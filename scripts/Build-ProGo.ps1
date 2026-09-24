@@ -70,7 +70,7 @@ public static class ProGoNativeIconMethods {
 }
 
 if (-not (Test-Path $Csc)) {
-    throw "csc.exe не найден: $Csc"
+    throw "csc.exe not found: $Csc"
 }
 
 if (-not (Test-Path $VersionFile)) {
@@ -89,7 +89,7 @@ New-ProGoIconFile -Path $IconPath
 
 $Sources = @(Get-ChildItem -Path $Src -Filter "*.cs" -File | Sort-Object FullName | ForEach-Object { $_.FullName })
 if ($Sources.Count -eq 0) {
-    throw "Исходники C# не найдены в $Src"
+    throw "C# sources not found in $Src"
 }
 
 $Args = @(
@@ -122,7 +122,7 @@ Copy-Item $VersionFile -Destination (Join-Path $Release "VERSION") -Force
 
 $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Install-FromGitHub.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $ReleaseScripts $scriptName) -Force
