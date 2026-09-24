@@ -13,10 +13,10 @@ $ReleaseDir = Join-Path $Root "release"
 $Exe = Join-Path $ReleaseDir "ProGo.exe"
 $VersionFile = Join-Path $ReleaseDir "VERSION"
 if (-not (Test-Path $Exe)) {
-    throw "ProGo.exe не найден после сборки."
+    throw "ProGo.exe not found after build."
 }
 if (-not (Test-Path $VersionFile)) {
-    throw "VERSION не найден после сборки."
+    throw "VERSION not found after build."
 }
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
@@ -31,7 +31,7 @@ if (Test-Path $Icon) {
 
 $InstalledScripts = Join-Path $InstallDir "scripts"
 New-Item -ItemType Directory -Path $InstalledScripts -Force | Out-Null
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Install-FromGitHub.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
