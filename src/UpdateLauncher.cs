@@ -56,6 +56,11 @@ namespace ProGo
         private static string ResolveUpdateScriptPath()
         {
             var installedScript = Path.Combine(AppPaths.Root, "scripts", UpdateScriptName);
+
+            // Always try to refresh the updater first. This prevents a stale local
+            // Update-ProGo.ps1 from keeping older update behavior forever.
+            if (TryDownloadUpdateScript(installedScript)) return installedScript;
+
             if (File.Exists(installedScript)) return installedScript;
 
             var executableDir = Path.GetDirectoryName(Application.ExecutablePath) ?? AppPaths.Root;
@@ -65,8 +70,6 @@ namespace ProGo
                 TryCopyScriptToInstalledLocation(besideExeScript, installedScript);
                 return File.Exists(installedScript) ? installedScript : besideExeScript;
             }
-
-            if (TryDownloadUpdateScript(installedScript)) return installedScript;
 
             return String.Empty;
         }
