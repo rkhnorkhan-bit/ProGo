@@ -38,6 +38,11 @@ foreach ($file in $TextFiles) {
     }
 }
 
+$VersionFile = Join-Path $Root "VERSION"
+if (-not (Test-Path $VersionFile)) { Fail "VERSION file missing" }
+$VersionText = (Get-Content -Raw -Path $VersionFile).Trim()
+if ($VersionText -notmatch "^\d+\.\d+\.\d+$") { Fail "VERSION is not semver-like: $VersionText" }
+
 $SourceBuilder = New-Object System.Text.StringBuilder
 Get-ChildItem -Path (Join-Path $Root "src") -Filter "*.cs" -File | Sort-Object FullName | ForEach-Object {
     [void]$SourceBuilder.AppendLine((Get-Content -Path $_.FullName -Raw))
@@ -80,12 +85,23 @@ $buildScriptText = Get-Content -Raw -Path $Build
 if ($buildScriptText -notmatch "/win32icon") {
     Fail "build script does not embed executable icon"
 }
+if ($buildScriptText -notmatch "VERSION") {
+    Fail "build script does not include VERSION"
+}
+
+$installScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
+if ($installScriptText -notmatch "Copy-Item \$VersionFile") {
+    Fail "installer does not copy VERSION marker"
+}
 
 $updateScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
-foreach ($required in @("Stop-ExistingProGoProcesses", "Wait-FileUnlocked", "Start-UpdatedProGo", "-PassThru", "Updated ProGo started")) {
+foreach ($required in @("Test-UpdateRequired", "Get-RemoteVersion", "У вас актуальная версия ProGo", "Backup-UserData", "vault.enc.json", "settings.json", "backups", "Start-UpdatedProGo", "-PassThru", "Updated ProGo started")) {
     if ($updateScriptText -notmatch [regex]::Escape($required)) {
-        Fail "forced updater restart marker missing: $required"
+        Fail "updater safety marker missing: $required"
     }
+}
+if ($updateScriptText -match "Stop-Process\s+-Id") {
+    Fail "updater still force-kills ProGo process"
 }
 
 $parseErrors = $null
@@ -107,6 +123,8 @@ if (-not (Test-Path $Exe)) { Fail "release ProGo.exe missing" }
 $ReleaseIcon = Join-Path $Root "release\ProGo.ico"
 if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
+$ReleaseVersion = Join-Path $Root "release\VERSION"
+if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
 foreach ($scriptName in @("Update-ProGo.ps1", "Install-FromGitHub.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release updater script missing: $scriptName" }
