@@ -57,8 +57,10 @@ if ($Source -match "DECOY|fake vault|wrong PIN|incorrect PIN") {
     Fail "decoy-disclosing marker found in source"
 }
 
-if ($Source -notmatch "Обновить ProGo") {
-    Fail "tray update menu text missing"
+foreach ($requiredSource in @("Обновить ProGo", "Создать резервную копию", "Откатить из резервной копии", "BackupService.EnsureVersionBackupExists", "BackupPickerForm", "Restore-ProGoBackup.ps1")) {
+    if ($Source -notmatch [regex]::Escape($requiredSource)) {
+        Fail "source marker missing: $requiredSource"
+    }
 }
 
 if ($Source -notmatch "BrandIcon\.Create") {
@@ -88,14 +90,20 @@ if ($buildScriptText -notmatch "/win32icon") {
 if ($buildScriptText -notmatch "VERSION") {
     Fail "build script does not include VERSION"
 }
+if ($buildScriptText -notmatch "Restore-ProGoBackup.ps1") {
+    Fail "build script does not include restore script"
+}
 
 $installScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
 if (-not $installScriptText.Contains('Copy-Item $VersionFile')) {
     Fail "installer does not copy VERSION marker"
 }
+if ($installScriptText -notmatch "Restore-ProGoBackup.ps1") {
+    Fail "installer does not deploy restore script"
+}
 
 $updateScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
-foreach ($required in @("Test-UpdateRequired", "Get-RemoteVersion", "У вас актуальная версия ProGo", "Backup-UserData", "vault.enc.json", "settings.json", "backups", "Start-UpdatedProGo", "-PassThru", "Updated ProGo started")) {
+foreach ($required in @("Test-UpdateRequired", "Get-RemoteVersion", "U8", "Backup-InstalledState", "ProGo.exe", "scripts", "vault.enc.json", "settings.json", "manifest.txt", "backups", "Start-UpdatedProGo", "-PassThru", "Updated ProGo started")) {
     if ($updateScriptText -notmatch [regex]::Escape($required)) {
         Fail "updater safety marker missing: $required"
     }
@@ -103,9 +111,22 @@ foreach ($required in @("Test-UpdateRequired", "Get-RemoteVersion", "У вас �
 if ($updateScriptText -match "Stop-Process\s+-Id") {
     Fail "updater still force-kills ProGo process"
 }
+if ($updateScriptText.Contains("У вас актуальная версия ProGo")) {
+    Fail "updater has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding"
+}
+
+$restoreScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
+foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
+    if ($restoreScriptText -notmatch [regex]::Escape($required)) {
+        Fail "restore script marker missing: $required"
+    }
+}
+if ($restoreScriptText.Contains("ProGo восстановлен")) {
+    Fail "restore script has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding"
+}
 
 $parseErrors = $null
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Raw -Path $scriptPath
@@ -125,9 +146,9 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Install-FromGitHub.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
-    if (-not (Test-Path $releaseScript)) { Fail "release updater script missing: $scriptName" }
+    if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
 
 Write-Host "ProGo tests PASS."
