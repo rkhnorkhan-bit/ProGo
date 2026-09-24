@@ -13,6 +13,7 @@ namespace ProGo
 
             AppPaths.EnsureDirectories();
             SafeLog.Info("ProGo started.");
+            BackupService.EnsureVersionBackupExists("startup");
 
             using (var settingsService = new SettingsService())
             using (var proxyService = new ProxyService(settingsService))
