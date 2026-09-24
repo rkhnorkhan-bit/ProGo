@@ -52,16 +52,29 @@ if ($Source -match "DECOY|fake vault|wrong PIN|incorrect PIN") {
     Fail "decoy-disclosing marker found in source"
 }
 
-$parseErrors = $null
-$scriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Build-ProGo.ps1")
-$tokens = @([System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$parseErrors))
-if ($parseErrors -ne $null -and @($parseErrors).Count -gt 0) {
-    Fail "PowerShell parser errors in Build-ProGo.ps1"
+if ($Source -notmatch "Обновить ProGo") {
+    Fail "tray update menu text missing"
 }
-if ($tokens.Count -eq 0) { Fail "PowerShell parser returned no tokens for Build-ProGo.ps1" }
+
+$parseErrors = $null
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1")) {
+    $scriptPath = Join-Path $PSScriptRoot $scriptName
+    if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
+    $scriptText = Get-Content -Raw -Path $scriptPath
+    $parseErrors = $null
+    $tokens = @([System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$parseErrors))
+    if ($parseErrors -ne $null -and @($parseErrors).Count -gt 0) {
+        Fail "PowerShell parser errors in $scriptName"
+    }
+    if ($tokens.Count -eq 0) { Fail "PowerShell parser returned no tokens for $scriptName" }
+}
 
 & $Build
 $Exe = Join-Path $Root "release\ProGo.exe"
 if (-not (Test-Path $Exe)) { Fail "release ProGo.exe missing" }
+foreach ($scriptName in @("Update-ProGo.ps1", "Install-FromGitHub.ps1")) {
+    $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
+    if (-not (Test-Path $releaseScript)) { Fail "release updater script missing: $scriptName" }
+}
 
 Write-Host "ProGo tests PASS."
