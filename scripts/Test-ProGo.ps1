@@ -18,12 +18,12 @@ Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
 
 $ForbiddenNames = @("vault*.json", "vault*.enc*", "*.pem", "*.key", "*.pfx", "*.p12", ".env", ".env.*", "*.log")
 foreach ($pattern in $ForbiddenNames) {
-    $items = Get-ChildItem -Path $Root -Recurse -Force -File -Include $pattern -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "\\release\\" }
+    $items = @(Get-ChildItem -Path $Root -Recurse -Force -File -Include $pattern -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "\\release\\" })
     if ($items.Count -gt 0) { Fail "forbidden runtime/secret-like file found: $pattern" }
 }
 
-$TextFiles = Get-RepoFiles | Where-Object { $_.Extension -in @(".cs", ".ps1", ".md", ".yml", ".yaml", ".json") }
+$TextFiles = @(Get-RepoFiles | Where-Object { $_.Extension -in @(".cs", ".ps1", ".md", ".yml", ".yaml", ".json") })
 $Legacy = "DM KZ VaultDesk|DungeonMasters|Dungeon Masters|KzVaultDesk|DMKZ"
 foreach ($file in $TextFiles) {
     $content = Get-Content -Path $file.FullName -Raw
@@ -46,8 +46,8 @@ if ($Source -match "DECOY|fake vault|wrong PIN|incorrect PIN") {
 
 $parseErrors = $null
 $scriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Build-ProGo.ps1")
-$tokens = [System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$parseErrors)
-if ($parseErrors -ne $null -and $parseErrors.Count -gt 0) {
+$tokens = @([System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$parseErrors))
+if ($parseErrors -ne $null -and @($parseErrors).Count -gt 0) {
     Fail "PowerShell parser errors in Build-ProGo.ps1"
 }
 if ($tokens.Count -eq 0) { Fail "PowerShell parser returned no tokens for Build-ProGo.ps1" }
