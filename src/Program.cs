@@ -17,7 +17,7 @@ namespace ProGo
             using (var settingsService = new SettingsService())
             using (var proxyService = new ProxyService(settingsService))
             using (var clipboardService = new ClipboardService(settingsService))
-            using (var context = new TrayApplicationContext(settingsService, proxyService, clipboardService))
+            using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, clipboardService))
             {
                 if (settingsService.Current.AutoApplyProxy)
                 {
