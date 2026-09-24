@@ -1,7 +1,9 @@
 param(
     [int]$WaitPid = 0,
     [string]$SourceZipUrl = "https://github.com/rkhnorkhan-bit/ProGo/archive/refs/heads/main.zip",
-    [switch]$NoLaunch
+    [string]$RemoteVersionUrl = "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/VERSION",
+    [switch]$NoLaunch,
+    [switch]$Force
 )
 
 Set-StrictMode -Version 2.0
@@ -11,6 +13,8 @@ $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 $UpdateLog = Join-Path $InstallDir "progo-update.log"
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $WorkDir = Join-Path $InstallDir ("update-" + $Timestamp)
+$BackupsDir = Join-Path $InstallDir "backups"
+$LocalVersionFile = Join-Path $InstallDir "VERSION"
 
 function Write-UpdateLog($Message) {
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
@@ -19,9 +23,55 @@ function Write-UpdateLog($Message) {
     Write-Host $Message
 }
 
+function Show-UserMessage($Text, $Title) {
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        [void][System.Windows.Forms.MessageBox]::Show($Text, $Title, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host "$Title: $Text"
+    }
+}
+
 function Fail($Message) {
     Write-UpdateLog ("ERROR: " + $Message)
     throw $Message
+}
+
+function Get-LocalVersion {
+    if (Test-Path $LocalVersionFile) {
+        return ((Get-Content -Raw -Path $LocalVersionFile).Trim())
+    }
+
+    return "0.0.0"
+}
+
+function Get-RemoteVersion {
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    } catch {
+        Write-UpdateLog "TLS setup warning: $($_.Exception.Message)"
+    }
+
+    return ((Invoke-WebRequest -Uri $RemoteVersionUrl -UseBasicParsing).Content.Trim())
+}
+
+function Test-UpdateRequired {
+    if ($Force) {
+        Write-UpdateLog "Force update requested."
+        return $true
+    }
+
+    $local = Get-LocalVersion
+    $remote = Get-RemoteVersion
+    Write-UpdateLog "Version check: local=$local remote=$remote"
+
+    if ($local -eq $remote) {
+        Write-UpdateLog "ProGo is already up to date."
+        Show-UserMessage "У вас актуальная версия ProGo: $local" "Обновление ProGo"
+        return $false
+    }
+
+    return $true
 }
 
 function Wait-ProGoExit($Pid, $TimeoutMs) {
@@ -46,24 +96,19 @@ function Stop-ExistingProGoProcesses($ExceptPid) {
     }
 
     foreach ($process in $processes) {
-        Write-UpdateLog "Stopping old ProGo process: PID $($process.Id)"
+        Write-UpdateLog "Requesting old ProGo process close: PID $($process.Id)"
         try {
             if ($process.MainWindowHandle -ne 0) {
                 [void]$process.CloseMainWindow()
-                [void]$process.WaitForExit(5000)
+                [void]$process.WaitForExit(10000)
             }
         } catch {
-            Write-UpdateLog "Graceful stop warning for PID $($process.Id): $($_.Exception.Message)"
+            Write-UpdateLog "Graceful close warning for PID $($process.Id): $($_.Exception.Message)"
         }
 
-        try {
-            $stillRunning = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-            if ($null -ne $stillRunning) {
-                Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-                Write-UpdateLog "Forced old ProGo process stop: PID $($process.Id)"
-            }
-        } catch {
-            Write-UpdateLog "Forced stop warning for PID $($process.Id): $($_.Exception.Message)"
+        $stillRunning = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
+        if ($null -ne $stillRunning) {
+            Fail "ProGo is still running. Close it manually and run update again. PID $($process.Id)"
         }
     }
 }
@@ -83,6 +128,31 @@ function Wait-FileUnlocked($Path, $TimeoutSeconds) {
     }
 
     Fail "Timed out waiting for file unlock: $Path"
+}
+
+function Backup-UserData {
+    New-Item -ItemType Directory -Path $BackupsDir -Force | Out-Null
+    $backupDir = Join-Path $BackupsDir ("backup-" + $Timestamp)
+    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+
+    $items = @("vault.enc.json", "settings.json", "progo.log", "VERSION")
+    $copied = 0
+    foreach ($name in $items) {
+        $source = Join-Path $InstallDir $name
+        if (Test-Path $source) {
+            Copy-Item $source -Destination (Join-Path $backupDir $name) -Force
+            $copied++
+        }
+    }
+
+    Write-UpdateLog "User data backup created: $backupDir; files=$copied"
+
+    $oldBackups = @(Get-ChildItem -Path $BackupsDir -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -Skip 10)
+    foreach ($old in $oldBackups) {
+        Remove-Item $old.FullName -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    return $backupDir
 }
 
 function Start-UpdatedProGo($ExePath) {
@@ -120,6 +190,10 @@ function Start-UpdatedProGo($ExePath) {
 
 Write-UpdateLog "ProGo update started."
 
+if (-not (Test-UpdateRequired)) {
+    return
+}
+
 $UpdaterPid = $PID
 Wait-ProGoExit -Pid $WaitPid -TimeoutMs 30000
 Stop-ExistingProGoProcesses -ExceptPid $UpdaterPid
@@ -127,14 +201,11 @@ Stop-ExistingProGoProcesses -ExceptPid $UpdaterPid
 $Exe = Join-Path $InstallDir "ProGo.exe"
 Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
 
+$BackupDir = Backup-UserData
+Write-UpdateLog "Backup before update: $BackupDir"
+
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
 $ZipPath = Join-Path $WorkDir "ProGo-main.zip"
-
-try {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-} catch {
-    Write-UpdateLog "TLS setup warning: $($_.Exception.Message)"
-}
 
 Write-UpdateLog "Downloading source from GitHub..."
 Invoke-WebRequest -Uri $SourceZipUrl -OutFile $ZipPath -UseBasicParsing
@@ -168,3 +239,4 @@ try {
 }
 
 Write-UpdateLog "ProGo update completed."
+Show-UserMessage "ProGo обновлён. Резервная копия данных сохранена: $BackupDir" "Обновление ProGo"
