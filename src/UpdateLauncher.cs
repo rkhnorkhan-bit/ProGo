@@ -33,8 +33,8 @@ namespace ProGo
                 var args = "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\" -WaitPid " + currentPid;
                 var psi = new ProcessStartInfo(powershell, args)
                 {
-                    UseShellExecute = false,
-                    CreateNoWindow = false,
+                    UseShellExecute = true,
+                    WindowStyle = ProcessWindowStyle.Minimized,
                     WorkingDirectory = AppPaths.Root
                 };
 
