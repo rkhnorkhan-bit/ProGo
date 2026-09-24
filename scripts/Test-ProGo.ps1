@@ -68,6 +68,10 @@ if ($Source -notmatch "TryDownloadUpdateScript") {
     Fail "updater download fallback missing"
 }
 
+if ($Source -notmatch "Always try to refresh the updater first") {
+    Fail "updater script is not refreshed before local fallback"
+}
+
 if ($Source -notmatch "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") {
     Fail "updater launcher is not minimized"
 }
