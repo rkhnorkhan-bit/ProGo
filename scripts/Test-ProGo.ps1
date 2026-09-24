@@ -24,10 +24,18 @@ foreach ($pattern in $ForbiddenNames) {
 }
 
 $TextFiles = @(Get-RepoFiles | Where-Object { $_.Extension -in @(".cs", ".ps1", ".md", ".yml", ".yaml", ".json") })
-$Legacy = "DM KZ VaultDesk|DungeonMasters|Dungeon Masters|KzVaultDesk|DMKZ"
+$LegacyParts = @(
+    ("DM KZ Vault" + "Desk"),
+    ("Dungeon" + "Masters"),
+    ("Dungeon " + "Masters"),
+    ("KzVault" + "Desk"),
+    ("DM" + "KZ")
+)
 foreach ($file in $TextFiles) {
     $content = Get-Content -Path $file.FullName -Raw
-    if ($content -match $Legacy) { Fail "legacy branding found in $($file.FullName)" }
+    foreach ($legacy in $LegacyParts) {
+        if ($content -match [regex]::Escape($legacy)) { Fail "legacy branding found in $($file.FullName)" }
+    }
 }
 
 $SourceBuilder = New-Object System.Text.StringBuilder
