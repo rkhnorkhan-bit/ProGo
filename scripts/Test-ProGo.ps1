@@ -68,9 +68,20 @@ if ($Source -notmatch "TryDownloadUpdateScript") {
     Fail "updater download fallback missing"
 }
 
+if ($Source -notmatch "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") {
+    Fail "updater launcher is not minimized"
+}
+
 $buildScriptText = Get-Content -Raw -Path $Build
 if ($buildScriptText -notmatch "/win32icon") {
     Fail "build script does not embed executable icon"
+}
+
+$updateScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
+foreach ($required in @("Stop-ExistingProGoProcesses", "Wait-FileUnlocked", "Start-UpdatedProGo", "-PassThru", "Updated ProGo started")) {
+    if ($updateScriptText -notmatch [regex]::Escape($required)) {
+        Fail "forced updater restart marker missing: $required"
+    }
 }
 
 $parseErrors = $null
