@@ -28,7 +28,7 @@ function Show-UserMessage($Text, $Title) {
         Add-Type -AssemblyName System.Windows.Forms
         [void][System.Windows.Forms.MessageBox]::Show($Text, $Title, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
     } catch {
-        Write-Host "$Title: $Text"
+        Write-Host ("{0}: {1}" -f $Title, $Text)
     }
 }
 
@@ -74,12 +74,12 @@ function Test-UpdateRequired {
     return $true
 }
 
-function Wait-ProGoExit($Pid, $TimeoutMs) {
-    if ($Pid -le 0) { return }
+function Wait-ProGoExit($TargetProcessId, $TimeoutMs) {
+    if ($TargetProcessId -le 0) { return }
 
-    Write-UpdateLog "Waiting for ProGo process to exit: PID $Pid"
+    Write-UpdateLog "Waiting for ProGo process to exit: PID $TargetProcessId"
     try {
-        $process = Get-Process -Id $Pid -ErrorAction SilentlyContinue
+        $process = Get-Process -Id $TargetProcessId -ErrorAction SilentlyContinue
         if ($null -ne $process) {
             [void]$process.WaitForExit($TimeoutMs)
         }
@@ -88,8 +88,8 @@ function Wait-ProGoExit($Pid, $TimeoutMs) {
     }
 }
 
-function Stop-ExistingProGoProcesses($ExceptPid) {
-    $processes = @(Get-Process -Name "ProGo" -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $ExceptPid })
+function Stop-ExistingProGoProcesses($ExceptProcessId) {
+    $processes = @(Get-Process -Name "ProGo" -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $ExceptProcessId })
     if ($processes.Count -eq 0) {
         Write-UpdateLog "No running ProGo processes found."
         return
@@ -194,9 +194,9 @@ if (-not (Test-UpdateRequired)) {
     return
 }
 
-$UpdaterPid = $PID
-Wait-ProGoExit -Pid $WaitPid -TimeoutMs 30000
-Stop-ExistingProGoProcesses -ExceptPid $UpdaterPid
+$UpdaterProcessId = $PID
+Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
+Stop-ExistingProGoProcesses -ExceptProcessId $UpdaterProcessId
 
 $Exe = Join-Path $InstallDir "ProGo.exe"
 Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
