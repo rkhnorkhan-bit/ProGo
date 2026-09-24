@@ -90,7 +90,7 @@ if ($buildScriptText -notmatch "VERSION") {
 }
 
 $installScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
-if ($installScriptText -notmatch "Copy-Item \$VersionFile") {
+if (-not $installScriptText.Contains('Copy-Item $VersionFile')) {
     Fail "installer does not copy VERSION marker"
 }
 
