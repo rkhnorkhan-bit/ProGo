@@ -10,7 +10,7 @@ function Fail($Message) {
 
 function Get-RepoFiles {
     Get-ChildItem -Path $Root -Recurse -File |
-        Where-Object { $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "\\release\\" }
+        Where-Object { $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "\\release\\" -and $_.FullName -notmatch "\\build\\" }
 }
 
 Write-Host "ProGo tests started."
@@ -19,7 +19,7 @@ Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
 $ForbiddenNames = @("vault*.json", "vault*.enc*", "*.pem", "*.key", "*.pfx", "*.p12", ".env", ".env.*", "*.log")
 foreach ($pattern in $ForbiddenNames) {
     $items = @(Get-ChildItem -Path $Root -Recurse -Force -File -Include $pattern -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "\\release\\" })
+        Where-Object { $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "\\release\\" -and $_.FullName -notmatch "\\build\\" })
     if ($items.Count -gt 0) { Fail "forbidden runtime/secret-like file found: $pattern" }
 }
 
@@ -56,6 +56,15 @@ if ($Source -notmatch "Обновить ProGo") {
     Fail "tray update menu text missing"
 }
 
+if ($Source -notmatch "BrandIcon\.Create") {
+    Fail "brand icon factory is not used by tray context"
+}
+
+$buildScriptText = Get-Content -Raw -Path $Build
+if ($buildScriptText -notmatch "/win32icon") {
+    Fail "build script does not embed executable icon"
+}
+
 $parseErrors = $null
 foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
@@ -72,6 +81,9 @@ foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.
 & $Build
 $Exe = Join-Path $Root "release\ProGo.exe"
 if (-not (Test-Path $Exe)) { Fail "release ProGo.exe missing" }
+$ReleaseIcon = Join-Path $Root "release\ProGo.ico"
+if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
+if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 foreach ($scriptName in @("Update-ProGo.ps1", "Install-FromGitHub.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release updater script missing: $scriptName" }
