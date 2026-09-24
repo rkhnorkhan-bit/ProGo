@@ -26,7 +26,9 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 - Копирование секрета только по явному действию.
 - Автоочистка clipboard, если там всё ещё находится скопированное ProGo значение.
 - Русский UI.
-- Скрипты build/install/uninstall/test.
+- Установка напрямую из GitHub.
+- Пункт tray `Обновить ProGo`: скачивает свежий `main` из GitHub, пересобирает и заменяет установленный `ProGo.exe`.
+- Скрипты build/install/update/uninstall/test.
 - GitHub Actions Windows build.
 
 ## Ограничения безопасности
@@ -63,6 +65,36 @@ ssh.exe -N -D 127.0.0.1:1080 -o ExitOnForwardFailure=yes -o ServerAliveInterval=
 
 ProGo не хранит SSH private keys или SSH passwords в source code.
 
+## Установка напрямую из GitHub
+
+Самый простой standalone-вариант для новой Windows-машины:
+
+```powershell
+$script = Join-Path $env:TEMP "Install-FromGitHub.ps1"
+Invoke-WebRequest "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/scripts/Install-FromGitHub.ps1" -OutFile $script -UseBasicParsing
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script
+```
+
+Скрипт скачает текущий `main` с GitHub, соберёт `ProGo.exe` через штатный .NET Framework compiler и установит приложение в:
+
+```text
+%LOCALAPPDATA%\ProGo
+```
+
+Startup shortcut создаётся по умолчанию. Чтобы отключить:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -NoStartup
+```
+
+## Установка из локального clone
+
+```powershell
+git clone https://github.com/rkhnorkhan-bit/ProGo.git
+cd ProGo
+.\scripts\Install-ProGo.ps1
+```
+
 ## Сборка
 
 ```powershell
@@ -75,27 +107,30 @@ ProGo не хранит SSH private keys или SSH passwords в source code.
 C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
 ```
 
-## Установка
-
-```powershell
-.\scripts\Install-ProGo.ps1
-```
-
-Installer копирует `ProGo.exe` в:
-
-```text
-%LOCALAPPDATA%\ProGo
-```
-
-Startup shortcut создаётся по умолчанию. Чтобы отключить:
-
-```powershell
-.\scripts\Install-ProGo.ps1 -NoStartup
-```
-
 ## Обновление
 
-Запустите installer повторно. `settings.json`, `vault.enc.json` и logs сохраняются.
+В tray menu нажмите:
+
+```text
+Обновить ProGo
+```
+
+Update-контур делает следующее:
+
+1. запускает `%LOCALAPPDATA%\ProGo\scripts\Update-ProGo.ps1`;
+2. закрывает текущий ProGo;
+3. скачивает свежий `main` из GitHub;
+4. пересобирает приложение локально;
+5. заменяет `%LOCALAPPDATA%\ProGo\ProGo.exe`;
+6. запускает обновлённый ProGo.
+
+`settings.json`, `vault.enc.json` и logs сохраняются.
+
+CLI-вариант:
+
+```powershell
+%LOCALAPPDATA%\ProGo\scripts\Update-ProGo.ps1
+```
 
 ## Удаление
 
