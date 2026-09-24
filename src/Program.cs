@@ -13,7 +13,7 @@ namespace ProGo
                 AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs args)
                 {
                     var ex = args.ExceptionObject as Exception;
-                    SafeLog.Error("Fatal unhandled exception.", ex ?? new Exception(String.valueOf(args.ExceptionObject)));
+                    SafeLog.Error("Fatal unhandled exception.", ex ?? new Exception(Convert.ToString(args.ExceptionObject)));
                 };
 
                 Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs args)
