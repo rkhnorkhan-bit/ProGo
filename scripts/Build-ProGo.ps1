@@ -50,5 +50,14 @@ $License = Join-Path $Root "LICENSE.md"
 if (Test-Path $Readme) { Copy-Item $Readme -Destination (Join-Path $Release "README.md") -Force }
 if (Test-Path $License) { Copy-Item $License -Destination (Join-Path $Release "LICENSE.md") -Force }
 
+$ReleaseScripts = Join-Path $Release "scripts"
+New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Install-FromGitHub.ps1")) {
+    $scriptPath = Join-Path $PSScriptRoot $scriptName
+    if (Test-Path $scriptPath) {
+        Copy-Item $scriptPath -Destination (Join-Path $ReleaseScripts $scriptName) -Force
+    }
+}
+
 Write-Host "Build OK: $Out"
 Write-Host "Release folder: $Release"
