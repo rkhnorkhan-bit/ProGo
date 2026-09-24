@@ -9,6 +9,9 @@
 - Added local encrypted vault MVP.
 - Added clipboard auto-clear.
 - Added Russian UI.
-- Added build, install, uninstall, and test scripts.
+- Added direct install from GitHub through `scripts/Install-FromGitHub.ps1`.
+- Added tray update action `Обновить ProGo`.
+- Added self-updater script `scripts/Update-ProGo.ps1` that downloads latest `main`, rebuilds locally, preserves user data, and restarts ProGo.
+- Added build, install, update, uninstall, and test scripts.
 - Added repository hygiene and Windows build CI.
 - Added source-available license notice, security policy, and documentation.
