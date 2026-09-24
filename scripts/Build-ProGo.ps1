@@ -11,6 +11,7 @@ $Release = Join-Path $Root "release"
 $BuildDir = Join-Path $Root "build"
 $Out = Join-Path $Release "ProGo.exe"
 $IconPath = Join-Path $BuildDir "ProGo.ico"
+$VersionFile = Join-Path $Root "VERSION"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
 function New-ProGoIconFile {
@@ -72,6 +73,10 @@ if (-not (Test-Path $Csc)) {
     throw "csc.exe не найден: $Csc"
 }
 
+if (-not (Test-Path $VersionFile)) {
+    throw "VERSION file not found: $VersionFile"
+}
+
 if (Test-Path $Release) {
     Remove-Item $Release -Recurse -Force
 }
@@ -113,6 +118,7 @@ $License = Join-Path $Root "LICENSE.md"
 if (Test-Path $Readme) { Copy-Item $Readme -Destination (Join-Path $Release "README.md") -Force }
 if (Test-Path $License) { Copy-Item $License -Destination (Join-Path $Release "LICENSE.md") -Force }
 Copy-Item $IconPath -Destination (Join-Path $Release "ProGo.ico") -Force
+Copy-Item $VersionFile -Destination (Join-Path $Release "VERSION") -Force
 
 $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
@@ -125,4 +131,5 @@ foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-Pr
 
 Write-Host "Build OK: $Out"
 Write-Host "Icon OK: $IconPath"
+Write-Host "Version OK: $((Get-Content -Raw -Path $VersionFile).Trim())"
 Write-Host "Release folder: $Release"
