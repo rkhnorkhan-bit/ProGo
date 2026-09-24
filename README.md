@@ -26,7 +26,9 @@ This project is intentionally small: no cloud backend, no telemetry, no hosted s
 - Copy secret by explicit action only.
 - Clipboard auto-clear if the clipboard still contains the copied ProGo value.
 - Russian UI.
-- Build/install/uninstall/test scripts.
+- Direct install from GitHub.
+- Tray item `Обновить ProGo`: downloads the latest `main` from GitHub, rebuilds locally, and replaces the installed `ProGo.exe`.
+- Build/install/update/uninstall/test scripts.
 - GitHub Actions Windows build.
 
 ## Security limitations
@@ -63,6 +65,36 @@ ssh.exe -N -D 127.0.0.1:1080 -o ExitOnForwardFailure=yes -o ServerAliveInterval=
 
 ProGo never stores SSH private keys or SSH passwords in source code.
 
+## Direct install from GitHub
+
+Recommended standalone install on a fresh Windows machine:
+
+```powershell
+$script = Join-Path $env:TEMP "Install-FromGitHub.ps1"
+Invoke-WebRequest "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/scripts/Install-FromGitHub.ps1" -OutFile $script -UseBasicParsing
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script
+```
+
+The script downloads the current `main` branch from GitHub, builds `ProGo.exe` using the stock .NET Framework compiler, and installs it to:
+
+```text
+%LOCALAPPDATA%\ProGo
+```
+
+A startup shortcut is created by default. To disable it:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -NoStartup
+```
+
+## Install from local clone
+
+```powershell
+git clone https://github.com/rkhnorkhan-bit/ProGo.git
+cd ProGo
+.\scripts\Install-ProGo.ps1
+```
+
 ## Build
 
 ```powershell
@@ -75,23 +107,30 @@ The build script uses:
 C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
 ```
 
-## Install
-
-```powershell
-.\scripts\Install-ProGo.ps1
-```
-
-The installer copies `ProGo.exe` to:
-
-```text
-%LOCALAPPDATA%\ProGo
-```
-
-It creates a startup shortcut unless `-NoStartup` is passed.
-
 ## Update
 
-Run the installer again. Existing `settings.json`, `vault.enc.json`, and logs are preserved.
+Use the tray menu item:
+
+```text
+Обновить ProGo
+```
+
+The updater:
+
+1. starts `%LOCALAPPDATA%\ProGo\scripts\Update-ProGo.ps1`;
+2. exits the running ProGo process;
+3. downloads the latest `main` branch from GitHub;
+4. rebuilds locally;
+5. replaces `%LOCALAPPDATA%\ProGo\ProGo.exe`;
+6. starts the updated ProGo.
+
+Existing `settings.json`, `vault.enc.json`, and logs are preserved.
+
+CLI update:
+
+```powershell
+%LOCALAPPDATA%\ProGo\scripts\Update-ProGo.ps1
+```
 
 ## Uninstall
 
