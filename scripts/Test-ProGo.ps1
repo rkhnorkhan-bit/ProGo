@@ -60,6 +60,14 @@ if ($Source -notmatch "BrandIcon\.Create") {
     Fail "brand icon factory is not used by tray context"
 }
 
+if ($Source -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") {
+    Fail "updater bootstrap fallback URL missing"
+}
+
+if ($Source -notmatch "TryDownloadUpdateScript") {
+    Fail "updater download fallback missing"
+}
+
 $buildScriptText = Get-Content -Raw -Path $Build
 if ($buildScriptText -notmatch "/win32icon") {
     Fail "build script does not embed executable icon"
