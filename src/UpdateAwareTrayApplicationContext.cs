@@ -46,6 +46,11 @@ namespace ProGo
             menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
             menu.Items.Add("Настройки", null, delegate { ShowSettings(); });
             menu.Items.Add("Открыть журнал", null, delegate { OpenLog(); });
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add("Создать резервную копию", null, delegate { CreateBackup(); });
+            menu.Items.Add("Откатить из резервной копии...", null, delegate { StartRestore(); });
+            menu.Items.Add("Открыть папку резервных копий", null, delegate { OpenBackups(); });
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Обновить ProGo", null, delegate { StartUpdate(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Выход", null, delegate { ExitThread(); });
@@ -99,10 +104,65 @@ namespace ProGo
             }
         }
 
+        private void OpenBackups()
+        {
+            try
+            {
+                Directory.CreateDirectory(BackupService.BackupsRoot);
+                Process.Start("explorer.exe", BackupService.BackupsRoot);
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Open backups failed.", ex);
+                MessageBox.Show("Не удалось открыть папку резервных копий.", AppConstants.ProductName);
+            }
+        }
+
+        private void CreateBackup()
+        {
+            try
+            {
+                var dir = BackupService.CreateBackup("manual");
+                MessageBox.Show("Резервная копия создана:\n" + dir, "Резервная копия ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Manual backup failed.", ex);
+                MessageBox.Show("Не удалось создать резервную копию. Подробности записаны в журнал.", "Резервная копия ProGo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void StartRestore()
+        {
+            var backups = BackupService.ListBackups();
+            if (backups.Count == 0)
+            {
+                MessageBox.Show("Резервные копии не найдены. Сначала создайте резервную копию или дождитесь следующего обновления версии.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            string backupDir;
+            if (!BackupPickerForm.TryPick(backups, out backupDir)) return;
+
+            var result = MessageBox.Show(
+                "ProGo будет закрыт, восстановит выбранную резервную копию и запустится заново.\n\nВыбранная копия:\n" + backupDir + "\n\nПродолжить?",
+                "Откат ProGo",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result != DialogResult.Yes) return;
+
+            if (!BackupService.StartRestore(backupDir)) return;
+
+            SafeLog.Info("Restore requested by user: " + backupDir + ".");
+            tray.Visible = false;
+            ExitThread();
+        }
+
         private void StartUpdate()
         {
             var result = MessageBox.Show(
-                "ProGo скачает свежую версию из GitHub, пересоберёт приложение и заменит установленный файл. Хранилище и настройки будут сохранены.\n\nПродолжить?",
+                "ProGo проверит версию в GitHub. Если обновление есть, будет создана резервная копия текущей версии, затем приложение обновится и запустится заново.\n\nПродолжить?",
                 "Обновление ProGo",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
