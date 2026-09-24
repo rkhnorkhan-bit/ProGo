@@ -12,8 +12,9 @@ namespace ProGo
         private readonly ClipboardService clipboard;
         private readonly NotifyIcon tray;
         private readonly System.Drawing.Icon icon;
+        private Timer startupShowTimer;
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, ClipboardService clipboardService)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, ClipboardService clipboardService, bool showStatusOnStartup)
         {
             settings = settingsService;
             proxy = proxyService;
@@ -29,6 +30,19 @@ namespace ProGo
             };
             tray.DoubleClick += delegate { ShowStatus(); };
             UpdateTooltip();
+
+            if (showStatusOnStartup)
+            {
+                startupShowTimer = new Timer { Interval = 500 };
+                startupShowTimer.Tick += delegate
+                {
+                    startupShowTimer.Stop();
+                    startupShowTimer.Dispose();
+                    startupShowTimer = null;
+                    ShowStatus();
+                };
+                startupShowTimer.Start();
+            }
         }
 
         private ContextMenuStrip BuildMenu()
@@ -185,6 +199,12 @@ namespace ProGo
         {
             if (disposing)
             {
+                if (startupShowTimer != null)
+                {
+                    startupShowTimer.Stop();
+                    startupShowTimer.Dispose();
+                    startupShowTimer = null;
+                }
                 tray.Dispose();
                 icon.Dispose();
             }
