@@ -1,0 +1,25 @@
+name: ProGo CI
+
+on:
+  push:
+    branches: [ main, develop, "feature/**" ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Repository hygiene and build
+        shell: powershell
+        run: .\scripts\Test-ProGo.ps1
+
+      - name: Upload release folder
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProGo-release
+          path: release/
