@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
@@ -12,16 +11,18 @@ namespace ProGo
         private readonly ProxyService proxy;
         private readonly ClipboardService clipboard;
         private readonly NotifyIcon tray;
+        private readonly System.Drawing.Icon icon;
 
         public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, ClipboardService clipboardService)
         {
             settings = settingsService;
             proxy = proxyService;
             clipboard = clipboardService;
+            icon = BrandIcon.Create();
 
             tray = new NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = icon,
                 Text = AppConstants.ProductName,
                 Visible = true,
                 ContextMenuStrip = BuildMenu()
@@ -122,7 +123,11 @@ namespace ProGo
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) tray.Dispose();
+            if (disposing)
+            {
+                tray.Dispose();
+                icon.Dispose();
+            }
             base.Dispose(disposing);
         }
     }
