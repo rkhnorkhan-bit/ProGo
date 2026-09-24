@@ -15,6 +15,12 @@ $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $WorkDir = Join-Path $InstallDir ("update-" + $Timestamp)
 $BackupsDir = Join-Path $InstallDir "backups"
 $LocalVersionFile = Join-Path $InstallDir "VERSION"
+$RemoteVersion = $null
+$LocalVersion = $null
+
+function U8($Base64) {
+    return [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Base64))
+}
 
 function Write-UpdateLog($Message) {
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
@@ -61,13 +67,13 @@ function Test-UpdateRequired {
         return $true
     }
 
-    $local = Get-LocalVersion
-    $remote = Get-RemoteVersion
-    Write-UpdateLog "Version check: local=$local remote=$remote"
+    $script:LocalVersion = Get-LocalVersion
+    $script:RemoteVersion = Get-RemoteVersion
+    Write-UpdateLog "Version check: local=$script:LocalVersion remote=$script:RemoteVersion"
 
-    if ($local -eq $remote) {
+    if ($script:LocalVersion -eq $script:RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
-        Show-UserMessage "У вас актуальная версия ProGo: $local" "Обновление ProGo"
+        Show-UserMessage ((U8 "0KMg0LLQsNGBINCw0LrRgtGD0LDQu9GM0L3QsNGPINCy0LXRgNGB0LjRjyBQcm9Hbzog") + $script:LocalVersion) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
         return $false
     }
 
@@ -130,24 +136,53 @@ function Wait-FileUnlocked($Path, $TimeoutSeconds) {
     Fail "Timed out waiting for file unlock: $Path"
 }
 
-function Backup-UserData {
-    New-Item -ItemType Directory -Path $BackupsDir -Force | Out-Null
-    $backupDir = Join-Path $BackupsDir ("backup-" + $Timestamp)
-    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+function Copy-IfExists($Name, $BackupDir) {
+    $source = Join-Path $InstallDir $Name
+    if (Test-Path $source) {
+        Copy-Item $source -Destination (Join-Path $BackupDir $Name) -Force
+    }
+}
 
-    $items = @("vault.enc.json", "settings.json", "progo.log", "VERSION")
-    $copied = 0
-    foreach ($name in $items) {
-        $source = Join-Path $InstallDir $name
-        if (Test-Path $source) {
-            Copy-Item $source -Destination (Join-Path $backupDir $name) -Force
-            $copied++
-        }
+function Copy-DirectoryIfExists($Name, $BackupDir) {
+    $source = Join-Path $InstallDir $Name
+    if (-not (Test-Path $source)) { return }
+
+    Copy-Item $source -Destination (Join-Path $BackupDir $Name) -Recurse -Force
+}
+
+function Backup-InstalledState {
+    New-Item -ItemType Directory -Path $BackupsDir -Force | Out-Null
+
+    $from = Get-LocalVersion
+    if ([string]::IsNullOrWhiteSpace($script:RemoteVersion)) {
+        $script:RemoteVersion = "unknown"
     }
 
-    Write-UpdateLog "User data backup created: $backupDir; files=$copied"
+    $backupName = "backup-{0}-v{1}-to-v{2}" -f $Timestamp, ($from -replace '[^0-9A-Za-z._-]', '_'), ($script:RemoteVersion -replace '[^0-9A-Za-z._-]', '_')
+    $backupDir = Join-Path $BackupsDir $backupName
+    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
-    $oldBackups = @(Get-ChildItem -Path $BackupsDir -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -Skip 10)
+    Copy-IfExists "ProGo.exe" $backupDir
+    Copy-IfExists "ProGo.ico" $backupDir
+    Copy-IfExists "VERSION" $backupDir
+    Copy-IfExists "vault.enc.json" $backupDir
+    Copy-IfExists "settings.json" $backupDir
+    Copy-IfExists "progo.log" $backupDir
+    Copy-DirectoryIfExists "scripts" $backupDir
+
+    $manifest = @(
+        "product=ProGo",
+        "version=$from",
+        "target_version=$script:RemoteVersion",
+        "created=$([DateTimeOffset]::Now.ToString('o'))",
+        "reason=before-update",
+        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log"
+    )
+    Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
+
+    Write-UpdateLog "Installed-state backup created: $backupDir"
+
+    $oldBackups = @(Get-ChildItem -Path $BackupsDir -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -Skip 20)
     foreach ($old in $oldBackups) {
         Remove-Item $old.FullName -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -201,7 +236,7 @@ Stop-ExistingProGoProcesses -ExceptProcessId $UpdaterProcessId
 $Exe = Join-Path $InstallDir "ProGo.exe"
 Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
 
-$BackupDir = Backup-UserData
+$BackupDir = Backup-InstalledState
 Write-UpdateLog "Backup before update: $BackupDir"
 
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
@@ -239,4 +274,4 @@ try {
 }
 
 Write-UpdateLog "ProGo update completed."
-Show-UserMessage "ProGo обновлён. Резервная копия данных сохранена: $BackupDir" "Обновление ProGo"
+Show-UserMessage ((U8 "UHJvR28g0L7QsdC90L7QstC70ZHQvS4g0KDQtdC30LXRgNCy0L3QsNGPINC60L7Qv9C40Y8g0YHQvtGF0YDQsNC90LXQvdCwOiA=") + $BackupDir) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
