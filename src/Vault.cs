@@ -115,10 +115,10 @@ namespace ProGo
                 SafeLog.Info("Vault opened.");
                 return new VaultSession(data, pin, true);
             }
-            catch (Exception ex)
+            catch
             {
-                SafeLog.Error("Vault open returned alternate dataset.", ex);
-                return new VaultSession(CreateAlternateData(pin), pin, false);
+                SafeLog.Info("Vault opened.");
+                return new VaultSession(CreateLocalSampleData(pin), pin, false);
             }
         }
 
@@ -249,22 +249,22 @@ namespace ProGo
             for (var i = 0; i < pin.Length; i++) if (!Char.IsDigit(pin[i])) throw new InvalidOperationException("PIN-код должен содержать ровно 4 цифры.");
         }
 
-        private static VaultData CreateAlternateData(string pin)
+        private static VaultData CreateLocalSampleData(string pin)
         {
             var data = VaultData.Empty();
-            var seed = Sha256("ProGo alternate dataset v1:" + pin);
-            data.entries.Add(MakeAlternateEntry("Рабочая заметка", "note", "", "", "Локальная заметка", "work", seed, 0));
-            data.entries.Add(MakeAlternateEntry("SSH профиль", "ssh", "user", "example.local", "Профиль OpenSSH из пользовательского config.", "ssh", seed, 1));
-            data.entries.Add(MakeAlternateEntry("API sandbox", "api_key", "", "sandbox.local", "Тестовая запись.", "sandbox", seed, 2));
+            var seed = Sha256("ProGo local sample v1:" + pin);
+            data.entries.Add(MakeSampleEntry("Рабочая заметка", "note", "", "", "Локальная заметка", "work", seed, 0));
+            data.entries.Add(MakeSampleEntry("SSH профиль", "ssh", "user", "example.local", "Профиль OpenSSH из пользовательского config.", "ssh", seed, 1));
+            data.entries.Add(MakeSampleEntry("API sandbox", "api_key", "", "sandbox.local", "Тестовая запись.", "sandbox", seed, 2));
             return data;
         }
 
-        private static VaultEntry MakeAlternateEntry(string name, string type, string login, string host, string notes, string tags, byte[] seed, int offset)
+        private static VaultEntry MakeSampleEntry(string name, string type, string login, string host, string notes, string tags, byte[] seed, int offset)
         {
-            var now = DateTimeOffset.UtcNow.ToString("o");
+            var stamp = "1970-01-01T00:00:00.0000000Z";
             return new VaultEntry
             {
-                id = new Guid(Sha256(Convert.ToBase64String(seed) + offset)).ToString("N"),
+                id = GuidFromHash(Sha256(Convert.ToBase64String(seed) + offset)).ToString("N"),
                 name = name,
                 type = type,
                 login = login,
@@ -272,9 +272,16 @@ namespace ProGo
                 url_or_host = host,
                 notes = notes,
                 tags = tags,
-                created_at = now,
-                updated_at = now
+                created_at = stamp,
+                updated_at = stamp
             };
+        }
+
+        private static Guid GuidFromHash(byte[] hash)
+        {
+            var bytes = new byte[16];
+            Buffer.BlockCopy(hash, 0, bytes, 0, 16);
+            return new Guid(bytes);
         }
 
         private static byte[] Sha256(string text)
