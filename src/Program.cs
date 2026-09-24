@@ -6,20 +6,20 @@ namespace ProGo
     internal static class Program
     {
         [STAThread]
-        private static void Main()
+        private static void Main(string[] args)
         {
             try
             {
-                AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs args)
+                AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs eventArgs)
                 {
-                    var ex = args.ExceptionObject as Exception;
-                    SafeLog.Error("Fatal unhandled exception.", ex ?? new Exception(Convert.ToString(args.ExceptionObject)));
+                    var ex = eventArgs.ExceptionObject as Exception;
+                    SafeLog.Error("Fatal unhandled exception.", ex ?? new Exception(Convert.ToString(eventArgs.ExceptionObject)));
                 };
 
-                Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs args)
+                Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs eventArgs)
                 {
-                    SafeLog.Error("Fatal UI thread exception.", args.Exception);
-                    ShowFatal(args.Exception);
+                    SafeLog.Error("Fatal UI thread exception.", eventArgs.Exception);
+                    ShowFatal(eventArgs.Exception);
                 };
 
                 Application.EnableVisualStyles();
@@ -31,10 +31,12 @@ namespace ProGo
                 // Backup creation must never block tray startup. It logs internally on failure.
                 BackupService.EnsureVersionBackupExists("startup");
 
+                var showStatusOnStartup = HasArg(args, "--show") || HasArg(args, "/show") || HasArg(args, "show");
+
                 using (var settingsService = new SettingsService())
                 using (var proxyService = new ProxyService(settingsService))
                 using (var clipboardService = new ClipboardService(settingsService))
-                using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, clipboardService))
+                using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, clipboardService, showStatusOnStartup))
                 {
                     if (settingsService.Current.AutoApplyProxy)
                     {
@@ -58,6 +60,18 @@ namespace ProGo
 
                 ShowFatal(ex);
             }
+        }
+
+        private static bool HasArg(string[] args, string value)
+        {
+            if (args == null) return false;
+
+            foreach (var arg in args)
+            {
+                if (String.Equals(arg, value, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+
+            return false;
         }
 
         private static void ShowFatal(Exception ex)
