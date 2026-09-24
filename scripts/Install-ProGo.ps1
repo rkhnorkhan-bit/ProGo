@@ -9,14 +9,25 @@ $Root = Split-Path -Parent $PSScriptRoot
 $BuildScript = Join-Path $PSScriptRoot "Build-ProGo.ps1"
 & $BuildScript
 
-$Exe = Join-Path $Root "release\ProGo.exe"
+$ReleaseDir = Join-Path $Root "release"
+$Exe = Join-Path $ReleaseDir "ProGo.exe"
+$VersionFile = Join-Path $ReleaseDir "VERSION"
 if (-not (Test-Path $Exe)) {
     throw "ProGo.exe не найден после сборки."
+}
+if (-not (Test-Path $VersionFile)) {
+    throw "VERSION не найден после сборки."
 }
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 Copy-Item $Exe -Destination (Join-Path $InstallDir "ProGo.exe") -Force
+Copy-Item $VersionFile -Destination (Join-Path $InstallDir "VERSION") -Force
+
+$Icon = Join-Path $ReleaseDir "ProGo.ico"
+if (Test-Path $Icon) {
+    Copy-Item $Icon -Destination (Join-Path $InstallDir "ProGo.ico") -Force
+}
 
 $InstalledScripts = Join-Path $InstallDir "scripts"
 New-Item -ItemType Directory -Path $InstalledScripts -Force | Out-Null
@@ -39,5 +50,6 @@ if (-not $NoStartup) {
 }
 
 Write-Host "Install OK: $InstallDir"
+Write-Host "Installed version: $((Get-Content -Raw -Path $VersionFile).Trim())"
 Write-Host "Updater scripts: $InstalledScripts"
 Write-Host "Vault/settings/logs are preserved in %LOCALAPPDATA%\ProGo."
