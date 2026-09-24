@@ -21,6 +21,7 @@ if (-not (Test-Path $VersionFile)) {
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $InstallDir "backups") -Force | Out-Null
 Copy-Item $Exe -Destination (Join-Path $InstallDir "ProGo.exe") -Force
 Copy-Item $VersionFile -Destination (Join-Path $InstallDir "VERSION") -Force
 
@@ -52,4 +53,5 @@ if (-not $NoStartup) {
 Write-Host "Install OK: $InstallDir"
 Write-Host "Installed version: $((Get-Content -Raw -Path $VersionFile).Trim())"
 Write-Host "Updater scripts: $InstalledScripts"
+Write-Host "Backups folder: $(Join-Path $InstallDir 'backups')"
 Write-Host "Vault/settings/logs are preserved in %LOCALAPPDATA%\ProGo."
