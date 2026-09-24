@@ -16,11 +16,10 @@ jobs:
       - name: Repository hygiene and build
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Path release -Force | Out-Null
           try {
-            .\scripts\Test-ProGo.ps1 *>&1 | Tee-Object -FilePath release\ci-output.txt
+            .\scripts\Test-ProGo.ps1 *>&1 | Tee-Object -FilePath ci-output.txt
           } catch {
-            $_ | Out-String | Tee-Object -FilePath release\ci-output.txt -Append
+            $_ | Out-String | Tee-Object -FilePath ci-output.txt -Append
             throw
           }
 
@@ -29,7 +28,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-ci-diagnostics
-          path: release/ci-output.txt
+          path: ci-output.txt
 
       - name: Upload release folder
         if: success()
