@@ -4,6 +4,7 @@
 
 - Initialized clean ProGo repository.
 - Added Windows WinForms tray application.
+- Added generated ProGo brand icon for tray and executable metadata.
 - Added configurable SSH SOCKS controller.
 - Added user-level proxy environment management.
 - Added local encrypted vault MVP.
