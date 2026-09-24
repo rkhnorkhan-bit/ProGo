@@ -1,0 +1,34 @@
+# Build artifacts
+bin/
+obj/
+release/
+build/
+dist/
+
+# IDE/user files
+.vs/
+.idea/
+*.user
+*.suo
+*.tmp
+*.log
+
+# Local settings and runtime data
+settings.local.*
+.env
+.env.*
+vault*.json
+vault*.enc*
+progo.log
+
+# Secrets / credentials
+*.key
+*.pem
+*.pfx
+*.p12
+secrets*
+credentials*
+
+# OS noise
+.DS_Store
+Thumbs.db
