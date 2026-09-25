@@ -93,6 +93,9 @@ if ($buildScriptText -notmatch "VERSION") {
 if ($buildScriptText -notmatch "Restore-ProGoBackup.ps1") {
     Fail "build script does not include restore script"
 }
+if ($buildScriptText -notmatch "bootstrap-only") {
+    Fail "build script does not document bootstrap installer exclusion"
+}
 
 $installScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
 if (-not $installScriptText.Contains('Copy-Item $VersionFile')) {
@@ -100,6 +103,9 @@ if (-not $installScriptText.Contains('Copy-Item $VersionFile')) {
 }
 if ($installScriptText -notmatch "Restore-ProGoBackup.ps1") {
     Fail "installer does not deploy restore script"
+}
+if ($installScriptText -notmatch "bootstrap") {
+    Fail "installer does not document bootstrap installer exclusion"
 }
 
 $updateScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
@@ -146,9 +152,11 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
+$runtimeBootstrap = Join-Path $Root "release\scripts\Install-FromGitHub.ps1"
+if (Test-Path $runtimeBootstrap) { Fail "bootstrap installer must not be included in runtime release scripts" }
 
 Write-Host "ProGo tests PASS."
