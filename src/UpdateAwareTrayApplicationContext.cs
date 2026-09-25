@@ -79,7 +79,7 @@ namespace ProGo
 
         private void ShowSettings()
         {
-            using (var form = new SettingsForm(settings)) form.ShowDialog();
+            using (var form = new SshProfilesSettingsForm(settings)) form.ShowDialog();
             UpdateTooltip();
         }
 
