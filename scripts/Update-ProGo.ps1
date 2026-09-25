@@ -1,9 +1,11 @@
 param(
     [int]$WaitPid = 0,
+    [string]$ReleasePackageUrl = "https://github.com/rkhnorkhan-bit/ProGo/releases/latest/download/ProGo-release.zip",
     [string]$SourceZipUrl = "https://github.com/rkhnorkhan-bit/ProGo/archive/refs/heads/main.zip",
     [string]$RemoteVersionUrl = "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/VERSION",
     [switch]$NoLaunch,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$NoReleasePackage
 )
 
 Set-StrictMode -Version 2.0
@@ -16,12 +18,14 @@ $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $TransactionRoot = Join-Path $env:TEMP ("ProGo-update-" + $Timestamp)
 $StageDir = Join-Path $TransactionRoot "stage"
 $SourceDir = Join-Path $TransactionRoot "source"
+$PackageDir = Join-Path $TransactionRoot "package"
 $BackupsDir = Join-Path $InstallDir "backups"
 $LocalVersionFile = Join-Path $InstallDir "VERSION"
 $RemoteVersion = $null
 $LocalVersion = $null
 $BackupDir = $null
 $MainWasChanged = $false
+$UpdateMode = "unknown"
 
 function U8($Base64) {
     return [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Base64))
@@ -320,8 +324,12 @@ function Backup-InstalledState {
         "version=$from",
         "target_version=$script:RemoteVersion",
         "created=$([DateTimeOffset]::Now.ToString('o'))",
+        "created_by=updater",
+        "backup_kind=pre-update",
+        "update_result=pending",
         "reason=before-transactional-update",
-        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log"
+        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log",
+        "update_mode=$script:UpdateMode"
     )
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
@@ -333,6 +341,29 @@ function Backup-InstalledState {
     }
 
     return $backupDir
+}
+
+function Set-BackupUpdateResult($BackupPath, $Result) {
+    try {
+        if ([string]::IsNullOrWhiteSpace($BackupPath)) { return }
+        $manifestPath = Join-Path $BackupPath "manifest.txt"
+        if (-not (Test-Path $manifestPath)) { return }
+
+        $lines = New-Object System.Collections.Generic.List[string]
+        $hasResult = $false
+        foreach ($line in (Get-Content -Path $manifestPath)) {
+            if ($line -like "update_result=*") {
+                $lines.Add("update_result=$Result")
+                $hasResult = $true
+            } else {
+                $lines.Add($line)
+            }
+        }
+        if (-not $hasResult) { $lines.Add("update_result=$Result") }
+        Set-Content -Path $manifestPath -Value $lines -Encoding UTF8
+    } catch {
+        Write-UpdateLog "Backup result marker warning: $($_.Exception.Message)"
+    }
 }
 
 function New-StagingCopy($TargetDir) {
@@ -403,6 +434,68 @@ function Restore-BackupToMain($SourceBackupDir) {
     try { Copy-DirectoryIfExists $SourceBackupDir "scripts" $InstallDir $false } catch { Write-UpdateLog "Rollback warning for scripts: $($_.Exception.Message)" }
 }
 
+function Find-ReleaseDirInExtractedPackage($Root) {
+    $directExe = Join-Path $Root "ProGo.exe"
+    if (Test-Path $directExe) { return $Root }
+
+    $releaseDir = Join-Path $Root "release"
+    if (Test-Path (Join-Path $releaseDir "ProGo.exe")) { return $releaseDir }
+
+    $candidate = Get-ChildItem -Path $Root -Directory -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { Test-Path (Join-Path $_.FullName "ProGo.exe") } |
+        Select-Object -First 1
+
+    if ($null -ne $candidate) { return $candidate.FullName }
+    return $null
+}
+
+function Try-GetReleasePackage($DestinationRoot) {
+    if ($NoReleasePackage) {
+        Write-UpdateLog "Release package mode disabled by -NoReleasePackage."
+        return $null
+    }
+
+    if ([string]::IsNullOrWhiteSpace($ReleasePackageUrl)) {
+        Write-UpdateLog "Release package URL is empty; using source-build fallback."
+        return $null
+    }
+
+    try {
+        New-Item -ItemType Directory -Path $DestinationRoot -Force | Out-Null
+        $packageZip = Join-Path $DestinationRoot "ProGo-release.zip"
+
+        Write-UpdateLog "Trying release package update mode."
+        Write-UpdateLog "update_mode=release-package"
+        Write-UpdateLog "Downloading release package: $ReleasePackageUrl"
+        Invoke-WebRequest -Uri $ReleasePackageUrl -OutFile $packageZip -UseBasicParsing -ErrorAction Stop
+
+        Write-UpdateLog "Extracting release package."
+        Expand-Archive -Path $packageZip -DestinationPath $DestinationRoot -Force
+
+        $releaseDir = Find-ReleaseDirInExtractedPackage $DestinationRoot
+        if ([string]::IsNullOrWhiteSpace($releaseDir)) {
+            throw "Release package does not contain ProGo.exe."
+        }
+
+        foreach ($required in @("ProGo.exe", "VERSION", "scripts\Update-ProGo.ps1")) {
+            if (-not (Test-Path (Join-Path $releaseDir $required))) {
+                throw "Release package missing required file: $required"
+            }
+        }
+
+        $packageVersion = ((Get-Content -Raw -Path (Join-Path $releaseDir "VERSION")).Trim())
+        if ($packageVersion -ne $script:RemoteVersion) {
+            throw "Release package version mismatch: package=$packageVersion remote=$script:RemoteVersion"
+        }
+
+        Write-UpdateLog "Release package accepted: $releaseDir"
+        return $releaseDir
+    } catch {
+        Write-UpdateLog "Release package unavailable; falling back to source build. Reason: $($_.Exception.Message)"
+        return $null
+    }
+}
+
 function Build-DownloadedSource($DownloadedSourceRoot) {
     $buildScript = Join-Path $DownloadedSourceRoot "scripts\Build-ProGo.ps1"
     if (-not (Test-Path $buildScript)) {
@@ -422,6 +515,33 @@ function Build-DownloadedSource($DownloadedSourceRoot) {
     }
 
     return $releaseDir
+}
+
+function Get-ReleaseDirForUpdate {
+    $packageRelease = Try-GetReleasePackage -DestinationRoot $PackageDir
+    if (-not [string]::IsNullOrWhiteSpace($packageRelease)) {
+        $script:UpdateMode = "release-package"
+        return $packageRelease
+    }
+
+    $script:UpdateMode = "source-build-fallback"
+    Write-UpdateLog "update_mode=source-build-fallback"
+
+    $ZipPath = Join-Path $TransactionRoot "ProGo-main.zip"
+    New-Item -ItemType Directory -Path $SourceDir -Force | Out-Null
+
+    Write-UpdateLog "Downloading source from GitHub into temporary workspace."
+    Invoke-WebRequest -Uri $SourceZipUrl -OutFile $ZipPath -UseBasicParsing
+
+    Write-UpdateLog "Extracting source into temporary workspace."
+    Expand-Archive -Path $ZipPath -DestinationPath $SourceDir -Force
+
+    $SourceRoot = Get-ChildItem -Path $SourceDir -Directory | Where-Object { Test-Path (Join-Path $_.FullName "scripts\Build-ProGo.ps1") } | Select-Object -First 1
+    if ($null -eq $SourceRoot) {
+        Fail "Downloaded archive does not contain expected ProGo source tree."
+    }
+
+    return (Build-DownloadedSource -DownloadedSourceRoot $SourceRoot.FullName)
 }
 
 function Start-UpdatedProGo($ExePath) {
@@ -489,27 +609,14 @@ try {
     $Exe = Join-Path $InstallDir "ProGo.exe"
     Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
 
+    New-Item -ItemType Directory -Path $TransactionRoot -Force | Out-Null
+
+    $ReleaseDir = Get-ReleaseDirForUpdate
+
     $BackupDir = Backup-InstalledState
     Write-UpdateLog "Backup before update: $BackupDir"
 
-    New-Item -ItemType Directory -Path $TransactionRoot -Force | Out-Null
     New-StagingCopy -TargetDir $StageDir
-
-    $ZipPath = Join-Path $TransactionRoot "ProGo-main.zip"
-    New-Item -ItemType Directory -Path $SourceDir -Force | Out-Null
-
-    Write-UpdateLog "Downloading source from GitHub into temporary workspace."
-    Invoke-WebRequest -Uri $SourceZipUrl -OutFile $ZipPath -UseBasicParsing
-
-    Write-UpdateLog "Extracting source into temporary workspace."
-    Expand-Archive -Path $ZipPath -DestinationPath $SourceDir -Force
-
-    $SourceRoot = Get-ChildItem -Path $SourceDir -Directory | Where-Object { Test-Path (Join-Path $_.FullName "scripts\Build-ProGo.ps1") } | Select-Object -First 1
-    if ($null -eq $SourceRoot) {
-        Fail "Downloaded archive does not contain expected ProGo source tree."
-    }
-
-    $ReleaseDir = Build-DownloadedSource -DownloadedSourceRoot $SourceRoot.FullName
     Apply-ReleaseToStaging -ReleaseDir $ReleaseDir -TargetDir $StageDir
     Test-StagingCopy -TargetDir $StageDir
 
@@ -527,11 +634,13 @@ try {
 
     Start-UpdatedProGo -ExePath (Join-Path $InstallDir "ProGo.exe")
 
+    Set-BackupUpdateResult -BackupPath $BackupDir -Result "success"
     Write-UpdateLog "ProGo transactional update completed."
     Show-UpdateDialog ((U8 "UHJvR28g0L7QsdC90L7QstC70ZHQvS4g0KDQtdC30LXRgNCy0L3QsNGPINC60L7Qv9C40Y8g0YHQvtGF0YDQsNC90LXQvdCwOgo=") + $BackupDir) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=") "Information"
 } catch {
     $message = $_.Exception.Message
     Write-UpdateLog "TRANSACTION FAILED: $message"
+    Set-BackupUpdateResult -BackupPath $BackupDir -Result "failed"
 
     if ($MainWasChanged) {
         Restore-BackupToMain -SourceBackupDir $BackupDir
