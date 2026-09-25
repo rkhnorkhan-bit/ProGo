@@ -24,10 +24,10 @@ namespace ProGo
             Text = "Настройки";
             AutoScaleMode = AutoScaleMode.Font;
             StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(760, 520);
+            MinimumSize = new Size(820, 560);
 
-            var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 15 };
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 210));
+            var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 16 };
+            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 220));
             panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(panel);
 
@@ -40,15 +40,16 @@ namespace ProGo
             {
                 Text = "SSH-профиль — это сохранённое имя подключения из ~/.ssh/config, например progo-kz, или прямой target вида root@109.235.116.85. ProGo использует выбранный профиль, чтобы поднять локальный SOCKS-туннель.",
                 AutoSize = true,
-                MaximumSize = new Size(500, 0)
+                MaximumSize = new Size(560, 0)
             };
             panel.Controls.Add(hint, 1, 3);
 
-            var profilePanel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1 };
+            var profilePanel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 1 };
             profilePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             profilePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 36));
             profilePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 36));
             profilePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 36));
+            profilePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
             sshProfiles.DropDownStyle = ComboBoxStyle.DropDownList;
             sshProfiles.Dock = DockStyle.Fill;
             profilePanel.Controls.Add(sshProfiles, 0, 0);
@@ -56,12 +57,15 @@ namespace ProGo
             var add = new Button { Text = "+", Dock = DockStyle.Fill };
             var remove = new Button { Text = "-", Dock = DockStyle.Fill };
             var edit = new Button { Text = "?", Dock = DockStyle.Fill };
+            var check = new Button { Text = "Проверить", Dock = DockStyle.Fill };
             add.Click += delegate { AddProfile(); };
             remove.Click += delegate { RemoveProfile(); };
             edit.Click += delegate { EditProfile(); };
+            check.Click += delegate { CheckSelectedProfile(); };
             profilePanel.Controls.Add(add, 1, 0);
             profilePanel.Controls.Add(remove, 2, 0);
             profilePanel.Controls.Add(edit, 3, 0);
+            profilePanel.Controls.Add(check, 4, 0);
             AddLabeled(panel, 4, "SSH-профиль", profilePanel);
 
             autoSwitchProfile.Text = "Автоматически менять профиль при недоступности";
@@ -73,8 +77,9 @@ namespace ProGo
 
             var help = new Label
             {
-                Text = "+ добавить профиль, - удалить выбранный, ? изменить выбранный и посмотреть пояснение.",
-                AutoSize = true
+                Text = "+ добавить профиль, - удалить выбранный, ? изменить выбранный, Проверить — выполнить ssh.exe -G без подключения к серверу.",
+                AutoSize = true,
+                MaximumSize = new Size(560, 0)
             };
             panel.Controls.Add(help, 1, 8);
 
@@ -86,13 +91,20 @@ namespace ProGo
             var logPath = new TextBox { ReadOnly = true, Text = AppPaths.LogPath };
             AddLabeled(panel, 13, "Журнал", logPath);
 
+            var sshConfigHint = new TextBox
+            {
+                ReadOnly = true,
+                Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "config")
+            };
+            AddLabeled(panel, 14, "SSH config", sshConfigHint);
+
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
             var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK };
             var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
             save.Click += Save;
             buttons.Controls.Add(cancel);
             buttons.Controls.Add(save);
-            panel.Controls.Add(buttons, 0, 14);
+            panel.Controls.Add(buttons, 0, 15);
             panel.SetColumnSpan(buttons, 2);
             AcceptButton = save;
             CancelButton = cancel;
@@ -109,7 +121,7 @@ namespace ProGo
 
         private static void AddLabeled(TableLayoutPanel panel, int row, string label, Control control)
         {
-            panel.RowStyles.Add(new RowStyle(SizeType.Absolute, row == 3 ? 56 : 32));
+            panel.RowStyles.Add(new RowStyle(SizeType.Absolute, row == 3 || row == 8 ? 56 : 32));
             panel.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
             control.Dock = DockStyle.Fill;
             panel.Controls.Add(control, 1, row);
@@ -219,6 +231,19 @@ namespace ProGo
                 if (index >= 0) profiles[index] = form.Profile;
                 ReloadProfiles(form.Profile.Target);
             }
+        }
+
+        private void CheckSelectedProfile()
+        {
+            var selected = SelectedProfile();
+            if (selected == null)
+            {
+                MessageBox.Show("SSH-профиль не выбран. Добавьте профиль кнопкой +.", "Проверить SSH-профиль", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var result = SshProfileDiagnostics.Check(selected.Target);
+            MessageBox.Show(result.ToReport(), "Проверить SSH-профиль", MessageBoxButtons.OK, result.SshResolved ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
 
         private bool ContainsTarget(string target)
