@@ -1,22 +1,33 @@
 # Changelog
 
-## 0.1.12 - Backup UX, manifest metadata, and retention
+## 0.1.13 - Release-package updater bridge
+
+- Added release-package update mode:
+  - updater first tries `ReleasePackageUrl`;
+  - default package URL is `https://github.com/rkhnorkhan-bit/ProGo/releases/latest/download/ProGo-release.zip`;
+  - package must contain `ProGo.exe`, `VERSION`, and `scripts/Update-ProGo.ps1`;
+  - package version must match remote `VERSION`;
+  - accepted package is still installed through the transactional staging/self-check/main-commit flow.
+- Kept `source-build-fallback` mode when no release package exists yet.
+- Added `update_mode=release-package` and `update_mode=source-build-fallback` logging in `update.log`.
+- Added CI packaging step for `ProGo-release.zip` artifact.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
+## 0.1.12 - Backup UX, manifest, and retention
 
 - Added richer backup manifest metadata:
-  - `target_version`
-  - `created_by`
-  - `update_result`
-  - `backup_kind`
-- Improved backup list display in rollback UI: version, target version, type, status, reason, and creation time are visible before rollback.
+  - `target_version`;
+  - `created_by`;
+  - `update_result`;
+  - `backup_kind`.
+- Improved rollback picker display with version, target version, backup kind, update result, reason, and creation time.
 - Added tray action `Удалить старые резервные копии...`.
-- Added retention policy:
-  - keep manual backups;
-  - keep the latest baseline backup;
-  - keep the latest pre-update backup;
-  - keep up to 10 latest automatic backups;
-  - delete older automatic backups only.
-- Added fallback parsing for legacy backup folders created before rich manifests existed.
-- Kept transactional updater behavior from `0.1.9` and runtime release packaging from `0.1.11`.
+- Added backup retention behavior:
+  - manual backups are preserved;
+  - latest baseline is preserved;
+  - latest pre-update backup is preserved;
+  - up to 10 latest automatic backups are preserved;
+  - only older automatic backups are deleted.
 - Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
 
 ## 0.1.11 - Runtime release without bootstrap installer
