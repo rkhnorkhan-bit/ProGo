@@ -124,7 +124,7 @@ $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is bootstrap-only. Do not include it in the runtime release:
 # some endpoint protection tools block downloaded bootstrap installers during self-update builds.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $ReleaseScripts $scriptName) -Force
