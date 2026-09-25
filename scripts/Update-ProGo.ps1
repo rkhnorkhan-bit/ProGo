@@ -182,7 +182,7 @@ function Backup-InstalledState {
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
     foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
-        try { Copy-FileIfExists $InstallDir $name $backupDir $false } catch { Write-UpdateLog "Backup warning for $name: $($_.Exception.Message)" }
+        try { Copy-FileIfExists $InstallDir $name $backupDir $false } catch { Write-UpdateLog "Backup warning for ${name}: $($_.Exception.Message)" }
     }
 
     try { Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false } catch { Write-UpdateLog "Backup warning for scripts: $($_.Exception.Message)" }
@@ -269,7 +269,7 @@ function Restore-BackupToMain($SourceBackupDir) {
     Write-UpdateLog "Rolling back main application from backup: $SourceBackupDir"
 
     foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log")) {
-        try { Copy-FileIfExists $SourceBackupDir $name $InstallDir $false } catch { Write-UpdateLog "Rollback warning for $name: $($_.Exception.Message)" }
+        try { Copy-FileIfExists $SourceBackupDir $name $InstallDir $false } catch { Write-UpdateLog "Rollback warning for ${name}: $($_.Exception.Message)" }
     }
 
     try { Copy-DirectoryIfExists $SourceBackupDir "scripts" $InstallDir $false } catch { Write-UpdateLog "Rollback warning for scripts: $($_.Exception.Message)" }
