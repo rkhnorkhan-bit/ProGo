@@ -1,5 +1,7 @@
 param(
-    [switch]$NoStartup
+    [switch]$NoStartup,
+    [switch]$NoStartMenuShortcut,
+    [switch]$Launch
 )
 
 Set-StrictMode -Version 2.0
@@ -33,27 +35,48 @@ if (Test-Path $Icon) {
 $InstalledScripts = Join-Path $InstallDir "scripts"
 New-Item -ItemType Directory -Path $InstalledScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is only for first-time bootstrap. It is intentionally not deployed into the installed runtime app.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
     }
 }
 
-if (-not $NoStartup) {
-    $Startup = [Environment]::GetFolderPath("Startup")
-    $ShortcutPath = Join-Path $Startup "ProGo.lnk"
+function New-ProGoShortcut($ShortcutPath, $Arguments) {
     $Shell = New-Object -ComObject WScript.Shell
     $Shortcut = $Shell.CreateShortcut($ShortcutPath)
     $Shortcut.TargetPath = Join-Path $InstallDir "ProGo.exe"
+    $Shortcut.Arguments = $Arguments
     $Shortcut.WorkingDirectory = $InstallDir
     $Shortcut.Description = "ProGo tray proxy and local vault"
+    $IconPath = Join-Path $InstallDir "ProGo.ico"
+    if (Test-Path $IconPath) { $Shortcut.IconLocation = $IconPath }
     $Shortcut.Save()
+}
+
+if (-not $NoStartup) {
+    $Startup = [Environment]::GetFolderPath("Startup")
+    New-ProGoShortcut -ShortcutPath (Join-Path $Startup "ProGo.lnk") -Arguments ""
+}
+
+if (-not $NoStartMenuShortcut) {
+    $Programs = [Environment]::GetFolderPath("Programs")
+    $MenuDir = Join-Path $Programs "ProGo"
+    New-Item -ItemType Directory -Path $MenuDir -Force | Out-Null
+    New-ProGoShortcut -ShortcutPath (Join-Path $MenuDir "ProGo.lnk") -Arguments "--show"
+    New-ProGoShortcut -ShortcutPath (Join-Path $MenuDir "ProGo Status.lnk") -Arguments "--show"
 }
 
 Write-Host "Install OK: $InstallDir"
 Write-Host "Installed version: $((Get-Content -Raw -Path $VersionFile).Trim())"
 Write-Host "Updater scripts: $InstalledScripts"
 Write-Host "Visible launcher: $(Join-Path $InstalledScripts 'Show-ProGo.ps1')"
+Write-Host "Start helper: $(Join-Path $InstalledScripts 'Start-ProGo.ps1')"
+Write-Host "Repair helper: $(Join-Path $InstalledScripts 'Repair-ProGo.ps1')"
 Write-Host "Backups folder: $(Join-Path $InstallDir 'backups')"
 Write-Host "Vault/settings/logs are preserved in %LOCALAPPDATA%\ProGo."
+
+if ($Launch) {
+    Start-Process -FilePath (Join-Path $InstallDir "ProGo.exe") -WorkingDirectory $InstallDir -ArgumentList "--show" | Out-Null
+    Write-Host "ProGo launched."
+}
