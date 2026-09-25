@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
@@ -30,11 +31,35 @@ namespace ProGo
         }
     }
 
+    internal sealed class SshProfileSetting
+    {
+        public string Name { get; set; }
+        public string Target { get; set; }
+
+        public SshProfileSetting Clone()
+        {
+            return new SshProfileSetting
+            {
+                Name = Name,
+                Target = Target
+            };
+        }
+
+        public override string ToString()
+        {
+            if (String.IsNullOrWhiteSpace(Name)) return Target ?? String.Empty;
+            if (String.Equals(Name, Target, StringComparison.OrdinalIgnoreCase)) return Name;
+            return Name + " — " + Target;
+        }
+    }
+
     internal sealed class AppSettings
     {
         public string SocksHost { get; set; }
         public int SocksPort { get; set; }
         public string SshProfile { get; set; }
+        public List<SshProfileSetting> SshProfiles { get; set; }
+        public bool AutoSwitchSshProfile { get; set; }
         public bool AutoStartSocks { get; set; }
         public bool AutoApplyProxy { get; set; }
         public int ClipboardClearSeconds { get; set; }
@@ -47,6 +72,8 @@ namespace ProGo
                 SocksHost = "127.0.0.1",
                 SocksPort = 1080,
                 SshProfile = "",
+                SshProfiles = new List<SshProfileSetting>(),
+                AutoSwitchSshProfile = false,
                 AutoStartSocks = false,
                 AutoApplyProxy = false,
                 ClipboardClearSeconds = 30,
@@ -104,6 +131,47 @@ namespace ProGo
             if (settings.SocksPort < 1 || settings.SocksPort > 65535) settings.SocksPort = 1080;
             if (settings.ClipboardClearSeconds < 5 || settings.ClipboardClearSeconds > 3600) settings.ClipboardClearSeconds = 30;
             if (String.IsNullOrWhiteSpace(settings.TestEndpoint)) settings.TestEndpoint = "https://api.openai.com/v1/models";
+            if (settings.SshProfile == null) settings.SshProfile = String.Empty;
+            NormalizeProfiles(settings);
+        }
+
+        private static void NormalizeProfiles(AppSettings settings)
+        {
+            var normalized = new List<SshProfileSetting>();
+            if (settings.SshProfiles != null)
+            {
+                foreach (var profile in settings.SshProfiles)
+                {
+                    if (profile == null) continue;
+                    var target = (profile.Target ?? String.Empty).Trim();
+                    if (String.IsNullOrWhiteSpace(target)) continue;
+                    var name = (profile.Name ?? String.Empty).Trim();
+                    if (String.IsNullOrWhiteSpace(name)) name = target;
+                    if (ContainsTarget(normalized, target)) continue;
+                    normalized.Add(new SshProfileSetting { Name = name, Target = target });
+                }
+            }
+
+            var selected = (settings.SshProfile ?? String.Empty).Trim();
+            if (!String.IsNullOrWhiteSpace(selected) && !ContainsTarget(normalized, selected))
+            {
+                normalized.Insert(0, new SshProfileSetting { Name = selected, Target = selected });
+            }
+
+            settings.SshProfiles = normalized;
+            if (String.IsNullOrWhiteSpace(settings.SshProfile) && normalized.Count > 0)
+            {
+                settings.SshProfile = normalized[0].Target;
+            }
+        }
+
+        private static bool ContainsTarget(List<SshProfileSetting> profiles, string target)
+        {
+            foreach (var profile in profiles)
+            {
+                if (String.Equals(profile.Target, target, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
         }
 
         public void Dispose()
@@ -197,9 +265,15 @@ namespace ProGo
         public void StartTunnel(bool showErrors)
         {
             var current = settings.Current;
-            if (String.IsNullOrWhiteSpace(current.SshProfile))
+            var targets = BuildProfileTargets(current);
+            if (targets.Count == 0)
             {
-                if (showErrors) System.Windows.Forms.MessageBox.Show("Укажите SSH-профиль в настройках.", AppConstants.ProductName);
+                if (showErrors)
+                {
+                    System.Windows.Forms.MessageBox.Show(
+                        "SSH-профиль не выбран.\n\nSSH-профиль — это короткое имя подключения из файла ~/.ssh/config, например progo-kz, или прямой SSH-target вида root@109.235.116.85. ProGo использует его для создания локального SOCKS-туннеля.",
+                        AppConstants.ProductName);
+                }
                 return;
             }
 
@@ -209,23 +283,29 @@ namespace ProGo
                 return;
             }
 
-            try
+            if (!current.AutoSwitchSshProfile)
             {
-                var args = String.Format("-N -D {0}:{1} -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 {2}", current.SocksHost, current.SocksPort, current.SshProfile);
-                var psi = new ProcessStartInfo("ssh.exe", args)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-
-                sshProcess = Process.Start(psi);
-                SafeLog.Info("SOCKS start requested. PID=" + (sshProcess == null ? "unknown" : sshProcess.Id.ToString()) + "; port=" + current.SocksPort + ".");
+                StartSingleTunnel(targets[0], showErrors, false);
+                return;
             }
-            catch (Exception ex)
+
+            foreach (var target in targets)
             {
-                SafeLog.Error("Failed to start SSH tunnel.", ex);
-                if (showErrors) System.Windows.Forms.MessageBox.Show("Не удалось запустить SSH. Проверьте SSH-профиль и соединение.", AppConstants.ProductName);
+                if (StartSingleTunnel(target, false, true))
+                {
+                    if (!String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase))
+                    {
+                        current.SshProfile = target;
+                        settings.Save(current);
+                        SafeLog.Info("SSH profile auto-switched to " + target + ".");
+                    }
+                    return;
+                }
+            }
+
+            if (showErrors)
+            {
+                System.Windows.Forms.MessageBox.Show("Не удалось запустить SOCKS ни через один SSH-профиль. Проверьте список профилей и доступность серверов.", AppConstants.ProductName);
             }
         }
 
@@ -250,6 +330,80 @@ namespace ProGo
         {
             StopTunnel();
             StartTunnel(true);
+        }
+
+        private bool StartSingleTunnel(string sshTarget, bool showErrors, bool requireListening)
+        {
+            try
+            {
+                var current = settings.Current;
+                var endpoint = current.SocksHost + ":" + current.SocksPort;
+                var args = String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 {1}", QuoteArg(endpoint), QuoteArg(sshTarget));
+                var psi = new ProcessStartInfo("ssh.exe", args)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+
+                sshProcess = Process.Start(psi);
+                SafeLog.Info("SOCKS start requested. PID=" + (sshProcess == null ? "unknown" : sshProcess.Id.ToString()) + "; port=" + current.SocksPort + "; sshProfile=" + sshTarget + ".");
+
+                if (!requireListening) return true;
+
+                for (var i = 0; i < 10; i++)
+                {
+                    System.Threading.Thread.Sleep(500);
+                    if (IsListening()) return true;
+                    if (sshProcess != null && sshProcess.HasExited) break;
+                }
+
+                StopTunnel();
+                SafeLog.Info("SSH profile did not become ready: " + sshTarget + ".");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Failed to start SSH tunnel for profile " + sshTarget + ".", ex);
+                if (showErrors) System.Windows.Forms.MessageBox.Show("Не удалось запустить SSH. Проверьте выбранный SSH-профиль и соединение.", AppConstants.ProductName);
+                return false;
+            }
+        }
+
+        private static List<string> BuildProfileTargets(AppSettings settings)
+        {
+            var targets = new List<string>();
+            var selected = (settings.SshProfile ?? String.Empty).Trim();
+            AddTarget(targets, selected);
+
+            if (settings.SshProfiles != null)
+            {
+                foreach (var profile in settings.SshProfiles)
+                {
+                    if (profile == null) continue;
+                    AddTarget(targets, profile.Target);
+                }
+            }
+
+            return targets;
+        }
+
+        private static void AddTarget(List<string> targets, string target)
+        {
+            target = (target ?? String.Empty).Trim();
+            if (String.IsNullOrWhiteSpace(target)) return;
+            foreach (var existing in targets)
+            {
+                if (String.Equals(existing, target, StringComparison.OrdinalIgnoreCase)) return;
+            }
+            targets.Add(target);
+        }
+
+        private static string QuoteArg(string value)
+        {
+            if (value == null) return "\"\"";
+            if (value.IndexOfAny(new[] { ' ', '\t', '\"' }) < 0) return value;
+            return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
         }
 
         private static bool IsTcpOpen(string host, int port, int timeoutMs)
