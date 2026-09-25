@@ -86,12 +86,12 @@ if ($Source -notmatch "Always try to refresh the updater first") { Fail "updater
 if ($Source -notmatch "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") { Fail "updater launcher is not minimized" }
 
 $buildScriptText = Get-Content -Raw -Path $Build
-foreach ($required in @("/win32icon", "VERSION", "Restore-ProGoBackup.ps1", "bootstrap-only")) {
+foreach ($required in @("/win32icon", "VERSION", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
     if ($buildScriptText -notmatch [regex]::Escape($required)) { Fail "build script marker missing: $required" }
 }
 
 $installScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
-foreach ($required in @('Copy-Item $VersionFile', "Restore-ProGoBackup.ps1", "bootstrap")) {
+foreach ($required in @('Copy-Item $VersionFile', "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "New-ProGoShortcut", "bootstrap")) {
     if (-not $installScriptText.Contains($required) -and $installScriptText -notmatch [regex]::Escape($required)) {
         Fail "installer marker missing: $required"
     }
@@ -133,12 +133,22 @@ foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.jso
     }
 }
 
+$repairScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Repair-ProGo.ps1")
+foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch")) {
+    if ($repairScriptText -notmatch [regex]::Escape($required)) { Fail "repair script marker missing: $required" }
+}
+
+$startScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Start-ProGo.ps1")
+foreach ($required in @("ProGo.exe", "--show", "Start-Process")) {
+    if ($startScriptText -notmatch [regex]::Escape($required)) { Fail "start script marker missing: $required" }
+}
+
 $workflowText = Get-Content -Raw -Path (Join-Path $Root ".github\workflows\ci.yml")
 foreach ($required in @("Pack release zip", "Compress-Archive", "ProGo-release.zip", "ProGo-release-zip")) {
     if ($workflowText -notmatch [regex]::Escape($required)) { Fail "CI release package marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Raw -Path $scriptPath
@@ -158,7 +168,7 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
