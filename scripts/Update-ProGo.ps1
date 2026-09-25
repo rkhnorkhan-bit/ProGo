@@ -10,13 +10,18 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
-$UpdateLog = Join-Path $InstallDir "progo-update.log"
+$UpdateLog = Join-Path $InstallDir "update.log"
+$LegacyUpdateLog = Join-Path $InstallDir "progo-update.log"
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$WorkDir = Join-Path $InstallDir ("update-" + $Timestamp)
+$TransactionRoot = Join-Path $env:TEMP ("ProGo-update-" + $Timestamp)
+$StageDir = Join-Path $TransactionRoot "stage"
+$SourceDir = Join-Path $TransactionRoot "source"
 $BackupsDir = Join-Path $InstallDir "backups"
 $LocalVersionFile = Join-Path $InstallDir "VERSION"
 $RemoteVersion = $null
 $LocalVersion = $null
+$BackupDir = $null
+$MainWasChanged = $false
 
 function U8($Base64) {
     return [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Base64))
@@ -26,6 +31,7 @@ function Write-UpdateLog($Message) {
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz") + " " + $Message
     Add-Content -Path $UpdateLog -Value $line -Encoding UTF8
+    Add-Content -Path $LegacyUpdateLog -Value $line -Encoding UTF8
     Write-Host $Message
 }
 
@@ -136,18 +142,31 @@ function Wait-FileUnlocked($Path, $TimeoutSeconds) {
     Fail "Timed out waiting for file unlock: $Path"
 }
 
-function Copy-IfExists($Name, $BackupDir) {
-    $source = Join-Path $InstallDir $Name
+function Copy-FileIfExists($SourceRoot, $Name, $DestinationRoot, $Required) {
+    $source = Join-Path $SourceRoot $Name
     if (Test-Path $source) {
-        Copy-Item $source -Destination (Join-Path $BackupDir $Name) -Force
+        New-Item -ItemType Directory -Path $DestinationRoot -Force | Out-Null
+        Copy-Item -LiteralPath $source -Destination (Join-Path $DestinationRoot $Name) -Force
+        return
+    }
+
+    if ($Required) {
+        Fail "Required file missing: $source"
     }
 }
 
-function Copy-DirectoryIfExists($Name, $BackupDir) {
-    $source = Join-Path $InstallDir $Name
-    if (-not (Test-Path $source)) { return }
+function Copy-DirectoryIfExists($SourceRoot, $Name, $DestinationRoot, $Required) {
+    $source = Join-Path $SourceRoot $Name
+    if (Test-Path $source) {
+        $destination = Join-Path $DestinationRoot $Name
+        if (Test-Path $destination) { Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue }
+        Copy-Item -LiteralPath $source -Destination $destination -Recurse -Force
+        return
+    }
 
-    Copy-Item $source -Destination (Join-Path $BackupDir $Name) -Recurse -Force
+    if ($Required) {
+        Fail "Required directory missing: $source"
+    }
 }
 
 function Backup-InstalledState {
@@ -162,21 +181,19 @@ function Backup-InstalledState {
     $backupDir = Join-Path $BackupsDir $backupName
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
-    Copy-IfExists "ProGo.exe" $backupDir
-    Copy-IfExists "ProGo.ico" $backupDir
-    Copy-IfExists "VERSION" $backupDir
-    Copy-IfExists "vault.enc.json" $backupDir
-    Copy-IfExists "settings.json" $backupDir
-    Copy-IfExists "progo.log" $backupDir
-    Copy-DirectoryIfExists "scripts" $backupDir
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
+        try { Copy-FileIfExists $InstallDir $name $backupDir $false } catch { Write-UpdateLog "Backup warning for $name: $($_.Exception.Message)" }
+    }
+
+    try { Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false } catch { Write-UpdateLog "Backup warning for scripts: $($_.Exception.Message)" }
 
     $manifest = @(
         "product=ProGo",
         "version=$from",
         "target_version=$script:RemoteVersion",
         "created=$([DateTimeOffset]::Now.ToString('o'))",
-        "reason=before-update",
-        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log"
+        "reason=before-transactional-update",
+        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log"
     )
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
@@ -188,6 +205,95 @@ function Backup-InstalledState {
     }
 
     return $backupDir
+}
+
+function New-StagingCopy($TargetDir) {
+    Write-UpdateLog "Creating intermediate staging copy: $TargetDir"
+    New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
+        Copy-FileIfExists $InstallDir $name $TargetDir $false
+    }
+
+    Copy-DirectoryIfExists $InstallDir "scripts" $TargetDir $false
+}
+
+function Apply-ReleaseToStaging($ReleaseDir, $TargetDir) {
+    Write-UpdateLog "Applying release to staging copy."
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
+        Copy-FileIfExists $ReleaseDir $name $TargetDir $true
+    }
+
+    Copy-DirectoryIfExists $ReleaseDir "scripts" $TargetDir $true
+}
+
+function Test-StagingCopy($TargetDir) {
+    Write-UpdateLog "Validating staging copy."
+
+    foreach ($name in @("ProGo.exe", "VERSION", "scripts\Update-ProGo.ps1")) {
+        $path = Join-Path $TargetDir $name
+        if (-not (Test-Path $path)) { Fail "Staging validation failed. Missing: $path" }
+    }
+
+    $stageVersion = ((Get-Content -Raw -Path (Join-Path $TargetDir "VERSION")).Trim())
+    if ($stageVersion -ne $script:RemoteVersion) {
+        Fail "Staging version mismatch: stage=$stageVersion remote=$script:RemoteVersion"
+    }
+
+    $stageExe = Join-Path $TargetDir "ProGo.exe"
+    $process = Start-Process -FilePath $stageExe -ArgumentList "--self-check" -WorkingDirectory $TargetDir -PassThru -Wait
+    if ($process.ExitCode -ne 0) {
+        Fail "Staging self-check failed with exit code $($process.ExitCode)"
+    }
+
+    Write-UpdateLog "Staging validation PASS."
+}
+
+function Install-StagingToMain($TargetDir) {
+    Write-UpdateLog "Installing validated staging copy into main application directory."
+    $script:MainWasChanged = $true
+
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
+        Copy-FileIfExists $TargetDir $name $InstallDir $true
+    }
+
+    Copy-DirectoryIfExists $TargetDir "scripts" $InstallDir $true
+}
+
+function Restore-BackupToMain($SourceBackupDir) {
+    if ([string]::IsNullOrWhiteSpace($SourceBackupDir) -or -not (Test-Path $SourceBackupDir)) {
+        Write-UpdateLog "Rollback skipped: backup directory is not available."
+        return
+    }
+
+    Write-UpdateLog "Rolling back main application from backup: $SourceBackupDir"
+
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log")) {
+        try { Copy-FileIfExists $SourceBackupDir $name $InstallDir $false } catch { Write-UpdateLog "Rollback warning for $name: $($_.Exception.Message)" }
+    }
+
+    try { Copy-DirectoryIfExists $SourceBackupDir "scripts" $InstallDir $false } catch { Write-UpdateLog "Rollback warning for scripts: $($_.Exception.Message)" }
+}
+
+function Build-DownloadedSource($DownloadedSourceRoot) {
+    $buildScript = Join-Path $DownloadedSourceRoot "scripts\Build-ProGo.ps1"
+    if (-not (Test-Path $buildScript)) {
+        Fail "Downloaded archive does not contain scripts\Build-ProGo.ps1"
+    }
+
+    Write-UpdateLog "Building downloaded source in temporary workspace."
+    & $buildScript
+
+    if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
+        Fail "Build failed with exit code $LASTEXITCODE"
+    }
+
+    $releaseDir = Join-Path $DownloadedSourceRoot "release"
+    if (-not (Test-Path (Join-Path $releaseDir "ProGo.exe"))) {
+        Fail "Build did not produce release\ProGo.exe"
+    }
+
+    return $releaseDir
 }
 
 function Start-UpdatedProGo($ExePath) {
@@ -223,55 +329,91 @@ function Start-UpdatedProGo($ExePath) {
     Fail "Updated ProGo did not stay running after restart attempts."
 }
 
-Write-UpdateLog "ProGo update started."
+function Cleanup-TemporaryFiles {
+    Write-UpdateLog "Cleaning temporary update files."
+    foreach ($path in @($TransactionRoot)) {
+        if (Test-Path $path) {
+            Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 
-if (-not (Test-UpdateRequired)) {
-    return
+    try {
+        $oldDirs = @(Get-ChildItem -Path $InstallDir -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "update-*" -or $_.Name -like "update-txn-*" })
+        foreach ($dir in $oldDirs) {
+            Remove-Item -LiteralPath $dir.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    } catch {
+        Write-UpdateLog "Cleanup warning: $($_.Exception.Message)"
+    }
 }
-
-$UpdaterProcessId = $PID
-Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
-Stop-ExistingProGoProcesses -ExceptProcessId $UpdaterProcessId
-
-$Exe = Join-Path $InstallDir "ProGo.exe"
-Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
-
-$BackupDir = Backup-InstalledState
-Write-UpdateLog "Backup before update: $BackupDir"
-
-New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
-$ZipPath = Join-Path $WorkDir "ProGo-main.zip"
-
-Write-UpdateLog "Downloading source from GitHub..."
-Invoke-WebRequest -Uri $SourceZipUrl -OutFile $ZipPath -UseBasicParsing
-
-Write-UpdateLog "Extracting source..."
-Expand-Archive -Path $ZipPath -DestinationPath $WorkDir -Force
-
-$SourceRoot = Get-ChildItem -Path $WorkDir -Directory | Where-Object { Test-Path (Join-Path $_.FullName "scripts\Install-ProGo.ps1") } | Select-Object -First 1
-if ($null -eq $SourceRoot) {
-    Fail "Downloaded archive does not contain scripts\Install-ProGo.ps1"
-}
-
-$InstallScript = Join-Path $SourceRoot.FullName "scripts\Install-ProGo.ps1"
-Write-UpdateLog "Installing updated ProGo from $($SourceRoot.FullName)"
-& $InstallScript -NoStartup
-
-if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
-    Fail "Installer failed with exit code $LASTEXITCODE"
-}
-
-if (-not (Test-Path $Exe)) {
-    Fail "Installed ProGo.exe not found: $Exe"
-}
-
-Start-UpdatedProGo -ExePath $Exe
 
 try {
-    Remove-Item $WorkDir -Recurse -Force -ErrorAction SilentlyContinue
-} catch {
-    Write-UpdateLog "Cleanup warning: $($_.Exception.Message)"
-}
+    Write-UpdateLog "ProGo transactional update started."
 
-Write-UpdateLog "ProGo update completed."
-Show-UserMessage ((U8 "UHJvR28g0L7QsdC90L7QstC70ZHQvS4g0KDQtdC30LXRgNCy0L3QsNGPINC60L7Qv9C40Y8g0YHQvtGF0YDQsNC90LXQvdCwOiA=") + $BackupDir) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
+    if (-not (Test-UpdateRequired)) {
+        return
+    }
+
+    $UpdaterProcessId = $PID
+    Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
+    Stop-ExistingProGoProcesses -ExceptProcessId $UpdaterProcessId
+
+    $Exe = Join-Path $InstallDir "ProGo.exe"
+    Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
+
+    $BackupDir = Backup-InstalledState
+    Write-UpdateLog "Backup before update: $BackupDir"
+
+    New-Item -ItemType Directory -Path $TransactionRoot -Force | Out-Null
+    New-StagingCopy -TargetDir $StageDir
+
+    $ZipPath = Join-Path $TransactionRoot "ProGo-main.zip"
+    New-Item -ItemType Directory -Path $SourceDir -Force | Out-Null
+
+    Write-UpdateLog "Downloading source from GitHub into temporary workspace."
+    Invoke-WebRequest -Uri $SourceZipUrl -OutFile $ZipPath -UseBasicParsing
+
+    Write-UpdateLog "Extracting source into temporary workspace."
+    Expand-Archive -Path $ZipPath -DestinationPath $SourceDir -Force
+
+    $SourceRoot = Get-ChildItem -Path $SourceDir -Directory | Where-Object { Test-Path (Join-Path $_.FullName "scripts\Build-ProGo.ps1") } | Select-Object -First 1
+    if ($null -eq $SourceRoot) {
+        Fail "Downloaded archive does not contain expected ProGo source tree."
+    }
+
+    $ReleaseDir = Build-DownloadedSource -DownloadedSourceRoot $SourceRoot.FullName
+    Apply-ReleaseToStaging -ReleaseDir $ReleaseDir -TargetDir $StageDir
+    Test-StagingCopy -TargetDir $StageDir
+
+    Install-StagingToMain -TargetDir $StageDir
+
+    $installedVersion = ((Get-Content -Raw -Path (Join-Path $InstallDir "VERSION")).Trim())
+    if ($installedVersion -ne $RemoteVersion) {
+        Fail "Installed version mismatch after commit: installed=$installedVersion remote=$RemoteVersion"
+    }
+
+    $mainCheck = Start-Process -FilePath (Join-Path $InstallDir "ProGo.exe") -ArgumentList "--self-check" -WorkingDirectory $InstallDir -PassThru -Wait
+    if ($mainCheck.ExitCode -ne 0) {
+        Fail "Main self-check failed after commit with exit code $($mainCheck.ExitCode)"
+    }
+
+    Start-UpdatedProGo -ExePath (Join-Path $InstallDir "ProGo.exe")
+
+    Write-UpdateLog "ProGo transactional update completed."
+    Show-UserMessage ((U8 "UHJvR28g0L7QsdC90L7QstC70ZHQvS4g0KDQtdC30LXRgNCy0L3QsNGPINC60L7Qv9C40Y8g0YHQvtGF0YDQsNC90LXQvdCwOgo=") + $BackupDir) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
+} catch {
+    $message = $_.Exception.Message
+    Write-UpdateLog "TRANSACTION FAILED: $message"
+
+    if ($MainWasChanged) {
+        Restore-BackupToMain -SourceBackupDir $BackupDir
+        Write-UpdateLog "Rollback completed after failed main commit."
+    } else {
+        Write-UpdateLog "Main application was not changed; rollback is not required."
+    }
+
+    Show-UserMessage ((U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28g0L3QtSDQstGL0L/QvtC70L3QtdC90L4uINCe0YHQvdC+0LLQvdC+0LUg0L/RgNC40LvQvtC20LXQvdC40LUg0YHQvtGF0YDQsNC90LXQvdC+INC40LvQuCDQstC+0YHRgdGC0LDQvdC+0LLQu9C10L3QviDQuNC3INGA0LXQt9C10YDQstC90L7QuSDQutC+0L/QuNC4LiDQn9C+0LTRgNC+0LHQvdC+0YHRgtC4INCyIHVwZGF0ZS5sb2cuCgo=") + $message) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
+    throw
+} finally {
+    Cleanup-TemporaryFiles
+}
