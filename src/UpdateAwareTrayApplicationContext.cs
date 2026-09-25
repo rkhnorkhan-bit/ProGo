@@ -59,7 +59,7 @@ namespace ProGo
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
             menu.Items.Add("Настройки", null, delegate { ShowSettings(); });
-            menu.Items.Add("Открыть журнал", null, delegate { OpenLog(); });
+            menu.Items.Add(BuildLogsMenu());
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Создать резервную копию", null, delegate { CreateBackup(); });
             menu.Items.Add("Откатить из резервной копии...", null, delegate { StartRestore(); });
@@ -69,6 +69,16 @@ namespace ProGo
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Выход", null, delegate { ExitThread(); });
             return menu;
+        }
+
+        private ToolStripMenuItem BuildLogsMenu()
+        {
+            var logs = new ToolStripMenuItem("Открыть логи");
+            logs.DropDownItems.Add("Журнал приложения: progo.log", null, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); });
+            logs.DropDownItems.Add("Журнал обновления: update.log", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); });
+            logs.DropDownItems.Add("Старый журнал обновления: progo-update.log", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "progo-update.log"), "старый журнал обновления"); });
+            logs.DropDownItems.Add("Открыть папку ProGo", null, delegate { OpenProGoFolder(); });
+            return logs;
         }
 
         private void ShowStatus()
@@ -103,18 +113,32 @@ namespace ProGo
             UpdateTooltip();
         }
 
-        private void OpenLog()
+        private void OpenLogFile(string path, string title)
         {
             try
             {
                 AppPaths.EnsureDirectories();
-                if (!File.Exists(AppPaths.LogPath)) File.WriteAllText(AppPaths.LogPath, "");
-                Process.Start("notepad.exe", AppPaths.LogPath);
+                if (!File.Exists(path)) File.WriteAllText(path, "");
+                Process.Start("notepad.exe", path);
             }
             catch (Exception ex)
             {
-                SafeLog.Error("Open log failed.", ex);
-                MessageBox.Show("Не удалось открыть журнал.", AppConstants.ProductName);
+                SafeLog.Error("Open log failed: " + title + ".", ex);
+                MessageBox.Show("Не удалось открыть " + title + ".", AppConstants.ProductName);
+            }
+        }
+
+        private void OpenProGoFolder()
+        {
+            try
+            {
+                AppPaths.EnsureDirectories();
+                Process.Start("explorer.exe", AppPaths.Root);
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Open ProGo folder failed.", ex);
+                MessageBox.Show("Не удалось открыть папку ProGo.", AppConstants.ProductName);
             }
         }
 
