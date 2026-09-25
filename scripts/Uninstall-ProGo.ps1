@@ -7,7 +7,9 @@ $ErrorActionPreference = "Stop"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 $Startup = [Environment]::GetFolderPath("Startup")
-$ShortcutPath = Join-Path $Startup "ProGo.lnk"
+$StartupShortcut = Join-Path $Startup "ProGo.lnk"
+$Programs = [Environment]::GetFolderPath("Programs")
+$MenuDir = Join-Path $Programs "ProGo"
 
 Get-Process -Name "ProGo" -ErrorAction SilentlyContinue | ForEach-Object {
     try {
@@ -17,8 +19,10 @@ Get-Process -Name "ProGo" -ErrorAction SilentlyContinue | ForEach-Object {
     } catch {}
 }
 
-if (Test-Path $ShortcutPath) {
-    Remove-Item $ShortcutPath -Force
+foreach ($path in @($StartupShortcut, $MenuDir)) {
+    if (Test-Path $path) {
+        Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 $Exe = Join-Path $InstallDir "ProGo.exe"
@@ -27,7 +31,7 @@ if (Test-Path $Exe) {
 }
 
 if ($RemoveUserData) {
-    $answer = Read-Host "Это удалит vault/settings/logs из $InstallDir. Введите DELETE для подтверждения"
+    $answer = Read-Host "This removes vault/settings/logs from $InstallDir. Type DELETE to confirm"
     if ($answer -eq "DELETE") {
         Remove-Item $InstallDir -Recurse -Force
         Write-Host "User data removed."
