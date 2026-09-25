@@ -57,7 +57,7 @@ if ($Source -match "DECOY|fake vault|wrong PIN|incorrect PIN") {
     Fail "decoy-disclosing marker found in source"
 }
 
-foreach ($requiredSource in @("Обновить ProGo", "Создать резервную копию", "Откатить из резервной копии", "BackupService.EnsureVersionBackupExists", "BackupPickerForm", "Restore-ProGoBackup.ps1")) {
+foreach ($requiredSource in @("Обновить ProGo", "Создать резервную копию", "Откатить из резервной копии", "BackupService.EnsureVersionBackupExists", "BackupPickerForm", "Restore-ProGoBackup.ps1", "Удалить старые резервные копии", "CleanupOldBackups", "update_result", "backup_kind", "target_version", "created_by", "MaxAutomaticBackups")) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"
     }
