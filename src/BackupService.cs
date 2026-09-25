@@ -12,11 +12,46 @@ namespace ProGo
         public string Path { get; set; }
         public string DisplayName { get; set; }
         public string Version { get; set; }
+        public string TargetVersion { get; set; }
+        public string Reason { get; set; }
+        public string CreatedBy { get; set; }
+        public string Result { get; set; }
+        public string Kind { get; set; }
+        public string Created { get; set; }
+        public DateTime LastWriteTime { get; set; }
+
+        public bool IsManual
+        {
+            get { return String.Equals(CreatedBy, "manual", StringComparison.OrdinalIgnoreCase) || String.Equals(Result, "manual", StringComparison.OrdinalIgnoreCase); }
+        }
+
+        public bool IsBaseline
+        {
+            get { return String.Equals(Kind, "baseline", StringComparison.OrdinalIgnoreCase) || String.Equals(Result, "baseline", StringComparison.OrdinalIgnoreCase); }
+        }
+
+        public bool IsPreUpdate
+        {
+            get { return String.Equals(Kind, "pre-update", StringComparison.OrdinalIgnoreCase) || ReasonText.IndexOf("update", StringComparison.OrdinalIgnoreCase) >= 0; }
+        }
+
+        public string ReasonText
+        {
+            get { return Reason ?? String.Empty; }
+        }
+    }
+
+    internal sealed class BackupCleanupResult
+    {
+        public int Deleted { get; set; }
+        public int Kept { get; set; }
+        public int Failed { get; set; }
+        public string Message { get; set; }
     }
 
     internal static class BackupService
     {
-        private const int MaxBackups = 20;
+        private const int MaxAutomaticBackups = 10;
 
         public static string BackupsRoot
         {
@@ -60,7 +95,7 @@ namespace ProGo
         {
             foreach (var backup in ListBackups())
             {
-                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase)) return true;
+                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline) return true;
             }
 
             return false;
@@ -74,6 +109,9 @@ namespace ProGo
             var version = CurrentVersion;
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             var safeVersion = Sanitize(version);
+            var kind = ClassifyKind(reason, String.Empty);
+            var result = kind == "baseline" ? "baseline" : (kind == "manual" ? "manual" : "created");
+            var createdBy = kind == "manual" ? "manual" : "app";
             var backupDir = System.IO.Path.Combine(BackupsRoot, "backup-" + timestamp + "-v" + safeVersion);
 
             var suffix = 1;
@@ -92,17 +130,13 @@ namespace ProGo
             CopyFileIfExists("vault.enc.json", backupDir);
             CopyFileIfExists("settings.json", backupDir);
             CopyFileIfExists("progo.log", backupDir);
+            CopyFileIfExists("update.log", backupDir);
+            CopyFileIfExists("progo-update.log", backupDir);
             CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"));
 
-            var manifest = new StringBuilder();
-            manifest.AppendLine("product=ProGo");
-            manifest.AppendLine("version=" + version);
-            manifest.AppendLine("created=" + DateTimeOffset.Now.ToString("o"));
-            manifest.AppendLine("reason=" + reason);
-            manifest.AppendLine("contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log");
-            File.WriteAllText(System.IO.Path.Combine(backupDir, "manifest.txt"), manifest.ToString(), Encoding.UTF8);
+            WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
 
-            TrimOldBackups();
+            CleanupOldBackups(false);
             SafeLog.Info("Backup created: " + backupDir + ".");
             return backupDir;
         }
@@ -118,23 +152,68 @@ namespace ProGo
 
             foreach (var dir in dirs)
             {
-                var version = ReadManifestValue(dir, "version");
-                if (String.IsNullOrEmpty(version)) version = "unknown";
-
-                var created = ReadManifestValue(dir, "created");
-                var name = System.IO.Path.GetFileName(dir);
-                var display = name + " — v" + version;
-                if (!String.IsNullOrEmpty(created)) display += " — " + created;
-
-                result.Add(new BackupInfo
-                {
-                    Path = dir,
-                    DisplayName = display,
-                    Version = version
-                });
+                result.Add(ReadBackupInfo(dir));
             }
 
             return result;
+        }
+
+        public static BackupCleanupResult CleanupOldBackups(bool includeSummary)
+        {
+            Directory.CreateDirectory(BackupsRoot);
+            var backups = ListBackups();
+            var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var backup in backups)
+            {
+                if (backup.IsManual) keep.Add(backup.Path);
+            }
+
+            var latestBaseline = FirstOrNull(backups, delegate(BackupInfo b) { return b.IsBaseline; });
+            if (latestBaseline != null) keep.Add(latestBaseline.Path);
+
+            var latestPreUpdate = FirstOrNull(backups, delegate(BackupInfo b) { return b.IsPreUpdate; });
+            if (latestPreUpdate != null) keep.Add(latestPreUpdate.Path);
+
+            var automaticKept = 0;
+            foreach (var backup in backups)
+            {
+                if (backup.IsManual) continue;
+                if (automaticKept < MaxAutomaticBackups)
+                {
+                    keep.Add(backup.Path);
+                    automaticKept++;
+                }
+            }
+
+            var deleted = 0;
+            var failed = 0;
+            foreach (var backup in backups)
+            {
+                if (keep.Contains(backup.Path)) continue;
+
+                try
+                {
+                    Directory.Delete(backup.Path, true);
+                    deleted++;
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    SafeLog.Error("Backup cleanup failed: " + backup.Path + ".", ex);
+                }
+            }
+
+            var output = new BackupCleanupResult
+            {
+                Deleted = deleted,
+                Kept = keep.Count,
+                Failed = failed,
+                Message = "Удалено: " + deleted + "; сохранено: " + keep.Count + "; ошибок: " + failed + "."
+            };
+
+            if (includeSummary) SafeLog.Info("Backup cleanup finished. " + output.Message);
+            return output;
         }
 
         public static bool StartRestore(string backupDir)
@@ -182,6 +261,114 @@ namespace ProGo
             }
         }
 
+        private static BackupInfo ReadBackupInfo(string dir)
+        {
+            var info = new BackupInfo
+            {
+                Path = dir,
+                LastWriteTime = Directory.GetLastWriteTime(dir),
+                Version = ReadManifestValue(dir, "version"),
+                TargetVersion = ReadManifestValue(dir, "target_version"),
+                Reason = ReadManifestValue(dir, "reason"),
+                CreatedBy = ReadManifestValue(dir, "created_by"),
+                Result = ReadManifestValue(dir, "update_result"),
+                Kind = ReadManifestValue(dir, "backup_kind"),
+                Created = ReadManifestValue(dir, "created")
+            };
+
+            if (String.IsNullOrEmpty(info.Version)) info.Version = InferVersionFromName(dir);
+            if (String.IsNullOrEmpty(info.TargetVersion)) info.TargetVersion = InferTargetVersionFromName(dir);
+            if (String.IsNullOrEmpty(info.Reason)) info.Reason = InferReasonFromName(dir);
+            if (String.IsNullOrEmpty(info.Kind)) info.Kind = ClassifyKind(info.Reason, info.TargetVersion);
+            if (String.IsNullOrEmpty(info.CreatedBy)) info.CreatedBy = info.Kind == "manual" ? "manual" : "unknown";
+            if (String.IsNullOrEmpty(info.Result)) info.Result = InferResult(info.Kind, info.Reason);
+            if (String.IsNullOrEmpty(info.Created)) info.Created = info.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
+
+            info.DisplayName = FormatDisplayName(info);
+            return info;
+        }
+
+        private static string FormatDisplayName(BackupInfo info)
+        {
+            var name = System.IO.Path.GetFileName(info.Path);
+            var target = String.IsNullOrEmpty(info.TargetVersion) || info.TargetVersion == "unknown" ? String.Empty : " → " + info.TargetVersion;
+            var status = String.IsNullOrEmpty(info.Result) ? "unknown" : info.Result;
+            var kind = String.IsNullOrEmpty(info.Kind) ? "backup" : info.Kind;
+            return name + " | " + kind + " | v" + info.Version + target + " | " + status + " | " + info.Created;
+        }
+
+        private static BackupInfo FirstOrNull(List<BackupInfo> backups, Predicate<BackupInfo> predicate)
+        {
+            foreach (var backup in backups)
+            {
+                if (predicate(backup)) return backup;
+            }
+            return null;
+        }
+
+        private static void WriteManifest(string backupDir, string version, string targetVersion, string reason, string createdBy, string updateResult, string backupKind)
+        {
+            var manifest = new StringBuilder();
+            manifest.AppendLine("product=ProGo");
+            manifest.AppendLine("version=" + SafeManifest(version));
+            manifest.AppendLine("target_version=" + SafeManifest(targetVersion));
+            manifest.AppendLine("created=" + DateTimeOffset.Now.ToString("o"));
+            manifest.AppendLine("reason=" + SafeManifest(reason));
+            manifest.AppendLine("created_by=" + SafeManifest(createdBy));
+            manifest.AppendLine("update_result=" + SafeManifest(updateResult));
+            manifest.AppendLine("backup_kind=" + SafeManifest(backupKind));
+            manifest.AppendLine("contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log,progo-update.log");
+            File.WriteAllText(System.IO.Path.Combine(backupDir, "manifest.txt"), manifest.ToString(), Encoding.UTF8);
+        }
+
+        private static string ClassifyKind(string reason, string targetVersion)
+        {
+            var text = (reason ?? String.Empty).ToLowerInvariant();
+            if (text.IndexOf("manual", StringComparison.OrdinalIgnoreCase) >= 0) return "manual";
+            if (text.IndexOf("baseline", StringComparison.OrdinalIgnoreCase) >= 0 || text.IndexOf("startup", StringComparison.OrdinalIgnoreCase) >= 0 || text.IndexOf("version", StringComparison.OrdinalIgnoreCase) >= 0) return "baseline";
+            if (!String.IsNullOrEmpty(targetVersion)) return "pre-update";
+            if (text.IndexOf("update", StringComparison.OrdinalIgnoreCase) >= 0) return "pre-update";
+            return "automatic";
+        }
+
+        private static string InferResult(string kind, string reason)
+        {
+            if (String.Equals(kind, "manual", StringComparison.OrdinalIgnoreCase)) return "manual";
+            if (String.Equals(kind, "baseline", StringComparison.OrdinalIgnoreCase)) return "baseline";
+            if (String.Equals(kind, "pre-update", StringComparison.OrdinalIgnoreCase)) return "pre-update";
+            if ((reason ?? String.Empty).IndexOf("failed", StringComparison.OrdinalIgnoreCase) >= 0) return "failed";
+            return "created";
+        }
+
+        private static string InferReasonFromName(string dir)
+        {
+            var name = System.IO.Path.GetFileName(dir) ?? String.Empty;
+            if (name.IndexOf("-to-v", StringComparison.OrdinalIgnoreCase) >= 0) return "before-update";
+            return "legacy-backup";
+        }
+
+        private static string InferVersionFromName(string dir)
+        {
+            var name = System.IO.Path.GetFileName(dir) ?? String.Empty;
+            var marker = "-v";
+            var index = name.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (index < 0) return "unknown";
+            var value = name.Substring(index + marker.Length);
+            var to = value.IndexOf("-to-v", StringComparison.OrdinalIgnoreCase);
+            if (to >= 0) value = value.Substring(0, to);
+            return String.IsNullOrEmpty(value) ? "unknown" : value;
+        }
+
+        private static string InferTargetVersionFromName(string dir)
+        {
+            var name = System.IO.Path.GetFileName(dir) ?? String.Empty;
+            var marker = "-to-v";
+            var index = name.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (index < 0) return String.Empty;
+            var value = name.Substring(index + marker.Length);
+            return String.IsNullOrEmpty(value) ? String.Empty : value;
+        }
+
         private static void CopyFileIfExists(string fileName, string backupDir)
         {
             var source = System.IO.Path.Combine(AppPaths.Root, fileName);
@@ -209,21 +396,6 @@ namespace ProGo
                 var targetDir = System.IO.Path.GetDirectoryName(target);
                 if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
                 File.Copy(file, target, true);
-            }
-        }
-
-        private static void TrimOldBackups()
-        {
-            if (!Directory.Exists(BackupsRoot)) return;
-
-            var dirs = Directory.GetDirectories(BackupsRoot);
-            Array.Sort(dirs);
-            Array.Reverse(dirs);
-
-            for (var i = MaxBackups; i < dirs.Length; i++)
-            {
-                try { Directory.Delete(dirs[i], true); }
-                catch { }
             }
         }
 
@@ -262,11 +434,17 @@ namespace ProGo
 
             return builder.ToString();
         }
+
+        private static string SafeManifest(string value)
+        {
+            return (value ?? String.Empty).Replace("\r", " ").Replace("\n", " ").Trim();
+        }
     }
 
     internal sealed class BackupPickerForm : Form
     {
         private readonly ListBox list;
+        private readonly TextBox details;
         private readonly List<BackupInfo> backups;
 
         public string SelectedBackupPath { get; private set; }
@@ -275,27 +453,37 @@ namespace ProGo
         {
             backups = items;
             Text = "Откат ProGo";
-            Width = 720;
-            Height = 360;
+            Width = 840;
+            Height = 460;
             StartPosition = FormStartPosition.CenterScreen;
 
             list = new ListBox
             {
                 Dock = DockStyle.Top,
-                Height = 250
+                Height = 235
             };
+            list.SelectedIndexChanged += delegate { UpdateDetails(); };
 
             foreach (var backup in backups)
             {
                 list.Items.Add(backup.DisplayName);
             }
 
+            details = new TextBox
+            {
+                Dock = DockStyle.Top,
+                Height = 110,
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical
+            };
+
             var ok = new Button
             {
                 Text = "Откатить",
                 Width = 110,
-                Left = 470,
-                Top = 270
+                Left = 590,
+                Top = 365
             };
             ok.Click += delegate { Accept(); };
 
@@ -303,16 +491,36 @@ namespace ProGo
             {
                 Text = "Отмена",
                 Width = 110,
-                Left = 590,
-                Top = 270
+                Left = 710,
+                Top = 365
             };
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; };
 
+            Controls.Add(details);
             Controls.Add(list);
             Controls.Add(ok);
             Controls.Add(cancel);
 
             if (list.Items.Count > 0) list.SelectedIndex = 0;
+        }
+
+        private void UpdateDetails()
+        {
+            if (list.SelectedIndex < 0 || list.SelectedIndex >= backups.Count)
+            {
+                details.Text = String.Empty;
+                return;
+            }
+
+            var backup = backups[list.SelectedIndex];
+            details.Text =
+                "Папка: " + backup.Path + Environment.NewLine +
+                "Версия: " + backup.Version + Environment.NewLine +
+                "Целевая версия: " + (String.IsNullOrEmpty(backup.TargetVersion) ? "—" : backup.TargetVersion) + Environment.NewLine +
+                "Тип: " + backup.Kind + Environment.NewLine +
+                "Статус: " + backup.Result + Environment.NewLine +
+                "Причина: " + backup.Reason + Environment.NewLine +
+                "Создано: " + backup.Created;
         }
 
         private void Accept()
