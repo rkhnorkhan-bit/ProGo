@@ -32,7 +32,8 @@ if (Test-Path $Icon) {
 
 $InstalledScripts = Join-Path $InstallDir "scripts"
 New-Item -ItemType Directory -Path $InstalledScripts -Force | Out-Null
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Install-FromGitHub.ps1")) {
+# Install-FromGitHub.ps1 is only for first-time bootstrap. It is intentionally not deployed into the installed runtime app.
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
