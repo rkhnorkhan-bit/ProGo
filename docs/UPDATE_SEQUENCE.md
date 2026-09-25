@@ -12,7 +12,7 @@ This document tracks the short-term update chain agreed during the 0.1.x stabili
 
 ## 0.1.12 — Backup UX / manifest / retention
 
-Status: in progress.
+Status: done.
 
 Scope:
 
@@ -31,16 +31,22 @@ Out of scope:
 - Vault format changes.
 - Updater transport changes.
 
-## 0.1.13 — Release-package updater
+## 0.1.13 — Release-package updater bridge
 
-Status: planned.
+Status: in progress.
 
 Scope:
 
-- Stop building from GitHub source during end-user update.
-- Download a prepared release package from GitHub Actions or GitHub Releases.
-- Verify package version before staging.
-- Keep source-build updater only as developer fallback.
+- Prefer a prepared release package over source-build updates.
+- Default release package URL: GitHub Releases `latest/download/ProGo-release.zip`.
+- Verify package contents and version before staging.
+- Keep source-build updater as fallback until a stable GitHub Release asset is published.
+- Add CI artifact `ProGo-release-zip` so the package format is produced on every green build.
+
+Out of scope:
+
+- Mandatory code signing.
+- Removing source-build fallback before a release asset exists.
 
 ## 0.1.14 — SSH profile manager hardening
 
