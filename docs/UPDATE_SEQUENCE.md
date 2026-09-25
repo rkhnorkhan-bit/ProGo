@@ -33,7 +33,7 @@ Out of scope:
 
 ## 0.1.13 — Release-package updater bridge
 
-Status: in progress.
+Status: done.
 
 Scope:
 
@@ -50,14 +50,15 @@ Out of scope:
 
 ## 0.1.14 — SSH profile manager hardening
 
-Status: planned.
+Status: in progress.
 
 Scope:
 
 - Add explicit `Проверить SSH-профиль` action.
 - Show whether the selected SSH profile exists in `~/.ssh/config` or is a direct `user@host` target.
-- Improve automatic profile switching diagnostics.
-- Make SSH failures explain whether the issue is profile missing, key/permission, host unreachable, or port-forward failure.
+- Resolve the profile with `ssh.exe -G <target>` without connecting to the server.
+- Show resolved `hostname`, `user`, and `identityfile`.
+- Improve automatic profile switching diagnostics in a later pass if runtime connection failures remain unclear.
 
 ## 0.1.15 — Installer / startup / recovery polish
 
