@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.11 - Runtime release without bootstrap installer
+
+- Removed `Install-FromGitHub.ps1` from runtime `release/scripts` and installed `%LOCALAPPDATA%\ProGo\scripts`.
+- Kept `Install-FromGitHub.ps1` in the repository as a first-time bootstrap helper only.
+- Fixed self-update builds that could fail when endpoint protection blocks the downloaded bootstrap installer script in the temporary source tree.
+- Added CI coverage to ensure the bootstrap installer is not included in runtime release scripts.
+- Kept transactional updater behavior from `0.1.9` and log-access UX from `0.1.10`.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.10 - Update log access UX
 
 - Added updater result dialog actions:
