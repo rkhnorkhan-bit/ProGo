@@ -35,13 +35,141 @@ function Write-UpdateLog($Message) {
     Write-Host $Message
 }
 
-function Show-UserMessage($Text, $Title) {
+function Copy-LogToClipboard {
     try {
         Add-Type -AssemblyName System.Windows.Forms
-        [void][System.Windows.Forms.MessageBox]::Show($Text, $Title, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        $text = ""
+        if (Test-Path $UpdateLog) {
+            $text = Get-Content -Raw -Path $UpdateLog
+        } elseif (Test-Path $LegacyUpdateLog) {
+            $text = Get-Content -Raw -Path $LegacyUpdateLog
+        }
+
+        if ([string]::IsNullOrWhiteSpace($text)) {
+            $text = "update.log is empty or not found: $UpdateLog"
+        }
+
+        try {
+            [System.Windows.Forms.Clipboard]::SetText($text)
+        } catch {
+            Set-Clipboard -Value $text
+        }
+
+        [void][System.Windows.Forms.MessageBox]::Show((U8 "0JbRg9GA0L3QsNC7INC+0LHQvdC+0LLQu9C10L3QuNGPINGB0LrQvtC/0LjRgNC+0LLQsNC9INCyINCx0YPRhNC10YAg0L7QsdC80LXQvdCwLg=="), "ProGo", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host ((U8 "0J3QtSDRg9C00LDQu9C+0YHRjCDRgdC60L7Qv9C40YDQvtCy0LDRgtGMINC20YPRgNC90LDQuzog") + $_.Exception.Message)
+    }
+}
+
+function Open-UpdateLog {
+    try {
+        if (-not (Test-Path $UpdateLog)) {
+            New-Item -ItemType File -Path $UpdateLog -Force | Out-Null
+        }
+        Start-Process -FilePath "notepad.exe" -ArgumentList $UpdateLog | Out-Null
+    } catch {
+        Write-Host ((U8 "0J3QtSDRg9C00LDQu9C+0YHRjCDQvtGC0LrRgNGL0YLRjCDRhNCw0LnQuzog") + $_.Exception.Message)
+    }
+}
+
+function Open-ProGoFolder {
+    try {
+        New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+        Start-Process -FilePath "explorer.exe" -ArgumentList $InstallDir | Out-Null
+    } catch {
+        Write-Host ((U8 "0J3QtSDRg9C00LDQu9C+0YHRjCDQvtGC0LrRgNGL0YLRjCDQv9Cw0L/QutGDOiA=") + $_.Exception.Message)
+    }
+}
+
+function Show-UpdateDialog($Text, $Title, $IconName) {
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        Add-Type -AssemblyName System.Drawing
+
+        $form = New-Object System.Windows.Forms.Form
+        $form.Text = $Title
+        $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+        $form.Width = 700
+        $form.Height = 310
+        $form.MinimizeBox = $false
+        $form.MaximizeBox = $false
+        $form.ShowInTaskbar = $true
+        $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
+
+        $icon = New-Object System.Windows.Forms.PictureBox
+        $icon.Left = 18
+        $icon.Top = 22
+        $icon.Width = 40
+        $icon.Height = 40
+        $icon.SizeMode = [System.Windows.Forms.PictureBoxSizeMode]::CenterImage
+        if ($IconName -eq "Error") {
+            $icon.Image = [System.Drawing.SystemIcons]::Error.ToBitmap()
+        } elseif ($IconName -eq "Warning") {
+            $icon.Image = [System.Drawing.SystemIcons]::Warning.ToBitmap()
+        } else {
+            $icon.Image = [System.Drawing.SystemIcons]::Information.ToBitmap()
+        }
+        $form.Controls.Add($icon)
+
+        $message = New-Object System.Windows.Forms.TextBox
+        $message.Left = 72
+        $message.Top = 20
+        $message.Width = 590
+        $message.Height = 155
+        $message.Multiline = $true
+        $message.ReadOnly = $true
+        $message.BorderStyle = [System.Windows.Forms.BorderStyle]::None
+        $message.BackColor = $form.BackColor
+        $message.Text = $Text
+        $form.Controls.Add($message)
+
+        $openLog = New-Object System.Windows.Forms.Button
+        $openLog.Text = U8 "0J7RgtC60YDRi9GC0YwgdXBkYXRlLmxvZw=="
+        $openLog.Left = 72
+        $openLog.Top = 200
+        $openLog.Width = 150
+        $openLog.Height = 32
+        $openLog.Add_Click({ Open-UpdateLog })
+        $form.Controls.Add($openLog)
+
+        $copyLog = New-Object System.Windows.Forms.Button
+        $copyLog.Text = U8 "0KHQutC+0L/QuNGA0L7QstCw0YLRjCBsb2c="
+        $copyLog.Left = 232
+        $copyLog.Top = 200
+        $copyLog.Width = 150
+        $copyLog.Height = 32
+        $copyLog.Add_Click({ Copy-LogToClipboard })
+        $form.Controls.Add($copyLog)
+
+        $openFolder = New-Object System.Windows.Forms.Button
+        $openFolder.Text = U8 "0J7RgtC60YDRi9GC0Ywg0L/QsNC/0LrRgyBQcm9Hbw=="
+        $openFolder.Left = 392
+        $openFolder.Top = 200
+        $openFolder.Width = 160
+        $openFolder.Height = 32
+        $openFolder.Add_Click({ Open-ProGoFolder })
+        $form.Controls.Add($openFolder)
+
+        $ok = New-Object System.Windows.Forms.Button
+        $ok.Text = U8 "T0s="
+        $ok.Left = 562
+        $ok.Top = 200
+        $ok.Width = 100
+        $ok.Height = 32
+        $ok.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $form.AcceptButton = $ok
+        $form.CancelButton = $ok
+        $form.Controls.Add($ok)
+
+        [void]$form.ShowDialog()
     } catch {
         Write-Host ("{0}: {1}" -f $Title, $Text)
+        Write-Host "update.log: $UpdateLog"
     }
+}
+
+function Show-UserMessage($Text, $Title) {
+    Show-UpdateDialog $Text $Title "Information"
 }
 
 function Fail($Message) {
@@ -400,7 +528,7 @@ try {
     Start-UpdatedProGo -ExePath (Join-Path $InstallDir "ProGo.exe")
 
     Write-UpdateLog "ProGo transactional update completed."
-    Show-UserMessage ((U8 "UHJvR28g0L7QsdC90L7QstC70ZHQvS4g0KDQtdC30LXRgNCy0L3QsNGPINC60L7Qv9C40Y8g0YHQvtGF0YDQsNC90LXQvdCwOgo=") + $BackupDir) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
+    Show-UpdateDialog ((U8 "UHJvR28g0L7QsdC90L7QstC70ZHQvS4g0KDQtdC30LXRgNCy0L3QsNGPINC60L7Qv9C40Y8g0YHQvtGF0YDQsNC90LXQvdCwOgo=") + $BackupDir) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=") "Information"
 } catch {
     $message = $_.Exception.Message
     Write-UpdateLog "TRANSACTION FAILED: $message"
@@ -412,7 +540,7 @@ try {
         Write-UpdateLog "Main application was not changed; rollback is not required."
     }
 
-    Show-UserMessage ((U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28g0L3QtSDQstGL0L/QvtC70L3QtdC90L4uINCe0YHQvdC+0LLQvdC+0LUg0L/RgNC40LvQvtC20LXQvdC40LUg0YHQvtGF0YDQsNC90LXQvdC+INC40LvQuCDQstC+0YHRgdGC0LDQvdC+0LLQu9C10L3QviDQuNC3INGA0LXQt9C10YDQstC90L7QuSDQutC+0L/QuNC4LiDQn9C+0LTRgNC+0LHQvdC+0YHRgtC4INCyIHVwZGF0ZS5sb2cuCgo=") + $message) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
+    Show-UpdateDialog ((U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28g0L3QtSDQstGL0L/QvtC70L3QtdC90L4uINCe0YHQvdC+0LLQvdC+0LUg0L/RgNC40LvQvtC20LXQvdC40LUg0YHQvtGF0YDQsNC90LXQvdC+INC40LvQuCDQstC+0YHRgdGC0LDQvdC+0LLQu9C10L3QviDQuNC3INGA0LXQt9C10YDQstC90L7QuSDQutC+0L/QuNC4LiDQn9C+0LTRgNC+0LHQvdC+0YHRgtC4INCyIHVwZGF0ZS5sb2cuCgo=") + $message) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=") "Error"
     throw
 } finally {
     Cleanup-TemporaryFiles
