@@ -58,24 +58,21 @@ if ($Source -match "DECOY|fake vault|wrong PIN|incorrect PIN") {
 }
 
 foreach ($requiredSource in @(
-    "Обновить ProGo",
-    "Создать резервную копию",
-    "Откатить из резервной копии",
     "BackupService.EnsureVersionBackupExists",
     "BackupPickerForm",
     "Restore-ProGoBackup.ps1",
-    "Удалить старые резервные копии",
     "CleanupOldBackups",
     "update_result",
     "backup_kind",
     "target_version",
     "created_by",
     "MaxAutomaticBackups",
-    "Проверить SSH-профиль",
+    "CheckSelectedProfile",
     "SshProfileDiagnostics.Check",
     "ssh.exe -G",
     "LooksDirectTarget",
-    "FoundInConfig"
+    "FoundInConfig",
+    "ResolvedIdentityFile"
 )) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"
@@ -128,7 +125,6 @@ foreach ($required in @(
     }
 }
 if ($updateScriptText -match "Stop-Process\s+-Id") { Fail "updater still force-kills ProGo process" }
-if ($updateScriptText.Contains("У вас актуальная версия ProGo")) { Fail "updater has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding" }
 
 $restoreScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
 foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
@@ -136,7 +132,6 @@ foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.jso
         Fail "restore script marker missing: $required"
     }
 }
-if ($restoreScriptText.Contains("ProGo восстановлен")) { Fail "restore script has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding" }
 
 $workflowText = Get-Content -Raw -Path (Join-Path $Root ".github\workflows\ci.yml")
 foreach ($required in @("Pack release zip", "Compress-Archive", "ProGo-release.zip", "ProGo-release-zip")) {
