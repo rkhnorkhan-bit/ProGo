@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.14 - SSH profile diagnostics
+
+- Added `Проверить SSH-профиль` action in settings.
+- Added `SshProfileDiagnostics`:
+  - detects direct `user@host` targets;
+  - checks whether an alias is present in `%USERPROFILE%\.ssh\config`;
+  - runs `ssh.exe -G <target>` without connecting to the server;
+  - reports resolved `hostname`, `user`, and `identityfile`.
+- Added visible SSH config path in settings.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.13 - Release-package updater bridge
 
 - Added release-package update mode:
