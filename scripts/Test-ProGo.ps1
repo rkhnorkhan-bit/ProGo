@@ -57,69 +57,73 @@ if ($Source -match "DECOY|fake vault|wrong PIN|incorrect PIN") {
     Fail "decoy-disclosing marker found in source"
 }
 
-foreach ($requiredSource in @("Обновить ProGo", "Создать резервную копию", "Откатить из резервной копии", "BackupService.EnsureVersionBackupExists", "BackupPickerForm", "Restore-ProGoBackup.ps1", "Удалить старые резервные копии", "CleanupOldBackups", "update_result", "backup_kind", "target_version", "created_by", "MaxAutomaticBackups")) {
+foreach ($requiredSource in @(
+    "Обновить ProGo",
+    "Создать резервную копию",
+    "Откатить из резервной копии",
+    "BackupService.EnsureVersionBackupExists",
+    "BackupPickerForm",
+    "Restore-ProGoBackup.ps1",
+    "Удалить старые резервные копии",
+    "CleanupOldBackups",
+    "update_result",
+    "backup_kind",
+    "target_version",
+    "created_by",
+    "MaxAutomaticBackups"
+)) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"
     }
 }
 
-if ($Source -notmatch "BrandIcon\.Create") {
-    Fail "brand icon factory is not used by tray context"
-}
-
-if ($Source -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") {
-    Fail "updater bootstrap fallback URL missing"
-}
-
-if ($Source -notmatch "TryDownloadUpdateScript") {
-    Fail "updater download fallback missing"
-}
-
-if ($Source -notmatch "Always try to refresh the updater first") {
-    Fail "updater script is not refreshed before local fallback"
-}
-
-if ($Source -notmatch "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") {
-    Fail "updater launcher is not minimized"
-}
+if ($Source -notmatch "BrandIcon\.Create") { Fail "brand icon factory is not used by tray context" }
+if ($Source -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") { Fail "updater bootstrap fallback URL missing" }
+if ($Source -notmatch "TryDownloadUpdateScript") { Fail "updater download fallback missing" }
+if ($Source -notmatch "Always try to refresh the updater first") { Fail "updater script is not refreshed before local fallback" }
+if ($Source -notmatch "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") { Fail "updater launcher is not minimized" }
 
 $buildScriptText = Get-Content -Raw -Path $Build
-if ($buildScriptText -notmatch "/win32icon") {
-    Fail "build script does not embed executable icon"
-}
-if ($buildScriptText -notmatch "VERSION") {
-    Fail "build script does not include VERSION"
-}
-if ($buildScriptText -notmatch "Restore-ProGoBackup.ps1") {
-    Fail "build script does not include restore script"
-}
-if ($buildScriptText -notmatch "bootstrap-only") {
-    Fail "build script does not document bootstrap installer exclusion"
+foreach ($required in @("/win32icon", "VERSION", "Restore-ProGoBackup.ps1", "bootstrap-only")) {
+    if ($buildScriptText -notmatch [regex]::Escape($required)) { Fail "build script marker missing: $required" }
 }
 
 $installScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
-if (-not $installScriptText.Contains('Copy-Item $VersionFile')) {
-    Fail "installer does not copy VERSION marker"
-}
-if ($installScriptText -notmatch "Restore-ProGoBackup.ps1") {
-    Fail "installer does not deploy restore script"
-}
-if ($installScriptText -notmatch "bootstrap") {
-    Fail "installer does not document bootstrap installer exclusion"
+foreach ($required in @('Copy-Item $VersionFile', "Restore-ProGoBackup.ps1", "bootstrap")) {
+    if (-not $installScriptText.Contains($required) -and $installScriptText -notmatch [regex]::Escape($required)) {
+        Fail "installer marker missing: $required"
+    }
 }
 
 $updateScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
-foreach ($required in @("Test-UpdateRequired", "Get-RemoteVersion", "U8", "Backup-InstalledState", "ProGo.exe", "scripts", "vault.enc.json", "settings.json", "manifest.txt", "backups", "Start-UpdatedProGo", "-PassThru", "Updated ProGo started")) {
+foreach ($required in @(
+    "Test-UpdateRequired",
+    "Get-RemoteVersion",
+    "U8",
+    "Backup-InstalledState",
+    "Set-BackupUpdateResult",
+    "ReleasePackageUrl",
+    "Try-GetReleasePackage",
+    "Get-ReleaseDirForUpdate",
+    "update_mode=release-package",
+    "update_mode=source-build-fallback",
+    "ProGo-release.zip",
+    "ProGo.exe",
+    "scripts",
+    "vault.enc.json",
+    "settings.json",
+    "manifest.txt",
+    "backups",
+    "Start-UpdatedProGo",
+    "-PassThru",
+    "Updated ProGo started"
+)) {
     if ($updateScriptText -notmatch [regex]::Escape($required)) {
         Fail "updater safety marker missing: $required"
     }
 }
-if ($updateScriptText -match "Stop-Process\s+-Id") {
-    Fail "updater still force-kills ProGo process"
-}
-if ($updateScriptText.Contains("У вас актуальная версия ProGo")) {
-    Fail "updater has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding"
-}
+if ($updateScriptText -match "Stop-Process\s+-Id") { Fail "updater still force-kills ProGo process" }
+if ($updateScriptText.Contains("У вас актуальная версия ProGo")) { Fail "updater has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding" }
 
 $restoreScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
 foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
@@ -127,11 +131,13 @@ foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.jso
         Fail "restore script marker missing: $required"
     }
 }
-if ($restoreScriptText.Contains("ProGo восстановлен")) {
-    Fail "restore script has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding"
+if ($restoreScriptText.Contains("ProGo восстановлен")) { Fail "restore script has raw Cyrillic text that breaks Windows PowerShell 5.1 encoding" }
+
+$workflowText = Get-Content -Raw -Path (Join-Path $Root ".github\workflows\ci.yml")
+foreach ($required in @("Pack release zip", "Compress-Archive", "ProGo-release.zip", "ProGo-release-zip")) {
+    if ($workflowText -notmatch [regex]::Escape($required)) { Fail "CI release package marker missing: $required" }
 }
 
-$parseErrors = $null
 foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
