@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.15 - Startup and recovery polish
+
+- Added `scripts/Start-ProGo.ps1` for normal launch without manually locating `ProGo.exe`.
+- Added `scripts/Repair-ProGo.ps1` to recreate the installed folder structure, scripts folder, backups folder, and copy available runtime files back into `%LOCALAPPDATA%\ProGo`.
+- Installer now deploys start/repair helpers.
+- Installer now creates Start Menu shortcuts:
+  - `ProGo`
+  - `ProGo Status`
+- Uninstaller now removes Start Menu shortcuts as well as startup shortcut.
+- Release package now includes `Start-ProGo.ps1` and `Repair-ProGo.ps1`.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.14 - SSH profile diagnostics
 
 - Added `Проверить SSH-профиль` action in settings.
