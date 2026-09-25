@@ -23,6 +23,14 @@ jobs:
             throw
           }
 
+      - name: Pack release zip
+        if: success()
+        shell: powershell
+        run: |
+          if (Test-Path ProGo-release.zip) { Remove-Item ProGo-release.zip -Force }
+          Compress-Archive -Path .\release\* -DestinationPath .\ProGo-release.zip -Force
+          Get-Item .\ProGo-release.zip | Format-List FullName,Length
+
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -36,3 +44,10 @@ jobs:
         with:
           name: ProGo-release
           path: release/
+
+      - name: Upload release package
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProGo-release-zip
+          path: ProGo-release.zip
