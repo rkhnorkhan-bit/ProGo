@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.10 - Update log access UX
+
+- Added updater result dialog actions:
+  - `Открыть update.log`
+  - `Скопировать log`
+  - `Открыть папку ProGo`
+- Added ProGo tray menu section `Открыть логи` with direct access to:
+  - `progo.log`
+  - `update.log`
+  - legacy `progo-update.log`
+  - the `%LOCALAPPDATA%\ProGo` folder.
+- Kept transactional updater behavior from `0.1.9`.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.9 - Transactional updater
 
 - Reworked updater into a transactional flow:
