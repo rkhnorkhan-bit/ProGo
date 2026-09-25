@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.9 - Transactional updater
+
+- Reworked updater into a transactional flow:
+  - create installed-state backup before any update work;
+  - create an intermediate staging copy;
+  - download and build the new version in a temporary workspace;
+  - apply the new version to staging first;
+  - validate staging with `ProGo.exe --self-check`;
+  - update the main application only after staging passes;
+  - rollback from backup if a post-commit failure occurs;
+  - write the full process to `update.log` and legacy `progo-update.log`;
+  - clean temporary update files in `finally`.
+- Added `ProGo.exe --self-check` for non-interactive updater validation.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.8 - SSH profile management
 
 - Added SSH profile selector in settings.
