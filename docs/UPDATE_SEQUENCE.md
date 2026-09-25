@@ -50,7 +50,7 @@ Out of scope:
 
 ## 0.1.14 — SSH profile manager hardening
 
-Status: in progress.
+Status: done.
 
 Scope:
 
@@ -62,11 +62,18 @@ Scope:
 
 ## 0.1.15 — Installer / startup / recovery polish
 
-Status: planned.
+Status: in progress.
 
 Scope:
 
-- Add explicit app shortcut/start action UX.
-- Add repair action for missing scripts.
-- Improve first-run screen and status access if tray icon is hidden.
+- Add explicit app start helper: `Start-ProGo.ps1`.
+- Add repair action for missing scripts/folders/runtime files: `Repair-ProGo.ps1`.
+- Add Start Menu shortcuts through the installer.
+- Remove Start Menu shortcuts through the uninstaller.
 - Keep logs and backup actions accessible from normal UI.
+
+Out of scope:
+
+- Installer MSI/MSIX.
+- Code signing.
+- Changing vault format, encryption, KDF, PIN behavior, or stored secrets.
