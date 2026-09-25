@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.8 - SSH profile management
+
+- Added SSH profile selector in settings.
+- Added local profile list stored in `settings.json`.
+- Added `+`, `-`, and `?` profile actions for adding, deleting, and editing the selected profile.
+- Added in-app explanation of what an SSH profile is and why ProGo needs it.
+- Added automatic SSH profile switching when the selected profile cannot bring the SOCKS tunnel up.
+- Preserved backward compatibility with the old `SshProfile` text field: existing values are migrated into the profile list automatically.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
+## 0.1.7 - Visible launch fallback
+
+- Added `ProGo.exe --show` to open the status window even when the tray icon is hidden.
+- Added `scripts/Show-ProGo.ps1` visible launcher.
+
+## 0.1.6 - Startup diagnostics
+
+- Added startup crash guard and fatal logging.
+- Added installer-created backups folder.
+
 ## 0.1.5 - Backup and rollback safety
 
 - Added `VERSION`-based update checks.
