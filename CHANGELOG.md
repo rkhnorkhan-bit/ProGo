@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.12 - Backup UX, manifest metadata, and retention
+
+- Added richer backup manifest metadata:
+  - `target_version`
+  - `created_by`
+  - `update_result`
+  - `backup_kind`
+- Improved backup list display in rollback UI: version, target version, type, status, reason, and creation time are visible before rollback.
+- Added tray action `Удалить старые резервные копии...`.
+- Added retention policy:
+  - keep manual backups;
+  - keep the latest baseline backup;
+  - keep the latest pre-update backup;
+  - keep up to 10 latest automatic backups;
+  - delete older automatic backups only.
+- Added fallback parsing for legacy backup folders created before rich manifests existed.
+- Kept transactional updater behavior from `0.1.9` and runtime release packaging from `0.1.11`.
+- Kept vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.11 - Runtime release without bootstrap installer
 
 - Removed `Install-FromGitHub.ps1` from runtime `release/scripts` and installed `%LOCALAPPDATA%\ProGo\scripts`.
