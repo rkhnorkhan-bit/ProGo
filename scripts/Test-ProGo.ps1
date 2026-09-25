@@ -70,7 +70,12 @@ foreach ($requiredSource in @(
     "backup_kind",
     "target_version",
     "created_by",
-    "MaxAutomaticBackups"
+    "MaxAutomaticBackups",
+    "Проверить SSH-профиль",
+    "SshProfileDiagnostics.Check",
+    "ssh.exe -G",
+    "LooksDirectTarget",
+    "FoundInConfig"
 )) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"
