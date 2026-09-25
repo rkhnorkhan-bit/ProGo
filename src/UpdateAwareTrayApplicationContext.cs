@@ -64,6 +64,7 @@ namespace ProGo
             menu.Items.Add("Создать резервную копию", null, delegate { CreateBackup(); });
             menu.Items.Add("Откатить из резервной копии...", null, delegate { StartRestore(); });
             menu.Items.Add("Открыть папку резервных копий", null, delegate { OpenBackups(); });
+            menu.Items.Add("Удалить старые резервные копии...", null, delegate { CleanupBackups(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Обновить ProGo", null, delegate { StartUpdate(); });
             menu.Items.Add(new ToolStripSeparator());
@@ -153,6 +154,28 @@ namespace ProGo
             {
                 SafeLog.Error("Open backups failed.", ex);
                 MessageBox.Show("Не удалось открыть папку резервных копий.", AppConstants.ProductName);
+            }
+        }
+
+        private void CleanupBackups()
+        {
+            var result = MessageBox.Show(
+                "ProGo удалит старые автоматические резервные копии.\n\nБудут сохранены ручные копии, последний baseline и последний pre-update backup.\n\nПродолжить?",
+                "Очистка резервных копий ProGo",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result != DialogResult.Yes) return;
+
+            try
+            {
+                var cleanup = BackupService.CleanupOldBackups(true);
+                MessageBox.Show(cleanup.Message, "Очистка резервных копий ProGo", MessageBoxButtons.OK, cleanup.Failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Backup cleanup failed.", ex);
+                MessageBox.Show("Не удалось очистить резервные копии. Подробности записаны в журнал.", "Очистка резервных копий ProGo", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
