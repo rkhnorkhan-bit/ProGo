@@ -47,6 +47,20 @@ namespace ProGo
                 }
 
                 SafeLog.Info("Updater process started. PID=" + process.Id + ".");
+
+                if (process.WaitForExit(1200))
+                {
+                    var exitCode = process.ExitCode;
+                    SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ".", new InvalidOperationException("Updater process exited before handoff."));
+                    MessageBox.Show(
+                        "Обновление не стартовало. ProGo останется запущенным. Подробности записаны в журнал.",
+                        "Обновление ProGo",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                    return false;
+                }
+
+                SafeLog.Info("Updater handoff confirmed. PID=" + process.Id + ".");
                 return true;
             }
             catch (Win32Exception ex)
