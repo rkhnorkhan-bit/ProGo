@@ -222,9 +222,35 @@ namespace ProGo
 
         private void StartUpdate()
         {
+            var check = UpdateLauncher.CheckForUpdate();
+
+            if (check.Availability == UpdateAvailability.Error)
+            {
+                MessageBox.Show(
+                    (check.ErrorMessage ?? "Не удалось проверить наличие обновлений.") +
+                    "\n\nТекущая версия: " + (check.LocalVersion ?? "неизвестна") +
+                    "\n\nПроверьте подключение к GitHub и повторите попытку.",
+                    "Проверка обновлений ProGo",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (check.Availability == UpdateAvailability.UpToDate)
+            {
+                MessageBox.Show(
+                    "У вас установлена актуальная версия ProGo.\n\nВерсия: " + check.LocalVersion,
+                    "Обновление ProGo",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
             var result = MessageBox.Show(
-                "ProGo проверит версию в GitHub. Если обновление есть, будет создана резервная копия текущей версии, затем приложение обновится и запустится заново.\n\nПродолжить?",
-                "Обновление ProGo",
+                "Доступна новая версия ProGo — " + check.RemoteVersion + ".\n\n" +
+                "Текущая версия: " + check.LocalVersion + "\n\n" +
+                "Установить обновление сейчас?",
+                "Доступно обновление ProGo",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
 
@@ -232,7 +258,7 @@ namespace ProGo
 
             if (!UpdateLauncher.StartUpdater()) return;
 
-            SafeLog.Info("Update requested by user.");
+            SafeLog.Info("Update requested by user. local=" + check.LocalVersion + "; remote=" + check.RemoteVersion + ".");
             tray.Visible = false;
             ExitThread();
         }
