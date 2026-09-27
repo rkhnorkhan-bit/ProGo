@@ -91,3 +91,16 @@ Scope:
 - Move transactional update logic into `Update-ProGo.Core.ps1`.
 - Ship, repair, stage, and validate both updater scripts.
 - Preserve transactional backup, validation, rollback, vault format, encryption, KDF, PIN behavior, and stored secrets.
+
+
+## 0.1.17 — Updater failure recovery
+
+Status: done.
+
+Scope:
+
+- Execute the downloaded updater core in memory to avoid a second downloaded script execution boundary.
+- Relaunch the installed ProGo automatically if bootstrap/core startup fails.
+- Keep the current application open when the updater child exits before handoff.
+- Log recovery, early-exit, and handoff events.
+- Preserve transactional backup, validation, rollback, vault format, encryption, KDF, PIN behavior, and stored secrets.
