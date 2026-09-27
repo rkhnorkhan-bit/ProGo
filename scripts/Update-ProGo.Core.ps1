@@ -223,7 +223,7 @@ function Test-UpdateRequired {
 
     $State.LocalVersion = Get-LocalVersion
     $State.RemoteVersion = Get-RemoteVersion
-    Write-UpdateLog "Version check: local=$State.LocalVersion remote=$State.RemoteVersion"
+    Write-UpdateLog "Version check: local=$($State.LocalVersion) remote=$($State.RemoteVersion)"
 
     if ($State.LocalVersion -eq $State.RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
@@ -338,14 +338,14 @@ function Backup-InstalledState {
     $manifest = @(
         "product=ProGo",
         "version=$from",
-        "target_version=$State.RemoteVersion",
+        "target_version=$($State.RemoteVersion)",
         "created=$([DateTimeOffset]::Now.ToString('o'))",
         "created_by=updater",
         "backup_kind=pre-update",
         "update_result=pending",
         "reason=before-transactional-update",
         "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log",
-        "update_mode=$State.UpdateMode"
+        "update_mode=$($State.UpdateMode)"
     )
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
@@ -412,7 +412,7 @@ function Test-StagingCopy($TargetDir) {
 
     $stageVersion = ((Get-Content -Raw -Path (Join-Path $TargetDir "VERSION")).Trim())
     if ($stageVersion -ne $State.RemoteVersion) {
-        Fail "Staging version mismatch: stage=$stageVersion remote=$State.RemoteVersion"
+        Fail "Staging version mismatch: stage=$stageVersion remote=$($State.RemoteVersion)"
     }
 
     $stageExe = Join-Path $TargetDir "ProGo.exe"
@@ -501,7 +501,7 @@ function Try-GetReleasePackage($DestinationRoot) {
 
         $packageVersion = ((Get-Content -Raw -Path (Join-Path $releaseDir "VERSION")).Trim())
         if ($packageVersion -ne $State.RemoteVersion) {
-            throw "Release package version mismatch: package=$packageVersion remote=$State.RemoteVersion"
+            throw "Release package version mismatch: package=$packageVersion remote=$($State.RemoteVersion)"
         }
 
         Write-UpdateLog "Release package accepted: $releaseDir"
@@ -640,7 +640,7 @@ try {
 
     $installedVersion = ((Get-Content -Raw -Path (Join-Path $InstallDir "VERSION")).Trim())
     if ($installedVersion -ne $State.RemoteVersion) {
-        Fail "Installed version mismatch after commit: installed=$installedVersion remote=$State.RemoteVersion"
+        Fail "Installed version mismatch after commit: installed=$installedVersion remote=$($State.RemoteVersion)"
     }
 
     $mainCheck = Start-Process -FilePath (Join-Path $InstallDir "ProGo.exe") -ArgumentList "--self-check" -WorkingDirectory $InstallDir -PassThru -Wait
