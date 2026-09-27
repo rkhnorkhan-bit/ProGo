@@ -72,7 +72,15 @@ foreach ($requiredSource in @(
     "ssh.exe -G",
     "LooksDirectTarget",
     "FoundInConfig",
-    "ResolvedIdentityFile"
+    "ResolvedIdentityFile",
+    "ConnectionMetrics",
+    "MeasureSocksLatencyMs",
+    "MeasureDownloadMbps",
+    "speed.cloudflare.com",
+    "Ping через SOCKS",
+    "Измерить скорость",
+    "Прокси окружения",
+    "Interval = 2000"
 )) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"

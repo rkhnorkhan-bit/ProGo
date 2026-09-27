@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.20 - Connection metrics in status
+
+- Added continuous SOCKS-route latency measurement in the Status window.
+- Latency is measured through the actual local SOCKS5 tunnel to the configured test endpoint, including remote DNS/TCP route establishment.
+- Added on-demand `Измерить скорость` button.
+- Speed test measures download throughput through SOCKS using a 10 MB Cloudflare test payload and reports Mbit/s.
+- Renamed the status row from `Системный прокси` to `Прокси окружения` to reflect the actual environment-variable proxy configuration.
+- Ping polling runs every 2 seconds without overlapping measurements; speed tests never run automatically.
+- Kept updater, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.19 - Updater transaction state scope fix
 
 - Replaced updater `$script:` mutable variables with one shared state object so in-memory ScriptBlock execution keeps a single transaction state.

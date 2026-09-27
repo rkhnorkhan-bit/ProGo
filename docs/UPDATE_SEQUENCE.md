@@ -129,3 +129,17 @@ Scope:
 - Keep remote/local version, update mode, and main-change state in one shared object.
 - Ensure post-install version verification uses the same remote version value produced by the version check.
 - Ensure rollback eligibility reflects whether the main application directory was modified.
+
+
+## 0.1.20 — Connection metrics in status
+
+Status: done.
+
+Scope:
+
+- Show continuous SOCKS-route latency in the Status window.
+- Poll latency every 2 seconds without overlapping measurements.
+- Add an explicit `Измерить скорость` action.
+- Run a download throughput test only on user request.
+- Show the latest speed result in Mbit/s.
+- Rename the proxy row to `Прокси окружения`.

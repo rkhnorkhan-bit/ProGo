@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Globalization;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 
@@ -427,6 +429,176 @@ namespace ProGo
         public void Dispose()
         {
             StopTunnel();
+        }
+    }
+
+    internal static class ConnectionMetrics
+    {
+        private const string SpeedTestUrl = "https://speed.cloudflare.com/__down?bytes=10000000";
+
+        public static int? MeasureSocksLatencyMs(AppSettings settings, int timeoutMs)
+        {
+            if (settings == null) return null;
+
+            Uri target;
+            if (!Uri.TryCreate(settings.TestEndpoint, UriKind.Absolute, out target)) return null;
+
+            var host = target.DnsSafeHost;
+            if (String.IsNullOrWhiteSpace(host)) return null;
+            var port = target.IsDefaultPort
+                ? (String.Equals(target.Scheme, "https", StringComparison.OrdinalIgnoreCase) ? 443 : 80)
+                : target.Port;
+
+            try
+            {
+                var stopwatch = Stopwatch.StartNew();
+                using (var client = new TcpClient())
+                {
+                    var connect = client.BeginConnect(settings.SocksHost, settings.SocksPort, null, null);
+                    if (!connect.AsyncWaitHandle.WaitOne(Math.Max(1000, timeoutMs)))
+                    {
+                        return null;
+                    }
+
+                    client.EndConnect(connect);
+                    using (var stream = client.GetStream())
+                    {
+                        stream.ReadTimeout = Math.Max(1000, timeoutMs);
+                        stream.WriteTimeout = Math.Max(1000, timeoutMs);
+
+                        var greeting = new byte[] { 0x05, 0x01, 0x00 };
+                        stream.Write(greeting, 0, greeting.Length);
+
+                        var greetingReply = new byte[2];
+                        if (!ReadExact(stream, greetingReply, 0, greetingReply.Length)) return null;
+                        if (greetingReply[0] != 0x05 || greetingReply[1] != 0x00) return null;
+
+                        var hostBytes = Encoding.ASCII.GetBytes(host);
+                        if (hostBytes.Length < 1 || hostBytes.Length > 255) return null;
+
+                        var request = new byte[7 + hostBytes.Length];
+                        request[0] = 0x05;
+                        request[1] = 0x01;
+                        request[2] = 0x00;
+                        request[3] = 0x03;
+                        request[4] = (byte)hostBytes.Length;
+                        Buffer.BlockCopy(hostBytes, 0, request, 5, hostBytes.Length);
+                        request[5 + hostBytes.Length] = (byte)((port >> 8) & 0xff);
+                        request[6 + hostBytes.Length] = (byte)(port & 0xff);
+                        stream.Write(request, 0, request.Length);
+
+                        var replyHeader = new byte[4];
+                        if (!ReadExact(stream, replyHeader, 0, replyHeader.Length)) return null;
+                        if (replyHeader[0] != 0x05 || replyHeader[1] != 0x00) return null;
+
+                        var addressBytes = 0;
+                        if (replyHeader[3] == 0x01)
+                        {
+                            addressBytes = 4;
+                        }
+                        else if (replyHeader[3] == 0x04)
+                        {
+                            addressBytes = 16;
+                        }
+                        else if (replyHeader[3] == 0x03)
+                        {
+                            var length = new byte[1];
+                            if (!ReadExact(stream, length, 0, 1)) return null;
+                            addressBytes = length[0];
+                        }
+                        else
+                        {
+                            return null;
+                        }
+
+                        var remainder = new byte[addressBytes + 2];
+                        if (!ReadExact(stream, remainder, 0, remainder.Length)) return null;
+
+                        stopwatch.Stop();
+                        return (int)Math.Max(1, Math.Round(stopwatch.Elapsed.TotalMilliseconds));
+                    }
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static double? MeasureDownloadMbps(AppSettings settings, out string error)
+        {
+            error = null;
+            if (settings == null)
+            {
+                error = "Настройки недоступны.";
+                return null;
+            }
+
+            try
+            {
+                var testUrl = SpeedTestUrl + "&t=" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+                var args =
+                    "--socks5-hostname \"" + settings.SocksHost + ":" + settings.SocksPort + "\" " +
+                    "-L -sS --connect-timeout 10 --max-time 35 -o NUL -w \"%{speed_download}\" \"" + testUrl + "\"";
+
+                var psi = new ProcessStartInfo("curl.exe", args)
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (var process = Process.Start(psi))
+                {
+                    if (process == null)
+                    {
+                        error = "Не удалось запустить curl.exe.";
+                        return null;
+                    }
+
+                    var output = process.StandardOutput.ReadToEnd();
+                    var stderr = process.StandardError.ReadToEnd();
+                    if (!process.WaitForExit(40000))
+                    {
+                        try { process.Kill(); } catch { }
+                        error = "Тест скорости превысил лимит времени.";
+                        return null;
+                    }
+
+                    if (process.ExitCode != 0)
+                    {
+                        error = String.IsNullOrWhiteSpace(stderr) ? "curl завершился с ошибкой." : SafeLog.Redact(stderr.Trim());
+                        return null;
+                    }
+
+                    double bytesPerSecond;
+                    if (!Double.TryParse(output.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out bytesPerSecond) || bytesPerSecond <= 0)
+                    {
+                        error = "Не удалось разобрать результат теста скорости.";
+                        return null;
+                    }
+
+                    return bytesPerSecond * 8.0 / 1000000.0;
+                }
+            }
+            catch (Exception ex)
+            {
+                error = SafeLog.Redact(ex.Message);
+                return null;
+            }
+        }
+
+        private static bool ReadExact(NetworkStream stream, byte[] buffer, int offset, int count)
+        {
+            var read = 0;
+            while (read < count)
+            {
+                var current = stream.Read(buffer, offset + read, count - read);
+                if (current <= 0) return false;
+                read += current;
+            }
+            return true;
         }
     }
 
