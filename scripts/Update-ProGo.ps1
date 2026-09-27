@@ -14,55 +14,86 @@ $ErrorActionPreference = "Stop"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 $ScriptsDir = Join-Path $InstallDir "scripts"
-$CoreScriptPath = Join-Path $ScriptsDir "Update-ProGo.Core.ps1"
+$LocalCoreScriptPath = Join-Path $ScriptsDir "Update-ProGo.Core.ps1"
 $BootstrapLog = Join-Path $InstallDir "update.log"
+$LegacyBootstrapLog = Join-Path $InstallDir "progo-update.log"
 
 function Write-BootstrapLog($Message) {
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz") + " " + $Message
     Add-Content -Path $BootstrapLog -Value $line -Encoding UTF8
+    Add-Content -Path $LegacyBootstrapLog -Value $line -Encoding UTF8
     Write-Host $Message
 }
 
-function Refresh-CoreScript {
-    New-Item -ItemType Directory -Path $ScriptsDir -Force | Out-Null
-    $downloadPath = $CoreScriptPath + ".download"
-    Remove-Item -LiteralPath $downloadPath -Force -ErrorAction SilentlyContinue
+function Wait-OldProGoExit {
+    if ($WaitPid -le 0) { return }
 
+    try {
+        $process = Get-Process -Id $WaitPid -ErrorAction SilentlyContinue
+        if ($null -ne $process) {
+            Write-BootstrapLog "Waiting for old ProGo process before recovery: PID $WaitPid"
+            [void]$process.WaitForExit(30000)
+        }
+    } catch {
+        Write-BootstrapLog "Recovery wait warning: $($_.Exception.Message)"
+    }
+}
+
+function Restart-InstalledProGo {
+    if ($NoLaunch) { return }
+
+    Wait-OldProGoExit
+
+    $exe = Join-Path $InstallDir "ProGo.exe"
+    if (-not (Test-Path $exe)) {
+        Write-BootstrapLog "Recovery launch skipped; ProGo.exe not found: $exe"
+        return
+    }
+
+    try {
+        $process = Start-Process -FilePath $exe -WorkingDirectory $InstallDir -PassThru
+        Write-BootstrapLog "Recovery launch started ProGo. PID=$($process.Id)"
+    } catch {
+        Write-BootstrapLog "Recovery launch failed: $($_.Exception.Message)"
+    }
+}
+
+function Get-UpdaterCoreText {
     try {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     } catch {
         Write-BootstrapLog "TLS setup warning: $($_.Exception.Message)"
     }
 
-    Write-BootstrapLog "Downloading updater core from GitHub."
-    Invoke-WebRequest -Uri $CoreScriptUrl -OutFile $downloadPath -UseBasicParsing -ErrorAction Stop
+    try {
+        Write-BootstrapLog "Downloading updater core from GitHub into memory."
+        $response = Invoke-WebRequest -Uri $CoreScriptUrl -UseBasicParsing -ErrorAction Stop
+        $text = [string]$response.Content
 
-    if (-not (Test-Path $downloadPath)) {
-        throw "Updater core download did not create a file."
+        if ([string]::IsNullOrWhiteSpace($text) -or $text.Length -lt 1024) {
+            throw "Downloaded updater core is empty or unexpectedly small."
+        }
+
+        Write-BootstrapLog "Updater core downloaded into memory."
+        return $text
+    } catch {
+        Write-BootstrapLog "In-memory updater core download failed: $($_.Exception.Message)"
+
+        if (Test-Path $LocalCoreScriptPath) {
+            Write-BootstrapLog "Falling back to installed updater core."
+            return [System.IO.File]::ReadAllText($LocalCoreScriptPath)
+        }
+
+        throw
     }
-
-    if ((Get-Item $downloadPath).Length -lt 1024) {
-        throw "Updater core download is unexpectedly small."
-    }
-
-    Move-Item -LiteralPath $downloadPath -Destination $CoreScriptPath -Force
-    try { Unblock-File -LiteralPath $CoreScriptPath -ErrorAction SilentlyContinue } catch {}
-    Write-BootstrapLog "Updater core refreshed."
 }
 
 try {
     Write-BootstrapLog "Updater bootstrap started."
 
-    try {
-        Refresh-CoreScript
-    } catch {
-        Write-BootstrapLog "Updater core refresh failed: $($_.Exception.Message)"
-        if (-not (Test-Path $CoreScriptPath)) {
-            throw
-        }
-        Write-BootstrapLog "Using existing updater core."
-    }
+    $coreText = Get-UpdaterCoreText
+    $coreBlock = [ScriptBlock]::Create($coreText)
 
     $coreArgs = @{
         WaitPid = $WaitPid
@@ -75,9 +106,11 @@ try {
     if ($Force) { $coreArgs.Force = $true }
     if ($NoReleasePackage) { $coreArgs.NoReleasePackage = $true }
 
-    Write-BootstrapLog "Starting transactional updater core."
-    & $CoreScriptPath @coreArgs
+    Write-BootstrapLog "Starting transactional updater core in memory."
+    & $coreBlock @coreArgs
 } catch {
-    Write-BootstrapLog "Updater bootstrap failed: $($_.Exception.Message)"
+    $message = $_.Exception.Message
+    Write-BootstrapLog "Updater bootstrap failed: $message"
+    Restart-InstalledProGo
     throw
 }
