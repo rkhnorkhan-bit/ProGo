@@ -104,3 +104,16 @@ Scope:
 - Keep the current application open when the updater child exits before handoff.
 - Log recovery, early-exit, and handoff events.
 - Preserve transactional backup, validation, rollback, vault format, encryption, KDF, PIN behavior, and stored secrets.
+
+
+## 0.1.18 — Antivirus-safe updater transport
+
+Status: done.
+
+Scope:
+
+- Avoid direct PowerShell access to raw GitHub script/version URLs.
+- Fetch updater core through GitHub Contents API as JSON/base64 and decode it in memory.
+- Use the GitHub source archive as fallback transport.
+- Fetch remote VERSION through GitHub Contents API.
+- Preserve automatic recovery and the transactional update pipeline.
