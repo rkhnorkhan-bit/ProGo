@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.18 - Antivirus-safe updater transport
+
+- Replaced direct PowerShell downloads from `raw.githubusercontent.com` for updater core/version with GitHub API content endpoints.
+- Updater core is received as GitHub JSON/base64 and decoded in memory.
+- Added source archive transport as a fallback if GitHub API access fails.
+- Kept automatic ProGo recovery if all updater transports fail.
+- Kept transactional backup, staging, self-check, rollback, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.17 - Updater failure recovery
 
 - Run the downloaded transactional updater core in memory instead of launching a second downloaded PowerShell script from disk.
