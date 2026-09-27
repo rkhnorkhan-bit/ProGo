@@ -155,3 +155,17 @@ Scope:
 - Log actual local/remote versions.
 - Persist actual target version and update mode in backup manifests.
 - Keep transaction behavior unchanged.
+
+
+## 0.1.22 — Published release pipeline and update UX
+
+Status: done.
+
+Scope:
+
+- Publish `ProGo-release.zip` as a real GitHub Release asset for every version change on `main`.
+- Tag releases as `vX.Y.Z`.
+- Use the latest published GitHub Release as the source of update availability.
+- Show an informational dialog when the installed version is current.
+- Show current/available versions and ask for confirmation when an update exists.
+- Keep source-build fallback for recovery.

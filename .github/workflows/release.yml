@@ -1,0 +1,74 @@
+name: ProGo Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - VERSION
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test and build
+        shell: powershell
+        run: |
+          .\scripts\Test-ProGo.ps1
+
+      - name: Resolve version
+        shell: powershell
+        run: |
+          $version = (Get-Content -Raw .\VERSION).Trim()
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Invalid VERSION: $version"
+          }
+          "PROGO_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "PROGO_TAG=v$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Pack release
+        shell: powershell
+        run: |
+          if (Test-Path .\ProGo-release.zip) {
+            Remove-Item .\ProGo-release.zip -Force
+          }
+          Compress-Archive -Path .\release\* -DestinationPath .\ProGo-release.zip -Force
+          Get-Item .\ProGo-release.zip | Format-List FullName,Length
+
+      - name: Publish GitHub Release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:PROGO_TAG
+          $title = "ProGo $env:PROGO_VERSION"
+
+          gh release view $tag --repo "${{ github.repository }}" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release $tag already exists; replacing package asset."
+            gh release upload $tag .\ProGo-release.zip --clobber --repo "${{ github.repository }}"
+            if ($LASTEXITCODE -ne 0) { throw "Release asset upload failed." }
+          } else {
+            Write-Host "Creating release $tag."
+            gh release create $tag .\ProGo-release.zip --target "${{ github.sha }}" --title $title --generate-notes --repo "${{ github.repository }}"
+            if ($LASTEXITCODE -ne 0) { throw "Release creation failed." }
+          }
+
+      - name: Verify release asset
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $json = gh release view $env:PROGO_TAG --repo "${{ github.repository }}" --json tagName,assets
+          if ($LASTEXITCODE -ne 0) { throw "Cannot read published release." }
+          $release = $json | ConvertFrom-Json
+          if ($release.tagName -ne $env:PROGO_TAG) { throw "Published tag mismatch." }
+          $asset = @($release.assets | Where-Object { $_.name -eq "ProGo-release.zip" })
+          if ($asset.Count -ne 1) { throw "ProGo-release.zip is missing from release." }
+          Write-Host "Release verified: $($release.tagName), asset=$($asset[0].name)"

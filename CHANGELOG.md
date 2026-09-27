@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.22 - Published releases and update UX
+
+- Added an automatic GitHub Release workflow triggered when `VERSION` changes on `main`.
+- Release workflow builds/tests ProGo, creates tag `vX.Y.Z`, publishes a GitHub Release, and uploads `ProGo-release.zip`.
+- Updater version checks now use the latest published GitHub Release instead of `main/VERSION`, preventing update prompts before a ready package exists.
+- Added in-app update availability check before closing ProGo.
+- When no update is available, ProGo shows the installed version and confirms that it is current.
+- When an update is available, ProGo shows current and available versions and asks for explicit confirmation before starting the updater.
+- Kept source-build fallback for recovery if a release asset cannot be downloaded.
+- Kept connection metrics, transaction safety, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.21 - Updater state log formatting
 
 - Fixed PowerShell string interpolation for updater shared-state properties.

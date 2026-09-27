@@ -2,7 +2,7 @@ param(
     [int]$WaitPid = 0,
     [string]$ReleasePackageUrl = "https://github.com/rkhnorkhan-bit/ProGo/releases/latest/download/ProGo-release.zip",
     [string]$SourceZipUrl = "https://github.com/rkhnorkhan-bit/ProGo/archive/refs/heads/main.zip",
-    [string]$RemoteVersionUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main",
+    [string]$RemoteVersionUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/releases/latest",
     [switch]$NoLaunch,
     [switch]$Force,
     [switch]$NoReleasePackage
@@ -204,6 +204,15 @@ function Get-RemoteVersion {
 
     try {
         $payload = $content | ConvertFrom-Json
+
+        if (-not [string]::IsNullOrWhiteSpace([string]$payload.tag_name)) {
+            $version = ([string]$payload.tag_name).Trim()
+            if ($version.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase)) {
+                $version = $version.Substring(1)
+            }
+            return $version
+        }
+
         if ($payload.encoding -eq "base64" -and -not [string]::IsNullOrWhiteSpace([string]$payload.content)) {
             $base64 = ([string]$payload.content) -replace "\\s", ""
             return ([System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($base64))).Trim()
