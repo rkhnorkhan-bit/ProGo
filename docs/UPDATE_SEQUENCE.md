@@ -62,7 +62,7 @@ Scope:
 
 ## 0.1.15 — Installer / startup / recovery polish
 
-Status: in progress.
+Status: done.
 
 Scope:
 
@@ -77,3 +77,17 @@ Out of scope:
 - Installer MSI/MSIX.
 - Code signing.
 - Changing vault format, encryption, KDF, PIN behavior, or stored secrets.
+
+
+## 0.1.16 — Updater launch recovery
+
+Status: done.
+
+Scope:
+
+- Stop using ShellExecute to launch Windows PowerShell from the application.
+- Log the updater child PID and native Win32 launch error codes.
+- Keep `Update-ProGo.ps1` small enough to act as a compatibility bootstrap for already-installed builds.
+- Move transactional update logic into `Update-ProGo.Core.ps1`.
+- Ship, repair, stage, and validate both updater scripts.
+- Preserve transactional backup, validation, rollback, vault format, encryption, KDF, PIN behavior, and stored secrets.
