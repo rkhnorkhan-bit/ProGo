@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.16 - Updater launch recovery
+
+- Changed the in-app updater launcher to start Windows PowerShell directly with `UseShellExecute = false` and `CreateNoWindow = true`.
+- Added Win32 native error-code and updater PID logging around updater process startup.
+- Split updater delivery into a lightweight `Update-ProGo.ps1` bootstrap and `Update-ProGo.Core.ps1` transactional core so older installed builds can refresh a smaller compatibility script before self-update.
+- Installer, repair helper, release package, staging validation, and tests now include the updater core.
+- Kept backup/staging/self-check/rollback behavior and user vault data unchanged.
+
 ## 0.1.15 - Startup and recovery polish
 
 - Added `scripts/Start-ProGo.ps1` for normal launch without manually locating `ProGo.exe`.
