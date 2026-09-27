@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -33,13 +34,30 @@ namespace ProGo
                 var args = "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\" -WaitPid " + currentPid;
                 var psi = new ProcessStartInfo(powershell, args)
                 {
-                    UseShellExecute = true,
-                    WindowStyle = ProcessWindowStyle.Minimized,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
                     WorkingDirectory = AppPaths.Root
                 };
 
-                Process.Start(psi);
+                SafeLog.Info("Launching updater. PowerShell=" + powershell + "; script=" + scriptPath + "; workingDirectory=" + AppPaths.Root + ".");
+                var process = Process.Start(psi);
+                if (process == null)
+                {
+                    throw new InvalidOperationException("Updater process was not created.");
+                }
+
+                SafeLog.Info("Updater process started. PID=" + process.Id + ".");
                 return true;
+            }
+            catch (Win32Exception ex)
+            {
+                SafeLog.Error("Updater launch failed. NativeErrorCode=" + ex.NativeErrorCode + ".", ex);
+                MessageBox.Show(
+                    "Не удалось запустить обновление. Подробности записаны в журнал.",
+                    "Обновление ProGo",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return false;
             }
             catch (Exception ex)
             {
