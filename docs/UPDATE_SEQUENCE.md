@@ -143,3 +143,15 @@ Scope:
 - Run a download throughput test only on user request.
 - Show the latest speed result in Mbit/s.
 - Rename the proxy row to `Прокси окружения`.
+
+
+## 0.1.21 — Updater state log formatting
+
+Status: done.
+
+Scope:
+
+- Correct PowerShell interpolation of shared updater state in logs and manifests.
+- Log actual local/remote versions.
+- Persist actual target version and update mode in backup manifests.
+- Keep transaction behavior unchanged.
