@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.21 - Updater state log formatting
+
+- Fixed PowerShell string interpolation for updater shared-state properties.
+- Version checks now log real local/remote version values instead of Hashtable property names.
+- Backup manifests now persist real `target_version` and `update_mode` values.
+- Version-mismatch diagnostics now include the actual remote version.
+- Added regression tests against direct `$State.Property` interpolation inside updater strings.
+- No changes to transaction semantics, connection metrics, vault format, encryption, KDF, PIN behavior, or stored secrets.
+
 ## 0.1.20 - Connection metrics in status
 
 - Added continuous SOCKS-route latency measurement in the Status window.
