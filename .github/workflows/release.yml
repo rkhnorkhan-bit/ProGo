@@ -65,7 +65,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $json = gh release view $env:PROGO_TAG --repo "${{ github.repository }}" --json tagName,isLatest,assets
+          $json = gh release view $env:PROGO_TAG --repo "${{ github.repository }}" --json tagName,assets
           if ($LASTEXITCODE -ne 0) { throw "Cannot read published release." }
           $release = $json | ConvertFrom-Json
           if ($release.tagName -ne $env:PROGO_TAG) { throw "Published tag mismatch." }
