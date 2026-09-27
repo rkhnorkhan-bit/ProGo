@@ -169,3 +169,14 @@ Scope:
 - Show an informational dialog when the installed version is current.
 - Show current/available versions and ask for confirmation when an update exists.
 - Keep source-build fallback for recovery.
+
+
+## 0.1.23 — Release publishing reliability
+
+Status: done.
+
+Scope:
+
+- Make the release-existence check non-terminating on Windows PowerShell 5.1.
+- Allow first-time release creation to proceed when no prior release exists.
+- Verify the published `ProGo-release.zip` asset after creation.

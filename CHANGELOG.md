@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.23 - Release publishing reliability
+
+- Fixed the GitHub Release workflow so a missing release is detected without Windows PowerShell 5.1 treating `gh release view` stderr as a terminating error.
+- Release publishing now proceeds to create the version tag and upload `ProGo-release.zip` on the first release for a version.
+- Kept update availability UX, release-based version checks, source-build fallback, connection metrics, transaction safety, and vault behavior unchanged.
+
 ## 0.1.22 - Published releases and update UX
 
 - Added an automatic GitHub Release workflow triggered when `VERSION` changes on `main`.
