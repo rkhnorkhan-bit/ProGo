@@ -21,11 +21,13 @@ $SourceDir = Join-Path $TransactionRoot "source"
 $PackageDir = Join-Path $TransactionRoot "package"
 $BackupsDir = Join-Path $InstallDir "backups"
 $LocalVersionFile = Join-Path $InstallDir "VERSION"
-$RemoteVersion = $null
-$LocalVersion = $null
+$State = @{
+    RemoteVersion = $null
+    LocalVersion = $null
+    MainWasChanged = $false
+    UpdateMode = "unknown"
+}
 $BackupDir = $null
-$MainWasChanged = $false
-$UpdateMode = "unknown"
 
 function U8($Base64) {
     return [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Base64))
@@ -219,13 +221,13 @@ function Test-UpdateRequired {
         return $true
     }
 
-    $script:LocalVersion = Get-LocalVersion
-    $script:RemoteVersion = Get-RemoteVersion
-    Write-UpdateLog "Version check: local=$script:LocalVersion remote=$script:RemoteVersion"
+    $State.LocalVersion = Get-LocalVersion
+    $State.RemoteVersion = Get-RemoteVersion
+    Write-UpdateLog "Version check: local=$State.LocalVersion remote=$State.RemoteVersion"
 
-    if ($script:LocalVersion -eq $script:RemoteVersion) {
+    if ($State.LocalVersion -eq $State.RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
-        Show-UserMessage ((U8 "0KMg0LLQsNGBINCw0LrRgtGD0LDQu9GM0L3QsNGPINCy0LXRgNGB0LjRjyBQcm9Hbzog") + $script:LocalVersion) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
+        Show-UserMessage ((U8 "0KMg0LLQsNGBINCw0LrRgtGD0LDQu9GM0L3QsNGPINCy0LXRgNGB0LjRjyBQcm9Hbzog") + $State.LocalVersion) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
         return $false
     }
 
@@ -319,11 +321,11 @@ function Backup-InstalledState {
     New-Item -ItemType Directory -Path $BackupsDir -Force | Out-Null
 
     $from = Get-LocalVersion
-    if ([string]::IsNullOrWhiteSpace($script:RemoteVersion)) {
-        $script:RemoteVersion = "unknown"
+    if ([string]::IsNullOrWhiteSpace($State.RemoteVersion)) {
+        $State.RemoteVersion = "unknown"
     }
 
-    $backupName = "backup-{0}-v{1}-to-v{2}" -f $Timestamp, ($from -replace '[^0-9A-Za-z._-]', '_'), ($script:RemoteVersion -replace '[^0-9A-Za-z._-]', '_')
+    $backupName = "backup-{0}-v{1}-to-v{2}" -f $Timestamp, ($from -replace '[^0-9A-Za-z._-]', '_'), ($State.RemoteVersion -replace '[^0-9A-Za-z._-]', '_')
     $backupDir = Join-Path $BackupsDir $backupName
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
@@ -336,14 +338,14 @@ function Backup-InstalledState {
     $manifest = @(
         "product=ProGo",
         "version=$from",
-        "target_version=$script:RemoteVersion",
+        "target_version=$State.RemoteVersion",
         "created=$([DateTimeOffset]::Now.ToString('o'))",
         "created_by=updater",
         "backup_kind=pre-update",
         "update_result=pending",
         "reason=before-transactional-update",
         "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log",
-        "update_mode=$script:UpdateMode"
+        "update_mode=$State.UpdateMode"
     )
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
@@ -409,8 +411,8 @@ function Test-StagingCopy($TargetDir) {
     }
 
     $stageVersion = ((Get-Content -Raw -Path (Join-Path $TargetDir "VERSION")).Trim())
-    if ($stageVersion -ne $script:RemoteVersion) {
-        Fail "Staging version mismatch: stage=$stageVersion remote=$script:RemoteVersion"
+    if ($stageVersion -ne $State.RemoteVersion) {
+        Fail "Staging version mismatch: stage=$stageVersion remote=$State.RemoteVersion"
     }
 
     $stageExe = Join-Path $TargetDir "ProGo.exe"
@@ -424,7 +426,7 @@ function Test-StagingCopy($TargetDir) {
 
 function Install-StagingToMain($TargetDir) {
     Write-UpdateLog "Installing validated staging copy into main application directory."
-    $script:MainWasChanged = $true
+    $State.MainWasChanged = $true
 
     foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
         Copy-FileIfExists $TargetDir $name $InstallDir $true
@@ -498,8 +500,8 @@ function Try-GetReleasePackage($DestinationRoot) {
         }
 
         $packageVersion = ((Get-Content -Raw -Path (Join-Path $releaseDir "VERSION")).Trim())
-        if ($packageVersion -ne $script:RemoteVersion) {
-            throw "Release package version mismatch: package=$packageVersion remote=$script:RemoteVersion"
+        if ($packageVersion -ne $State.RemoteVersion) {
+            throw "Release package version mismatch: package=$packageVersion remote=$State.RemoteVersion"
         }
 
         Write-UpdateLog "Release package accepted: $releaseDir"
@@ -534,11 +536,11 @@ function Build-DownloadedSource($DownloadedSourceRoot) {
 function Get-ReleaseDirForUpdate {
     $packageRelease = Try-GetReleasePackage -DestinationRoot $PackageDir
     if (-not [string]::IsNullOrWhiteSpace($packageRelease)) {
-        $script:UpdateMode = "release-package"
+        $State.UpdateMode = "release-package"
         return $packageRelease
     }
 
-    $script:UpdateMode = "source-build-fallback"
+    $State.UpdateMode = "source-build-fallback"
     Write-UpdateLog "update_mode=source-build-fallback"
 
     $ZipPath = Join-Path $TransactionRoot "ProGo-main.zip"
@@ -637,8 +639,8 @@ try {
     Install-StagingToMain -TargetDir $StageDir
 
     $installedVersion = ((Get-Content -Raw -Path (Join-Path $InstallDir "VERSION")).Trim())
-    if ($installedVersion -ne $RemoteVersion) {
-        Fail "Installed version mismatch after commit: installed=$installedVersion remote=$RemoteVersion"
+    if ($installedVersion -ne $State.RemoteVersion) {
+        Fail "Installed version mismatch after commit: installed=$installedVersion remote=$State.RemoteVersion"
     }
 
     $mainCheck = Start-Process -FilePath (Join-Path $InstallDir "ProGo.exe") -ArgumentList "--self-check" -WorkingDirectory $InstallDir -PassThru -Wait
@@ -656,7 +658,7 @@ try {
     Write-UpdateLog "TRANSACTION FAILED: $message"
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "failed"
 
-    if ($MainWasChanged) {
+    if ($State.MainWasChanged) {
         Restore-BackupToMain -SourceBackupDir $BackupDir
         Write-UpdateLog "Rollback completed after failed main commit."
     } else {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.19 - Updater transaction state scope fix
+
+- Replaced updater `$script:` mutable variables with one shared state object so in-memory ScriptBlock execution keeps a single transaction state.
+- Fixed remote version persistence after the version check.
+- Fixed `MainWasChanged` tracking so rollback decisions reflect whether the main install was actually modified.
+- Added CI guards against reintroducing script-scoped updater state.
+- Kept GitHub API transport, recovery, backup, staging, self-check, rollback, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.18 - Antivirus-safe updater transport
 
 - Replaced direct PowerShell downloads from `raw.githubusercontent.com` for updater core/version with GitHub API content endpoints.
