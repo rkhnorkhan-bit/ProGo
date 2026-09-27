@@ -119,8 +119,15 @@ namespace ProGo
         private readonly Label address;
         private readonly Label pid;
         private readonly Label env;
+        private readonly Label ping;
+        private readonly Label speed;
         private readonly Label route;
         private readonly Label checkedAt;
+        private readonly Button speedButton;
+        private readonly Timer pingTimer;
+        private int pingInFlight;
+        private int speedInFlight;
+        private bool closing;
 
         public StatusForm(SettingsService settingsService, ProxyService proxyService)
         {
@@ -129,40 +136,67 @@ namespace ProGo
             Text = "Состояние";
             AutoScaleMode = AutoScaleMode.Font;
             StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(520, 300);
+            MinimumSize = new Size(620, 380);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 8 };
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 10 };
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(table);
 
             state = AddRow(table, 0, "SOCKS-туннель");
             address = AddRow(table, 1, "Адрес");
             pid = AddRow(table, 2, "SSH-процесс");
-            env = AddRow(table, 3, "Системный прокси");
-            route = AddRow(table, 4, "Маршрут");
-            checkedAt = AddRow(table, 5, "Последняя проверка");
+            env = AddRow(table, 3, "Прокси окружения");
+            ping = AddRow(table, 4, "Ping через SOCKS");
+            speed = AddRow(table, 5, "Скорость");
+            route = AddRow(table, 6, "Маршрут");
+            checkedAt = AddRow(table, 7, "Последняя проверка");
 
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var close = new Button { Text = "Закрыть", Width = 110, DialogResult = DialogResult.Cancel };
-            var restart = new Button { Text = "Перезапустить SOCKS", Width = 160 };
-            var check = new Button { Text = "Проверить снова", Width = 140 };
-            restart.Click += delegate { proxy.RestartTunnel(); RefreshState(false); };
-            check.Click += delegate { RefreshState(true); };
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
+            var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
+            var restart = new Button { Text = "Перезапустить SOCKS", Width = 150 };
+            speedButton = new Button { Text = "Измерить скорость", Width = 150 };
+            var check = new Button { Text = "Проверить снова", Width = 130 };
+            restart.Click += delegate
+            {
+                proxy.RestartTunnel();
+                RefreshState(false);
+                QueuePingMeasure();
+            };
+            speedButton.Click += delegate { StartSpeedTest(); };
+            check.Click += delegate
+            {
+                RefreshState(true);
+                QueuePingMeasure();
+            };
             buttons.Controls.Add(close);
             buttons.Controls.Add(restart);
+            buttons.Controls.Add(speedButton);
             buttons.Controls.Add(check);
-            table.Controls.Add(buttons, 0, 7);
+            table.Controls.Add(buttons, 0, 9);
             table.SetColumnSpan(buttons, 2);
             CancelButton = close;
+
+            pingTimer = new Timer { Interval = 2000 };
+            pingTimer.Tick += delegate { QueuePingMeasure(); };
+            FormClosed += delegate
+            {
+                closing = true;
+                pingTimer.Stop();
+            };
+
             RefreshState(false);
+            ping.Text = "Измерение...";
+            speed.Text = "—";
+            QueuePingMeasure();
+            pingTimer.Start();
         }
 
         private static Label AddRow(TableLayoutPanel table, int row, string name)
         {
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
             table.Controls.Add(new Label { Text = name, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-            var value = new Label { Text = "—", AutoSize = true, Anchor = AnchorStyles.Left };
+            var value = new Label { Text = "—", AutoSize = true, Anchor = AnchorStyles.Left, MaximumSize = new Size(400, 0) };
             table.Controls.Add(value, 1, row);
             return value;
         }
@@ -175,6 +209,103 @@ namespace ProGo
             env.Text = Environment.GetEnvironmentVariable("ALL_PROXY", EnvironmentVariableTarget.User) ?? "Не настроен";
             if (testRoute) route.Text = RouteTester.Test(settings.Current, proxy);
             checkedAt.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+        private void QueuePingMeasure()
+        {
+            if (closing) return;
+            if (System.Threading.Interlocked.Exchange(ref pingInFlight, 1) != 0) return;
+
+            var current = settings.Current;
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                int? latency = null;
+                try
+                {
+                    latency = ConnectionMetrics.MeasureSocksLatencyMs(current, 4000);
+                }
+                finally
+                {
+                    System.Threading.Interlocked.Exchange(ref pingInFlight, 0);
+                }
+
+                try
+                {
+                    if (closing || IsDisposed || !IsHandleCreated) return;
+                    BeginInvoke((Action)delegate
+                    {
+                        if (closing || IsDisposed) return;
+                        ping.Text = latency.HasValue ? latency.Value + " ms" : "—";
+                    });
+                }
+                catch
+                {
+                    // Form may be closing while the background measurement completes.
+                }
+            });
+        }
+
+        private void StartSpeedTest()
+        {
+            if (closing) return;
+            if (System.Threading.Interlocked.Exchange(ref speedInFlight, 1) != 0) return;
+
+            speedButton.Enabled = false;
+            speed.Text = "Измерение...";
+
+            var current = settings.Current;
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                string error;
+                var mbps = ConnectionMetrics.MeasureDownloadMbps(current, out error);
+
+                try
+                {
+                    if (closing || IsDisposed || !IsHandleCreated) return;
+                    BeginInvoke((Action)delegate
+                    {
+                        if (closing || IsDisposed) return;
+
+                        if (mbps.HasValue)
+                        {
+                            speed.Text = mbps.Value.ToString("0.0") + " Мбит/с ↓";
+                            SafeLog.Info("Speed test completed. Mbps=" + mbps.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + ".");
+                        }
+                        else
+                        {
+                            speed.Text = "Не удалось измерить";
+                            if (!String.IsNullOrWhiteSpace(error))
+                            {
+                                SafeLog.Error("Speed test failed: " + error + ".", new InvalidOperationException(error));
+                            }
+                        }
+
+                        speedButton.Enabled = true;
+                    });
+                }
+                catch
+                {
+                    // Form may be closing while the speed test completes.
+                }
+                finally
+                {
+                    System.Threading.Interlocked.Exchange(ref speedInFlight, 0);
+                }
+            });
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                closing = true;
+                if (pingTimer != null)
+                {
+                    pingTimer.Stop();
+                    pingTimer.Dispose();
+                }
+            }
+            base.Dispose(disposing);
         }
     }
 
