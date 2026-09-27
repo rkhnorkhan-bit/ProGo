@@ -84,9 +84,10 @@ foreach ($requiredSource in @(
     "UpdateAvailability",
     "CheckForUpdate",
     "releases/latest",
-    "У вас установлена актуальная версия ProGo",
-    "Доступна новая версия ProGo",
-    "Установить обновление сейчас?"
+    "MessageBoxIcon.Information",
+    "MessageBoxButtons.YesNo",
+    "check.RemoteVersion",
+    "check.LocalVersion"
 )) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"
