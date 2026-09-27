@@ -117,3 +117,15 @@ Scope:
 - Use the GitHub source archive as fallback transport.
 - Fetch remote VERSION through GitHub Contents API.
 - Preserve automatic recovery and the transactional update pipeline.
+
+
+## 0.1.19 — Updater transaction state scope fix
+
+Status: done.
+
+Scope:
+
+- Remove `$script:` mutable updater state that breaks under in-memory ScriptBlock execution.
+- Keep remote/local version, update mode, and main-change state in one shared object.
+- Ensure post-install version verification uses the same remote version value produced by the version check.
+- Ensure rollback eligibility reflects whether the main application directory was modified.
