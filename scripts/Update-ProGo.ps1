@@ -2,7 +2,7 @@ param(
     [int]$WaitPid = 0,
     [string]$ReleasePackageUrl = "https://github.com/rkhnorkhan-bit/ProGo/releases/latest/download/ProGo-release.zip",
     [string]$SourceZipUrl = "https://github.com/rkhnorkhan-bit/ProGo/archive/refs/heads/main.zip",
-    [string]$RemoteVersionUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main",
+    [string]$RemoteVersionUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/releases/latest",
     [string]$CoreApiUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/contents/scripts/Update-ProGo.Core.ps1?ref=main",
     [switch]$NoLaunch,
     [switch]$Force,
