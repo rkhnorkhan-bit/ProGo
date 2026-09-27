@@ -141,6 +141,12 @@ foreach ($required in @(
     }
 }
 if ($updateScriptText -match "Stop-Process\s+-Id") { Fail "updater still force-kills ProGo process" }
+if ($updateScriptText -match '\$script:') { Fail "updater core must not use script-scoped mutable state under in-memory execution" }
+foreach ($requiredStateMarker in @("$State.RemoteVersion", "$State.MainWasChanged", "$State.UpdateMode", "installed=$installedVersion remote=$State.RemoteVersion")) {
+    if ($updateScriptText -notmatch [regex]::Escape($requiredStateMarker)) {
+        Fail "updater shared-state marker missing: $requiredStateMarker"
+    }
+}
 if ($updateScriptText -notmatch [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater remote version API URL missing" }
 if ($updateScriptText -notmatch "ConvertFrom-Json") { Fail "updater remote version API decoding missing" }
 if ($updateScriptText -match [regex]::Escape("raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/VERSION")) { Fail "updater core still depends on raw GitHub VERSION URL" }
