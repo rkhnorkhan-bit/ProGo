@@ -107,7 +107,7 @@ foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Rest
 }
 
 $updateBootstrapText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
-foreach ($required in @("CoreScriptUrl", "Update-ProGo.Core.ps1", "Get-UpdaterCoreText", "[ScriptBlock]::Create", "Starting transactional updater core in memory.", "Restart-InstalledProGo", "Recovery launch started ProGo")) {
+foreach ($required in @("CoreApiUrl", "api.github.com/repos/rkhnorkhan-bit/ProGo/contents/scripts/Update-ProGo.Core.ps1", "Update-ProGo.Core.ps1", "Get-UpdaterCoreText", "Get-CoreFromGitHubApi", "Get-CoreFromSourceArchive", "ConvertFrom-Json", "[ScriptBlock]::Create", "Starting transactional updater core in memory.", "Restart-InstalledProGo", "Recovery launch started ProGo")) {
     if ($updateBootstrapText -notmatch [regex]::Escape($required)) {
         Fail "updater bootstrap marker missing: $required"
     }
@@ -141,6 +141,9 @@ foreach ($required in @(
     }
 }
 if ($updateScriptText -match "Stop-Process\s+-Id") { Fail "updater still force-kills ProGo process" }
+if ($updateScriptText -notmatch [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater remote version API URL missing" }
+if ($updateScriptText -notmatch "ConvertFrom-Json") { Fail "updater remote version API decoding missing" }
+if ($updateScriptText -match [regex]::Escape("raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/VERSION")) { Fail "updater core still depends on raw GitHub VERSION URL" }
 
 $restoreScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
 foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
