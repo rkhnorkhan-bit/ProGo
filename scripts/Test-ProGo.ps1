@@ -142,7 +142,7 @@ foreach ($required in @(
 }
 if ($updateScriptText -match "Stop-Process\s+-Id") { Fail "updater still force-kills ProGo process" }
 if ($updateScriptText -match '\$script:') { Fail "updater core must not use script-scoped mutable state under in-memory execution" }
-foreach ($requiredStateMarker in @("$State.RemoteVersion", "$State.MainWasChanged", "$State.UpdateMode", "installed=$installedVersion remote=$State.RemoteVersion")) {
+foreach ($requiredStateMarker in @('$State.RemoteVersion', '$State.MainWasChanged', '$State.UpdateMode', 'installed=$installedVersion remote=$State.RemoteVersion')) {
     if ($updateScriptText -notmatch [regex]::Escape($requiredStateMarker)) {
         Fail "updater shared-state marker missing: $requiredStateMarker"
     }
