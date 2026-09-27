@@ -90,6 +90,9 @@ if ($updateLauncherSource -notmatch "CreateNoWindow\s*=\s*true") { Fail "updater
 if ($updateLauncherSource -match "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") { Fail "updater launcher must not depend on ShellExecute window style" }
 if ($updateLauncherSource -notmatch "NativeErrorCode") { Fail "updater launcher must log Win32 native error code" }
 if ($updateLauncherSource -notmatch "Updater process started\. PID=") { Fail "updater launcher success PID logging missing" }
+if ($updateLauncherSource -notmatch "WaitForExit\(1200\)") { Fail "updater launcher handoff wait missing" }
+if ($updateLauncherSource -notmatch "Updater process exited before handoff") { Fail "updater launcher early-exit guard missing" }
+if ($updateLauncherSource -notmatch "Updater handoff confirmed\. PID=") { Fail "updater launcher handoff logging missing" }
 
 $buildScriptText = Get-Content -Raw -Path $Build
 foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
@@ -104,7 +107,7 @@ foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Rest
 }
 
 $updateBootstrapText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
-foreach ($required in @("CoreScriptUrl", "Update-ProGo.Core.ps1", "Refresh-CoreScript", "Starting transactional updater core.")) {
+foreach ($required in @("CoreScriptUrl", "Update-ProGo.Core.ps1", "Get-UpdaterCoreText", "[ScriptBlock]::Create", "Starting transactional updater core in memory.", "Restart-InstalledProGo", "Recovery launch started ProGo")) {
     if ($updateBootstrapText -notmatch [regex]::Escape($required)) {
         Fail "updater bootstrap marker missing: $required"
     }

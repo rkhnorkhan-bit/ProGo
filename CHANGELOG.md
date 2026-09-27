@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.17 - Updater failure recovery
+
+- Run the downloaded transactional updater core in memory instead of launching a second downloaded PowerShell script from disk.
+- On bootstrap failure, wait for the old ProGo process to exit and relaunch the installed ProGo executable automatically.
+- The application now verifies updater handoff for 1.2 seconds and stays open if the updater process exits immediately.
+- Added recovery/handoff coverage to Windows CI.
+- Kept transactional backup, staging, self-check, rollback, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.16 - Updater launch recovery
 
 - Changed the in-app updater launcher to start Windows PowerShell directly with `UseShellExecute = false` and `CreateNoWindow = true`.
