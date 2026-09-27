@@ -80,7 +80,13 @@ foreach ($requiredSource in @(
     "Ping через SOCKS",
     "Измерить скорость",
     "Прокси окружения",
-    "Interval = 2000"
+    "Interval = 2000",
+    "UpdateAvailability",
+    "CheckForUpdate",
+    "releases/latest",
+    "У вас установлена актуальная версия ProGo",
+    "Доступна новая версия ProGo",
+    "Установить обновление сейчас?"
 )) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"
@@ -173,9 +179,11 @@ foreach ($badInterpolation in @(
         Fail "updater state property is interpolated incorrectly: $badInterpolation"
     }
 }
-if ($updateScriptText -notmatch [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater remote version API URL missing" }
-if ($updateScriptText -notmatch "ConvertFrom-Json") { Fail "updater remote version API decoding missing" }
+if ($updateScriptText -notmatch [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/releases/latest")) { Fail "updater latest release API URL missing" }
+if ($updateScriptText -notmatch "ConvertFrom-Json") { Fail "updater latest release API decoding missing" }
+if ($updateScriptText -notmatch "tag_name") { Fail "updater latest release tag parsing missing" }
 if ($updateScriptText -match [regex]::Escape("raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/VERSION")) { Fail "updater core still depends on raw GitHub VERSION URL" }
+if ($updateScriptText -match [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater core still uses main VERSION instead of published release" }
 
 $restoreScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
 foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
@@ -197,6 +205,21 @@ foreach ($required in @("ProGo.exe", "--show", "Start-Process")) {
 $workflowText = Get-Content -Raw -Path (Join-Path $Root ".github\workflows\ci.yml")
 foreach ($required in @("Pack release zip", "Compress-Archive", "ProGo-release.zip", "ProGo-release-zip")) {
     if ($workflowText -notmatch [regex]::Escape($required)) { Fail "CI release package marker missing: $required" }
+}
+
+$releaseWorkflowPath = Join-Path $Root ".github\workflows\release.yml"
+if (-not (Test-Path $releaseWorkflowPath)) { Fail "release workflow missing" }
+$releaseWorkflowText = Get-Content -Raw -Path $releaseWorkflowPath
+foreach ($required in @(
+    "permissions:",
+    "contents: write",
+    "VERSION",
+    "gh release create",
+    "gh release upload",
+    "ProGo-release.zip",
+    "Verify release asset"
+)) {
+    if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
 foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
