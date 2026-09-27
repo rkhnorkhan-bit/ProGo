@@ -3,14 +3,116 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace ProGo
 {
+    internal enum UpdateAvailability
+    {
+        Error,
+        UpToDate,
+        Available
+    }
+
+    internal sealed class UpdateCheckResult
+    {
+        public UpdateAvailability Availability { get; set; }
+        public string LocalVersion { get; set; }
+        public string RemoteVersion { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+
     internal static class UpdateLauncher
     {
         private const string UpdateScriptName = "Update-ProGo.ps1";
         private const string RawUpdateScriptUrl = "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo.ps1";
+        private const string LatestReleaseApiUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/releases/latest";
+
+        private sealed class GitHubReleaseInfo
+        {
+            public string tag_name { get; set; }
+            public bool draft { get; set; }
+            public bool prerelease { get; set; }
+        }
+
+        public static UpdateCheckResult CheckForUpdate()
+        {
+            var localVersion = ReadInstalledVersion();
+
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                string json;
+                using (var client = new WebClient())
+                {
+                    client.Headers.Add("User-Agent", "ProGo-Updater");
+                    client.Headers.Add("Accept", "application/vnd.github+json");
+                    json = client.DownloadString(LatestReleaseApiUrl);
+                }
+
+                var serializer = new JavaScriptSerializer();
+                var release = serializer.Deserialize<GitHubReleaseInfo>(json);
+                var remoteVersion = NormalizeVersion(release == null ? null : release.tag_name);
+
+                Version local;
+                Version remote;
+                if (!Version.TryParse(localVersion, out local))
+                {
+                    return ErrorResult(localVersion, remoteVersion, "Не удалось определить установленную версию ProGo.");
+                }
+                if (!Version.TryParse(remoteVersion, out remote))
+                {
+                    return ErrorResult(localVersion, remoteVersion, "GitHub вернул некорректную версию релиза.");
+                }
+
+                var availability = remote > local ? UpdateAvailability.Available : UpdateAvailability.UpToDate;
+                SafeLog.Info("Update check completed. local=" + localVersion + "; remote=" + remoteVersion + "; result=" + availability + ".");
+                return new UpdateCheckResult
+                {
+                    Availability = availability,
+                    LocalVersion = localVersion,
+                    RemoteVersion = remoteVersion
+                };
+            }
+            catch (Exception ex)
+            {
+                SafeLog.Error("Update check failed.", ex);
+                return ErrorResult(localVersion, null, "Не удалось проверить обновления на GitHub.");
+            }
+        }
+
+        private static UpdateCheckResult ErrorResult(string localVersion, string remoteVersion, string message)
+        {
+            return new UpdateCheckResult
+            {
+                Availability = UpdateAvailability.Error,
+                LocalVersion = localVersion,
+                RemoteVersion = remoteVersion,
+                ErrorMessage = message
+            };
+        }
+
+        private static string ReadInstalledVersion()
+        {
+            try
+            {
+                var path = Path.Combine(AppPaths.Root, "VERSION");
+                if (!File.Exists(path)) return "0.0.0";
+                return NormalizeVersion(File.ReadAllText(path));
+            }
+            catch
+            {
+                return "0.0.0";
+            }
+        }
+
+        private static string NormalizeVersion(string value)
+        {
+            value = (value ?? String.Empty).Trim();
+            if (value.StartsWith("v", StringComparison.OrdinalIgnoreCase)) value = value.Substring(1);
+            return value;
+        }
 
         public static bool StartUpdater()
         {
