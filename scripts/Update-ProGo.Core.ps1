@@ -2,7 +2,7 @@ param(
     [int]$WaitPid = 0,
     [string]$ReleasePackageUrl = "https://github.com/rkhnorkhan-bit/ProGo/releases/latest/download/ProGo-release.zip",
     [string]$SourceZipUrl = "https://github.com/rkhnorkhan-bit/ProGo/archive/refs/heads/main.zip",
-    [string]$RemoteVersionUrl = "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/VERSION",
+    [string]$RemoteVersionUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main",
     [switch]$NoLaunch,
     [switch]$Force,
     [switch]$NoReleasePackage
@@ -196,7 +196,21 @@ function Get-RemoteVersion {
         Write-UpdateLog "TLS setup warning: $($_.Exception.Message)"
     }
 
-    return ((Invoke-WebRequest -Uri $RemoteVersionUrl -UseBasicParsing).Content.Trim())
+    $headers = @{ "User-Agent" = "ProGo-Updater" }
+    $response = Invoke-WebRequest -Uri $RemoteVersionUrl -Headers $headers -UseBasicParsing -ErrorAction Stop
+    $content = [string]$response.Content
+
+    try {
+        $payload = $content | ConvertFrom-Json
+        if ($payload.encoding -eq "base64" -and -not [string]::IsNullOrWhiteSpace([string]$payload.content)) {
+            $base64 = ([string]$payload.content) -replace "\\s", ""
+            return ([System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($base64))).Trim()
+        }
+    } catch {
+        # Non-JSON endpoints are still supported for compatibility.
+    }
+
+    return $content.Trim()
 }
 
 function Test-UpdateRequired {
