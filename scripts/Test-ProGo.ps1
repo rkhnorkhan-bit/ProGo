@@ -80,14 +80,16 @@ foreach ($requiredSource in @(
 }
 
 if ($Source -notmatch "BrandIcon\.Create") { Fail "brand icon factory is not used by tray context" }
-if ($Source -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") { Fail "updater bootstrap fallback URL missing" }
-if ($Source -notmatch "TryDownloadUpdateScript") { Fail "updater download fallback missing" }
-if ($Source -notmatch "Always try to refresh the updater first") { Fail "updater script is not refreshed before local fallback" }
-if ($Source -notmatch "UseShellExecute\s*=\s*false") { Fail "updater launcher must bypass ShellExecute" }
-if ($Source -notmatch "CreateNoWindow\s*=\s*true") { Fail "updater launcher must run without a console window" }
-if ($Source -match "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") { Fail "updater launcher must not depend on ShellExecute window style" }
-if ($Source -notmatch "NativeErrorCode") { Fail "updater launcher must log Win32 native error code" }
-if ($Source -notmatch "Updater process started\. PID=") { Fail "updater launcher success PID logging missing" }
+
+$updateLauncherSource = Get-Content -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
+if ($updateLauncherSource -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") { Fail "updater bootstrap fallback URL missing" }
+if ($updateLauncherSource -notmatch "TryDownloadUpdateScript") { Fail "updater download fallback missing" }
+if ($updateLauncherSource -notmatch "Always try to refresh the updater first") { Fail "updater script is not refreshed before local fallback" }
+if ($updateLauncherSource -notmatch "UseShellExecute\s*=\s*false") { Fail "updater launcher must bypass ShellExecute" }
+if ($updateLauncherSource -notmatch "CreateNoWindow\s*=\s*true") { Fail "updater launcher must run without a console window" }
+if ($updateLauncherSource -match "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") { Fail "updater launcher must not depend on ShellExecute window style" }
+if ($updateLauncherSource -notmatch "NativeErrorCode") { Fail "updater launcher must log Win32 native error code" }
+if ($updateLauncherSource -notmatch "Updater process started\. PID=") { Fail "updater launcher success PID logging missing" }
 
 $buildScriptText = Get-Content -Raw -Path $Build
 foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
