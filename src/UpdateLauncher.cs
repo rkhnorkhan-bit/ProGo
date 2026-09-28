@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
@@ -153,12 +154,22 @@ namespace ProGo
                 if (process.WaitForExit(1200))
                 {
                     var exitCode = process.ExitCode;
-                    SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ".", new InvalidOperationException("Updater process exited before handoff."));
+                    var recentLogs = ReadRecentUpdaterLogs();
+                    var likelyAntivirusBlock = LooksLikeAntivirusBlock(recentLogs);
+                    if (likelyAntivirusBlock)
+                    {
+                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ". Possible antivirus or endpoint protection block.", new InvalidOperationException("Updater process exited before handoff."));
+                    }
+                    else
+                    {
+                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ".", new InvalidOperationException("Updater process exited before handoff."));
+                    }
+
                     MessageBox.Show(
-                        "Обновление не стартовало. ProGo останется запущенным. Подробности записаны в журнал.",
+                        BuildEarlyExitMessage(exitCode, likelyAntivirusBlock),
                         "Обновление ProGo",
                         MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
+                        likelyAntivirusBlock ? MessageBoxIcon.Warning : MessageBoxIcon.Error);
                     return false;
                 }
 
@@ -184,6 +195,65 @@ namespace ProGo
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return false;
+            }
+        }
+
+        private static string BuildEarlyExitMessage(int exitCode, bool likelyAntivirusBlock)
+        {
+            if (likelyAntivirusBlock)
+            {
+                return
+                    "Обновление не стартовало: updater завершился слишком рано.\n\n" +
+                    "Похоже, антивирус или endpoint protection заблокировал загрузку/запуск обновления.\n\n" +
+                    "Что сделать:\n" +
+                    "1. Разрешить ProGo.exe в антивирусе.\n" +
+                    "2. Разрешить scripts\\Update-ProGo.ps1 и scripts\\Update-ProGo.Core.ps1.\n" +
+                    "3. Разрешить загрузки с github.com и api.github.com.\n" +
+                    "4. Повторить обновление.\n\n" +
+                    "ExitCode: " + exitCode + "\n" +
+                    "Подробности записаны в update.log и progo.log.";
+            }
+
+            return
+                "Обновление не стартовало. ProGo останется запущенным.\n\n" +
+                "Updater завершился до handoff. ExitCode: " + exitCode + "\n\n" +
+                "Подробности записаны в update.log и progo.log.";
+        }
+
+        private static bool LooksLikeAntivirusBlock(string text)
+        {
+            if (String.IsNullOrWhiteSpace(text)) return false;
+            var lower = text.ToLowerInvariant();
+            return lower.IndexOf("antivirus", StringComparison.Ordinal) >= 0 ||
+                   lower.IndexOf("forbidden by antivirus", StringComparison.Ordinal) >= 0 ||
+                   lower.IndexOf("request has been forbidden", StringComparison.Ordinal) >= 0 ||
+                   lower.IndexOf(" 499", StringComparison.Ordinal) >= 0 ||
+                   lower.IndexOf("(499)", StringComparison.Ordinal) >= 0 ||
+                   lower.IndexOf("access is denied", StringComparison.Ordinal) >= 0 ||
+                   lower.IndexOf("access denied", StringComparison.Ordinal) >= 0 ||
+                   lower.IndexOf("отказано в доступе", StringComparison.Ordinal) >= 0;
+        }
+
+        private static string ReadRecentUpdaterLogs()
+        {
+            var builder = new StringBuilder();
+            AppendRecentFileText(builder, Path.Combine(AppPaths.Root, "update.log"));
+            AppendRecentFileText(builder, Path.Combine(AppPaths.Root, "progo-update.log"));
+            return builder.ToString();
+        }
+
+        private static void AppendRecentFileText(StringBuilder builder, string path)
+        {
+            try
+            {
+                if (String.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
+                var text = File.ReadAllText(path);
+                if (text.Length > 12000) text = text.Substring(text.Length - 12000);
+                builder.AppendLine(text);
+            }
+            catch
+            {
+                // Failure diagnostics must never break updater launch handling.
             }
         }
 
