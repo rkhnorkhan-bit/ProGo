@@ -72,7 +72,7 @@ namespace ProGo
             panel.Controls.Add(autoSwitchProfile, 1, 5);
             autoStart.Text = "Запускать SOCKS вместе с ProGo";
             panel.Controls.Add(autoStart, 1, 6);
-            autoProxy.Text = "Автоматически применять настройки прокси";
+            autoProxy.Text = "Автоматически запускать HTTP proxy и применять env";
             panel.Controls.Add(autoProxy, 1, 7);
 
             var help = new Label

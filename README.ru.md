@@ -4,7 +4,7 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 
 ## Статус
 
-Версия: `0.1.0` bootstrap MVP.
+Версия: `0.1.27`.
 
 Проект намеренно маленький: без облачного backend, без телеметрии, без хранения секретов на сервере.
 
@@ -19,7 +19,7 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 
 - Запуск, остановка и перезапуск SSH SOCKS-туннеля из tray.
 - Настраиваемые SOCKS host, port и SSH profile.
-- User-level proxy environment variables: `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY` и lowercase aliases.
+- User-level `ALL_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY` через loopback HTTP CONNECT bridge `http://127.0.0.1:1881`.
 - Current-user системный прокси Windows для browser/login-сценариев.
 - CLI/Codex HTTP CONNECT proxy bridge для инструментов, которым нужен обычный `http://` proxy вместо SOCKS.
 - Проверка маршрута через `curl.exe --socks5-hostname`.
@@ -125,7 +125,7 @@ HTTP_PROXY=http://127.0.0.1:1881
 NO_PROXY=localhost,127.0.0.1,::1
 ```
 
-Уже открытые терминалы не получают новые user-level environment variables автоматически. Для текущей работы используйте `Открыть PowerShell с CLI proxy`, затем запускайте `codex login` в новом окне.
+Уже открытые терминалы не получают новые user-level environment variables автоматически. Для текущей работы используйте `Открыть PowerShell с CLI proxy`, затем запускайте `codex login` в новом окне. Если user-level env уже указывает на `127.0.0.1:1881`, ProGo восстанавливает listener при следующем запуске; явная остановка CLI proxy или выход из ProGo очищает ProGo-owned env, чтобы новые процессы не наследовали мёртвый loopback-порт.
 
 ## Установка напрямую из GitHub
 

@@ -4,7 +4,7 @@ ProGo is a small Windows tray application for fast SSH SOCKS proxy control and a
 
 ## Status
 
-Version: `0.1.0` bootstrap MVP.
+Version: `0.1.27`.
 
 This project is intentionally small: no cloud backend, no telemetry, no hosted secrets storage.
 
@@ -19,7 +19,7 @@ This project is intentionally small: no cloud backend, no telemetry, no hosted s
 
 - Start, stop, and restart an SSH SOCKS tunnel from tray.
 - Configurable SOCKS host, port, and SSH profile.
-- User-level proxy environment variables: `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY` and lowercase aliases.
+- User-level `ALL_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY` variables routed through the loopback HTTP CONNECT bridge at `http://127.0.0.1:1881`.
 - Current-user Windows system proxy toggle for WinINet/browser login flows.
 - CLI/Codex HTTP CONNECT proxy bridge for tools that need a normal `http://` proxy instead of SOCKS.
 - Route check through `curl.exe --socks5-hostname`.
@@ -125,7 +125,7 @@ HTTP_PROXY=http://127.0.0.1:1881
 NO_PROXY=localhost,127.0.0.1,::1
 ```
 
-Already-open terminals do not receive new user-level environment variables automatically. For immediate use, choose `Открыть PowerShell с CLI proxy`, then run `codex login` in the opened shell.
+Already-open terminals do not receive new user-level environment variables automatically. For immediate use, choose `Открыть PowerShell с CLI proxy`, then run `codex login` in the opened shell. ProGo restores the `127.0.0.1:1881` listener on startup when the user environment already points to it, and explicit CLI-proxy stop/ProGo exit clears ProGo-owned proxy env values to avoid stale loopback ports.
 
 ## Direct install from GitHub
 
