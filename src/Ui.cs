@@ -41,7 +41,7 @@ namespace ProGo
             menu.Items.Add("Остановить SOCKS", null, delegate { proxy.StopTunnel(); UpdateTooltip(); });
             menu.Items.Add("Перезапустить SOCKS", null, delegate { proxy.RestartTunnel(); UpdateTooltip(); });
             menu.Items.Add("Изменить порт SOCKS...", null, delegate { ChangePort(); });
-            menu.Items.Add("Применить настройки прокси", null, delegate { EnvironmentProxyService.Apply(settings.Current); MessageBox.Show("Настройки прокси применены. Уже запущенным процессам может потребоваться перезапуск.", AppConstants.ProductName); });
+            menu.Items.Add("Применить proxy environment", null, delegate { CliProxyEnvironmentService.ApplyUserEnvironment(); MessageBox.Show("Proxy environment применён через HTTP CONNECT bridge. Уже запущенным процессам может потребоваться перезапуск.", AppConstants.ProductName); });
             menu.Items.Add("Проверить соединение", null, delegate { MessageBox.Show(RouteTester.Test(settings.Current, proxy), "Проверка соединения"); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
@@ -79,7 +79,7 @@ namespace ProGo
             next.SocksPort = port;
             settings.Save(next);
             proxy.RestartTunnel();
-            EnvironmentProxyService.Apply(settings.Current);
+            CliProxyEnvironmentService.ApplyUserEnvironment();
             MessageBox.Show("Порт SOCKS изменён на " + port + ".", "Порт SOCKS");
             UpdateTooltip();
         }
