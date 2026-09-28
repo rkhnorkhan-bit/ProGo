@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.25 - Antivirus-aware updater diagnostics
+
+- Improved in-app updater failure diagnostics when the updater exits before handoff.
+- ProGo now inspects recent `update.log` and `progo-update.log` content for antivirus/endpoint-protection indicators such as `499`, `antivirus`, `forbidden`, `access denied`, or `отказано в доступе`.
+- When such indicators are present, the update dialog explains that antivirus or endpoint protection likely blocked the update and suggests allowing `ProGo.exe`, updater scripts, and GitHub endpoints.
+- Kept update transaction semantics, release-package update mode, current-user Windows system proxy, SOCKS behavior, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.24 - Current-user Windows system proxy
 
 - Added current-user Windows system proxy support for browser/login flows that respect WinINet user proxy settings.
