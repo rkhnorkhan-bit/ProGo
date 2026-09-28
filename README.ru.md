@@ -20,6 +20,7 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 - Запуск, остановка и перезапуск SSH SOCKS-туннеля из tray.
 - Настраиваемые SOCKS host, port и SSH profile.
 - User-level proxy environment variables: `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY` и lowercase aliases.
+- Current-user системный прокси Windows для browser/login-сценариев.
 - Проверка маршрута через `curl.exe --socks5-hostname`.
 - Локальный encrypted vault: `%LOCALAPPDATA%\ProGo\vault.enc.json`.
 - Типы записей: `api_key`, `password`, `token`, `ssh`, `note`, `custom`.
@@ -64,6 +65,36 @@ ssh.exe -N -D 127.0.0.1:1080 -o ExitOnForwardFailure=yes -o ServerAliveInterval=
 ```
 
 ProGo не хранит SSH private keys или SSH passwords в source code.
+
+## Системный прокси Windows
+
+ProGo умеет включать current-user системный прокси Windows из tray menu:
+
+```text
+Включить системный прокси Windows
+```
+
+Этот режим записывает WinINet-настройки текущего пользователя в HKCU и направляет proxy-aware приложения Windows на локальный SSH SOCKS endpoint:
+
+```text
+socks=127.0.0.1:1080
+```
+
+Перед изменением Windows proxy settings ProGo сохраняет предыдущие значения текущего пользователя в `%LOCALAPPDATA%\ProGo\system-proxy-backup.json`. Для восстановления используйте tray action:
+
+```text
+Отключить системный прокси Windows
+```
+
+Режим рассчитан на browser/login-сценарии, например когда Codex из свежего `cmd` открывает authentication URL. После включения откройте новое окно `cmd` и повторите команду входа. Если браузер уже был открыт, перезапустите браузер — старые процессы могут держать старые proxy-настройки.
+
+Границы режима:
+
+- только текущий пользователь;
+- права администратора не нужны;
+- machine-wide WinHTTP не меняется;
+- VPN/TUN/WFP-перехвата всего трафика нет;
+- приложения, которые игнорируют Windows proxy settings, могут подключаться напрямую.
 
 ## Установка напрямую из GitHub
 
