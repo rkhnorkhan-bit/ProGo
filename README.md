@@ -20,6 +20,7 @@ This project is intentionally small: no cloud backend, no telemetry, no hosted s
 - Start, stop, and restart an SSH SOCKS tunnel from tray.
 - Configurable SOCKS host, port, and SSH profile.
 - User-level proxy environment variables: `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY` and lowercase aliases.
+- Current-user Windows system proxy toggle for WinINet/browser login flows.
 - Route check through `curl.exe --socks5-hostname`.
 - Local encrypted vault at `%LOCALAPPDATA%\ProGo\vault.enc.json`.
 - Vault entry types: `api_key`, `password`, `token`, `ssh`, `note`, `custom`.
@@ -64,6 +65,36 @@ ssh.exe -N -D 127.0.0.1:1080 -o ExitOnForwardFailure=yes -o ServerAliveInterval=
 ```
 
 ProGo never stores SSH private keys or SSH passwords in source code.
+
+## Windows system proxy
+
+ProGo can enable a current-user Windows system proxy from the tray menu:
+
+```text
+Включить системный прокси Windows
+```
+
+This writes current-user WinINet settings under HKCU and points Windows proxy-aware applications to the local SSH SOCKS endpoint:
+
+```text
+socks=127.0.0.1:1080
+```
+
+Before changing Windows proxy settings, ProGo saves the previous current-user proxy values to `%LOCALAPPDATA%\ProGo\system-proxy-backup.json`. Use this tray action to restore them:
+
+```text
+Отключить системный прокси Windows
+```
+
+This mode is intended for browser/login flows, for example launching a Codex authentication URL from a fresh `cmd` session. After enabling it, open a new `cmd` window and restart any already-open browser that should pick up the proxy settings.
+
+Scope and limits:
+
+- current user only;
+- no administrator rights required;
+- no machine-wide WinHTTP changes;
+- no VPN/TUN/WFP traffic interception;
+- applications that ignore Windows proxy settings may still connect directly.
 
 ## Direct install from GitHub
 
