@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.24 - Current-user Windows system proxy
+
+- Added current-user Windows system proxy support for browser/login flows that respect WinINet user proxy settings.
+- Added tray actions to enable and disable Windows system proxy without requiring administrator rights.
+- Enabling Windows system proxy stores the previous current-user proxy configuration in `%LOCALAPPDATA%\ProGo\system-proxy-backup.json` before writing `socks=127.0.0.1:<port>`.
+- Disabling Windows system proxy restores the backed-up `ProxyEnable`, `ProxyServer`, `ProxyOverride`, `AutoConfigURL`, and `AutoDetect` values.
+- Kept the existing user-level proxy environment variables and SOCKS tunnel behavior unchanged.
+- Kept machine-wide WinHTTP, VPN/TUN/WFP routing, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.23 - Release publishing reliability
 
 - Fixed the GitHub Release workflow so a missing release is detected without Windows PowerShell 5.1 treating `gh release view` stderr as a terminating error.

@@ -55,6 +55,8 @@ namespace ProGo
             menu.Items.Add("Перезапустить SOCKS", null, delegate { proxy.RestartTunnel(); UpdateTooltip(); });
             menu.Items.Add("Изменить порт SOCKS...", null, delegate { ChangePort(); });
             menu.Items.Add("Применить настройки прокси", null, delegate { EnvironmentProxyService.Apply(settings.Current); MessageBox.Show("Настройки прокси применены. Уже запущенным процессам может потребоваться перезапуск.", AppConstants.ProductName); });
+            menu.Items.Add("Включить системный прокси Windows", null, delegate { EnableSystemProxy(); });
+            menu.Items.Add("Отключить системный прокси Windows", null, delegate { DisableSystemProxy(); });
             menu.Items.Add("Проверить соединение", null, delegate { MessageBox.Show(RouteTester.Test(settings.Current, proxy), "Проверка соединения"); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
@@ -103,6 +105,7 @@ namespace ProGo
 
         private void ChangePort()
         {
+            var systemProxyWasApplied = SystemProxyService.IsApplied(settings.Current);
             int port;
             if (!PortForm.TryGetPort(settings.Current.SocksPort, out port)) return;
             var next = settings.Current;
@@ -110,8 +113,69 @@ namespace ProGo
             settings.Save(next);
             proxy.RestartTunnel();
             EnvironmentProxyService.Apply(settings.Current);
+
+            if (systemProxyWasApplied)
+            {
+                string proxyMessage;
+                if (!SystemProxyService.Apply(settings.Current, out proxyMessage))
+                {
+                    MessageBox.Show(proxyMessage ?? "Порт SOCKS изменён, но системный прокси Windows не удалось обновить.", "Системный прокси Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+
             MessageBox.Show("Порт SOCKS изменён на " + port + ".", "Порт SOCKS");
             UpdateTooltip();
+        }
+
+        private void EnableSystemProxy()
+        {
+            if (!proxy.IsListening())
+            {
+                var start = MessageBox.Show(
+                    "SOCKS-туннель сейчас не слушает порт " + settings.Current.SocksPort + ".\n\nЗапустить SOCKS перед включением системного прокси Windows?",
+                    "Системный прокси Windows",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (start == DialogResult.Yes)
+                {
+                    proxy.StartTunnel(true);
+                    UpdateTooltip();
+                }
+            }
+
+            EnvironmentProxyService.Apply(settings.Current);
+
+            string message;
+            if (!SystemProxyService.Apply(settings.Current, out message))
+            {
+                MessageBox.Show(message ?? "Не удалось включить системный прокси Windows.", "Системный прокси Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            MessageBox.Show(
+                "Системный прокси Windows включён для текущего пользователя.\n\n" +
+                "ProxyServer: socks=" + settings.Current.SocksHost + ":" + settings.Current.SocksPort + "\n\n" +
+                "Для Codex/login-сценария откройте новое окно cmd и запустите команду входа заново. Если браузер уже был открыт, перезапустите браузер — старые процессы могут держать старые proxy-настройки.",
+                "Системный прокси Windows",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void DisableSystemProxy()
+        {
+            string message;
+            if (!SystemProxyService.Restore(out message))
+            {
+                MessageBox.Show(message ?? "Не удалось восстановить системный прокси Windows.", "Системный прокси Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            MessageBox.Show(
+                "Предыдущие Windows proxy-настройки текущего пользователя восстановлены.\n\nУже запущенным приложениям может потребоваться перезапуск.",
+                "Системный прокси Windows",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
 
         private void OpenLogFile(string path, string title)
