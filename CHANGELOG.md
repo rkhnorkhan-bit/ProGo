@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.26 - CLI HTTP CONNECT proxy bridge
+
+- Added a local loopback-only HTTP CONNECT proxy for CLI tools that do not reliably use SOCKS proxy environment variables.
+- The CLI proxy listens on `127.0.0.1:1881` and forwards CONNECT traffic through the existing SSH SOCKS tunnel at the configured SOCKS host and port.
+- Added tray actions to start and stop the CLI/Codex proxy, apply CLI proxy environment variables, and open a PowerShell session with the correct proxy environment.
+- CLI proxy environment uses `http://127.0.0.1:1881` for `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY`, and lowercase aliases.
+- Kept current-user Windows system proxy, SOCKS tunnel behavior, updater transaction semantics, vault format, encryption, KDF, PIN behavior, and stored secrets unchanged.
+
 ## 0.1.25 - Antivirus-aware updater diagnostics
 
 - Improved in-app updater failure diagnostics when the updater exits before handoff.
