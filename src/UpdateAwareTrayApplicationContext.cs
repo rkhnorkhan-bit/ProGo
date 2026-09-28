@@ -9,15 +9,17 @@ namespace ProGo
     {
         private readonly SettingsService settings;
         private readonly ProxyService proxy;
+        private readonly CliProxyBridgeService cliProxy;
         private readonly ClipboardService clipboard;
         private readonly NotifyIcon tray;
         private readonly System.Drawing.Icon icon;
         private Timer startupShowTimer;
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, ClipboardService clipboardService, bool showStatusOnStartup)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, ClipboardService clipboardService, bool showStatusOnStartup)
         {
             settings = settingsService;
             proxy = proxyService;
+            cliProxy = cliProxyService;
             clipboard = clipboardService;
             icon = BrandIcon.Create();
 
@@ -57,6 +59,12 @@ namespace ProGo
             menu.Items.Add("Применить настройки прокси", null, delegate { EnvironmentProxyService.Apply(settings.Current); MessageBox.Show("Настройки прокси применены. Уже запущенным процессам может потребоваться перезапуск.", AppConstants.ProductName); });
             menu.Items.Add("Включить системный прокси Windows", null, delegate { EnableSystemProxy(); });
             menu.Items.Add("Отключить системный прокси Windows", null, delegate { DisableSystemProxy(); });
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add("Запустить CLI/Codex proxy", null, delegate { StartCliProxy(true); });
+            menu.Items.Add("Остановить CLI/Codex proxy", null, delegate { StopCliProxy(); });
+            menu.Items.Add("Применить CLI proxy env", null, delegate { ApplyCliProxyEnvironment(); });
+            menu.Items.Add("Открыть PowerShell с CLI proxy", null, delegate { OpenPowerShellWithCliProxy(); });
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Проверить соединение", null, delegate { MessageBox.Show(RouteTester.Test(settings.Current, proxy), "Проверка соединения"); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
@@ -156,7 +164,7 @@ namespace ProGo
             MessageBox.Show(
                 "Системный прокси Windows включён для текущего пользователя.\n\n" +
                 "ProxyServer: socks=" + settings.Current.SocksHost + ":" + settings.Current.SocksPort + "\n\n" +
-                "Для Codex/login-сценария откройте новое окно cmd и запустите команду входа заново. Если браузер уже был открыт, перезапустите браузер — старые процессы могут держать старые proxy-настройки.",
+                "Для браузеров/WinINet откройте новое окно или перезапустите приложение. Для Codex CLI используйте пункт «Запустить CLI/Codex proxy».",
                 "Системный прокси Windows",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
@@ -176,6 +184,83 @@ namespace ProGo
                 "Системный прокси Windows",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
+        }
+
+        private bool StartCliProxy(bool showDialog)
+        {
+            if (!proxy.IsListening())
+            {
+                var start = MessageBox.Show(
+                    "SOCKS-туннель сейчас не слушает порт " + settings.Current.SocksPort + ".\n\nЗапустить SOCKS перед включением CLI/Codex proxy?",
+                    "CLI/Codex proxy",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (start == DialogResult.Yes)
+                {
+                    proxy.StartTunnel(true);
+                    UpdateTooltip();
+                }
+            }
+
+            if (!proxy.IsListening())
+            {
+                if (showDialog) MessageBox.Show("CLI/Codex proxy не запущен: сначала нужен рабочий SOCKS-туннель.", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            string message;
+            if (!cliProxy.Start(out message))
+            {
+                if (showDialog) MessageBox.Show(message ?? "Не удалось запустить CLI/Codex proxy.", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            CliProxyEnvironmentService.ApplyUserEnvironment();
+            if (showDialog)
+            {
+                MessageBox.Show(
+                    "CLI/Codex proxy запущен.\n\n" +
+                    "HTTP proxy: " + CliProxyEnvironmentService.ProxyUrl + "\n" +
+                    "SOCKS backend: " + settings.Current.SocksHost + ":" + settings.Current.SocksPort + "\n\n" +
+                    "Для текущей сессии используйте пункт «Открыть PowerShell с CLI proxy» или откройте новое окно PowerShell/cmd после применения env.",
+                    "CLI/Codex proxy",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+
+            return true;
+        }
+
+        private void StopCliProxy()
+        {
+            cliProxy.Stop();
+            MessageBox.Show("CLI/Codex proxy остановлен. User-level env может остаться указывать на " + CliProxyEnvironmentService.ProxyUrl + ".", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ApplyCliProxyEnvironment()
+        {
+            CliProxyEnvironmentService.ApplyUserEnvironment();
+            MessageBox.Show(
+                "CLI proxy environment применён для текущего пользователя.\n\n" +
+                "HTTPS_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n" +
+                "HTTP_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n" +
+                "ALL_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n\n" +
+                "Уже открытые терминалы это не подхватят. Откройте новое окно или используйте «Открыть PowerShell с CLI proxy».",
+                "CLI/Codex proxy",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void OpenPowerShellWithCliProxy()
+        {
+            if (!cliProxy.IsRunning && !StartCliProxy(false)) return;
+
+            string message;
+            if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(out message))
+            {
+                MessageBox.Show(message ?? "Не удалось открыть PowerShell с CLI proxy.", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private void OpenLogFile(string path, string title)
