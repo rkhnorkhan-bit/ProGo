@@ -21,6 +21,7 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 - Настраиваемые SOCKS host, port и SSH profile.
 - User-level proxy environment variables: `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY` и lowercase aliases.
 - Current-user системный прокси Windows для browser/login-сценариев.
+- CLI/Codex HTTP CONNECT proxy bridge для инструментов, которым нужен обычный `http://` proxy вместо SOCKS.
 - Проверка маршрута через `curl.exe --socks5-hostname`.
 - Локальный encrypted vault: `%LOCALAPPDATA%\ProGo\vault.enc.json`.
 - Типы записей: `api_key`, `password`, `token`, `ssh`, `note`, `custom`.
@@ -86,7 +87,7 @@ socks=127.0.0.1:1080
 Отключить системный прокси Windows
 ```
 
-Режим рассчитан на browser/login-сценарии, например когда Codex из свежего `cmd` открывает authentication URL. После включения откройте новое окно `cmd` и повторите команду входа. Если браузер уже был открыт, перезапустите браузер — старые процессы могут держать старые proxy-настройки.
+Режим рассчитан на browser/login-сценарии. Если браузер уже был открыт, перезапустите браузер — старые процессы могут держать старые proxy-настройки.
 
 Границы режима:
 
@@ -95,6 +96,36 @@ socks=127.0.0.1:1080
 - machine-wide WinHTTP не меняется;
 - VPN/TUN/WFP-перехвата всего трафика нет;
 - приложения, которые игнорируют Windows proxy settings, могут подключаться напрямую.
+
+## CLI/Codex proxy
+
+Некоторые CLI-инструменты не используют Windows system proxy и нестабильно работают с `socks5h://` в environment variables. Для таких случаев ProGo может запустить локальный HTTP CONNECT proxy bridge:
+
+```text
+Codex CLI → http://127.0.0.1:1881 → SOCKS 127.0.0.1:<SOCKS-port> → SSH tunnel
+```
+
+Tray actions:
+
+```text
+Запустить CLI/Codex proxy
+Применить CLI proxy env
+Открыть PowerShell с CLI proxy
+Остановить CLI/Codex proxy
+```
+
+`Запустить CLI/Codex proxy` поднимает loopback-only listener `127.0.0.1:1881`. Он принимает только HTTP `CONNECT` и прокидывает поток через текущий SOCKS-туннель.
+
+`Применить CLI proxy env` записывает user-level переменные:
+
+```text
+ALL_PROXY=http://127.0.0.1:1881
+HTTPS_PROXY=http://127.0.0.1:1881
+HTTP_PROXY=http://127.0.0.1:1881
+NO_PROXY=localhost,127.0.0.1,::1
+```
+
+Уже открытые терминалы не получают новые user-level environment variables автоматически. Для текущей работы используйте `Открыть PowerShell с CLI proxy`, затем запускайте `codex login` в новом окне.
 
 ## Установка напрямую из GitHub
 

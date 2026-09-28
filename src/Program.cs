@@ -45,8 +45,9 @@ namespace ProGo
 
                 using (var settingsService = new SettingsService())
                 using (var proxyService = new ProxyService(settingsService))
+                using (var cliProxyService = new CliProxyBridgeService(settingsService))
                 using (var clipboardService = new ClipboardService(settingsService))
-                using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, clipboardService, showStatusOnStartup))
+                using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, cliProxyService, clipboardService, showStatusOnStartup))
                 {
                     if (settingsService.Current.AutoApplyProxy)
                     {
@@ -84,10 +85,12 @@ namespace ProGo
             AppPaths.EnsureDirectories();
 
             using (var settingsService = new SettingsService())
+            using (var cliProxyService = new CliProxyBridgeService(settingsService))
             {
                 if (settingsService.Current == null) throw new InvalidOperationException("Settings are not available.");
                 if (settingsService.Current.SocksPort < 1 || settingsService.Current.SocksPort > 65535) throw new InvalidOperationException("Invalid SOCKS port.");
                 if (settingsService.Current.SshProfiles == null) throw new InvalidOperationException("SSH profile list is not available.");
+                if (CliProxyBridgeService.Port < 1 || CliProxyBridgeService.Port > 65535) throw new InvalidOperationException("Invalid CLI proxy port.");
             }
 
             var exePath = Application.ExecutablePath;
