@@ -56,7 +56,7 @@ namespace ProGo
             menu.Items.Add("Остановить SOCKS", null, delegate { proxy.StopTunnel(); UpdateTooltip(); });
             menu.Items.Add("Перезапустить SOCKS", null, delegate { proxy.RestartTunnel(); UpdateTooltip(); });
             menu.Items.Add("Изменить порт SOCKS...", null, delegate { ChangePort(); });
-            menu.Items.Add("Применить настройки прокси", null, delegate { EnvironmentProxyService.Apply(settings.Current); MessageBox.Show("Настройки прокси применены. Уже запущенным процессам может потребоваться перезапуск.", AppConstants.ProductName); });
+            menu.Items.Add("Применить proxy environment", null, delegate { ApplyCliProxyEnvironment(); });
             menu.Items.Add("Включить системный прокси Windows", null, delegate { EnableSystemProxy(); });
             menu.Items.Add("Отключить системный прокси Windows", null, delegate { DisableSystemProxy(); });
             menu.Items.Add(new ToolStripSeparator());
@@ -78,7 +78,7 @@ namespace ProGo
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Обновить ProGo", null, delegate { StartUpdate(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Выход", null, delegate { ExitThread(); });
+            menu.Items.Add("Выход", null, delegate { ExitProGo(); });
             return menu;
         }
 
@@ -120,7 +120,7 @@ namespace ProGo
             next.SocksPort = port;
             settings.Save(next);
             proxy.RestartTunnel();
-            EnvironmentProxyService.Apply(settings.Current);
+            EnsureCliProxyEnvironment(false);
 
             if (systemProxyWasApplied)
             {
@@ -152,7 +152,7 @@ namespace ProGo
                 }
             }
 
-            EnvironmentProxyService.Apply(settings.Current);
+            EnsureCliProxyEnvironment(false);
 
             string message;
             if (!SystemProxyService.Apply(settings.Current, out message))
@@ -235,21 +235,56 @@ namespace ProGo
         private void StopCliProxy()
         {
             cliProxy.Stop();
-            MessageBox.Show("CLI/Codex proxy остановлен. User-level env может остаться указывать на " + CliProxyEnvironmentService.ProxyUrl + ".", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+            MessageBox.Show(
+                "CLI/Codex proxy остановлен. ProGo-owned user-level proxy env очищен для новых процессов.\n\n" +
+                "Уже запущенный Codex/терминал сохраняет старое окружение до перезапуска.",
+                "CLI/Codex proxy",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private bool EnsureCliProxyEnvironment(bool showErrors)
+        {
+            string message;
+            if (!cliProxy.IsRunning && !cliProxy.Start(out message))
+            {
+                if (showErrors)
+                {
+                    MessageBox.Show(
+                        message ?? "Не удалось запустить CLI/Codex proxy.",
+                        "CLI/Codex proxy",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+                return false;
+            }
+
+            CliProxyEnvironmentService.ApplyUserEnvironment();
+            return true;
         }
 
         private void ApplyCliProxyEnvironment()
         {
-            CliProxyEnvironmentService.ApplyUserEnvironment();
+            if (!EnsureCliProxyEnvironment(true)) return;
+
             MessageBox.Show(
-                "CLI proxy environment применён для текущего пользователя.\n\n" +
+                "Proxy environment применён для текущего пользователя через HTTP CONNECT bridge.\n\n" +
                 "HTTPS_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n" +
                 "HTTP_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n" +
                 "ALL_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n\n" +
-                "Уже открытые терминалы это не подхватят. Откройте новое окно или используйте «Открыть PowerShell с CLI proxy».",
+                "Прямой SOCKS остаётся внутренним endpoint. Уже открытые терминалы не получат новое окружение автоматически.",
                 "CLI/Codex proxy",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
+        }
+
+        private void ExitProGo()
+        {
+            cliProxy.Stop();
+            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+            tray.Visible = false;
+            ExitThread();
         }
 
         private void OpenPowerShellWithCliProxy()

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.27 - Canonical HTTP proxy environment and Codex stream stability
+
+- Made the loopback HTTP CONNECT bridge at `127.0.0.1:1881` the canonical user-level proxy environment path.
+- Removed the legacy C# path that published `socks5h://<host>:<port>` through `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY`.
+- ProGo now restores the CLI HTTP proxy listener on startup when existing user-level proxy variables still point to `http://127.0.0.1:1881`, preventing stale-loopback `os error 10061` failures after app restart/update.
+- Explicit CLI proxy stop and explicit ProGo exit clear only ProGo-owned proxy environment values.
+- Removed the 60-second socket read/write timeout from established CLI proxy streams so long-lived Codex WebSocket/CONNECT sessions are not terminated by ProGo idle timeout.
+- Updated tray behavior, automatic proxy wording, proxy setup documentation, and regression tests.
+- Kept the SSH SOCKS endpoint available as the internal/explicit transport and kept the separate current-user Windows system proxy feature.
+
 ## 0.1.26 - CLI HTTP CONNECT proxy bridge
 
 - Added a local loopback-only HTTP CONNECT proxy for CLI tools that do not reliably use SOCKS proxy environment variables.

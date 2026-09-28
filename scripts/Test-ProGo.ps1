@@ -57,6 +57,10 @@ if ($Source -match "DECOY|fake vault|wrong PIN|incorrect PIN") {
     Fail "decoy-disclosing marker found in source"
 }
 
+if ($Source -match [regex]::Escape("socks5h://")) {
+    Fail "C# source must not publish SOCKS URI through HTTP_PROXY/HTTPS_PROXY/ALL_PROXY; use the local HTTP CONNECT bridge"
+}
+
 foreach ($requiredSource in @(
     "BackupService.EnsureVersionBackupExists",
     "BackupPickerForm",
@@ -87,7 +91,11 @@ foreach ($requiredSource in @(
     "MessageBoxIcon.Information",
     "MessageBoxButtons.YesNo",
     "check.RemoteVersion",
-    "check.LocalVersion"
+    "check.LocalVersion",
+    "CliProxyEnvironmentService.ApplyUserEnvironment",
+    "CliProxyEnvironmentService.IsAppliedToUserEnvironment",
+    "ClearUserEnvironmentIfOwned",
+    "SocketTimeoutMs = 0"
 )) {
     if ($Source -notmatch [regex]::Escape($requiredSource)) {
         Fail "source marker missing: $requiredSource"
@@ -95,6 +103,17 @@ foreach ($requiredSource in @(
 }
 
 if ($Source -notmatch "BrandIcon\.Create") { Fail "brand icon factory is not used by tray context" }
+
+$proxySetupText = Get-Content -Raw -Path (Join-Path $Root "docs\PROXY_SETUP.md")
+foreach ($required in @(
+    "HTTP_PROXY=http://127.0.0.1:1881",
+    "HTTPS_PROXY=http://127.0.0.1:1881",
+    "ALL_PROXY=http://127.0.0.1:1881",
+    "Codex CLI"
+)) {
+    if ($proxySetupText -notmatch [regex]::Escape($required)) { Fail "proxy setup marker missing: $required" }
+}
+if ($proxySetupText -match [regex]::Escape("HTTP_PROXY=socks5h://")) { Fail "proxy setup still documents SOCKS URI for HTTP_PROXY" }
 
 $updateLauncherSource = Get-Content -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
 if ($updateLauncherSource -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") { Fail "updater bootstrap fallback URL missing" }

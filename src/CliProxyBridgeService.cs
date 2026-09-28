@@ -15,7 +15,8 @@ namespace ProGo
         public const int Port = 1881;
         private const int BufferSize = 32 * 1024;
         private const int ConnectTimeoutMs = 10000;
-        private const int SocketTimeoutMs = 60000;
+        // Zero means no read/write timeout. Long-lived Codex WebSocket streams must not be cut after idle periods.
+        private const int SocketTimeoutMs = 0;
 
         private readonly SettingsService settings;
         private TcpListener listener;
@@ -388,6 +389,30 @@ namespace ProGo
             SafeLog.Info("CLI proxy environment applied. proxy=" + ProxyUrl + ".");
         }
 
+        public static bool IsAppliedToUserEnvironment()
+        {
+            return IsUserValue("ALL_PROXY", ProxyUrl) ||
+                   IsUserValue("HTTPS_PROXY", ProxyUrl) ||
+                   IsUserValue("HTTP_PROXY", ProxyUrl) ||
+                   IsUserValue("all_proxy", ProxyUrl) ||
+                   IsUserValue("https_proxy", ProxyUrl) ||
+                   IsUserValue("http_proxy", ProxyUrl);
+        }
+
+        public static void ClearUserEnvironmentIfOwned()
+        {
+            ClearUserIfOwned("ALL_PROXY", ProxyUrl);
+            ClearUserIfOwned("HTTPS_PROXY", ProxyUrl);
+            ClearUserIfOwned("HTTP_PROXY", ProxyUrl);
+            ClearUserIfOwned("all_proxy", ProxyUrl);
+            ClearUserIfOwned("https_proxy", ProxyUrl);
+            ClearUserIfOwned("http_proxy", ProxyUrl);
+            ClearUserIfOwned("NO_PROXY", "localhost,127.0.0.1,::1");
+            ClearUserIfOwned("no_proxy", "localhost,127.0.0.1,::1");
+            BroadcastEnvironmentChange();
+            SafeLog.Info("CLI proxy environment cleared for ProGo-owned values.");
+        }
+
         public static bool OpenPowerShellWithEnvironment(out string message)
         {
             message = null;
@@ -440,6 +465,20 @@ namespace ProGo
         private static void SetUser(string name, string value)
         {
             Environment.SetEnvironmentVariable(name, value, EnvironmentVariableTarget.User);
+        }
+
+        private static bool IsUserValue(string name, string expected)
+        {
+            var value = Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.User);
+            return String.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ClearUserIfOwned(string name, string expected)
+        {
+            if (IsUserValue(name, expected))
+            {
+                Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
+            }
         }
 
         private static void BroadcastEnvironmentChange()

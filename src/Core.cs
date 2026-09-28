@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
@@ -599,40 +598,6 @@ namespace ProGo
                 read += current;
             }
             return true;
-        }
-    }
-
-    internal static class EnvironmentProxyService
-    {
-        private const int HWND_BROADCAST = 0xffff;
-        private const int WM_SETTINGCHANGE = 0x001A;
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr SendMessageTimeout(IntPtr hWnd, int Msg, IntPtr wParam, string lParam, int fuFlags, int uTimeout, out IntPtr lpdwResult);
-
-        public static void Apply(AppSettings settings)
-        {
-            var value = "socks5h://" + settings.SocksHost + ":" + settings.SocksPort;
-            SetUser("ALL_PROXY", value);
-            SetUser("HTTPS_PROXY", value);
-            SetUser("HTTP_PROXY", value);
-            SetUser("all_proxy", value);
-            SetUser("https_proxy", value);
-            SetUser("http_proxy", value);
-            SetUser("NO_PROXY", "localhost,127.0.0.1,::1");
-            BroadcastEnvironmentChange();
-            SafeLog.Info("Proxy environment applied. port=" + settings.SocksPort + ".");
-        }
-
-        private static void SetUser(string name, string value)
-        {
-            Environment.SetEnvironmentVariable(name, value, EnvironmentVariableTarget.User);
-        }
-
-        private static void BroadcastEnvironmentChange()
-        {
-            IntPtr result;
-            SendMessageTimeout((IntPtr)HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "Environment", 0, 5000, out result);
         }
     }
 
