@@ -37,6 +37,7 @@ jobs:
         with:
           name: ProGo-ci-diagnostics
           path: ci-output.txt
+          retention-days: 7
 
       - name: Upload release folder
         if: success()
@@ -44,6 +45,7 @@ jobs:
         with:
           name: ProGo-release
           path: release/
+          retention-days: 3
 
       - name: Upload release package
         if: success()
@@ -51,3 +53,4 @@ jobs:
         with:
           name: ProGo-release-zip
           path: ProGo-release.zip
+          retention-days: 3
