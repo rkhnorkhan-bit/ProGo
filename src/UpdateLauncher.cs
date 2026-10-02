@@ -122,7 +122,7 @@ namespace ProGo
                 if (String.IsNullOrEmpty(scriptPath) || !File.Exists(scriptPath))
                 {
                     MessageBox.Show(
-                        "Скрипт обновления не найден и не смог быть скачан из GitHub. Запустите установку из GitHub один раз вручную.",
+                        "Файл обновления отсутствует. Откройте «Помощь → Антивирус и обновления» для восстановления установки.",
                         "Обновление ProGo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
@@ -157,7 +157,7 @@ namespace ProGo
                     var likelyAntivirusBlock = LooksLikeAntivirusBlock(recentLogs);
                     if (likelyAntivirusBlock)
                     {
-                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ". Possible antivirus or система защиты block.", new InvalidOperationException("Updater process exited before handoff."));
+                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ". Possible antivirus or endpoint protection block.", new InvalidOperationException("Updater process exited before handoff."));
                     }
                     else
                     {

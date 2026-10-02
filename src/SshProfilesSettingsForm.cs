@@ -45,6 +45,15 @@ namespace ProGo
             var automation = Page(tabs, "Автоматика");
             var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
             automation.Controls.Add(autoFlow);
+            autoFlow.SizeChanged += delegate {
+                foreach (Control child in autoFlow.Controls) {
+                    var card = child as SurfacePanel; if (card == null) continue;
+                    card.Width = Math.Max(600, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4);
+                    foreach (Control item in card.Controls) {
+                        var hint = item as Label; if (hint != null) hint.MaximumSize = new Size(card.Width - 38, 0);
+                    }
+                }
+            };
             autoFlow.Controls.Add(UiTheme.Label("Галочка — автоматически. Кнопки — вручную в любой момент.", UiTheme.Body, UiTheme.Muted));
             AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды «Остановить» он сам не включится.", "Перезапустить", "restart", "Остановить", "stop");
             AutomationCard(autoFlow, autoProxy, "Включать прокси для командной строки", "При запуске ProGo настраивать новые терминалы через HTTP_PROXY и HTTPS_PROXY. Уже открытые окна нужно перезапустить.", "Включить", "terminal-on", "Выключить", "terminal-off");

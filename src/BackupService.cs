@@ -225,7 +225,7 @@ namespace ProGo
                 {
                     MessageBox.Show(
                         "Скрипт отката не найден. Обновите ProGo из GitHub один раз после исправления rollback-контура.",
-                        "Откат ProGo",
+                        "Восстановление ProGo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
                     return false;
@@ -233,7 +233,7 @@ namespace ProGo
 
                 if (String.IsNullOrEmpty(backupDir) || !Directory.Exists(backupDir))
                 {
-                    MessageBox.Show("Резервная копия не найдена.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Резервная копия не найдена.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
                 }
 
@@ -256,7 +256,7 @@ namespace ProGo
             catch (Exception ex)
             {
                 SafeLog.Error("Restore launch failed.", ex);
-                MessageBox.Show("Не удалось запустить откат. Подробности записаны в журнал.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Не удалось запустить восстановление. Подробности записаны в журнал.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
         }
@@ -527,7 +527,7 @@ namespace ProGo
         {
             if (list.SelectedIndex < 0 || list.SelectedIndex >= backups.Count)
             {
-                MessageBox.Show("Выберите резервную копию.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Выберите резервную копию.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 

@@ -55,7 +55,7 @@ namespace ProGo
                 {
                     settings.Current.SshProfile = "my-vps";
                     BridgeRoundTrip(settings, false); BridgeRoundTrip(settings, true);
-                    Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+                    Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
                     using (var proxy = new ProxyService(settings))
                     using (var relay = new Ikev2RelayService())
                     using (var home = new HomeVpnService(relay))
@@ -106,7 +106,7 @@ namespace ProGo
         {
             var dir = Path.Combine(work, "codex fixture"); Directory.CreateDirectory(dir);
             var capture = Path.Combine(dir, "result.txt");
-            File.WriteAllText(Path.Combine(dir, "codex.cmd"), "@echo off\r\necho %HTTP_PROXY%>%PROGO_TEST_RESULT%\r\necho %NO_PROXY%>>%PROGO_TEST_RESULT%\r\n", Encoding.ASCII);
+            File.WriteAllText(Path.Combine(dir, "codex.cmd"), "@echo off\r\necho %HTTP_PROXY%>\"%PROGO_TEST_RESULT%\"\r\necho %NO_PROXY%>>\"%PROGO_TEST_RESULT%\"\r\n", Encoding.ASCII);
             var launcher = Path.Combine(dir, "launch.cmd"); File.WriteAllText(launcher, CodexProxyService.LauncherContent(), Encoding.ASCII);
             var start = new ProcessStartInfo("cmd.exe", "/D /C \"\"" + launcher + "\"\"") { UseShellExecute = false, CreateNoWindow = true };
             start.EnvironmentVariables["PATH"] = dir + ";" + Environment.GetEnvironmentVariable("PATH");
