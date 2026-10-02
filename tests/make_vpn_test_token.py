@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import time
 
 directory = pathlib.Path(sys.argv[1])
 directory.mkdir(parents=True, exist_ok=True)
@@ -34,4 +35,4 @@ spec = importlib.util.spec_from_file_location('profile_share', pathlib.Path(__fi
 share = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(share)
 url = 'https://vpn.example.org/#' + 'A' * 43
-(directory / 'qr.json').write_text(json.dumps(dict(Url=url, Expires=2000000000, Matrix=share.qr_rows(url))))
+(directory / 'qr.json').write_text(json.dumps(dict(Url=url, Expires=int(time.time()) + 900, Matrix=share.qr_rows(url))))

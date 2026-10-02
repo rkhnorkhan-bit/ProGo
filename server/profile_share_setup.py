@@ -85,7 +85,7 @@ def install(data, domain):
         run('apt-get', 'install', '-y', 'caddy')
     if not caddyfile.is_file():
         raise RuntimeError('Automatic QR setup requires /etc/caddy/Caddyfile')
-    service = run('systemctl', 'cat', 'caddy.service', capture=True)
+    service = run('systemctl', 'show', 'caddy.service', '--property=ExecStart', '--value', capture=True)
     if '/etc/caddy/Caddyfile' not in service or '--resume' in service:
         raise RuntimeError('Caddy uses a custom configuration; ask its administrator to add the QR site')
     original = caddyfile.read_text()

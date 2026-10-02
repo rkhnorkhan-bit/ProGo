@@ -7,7 +7,6 @@ third-party QR services. Unclaimed links and claimed sessions live only in RAM.
 import base64
 import hashlib
 import hmac
-import html
 import http.cookies
 import http.server
 import importlib.util

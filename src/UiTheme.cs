@@ -208,7 +208,7 @@ namespace ProGo
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e); e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            string[] titles = { "Доступ", "Сервер", "Роутер", "iPhone", "Проверка" };
+            string[] titles = { "Доступ", "Сервер", "Роутер", "Телефон", "Проверка" };
             int width = Math.Max(1, Width / 5);
             for (int i = 0; i < 5; i++)
             {
