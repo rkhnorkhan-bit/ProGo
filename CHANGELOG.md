@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — Automatic application proxy ports
+
+- Added **Настройки → Порт приложений** with automatic selection (default), a fixed port, and **Подобрать свободный**. The last successful port is reused; an occupied or Windows-reserved port falls back to an atomically bound free port in automatic mode.
+- The actual loopback address is visible on the dashboard and can be copied from settings. Port selection affects the local HTTP/CONNECT bridge only; SSH, SOCKS and iPhone VPN ports keep their separate settings.
+- Port changes migrate ProGo-owned terminal environment, Windows proxy and Codex launcher together. Original user settings and later external changes are preserved. Existing terminals/Codex need reopening to read a new environment.
+- A busy fixed port or failed settings save preserves the previous listener and configuration. A healthy listener never changes port in the background. Explicit manual stop remains respected.
+- Added Windows socket-conflict, migration, rollback, scoped Codex and native settings UI checks. Public sources and packages contain generic setup examples only.
+
 ## 0.2.0 — Desktop experience and independent automation
 
 - New native connection dashboard, shared dark theme, multi-resolution icon and grouped plain-language tray menus.
