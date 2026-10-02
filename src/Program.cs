@@ -47,8 +47,9 @@ namespace ProGo
                 using (var proxyService = new ProxyService(settingsService))
                 using (var cliProxyService = new CliProxyBridgeService(settingsService))
                 using (var ikev2Relay = new Ikev2RelayService())
+                using (var homeVpn = new HomeVpnService(ikev2Relay))
                 using (var clipboardService = new ClipboardService(settingsService))
-                using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, cliProxyService, ikev2Relay, clipboardService, showStatusOnStartup))
+                using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, cliProxyService, homeVpn, clipboardService, showStatusOnStartup))
                 {
                     if (settingsService.Current.AutoStartSocks)
                     {

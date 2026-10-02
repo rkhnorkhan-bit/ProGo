@@ -11,6 +11,7 @@ namespace ProGo
         private readonly Action<AppSettings> saveSettings;
         private readonly string sshExecutable;
         private readonly Func<DateTime> utcNow;
+        private readonly string sshOptions;
         private readonly object gate = new object();
         private readonly System.Threading.Timer recoveryTimer;
         private Process sshProcess;
@@ -35,9 +36,10 @@ namespace ProGo
 
         // The test harness uses a local child process and a clock, never real SSH credentials.
         internal ProxyService(Func<AppSettings> read, Action<AppSettings> save, string executable,
-            Func<DateTime> clock, bool startTimer)
+            Func<DateTime> clock, bool startTimer, string extraOptions = "")
         {
             readSettings = read; saveSettings = save; sshExecutable = executable; utcNow = clock;
+            sshOptions = extraOptions;
             if (startTimer)
                 recoveryTimer = new System.Threading.Timer(delegate { PollRecovery(); }, null, 5000, 5000);
         }
@@ -240,7 +242,7 @@ namespace ProGo
             {
                 var current = readSettings();
                 var endpoint = current.SocksHost + ":" + current.SocksPort;
-                var args = String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 {1}{2}",
+                var args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 {1}{2}",
                     QuoteArg(endpoint), automatic ? "-o BatchMode=yes " : "", QuoteArg(target));
                 var psi = new ProcessStartInfo(sshExecutable, args)
                 {

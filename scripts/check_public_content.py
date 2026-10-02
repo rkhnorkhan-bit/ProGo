@@ -18,7 +18,8 @@ PERSONAL_PATH = re.compile(
     r'[A-Za-z]:[\\/]+Users[\\/]+(?!Public[\\/])[^\s\\/"\'<>]+[\\/]'
     r'|/(?:home|Users)/[A-Za-z0-9_.-]+/|/root(?=/)'
 )
-PRIVATE_KEY = re.compile(r'-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----')
+# Match actual PEM content, not the format delimiter used by the token validator.
+PRIVATE_KEY = re.compile(r'-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----[\r\n]+[A-Za-z0-9+/]{32}')
 TEXT_SUFFIXES = {'.cs', '.ps1', '.py', '.sh', '.md', '.json', '.yml', '.yaml', '.csproj'}
 SECRET_SUFFIXES = {'.pem', '.key', '.pfx', '.p12', '.mobileconfig', '.log'}
 
@@ -43,6 +44,10 @@ def issues(path, release=False):
             try:
                 address = ipaddress.IPv4Address(match.group())
             except ipaddress.AddressValueError:
+                continue
+            # ASN.1 Basic Constraints OID and multicast firewall ranges are not
+            # infrastructure addresses. PEM content is still checked above.
+            if match.group() == '2.5.29.19' or address.is_multicast:
                 continue
             if address.is_global and not any(address in net for net in DOCUMENTATION_NETS):
                 yield 'non-documentation public IPv4 literal'

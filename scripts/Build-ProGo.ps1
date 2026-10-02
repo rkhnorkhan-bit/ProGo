@@ -102,6 +102,8 @@ $Args = @(
     "/out:$Out",
     "/reference:System.dll",
     "/reference:System.Core.dll",
+    "/reference:System.Security.dll",
+    "/reference:System.Xml.dll",
     "/reference:System.Drawing.dll",
     "/reference:System.Windows.Forms.dll",
     "/reference:System.Web.Extensions.dll"
@@ -137,7 +139,7 @@ $HomeVpnDir = Join-Path $ReleaseScripts "home-vpn"
 $HomeVpnServer = Join-Path $HomeVpnDir "server"
 New-Item -ItemType Directory -Path $HomeVpnServer -Force | Out-Null
 Copy-Item (Join-Path $Root "docs\HOME_IKEV2.md") -Destination (Join-Path $HomeVpnDir "HOME_IKEV2.md") -Force
-foreach ($serverFile in @("ikev2_relay.py", "install-ikev2-relay.sh", "make_home_profile.py")) {
+foreach ($serverFile in @("ikev2_relay.py", "install-ikev2-relay.sh", "make_home_profile.py", "home_vpn_setup.py")) {
     Copy-Item (Join-Path $Root ("server\" + $serverFile)) -Destination (Join-Path $HomeVpnServer $serverFile) -Force
 }
 
