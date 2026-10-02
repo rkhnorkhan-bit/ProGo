@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Windows.Forms;
 
@@ -54,28 +56,48 @@ namespace ProGo
             Directory.CreateDirectory(Path.GetDirectoryName(LauncherPath));
             File.WriteAllText(LauncherPath, LauncherContent(), Encoding.ASCII);
             Directory.CreateDirectory(Path.GetDirectoryName(ShortcutPath));
-            object shell = null, shortcut = null;
+            object shortcut = null;
             try
             {
-                var type = Type.GetTypeFromProgID("WScript.Shell");
-                shell = Activator.CreateInstance(type);
-                shortcut = type.InvokeMember("CreateShortcut", System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { ShortcutPath });
-                Set(shortcut, "TargetPath", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"));
-                Set(shortcut, "Arguments", "/D /K \"\"" + LauncherPath + "\"\"");
-                Set(shortcut, "WorkingDirectory", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-                Set(shortcut, "IconLocation", Application.ExecutablePath + ",0");
-                Set(shortcut, "Description", "Codex CLI с прокси ProGo только для этого окна");
-                shortcut.GetType().InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, shortcut, null);
+                shortcut = new ShellLink();
+                var link = (IShellLinkW)shortcut;
+                link.SetPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"));
+                link.SetArguments("/D /K \"\"" + LauncherPath + "\"\"");
+                link.SetWorkingDirectory(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+                link.SetIconLocation(Application.ExecutablePath, 0);
+                link.SetDescription("Codex CLI с прокси ProGo только для этого окна");
+                ((IPersistFile)shortcut).Save(ShortcutPath, true);
             }
             finally
             {
-                if (shortcut != null) System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
-                if (shell != null) System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+                if (shortcut != null) Marshal.FinalReleaseComObject(shortcut);
             }
         }
-        private static void Set(object target, string property, object value)
+        [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
+        private class ShellLink { }
+        // Use the Unicode Shell interface: WScript's shortcut writer can lose
+        // non-ASCII file names on Windows installations with another locale.
+        [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface IShellLinkW
         {
-            target.GetType().InvokeMember(property, System.Reflection.BindingFlags.SetProperty, null, target, new[] { value });
+            void GetPath(IntPtr path, int length, IntPtr findData, uint flags);
+            void GetIDList(out IntPtr list);
+            void SetIDList(IntPtr list);
+            void GetDescription(IntPtr description, int length);
+            void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string description);
+            void GetWorkingDirectory(IntPtr directory, int length);
+            void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string directory);
+            void GetArguments(IntPtr arguments, int length);
+            void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string arguments);
+            void GetHotkey(out short hotkey);
+            void SetHotkey(short hotkey);
+            void GetShowCmd(out int command);
+            void SetShowCmd(int command);
+            void GetIconLocation(IntPtr path, int length, out int index);
+            void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string path, int index);
+            void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string path, uint reserved);
+            void Resolve(IntPtr window, uint flags);
+            void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
         }
         public static void Disable()
         {
