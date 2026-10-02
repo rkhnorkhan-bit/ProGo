@@ -274,7 +274,8 @@ foreach ($relativePath in @(
     "scripts\home-vpn\HOME_IKEV2.md",
     "scripts\home-vpn\server\ikev2_relay.py",
     "scripts\home-vpn\server\install-ikev2-relay.sh",
-    "scripts\home-vpn\server\make_home_profile.py"
+    "scripts\home-vpn\server\make_home_profile.py",
+    "scripts\home-vpn\server\home_vpn_setup.py"
 )) {
     if (-not (Test-Path (Join-Path $Root ("release\" + $relativePath)))) {
         Fail "home VPN release resource missing: $relativePath"

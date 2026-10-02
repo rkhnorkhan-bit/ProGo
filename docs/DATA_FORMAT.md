@@ -86,3 +86,12 @@ Path:
 ```
 
 Logs are operational only and must not contain decrypted secret values.
+
+## Home VPN access
+
+`home-vpn-private/*.dat` contains current-user DPAPI-protected invitations, owner
+connection metadata and the home entry address. These files are independent of
+the vault. Runtime SSH keys are written into a current-user-only session directory
+and removed on orderly stop. No administrator password is stored. A `PROGO1.` token
+is a bearer credential, not a signed identity claim: accept it only from a trusted
+VPS owner. It contains per-invitation access and a pinned server host key.

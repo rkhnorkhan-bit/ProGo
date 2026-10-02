@@ -2,6 +2,13 @@
 
 ProGo is a small Windows tray application for fast SSH SOCKS proxy control and a local encrypted credentials vault.
 
+## Guided home VPN
+
+Open **VPN для iPhone…** for the five-step wizard. Choose an existing VPS invitation
+token or add your own Ubuntu VPS using SSH. The wizard provisions the server,
+generates an iPhone profile, shows router forwarding, and checks transport. Owners
+can issue and revoke friend tokens. [Setup and limits](docs/HOME_IKEV2.md).
+
 ## Status
 
 Version: `0.1.29`.

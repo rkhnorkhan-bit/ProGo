@@ -83,7 +83,7 @@ def render_config(data):
     return '''connections {
     progo-home {
         version = 2
-        local_addrs = %any
+        local_addrs = %%any
         remote_addrs = 127.0.0.1
         pools = progo-home4, progo-home6
         proposals = aes256-sha256-modp2048,aes128-sha256-modp2048
@@ -206,7 +206,7 @@ def prepare():
     os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
     run('apt-get', 'update')
     run('apt-get', 'install', '-y', 'charon-systemd', 'strongswan-swanctl',
-        'libcharon-extra-plugins', 'libstrongswan-extra-plugins', 'openssl', 'nftables', 'openssh-server', 'python3-vici')
+        'libcharon-extra-plugins', 'libstrongswan-extra-plugins', 'openssl', 'nftables', 'openssh-server')
     if not re.search(r'^\s*include\s+conf\.d/\*\.conf\s*$', pathlib.Path('/etc/swanctl/swanctl.conf').read_text(), re.M):
         raise RuntimeError('swanctl.conf must include conf.d/*.conf before automatic setup')
     ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -340,13 +340,9 @@ def revoke(data, identifier):
     item['revoked'] = True
     save_state(data)
     load_config(data)
-    import vici
-    session = vici.Session()
-    session.unload_shared({'id': 'eap-' + identifier})
-    for event in session.list_sas():
-        for sa in event.values():
-            if sa.get('remote-eap-id') == user.encode():
-                session.terminate({'ike-id': sa['uniqueid'], 'timeout': '1000'})
+    # swanctl reconciles credentials and unloads shared secrets absent from the
+    # full configuration. Closing this account's SSH sessions cuts active flows;
+    # old IKE SAs expire through DPD without disrupting other clients.
 
 
 def main():
