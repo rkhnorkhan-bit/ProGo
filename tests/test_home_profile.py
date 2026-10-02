@@ -42,6 +42,17 @@ class ProfileTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             module.build_profile({}, 'home.example.org')
 
+    def test_legacy_invalid_dh_is_repaired_without_changing_valid_pfs_policy(self):
+        for group, pfs, expected_group, expected_pfs in ((0, 0, 14, 0), (19, 1, 19, 1)):
+            original = {'PayloadContent': [{
+                'PayloadType': 'com.apple.vpn.managed', 'VPNType': 'IKEv2',
+                'IKEv2': {'RemoteIdentifier': 'vpn.example.org', 'EnablePFS': pfs,
+                          'ChildSecurityAssociationParameters': {'DiffieHellmanGroup': group}}}]}
+            result = module.build_profile(original, 'home.example.org')['PayloadContent'][0]['IKEv2']
+            self.assertEqual(result['ChildSecurityAssociationParameters']['DiffieHellmanGroup'], expected_group)
+            self.assertEqual(result['EnablePFS'], expected_pfs)
+            self.assertEqual(original['PayloadContent'][0]['IKEv2']['ChildSecurityAssociationParameters']['DiffieHellmanGroup'], group)
+
 
 if __name__ == '__main__':
     unittest.main()
