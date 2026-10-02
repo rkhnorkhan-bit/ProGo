@@ -441,7 +441,7 @@ namespace ProGo
         }
     }
 
-    internal sealed class BackupPickerForm : Form
+    internal sealed class BackupPickerForm : ProGoForm
     {
         private readonly ListBox list;
         private readonly TextBox details;
@@ -452,7 +452,7 @@ namespace ProGo
         public BackupPickerForm(List<BackupInfo> items)
         {
             backups = items;
-            Text = "Откат ProGo";
+            Text = "Восстановить ProGo из копии";
             Width = 840;
             Height = 460;
             StartPosition = FormStartPosition.CenterScreen;
@@ -480,7 +480,7 @@ namespace ProGo
 
             var ok = new Button
             {
-                Text = "Откатить",
+                Text = "Восстановить",
                 Width = 110,
                 Left = 590,
                 Top = 365

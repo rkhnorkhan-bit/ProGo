@@ -1,4 +1,4 @@
-param(
+﻿param(
     [int]$WaitPid = 0,
     [string]$ReleasePackageUrl = "https://github.com/rkhnorkhan-bit/ProGo/releases/latest/download/ProGo-release.zip",
     [string]$SourceZipUrl = "https://github.com/rkhnorkhan-bit/ProGo/archive/refs/heads/main.zip",
@@ -29,10 +29,6 @@ $State = @{
 }
 $BackupDir = $null
 
-function U8($Base64) {
-    return [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Base64))
-}
-
 function Write-UpdateLog($Message) {
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz") + " " + $Message
@@ -61,9 +57,9 @@ function Copy-LogToClipboard {
             Set-Clipboard -Value $text
         }
 
-        [void][System.Windows.Forms.MessageBox]::Show((U8 "0JbRg9GA0L3QsNC7INC+0LHQvdC+0LLQu9C10L3QuNGPINGB0LrQvtC/0LjRgNC+0LLQsNC9INCyINCx0YPRhNC10YAg0L7QsdC80LXQvdCwLg=="), "ProGo", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        [void][System.Windows.Forms.MessageBox]::Show(('Журнал обновления скопирован в буфер обмена.'), "ProGo", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
     } catch {
-        Write-Host ((U8 "0J3QtSDRg9C00LDQu9C+0YHRjCDRgdC60L7Qv9C40YDQvtCy0LDRgtGMINC20YPRgNC90LDQuzog") + $_.Exception.Message)
+        Write-Host (('Не удалось скопировать журнал: ') + $_.Exception.Message)
     }
 }
 
@@ -74,7 +70,7 @@ function Open-UpdateLog {
         }
         Start-Process -FilePath "notepad.exe" -ArgumentList $UpdateLog | Out-Null
     } catch {
-        Write-Host ((U8 "0J3QtSDRg9C00LDQu9C+0YHRjCDQvtGC0LrRgNGL0YLRjCDRhNCw0LnQuzog") + $_.Exception.Message)
+        Write-Host (('Не удалось открыть файл: ') + $_.Exception.Message)
     }
 }
 
@@ -83,7 +79,7 @@ function Open-ProGoFolder {
         New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
         Start-Process -FilePath "explorer.exe" -ArgumentList $InstallDir | Out-Null
     } catch {
-        Write-Host ((U8 "0J3QtSDRg9C00LDQu9C+0YHRjCDQvtGC0LrRgNGL0YLRjCDQv9Cw0L/QutGDOiA=") + $_.Exception.Message)
+        Write-Host (('Не удалось открыть папку: ') + $_.Exception.Message)
     }
 }
 
@@ -95,7 +91,10 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $form = New-Object System.Windows.Forms.Form
         $form.Text = $Title
         $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
-        $form.Width = 700
+        $form.Width = 760
+        $form.BackColor = [Drawing.Color]::FromArgb(12,17,27)
+        $form.ForeColor = [Drawing.Color]::FromArgb(235,241,250)
+        $form.Font = New-Object Drawing.Font "Segoe UI", 10
         $form.Height = 310
         $form.MinimizeBox = $false
         $form.MaximizeBox = $false
@@ -120,17 +119,18 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $message = New-Object System.Windows.Forms.TextBox
         $message.Left = 72
         $message.Top = 20
-        $message.Width = 590
+        $message.Width = 650
         $message.Height = 155
         $message.Multiline = $true
         $message.ReadOnly = $true
         $message.BorderStyle = [System.Windows.Forms.BorderStyle]::None
         $message.BackColor = $form.BackColor
+        $message.ForeColor = $form.ForeColor
         $message.Text = $Text
         $form.Controls.Add($message)
 
         $openLog = New-Object System.Windows.Forms.Button
-        $openLog.Text = U8 "0J7RgtC60YDRi9GC0YwgdXBkYXRlLmxvZw=="
+        $openLog.Text = 'Журнал обновления'
         $openLog.Left = 72
         $openLog.Top = 200
         $openLog.Width = 150
@@ -139,7 +139,7 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $form.Controls.Add($openLog)
 
         $copyLog = New-Object System.Windows.Forms.Button
-        $copyLog.Text = U8 "0KHQutC+0L/QuNGA0L7QstCw0YLRjCBsb2c="
+        $copyLog.Text = 'Копировать журнал'
         $copyLog.Left = 232
         $copyLog.Top = 200
         $copyLog.Width = 150
@@ -148,7 +148,7 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $form.Controls.Add($copyLog)
 
         $openFolder = New-Object System.Windows.Forms.Button
-        $openFolder.Text = U8 "0J7RgtC60YDRi9GC0Ywg0L/QsNC/0LrRgyBQcm9Hbw=="
+        $openFolder.Text = 'Открыть папку ProGo'
         $openFolder.Left = 392
         $openFolder.Top = 200
         $openFolder.Width = 160
@@ -157,7 +157,7 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $form.Controls.Add($openFolder)
 
         $ok = New-Object System.Windows.Forms.Button
-        $ok.Text = U8 "T0s="
+        $ok.Text = 'OK'
         $ok.Left = 562
         $ok.Top = 200
         $ok.Width = 100
@@ -167,6 +167,13 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $form.CancelButton = $ok
         $form.Controls.Add($ok)
 
+        foreach ($control in $form.Controls) {
+            if ($control -is [Windows.Forms.Button]) {
+                $control.FlatStyle = 'Flat'
+                $control.BackColor = [Drawing.Color]::FromArgb(30,40,57)
+                $control.ForeColor = $form.ForeColor
+            }
+        }
         [void]$form.ShowDialog()
     } catch {
         Write-Host ("{0}: {1}" -f $Title, $Text)
@@ -192,51 +199,32 @@ function Get-LocalVersion {
 }
 
 function Get-RemoteVersion {
-    try {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    } catch {
-        Write-UpdateLog "TLS setup warning: $($_.Exception.Message)"
-    }
-
-    $headers = @{ "User-Agent" = "ProGo-Updater" }
-    $response = Invoke-WebRequest -Uri $RemoteVersionUrl -Headers $headers -UseBasicParsing -ErrorAction Stop
-    $content = [string]$response.Content
-
-    try {
-        $payload = $content | ConvertFrom-Json
-
-        if (-not [string]::IsNullOrWhiteSpace([string]$payload.tag_name)) {
-            $version = ([string]$payload.tag_name).Trim()
-            if ($version.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase)) {
-                $version = $version.Substring(1)
-            }
-            return $version
-        }
-
-        if ($payload.encoding -eq "base64" -and -not [string]::IsNullOrWhiteSpace([string]$payload.content)) {
-            $base64 = ([string]$payload.content) -replace "\\s", ""
-            return ([System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($base64))).Trim()
-        }
-    } catch {
-        # Non-JSON endpoints are still supported for compatibility.
-    }
-
-    return $content.Trim()
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $response = Invoke-WebRequest -Uri $RemoteVersionUrl -Headers @{ "User-Agent" = "ProGo-Updater" } -UseBasicParsing -ErrorAction Stop
+    $payload = $response.Content | ConvertFrom-Json
+    if ($payload.draft -or $payload.prerelease) { throw "Only stable published releases are accepted." }
+    $version = ([string]$payload.tag_name).TrimStart('v')
+    if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid release version." }
+    $assets = @($payload.assets | Where-Object { $_.name -eq 'ProGo-release.zip' })
+    if ($assets.Count -ne 1) { throw "The release package is missing or ambiguous." }
+    $asset = $assets[0]
+    $expectedUrl = 'https://github.com/rkhnorkhan-bit/ProGo/releases/download/v' + $version + '/ProGo-release.zip'
+    if ([string]$asset.browser_download_url -cne $expectedUrl) { throw "Unexpected release download location." }
+    if ([string]$asset.digest -notmatch '^sha256:[a-fA-F0-9]{64}$') { throw "The release has no SHA-256 digest. Update cancelled." }
+    $State.ReleaseUrl = $expectedUrl
+    $State.ReleaseSha256 = ([string]$asset.digest).Substring(7)
+    return $version
 }
 
 function Test-UpdateRequired {
-    if ($Force) {
-        Write-UpdateLog "Force update requested."
-        return $true
-    }
-
     $State.LocalVersion = Get-LocalVersion
     $State.RemoteVersion = Get-RemoteVersion
     Write-UpdateLog "Version check: local=$($State.LocalVersion) remote=$($State.RemoteVersion)"
+    if ($Force) { Write-UpdateLog "Force update requested."; return $true }
 
     if ($State.LocalVersion -eq $State.RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
-        Show-UserMessage ((U8 "0KMg0LLQsNGBINCw0LrRgtGD0LDQu9GM0L3QsNGPINCy0LXRgNGB0LjRjyBQcm9Hbzog") + $State.LocalVersion) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=")
+        Show-UserMessage (('У вас актуальная версия ProGo: ') + $State.LocalVersion) ('Обновление ProGo')
         return $false
     }
 
@@ -474,99 +462,50 @@ function Find-ReleaseDirInExtractedPackage($Root) {
     return $null
 }
 
-function Try-GetReleasePackage($DestinationRoot) {
-    if ($NoReleasePackage) {
-        Write-UpdateLog "Release package mode disabled by -NoReleasePackage."
-        return $null
-    }
-
-    if ([string]::IsNullOrWhiteSpace($ReleasePackageUrl)) {
-        Write-UpdateLog "Release package URL is empty; using source-build fallback."
-        return $null
-    }
-
+function Test-ReleaseArchive($ZipPath, $Root) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive = [IO.Compression.ZipFile]::OpenRead($ZipPath)
     try {
-        New-Item -ItemType Directory -Path $DestinationRoot -Force | Out-Null
-        $packageZip = Join-Path $DestinationRoot "ProGo-release.zip"
-
-        Write-UpdateLog "Trying release package update mode."
-        Write-UpdateLog "update_mode=release-package"
-        Write-UpdateLog "Downloading release package: $ReleasePackageUrl"
-        Invoke-WebRequest -Uri $ReleasePackageUrl -OutFile $packageZip -UseBasicParsing -ErrorAction Stop
-
-        Write-UpdateLog "Extracting release package."
-        Expand-Archive -Path $packageZip -DestinationPath $DestinationRoot -Force
-
-        $releaseDir = Find-ReleaseDirInExtractedPackage $DestinationRoot
-        if ([string]::IsNullOrWhiteSpace($releaseDir)) {
-            throw "Release package does not contain ProGo.exe."
+        $prefix = [IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
+        $total = 0L
+        if ($archive.Entries.Count -gt 1000) { throw "Too many files in release archive." }
+        foreach ($entry in $archive.Entries) {
+            $relative = $entry.FullName.Replace('/', '\')
+            if ([IO.Path]::IsPathRooted($relative) -or $relative.Contains(':')) { throw "Unsafe archive path." }
+            $target = [IO.Path]::GetFullPath((Join-Path $Root $relative))
+            if (-not $target.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) { throw "Archive path escapes staging." }
+            $total += $entry.Length
+            if ($total -gt 64MB) { throw "Release archive exceeds size limit." }
         }
-
-        foreach ($required in @("ProGo.exe", "VERSION", "scripts\Update-ProGo.ps1", "scripts\Update-ProGo.Core.ps1")) {
-            if (-not (Test-Path (Join-Path $releaseDir $required))) {
-                throw "Release package missing required file: $required"
-            }
-        }
-
-        $packageVersion = ((Get-Content -Raw -Path (Join-Path $releaseDir "VERSION")).Trim())
-        if ($packageVersion -ne $State.RemoteVersion) {
-            throw "Release package version mismatch: package=$packageVersion remote=$($State.RemoteVersion)"
-        }
-
-        Write-UpdateLog "Release package accepted: $releaseDir"
-        return $releaseDir
-    } catch {
-        Write-UpdateLog "Release package unavailable; falling back to source build. Reason: $($_.Exception.Message)"
-        return $null
-    }
+    } finally { $archive.Dispose() }
 }
 
-function Build-DownloadedSource($DownloadedSourceRoot) {
-    $buildScript = Join-Path $DownloadedSourceRoot "scripts\Build-ProGo.ps1"
-    if (-not (Test-Path $buildScript)) {
-        Fail "Downloaded archive does not contain scripts\Build-ProGo.ps1"
+function Try-GetReleasePackage($DestinationRoot) {
+    if ($NoReleasePackage) { throw "Source execution during update is no longer supported. Use a published release." }
+    if ([string]::IsNullOrWhiteSpace($State.ReleaseUrl) -or [string]::IsNullOrWhiteSpace($State.ReleaseSha256)) { throw "Release metadata is unavailable." }
+    New-Item -ItemType Directory -Path $DestinationRoot -Force | Out-Null
+    $packageZip = Join-Path $DestinationRoot "ProGo-release.zip"
+    Write-UpdateLog "update_mode=release-package"
+    Write-UpdateLog "Downloading published package: $($State.ReleaseUrl)"
+    Invoke-WebRequest -Uri $State.ReleaseUrl -OutFile $packageZip -UseBasicParsing -ErrorAction Stop
+    $actual = (Get-FileHash -LiteralPath $packageZip -Algorithm SHA256).Hash
+    if ($actual -ine $State.ReleaseSha256) { throw "Package SHA-256 mismatch. No installed files were changed." }
+    Write-UpdateLog "Package SHA-256 verified: $actual"
+    Test-ReleaseArchive -ZipPath $packageZip -Root $DestinationRoot
+    Expand-Archive -LiteralPath $packageZip -DestinationPath $DestinationRoot -Force
+    $releaseDir = Find-ReleaseDirInExtractedPackage $DestinationRoot
+    if ([string]::IsNullOrWhiteSpace($releaseDir)) { throw "Release package does not contain ProGo.exe." }
+    foreach ($required in @("ProGo.exe", "VERSION", "scripts\Update-ProGo.ps1", "scripts\Update-ProGo.Core.ps1")) {
+        if (-not (Test-Path -LiteralPath (Join-Path $releaseDir $required))) { throw "Release package missing: $required" }
     }
-
-    Write-UpdateLog "Building downloaded source in temporary workspace."
-    & $buildScript
-
-    if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
-        Fail "Build failed with exit code $LASTEXITCODE"
-    }
-
-    $releaseDir = Join-Path $DownloadedSourceRoot "release"
-    if (-not (Test-Path (Join-Path $releaseDir "ProGo.exe"))) {
-        Fail "Build did not produce release\ProGo.exe"
-    }
-
+    $packageVersion = (Get-Content -Raw -LiteralPath (Join-Path $releaseDir "VERSION")).Trim()
+    if ($packageVersion -ne $State.RemoteVersion) { throw "Release package version mismatch." }
     return $releaseDir
 }
 
 function Get-ReleaseDirForUpdate {
-    $packageRelease = Try-GetReleasePackage -DestinationRoot $PackageDir
-    if (-not [string]::IsNullOrWhiteSpace($packageRelease)) {
-        $State.UpdateMode = "release-package"
-        return $packageRelease
-    }
-
-    $State.UpdateMode = "source-build-fallback"
-    Write-UpdateLog "update_mode=source-build-fallback"
-
-    $ZipPath = Join-Path $TransactionRoot "ProGo-main.zip"
-    New-Item -ItemType Directory -Path $SourceDir -Force | Out-Null
-
-    Write-UpdateLog "Downloading source from GitHub into temporary workspace."
-    Invoke-WebRequest -Uri $SourceZipUrl -OutFile $ZipPath -UseBasicParsing
-
-    Write-UpdateLog "Extracting source into temporary workspace."
-    Expand-Archive -Path $ZipPath -DestinationPath $SourceDir -Force
-
-    $SourceRoot = Get-ChildItem -Path $SourceDir -Directory | Where-Object { Test-Path (Join-Path $_.FullName "scripts\Build-ProGo.ps1") } | Select-Object -First 1
-    if ($null -eq $SourceRoot) {
-        Fail "Downloaded archive does not contain expected ProGo source tree."
-    }
-
-    return (Build-DownloadedSource -DownloadedSourceRoot $SourceRoot.FullName)
+    $State.UpdateMode = "release-package"
+    return (Try-GetReleasePackage -DestinationRoot $PackageDir)
 }
 
 function Start-UpdatedProGo($ExePath) {
@@ -661,7 +600,8 @@ try {
 
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "success"
     Write-UpdateLog "ProGo transactional update completed."
-    Show-UpdateDialog ((U8 "UHJvR28g0L7QsdC90L7QstC70ZHQvS4g0KDQtdC30LXRgNCy0L3QsNGPINC60L7Qv9C40Y8g0YHQvtGF0YDQsNC90LXQvdCwOgo=") + $BackupDir) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=") "Information"
+    Show-UpdateDialog (('ProGo обновлён. Резервная копия сохранена:
+') + $BackupDir) ('Обновление ProGo') "Information"
 } catch {
     $message = $_.Exception.Message
     Write-UpdateLog "TRANSACTION FAILED: $message"
@@ -674,7 +614,9 @@ try {
         Write-UpdateLog "Main application was not changed; rollback is not required."
     }
 
-    Show-UpdateDialog ((U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28g0L3QtSDQstGL0L/QvtC70L3QtdC90L4uINCe0YHQvdC+0LLQvdC+0LUg0L/RgNC40LvQvtC20LXQvdC40LUg0YHQvtGF0YDQsNC90LXQvdC+INC40LvQuCDQstC+0YHRgdGC0LDQvdC+0LLQu9C10L3QviDQuNC3INGA0LXQt9C10YDQstC90L7QuSDQutC+0L/QuNC4LiDQn9C+0LTRgNC+0LHQvdC+0YHRgtC4INCyIHVwZGF0ZS5sb2cuCgo=") + $message) (U8 "0J7QsdC90L7QstC70LXQvdC40LUgUHJvR28=") "Error"
+    Show-UpdateDialog (('Обновление ProGo не выполнено. Основное приложение сохранено или восстановлено из резервной копии. Подробности в update.log.
+
+') + $message) ('Обновление ProGo') "Error"
     throw
 } finally {
     Cleanup-TemporaryFiles

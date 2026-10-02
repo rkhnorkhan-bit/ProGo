@@ -113,6 +113,8 @@ namespace ProGo
                 Text(xml, "ServerCertificateCommonName", "string", Identity);
                 Text(xml, "ServerCertificateIssuerCommonName", "string", CaName);
                 Text(xml, "DisableMOBIKE", "integer", "1");
+                // CHILD DH must be a supported group even with PFS disabled.
+                Text(xml, "EnablePFS", "integer", "0");
                 Text(xml, "IncludeAllNetworks", "integer", "1");
                 Text(xml, "DeadPeerDetectionRate", "string", "Medium");
                 Key(xml, "IKESecurityAssociationParameters"); xml.WriteStartElement("dict");
@@ -120,7 +122,7 @@ namespace ProGo
                 Text(xml, "DiffieHellmanGroup", "integer", "14"); xml.WriteEndElement();
                 Key(xml, "ChildSecurityAssociationParameters"); xml.WriteStartElement("dict");
                 Text(xml, "EncryptionAlgorithm", "string", "AES-256"); Text(xml, "IntegrityAlgorithm", "string", "SHA2-256");
-                Text(xml, "DiffieHellmanGroup", "integer", "0"); xml.WriteEndElement();
+                Text(xml, "DiffieHellmanGroup", "integer", "14"); xml.WriteEndElement();
                 xml.WriteEndElement(); xml.WriteEndElement(); xml.WriteEndElement(); xml.WriteEndElement(); xml.WriteEndElement();
             }
         }

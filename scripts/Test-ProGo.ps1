@@ -1,4 +1,4 @@
-Set-StrictMode -Version 2.0
+﻿Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $PSScriptRoot
@@ -81,9 +81,9 @@ foreach ($requiredSource in @(
     "MeasureSocksLatencyMs",
     "MeasureDownloadMbps",
     "speed.cloudflare.com",
-    "Ping через SOCKS",
+    "Задержка соединения",
     "Измерить скорость",
-    "Прокси окружения",
+    "Командная строка",
     "Interval = 2000",
     "UpdateAvailability",
     "CheckForUpdate",
@@ -116,17 +116,9 @@ foreach ($required in @(
 if ($proxySetupText -match [regex]::Escape("HTTP_PROXY=socks5h://")) { Fail "proxy setup still documents SOCKS URI for HTTP_PROXY" }
 
 $updateLauncherSource = Get-Content -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
-if ($updateLauncherSource -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") { Fail "updater bootstrap fallback URL missing" }
-if ($updateLauncherSource -notmatch "TryDownloadUpdateScript") { Fail "updater download fallback missing" }
-if ($updateLauncherSource -notmatch "Always try to refresh the updater first") { Fail "updater script is not refreshed before local fallback" }
-if ($updateLauncherSource -notmatch "UseShellExecute\s*=\s*false") { Fail "updater launcher must bypass ShellExecute" }
-if ($updateLauncherSource -notmatch "CreateNoWindow\s*=\s*true") { Fail "updater launcher must run without a console window" }
-if ($updateLauncherSource -match "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") { Fail "updater launcher must not depend on ShellExecute window style" }
-if ($updateLauncherSource -notmatch "NativeErrorCode") { Fail "updater launcher must log Win32 native error code" }
-if ($updateLauncherSource -notmatch "Updater process started\. PID=") { Fail "updater launcher success PID logging missing" }
-if ($updateLauncherSource -notmatch "WaitForExit\(1200\)") { Fail "updater launcher handoff wait missing" }
-if ($updateLauncherSource -notmatch "Updater process exited before handoff") { Fail "updater launcher early-exit guard missing" }
-if ($updateLauncherSource -notmatch "Updater handoff confirmed\. PID=") { Fail "updater launcher handoff logging missing" }
+if ($updateLauncherSource -match 'TryDownloadUpdateScript|ExecutionPolicy Bypass|RawUpdateScriptUrl') { Fail "updater must use installed files and respect execution policy" }
+if ($updateLauncherSource -notmatch 'CreateNoWindow = false') { Fail "updater must show its progress console" }
+if ($updateLauncherSource -notmatch 'WaitForExit\(1200\)') { Fail "updater early-exit guard missing" }
 
 $buildScriptText = Get-Content -Raw -Path $Build
 foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
@@ -141,24 +133,25 @@ foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Rest
 }
 
 $updateBootstrapText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
-foreach ($required in @("CoreApiUrl", "api.github.com/repos/rkhnorkhan-bit/ProGo/contents/scripts/Update-ProGo.Core.ps1", "Update-ProGo.Core.ps1", "Get-UpdaterCoreText", "Get-CoreFromGitHubApi", "Get-CoreFromSourceArchive", "ConvertFrom-Json", "[ScriptBlock]::Create", "Starting transactional updater core in memory.", "Restart-InstalledProGo", "Recovery launch started ProGo")) {
-    if ($updateBootstrapText -notmatch [regex]::Escape($required)) {
-        Fail "updater bootstrap marker missing: $required"
-    }
+if ($updateBootstrapText -match 'ScriptBlock|FromBase64String|Invoke-WebRequest|Download') {
+    # The static error message can mention downloading a release; no network code belongs here.
+    if ($updateBootstrapText -match 'ScriptBlock|FromBase64String|Invoke-WebRequest|DownloadString|DownloadFile') { Fail "updater bootstrap executes or fetches remote code" }
 }
+if (-not $updateBootstrapText.Contains('& $LocalCoreScriptPath @coreArgs')) { Fail "updater must execute installed core as a file" }
 
 $updateScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.Core.ps1")
 foreach ($required in @(
     "Test-UpdateRequired",
     "Get-RemoteVersion",
-    "U8",
     "Backup-InstalledState",
     "Set-BackupUpdateResult",
     "ReleasePackageUrl",
     "Try-GetReleasePackage",
+    "Get-FileHash",
+    "Package SHA-256 verified",
+    "Test-ReleaseArchive",
     "Get-ReleaseDirForUpdate",
     "update_mode=release-package",
-    "update_mode=source-build-fallback",
     "ProGo-release.zip",
     "ProGo.exe",
     "scripts",
@@ -175,7 +168,7 @@ foreach ($required in @(
     }
 }
 if ($updateScriptText -match "Stop-Process\s+-Id") { Fail "updater still force-kills ProGo process" }
-if ($updateScriptText -match '\$script:') { Fail "updater core must not use script-scoped mutable state under in-memory execution" }
+if ($updateScriptText -match 'Build-DownloadedSource|ScriptBlock') { Fail "updater must not execute downloaded source" }
 foreach ($requiredStateMarker in @(
     '$State.RemoteVersion',
     '$State.MainWasChanged',
@@ -289,4 +282,11 @@ if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
 
+$DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
+$DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
+& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
+& $DesktopHarness (Join-Path $Root 'build\desktop-shots')
+if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
+& (Join-Path $Root 'tests\UpdatePackageTests.ps1')
 Write-Host "ProGo tests PASS."

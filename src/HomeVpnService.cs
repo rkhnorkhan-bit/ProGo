@@ -43,6 +43,7 @@ namespace ProGo
         private string sessionDirectory;
         private CancellationTokenSource starting;
         private bool disposed;
+        internal bool AutoRestart = true;
         internal string RecoveryStatus { get { return proxy == null ? "Не запущен" : proxy.RecoveryStatus; } }
 
         internal HomeVpnService(Ikev2RelayService relay)
@@ -100,7 +101,7 @@ namespace ProGo
                 var reservation = new TcpListener(IPAddress.Loopback, 0); reservation.Start();
                 try { port = ((IPEndPoint)reservation.LocalEndpoint).Port; } finally { reservation.Stop(); }
                 var options = AppSettings.Defaults(); options.SocksPort = port; options.SshProfile = "progo-home";
-                proxy = new ProxyService(delegate { return options; }, delegate { }, "ssh.exe", delegate { return DateTime.UtcNow; }, true,
+                proxy = new ProxyService(delegate { options.AutoRestartSocks = AutoRestart; return options; }, delegate { }, "ssh.exe", delegate { return DateTime.UtcNow; }, true,
                     "-F " + Argument(config) + " ");
                 proxy.StartTunnel(false);
                 for (int i = 0; i < 40; i++)

@@ -1,48 +1,73 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace ProGo
 {
-    internal static class BrandIcon
+    public static class BrandIcon
     {
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool DestroyIcon(IntPtr hIcon);
 
-        public static Icon Create()
+        public static Bitmap Draw(int size)
         {
-            using (var bitmap = new Bitmap(64, 64))
+            var bitmap = new Bitmap(size, size);
             using (var g = Graphics.FromImage(bitmap))
             {
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
-
-                using (var shadow = new SolidBrush(Color.FromArgb(70, 0, 0, 0)))
-                using (var background = new SolidBrush(Color.FromArgb(24, 64, 160)))
-                using (var accent = new SolidBrush(Color.FromArgb(69, 214, 147)))
-                using (var white = new SolidBrush(Color.White))
-                using (var font = new Font("Segoe UI", 36f, FontStyle.Bold, GraphicsUnit.Pixel))
-                using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                g.ScaleTransform(size / 64f, size / 64f);
+                using (var shape = new GraphicsPath())
+                using (var background = new LinearGradientBrush(new Rectangle(0, 0, 64, 64), Color.FromArgb(40, 67, 92), Color.FromArgb(11, 21, 35), 60f))
+                using (var edge = new Pen(Color.FromArgb(81, 126, 148), 1f))
+                using (var mark = new Pen(Color.FromArgb(90, 232, 187), 7f))
                 {
-                    g.FillEllipse(shadow, 6, 7, 54, 54);
-                    g.FillEllipse(background, 4, 4, 56, 56);
-                    g.FillEllipse(accent, 43, 10, 10, 10);
-                    g.DrawString("P", font, white, new RectangleF(0, 5, 64, 54), format);
-                }
-
-                IntPtr hIcon = bitmap.GetHicon();
-                try
-                {
-                    using (var icon = Icon.FromHandle(hIcon))
+                    shape.AddArc(2, 2, 24, 24, 180, 90); shape.AddArc(38, 2, 24, 24, 270, 90);
+                    shape.AddArc(38, 38, 24, 24, 0, 90); shape.AddArc(2, 38, 24, 24, 90, 90); shape.CloseFigure();
+                    g.FillPath(background, shape); g.DrawPath(edge, shape);
+                    mark.StartCap = mark.EndCap = LineCap.Round; mark.LineJoin = LineJoin.Round;
+                    g.DrawLine(mark, 21, 47, 21, 18); g.DrawLine(mark, 21, 18, 35, 18);
+                    g.DrawArc(mark, 25, 18, 20, 20, 270, 180); g.DrawLine(mark, 35, 38, 29, 38);
+                    using (var arrow = new Pen(Color.White, 3.5f))
                     {
-                        return (Icon)icon.Clone();
+                        arrow.StartCap = arrow.EndCap = LineCap.Round;
+                        g.DrawLine(arrow, 36, 48, 47, 37); g.DrawLine(arrow, 39, 37, 47, 37); g.DrawLine(arrow, 47, 37, 47, 45);
                     }
                 }
-                finally
+            }
+            return bitmap;
+        }
+        public static Icon Create()
+        {
+            using (var bitmap = Draw(64))
+            {
+                var handle = bitmap.GetHicon();
+                try { using (var icon = Icon.FromHandle(handle)) return (Icon)icon.Clone(); }
+                finally { DestroyIcon(handle); }
+            }
+        }
+        // The executable and tray use exactly the same drawing at every icon size.
+        public static void WriteIcon(string path)
+        {
+            int[] sizes = { 16, 24, 32, 48, 64, 128, 256 };
+            var frames = new byte[sizes.Length][];
+            for (int i = 0; i < sizes.Length; i++)
+                using (var bitmap = Draw(sizes[i]))
+                using (var stream = new MemoryStream()) { bitmap.Save(stream, ImageFormat.Png); frames[i] = stream.ToArray(); }
+            using (var writer = new BinaryWriter(File.Create(path)))
+            {
+                writer.Write((ushort)0); writer.Write((ushort)1); writer.Write((ushort)sizes.Length);
+                int offset = 6 + 16 * sizes.Length;
+                for (int i = 0; i < sizes.Length; i++)
                 {
-                    DestroyIcon(hIcon);
+                    writer.Write((byte)(sizes[i] == 256 ? 0 : sizes[i])); writer.Write((byte)(sizes[i] == 256 ? 0 : sizes[i]));
+                    writer.Write((byte)0); writer.Write((byte)0); writer.Write((ushort)1); writer.Write((ushort)32);
+                    writer.Write(frames[i].Length); writer.Write(offset); offset += frames[i].Length;
                 }
+                foreach (var frame in frames) writer.Write(frame);
             }
         }
     }

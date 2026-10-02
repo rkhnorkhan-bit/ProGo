@@ -11,10 +11,11 @@ using System.Windows.Forms;
 
 namespace ProGo
 {
-    internal sealed class HomeVpnWizardForm : Form
+    internal sealed class HomeVpnWizardForm : ProGoForm
     {
         private readonly HomeVpnService service;
         private readonly FlowLayoutPanel body = new FlowLayoutPanel();
+        private readonly WizardProgress progress = new WizardProgress();
         private readonly Label heading = new Label();
         private readonly Label status = new Label();
         private readonly Button back = new Button();
@@ -33,19 +34,19 @@ namespace ProGo
         internal HomeVpnWizardForm(HomeVpnService service)
         {
             this.service = service;
-            Text = "iPhone через домашний ПК"; AutoScaleMode = AutoScaleMode.Font;
+            Text = "iPhone через домашний ПК"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(750, 650); MinimumSize = new Size(700, 620);
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), RowCount = 5, ColumnCount = 1 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int i = 0; i < 5; i++) layout.RowStyles.Add(new RowStyle(i == 2 ? SizeType.Percent : SizeType.AutoSize, i == 2 ? 100 : 0));
-            heading.AutoSize = true; heading.Font = new Font(Font, FontStyle.Bold); heading.Margin = new Padding(0, 0, 0, 8);
-            var progress = new Label { Text = "Доступ  →  VPS  →  Роутер  →  iPhone  →  Проверка", AutoSize = true, ForeColor = Color.DimGray, Margin = new Padding(0, 0, 0, 16) };
+            heading.AutoSize = true; heading.Font = UiTheme.Heading; heading.Margin = new Padding(0, 0, 0, 8);
+            progress.Dock = DockStyle.Top; progress.Height = 64; progress.Margin = new Padding(0, 0, 0, 16);
             body.Dock = DockStyle.Fill; body.FlowDirection = FlowDirection.TopDown; body.WrapContents = false; body.AutoScroll = true;
             status.AutoSize = true; status.MaximumSize = new Size(680, 0); status.Margin = new Padding(0, 8, 0, 8);
             var footer = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill };
-            back.Text = "Назад"; back.AutoSize = true; back.Click += delegate { Remember(); ShowStep(Math.Max(0, step - 1)); };
-            next.AutoSize = true; next.Click += async delegate { await Advance(); };
+            back.Text = "Назад"; back.MinimumSize = new Size(120, 38); back.AutoSize = true; back.Click += delegate { Remember(); ShowStep(Math.Max(0, step - 1)); };
+            next.Tag = "primary"; next.MinimumSize = new Size(180, 38); next.AutoSize = true; next.Click += async delegate { await Advance(); };
             footer.Controls.Add(back); footer.Controls.Add(next);
             layout.Controls.Add(heading, 0, 0); layout.Controls.Add(progress, 0, 1); layout.Controls.Add(body, 0, 2);
             layout.Controls.Add(status, 0, 3); layout.Controls.Add(footer, 0, 4); Controls.Add(layout);
@@ -57,10 +58,10 @@ namespace ProGo
 
         private void ShowStep(int value)
         {
-            step = value; body.SuspendLayout();
+            step = value; progress.Step = value; body.SuspendLayout();
             foreach (Control control in body.Controls.Cast<Control>().ToArray()) control.Dispose();
             body.Controls.Clear(); counters = null; host = login = key = token = home = null; port = null; routerCheck = null;
-            status.Text = ""; status.ForeColor = Color.DarkSlateGray;
+            status.Text = ""; status.ForeColor = UiTheme.Muted;
             string[] titles = { "Как подключаемся?", own ? "Данные вашего VPS" : "Токен приглашения", "Подготовьте домашний роутер", "Добавьте VPN на iPhone", "Проверка и управление" };
             heading.Text = (step + 1) + ". " + titles[step];
             back.Visible = step > 0; next.Visible = step > 0; next.Text = step == 4 ? "Закрыть" : "Далее";
@@ -131,9 +132,9 @@ namespace ProGo
                 Action("Настроить роутер / создать профиль снова", delegate { ShowStep(2); });
                 Action("Выбрать другой VPS или токен", delegate { ShowStep(0); });
                 if (service.Owner != null) Action("Доступ друзей…", async delegate { await ManageInvitations(); });
-                Paragraph("Режим экспериментальный: IKEv2 нужно проверить с вашим iPhone и провайдером. При обрыве SSH/SOCKS ProGo повторяет подключение автоматически; телефон может переподключать VPN несколько секунд.");
+                Paragraph("Режим экспериментальный: IKEv2 нужно проверить с вашим iPhone и провайдером. При обрыве SSH/SOCKS при включённом автовосстановлении ProGo повторяет подключение; телефон может переподключать VPN несколько секунд.");
             }
-            body.ResumeLayout(); RefreshStatus();
+            UiTheme.Apply(body); body.ResumeLayout(); RefreshStatus();
         }
 
         private void Remember()
@@ -177,9 +178,9 @@ namespace ProGo
         private async Task RunStep(Func<Task> action)
         {
             if (busy) return;
-            busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = Color.DarkSlateGray;
+            busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await action(); }
-            catch (Exception ex) { status.ForeColor = Color.DarkRed; status.Text = ex.Message; }
+            catch (Exception ex) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; }
             finally { busy = false; if (!IsDisposed) { body.Enabled = true; back.Enabled = next.Enabled = true; } }
         }
         private void SetProgress(string text) { status.Text = text; }
@@ -219,7 +220,7 @@ namespace ProGo
                     service.Access.WriteProfile(dialog.FileName, service.HomeAddress);
                     profileSaved = true; status.Text = "Профиль сохранён. Передайте файл на iPhone и установите его.";
                 }
-                catch (Exception ex) { status.ForeColor = Color.DarkRed; status.Text = ex.Message; }
+                catch (Exception ex) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; }
             }
         }
         private async Task ManageInvitations()
@@ -228,7 +229,7 @@ namespace ProGo
             {
                 var response = await HomeVpnService.AdminAsync(service.Owner, "list", null, null, SetProgress);
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(response);
-                using (var dialog = new Form { Text = "Доступ друзей", Size = new Size(630, 440), StartPosition = FormStartPosition.CenterParent })
+                using (var dialog = new ProGoForm { Text = "Доступ друзей", Size = new Size(630, 440), StartPosition = FormStartPosition.CenterParent })
                 {
                     var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), FlowDirection = FlowDirection.TopDown, WrapContents = false };
                     var list = new ListBox { Width = 570, Height = 175 }; foreach (var item in items) list.Items.Add(item);
@@ -246,7 +247,7 @@ namespace ProGo
                         {
                             var value = await HomeVpnService.AdminAsync(service.Owner, "invite", label.Text, null, delegate { });
                             var access = HomeVpnAccess.Parse(value);
-                            using (var share = new Form { Text = "Личный токен для друга", Size = new Size(630, 290), StartPosition = FormStartPosition.CenterParent })
+                            using (var share = new ProGoForm { Text = "Личный токен для друга", Size = new Size(630, 290), StartPosition = FormStartPosition.CenterParent })
                             {
                                 var description = new Label { Dock = DockStyle.Top, Height = 80, Padding = new Padding(12), Text = "Отправьте токен другу лично. Он выберет в ProGo «Подключиться к готовому VPS». Токен даёт доступ к VPN до отзыва владельцем; не публикуйте его." };
                                 var secret = new TextBox { Dock = DockStyle.Top, UseSystemPasswordChar = true, Text = value };

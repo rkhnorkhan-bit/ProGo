@@ -19,6 +19,7 @@ namespace ProGo
         public bool HadAutoDetect { get; set; }
         public int AutoDetect { get; set; }
         public string CreatedAtUtc { get; set; }
+        public string AppliedServer { get; set; }
     }
 
     internal static class SystemProxyService
@@ -62,6 +63,9 @@ namespace ProGo
             {
                 AppPaths.EnsureDirectories();
                 SaveBackupIfNeeded();
+                var owned = LoadBackup();
+                owned.AppliedServer = BuildProxyServer(settings);
+                File.WriteAllText(BackupPath, new JavaScriptSerializer().Serialize(owned));
 
                 using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey))
                 {
@@ -146,11 +150,20 @@ namespace ProGo
                 var snapshot = ReadCurrent();
                 if (!snapshot.HadProxyEnable || snapshot.ProxyEnable == 0) return false;
                 if (!snapshot.HadProxyServer || String.IsNullOrWhiteSpace(snapshot.ProxyServer)) return false;
-                return snapshot.ProxyServer.IndexOf(BuildProxyServer(settings), StringComparison.OrdinalIgnoreCase) >= 0;
+                return String.Equals(snapshot.ProxyServer, BuildProxyServer(settings), StringComparison.OrdinalIgnoreCase);
             }
             catch
             {
                 return false;
+            }
+        }
+
+        public static bool IsOwned
+        {
+            get
+            {
+                try { var saved = LoadBackup(); var now = ReadCurrent(); return saved != null && !String.IsNullOrWhiteSpace(saved.AppliedServer) && now.ProxyServer == saved.AppliedServer; }
+                catch { return false; }
             }
         }
 
@@ -227,7 +240,7 @@ namespace ProGo
 
         private static string BuildProxyServer(AppSettings settings)
         {
-            return "socks=" + settings.SocksHost + ":" + settings.SocksPort;
+            return "http=" + CliProxyBridgeService.Host + ":" + CliProxyBridgeService.Port + ";https=" + CliProxyBridgeService.Host + ":" + CliProxyBridgeService.Port;
         }
 
         private static void RestoreDword(RegistryKey key, string name, bool hadValue, int value)

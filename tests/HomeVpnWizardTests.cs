@@ -48,6 +48,8 @@ namespace ProGo
                 Check(xml.SelectSingleNode("//key[text()='RemoteIdentifier']/following-sibling::*[1]").InnerText == access.Identity, "server certificate identity remains pinned");
                 Check(xml.SelectSingleNode("//key[text()='DisableMOBIKE']/following-sibling::*[1]").InnerText == "1"
                     && xml.SelectSingleNode("//key[text()='IncludeAllNetworks']/following-sibling::*[1]").InnerText == "1", "profile uses home route and full tunnel");
+                Check(xml.SelectNodes("//key[text()='DiffieHellmanGroup']/following-sibling::integer[1]").Cast<XmlNode>().All(n => n.InnerText == "14"), "generated profile uses valid DH14 in both associations");
+                Check(xml.SelectSingleNode("//key[text()='EnablePFS']/following-sibling::*[1]").InnerText == "0", "CHILD PFS explicitly matches existing server ESP policy");
                 Check(!File.ReadAllText(profile).Contains(access.PrivateKey), "iPhone profile never contains SSH private key");
                 bool overwrite = false; try { access.WriteProfile(profile, "home.example.org"); } catch (IOException) { overwrite = true; }
                 Check(overwrite, "profile export preserves existing file");

@@ -27,7 +27,6 @@ namespace ProGo
     internal static class UpdateLauncher
     {
         private const string UpdateScriptName = "Update-ProGo.ps1";
-        private const string RawUpdateScriptUrl = "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo.ps1";
         private const string LatestReleaseApiUrl = "https://api.github.com/repos/rkhnorkhan-bit/ProGo/releases/latest";
 
         private sealed class GitHubReleaseInfo
@@ -134,11 +133,11 @@ namespace ProGo
                 if (!File.Exists(powershell)) powershell = "powershell.exe";
 
                 var currentPid = Process.GetCurrentProcess().Id;
-                var args = "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\" -WaitPid " + currentPid;
+                var args = "-NoProfile -File \"" + scriptPath + "\" -WaitPid " + currentPid;
                 var psi = new ProcessStartInfo(powershell, args)
                 {
                     UseShellExecute = false,
-                    CreateNoWindow = true,
+                    CreateNoWindow = false,
                     WorkingDirectory = AppPaths.Root
                 };
 
@@ -158,7 +157,7 @@ namespace ProGo
                     var likelyAntivirusBlock = LooksLikeAntivirusBlock(recentLogs);
                     if (likelyAntivirusBlock)
                     {
-                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ". Possible antivirus or endpoint protection block.", new InvalidOperationException("Updater process exited before handoff."));
+                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ". Possible antivirus or система защиты block.", new InvalidOperationException("Updater process exited before handoff."));
                     }
                     else
                     {
@@ -203,20 +202,18 @@ namespace ProGo
             if (likelyAntivirusBlock)
             {
                 return
-                    "Обновление не стартовало: updater завершился слишком рано.\n\n" +
-                    "Похоже, антивирус или endpoint protection заблокировал загрузку/запуск обновления.\n\n" +
+                    "Обновление не стартовало: процесс обновления завершился слишком рано.\n\n" +
+                    "Похоже, антивирус или система защиты заблокировал загрузку/запуск обновления.\n\n" +
                     "Что сделать:\n" +
-                    "1. Разрешить ProGo.exe в антивирусе.\n" +
-                    "2. Разрешить scripts\\Update-ProGo.ps1 и scripts\\Update-ProGo.Core.ps1.\n" +
-                    "3. Разрешить загрузки с github.com и api.github.com.\n" +
-                    "4. Повторить обновление.\n\n" +
+                    "Откройте отчёт антивируса и сохраните название обнаружения.\n" +
+                    "В разделе «Помощь» есть официальный выпуск и инструкция проверки.\n\n" +
                     "ExitCode: " + exitCode + "\n" +
                     "Подробности записаны в update.log и progo.log.";
             }
 
             return
                 "Обновление не стартовало. ProGo останется запущенным.\n\n" +
-                "Updater завершился до handoff. ExitCode: " + exitCode + "\n\n" +
+                "Процесс обновления завершился до передачи управления. Код: " + exitCode + "\n\n" +
                 "Подробности записаны в update.log и progo.log.";
         }
 
@@ -259,59 +256,9 @@ namespace ProGo
 
         private static string ResolveUpdateScriptPath()
         {
-            var installedScript = Path.Combine(AppPaths.Root, "scripts", UpdateScriptName);
-
-            // Always try to refresh the updater first. This prevents a stale local
-            // Update-ProGo.ps1 from keeping older update behavior forever.
-            if (TryDownloadUpdateScript(installedScript)) return installedScript;
-
-            if (File.Exists(installedScript)) return installedScript;
-
-            var executableDir = Path.GetDirectoryName(Application.ExecutablePath) ?? AppPaths.Root;
-            var besideExeScript = Path.Combine(executableDir, "scripts", UpdateScriptName);
-            if (File.Exists(besideExeScript))
-            {
-                TryCopyScriptToInstalledLocation(besideExeScript, installedScript);
-                return File.Exists(installedScript) ? installedScript : besideExeScript;
-            }
-
-            return String.Empty;
-        }
-
-        private static void TryCopyScriptToInstalledLocation(string source, string destination)
-        {
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(destination));
-                File.Copy(source, destination, true);
-                SafeLog.Info("Updater script copied to install data folder.");
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Updater script copy failed.", ex);
-            }
-        }
-
-        private static bool TryDownloadUpdateScript(string destination)
-        {
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(destination));
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                using (var client = new WebClient())
-                {
-                    client.Headers.Add("User-Agent", "ProGo-Updater");
-                    client.DownloadFile(RawUpdateScriptUrl, destination);
-                }
-
-                SafeLog.Info("Updater script downloaded from GitHub.");
-                return File.Exists(destination);
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Updater script download failed.", ex);
-                return false;
-            }
+            var besideExe = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "scripts", UpdateScriptName);
+            if (File.Exists(besideExe)) return besideExe;
+            throw new FileNotFoundException("Файл обновления отсутствует. Откройте официальный выпуск в разделе «Помощь» и восстановите установку.");
         }
     }
 }

@@ -13,7 +13,7 @@ try {
     $Fixture = Join-Path $Root 'build\vpn-fixture'
     python .\tests\make_vpn_test_token.py $Fixture
     if ($LASTEXITCODE -ne 0) { throw 'VPN fixture generation failed' }
-    & $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$WizardHarness" .\src\Core.cs .\src\ProxyService.cs .\src\Ikev2RelayService.cs .\src\HomeVpnAccess.cs .\src\HomeVpnService.cs .\src\HomeVpnWizardForm.cs .\tests\HomeVpnWizardTests.cs
+    & $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$WizardHarness" .\src\Core.cs .\src\ProxyService.cs .\src\Ikev2RelayService.cs .\src\HomeVpnAccess.cs .\src\HomeVpnService.cs .\src\HomeVpnWizardForm.cs .\src\UiTheme.cs .\src\BrandIcon.cs .\tests\HomeVpnWizardTests.cs
     if ($LASTEXITCODE -ne 0) { throw 'Home VPN wizard harness build failed' }
     & $WizardHarness (Join-Path $Fixture 'token')
     if ($LASTEXITCODE -ne 0) { throw 'Home VPN wizard tests failed' }

@@ -49,73 +49,153 @@ namespace ProGo
             }
         }
 
+        private readonly AutomationPlan automation = new AutomationPlan();
+        private readonly Timer automationTimer = new Timer { Interval = 1000 };
+        private MainWindow mainWindow;
+
         private ContextMenuStrip BuildMenu()
         {
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Состояние", null, delegate { ShowStatus(); });
+            menu.Items.Add("Открыть ProGo", null, delegate { ShowStatus(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Запустить SOCKS", null, delegate { proxy.StartTunnel(true); UpdateTooltip(); });
-            menu.Items.Add("Остановить SOCKS", null, delegate { proxy.StopTunnel(); UpdateTooltip(); });
-            menu.Items.Add("Перезапустить SOCKS", null, delegate { proxy.RestartTunnel(); UpdateTooltip(); });
-            var autoRestart = new ToolStripMenuItem("Автовосстановление SOCKS")
-            {
-                Checked = settings.Current.AutoRestartSocks
-            };
-            autoRestart.Click += delegate
-            {
-                proxy.SetAutoRestart(!settings.Current.AutoRestartSocks);
-                autoRestart.Checked = settings.Current.AutoRestartSocks;
-            };
-            menu.Opening += delegate { autoRestart.Checked = settings.Current.AutoRestartSocks; };
-            menu.Items.Add(autoRestart);
-            menu.Items.Add("Изменить порт SOCKS...", null, delegate { ChangePort(); });
-            menu.Items.Add("Применить proxy environment", null, delegate { ApplyCliProxyEnvironment(); });
-            menu.Items.Add("Включить системный прокси Windows", null, delegate { EnableSystemProxy(); });
-            menu.Items.Add("Отключить системный прокси Windows", null, delegate { DisableSystemProxy(); });
+            var connection = new ToolStripMenuItem("Подключение");
+            Item(connection, "Подключиться к серверу", "connect");
+            Item(connection, "Отключиться", "stop");
+            Item(connection, "Переподключиться", "restart");
+            Item(connection, "Проверить маршрут и скорость", "diagnostics");
+            menu.Items.Add(connection);
+            var apps = new ToolStripMenuItem("Прокси для приложений");
+            Item(apps, "Windows — включить", "windows-on"); Item(apps, "Windows — выключить", "windows-off");
+            apps.DropDownItems.Add(new ToolStripSeparator());
+            Item(apps, "Командная строка — включить", "terminal-on"); Item(apps, "Командная строка — выключить", "terminal-off");
+            Item(apps, "Открыть терминал с прокси", "terminal-open");
+            apps.DropDownItems.Add(new ToolStripSeparator());
+            Item(apps, "Codex — настроить ярлык", "codex-on"); Item(apps, "Codex — убрать ярлык", "codex-off");
+            Item(apps, "Открыть Codex через ProGo", "codex-open"); menu.Items.Add(apps);
+            menu.Items.Add("iPhone через домашний ПК…", null, delegate { Execute("iphone"); });
+            menu.Items.Add("Хранилище паролей и ключей…", null, delegate { ShowVault(); });
+            menu.Items.Add("Настройки и автоматика…", null, delegate { ShowSettings(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Запустить CLI/Codex proxy", null, delegate { StartCliProxy(true); });
-            menu.Items.Add("Остановить CLI/Codex proxy", null, delegate { StopCliProxy(); });
-            menu.Items.Add("Применить CLI proxy env", null, delegate { ApplyCliProxyEnvironment(); });
-            menu.Items.Add("Открыть PowerShell с CLI proxy", null, delegate { OpenPowerShellWithCliProxy(); });
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Проверить соединение", null, delegate { MessageBox.Show(RouteTester.Test(settings.Current, proxy), "Проверка соединения"); });
-            menu.Items.Add("VPN для iPhone...", null, delegate { using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(); });
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
-            menu.Items.Add("Настройки", null, delegate { ShowSettings(); });
+            var backups = new ToolStripMenuItem("Резервные копии");
+            backups.DropDownItems.Add("Создать копию сейчас", null, delegate { CreateBackup(); });
+            backups.DropDownItems.Add("Восстановить из копии…", null, delegate { StartRestore(); });
+            backups.DropDownItems.Add("Открыть папку с копиями", null, delegate { OpenBackups(); });
+            backups.DropDownItems.Add("Удалить старые автоматические копии…", null, delegate { CleanupBackups(); }); menu.Items.Add(backups);
             menu.Items.Add(BuildLogsMenu());
+            menu.Items.Add("Проверить обновления…", null, delegate { StartUpdate(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Создать резервную копию", null, delegate { CreateBackup(); });
-            menu.Items.Add("Откатить из резервной копии...", null, delegate { StartRestore(); });
-            menu.Items.Add("Открыть папку резервных копий", null, delegate { OpenBackups(); });
-            menu.Items.Add("Удалить старые резервные копии...", null, delegate { CleanupBackups(); });
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Обновить ProGo", null, delegate { StartUpdate(); });
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Выход", null, delegate { ExitProGo(); });
-            return menu;
+            menu.Items.Add("Завершить работу ProGo", null, delegate { ExitProGo(); });
+            UiTheme.Menu(menu); return menu;
         }
-
+        private void Item(ToolStripMenuItem menu, string text, string action)
+        {
+            menu.DropDownItems.Add(text, null, delegate { Execute(action); });
+        }
         private ToolStripMenuItem BuildLogsMenu()
         {
-            var logs = new ToolStripMenuItem("Открыть логи");
-            logs.DropDownItems.Add("Журнал приложения: progo.log", null, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); });
-            logs.DropDownItems.Add("Журнал обновления: update.log", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); });
-            logs.DropDownItems.Add("Старый журнал обновления: progo-update.log", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "progo-update.log"), "старый журнал обновления"); });
-            logs.DropDownItems.Add("Открыть папку ProGo", null, delegate { OpenProGoFolder(); });
-            return logs;
+            var logs = new ToolStripMenuItem("Помощь и журналы");
+            logs.DropDownItems.Add("Антивирус и обновления…", null, delegate { ShowHelp(); });
+            logs.DropDownItems.Add("Журнал приложения", null, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); });
+            logs.DropDownItems.Add("Журнал обновления", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); });
+            logs.DropDownItems.Add("Папка приложения", null, delegate { OpenProGoFolder(); }); return logs;
         }
-
         private void ShowStatus()
         {
-            using (var form = new StatusForm(settings, proxy)) form.ShowDialog();
-            UpdateTooltip();
+            if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
+            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute);
+            mainWindow.FormClosed += delegate { mainWindow = null; };
+            mainWindow.Show(); UpdateTooltip();
         }
-
         private void ShowSettings()
         {
-            using (var form = new SshProfilesSettingsForm(settings)) form.ShowDialog();
+            var before = settings.Current;
+            using (var form = new SshProfilesSettingsForm(settings))
+            {
+                form.ManualActionRequested += Execute;
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
+                    automation.Update(before, settings.Current);
+                    if (!before.AutoStartSocks && settings.Current.AutoStartSocks) proxy.StartTunnel(false);
+                    if (before.SocksPort != settings.Current.SocksPort || before.SocksHost != settings.Current.SocksHost || before.SshProfile != settings.Current.SshProfile)
+                    {
+                        if (proxy.CurrentPid.HasValue) proxy.RestartTunnel();
+                    }
+                }
+            }
             UpdateTooltip();
+        }
+        internal void StartAutomation()
+        {
+            homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
+            automation.Update(null, settings.Current);
+            automationTimer.Tick += delegate
+            {
+                bool ready = proxy.IsListening();
+                foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
+                    if (automation.Take(feature, ready))
+                        try { EnableFeature(feature); }
+                        catch (Exception ex) { SafeLog.Error("Automatic proxy setup failed.", ex); tray.ShowBalloonTip(5000, "ProGo", ex.Message, ToolTipIcon.Warning); }
+            };
+            automationTimer.Start();
+        }
+        private void Execute(string action)
+        {
+            try
+            {
+                switch (action)
+                {
+                    case "connect": if (proxy.IsListening()) proxy.RestartTunnel(); else proxy.StartTunnel(true); break;
+                    case "restart": proxy.RestartTunnel(); break;
+                    case "stop":
+                        foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
+                        DisconnectApps(); proxy.StopTunnel(); break;
+                    case "settings": ShowSettings(); break;
+                    case "vault": ShowVault(); break;
+                    case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(); break;
+                    case "diagnostics": using (var form = new StatusForm(settings, proxy)) form.ShowDialog(); break;
+                    case "terminal-on": RequireRoute(); EnableFeature(ProxyFeature.Terminal); break;
+                    case "terminal-off": automation.Cancel(ProxyFeature.Terminal); CliProxyEnvironmentService.ClearUserEnvironmentIfOwned(); break;
+                    case "windows-on": RequireRoute(); EnableFeature(ProxyFeature.Windows); break;
+                    case "windows-off": automation.Cancel(ProxyFeature.Windows); string m; if (!SystemProxyService.Restore(out m)) throw new InvalidOperationException(m); break;
+                    case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Codex); break;
+                    case "codex-off": automation.Cancel(ProxyFeature.Codex); CodexProxyService.Disable(); break;
+                    case "codex-open": RequireRoute(); EnsureBridge(); CodexProxyService.Open(); break;
+                    case "terminal-open": RequireRoute(); EnsureBridge(); string error; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(out error)) throw new InvalidOperationException(error); break;
+                    case "help": ShowHelp(); break;
+                    case "update": StartUpdate(); break;
+                }
+                UpdateTooltip();
+            }
+            catch (Exception ex) { SafeLog.Error("User action failed: " + action, ex); MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+        }
+        private void RequireRoute()
+        {
+            if (proxy.IsListening()) return;
+            proxy.StartTunnel(true);
+            if (!proxy.IsListening()) throw new InvalidOperationException("Подключение к серверу ещё не готово. Завершите вход в окне SSH и повторите действие.");
+        }
+        private void EnsureBridge()
+        {
+            string message; if (!cliProxy.Start(out message)) throw new InvalidOperationException(message);
+        }
+        private void EnableFeature(ProxyFeature feature)
+        {
+            EnsureBridge();
+            if (feature == ProxyFeature.Terminal) CliProxyEnvironmentService.ApplyUserEnvironment();
+            else if (feature == ProxyFeature.Codex) CodexProxyService.Enable();
+            else { string message; if (!SystemProxyService.Apply(settings.Current, out message)) throw new InvalidOperationException(message); }
+        }
+        private void DisconnectApps()
+        {
+            try { CliProxyEnvironmentService.ClearUserEnvironmentIfOwned(); }
+            catch (Exception ex) { SafeLog.Error("Environment restore failed.", ex); }
+            if (SystemProxyService.IsOwned) { string message; SystemProxyService.Restore(out message); }
+            cliProxy.Stop();
+        }
+        private void ShowHelp()
+        {
+            using (var form = new HelpForm(delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); })) form.ShowDialog();
         }
 
         private void ShowVault()
@@ -125,192 +205,12 @@ namespace ProGo
             using (var form = new VaultForm(session, clipboard, settings)) form.ShowDialog();
         }
 
-        private void ChangePort()
-        {
-            var systemProxyWasApplied = SystemProxyService.IsApplied(settings.Current);
-            int port;
-            if (!PortForm.TryGetPort(settings.Current.SocksPort, out port)) return;
-            var next = settings.Current;
-            next.SocksPort = port;
-            settings.Save(next);
-            proxy.RestartTunnel();
-            EnsureCliProxyEnvironment(false);
-
-            if (systemProxyWasApplied)
-            {
-                string proxyMessage;
-                if (!SystemProxyService.Apply(settings.Current, out proxyMessage))
-                {
-                    MessageBox.Show(proxyMessage ?? "Порт SOCKS изменён, но системный прокси Windows не удалось обновить.", "Системный прокси Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-
-            MessageBox.Show("Порт SOCKS изменён на " + port + ".", "Порт SOCKS");
-            UpdateTooltip();
-        }
-
-        private void EnableSystemProxy()
-        {
-            if (!proxy.IsListening())
-            {
-                var start = MessageBox.Show(
-                    "SOCKS-туннель сейчас не слушает порт " + settings.Current.SocksPort + ".\n\nЗапустить SOCKS перед включением системного прокси Windows?",
-                    "Системный прокси Windows",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
-
-                if (start == DialogResult.Yes)
-                {
-                    proxy.StartTunnel(true);
-                    UpdateTooltip();
-                }
-            }
-
-            EnsureCliProxyEnvironment(false);
-
-            string message;
-            if (!SystemProxyService.Apply(settings.Current, out message))
-            {
-                MessageBox.Show(message ?? "Не удалось включить системный прокси Windows.", "Системный прокси Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            MessageBox.Show(
-                "Системный прокси Windows включён для текущего пользователя.\n\n" +
-                "ProxyServer: socks=" + settings.Current.SocksHost + ":" + settings.Current.SocksPort + "\n\n" +
-                "Для браузеров/WinINet откройте новое окно или перезапустите приложение. Для Codex CLI используйте пункт «Запустить CLI/Codex proxy».",
-                "Системный прокси Windows",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
-        private void DisableSystemProxy()
-        {
-            string message;
-            if (!SystemProxyService.Restore(out message))
-            {
-                MessageBox.Show(message ?? "Не удалось восстановить системный прокси Windows.", "Системный прокси Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            MessageBox.Show(
-                "Предыдущие Windows proxy-настройки текущего пользователя восстановлены.\n\nУже запущенным приложениям может потребоваться перезапуск.",
-                "Системный прокси Windows",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
-        private bool StartCliProxy(bool showDialog)
-        {
-            if (!proxy.IsListening())
-            {
-                var start = MessageBox.Show(
-                    "SOCKS-туннель сейчас не слушает порт " + settings.Current.SocksPort + ".\n\nЗапустить SOCKS перед включением CLI/Codex proxy?",
-                    "CLI/Codex proxy",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
-
-                if (start == DialogResult.Yes)
-                {
-                    proxy.StartTunnel(true);
-                    UpdateTooltip();
-                }
-            }
-
-            if (!proxy.IsListening())
-            {
-                if (showDialog) MessageBox.Show("CLI/Codex proxy не запущен: сначала нужен рабочий SOCKS-туннель.", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-
-            string message;
-            if (!cliProxy.Start(out message))
-            {
-                if (showDialog) MessageBox.Show(message ?? "Не удалось запустить CLI/Codex proxy.", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-
-            CliProxyEnvironmentService.ApplyUserEnvironment();
-            if (showDialog)
-            {
-                MessageBox.Show(
-                    "CLI/Codex proxy запущен.\n\n" +
-                    "HTTP proxy: " + CliProxyEnvironmentService.ProxyUrl + "\n" +
-                    "SOCKS backend: " + settings.Current.SocksHost + ":" + settings.Current.SocksPort + "\n\n" +
-                    "Для текущей сессии используйте пункт «Открыть PowerShell с CLI proxy» или откройте новое окно PowerShell/cmd после применения env.",
-                    "CLI/Codex proxy",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-            }
-
-            return true;
-        }
-
-        private void StopCliProxy()
-        {
-            cliProxy.Stop();
-            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
-            MessageBox.Show(
-                "CLI/Codex proxy остановлен. ProGo-owned user-level proxy env очищен для новых процессов.\n\n" +
-                "Уже запущенный Codex/терминал сохраняет старое окружение до перезапуска.",
-                "CLI/Codex proxy",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
-        private bool EnsureCliProxyEnvironment(bool showErrors)
-        {
-            string message;
-            if (!cliProxy.IsRunning && !cliProxy.Start(out message))
-            {
-                if (showErrors)
-                {
-                    MessageBox.Show(
-                        message ?? "Не удалось запустить CLI/Codex proxy.",
-                        "CLI/Codex proxy",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                }
-                return false;
-            }
-
-            CliProxyEnvironmentService.ApplyUserEnvironment();
-            return true;
-        }
-
-        private void ApplyCliProxyEnvironment()
-        {
-            if (!EnsureCliProxyEnvironment(true)) return;
-
-            MessageBox.Show(
-                "Proxy environment применён для текущего пользователя через HTTP CONNECT bridge.\n\n" +
-                "HTTPS_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n" +
-                "HTTP_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n" +
-                "ALL_PROXY=" + CliProxyEnvironmentService.ProxyUrl + "\n\n" +
-                "Прямой SOCKS остаётся внутренним endpoint. Уже открытые терминалы не получат новое окружение автоматически.",
-                "CLI/Codex proxy",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
         private void ExitProGo()
         {
             homeVpn.Stop();
-            cliProxy.Stop();
-            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+            DisconnectApps();
             tray.Visible = false;
             ExitThread();
-        }
-
-        private void OpenPowerShellWithCliProxy()
-        {
-            if (!cliProxy.IsRunning && !StartCliProxy(false)) return;
-
-            string message;
-            if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(out message))
-            {
-                MessageBox.Show(message ?? "Не удалось открыть PowerShell с CLI proxy.", "CLI/Codex proxy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
         }
 
         private void OpenLogFile(string path, string title)
@@ -359,7 +259,7 @@ namespace ProGo
         private void CleanupBackups()
         {
             var result = MessageBox.Show(
-                "ProGo удалит старые автоматические резервные копии.\n\nБудут сохранены ручные копии, последний baseline и последний pre-update backup.\n\nПродолжить?",
+                "ProGo удалит старые автоматические резервные копии.\n\nБудут сохранены ручные копии, исходная копия и последняя копия перед обновлением.\n\nПродолжить?",
                 "Очистка резервных копий ProGo",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -397,7 +297,7 @@ namespace ProGo
             var backups = BackupService.ListBackups();
             if (backups.Count == 0)
             {
-                MessageBox.Show("Резервные копии не найдены. Сначала создайте резервную копию или дождитесь следующего обновления версии.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Резервные копии не найдены. Сначала создайте резервную копию или дождитесь следующего обновления версии.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -406,7 +306,7 @@ namespace ProGo
 
             var result = MessageBox.Show(
                 "ProGo будет закрыт, восстановит выбранную резервную копию и запустится заново.\n\nВыбранная копия:\n" + backupDir + "\n\nПродолжить?",
-                "Откат ProGo",
+                "Восстановление ProGo",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
 
@@ -419,9 +319,15 @@ namespace ProGo
             ExitThread();
         }
 
-        private void StartUpdate()
+        private bool checkingUpdate;
+        private async void StartUpdate()
         {
-            var check = UpdateLauncher.CheckForUpdate();
+            if (checkingUpdate) return;
+            checkingUpdate = true;
+            UpdateCheckResult check;
+            try { check = await System.Threading.Tasks.Task.Run(() => UpdateLauncher.CheckForUpdate()); }
+            finally { checkingUpdate = false; }
+
 
             if (check.Availability == UpdateAvailability.Error)
             {
@@ -464,7 +370,7 @@ namespace ProGo
 
         private void UpdateTooltip()
         {
-            tray.Text = AppConstants.ProductName + " — SOCKS: " + (proxy.IsListening() ? "работает" : "остановлен");
+            tray.Text = AppConstants.ProductName + " — туннель: " + (proxy.IsListening() ? "работает" : "остановлен");
         }
 
         protected override void Dispose(bool disposing)
@@ -477,6 +383,9 @@ namespace ProGo
                     startupShowTimer.Dispose();
                     startupShowTimer = null;
                 }
+                automationTimer.Stop(); automationTimer.Dispose();
+                if (mainWindow != null) mainWindow.Dispose();
+                DisconnectApps();
                 tray.Dispose();
                 icon.Dispose();
             }
