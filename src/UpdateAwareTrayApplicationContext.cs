@@ -57,6 +57,17 @@ namespace ProGo
             menu.Items.Add("Запустить SOCKS", null, delegate { proxy.StartTunnel(true); UpdateTooltip(); });
             menu.Items.Add("Остановить SOCKS", null, delegate { ikev2Relay.Stop(); proxy.StopTunnel(); UpdateTooltip(); });
             menu.Items.Add("Перезапустить SOCKS", null, delegate { ikev2Relay.Stop(); proxy.RestartTunnel(); UpdateTooltip(); });
+            var autoRestart = new ToolStripMenuItem("Автовосстановление SOCKS")
+            {
+                Checked = settings.Current.AutoRestartSocks
+            };
+            autoRestart.Click += delegate
+            {
+                proxy.SetAutoRestart(!settings.Current.AutoRestartSocks);
+                autoRestart.Checked = settings.Current.AutoRestartSocks;
+            };
+            menu.Opening += delegate { autoRestart.Checked = settings.Current.AutoRestartSocks; };
+            menu.Items.Add(autoRestart);
             menu.Items.Add("Изменить порт SOCKS...", null, delegate { ChangePort(); });
             menu.Items.Add("Применить proxy environment", null, delegate { ApplyCliProxyEnvironment(); });
             menu.Items.Add("Включить системный прокси Windows", null, delegate { EnableSystemProxy(); });

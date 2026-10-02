@@ -281,4 +281,11 @@ foreach ($relativePath in @(
     }
 }
 
+$RecoveryHarness = Join-Path $Root "build\SocksRecoveryTests.exe"
+$Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
+if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
+& $RecoveryHarness
+if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
+
 Write-Host "ProGo tests PASS."

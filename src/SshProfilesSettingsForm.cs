@@ -267,6 +267,7 @@ namespace ProGo
                 SshProfiles = CloneProfiles(),
                 AutoSwitchSshProfile = autoSwitchProfile.Checked,
                 AutoStartSocks = autoStart.Checked,
+                AutoRestartSocks = service.Current.AutoRestartSocks,
                 AutoApplyProxy = autoProxy.Checked,
                 ClipboardClearSeconds = (int)clearSeconds.Value,
                 TestEndpoint = endpoint.Text.Trim()

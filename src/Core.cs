@@ -62,9 +62,16 @@ namespace ProGo
         public List<SshProfileSetting> SshProfiles { get; set; }
         public bool AutoSwitchSshProfile { get; set; }
         public bool AutoStartSocks { get; set; }
+        public bool AutoRestartSocks { get; set; }
         public bool AutoApplyProxy { get; set; }
         public int ClipboardClearSeconds { get; set; }
         public string TestEndpoint { get; set; }
+
+        public AppSettings()
+        {
+            // Older settings files omit this property; explicit false is preserved.
+            AutoRestartSocks = true;
+        }
 
         public static AppSettings Defaults()
         {
@@ -76,6 +83,7 @@ namespace ProGo
                 SshProfiles = new List<SshProfileSetting>(),
                 AutoSwitchSshProfile = false,
                 AutoStartSocks = false,
+                AutoRestartSocks = true,
                 AutoApplyProxy = false,
                 ClipboardClearSeconds = 30,
                 TestEndpoint = "https://api.openai.com/v1/models"
@@ -230,204 +238,6 @@ namespace ProGo
                 result = regex.Replace(result, "$1=<redacted>");
             }
             return result;
-        }
-    }
-
-    internal sealed class ProxyService : IDisposable
-    {
-        private readonly SettingsService settings;
-        private Process sshProcess;
-
-        public ProxyService(SettingsService settingsService)
-        {
-            settings = settingsService;
-        }
-
-        public bool IsListening()
-        {
-            return IsTcpOpen(settings.Current.SocksHost, settings.Current.SocksPort, 700);
-        }
-
-        public int? CurrentPid
-        {
-            get
-            {
-                try
-                {
-                    return sshProcess != null && !sshProcess.HasExited ? (int?)sshProcess.Id : null;
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-        }
-
-        public void StartTunnel(bool showErrors)
-        {
-            var current = settings.Current;
-            var targets = BuildProfileTargets(current);
-            if (targets.Count == 0)
-            {
-                if (showErrors)
-                {
-                    System.Windows.Forms.MessageBox.Show(
-                        "SSH-профиль не выбран.\n\nSSH-профиль — это короткое имя подключения из файла ~/.ssh/config, например my-vps, или прямой SSH-target вида user@vpn.example.org. ProGo использует его для создания локального SOCKS-туннеля.",
-                        AppConstants.ProductName);
-                }
-                return;
-            }
-
-            if (IsListening())
-            {
-                SafeLog.Info("SOCKS already listens on port " + current.SocksPort + ".");
-                return;
-            }
-
-            if (!current.AutoSwitchSshProfile)
-            {
-                StartSingleTunnel(targets[0], showErrors, false);
-                return;
-            }
-
-            foreach (var target in targets)
-            {
-                if (StartSingleTunnel(target, false, true))
-                {
-                    if (!String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase))
-                    {
-                        current.SshProfile = target;
-                        settings.Save(current);
-                        SafeLog.Info("SSH profile auto-switched to " + target + ".");
-                    }
-                    return;
-                }
-            }
-
-            if (showErrors)
-            {
-                System.Windows.Forms.MessageBox.Show("Не удалось запустить SOCKS ни через один SSH-профиль. Проверьте список профилей и доступность серверов.", AppConstants.ProductName);
-            }
-        }
-
-        public void StopTunnel()
-        {
-            try
-            {
-                if (sshProcess != null && !sshProcess.HasExited)
-                {
-                    sshProcess.Kill();
-                    sshProcess.WaitForExit(3000);
-                    SafeLog.Info("SOCKS process stopped. PID=" + sshProcess.Id + ".");
-                }
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Failed to stop SSH tunnel.", ex);
-            }
-        }
-
-        public void RestartTunnel()
-        {
-            StopTunnel();
-            StartTunnel(true);
-        }
-
-        private bool StartSingleTunnel(string sshTarget, bool showErrors, bool requireListening)
-        {
-            try
-            {
-                var current = settings.Current;
-                var endpoint = current.SocksHost + ":" + current.SocksPort;
-                var args = String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 {1}", QuoteArg(endpoint), QuoteArg(sshTarget));
-                var psi = new ProcessStartInfo("ssh.exe", args)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-
-                sshProcess = Process.Start(psi);
-                SafeLog.Info("SOCKS start requested. PID=" + (sshProcess == null ? "unknown" : sshProcess.Id.ToString()) + "; port=" + current.SocksPort + "; sshProfile=" + sshTarget + ".");
-
-                if (!requireListening) return true;
-
-                for (var i = 0; i < 10; i++)
-                {
-                    System.Threading.Thread.Sleep(500);
-                    if (IsListening()) return true;
-                    if (sshProcess != null && sshProcess.HasExited) break;
-                }
-
-                StopTunnel();
-                SafeLog.Info("SSH profile did not become ready: " + sshTarget + ".");
-                return false;
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Failed to start SSH tunnel for profile " + sshTarget + ".", ex);
-                if (showErrors) System.Windows.Forms.MessageBox.Show("Не удалось запустить SSH. Проверьте выбранный SSH-профиль и соединение.", AppConstants.ProductName);
-                return false;
-            }
-        }
-
-        private static List<string> BuildProfileTargets(AppSettings settings)
-        {
-            var targets = new List<string>();
-            var selected = (settings.SshProfile ?? String.Empty).Trim();
-            AddTarget(targets, selected);
-
-            if (settings.SshProfiles != null)
-            {
-                foreach (var profile in settings.SshProfiles)
-                {
-                    if (profile == null) continue;
-                    AddTarget(targets, profile.Target);
-                }
-            }
-
-            return targets;
-        }
-
-        private static void AddTarget(List<string> targets, string target)
-        {
-            target = (target ?? String.Empty).Trim();
-            if (String.IsNullOrWhiteSpace(target)) return;
-            foreach (var existing in targets)
-            {
-                if (String.Equals(existing, target, StringComparison.OrdinalIgnoreCase)) return;
-            }
-            targets.Add(target);
-        }
-
-        private static string QuoteArg(string value)
-        {
-            if (value == null) return "\"\"";
-            if (value.IndexOfAny(new[] { ' ', '\t', '\"' }) < 0) return value;
-            return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
-        }
-
-        private static bool IsTcpOpen(string host, int port, int timeoutMs)
-        {
-            try
-            {
-                using (var client = new TcpClient())
-                {
-                    var ar = client.BeginConnect(host, port, null, null);
-                    if (!ar.AsyncWaitHandle.WaitOne(timeoutMs)) return false;
-                    client.EndConnect(ar);
-                    return true;
-                }
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public void Dispose()
-        {
-            StopTunnel();
         }
     }
 

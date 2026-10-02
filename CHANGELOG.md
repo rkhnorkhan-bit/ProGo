@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.29 - Automatic SOCKS recovery
+
+- Added background recovery for SSH processes started by ProGo and for SOCKS listeners that repeatedly stop responding. The check runs every five seconds and allows startup time before declaring a listener failure.
+- Retry delays increase from 5 to 60 seconds. A stable connection resets the delay; automatic attempts use noninteractive SSH authentication and a connection timeout.
+- Added the Russian tray toggle `Автовосстановление SOCKS` and recovery status in the status window. Recovery defaults to enabled for older settings while preserving an explicit opt-out and the separate automatic-start preference.
+- Manual stop and application exit cancel recovery. The watchdog manages only its own SSH process, avoids duplicate launches, and waits when another process occupies the port. Configured SSH profile fallback remains available.
+- Added twelve Windows tests using local child processes, simulated crashes, SOCKS listeners, and an injected clock. No infrastructure credentials or live servers are needed by these tests.
+
 ## 0.1.28 - Experimental home IKEv2 relay
 
 - Added an opt-in Russian tray dialog to relay iPhone IKEv2/NAT-T packets through the existing local SOCKS transport. VPN authentication and IPsec termination remain on the user's VPS.

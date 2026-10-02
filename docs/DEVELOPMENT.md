@@ -28,6 +28,11 @@ check covers source files and the compiled release, including UTF-16 strings in
 the executable. Use reserved documentation addresses and generic paths in public
 examples; manual review is still required for names, hostnames, and context.
 
+`Test-ProGo.ps1` also runs `tests/SocksRecoveryTests.cs` on .NET Framework.
+The harness exercises the actual process manager using disposable loopback-only
+child processes and a test clock, including crashes, backoff, manual stop,
+opt-out, port conflicts, and profile fallback. It does not use real SSH servers.
+
 ## Install locally
 
 ```powershell

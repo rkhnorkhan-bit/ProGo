@@ -1,5 +1,31 @@
 # Proxy Setup
 
+## Automatic SOCKS recovery
+
+Starting with 0.1.29, the tray toggle `Автовосстановление SOCKS` is enabled by
+default. It applies after ProGo starts an SSH tunnel; it does not enable the
+separate `Запускать SOCKS вместе с ProGo` setting.
+
+ProGo checks its SSH process and the local SOCKS greeting every five seconds.
+An unexpected process exit schedules a restart. A new process has a 20-second
+startup grace period; three consecutive failed listener checks after that grace
+period cause a restart. SSH keepalives detect a lost remote connection separately.
+A website outage alone is not treated as a local tunnel failure.
+
+Retries wait 5, 10, 20, 40, then at most 60 seconds. After one minute of healthy
+listener checks the backoff resets. Automatic attempts use `BatchMode=yes`, so
+SSH keys or an already unlocked agent must work without a password prompt.
+Host-key validation remains enabled according to the SSH configuration.
+
+`Остановить SOCKS` cancels retries until the next explicit start. Turning the
+recovery toggle off leaves a running tunnel alone. Exiting or updating ProGo
+disposes the monitor and stops the owned process. Another process occupying the
+SOCKS port is never killed or adopted by the watchdog.
+
+The `Состояние` window displays recovery status. Existing connections can break
+during a restart; client applications must reconnect. The local CLI proxy and
+optional iPhone relay are not stopped by automatic SOCKS recovery.
+
 ## 1. Create an OpenSSH profile
 
 Edit your user OpenSSH config:

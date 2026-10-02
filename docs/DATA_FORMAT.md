@@ -16,6 +16,7 @@ Shape:
   "SocksPort": 1080,
   "SshProfile": "my-vps",
   "AutoStartSocks": false,
+  "AutoRestartSocks": true,
   "AutoApplyProxy": false,
   "ClipboardClearSeconds": 30,
   "TestEndpoint": "https://api.openai.com/v1/models"
@@ -23,6 +24,10 @@ Shape:
 ```
 
 Do not store SSH passwords, private keys, API keys, or production secrets in settings.
+
+`AutoRestartSocks` defaults to `true` when omitted by an older settings file.
+An explicit `false` is preserved. Recovery only follows a SOCKS start requested
+in the current ProGo session; it does not enable `AutoStartSocks`.
 
 ## Vault
 
