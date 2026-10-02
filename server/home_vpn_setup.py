@@ -7,6 +7,7 @@ is put in an invitation. All generated state is private and outside the checkout
 import argparse
 import base64
 import datetime as dt
+import fcntl
 import ipaddress
 import json
 import os
@@ -296,6 +297,7 @@ def issue(data, name, server, port):
     entry = dict(id=identifier, name=name, password=secrets.token_hex(24), revoked=False,
                  created=dt.datetime.now(dt.timezone.utc).isoformat())
     pathlib.Path('/var/lib/progo-home-users').mkdir(mode=0o755, exist_ok=True)
+    os.chmod('/var/lib/progo-home-users', 0o755)
     user_home = pathlib.Path('/var/lib/progo-home-users') / user
     run('useradd', '--system', '--create-home', '--home-dir', str(user_home), '--gid', GROUP,
         '--shell', '/usr/sbin/nologin', user)
@@ -360,6 +362,10 @@ def main():
     if args.action == 'network':
         apply_network(state())
         return
+    # Serialize owner operations across PCs. The boot-time network action is
+    # deliberately separate because setup waits for its systemd unit.
+    operation_lock = open('/run/progo-home-setup.lock', 'a')
+    fcntl.flock(operation_lock, fcntl.LOCK_EX)
     if not args.output:
         parser.error('--output is required; credentials are never printed to the terminal')
     if os.path.lexists(args.output):

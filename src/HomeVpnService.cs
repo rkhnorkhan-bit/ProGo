@@ -170,7 +170,7 @@ namespace ProGo
                 var keyArgs = String.IsNullOrWhiteSpace(owner.KeyFile) ? "" : " -i " + Argument(owner.KeyFile);
                 var target = owner.Login + "@" + owner.Host;
                 progress("Копирование помощника на VPS. Если SSH спросит пароль или подтверждение ключа, ответьте в открывшемся окне.");
-                await ConsoleAsync("scp.exe", "-P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"), null);
+                await ConsoleAsync("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"), null);
                 var remote = "/tmp/" + name;
                 var command = "trap 'rm -rf -- " + remote + "' EXIT; "
                     + (owner.Login == "root" ? "" : "sudo -n ") + "python3 -I " + remote + "/home_vpn_setup.py " + action
@@ -180,7 +180,7 @@ namespace ProGo
                 progress("Настройка VPS. Окно SSH показывает ход установки; для пользователя без root нужен sudo без запроса пароля.");
                 // A real console remains available for OpenSSH password/host-key prompts.
                 // Only stdout goes to a private local file; the token is never a command argument.
-                await ConsoleAsync("ssh.exe", "-T -p " + owner.Port + keyArgs + " " + Argument(target) + " " + Argument(command), output);
+                await ConsoleAsync("ssh.exe", "-o ConnectTimeout=15 -T -p " + owner.Port + keyArgs + " " + Argument(target) + " " + Argument(command), output);
                 var result = File.ReadAllText(output).Trim();
                 if (result.Length == 0 || result.Length > 32768) throw new InvalidOperationException("VPS не вернул результат.");
                 return result;

@@ -21,6 +21,10 @@ def check(condition, message):
 def main():
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.geteuid() != 0:
         raise RuntimeError('This test is restricted to a disposable GitHub Actions runner')
+    os.umask(0o077)
+    # The owner normally invokes provisioning through an already-running SSH
+    # server. GitHub's image ships OpenSSH but leaves its service stopped.
+    subprocess.run(['systemctl', 'start', 'ssh.service'], check=True)
     spec = importlib.util.spec_from_file_location('setup', REPO / 'server/home_vpn_setup.py')
     setup = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(setup)

@@ -27,6 +27,7 @@ namespace ProGo
         private CheckBox routerCheck;
         private HomeVpnOwner draftOwner;
         private string draftToken = "", draftHome;
+        private string preparedToken, preparedOwner;
         private Label counters;
 
         internal HomeVpnWizardForm(HomeVpnService service)
@@ -150,7 +151,16 @@ namespace ProGo
                 if (step == 1)
                 {
                     var value = draftToken;
-                    if (own) value = await HomeVpnService.AdminAsync(draftOwner, "setup", "My iPhone", null, SetProgress);
+                    if (own)
+                    {
+                        var ownerId = new JavaScriptSerializer().Serialize(draftOwner);
+                        if (preparedToken == null || preparedOwner != ownerId)
+                        {
+                            preparedToken = await HomeVpnService.AdminAsync(draftOwner, "setup", "My iPhone", null, SetProgress);
+                            preparedOwner = ownerId;
+                        }
+                        value = preparedToken;
+                    }
                     service.UseToken(value, own ? draftOwner : null);
                     SetProgress("Проверяем защищённый канал к VPS…"); await service.StartAsync(); draftToken = "";
                 }
@@ -158,6 +168,7 @@ namespace ProGo
                 {
                     if (!routerDone) throw new InvalidOperationException("Сначала настройте обе записи на роутере и отметьте галочку.");
                     service.SetHomeAddress(draftHome);
+                    profileSaved = false;
                 }
                 else if (step == 3 && !profileSaved) throw new InvalidOperationException("Сначала сохраните профиль кнопкой выше и установите его на iPhone.");
                 ShowStep(step + 1);
