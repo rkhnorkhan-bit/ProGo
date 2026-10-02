@@ -39,7 +39,7 @@ namespace ProGo
             Nav(nav, "Диагностика", delegate { action("diagnostics"); }, false);
             Nav(nav, "Настройки", delegate { action("settings"); }, false);
             rail.Controls.Add(nav);
-            var version = UiTheme.Label("DESKTOP  /  0.2.1\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
+            var version = UiTheme.Label("DESKTOP  /  " + typeof(MainWindow).Assembly.GetName().Version.ToString(3) + "\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
             version.AutoSize = false; version.Size = new Size(178, 65); version.Dock = DockStyle.Bottom; rail.Controls.Add(version);
             var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(28), ColumnCount = 1, RowCount = 5 };
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
