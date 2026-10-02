@@ -422,7 +422,11 @@ namespace ProGo
         public static void ApplyUserEnvironment()
         {
             AppPaths.EnsureDirectories();
-            if (!File.Exists(BackupPath))
+            if (File.Exists(BackupPath))
+            {
+                if (new JavaScriptSerializer().Deserialize<Dictionary<string, string>>(File.ReadAllText(BackupPath)) == null) throw new IOException("Не удалось прочитать прежние настройки прокси.");
+            }
+            else
             {
                 var saved = new Dictionary<string, string>();
                 foreach (var name in Names)

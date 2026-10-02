@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace ProGo
 {
@@ -51,6 +52,7 @@ namespace ProGo
                 Check(!CliProxyBridgeService.TryParseHttpTarget("GET http://user:secret@example.org/ HTTP/1.1\r\n\r\n", out host, out port, out header), "HTTP rejects credentials in URI");
                 Check(!CliProxyBridgeService.TryParseHttpTarget("GET https://example.org/ HTTP/1.1\r\n\r\n", out host, out port, out header), "HTTPS requires CONNECT");
                 ScopedCodex();
+                RestorePreferences();
                 using (var settings = new SettingsService())
                 {
                     settings.Current.SshProfile = "my-vps";
@@ -115,6 +117,43 @@ namespace ProGo
             using (var process = Process.Start(start)) { if (!process.WaitForExit(10000)) { process.Kill(); throw new Exception("Codex launcher stalled"); } Check(process.ExitCode == 0, "scoped Codex launcher executes local CLI"); }
             Check(File.ReadAllText(capture).Contains(CliProxyEnvironmentService.ProxyUrl) && Environment.GetEnvironmentVariable("HTTP_PROXY") == existing, "Codex gets proxy without changing parent environment");
         }
+        private static void RestorePreferences()
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("SKIP: registry restoration checks require isolated CI"); return; }
+            string[] names = { "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY" };
+            var original = names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
+            var backup = Path.Combine(AppPaths.Root, "proxy-environment-backup.json");
+            if (File.Exists(backup) || File.Exists(SystemProxyService.BackupPath)) throw new Exception("CI proxy fixture is not isolated");
+            try
+            {
+                Environment.SetEnvironmentVariable("HTTP_PROXY", "http://prior.example.org:8080", EnvironmentVariableTarget.User);
+                CliProxyEnvironmentService.ApplyUserEnvironment(); CliProxyEnvironmentService.ApplyUserEnvironment();
+                Environment.SetEnvironmentVariable("HTTPS_PROXY", "http://other.example.org:8080", EnvironmentVariableTarget.User);
+                CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+                Check(Environment.GetEnvironmentVariable("HTTP_PROXY", EnvironmentVariableTarget.User) == "http://prior.example.org:8080", "terminal preferences survive repeated apply/restore");
+                Check(Environment.GetEnvironmentVariable("HTTPS_PROXY", EnvironmentVariableTarget.User) == "http://other.example.org:8080", "later external environment changes are preserved");
+            }
+            finally { foreach (var pair in original) Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.User); if (File.Exists(backup)) File.Delete(backup); }
+            string error;
+            if (!SystemProxyService.Apply(AppSettings.Defaults(), out error)) throw new Exception(error);
+            try
+            {
+                Check(SystemProxyService.IsOwned && SystemProxyService.IsApplied(AppSettings.Defaults()), "Windows proxy ownership is tracked");
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings", true))
+                {
+                    Check(Convert.ToString(key.GetValue("ProxyServer")) == "http=127.0.0.1:1881;https=127.0.0.1:1881", "Windows uses tested HTTP/CONNECT bridge");
+                    key.SetValue("ProxyServer", "other.example.org:8080");
+                    Check(!SystemProxyService.IsOwned, "exit does not own another application's Windows proxy");
+                }
+            }
+            finally { if (!SystemProxyService.Restore(out error)) throw new Exception(error); }
+            Check(!File.Exists(SystemProxyService.BackupPath), "successful Windows restore clears its backup");
+            CodexProxyService.Enable();
+            try { Check(CodexProxyService.IsConfigured, "Codex Start Menu shortcut created"); }
+            finally { CodexProxyService.Disable(); }
+            Check(!CodexProxyService.IsConfigured, "Codex manual off removes owned launcher");
+        }
+
         private static string ReadHeader(NetworkStream stream)
         {
             var text = new StringBuilder(); int value;

@@ -34,13 +34,7 @@ namespace ProGo
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
             root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
             root.Controls.Add(UiTheme.Label("Автоматика, подключения и личные настройки — в одном месте.", UiTheme.Body, UiTheme.Muted), 0, 1);
-            var tabs = new TabControl { Dock = DockStyle.Fill, DrawMode = TabDrawMode.OwnerDrawFixed, ItemSize = new Size(178, 38), SizeMode = TabSizeMode.Fixed };
-            tabs.DrawItem += delegate(object sender, DrawItemEventArgs args)
-            {
-                bool selected = args.Index == tabs.SelectedIndex;
-                using (var brush = new SolidBrush(selected ? UiTheme.Field : UiTheme.Background)) args.Graphics.FillRectangle(brush, args.Bounds);
-                TextRenderer.DrawText(args.Graphics, tabs.TabPages[args.Index].Text, UiTheme.Strong, args.Bounds, selected ? UiTheme.Accent : UiTheme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-            };
+            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(178, 38), SizeMode = TabSizeMode.Fixed };
             root.Controls.Add(tabs, 0, 2);
             var automation = Page(tabs, "Автоматика");
             var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
@@ -293,22 +287,28 @@ namespace ProGo
         public SshProfileEditorForm(SshProfileSetting profile)
         {
             Profile = profile == null ? new SshProfileSetting() : profile.Clone();
-            Text = String.IsNullOrWhiteSpace(Profile.Target) ? "Новый SSH-профиль" : "SSH-профиль";
+            Text = String.IsNullOrWhiteSpace(Profile.Target) ? "Добавить подключение" : "Изменить подключение";
             AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(690, 340);
             MinimumSize = new Size(690, 340);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 6 };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 2, RowCount = 6 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             Controls.Add(table);
 
             var hint = new Label
             {
-                Text = "ProGo использует обычный клиент SSH Windows. Это только имя подключения или адрес для SSH. Лучше использовать алиас из ~/.ssh/config, например my-vps.",
+                Text = "Укажите адрес сервера с именем пользователя или готовое имя подключения из файла SSH. ProGo подключается встроенным клиентом Windows.",
                 AutoSize = true,
-                MaximumSize = new Size(360, 0)
+                MaximumSize = new Size(620, 0), ForeColor = UiTheme.Muted, Tag = "styled"
             };
             table.Controls.Add(hint, 0, 0);
             table.SetColumnSpan(hint, 2);
@@ -324,7 +324,7 @@ namespace ProGo
             table.Controls.Add(examples, 1, 3);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK };
+            var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK, Tag = "primary" };
             var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
             save.Click += Save;
             buttons.Controls.Add(cancel);
@@ -340,7 +340,6 @@ namespace ProGo
 
         private static void Add(TableLayoutPanel table, int row, string label, Control control)
         {
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
             table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
             control.Dock = DockStyle.Fill;
             table.Controls.Add(control, 1, row);

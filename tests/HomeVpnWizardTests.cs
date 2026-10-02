@@ -77,7 +77,7 @@ namespace ProGo
                     {
                         show.Invoke(form, new object[] { step }); Application.DoEvents();
                         using (var bitmap = new System.Drawing.Bitmap(form.Width, form.Height))
-                        { form.DrawToBitmap(bitmap, form.ClientRectangle); bitmap.Save(Path.Combine(work, "wizard-" + step + ".png")); }
+                        { form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size)); bitmap.Save(Path.Combine(work, "wizard-" + step + ".png")); }
                     }
                     form.Close();
                 }

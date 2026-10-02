@@ -91,12 +91,30 @@ namespace ProGo
             if (root is TextBoxBase || root is ComboBox || root is NumericUpDown || root is ListBox)
             {
                 root.BackColor = Field;
+                var combo = root as ComboBox;
+                if (combo != null)
+                {
+                    combo.FlatStyle = FlatStyle.Flat; combo.DrawMode = DrawMode.OwnerDrawFixed;
+                    combo.ItemHeight = Math.Max(24, combo.Font.Height + 8);
+                    combo.DrawItem -= DrawComboItem; combo.DrawItem += DrawComboItem;
+                }
                 var box = root as TextBoxBase; if (box != null) box.BorderStyle = BorderStyle.FixedSingle;
                 var list = root as ListBox; if (list != null) { list.BorderStyle = BorderStyle.None; list.ItemHeight = 28; }
             }
-            else if (root is Panel || root is TabPage) root.BackColor = root.Parent == null ? Background : root.Parent.BackColor;
+            else if (root is TabControl || root is TabPage) root.BackColor = Background;
+            else if (root is Panel) root.BackColor = root.Parent == null ? Background : root.Parent.BackColor;
             else if (root is Form) root.BackColor = Background;
             else if (root is Label || root is CheckBox || root is RadioButton || root is PictureBox) root.BackColor = Color.Transparent;
+        }
+        private static void DrawComboItem(object sender, DrawItemEventArgs e)
+        {
+            var combo = (ComboBox)sender;
+            bool selected = (e.State & DrawItemState.Selected) != 0;
+            using (var brush = new SolidBrush(selected ? Border : Field)) e.Graphics.FillRectangle(brush, e.Bounds);
+            string value = e.Index >= 0 ? combo.GetItemText(combo.Items[e.Index]) : combo.Text;
+            var bounds = e.Bounds; bounds.Inflate(-5, 0);
+            TextRenderer.DrawText(e.Graphics, value, combo.Font, bounds, Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            if ((e.State & DrawItemState.Focus) != 0) e.DrawFocusRectangle();
         }
         private static void StyleButton(Button b)
         {
@@ -143,6 +161,30 @@ namespace ProGo
             public override Color ImageMarginGradientMiddle { get { return Surface; } }
             public override Color ImageMarginGradientEnd { get { return Surface; } }
         }
+    }
+
+    internal sealed class ProGoTabs : TabControl
+    {
+        internal ProGoTabs()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+        }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var background = SystemInformation.HighContrast ? SystemColors.Window : UiTheme.Background;
+            e.Graphics.Clear(background);
+            for (int i = 0; i < TabCount; i++)
+            {
+                var bounds = GetTabRect(i); bool selected = i == SelectedIndex;
+                var fill = SystemInformation.HighContrast ? (selected ? SystemColors.Highlight : SystemColors.Window) : (selected ? UiTheme.Field : UiTheme.Background);
+                var color = SystemInformation.HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) : (selected ? UiTheme.Accent : UiTheme.Muted);
+                using (var brush = new SolidBrush(fill)) e.Graphics.FillRectangle(brush, bounds);
+                TextRenderer.DrawText(e.Graphics, TabPages[i].Text, UiTheme.Strong, bounds, color, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                if (selected) using (var pen = new Pen(color, 2)) e.Graphics.DrawLine(pen, bounds.Left + 16, bounds.Bottom - 2, bounds.Right - 16, bounds.Bottom - 2);
+                if (selected && Focused) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(bounds, -4, -4), color, fill);
+            }
+        }
+        protected override void OnSelectedIndexChanged(EventArgs e) { base.OnSelectedIndexChanged(e); Invalidate(); }
     }
 
     internal sealed class SurfacePanel : Panel

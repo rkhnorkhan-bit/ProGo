@@ -258,6 +258,13 @@ namespace ProGo
             grid.MultiSelect = false;
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.DoubleClick += delegate { EditSelected(); };
+            grid.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                if (grid.Rows.Count != 0) return;
+                TextRenderer.DrawText(e.Graphics, "Здесь будут ваши записи\nНажмите «Добавить», чтобы сохранить первый секрет.", UiTheme.Body,
+                    new Rectangle(20, 70, Math.Max(1, grid.Width - 40), 80), UiTheme.Muted,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
+            };
             root.Controls.Add(grid, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };

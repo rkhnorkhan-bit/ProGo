@@ -17,9 +17,13 @@ namespace ProGo
         {
             this.settings = settings; this.proxy = proxy; this.home = home;
             Text = "ProGo · Ваше подключение"; ClientSize = new Size(1040, 710); MinimumSize = new Size(970, 680);
-            var shell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+            var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
+            Controls.Add(viewport);
+            var shell = new TableLayoutPanel { ColumnCount = 2, RowCount = 1, MinimumSize = new Size(970, 680), Size = ClientSize };
+            viewport.Controls.Add(shell);
+            viewport.SizeChanged += delegate { shell.Size = new Size(Math.Max(viewport.ClientSize.Width, shell.MinimumSize.Width), Math.Max(viewport.ClientSize.Height, shell.MinimumSize.Height)); };
             shell.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 210)); shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); Controls.Add(shell);
+            shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             var rail = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Surface, Tag = "styled", Padding = new Padding(20) };
             shell.Controls.Add(rail, 0, 0);
             var brand = new PictureBox { Image = logo, Location = new Point(24, 28), Size = new Size(52, 52), SizeMode = PictureBoxSizeMode.Zoom };
