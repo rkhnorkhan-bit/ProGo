@@ -1,0 +1,212 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web.Script.Serialization;
+
+namespace ProGo
+{
+    internal sealed class HomeVpnOwner
+    {
+        public string Host { get; set; }
+        public int Port { get; set; }
+        public string Login { get; set; }
+        public string KeyFile { get; set; }
+        internal void Validate()
+        {
+            if (!HomeVpnAccess.ValidHost(Host) || Port < 1 || Port > 65535
+                || !System.Text.RegularExpressions.Regex.IsMatch(Login ?? "", @"\A[a-z_][a-z0-9_-]{0,31}\z"))
+                throw new ArgumentException("Проверьте адрес VPS, SSH-порт и имя пользователя.");
+            if (!String.IsNullOrWhiteSpace(KeyFile) && !File.Exists(KeyFile)) throw new ArgumentException("Файл SSH-ключа не найден.");
+        }
+    }
+
+    internal sealed class HomeVpnInvitation
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public bool Revoked { get; set; }
+        public override string ToString() { return Name + " — " + (Revoked ? "отозван" : "активен") + " (" + Id.Substring(0, 8) + ")"; }
+    }
+
+    internal sealed class HomeVpnService : IDisposable
+    {
+        internal readonly Ikev2RelayService Relay;
+        internal HomeVpnAccess Access { get; private set; }
+        internal HomeVpnOwner Owner { get; private set; }
+        internal string HomeAddress { get; private set; }
+        private ProxyService proxy;
+        private string sessionDirectory;
+        private CancellationTokenSource starting;
+        private bool disposed;
+        internal string RecoveryStatus { get { return proxy == null ? "Не запущен" : proxy.RecoveryStatus; } }
+
+        internal HomeVpnService(Ikev2RelayService relay)
+        {
+            Relay = relay;
+            try
+            {
+                var token = HomeVpnPrivateFiles.Load("access");
+                if (token != null) Access = HomeVpnAccess.Parse(token);
+                var owner = HomeVpnPrivateFiles.Load("owner");
+                if (owner != null) Owner = new JavaScriptSerializer().Deserialize<HomeVpnOwner>(owner);
+                HomeAddress = HomeVpnPrivateFiles.Load("home-address") ?? "";
+            }
+            catch { SafeLog.Info("Saved home VPN access needs to be imported again."); }
+        }
+
+        internal void UseToken(string token, HomeVpnOwner owner)
+        {
+            var access = HomeVpnAccess.Parse(token);
+            Stop();
+            HomeVpnPrivateFiles.Save("access", token.Trim());
+            HomeVpnPrivateFiles.Save("owner", new JavaScriptSerializer().Serialize(owner));
+            Access = access; Owner = owner;
+        }
+
+        internal void SetHomeAddress(string address)
+        {
+            address = (address ?? "").Trim();
+            if (!HomeVpnAccess.ValidHost(address)) throw new ArgumentException("Введите внешний адрес домашнего роутера или DDNS, без https:// и порта.");
+            HomeVpnPrivateFiles.Save("home-address", address); HomeAddress = address;
+        }
+
+        internal async Task StartAsync()
+        {
+            if (disposed) throw new ObjectDisposedException("HomeVpnService");
+            if (Access == null) throw new InvalidOperationException("Сначала добавьте VPS или вставьте токен.");
+            if (Relay.IsRunning || starting != null) return;
+            Stop();
+            var cancellation = new CancellationTokenSource(); starting = cancellation;
+            try
+            {
+                HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
+                sessionDirectory = Path.Combine(HomeVpnPrivateFiles.Root, "session-" + Guid.NewGuid().ToString("N"));
+                HomeVpnPrivateFiles.SecureDirectory(sessionDirectory);
+                var key = Path.Combine(sessionDirectory, "access");
+                var known = Path.Combine(sessionDirectory, "known_hosts");
+                var config = Path.Combine(sessionDirectory, "ssh_config");
+                File.WriteAllText(key, Access.PrivateKey, new UTF8Encoding(false));
+                File.WriteAllText(known, "progo-home-" + Access.ServerId + " " + Access.HostKey + "\n", new UTF8Encoding(false));
+                File.WriteAllText(config, "Host progo-home\n HostName " + Access.Host + "\n Port " + Access.Port + "\n User " + Access.User
+                    + "\n IdentityFile " + ConfigPath(key) + "\n IdentitiesOnly yes\n IdentityAgent none\n BatchMode yes\n StrictHostKeyChecking yes"
+                    + "\n HostKeyAlias progo-home-" + Access.ServerId + "\n HostKeyAlgorithms ssh-ed25519\n UserKnownHostsFile " + ConfigPath(known)
+                    + "\n GlobalKnownHostsFile NUL\n", new UTF8Encoding(false));
+                int port;
+                var reservation = new TcpListener(IPAddress.Loopback, 0); reservation.Start();
+                try { port = ((IPEndPoint)reservation.LocalEndpoint).Port; } finally { reservation.Stop(); }
+                var options = AppSettings.Defaults(); options.SocksPort = port; options.SshProfile = "progo-home";
+                proxy = new ProxyService(delegate { return options; }, delegate { }, "ssh.exe", delegate { return DateTime.UtcNow; }, true,
+                    "-F " + Argument(config) + " ");
+                proxy.StartTunnel(false);
+                for (int i = 0; i < 40; i++)
+                {
+                    cancellation.Token.ThrowIfCancellationRequested();
+                    if (proxy.IsListening()) break;
+                    await Task.Delay(250, cancellation.Token);
+                }
+                cancellation.Token.ThrowIfCancellationRequested();
+                await Relay.StartAsync("127.0.0.1", port);
+                cancellation.Token.ThrowIfCancellationRequested();
+            }
+            catch
+            {
+                Stop();
+                throw new InvalidOperationException("Канал к VPS не готов. Проверьте интернет и токен: владелец мог отозвать доступ или изменить SSH-ключ сервера. Можно повторить запуск.");
+            }
+            finally { if (starting == cancellation) starting = null; cancellation.Dispose(); }
+        }
+
+        internal void Stop()
+        {
+            if (starting != null) starting.Cancel();
+            Relay.Stop();
+            if (proxy != null) { proxy.Dispose(); proxy = null; }
+            if (sessionDirectory != null)
+            {
+                try { Directory.Delete(sessionDirectory, true); } catch { }
+                sessionDirectory = null;
+            }
+        }
+
+        private static string ConfigPath(string path)
+        {
+            if (path.IndexOfAny(new[] { '\r', '\n', '"' }) >= 0) throw new ArgumentException("Недопустимый путь к профилю Windows.");
+            return "\"" + path.Replace('\\', '/') + "\"";
+        }
+
+        // Windows CreateProcess argument quoting, including trailing backslashes.
+        internal static string Argument(string value)
+        {
+            var result = new StringBuilder("\""); int slashes = 0;
+            foreach (char c in value)
+            {
+                if (c == '\\') { slashes++; continue; }
+                result.Append('\\', c == '"' ? slashes * 2 + 1 : slashes); result.Append(c); slashes = 0;
+            }
+            result.Append('\\', slashes * 2); return result.Append('"').ToString();
+        }
+
+        internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
+        {
+            owner.Validate();
+            if (action != "setup" && action != "invite" && action != "list" && action != "revoke") throw new ArgumentException("Unknown action");
+            if (action == "revoke" && !System.Text.RegularExpressions.Regex.IsMatch(identifier ?? "", @"\A[0-9a-f]{24}\z")) throw new ArgumentException("Invalid invitation");
+            if ((label ?? "").Length > 80 || (label ?? "").IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) throw new ArgumentException("Название слишком длинное.");
+            HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
+            var work = Path.Combine(HomeVpnPrivateFiles.Root, "admin-" + Guid.NewGuid().ToString("N"));
+            HomeVpnPrivateFiles.SecureDirectory(work);
+            var name = "progo-" + Guid.NewGuid().ToString("N");
+            var upload = Path.Combine(work, name); Directory.CreateDirectory(upload);
+            var output = Path.Combine(work, "result.txt");
+            try
+            {
+                foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh" })
+                    File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts", "home-vpn", "server", file), Path.Combine(upload, file));
+                var keyArgs = String.IsNullOrWhiteSpace(owner.KeyFile) ? "" : " -i " + Argument(owner.KeyFile);
+                var target = owner.Login + "@" + owner.Host;
+                progress("Копирование помощника на VPS. Если SSH спросит пароль или подтверждение ключа, ответьте в открывшемся окне.");
+                await ConsoleAsync("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"), null);
+                var remote = "/tmp/" + name;
+                var command = "trap 'rm -rf -- " + remote + "' EXIT; "
+                    + (owner.Login == "root" ? "" : "sudo -n ") + "python3 -I " + remote + "/home_vpn_setup.py " + action
+                    + " --host " + Shell(owner.Host) + " --port " + owner.Port + " --name " + Shell(label ?? "My iPhone")
+                    + (action == "revoke" ? " --id " + identifier : "") + " --output " + remote + "/result 1>&2"
+                    + " && cat " + remote + "/result";
+                progress("Настройка VPS. Окно SSH показывает ход установки; для пользователя без root нужен sudo без запроса пароля.");
+                // A real console remains available for OpenSSH password/host-key prompts.
+                // Only stdout goes to a private local file; the token is never a command argument.
+                await ConsoleAsync("ssh.exe", "-o ConnectTimeout=15 -T -p " + owner.Port + keyArgs + " " + Argument(target) + " " + Argument(command), output);
+                var result = File.ReadAllText(output).Trim();
+                if (result.Length == 0 || result.Length > 32768) throw new InvalidOperationException("VPS не вернул результат.");
+                return result;
+            }
+            finally { try { Directory.Delete(work, true); } catch { } }
+        }
+
+        private static string Shell(string value) { return "'" + value.Replace("'", "'\"'\"'") + "'"; }
+        private static string PowerShell(string value) { return "'" + value.Replace("'", "''") + "'"; }
+        private static Task ConsoleAsync(string executable, string arguments, string output)
+        {
+            return Task.Run(delegate
+            {
+                // Start-Process ArgumentList preserves the exact, already quoted command line.
+                var script = "$p=Start-Process -FilePath " + PowerShell(executable) + " -ArgumentList " + PowerShell(arguments)
+                    + " -NoNewWindow -PassThru -Wait" + (output == null ? "" : " -RedirectStandardOutput " + PowerShell(output))
+                    + "; if($p.ExitCode -ne 0){ Write-Host 'SSH operation failed. Check the message above.'; Start-Sleep -Seconds 5 }; exit $p.ExitCode";
+                using (var process = Process.Start(new ProcessStartInfo("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -EncodedCommand "
+                    + Convert.ToBase64String(Encoding.Unicode.GetBytes(script))) { UseShellExecute = true }))
+                {
+                    process.WaitForExit();
+                    if (process.ExitCode != 0) throw new InvalidOperationException("Операция SSH не завершена. Проверьте адрес, права пользователя и сообщение в окне SSH. Настройку можно повторить.");
+                }
+            });
+        }
+
+        public void Dispose() { disposed = true; Stop(); }
+    }
+}

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.29 - Guided home VPN and SOCKS recovery
+
+- Replaced the instruction dialog with a Russian five-step wizard: VPS access, server setup, router forwarding, iPhone profile, and connection checks.
+- Added own-Ubuntu-VPS setup through normal OpenSSH authentication and a separate invitation-token path. Tokens carry individually restricted SSH and EAP access, never the administrator password.
+- Added friend invitation creation and revocation. Revocation removes that account's access and disconnects its SSH sessions without stopping other invitations.
+- Added a separate recoverable SOCKS channel for home VPN, pinned SSH host keys, current-user DPAPI storage, and generated iPhone profiles. Router port forwarding and iOS profile installation remain explicit manual steps in the wizard.
+- Added Windows token/profile/UI tests and isolated Ubuntu provisioning tests with actual strongSwan, OpenSSH, restricted forwarding, and revocation. Real iPhone/router/mobile-provider interoperability still requires verification.
+
+- Added background recovery for SSH processes started by ProGo and for SOCKS listeners that repeatedly stop responding. The check runs every five seconds and allows startup time before declaring a listener failure.
+- Retry delays increase from 5 to 60 seconds. A stable connection resets the delay; automatic attempts use noninteractive SSH authentication and a connection timeout.
+- Added the Russian tray toggle `Автовосстановление SOCKS` and recovery status in the status window. Recovery defaults to enabled for older settings while preserving an explicit opt-out and the separate automatic-start preference.
+- Manual stop and application exit cancel recovery. The watchdog manages only its own SSH process, avoids duplicate launches, and waits when another process occupies the port. Configured SSH profile fallback remains available.
+- Added twelve Windows tests using local child processes, simulated crashes, SOCKS listeners, and an injected clock. No infrastructure credentials or live servers are needed by these tests.
+
 ## 0.1.28 - Experimental home IKEv2 relay
 
 - Added an opt-in Russian tray dialog to relay iPhone IKEv2/NAT-T packets through the existing local SOCKS transport. VPN authentication and IPsec termination remain on the user's VPS.

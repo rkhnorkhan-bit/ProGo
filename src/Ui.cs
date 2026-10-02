@@ -123,6 +123,7 @@ namespace ProGo
         private readonly Label speed;
         private readonly Label route;
         private readonly Label checkedAt;
+        private readonly Label recovery;
         private readonly Button speedButton;
         private readonly Timer pingTimer;
         private int pingInFlight;
@@ -151,6 +152,7 @@ namespace ProGo
             speed = AddRow(table, 5, "Скорость");
             route = AddRow(table, 6, "Маршрут");
             checkedAt = AddRow(table, 7, "Последняя проверка");
+            recovery = AddRow(table, 8, "Автовосстановление");
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
             var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
@@ -209,6 +211,7 @@ namespace ProGo
             env.Text = Environment.GetEnvironmentVariable("ALL_PROXY", EnvironmentVariableTarget.User) ?? "Не настроен";
             if (testRoute) route.Text = RouteTester.Test(settings.Current, proxy);
             checkedAt.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            recovery.Text = proxy.RecoveryStatus;
         }
 
         private void QueuePingMeasure()
@@ -236,6 +239,7 @@ namespace ProGo
                     {
                         if (closing || IsDisposed) return;
                         ping.Text = latency.HasValue ? latency.Value + " ms" : "—";
+                        RefreshState(false);
                     });
                 }
                 catch
@@ -398,6 +402,7 @@ namespace ProGo
                 SocksPort = (int)port.Value,
                 SshProfile = ssh.Text.Trim(),
                 AutoStartSocks = autoStart.Checked,
+                AutoRestartSocks = service.Current.AutoRestartSocks,
                 AutoApplyProxy = autoProxy.Checked,
                 ClipboardClearSeconds = (int)clearSeconds.Value,
                 TestEndpoint = endpoint.Text.Trim()

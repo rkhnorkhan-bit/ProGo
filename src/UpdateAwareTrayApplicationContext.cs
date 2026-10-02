@@ -10,18 +10,18 @@ namespace ProGo
         private readonly SettingsService settings;
         private readonly ProxyService proxy;
         private readonly CliProxyBridgeService cliProxy;
-        private readonly Ikev2RelayService ikev2Relay;
+        private readonly HomeVpnService homeVpn;
         private readonly ClipboardService clipboard;
         private readonly NotifyIcon tray;
         private readonly System.Drawing.Icon icon;
         private Timer startupShowTimer;
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, Ikev2RelayService ikev2RelayService, ClipboardService clipboardService, bool showStatusOnStartup)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup)
         {
             settings = settingsService;
             proxy = proxyService;
             cliProxy = cliProxyService;
-            ikev2Relay = ikev2RelayService;
+            homeVpn = homeVpnService;
             clipboard = clipboardService;
             icon = BrandIcon.Create();
 
@@ -55,8 +55,19 @@ namespace ProGo
             menu.Items.Add("Состояние", null, delegate { ShowStatus(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Запустить SOCKS", null, delegate { proxy.StartTunnel(true); UpdateTooltip(); });
-            menu.Items.Add("Остановить SOCKS", null, delegate { ikev2Relay.Stop(); proxy.StopTunnel(); UpdateTooltip(); });
-            menu.Items.Add("Перезапустить SOCKS", null, delegate { ikev2Relay.Stop(); proxy.RestartTunnel(); UpdateTooltip(); });
+            menu.Items.Add("Остановить SOCKS", null, delegate { proxy.StopTunnel(); UpdateTooltip(); });
+            menu.Items.Add("Перезапустить SOCKS", null, delegate { proxy.RestartTunnel(); UpdateTooltip(); });
+            var autoRestart = new ToolStripMenuItem("Автовосстановление SOCKS")
+            {
+                Checked = settings.Current.AutoRestartSocks
+            };
+            autoRestart.Click += delegate
+            {
+                proxy.SetAutoRestart(!settings.Current.AutoRestartSocks);
+                autoRestart.Checked = settings.Current.AutoRestartSocks;
+            };
+            menu.Opening += delegate { autoRestart.Checked = settings.Current.AutoRestartSocks; };
+            menu.Items.Add(autoRestart);
             menu.Items.Add("Изменить порт SOCKS...", null, delegate { ChangePort(); });
             menu.Items.Add("Применить proxy environment", null, delegate { ApplyCliProxyEnvironment(); });
             menu.Items.Add("Включить системный прокси Windows", null, delegate { EnableSystemProxy(); });
@@ -68,7 +79,7 @@ namespace ProGo
             menu.Items.Add("Открыть PowerShell с CLI proxy", null, delegate { OpenPowerShellWithCliProxy(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Проверить соединение", null, delegate { MessageBox.Show(RouteTester.Test(settings.Current, proxy), "Проверка соединения"); });
-            menu.Items.Add("VPN для iPhone...", null, delegate { using (var form = new Ikev2RelayForm(settings, ikev2Relay)) form.ShowDialog(); });
+            menu.Items.Add("VPN для iPhone...", null, delegate { using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
             menu.Items.Add("Настройки", null, delegate { ShowSettings(); });
@@ -119,7 +130,6 @@ namespace ProGo
             var systemProxyWasApplied = SystemProxyService.IsApplied(settings.Current);
             int port;
             if (!PortForm.TryGetPort(settings.Current.SocksPort, out port)) return;
-            ikev2Relay.Stop();
             var next = settings.Current;
             next.SocksPort = port;
             settings.Save(next);
@@ -285,7 +295,7 @@ namespace ProGo
 
         private void ExitProGo()
         {
-            ikev2Relay.Stop();
+            homeVpn.Stop();
             cliProxy.Stop();
             CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
             tray.Visible = false;

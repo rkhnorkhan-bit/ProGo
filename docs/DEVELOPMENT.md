@@ -28,6 +28,11 @@ check covers source files and the compiled release, including UTF-16 strings in
 the executable. Use reserved documentation addresses and generic paths in public
 examples; manual review is still required for names, hostnames, and context.
 
+`Test-ProGo.ps1` also runs `tests/SocksRecoveryTests.cs` on .NET Framework.
+The harness exercises the actual process manager using disposable loopback-only
+child processes and a test clock, including crashes, backoff, manual stop,
+opt-out, port conflicts, and profile fallback. It does not use real SSH servers.
+
 ## Install locally
 
 ```powershell
@@ -65,3 +70,15 @@ Separate approval is required for changes to:
 - telemetry;
 - auto-update;
 - backend/cloud sync.
+
+## Home VPN validation
+
+`Test-HomeVpnRelay.ps1` creates temporary certificates and keys under `build`,
+checks token rejection, profile identity/routing, DPAPI and wizard navigation,
+and then runs the socket relay integration suite. It requires OpenSSH and OpenSSL
+(Git for Windows supplies OpenSSL in CI). Generated credentials never enter the package.
+
+`tests/home_vpn_provision_smoke.py` is restricted to a disposable Ubuntu GitHub
+Actions runner. It installs real strongSwan/OpenSSH, issues independent invites,
+checks the allowed relay port and denied arbitrary ports, and verifies revocation.
+Never run this provisioning test on an existing personal or production server.

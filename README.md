@@ -2,9 +2,16 @@
 
 ProGo is a small Windows tray application for fast SSH SOCKS proxy control and a local encrypted credentials vault.
 
+## Guided home VPN
+
+Open **VPN для iPhone…** for the five-step wizard. Choose an existing VPS invitation
+token or add your own Ubuntu VPS using SSH. The wizard provisions the server,
+generates an iPhone profile, shows router forwarding, and checks transport. Owners
+can issue and revoke friend tokens. [Setup and limits](docs/HOME_IKEV2.md).
+
 ## Status
 
-Version: `0.1.28`.
+Version: `0.1.29`.
 
 This project has no vendor-operated backend, no telemetry, and no hosted secrets storage.
 
@@ -18,6 +25,7 @@ This project has no vendor-operated backend, no telemetry, and no hosted secrets
 ## Features
 
 - Start, stop, and restart an SSH SOCKS tunnel from tray.
+- Automatic SOCKS recovery after its owned SSH process exits or the SOCKS listener stops responding. Enabled by default; toggle `Автовосстановление SOCKS` in the tray menu. A manual stop cancels retries.
 - Configurable SOCKS host, port, and SSH profile.
 - User-level `ALL_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY` variables routed through the loopback HTTP CONNECT bridge at `http://127.0.0.1:1881`.
 - Current-user Windows system proxy toggle for WinINet/browser login flows.
