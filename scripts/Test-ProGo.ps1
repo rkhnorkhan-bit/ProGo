@@ -1,4 +1,4 @@
-Set-StrictMode -Version 2.0
+﻿Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $PSScriptRoot
@@ -32,7 +32,7 @@ $LegacyParts = @(
     ("DM" + "KZ")
 )
 foreach ($file in $TextFiles) {
-    $content = Get-Content -Path $file.FullName -Raw
+    $content = Get-Content -Encoding UTF8 -Path $file.FullName -Raw
     foreach ($legacy in $LegacyParts) {
         if ($content -match [regex]::Escape($legacy)) { Fail "legacy branding found in $($file.FullName)" }
     }
@@ -40,12 +40,12 @@ foreach ($file in $TextFiles) {
 
 $VersionFile = Join-Path $Root "VERSION"
 if (-not (Test-Path $VersionFile)) { Fail "VERSION file missing" }
-$VersionText = (Get-Content -Raw -Path $VersionFile).Trim()
+$VersionText = (Get-Content -Encoding UTF8 -Raw -Path $VersionFile).Trim()
 if ($VersionText -notmatch "^\d+\.\d+\.\d+$") { Fail "VERSION is not semver-like: $VersionText" }
 
 $SourceBuilder = New-Object System.Text.StringBuilder
 Get-ChildItem -Path (Join-Path $Root "src") -Filter "*.cs" -File | Sort-Object FullName | ForEach-Object {
-    [void]$SourceBuilder.AppendLine((Get-Content -Path $_.FullName -Raw))
+    [void]$SourceBuilder.AppendLine((Get-Content -Encoding UTF8 -Path $_.FullName -Raw))
 }
 $Source = $SourceBuilder.ToString()
 
@@ -81,9 +81,9 @@ foreach ($requiredSource in @(
     "MeasureSocksLatencyMs",
     "MeasureDownloadMbps",
     "speed.cloudflare.com",
-    "Ping через SOCKS",
+    "Задержка соединения",
     "Измерить скорость",
-    "Прокси окружения",
+    "Командная строка",
     "Interval = 2000",
     "UpdateAvailability",
     "CheckForUpdate",
@@ -104,7 +104,7 @@ foreach ($requiredSource in @(
 
 if ($Source -notmatch "BrandIcon\.Create") { Fail "brand icon factory is not used by tray context" }
 
-$proxySetupText = Get-Content -Raw -Path (Join-Path $Root "docs\PROXY_SETUP.md")
+$proxySetupText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $Root "docs\PROXY_SETUP.md")
 foreach ($required in @(
     "HTTP_PROXY=http://127.0.0.1:1881",
     "HTTPS_PROXY=http://127.0.0.1:1881",
@@ -115,50 +115,43 @@ foreach ($required in @(
 }
 if ($proxySetupText -match [regex]::Escape("HTTP_PROXY=socks5h://")) { Fail "proxy setup still documents SOCKS URI for HTTP_PROXY" }
 
-$updateLauncherSource = Get-Content -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
-if ($updateLauncherSource -notmatch "raw\.githubusercontent\.com/rkhnorkhan-bit/ProGo/main/scripts/Update-ProGo\.ps1") { Fail "updater bootstrap fallback URL missing" }
-if ($updateLauncherSource -notmatch "TryDownloadUpdateScript") { Fail "updater download fallback missing" }
-if ($updateLauncherSource -notmatch "Always try to refresh the updater first") { Fail "updater script is not refreshed before local fallback" }
-if ($updateLauncherSource -notmatch "UseShellExecute\s*=\s*false") { Fail "updater launcher must bypass ShellExecute" }
-if ($updateLauncherSource -notmatch "CreateNoWindow\s*=\s*true") { Fail "updater launcher must run without a console window" }
-if ($updateLauncherSource -match "WindowStyle\s*=\s*ProcessWindowStyle\.Minimized") { Fail "updater launcher must not depend on ShellExecute window style" }
-if ($updateLauncherSource -notmatch "NativeErrorCode") { Fail "updater launcher must log Win32 native error code" }
-if ($updateLauncherSource -notmatch "Updater process started\. PID=") { Fail "updater launcher success PID logging missing" }
-if ($updateLauncherSource -notmatch "WaitForExit\(1200\)") { Fail "updater launcher handoff wait missing" }
-if ($updateLauncherSource -notmatch "Updater process exited before handoff") { Fail "updater launcher early-exit guard missing" }
-if ($updateLauncherSource -notmatch "Updater handoff confirmed\. PID=") { Fail "updater launcher handoff logging missing" }
+$updateLauncherSource = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
+if ($updateLauncherSource -match 'TryDownloadUpdateScript|ExecutionPolicy Bypass|RawUpdateScriptUrl') { Fail "updater must use installed files and respect execution policy" }
+if ($updateLauncherSource -notmatch 'CreateNoWindow = false') { Fail "updater must show its progress console" }
+if ($updateLauncherSource -notmatch 'WaitForExit\(1200\)') { Fail "updater early-exit guard missing" }
 
-$buildScriptText = Get-Content -Raw -Path $Build
+$buildScriptText = Get-Content -Encoding UTF8 -Raw -Path $Build
 foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
     if ($buildScriptText -notmatch [regex]::Escape($required)) { Fail "build script marker missing: $required" }
 }
 
-$installScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
+$installScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
 foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "New-ProGoShortcut", "bootstrap")) {
     if (-not $installScriptText.Contains($required) -and $installScriptText -notmatch [regex]::Escape($required)) {
         Fail "installer marker missing: $required"
     }
 }
 
-$updateBootstrapText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
-foreach ($required in @("CoreApiUrl", "api.github.com/repos/rkhnorkhan-bit/ProGo/contents/scripts/Update-ProGo.Core.ps1", "Update-ProGo.Core.ps1", "Get-UpdaterCoreText", "Get-CoreFromGitHubApi", "Get-CoreFromSourceArchive", "ConvertFrom-Json", "[ScriptBlock]::Create", "Starting transactional updater core in memory.", "Restart-InstalledProGo", "Recovery launch started ProGo")) {
-    if ($updateBootstrapText -notmatch [regex]::Escape($required)) {
-        Fail "updater bootstrap marker missing: $required"
-    }
+$updateBootstrapText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.ps1")
+if ($updateBootstrapText -match 'ScriptBlock|FromBase64String|Invoke-WebRequest|Download') {
+    # The static error message can mention downloading a release; no network code belongs here.
+    if ($updateBootstrapText -match 'ScriptBlock|FromBase64String|Invoke-WebRequest|DownloadString|DownloadFile') { Fail "updater bootstrap executes or fetches remote code" }
 }
+if (-not $updateBootstrapText.Contains('& $LocalCoreScriptPath @coreArgs')) { Fail "updater must execute installed core as a file" }
 
-$updateScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.Core.ps1")
+$updateScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Update-ProGo.Core.ps1")
 foreach ($required in @(
     "Test-UpdateRequired",
     "Get-RemoteVersion",
-    "U8",
     "Backup-InstalledState",
     "Set-BackupUpdateResult",
     "ReleasePackageUrl",
     "Try-GetReleasePackage",
+    "Get-FileHash",
+    "Package SHA-256 verified",
+    "Test-ReleaseArchive",
     "Get-ReleaseDirForUpdate",
     "update_mode=release-package",
-    "update_mode=source-build-fallback",
     "ProGo-release.zip",
     "ProGo.exe",
     "scripts",
@@ -175,7 +168,7 @@ foreach ($required in @(
     }
 }
 if ($updateScriptText -match "Stop-Process\s+-Id") { Fail "updater still force-kills ProGo process" }
-if ($updateScriptText -match '\$script:') { Fail "updater core must not use script-scoped mutable state under in-memory execution" }
+if ($updateScriptText -match 'Build-DownloadedSource|ScriptBlock') { Fail "updater must not execute downloaded source" }
 foreach ($requiredStateMarker in @(
     '$State.RemoteVersion',
     '$State.MainWasChanged',
@@ -205,31 +198,31 @@ if ($updateScriptText -notmatch "tag_name") { Fail "updater latest release tag p
 if ($updateScriptText -match [regex]::Escape("raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/VERSION")) { Fail "updater core still depends on raw GitHub VERSION URL" }
 if ($updateScriptText -match [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater core still uses main VERSION instead of published release" }
 
-$restoreScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
+$restoreScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
 foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
     if ($restoreScriptText -notmatch [regex]::Escape($required)) {
         Fail "restore script marker missing: $required"
     }
 }
 
-$repairScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Repair-ProGo.ps1")
+$repairScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Repair-ProGo.ps1")
 foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch")) {
     if ($repairScriptText -notmatch [regex]::Escape($required)) { Fail "repair script marker missing: $required" }
 }
 
-$startScriptText = Get-Content -Raw -Path (Join-Path $PSScriptRoot "Start-ProGo.ps1")
+$startScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Start-ProGo.ps1")
 foreach ($required in @("ProGo.exe", "--show", "Start-Process")) {
     if ($startScriptText -notmatch [regex]::Escape($required)) { Fail "start script marker missing: $required" }
 }
 
-$workflowText = Get-Content -Raw -Path (Join-Path $Root ".github\workflows\ci.yml")
+$workflowText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $Root ".github\workflows\ci.yml")
 foreach ($required in @("Pack release zip", "Compress-Archive", "ProGo-release.zip", "ProGo-release-zip")) {
     if ($workflowText -notmatch [regex]::Escape($required)) { Fail "CI release package marker missing: $required" }
 }
 
 $releaseWorkflowPath = Join-Path $Root ".github\workflows\release.yml"
 if (-not (Test-Path $releaseWorkflowPath)) { Fail "release workflow missing" }
-$releaseWorkflowText = Get-Content -Raw -Path $releaseWorkflowPath
+$releaseWorkflowText = Get-Content -Encoding UTF8 -Raw -Path $releaseWorkflowPath
 foreach ($required in @(
     "permissions:",
     "contents: write",
@@ -245,7 +238,7 @@ foreach ($required in @(
 foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
-    $scriptText = Get-Content -Raw -Path $scriptPath
+    $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
     $parseErrors = $null
     $tokens = @([System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$parseErrors))
     if ($parseErrors -ne $null -and @($parseErrors).Count -gt 0) {
@@ -289,4 +282,11 @@ if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
 
+$DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
+$DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
+& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
+& $DesktopHarness (Join-Path $Root 'build\desktop-shots')
+if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
+& (Join-Path $Root 'tests\UpdatePackageTests.ps1')
 Write-Host "ProGo tests PASS."

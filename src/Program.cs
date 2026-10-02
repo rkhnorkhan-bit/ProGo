@@ -56,27 +56,7 @@ namespace ProGo
                         proxyService.StartTunnel(false);
                     }
 
-                    var shouldStartCliProxy =
-                        settingsService.Current.AutoApplyProxy ||
-                        CliProxyEnvironmentService.IsAppliedToUserEnvironment();
-
-                    if (shouldStartCliProxy)
-                    {
-                        string cliProxyMessage;
-                        if (cliProxyService.Start(out cliProxyMessage))
-                        {
-                            if (settingsService.Current.AutoApplyProxy)
-                            {
-                                CliProxyEnvironmentService.ApplyUserEnvironment();
-                            }
-                        }
-                        else
-                        {
-                            SafeLog.Error(
-                                "Automatic CLI HTTP proxy startup failed.",
-                                new InvalidOperationException(cliProxyMessage ?? "CLI HTTP proxy startup failed."));
-                        }
-                    }
+                    context.StartAutomation();
 
                     Application.Run(context);
                 }

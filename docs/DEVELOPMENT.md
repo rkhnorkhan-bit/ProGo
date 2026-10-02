@@ -82,3 +82,18 @@ and then runs the socket relay integration suite. It requires OpenSSH and OpenSS
 Actions runner. It installs real strongSwan/OpenSSH, issues independent invites,
 checks the allowed relay port and denied arbitrary ports, and verifies revocation.
 Never run this provisioning test on an existing personal or production server.
+
+## Desktop 0.2 validation
+
+`Test-ProGo.ps1` also runs `DesktopTests.cs` for preference migration, all combinations
+of independent automatic actions, manual override, scoped Codex launch, HTTP/CONNECT
+round trips through a loopback SOCKS fixture, native form screenshots and 150% scaling.
+`UpdatePackageTests.ps1` loads only updater function definitions in a disposable test
+scope and rejects corrupt digests, missing metadata, unexpected hosts and archive
+traversal. Runtime code never evaluates downloaded scripts. Windows screenshots
+are CI artifacts. They contain only synthetic connection settings and empty vaults.
+
+The executable is unsigned. Do not claim antivirus clearance based on CI success;
+record a vendor result separately. Do not introduce exclusions, obfuscation or
+antivirus-disabling code. A future Authenticode rollout needs a real publisher
+certificate and protected signing credentials; never commit such credentials.

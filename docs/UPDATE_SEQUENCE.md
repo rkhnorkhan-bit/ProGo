@@ -1,6 +1,9 @@
 # ProGo planned update sequence
 
-This document tracks the short-term update chain agreed during the 0.1.x stabilization phase.
+This is historical release history. **0.2.0 supersedes the 0.1.x updater transport**:
+only installed updater files execute; version-specific release packages require the
+GitHub SHA-256 digest. In-memory script evaluation and source-build fallback have
+been removed. No antivirus trust or detection clearance is claimed.
 
 ## Rules
 

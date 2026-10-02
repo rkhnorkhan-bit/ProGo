@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — Desktop experience and independent automation
+
+- New native connection dashboard, shared dark theme, multi-resolution icon and grouped plain-language tray menus.
+- Four independent automatic options: recover the tunnel, prepare new terminal environments, enable Windows proxy, and prepare a scoped Codex launcher. Manual controls remain available; new options are opt-in.
+- HTTP and HTTPS CONNECT support through the loopback bridge; previous environment settings are restored where still owned by ProGo.
+- Updates run installed script files and verify the published asset SHA-256 before extraction. Remote in-memory PowerShell execution and source-build fallback are removed. Backup, staging and rollback remain.
+- Antivirus help explains detection reporting and links to official releases. No exclusions or security bypasses are added; the executable remains unsigned and Kaspersky clearance is not claimed.
+- Fix iPhone profile installation failing with `Invalid DH group (0)`. Re-export the phone profile after updating; existing server settings remain compatible.
+- Automated Windows migration, manual override, scoped process environment, proxy transport, visual and package-validation checks. Actual iPhone connectivity still requires device testing.
+
 ## 0.1.29 - Guided home VPN and SOCKS recovery
 
 - Replaced the instruction dialog with a Russian five-step wizard: VPS access, server setup, router forwarding, iPhone profile, and connection checks.

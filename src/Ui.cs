@@ -8,110 +8,7 @@ using System.Windows.Forms;
 
 namespace ProGo
 {
-    internal sealed class TrayApplicationContext : ApplicationContext
-    {
-        private readonly SettingsService settings;
-        private readonly ProxyService proxy;
-        private readonly ClipboardService clipboard;
-        private readonly NotifyIcon tray;
-
-        public TrayApplicationContext(SettingsService settingsService, ProxyService proxyService, ClipboardService clipboardService)
-        {
-            settings = settingsService;
-            proxy = proxyService;
-            clipboard = clipboardService;
-
-            tray = new NotifyIcon
-            {
-                Icon = SystemIcons.Application,
-                Text = AppConstants.ProductName,
-                Visible = true,
-                ContextMenuStrip = BuildMenu()
-            };
-            tray.DoubleClick += delegate { ShowStatus(); };
-            UpdateTooltip();
-        }
-
-        private ContextMenuStrip BuildMenu()
-        {
-            var menu = new ContextMenuStrip();
-            menu.Items.Add("Состояние", null, delegate { ShowStatus(); });
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Запустить SOCKS", null, delegate { proxy.StartTunnel(true); UpdateTooltip(); });
-            menu.Items.Add("Остановить SOCKS", null, delegate { proxy.StopTunnel(); UpdateTooltip(); });
-            menu.Items.Add("Перезапустить SOCKS", null, delegate { proxy.RestartTunnel(); UpdateTooltip(); });
-            menu.Items.Add("Изменить порт SOCKS...", null, delegate { ChangePort(); });
-            menu.Items.Add("Применить proxy environment", null, delegate { CliProxyEnvironmentService.ApplyUserEnvironment(); MessageBox.Show("Proxy environment применён через HTTP CONNECT bridge. Уже запущенным процессам может потребоваться перезапуск.", AppConstants.ProductName); });
-            menu.Items.Add("Проверить соединение", null, delegate { MessageBox.Show(RouteTester.Test(settings.Current, proxy), "Проверка соединения"); });
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Хранилище секретов", null, delegate { ShowVault(); });
-            menu.Items.Add("Настройки", null, delegate { ShowSettings(); });
-            menu.Items.Add("Открыть журнал", null, delegate { OpenLog(); });
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Выход", null, delegate { ExitThread(); });
-            return menu;
-        }
-
-        private void ShowStatus()
-        {
-            using (var form = new StatusForm(settings, proxy)) form.ShowDialog();
-            UpdateTooltip();
-        }
-
-        private void ShowSettings()
-        {
-            using (var form = new SettingsForm(settings)) form.ShowDialog();
-            UpdateTooltip();
-        }
-
-        private void ShowVault()
-        {
-            VaultSession session;
-            if (!PinForm.OpenSession(out session)) return;
-            using (var form = new VaultForm(session, clipboard, settings)) form.ShowDialog();
-        }
-
-        private void ChangePort()
-        {
-            int port;
-            if (!PortForm.TryGetPort(settings.Current.SocksPort, out port)) return;
-            var next = settings.Current;
-            next.SocksPort = port;
-            settings.Save(next);
-            proxy.RestartTunnel();
-            CliProxyEnvironmentService.ApplyUserEnvironment();
-            MessageBox.Show("Порт SOCKS изменён на " + port + ".", "Порт SOCKS");
-            UpdateTooltip();
-        }
-
-        private void OpenLog()
-        {
-            try
-            {
-                AppPaths.EnsureDirectories();
-                if (!File.Exists(AppPaths.LogPath)) File.WriteAllText(AppPaths.LogPath, "");
-                Process.Start("notepad.exe", AppPaths.LogPath);
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Open log failed.", ex);
-                MessageBox.Show("Не удалось открыть журнал.", AppConstants.ProductName);
-            }
-        }
-
-        private void UpdateTooltip()
-        {
-            tray.Text = AppConstants.ProductName + " — SOCKS: " + (proxy.IsListening() ? "работает" : "остановлен");
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) tray.Dispose();
-            base.Dispose(disposing);
-        }
-    }
-
-    internal sealed class StatusForm : Form
+    internal sealed class StatusForm : ProGoForm
     {
         private readonly SettingsService settings;
         private readonly ProxyService proxy;
@@ -134,21 +31,22 @@ namespace ProGo
         {
             settings = settingsService;
             proxy = proxyService;
-            Text = "Состояние";
-            AutoScaleMode = AutoScaleMode.Font;
+            Text = "Маршрут и скорость · ProGo";
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(620, 380);
+            ClientSize = new Size(820, 570);
+            MinimumSize = new Size(790, 540);
 
             var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 10 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(table);
 
-            state = AddRow(table, 0, "SOCKS-туннель");
+            state = AddRow(table, 0, "Соединение");
             address = AddRow(table, 1, "Адрес");
             pid = AddRow(table, 2, "SSH-процесс");
-            env = AddRow(table, 3, "Прокси окружения");
-            ping = AddRow(table, 4, "Ping через SOCKS");
+            env = AddRow(table, 3, "Командная строка");
+            ping = AddRow(table, 4, "Задержка соединения");
             speed = AddRow(table, 5, "Скорость");
             route = AddRow(table, 6, "Маршрут");
             checkedAt = AddRow(table, 7, "Последняя проверка");
@@ -156,7 +54,7 @@ namespace ProGo
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
             var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
-            var restart = new Button { Text = "Перезапустить SOCKS", Width = 150 };
+            var restart = new Button { Text = "Переподключиться", Width = 150 };
             speedButton = new Button { Text = "Измерить скорость", Width = 150 };
             var check = new Button { Text = "Проверить снова", Width = 130 };
             restart.Click += delegate
@@ -196,7 +94,7 @@ namespace ProGo
 
         private static Label AddRow(TableLayoutPanel table, int row, string name)
         {
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
             table.Controls.Add(new Label { Text = name, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
             var value = new Label { Text = "—", AutoSize = true, Anchor = AnchorStyles.Left, MaximumSize = new Size(400, 0) };
             table.Controls.Add(value, 1, row);
@@ -313,105 +211,7 @@ namespace ProGo
         }
     }
 
-    internal sealed class SettingsForm : Form
-    {
-        private readonly SettingsService service;
-        private readonly TextBox host = new TextBox();
-        private readonly NumericUpDown port = new NumericUpDown();
-        private readonly TextBox ssh = new TextBox();
-        private readonly CheckBox autoStart = new CheckBox();
-        private readonly CheckBox autoProxy = new CheckBox();
-        private readonly NumericUpDown clearSeconds = new NumericUpDown();
-        private readonly TextBox endpoint = new TextBox();
-
-        public SettingsForm(SettingsService settingsService)
-        {
-            service = settingsService;
-            Text = "Настройки";
-            AutoScaleMode = AutoScaleMode.Font;
-            StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(620, 420);
-
-            var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 12 };
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            Controls.Add(panel);
-
-            AddHeader(panel, 0, "Соединение");
-            AddLabeled(panel, 1, "Адрес SOCKS", host);
-            port.Minimum = 1; port.Maximum = 65535;
-            AddLabeled(panel, 2, "Порт SOCKS", port);
-            AddLabeled(panel, 3, "SSH-профиль", ssh);
-            autoStart.Text = "Запускать SOCKS вместе с ProGo";
-            panel.Controls.Add(autoStart, 1, 4);
-            autoProxy.Text = "Автоматически применять настройки прокси";
-            panel.Controls.Add(autoProxy, 1, 5);
-            AddHeader(panel, 6, "Безопасность");
-            clearSeconds.Minimum = 5; clearSeconds.Maximum = 3600;
-            AddLabeled(panel, 7, "Очищать буфер через, сек.", clearSeconds);
-            AddHeader(panel, 8, "Диагностика");
-            AddLabeled(panel, 9, "Адрес проверки", endpoint);
-            var logPath = new TextBox { ReadOnly = true, Text = AppPaths.LogPath };
-            AddLabeled(panel, 10, "Журнал", logPath);
-
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
-            save.Click += Save;
-            buttons.Controls.Add(cancel);
-            buttons.Controls.Add(save);
-            panel.Controls.Add(buttons, 0, 11);
-            panel.SetColumnSpan(buttons, 2);
-            AcceptButton = save;
-            CancelButton = cancel;
-            LoadValues();
-        }
-
-        private static void AddHeader(TableLayoutPanel panel, int row, string text)
-        {
-            var label = new Label { Text = text, Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold), AutoSize = true, Anchor = AnchorStyles.Left };
-            panel.Controls.Add(label, 0, row);
-            panel.SetColumnSpan(label, 2);
-        }
-
-        private static void AddLabeled(TableLayoutPanel panel, int row, string label, Control control)
-        {
-            panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-            panel.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-            control.Dock = DockStyle.Fill;
-            panel.Controls.Add(control, 1, row);
-        }
-
-        private void LoadValues()
-        {
-            var s = service.Current;
-            host.Text = s.SocksHost;
-            port.Value = s.SocksPort;
-            ssh.Text = s.SshProfile ?? "";
-            autoStart.Checked = s.AutoStartSocks;
-            autoProxy.Checked = s.AutoApplyProxy;
-            clearSeconds.Value = s.ClipboardClearSeconds;
-            endpoint.Text = s.TestEndpoint;
-        }
-
-        private void Save(object sender, EventArgs e)
-        {
-            service.Save(new AppSettings
-            {
-                SocksHost = host.Text.Trim(),
-                SocksPort = (int)port.Value,
-                SshProfile = ssh.Text.Trim(),
-                AutoStartSocks = autoStart.Checked,
-                AutoRestartSocks = service.Current.AutoRestartSocks,
-                AutoApplyProxy = autoProxy.Checked,
-                ClipboardClearSeconds = (int)clearSeconds.Value,
-                TestEndpoint = endpoint.Text.Trim()
-            });
-            Close();
-        }
-    }
-
-    internal sealed class VaultForm : Form
+    internal sealed class VaultForm : ProGoForm
     {
         private readonly VaultSession session;
         private readonly ClipboardService clipboard;
@@ -426,9 +226,10 @@ namespace ProGo
             clipboard = clipboardService;
             settings = settingsService;
             Text = "Хранилище секретов";
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(860, 520);
+            ClientSize = new Size(1040, 600);
+            MinimumSize = new Size(980, 560);
 
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), RowCount = 3, ColumnCount = 1 };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
@@ -457,6 +258,13 @@ namespace ProGo
             grid.MultiSelect = false;
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.DoubleClick += delegate { EditSelected(); };
+            grid.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                if (grid.Rows.Count != 0) return;
+                TextRenderer.DrawText(e.Graphics, "Здесь будут ваши записи\nНажмите «Добавить», чтобы сохранить первый секрет.", UiTheme.Body,
+                    new Rectangle(20, 70, Math.Max(1, grid.Width - 40), 80), UiTheme.Muted,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
+            };
             root.Controls.Add(grid, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
@@ -593,7 +401,7 @@ namespace ProGo
         }
     }
 
-    internal sealed class EntryForm : Form
+    internal sealed class EntryForm : ProGoForm
     {
         private readonly TextBox name = new TextBox();
         private readonly ComboBox type = new ComboBox();
@@ -608,9 +416,10 @@ namespace ProGo
         {
             Entry = entry;
             Text = String.IsNullOrEmpty(entry.name) ? "Новая запись" : "Редактирование записи";
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterParent;
-            MinimumSize = new Size(560, 520);
+            ClientSize = new Size(680, 570);
+            MinimumSize = new Size(620, 540);
 
             var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 9 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
@@ -650,7 +459,7 @@ namespace ProGo
 
         private static void Add(TableLayoutPanel table, int row, string label, Control control)
         {
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, row == 6 ? 92 : 32));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, row == 6 ? 92 : 42));
             table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
             control.Dock = DockStyle.Fill;
             table.Controls.Add(control, 1, row);
@@ -696,7 +505,7 @@ namespace ProGo
         }
     }
 
-    internal sealed class PinForm : Form
+    internal sealed class PinForm : ProGoForm
     {
         private readonly TextBox pin = new TextBox();
         private readonly TextBox confirm = new TextBox();
@@ -707,9 +516,10 @@ namespace ProGo
         {
             create = createVault;
             Text = create ? "Создание хранилища" : "Разблокировка";
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(360, create ? 210 : 170);
+            ClientSize = new Size(520, create ? 260 : 220);
+            MinimumSize = Size;
 
             var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = create ? 4 : 3 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
@@ -780,7 +590,7 @@ namespace ProGo
         }
     }
 
-    internal sealed class PortForm : Form
+    internal sealed class PortForm : ProGoForm
     {
         private readonly NumericUpDown port = new NumericUpDown();
         public int Port { get { return (int)port.Value; } }
@@ -788,9 +598,10 @@ namespace ProGo
         private PortForm(int current)
         {
             Text = "Порт SOCKS";
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(360, 150);
+            ClientSize = new Size(480, 210);
+            MinimumSize = Size;
             port.Minimum = 1;
             port.Maximum = 65535;
             port.Value = current >= 1 && current <= 65535 ? current : 1080;

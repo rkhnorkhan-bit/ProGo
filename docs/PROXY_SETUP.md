@@ -1,157 +1,66 @@
-# Proxy Setup
+# Proxy setup
 
-## Automatic SOCKS recovery
+## Connection
 
-Starting with 0.1.29, the tray toggle `Автовосстановление SOCKS` is enabled by
-default. It applies after ProGo starts an SSH tunnel; it does not enable the
-separate `Запускать SOCKS вместе с ProGo` setting.
+In **Настройки → Подключение**, add an SSH alias from the standard OpenSSH config
+or a target such as `user@vpn.example.org`. Connect from the main window. A live
+SOCKS listener means the tunnel is ready; route diagnostics verify actual reachability.
 
-ProGo checks its SSH process and the local SOCKS greeting every five seconds.
-An unexpected process exit schedules a restart. A new process has a 20-second
-startup grace period; three consecutive failed listener checks after that grace
-period cause a restart. SSH keepalives detect a lost remote connection separately.
-A website outage alone is not treated as a local tunnel failure.
+## Automatic and manual controls
 
-Retries wait 5, 10, 20, 40, then at most 60 seconds. After one minute of healthy
-listener checks the backoff resets. Automatic attempts use `BatchMode=yes`, so
-SSH keys or an already unlocked agent must work without a password prompt.
-Host-key validation remains enabled according to the SSH configuration.
+**Настройки → Автоматика** exposes recovery, terminal environment, Windows proxy,
+and a scoped Codex launcher as independent settings. Startup actions wait for SOCKS
+readiness and run once. Manual off cancels an outstanding action for the session;
+it is not undone on the next timer tick. Unchecking disables future automatic work;
+use the adjacent button to disable a currently active feature. New Windows and Codex
+options default to false. Existing recovery and environment preferences are retained.
 
-`Остановить SOCKS` cancels retries until the next explicit start. Turning the
-recovery toggle off leaves a running tunnel alone. Exiting or updating ProGo
-disposes the monitor and stops the owned process. Another process occupying the
-SOCKS port is never killed or adopted by the watchdog.
+Recovery checks the owned SSH process and SOCKS handshake every five seconds,
+uses a 20-second startup grace period, and retries with capped exponential backoff.
+It never adopts or kills a process belonging to someone else. Manual stop cancels
+retries. Automatic recovery also applies to the independent iPhone tunnel.
 
-The `Состояние` window displays recovery status. Existing connections can break
-during a restart; client applications must reconnect. The local CLI proxy and
-optional iPhone relay are not stopped by automatic SOCKS recovery.
+## Command line
 
-## 1. Create an OpenSSH profile
-
-Edit your user OpenSSH config:
+**Прокси для приложений → Командная строка — включить** applies:
 
 ```text
-%USERPROFILE%\.ssh\config
-```
-
-Example:
-
-```sshconfig
-Host my-vps
-  HostName example.com
-  User deploy
-  IdentityFile ~/.ssh/id_ed25519
-```
-
-Check it manually:
-
-```powershell
-ssh my-vps
-```
-
-## 2. Configure ProGo
-
-Open ProGo settings and set:
-
-- SOCKS host: `127.0.0.1`
-- SOCKS port: `1080` or another free local port
-- SSH profile: `my-vps`
-
-For automatic CLI routing, enable:
-
-```text
-Автоматически запускать HTTP proxy и применять env
-```
-
-## 3. Start SOCKS
-
-Tray menu:
-
-```text
-Запустить SOCKS
-```
-
-ProGo starts a command equivalent to:
-
-```powershell
-ssh.exe -N -D 127.0.0.1:1080 -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 my-vps
-```
-
-The SOCKS endpoint is the internal/explicit transport endpoint. It is not published as `HTTP_PROXY`, `HTTPS_PROXY`, or `ALL_PROXY`.
-
-## 4. CLI/Codex HTTP CONNECT bridge
-
-ProGo exposes a loopback-only HTTP CONNECT proxy:
-
-```text
-Codex CLI
-  -> http://127.0.0.1:1881
-  -> SOCKS 127.0.0.1:<SOCKS-port>
-  -> SSH tunnel
-  -> remote VPS
-  -> destination
-```
-
-Use:
-
-```text
-Запустить CLI/Codex proxy
-```
-
-The bridge listens only on `127.0.0.1:1881`. Long-lived CONNECT streams, including WebSocket traffic, do not use a ProGo read/write idle timeout.
-
-## 5. Apply proxy environment
-
-Tray menu:
-
-```text
-Применить proxy environment
-```
-
-ProGo starts the local HTTP bridge if needed and writes user-level environment variables:
-
-```text
-ALL_PROXY=http://127.0.0.1:1881
-HTTPS_PROXY=http://127.0.0.1:1881
 HTTP_PROXY=http://127.0.0.1:1881
-all_proxy=http://127.0.0.1:1881
-https_proxy=http://127.0.0.1:1881
-http_proxy=http://127.0.0.1:1881
+HTTPS_PROXY=http://127.0.0.1:1881
+ALL_PROXY=http://127.0.0.1:1881
 NO_PROXY=localhost,127.0.0.1,::1
-no_proxy=localhost,127.0.0.1,::1
 ```
 
-This is the canonical environment route for Codex and other HTTP-proxy-aware CLI tools.
+The listener is loopback-only and supports plain HTTP plus HTTPS CONNECT over the
+selected SOCKS transport. DNS destination names are passed to SOCKS. Established
+streams have no idle read timeout; request and SOCKS handshakes are bounded.
 
-Already running processes keep their inherited environment. Open a new terminal, or use:
+Existing terminal processes retain their environment. Open a new terminal, or use
+**Открыть терминал с прокси**. Environment changes are for the current Windows user;
+previous values are backed up and restored only if still owned by ProGo. Turning off
+automation alone does not change those values. Disconnect/exit restores owned settings.
+
+## Codex CLI
+
+**Codex — настроить ярлык** creates **Codex через ProGo** in the Start Menu.
+The command wrapper uses `setlocal`; its HTTP proxy variables apply only to the
+launched Codex process. It does not alter Codex configuration, API keys, PATH or
+other terminal environments. Install Codex CLI separately and keep ProGo connected.
+**Открыть Codex через ProGo** starts it directly with the same scoped environment.
+**Codex — убрать ярлык** removes the ProGo-owned launcher; it does not uninstall Codex.
+
+## Windows applications
+
+**Windows — включить** sets current-user WinINet proxy values to:
 
 ```text
-Открыть PowerShell с CLI proxy
+http=127.0.0.1:1881;https=127.0.0.1:1881
 ```
 
-If user-level proxy variables already point to `http://127.0.0.1:1881`, ProGo restores the bridge listener on application startup even when the variables were applied in an earlier session.
+The previous proxy configuration is stored in `system-proxy-backup.json`.
+**Windows — выключить** restores that configuration. Disconnect/exit restores it
+only while the applied proxy still belongs to ProGo. Other apps' later proxy changes
+are not overwritten on exit. Machine-wide WinHTTP is not modified.
 
-Explicitly stopping the CLI/Codex proxy or choosing `Выход` clears ProGo-owned user-level proxy variables so new processes do not inherit a dead loopback proxy.
-
-## 6. Windows system proxy
-
-`Включить системный прокси Windows` remains a separate current-user WinINet/browser feature. It points supported Windows applications at the SOCKS endpoint and does not replace the HTTP CONNECT bridge used by Codex CLI.
-
-## 7. Check the route
-
-Check the HTTP bridge:
-
-```powershell
-curl.exe -v -x http://127.0.0.1:1881 https://api.ipify.org
-```
-
-The returned public IP should be the VPS egress IP.
-
-Check Codex:
-
-```powershell
-codex doctor
-codex exec "Reply only with WORKS"
-```
-
-For ChatGPT subscription authentication, `codex doctor` should report ChatGPT auth, reachable provider endpoints, and a successful WebSocket handshake when the current Codex version and network path support it.
+Apps that ignore system settings can connect directly; this feature is not a full
+Windows VPN. The [iPhone wizard](HOME_IKEV2.md) is a separate native IKEv2 route.

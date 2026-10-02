@@ -1,234 +1,89 @@
-# ProGo
+# ProGo 0.2.0
 
-ProGo is a small Windows tray application for fast SSH SOCKS proxy control and a local encrypted credentials vault.
+A lightweight native Windows app for SSH proxy connections, a home-entry iPhone VPN,
+and an encrypted local vault. Russian interface, no telemetry, no vendor-operated backend.
 
-## Guided home VPN
+**[Инструкция на русском](https://github.com/rkhnorkhan-bit/ProGo/blob/main/README.ru.md)** ·
+[Latest release](https://github.com/rkhnorkhan-bit/ProGo/releases/latest)
 
-Open **VPN для iPhone…** for the five-step wizard. Choose an existing VPS invitation
-token or add your own Ubuntu VPS using SSH. The wizard provisions the server,
-generates an iPhone profile, shows router forwarding, and checks transport. Owners
-can issue and revoke friend tokens. [Setup and limits](docs/HOME_IKEV2.md).
+## Desktop experience
 
-## Status
+Open ProGo from the tray for the connection dashboard. Settings separates automation,
+connections, vault preferences and diagnostics. All application dialogs use the same
+native dark theme, keyboard controls and multi-resolution icon. Windows native security
+and file dialogs retain their standard appearance. No embedded browser or VM is required.
 
-Version: `0.1.29`.
+## Four independent automatic options
 
-This project has no vendor-operated backend, no telemetry, and no hosted secrets storage.
+| Option in Settings | Behavior |
+| --- | --- |
+| Восстанавливать подключение при обрыве | Recovers an owned SSH/SOCKS connection after failure. Manual stop cancels retries. Applies to the home VPN channel too. |
+| Включать прокси для командной строки | Applies proxy environment variables for newly launched terminals when the connection is ready. |
+| Включать прокси для приложений Windows | Applies current-user Windows HTTP/HTTPS proxy settings when ready. |
+| Подготавливать Codex к работе через прокси | Creates a **Codex через ProGo** Start Menu shortcut that gives only the launched CLI a scoped proxy environment. |
 
-## Platform
+Unchecked means manual control; adjacent buttons remain available. Unchecking does not
+silently undo a manually active feature. Manual off suppresses pending automation for
+that session. The next launch or an explicit preference off/on re-arms it. Existing
+preferences migrate; new Windows/Codex automation defaults to off. CLI installation
+itself is separate. **Подключаться к серверу при запуске ProGo** remains a separate setting.
 
-- Windows 10/11 x64
-- .NET Framework 4.8 runtime
-- Windows OpenSSH client (`ssh.exe`)
-- Windows PowerShell 5.1 or PowerShell 7.x for scripts
+Proxy-aware Windows apps and terminal programs use `http://127.0.0.1:1881`, which
+supports HTTP requests and HTTPS CONNECT over SSH/SOCKS. This does not capture all PC
+traffic. Previous user settings are restored where still owned by ProGo on disconnect
+or exit; existing processes must be restarted to refresh their environment.
 
-## Features
+## Home VPN
 
-- Start, stop, and restart an SSH SOCKS tunnel from tray.
-- Automatic SOCKS recovery after its owned SSH process exits or the SOCKS listener stops responding. Enabled by default; toggle `Автовосстановление SOCKS` in the tray menu. A manual stop cancels retries.
-- Configurable SOCKS host, port, and SSH profile.
-- User-level `ALL_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY` variables routed through the loopback HTTP CONNECT bridge at `http://127.0.0.1:1881`.
-- Current-user Windows system proxy toggle for WinINet/browser login flows.
-- CLI/Codex HTTP CONNECT proxy bridge for tools that need a normal `http://` proxy instead of SOCKS.
-- Experimental [home IKEv2 relay for iPhone](docs/HOME_IKEV2.md): transport encrypted VPN packets through the existing SSH/SOCKS tunnel to a self-hosted strongSwan server. Requires router forwarding and a small helper on the VPS; authentication stays on the VPS.
-- Route check through `curl.exe --socks5-hostname`.
-- Local encrypted vault at `%LOCALAPPDATA%\ProGo\vault.enc.json`.
-- Vault entry types: `api_key`, `password`, `token`, `ssh`, `note`, `custom`.
-- Copy secret by explicit action only.
-- Clipboard auto-clear if the clipboard still contains the copied ProGo value.
-- Russian UI.
-- Direct install from GitHub.
-- Tray item `Обновить ProGo`: installs the latest published release package with backup and rollback; a source build is available as a recovery fallback.
-- Build/install/update/uninstall/test scripts.
-- GitHub Actions Windows build.
+Open **iPhone через домашний ПК…**. Choose an existing VPS token or add an Ubuntu VPS
+with SSH. The wizard provisions the VPN service, shows router forwarding rules,
+exports an iPhone profile and reports transport counters. Owners can issue and revoke
+separate invitations. [Setup and limits](https://github.com/rkhnorkhan-bit/ProGo/blob/main/docs/HOME_IKEV2.md).
 
-## Security limitations
+0.2.0 fixes iOS rejecting profiles with `Invalid DH group (0)`. Export a new profile
+from the wizard and reinstall it; the server does not require reprovisioning.
+The home route remains experimental and must be verified with the actual phone/provider.
 
-The current MVP uses a 4-digit PIN. This is convenient but weak: it has only 10,000 combinations. Do not treat it as a strong master password.
+## Updates and antivirus
 
-Vault data is encrypted at rest with:
+**Обновить ProGo** installs the latest published release. Starting with 0.2, the installed
+updater file resolves a version-specific release asset and verifies GitHub's SHA-256
+digest before extraction. Archive paths and staging are checked before replacement;
+backup and rollback are retained. Settings, vault data and VPN credentials are preserved.
+The first upgrade from an older release still uses that release's package validation.
 
-- AES-256-CBC
-- HMAC-SHA256
-- PBKDF2-HMAC-SHA256
-- encrypt-then-MAC structure
+The updater no longer downloads/evaluates PowerShell text in memory or compiles
+remote source as a fallback. It respects execution policy. Missing digests and failed
+validation cancel the update rather than weakening checks. No antivirus exclusions,
+security disabling or detection-evasion behavior is included.
 
-Logs are designed not to contain PINs, secrets, tokens, API keys, Authorization headers, decrypted vault data, or clipboard values.
+The executable is currently **unsigned**. SHA-256 is an integrity check, not an
+Authenticode publisher signature or antivirus approval. Use **Помощь и журналы →
+Антивирус и обновления…** to reach logs, the official release, and Kaspersky OpenTIP.
+Record the exact detection name before assuming a false positive.
 
-## SSH setup
+If an older updater is blocked, use the official release via a browser after resolving
+the detection with the antivirus vendor. Close ProGo, back up its folder, and extract
+the archive into `%LOCALAPPDATA%\ProGo`. Keep settings, vault and private VPN data.
 
-Create an SSH alias in your standard OpenSSH config:
+## Platform and development
 
-```sshconfig
-Host my-vps
-  HostName example.com
-  User deploy
-  IdentityFile ~/.ssh/id_ed25519
-```
-
-Then set `my-vps` as the SSH profile in ProGo settings.
-
-ProGo runs a command equivalent to:
-
-```powershell
-ssh.exe -N -D 127.0.0.1:1080 -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 my-vps
-```
-
-ProGo never stores SSH private keys or SSH passwords in source code.
-
-## Windows system proxy
-
-ProGo can enable a current-user Windows system proxy from the tray menu:
-
-```text
-Включить системный прокси Windows
-```
-
-This writes current-user WinINet settings under HKCU and points Windows proxy-aware applications to the local SSH SOCKS endpoint:
-
-```text
-socks=127.0.0.1:1080
-```
-
-Before changing Windows proxy settings, ProGo saves the previous current-user proxy values to `%LOCALAPPDATA%\ProGo\system-proxy-backup.json`. Use this tray action to restore them:
-
-```text
-Отключить системный прокси Windows
-```
-
-This mode is intended for browser/login flows. Restart any already-open browser that should pick up the proxy settings.
-
-Scope and limits:
-
-- current user only;
-- no administrator rights required;
-- no machine-wide WinHTTP changes;
-- no VPN/TUN/WFP traffic interception;
-- applications that ignore Windows proxy settings may still connect directly.
-
-## CLI/Codex proxy
-
-Some CLI tools do not use Windows system proxy settings and may not reliably use `socks5h://` proxy environment variables. ProGo can start a local HTTP CONNECT proxy bridge for those tools:
-
-```text
-Codex CLI -> http://127.0.0.1:1881 -> SOCKS 127.0.0.1:<SOCKS-port> -> SSH tunnel
-```
-
-Tray actions:
-
-```text
-Запустить CLI/Codex proxy
-Применить CLI proxy env
-Открыть PowerShell с CLI proxy
-Остановить CLI/Codex proxy
-```
-
-`Запустить CLI/Codex proxy` starts a loopback-only listener at `127.0.0.1:1881`. It accepts HTTP `CONNECT` only and relays the stream through the current SOCKS tunnel.
-
-`Применить CLI proxy env` writes user-level environment variables:
-
-```text
-ALL_PROXY=http://127.0.0.1:1881
-HTTPS_PROXY=http://127.0.0.1:1881
-HTTP_PROXY=http://127.0.0.1:1881
-NO_PROXY=localhost,127.0.0.1,::1
-```
-
-Already-open terminals do not receive new user-level environment variables automatically. For immediate use, choose `Открыть PowerShell с CLI proxy`, then run `codex login` in the opened shell. ProGo restores the `127.0.0.1:1881` listener on startup when the user environment already points to it, and explicit CLI-proxy stop/ProGo exit clears ProGo-owned proxy env values to avoid stale loopback ports.
-
-## Direct install from GitHub
-
-Recommended standalone install on a fresh Windows machine:
-
-```powershell
-$script = Join-Path $env:TEMP "Install-FromGitHub.ps1"
-Invoke-WebRequest "https://raw.githubusercontent.com/rkhnorkhan-bit/ProGo/main/scripts/Install-FromGitHub.ps1" -OutFile $script -UseBasicParsing
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script
-```
-
-The script downloads the current `main` branch from GitHub, builds `ProGo.exe` using the stock .NET Framework compiler, and installs it to:
-
-```text
-%LOCALAPPDATA%\ProGo
-```
-
-A startup shortcut is created by default. To disable it:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -NoStartup
-```
-
-## Install from local clone
-
-```powershell
-git clone https://github.com/rkhnorkhan-bit/ProGo.git
-cd ProGo
-.\scripts\Install-ProGo.ps1
-```
-
-## Build
+Windows 10/11 x64, .NET Framework 4.8, Windows OpenSSH and PowerShell 5.1.
 
 ```powershell
 .\scripts\Build-ProGo.ps1
-```
-
-The build script uses:
-
-```text
-C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
-```
-
-## Update
-
-Use the tray menu item:
-
-```text
-Обновить ProGo
-```
-
-The updater:
-
-1. starts `%LOCALAPPDATA%\ProGo\scripts\Update-ProGo.ps1`;
-2. exits the running ProGo process;
-3. downloads the latest `main` branch from GitHub;
-4. rebuilds locally;
-5. replaces `%LOCALAPPDATA%\ProGo\ProGo.exe`;
-6. starts the updated ProGo.
-
-Existing `settings.json`, `vault.enc.json`, and logs are preserved.
-
-CLI update:
-
-```powershell
-%LOCALAPPDATA%\ProGo\scripts\Update-ProGo.ps1
-```
-
-## Uninstall
-
-```powershell
-.\scripts\Uninstall-ProGo.ps1
-```
-
-By default, uninstall keeps user data. To request user data removal:
-
-```powershell
-.\scripts\Uninstall-ProGo.ps1 -RemoveUserData
-```
-
-The script then requires explicit `DELETE` confirmation.
-
-## Test
-
-```powershell
 .\scripts\Test-ProGo.ps1
+.\scripts\Test-HomeVpnRelay.ps1
 ```
 
-The test script performs repository hygiene checks and a Windows build smoke test.
+For a source checkout, `scripts/Install-ProGo.ps1` builds and installs locally.
+[Development documentation](https://github.com/rkhnorkhan-bit/ProGo/blob/main/docs/DEVELOPMENT.md).
 
-## License
+## Vault and license
 
-ProGo is source-available for personal and noncommercial use. Commercial use requires separate written permission from the repository owner. See `LICENSE.md` and `COMMERCIAL_USE.md`.
+The vault uses AES-256-CBC, HMAC-SHA256 and PBKDF2-HMAC-SHA256. Its four-digit PIN
+has only 10,000 combinations and is not a strong master password. Never publish
+credentials, phone profiles, tokens, private keys, decrypted data or personal logs.
 
-## Responsible disclosure
-
-Do not publish real secrets, vault files, tokens, keys, or credentials in issues or pull requests. See `SECURITY.md`.
+Source-available for personal/noncommercial use. Commercial use requires separate
+written permission; see LICENSE.md and COMMERCIAL_USE.md in the repository.

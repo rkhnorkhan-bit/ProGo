@@ -101,7 +101,7 @@ namespace ProGo
                 if (targets.Count == 0)
                 {
                     if (showErrors)
-                        System.Windows.Forms.MessageBox.Show("SSH-профиль не выбран. Добавьте имя подключения из ~/.ssh/config, например my-vps, или target user@vpn.example.org.", AppConstants.ProductName);
+                        System.Windows.Forms.MessageBox.Show("Сервер не выбран. Откройте «Настройки → Подключение → Добавить». Укажите имя подключения SSH или адрес user@vpn.example.org.", AppConstants.ProductName);
                     return;
                 }
                 // Never launch a second SSH process while the first is still connecting.

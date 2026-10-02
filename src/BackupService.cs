@@ -225,7 +225,7 @@ namespace ProGo
                 {
                     MessageBox.Show(
                         "Скрипт отката не найден. Обновите ProGo из GitHub один раз после исправления rollback-контура.",
-                        "Откат ProGo",
+                        "Восстановление ProGo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
                     return false;
@@ -233,7 +233,7 @@ namespace ProGo
 
                 if (String.IsNullOrEmpty(backupDir) || !Directory.Exists(backupDir))
                 {
-                    MessageBox.Show("Резервная копия не найдена.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Резервная копия не найдена.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
                 }
 
@@ -256,7 +256,7 @@ namespace ProGo
             catch (Exception ex)
             {
                 SafeLog.Error("Restore launch failed.", ex);
-                MessageBox.Show("Не удалось запустить откат. Подробности записаны в журнал.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Не удалось запустить восстановление. Подробности записаны в журнал.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
         }
@@ -441,7 +441,7 @@ namespace ProGo
         }
     }
 
-    internal sealed class BackupPickerForm : Form
+    internal sealed class BackupPickerForm : ProGoForm
     {
         private readonly ListBox list;
         private readonly TextBox details;
@@ -452,55 +452,30 @@ namespace ProGo
         public BackupPickerForm(List<BackupInfo> items)
         {
             backups = items;
-            Text = "Откат ProGo";
+            Text = "Восстановить ProGo из копии";
             Width = 840;
             Height = 460;
             StartPosition = FormStartPosition.CenterScreen;
 
-            list = new ListBox
-            {
-                Dock = DockStyle.Top,
-                Height = 235
-            };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
+            root.Controls.Add(UiTheme.Label("Вернуться к сохранённой версии", UiTheme.Heading, UiTheme.Text), 0, 0);
+            root.Controls.Add(UiTheme.Label(items.Count == 0 ? "Сохранённых копий пока нет." : "Выберите копию. Перед восстановлением ProGo запросит подтверждение.", UiTheme.Body, UiTheme.Muted), 0, 1);
+            list = new ListBox { Dock = DockStyle.Fill };
             list.SelectedIndexChanged += delegate { UpdateDetails(); };
-
-            foreach (var backup in backups)
-            {
-                list.Items.Add(backup.DisplayName);
-            }
-
-            details = new TextBox
-            {
-                Dock = DockStyle.Top,
-                Height = 110,
-                Multiline = true,
-                ReadOnly = true,
-                ScrollBars = ScrollBars.Vertical
-            };
-
-            var ok = new Button
-            {
-                Text = "Откатить",
-                Width = 110,
-                Left = 590,
-                Top = 365
-            };
-            ok.Click += delegate { Accept(); };
-
-            var cancel = new Button
-            {
-                Text = "Отмена",
-                Width = 110,
-                Left = 710,
-                Top = 365
-            };
-            cancel.Click += delegate { DialogResult = DialogResult.Cancel; };
-
-            Controls.Add(details);
-            Controls.Add(list);
-            Controls.Add(ok);
-            Controls.Add(cancel);
-
+            foreach (var backup in backups) list.Items.Add(backup.DisplayName);
+            details = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical };
+            root.Controls.Add(list, 0, 2); root.Controls.Add(details, 0, 3);
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
+            var cancel = UiTheme.Button("Отмена", delegate { DialogResult = DialogResult.Cancel; }, false);
+            var ok = UiTheme.Button("Восстановить", delegate { Accept(); }, true); ok.Enabled = items.Count > 0;
+            actions.Controls.Add(cancel); actions.Controls.Add(ok); root.Controls.Add(actions, 0, 4);
+            Controls.Add(root); AcceptButton = ok; CancelButton = cancel;
             if (list.Items.Count > 0) list.SelectedIndex = 0;
         }
 
@@ -508,7 +483,7 @@ namespace ProGo
         {
             if (list.SelectedIndex < 0 || list.SelectedIndex >= backups.Count)
             {
-                details.Text = String.Empty;
+                details.Text = "Выберите сохранённую копию в списке выше.";
                 return;
             }
 
@@ -527,7 +502,7 @@ namespace ProGo
         {
             if (list.SelectedIndex < 0 || list.SelectedIndex >= backups.Count)
             {
-                MessageBox.Show("Выберите резервную копию.", "Откат ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Выберите резервную копию.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 

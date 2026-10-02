@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Web.Script.Serialization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -22,6 +24,7 @@ namespace ProGo
         private TcpListener listener;
         private Thread acceptThread;
         private volatile bool running;
+        private readonly HashSet<TcpClient> clients = new HashSet<TcpClient>();
 
         public CliProxyBridgeService(SettingsService settingsService)
         {
@@ -48,7 +51,8 @@ namespace ProGo
                 listener = new TcpListener(IPAddress.Loopback, Port);
                 listener.Start(64);
                 running = true;
-                acceptThread = new Thread(AcceptLoop);
+                var server = listener;
+                acceptThread = new Thread(delegate() { AcceptLoop(server); });
                 acceptThread.IsBackground = true;
                 acceptThread.Name = "ProGo CLI proxy bridge";
                 acceptThread.Start();
@@ -71,18 +75,24 @@ namespace ProGo
             running = false;
             try { if (listener != null) listener.Stop(); } catch { }
             listener = null;
+            lock (clients) { foreach (var client in clients) try { client.Close(); } catch { } clients.Clear(); }
             SafeLog.Info("CLI HTTP CONNECT proxy stopped.");
         }
 
-        private void AcceptLoop()
+        private void AcceptLoop(TcpListener server)
         {
-            while (running)
+            while (running && ReferenceEquals(listener, server))
             {
                 try
                 {
-                    var client = listener.AcceptTcpClient();
+                    var client = server.AcceptTcpClient();
+                    lock (clients)
+                    {
+                        if (!running || clients.Count >= 128) { client.Close(); continue; }
+                        clients.Add(client);
+                    }
                     client.NoDelay = true;
-                    client.ReceiveTimeout = SocketTimeoutMs;
+                    client.ReceiveTimeout = ConnectTimeoutMs;
                     client.SendTimeout = SocketTimeoutMs;
                     ThreadPool.QueueUserWorkItem(HandleClient, client);
                 }
@@ -116,15 +126,17 @@ namespace ProGo
                     var header = ReadHttpHeader(clientStream);
                     string targetHost;
                     int targetPort;
-                    if (!TryParseConnectTarget(header, out targetHost, out targetPort))
+                    bool connect = TryParseConnectTarget(header, out targetHost, out targetPort);
+                    string forwardHeader = null;
+                    if (!connect && !TryParseHttpTarget(header, out targetHost, out targetPort, out forwardHeader))
                     {
-                        WriteAscii(clientStream, "HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\n\r\n");
+                        WriteAscii(clientStream, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
                         return;
                     }
-
                     upstream = ConnectThroughSocks(targetHost, targetPort);
-                    WriteAscii(clientStream, "HTTP/1.1 200 Connection Established\r\nProxy-Agent: ProGo\r\n\r\n");
-                    SafeLog.Info("CLI proxy CONNECT established. target=" + SafeTarget(targetHost, targetPort) + ".");
+                    client.ReceiveTimeout = SocketTimeoutMs;
+                    if (connect) WriteAscii(clientStream, "HTTP/1.1 200 Connection Established\r\n\r\n");
+                    else WriteAscii(upstream.GetStream(), forwardHeader);
                     Relay(client, upstream);
                 }
             }
@@ -140,6 +152,7 @@ namespace ProGo
             finally
             {
                 try { if (upstream != null) upstream.Close(); } catch { }
+                lock (clients) clients.Remove(client);
             }
         }
 
@@ -158,6 +171,7 @@ namespace ProGo
                 }
             }
 
+            if (count < 4 || bytes[count - 4] != '\r' || bytes[count - 3] != '\n' || bytes[count - 2] != '\r' || bytes[count - 1] != '\n') throw new IOException("Incomplete or oversized HTTP header.");
             return Encoding.ASCII.GetString(bytes, 0, count);
         }
 
@@ -196,13 +210,37 @@ namespace ProGo
             return port > 0 && port <= 65535;
         }
 
+        internal static bool TryParseHttpTarget(string header, out string host, out int port, out string forwarded)
+        {
+            host = null; port = 0; forwarded = null;
+            if (header == null || !header.EndsWith("\r\n\r\n", StringComparison.Ordinal)) return false;
+            var lines = header.Split(new[] { "\r\n" }, StringSplitOptions.None);
+            var request = lines[0].Split(' ');
+            if (request.Length != 3 || request[0] == "CONNECT" || (request[2] != "HTTP/1.1" && request[2] != "HTTP/1.0")) return false;
+            foreach (char c in request[0]) if (c < 'A' || c > 'Z') return false;
+            Uri uri;
+            if (!Uri.TryCreate(request[1], UriKind.Absolute, out uri) || uri.Scheme != "http" || !String.IsNullOrEmpty(uri.UserInfo) || !String.IsNullOrEmpty(uri.Fragment)) return false;
+            host = uri.DnsSafeHost; port = uri.Port;
+            var result = new StringBuilder(request[0] + " " + uri.PathAndQuery + " " + request[2] + "\r\nHost: " + uri.Authority + "\r\nConnection: close\r\n");
+            for (int i = 1; i < lines.Length && lines[i].Length > 0; i++)
+            {
+                int colon = lines[i].IndexOf(':'); if (colon <= 0 || Char.IsWhiteSpace(lines[i][0])) return false;
+                string name = lines[i].Substring(0, colon);
+                if (name.Equals("Host", StringComparison.OrdinalIgnoreCase) || name.Equals("Connection", StringComparison.OrdinalIgnoreCase) || name.StartsWith("Proxy-", StringComparison.OrdinalIgnoreCase)) continue;
+                result.Append(lines[i]).Append("\r\n");
+            }
+            result.Append("\r\n"); forwarded = result.ToString(); return true;
+        }
+
         private TcpClient ConnectThroughSocks(string targetHost, int targetPort)
         {
             var current = settings.Current;
             var socks = new TcpClient();
             socks.NoDelay = true;
-            socks.ReceiveTimeout = SocketTimeoutMs;
+            socks.ReceiveTimeout = ConnectTimeoutMs;
             socks.SendTimeout = SocketTimeoutMs;
+            try
+            {
             ConnectWithTimeout(socks, current.SocksHost, current.SocksPort, ConnectTimeoutMs);
 
             var stream = socks.GetStream();
@@ -250,7 +288,10 @@ namespace ProGo
 
             var remainder = new byte[addressBytes + 2];
             ReadExact(stream, remainder, 0, remainder.Length);
+            socks.ReceiveTimeout = SocketTimeoutMs;
             return socks;
+            }
+            catch { socks.Close(); throw; }
         }
 
         private static byte[] BuildSocksConnectRequest(string targetHost, int targetPort)
@@ -375,18 +416,29 @@ namespace ProGo
             get { return "http://" + CliProxyBridgeService.Host + ":" + CliProxyBridgeService.Port; }
         }
 
+        private static string BackupPath { get { return Path.Combine(AppPaths.Root, "proxy-environment-backup.json"); } }
+        private static readonly string[] Names = { "ALL_PROXY", "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY" };
+        private static string Expected(string name) { return name == "NO_PROXY" ? "localhost,127.0.0.1,::1" : ProxyUrl; }
         public static void ApplyUserEnvironment()
         {
-            SetUser("ALL_PROXY", ProxyUrl);
-            SetUser("HTTPS_PROXY", ProxyUrl);
-            SetUser("HTTP_PROXY", ProxyUrl);
-            SetUser("all_proxy", ProxyUrl);
-            SetUser("https_proxy", ProxyUrl);
-            SetUser("http_proxy", ProxyUrl);
-            SetUser("NO_PROXY", "localhost,127.0.0.1,::1");
-            SetUser("no_proxy", "localhost,127.0.0.1,::1");
+            AppPaths.EnsureDirectories();
+            if (File.Exists(BackupPath))
+            {
+                if (new JavaScriptSerializer().Deserialize<Dictionary<string, string>>(File.ReadAllText(BackupPath)) == null) throw new IOException("Не удалось прочитать прежние настройки прокси.");
+            }
+            else
+            {
+                var saved = new Dictionary<string, string>();
+                foreach (var name in Names)
+                {
+                    string value = Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.User);
+                    saved[name] = String.Equals(value, Expected(name), StringComparison.OrdinalIgnoreCase) ? null : value;
+                }
+                File.WriteAllText(BackupPath, new JavaScriptSerializer().Serialize(saved));
+            }
+            foreach (var name in Names) SetUser(name, Expected(name));
             BroadcastEnvironmentChange();
-            SafeLog.Info("CLI proxy environment applied. proxy=" + ProxyUrl + ".");
+            SafeLog.Info("Proxy environment applied for new terminals.");
         }
 
         public static bool IsAppliedToUserEnvironment()
@@ -401,16 +453,18 @@ namespace ProGo
 
         public static void ClearUserEnvironmentIfOwned()
         {
-            ClearUserIfOwned("ALL_PROXY", ProxyUrl);
-            ClearUserIfOwned("HTTPS_PROXY", ProxyUrl);
-            ClearUserIfOwned("HTTP_PROXY", ProxyUrl);
-            ClearUserIfOwned("all_proxy", ProxyUrl);
-            ClearUserIfOwned("https_proxy", ProxyUrl);
-            ClearUserIfOwned("http_proxy", ProxyUrl);
-            ClearUserIfOwned("NO_PROXY", "localhost,127.0.0.1,::1");
-            ClearUserIfOwned("no_proxy", "localhost,127.0.0.1,::1");
+            Dictionary<string, string> saved = null;
+            if (File.Exists(BackupPath)) saved = new JavaScriptSerializer().Deserialize<Dictionary<string, string>>(File.ReadAllText(BackupPath));
+            // Windows environment names are case-insensitive. Restore only values still owned by ProGo.
+            foreach (var name in Names)
+            {
+                string previous = null;
+                if (saved != null) saved.TryGetValue(name, out previous);
+                if (IsUserValue(name, Expected(name))) Environment.SetEnvironmentVariable(name, previous, EnvironmentVariableTarget.User);
+            }
+            if (File.Exists(BackupPath)) File.Delete(BackupPath);
             BroadcastEnvironmentChange();
-            SafeLog.Info("CLI proxy environment cleared for ProGo-owned values.");
+            SafeLog.Info("Previous proxy environment restored where still owned by ProGo.");
         }
 
         public static bool OpenPowerShellWithEnvironment(out string message)
@@ -438,7 +492,7 @@ namespace ProGo
             }
         }
 
-        private static void ApplyProcessEnvironment(ProcessStartInfo psi)
+        internal static void ApplyProcessEnvironment(ProcessStartInfo psi)
         {
             psi.EnvironmentVariables["ALL_PROXY"] = ProxyUrl;
             psi.EnvironmentVariables["HTTPS_PROXY"] = ProxyUrl;

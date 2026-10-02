@@ -52,11 +52,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Public content check failed' }
 
       - name: Upload wizard screenshots
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-wizard-screenshots
-          path: build/vpn-fixture/*.png
+          path: |
+            build/vpn-fixture/*.png
+            build/desktop-shots/*.png
           retention-days: 3
 
       - name: Pack release zip

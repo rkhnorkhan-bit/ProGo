@@ -28,6 +28,12 @@ def build_profile(original, server):
     # Keep the authenticated identity and certificate of the VPS. Do not advertise
     # alternate addresses that might make the phone bypass the home relay.
     vpn['IKEv2']['DisableMOBIKE'] = 1
+    # Older exported profiles encoded disabled CHILD PFS as DH=0. iOS rejects 0;
+    # use a valid group and the dedicated switch, without changing server policy.
+    child = vpn['IKEv2'].get('ChildSecurityAssociationParameters', {})
+    if child.get('DiffieHellmanGroup') == 0:
+        child['DiffieHellmanGroup'] = 14
+        vpn['IKEv2']['EnablePFS'] = 0
     vpn['UserDefinedName'] = 'ProGo — через домашний ПК'
     profile['PayloadDisplayName'] = vpn['UserDefinedName']
     replacements = {}
