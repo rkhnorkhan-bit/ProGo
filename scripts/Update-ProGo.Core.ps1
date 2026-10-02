@@ -222,7 +222,7 @@ function Test-UpdateRequired {
     Write-UpdateLog "Version check: local=$($State.LocalVersion) remote=$($State.RemoteVersion)"
     if ($Force) { Write-UpdateLog "Force update requested."; return $true }
 
-    if ($State.LocalVersion -eq $State.RemoteVersion) {
+    if ([version]$State.LocalVersion -ge [version]$State.RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
         Show-UserMessage (('У вас актуальная версия ProGo: ') + $State.LocalVersion) ('Обновление ProGo')
         return $false
