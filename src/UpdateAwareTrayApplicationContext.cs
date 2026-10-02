@@ -102,7 +102,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy);
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
         }
@@ -112,6 +112,14 @@ namespace ProGo
             using (var form = new SshProfilesSettingsForm(settings))
             {
                 form.ManualActionRequested += Execute;
+                form.ProxyEndpointText = cliProxy.ProxyUrl;
+                form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
+                    var oldPort = settings.Current.HttpProxyPort;
+                    string message;
+                    if (!cliProxy.Reconfigure(proposed, pickFree, out message)) return message;
+                    NotifyPortChange(oldPort);
+                    return null;
+                };
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
@@ -160,8 +168,8 @@ namespace ProGo
                     case "windows-off": automation.Cancel(ProxyFeature.Windows); string m; if (!SystemProxyService.Restore(out m)) throw new InvalidOperationException(m); break;
                     case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Codex); break;
                     case "codex-off": automation.Cancel(ProxyFeature.Codex); CodexProxyService.Disable(); break;
-                    case "codex-open": RequireRoute(); EnsureBridge(); CodexProxyService.Open(); break;
-                    case "terminal-open": RequireRoute(); EnsureBridge(); string error; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(out error)) throw new InvalidOperationException(error); break;
+                    case "codex-open": RequireRoute(); EnsureBridge(); CodexProxyService.Open(cliProxy.Port); break;
+                    case "terminal-open": RequireRoute(); EnsureBridge(); string error; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error)) throw new InvalidOperationException(error); break;
                     case "help": ShowHelp(); break;
                     case "update": StartUpdate(); break;
                 }
@@ -177,13 +185,20 @@ namespace ProGo
         }
         private void EnsureBridge()
         {
+            var oldPort = settings.Current.HttpProxyPort;
             string message; if (!cliProxy.Start(out message)) throw new InvalidOperationException(message);
+            NotifyPortChange(oldPort);
+        }
+        private void NotifyPortChange(int previous)
+        {
+            if (previous == settings.Current.HttpProxyPort) return;
+            tray.ShowBalloonTip(7000, "Новый порт приложений", "Адрес: " + cliProxy.ProxyUrl + ". Настройки прокси ProGo обновлены. Перезапустите открытые терминалы и Codex.", ToolTipIcon.Info);
         }
         private void EnableFeature(ProxyFeature feature)
         {
             EnsureBridge();
-            if (feature == ProxyFeature.Terminal) CliProxyEnvironmentService.ApplyUserEnvironment();
-            else if (feature == ProxyFeature.Codex) CodexProxyService.Enable();
+            if (feature == ProxyFeature.Terminal) CliProxyEnvironmentService.ApplyUserEnvironment(cliProxy.Port);
+            else if (feature == ProxyFeature.Codex) CodexProxyService.Enable(cliProxy.Port);
             else { string message; if (!SystemProxyService.Apply(settings.Current, out message)) throw new InvalidOperationException(message); }
         }
         private void DisconnectApps()

@@ -22,6 +22,16 @@ namespace ProGo
         private readonly CheckBox autoWindows = new CheckBox();
         private readonly CheckBox autoCodex = new CheckBox();
         public event Action<string> ManualActionRequested;
+        public Func<AppSettings, bool, string> SaveRequested;
+        private readonly CheckBox autoHttpPort = new CheckBox();
+        private readonly NumericUpDown httpPort = new NumericUpDown();
+        private readonly TextBox proxyAddress = new TextBox { ReadOnly = true };
+        private readonly Label portNotice = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private TabControl settingsTabs;
+        private bool pickFreePort;
+        private int initialHttpPort;
+        public string ProxyEndpointText { set { proxyAddress.Text = value; } }
+
 
         public SshProfilesSettingsForm(SettingsService settingsService)
         {
@@ -34,8 +44,8 @@ namespace ProGo
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
             root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
             root.Controls.Add(UiTheme.Label("Автоматика, подключения и личные настройки — в одном месте.", UiTheme.Body, UiTheme.Muted), 0, 1);
-            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(178, 38), SizeMode = TabSizeMode.Fixed };
-            root.Controls.Add(tabs, 0, 2);
+            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed };
+            root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
             var automation = Page(tabs, "Автоматика");
             var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
             automation.Controls.Add(autoFlow);
@@ -62,8 +72,8 @@ namespace ProGo
             actions.Controls.Add(UiTheme.Button("Удалить", delegate { RemoveProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Проверить", delegate { CheckSelectedProfile(); }, false));
             connection.Controls.Add(actions, 0, 1); connection.SetColumnSpan(actions, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-            AddLabeled(connection, 2, "Локальный адрес", host);
-            port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Локальный порт", port);
+            AddLabeled(connection, 2, "Адрес SOCKS-туннеля", host);
+            port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Порт SOCKS-туннеля", port);
             autoStart.Text = "Подключаться к серверу при запуске ProGo"; autoStart.AutoSize = true;
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
             connection.Controls.Add(autoStart, 0, 4); connection.SetColumnSpan(autoStart, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
@@ -81,8 +91,32 @@ namespace ProGo
             AddLabeled(diagnostic, 2, "Файл подключений SSH", new TextBox { ReadOnly = true, Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "config") });
             var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус и обновления». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
             av.MaximumSize = new Size(710, 0); diagnostic.Controls.Add(av, 0, 3); diagnostic.SetColumnSpan(av, 2);
+            var appPorts = FormTable(Page(tabs, "Порт приложений"));
+            autoHttpPort.Text = "Выбирать свободный порт автоматически";
+            autoHttpPort.AutoSize = true;
+            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            appPorts.Controls.Add(autoHttpPort, 0, 0); appPorts.SetColumnSpan(autoHttpPort, 2);
+            httpPort.Minimum = 1; httpPort.Maximum = 65535;
+            AddLabeled(appPorts, 1, "Порт на этом компьютере", httpPort);
+            autoHttpPort.CheckedChanged += delegate { httpPort.Enabled = !autoHttpPort.Checked && !pickFreePort; };
+            AddLabeled(appPorts, 2, "Текущий адрес", proxyAddress);
+            var portActions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+            portActions.Controls.Add(UiTheme.Button("Подобрать свободный", delegate {
+                pickFreePort = true; httpPort.Enabled = false;
+                portNotice.ForeColor = UiTheme.Accent;
+                portNotice.Text = "Новый свободный порт будет выбран при сохранении. Режим выбора порта останется прежним.";
+            }, false));
+            portActions.Controls.Add(UiTheme.Button("Скопировать адрес", delegate { Clipboard.SetText(proxyAddress.Text); }, false));
+            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
+            appPorts.Controls.Add(portActions, 0, 3); appPorts.SetColumnSpan(portActions, 2);
+            var portHelp = UiTheme.Label("Автоматически: ProGo сначала использует последний порт. Если он занят — выбирает другой. Без галочки используется только указанный порт.\n\nПри смене порта настройки Windows, терминала и ярлыка Codex, включённые через ProGo, обновятся вместе. Открытые терминалы и Codex нужно перезапустить.", UiTheme.Body, UiTheme.Muted);
+            portHelp.MaximumSize = new Size(740, 0);
+            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 155));
+            appPorts.Controls.Add(portHelp, 0, 4); appPorts.SetColumnSpan(portHelp, 2);
+            portNotice.MaximumSize = new Size(740, 0);
+            appPorts.Controls.Add(portNotice, 0, 5); appPorts.SetColumnSpan(portNotice, 2);
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 12, 0, 0) };
-            var save = UiTheme.Button("Сохранить", Save, true); save.DialogResult = DialogResult.OK;
+            var save = UiTheme.Button("Сохранить", Save, true);
             var cancel = UiTheme.Button("Отмена", null, false); cancel.DialogResult = DialogResult.Cancel;
             buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 3);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
@@ -119,6 +153,11 @@ namespace ProGo
             var s = service.Current;
             host.Text = s.SocksHost;
             port.Value = s.SocksPort;
+            httpPort.Value = s.HttpProxyPort;
+            initialHttpPort = s.HttpProxyPort;
+            autoHttpPort.Checked = s.AutoHttpProxyPort;
+            httpPort.Enabled = !autoHttpPort.Checked;
+            proxyAddress.Text = CliProxyBridgeService.UrlFor(s.HttpProxyPort);
             autoSwitchProfile.Checked = s.AutoSwitchSshProfile;
             autoStart.Checked = s.AutoStartSocks;
             autoProxy.Checked = s.AutoApplyProxy;
@@ -249,10 +288,12 @@ namespace ProGo
         {
             var selected = SelectedProfile();
             var selectedTarget = selected == null ? String.Empty : selected.Target;
-            service.Save(new AppSettings
+            var proposed = new AppSettings
             {
                 SocksHost = host.Text.Trim(),
                 SocksPort = (int)port.Value,
+                HttpProxyPort = (int)httpPort.Value == initialHttpPort && !pickFreePort ? service.Current.HttpProxyPort : (int)httpPort.Value,
+                AutoHttpProxyPort = autoHttpPort.Checked,
                 SshProfile = selectedTarget,
                 SshProfiles = CloneProfiles(),
                 AutoSwitchSshProfile = autoSwitchProfile.Checked,
@@ -263,8 +304,16 @@ namespace ProGo
                 AutoApplyProxy = autoProxy.Checked,
                 ClipboardClearSeconds = (int)clearSeconds.Value,
                 TestEndpoint = endpoint.Text.Trim()
-            });
-            Close();
+            };
+            string error = null;
+            if (SaveRequested != null) error = SaveRequested(proposed, pickFreePort);
+            else using (var bridge = new CliProxyBridgeService(service)) bridge.Reconfigure(proposed, pickFreePort, out error);
+            if (error != null)
+            {
+                DialogResult = DialogResult.None; settingsTabs.SelectedIndex = 4;
+                portNotice.ForeColor = Color.FromArgb(255, 152, 128); portNotice.Text = error; return;
+            }
+            DialogResult = DialogResult.OK; Close();
         }
 
         private List<SshProfileSetting> CloneProfiles()

@@ -58,6 +58,8 @@ namespace ProGo
     {
         public string SocksHost { get; set; }
         public int SocksPort { get; set; }
+        public int HttpProxyPort { get; set; }
+        public bool AutoHttpProxyPort { get; set; }
         public string SshProfile { get; set; }
         public List<SshProfileSetting> SshProfiles { get; set; }
         public bool AutoSwitchSshProfile { get; set; }
@@ -73,6 +75,13 @@ namespace ProGo
         {
             // Older settings files omit this property; explicit false is preserved.
             AutoRestartSocks = true;
+            HttpProxyPort = 1881;
+            AutoHttpProxyPort = true;
+        }
+
+        public AppSettings Clone()
+        {
+            return new JavaScriptSerializer().Deserialize<AppSettings>(new JavaScriptSerializer().Serialize(this));
         }
 
         public static AppSettings Defaults()
@@ -131,7 +140,14 @@ namespace ProGo
         {
             Normalize(settings);
             AppPaths.EnsureDirectories();
-            File.WriteAllText(AppPaths.SettingsPath, serializer.Serialize(settings));
+            var pending = AppPaths.SettingsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(pending, serializer.Serialize(settings));
+                if (File.Exists(AppPaths.SettingsPath)) File.Replace(pending, AppPaths.SettingsPath, null);
+                else File.Move(pending, AppPaths.SettingsPath);
+            }
+            finally { if (File.Exists(pending)) File.Delete(pending); }
             Current = settings;
             SafeLog.Info("Settings saved.");
         }
@@ -140,6 +156,7 @@ namespace ProGo
         {
             if (String.IsNullOrWhiteSpace(settings.SocksHost)) settings.SocksHost = "127.0.0.1";
             if (settings.SocksPort < 1 || settings.SocksPort > 65535) settings.SocksPort = 1080;
+            if (settings.HttpProxyPort < 1 || settings.HttpProxyPort > 65535) settings.HttpProxyPort = 1881;
             if (settings.ClipboardClearSeconds < 5 || settings.ClipboardClearSeconds > 3600) settings.ClipboardClearSeconds = 30;
             if (String.IsNullOrWhiteSpace(settings.TestEndpoint)) settings.TestEndpoint = "https://api.openai.com/v1/models";
             if (settings.SshProfile == null) settings.SshProfile = String.Empty;

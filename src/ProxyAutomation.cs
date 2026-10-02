@@ -38,10 +38,10 @@ namespace ProGo
         internal static string LauncherPath { get { return Path.Combine(AppPaths.Root, "scripts", "Codex-ProGo.cmd"); } }
         private static string ShortcutPath { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "ProGo", "Codex через ProGo.lnk"); } }
         public static bool IsConfigured { get { return File.Exists(LauncherPath) && File.Exists(ShortcutPath); } }
-        internal static string LauncherContent()
+        internal static string LauncherContent(int port)
         {
             var text = new StringBuilder("@echo off\r\n" + Marker + "\r\nsetlocal\r\n");
-            foreach (var name in new[] { "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY" }) text.AppendLine("set \"" + name + "=" + CliProxyEnvironmentService.ProxyUrl + "\"");
+            foreach (var name in new[] { "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY" }) text.AppendLine("set \"" + name + "=" + CliProxyBridgeService.UrlFor(port) + "\"");
             text.AppendLine("set \"NO_PROXY=localhost,127.0.0.1,::1\"");
             text.AppendLine("echo Codex via ProGo. Keep ProGo connected while using this window.");
             text.AppendLine("where codex >nul 2>nul");
@@ -50,11 +50,11 @@ namespace ProGo
             text.AppendLine("endlocal");
             return text.ToString();
         }
-        public static void Enable()
+        public static void Enable(int port)
         {
             if (File.Exists(LauncherPath) && !File.ReadAllText(LauncherPath).Contains(Marker)) throw new IOException("Файл запуска Codex уже существует и создан не ProGo. Он сохранён без изменений.");
             Directory.CreateDirectory(Path.GetDirectoryName(LauncherPath));
-            File.WriteAllText(LauncherPath, LauncherContent(), Encoding.ASCII);
+            File.WriteAllText(LauncherPath, LauncherContent(port), Encoding.ASCII);
             Directory.CreateDirectory(Path.GetDirectoryName(ShortcutPath));
             object shortcut = null;
             try
@@ -99,13 +99,18 @@ namespace ProGo
             void Resolve(IntPtr window, uint flags);
             void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
         }
+        internal static bool IsOwned { get { return File.Exists(LauncherPath) && File.ReadAllText(LauncherPath).Contains(Marker); } }
+        internal static void MoveOwned(int port)
+        {
+            if (IsOwned) File.WriteAllText(LauncherPath, LauncherContent(port), Encoding.ASCII);
+        }
         public static void Disable()
         {
             if (!File.Exists(LauncherPath) || !File.ReadAllText(LauncherPath).Contains(Marker)) return;
             if (File.Exists(ShortcutPath)) File.Delete(ShortcutPath);
             File.Delete(LauncherPath);
         }
-        public static void Open()
+        public static void Open(int port)
         {
             // Launch in a scoped child process. Never modify Codex config, PATH or API keys.
             var start = new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"), "/D /K codex")
@@ -113,7 +118,7 @@ namespace ProGo
                 UseShellExecute = false,
                 WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             };
-            CliProxyEnvironmentService.ApplyProcessEnvironment(start);
+            CliProxyEnvironmentService.ApplyProcessEnvironment(start, port);
             Process.Start(start);
         }
     }

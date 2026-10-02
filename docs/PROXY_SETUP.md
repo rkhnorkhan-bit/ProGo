@@ -20,9 +20,28 @@ uses a 20-second startup grace period, and retries with capped exponential backo
 It never adopts or kills a process belonging to someone else. Manual stop cancels
 retries. Automatic recovery also applies to the independent iPhone tunnel.
 
+## Application port
+
+Use **Настройки → Порт приложений**. Automatic selection defaults to on for new and
+upgraded settings. The bridge tries the saved port (initially 1881). If Windows reports
+it busy/reserved, ProGo binds port zero and uses the port assigned by the OS. The
+socket remains bound throughout setup, avoiding a check-then-bind race.
+
+For fixed mode, uncheck **Выбирать свободный порт автоматически** and enter a port
+from 1 to 65535. A conflict reports an actionable error and retains the old listener
+and settings. **Подобрать свободный** reserves a new port at Save, without changing
+mode. An unrelated Save or repeated Start keeps a healthy listener on the same port.
+Automatic selection happens at proxy startup; it is not a background port rotation.
+
+Changes move only ProGo-owned environment values, Windows proxy endpoint and Codex
+wrapper, retaining original restore backups. Failure to save settings rolls back those
+integrations. Manually disabled integrations stay disabled. No other listener is stopped.
+The bridge remains loopback-only. SSH, SOCKS, router and IKEv2 ports are independent.
+
 ## Command line
 
-**Прокси для приложений → Командная строка — включить** applies:
+**Прокси для приложений → Командная строка — включить** applies the selected port.
+For example, when the dashboard shows port 1881:
 
 ```text
 HTTP_PROXY=http://127.0.0.1:1881
@@ -51,7 +70,8 @@ other terminal environments. Install Codex CLI separately and keep ProGo connect
 
 ## Windows applications
 
-**Windows — включить** sets current-user WinINet proxy values to:
+**Windows — включить** sets current-user WinINet proxy values to the same selected
+port. For example, when it is 1881:
 
 ```text
 http=127.0.0.1:1881;https=127.0.0.1:1881

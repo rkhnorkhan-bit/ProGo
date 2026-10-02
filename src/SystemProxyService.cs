@@ -53,9 +53,9 @@ namespace ProGo
                 return false;
             }
 
-            if (String.IsNullOrWhiteSpace(settings.SocksHost) || settings.SocksPort < 1 || settings.SocksPort > 65535)
+            if (settings.HttpProxyPort < 1 || settings.HttpProxyPort > 65535)
             {
-                message = "Некорректный адрес или порт SOCKS.";
+                message = "Некорректный порт приложений.";
                 return false;
             }
 
@@ -83,7 +83,7 @@ namespace ProGo
                 }
 
                 RefreshSystemProxy();
-                SafeLog.Info("Current-user Windows proxy enabled. port=" + settings.SocksPort + ".");
+                SafeLog.Info("Current-user Windows proxy enabled. port=" + settings.HttpProxyPort + ".");
                 return true;
             }
             catch (Exception ex)
@@ -113,22 +113,7 @@ namespace ProGo
                     return false;
                 }
 
-                using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey))
-                {
-                    if (key == null)
-                    {
-                        message = "Не удалось открыть настройки Internet Settings текущего пользователя.";
-                        return false;
-                    }
-
-                    RestoreDword(key, "ProxyEnable", backup.HadProxyEnable, backup.ProxyEnable);
-                    RestoreString(key, "ProxyServer", backup.HadProxyServer, backup.ProxyServer);
-                    RestoreString(key, "ProxyOverride", backup.HadProxyOverride, backup.ProxyOverride);
-                    RestoreString(key, "AutoConfigURL", backup.HadAutoConfigUrl, backup.AutoConfigUrl);
-                    RestoreDword(key, "AutoDetect", backup.HadAutoDetect, backup.AutoDetect);
-                }
-
-                RefreshSystemProxy();
+                RestoreSnapshot(backup);
                 try { File.Delete(BackupPath); } catch { }
                 SafeLog.Info("Current-user Windows proxy restored.");
                 return true;
@@ -173,7 +158,7 @@ namespace ProGo
             {
                 var snapshot = ReadCurrent();
                 if (!snapshot.HadProxyEnable || snapshot.ProxyEnable == 0) return "выключен";
-                if (settings != null && IsApplied(settings)) return "включён для " + settings.SocksHost + ":" + settings.SocksPort;
+                if (settings != null && IsApplied(settings)) return "включён для " + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort;
                 return String.IsNullOrWhiteSpace(snapshot.ProxyServer) ? "включён" : "включён: " + snapshot.ProxyServer;
             }
             catch
@@ -198,7 +183,7 @@ namespace ProGo
             return serializer.Deserialize<SystemProxyBackup>(File.ReadAllText(BackupPath));
         }
 
-        private static SystemProxyBackup ReadCurrent()
+        internal static SystemProxyBackup ReadCurrent()
         {
             var backup = new SystemProxyBackup();
             using (var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKey, false))
@@ -231,6 +216,20 @@ namespace ProGo
             return backup;
         }
 
+        internal static void RestoreSnapshot(SystemProxyBackup backup)
+        {
+            using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey))
+            {
+                if (key == null) throw new IOException("Не удалось открыть настройки прокси Windows.");
+                RestoreDword(key, "ProxyEnable", backup.HadProxyEnable, backup.ProxyEnable);
+                RestoreString(key, "ProxyServer", backup.HadProxyServer, backup.ProxyServer);
+                RestoreString(key, "ProxyOverride", backup.HadProxyOverride, backup.ProxyOverride);
+                RestoreString(key, "AutoConfigURL", backup.HadAutoConfigUrl, backup.AutoConfigUrl);
+                RestoreDword(key, "AutoDetect", backup.HadAutoDetect, backup.AutoDetect);
+            }
+            RefreshSystemProxy();
+        }
+
         private static int ReadDword(object value, int fallback)
         {
             if (value == null) return fallback;
@@ -240,7 +239,7 @@ namespace ProGo
 
         private static string BuildProxyServer(AppSettings settings)
         {
-            return "http=" + CliProxyBridgeService.Host + ":" + CliProxyBridgeService.Port + ";https=" + CliProxyBridgeService.Host + ":" + CliProxyBridgeService.Port;
+            return "http=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort + ";https=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort;
         }
 
         private static void RestoreDword(RegistryKey key, string name, bool hadValue, int value)

@@ -9,12 +9,14 @@ namespace ProGo
         private readonly SettingsService settings;
         private readonly ProxyService proxy;
         private readonly HomeVpnService home;
+        private readonly CliProxyBridgeService appProxy;
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
-        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action)
+        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null)
         {
+            this.appProxy = appProxy;
             this.settings = settings; this.proxy = proxy; this.home = home;
             Text = "ProGo · Ваше подключение"; ClientSize = new Size(1040, 710); MinimumSize = new Size(970, 680);
             var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
@@ -37,7 +39,7 @@ namespace ProGo
             Nav(nav, "Диагностика", delegate { action("diagnostics"); }, false);
             Nav(nav, "Настройки", delegate { action("settings"); }, false);
             rail.Controls.Add(nav);
-            var version = UiTheme.Label("DESKTOP  /  0.2.0\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
+            var version = UiTheme.Label("DESKTOP  /  0.2.1\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
             version.AutoSize = false; version.Size = new Size(178, 65); version.Dock = DockStyle.Bottom; rail.Controls.Add(version);
             var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(28), ColumnCount = 1, RowCount = 5 };
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -91,9 +93,10 @@ namespace ProGo
             subtitle.Text = String.IsNullOrWhiteSpace(settings.Current.SshProfile) ? "Добавьте сервер в настройках, чтобы начать." : "Сервер: " + settings.Current.SshProfile;
             connect.Text = ready ? "Переподключиться" : "Подключиться";
             windowsState.Text = SystemProxyService.IsApplied(settings.Current) ? "Включено" : "Выключено";
-            terminalState.Text = CliProxyEnvironmentService.IsAppliedToUserEnvironment() ? "Включено" : "Выключено";
+            terminalState.Text = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) ? "Включено" : "Выключено";
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
-            recovery.Text = proxy.RecoveryStatus + "\n\nЗакройте окно — ProGo продолжит работать в трее рядом с часами.";
+            recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +
+                (appProxy != null && appProxy.IsRunning ? " · работает" : " · выключен");
         }
         protected override void Dispose(bool disposing)
         {

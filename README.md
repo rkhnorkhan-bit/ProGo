@@ -1,4 +1,4 @@
-# ProGo 0.2.0
+# ProGo 0.2.1
 
 A lightweight native Windows app for SSH proxy connections, a home-entry iPhone VPN,
 and an encrypted local vault. Russian interface, no telemetry, no vendor-operated backend.
@@ -9,7 +9,7 @@ and an encrypted local vault. Russian interface, no telemetry, no vendor-operate
 ## Desktop experience
 
 Open ProGo from the tray for the connection dashboard. Settings separates automation,
-connections, vault preferences and diagnostics. All application dialogs use the same
+connections, application ports, vault preferences and diagnostics. All application dialogs use the same
 native dark theme, keyboard controls and multi-resolution icon. Windows native security
 and file dialogs retain their standard appearance. No embedded browser or VM is required.
 
@@ -28,10 +28,21 @@ that session. The next launch or an explicit preference off/on re-arms it. Exist
 preferences migrate; new Windows/Codex automation defaults to off. CLI installation
 itself is separate. **Подключаться к серверу при запуске ProGo** remains a separate setting.
 
-Proxy-aware Windows apps and terminal programs use `http://127.0.0.1:1881`, which
+Proxy-aware Windows apps and terminal programs use a shared loopback HTTP endpoint, which
 supports HTTP requests and HTTPS CONNECT over SSH/SOCKS. This does not capture all PC
 traffic. Previous user settings are restored where still owned by ProGo on disconnect
 or exit; existing processes must be restarted to refresh their environment.
+
+## Application proxy port
+
+**Настройки → Порт приложений** defaults to automatic selection. ProGo first tries the
+last saved port (1881 on upgrade); if unavailable, it binds a free loopback port and
+updates its active integrations. Uncheck **Выбирать свободный порт автоматически**
+for a fixed port. **Подобрать свободный** chooses a new port on Save while retaining
+the selected mode. A fixed-port conflict leaves the existing connection unchanged.
+The current address appears on the dashboard and can be copied in settings.
+Restart already open terminals and Codex after changing it.
+[Detailed behavior](docs/PROXY_SETUP.md#application-port).
 
 ## Home VPN
 
