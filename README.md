@@ -6,7 +6,7 @@ ProGo is a small Windows tray application for fast SSH SOCKS proxy control and a
 
 Version: `0.1.27`.
 
-This project is intentionally small: no cloud backend, no telemetry, no hosted secrets storage.
+This project has no vendor-operated backend, no telemetry, and no hosted secrets storage.
 
 ## Platform
 
@@ -22,6 +22,7 @@ This project is intentionally small: no cloud backend, no telemetry, no hosted s
 - User-level `ALL_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY` variables routed through the loopback HTTP CONNECT bridge at `http://127.0.0.1:1881`.
 - Current-user Windows system proxy toggle for WinINet/browser login flows.
 - CLI/Codex HTTP CONNECT proxy bridge for tools that need a normal `http://` proxy instead of SOCKS.
+- Experimental [home IKEv2 relay for iPhone](docs/HOME_IKEV2.md): transport encrypted VPN packets through the existing SSH/SOCKS tunnel to a self-hosted strongSwan server. Requires router forwarding and a small helper on the VPS; authentication stays on the VPS.
 - Route check through `curl.exe --socks5-hostname`.
 - Local encrypted vault at `%LOCALAPPDATA%\ProGo\vault.enc.json`.
 - Vault entry types: `api_key`, `password`, `token`, `ssh`, `note`, `custom`.
