@@ -75,6 +75,10 @@ def main():
                 except OSError:
                     reply = b''
             check(not reply, 'arbitrary port forwarding is denied')
+            shell = subprocess.run(['ssh', '-p', '22222', '-i', str(root / b['User']), '-o', 'BatchMode=yes',
+                '-o', 'IdentitiesOnly=yes', '-o', 'UserKnownHostsFile=' + str(root / 'known_hosts'),
+                b['User'] + '@127.0.0.1', 'printf PROGO_SHELL_EXECUTED'], capture_output=True, timeout=5)
+            check(shell.returncode != 0 and b'PROGO_SHELL_EXECUTED' not in shell.stdout, 'invitation cannot execute a shell command')
             setup.revoke(data, b['InviteId'])
             time.sleep(1)
             check(friend.poll() is not None and not probe(22224), 'revocation closes active friend tunnel')

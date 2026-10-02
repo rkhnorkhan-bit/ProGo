@@ -185,9 +185,18 @@ def prepare():
     # Preflight before installing or replacing anything.
     for path in [CONFIG, SSH_CONFIG, pathlib.Path('/etc/swanctl/x509/progo-home-server.pem'),
                  pathlib.Path('/etc/swanctl/x509ca/progo-home-ca.pem'),
-                 pathlib.Path('/etc/swanctl/private/progo-home-server.key')]:
+                 pathlib.Path('/etc/swanctl/private/progo-home-server.key'),
+                 pathlib.Path('/etc/systemd/system/progo-home-network.service'),
+                 pathlib.Path('/etc/sysctl.d/80-progo-home.conf')]:
         if path.exists():
             raise RuntimeError('Existing configuration requires review: ' + str(path))
+    if run('getent', 'group', GROUP, check=False, capture=True):
+        raise RuntimeError('The invitation group already exists without managed state')
+    if shutil.which('nft'):
+        for family, name in [('ip', 'progo_home4'), ('ip6', 'progo_home6')]:
+            found = subprocess.run(['nft', 'list', 'table', family, name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if found.returncode == 0:
+                raise RuntimeError('A firewall table already uses the ProGo name')
     if shutil.which('ipsec') and run('systemctl', 'is-active', '--quiet', 'strongswan-starter', check=False).returncode == 0:
         raise RuntimeError('Existing strongSwan starter installation requires manual migration')
     routes = json.loads(run('ip', '-j', '-4', 'route', capture=True))
