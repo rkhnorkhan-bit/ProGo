@@ -9,6 +9,7 @@ import base64
 import datetime as dt
 import fcntl
 import ipaddress
+import importlib.util
 import json
 import os
 import pathlib
@@ -69,6 +70,16 @@ def state():
 
 def save_state(value):
     write(ROOT / 'state.json', json.dumps(value))
+    if pathlib.Path('/opt/progo-profile-share/profile_share_setup.py').exists():
+        share_module(pathlib.Path('/opt/progo-profile-share/profile_share_setup.py')).sync(value)
+
+
+def share_module(path=None):
+    path = path or pathlib.Path(__file__).with_name('profile_share_setup.py')
+    spec = importlib.util.spec_from_file_location('progo_share_setup', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def user_name(identifier):
@@ -159,6 +170,25 @@ table ip6 progo_home6 {
 ''' % data
 
 
+def legacy_forward_rules(data, listing):
+    """Permit only authenticated home VPN traffic through our older filter.
+
+    An accept in progo_home4 cannot override a drop in another base chain.
+    Never remove the old policy or bypass unrelated administrator firewalls.
+    """
+    rules = [entry['rule'] for entry in listing.get('nftables', []) if 'rule' in entry]
+    if not any(any('drop' in expr for expr in rule.get('expr', []))
+               and any(expr.get('match', {}).get('left') == {'meta': {'key': 'nfproto'}}
+                       and expr['match'].get('right') == 'ipv4' for expr in rule.get('expr', [])) for rule in rules):
+        return ''
+    labels = ('ProGo home VPN outbound', 'ProGo home VPN return')
+    remove = ''.join('delete rule inet progo_ikev2 forward handle %d\n' % rule['handle']
+                     for rule in rules if rule.get('comment') in labels and isinstance(rule.get('handle'), int))
+    return remove + '''insert rule inet progo_ikev2 forward ip saddr %(pool4)s oifname "%(wan)s" ipsec in reqid != 0 counter accept comment "ProGo home VPN outbound"
+insert rule inet progo_ikev2 forward ip daddr %(pool4)s ipsec out reqid != 0 ct state established,related counter accept comment "ProGo home VPN return"
+''' % data
+
+
 def apply_network(data):
     rules = network_rules(data)
     prefix = ''
@@ -167,10 +197,17 @@ def apply_network(data):
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if result.returncode == 0:
             prefix += 'delete table ' + family + ' ' + name + '\n'
+    legacy = subprocess.run(['nft', '-j', 'list', 'chain', 'inet', 'progo_ikev2', 'forward'],
+                            text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    compatibility = legacy_forward_rules(data, json.loads(legacy.stdout)) if legacy.returncode == 0 else ''
     rules_path = ROOT / 'network.nft'
-    write(rules_path, prefix + rules)
+    write(rules_path, prefix + rules + compatibility)
     run('nft', '--check', '-f', str(rules_path))
     run('nft', '-f', str(rules_path))
+    if compatibility:
+        # Reapply narrow exceptions when the older installer rebuilds its table.
+        managed('/etc/systemd/system/progo-ikev2-network.service.d/80-progo-home.conf',
+                '[Service]\nExecStartPost=/usr/bin/python3 -I /opt/progo-home/home_vpn_setup.py network\n', 0o644)
     managed('/etc/sysctl.d/80-progo-home.conf', 'net.ipv4.ip_forward=1\n', 0o644)
     run('sysctl', '-w', 'net.ipv4.ip_forward=1')
 
@@ -276,7 +313,7 @@ def finish_setup(data):
     write('/opt/progo-home/home_vpn_setup.py', pathlib.Path(__file__).read_text(), 0o700)
     managed('/etc/systemd/system/progo-home-network.service', '''[Unit]
 Description=ProGo home VPN network rules
-After=network-online.target nftables.service
+After=network-online.target nftables.service progo-ikev2-network.service
 Before=strongswan.service
 [Service]
 Type=oneshot
@@ -285,6 +322,7 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 ''', 0o644)
+    apply_network(data)
     run('systemctl', 'daemon-reload')
     run('systemctl', 'enable', '--now', 'progo-home-network.service', 'strongswan.service')
     ufw = shutil.which('ufw')
@@ -333,7 +371,7 @@ def issue(data, name, server, port):
         token = dict(Version=1, ServerId=data['server_id'], InviteId=identifier,
                      Host=server, Port=port, User=user, PrivateKey=key.read_text(),
                      HostKey=' '.join(public[:2]), Ca=base64.b64encode((ROOT / 'pki/ca.der').read_bytes()).decode(),
-                     Password=entry['password'])
+                     Password=entry['password'], ShareUrl=data.get('share_origin'))
     return 'PROGO1.' + base64.urlsafe_b64encode(json.dumps(token, separators=(',', ':')).encode()).decode().rstrip('=')
 
 
@@ -358,11 +396,12 @@ def revoke(data, identifier):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['setup', 'invite', 'revoke', 'list', 'network'])
+    parser.add_argument('action', choices=['setup', 'invite', 'revoke', 'list', 'network', 'share', 'repair'])
     parser.add_argument('--host')
     parser.add_argument('--port', type=int, default=22)
     parser.add_argument('--name', default='My iPhone')
     parser.add_argument('--id')
+    parser.add_argument('--domain')
     parser.add_argument('--output')
     args = parser.parse_args()
     if os.geteuid() != 0:
@@ -382,6 +421,12 @@ def main():
     data = prepare() if args.action == 'setup' else state()
     if args.action in ('setup', 'invite'):
         result = issue(data, args.name, host(args.host or ''), args.port)
+    elif args.action == 'share':
+        result = share_module().install(data, args.domain or '')
+        save_state(data)
+    elif args.action == 'repair':
+        finish_setup(data)
+        result = 'VPN network rules refreshed. Reconnect the phone and test internet access.'
     elif args.action == 'revoke':
         revoke(data, args.id or '')
         result = 'Access revoked.'

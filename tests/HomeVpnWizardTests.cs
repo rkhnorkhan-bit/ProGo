@@ -33,6 +33,7 @@ namespace ProGo
                     new KeyValuePair<string,object>("PrivateKey", "not a key"),
                     new KeyValuePair<string,object>("Ca", "not a certificate"),
                     new KeyValuePair<string,object>("Password", "bad\"password"),
+                    new KeyValuePair<string,object>("ShareUrl", "http://vpn.example.org"),
                     new KeyValuePair<string,object>("HostKey", "ssh-ed25519 invalid") })
                 {
                     var modified = new Dictionary<string, object>(original); modified[mutation.Key] = mutation.Value;
@@ -59,7 +60,32 @@ namespace ProGo
                 Check(HomeVpnPrivateFiles.Load("test-only") == text && !Encoding.UTF8.GetString(File.ReadAllBytes(saved)).Contains("PROGO1."), "local access is protected by Windows DPAPI");
                 Check(Directory.GetAccessControl(HomeVpnPrivateFiles.Root).AreAccessRulesProtected, "credential directory does not inherit broad access");
                 File.Delete(saved);
+                var qr = Json.Deserialize<PhoneProfileLink>(File.ReadAllText(Path.Combine(work, "qr.json")));
+                HomeProfileShare.Validate(qr, "vpn.example.org");
+                Check(HomeProfileShare.Origin("vpn.example.org") == "https://vpn.example.org", "sharing normalizes to HTTPS origin");
+                foreach (var url in new[] { "http://vpn.example.org", "https://user@vpn.example.org", "https://vpn.example.org/path", "https://vpn.example.org:8443", "https://vpn.example.org/#secret" })
+                {
+                    bool rejected = false; try { HomeProfileShare.Origin(url); } catch (ArgumentException) { rejected = true; }
+                    Check(rejected, "unsafe sharing origin is rejected");
+                }
+                using (var bitmap = HomeProfileShare.Render(qr, 400))
+                {
+                    Check(bitmap.Width <= 400 && bitmap.GetPixel(0, 0).ToArgb() == Color.White.ToArgb(), "QR has integer pixels and white quiet zone");
+                    bitmap.Save(Path.Combine(work, "qr-code.png"));
+                }
+                var invalidQr = new PhoneProfileLink { Url = "https://other.example.org/#" + new string('A', 43), Expires = qr.Expires, Matrix = qr.Matrix };
+                bool wrongOrigin = false; try { HomeProfileShare.Validate(invalidQr, "vpn.example.org"); } catch (InvalidOperationException) { wrongOrigin = true; }
+                Check(wrongOrigin, "QR cannot redirect to another origin");
                 Application.EnableVisualStyles();
+                using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }))
+                {
+                    qrForm.Show(); Application.DoEvents();
+                    Check(AllControls(qrForm).OfType<PictureBox>().Any(p => p.Image != null), "native dialog renders QR");
+                    Check(AllControls(qrForm).OfType<Button>().Any(b => b.Text == "Отозвать ссылку"), "QR revocation action is present");
+                    using (var shot = new Bitmap(qrForm.Width, qrForm.Height))
+                    { qrForm.DrawToBitmap(shot, new Rectangle(Point.Empty, shot.Size)); shot.Save(Path.Combine(work, "qr-dialog.png")); }
+                    qrForm.Close();
+                }
                 using (var relay = new Ikev2RelayService())
                 using (var service = new HomeVpnService(relay))
                 using (var form = new HomeVpnWizardForm(service))
@@ -77,6 +103,7 @@ namespace ProGo
                     foreach (int step in new[] { 0, 1, 2, 3, 4 })
                     {
                         show.Invoke(form, new object[] { step }); Application.DoEvents();
+                        if (step == 3) Check(AllControls(form).OfType<Button>().Any(b => b.Text == "Установить на телефон по QR"), "phone step offers QR installation");
                         using (var bitmap = new System.Drawing.Bitmap(form.Width, form.Height))
                         { form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size)); bitmap.Save(Path.Combine(work, "wizard-" + step + ".png")); }
                     }

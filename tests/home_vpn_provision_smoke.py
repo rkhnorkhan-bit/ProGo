@@ -1,10 +1,12 @@
 """Destructive to the disposable CI runner only. Never run on a user's VPS."""
 import base64
+import http.client
 import importlib.util
 import json
 import os
 import pathlib
 import socket
+import ssl
 import subprocess
 import tempfile
 import time
@@ -87,12 +89,98 @@ def main():
             check(rejected.poll() is not None, 'revoked token cannot reconnect')
             again = setup.prepare()
             check(again['server_id'] == data['server_id'], 'repeated setup preserves CA and invitation state')
+            # Reproduce the older direct-VPN installer blocking every forwarded
+            # IPv4 flow not from its own pool. Accepting in another chain is not enough.
+            subprocess.run(['nft', '-f', '-'], input='table inet progo_ikev2 { chain forward { type filter hook forward priority -5; policy accept; meta nfproto ipv4 drop; } }\n', text=True, check=True)
+            setup.apply_network(data)
+            setup.apply_network(data)
+            legacy = setup.run('nft', 'list', 'chain', 'inet', 'progo_ikev2', 'forward', capture=True)
+            check(legacy.count('ProGo home VPN outbound') == 1 and legacy.count('ProGo home VPN return') == 1,
+                  'legacy firewall repair is narrow and idempotent')
+            check('meta nfproto ipv4 drop' in legacy and 'ipsec in reqid != 0' in legacy and 'ipsec out reqid != 0' in legacy,
+                  'legacy drop policy remains; only authenticated home VPN is excepted')
+            check(pathlib.Path('/etc/systemd/system/progo-ikev2-network.service.d/80-progo-home.conf').exists(),
+                  'legacy firewall reload reapplies home VPN compatibility')
+            test_https_sharing(setup, data, a)
         finally:
             for process in processes:
                 if process.poll() is None:
                     process.terminate()
                 process.wait(timeout=5)
             sshd.terminate(); sshd.wait(timeout=5)
+
+
+def test_https_sharing(setup, data, owner):
+    """Real systemd service, Caddy TLS and least-privilege credentials on CI only."""
+    subprocess.run(['apt-get', 'install', '-y', 'caddy'], check=True)
+    # Local CA is test-only; production installer uses publicly trusted ACME TLS.
+    pathlib.Path('/etc/caddy/Caddyfile').write_text('{\n local_certs\n}\n:8085 {\n respond "existing site"\n}\n')
+    with open('/etc/hosts', 'a') as hosts:
+        hosts.write('\n127.0.0.1 profiles.progo.test\n')
+    helper = setup.share_module()
+    origin = helper.install(data, 'profiles.progo.test')
+    setup.save_state(data)
+    check(origin == 'https://profiles.progo.test', 'QR installer creates dedicated HTTPS origin')
+    cert = pathlib.Path('/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt')
+    for _ in range(40):
+        if cert.exists():
+            break
+        time.sleep(.25)
+    context = ssl.create_default_context(cafile=str(cert))
+
+    def request(path, method='GET', content=None, auth=None, cookie=None):
+        channel = http.client.HTTPSConnection('profiles.progo.test', context=context, timeout=5)
+        headers = {}
+        if auth:
+            headers['Authorization'] = 'Basic ' + base64.b64encode((auth['User'] + ':' + auth['Password']).encode()).decode()
+        if cookie:
+            headers['Cookie'] = cookie.split(';')[0]
+        if content is not None:
+            content = json.dumps(content)
+            headers['Content-Type'] = 'application/json'
+        channel.request(method, path, content, headers)
+        result = channel.getresponse()
+        code, fields, body = result.status, dict(result.getheaders()), result.read()
+        channel.close()
+        return code, fields, body
+
+    for attempt in range(40):
+        try:
+            response = request('/health')
+            if response[0] == 200:
+                break
+        except OSError:
+            pass
+        if attempt == 39:
+            raise AssertionError('HTTPS QR service did not become healthy')
+        time.sleep(.25)
+    check(json.loads(response[2])['ServerId'] == data['server_id'], 'real HTTPS reaches the isolated profile service')
+    settings = pathlib.Path('/etc/progo-profile-share/publishers.json').read_text()
+    check(owner['Password'] not in settings and owner['PrivateKey'] not in settings, 'web service configuration contains hashes and public CA only')
+    forbidden = subprocess.run(['runuser', '-u', 'progo-share', '--', 'cat', str(setup.ROOT / 'state.json')], capture_output=True)
+    check(forbidden.returncode != 0, 'web process cannot read private VPN state')
+    code, _, body = request('/api/share', 'POST', {'home': 'home.example.org'}, owner)
+    check(code == 200, 'owner creates QR over actual TLS')
+    token = json.loads(body)['Url'].split('#')[1]
+    code, headers, _ = request('/claim', 'POST', {'token': token})
+    check(code == 200, 'phone claims the profile once over TLS')
+    cookie = next(v for k, v in headers.items() if k.lower() == 'set-cookie')
+    code, _, body = request('/profile.mobileconfig', cookie=cookie)
+    check(code == 200 and b'AuthPassword' in body and b'PRIVATE KEY' not in body, 'Safari download is served with VPN-only data')
+    new_token = setup.issue(data, 'Share test', 'vpn.example.org', 22222)
+    child = json.loads(base64.urlsafe_b64decode(new_token[7:] + '=' * (-len(new_token[7:]) % 4)))
+    check(child['ShareUrl'] == origin, 'friend invitation discovers the configured QR service')
+    code, _, _ = request('/api/share', 'POST', {'home': 'home.example.org'}, child)
+    check(code == 200, 'new invitation has independent publishing access')
+    setup.revoke(data, child['InviteId'])
+    check(request('/api/share', 'POST', {'home': 'home.example.org'}, child)[0] == 401, 'server revocation invalidates QR publishing')
+    check(request('/profile.mobileconfig', cookie=cookie)[0] == 200, 'friend revocation preserves owner download')
+    # Repeat installation must preserve the original Caddy site and avoid imports multiplying.
+    helper.install(data, 'profiles.progo.test')
+    config = pathlib.Path('/etc/caddy/Caddyfile').read_text()
+    check('existing site' in config and config.count('import /etc/caddy/progo-profile-share.caddy') == 1,
+          'repeated QR setup preserves existing Caddy site and single import')
+    check(request('/profile.mobileconfig', cookie=cookie)[0] == 410, 'restart discards short-lived profile sessions')
 
 
 if __name__ == '__main__':

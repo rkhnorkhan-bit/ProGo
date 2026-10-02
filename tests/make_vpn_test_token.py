@@ -28,3 +28,10 @@ token = dict(Version=1, ServerId=identifier, InviteId='b' * 24, Host='vpn.exampl
              User='pgv' + 'b' * 24, Password='c' * 48, PrivateKey=(directory / 'access').read_text(),
              HostKey=' '.join(public[:2]), Ca=base64.b64encode((directory / 'ca-der').read_bytes()).decode())
 (directory / 'token').write_text('PROGO1.' + base64.urlsafe_b64encode(json.dumps(token).encode()).decode().rstrip('='))
+# Generate a real QR with the same renderer used by the VPS, for native UI tests.
+import importlib.util
+spec = importlib.util.spec_from_file_location('profile_share', pathlib.Path(__file__).resolve().parents[1] / 'server/profile_share.py')
+share = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(share)
+url = 'https://vpn.example.org/#' + 'A' * 43
+(directory / 'qr.json').write_text(json.dumps(dict(Url=url, Expires=2000000000, Matrix=share.qr_rows(url))))

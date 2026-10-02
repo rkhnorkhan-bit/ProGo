@@ -62,12 +62,12 @@ namespace ProGo
             foreach (Control control in body.Controls.Cast<Control>().ToArray()) control.Dispose();
             body.Controls.Clear(); counters = null; host = login = key = token = home = null; port = null; routerCheck = null;
             status.Text = ""; status.ForeColor = UiTheme.Muted;
-            string[] titles = { "Как подключаемся?", own ? "Данные вашего VPS" : "Токен приглашения", "Подготовьте домашний роутер", "Добавьте VPN на iPhone", "Проверка и управление" };
+            string[] titles = { "Как подключаемся?", own ? "Данные вашего VPS" : "Токен приглашения", "Подготовьте домашний роутер", "Добавьте VPN на телефон", "Проверка и управление" };
             heading.Text = (step + 1) + ". " + titles[step];
             back.Visible = step > 0; next.Visible = step > 0; next.Text = step == 4 ? "Закрыть" : "Далее";
             if (step == 0)
             {
-                Paragraph("Мастер подключит iPhone через этот ПК и VPS. На телефоне используется встроенный IKEv2. Компьютер должен оставаться включённым и иметь доступный извне домашний адрес.");
+                Paragraph("Мастер подключит телефон через этот ПК и VPS. iPhone использует встроенный IKEv2, Android — strongSwan VPN Client. Компьютер должен оставаться включённым и иметь доступный извне домашний адрес.");
                 Action("Подключиться к готовому VPS", delegate { own = false; ShowStep(1); });
                 Paragraph("Владелец VPS выдаёт вам токен. Пароль администратора не требуется.");
                 Action("Добавить свой VPS", delegate { own = true; ShowStep(1); });
@@ -114,12 +114,13 @@ namespace ProGo
             }
             else if (step == 3)
             {
-                Paragraph("ProGo подготовит профиль с домашним адресом и личными данными доступа. На iPhone не потребуется вводить сервер, логин и пароль вручную.");
-                Action("Сохранить профиль для iPhone…", SaveProfile);
-                Paragraph("1. Передайте сохранённый .mobileconfig на iPhone как вложение письма или через iCloud Drive. Если Telegram открывает текст, используйте вложение в приложении «Почта».");
-                Paragraph("2. Откройте файл на iPhone и разрешите загрузку профиля. Затем: Настройки → Основные → VPN и управление устройством → ProGo → Установить. Профиль содержит VPN и сертификат вашего VPS.");
-                Paragraph("3. Выберите «ProGo — домашний VPN», выключите Wi-Fi и включите VPN через мобильный интернет. Для этого маршрута используйте только одно активное VPN-подключение.");
-                Paragraph("Профиль содержит личный доступ. Не публикуйте его; каждому другу создавайте отдельный токен.");
+                Paragraph("Сканируйте QR камерой телефона. Откроется защищённая страница с выбором iPhone или Android; сервер, логин и пароль уже будут заполнены.");
+                Action("Установить на телефон по QR", async delegate { await ShowQr(); });
+                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); });
+                Paragraph("iPhone: откройте страницу в Safari, разрешите загрузку и подтвердите установку в Настройки → Основные → VPN и управление устройством. Android: импортируйте профиль в strongSwan VPN Client.");
+                Paragraph("Первая выдача требует HTTPS-домена на VPS. Владелец настраивает его здесь один раз; для друзей адрес сохраняется в новых токенах.");
+                Action("Сохранить профиль iPhone файлом…", SaveProfile);
+                Paragraph("После установки выключите Wi-Fi на телефоне, выберите «ProGo — домашний VPN» и включите VPN. Компьютер и канал ProGo должны оставаться включёнными.");
                 next.Text = "Профиль установлен — проверить";
             }
             else
@@ -129,9 +130,19 @@ namespace ProGo
                 Action("Остановить канал", delegate { service.Stop(); RefreshStatus(); });
                 counters = Paragraph("");
                 Paragraph("На iPhone выключите Wi-Fi, выберите профиль ProGo и включите VPN. Затем откройте сайт проверки IP: должен отображаться выход вашего VPS. Счётчики подтверждают пересылку, а статус «Подключено» проверяется на телефоне.");
+                Action("Установить на телефон по QR", async delegate { await ShowQr(); });
+                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); });
                 Action("Настроить роутер / создать профиль снова", delegate { ShowStep(2); });
                 Action("Выбрать другой VPS или токен", delegate { ShowStep(0); });
                 if (service.Owner != null) Action("Доступ друзей…", async delegate { await ManageInvitations(); });
+                if (service.Owner != null) Action("Исправить выход VPN в интернет", async delegate
+                {
+                    await RunStep(async delegate
+                    {
+                        await HomeVpnService.AdminAsync(service.Owner, "repair", null, null, SetProgress);
+                        SetProgress("Правила выхода VPN обновлены. Переподключите VPN на телефоне и откройте сайт для проверки.");
+                    });
+                });
                 Paragraph("Режим экспериментальный: IKEv2 нужно проверить с вашим iPhone и провайдером. При обрыве SSH/SOCKS при включённом автовосстановлении ProGo повторяет подключение; телефон может переподключать VPN несколько секунд.");
             }
             UiTheme.Apply(body); body.ResumeLayout(); RefreshStatus();
@@ -171,7 +182,7 @@ namespace ProGo
                     service.SetHomeAddress(draftHome);
                     profileSaved = false;
                 }
-                else if (step == 3 && !profileSaved) throw new InvalidOperationException("Сначала сохраните профиль кнопкой выше и установите его на iPhone.");
+                else if (step == 3 && !profileSaved) throw new InvalidOperationException("Сначала откройте QR или сохраните профиль, затем установите его на телефон.");
                 ShowStep(step + 1);
             });
         }
@@ -208,6 +219,23 @@ namespace ProGo
                 if (process.ExitCode != 0) throw new InvalidOperationException("Windows не подтвердила добавление правил. Повторите и разрешите запрос администратора.");
             }
             SetProgress("Windows разрешает входящие UDP 15000 и 14500 для ProGo. Следующий шаг — роутер.");
+        }
+        private async Task ShowQr()
+        {
+            if (service.Access == null || !HomeVpnAccess.ValidHost(service.HomeAddress))
+            { ShowStep(2); status.Text = "Сначала укажите внешний домашний адрес."; return; }
+            if (String.IsNullOrEmpty(service.ShareOrigin) && !HomeProfileShare.Configure(this, service)) return;
+            await RunStep(async delegate
+            {
+                SetProgress("Создаём QR на 15 минут. Предыдущая ссылка этого доступа перестанет работать…");
+                var origin = service.ShareOrigin;
+                var access = service.Access;
+                var link = await HomeProfileShare.CreateAsync(origin, access, service.HomeAddress);
+                using (var dialog = new PhoneProfileQrForm(link, delegate { return HomeProfileShare.RevokeAsync(origin, access); }))
+                    dialog.ShowDialog(this);
+                profileSaved = true;
+                SetProgress("После установки выберите VPN ProGo на телефоне. Закрытие окна не отзывает ссылку; она действует до истечения срока.");
+            });
         }
         private void SaveProfile(object sender, EventArgs args)
         {
@@ -282,7 +310,7 @@ namespace ProGo
         private void RefreshStatus()
         {
             if (step != 4 || counters == null) return;
-            counters.Text = (service.Relay.IsRunning ? "Канал ПК → VPS запущен." : "Канал остановлен.") + "\nSOCKS: " + service.RecoveryStatus
+            counters.Text = (service.Relay.IsRunning ? "Канал ПК → VPS запущен. Подключение телефона и интернет ещё не проверены." : "Канал остановлен.") + "\nSOCKS: " + service.RecoveryStatus
                 + "\nПакеты: от телефона " + service.Relay.Received + ", на VPS " + service.Relay.Sent + ", обратно " + service.Relay.Returned
                 + (service.Relay.Received == 0 ? "\nПакетов от телефона пока нет: проверьте выбранный профиль и проброс портов." : "")
                 + (service.Relay.LastError == null ? "" : "\n" + service.Relay.LastError);

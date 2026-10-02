@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2 — Phone setup by QR and VPN forwarding repair
+
+- Added **Установить на телефон по QR** to the home VPN wizard. A locally generated QR opens an HTTPS page for iPhone `.mobileconfig` or Android strongSwan `.sswan`; the phone confirms installation.
+- Added one-time QR claims, a 15-minute expiry, explicit link revocation, a copy-link action and a countdown. Previews do not consume links. New QR creation invalidates earlier links/download sessions for the same invitation. Installed VPN access remains valid until its invitation is revoked.
+- Added optional owner setup for a dedicated HTTPS subdomain on Ubuntu, using Caddy with existing-site preservation and configuration validation. DNS and hosting firewall configuration are prerequisites. New friend tokens discover this endpoint automatically; older tokens can enter it once.
+- Profile delivery runs as a restricted account, holds profiles only in memory, reads password hashes/public CA only, and never receives the invitation SSH key or CA private key. HTTPS redirects are not followed by the desktop client.
+- Added **Исправить выход VPN в интернет**: the managed home VPN pool receives narrow IPsec-only exceptions when the older `progo_ikev2` firewall blocks forwarded IPv4. The older drop policy remains and exceptions are reapplied on its service restart. No tokens or certificates are replaced.
+- Automated checks cover actual HTTPS/Caddy/systemd provisioning, revocation and expiry, concurrent one-time claims, QR decoding, native Windows UI, both profile formats and legacy firewall compatibility. Physical phone import and end-to-end mobile connectivity still require device testing.
+- Router automation, mail sending, billing and a separate administration panel are not included in this release.
+
 ## 0.2.1 — Automatic application proxy ports
 
 - Added **Настройки → Порт приложений** with automatic selection (default), a fixed port, and **Подобрать свободный**. The last successful port is reused; an occupied or Windows-reserved port falls back to an atomically bound free port in automatic mode.
