@@ -27,6 +27,22 @@ jobs:
             throw
           }
 
+      - name: Set up Python for relay tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: IKEv2 relay integration tests on .NET Framework
+        shell: powershell
+        run: |
+          .\scripts\Test-HomeVpnRelay.ps1
+
+      - name: Check public sources and release content
+        shell: powershell
+        run: |
+          python .\scripts\check_public_content.py --release .\release
+          if ($LASTEXITCODE -ne 0) { throw 'Public content check failed' }
+
       - name: Pack release zip
         if: success()
         shell: powershell

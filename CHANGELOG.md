@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.28 - Experimental home IKEv2 relay
+
+- Added an opt-in Russian tray dialog to relay iPhone IKEv2/NAT-T packets through the existing local SOCKS transport. VPN authentication and IPsec termination remain on the user's VPS.
+- Added a loopback-only Python receiver, an isolated systemd installer, executable-scoped Windows firewall setup, and a derived iPhone profile for the home entry address.
+- Added socket integration tests, resource limits, and setup/rollback documentation. The relay is disabled by default. Real iPhone/router/strongSwan interoperability and performance still require verification on the target network.
+- Included the firewall helper, server files, and generic setup instructions in the built-in updater's package. VPS, router, and iPhone setup remain separate steps.
+- Replaced infrastructure-specific SSH examples with documentation placeholders and added a public-content check before packaging and publication.
+
 ## 0.1.27 - Canonical HTTP proxy environment and Codex stream stability
 
 - Made the loopback HTTP CONNECT bridge at `127.0.0.1:1881` the canonical user-level proxy environment path.

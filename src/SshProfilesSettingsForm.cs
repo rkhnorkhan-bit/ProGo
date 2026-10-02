@@ -38,7 +38,7 @@ namespace ProGo
 
             var hint = new Label
             {
-                Text = "SSH-профиль — это сохранённое имя подключения из ~/.ssh/config, например progo-kz, или прямой target вида root@109.235.116.85. ProGo использует выбранный профиль, чтобы поднять локальный SOCKS-туннель.",
+                Text = "SSH-профиль — это сохранённое имя подключения из ~/.ssh/config, например my-vps, или прямой target вида user@vpn.example.org. ProGo использует выбранный профиль, чтобы поднять локальный SOCKS-туннель.",
                 AutoSize = true,
                 MaximumSize = new Size(560, 0)
             };
@@ -215,7 +215,7 @@ namespace ProGo
             var selected = SelectedProfile();
             if (selected == null)
             {
-                MessageBox.Show("SSH-профиль — это имя подключения для ssh.exe. Пример: progo-kz.\n\nСначала добавьте профиль кнопкой +.", "Что такое SSH-профиль", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("SSH-профиль — это имя подключения для ssh.exe. Пример: my-vps.\n\nСначала добавьте профиль кнопкой +.", "Что такое SSH-профиль", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -306,7 +306,7 @@ namespace ProGo
 
             var hint = new Label
             {
-                Text = "Профиль не хранит пароль. Это только имя/target для ssh.exe. Лучше использовать алиас из ~/.ssh/config, например progo-kz.",
+                Text = "Профиль не хранит пароль. Это только имя/target для ssh.exe. Лучше использовать алиас из ~/.ssh/config, например my-vps.",
                 AutoSize = true,
                 MaximumSize = new Size(360, 0)
             };
@@ -318,7 +318,7 @@ namespace ProGo
 
             var examples = new Label
             {
-                Text = "Примеры: progo-kz или root@109.235.116.85",
+                Text = "Примеры: my-vps или user@vpn.example.org",
                 AutoSize = true
             };
             table.Controls.Add(examples, 1, 3);
@@ -351,7 +351,7 @@ namespace ProGo
             var targetText = target.Text.Trim();
             if (String.IsNullOrWhiteSpace(targetText))
             {
-                MessageBox.Show("Укажите SSH target: например progo-kz или root@109.235.116.85.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Укажите SSH target: например my-vps или user@vpn.example.org.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DialogResult = DialogResult.None;
                 return;
             }

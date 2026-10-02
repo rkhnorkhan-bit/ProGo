@@ -19,7 +19,14 @@
 
 ```powershell
 .\scripts\Test-ProGo.ps1
+.\scripts\Test-HomeVpnRelay.ps1
+python .\scripts\check_public_content.py --release .\release
 ```
+
+The relay tests and public-content check require Python 3.12 in CI. The content
+check covers source files and the compiled release, including UTF-16 strings in
+the executable. Use reserved documentation addresses and generic paths in public
+examples; manual review is still required for names, hostnames, and context.
 
 ## Install locally
 

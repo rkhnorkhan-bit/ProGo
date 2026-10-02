@@ -4,9 +4,9 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 
 ## Статус
 
-Версия: `0.1.27`.
+Версия: `0.1.28`.
 
-Проект намеренно маленький: без облачного backend, без телеметрии, без хранения секретов на сервере.
+Проект не использует серверы разработчика, телеметрию или облачное хранилище секретов.
 
 ## Платформа
 
@@ -22,6 +22,7 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 - User-level `ALL_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY` через loopback HTTP CONNECT bridge `http://127.0.0.1:1881`.
 - Current-user системный прокси Windows для browser/login-сценариев.
 - CLI/Codex HTTP CONNECT proxy bridge для инструментов, которым нужен обычный `http://` proxy вместо SOCKS.
+- Экспериментальный [VPN для iPhone через домашний ПК](docs/HOME_IKEV2.md): пересылка зашифрованных пакетов IKEv2 через SSH/SOCKS на собственный VPS. Требуются проброс портов и небольшой приёмник на VPS; пароль проверяет strongSwan на VPS.
 - Проверка маршрута через `curl.exe --socks5-hostname`.
 - Локальный encrypted vault: `%LOCALAPPDATA%\ProGo\vault.enc.json`.
 - Типы записей: `api_key`, `password`, `token`, `ssh`, `note`, `custom`.
@@ -29,7 +30,7 @@ ProGo — лёгкое Windows tray-приложение для быстрого
 - Автоочистка clipboard, если там всё ещё находится скопированное ProGo значение.
 - Русский UI.
 - Установка напрямую из GitHub.
-- Пункт tray `Обновить ProGo`: скачивает свежий `main` из GitHub, пересобирает и заменяет установленный `ProGo.exe`.
+- Пункт tray `Обновить ProGo`: устанавливает пакет последнего опубликованного релиза с резервной копией и откатом; сборка исходников служит запасным способом восстановления.
 - Скрипты build/install/update/uninstall/test.
 - GitHub Actions Windows build.
 

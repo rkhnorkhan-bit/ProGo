@@ -35,12 +35,14 @@ if (Test-Path $Icon) {
 $InstalledScripts = Join-Path $InstallDir "scripts"
 New-Item -ItemType Directory -Path $InstalledScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is only for first-time bootstrap. It is intentionally not deployed into the installed runtime app.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
     }
 }
+
+Copy-Item (Join-Path $ReleaseDir "scripts\home-vpn") -Destination $InstalledScripts -Recurse -Force
 
 function New-ProGoShortcut($ShortcutPath, $Arguments) {
     $Shell = New-Object -ComObject WScript.Shell

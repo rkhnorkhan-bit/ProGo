@@ -124,11 +124,21 @@ $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is bootstrap-only. Do not include it in the runtime release:
 # some endpoint protection tools block downloaded bootstrap installers during self-update builds.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $ReleaseScripts $scriptName) -Force
     }
+}
+
+# Keep optional VPN resources inside scripts so existing transactional updaters
+# install and back up them together with the other runtime helpers.
+$HomeVpnDir = Join-Path $ReleaseScripts "home-vpn"
+$HomeVpnServer = Join-Path $HomeVpnDir "server"
+New-Item -ItemType Directory -Path $HomeVpnServer -Force | Out-Null
+Copy-Item (Join-Path $Root "docs\HOME_IKEV2.md") -Destination (Join-Path $HomeVpnDir "HOME_IKEV2.md") -Force
+foreach ($serverFile in @("ikev2_relay.py", "install-ikev2-relay.sh", "make_home_profile.py")) {
+    Copy-Item (Join-Path $Root ("server\" + $serverFile)) -Destination (Join-Path $HomeVpnServer $serverFile) -Force
 }
 
 Write-Host "Build OK: $Out"
