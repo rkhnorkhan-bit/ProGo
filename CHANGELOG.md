@@ -2,6 +2,7 @@
 
 ## 0.2.2 — Phone setup by QR and VPN forwarding repair
 
+- Restored **Запустить CLI** as a direct dashboard/tray action. Codex automatic/manual setup now applies the current-user HTTP proxy environment for ordinary launches; a scoped shortcut is optional. Existing terminal/IDE processes need one restart to inherit the environment.
 - Added **Установить на телефон по QR** to the home VPN wizard. A locally generated QR opens an HTTPS page for iPhone `.mobileconfig` or Android strongSwan `.sswan`; the phone confirms installation.
 - Added one-time QR claims, a 15-minute expiry, explicit link revocation, a copy-link action and a countdown. Previews do not consume links. New QR creation invalidates earlier links/download sessions for the same invitation. Installed VPN access remains valid until its invitation is revoked.
 - Added optional owner setup for a dedicated HTTPS subdomain on Ubuntu, using Caddy with existing-site preservation and configuration validation. DNS and hosting firewall configuration are prerequisites. New friend tokens discover this endpoint automatically; older tokens can enter it once.

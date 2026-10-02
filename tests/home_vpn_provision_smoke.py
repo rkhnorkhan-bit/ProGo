@@ -91,7 +91,7 @@ def main():
             check(again['server_id'] == data['server_id'], 'repeated setup preserves CA and invitation state')
             # Reproduce the older direct-VPN installer blocking every forwarded
             # IPv4 flow not from its own pool. Accepting in another chain is not enough.
-            subprocess.run(['nft', '-f', '-'], input='table inet progo_ikev2 { chain forward { type filter hook forward priority -5; policy accept; meta nfproto ipv4 drop; } }\n', text=True, check=True)
+            subprocess.run(['nft', '-f', '-'], input='table inet progo_ikev2 { chain forward { type filter hook forward priority -5; policy accept; meta nfproto ipv4 drop; }\n}\n', text=True, check=True)
             setup.apply_network(data)
             setup.apply_network(data)
             legacy = setup.run('nft', 'list', 'chain', 'inet', 'progo_ikev2', 'forward', capture=True)

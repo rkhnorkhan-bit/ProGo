@@ -20,7 +20,7 @@ and file dialogs retain their standard appearance. No embedded browser or VM is 
 | Восстанавливать подключение при обрыве | Recovers an owned SSH/SOCKS connection after failure. Manual stop cancels retries. Applies to the home VPN channel too. |
 | Включать прокси для командной строки | Applies proxy environment variables for newly launched terminals when the connection is ready. |
 | Включать прокси для приложений Windows | Applies current-user Windows HTTP/HTTPS proxy settings when ready. |
-| Подготавливать Codex к работе через прокси | Creates a **Codex через ProGo** Start Menu shortcut that gives only the launched CLI a scoped proxy environment. |
+| Включать прокси для обычного запуска Codex | Prepares current-user HTTP proxy variables for normal Codex launches. No special shortcut is required. |
 
 Unchecked means manual control; adjacent buttons remain available. Unchecking does not
 silently undo a manually active feature. Manual off suppresses pending automation for
