@@ -50,6 +50,16 @@ namespace ProGo
             text.AppendLine("endlocal");
             return text.ToString();
         }
+        // Normal Codex launch uses the same Windows-user proxy environment as
+        // other command-line tools. The scoped shortcut below is optional.
+        internal static void EnableOrdinaryLaunch(int port)
+        {
+            CliProxyEnvironmentService.ApplyUserEnvironment(port);
+        }
+        internal static void DisableOrdinaryLaunch()
+        {
+            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+        }
         public static void Enable(int port)
         {
             if (File.Exists(LauncherPath) && !File.ReadAllText(LauncherPath).Contains(Marker)) throw new IOException("Файл запуска Codex уже существует и создан не ProGo. Он сохранён без изменений.");

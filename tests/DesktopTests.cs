@@ -68,7 +68,14 @@ namespace ProGo
                     using (var home = new HomeVpnService(relay))
                     using (var clipboard = new ClipboardService(settings))
                     {
-                        Snapshot(new MainWindow(settings, proxy, home, delegate { }), "main");
+                        string clicked = null;
+                        using (var dashboard = new MainWindow(settings, proxy, home, delegate(string action) { clicked = action; }))
+                        {
+                            dashboard.Show(); Application.DoEvents();
+                            Descendants(dashboard).OfType<Button>().Single(b => b.Text == "Запустить CLI").PerformClick();
+                            Check(clicked == "cli-start", "dashboard restores direct Start CLI action");
+                            Shot(dashboard, "main"); dashboard.Close();
+                        }
                         using (var form = new SshProfilesSettingsForm(settings))
                         {
                             Snapshot(form, "settings", false);
@@ -143,6 +150,12 @@ namespace ProGo
             try
             {
                 Environment.SetEnvironmentVariable("HTTP_PROXY", "http://prior.example.org:8080", EnvironmentVariableTarget.User);
+                bool shortcutExisted = File.Exists(CodexProxyService.LauncherPath);
+                CodexProxyService.EnableOrdinaryLaunch(31881);
+                Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(31881), "ordinary Codex launch receives user proxy environment");
+                Check(File.Exists(CodexProxyService.LauncherPath) == shortcutExisted, "ordinary Codex setup does not require or create a shortcut");
+                CliProxyEnvironmentService.MoveOwned(1881);
+                Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(1881), "ordinary Codex settings follow the actual application port");
                 CliProxyEnvironmentService.ApplyUserEnvironment(1881); CliProxyEnvironmentService.ApplyUserEnvironment(1881);
                 Environment.SetEnvironmentVariable("HTTPS_PROXY", "http://other.example.org:8080", EnvironmentVariableTarget.User);
                 CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();

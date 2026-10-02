@@ -39,7 +39,7 @@ namespace ProGo
             Nav(nav, "Диагностика", delegate { action("diagnostics"); }, false);
             Nav(nav, "Настройки", delegate { action("settings"); }, false);
             rail.Controls.Add(nav);
-            var version = UiTheme.Label("DESKTOP  /  0.2.1\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
+            var version = UiTheme.Label("DESKTOP  /  " + typeof(MainWindow).Assembly.GetName().Version.ToString(3) + "\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
             version.AutoSize = false; version.Size = new Size(178, 65); version.Dock = DockStyle.Bottom; rail.Controls.Add(version);
             var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(28), ColumnCount = 1, RowCount = 5 };
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -60,7 +60,7 @@ namespace ProGo
             var cards = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
             for (int i = 0; i < 3; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 3));
             windowsState = Card(cards, 0, "WINDOWS", "Приложения", "windows-on", action);
-            terminalState = Card(cards, 1, "ТЕРМИНАЛ", "Командная строка", "terminal-on", action);
+            terminalState = Card(cards, 1, "CLI И CODEX", "Обычный запуск", "cli-start", action);
             phoneState = Card(cards, 2, "IPHONE", "Через домашний ПК", "iphone", action); content.Controls.Add(cards, 0, 2);
             var bottom = new SurfacePanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 14) };
             var title = UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text); title.Location = new Point(20, 16); bottom.Controls.Add(title);
@@ -82,7 +82,7 @@ namespace ProGo
             var name = UiTheme.Label(title, UiTheme.Strong, UiTheme.Muted); name.Location = new Point(16, 14); card.Controls.Add(name);
             var state = UiTheme.Label("Выключено", UiTheme.Heading, UiTheme.Text); state.Location = new Point(14, 40); card.Controls.Add(state);
             var caption = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted); caption.Location = new Point(16, 72); card.Controls.Add(caption);
-            var open = UiTheme.Button(column == 2 ? "Открыть мастер" : "Настроить", delegate { action(column == 2 ? actionName : "settings"); }, false);
+            var open = UiTheme.Button(column == 2 ? "Открыть мастер" : column == 1 ? "Запустить CLI" : "Настроить", delegate { action(column == 0 ? "settings" : actionName); }, false);
             open.Location = new Point(16, 100); open.MinimumSize = new Size(100, 32); open.Height = 32; open.Padding = new Padding(7, 0, 7, 0); card.Controls.Add(open); cards.Controls.Add(card, column, 0); return state;
         }
         private void RefreshState()

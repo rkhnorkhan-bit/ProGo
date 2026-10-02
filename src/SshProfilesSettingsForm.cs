@@ -62,7 +62,7 @@ namespace ProGo
             AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды «Остановить» он сам не включится.", "Перезапустить", "restart", "Остановить", "stop");
             AutomationCard(autoFlow, autoProxy, "Включать прокси для командной строки", "При запуске ProGo настраивать новые терминалы через HTTP_PROXY и HTTPS_PROXY. Уже открытые окна нужно перезапустить.", "Включить", "terminal-on", "Выключить", "terminal-off");
             AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", "Включить", "windows-on", "Выключить", "windows-off");
-            AutomationCard(autoFlow, autoCodex, "Подготавливать Codex к работе через прокси", "Создавать в меню «Пуск» ярлык «Codex через ProGo». Прокси действует только для запущенного через него Codex CLI.", "Настроить", "codex-on", "Убрать ярлык", "codex-off");
+            AutomationCard(autoFlow, autoCodex, "Включать прокси для обычного запуска Codex", "Настраивать HTTP_PROXY и HTTPS_PROXY для Codex и новых терминалов. Отдельный ярлык не нужен. Уже открытый Codex или терминал нужно перезапустить. Кнопка выключения общая с CLI.", "Включить", "codex-on", "Выключить", "codex-off");
             var connection = FormTable(Page(tabs, "Подключение"));
             sshProfiles.DropDownStyle = ComboBoxStyle.DropDownList;
             AddLabeled(connection, 0, "Сервер", sshProfiles);

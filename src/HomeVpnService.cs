@@ -39,6 +39,15 @@ namespace ProGo
         internal HomeVpnAccess Access { get; private set; }
         internal HomeVpnOwner Owner { get; private set; }
         internal string HomeAddress { get; private set; }
+        internal string ShareOrigin
+        {
+            get { return Access == null ? null : HomeVpnPrivateFiles.Load("share-" + Access.ServerId) ?? Access.ShareUrl; }
+        }
+        internal void SetShareOrigin(string value)
+        {
+            if (Access == null) throw new InvalidOperationException("Сначала добавьте доступ к VPS.");
+            HomeVpnPrivateFiles.Save("share-" + Access.ServerId, HomeProfileShare.Origin(value));
+        }
         private ProxyService proxy;
         private string sessionDirectory;
         private CancellationTokenSource starting;
@@ -155,9 +164,10 @@ namespace ProGo
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
             owner.Validate();
-            if (action != "setup" && action != "invite" && action != "list" && action != "revoke") throw new ArgumentException("Unknown action");
+            if (action != "setup" && action != "invite" && action != "list" && action != "revoke" && action != "share" && action != "repair") throw new ArgumentException("Unknown action");
             if (action == "revoke" && !System.Text.RegularExpressions.Regex.IsMatch(identifier ?? "", @"\A[0-9a-f]{24}\z")) throw new ArgumentException("Invalid invitation");
             if ((label ?? "").Length > 80 || (label ?? "").IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) throw new ArgumentException("Название слишком длинное.");
+            if (action == "share") identifier = new Uri(HomeProfileShare.Origin(identifier)).Host;
             HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
             var work = Path.Combine(HomeVpnPrivateFiles.Root, "admin-" + Guid.NewGuid().ToString("N"));
             HomeVpnPrivateFiles.SecureDirectory(work);
@@ -166,7 +176,7 @@ namespace ProGo
             var output = Path.Combine(work, "result.txt");
             try
             {
-                foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh" })
+                foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" })
                     File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts", "home-vpn", "server", file), Path.Combine(upload, file));
                 var keyArgs = String.IsNullOrWhiteSpace(owner.KeyFile) ? "" : " -i " + Argument(owner.KeyFile);
                 var target = owner.Login + "@" + owner.Host;
@@ -176,7 +186,7 @@ namespace ProGo
                 var command = "trap 'rm -rf -- " + remote + "' EXIT; "
                     + (owner.Login == "root" ? "" : "sudo -n ") + "python3 -I " + remote + "/home_vpn_setup.py " + action
                     + " --host " + Shell(owner.Host) + " --port " + owner.Port + " --name " + Shell(label ?? "My iPhone")
-                    + (action == "revoke" ? " --id " + identifier : "") + " --output " + remote + "/result 1>&2"
+                    + (action == "revoke" ? " --id " + identifier : action == "share" ? " --domain " + Shell(identifier) : "") + " --output " + remote + "/result 1>&2"
                     + " && cat " + remote + "/result";
                 progress("Настройка VPS. Окно SSH показывает ход установки; для пользователя без root нужен sudo без запроса пароля.");
                 // A real console remains available for OpenSSH password/host-key prompts.

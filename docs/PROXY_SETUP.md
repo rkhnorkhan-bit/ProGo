@@ -9,7 +9,8 @@ SOCKS listener means the tunnel is ready; route diagnostics verify actual reacha
 ## Automatic and manual controls
 
 **Настройки → Автоматика** exposes recovery, terminal environment, Windows proxy,
-and a scoped Codex launcher as independent settings. Startup actions wait for SOCKS
+and normal Codex launch as independent startup options. Codex and terminal setup use
+the same user proxy environment; manual off cancels both pending environment actions. Startup actions wait for SOCKS
 readiness and run once. Manual off cancels an outstanding action for the session;
 it is not undone on the next timer tick. Unchecking disables future automatic work;
 use the adjacent button to disable a currently active feature. New Windows and Codex
@@ -40,7 +41,7 @@ The bridge remains loopback-only. SSH, SOCKS, router and IKEv2 ports are indepen
 
 ## Command line
 
-**Прокси для приложений → Командная строка — включить** applies the selected port.
+**Запустить CLI** on the dashboard, or **Прокси для приложений → Запустить CLI (Codex и терминалы)** applies the selected port.
 For example, when the dashboard shows port 1881:
 
 ```text
@@ -61,12 +62,20 @@ automation alone does not change those values. Disconnect/exit restores owned se
 
 ## Codex CLI
 
-**Codex — настроить ярлык** creates **Codex через ProGo** in the Start Menu.
-The command wrapper uses `setlocal`; its HTTP proxy variables apply only to the
-launched Codex process. It does not alter Codex configuration, API keys, PATH or
-other terminal environments. Install Codex CLI separately and keep ProGo connected.
-**Открыть Codex через ProGo** starts it directly with the same scoped environment.
-**Codex — убрать ярлык** removes the ProGo-owned launcher; it does not uninstall Codex.
+**Запустить CLI** starts the HTTP bridge and applies its actual port to the current
+Windows user's environment. Run `codex` normally afterwards. The automatic setting
+**Включать прокси для обычного запуска Codex** and **Codex — включить прокси** use
+the same environment setup. No special shortcut is required.
+
+Completely close and reopen an already running terminal, IDE or Codex app once so it
+inherits the updated environment. Opening another tab in an existing terminal may
+reuse its old environment. **Открыть Codex через ProGo** remains a convenient direct
+launch with an explicit process environment. Codex installation is separate.
+
+The scoped Start Menu shortcut is optional under **Дополнительно: ярлык Codex**.
+Creating/removing it does not enable/disable the shared user proxy environment.
+Manual CLI/Codex off restores only ProGo-owned user values; it cannot change the
+environment of processes that are already running. Windows system proxy is separate.
 
 ## Windows applications
 

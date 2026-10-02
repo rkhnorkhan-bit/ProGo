@@ -24,6 +24,7 @@ namespace ProGo
         public string HostKey { get; set; }
         public string Ca { get; set; }
         public string Password { get; set; }
+        public string ShareUrl { get; set; }
         public string Identity { get { return ServerId + ".vpn.progo.invalid"; } }
         public string CaName { get { return "ProGo Home " + ServerId; } }
 
@@ -64,6 +65,7 @@ namespace ProGo
                         || ca.NotAfter.ToUniversalTime() < DateTime.UtcNow || ca.NotBefore.ToUniversalTime() > DateTime.UtcNow.AddMinutes(5))
                         throw new FormatException();
                 }
+                if (!String.IsNullOrEmpty(value.ShareUrl)) value.ShareUrl = HomeProfileShare.Origin(value.ShareUrl);
                 return value;
             }
             catch (Exception ex)

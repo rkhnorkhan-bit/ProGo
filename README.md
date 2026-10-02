@@ -20,7 +20,7 @@ and file dialogs retain their standard appearance. No embedded browser or VM is 
 | Восстанавливать подключение при обрыве | Recovers an owned SSH/SOCKS connection after failure. Manual stop cancels retries. Applies to the home VPN channel too. |
 | Включать прокси для командной строки | Applies proxy environment variables for newly launched terminals when the connection is ready. |
 | Включать прокси для приложений Windows | Applies current-user Windows HTTP/HTTPS proxy settings when ready. |
-| Подготавливать Codex к работе через прокси | Creates a **Codex через ProGo** Start Menu shortcut that gives only the launched CLI a scoped proxy environment. |
+| Включать прокси для обычного запуска Codex | Prepares current-user HTTP proxy variables for normal Codex launches. No special shortcut is required. |
 
 Unchecked means manual control; adjacent buttons remain available. Unchecking does not
 silently undo a manually active feature. Manual off suppresses pending automation for
@@ -48,8 +48,11 @@ Restart already open terminals and Codex after changing it.
 
 Open **iPhone через домашний ПК…**. Choose an existing VPS token or add an Ubuntu VPS
 with SSH. The wizard provisions the VPN service, shows router forwarding rules,
-exports an iPhone profile and reports transport counters. Owners can issue and revoke
-separate invitations. [Setup and limits](https://github.com/rkhnorkhan-bit/ProGo/blob/main/docs/HOME_IKEV2.md).
+offers a temporary QR link for iPhone and Android strongSwan profiles, and reports
+transport counters. QR delivery needs a dedicated HTTPS domain on the VPS, configured
+once by its owner. File export remains available. Owners can issue and revoke separate
+invitations. The **Исправить выход VPN в интернет** action repairs the known conflict
+with the older ProGo IPv4 forwarding policy. [Setup and limits](https://github.com/rkhnorkhan-bit/ProGo/blob/main/docs/HOME_IKEV2.md).
 
 0.2.0 fixes iOS rejecting profiles with `Invalid DH group (0)`. Export a new profile
 from the wizard and reinstall it; the server does not require reprovisioning.
