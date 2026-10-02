@@ -35,13 +35,13 @@ jobs:
       - name: IKEv2 relay integration tests on .NET Framework
         shell: powershell
         run: |
-          $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
-          $harness = Join-Path $PWD 'build\RelayHarness.exe'
-          & $csc /nologo /target:exe /reference:System.dll /reference:System.Core.dll "/out:$harness" .\src\Ikev2RelayService.cs .\tests\RelayHarness.cs
-          if ($LASTEXITCODE -ne 0) { throw 'Relay harness build failed' }
-          $env:PROGO_RELAY_TEST_COMMAND = ConvertTo-Json -InputObject @($harness) -Compress
-          python -m unittest discover -s tests -p 'test_*.py' -v
-          if ($LASTEXITCODE -ne 0) { throw 'Relay integration tests failed' }
+          .\scripts\Test-HomeVpnRelay.ps1
+
+      - name: Check public sources and release content
+        shell: powershell
+        run: |
+          python .\scripts\check_public_content.py --release .\release
+          if ($LASTEXITCODE -ne 0) { throw 'Public content check failed' }
 
       - name: Pack release zip
         if: success()

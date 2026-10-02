@@ -52,7 +52,7 @@ namespace ProGo
             var instructions = new Button { Text = "Инструкция", AutoSize = true };
             instructions.Click += delegate
             {
-                try { Process.Start("https://github.com/rkhnorkhan-bit/ProGo/blob/feature/home-ikev2-relay/docs/HOME_IKEV2.md"); }
+                try { Process.Start("https://github.com/rkhnorkhan-bit/ProGo/blob/main/docs/HOME_IKEV2.md"); }
                 catch { MessageBox.Show("Инструкция находится в репозитории ProGo: docs/HOME_IKEV2.md.", Text); }
             };
             buttons.Controls.Add(start); buttons.Controls.Add(stop); buttons.Controls.Add(instructions);

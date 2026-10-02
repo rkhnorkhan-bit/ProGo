@@ -269,4 +269,16 @@ foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-
 $runtimeBootstrap = Join-Path $Root "release\scripts\Install-FromGitHub.ps1"
 if (Test-Path $runtimeBootstrap) { Fail "bootstrap installer must not be included in runtime release scripts" }
 
+foreach ($relativePath in @(
+    "scripts\Enable-HomeVpnFirewall.ps1",
+    "scripts\home-vpn\HOME_IKEV2.md",
+    "scripts\home-vpn\server\ikev2_relay.py",
+    "scripts\home-vpn\server\install-ikev2-relay.sh",
+    "scripts\home-vpn\server\make_home_profile.py"
+)) {
+    if (-not (Test-Path (Join-Path $Root ("release\" + $relativePath)))) {
+        Fail "home VPN release resource missing: $relativePath"
+    }
+}
+
 Write-Host "ProGo tests PASS."

@@ -31,6 +31,22 @@ jobs:
           }
           "PROGO_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "PROGO_TAG=v$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $changelog = Get-Content -Raw -Encoding UTF8 .\CHANGELOG.md
+          $section = '(?ms)^## ' + [regex]::Escape($version) + '[^\r\n]*\r?\n(.*?)(?=^## |\z)'
+          if ($changelog -notmatch $section) { throw 'Changelog entry missing for release version' }
+          Set-Content -Path .\build\release-notes.md -Value ($Matches[1].Trim()) -Encoding UTF8
+
+      - name: Set up Python for release checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify relay and public package content
+        shell: powershell
+        run: |
+          .\scripts\Test-HomeVpnRelay.ps1
+          python .\scripts\check_public_content.py --release .\release
+          if ($LASTEXITCODE -ne 0) { throw 'Public content check failed' }
 
       - name: Pack release
         shell: powershell
@@ -58,7 +74,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Release asset upload failed." }
           } else {
             Write-Host "Creating release $tag."
-            gh release create $tag .\ProGo-release.zip --target "${{ github.sha }}" --title $title --generate-notes --repo "${{ github.repository }}"
+            gh release create $tag .\ProGo-release.zip --target "${{ github.sha }}" --title $title --notes-file .\build\release-notes.md --repo "${{ github.repository }}"
             if ($LASTEXITCODE -ne 0) { throw "Release creation failed." }
           }
 

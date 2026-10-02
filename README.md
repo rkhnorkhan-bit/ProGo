@@ -4,7 +4,7 @@ ProGo is a small Windows tray application for fast SSH SOCKS proxy control and a
 
 ## Status
 
-Version: `0.1.27`.
+Version: `0.1.28`.
 
 This project has no vendor-operated backend, no telemetry, and no hosted secrets storage.
 
@@ -30,7 +30,7 @@ This project has no vendor-operated backend, no telemetry, and no hosted secrets
 - Clipboard auto-clear if the clipboard still contains the copied ProGo value.
 - Russian UI.
 - Direct install from GitHub.
-- Tray item `Обновить ProGo`: downloads the latest `main` from GitHub, rebuilds locally, and replaces the installed `ProGo.exe`.
+- Tray item `Обновить ProGo`: installs the latest published release package with backup and rollback; a source build is available as a recovery fallback.
 - Build/install/update/uninstall/test scripts.
 - GitHub Actions Windows build.
 

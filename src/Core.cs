@@ -272,7 +272,7 @@ namespace ProGo
                 if (showErrors)
                 {
                     System.Windows.Forms.MessageBox.Show(
-                        "SSH-профиль не выбран.\n\nSSH-профиль — это короткое имя подключения из файла ~/.ssh/config, например progo-kz, или прямой SSH-target вида root@109.235.116.85. ProGo использует его для создания локального SOCKS-туннеля.",
+                        "SSH-профиль не выбран.\n\nSSH-профиль — это короткое имя подключения из файла ~/.ssh/config, например my-vps, или прямой SSH-target вида user@vpn.example.org. ProGo использует его для создания локального SOCKS-туннеля.",
                         AppConstants.ProductName);
                 }
                 return;
