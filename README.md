@@ -13,19 +13,19 @@ connections, application ports, vault preferences and diagnostics. All applicati
 native dark theme, keyboard controls and multi-resolution icon. Windows native security
 and file dialogs retain their standard appearance. No embedded browser or VM is required.
 
-## Four independent automatic options
+## Three automatic options
 
 | Option in Settings | Behavior |
 | --- | --- |
 | Восстанавливать подключение при обрыве | Recovers an owned SSH/SOCKS connection after failure. Manual stop cancels retries. Applies to the home VPN channel too. |
-| Включать прокси для командной строки | Applies proxy environment variables for newly launched terminals when the connection is ready. |
+| Включать прокси для терминалов и Codex | Applies one shared current-user proxy environment for newly opened terminals and normal Codex launches when the connection is ready. No special shortcut is required. |
 | Включать прокси для приложений Windows | Applies current-user Windows HTTP/HTTPS proxy settings when ready. |
-| Включать прокси для обычного запуска Codex | Prepares current-user HTTP proxy variables for normal Codex launches. No special shortcut is required. |
 
 Unchecked means manual control; adjacent buttons remain available. Unchecking does not
 silently undo a manually active feature. Manual off suppresses pending automation for
 that session. The next launch or an explicit preference off/on re-arms it. Existing
-preferences migrate; new Windows/Codex automation defaults to off. CLI installation
+preferences migrate: either old terminal or Codex switch enables the unified option.
+An explicit new off remains off. New installations default to manual CLI control. CLI installation
 itself is separate. **Подключаться к серверу при запуске ProGo** remains a separate setting.
 
 Proxy-aware Windows apps and terminal programs use a shared loopback HTTP endpoint, which

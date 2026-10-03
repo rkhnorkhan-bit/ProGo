@@ -13,14 +13,13 @@ namespace ProGo
         private readonly ComboBox sshProfiles = new ComboBox();
         private readonly CheckBox autoSwitchProfile = new CheckBox();
         private readonly CheckBox autoStart = new CheckBox();
-        private readonly CheckBox autoProxy = new CheckBox();
+        private readonly CheckBox autoCli = new CheckBox();
         private readonly NumericUpDown clearSeconds = new NumericUpDown();
         private readonly TextBox endpoint = new TextBox();
         private readonly List<SshProfileSetting> profiles = new List<SshProfileSetting>();
 
         private readonly CheckBox autoRestart = new CheckBox();
         private readonly CheckBox autoWindows = new CheckBox();
-        private readonly CheckBox autoCodex = new CheckBox();
         public event Action<string> ManualActionRequested;
         public Func<AppSettings, bool, string> SaveRequested;
         private readonly CheckBox autoHttpPort = new CheckBox();
@@ -60,9 +59,8 @@ namespace ProGo
             };
             autoFlow.Controls.Add(UiTheme.Label("Галочка — автоматически. Кнопки — вручную в любой момент.", UiTheme.Body, UiTheme.Muted));
             AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды «Остановить» он сам не включится.", "Перезапустить", "restart", "Остановить", "stop");
-            AutomationCard(autoFlow, autoProxy, "Включать прокси для командной строки", "При запуске ProGo настраивать новые терминалы через HTTP_PROXY и HTTPS_PROXY. Уже открытые окна нужно перезапустить.", "Включить", "terminal-on", "Выключить", "terminal-off");
+            AutomationCard(autoFlow, autoCli, "Включать прокси для терминалов и Codex", "Включать общий прокси после подключения ProGo. Затем откройте новый терминал или перезапустите уже открытый Codex. Отдельный ярлык не нужен.", "Включить", "cli-start", "Выключить", "cli-off");
             AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", "Включить", "windows-on", "Выключить", "windows-off");
-            AutomationCard(autoFlow, autoCodex, "Включать прокси для обычного запуска Codex", "Настраивать HTTP_PROXY и HTTPS_PROXY для Codex и новых терминалов. Отдельный ярлык не нужен. Уже открытый Codex или терминал нужно перезапустить. Кнопка выключения общая с CLI.", "Включить", "codex-on", "Выключить", "codex-off");
             var connection = FormTable(Page(tabs, "Подключение"));
             sshProfiles.DropDownStyle = ComboBoxStyle.DropDownList;
             AddLabeled(connection, 0, "Сервер", sshProfiles);
@@ -160,10 +158,9 @@ namespace ProGo
             proxyAddress.Text = CliProxyBridgeService.UrlFor(s.HttpProxyPort);
             autoSwitchProfile.Checked = s.AutoSwitchSshProfile;
             autoStart.Checked = s.AutoStartSocks;
-            autoProxy.Checked = s.AutoApplyProxy;
+            autoCli.Checked = s.AutoCliProxy;
             autoRestart.Checked = s.AutoRestartSocks;
             autoWindows.Checked = s.AutoSystemProxy;
-            autoCodex.Checked = s.AutoCodexProxy;
             clearSeconds.Value = s.ClipboardClearSeconds;
             endpoint.Text = s.TestEndpoint;
 
@@ -300,8 +297,7 @@ namespace ProGo
                 AutoStartSocks = autoStart.Checked,
                 AutoRestartSocks = autoRestart.Checked,
                 AutoSystemProxy = autoWindows.Checked,
-                AutoCodexProxy = autoCodex.Checked,
-                AutoApplyProxy = autoProxy.Checked,
+                AutoCliProxy = autoCli.Checked,
                 ClipboardClearSeconds = (int)clearSeconds.Value,
                 TestEndpoint = endpoint.Text.Trim()
             };

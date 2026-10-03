@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased — audit stage F02
+## Unreleased — audit stages F02 and F01
+
+- Merge terminal and ordinary Codex automation into one **Включать прокси для
+  терминалов и Codex** option. Keep **Запустить CLI** as the direct compatible action
+  and scoped Codex launch/shortcut as additional choices.
+- Migrate the two old switches using OR. Save only the unified setting and respect
+  its explicit off on later loads. Remove duplicated Codex on/off controls.
+- Verify all legacy combinations, actual manual command aliases and cancellation,
+  and ordinary CLI startup with a local fixture without a special shortcut.
 
 - Automatic proxy setup remains pending until application succeeds. Temporary
   failures retry after 5, 15 and 45 seconds; repeated failures pause after four
