@@ -32,6 +32,7 @@ internal static class SocksRecoveryTests
             Test("startup timeout stops its owned child and gives guidance", AsyncTimeout);
             Test("SSH refusal explains key authorization without a hidden prompt", AsyncRefusal);
             Test("asynchronous startup refuses a foreign non-SOCKS listener", AsyncForeignListener);
+            Test("async launch failure schedules the first recovery delay once", AsyncLaunchFailure);
             Test("recovery respects configured profile fallback", Fallback);
             Test("manual profile fallback remains available", ManualFallback);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
@@ -266,6 +267,18 @@ internal static class SocksRecoveryTests
             Assert(task.Wait(5000) && !task.Result && f.Proxy.StartupError.Contains("ключ не принят") && f.Proxy.StartupError.Contains("Первый вход"), "SSH key refusal did not give actionable visible-login guidance");
         }
     }
+    private static void AsyncLaunchFailure()
+    {
+        var config = AppSettings.Defaults(); config.SshProfile = "ready";
+        var now = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var reserve = new TcpListener(IPAddress.Loopback, 0); reserve.Start();
+        config.SocksPort = ((IPEndPoint)reserve.LocalEndpoint).Port; reserve.Stop();
+        using (var proxy = new ProxyService(() => config, delegate { }, "missing-fixture-ssh.exe", () => now, false)) {
+            Assert(!proxy.StartTunnelAsync(CancellationToken.None).GetAwaiter().GetResult(), "Missing executable must fail");
+            Assert(proxy.NextRecoveryUtc == now.AddSeconds(5), "Async wrapper must not increase initial backoff twice");
+        }
+    }
+
     private static void AsyncForeignListener()
     {
         using (var f = new Fixture()) {

@@ -138,7 +138,8 @@ F05 SSH startup readiness and F14 existing network tasks remain separate work.
 ## Stage 6a — F05: await desktop SSH readiness from one request
 
 - Desktop connect/reconnect, ordinary **Запустить CLI**, Windows mode and scoped
-  launch commands await a bounded asynchronous SOCKS-ready result. Concurrent
+  launch commands await a bounded asynchronous SOCKS-ready result. Completion
+  uses the persistent application UI dispatcher, including after settings dialogs. Concurrent
   callers share one startup; repeated CLI aliases do not add another intent.
 - Show pending connection/CLI controls while the UI remains responsive. Stop,
   manual off, changed connection settings and disposal discard pending actions,
@@ -164,8 +165,8 @@ all existing blocking operations covered separately by F14.
 
 ## Remaining stages
 
-F05–F10 and F14–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
-restore ownership) are not fixed by these stages. Preserve the ordinary
+F05–F10 and F14–F30 remain separate work. In particular, F05 is partial until the structured connection editor is complete; F06 (Windows
+restore ownership) remains untouched. Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

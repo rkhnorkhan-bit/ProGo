@@ -24,7 +24,7 @@ namespace ProGo
         private readonly Dictionary<string, long> pendingRoutes = new Dictionary<string, long>();
         private long nextRouteRequest;
         private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
-        private bool closing;
+        private volatile bool closing;
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
         public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null)
@@ -245,7 +245,7 @@ namespace ProGo
             return action == "cli-start" || action == "windows-on" || action == "connect" || action == "restart" ||
                 action == "codex-shortcut-on" || action == "codex-open" || action == "terminal-open" ? action : null;
         }
-        private async void BeginRouteAction(string action)
+        private void BeginRouteAction(string action)
         {
             if (closing || pendingRoutes.ContainsKey(action)) return;
             long request = ++nextRouteRequest; pendingRoutes[action] = request;
@@ -254,33 +254,45 @@ namespace ProGo
                 pendingRoutes.Clear(); pendingRoutes[action] = request; proxy.StopTunnel();
             }
             health.Invalidate(); RefreshPendingRoutes();
+            CompleteRouteAction(action, request);
+        }
+        private async Task CompleteRouteAction(string action, long request)
+        {
+            bool ready = false, cancelled = false; Exception failure = null;
+            try { ready = await proxy.StartTunnelAsync(routeLifetime.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) { cancelled = true; }
+            catch (Exception ex) { failure = ex; }
+            if (closing) return;
             try {
-                bool ready = await proxy.StartTunnelAsync(routeLifetime.Token);
-                long active;
-                if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request) return;
-                if (!ready) throw new InvalidOperationException(proxy.StartupError ?? "Прокси не готов. Проверьте сервер и SSH-ключ в «Подключениях».");
-                switch (action) {
-                    case "cli-start": EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
-                    case "windows-on": EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
-                    case "codex-shortcut-on": EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
-                    case "codex-open": EnsureBridge(); CodexProxyService.Open(cliProxy.Port); break;
-                    case "terminal-open": EnsureBridge(); string error; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error)) throw new InvalidOperationException(error); break;
-                }
-                health.Invalidate();
+                // Modal dialogs may replace a captured WinForms synchronization context.
+                // Always finish against this application's persistent UI dispatcher.
+                activationDispatcher.BeginInvoke(new Action(delegate {
+                    long active;
+                    if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request) return;
+                    try {
+                        if (cancelled) return;
+                        if (failure != null) throw failure;
+                        if (!ready) throw new InvalidOperationException(proxy.StartupError ?? "Прокси не готов. Проверьте сервер и SSH-ключ в «Подключениях».");
+                        switch (action) {
+                            case "cli-start": EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
+                            case "windows-on": EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
+                            case "codex-shortcut-on": EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
+                            case "codex-open": EnsureBridge(); CodexProxyService.Open(cliProxy.Port); break;
+                            case "terminal-open": EnsureBridge(); string error; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error)) throw new InvalidOperationException(error); break;
+                        }
+                        health.Invalidate();
+                    }
+                    catch (Exception ex) {
+                        SafeLog.Error("User connection action failed: " + action, ex);
+                        MessageBox.Show(mainWindow, ex.Message, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    finally {
+                        if (pendingRoutes.TryGetValue(action, out active) && active == request) pendingRoutes.Remove(action);
+                        if (!closing) RefreshPendingRoutes();
+                    }
+                }));
             }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) {
-                long active;
-                if (!closing && pendingRoutes.TryGetValue(action, out active) && active == request) {
-                    SafeLog.Error("User connection action failed: " + action, ex);
-                    MessageBox.Show(mainWindow, ex.Message, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-            finally {
-                long active;
-                if (pendingRoutes.TryGetValue(action, out active) && active == request) pendingRoutes.Remove(action);
-                if (!closing) RefreshPendingRoutes();
-            }
+            catch (InvalidOperationException ex) { if (!closing) SafeLog.Error("Connection result could not reach the application UI.", ex); }
         }
         private void RefreshPendingRoutes()
         {
