@@ -2,12 +2,16 @@
 import concurrent.futures
 import importlib.util
 import json
+import os
 import pathlib
 import tempfile
 import threading
 import types
 import unittest
 from unittest import mock
+
+if os.name != 'posix':
+    raise unittest.SkipTest('Linux server ownership and flock are verified by the Ubuntu CI job')
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('profile_setup', REPO / 'server/profile_share_setup.py')
