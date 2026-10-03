@@ -12,8 +12,7 @@ if (-not (Test-Path $Exe)) {
     throw "ProGo.exe not found: $Exe. Run Repair-ProGo.ps1 or reinstall ProGo."
 }
 
-$args = @()
-if ($Show) { $args += "--show" }
-
-Start-Process -FilePath $Exe -WorkingDirectory $InstallDir -ArgumentList $args | Out-Null
-Write-Host "ProGo started: $Exe"
+$launch = @{ FilePath = $Exe; WorkingDirectory = $InstallDir }
+if ($Show) { $launch.ArgumentList = "--show" }
+Start-Process @launch | Out-Null
+Write-Host "ProGo launch requested: $Exe. An existing instance opens its window."

@@ -42,6 +42,28 @@ one startup writer, actual shared manual handlers and cancellation. Ordinary
 the test does not call OpenAI or require a real account. Native Windows screenshots
 cover the unified card. F02 delayed retry and cancellation checks remain in place.
 
+## Stage 3a — F03: one application instance per Windows user
+
+Implementation:
+
+- Acquire a per-user global lifetime mutex before settings, backups or services.
+- A secondary launch only sends the existing owner a window-activation command,
+  then exits. The named pipe grants access only to the same user and SYSTEM.
+- Queue an activation received during startup until the UI attaches; show or
+  restore the existing dashboard on its UI thread.
+- Release the lifetime mutex during disposal and recover an abandoned mutex
+  after a crashed owner. A secondary self-check exits without shared-state access.
+- Start/Show scripts report a launch request; Start handles its no-argument case.
+
+Verification: isolated Windows process tests launch the compiled executable
+normally, with the show aliases, through Start/Show scripts and concurrently.
+They check that secondaries do not change settings, snapshots, backups or logs,
+that the existing proxy survives their exit, that the dashboard is reused and
+restored from minimized state, and that a crashed owner can be replaced.
+
+F03 is **partial**: stage 3b must serialize update/restore operations and their
+handoff. It is not counted as fully resolved by this application-lifetime change.
+
 ## Remaining stages
 
 F03–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows

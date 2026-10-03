@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased — audit stages F02 and F01
+## Unreleased — audit stages F02, F01 and F03a
+
+- Keep one application instance per Windows user. Repeat launches request the
+  existing dashboard instead of starting another tray/service owner.
+- Queue window activation during startup, restore a minimized dashboard and
+  recover the lifetime mutex after a crashed process.
+- Verify normal/show/script/concurrent launches against the compiled Windows
+  executable; update/restore handoff locking remains the separate F03b substage.
 
 - Merge terminal and ordinary Codex automation into one **Включать прокси для
   терминалов и Codex** option. Keep **Запустить CLI** as the direct compatible action
