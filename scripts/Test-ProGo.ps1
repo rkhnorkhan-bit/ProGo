@@ -288,5 +288,10 @@ $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEa
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
 & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
+$InstanceHarness = Join-Path $Root 'build\InstanceTests.exe'
+& $Csc /nologo /target:exe /main:ProGo.InstanceTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$InstanceHarness" $DesktopSources (Join-Path $Root 'tests\InstanceTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Instance harness build failed' }
+& $InstanceHarness $Exe $PSScriptRoot
+if ($LASTEXITCODE -ne 0) { Fail 'Instance tests failed' }
 & (Join-Path $Root 'tests\UpdatePackageTests.ps1')
 Write-Host "ProGo tests PASS."

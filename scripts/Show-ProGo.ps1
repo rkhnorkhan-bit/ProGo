@@ -9,4 +9,4 @@ if (-not (Test-Path $Exe)) {
 }
 
 Start-Process -FilePath $Exe -ArgumentList "--show" -WorkingDirectory $InstallDir
-Write-Host "ProGo launched with visible status window."
+Write-Host "ProGo window requested. An existing instance is reused."

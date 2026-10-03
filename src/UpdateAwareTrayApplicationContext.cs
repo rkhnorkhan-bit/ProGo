@@ -24,6 +24,7 @@ namespace ProGo
             homeVpn = homeVpnService;
             clipboard = clipboardService;
             icon = BrandIcon.Create();
+            activationDispatcher.CreateControl();
 
             tray = new NotifyIcon
             {
@@ -52,6 +53,7 @@ namespace ProGo
         private readonly AutomationPlan automation = new AutomationPlan();
         private readonly Timer automationTimer = new Timer { Interval = 1000 };
         private MainWindow mainWindow;
+        private readonly Control activationDispatcher = new Control();
 
         private ContextMenuStrip BuildMenu()
         {
@@ -106,6 +108,16 @@ namespace ProGo
             mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, automation);
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
+        }
+        internal void RequestShowStatus()
+        {
+            if (activationDispatcher.IsDisposed) return;
+            if (activationDispatcher.InvokeRequired)
+            {
+                try { activationDispatcher.BeginInvoke(new Action(ShowStatus)); }
+                catch (InvalidOperationException) { }
+            }
+            else ShowStatus();
         }
         private void ShowSettings()
         {
@@ -418,6 +430,7 @@ namespace ProGo
                     startupShowTimer = null;
                 }
                 automationTimer.Stop(); automationTimer.Dispose();
+                activationDispatcher.Dispose();
                 if (mainWindow != null) mainWindow.Dispose();
                 DisconnectApps();
                 tray.Dispose();

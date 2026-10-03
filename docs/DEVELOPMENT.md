@@ -119,3 +119,14 @@ apply/restore the same user environment and cancel pending automation. A local
 `codex.cmd` fixture runs as ordinary `codex` with the environment of a new shell,
 without the scoped launcher, API credentials or external requests. Native screenshots
 and button checks cover the single settings card and retained **Запустить CLI**.
+
+### Audit stage F03a
+
+`InstanceTests.cs` runs only in isolated Windows CI. It launches the compiled
+ProGo executable via normal/show/Start/Show entry points and parallel repeats.
+It verifies queued startup activation, same-owner window reuse, shared-file
+immutability on secondary exit, preserved HTTP proxy ownership, minimized-window
+restore, clean mutex release and replacement after a deliberately killed owner.
+The fixture uses a disposable loopback listener and restores the original test
+settings/environment in finally. It does not use SSH servers or account secrets.
+Update/restore operation locking remains the separate F03b substage.

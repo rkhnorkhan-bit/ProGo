@@ -53,6 +53,13 @@ the shared current-user environment for ordinary launches. `CodexProxyService`
 only creates or opens an optional scoped launcher; it does not change Codex config.
 Windows and terminal traffic use the local HTTP/CONNECT bridge.
 
+`ApplicationInstance` holds a global, SID-scoped mutex for the normal application
+lifetime. It is acquired before shared data and services. Repeat launches use a
+same-user named pipe with one activation command; no file paths, credentials or
+arbitrary actions are accepted. Startup activation is queued until the tray
+context attaches and dispatches it to the UI thread. Update/restore handoff
+serialization is a separate pending part of audit F03.
+
 `UpdateLauncher` executes the installed updater file. The updater resolves a pinned
 release asset and SHA-256 from GitHub metadata and validates paths before unpacking.
 The existing backup/staging/rollback sequence remains. No source-build fallback or
