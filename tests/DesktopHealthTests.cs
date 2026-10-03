@@ -90,9 +90,9 @@ namespace ProGo
                 }
             } finally { Environment.SetEnvironmentVariable("NO_PROXY", bypass); }
 
-            var refused = Occupy(0);
+            var refusedListener = Occupy(0);
             var rejectingServer = Task.Run(delegate {
-                using (var client = refused.AcceptTcpClient()) {
+                using (var client = refusedListener.AcceptTcpClient()) {
                     var stream = client.GetStream(); stream.ReadTimeout = 4000;
                     HealthAcceptGreeting(stream); stream.Write(new byte[] { 5, 0 }, 0, 2);
                     var request = HealthRead(stream, 4);
@@ -101,10 +101,10 @@ namespace ProGo
                 }
             });
             try {
-                config.SocksHost = "127.0.0.1"; config.SocksPort = Number(refused); config.TestEndpoint = "http://probe.example.invalid/health";
+                config.SocksHost = "127.0.0.1"; config.SocksPort = Number(refusedListener); config.TestEndpoint = "http://probe.example.invalid/health";
                 var result = ConnectionHealthMonitor.CheckInternet(config, CancellationToken.None);
                 Check(rejectingServer.Wait(5000) && !result.Responded && result.HttpStatus == 0, "actual curl cannot turn rejected remote CONNECT into internet readiness");
-            } finally { refused.Stop(); }
+            } finally { refusedListener.Stop(); }
 
             var stalled = Occupy(0);
             using (var entered = new ManualResetEventSlim())
@@ -151,7 +151,7 @@ namespace ProGo
                 local = false; HealthRefresh(monitor);
                 Check(!monitor.Current.SocksReady && calls == before && monitor.Current.Internet == ConnectionProbeState.Unknown,
                     "failed local protocol skips egress and clears previous internet proof");
-                local = true; HealthRefresh(monitor); config.TestEndpoint = "https://example.org/changed";
+                local = true; internet = true; HealthRefresh(monitor); config.TestEndpoint = "https://example.org/changed";
                 Check(!monitor.Current.InternetVerified, "changing endpoint immediately invalidates cached proof");
             }
             int generationCalls = 0;
