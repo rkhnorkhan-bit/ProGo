@@ -127,7 +127,7 @@ namespace ProGo
             {
                 Paragraph(service.Access == null ? "Сначала добавьте VPS или токен." : "VPS: " + service.Access.Host + "\nДомашний адрес: " + (service.HomeAddress ?? "ещё не указан"));
                 Action("Запустить канал", async delegate { await RunStep(async delegate { await service.StartAsync(); RefreshStatus(); }); });
-                Action("Остановить канал", delegate { service.Stop(); RefreshStatus(); });
+                Action("Остановить VPN для телефона", delegate { service.Stop(); RefreshStatus(); });
                 counters = Paragraph("");
                 Paragraph("На iPhone выключите Wi-Fi, выберите профиль ProGo и включите VPN. Затем откройте сайт проверки IP: должен отображаться выход вашего VPS. Счётчики подтверждают пересылку, а статус «Подключено» проверяется на телефоне.");
                 Action("Установить на телефон по QR", async delegate { await ShowQr(); });

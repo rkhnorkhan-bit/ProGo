@@ -5,6 +5,7 @@ using System.Windows.Forms;
 
 namespace ProGo
 {
+    internal enum SettingsSection { Automation, Connections, Windows }
     internal sealed class SshProfilesSettingsForm : ProGoForm
     {
         private readonly SettingsService service;
@@ -32,7 +33,7 @@ namespace ProGo
         public string ProxyEndpointText { set { proxyAddress.Text = value; } }
 
 
-        public SshProfilesSettingsForm(SettingsService settingsService)
+        public SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section = SettingsSection.Automation)
         {
             service = settingsService;
             Text = "Настройки · ProGo";
@@ -58,7 +59,7 @@ namespace ProGo
                 }
             };
             autoFlow.Controls.Add(UiTheme.Label("Галочка — автоматически. Кнопки — вручную в любой момент.", UiTheme.Body, UiTheme.Muted));
-            AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды «Остановить» он сам не включится.", "Перезапустить", "restart", "Остановить", "stop");
+            AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды отключения он сам не включится.", "Перезапустить", "restart", "Отключить прокси на ПК", "stop");
             AutomationCard(autoFlow, autoCli, "Включать прокси для терминалов и Codex", "Включать общий прокси после подключения ProGo. Затем откройте новый терминал или перезапустите уже открытый Codex. Отдельный ярлык не нужен.", "Включить", "cli-start", "Выключить", "cli-off");
             AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", "Включить", "windows-on", "Выключить", "windows-off");
             var connection = FormTable(Page(tabs, "Подключение"));
@@ -118,6 +119,11 @@ namespace ProGo
             var cancel = UiTheme.Button("Отмена", null, false); cancel.DialogResult = DialogResult.Cancel;
             buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 3);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
+            settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
+            Shown += delegate {
+                if (section == SettingsSection.Windows) { autoFlow.ScrollControlIntoView(autoWindows.Parent); autoWindows.Focus(); }
+                else if (section == SettingsSection.Connections) sshProfiles.Focus();
+            };
         }
         private static TabPage Page(TabControl tabs, string title)
         {

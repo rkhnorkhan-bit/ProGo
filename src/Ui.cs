@@ -22,20 +22,27 @@ namespace ProGo
         private readonly Label checkedAt;
         private readonly Label recovery;
         private readonly Button speedButton;
+        private readonly Button checkButton;
+        private readonly Func<AppSettings, ProxyService, string> routeProbe;
+        private readonly Func<DateTime> now;
         private readonly Timer pingTimer;
         private int pingInFlight;
         private int speedInFlight;
+        private int routeInFlight;
         private bool closing;
 
-        public StatusForm(SettingsService settingsService, ProxyService proxyService)
+        public StatusForm(SettingsService settingsService, ProxyService proxyService, bool checkRouteOnOpen = false,
+            Func<AppSettings, ProxyService, string> routeProbe = null, Func<DateTime> clock = null)
         {
             settings = settingsService;
             proxy = proxyService;
+            this.routeProbe = routeProbe ?? new Func<AppSettings, ProxyService, string>(RouteTester.Test);
+            now = clock ?? (() => DateTime.Now);
             Text = "Маршрут и скорость · ProGo";
             AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(820, 570);
-            MinimumSize = new Size(790, 540);
+            MinimumSize = new Size(790, 570);
 
             var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 10 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
@@ -49,14 +56,17 @@ namespace ProGo
             ping = AddRow(table, 4, "Задержка соединения");
             speed = AddRow(table, 5, "Скорость");
             route = AddRow(table, 6, "Маршрут");
-            checkedAt = AddRow(table, 7, "Последняя проверка");
+            checkedAt = AddRow(table, 7, "Проверка маршрута");
             recovery = AddRow(table, 8, "Автовосстановление");
+            table.RowStyles[6].Height = 82;
+            table.RowStyles[7].Height = 60;
+            table.RowStyles[8].Height = 68;
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
             var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
             var restart = new Button { Text = "Переподключиться", Width = 150 };
             speedButton = new Button { Text = "Измерить скорость", Width = 150 };
-            var check = new Button { Text = "Проверить снова", Width = 130 };
+            checkButton = new Button { Text = "Проверить маршрут", Width = 160 };
             restart.Click += delegate
             {
                 proxy.RestartTunnel();
@@ -64,15 +74,15 @@ namespace ProGo
                 QueuePingMeasure();
             };
             speedButton.Click += delegate { StartSpeedTest(); };
-            check.Click += delegate
+            checkButton.Click += delegate
             {
-                RefreshState(true);
+                QueueRouteMeasure();
                 QueuePingMeasure();
             };
             buttons.Controls.Add(close);
             buttons.Controls.Add(restart);
             buttons.Controls.Add(speedButton);
-            buttons.Controls.Add(check);
+            buttons.Controls.Add(checkButton);
             table.Controls.Add(buttons, 0, 9);
             table.SetColumnSpan(buttons, 2);
             CancelButton = close;
@@ -86,10 +96,11 @@ namespace ProGo
             };
 
             RefreshState(false);
+            route.Text = "Маршрут ещё не проверен";
+            checkedAt.Text = "Ещё не проверен";
             ping.Text = "Измерение...";
             speed.Text = "—";
-            QueuePingMeasure();
-            pingTimer.Start();
+            Shown += delegate { QueuePingMeasure(); pingTimer.Start(); if (checkRouteOnOpen) QueueRouteMeasure(); };
         }
 
         private static Label AddRow(TableLayoutPanel table, int row, string name)
@@ -103,13 +114,38 @@ namespace ProGo
 
         private void RefreshState(bool testRoute)
         {
-            state.Text = proxy.IsListening() ? "Работает" : "Остановлен";
+            state.Text = (proxy.IsListening() ? "Работает" : "Остановлен") + " · статус " + now().ToString("HH:mm:ss");
             address.Text = settings.Current.SocksHost + ":" + settings.Current.SocksPort;
             pid.Text = proxy.CurrentPid.HasValue ? "PID " + proxy.CurrentPid.Value : "Не запущен этим экземпляром";
             env.Text = Environment.GetEnvironmentVariable("ALL_PROXY", EnvironmentVariableTarget.User) ?? "Не настроен";
-            if (testRoute) route.Text = RouteTester.Test(settings.Current, proxy);
-            checkedAt.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            if (testRoute) QueueRouteMeasure();
             recovery.Text = proxy.RecoveryStatus;
+        }
+
+        private void QueueRouteMeasure()
+        {
+            if (closing || System.Threading.Interlocked.Exchange(ref routeInFlight, 1) != 0) return;
+            var current = settings.Current.Clone();
+            checkButton.Enabled = false; checkButton.Text = "Проверяем…";
+            route.Text = "Проверяем маршрут через SOCKS…";
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate {
+                string result;
+                try { result = routeProbe(current, proxy); }
+                catch (Exception ex) { SafeLog.Error("Route test failed.", ex); result = "Не удалось проверить маршрут через SOCKS."; }
+                var completed = now();
+                try {
+                    if (closing || IsDisposed || !IsHandleCreated) return;
+                    BeginInvoke((Action)delegate {
+                        if (closing || IsDisposed) return;
+                        route.Text = result;
+                        checkedAt.Text = completed.ToString("yyyy-MM-dd HH:mm:ss") + "\nSOCKS → " + SafeLog.Redact(current.TestEndpoint);
+                        checkButton.Text = "Проверить маршрут"; checkButton.Enabled = true;
+                        System.Threading.Interlocked.Exchange(ref routeInFlight, 0);
+                    });
+                }
+                catch (InvalidOperationException) { System.Threading.Interlocked.Exchange(ref routeInFlight, 0); }
+                finally { if (closing || IsDisposed) System.Threading.Interlocked.Exchange(ref routeInFlight, 0); }
+            });
         }
 
         private void QueuePingMeasure()
@@ -136,7 +172,7 @@ namespace ProGo
                     BeginInvoke((Action)delegate
                     {
                         if (closing || IsDisposed) return;
-                        ping.Text = latency.HasValue ? latency.Value + " ms" : "—";
+                        ping.Text = (latency.HasValue ? latency.Value + " ms" : "Нет ответа") + "\nSOCKS · " + now().ToString("HH:mm:ss");
                         RefreshState(false);
                     });
                 }
@@ -181,6 +217,8 @@ namespace ProGo
                                 SafeLog.Error("Speed test failed: " + error + ".", new InvalidOperationException(error));
                             }
                         }
+
+                        speed.Text += "\nCloudflare через SOCKS · " + now().ToString("HH:mm:ss");
 
                         speedButton.Enabled = true;
                     });

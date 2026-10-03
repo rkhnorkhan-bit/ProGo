@@ -287,7 +287,7 @@ if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
 
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
 $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
-& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs')
+& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
 & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
