@@ -517,9 +517,15 @@ namespace ProGo
 
         public static bool IsAppliedToUserEnvironment(int port)
         {
-            return Names.All(name => IsUserValue(name, Expected(name, port)));
+            foreach (var name in Names) if (!IsUserValue(name, Expected(name, port))) return false;
+            return true;
         }
-        internal static bool IsPartiallyApplied(int port) { return !IsAppliedToUserEnvironment(port) && Names.Any(name => IsUserValue(name, Expected(name, port))); }
+        internal static bool IsPartiallyApplied(int port)
+        {
+            if (IsAppliedToUserEnvironment(port)) return false;
+            foreach (var name in Names) if (IsUserValue(name, Expected(name, port))) return true;
+            return false;
+        }
 
         public static void ClearUserEnvironmentIfOwned()
         {
