@@ -165,6 +165,7 @@ namespace ProGo
                 {
                     System.Threading.Interlocked.Exchange(ref pingInFlight, 0);
                 }
+                var completed = now();
 
                 try
                 {
@@ -172,7 +173,7 @@ namespace ProGo
                     BeginInvoke((Action)delegate
                     {
                         if (closing || IsDisposed) return;
-                        ping.Text = (latency.HasValue ? latency.Value + " ms" : "Нет ответа") + "\nSOCKS · " + now().ToString("HH:mm:ss");
+                        ping.Text = (latency.HasValue ? latency.Value + " ms" : "Нет ответа") + "\nSOCKS · " + completed.ToString("HH:mm:ss");
                         RefreshState(false);
                     });
                 }
@@ -196,6 +197,7 @@ namespace ProGo
             {
                 string error;
                 var mbps = ConnectionMetrics.MeasureDownloadMbps(current, out error);
+                var completed = now();
 
                 try
                 {
@@ -218,7 +220,7 @@ namespace ProGo
                             }
                         }
 
-                        speed.Text += "\nCloudflare через SOCKS · " + now().ToString("HH:mm:ss");
+                        speed.Text += "\nCloudflare через SOCKS · " + completed.ToString("HH:mm:ss");
 
                         speedButton.Enabled = true;
                     });

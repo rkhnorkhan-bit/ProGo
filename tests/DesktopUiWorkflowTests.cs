@@ -53,9 +53,9 @@ namespace ProGo
                         var option = Descendants(form).OfType<CheckBox>().Single(c => c.Text == "Включать прокси для приложений Windows");
                         var flow = (FlowLayoutPanel)option.Parent.Parent;
                         var bounds = flow.RectangleToClient(option.Parent.RectangleToScreen(option.Parent.ClientRectangle));
-                        Check(Descendants(form).OfType<TabControl>().Single().SelectedIndex == 0 && bounds.Top >= 0 && bounds.Bottom <= flow.ClientSize.Height,
-                            "Windows card route scrolls the actual Windows controls into view");
                         Shot(form, "settings-windows-route");
+                        Check(Descendants(form).OfType<TabControl>().Single().SelectedIndex == 0 && bounds.Top >= 0 && bounds.Bottom <= flow.ClientSize.Height,
+                            "Windows card route scrolls the actual Windows controls into view: " + bounds + " viewport=" + flow.ClientSize);
                     });
                     CheckModal(context, main, "settings", "settings", delegate(Form form) {
                         Check(Descendants(form).OfType<TabControl>().Single().SelectedTab.Text == "Автоматика", "Settings retains automation entry");

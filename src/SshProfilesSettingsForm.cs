@@ -121,7 +121,16 @@ namespace ProGo
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
             Shown += delegate {
-                if (section == SettingsSection.Windows) { autoFlow.ScrollControlIntoView(autoWindows.Parent); autoWindows.Focus(); }
+                if (section == SettingsSection.Windows) {
+                    autoWindows.Focus();
+                    BeginInvoke((Action)delegate {
+                        if (IsDisposed) return;
+                        var card = autoWindows.Parent;
+                        autoFlow.ScrollControlIntoView(card);
+                        int overflow = card.Bottom + autoFlow.Padding.Bottom - autoFlow.ClientSize.Height;
+                        if (overflow > 0) autoFlow.AutoScrollPosition = new Point(0, -autoFlow.AutoScrollPosition.Y + overflow);
+                    });
+                }
                 else if (section == SettingsSection.Connections) sshProfiles.Focus();
             };
         }
