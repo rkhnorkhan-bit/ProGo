@@ -29,7 +29,9 @@ function DriverInfo($Mode) { return (ChildInfo $ps "-NoProfile -File `"$driver`"
 function Snapshot {
     return (@(Get-ChildItem $install -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName + ':' + (Get-FileHash $_.FullName).Hash }) -join "`n")
 }
-$holder = $null; $lease = $null
+$holder = $null; $lease = $null; $primary = $null
+$runtimeSettings = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'ProGo\settings.json'
+$originalSettings = if (Test-Path $runtimeSettings) { [IO.File]::ReadAllBytes($runtimeSettings) } else { $null }
 try {
     New-Item -ItemType Directory -Force $install,$backup | Out-Null
     Copy-Item $Exe (Join-Path $install 'ProGo.exe')
@@ -51,8 +53,14 @@ try {
     Check ((Run (DriverInfo 'startup')) -eq 0) 'authorized child inherits the owner permit'
     Check ((Run (ChildInfo $ps "-NoProfile -File `"$driver`" -Mode startup -Scripts `"$Scripts`"" -NoPermit)) -eq 4) 'normal startup is blocked while files may be replaced'
     Check ((Run (ChildInfo $Exe '--self-check')) -eq 0) 'compiled staging self-check runs under owner permit'
+    Set-Content $runtimeSettings '{"AutoCliProxy":false,"AutoWindowsProxy":false,"AutoStartSocks":false,"AutoRestartSocks":false}'
+    $primary = [Diagnostics.Process]::Start((ChildInfo $Exe '--show'))
+    Start-Sleep -Seconds 2
+    Check (-not $primary.HasExited) 'authorized updated application starts while operation owns the gate'
     $permitName = $env:PROGO_MAINTENANCE_PERMIT
     $lease.Dispose(); $lease = $null
+    Check ((Run (ChildInfo $Exe '--self-check' -NoPermit)) -eq 3) 'restarted application retains single-instance ownership after handoff'
+    $primary.Kill(); [void]$primary.WaitForExit(5000); $primary.Dispose(); $primary = $null
     $stale = DriverInfo 'startup'; $stale.EnvironmentVariables['PROGO_MAINTENANCE_PERMIT'] = $permitName
     # A different current operation invalidates the old permit even if the name is replayed.
     $lease = [ProGo.MaintenanceOperation]::Enter()
@@ -108,6 +116,8 @@ try {
     Write-Host "Maintenance tests PASS: $passed"
 } finally {
     if ($null -ne $lease) { $lease.Dispose() }
+    if ($null -ne $primary) { if (-not $primary.HasExited) { $primary.Kill() }; $primary.Dispose() }
+    if ($null -ne $originalSettings) { [IO.File]::WriteAllBytes($runtimeSettings, $originalSettings) } else { Remove-Item $runtimeSettings -ErrorAction SilentlyContinue }
     if ($null -ne $holder) { if (-not $holder.HasExited) { $holder.Kill() }; $holder.Dispose() }
     Remove-Item $fixture -Recurse -Force -ErrorAction SilentlyContinue
 }

@@ -118,7 +118,7 @@ if ($proxySetupText -match [regex]::Escape("HTTP_PROXY=socks5h://")) { Fail "pro
 $updateLauncherSource = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
 if ($updateLauncherSource -match 'TryDownloadUpdateScript|ExecutionPolicy Bypass|RawUpdateScriptUrl') { Fail "updater must use installed files and respect execution policy" }
 if ($updateLauncherSource -notmatch 'CreateNoWindow = false') { Fail "updater must show its progress console" }
-if ($updateLauncherSource -notmatch 'WaitForExit\(1200\)') { Fail "updater early-exit guard missing" }
+if ($updateLauncherSource -notmatch 'MaintenanceOperation.StartHandoff') { Fail "updater ownership handoff guard missing" }
 
 $buildScriptText = Get-Content -Encoding UTF8 -Raw -Path $Build
 foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
