@@ -245,12 +245,16 @@ namespace ProGo
 
                 var psi = new ProcessStartInfo(powershell, args)
                 {
-                    UseShellExecute = true,
-                    WindowStyle = ProcessWindowStyle.Minimized,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
                     WorkingDirectory = AppPaths.Root
                 };
 
-                Process.Start(psi);
+                if (!MaintenanceOperation.StartHandoff(psi))
+                {
+                    MessageBox.Show("Восстановление не получило управление. Возможно, уже выполняется обновление или восстановление. ProGo останется запущенным.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
                 return true;
             }
             catch (Exception ex)

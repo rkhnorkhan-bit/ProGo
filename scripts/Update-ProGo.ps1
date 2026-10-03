@@ -13,6 +13,14 @@ $ErrorActionPreference = "Stop"
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 $LocalCoreScriptPath = Join-Path $PSScriptRoot "Update-ProGo.Core.ps1"
 
+. (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
+# The core takes the operation lease. Do not handle a competing operation as an
+# update failure or relaunch another process after its owner has exited.
+$StartupProbe = $null
+if (-not [ProGo.MaintenanceOperation]::TryEnterStartup([ref]$StartupProbe)) {
+    throw 'ProGo: update or restore is already in progress.'
+}
+if ($null -ne $StartupProbe) { $StartupProbe.Dispose() }
 # Run the installed, reviewable file. Never fetch or evaluate remote script text.
 try {
     if (-not (Test-Path -LiteralPath $LocalCoreScriptPath -PathType Leaf)) {
@@ -29,6 +37,7 @@ try {
     }
     & $LocalCoreScriptPath @coreArgs
 } catch {
+    if ($_.Exception.ToString().Contains("already in progress")) { throw }
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     Add-Content -LiteralPath (Join-Path $InstallDir "update.log") -Value ("Installed updater failed: " + $_.Exception.Message) -Encoding UTF8
     # Existing process stays alive after an early launch failure. Relaunch only if it exited.

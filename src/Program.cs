@@ -14,7 +14,16 @@ namespace ProGo
 
             try
             {
-                using (var instance = new ApplicationInstance())
+                IDisposable startup;
+                if (!MaintenanceOperation.TryEnterStartup(out startup))
+                {
+                    Environment.ExitCode = 4;
+                    if (!selfCheck) MessageBox.Show("ProGo обновляется или восстанавливается. Дождитесь завершения и откройте его снова.", "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                ApplicationInstance acquired;
+                using (startup) acquired = new ApplicationInstance();
+                using (var instance = acquired)
                 {
                     if (!instance.IsOwner)
                     {

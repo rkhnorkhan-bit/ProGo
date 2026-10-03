@@ -108,31 +108,39 @@ function Start-ProGo {
     Write-RestoreLog "Restored ProGo started: PID $($process.Id)"
 }
 
-Write-RestoreLog "ProGo restore started."
-Write-RestoreLog "BackupDir=$BackupDir"
+. (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
+$Maintenance = [ProGo.MaintenanceOperation]::Enter()
+try {
+    Write-RestoreLog "ProGo restore started."
+    Write-RestoreLog "BackupDir=$BackupDir"
 
-if (-not (Test-Path $BackupDir)) {
-    Fail "Backup folder does not exist: $BackupDir"
+    if (-not (Test-Path $BackupDir)) {
+        Fail "Backup folder does not exist: $BackupDir"
+    }
+
+    $manifest = Join-Path $BackupDir "manifest.txt"
+    if (-not (Test-Path $manifest)) {
+        Fail "Backup manifest not found: $manifest"
+    }
+
+    [ProGo.MaintenanceOperation]::ConfirmHandoff()
+    Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
+    [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
+    $exePath = Join-Path $InstallDir "ProGo.exe"
+    Wait-FileUnlocked -Path $exePath -TimeoutSeconds 30
+
+    Copy-IfExists "ProGo.exe"
+    Copy-IfExists "ProGo.ico"
+    Copy-IfExists "VERSION"
+    Copy-IfExists "vault.enc.json"
+    Copy-IfExists "settings.json"
+    Copy-IfExists "progo.log"
+    Copy-DirectoryIfExists "scripts"
+
+    Start-ProGo
+
+    Write-RestoreLog "ProGo restore completed."
+    Show-UserMessage ((U8 "UHJvR28g0LLQvtGB0YHRgtCw0L3QvtCy0LvQtdC9INC40Lcg0YDQtdC30LXRgNCy0L3QvtC5INC60L7Qv9C40Lg6IA==") + $BackupDir) (U8 "0J7RgtC60LDRgiBQcm9Hbw==")
+} finally {
+    $Maintenance.Dispose()
 }
-
-$manifest = Join-Path $BackupDir "manifest.txt"
-if (-not (Test-Path $manifest)) {
-    Fail "Backup manifest not found: $manifest"
-}
-
-Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
-$exePath = Join-Path $InstallDir "ProGo.exe"
-Wait-FileUnlocked -Path $exePath -TimeoutSeconds 30
-
-Copy-IfExists "ProGo.exe"
-Copy-IfExists "ProGo.ico"
-Copy-IfExists "VERSION"
-Copy-IfExists "vault.enc.json"
-Copy-IfExists "settings.json"
-Copy-IfExists "progo.log"
-Copy-DirectoryIfExists "scripts"
-
-Start-ProGo
-
-Write-RestoreLog "ProGo restore completed."
-Show-UserMessage ((U8 "UHJvR28g0LLQvtGB0YHRgtCw0L3QvtCy0LvQtdC9INC40Lcg0YDQtdC30LXRgNCy0L3QvtC5INC60L7Qv9C40Lg6IA==") + $BackupDir) (U8 "0J7RgtC60LDRgiBQcm9Hbw==")
