@@ -14,15 +14,20 @@ namespace ProGo
         private readonly ClipboardService clipboard;
         private readonly NotifyIcon tray;
         private readonly System.Drawing.Icon icon;
+        private readonly ConnectionHealthMonitor health;
+        private readonly bool ownsHealth;
+        private readonly Timer statusTimer = new Timer { Interval = 1000 };
         private Timer startupShowTimer;
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null)
         {
             settings = settingsService;
             proxy = proxyService;
             cliProxy = cliProxyService;
             homeVpn = homeVpnService;
             clipboard = clipboardService;
+            ownsHealth = health == null;
+            this.health = health ?? new ConnectionHealthMonitor(() => settings.Current);
             icon = BrandIcon.Create();
             activationDispatcher.CreateControl();
 
@@ -35,6 +40,10 @@ namespace ProGo
             };
             tray.DoubleClick += delegate { ShowStatus(); };
             UpdateTooltip();
+            this.health.Changed += HealthChanged;
+            statusTimer.Tick += delegate { UpdateTooltip(); };
+            statusTimer.Start();
+            if (ownsHealth) this.health.Start();
 
             if (showStatusOnStartup)
             {
@@ -108,7 +117,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, automation);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, automation, health);
             mainWindow.FormClosing += DashboardClosing;
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
@@ -163,7 +172,7 @@ namespace ProGo
             automation.Update(null, settings.Current);
             automationTimer.Tick += delegate
             {
-                bool ready = proxy.IsListening();
+                bool ready = health.Current.SocksReady;
                 foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
                 {
                     Exception error;
@@ -186,8 +195,8 @@ namespace ProGo
             {
                 switch (action)
                 {
-                    case "connect": if (proxy.IsListening()) proxy.RestartTunnel(); else proxy.StartTunnel(true); break;
-                    case "restart": proxy.RestartTunnel(); break;
+                    case "connect": health.Invalidate(); if (proxy.IsListening()) proxy.RestartTunnel(); else proxy.StartTunnel(true); health.Invalidate(); break;
+                    case "restart": health.Invalidate(); proxy.RestartTunnel(); health.Invalidate(); break;
                     case "stop":
                         StopDesktop(); break;
                     case "phone-stop": homeVpn.Stop(); break;
@@ -198,7 +207,7 @@ namespace ProGo
                     case "vault": ShowVault(); break;
                     case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(mainWindow); break;
                     case "diagnostics":
-                    case "route-check": using (var form = new StatusForm(settings, proxy, action == "route-check")) form.ShowDialog(mainWindow); break;
+                    case "route-check": using (var form = new StatusForm(settings, proxy, action == "route-check", null, null, health)) form.ShowDialog(mainWindow); break;
                     case "cli-start":
                     case "terminal-on":
                     case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
@@ -223,6 +232,7 @@ namespace ProGo
         {
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             DisconnectApps(); proxy.StopTunnel();
+            health.Invalidate();
         }
         private void RequireRoute()
         {
@@ -440,13 +450,25 @@ namespace ProGo
 
         private void UpdateTooltip()
         {
-            tray.Text = AppConstants.ProductName + " — туннель: " + (proxy.IsListening() ? "работает" : "остановлен");
+            tray.Text = health.Current.TrayText;
+        }
+        private void HealthChanged()
+        {
+            if (activationDispatcher.IsDisposed || !activationDispatcher.IsHandleCreated) return;
+            try { activationDispatcher.BeginInvoke((Action)delegate {
+                if (activationDispatcher.IsDisposed) return;
+                UpdateTooltip();
+                if (mainWindow != null && !mainWindow.IsDisposed) mainWindow.RefreshConnectionState();
+            }); } catch (InvalidOperationException) { }
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
+                health.Changed -= HealthChanged;
+                if (ownsHealth) health.Dispose();
+                statusTimer.Stop(); statusTimer.Dispose();
                 if (startupShowTimer != null)
                 {
                     startupShowTimer.Stop();

@@ -12,6 +12,7 @@ namespace ProGo
     {
         private readonly SettingsService settings;
         private readonly ProxyService proxy;
+        private readonly ConnectionHealthMonitor health;
         private readonly Label state;
         private readonly Label address;
         private readonly Label pid;
@@ -32,10 +33,11 @@ namespace ProGo
         private bool closing;
 
         public StatusForm(SettingsService settingsService, ProxyService proxyService, bool checkRouteOnOpen = false,
-            Func<AppSettings, ProxyService, string> routeProbe = null, Func<DateTime> clock = null)
+            Func<AppSettings, ProxyService, string> routeProbe = null, Func<DateTime> clock = null, ConnectionHealthMonitor health = null)
         {
             settings = settingsService;
             proxy = proxyService;
+            this.health = health;
             this.routeProbe = routeProbe ?? new Func<AppSettings, ProxyService, string>(RouteTester.Test);
             now = clock ?? (() => DateTime.Now);
             Text = "Маршрут и скорость · ProGo";
@@ -69,7 +71,8 @@ namespace ProGo
             checkButton = new Button { Text = "Проверить маршрут", Width = 160 };
             restart.Click += delegate
             {
-                proxy.RestartTunnel();
+                if (health != null) health.Invalidate();
+                try { proxy.RestartTunnel(); } finally { if (health != null) health.Invalidate(); }
                 RefreshState(false);
                 QueuePingMeasure();
             };
@@ -114,7 +117,7 @@ namespace ProGo
 
         private void RefreshState(bool testRoute)
         {
-            state.Text = (proxy.IsListening() ? "Работает" : "Остановлен") + " · статус " + now().ToString("HH:mm:ss");
+            state.Text = (health == null ? "Подключение не проверено" : health.Current.Title) + " · статус " + now().ToString("HH:mm:ss");
             address.Text = settings.Current.SocksHost + ":" + settings.Current.SocksPort;
             pid.Text = proxy.CurrentPid.HasValue ? "PID " + proxy.CurrentPid.Value : "Не запущен этим экземпляром";
             env.Text = Environment.GetEnvironmentVariable("ALL_PROXY", EnvironmentVariableTarget.User) ?? "Не настроен";

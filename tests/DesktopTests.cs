@@ -67,6 +67,7 @@ namespace ProGo
                     Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
                     UnifiedCliActions(settings);
                     UiControls(settings);
+                    HealthChecks(settings);
                     using (var proxy = new ProxyService(settings))
                     using (var relay = new Ikev2RelayService())
                     using (var home = new HomeVpnService(relay))
