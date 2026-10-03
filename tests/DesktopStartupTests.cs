@@ -2,12 +2,33 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace ProGo
 {
     internal static partial class DesktopTests
     {
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string cls, string title);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr window, StringBuilder text, int count);
+        [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr window, Func<IntPtr, IntPtr, bool> visit, IntPtr data);
+        [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr window, uint message, IntPtr wparam, IntPtr lparam);
+        private static Timer WatchStartupErrors()
+        {
+            var timer = new Timer { Interval = 200 };
+            timer.Tick += delegate {
+                var dialog = FindWindow("#32770", "Подключение ProGo");
+                if (dialog == IntPtr.Zero) return;
+                EnumChildWindows(dialog, delegate(IntPtr window, IntPtr data) {
+                    var text = new StringBuilder(2048); GetWindowText(window, text, text.Capacity);
+                    if (text.Length > 0) Console.WriteLine("Unexpected startup dialog: " + text);
+                    return true;
+                }, IntPtr.Zero);
+                PostMessage(dialog, 0x0010, IntPtr.Zero, IntPtr.Zero);
+            };
+            timer.Start(); return timer;
+        }
         private static void AsyncCliStartup(SettingsService settings)
         {
             var login = SshInteractiveLogin.CreateStartInfo("my-vps");
