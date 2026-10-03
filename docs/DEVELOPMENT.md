@@ -129,4 +129,13 @@ immutability on secondary exit, preserved HTTP proxy ownership, minimized-window
 restore, clean mutex release and replacement after a deliberately killed owner.
 The fixture uses a disposable loopback listener and restores the original test
 settings/environment in finally. It does not use SSH servers or account secrets.
-Update/restore operation locking remains the separate F03b substage.
+### Audit stage F03b
+
+`MaintenanceTests.ps1` runs only in disposable Windows CI. The three installed
+update/restore entry points are launched as real competing PowerShell processes.
+The local transaction driver executes their actual AST body with fixture network
+metadata/package paths and suppressed modal dialogs, covering real compiled
+staging/main self-checks, copying, restore, rollback and ownership release.
+No external release is downloaded or installed on a user's computer. The runtime
+class is shipped as installed source for PowerShell Add-Type; it is identical
+to the class compiled into ProGo. Handoff and permits use same-user/SYSTEM ACLs.

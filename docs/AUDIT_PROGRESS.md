@@ -61,12 +61,33 @@ They check that secondaries do not change settings, snapshots, backups or logs,
 that the existing proxy survives their exit, that the dashboard is reused and
 restored from minimized state, and that a crashed owner can be replaced.
 
-F03 is **partial**: stage 3b must serialize update/restore operations and their
-handoff. It is not counted as fully resolved by this application-lifetime change.
+## Stage 3b — F03: update/restore ownership and handoff
+
+- A shared per-user mutex serializes update and restore before network requests,
+  log writes, backup creation or file changes. Losing contenders do not perform
+  rollback, cleanup or an error-triggered relaunch of the winning operation.
+- Program holds the startup gate until its lifetime mutex is acquired. During
+  maintenance, normal starts refuse shared-state access. Only children carrying
+  the current owner's short-lived event permit can self-check/restart.
+- Both UI launchers wait for the helper to acknowledge actual ownership before
+  closing ProGo. A failed/busy helper leaves the application running.
+- Update/restore check that the old application has stopped before modifying
+  files; rollback also refuses to overwrite an active application. All paths
+  dispose ownership in finally, including failure and abandoned-helper recovery.
+- The same installed C# class is used by Program and PowerShell helpers. No
+  downloaded code, update trust rules or vault/backup formats are changed.
+
+Verification: isolated Windows maintenance tests exercise all three competing
+entry points, unchanged files/logs on refusal, blocked/authorized startup,
+expired permits, handoff success/failure, abandoned ownership, real local
+transaction staging/installed self-checks, restore and failed-commit rollback.
+Only network metadata/download and modal test dialogs are replaced by fixtures.
+This protocol applies to these builds; a restored older executable predating
+F03 does not gain its lifetime/startup safeguards until upgraded.
 
 ## Remaining stages
 
-F03–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
+F04–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
 restore ownership) are not fixed by these stages. Preserve the ordinary
 **Запустить CLI** entry point throughout.
 

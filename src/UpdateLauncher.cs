@@ -142,37 +142,12 @@ namespace ProGo
                 };
 
                 SafeLog.Info("Launching updater. PowerShell=" + powershell + "; script=" + scriptPath + "; workingDirectory=" + AppPaths.Root + ".");
-                var process = Process.Start(psi);
-                if (process == null)
+                if (!MaintenanceOperation.StartHandoff(psi))
                 {
-                    throw new InvalidOperationException("Updater process was not created.");
-                }
-
-                SafeLog.Info("Updater process started. PID=" + process.Id + ".");
-
-                if (process.WaitForExit(1200))
-                {
-                    var exitCode = process.ExitCode;
-                    var recentLogs = ReadRecentUpdaterLogs();
-                    var likelyAntivirusBlock = LooksLikeAntivirusBlock(recentLogs);
-                    if (likelyAntivirusBlock)
-                    {
-                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ". Possible antivirus or endpoint protection block.", new InvalidOperationException("Updater process exited before handoff."));
-                    }
-                    else
-                    {
-                        SafeLog.Error("Updater process exited before handoff. ExitCode=" + exitCode + ".", new InvalidOperationException("Updater process exited before handoff."));
-                    }
-
-                    MessageBox.Show(
-                        BuildEarlyExitMessage(exitCode, likelyAntivirusBlock),
-                        "Обновление ProGo",
-                        MessageBoxButtons.OK,
-                        likelyAntivirusBlock ? MessageBoxIcon.Warning : MessageBoxIcon.Error);
+                    MessageBox.Show("Обновление не получило управление. Возможно, уже выполняется обновление или восстановление. ProGo останется запущенным.", "Обновление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
                 }
-
-                SafeLog.Info("Updater handoff confirmed. PID=" + process.Id + ".");
+                SafeLog.Info("Updater ownership handoff confirmed.");
                 return true;
             }
             catch (Win32Exception ex)

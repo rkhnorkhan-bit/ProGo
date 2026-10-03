@@ -118,15 +118,15 @@ if ($proxySetupText -match [regex]::Escape("HTTP_PROXY=socks5h://")) { Fail "pro
 $updateLauncherSource = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
 if ($updateLauncherSource -match 'TryDownloadUpdateScript|ExecutionPolicy Bypass|RawUpdateScriptUrl') { Fail "updater must use installed files and respect execution policy" }
 if ($updateLauncherSource -notmatch 'CreateNoWindow = false') { Fail "updater must show its progress console" }
-if ($updateLauncherSource -notmatch 'WaitForExit\(1200\)') { Fail "updater early-exit guard missing" }
+if ($updateLauncherSource -notmatch 'MaintenanceOperation.StartHandoff') { Fail "updater ownership handoff guard missing" }
 
 $buildScriptText = Get-Content -Encoding UTF8 -Raw -Path $Build
-foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
+foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if ($buildScriptText -notmatch [regex]::Escape($required)) { Fail "build script marker missing: $required" }
 }
 
 $installScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
-foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "New-ProGoShortcut", "bootstrap")) {
+foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "New-ProGoShortcut", "bootstrap", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if (-not $installScriptText.Contains($required) -and $installScriptText -notmatch [regex]::Escape($required)) {
         Fail "installer marker missing: $required"
     }
@@ -206,7 +206,7 @@ foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.jso
 }
 
 $repairScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Repair-ProGo.ps1")
-foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch")) {
+foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if ($repairScriptText -notmatch [regex]::Escape($required)) { Fail "repair script marker missing: $required" }
 }
 
@@ -235,7 +235,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
@@ -255,10 +255,13 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
+$maintenanceSource = Join-Path $Root 'release\scripts\MaintenanceOperation.cs'
+if (-not (Test-Path $maintenanceSource)) { Fail 'maintenance runtime source missing' }
+if ((Get-FileHash $maintenanceSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\MaintenanceOperation.cs')).Hash) { Fail 'app and helper ownership protocol differ' }
 $runtimeBootstrap = Join-Path $Root "release\scripts\Install-FromGitHub.ps1"
 if (Test-Path $runtimeBootstrap) { Fail "bootstrap installer must not be included in runtime release scripts" }
 
@@ -293,5 +296,6 @@ $InstanceHarness = Join-Path $Root 'build\InstanceTests.exe'
 if ($LASTEXITCODE -ne 0) { Fail 'Instance harness build failed' }
 & $InstanceHarness $Exe $PSScriptRoot
 if ($LASTEXITCODE -ne 0) { Fail 'Instance tests failed' }
+& (Join-Path $Root 'tests\MaintenanceTests.ps1') $Exe (Join-Path $Root 'release\scripts')
 & (Join-Path $Root 'tests\UpdatePackageTests.ps1')
 Write-Host "ProGo tests PASS."

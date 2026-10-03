@@ -245,31 +245,6 @@ function Wait-ProGoExit($TargetProcessId, $TimeoutMs) {
     }
 }
 
-function Stop-ExistingProGoProcesses($ExceptProcessId) {
-    $processes = @(Get-Process -Name "ProGo" -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $ExceptProcessId })
-    if ($processes.Count -eq 0) {
-        Write-UpdateLog "No running ProGo processes found."
-        return
-    }
-
-    foreach ($process in $processes) {
-        Write-UpdateLog "Requesting old ProGo process close: PID $($process.Id)"
-        try {
-            if ($process.MainWindowHandle -ne 0) {
-                [void]$process.CloseMainWindow()
-                [void]$process.WaitForExit(10000)
-            }
-        } catch {
-            Write-UpdateLog "Graceful close warning for PID $($process.Id): $($_.Exception.Message)"
-        }
-
-        $stillRunning = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-        if ($null -ne $stillRunning) {
-            Fail "ProGo is still running. Close it manually and run update again. PID $($process.Id)"
-        }
-    }
-}
-
 function Wait-FileUnlocked($Path, $TimeoutSeconds) {
     if (-not (Test-Path $Path)) { return }
 
@@ -559,6 +534,10 @@ function Cleanup-TemporaryFiles {
     }
 }
 
+# Acquire before logs, network, backups or waits. A rejected contender has no
+# installed-state side effects and cannot enter rollback/cleanup for the owner.
+. (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
+$Maintenance = [ProGo.MaintenanceOperation]::Enter()
 try {
     Write-UpdateLog "ProGo transactional update started."
 
@@ -566,9 +545,9 @@ try {
         return
     }
 
-    $UpdaterProcessId = $PID
+    [ProGo.MaintenanceOperation]::ConfirmHandoff()
     Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
-    Stop-ExistingProGoProcesses -ExceptProcessId $UpdaterProcessId
+    [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
 
     $Exe = Join-Path $InstallDir "ProGo.exe"
     Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
@@ -608,6 +587,7 @@ try {
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "failed"
 
     if ($State.MainWasChanged) {
+        [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
         Restore-BackupToMain -SourceBackupDir $BackupDir
         Write-UpdateLog "Rollback completed after failed main commit."
     } else {
@@ -619,5 +599,5 @@ try {
 ') + $message) ('Обновление ProGo') "Error"
     throw
 } finally {
-    Cleanup-TemporaryFiles
+    try { Cleanup-TemporaryFiles } finally { $Maintenance.Dispose() }
 }

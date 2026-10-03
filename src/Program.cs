@@ -14,7 +14,17 @@ namespace ProGo
 
             try
             {
-                using (var instance = new ApplicationInstance())
+                IDisposable startup;
+                if (!MaintenanceOperation.TryEnterStartup(out startup))
+                {
+                    Environment.ExitCode = 4;
+                    // Do not keep this executable locked by a second modal window
+                    // while its owner is trying to replace it.
+                    return;
+                }
+                ApplicationInstance acquired;
+                using (startup) acquired = new ApplicationInstance();
+                using (var instance = acquired)
                 {
                     if (!instance.IsOwner)
                     {
