@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -230,14 +231,26 @@ internal static class SocksRecoveryTests
 
     private static void AsyncSlowStartup()
     {
-        using (var f = new Fixture()) {
-            f.Settings.SshProfile = "slow";
-            var watch = Stopwatch.StartNew(); var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
-            Assert(watch.ElapsedMilliseconds < 300 && !task.IsCompleted && f.Proxy.IsConnecting, "Start call blocked or declared readiness before delayed SOCKS");
-            Assert(ReferenceEquals(task, f.Proxy.StartTunnelAsync(CancellationToken.None)), "Concurrent starts did not share their pending operation");
-            Assert(task.Wait(5000) && task.Result && !f.Proxy.IsConnecting, "Slow SOCKS was not awaited");
-            var pid = f.Proxy.CurrentPid;
-            Assert(f.Proxy.StartTunnelAsync(CancellationToken.None).Result && f.Proxy.CurrentPid == pid, "Repeated ready request created another child");
+        // Gate readiness explicitly: a busy runner can pause this test thread
+        // longer than a fixed simulated SSH delay after the call already returned.
+        var release = Path.Combine(Path.GetTempPath(), "progo-socks-ready-" + Guid.NewGuid().ToString("N"));
+        var previous = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_RELEASE");
+        Environment.SetEnvironmentVariable("PROGO_TEST_SSH_RELEASE", release);
+        try {
+            using (var f = new Fixture()) {
+                f.Settings.SshProfile = "slow";
+                var watch = Stopwatch.StartNew(); var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(watch.ElapsedMilliseconds < 2000, "Start call blocked: " + watch.ElapsedMilliseconds + "ms");
+                Assert(!task.IsCompleted && f.Proxy.IsConnecting, "Readiness was declared before the fixture released SOCKS");
+                Assert(ReferenceEquals(task, f.Proxy.StartTunnelAsync(CancellationToken.None)), "Concurrent starts did not share their pending operation");
+                File.WriteAllText(release, "ready");
+                Assert(task.Wait(5000) && task.Result && !f.Proxy.IsConnecting, "Slow SOCKS was not awaited");
+                var pid = f.Proxy.CurrentPid;
+                Assert(f.Proxy.StartTunnelAsync(CancellationToken.None).Result && f.Proxy.CurrentPid == pid, "Repeated ready request created another child");
+            }
+        } finally {
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_RELEASE", previous);
+            if (File.Exists(release)) File.Delete(release);
         }
     }
     private static void AsyncCancellation()
@@ -318,7 +331,11 @@ internal static class SocksRecoveryTests
         if (mode == "denied") { Console.Error.WriteLine("Permission denied (publickey)."); return 1; }
         if (mode == "die" || (mode == "batch-only" && Array.IndexOf(args, "BatchMode=yes") < 0)) return 1;
         if (mode == "quiet") { Thread.Sleep(Timeout.Infinite); return 0; }
-        if (mode == "slow") Thread.Sleep(1200);
+        if (mode == "slow") {
+            var release = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_RELEASE");
+            if (String.IsNullOrEmpty(release)) Thread.Sleep(1200);
+            else while (!File.Exists(release)) Thread.Sleep(20);
+        }
         var endpoint = args[Array.IndexOf(args, "-D") + 1];
         var port = Int32.Parse(endpoint.Substring(endpoint.LastIndexOf(':') + 1));
         var listener = new TcpListener(IPAddress.Loopback, port);

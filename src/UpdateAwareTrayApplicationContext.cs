@@ -256,7 +256,7 @@ namespace ProGo
             health.Invalidate(); RefreshPendingRoutes();
             CompleteRouteAction(action, request);
         }
-        private async Task CompleteRouteAction(string action, long request)
+        private async void CompleteRouteAction(string action, long request)
         {
             bool ready = false, cancelled = false; Exception failure = null;
             try { ready = await proxy.StartTunnelAsync(routeLifetime.Token).ConfigureAwait(false); }
