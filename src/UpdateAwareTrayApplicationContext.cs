@@ -104,7 +104,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, automation);
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
         }
@@ -143,9 +143,15 @@ namespace ProGo
             {
                 bool ready = proxy.IsListening();
                 foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
-                    if (automation.Take(feature, ready))
-                        try { EnableFeature(feature); }
-                        catch (Exception ex) { SafeLog.Error("Automatic proxy setup failed.", ex); tray.ShowBalloonTip(5000, "ProGo", ex.Message, ToolTipIcon.Warning); }
+                {
+                    Exception error;
+                    var result = automation.TryApply(feature, ready, EnableFeature, out error);
+                    if (error == null) continue;
+                    SafeLog.Error("Automatic proxy setup failed: " + feature + ".", error);
+                    if (automation.FailureCount(feature) == 1 || result == AutomationResult.Paused)
+                        tray.ShowBalloonTip(6000, "Автонастройка " + AutomationPlan.FeatureName(feature), error.Message +
+                            (result == AutomationResult.Paused ? "\nПовторы остановлены. Проверьте настройки и нажмите «Включить»." : "\nProGo повторит попытку автоматически."), ToolTipIcon.Warning);
+                }
             };
             automationTimer.Start();
         }
@@ -165,11 +171,11 @@ namespace ProGo
                     case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(); break;
                     case "diagnostics": using (var form = new StatusForm(settings, proxy)) form.ShowDialog(); break;
                     case "cli-start":
-                    case "terminal-on": RequireRoute(); EnableFeature(ProxyFeature.Terminal); CliReadyNotice(); break;
+                    case "terminal-on": RequireRoute(); EnableFeature(ProxyFeature.Terminal); automation.Cancel(ProxyFeature.Terminal); CliReadyNotice(); break;
                     case "terminal-off": DisableCli(); break;
-                    case "windows-on": RequireRoute(); EnableFeature(ProxyFeature.Windows); break;
+                    case "windows-on": RequireRoute(); EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
                     case "windows-off": automation.Cancel(ProxyFeature.Windows); string m; if (!SystemProxyService.Restore(out m)) throw new InvalidOperationException(m); break;
-                    case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Codex); CliReadyNotice(); break;
+                    case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Codex); automation.Cancel(ProxyFeature.Codex); CliReadyNotice(); break;
                     case "codex-off": DisableCli(); break;
                     case "codex-shortcut-on": RequireRoute(); EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
                     case "codex-shortcut-off": CodexProxyService.Disable(); break;

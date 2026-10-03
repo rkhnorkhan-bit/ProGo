@@ -36,16 +36,16 @@ namespace ProGo
                     var plan = new AutomationPlan(); plan.Update(null, s);
                     foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
                     {
-                        Check(!plan.Take(feature, false), "automation waits for a ready route " + mask + "/" + feature);
+                        Check(!ApplyOnce(plan, feature, false), "automation waits for a ready route " + mask + "/" + feature);
                         bool enabled = AutomationPlan.Enabled(s, feature);
-                        Check(plan.Take(feature, true) == enabled && !plan.Take(feature, true), "independent one-time startup option " + mask + "/" + feature);
+                        Check(ApplyOnce(plan, feature, true) == enabled && !ApplyOnce(plan, feature, true), "enabled startup option completes once " + mask + "/" + feature);
                     }
                 }
                 var before = AppSettings.Defaults(); var after = AppSettings.Defaults(); after.AutoSystemProxy = true;
                 var changes = new AutomationPlan(); changes.Update(before, after); changes.Cancel(ProxyFeature.Windows);
-                changes.Update(after, after); Check(!changes.Take(ProxyFeature.Windows, true), "manual off survives timer and unrelated save");
-                changes.Update(after, before); changes.Update(before, after); Check(changes.Take(ProxyFeature.Windows, true), "explicit off/on re-arms automation");
-                changes.Update(null, after); changes.Update(after, before); Check(!changes.Take(ProxyFeature.Windows, true), "unchecked option cancels a pending application");
+                changes.Update(after, after); Check(!ApplyOnce(changes, ProxyFeature.Windows, true), "manual off survives timer and unrelated save");
+                changes.Update(after, before); changes.Update(before, after); Check(ApplyOnce(changes, ProxyFeature.Windows, true), "explicit off/on re-arms automation");
+                changes.Update(null, after); changes.Update(after, before); Check(!ApplyOnce(changes, ProxyFeature.Windows, true), "unchecked option cancels a pending application");
                 string host, header; int port;
                 Check(CliProxyBridgeService.TryParseHttpTarget("GET http://example.org/path?q=1 HTTP/1.1\r\nHost: wrong.example\r\nProxy-Authorization: private\r\n\r\n", out host, out port, out header)
                     && host == "example.org" && port == 80 && header.StartsWith("GET /path?q=1 HTTP/1.1\r\nHost: example.org") && !header.Contains("private"), "HTTP proxy rewrites authority and strips proxy credentials");
@@ -59,6 +59,7 @@ namespace ProGo
                 using (var settings = new SettingsService())
                 {
                     settings.Current.SshProfile = "my-vps";
+                    AutomationRetries(settings);
                     ProxyPorts(settings);
                     PortIntegrations(settings);
                     BridgeRoundTrip(settings, false); BridgeRoundTrip(settings, true);
@@ -75,6 +76,18 @@ namespace ProGo
                             Descendants(dashboard).OfType<Button>().Single(b => b.Text == "Запустить CLI").PerformClick();
                             Check(clicked == "cli-start", "dashboard restores direct Start CLI action");
                             Shot(dashboard, "main"); dashboard.Close();
+                        }
+                        var failedAutomation = new AutomationPlan();
+                        var automaticWindows = AppSettings.Defaults(); automaticWindows.AutoSystemProxy = true;
+                        failedAutomation.Update(null, automaticWindows);
+                        Exception setupError;
+                        failedAutomation.TryApply(ProxyFeature.Windows, true, delegate { throw new UnauthorizedAccessException("Test access denied"); }, out setupError);
+                        using (var dashboard = new MainWindow(settings, proxy, home, delegate { }, null, failedAutomation))
+                        {
+                            dashboard.Show(); Application.DoEvents();
+                            var statusLabel = Descendants(dashboard).OfType<Label>().Single(l => l.Text.Contains("Автонастройка Windows: ошибка. Проверьте настройки."));
+                            Check(statusLabel.Visible && statusLabel.Bottom <= statusLabel.Parent.ClientSize.Height, "dashboard exposes paused automation with visible corrective guidance");
+                            Shot(dashboard, "main-automation-error"); dashboard.Close();
                         }
                         using (var form = new SshProfilesSettingsForm(settings))
                         {
@@ -116,6 +129,100 @@ namespace ProGo
         private static IEnumerable<Control> Descendants(Control c)
         {
             foreach (Control child in c.Controls) { yield return child; foreach (var nested in Descendants(child)) yield return nested; }
+        }
+        private static bool ApplyOnce(AutomationPlan plan, ProxyFeature feature, bool ready)
+        {
+            Exception error;
+            return plan.TryApply(feature, ready, delegate { }, out error) == AutomationResult.Applied;
+        }
+        private static void AutomationRetries(SettingsService settings)
+        {
+            DateTime now = new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var saved = settings.Current.Clone();
+            var configured = AppSettings.Defaults(); configured.AutoApplyProxy = true; configured.AutoHttpProxyPort = false;
+            var disabled = configured.Clone(); disabled.AutoApplyProxy = false;
+            var occupied = Occupy(0); configured.HttpProxyPort = Number(occupied);
+            var plan = new AutomationPlan(delegate { return now; }); plan.Update(null, configured);
+            int calls = 0; bool failWrite = true; Exception error;
+            string marker = Path.Combine(work, "automatic-apply.txt");
+            try
+            {
+                settings.Save(configured);
+                using (var bridge = new CliProxyBridgeService(settings))
+                {
+                    Action<ProxyFeature> apply = delegate {
+                        calls++; string message;
+                        if (!bridge.Start(out message)) throw new InvalidOperationException(message);
+                        if (failWrite) throw new IOException("Test settings file is locked");
+                        File.WriteAllText(marker, bridge.ProxyUrl);
+                    };
+                    Check(plan.TryApply(ProxyFeature.Terminal, false, apply, out error) == AutomationResult.None && calls == 0, "unready route never applies automatic settings");
+                    Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.RetryScheduled && error != null && calls == 1, "real occupied proxy port keeps its failed action pending");
+                    Check(plan.GetStatusText(true).Contains("5 с") && settings.Current.AutoApplyProxy, "retry status is visible without changing the enabled preference");
+                    for (int second = 1; second < 5; second++)
+                    {
+                        now = now.AddSeconds(1);
+                        Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.None && calls == 1, "timer cannot repeat before the deadline " + second);
+                    }
+                    plan.Update(configured, configured);
+                    using (var probe = new TcpClient()) { probe.Connect(IPAddress.Loopback, Number(occupied)); Check(probe.Connected, "automation preserves the foreign occupied listener"); }
+                    occupied.Stop(); now = now.AddSeconds(1);
+                    Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.RetryScheduled && calls == 2 && bridge.IsRunning && !File.Exists(marker), "released port advances to a write failure without losing the task");
+                    Check(plan.GetStatusText(true).Contains("15 с"), "second failure increases the retry delay");
+                    now = now.AddSeconds(15); failWrite = false;
+                    Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.Applied && error == null && calls == 3 && File.ReadAllText(marker) == bridge.ProxyUrl, "automatic setup completes after port and write faults clear without app restart");
+                    Check(!ApplyOnce(plan, ProxyFeature.Terminal, true) && plan.GetStatusText(true) == "", "successful configuration is not repeated and clears retry status");
+                }
+            }
+            finally { occupied.Stop(); settings.Save(saved); if (File.Exists(marker)) File.Delete(marker); }
+
+            var retry = new AutomationPlan(delegate { return now; }); retry.Update(null, configured);
+            calls = 0;
+            Action<ProxyFeature> fail = delegate { calls++; throw new IOException("Test temporary fault"); };
+            int[] delay = { 5, 15, 45 };
+            for (int attempt = 0; attempt < 4; attempt++)
+            {
+                var result = retry.TryApply(ProxyFeature.Terminal, true, fail, out error);
+                Check(result == (attempt < 3 ? AutomationResult.RetryScheduled : AutomationResult.Paused), "persistent fault has a bounded attempt " + attempt);
+                if (attempt < 3) now = now.AddSeconds(delay[attempt]);
+            }
+            now = now.AddDays(1);
+            Check(retry.TryApply(ProxyFeature.Terminal, true, fail, out error) == AutomationResult.None && calls == 4 && retry.GetStatusText(true).Contains("Проверьте настройки"), "exhausted attempts pause with guidance instead of an endless retry loop");
+            retry.Update(configured, configured);
+            Check(!ApplyOnce(retry, ProxyFeature.Terminal, true), "unrelated settings save cannot reset the retry budget");
+            retry.Update(configured, disabled); retry.Update(disabled, configured);
+            Check(ApplyOnce(retry, ProxyFeature.Terminal, true), "explicit automation off/on restarts a paused task");
+
+            var manual = new AutomationPlan(delegate { return now; }); manual.Update(null, configured);
+            manual.TryApply(ProxyFeature.Terminal, true, fail, out error); manual.Cancel(ProxyFeature.Terminal);
+            now = now.AddMinutes(1); int beforeCancel = calls;
+            Check(manual.TryApply(ProxyFeature.Terminal, true, fail, out error) == AutomationResult.None && calls == beforeCancel && manual.GetStatusText(true) == "", "manual off cancels a scheduled retry and its status");
+            manual.Update(null, configured); manual.TryApply(ProxyFeature.Terminal, true, fail, out error);
+            manual.Update(configured, disabled); now = now.AddMinutes(1);
+            Check(!ApplyOnce(manual, ProxyFeature.Terminal, true), "unchecking automation cancels a failed pending task");
+
+            var permanent = new AutomationPlan(delegate { return now; }); permanent.Update(null, configured);
+            Check(permanent.TryApply(ProxyFeature.Terminal, true, delegate { throw new UnauthorizedAccessException("Test denied"); }, out error) == AutomationResult.Paused, "access denial asks for correction immediately");
+            now = now.AddDays(1); Check(!ApplyOnce(permanent, ProxyFeature.Terminal, true), "known permanent error is never retried by the timer");
+            foreach (var fault in new Exception[] { new ArgumentException("Test invalid setting"), new InvalidOperationException("Test wrapper", new System.Security.SecurityException("Test denied")) })
+            {
+                var blocked = new AutomationPlan(delegate { return now; }); blocked.Update(null, configured);
+                Check(blocked.TryApply(ProxyFeature.Terminal, true, delegate { throw fault; }, out error) == AutomationResult.Paused, "known permanent fault pauses: " + fault.GetType().Name);
+            }
+
+            var both = configured.Clone(); both.AutoSystemProxy = true;
+            var separate = new AutomationPlan(delegate { return now; }); separate.Update(null, both);
+            separate.TryApply(ProxyFeature.Terminal, true, fail, out error);
+            Check(ApplyOnce(separate, ProxyFeature.Windows, true), "failed terminal setup does not block another enabled action");
+
+            var cancelled = new AutomationPlan(delegate { return now; }); cancelled.Update(null, configured);
+            Check(cancelled.TryApply(ProxyFeature.Terminal, true, delegate { cancelled.Cancel(ProxyFeature.Terminal); throw new IOException("Test concurrent cancel"); }, out error) == AutomationResult.None && error == null && !ApplyOnce(cancelled, ProxyFeature.Terminal, true), "cancellation during application cannot resurrect its failed task");
+            var reentrant = new AutomationPlan(delegate { return now; }); reentrant.Update(null, configured);
+            Check(reentrant.TryApply(ProxyFeature.Terminal, true, delegate { Check(!ApplyOnce(reentrant, ProxyFeature.Terminal, true), "same task cannot run recursively"); }, out error) == AutomationResult.Applied, "outer application completes after reentrancy guard");
+            var rearmed = new AutomationPlan(delegate { return now; }); rearmed.Update(null, configured);
+            Check(rearmed.TryApply(ProxyFeature.Terminal, true, delegate {
+                rearmed.Cancel(ProxyFeature.Terminal); rearmed.Update(disabled, configured);
+            }, out error) == AutomationResult.None && ApplyOnce(rearmed, ProxyFeature.Terminal, true), "old completion cannot remove a newly rearmed task");
         }
         private static void Snapshot(Form form, string name, bool dispose = true)
         {

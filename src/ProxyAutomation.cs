@@ -10,21 +10,92 @@ using System.Windows.Forms;
 namespace ProGo
 {
     internal enum ProxyFeature { Terminal, Windows, Codex }
+    internal enum AutomationResult { None, Applied, RetryScheduled, Paused }
 
-    // One pending application per enabled option. Manual off cancels that application
-    // until the next app launch or until the user explicitly enables automation again.
+    // Keep an enabled option pending until it is applied successfully. The timer
+    // never retries a cancelled option or spins forever on a persistent failure.
     internal sealed class AutomationPlan
     {
-        private readonly HashSet<ProxyFeature> pending = new HashSet<ProxyFeature>();
+        private sealed class PendingAction
+        {
+            internal int Failures;
+            internal DateTime RetryAt;
+            internal bool Paused, Applying;
+        }
+        private static readonly int[] RetrySeconds = { 5, 15, 45 };
+        private readonly Dictionary<ProxyFeature, PendingAction> pending = new Dictionary<ProxyFeature, PendingAction>();
+        private readonly Func<DateTime> now;
+        internal AutomationPlan() : this(delegate { return DateTime.UtcNow; }) { }
+        internal AutomationPlan(Func<DateTime> clock) { now = clock; }
         internal void Update(AppSettings before, AppSettings after)
         {
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
             {
                 if (!Enabled(after, feature)) pending.Remove(feature);
-                else if (before == null || !Enabled(before, feature)) pending.Add(feature);
+                else if (before == null || !Enabled(before, feature)) pending[feature] = new PendingAction();
             }
         }
-        internal bool Take(ProxyFeature feature, bool ready) { return ready && pending.Remove(feature); }
+        internal AutomationResult TryApply(ProxyFeature feature, bool ready, Action<ProxyFeature> apply, out Exception error)
+        {
+            error = null;
+            PendingAction state;
+            if (!ready || !pending.TryGetValue(feature, out state) || state.Paused || state.Applying || now() < state.RetryAt)
+                return AutomationResult.None;
+            state.Applying = true;
+            try
+            {
+                apply(feature);
+                if (!IsCurrent(feature, state)) return AutomationResult.None;
+                pending.Remove(feature);
+                return AutomationResult.Applied;
+            }
+            catch (Exception ex)
+            {
+                if (!IsCurrent(feature, state)) return AutomationResult.None;
+                error = ex;
+                state.Failures++;
+                if (PermanentFailure(ex) || state.Failures > RetrySeconds.Length)
+                {
+                    state.Paused = true;
+                    return AutomationResult.Paused;
+                }
+                state.RetryAt = now().AddSeconds(RetrySeconds[state.Failures - 1]);
+                return AutomationResult.RetryScheduled;
+            }
+            finally { state.Applying = false; }
+        }
+        private bool IsCurrent(ProxyFeature feature, PendingAction state)
+        {
+            PendingAction current;
+            return pending.TryGetValue(feature, out current) && Object.ReferenceEquals(current, state);
+        }
+        private static bool PermanentFailure(Exception error)
+        {
+            for (var ex = error; ex != null; ex = ex.InnerException)
+                if (ex is UnauthorizedAccessException || ex is System.Security.SecurityException || ex is ArgumentException) return true;
+            return false;
+        }
+        internal int FailureCount(ProxyFeature feature)
+        {
+            PendingAction state;
+            return pending.TryGetValue(feature, out state) ? state.Failures : 0;
+        }
+        internal string GetStatusText(bool ready)
+        {
+            foreach (var pair in pending)
+                if (pair.Value.Paused) return "Автонастройка " + FeatureName(pair.Key) + ": ошибка. Проверьте настройки.";
+            if (pending.Count == 0) return "";
+            if (!ready) return "Автонастройка: ожидает подключения к серверу.";
+            DateTime retryAt = DateTime.MaxValue;
+            foreach (var state in pending.Values)
+                if (state.Failures > 0 && state.RetryAt < retryAt) retryAt = state.RetryAt;
+            if (retryAt == DateTime.MaxValue) return "Автонастройка: настройки ожидают применения.";
+            return "Автонастройка: повтор через " + Math.Max(0, (int)Math.Ceiling((retryAt - now()).TotalSeconds)) + " с.";
+        }
+        internal static string FeatureName(ProxyFeature feature)
+        {
+            return feature == ProxyFeature.Terminal ? "терминалов" : feature == ProxyFeature.Windows ? "Windows" : "Codex";
+        }
         internal void Cancel(ProxyFeature feature) { pending.Remove(feature); }
         internal static bool Enabled(AppSettings s, ProxyFeature feature)
         {
