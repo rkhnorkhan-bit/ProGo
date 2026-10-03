@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Root-only installation/synchronization for the optional HTTPS QR service."""
 import base64
+import fcntl
 import hashlib
 import json
 import os
@@ -11,6 +12,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 
 ROOT = pathlib.Path('/var/lib/progo-home')
@@ -27,26 +29,35 @@ def run(*args, capture=False):
 
 def write(path, text, mode=0o644, group=None):
     path = pathlib.Path(path)
-    temp = path.with_name(path.name + '.new')
-    with open(temp, 'w', encoding='utf-8') as stream:
-        stream.write(text)
-    os.chmod(temp, mode)
-    if group is not None:
-        os.chown(temp, 0, group)
-    os.replace(temp, path)
+    descriptor, name = tempfile.mkstemp(prefix='.' + path.name + '.', dir=path.parent)
+    temp = pathlib.Path(name)
+    try:
+        with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
+            stream.write(text)
+            stream.flush()
+            os.fchmod(stream.fileno(), mode)
+            if group is not None:
+                os.fchown(stream.fileno(), 0, group)
+        os.replace(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
 
 
 def sync(data=None):
     if not CONFIG.exists():
         return
-    data = data or json.loads((ROOT / 'state.json').read_text())
-    if not data.get('share_origin'):
-        return
-    users = {'pgv' + i['id']: hashlib.sha256(i['password'].encode()).hexdigest()
-             for i in data['invites'] if not i['revoked']}
-    settings = dict(origin=data['share_origin'], server_id=data['server_id'], identity=data['identity'],
-                    ca_name=data['ca_name'], ca=base64.b64encode((ROOT / 'pki/ca.der').read_bytes()).decode(), users=users)
-    write(CONFIG / 'publishers.json', json.dumps(settings), 0o640, pwd.getpwnam(USER).pw_gid)
+    # Owner changes and the systemd path watcher may run together. Serialize
+    # the read and publish, so an older watcher cannot restore revoked access.
+    with open(CONFIG / '.sync.lock', 'a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        data = data or json.loads((ROOT / 'state.json').read_text())
+        if not data.get('share_origin'):
+            return
+        users = {'pgv' + i['id']: hashlib.sha256(i['password'].encode()).hexdigest()
+                 for i in data['invites'] if not i['revoked']}
+        settings = dict(origin=data['share_origin'], server_id=data['server_id'], identity=data['identity'],
+                        ca_name=data['ca_name'], ca=base64.b64encode((ROOT / 'pki/ca.der').read_bytes()).decode(), users=users)
+        write(CONFIG / 'publishers.json', json.dumps(settings), 0o640, pwd.getpwnam(USER).pw_gid)
 
 
 def domain_name(value):

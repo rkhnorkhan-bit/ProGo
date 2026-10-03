@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - VERSION
+      - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:
@@ -20,7 +21,7 @@ jobs:
         run: |
           python3 -m venv /tmp/progo-qr-test
           /tmp/progo-qr-test/bin/pip install numpy==2.2.6 zxing-cpp==2.3.0
-          /tmp/progo-qr-test/bin/python -m unittest discover -s tests -p 'test_profile_share.py' -v
+          /tmp/progo-qr-test/bin/python -m unittest discover -s tests -p 'test_profile_share*.py' -v
       - name: Provision isolated VPN and test invitation restrictions
         run: sudo --preserve-env=GITHUB_ACTIONS python3 tests/home_vpn_provision_smoke.py
 

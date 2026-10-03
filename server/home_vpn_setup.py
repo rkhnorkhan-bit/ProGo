@@ -71,7 +71,7 @@ def state():
 def save_state(value):
     write(ROOT / 'state.json', json.dumps(value))
     if pathlib.Path('/opt/progo-profile-share/profile_share_setup.py').exists():
-        share_module(pathlib.Path('/opt/progo-profile-share/profile_share_setup.py')).sync(value)
+        share_module(pathlib.Path('/opt/progo-profile-share/profile_share_setup.py')).sync()
 
 
 def share_module(path=None):
