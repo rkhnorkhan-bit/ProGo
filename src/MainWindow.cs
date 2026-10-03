@@ -10,13 +10,15 @@ namespace ProGo
         private readonly ProxyService proxy;
         private readonly HomeVpnService home;
         private readonly CliProxyBridgeService appProxy;
+        private readonly AutomationPlan automation;
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
-        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null)
+        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null)
         {
             this.appProxy = appProxy;
+            this.automation = automation;
             this.settings = settings; this.proxy = proxy; this.home = home;
             Text = "ProGo · Ваше подключение"; ClientSize = new Size(1040, 710); MinimumSize = new Size(970, 680);
             var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
@@ -97,6 +99,11 @@ namespace ProGo
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +
                 (appProxy != null && appProxy.IsRunning ? " · работает" : " · выключен");
+            if (automation != null)
+            {
+                string status = automation.GetStatusText(ready);
+                if (status.Length > 0) recovery.Text += "\n" + status;
+            }
         }
         protected override void Dispose(bool disposing)
         {

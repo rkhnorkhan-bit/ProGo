@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — audit stage F02
+
+- Automatic proxy setup remains pending until application succeeds. Temporary
+  failures retry after 5, 15 and 45 seconds; repeated failures pause after four
+  attempts instead of looping forever.
+- Access-denied and invalid-argument errors pause immediately with corrective
+  guidance. The dashboard shows waiting, retry and paused states; tray warnings
+  appear on the first failure and when attempts are paused, not on every tick.
+- Manual off, unchecked automation and successful manual application cancel the
+  pending task. Explicitly switching automation off/on re-arms it.
+- Regression checks cover a real occupied loopback port, a configuration-write
+  fault, eventual success, bounded delays, manual cancellation and reentrancy.
+
+
 ## 0.2.2 — Phone setup by QR and VPN forwarding repair
 
 - Restored **Запустить CLI** as a direct dashboard/tray action. Codex automatic/manual setup now applies the current-user HTTP proxy environment for ordinary launches; a scoped shortcut is optional. Existing terminal/IDE processes need one restart to inherit the environment.

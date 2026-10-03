@@ -97,3 +97,13 @@ The executable is unsigned. Do not claim antivirus clearance based on CI success
 record a vendor result separately. Do not introduce exclusions, obfuscation or
 antivirus-disabling code. A future Authenticode rollout needs a real publisher
 certificate and protected signing credentials; never commit such credentials.
+
+### Audit stage F02
+
+Desktop regressions also exercise automatic setup through a real occupied
+loopback proxy port and a simulated configuration-write failure, then clear both
+faults and verify successful application without restarting ProGo. The injected
+clock checks delayed/bounded retries, permanent errors, manual cancellation,
+explicit re-arming and reentrancy without sleeping or using a real VPS. Native
+screenshots include the paused automatic-setup status and corrective guidance.
+The other audit findings remain tracked separately in `AUDIT_PROGRESS.md`.
