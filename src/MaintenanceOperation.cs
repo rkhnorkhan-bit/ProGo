@@ -37,15 +37,15 @@ namespace ProGo
             bool created;
             return new EventWaitHandle(false, EventResetMode.ManualReset, name, out created, security);
         }
-        private MaintenanceOperation()
+        private MaintenanceOperation(int timeout)
         {
             mutex = CreateMutex(Prefix + "Owner");
-            try { owned = mutex.WaitOne(0); }
+            try { owned = mutex.WaitOne(timeout); }
             catch (AbandonedMutexException) { owned = true; }
         }
         public static MaintenanceOperation Enter()
         {
-            var operation = new MaintenanceOperation();
+            var operation = new MaintenanceOperation(0);
             try
             {
                 if (!operation.owned) throw new InvalidOperationException("ProGo: update or restore is already in progress. Try again when it finishes.");
@@ -69,7 +69,9 @@ namespace ProGo
         }
         public static bool TryEnterStartup(out IDisposable startup)
         {
-            var operation = new MaintenanceOperation();
+            // Startup owners keep this gate only until the lifetime mutex is acquired.
+            // Serialize concurrent normal starts rather than misreport maintenance.
+            var operation = new MaintenanceOperation(3000);
             if (operation.owned) { startup = operation; return true; }
             operation.Dispose(); startup = null;
             string name = Environment.GetEnvironmentVariable(PermitVariable);
