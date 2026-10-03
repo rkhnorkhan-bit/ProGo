@@ -121,12 +121,12 @@ if ($updateLauncherSource -notmatch 'CreateNoWindow = false') { Fail "updater mu
 if ($updateLauncherSource -notmatch 'MaintenanceOperation.StartHandoff') { Fail "updater ownership handoff guard missing" }
 
 $buildScriptText = Get-Content -Encoding UTF8 -Raw -Path $Build
-foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only")) {
+foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "bootstrap-only", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if ($buildScriptText -notmatch [regex]::Escape($required)) { Fail "build script marker missing: $required" }
 }
 
 $installScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
-foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "New-ProGoShortcut", "bootstrap")) {
+foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "New-ProGoShortcut", "bootstrap", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if (-not $installScriptText.Contains($required) -and $installScriptText -notmatch [regex]::Escape($required)) {
         Fail "installer marker missing: $required"
     }
@@ -206,7 +206,7 @@ foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.jso
 }
 
 $repairScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Repair-ProGo.ps1")
-foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch")) {
+foreach ($required in @("ProGo.exe", "VERSION", "backups", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoLaunch", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if ($repairScriptText -notmatch [regex]::Escape($required)) { Fail "repair script marker missing: $required" }
 }
 
@@ -259,6 +259,9 @@ foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
+$maintenanceSource = Join-Path $Root 'release\scripts\MaintenanceOperation.cs'
+if (-not (Test-Path $maintenanceSource)) { Fail 'maintenance runtime source missing' }
+if ((Get-FileHash $maintenanceSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\MaintenanceOperation.cs')).Hash) { Fail 'app and helper ownership protocol differ' }
 $runtimeBootstrap = Join-Path $Root "release\scripts\Install-FromGitHub.ps1"
 if (Test-Path $runtimeBootstrap) { Fail "bootstrap installer must not be included in runtime release scripts" }
 
