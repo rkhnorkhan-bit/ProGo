@@ -58,6 +58,7 @@ try {
     $primary = [Diagnostics.Process]::Start((ChildInfo $Exe '--show'))
     Start-Sleep -Seconds 2
     Check (-not $primary.HasExited) 'authorized updated application starts while operation owns the gate'
+    Check ((Run (ChildInfo $Exe '--self-check')) -eq 3) 'restarted application owns its lifetime before maintenance releases the gate'
     $permitName = $env:PROGO_MAINTENANCE_PERMIT
     $lease.Dispose(); $lease = $null
     Check ((Run (ChildInfo $Exe '--self-check' -NoPermit)) -eq 3) 'restarted application retains single-instance ownership after handoff'
