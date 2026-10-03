@@ -67,6 +67,7 @@ namespace ProGo
         public bool AutoRestartSocks { get; set; }
         public bool AutoCliProxy { get; set; }
         public bool AutoSystemProxy { get; set; }
+        public bool TrayCloseExplained { get; set; }
         public int ClipboardClearSeconds { get; set; }
         public string TestEndpoint { get; set; }
 

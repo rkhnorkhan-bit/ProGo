@@ -85,9 +85,33 @@ Only network metadata/download and modal test dialogs are replaced by fixtures.
 This protocol applies to these builds; a restored older executable predating
 F03 does not gain its lifetime/startup safeguards until upgraded.
 
+## Stage 4 — F11/F12/F13: controls, stop scopes and route checks
+
+- Connections opens the server tab; the Windows card opens and focuses its
+  Windows controls. Highlight the active dialog and return navigation home on
+  close. Windows and CLI cards expose symmetric manual on/off commands while
+  preserving **Запустить CLI** when the shared mode is off.
+- Name desktop, phone and full stop separately in the dashboard/tray/wizard.
+  Desktop stop cancels desktop automation/recovery without stopping the phone;
+  phone stop preserves desktop work; full stop cancels both channels. Explain
+  once that closing the dashboard leaves ProGo and its connections in the tray.
+- A route-check command starts one background check as diagnostics opens.
+  Opening diagnostics alone shows an untested state. Route completion time and
+  source are independent of status/ping refresh; speed shows its own source/time.
+  Suppress overlapping route checks and ignore results after the window closes.
+
+Verification: `DesktopUiWorkflowTests.cs` runs actual modal routes, active/home
+navigation, Windows and CLI apply/restore through dashboard buttons, each stop
+scope with a loopback relay, cancellation and persisted one-time tray guidance.
+Injected route probes/clocks check first-run, repeat, independent timestamps,
+concurrency and closing during an error. Native screenshots cover the changed
+cards, targeted settings and diagnostics alongside the existing scaling checks.
+F04 connection-health semantics and F14 broader task cancellation/deadlines
+remain separate findings.
+
 ## Remaining stages
 
-F04–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
+F04–F10 and F14–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
 restore ownership) are not fixed by these stages. Preserve the ordinary
 **Запустить CLI** entry point throughout.
 

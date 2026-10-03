@@ -139,3 +139,11 @@ staging/main self-checks, copying, restore, rollback and ownership release.
 No external release is downloaded or installed on a user's computer. The runtime
 class is shipped as installed source for PowerShell Add-Type; it is identical
 to the class compiled into ProGo. Handoff and permits use same-user/SYSTEM ACLs.
+
+### Audit stage F11/F12/F13
+
+`DesktopUiWorkflowTests.cs` extends the isolated Windows desktop harness with
+real command routing, modal navigation, symmetric dashboard mode controls,
+independent desktop/phone/full stop and one-time tray guidance. A local SOCKS
+relay fixture and injected route probes/clocks avoid real VPS or account access.
+Screenshots include targeted settings and independent diagnostic timestamps.

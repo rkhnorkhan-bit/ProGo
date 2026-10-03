@@ -14,7 +14,7 @@ using Microsoft.Win32;
 
 namespace ProGo
 {
-    internal static class DesktopTests
+    internal static partial class DesktopTests
     {
         private static int passed;
         private static string work;
@@ -66,6 +66,7 @@ namespace ProGo
                     BridgeRoundTrip(settings, false); BridgeRoundTrip(settings, true);
                     Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
                     UnifiedCliActions(settings);
+                    UiControls(settings);
                     using (var proxy = new ProxyService(settings))
                     using (var relay = new Ikev2RelayService())
                     using (var home = new HomeVpnService(relay))

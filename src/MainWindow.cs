@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -13,6 +14,8 @@ namespace ProGo
         private readonly AutomationPlan automation;
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
+        private Button windowsToggle, cliToggle;
+        private readonly Dictionary<string, Button> navigation = new Dictionary<string, Button>();
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
         internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null)
@@ -34,12 +37,14 @@ namespace ProGo
             var wordmark = UiTheme.Label("ProGo", UiTheme.Heading, UiTheme.Text); wordmark.Location = new Point(84, 38);
             rail.Controls.Add(brand); rail.Controls.Add(wordmark);
             var nav = new FlowLayoutPanel { Location = new Point(20, 124), Width = 170, Height = 450, FlowDirection = FlowDirection.TopDown, WrapContents = false };
-            Nav(nav, "Главная", null, true);
-            Nav(nav, "iPhone через ПК", delegate { action("iphone"); }, false);
-            Nav(nav, "Подключения", delegate { action("settings"); }, false);
-            Nav(nav, "Хранилище", delegate { action("vault"); }, false);
-            Nav(nav, "Диагностика", delegate { action("diagnostics"); }, false);
-            Nav(nav, "Настройки", delegate { action("settings"); }, false);
+            Nav(nav, "Главная", "home", delegate { SetNavigation("home"); });
+            Nav(nav, "iPhone через ПК", "iphone", delegate { action("iphone"); });
+            Nav(nav, "Подключения", "connections", delegate { action("connections"); });
+            Nav(nav, "Хранилище", "vault", delegate { action("vault"); });
+            Nav(nav, "Диагностика", "diagnostics", delegate { action("diagnostics"); });
+            Nav(nav, "Настройки", "settings", delegate { action("settings"); });
+            var stopAll = UiTheme.Button("Остановить все\nподключения", delegate { action("stop-all"); RefreshState(); }, false);
+            stopAll.AutoSize = false; stopAll.Size = new Size(168, 60); nav.Controls.Add(stopAll);
             rail.Controls.Add(nav);
             var version = UiTheme.Label("DESKTOP  /  " + typeof(MainWindow).Assembly.GetName().Version.ToString(3) + "\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
             version.AutoSize = false; version.Size = new Size(178, 65); version.Dock = DockStyle.Bottom; rail.Controls.Add(version);
@@ -57,8 +62,8 @@ namespace ProGo
             subtitle = UiTheme.Label("", UiTheme.Body, UiTheme.Muted); subtitle.Location = new Point(22, 95); subtitle.MaximumSize = new Size(630, 30); subtitle.AutoEllipsis = true; hero.Controls.Add(subtitle);
             var heroActions = new FlowLayoutPanel { Location = new Point(22, 131), Width = 650, Height = 48 };
             connect = UiTheme.Button("Подключиться", delegate { action("connect"); RefreshState(); }, true);
-            heroActions.Controls.Add(connect); heroActions.Controls.Add(UiTheme.Button("Отключиться", delegate { action("stop"); RefreshState(); }, false));
-            heroActions.Controls.Add(UiTheme.Button("Проверить маршрут", delegate { action("diagnostics"); }, false)); hero.Controls.Add(heroActions); content.Controls.Add(hero, 0, 1);
+            heroActions.Controls.Add(connect); heroActions.Controls.Add(UiTheme.Button("Отключить прокси на ПК", delegate { action("stop"); RefreshState(); }, false));
+            heroActions.Controls.Add(UiTheme.Button("Проверить маршрут", delegate { action("route-check"); }, false)); hero.Controls.Add(heroActions); content.Controls.Add(hero, 0, 1);
             var cards = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
             for (int i = 0; i < 3; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 3));
             windowsState = Card(cards, 0, "WINDOWS", "Приложения", "windows-on", action);
@@ -73,18 +78,34 @@ namespace ProGo
             footer.Controls.Add(UiTheme.Button("Помощь", delegate { action("help"); }, false)); content.Controls.Add(footer, 0, 4);
             timer.Tick += delegate { RefreshState(); }; timer.Start(); RefreshState();
         }
-        private static void Nav(FlowLayoutPanel panel, string text, EventHandler action, bool selected)
+        private void Nav(FlowLayoutPanel panel, string text, string route, EventHandler action)
         {
-            var button = UiTheme.Button(text, action, selected); button.AutoSize = false; button.Size = new Size(168, 42);
+            var button = UiTheme.Button(text, action, route == "home"); button.AutoSize = false; button.Size = new Size(168, 42);
             button.TextAlign = ContentAlignment.MiddleLeft; button.Margin = new Padding(0, 0, 0, 10); panel.Controls.Add(button);
+            navigation.Add(route, button);
         }
-        private static Label Card(TableLayoutPanel cards, int column, string title, string description, string actionName, Action<string> action)
+        internal void SetNavigation(string route)
+        {
+            foreach (var item in navigation) { item.Value.Tag = item.Key == route ? "primary" : null; UiTheme.Apply(item.Value); }
+        }
+        private Label Card(TableLayoutPanel cards, int column, string title, string description, string actionName, Action<string> action)
         {
             var card = new SurfacePanel { Dock = DockStyle.Fill, Margin = new Padding(column == 0 ? 0 : 6, 0, column == 2 ? 0 : 6, 18), Padding = new Padding(16) };
             var name = UiTheme.Label(title, UiTheme.Strong, UiTheme.Muted); name.Location = new Point(16, 14); card.Controls.Add(name);
             var state = UiTheme.Label("Выключено", UiTheme.Heading, UiTheme.Text); state.Location = new Point(14, 40); card.Controls.Add(state);
             var caption = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted); caption.Location = new Point(16, 72); card.Controls.Add(caption);
-            var open = UiTheme.Button(column == 2 ? "Открыть мастер" : column == 1 ? "Запустить CLI" : "Настроить", delegate { action(column == 0 ? "settings" : actionName); }, false);
+            var open = UiTheme.Button(column == 2 ? "Открыть мастер" : column == 1 ? "Запустить CLI" : "Включить", delegate {
+                action(column == 0 ? (SystemProxyService.IsApplied(settings.Current) ? "windows-off" : "windows-on") :
+                    column == 1 ? (CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) ? "cli-off" : "cli-start") : actionName);
+                RefreshState();
+            }, false);
+            if (column == 0) {
+                windowsToggle = open;
+                var configure = new LinkLabel { Text = "Настройки", AutoSize = true, Location = new Point(108, 14), Font = UiTheme.Body,
+                    LinkColor = UiTheme.Accent, ActiveLinkColor = UiTheme.Text, VisitedLinkColor = UiTheme.Accent, AccessibleName = "Настройки прокси Windows" };
+                configure.LinkClicked += delegate { action("windows-settings"); }; card.Controls.Add(configure);
+            }
+            if (column == 1) cliToggle = open;
             open.Location = new Point(16, 100); open.MinimumSize = new Size(100, 32); open.Height = 32; open.Padding = new Padding(7, 0, 7, 0); card.Controls.Add(open); cards.Controls.Add(card, column, 0); return state;
         }
         private void RefreshState()
@@ -96,6 +117,9 @@ namespace ProGo
             connect.Text = ready ? "Переподключиться" : "Подключиться";
             windowsState.Text = SystemProxyService.IsApplied(settings.Current) ? "Включено" : "Выключено";
             terminalState.Text = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) ? "Включено" : "Выключено";
+            windowsToggle.Text = windowsState.Text == "Включено" ? "Выключить" : "Включить";
+            cliToggle.Text = terminalState.Text == "Включено" ? "Выключить CLI" : "Запустить CLI";
+            windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +
                 (appProxy != null && appProxy.IsRunning ? " · работает" : " · выключен");

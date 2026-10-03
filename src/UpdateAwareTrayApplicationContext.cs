@@ -62,9 +62,11 @@ namespace ProGo
             menu.Items.Add(new ToolStripSeparator());
             var connection = new ToolStripMenuItem("Подключение");
             Item(connection, "Подключиться к серверу", "connect");
-            Item(connection, "Отключиться", "stop");
+            Item(connection, "Отключить прокси на ПК", "stop");
+            Item(connection, "Остановить все подключения", "stop-all");
             Item(connection, "Переподключиться", "restart");
-            Item(connection, "Проверить маршрут и скорость", "diagnostics");
+            Item(connection, "Проверить маршрут", "route-check");
+            Item(connection, "Открыть диагностику и скорость", "diagnostics");
             menu.Items.Add(connection);
             var apps = new ToolStripMenuItem("Прокси для приложений");
             Item(apps, "Windows — включить", "windows-on"); Item(apps, "Windows — выключить", "windows-off");
@@ -76,8 +78,9 @@ namespace ProGo
             Item(extra, "Создать отдельный ярлык", "codex-shortcut-on"); Item(extra, "Удалить отдельный ярлык", "codex-shortcut-off"); apps.DropDownItems.Add(extra);
             Item(apps, "Открыть Codex через ProGo", "codex-open"); menu.Items.Add(apps);
             menu.Items.Add("iPhone через домашний ПК…", null, delegate { Execute("iphone"); });
-            menu.Items.Add("Хранилище паролей и ключей…", null, delegate { ShowVault(); });
-            menu.Items.Add("Настройки и автоматика…", null, delegate { ShowSettings(); });
+            menu.Items.Add("Остановить VPN для телефона", null, delegate { Execute("phone-stop"); });
+            menu.Items.Add("Хранилище паролей и ключей…", null, delegate { Execute("vault"); });
+            menu.Items.Add("Настройки и автоматика…", null, delegate { Execute("settings"); });
             menu.Items.Add(new ToolStripSeparator());
             var backups = new ToolStripMenuItem("Резервные копии");
             backups.DropDownItems.Add("Создать копию сейчас", null, delegate { CreateBackup(); });
@@ -106,6 +109,7 @@ namespace ProGo
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
             mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, automation);
+            mainWindow.FormClosing += DashboardClosing;
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
         }
@@ -119,10 +123,17 @@ namespace ProGo
             }
             else ShowStatus();
         }
-        private void ShowSettings()
+        private void DashboardClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason != CloseReason.UserClosing || e.Cancel || settings.Current.TrayCloseExplained) return;
+            tray.ShowBalloonTip(6000, "ProGo остаётся в трее", "Закрытие окна не отключает подключения. Откройте ProGo значком рядом с часами. Для отключения используйте команды остановки, для выхода — «Завершить работу ProGo».", ToolTipIcon.Info);
+            var updated = settings.Current.Clone(); updated.TrayCloseExplained = true;
+            try { settings.Save(updated); } catch (Exception ex) { SafeLog.Error("Tray explanation preference could not be saved.", ex); }
+        }
+        private void ShowSettings(SettingsSection section = SettingsSection.Automation)
         {
             var before = settings.Current;
-            using (var form = new SshProfilesSettingsForm(settings))
+            using (var form = new SshProfilesSettingsForm(settings, section))
             {
                 form.ManualActionRequested += Execute;
                 form.ProxyEndpointText = cliProxy.ProxyUrl;
@@ -133,7 +144,7 @@ namespace ProGo
                     NotifyPortChange(oldPort);
                     return null;
                 };
-                if (form.ShowDialog() == DialogResult.OK)
+                if (form.ShowDialog(mainWindow) == DialogResult.OK)
                 {
                     homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
                     automation.Update(before, settings.Current);
@@ -168,6 +179,9 @@ namespace ProGo
         }
         private void Execute(string action)
         {
+            string navigation = action == "windows-settings" ? "settings" : action == "route-check" ? "diagnostics" : action;
+            bool isPage = navigation == "settings" || navigation == "connections" || navigation == "vault" || navigation == "iphone" || navigation == "diagnostics";
+            if (isPage && mainWindow != null) mainWindow.SetNavigation(navigation);
             try
             {
                 switch (action)
@@ -175,12 +189,16 @@ namespace ProGo
                     case "connect": if (proxy.IsListening()) proxy.RestartTunnel(); else proxy.StartTunnel(true); break;
                     case "restart": proxy.RestartTunnel(); break;
                     case "stop":
-                        foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
-                        DisconnectApps(); proxy.StopTunnel(); break;
+                        StopDesktop(); break;
+                    case "phone-stop": homeVpn.Stop(); break;
+                    case "stop-all": try { StopDesktop(); } finally { homeVpn.Stop(); } break;
                     case "settings": ShowSettings(); break;
+                    case "connections": ShowSettings(SettingsSection.Connections); break;
+                    case "windows-settings": ShowSettings(SettingsSection.Windows); break;
                     case "vault": ShowVault(); break;
-                    case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(); break;
-                    case "diagnostics": using (var form = new StatusForm(settings, proxy)) form.ShowDialog(); break;
+                    case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(mainWindow); break;
+                    case "diagnostics":
+                    case "route-check": using (var form = new StatusForm(settings, proxy, action == "route-check")) form.ShowDialog(mainWindow); break;
                     case "cli-start":
                     case "terminal-on":
                     case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
@@ -199,6 +217,12 @@ namespace ProGo
                 UpdateTooltip();
             }
             catch (Exception ex) { SafeLog.Error("User action failed: " + action, ex); MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            finally { if (isPage && mainWindow != null && !mainWindow.IsDisposed) mainWindow.SetNavigation("home"); }
+        }
+        private void StopDesktop()
+        {
+            foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
+            DisconnectApps(); proxy.StopTunnel();
         }
         private void RequireRoute()
         {
