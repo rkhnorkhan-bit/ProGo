@@ -18,7 +18,8 @@ namespace ProGo
                 if (!MaintenanceOperation.TryEnterStartup(out startup))
                 {
                     Environment.ExitCode = 4;
-                    if (!selfCheck) MessageBox.Show("ProGo обновляется или восстанавливается. Дождитесь завершения и откройте его снова.", "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Do not keep this executable locked by a second modal window
+                    // while its owner is trying to replace it.
                     return;
                 }
                 ApplicationInstance acquired;

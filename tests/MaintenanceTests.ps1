@@ -49,6 +49,7 @@ try {
         Check ((Run (ChildInfo $ps $args)) -ne 0) "competing entry point rejects while maintenance owns state: $script"
         Check ((Snapshot) -eq $before) "rejected $script leaves files, backups and logs unchanged"
     }
+    Check ((Run (ChildInfo $Exe '--show' -NoPermit)) -eq 4) 'normal compiled launch exits without a blocking window during maintenance'
     Check ((Run (ChildInfo $Exe '--self-check' -NoPermit)) -eq 4) 'ordinary self-check cannot touch shared state during maintenance'
     Check ((Run (DriverInfo 'startup')) -eq 0) 'authorized child inherits the owner permit'
     Check ((Run (ChildInfo $ps "-NoProfile -File `"$driver`" -Mode startup -Scripts `"$Scripts`"" -NoPermit)) -eq 4) 'normal startup is blocked while files may be replaced'
