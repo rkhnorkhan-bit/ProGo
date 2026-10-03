@@ -47,7 +47,7 @@ namespace ProGo
             var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed };
             root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
             var automation = Page(tabs, "Автоматика");
-            var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
+            var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, AutoScrollMargin = new Size(0, 18), FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
             automation.Controls.Add(autoFlow);
             autoFlow.SizeChanged += delegate {
                 foreach (Control child in autoFlow.Controls) {

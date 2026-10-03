@@ -42,7 +42,7 @@ namespace ProGo
             AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(820, 570);
-            MinimumSize = new Size(790, 570);
+            MinimumSize = new Size(790, 610);
 
             var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 10 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));

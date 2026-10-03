@@ -54,7 +54,11 @@ namespace ProGo
                         var flow = (FlowLayoutPanel)option.Parent.Parent;
                         var bounds = flow.RectangleToClient(option.Parent.RectangleToScreen(option.Parent.ClientRectangle));
                         Shot(form, "settings-windows-route");
-                        Check(Descendants(form).OfType<TabControl>().Single().SelectedIndex == 0 && bounds.Top >= 0 && bounds.Bottom <= flow.ClientSize.Height,
+                        var controls = Descendants(option.Parent).Where(c => c is CheckBox || c is Button).ToArray();
+                        Check(Descendants(form).OfType<TabControl>().Single().SelectedIndex == 0 && controls.All(c => {
+                            var area = flow.RectangleToClient(c.RectangleToScreen(c.ClientRectangle));
+                            return c.Visible && area.Top >= 0 && area.Bottom <= flow.ClientSize.Height;
+                        }),
                             "Windows card route scrolls the actual Windows controls into view: " + bounds + " viewport=" + flow.ClientSize);
                     });
                     CheckModal(context, main, "settings", "settings", delegate(Form form) {
@@ -174,6 +178,9 @@ namespace ProGo
                 Check(time.Text == previous && ((Label)Field(form, "state")).Text.Contains("13:00:00"), "status and ping refresh leave route time unchanged");
                 button.PerformClick(); PumpUntil(() => button.Enabled && calls == 2);
                 Check(time.Text.Contains("13:00:00"), "explicit repeat refreshes route timestamp");
+                form.Size = form.MinimumSize; Application.DoEvents();
+                Check(Descendants(form).OfType<Button>().All(b => b.Visible && b.Top >= 0 && b.Bottom <= b.Parent.ClientSize.Height),
+                    "diagnostic commands remain visible at minimum window size");
                 Shot(form, "diagnostics-timestamps"); form.Close();
             }
             using (var release = new ManualResetEventSlim(false))
