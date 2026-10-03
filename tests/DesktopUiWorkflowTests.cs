@@ -85,6 +85,7 @@ namespace ProGo
                     // The real route command uses a closed local port: no external curl request.
                     var stopped = settings.Current.Clone(); stopped.SocksPort = 1; settings.Save(stopped);
                     CheckModal(context, main, "route-check", "diagnostics", delegate(Form form) {
+                        PumpUntil(() => ((Label)Field(form, "checkedAt")).Text != "Ещё не проверен");
                         Check(((Label)Field(form, "checkedAt")).Text != "Ещё не проверен", "route command performs first check without second click");
                         Shot(form, "diagnostics-route-command");
                     });
