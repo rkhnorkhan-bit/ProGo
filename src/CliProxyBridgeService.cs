@@ -517,9 +517,14 @@ namespace ProGo
 
         public static bool IsAppliedToUserEnvironment(int port)
         {
-            return IsUserValue("ALL_PROXY", Expected("ALL_PROXY", port)) ||
-                   IsUserValue("HTTPS_PROXY", Expected("HTTPS_PROXY", port)) ||
-                   IsUserValue("HTTP_PROXY", Expected("HTTP_PROXY", port));
+            foreach (var name in Names) if (!IsUserValue(name, Expected(name, port))) return false;
+            return true;
+        }
+        internal static bool IsPartiallyApplied(int port)
+        {
+            if (IsAppliedToUserEnvironment(port)) return false;
+            foreach (var name in Names) if (IsUserValue(name, Expected(name, port))) return true;
+            return false;
         }
 
         public static void ClearUserEnvironmentIfOwned()

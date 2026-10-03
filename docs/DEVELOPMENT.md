@@ -147,3 +147,14 @@ real command routing, modal navigation, symmetric dashboard mode controls,
 independent desktop/phone/full stop and one-time tray guidance. A local SOCKS
 relay fixture and injected route probes/clocks avoid real VPS or account access.
 Screenshots include targeted settings and independent diagnostic timestamps.
+
+### Audit stage F04
+
+`DesktopHealthTests.cs` exercises actual SOCKS greetings and curl egress against
+disposable loopback fixtures: fragmented/foreign/silent replies, HTTP 200/401,
+NO_PROXY=* and cancellation. Injected probes/clocks verify independent cache
+timestamps, expiry, discarded stale results and UI responsiveness. Native
+window/tray checks distinguish applied preferences, partial CLI configuration,
+SOCKS readiness and verified internet. The earlier ordinary Start CLI and
+instance-ownership regressions still run. No health evidence is persisted.
+These deadlines do not resolve the existing operations covered separately by F14.

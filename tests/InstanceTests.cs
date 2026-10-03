@@ -134,8 +134,20 @@ namespace ProGo
                 Check(Exit(Start(installed, "--self-check")) == 0, "clean owner disposal releases the mutex for a later launch");
 
                 listener.Start();
+                System.Threading.Tasks.Task.Run(async delegate {
+                    try {
+                        while (true) {
+                            using (var client = await listener.AcceptTcpClientAsync()) {
+                                var stream = client.GetStream(); stream.ReadTimeout = 1500;
+                                if (stream.ReadByte() == 5 && stream.ReadByte() == 1 && stream.ReadByte() == 0)
+                                    stream.Write(new byte[] { 5, 0 }, 0, 2);
+                            }
+                        }
+                    } catch (SocketException) { } catch (ObjectDisposedException) { }
+                });
                 var configured = AppSettings.Defaults(); configured.AutoCliProxy = true; configured.AutoRestartSocks = false;
                 configured.SocksPort = ((IPEndPoint)listener.LocalEndpoint).Port;
+                configured.TestEndpoint = "http://127.0.0.1:1/";
                 using (var settings = new SettingsService()) settings.Save(configured);
                 primary = Start(installed, "");
                 Wait(() => !primary.HasExited && AppliedPort() > 0, "actual primary proxy startup");

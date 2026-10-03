@@ -12,16 +12,18 @@ namespace ProGo
         private readonly HomeVpnService home;
         private readonly CliProxyBridgeService appProxy;
         private readonly AutomationPlan automation;
+        private readonly ConnectionHealthMonitor health;
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
         private Button windowsToggle, cliToggle;
         private readonly Dictionary<string, Button> navigation = new Dictionary<string, Button>();
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
-        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null)
+        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null)
         {
             this.appProxy = appProxy;
             this.automation = automation;
+            this.health = health;
             this.settings = settings; this.proxy = proxy; this.home = home;
             Text = "ProGo · Ваше подключение"; ClientSize = new Size(1040, 710); MinimumSize = new Size(970, 680);
             var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
@@ -66,8 +68,8 @@ namespace ProGo
             heroActions.Controls.Add(UiTheme.Button("Проверить маршрут", delegate { action("route-check"); }, false)); hero.Controls.Add(heroActions); content.Controls.Add(hero, 0, 1);
             var cards = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
             for (int i = 0; i < 3; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 3));
-            windowsState = Card(cards, 0, "WINDOWS", "Приложения", "windows-on", action);
-            terminalState = Card(cards, 1, "CLI И CODEX", "Обычный запуск", "cli-start", action);
+            windowsState = Card(cards, 0, "WINDOWS", "Параметры Windows", "windows-on", action);
+            terminalState = Card(cards, 1, "CLI И CODEX", "Для новых терминалов", "cli-start", action);
             phoneState = Card(cards, 2, "IPHONE", "Через домашний ПК", "iphone", action); content.Controls.Add(cards, 0, 2);
             var bottom = new SurfacePanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 14) };
             var title = UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text); title.Location = new Point(20, 16); bottom.Controls.Add(title);
@@ -108,25 +110,28 @@ namespace ProGo
             if (column == 1) cliToggle = open;
             open.Location = new Point(16, 100); open.MinimumSize = new Size(100, 32); open.Height = 32; open.Padding = new Padding(7, 0, 7, 0); card.Controls.Add(open); cards.Controls.Add(card, column, 0); return state;
         }
+        internal void RefreshConnectionState() { RefreshState(); }
         private void RefreshState()
         {
-            bool ready = proxy.IsListening();
-            connection.Text = ready ? "Туннель работает" : "Готовы подключиться?";
-            connection.ForeColor = ready ? UiTheme.Accent : UiTheme.Text;
-            subtitle.Text = String.IsNullOrWhiteSpace(settings.Current.SshProfile) ? "Добавьте сервер в настройках, чтобы начать." : "Сервер: " + settings.Current.SshProfile;
+            var status = health == null ? new ConnectionHealthSnapshot("", ConnectionProbeState.Unknown, ConnectionProbeState.Unknown) : health.Current;
+            bool ready = status.SocksReady;
+            connection.Text = status.Title;
+            connection.ForeColor = status.InternetVerified ? UiTheme.Accent : status.Socks == ConnectionProbeState.Failed ? UiTheme.Error : UiTheme.Text;
+            subtitle.Text = status.Summary;
             connect.Text = ready ? "Переподключиться" : "Подключиться";
-            windowsState.Text = SystemProxyService.IsApplied(settings.Current) ? "Включено" : "Выключено";
-            terminalState.Text = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) ? "Включено" : "Выключено";
-            windowsToggle.Text = windowsState.Text == "Включено" ? "Выключить" : "Включить";
-            cliToggle.Text = terminalState.Text == "Включено" ? "Выключить CLI" : "Запустить CLI";
+            bool windowsApplied = SystemProxyService.IsApplied(settings.Current), cliApplied = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort);
+            windowsState.Text = windowsApplied ? "Настроено" : "Не настроено";
+            terminalState.Text = cliApplied ? "Настроено" : CliProxyEnvironmentService.IsPartiallyApplied(settings.Current.HttpProxyPort) ? "Частично" : "Не настроено";
+            windowsToggle.Text = windowsApplied ? "Выключить" : "Включить";
+            cliToggle.Text = cliApplied ? "Выключить CLI" : "Запустить CLI";
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +
                 (appProxy != null && appProxy.IsRunning ? " · работает" : " · выключен");
             if (automation != null)
             {
-                string status = automation.GetStatusText(ready);
-                if (status.Length > 0) recovery.Text += "\n" + status;
+                string automaticStatus = automation.GetStatusText(ready);
+                if (automaticStatus.Length > 0) recovery.Text += "\n" + automaticStatus;
             }
         }
         protected override void Dispose(bool disposing)

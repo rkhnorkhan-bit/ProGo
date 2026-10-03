@@ -106,12 +106,38 @@ scope with a loopback relay, cancellation and persisted one-time tray guidance.
 Injected route probes/clocks check first-run, repeat, independent timestamps,
 concurrency and closing during an error. Native screenshots cover the changed
 cards, targeted settings and diagnostics alongside the existing scaling checks.
-F04 connection-health semantics and F14 broader task cancellation/deadlines
-remain separate findings.
+F14 broader task cancellation/deadlines remains a separate finding.
+
+## Stage 5 — F04: connection status requires evidence
+
+- Separate applied Windows/CLI preferences, a successful SOCKS greeting and
+  an HTTP response through that SOCKS route. Only the last state gets the green
+  internet label. A partial four-variable CLI environment shows **Частично**
+  and keeps the ordinary **Запустить CLI** repair action.
+- Share immutable, in-memory health evidence between dashboard, diagnostics,
+  automation readiness and tray. Publish changes without reopening settings.
+  Refresh the SOCKS greeting every five seconds and egress every thirty seconds;
+  discard local evidence after fifteen seconds and internet evidence after
+  forty-five seconds. Changing connection settings invalidates old results.
+- Perform the new probes in the background, with bounded connection/read/curl
+  deadlines, no overlapping workers and cancellation on disposal. An inherited
+  NO_PROXY cannot bypass the explicit SOCKS egress check. HTTP 401/403 confirms
+  transport only; it does not prove account access or application authorization.
+- Preserve the separate phone-channel status and its internet-test guidance.
+  An open TCP port remains a port-ownership check, never a green health claim.
+
+Verification: `DesktopHealthTests.cs` uses foreign/silent/fragmented SOCKS
+listeners, actual curl against a loopback SOCKS/HTTP fixture, failed egress,
+inherited bypass variables, cancellation and injected clocks/probes. It checks
+cache timestamps, expiry, discarded stale results, UI heartbeat, each partial
+CLI variable, and automatic shared dashboard/tray updates. Native screenshots
+cover protocol-only, verified, unavailable and partial-configuration states.
+The instance fixture now speaks SOCKS before automatic CLI setup can proceed.
+F05 SSH startup readiness and F14 existing network tasks remain separate work.
 
 ## Remaining stages
 
-F04–F10 and F14–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
+F05–F10 and F14–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
 restore ownership) are not fixed by these stages. Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
