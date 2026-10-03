@@ -158,3 +158,14 @@ window/tray checks distinguish applied preferences, partial CLI configuration,
 SOCKS readiness and verified internet. The earlier ordinary Start CLI and
 instance-ownership regressions still run. No health evidence is persisted.
 These deadlines do not resolve the existing operations covered separately by F14.
+
+### Audit stage F05a
+
+The recovery child fixture also exercises asynchronous delayed startup, shared
+requests, cancellation/retry, timeout, rejected keys and foreign listeners.
+`DesktopStartupTests.cs` clicks ordinary Start CLI against that local child,
+checks UI heartbeat and both modes on one connection, and cancels pending
+requests before any late configuration write. Existing UI/manual aliases now
+use a loopback SOCKS greeting fixture and await completion. The visible-login
+launch configuration is validated without a real SSH server or credentials.
+Structured profile fields remain F05b; broader deadlines/cancellation remain F14.

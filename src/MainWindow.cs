@@ -16,6 +16,7 @@ namespace ProGo
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
         private Button windowsToggle, cliToggle;
+        private bool cliPending, windowsPending, routePending;
         private readonly Dictionary<string, Button> navigation = new Dictionary<string, Button>();
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
@@ -111,19 +112,28 @@ namespace ProGo
             open.Location = new Point(16, 100); open.MinimumSize = new Size(100, 32); open.Height = 32; open.Padding = new Padding(7, 0, 7, 0); card.Controls.Add(open); cards.Controls.Add(card, column, 0); return state;
         }
         internal void RefreshConnectionState() { RefreshState(); }
+        internal void SetRoutePending(bool cli, bool windows, bool any)
+        {
+            cliPending = cli; windowsPending = windows; routePending = any; RefreshState();
+        }
         private void RefreshState()
         {
             var status = health == null ? new ConnectionHealthSnapshot("", ConnectionProbeState.Unknown, ConnectionProbeState.Unknown) : health.Current;
             bool ready = status.SocksReady;
             connection.Text = status.Title;
+            if (proxy.IsConnecting && !status.SocksReady) connection.Text = "Подключаемся к серверу…";
             connection.ForeColor = status.InternetVerified ? UiTheme.Accent : status.Socks == ConnectionProbeState.Failed ? UiTheme.Error : UiTheme.Text;
             subtitle.Text = status.Summary;
             connect.Text = ready ? "Переподключиться" : "Подключиться";
+            connect.Enabled = !routePending && !proxy.IsConnecting;
             bool windowsApplied = SystemProxyService.IsApplied(settings.Current), cliApplied = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort);
             windowsState.Text = windowsApplied ? "Настроено" : "Не настроено";
             terminalState.Text = cliApplied ? "Настроено" : CliProxyEnvironmentService.IsPartiallyApplied(settings.Current.HttpProxyPort) ? "Частично" : "Не настроено";
             windowsToggle.Text = windowsApplied ? "Выключить" : "Включить";
             cliToggle.Text = cliApplied ? "Выключить CLI" : "Запустить CLI";
+            if (cliPending) cliToggle.Text = "Подключаем CLI…";
+            if (windowsPending) windowsToggle.Text = "Подключаем…";
+            cliToggle.Enabled = !cliPending; windowsToggle.Enabled = !windowsPending;
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +

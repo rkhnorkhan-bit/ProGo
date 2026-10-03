@@ -21,16 +21,39 @@ namespace ProGo
             while (!ready()) { if (watch.ElapsedMilliseconds > 5000) throw new Exception("UI fixture deadline"); Application.DoEvents(); Thread.Sleep(10); }
             Application.DoEvents();
         }
+        private static void AnswerFixtureSocks(TcpListener listener)
+        {
+            // The simulated remote server must not compete with the client probe
+            // for thread-pool workers while that probe waits synchronously for it.
+            new Thread(delegate() {
+                try {
+                    while (true) {
+                        var client = listener.AcceptTcpClient();
+                        new Thread(delegate() {
+                            using (client) {
+                                try {
+                                    var stream = client.GetStream(); stream.ReadTimeout = 1000;
+                                    var greet = HealthRead(stream, 2); HealthRead(stream, greet[1]);
+                                    if (greet[0] == 5) stream.Write(new byte[] { 5, 0 }, 0, 2);
+                                } catch (System.IO.IOException) { } catch (ObjectDisposedException) { }
+                            }
+                        }) { IsBackground = true }.Start();
+                    }
+                } catch (SocketException) { } catch (ObjectDisposedException) { }
+            }) { IsBackground = true }.Start();
+        }
         private static void UiControls(SettingsService settings)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("SKIP: UI action state requires isolated CI"); return; }
             var original = settings.Current.Clone();
             var environment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
             var listener = Occupy(0);
+            AnswerFixtureSocks(listener);
             try {
                 var configured = original.Clone(); configured.SocksHost = "127.0.0.1"; configured.SocksPort = Number(listener);
                 configured.AutoCliProxy = true; configured.AutoSystemProxy = true; configured.TrayCloseExplained = false;
                 settings.Save(configured);
+                Check(ConnectionHealthMonitor.CheckSocks(configured, CancellationToken.None), "UI fixture speaks SOCKS before creating the application");
                 using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), "unused-test-ssh", () => DateTime.UtcNow, false))
                 using (var bridge = new CliProxyBridgeService(settings))
                 using (var relay = new Ikev2RelayService())
@@ -64,11 +87,14 @@ namespace ProGo
                     CheckModal(context, main, "settings", "settings", delegate(Form form) {
                         Check(Descendants(form).OfType<TabControl>().Single().SelectedTab.Text == "Автоматика", "Settings retains automation entry");
                     });
+                    Check(ConnectionHealthMonitor.CheckSocks(settings.Current, CancellationToken.None), "UI fixture remains ready after closing settings dialogs");
                     ((Button)Field(main, "windowsToggle")).PerformClick(); Application.DoEvents();
+                    PumpUntil(() => context.PendingRouteCount == 0);
                     Check(SystemProxyService.IsApplied(settings.Current) && ((Button)Field(main, "windowsToggle")).Text == "Выключить", "Windows card enables its own mode");
                     ((Button)Field(main, "windowsToggle")).PerformClick();
                     Check(!SystemProxyService.IsOwned && ((Button)Field(main, "windowsToggle")).Text == "Включить", "Windows card restores with its symmetric off command");
                     ((Button)Field(main, "cliToggle")).PerformClick();
+                    PumpUntil(() => context.PendingRouteCount == 0);
                     Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) && ((Button)Field(main, "cliToggle")).Text == "Выключить CLI", "Start CLI exposes matching off on main");
                     Shot(main, "main-cli-enabled");
                     ((Button)Field(main, "cliToggle")).PerformClick();

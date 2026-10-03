@@ -1,6 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using CancellationTokenSource = System.Threading.CancellationTokenSource;
 using System.Windows.Forms;
 
 namespace ProGo
@@ -18,6 +21,11 @@ namespace ProGo
         private readonly bool ownsHealth;
         private readonly Timer statusTimer = new Timer { Interval = 1000 };
         private Timer startupShowTimer;
+        private readonly Dictionary<string, long> pendingRoutes = new Dictionary<string, long>();
+        private long nextRouteRequest;
+        private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
+        private volatile bool closing;
+        internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
         public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null)
         {
@@ -118,6 +126,7 @@ namespace ProGo
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
             mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, automation, health);
+            RefreshPendingRoutes();
             mainWindow.FormClosing += DashboardClosing;
             mainWindow.FormClosed += delegate { mainWindow = null; };
             mainWindow.Show(); UpdateTooltip();
@@ -142,14 +151,20 @@ namespace ProGo
         private void ShowSettings(SettingsSection section = SettingsSection.Automation)
         {
             var before = settings.Current;
+            bool reconnectAfterSave = false;
             using (var form = new SshProfilesSettingsForm(settings, section))
             {
                 form.ManualActionRequested += Execute;
                 form.ProxyEndpointText = cliProxy.ProxyUrl;
                 form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
+                    bool changed = proposed.SocksHost != settings.Current.SocksHost || proposed.SocksPort != settings.Current.SocksPort || proposed.SshProfile != settings.Current.SshProfile;
                     var oldPort = settings.Current.HttpProxyPort;
                     string message;
                     if (!cliProxy.Reconfigure(proposed, pickFree, out message)) return message;
+                    if (changed) {
+                        reconnectAfterSave = proxy.CurrentPid.HasValue || proxy.IsConnecting;
+                        pendingRoutes.Clear(); proxy.StopTunnel(); RefreshPendingRoutes(); health.Invalidate();
+                    }
                     NotifyPortChange(oldPort);
                     return null;
                 };
@@ -157,11 +172,7 @@ namespace ProGo
                 {
                     homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
                     automation.Update(before, settings.Current);
-                    if (!before.AutoStartSocks && settings.Current.AutoStartSocks) proxy.StartTunnel(false);
-                    if (before.SocksPort != settings.Current.SocksPort || before.SocksHost != settings.Current.SocksHost || before.SshProfile != settings.Current.SshProfile)
-                    {
-                        if (proxy.CurrentPid.HasValue) proxy.RestartTunnel();
-                    }
+                    if (reconnectAfterSave || (!before.AutoStartSocks && settings.Current.AutoStartSocks)) proxy.StartTunnelAsync(System.Threading.CancellationToken.None);
                 }
             }
             UpdateTooltip();
@@ -188,6 +199,8 @@ namespace ProGo
         }
         private void Execute(string action)
         {
+            var routed = RouteAction(action);
+            if (routed != null) { BeginRouteAction(routed); return; }
             string navigation = action == "windows-settings" ? "settings" : action == "route-check" ? "diagnostics" : action;
             bool isPage = navigation == "settings" || navigation == "connections" || navigation == "vault" || navigation == "iphone" || navigation == "diagnostics";
             if (isPage && mainWindow != null) mainWindow.SetNavigation(navigation);
@@ -195,8 +208,6 @@ namespace ProGo
             {
                 switch (action)
                 {
-                    case "connect": health.Invalidate(); if (proxy.IsListening()) proxy.RestartTunnel(); else proxy.StartTunnel(true); health.Invalidate(); break;
-                    case "restart": health.Invalidate(); proxy.RestartTunnel(); health.Invalidate(); break;
                     case "stop":
                         StopDesktop(); break;
                     case "phone-stop": homeVpn.Stop(); break;
@@ -208,18 +219,11 @@ namespace ProGo
                     case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(mainWindow); break;
                     case "diagnostics":
                     case "route-check": using (var form = new StatusForm(settings, proxy, action == "route-check", null, null, health)) form.ShowDialog(mainWindow); break;
-                    case "cli-start":
-                    case "terminal-on":
-                    case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
                     case "cli-off":
                     case "terminal-off":
                     case "codex-off": DisableCli(); break;
-                    case "windows-on": RequireRoute(); EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
-                    case "windows-off": automation.Cancel(ProxyFeature.Windows); string m; if (!SystemProxyService.Restore(out m)) throw new InvalidOperationException(m); break;
-                    case "codex-shortcut-on": RequireRoute(); EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
+                    case "windows-off": CancelPendingRoute("windows-on"); automation.Cancel(ProxyFeature.Windows); string m; if (!SystemProxyService.Restore(out m)) throw new InvalidOperationException(m); break;
                     case "codex-shortcut-off": CodexProxyService.Disable(); break;
-                    case "codex-open": RequireRoute(); EnsureBridge(); CodexProxyService.Open(cliProxy.Port); break;
-                    case "terminal-open": RequireRoute(); EnsureBridge(); string error; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error)) throw new InvalidOperationException(error); break;
                     case "help": ShowHelp(); break;
                     case "update": StartUpdate(); break;
                 }
@@ -230,15 +234,76 @@ namespace ProGo
         }
         private void StopDesktop()
         {
+            pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             DisconnectApps(); proxy.StopTunnel();
             health.Invalidate();
         }
-        private void RequireRoute()
+        private static string RouteAction(string action)
         {
-            if (proxy.IsListening()) return;
-            proxy.StartTunnel(true);
-            if (!proxy.IsListening()) throw new InvalidOperationException("Подключение к серверу ещё не готово. Завершите вход в окне SSH и повторите действие.");
+            if (action == "terminal-on" || action == "codex-on") return "cli-start";
+            return action == "cli-start" || action == "windows-on" || action == "connect" || action == "restart" ||
+                action == "codex-shortcut-on" || action == "codex-open" || action == "terminal-open" ? action : null;
+        }
+        private void BeginRouteAction(string action)
+        {
+            if (closing || pendingRoutes.ContainsKey(action)) return;
+            long request = ++nextRouteRequest; pendingRoutes[action] = request;
+            // A reconnect invalidates all previous requests before a new connection is awaited.
+            if (action == "restart" || (action == "connect" && proxy.CurrentPid.HasValue)) {
+                pendingRoutes.Clear(); pendingRoutes[action] = request; proxy.StopTunnel();
+            }
+            health.Invalidate(); RefreshPendingRoutes();
+            CompleteRouteAction(action, request);
+        }
+        private async void CompleteRouteAction(string action, long request)
+        {
+            bool ready = false, cancelled = false; Exception failure = null;
+            try { ready = await proxy.StartTunnelAsync(routeLifetime.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) { cancelled = true; }
+            catch (Exception ex) { failure = ex; }
+            if (closing) return;
+            try {
+                // Modal dialogs may replace a captured WinForms synchronization context.
+                // Always finish against this application's persistent UI dispatcher.
+                activationDispatcher.BeginInvoke(new Action(delegate {
+                    long active;
+                    if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request) return;
+                    try {
+                        if (cancelled) return;
+                        if (failure != null) throw failure;
+                        if (!ready) throw new InvalidOperationException(proxy.StartupError ?? "Прокси не готов. Проверьте сервер и SSH-ключ в «Подключениях».");
+                        switch (action) {
+                            case "cli-start": EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
+                            case "windows-on": EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
+                            case "codex-shortcut-on": EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
+                            case "codex-open": EnsureBridge(); CodexProxyService.Open(cliProxy.Port); break;
+                            case "terminal-open": EnsureBridge(); string error; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error)) throw new InvalidOperationException(error); break;
+                        }
+                        health.Invalidate();
+                    }
+                    catch (Exception ex) {
+                        SafeLog.Error("User connection action failed: " + action, ex);
+                        MessageBox.Show(mainWindow, ex.Message, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    finally {
+                        if (pendingRoutes.TryGetValue(action, out active) && active == request) pendingRoutes.Remove(action);
+                        if (!closing) RefreshPendingRoutes();
+                    }
+                }));
+            }
+            catch (InvalidOperationException ex) { if (!closing) SafeLog.Error("Connection result could not reach the application UI.", ex); }
+        }
+        private void RefreshPendingRoutes()
+        {
+            if (mainWindow != null && !mainWindow.IsDisposed)
+                mainWindow.SetRoutePending(pendingRoutes.ContainsKey("cli-start"), pendingRoutes.ContainsKey("windows-on"), pendingRoutes.Count > 0);
+        }
+        private void CancelPendingRoute(string action)
+        {
+            pendingRoutes.Remove(action);
+            if (pendingRoutes.Count == 0 && proxy.IsConnecting) proxy.StopTunnel();
+            RefreshPendingRoutes();
         }
         private void EnsureBridge()
         {
@@ -259,6 +324,7 @@ namespace ProGo
         }
         private void DisableCli()
         {
+            CancelPendingRoute("cli-start");
             automation.Cancel(ProxyFeature.Cli);
             CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
         }
@@ -466,6 +532,7 @@ namespace ProGo
         {
             if (disposing)
             {
+                closing = true; pendingRoutes.Clear(); routeLifetime.Cancel(); routeLifetime.Dispose();
                 health.Changed -= HealthChanged;
                 if (ownsHealth) health.Dispose();
                 statusTimer.Stop(); statusTimer.Dispose();

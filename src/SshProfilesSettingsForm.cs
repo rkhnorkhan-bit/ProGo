@@ -70,6 +70,12 @@ namespace ProGo
             actions.Controls.Add(UiTheme.Button("Изменить", delegate { EditProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Удалить", delegate { RemoveProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Проверить", delegate { CheckSelectedProfile(); }, false));
+            actions.Controls.Add(UiTheme.Button("Первый вход", delegate {
+                var selected = SelectedProfile();
+                if (selected == null) { MessageBox.Show(this, "Сначала добавьте и выберите сервер.", "Первый вход SSH"); return; }
+                try { SshInteractiveLogin.Open(selected.Target); }
+                catch (Exception ex) { MessageBox.Show(this, ex.Message, "Первый вход SSH", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            }, false));
             connection.Controls.Add(actions, 0, 1); connection.SetColumnSpan(actions, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
             AddLabeled(connection, 2, "Адрес SOCKS-туннеля", host);
             port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Порт SOCKS-туннеля", port);
@@ -77,7 +83,7 @@ namespace ProGo
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
             connection.Controls.Add(autoStart, 0, 4); connection.SetColumnSpan(autoStart, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
             connection.Controls.Add(autoSwitchProfile, 0, 5); connection.SetColumnSpan(autoSwitchProfile, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-            var help = UiTheme.Label("Сервер — это имя подключения SSH или адрес вида user@vpn.example.org. Автоматические прокси включатся, когда соединение будет готово. Для подключения iPhone используйте отдельный мастер.", UiTheme.Body, UiTheme.Muted);
+            var help = UiTheme.Label("Фоновое подключение использует SSH-ключ и не запрашивает пароль. «Первый вход» открывает видимое окно SSH: сверьте отпечаток ключа сервера, войдите и завершите сеанс командой exit. Вход по паролю сам по себе не настраивает SSH-ключ для ProGo. Затем нажмите «Запустить CLI» один раз — ProGo дождётся готовности. Для iPhone используйте отдельный мастер.", UiTheme.Body, UiTheme.Muted);
             help.MaximumSize = new Size(740, 0); connection.Controls.Add(help, 0, 6); connection.SetColumnSpan(help, 2);
             var privacy = FormTable(Page(tabs, "Хранилище"));
             clearSeconds.Minimum = 5; clearSeconds.Maximum = 3600;

@@ -74,7 +74,7 @@ namespace ProGo
                     {
                         if (settingsService.Current.AutoStartSocks)
                         {
-                            proxyService.StartTunnel(false);
+                            proxyService.StartTunnelAsync(System.Threading.CancellationToken.None);
                         }
 
                         context.StartAutomation();

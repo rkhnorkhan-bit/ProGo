@@ -17,11 +17,16 @@ namespace ProGo
     internal static partial class DesktopTests
     {
         private static int passed;
+        private static string lastCheck = "test startup";
         private static string work;
-        private static void Check(bool value, string name) { if (!value) throw new Exception(name); passed++; Console.WriteLine("PASS: " + name); }
+        private static void Check(bool value, string name) { lastCheck = name; if (!value) throw new Exception(name); passed++; Console.WriteLine("PASS: " + name); }
         [STAThread]
         private static int Main(string[] args)
         {
+            using (var guard = new System.Threading.Timer(delegate {
+                Console.WriteLine("FAIL: desktop fixture watchdog; last check: " + lastCheck);
+                Console.Out.Flush(); Environment.Exit(1);
+            }, null, 120000, System.Threading.Timeout.Infinite))
             try
             {
                 work = Path.GetFullPath(args[0]); Directory.CreateDirectory(work);
@@ -65,9 +70,12 @@ namespace ProGo
                     PortIntegrations(settings);
                     BridgeRoundTrip(settings, false); BridgeRoundTrip(settings, true);
                     Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+                    using (var errors = WatchStartupErrors()) {
                     UnifiedCliActions(settings);
                     UiControls(settings);
                     HealthChecks(settings);
+                    AsyncCliStartup(settings);
+                    }
                     using (var proxy = new ProxyService(settings))
                     using (var relay = new Ikev2RelayService())
                     using (var home = new HomeVpnService(relay))
@@ -395,6 +403,7 @@ namespace ProGo
             var originalEnvironment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
             if (File.Exists(CliProxyEnvironmentService.BackupPath) || File.Exists(SystemProxyService.BackupPath)) throw new Exception("Unified action fixture is not isolated");
             var listener = Occupy(0);
+            AnswerFixtureSocks(listener);
             try
             {
                 var configured = originalSettings.Clone(); configured.SocksHost = "127.0.0.1"; configured.SocksPort = Number(listener);
@@ -419,6 +428,7 @@ namespace ProGo
                     {
                         plan.Update(null, configured);
                         execute.Invoke(context, new object[] { on[i] });
+                        PumpUntil(() => context.PendingRouteCount == 0);
                         Check(bridge.IsRunning && CliProxyEnvironmentService.IsAppliedToUserEnvironment(bridge.Port) && !ApplyOnce(plan, ProxyFeature.Cli, true),
                             "manual start and legacy alias apply one mode and cancel its automatic writer " + on[i]);
                         plan.Update(null, configured);

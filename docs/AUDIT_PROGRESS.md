@@ -135,10 +135,38 @@ cover protocol-only, verified, unavailable and partial-configuration states.
 The instance fixture now speaks SOCKS before automatic CLI setup can proceed.
 F05 SSH startup readiness and F14 existing network tasks remain separate work.
 
+## Stage 6a — F05: await desktop SSH readiness from one request
+
+- Desktop connect/reconnect, ordinary **Запустить CLI**, Windows mode and scoped
+  launch commands await a bounded asynchronous SOCKS-ready result. Completion
+  uses the persistent application UI dispatcher, including after settings dialogs. Concurrent
+  callers share one startup; repeated CLI aliases do not add another intent.
+- Show pending connection/CLI controls while the UI remains responsive. Stop,
+  manual off, changed connection settings and disposal discard pending actions,
+  preventing a late environment/Windows write. A new attempt after cancellation
+  waits for cleanup before creating its owned process.
+- Hidden SSH starts always use BatchMode and strict host-key checking. The
+  explicit **Первый вход** action opens a visible console with host-key prompts
+  and configured forwardings disabled. Passwords are not stored. Explain that
+  a password login does not by itself configure a key for background ProGo use.
+- Startup timeout, foreign TCP listener and rejected SSH key have specific next
+  steps. Preserve existing recovery/fallback behavior and earlier F04 evidence.
+
+Verification: native Windows child-process fixtures delay/refuse SSH, exercise
+shared startup, timeout, cancellation/retry and foreign listeners. Desktop tests
+click the actual ordinary CLI button once, check a UI heartbeat, apply both modes
+from one connection, stop pending requests and verify no delayed settings write.
+Earlier fixtures now answer the SOCKS handshake and await command completion.
+Native screenshots cover pending CLI and the first-login control/guidance.
+
+F05 remains partial: the structured server/user/port/key editor and advanced
+alias compatibility are the next F05b stage. This stage does not claim to resolve
+all existing blocking operations covered separately by F14.
+
 ## Remaining stages
 
-F05–F10 and F14–F30 remain separate work. In particular, F05 (SSH readiness) and F06 (Windows
-restore ownership) are not fixed by these stages. Preserve the ordinary
+F05–F10 and F14–F30 remain separate work. In particular, F05 is partial until the structured connection editor is complete; F06 (Windows
+restore ownership) remains untouched. Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described
