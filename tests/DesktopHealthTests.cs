@@ -61,18 +61,18 @@ namespace ProGo
             try {
                 Environment.SetEnvironmentVariable("NO_PROXY", "*");
                 foreach (int status in new[] { 200, 401 }) {
-                    var listener = Occupy(0); bool head = false, remoteName = false;
+                    var listener = Occupy(0); bool head = false, remoteName = false; string received = "", destination = "";
                     var server = Task.Run(delegate {
                         using (var client = listener.AcceptTcpClient()) {
                             var stream = client.GetStream(); stream.ReadTimeout = 4000;
                             HealthRead(stream, 3); stream.Write(new byte[] { 5, 0 }, 0, 2);
                             var request = HealthRead(stream, 4);
-                            if (request[3] == 3) { var name = HealthRead(stream, stream.ReadByte()); remoteName = Encoding.ASCII.GetString(name) == "probe.example.invalid"; }
+                            if (request[3] == 3) { var name = HealthRead(stream, stream.ReadByte()); destination = Encoding.ASCII.GetString(name); remoteName = destination == "probe.example.invalid"; }
                             else HealthRead(stream, request[3] == 1 ? 4 : 16);
                             HealthRead(stream, 2); stream.Write(new byte[] { 5, 0, 0, 1, 127, 0, 0, 1, 0, 1 }, 0, 10);
                             var builder = new StringBuilder();
                             while (!builder.ToString().EndsWith("\r\n\r\n")) { int value = stream.ReadByte(); if (value < 0) throw new EndOfStreamException(); builder.Append((char)value); }
-                            head = builder.ToString().StartsWith("HEAD /health HTTP/");
+                            received = builder.ToString().Split('\r')[0]; head = received.StartsWith("HEAD /health HTTP/");
                             var answer = Encoding.ASCII.GetBytes("HTTP/1.1 " + status + " Fixture\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"); stream.Write(answer, 0, answer.Length);
                         }
                     });
@@ -80,7 +80,7 @@ namespace ProGo
                         config.SocksHost = "127.0.0.1"; config.SocksPort = Number(listener); config.TestEndpoint = "http://probe.example.invalid/health";
                         var result = ConnectionHealthMonitor.CheckInternet(config, CancellationToken.None);
                         Check(server.Wait(5000) && head && remoteName && result.Responded && result.HttpStatus == status,
-                            "actual curl proves HTTP " + status + " through SOCKS despite NO_PROXY=* without external traffic");
+                            "actual curl proves HTTP " + status + " through SOCKS despite NO_PROXY=* without external traffic; response=" + result.Responded + "/" + result.HttpStatus + "; destination=" + destination + "; request=" + received);
                     } finally { listener.Stop(); }
                 }
             } finally { Environment.SetEnvironmentVariable("NO_PROXY", bypass); }
