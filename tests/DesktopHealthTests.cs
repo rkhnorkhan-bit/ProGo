@@ -22,6 +22,11 @@ namespace ProGo
         {
             monitor.RequestRefresh(true); PumpUntil(() => !(bool)Field(monitor, "busy"));
         }
+        private static void HealthAcceptGreeting(NetworkStream stream)
+        {
+            var greeting = HealthRead(stream, 2);
+            if (greeting[0] != 5 || !HealthRead(stream, greeting[1]).Contains((byte)0)) throw new IOException("Fixture requires SOCKS5 with no-auth method");
+        }
         private static void HealthGreeting(byte[] reply, bool expected, string description, int delay = 0)
         {
             var listener = Occupy(0); var config = AppSettings.Defaults(); config.SocksHost = "127.0.0.1"; config.SocksPort = Number(listener);
@@ -65,7 +70,7 @@ namespace ProGo
                     var server = Task.Run(delegate {
                         using (var client = listener.AcceptTcpClient()) {
                             var stream = client.GetStream(); stream.ReadTimeout = 4000;
-                            HealthRead(stream, 3); stream.Write(new byte[] { 5, 0 }, 0, 2);
+                            HealthAcceptGreeting(stream); stream.Write(new byte[] { 5, 0 }, 0, 2);
                             var request = HealthRead(stream, 4);
                             if (request[3] == 3) { var name = HealthRead(stream, stream.ReadByte()); destination = Encoding.ASCII.GetString(name); remoteName = destination == "probe.example.invalid"; }
                             else HealthRead(stream, request[3] == 1 ? 4 : 16);
@@ -84,6 +89,22 @@ namespace ProGo
                     } finally { listener.Stop(); }
                 }
             } finally { Environment.SetEnvironmentVariable("NO_PROXY", bypass); }
+
+            var refused = Occupy(0);
+            var rejectingServer = Task.Run(delegate {
+                using (var client = refused.AcceptTcpClient()) {
+                    var stream = client.GetStream(); stream.ReadTimeout = 4000;
+                    HealthAcceptGreeting(stream); stream.Write(new byte[] { 5, 0 }, 0, 2);
+                    var request = HealthRead(stream, 4);
+                    HealthRead(stream, request[3] == 3 ? stream.ReadByte() : request[3] == 1 ? 4 : 16); HealthRead(stream, 2);
+                    stream.Write(new byte[] { 5, 5, 0, 1, 0, 0, 0, 0, 0, 0 }, 0, 10);
+                }
+            });
+            try {
+                config.SocksHost = "127.0.0.1"; config.SocksPort = Number(refused); config.TestEndpoint = "http://probe.example.invalid/health";
+                var result = ConnectionHealthMonitor.CheckInternet(config, CancellationToken.None);
+                Check(rejectingServer.Wait(5000) && !result.Responded && result.HttpStatus == 0, "actual curl cannot turn rejected remote CONNECT into internet readiness");
+            } finally { refused.Stop(); }
 
             var stalled = Occupy(0);
             using (var entered = new ManualResetEventSlim())
@@ -121,6 +142,10 @@ namespace ProGo
                 clock = clock.AddSeconds(6); int before = calls; monitor.RequestRefresh(); PumpUntil(() => !(bool)Field(monitor, "busy"));
                 Check(calls == before && monitor.Current.InternetCheckedUtc == verified.InternetCheckedUtc && monitor.Current.SocksCheckedUtc == clock,
                     "cached egress preserves its completion time while local evidence refreshes");
+                clock = clock.AddSeconds(25); internet = false; monitor.RequestRefresh(); PumpUntil(() => !(bool)Field(monitor, "busy"));
+                Check(calls == before + 1 && !monitor.Current.InternetVerified && monitor.Current.InternetCheckedUtc == clock,
+                    "thirty-second egress expiry starts a real replacement and removes old success");
+                before = calls;
                 clock = clock.AddSeconds(16);
                 Check(!monitor.Current.SocksReady && !monitor.Current.InternetVerified, "expired local evidence cannot remain green");
                 local = false; HealthRefresh(monitor);
