@@ -26,7 +26,12 @@ internal static class SocksRecoveryTests
             Test("startup grace and repeated missing-listener checks", MissingListener);
             Test("an open TCP port without SOCKS is not considered healthy", InvalidSocksListener);
             Test("external port owner is neither killed nor adopted", ExternalListener);
-            Test("automatic retries are noninteractive", BatchMode);
+            Test("manual and automatic hidden attempts are noninteractive", BatchMode);
+            Test("asynchronous slow startup shares one process and waits for SOCKS", AsyncSlowStartup);
+            Test("stop cancels startup and immediate retry starts one fresh attempt", AsyncCancellation);
+            Test("startup timeout stops its owned child and gives guidance", AsyncTimeout);
+            Test("SSH refusal explains key authorization without a hidden prompt", AsyncRefusal);
+            Test("asynchronous startup refuses a foreign non-SOCKS listener", AsyncForeignListener);
             Test("recovery respects configured profile fallback", Fallback);
             Test("manual profile fallback remains available", ManualFallback);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
@@ -60,13 +65,13 @@ internal static class SocksRecoveryTests
         public AppSettings Settings = AppSettings.Defaults();
         public DateTime Now = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public readonly ProxyService Proxy;
-        public Fixture()
+        public Fixture(int startupTimeoutMs = 20000)
         {
             var reserve = new TcpListener(IPAddress.Loopback, 0); reserve.Start();
             Settings.SocksPort = ((IPEndPoint)reserve.LocalEndpoint).Port; reserve.Stop();
             Settings.SshProfile = "ready";
             Proxy = new ProxyService(delegate { return Settings; }, delegate(AppSettings s) { Settings = s; },
-                Executable, delegate { return Now; }, false);
+                Executable, delegate { return Now; }, false, "", startupTimeoutMs);
         }
         public void Tick(int seconds) { Now = Now.AddSeconds(seconds); Proxy.PollRecovery(); }
         public void Ready()
@@ -217,10 +222,59 @@ internal static class SocksRecoveryTests
         using (var f = new Fixture())
         {
             f.Settings.SshProfile = "batch-only"; f.Proxy.StartTunnel(false);
-            WaitFor(delegate { return !f.Proxy.CurrentPid.HasValue; });
-            f.Tick(0); f.Tick(5); f.Ready();
+            f.Ready(); f.Crash(); f.Tick(5); f.Ready();
             Assert(f.Proxy.AutomaticRestarts == 1, "Automatic retry did not use BatchMode");
         }
+
+    private static void AsyncSlowStartup()
+    {
+        using (var f = new Fixture()) {
+            f.Settings.SshProfile = "slow";
+            var watch = Stopwatch.StartNew(); var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(watch.ElapsedMilliseconds < 300 && !task.IsCompleted && f.Proxy.IsConnecting, "Start call blocked or declared readiness before delayed SOCKS");
+            Assert(ReferenceEquals(task, f.Proxy.StartTunnelAsync(CancellationToken.None)), "Concurrent starts did not share their pending operation");
+            Assert(task.Wait(5000) && task.Result && !f.Proxy.IsConnecting, "Slow SOCKS was not awaited");
+            var pid = f.Proxy.CurrentPid;
+            Assert(f.Proxy.StartTunnelAsync(CancellationToken.None).Result && f.Proxy.CurrentPid == pid, "Repeated ready request created another child");
+        }
+    }
+    private static void AsyncCancellation()
+    {
+        using (var f = new Fixture()) {
+            f.Settings.SshProfile = "quiet";
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None); WaitFor(() => f.Proxy.CurrentPid.HasValue);
+            f.Proxy.StopTunnel(); f.Settings.SshProfile = "ready";
+            var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(retry.Wait(5000) && retry.Result && f.Proxy.CurrentPid.HasValue, "Immediate retry after cancellation failed or resurrected the former intent");
+            Assert(task.IsCanceled, "Stopped asynchronous request did not cancel");
+        }
+    }
+    private static void AsyncTimeout()
+    {
+        using (var f = new Fixture(500)) {
+            f.Settings.SshProfile = "quiet"; f.Settings.AutoRestartSocks = false;
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(task.Wait(5000) && !task.Result && !f.Proxy.CurrentPid.HasValue && !f.Proxy.IsConnecting && f.Proxy.StartupError.Contains("отведённое время"), "Timeout was unbounded, kept its child, or gave no next step");
+        }
+    }
+    private static void AsyncRefusal()
+    {
+        using (var f = new Fixture()) {
+            f.Settings.SshProfile = "denied"; f.Settings.AutoRestartSocks = false;
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(task.Wait(5000) && !task.Result && f.Proxy.StartupError.Contains("ключ не принят") && f.Proxy.StartupError.Contains("Первый вход"), "SSH key refusal did not give actionable visible-login guidance");
+        }
+    }
+    private static void AsyncForeignListener()
+    {
+        using (var f = new Fixture()) {
+            var listener = new TcpListener(IPAddress.Loopback, f.Settings.SocksPort); listener.Start();
+            try {
+                var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(task.Wait(5000) && !task.Result && !f.Proxy.CurrentPid.HasValue && f.Proxy.StartupError.Contains("Порт SOCKS занят") && f.Proxy.IsListening(), "Foreign TCP listener was adopted, removed or accepted as a ready route");
+            } finally { listener.Stop(); }
+        }
+    }
     }
 
     private static void Fallback()
@@ -248,8 +302,10 @@ internal static class SocksRecoveryTests
     private static int FakeSsh(string[] args)
     {
         var mode = args[args.Length - 1];
+        if (mode == "denied") { Console.Error.WriteLine("Permission denied (publickey)."); return 1; }
         if (mode == "die" || (mode == "batch-only" && Array.IndexOf(args, "BatchMode=yes") < 0)) return 1;
         if (mode == "quiet") { Thread.Sleep(Timeout.Infinite); return 0; }
+        if (mode == "slow") Thread.Sleep(1200);
         var endpoint = args[Array.IndexOf(args, "-D") + 1];
         var port = Int32.Parse(endpoint.Substring(endpoint.LastIndexOf(':') + 1));
         var listener = new TcpListener(IPAddress.Loopback, port);

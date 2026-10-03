@@ -280,14 +280,14 @@ foreach ($relativePath in @(
 
 $RecoveryHarness = Join-Path $Root "build\SocksRecoveryTests.exe"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
 
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
 $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
-& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs')
+& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs') (Join-Path $Root 'tests\DesktopStartupTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
 & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }

@@ -21,12 +21,32 @@ namespace ProGo
             while (!ready()) { if (watch.ElapsedMilliseconds > 5000) throw new Exception("UI fixture deadline"); Application.DoEvents(); Thread.Sleep(10); }
             Application.DoEvents();
         }
+        private static void AnswerFixtureSocks(TcpListener listener)
+        {
+            Task.Run(async delegate {
+                try {
+                    while (true) {
+                        var client = await listener.AcceptTcpClientAsync();
+                        Task.Run(delegate {
+                            using (client) {
+                                try {
+                                    var stream = client.GetStream(); stream.ReadTimeout = 1000;
+                                    var greet = HealthRead(stream, 2); HealthRead(stream, greet[1]);
+                                    if (greet[0] == 5) stream.Write(new byte[] { 5, 0 }, 0, 2);
+                                } catch (System.IO.IOException) { } catch (ObjectDisposedException) { }
+                            }
+                        });
+                    }
+                } catch (SocketException) { } catch (ObjectDisposedException) { }
+            });
+        }
         private static void UiControls(SettingsService settings)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("SKIP: UI action state requires isolated CI"); return; }
             var original = settings.Current.Clone();
             var environment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
             var listener = Occupy(0);
+            AnswerFixtureSocks(listener);
             try {
                 var configured = original.Clone(); configured.SocksHost = "127.0.0.1"; configured.SocksPort = Number(listener);
                 configured.AutoCliProxy = true; configured.AutoSystemProxy = true; configured.TrayCloseExplained = false;
@@ -65,10 +85,12 @@ namespace ProGo
                         Check(Descendants(form).OfType<TabControl>().Single().SelectedTab.Text == "Автоматика", "Settings retains automation entry");
                     });
                     ((Button)Field(main, "windowsToggle")).PerformClick(); Application.DoEvents();
+                    PumpUntil(() => context.PendingRouteCount == 0);
                     Check(SystemProxyService.IsApplied(settings.Current) && ((Button)Field(main, "windowsToggle")).Text == "Выключить", "Windows card enables its own mode");
                     ((Button)Field(main, "windowsToggle")).PerformClick();
                     Check(!SystemProxyService.IsOwned && ((Button)Field(main, "windowsToggle")).Text == "Включить", "Windows card restores with its symmetric off command");
                     ((Button)Field(main, "cliToggle")).PerformClick();
+                    PumpUntil(() => context.PendingRouteCount == 0);
                     Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) && ((Button)Field(main, "cliToggle")).Text == "Выключить CLI", "Start CLI exposes matching off on main");
                     Shot(main, "main-cli-enabled");
                     ((Button)Field(main, "cliToggle")).PerformClick();

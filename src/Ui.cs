@@ -69,10 +69,17 @@ namespace ProGo
             var restart = new Button { Text = "Переподключиться", Width = 150 };
             speedButton = new Button { Text = "Измерить скорость", Width = 150 };
             checkButton = new Button { Text = "Проверить маршрут", Width = 160 };
-            restart.Click += delegate
+            restart.Click += async delegate
             {
                 if (health != null) health.Invalidate();
-                try { proxy.RestartTunnel(); } finally { if (health != null) health.Invalidate(); }
+                restart.Enabled = false;
+                try {
+                    proxy.StopTunnel();
+                    if (!await proxy.StartTunnelAsync(System.Threading.CancellationToken.None) && !IsDisposed)
+                        MessageBox.Show(this, proxy.StartupError, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                } catch (OperationCanceledException) { }
+                finally { if (health != null) health.Invalidate(); if (!IsDisposed) restart.Enabled = true; }
+                if (IsDisposed) return;
                 RefreshState(false);
                 QueuePingMeasure();
             };
