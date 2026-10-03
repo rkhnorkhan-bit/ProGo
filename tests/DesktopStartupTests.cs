@@ -12,7 +12,8 @@ namespace ProGo
     {
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string cls, string title);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr window, StringBuilder text, int count);
-        [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr window, Func<IntPtr, IntPtr, bool> visit, IntPtr data);
+        private delegate bool VisitWindow(IntPtr window, IntPtr data);
+        [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr window, VisitWindow visit, IntPtr data);
         [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr window, uint message, IntPtr wparam, IntPtr lparam);
         private static Timer WatchStartupErrors()
         {
