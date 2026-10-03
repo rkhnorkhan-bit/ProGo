@@ -31,7 +31,7 @@ namespace ProGo
                 var configured = original.Clone(); configured.SocksHost = "127.0.0.1"; configured.SocksPort = Number(listener);
                 configured.AutoCliProxy = true; configured.AutoSystemProxy = true; configured.TrayCloseExplained = false;
                 settings.Save(configured);
-                using (var proxy = new ProxyService(settings))
+                using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), "unused-test-ssh", () => DateTime.UtcNow, false))
                 using (var bridge = new CliProxyBridgeService(settings))
                 using (var relay = new Ikev2RelayService())
                 using (var home = new HomeVpnService(relay))
