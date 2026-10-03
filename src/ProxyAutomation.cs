@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace ProGo
 {
-    internal enum ProxyFeature { Terminal, Windows, Codex }
+    internal enum ProxyFeature { Cli, Windows }
     internal enum AutomationResult { None, Applied, RetryScheduled, Paused }
 
     // Keep an enabled option pending until it is applied successfully. The timer
@@ -94,12 +94,12 @@ namespace ProGo
         }
         internal static string FeatureName(ProxyFeature feature)
         {
-            return feature == ProxyFeature.Terminal ? "терминалов" : feature == ProxyFeature.Windows ? "Windows" : "Codex";
+            return feature == ProxyFeature.Cli ? "терминалов и Codex" : "Windows";
         }
         internal void Cancel(ProxyFeature feature) { pending.Remove(feature); }
         internal static bool Enabled(AppSettings s, ProxyFeature feature)
         {
-            return feature == ProxyFeature.Terminal ? s.AutoApplyProxy : feature == ProxyFeature.Windows ? s.AutoSystemProxy : s.AutoCodexProxy;
+            return feature == ProxyFeature.Cli ? s.AutoCliProxy : s.AutoSystemProxy;
         }
     }
 
@@ -120,16 +120,6 @@ namespace ProGo
             text.AppendLine("call codex %*");
             text.AppendLine("endlocal");
             return text.ToString();
-        }
-        // Normal Codex launch uses the same Windows-user proxy environment as
-        // other command-line tools. The scoped shortcut below is optional.
-        internal static void EnableOrdinaryLaunch(int port)
-        {
-            CliProxyEnvironmentService.ApplyUserEnvironment(port);
-        }
-        internal static void DisableOrdinaryLaunch()
-        {
-            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
         }
         public static void Enable(int port)
         {

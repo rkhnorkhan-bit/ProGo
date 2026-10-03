@@ -86,7 +86,7 @@ Never run this provisioning test on an existing personal or production server.
 ## Desktop 0.2 validation
 
 `Test-ProGo.ps1` also runs `DesktopTests.cs` for preference migration, all combinations
-of independent automatic actions, manual override, scoped Codex launch, HTTP/CONNECT
+of CLI and Windows automatic actions, manual override, scoped Codex launch, HTTP/CONNECT
 round trips through a loopback SOCKS fixture, native form screenshots and 150% scaling.
 `UpdatePackageTests.ps1` loads only updater function definitions in a disposable test
 scope and rejects corrupt digests, missing metadata, unexpected hosts and archive
@@ -107,3 +107,15 @@ clock checks delayed/bounded retries, permanent errors, manual cancellation,
 explicit re-arming and reentrancy without sleeping or using a real VPS. Native
 screenshots include the paused automatic-setup status and corrective guidance.
 The other audit findings remain tracked separately in `AUDIT_PROGRESS.md`.
+
+### Audit stage F01
+
+Desktop regressions load all four combinations of the legacy terminal/Codex
+switches from actual temporary settings files, verify OR migration and a single
+automatic writer, save the unified off and reload without resurrecting old flags.
+They check canonical-field precedence, clone compatibility and unrelated settings.
+In isolated Windows CI, the actual dashboard-compatible command and legacy aliases
+apply/restore the same user environment and cancel pending automation. A local
+`codex.cmd` fixture runs as ordinary `codex` with the environment of a new shell,
+without the scoped launcher, API credentials or external requests. Native screenshots
+and button checks cover the single settings card and retained **Запустить CLI**.

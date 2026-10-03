@@ -26,12 +26,12 @@ namespace ProGo
             {
                 work = Path.GetFullPath(args[0]); Directory.CreateDirectory(work);
                 var json = new JavaScriptSerializer();
-                var old = json.Deserialize<AppSettings>("{\"AutoRestartSocks\":false,\"AutoApplyProxy\":true}");
-                Check(!old.AutoRestartSocks && old.AutoApplyProxy && !old.AutoSystemProxy && !old.AutoCodexProxy, "old preferences retained; new options opt in");
+                var old = SettingsService.DeserializeSettings("{\"AutoRestartSocks\":false,\"AutoApplyProxy\":true}");
+                Check(!old.AutoRestartSocks && old.AutoCliProxy && !old.AutoSystemProxy, "legacy CLI preference migrates without enabling unrelated options");
                 Check(json.Deserialize<AppSettings>("{}").AutoRestartSocks, "missing recovery preference retains default");
-                for (int mask = 0; mask < 8; mask++)
+                for (int mask = 0; mask < 4; mask++)
                 {
-                    var s = AppSettings.Defaults(); s.AutoApplyProxy = (mask & 1) != 0; s.AutoSystemProxy = (mask & 2) != 0; s.AutoCodexProxy = (mask & 4) != 0;
+                    var s = AppSettings.Defaults(); s.AutoCliProxy = (mask & 1) != 0; s.AutoSystemProxy = (mask & 2) != 0;
                     s = json.Deserialize<AppSettings>(json.Serialize(s));
                     var plan = new AutomationPlan(); plan.Update(null, s);
                     foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
@@ -58,12 +58,14 @@ namespace ProGo
                 RestorePreferences();
                 using (var settings = new SettingsService())
                 {
+                    CliSettingsMigration();
                     settings.Current.SshProfile = "my-vps";
                     AutomationRetries(settings);
                     ProxyPorts(settings);
                     PortIntegrations(settings);
                     BridgeRoundTrip(settings, false); BridgeRoundTrip(settings, true);
                     Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+                    UnifiedCliActions(settings);
                     using (var proxy = new ProxyService(settings))
                     using (var relay = new Ikev2RelayService())
                     using (var home = new HomeVpnService(relay))
@@ -93,7 +95,21 @@ namespace ProGo
                         {
                             Snapshot(form, "settings", false);
                             var tabs = Descendants(form).OfType<TabControl>().Single();
-                            Check(Descendants(tabs.TabPages[0]).OfType<CheckBox>().Count() == 4, "four clearly separated automatic options");
+                            Check(Descendants(tabs.TabPages[0]).OfType<CheckBox>().Count() == 3, "three automatic options with one shared CLI and Codex mode");
+                            var cliToggle = Descendants(tabs.TabPages[0]).OfType<CheckBox>().Single(c => c.Text == "Включать прокси для терминалов и Codex");
+                            string manualAction = null;
+                            form.ManualActionRequested += delegate(string action) { manualAction = action; };
+                            var cliCard = cliToggle.Parent;
+                            Descendants(cliCard).OfType<Button>().Single(b => b.Text == "Включить").PerformClick();
+                            Check(manualAction == "cli-start", "settings uses the same Start CLI command as the dashboard");
+                            Descendants(cliCard).OfType<Button>().Single(b => b.Text == "Выключить").PerformClick();
+                            Check(manualAction == "cli-off", "settings exposes one shared CLI and Codex off command");
+                            cliToggle.Checked = true;
+                            AppSettings capturedSettings = null;
+                            form.SaveRequested = delegate(AppSettings proposed, bool pickFree) { capturedSettings = proposed; return "Test save rejected"; };
+                            ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
+                            Check(capturedSettings != null && capturedSettings.AutoCliProxy, "settings saves the unified automatic option");
+                            tabs.SelectedIndex = 0; Shot(form, "settings-unified-cli");
                             var flow = Descendants(tabs.TabPages[0]).OfType<FlowLayoutPanel>().First();
                             flow.AutoScrollPosition = new Point(0, 1000); Shot(form, "settings-bottom");
                             for (int i = 1; i < tabs.TabCount; i++) { tabs.SelectedIndex = i; Application.DoEvents(); Shot(form, "settings-" + i); }
@@ -135,12 +151,82 @@ namespace ProGo
             Exception error;
             return plan.TryApply(feature, ready, delegate { }, out error) == AutomationResult.Applied;
         }
+        private static void CliSettingsMigration()
+        {
+            var original = File.ReadAllBytes(AppPaths.SettingsPath);
+            var json = new JavaScriptSerializer();
+            try
+            {
+                for (int mask = 0; mask < 4; mask++)
+                {
+                    var legacy = new Dictionary<string, object> {
+                        { "AutoApplyProxy", (mask & 1) != 0 }, { "AutoCodexProxy", (mask & 2) != 0 },
+                        { "AutoSystemProxy", true }, { "AutoRestartSocks", false },
+                        { "AutoStartSocks", true }, { "HttpProxyPort", 31881 }, { "AutoHttpProxyPort", false }
+                    };
+                    File.WriteAllText(AppPaths.SettingsPath, json.Serialize(legacy));
+                    using (var migrated = new SettingsService())
+                    {
+                        Check(migrated.Current.AutoCliProxy == (mask != 0), "both legacy flags migrate by OR " + mask);
+                        Check(migrated.Current.AutoSystemProxy && !migrated.Current.AutoRestartSocks && migrated.Current.AutoStartSocks &&
+                            migrated.Current.HttpProxyPort == 31881 && !migrated.Current.AutoHttpProxyPort, "CLI migration preserves unrelated preferences " + mask);
+                        var proposed = migrated.Current.Clone();
+                        Check(proposed.AutoCliProxy == (mask != 0), "cloning retains the unified mode " + mask);
+                        var plan = new AutomationPlan(); plan.Update(null, proposed);
+                        int writes = 0; Exception error;
+                        foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
+                            plan.TryApply(feature, true, delegate(ProxyFeature f) { if (f == ProxyFeature.Cli) writes++; }, out error);
+                        Check(writes == (mask == 0 ? 0 : 1), "legacy startup produces at most one CLI writer " + mask);
+                        proposed.AutoCliProxy = false; migrated.Save(proposed);
+                        var stored = json.Deserialize<Dictionary<string, object>>(File.ReadAllText(AppPaths.SettingsPath));
+                        Check(stored.ContainsKey("AutoCliProxy") && !stored.ContainsKey("AutoApplyProxy") && !stored.ContainsKey("AutoCodexProxy"), "save removes legacy switches " + mask);
+                        using (var reloaded = new SettingsService())
+                            Check(!reloaded.Current.AutoCliProxy && reloaded.Current.AutoSystemProxy, "unified off survives saving and reloading " + mask);
+                    }
+                }
+            }
+            finally { File.WriteAllBytes(AppPaths.SettingsPath, original); }
+            Check(!SettingsService.DeserializeSettings("{\"AutoCliProxy\":false,\"AutoApplyProxy\":true,\"AutoCodexProxy\":true}").AutoCliProxy,
+                "explicit unified off overrides stale legacy fields");
+            Check(SettingsService.DeserializeSettings("{\"AutoCliProxy\":true,\"AutoApplyProxy\":false,\"AutoCodexProxy\":false}").AutoCliProxy,
+                "explicit unified on overrides old disabled flags");
+            Check(!SettingsService.DeserializeSettings("{}").AutoCliProxy, "missing CLI preference defaults to manual mode");
+            Check(SettingsService.DeserializeSettings("{\"AutoCodexProxy\":true}").AutoCliProxy, "Codex-only old preference migrates to unified mode");
+            Check(SettingsService.DeserializeSettings("{\"autocodexproxy\":true}").AutoCliProxy, "legacy field casing remains compatible");
+            Check(!SettingsService.DeserializeSettings("{\"autocliproxy\":false,\"AutoCodexProxy\":true}").AutoCliProxy,
+                "explicit unified off also wins with alternate field casing");
+        }
+        private static void OrdinaryCodex()
+        {
+            var dir = Path.Combine(work, "ordinary codex fixture"); Directory.CreateDirectory(dir);
+            var capture = Path.Combine(dir, "result.txt");
+            var command = new StringBuilder("@echo off\r\n");
+            foreach (var name in CliProxyEnvironmentService.Names)
+                command.AppendLine("echo " + name + "=%" + name + "%>>\"%PROGO_TEST_RESULT%\"");
+            File.WriteAllText(Path.Combine(dir, "codex.cmd"), command.ToString(), Encoding.ASCII);
+            var start = new ProcessStartInfo("cmd.exe", "/D /C codex") { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = dir };
+            start.EnvironmentVariables["PATH"] = dir + ";" + Environment.GetEnvironmentVariable("PATH");
+            start.EnvironmentVariables["PROGO_TEST_RESULT"] = capture;
+            // Model a newly opened Windows shell by reading its current-user
+            // settings, not by calling the scoped process-environment helper.
+            foreach (var name in CliProxyEnvironmentService.Names)
+                start.EnvironmentVariables[name] = Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.User);
+            using (var process = Process.Start(start))
+            {
+                if (!process.WaitForExit(10000)) { process.Kill(); throw new Exception("Ordinary Codex fixture stalled"); }
+                Check(process.ExitCode == 0, "ordinary codex runs without a ProGo launcher");
+            }
+            var lines = File.ReadAllLines(capture);
+            foreach (var name in CliProxyEnvironmentService.Names)
+                Check(lines.Contains(name + "=" + (name == "NO_PROXY" ? "localhost,127.0.0.1,::1" : CliProxyBridgeService.UrlFor(31881))),
+                    "ordinary codex receives unified user environment " + name);
+        }
         private static void AutomationRetries(SettingsService settings)
         {
             DateTime now = new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var saved = settings.Current.Clone();
-            var configured = AppSettings.Defaults(); configured.AutoApplyProxy = true; configured.AutoHttpProxyPort = false;
-            var disabled = configured.Clone(); disabled.AutoApplyProxy = false;
+            var configured = AppSettings.Defaults(); configured.AutoCliProxy = true; configured.AutoHttpProxyPort = false;
+            var disabled = configured.Clone(); disabled.AutoCliProxy = false;
             var occupied = Occupy(0); configured.HttpProxyPort = Number(occupied);
             var plan = new AutomationPlan(delegate { return now; }); plan.Update(null, configured);
             int calls = 0; bool failWrite = true; Exception error;
@@ -156,22 +242,22 @@ namespace ProGo
                         if (failWrite) throw new IOException("Test settings file is locked");
                         File.WriteAllText(marker, bridge.ProxyUrl);
                     };
-                    Check(plan.TryApply(ProxyFeature.Terminal, false, apply, out error) == AutomationResult.None && calls == 0, "unready route never applies automatic settings");
-                    Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.RetryScheduled && error != null && calls == 1, "real occupied proxy port keeps its failed action pending");
-                    Check(plan.GetStatusText(true).Contains("5 с") && settings.Current.AutoApplyProxy, "retry status is visible without changing the enabled preference");
+                    Check(plan.TryApply(ProxyFeature.Cli, false, apply, out error) == AutomationResult.None && calls == 0, "unready route never applies automatic settings");
+                    Check(plan.TryApply(ProxyFeature.Cli, true, apply, out error) == AutomationResult.RetryScheduled && error != null && calls == 1, "real occupied proxy port keeps its failed action pending");
+                    Check(plan.GetStatusText(true).Contains("5 с") && settings.Current.AutoCliProxy, "retry status is visible without changing the enabled preference");
                     for (int second = 1; second < 5; second++)
                     {
                         now = now.AddSeconds(1);
-                        Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.None && calls == 1, "timer cannot repeat before the deadline " + second);
+                        Check(plan.TryApply(ProxyFeature.Cli, true, apply, out error) == AutomationResult.None && calls == 1, "timer cannot repeat before the deadline " + second);
                     }
                     plan.Update(configured, configured);
                     using (var probe = new TcpClient()) { probe.Connect(IPAddress.Loopback, Number(occupied)); Check(probe.Connected, "automation preserves the foreign occupied listener"); }
                     occupied.Stop(); now = now.AddSeconds(1);
-                    Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.RetryScheduled && calls == 2 && bridge.IsRunning && !File.Exists(marker), "released port advances to a write failure without losing the task");
+                    Check(plan.TryApply(ProxyFeature.Cli, true, apply, out error) == AutomationResult.RetryScheduled && calls == 2 && bridge.IsRunning && !File.Exists(marker), "released port advances to a write failure without losing the task");
                     Check(plan.GetStatusText(true).Contains("15 с"), "second failure increases the retry delay");
                     now = now.AddSeconds(15); failWrite = false;
-                    Check(plan.TryApply(ProxyFeature.Terminal, true, apply, out error) == AutomationResult.Applied && error == null && calls == 3 && File.ReadAllText(marker) == bridge.ProxyUrl, "automatic setup completes after port and write faults clear without app restart");
-                    Check(!ApplyOnce(plan, ProxyFeature.Terminal, true) && plan.GetStatusText(true) == "", "successful configuration is not repeated and clears retry status");
+                    Check(plan.TryApply(ProxyFeature.Cli, true, apply, out error) == AutomationResult.Applied && error == null && calls == 3 && File.ReadAllText(marker) == bridge.ProxyUrl, "automatic setup completes after port and write faults clear without app restart");
+                    Check(!ApplyOnce(plan, ProxyFeature.Cli, true) && plan.GetStatusText(true) == "", "successful configuration is not repeated and clears retry status");
                 }
             }
             finally { occupied.Stop(); settings.Save(saved); if (File.Exists(marker)) File.Delete(marker); }
@@ -182,47 +268,47 @@ namespace ProGo
             int[] delay = { 5, 15, 45 };
             for (int attempt = 0; attempt < 4; attempt++)
             {
-                var result = retry.TryApply(ProxyFeature.Terminal, true, fail, out error);
+                var result = retry.TryApply(ProxyFeature.Cli, true, fail, out error);
                 Check(result == (attempt < 3 ? AutomationResult.RetryScheduled : AutomationResult.Paused), "persistent fault has a bounded attempt " + attempt);
                 if (attempt < 3) now = now.AddSeconds(delay[attempt]);
             }
             now = now.AddDays(1);
-            Check(retry.TryApply(ProxyFeature.Terminal, true, fail, out error) == AutomationResult.None && calls == 4 && retry.GetStatusText(true).Contains("Проверьте настройки"), "exhausted attempts pause with guidance instead of an endless retry loop");
+            Check(retry.TryApply(ProxyFeature.Cli, true, fail, out error) == AutomationResult.None && calls == 4 && retry.GetStatusText(true).Contains("Проверьте настройки"), "exhausted attempts pause with guidance instead of an endless retry loop");
             retry.Update(configured, configured);
-            Check(!ApplyOnce(retry, ProxyFeature.Terminal, true), "unrelated settings save cannot reset the retry budget");
+            Check(!ApplyOnce(retry, ProxyFeature.Cli, true), "unrelated settings save cannot reset the retry budget");
             retry.Update(configured, disabled); retry.Update(disabled, configured);
-            Check(ApplyOnce(retry, ProxyFeature.Terminal, true), "explicit automation off/on restarts a paused task");
+            Check(ApplyOnce(retry, ProxyFeature.Cli, true), "explicit automation off/on restarts a paused task");
 
             var manual = new AutomationPlan(delegate { return now; }); manual.Update(null, configured);
-            manual.TryApply(ProxyFeature.Terminal, true, fail, out error); manual.Cancel(ProxyFeature.Terminal);
+            manual.TryApply(ProxyFeature.Cli, true, fail, out error); manual.Cancel(ProxyFeature.Cli);
             now = now.AddMinutes(1); int beforeCancel = calls;
-            Check(manual.TryApply(ProxyFeature.Terminal, true, fail, out error) == AutomationResult.None && calls == beforeCancel && manual.GetStatusText(true) == "", "manual off cancels a scheduled retry and its status");
-            manual.Update(null, configured); manual.TryApply(ProxyFeature.Terminal, true, fail, out error);
+            Check(manual.TryApply(ProxyFeature.Cli, true, fail, out error) == AutomationResult.None && calls == beforeCancel && manual.GetStatusText(true) == "", "manual off cancels a scheduled retry and its status");
+            manual.Update(null, configured); manual.TryApply(ProxyFeature.Cli, true, fail, out error);
             manual.Update(configured, disabled); now = now.AddMinutes(1);
-            Check(!ApplyOnce(manual, ProxyFeature.Terminal, true), "unchecking automation cancels a failed pending task");
+            Check(!ApplyOnce(manual, ProxyFeature.Cli, true), "unchecking automation cancels a failed pending task");
 
             var permanent = new AutomationPlan(delegate { return now; }); permanent.Update(null, configured);
-            Check(permanent.TryApply(ProxyFeature.Terminal, true, delegate { throw new UnauthorizedAccessException("Test denied"); }, out error) == AutomationResult.Paused, "access denial asks for correction immediately");
-            now = now.AddDays(1); Check(!ApplyOnce(permanent, ProxyFeature.Terminal, true), "known permanent error is never retried by the timer");
+            Check(permanent.TryApply(ProxyFeature.Cli, true, delegate { throw new UnauthorizedAccessException("Test denied"); }, out error) == AutomationResult.Paused, "access denial asks for correction immediately");
+            now = now.AddDays(1); Check(!ApplyOnce(permanent, ProxyFeature.Cli, true), "known permanent error is never retried by the timer");
             foreach (var fault in new Exception[] { new ArgumentException("Test invalid setting"), new InvalidOperationException("Test wrapper", new System.Security.SecurityException("Test denied")) })
             {
                 var blocked = new AutomationPlan(delegate { return now; }); blocked.Update(null, configured);
-                Check(blocked.TryApply(ProxyFeature.Terminal, true, delegate { throw fault; }, out error) == AutomationResult.Paused, "known permanent fault pauses: " + fault.GetType().Name);
+                Check(blocked.TryApply(ProxyFeature.Cli, true, delegate { throw fault; }, out error) == AutomationResult.Paused, "known permanent fault pauses: " + fault.GetType().Name);
             }
 
             var both = configured.Clone(); both.AutoSystemProxy = true;
             var separate = new AutomationPlan(delegate { return now; }); separate.Update(null, both);
-            separate.TryApply(ProxyFeature.Terminal, true, fail, out error);
+            separate.TryApply(ProxyFeature.Cli, true, fail, out error);
             Check(ApplyOnce(separate, ProxyFeature.Windows, true), "failed terminal setup does not block another enabled action");
 
             var cancelled = new AutomationPlan(delegate { return now; }); cancelled.Update(null, configured);
-            Check(cancelled.TryApply(ProxyFeature.Terminal, true, delegate { cancelled.Cancel(ProxyFeature.Terminal); throw new IOException("Test concurrent cancel"); }, out error) == AutomationResult.None && error == null && !ApplyOnce(cancelled, ProxyFeature.Terminal, true), "cancellation during application cannot resurrect its failed task");
+            Check(cancelled.TryApply(ProxyFeature.Cli, true, delegate { cancelled.Cancel(ProxyFeature.Cli); throw new IOException("Test concurrent cancel"); }, out error) == AutomationResult.None && error == null && !ApplyOnce(cancelled, ProxyFeature.Cli, true), "cancellation during application cannot resurrect its failed task");
             var reentrant = new AutomationPlan(delegate { return now; }); reentrant.Update(null, configured);
-            Check(reentrant.TryApply(ProxyFeature.Terminal, true, delegate { Check(!ApplyOnce(reentrant, ProxyFeature.Terminal, true), "same task cannot run recursively"); }, out error) == AutomationResult.Applied, "outer application completes after reentrancy guard");
+            Check(reentrant.TryApply(ProxyFeature.Cli, true, delegate { Check(!ApplyOnce(reentrant, ProxyFeature.Cli, true), "same task cannot run recursively"); }, out error) == AutomationResult.Applied, "outer application completes after reentrancy guard");
             var rearmed = new AutomationPlan(delegate { return now; }); rearmed.Update(null, configured);
-            Check(rearmed.TryApply(ProxyFeature.Terminal, true, delegate {
-                rearmed.Cancel(ProxyFeature.Terminal); rearmed.Update(disabled, configured);
-            }, out error) == AutomationResult.None && ApplyOnce(rearmed, ProxyFeature.Terminal, true), "old completion cannot remove a newly rearmed task");
+            Check(rearmed.TryApply(ProxyFeature.Cli, true, delegate {
+                rearmed.Cancel(ProxyFeature.Cli); rearmed.Update(disabled, configured);
+            }, out error) == AutomationResult.None && ApplyOnce(rearmed, ProxyFeature.Cli, true), "old completion cannot remove a newly rearmed task");
         }
         private static void Snapshot(Form form, string name, bool dispose = true)
         {
@@ -258,9 +344,10 @@ namespace ProGo
             {
                 Environment.SetEnvironmentVariable("HTTP_PROXY", "http://prior.example.org:8080", EnvironmentVariableTarget.User);
                 bool shortcutExisted = File.Exists(CodexProxyService.LauncherPath);
-                CodexProxyService.EnableOrdinaryLaunch(31881);
+                CliProxyEnvironmentService.ApplyUserEnvironment(31881);
                 Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(31881), "ordinary Codex launch receives user proxy environment");
                 Check(File.Exists(CodexProxyService.LauncherPath) == shortcutExisted, "ordinary Codex setup does not require or create a shortcut");
+                OrdinaryCodex();
                 CliProxyEnvironmentService.MoveOwned(1881);
                 Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(1881), "ordinary Codex settings follow the actual application port");
                 CliProxyEnvironmentService.ApplyUserEnvironment(1881); CliProxyEnvironmentService.ApplyUserEnvironment(1881);
@@ -287,7 +374,64 @@ namespace ProGo
             CodexProxyService.Enable(31881);
             try { Check(CodexProxyService.IsConfigured, "Codex Start Menu shortcut created"); }
             finally { CodexProxyService.Disable(); }
-            Check(!CodexProxyService.IsConfigured, "Codex manual off removes owned launcher");
+            Check(!CodexProxyService.IsConfigured, "removing the scoped shortcut deletes its owned launcher");
+        }
+
+        private static IEnumerable<ToolStripItem> MenuItems(ToolStripItemCollection items)
+        {
+            foreach (ToolStripItem item in items)
+            {
+                yield return item;
+                var menu = item as ToolStripMenuItem;
+                if (menu != null) foreach (var child in MenuItems(menu.DropDownItems)) yield return child;
+            }
+        }
+        private static void UnifiedCliActions(SettingsService settings)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("SKIP: unified action registry checks require isolated CI"); return; }
+            var originalSettings = settings.Current.Clone();
+            var originalEnvironment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
+            if (File.Exists(CliProxyEnvironmentService.BackupPath) || File.Exists(SystemProxyService.BackupPath)) throw new Exception("Unified action fixture is not isolated");
+            var listener = Occupy(0);
+            try
+            {
+                var configured = originalSettings.Clone(); configured.SocksHost = "127.0.0.1"; configured.SocksPort = Number(listener);
+                configured.AutoCliProxy = true; configured.AutoHttpProxyPort = true; settings.Save(configured);
+                using (var proxy = new ProxyService(settings))
+                using (var bridge = new CliProxyBridgeService(settings))
+                using (var relay = new Ikev2RelayService())
+                using (var home = new HomeVpnService(relay))
+                using (var clipboard = new ClipboardService(settings))
+                using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false))
+                {
+                    var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                    var execute = typeof(UpdateAwareTrayApplicationContext).GetMethod("Execute", flags);
+                    var plan = (AutomationPlan)typeof(UpdateAwareTrayApplicationContext).GetField("automation", flags).GetValue(context);
+                    var tray = (NotifyIcon)typeof(UpdateAwareTrayApplicationContext).GetField("tray", flags).GetValue(context);
+                    var labels = MenuItems(tray.ContextMenuStrip.Items).Select(i => i.Text).ToArray();
+                    Check(labels.Count(t => t == "Запустить CLI (терминалы и Codex)") == 1 && labels.Count(t => t == "Выключить прокси для терминалов и Codex") == 1 &&
+                        !labels.Contains("Codex — включить прокси") && !labels.Contains("Codex — выключить прокси"), "tray exposes one shared CLI and Codex action pair");
+                    Check(labels.Contains("Создать отдельный ярлык") && labels.Contains("Открыть Codex через ProGo"), "scoped Codex actions remain additional choices");
+                    string[] on = { "cli-start", "terminal-on", "codex-on" }, off = { "cli-off", "terminal-off", "codex-off" };
+                    for (int i = 0; i < on.Length; i++)
+                    {
+                        plan.Update(null, configured);
+                        execute.Invoke(context, new object[] { on[i] });
+                        Check(bridge.IsRunning && CliProxyEnvironmentService.IsAppliedToUserEnvironment(bridge.Port) && !ApplyOnce(plan, ProxyFeature.Cli, true),
+                            "manual start and legacy alias apply one mode and cancel its automatic writer " + on[i]);
+                        plan.Update(null, configured);
+                        execute.Invoke(context, new object[] { off[i] });
+                        Check(!ApplyOnce(plan, ProxyFeature.Cli, true) && CliProxyEnvironmentService.Names.All(n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User) == originalEnvironment[n]),
+                            "manual off and legacy alias restore one environment and cancel pending setup " + off[i]);
+                    }
+                }
+            }
+            finally
+            {
+                listener.Stop(); settings.Save(originalSettings);
+                foreach (var pair in originalEnvironment) Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.User);
+                if (File.Exists(CliProxyEnvironmentService.BackupPath)) File.Delete(CliProxyEnvironmentService.BackupPath);
+            }
         }
 
         private static TcpListener Occupy(int port)

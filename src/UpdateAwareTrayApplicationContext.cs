@@ -67,10 +67,9 @@ namespace ProGo
             var apps = new ToolStripMenuItem("Прокси для приложений");
             Item(apps, "Windows — включить", "windows-on"); Item(apps, "Windows — выключить", "windows-off");
             apps.DropDownItems.Add(new ToolStripSeparator());
-            Item(apps, "Запустить CLI (Codex и терминалы)", "cli-start"); Item(apps, "Выключить CLI-прокси", "terminal-off");
+            Item(apps, "Запустить CLI (терминалы и Codex)", "cli-start"); Item(apps, "Выключить прокси для терминалов и Codex", "cli-off");
             Item(apps, "Открыть терминал с прокси", "terminal-open");
             apps.DropDownItems.Add(new ToolStripSeparator());
-            Item(apps, "Codex — включить прокси", "codex-on"); Item(apps, "Codex — выключить прокси", "codex-off");
             var extra = new ToolStripMenuItem("Дополнительно: ярлык Codex");
             Item(extra, "Создать отдельный ярлык", "codex-shortcut-on"); Item(extra, "Удалить отдельный ярлык", "codex-shortcut-off"); apps.DropDownItems.Add(extra);
             Item(apps, "Открыть Codex через ProGo", "codex-open"); menu.Items.Add(apps);
@@ -171,12 +170,13 @@ namespace ProGo
                     case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(); break;
                     case "diagnostics": using (var form = new StatusForm(settings, proxy)) form.ShowDialog(); break;
                     case "cli-start":
-                    case "terminal-on": RequireRoute(); EnableFeature(ProxyFeature.Terminal); automation.Cancel(ProxyFeature.Terminal); CliReadyNotice(); break;
-                    case "terminal-off": DisableCli(); break;
+                    case "terminal-on":
+                    case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
+                    case "cli-off":
+                    case "terminal-off":
+                    case "codex-off": DisableCli(); break;
                     case "windows-on": RequireRoute(); EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
                     case "windows-off": automation.Cancel(ProxyFeature.Windows); string m; if (!SystemProxyService.Restore(out m)) throw new InvalidOperationException(m); break;
-                    case "codex-on": RequireRoute(); EnableFeature(ProxyFeature.Codex); automation.Cancel(ProxyFeature.Codex); CliReadyNotice(); break;
-                    case "codex-off": DisableCli(); break;
                     case "codex-shortcut-on": RequireRoute(); EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
                     case "codex-shortcut-off": CodexProxyService.Disable(); break;
                     case "codex-open": RequireRoute(); EnsureBridge(); CodexProxyService.Open(cliProxy.Port); break;
@@ -208,16 +208,13 @@ namespace ProGo
         private void EnableFeature(ProxyFeature feature)
         {
             EnsureBridge();
-            if (feature == ProxyFeature.Terminal) CliProxyEnvironmentService.ApplyUserEnvironment(cliProxy.Port);
-            else if (feature == ProxyFeature.Codex) CodexProxyService.EnableOrdinaryLaunch(cliProxy.Port);
+            if (feature == ProxyFeature.Cli) CliProxyEnvironmentService.ApplyUserEnvironment(cliProxy.Port);
             else { string message; if (!SystemProxyService.Apply(settings.Current, out message)) throw new InvalidOperationException(message); }
         }
         private void DisableCli()
         {
-            // Codex and generic CLI use one shared user environment. Explicit
-            // manual off cancels both pending automatic writers for this session.
-            automation.Cancel(ProxyFeature.Terminal); automation.Cancel(ProxyFeature.Codex);
-            CodexProxyService.DisableOrdinaryLaunch();
+            automation.Cancel(ProxyFeature.Cli);
+            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
         }
         private void CliReadyNotice()
         {

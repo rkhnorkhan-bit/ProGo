@@ -65,9 +65,8 @@ namespace ProGo
         public bool AutoSwitchSshProfile { get; set; }
         public bool AutoStartSocks { get; set; }
         public bool AutoRestartSocks { get; set; }
-        public bool AutoApplyProxy { get; set; }
+        public bool AutoCliProxy { get; set; }
         public bool AutoSystemProxy { get; set; }
-        public bool AutoCodexProxy { get; set; }
         public int ClipboardClearSeconds { get; set; }
         public string TestEndpoint { get; set; }
 
@@ -95,7 +94,7 @@ namespace ProGo
                 AutoSwitchSshProfile = false,
                 AutoStartSocks = false,
                 AutoRestartSocks = true,
-                AutoApplyProxy = false,
+                AutoCliProxy = false,
                 ClipboardClearSeconds = 30,
                 TestEndpoint = "https://api.openai.com/v1/models"
             };
@@ -125,7 +124,7 @@ namespace ProGo
             try
             {
                 var text = File.ReadAllText(AppPaths.SettingsPath);
-                var settings = serializer.Deserialize<AppSettings>(text) ?? AppSettings.Defaults();
+                var settings = DeserializeSettings(text);
                 Normalize(settings);
                 return settings;
             }
@@ -150,6 +149,26 @@ namespace ProGo
             finally { if (File.Exists(pending)) File.Delete(pending); }
             Current = settings;
             SafeLog.Info("Settings saved.");
+        }
+
+        internal static AppSettings DeserializeSettings(string text)
+        {
+            var json = new JavaScriptSerializer();
+            var settings = json.Deserialize<AppSettings>(text) ?? AppSettings.Defaults();
+            var values = json.Deserialize<Dictionary<string, object>>(text);
+            if (values == null) return settings;
+            values = new Dictionary<string, object>(values, StringComparer.OrdinalIgnoreCase);
+            // A new explicit false wins over stale legacy fields. Save writes
+            // only AutoCliProxy, so turning it off cannot resurrect a legacy on.
+            if (!values.ContainsKey("AutoCliProxy"))
+                settings.AutoCliProxy = LegacyFlag(values, "AutoApplyProxy") || LegacyFlag(values, "AutoCodexProxy");
+            return settings;
+        }
+
+        private static bool LegacyFlag(Dictionary<string, object> values, string name)
+        {
+            object value;
+            return values.TryGetValue(name, out value) && value is bool && (bool)value;
         }
 
         private static void Normalize(AppSettings settings)
