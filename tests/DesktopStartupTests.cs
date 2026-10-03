@@ -11,7 +11,7 @@ namespace ProGo
         private static void AsyncCliStartup(SettingsService settings)
         {
             var login = SshInteractiveLogin.CreateStartInfo("my-vps");
-            Check(login.UseShellExecute && login.WindowStyle == ProcessWindowStyle.Normal && login.Arguments.Contains("StrictHostKeyChecking=ask") &&
+            Check(login.UseShellExecute && login.WindowStyle == ProcessWindowStyle.Normal && login.Arguments.Contains("-NoExit") && login.Arguments.Contains("StrictHostKeyChecking=ask") &&
                 login.Arguments.Contains("BatchMode=no") && login.Arguments.Contains("ClearAllForwardings=yes"), "explicit first login uses visible SSH, asks for host verification and creates no tunnel");
             foreach (var target in new[] { "-V", "my-vps -o ProxyCommand=anything", "host\"", "host\n" }) {
                 bool rejected = false;

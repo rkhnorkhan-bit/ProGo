@@ -225,6 +225,7 @@ internal static class SocksRecoveryTests
             f.Ready(); f.Crash(); f.Tick(5); f.Ready();
             Assert(f.Proxy.AutomaticRestarts == 1, "Automatic retry did not use BatchMode");
         }
+    }
 
     private static void AsyncSlowStartup()
     {
@@ -274,7 +275,6 @@ internal static class SocksRecoveryTests
                 Assert(task.Wait(5000) && !task.Result && !f.Proxy.CurrentPid.HasValue && f.Proxy.StartupError.Contains("Порт SOCKS занят") && f.Proxy.IsListening(), "Foreign TCP listener was adopted, removed or accepted as a ready route");
             } finally { listener.Stop(); }
         }
-    }
     }
 
     private static void Fallback()
