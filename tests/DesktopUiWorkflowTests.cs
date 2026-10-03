@@ -85,7 +85,13 @@ namespace ProGo
                         Check(Descendants(form).OfType<TabControl>().Single().SelectedTab.Text == "Автоматика", "Settings retains automation entry");
                     });
                     ((Button)Field(main, "windowsToggle")).PerformClick(); Application.DoEvents();
-                    PumpUntil(() => context.PendingRouteCount == 0);
+                    try { PumpUntil(() => context.PendingRouteCount == 0); }
+                    catch (Exception ex) {
+                        var startup = (Task<bool>)Field(proxy, "startupTask");
+                        throw new Exception("Windows route fixture: pending=" + context.PendingRouteCount + "; connecting=" + proxy.IsConnecting +
+                            "; task=" + (startup == null ? "none" : startup.Status.ToString()) + "; error=" + proxy.StartupError +
+                            "; protocol=" + ConnectionHealthMonitor.CheckSocks(settings.Current, CancellationToken.None), ex);
+                    }
                     Check(SystemProxyService.IsApplied(settings.Current) && ((Button)Field(main, "windowsToggle")).Text == "Выключить", "Windows card enables its own mode");
                     ((Button)Field(main, "windowsToggle")).PerformClick();
                     Check(!SystemProxyService.IsOwned && ((Button)Field(main, "windowsToggle")).Text == "Включить", "Windows card restores with its symmetric off command");

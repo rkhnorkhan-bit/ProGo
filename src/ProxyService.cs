@@ -161,7 +161,7 @@ namespace ProGo
                             if (!ready) lock (gate) {
                                 StopProcessOnly();
                                 if (source.IsCancellationRequested) { wanted = false; retryAt = null; }
-                                else if (wanted) ScheduleRecovery();
+                                else if (wanted && !retryAt.HasValue) ScheduleRecovery();
                             }
                             lock (startupGate) { connecting = false; startupCancellation = null; source.Dispose(); }
                         }
