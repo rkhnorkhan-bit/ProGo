@@ -39,6 +39,7 @@ namespace ProGo
         private int ownedPort;
         private string ownedTarget;
         private string selectedAtStart;
+        private string selectedConnectionAtStart;
 
         public ProxyService(SettingsService settings)
             : this(delegate { return settings.Current; }, settings.Save, "ssh.exe", delegate { return DateTime.UtcNow; }, true)
@@ -136,7 +137,8 @@ namespace ProGo
                             while (true) {
                                 deadline.Token.ThrowIfCancellationRequested();
                                 var changed = readSettings();
-                                if (changed.SocksHost != current.SocksHost || changed.SocksPort != current.SocksPort) { source.Cancel(); source.Token.ThrowIfCancellationRequested(); }
+                                if (changed.SocksHost != current.SocksHost || changed.SocksPort != current.SocksPort ||
+                                    (changed.SshProfile == current.SshProfile && SshConnection.Signature(changed) != SshConnection.Signature(current))) { source.Cancel(); source.Token.ThrowIfCancellationRequested(); }
                                 if (ConnectionHealthMonitor.CheckSocks(current, deadline.Token)) { ready = true; return true; }
                                 bool alive; lock (gate) { alive = IsOwnedProcessAlive(); }
                                 if (!alive) {
@@ -275,7 +277,7 @@ namespace ProGo
                         {
                             healthySince = now;
                             var current = readSettings();
-                            if (current.AutoSwitchSshProfile && current.SshProfile == selectedAtStart &&
+                            if (current.AutoSwitchSshProfile && current.SshProfile == selectedAtStart && SshConnection.Signature(current) == selectedConnectionAtStart &&
                                 current.SocksHost == ownedHost && current.SocksPort == ownedPort)
                                 SelectWorkingProfile(current, ownedTarget);
                             SafeLog.Info("SOCKS listener is ready.");
@@ -337,7 +339,7 @@ namespace ProGo
                 var current = readSettings();
                 var endpoint = current.SocksHost + ":" + current.SocksPort;
                 var args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=yes {1}",
-                    QuoteArg(endpoint), QuoteArg(target));
+                    SshConnection.Quote(endpoint), SshConnection.CommandArguments(SshConnection.Resolve(current, target)));
                 var psi = new ProcessStartInfo(sshExecutable, args)
                 {
                     UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden, RedirectStandardError = true
@@ -355,7 +357,7 @@ namespace ProGo
                 sshProcess.BeginErrorReadLine();
                 startedAt = utcNow(); healthySince = null; missingListener = 0;
                 ownedHost = current.SocksHost; ownedPort = current.SocksPort; ownedTarget = target;
-                selectedAtStart = current.SshProfile;
+                selectedAtStart = current.SshProfile; selectedConnectionAtStart = SshConnection.Signature(current);
                 SafeLog.Info(automatic ? "SOCKS automatic restart requested." : "SOCKS start requested.");
                 return true;
             }
@@ -415,13 +417,6 @@ namespace ProGo
             foreach (var existing in targets)
                 if (String.Equals(existing, target, StringComparison.OrdinalIgnoreCase)) return;
             targets.Add(target);
-        }
-
-        private static string QuoteArg(string value)
-        {
-            if (value == null) return "\"\"";
-            if (value.IndexOfAny(new[] { ' ', '\t', '\"' }) < 0) return value;
-            return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
         }
 
         private static bool IsTcpOpen(string host, int port, int timeoutMs)

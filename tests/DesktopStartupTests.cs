@@ -33,8 +33,9 @@ namespace ProGo
         private static void AsyncCliStartup(SettingsService settings)
         {
             var login = SshInteractiveLogin.CreateStartInfo("my-vps");
-            Check(login.UseShellExecute && login.WindowStyle == ProcessWindowStyle.Normal && login.Arguments.Contains("-NoExit") && login.Arguments.Contains("StrictHostKeyChecking=ask") &&
-                login.Arguments.Contains("BatchMode=no") && login.Arguments.Contains("ClearAllForwardings=yes"), "explicit first login uses visible SSH, asks for host verification and creates no tunnel");
+            var command = Encoding.Unicode.GetString(Convert.FromBase64String(login.Arguments.Split(' ').Last()));
+            Check(login.UseShellExecute && login.WindowStyle == ProcessWindowStyle.Normal && login.Arguments.Contains("-NoExit") && command.Contains("StrictHostKeyChecking=ask") &&
+                command.Contains("BatchMode=no") && command.Contains("ClearAllForwardings=yes"), "explicit first login uses visible SSH, asks for host verification and creates no tunnel");
             foreach (var target in new[] { "-V", "my-vps -o ProxyCommand=anything", "host\"", "host\n" }) {
                 bool rejected = false;
                 try { SshInteractiveLogin.CreateStartInfo(target); } catch (ArgumentException) { rejected = true; }

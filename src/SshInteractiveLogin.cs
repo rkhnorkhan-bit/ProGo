@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
+using System.Text;
 
 namespace ProGo
 {
@@ -8,17 +8,20 @@ namespace ProGo
     {
         internal static ProcessStartInfo CreateStartInfo(string target)
         {
-            if (target != null && target.IndexOfAny(new[] { '\r', '\n' }) >= 0) throw new ArgumentException("Адрес SSH должен быть в одной строке.");
-            target = (target ?? "").Trim();
-            if (target.Length == 0 || target[0] == '-' || !Regex.IsMatch(target, @"^[A-Za-z0-9_.@:\[\]-]+$"))
-                throw new ArgumentException("Выберите имя SSH-подключения или адрес user@vpn.example.org без параметров командной строки.");
-            // This explicit action opens a visible SSH console. Never bypass host-key validation
-            // or store a password; forwardings from the user's SSH config are disabled here.
-            // Keep the console open after a refusal so the user can read SSH's explanation.
-            return new ProcessStartInfo("powershell.exe", "-NoProfile -NoExit -Command \"& ssh.exe -o ClearAllForwardings=yes -o StrictHostKeyChecking=ask -o BatchMode=no -o NumberOfPasswordPrompts=3 '" + target + "'\"") {
+            return CreateStartInfo(new SshProfileSetting { Target = target });
+        }
+        internal static ProcessStartInfo CreateStartInfo(SshProfileSetting profile)
+        {
+            var args = SshConnection.Arguments(profile);
+            // Literal PowerShell strings + EncodedCommand keep file paths out of shell syntax.
+            // Keep the console visible after refusals, verify the host, and disable configured forwardings.
+            var command = "& ssh.exe -o ClearAllForwardings=yes -o StrictHostKeyChecking=ask -o BatchMode=no -o NumberOfPasswordPrompts=3 ";
+            foreach (var arg in args) command += "'" + arg.Replace("'", "''") + "' ";
+            return new ProcessStartInfo("powershell.exe", "-NoProfile -NoExit -EncodedCommand " +
+                Convert.ToBase64String(Encoding.Unicode.GetBytes(command))) {
                 UseShellExecute = true, WindowStyle = ProcessWindowStyle.Normal
             };
         }
-        internal static void Open(string target) { using (var process = Process.Start(CreateStartInfo(target))) { } }
+        internal static void Open(SshProfileSetting profile) { using (var process = Process.Start(CreateStartInfo(profile))) { } }
     }
 }

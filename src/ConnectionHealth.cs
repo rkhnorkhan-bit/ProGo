@@ -69,7 +69,7 @@ namespace ProGo
             this.socksProbe = socksProbe ?? new Func<AppSettings, CancellationToken, bool>(CheckSocks);
             this.internetProbe = internetProbe ?? new Func<AppSettings, CancellationToken, InternetProbeResult>(CheckInternet);
         }
-        private static string Key(AppSettings s) { return s.SocksHost + "\n" + s.SocksPort + "\n" + s.SshProfile + "\n" + s.TestEndpoint; }
+        private static string Key(AppSettings s) { return s.SocksHost + "\n" + s.SocksPort + "\n" + SshConnection.Signature(s) + "\n" + s.TestEndpoint; }
         private void Match(string key)
         {
             if (snapshot.Key == key) return;

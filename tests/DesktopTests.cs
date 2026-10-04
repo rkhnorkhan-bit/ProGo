@@ -74,6 +74,7 @@ namespace ProGo
                     UnifiedCliActions(settings);
                     UiControls(settings);
                     HealthChecks(settings);
+                    StructuredSshProfiles(settings);
                     AsyncCliStartup(settings);
                     }
                     using (var proxy = new ProxyService(settings))

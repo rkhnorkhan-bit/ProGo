@@ -2,9 +2,26 @@
 
 ## Connection
 
-In **Настройки → Подключение**, add an SSH alias from the standard OpenSSH config
-or a target such as `user@vpn.example.org`. Connect from the main window. A live
-SOCKS listener means the tunnel is ready; route diagnostics verify actual reachability.
+In **Настройки → Подключение → Добавить**, choose **По адресу сервера**.
+Enter the VPS IP/domain (without `https://`, login or port), SSH login, SSH port
+(default 22), and optionally select a private key file. Leave the key field empty
+to use standard Windows OpenSSH keys/agent. ProGo stores only the file path;
+it does not upload the private key or save an SSH password.
+
+Use **Первый вход** to open a visible SSH console with these same settings.
+Verify the host fingerprint independently before accepting it. An encrypted key
+must be unlocked through your SSH agent for unattended use. A password login
+alone does not authorize a key for background connections.
+
+Existing connections remain in **Из SSH config (для опытных)** mode. The alias
+(e.g. `my-vps`) or legacy `user@vpn.example.org` retains OpenSSH resolution; ProGo
+does not rewrite the SSH config. **Проверить** uses `ssh.exe -G` with the same
+server/login/port/key as the tunnel, and reports the resolved SSH port.
+
+Connect from the main window. SOCKS readiness and a verified internet response
+are separate states. Changing the selected server, login, SSH port or key restarts
+an active desktop tunnel and discards stale readiness; renaming it does not.
+The SSH port is independent of the SOCKS and local HTTP proxy ports.
 
 ## Automatic and manual controls
 
