@@ -35,6 +35,20 @@ namespace ProGo
                 Check(!BackupService.TryValidateRestore(backup, out error) && error.Contains("vault.enc.json"), "application preflight rejects damaged opaque vault with a specific message");
                 Check(File.ReadAllBytes(AppPaths.VaultPath).SequenceEqual(installedVault), "application preflight never mutates installed vault");
                 Check(!BackupService.TryValidateRestore(Path.Combine(work, "missing-backup"), out error), "application preflight reports missing copy without throwing to UI");
+                Directory.Delete(backup, true); backup = null;
+                backup = BackupService.CreateBackup("baseline");
+                Check(BackupService.HasBackupForVersion("0.0.1"), "complete indexed baseline satisfies version backup readiness");
+                File.Delete(Path.Combine(backup, BackupIntegrity.IndexName));
+                Check(!BackupService.HasBackupForVersion("0.0.1"), "legacy baseline cannot prevent creation of a new verifiable baseline");
+                File.Delete(Path.Combine(AppPaths.Root, "ProGo.exe"));
+                var incompleteRefused = false;
+                var before = Directory.Exists(BackupService.BackupsRoot) ? Directory.GetDirectories(BackupService.BackupsRoot) : new string[0];
+                try { BackupService.CreateBackup("manual"); } catch (System.IO.InvalidDataException) { incompleteRefused = true; }
+                finally
+                {
+                    foreach (var dir in Directory.GetDirectories(BackupService.BackupsRoot).Except(before)) Directory.Delete(dir, true);
+                }
+                Check(incompleteRefused, "app refuses to report incomplete source installation as a ready copy");
             }
             finally
             {

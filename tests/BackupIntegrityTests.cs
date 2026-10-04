@@ -37,6 +37,11 @@ internal static class BackupIntegrityTests
         try
         {
             Fixture(); BackupIntegrity.Validate(root); Check(true, "complete copy with nested paths validates");
+            File.Delete(Path.Combine(root, "scripts", "Maintenance-ProGo.ps1"));
+            File.Delete(Path.Combine(root, "scripts", "MaintenanceOperation.cs"));
+            BackupIntegrity.Write(root); BackupIntegrity.Validate(root);
+            Check(true, "complete older program does not require newer ownership helper files");
+            Fixture();
             var index = File.ReadAllText(Path.Combine(root, BackupIntegrity.IndexName));
             BackupIntegrity.Write(root);
             Check(File.ReadAllText(Path.Combine(root, BackupIntegrity.IndexName)) == index, "index refresh is deterministic and excludes its own metadata");

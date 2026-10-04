@@ -14,8 +14,7 @@ namespace ProGo
         private const string Header = "ProGo backup integrity v1";
         private static readonly string[] Required = { "ProGo.exe", "VERSION",
             "scripts/Start-ProGo.ps1", "scripts/Restore-ProGoBackup.ps1",
-            "scripts/Update-ProGo.Core.ps1", "scripts/Maintenance-ProGo.ps1",
-            "scripts/MaintenanceOperation.cs" };
+            "scripts/Update-ProGo.Core.ps1" };
 
         public static void Write(string directory)
         {

@@ -266,7 +266,11 @@ F07 is complete when the exact Windows and Linux CI run passes.
 App and updater write the same SHA-256 inventory for the files actually copied.
 Manifest `contains` lists actual payload roots; update outcome metadata may change
 without invalidating immutable payload digests. Existing-file copy errors abort
-updater backup creation instead of silently certifying partial data.
+updater backup creation instead of silently certifying partial data. Writers also
+validate completeness before reporting success or applying retention. An old
+baseline without digests cannot suppress creation of a verifiable new baseline.
+Required helpers use the original program layout; newer ownership helpers are
+verified when recorded but are not required in a complete older program copy.
 
 The application validates the selected copy before confirmation and maintenance
 cleanup. The installed restore helper revalidates before handoff and waiting for

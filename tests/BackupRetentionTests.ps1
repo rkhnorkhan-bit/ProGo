@@ -52,5 +52,10 @@ try {
         $incomplete = Join-Path $BackupsDir 'backup-20260201-000001-v0.0.1-to-v0.0.2'
         if (Test-Path (Join-Path $incomplete 'backup-files.sha256')) { throw 'Partial backup has a completed digest index' }
     } finally { $locked.Dispose() }
+    Remove-Item (Join-Path $InstallDir 'ProGo.exe')
+    $Timestamp = '20260201-000002'
+    $refused = $false
+    try { Backup-InstalledState | Out-Null } catch { $refused = $true }
+    if (-not $refused) { throw 'Updater reported incomplete installation as a ready copy' }
     Write-Host 'Backup updater tests PASS: manual contents, unknown folder, latest baseline/pre-update ten-slot parity, shared integrity and locked-copy refusal'
 } finally { if (Test-Path $InstallDir) { Remove-Item $InstallDir -Recurse -Force } }

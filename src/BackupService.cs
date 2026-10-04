@@ -93,7 +93,11 @@ namespace ProGo
         {
             foreach (var backup in ListBackups())
             {
-                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline) return true;
+                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline)
+                {
+                    string error;
+                    if (TryValidateRestore(backup.Path, out error)) return true;
+                }
             }
 
             return false;
@@ -134,6 +138,7 @@ namespace ProGo
 
             WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
             BackupIntegrity.Write(backupDir);
+            BackupIntegrity.Validate(backupDir);
 
             ApplyCleanupPlan(BackupRetention.Plan(BackupsRoot, backupDir), false);
             SafeLog.Info("Backup created: " + backupDir + ".");

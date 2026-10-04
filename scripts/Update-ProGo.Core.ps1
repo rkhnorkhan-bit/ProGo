@@ -322,6 +322,7 @@ function Backup-InstalledState {
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
     [ProGo.BackupIntegrity]::Write($backupDir)
+    [ProGo.BackupIntegrity]::Validate($backupDir)
     Write-UpdateLog "Installed-state backup created: $backupDir"
 
     # Manifest-aware policy is shared with BackupService. Unknown/manual folders
