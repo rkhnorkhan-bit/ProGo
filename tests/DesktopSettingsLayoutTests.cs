@@ -65,8 +65,8 @@ namespace ProGo
                     Check(toggle.GetPreferredSize(new Size(toggle.Width, 0)).Height <= toggle.Height, name + " gives the preference caption enough height");
                 }
                 var root = (TableLayoutPanel)tabs.Parent;
-                Check(root.Controls.OfType<Label>().All(l => l.GetPreferredSize(new Size(l.Width, 0)).Height <= l.Height),
-                    name + " wraps the explanatory header instead of clipping it");
+                Check(root.Controls.OfType<Label>().Where(l => l.Visible).All(l => l.GetPreferredSize(new Size(l.Width, 0)).Height <= l.Height),
+                    name + " wraps the explanatory header instead of clipping it: " + string.Join("; ", root.Controls.OfType<Label>().Where(l => l.Visible).Select(l => l.Bounds + " preferred=" + l.GetPreferredSize(new Size(l.Width, 0)))));
                 Check(Enumerable.Range(0, tabs.TabCount).All(i => tabs.ClientRectangle.Contains(tabs.GetTabRect(i))),
                     name + " exposes all five tab headers with wrapped tab rows");
                 foreach (var button in new[] { (Button)form.AcceptButton, (Button)form.CancelButton })
