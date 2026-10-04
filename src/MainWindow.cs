@@ -21,26 +21,32 @@ namespace ProGo
         private readonly Dictionary<string, Button> navigation = new Dictionary<string, Button>();
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
+        private readonly Panel viewport;
+        private readonly TableLayoutPanel body, cards;
+        private readonly List<SurfacePanel> statusCards = new List<SurfacePanel>();
+        private bool fitting;
         internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null, AppProxyConsumers appConsumers = null)
         {
             this.appProxy = appProxy; this.appConsumers = appConsumers;
             this.automation = automation;
             this.health = health;
             this.settings = settings; this.proxy = proxy; this.home = home;
-            Text = "ProGo · Ваше подключение"; ClientSize = new Size(1040, 710); MinimumSize = new Size(970, 680);
-            var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-            Controls.Add(viewport);
-            var shell = new TableLayoutPanel { ColumnCount = 2, RowCount = 1, MinimumSize = new Size(970, 680), Size = ClientSize };
-            viewport.Controls.Add(shell);
-            viewport.SizeChanged += delegate { shell.Size = new Size(Math.Max(viewport.ClientSize.Width, shell.MinimumSize.Width), Math.Max(viewport.ClientSize.Height, shell.MinimumSize.Height)); };
+            Text = "ProGo · Ваше подключение"; ClientSize = new Size(1040, 710); MinimumSize = new Size(760, 560);
+            var shell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+            Controls.Add(shell);
             shell.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 210)); shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            var rail = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Surface, Tag = "styled", Padding = new Padding(20) };
+            var rail = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+                BackColor = UiTheme.Surface, Tag = "styled", Padding = new Padding(20), Margin = new Padding(0) };
+            rail.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            rail.RowStyles.Add(new RowStyle(SizeType.AutoSize)); rail.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            rail.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             shell.Controls.Add(rail, 0, 0);
-            var brand = new PictureBox { Image = logo, Location = new Point(24, 28), Size = new Size(52, 52), SizeMode = PictureBoxSizeMode.Zoom };
-            var wordmark = UiTheme.Label("ProGo", UiTheme.Heading, UiTheme.Text); wordmark.Location = new Point(84, 38);
-            rail.Controls.Add(brand); rail.Controls.Add(wordmark);
-            var nav = new FlowLayoutPanel { Location = new Point(20, 124), Width = 170, Height = 450, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+            var brand = new PictureBox { Image = logo, Size = new Size(52, 52), SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 0, 12, 0) };
+            var wordmark = UiTheme.Label("ProGo", UiTheme.Heading, UiTheme.Text); wordmark.Margin = new Padding(0, 12, 0, 0);
+            var branding = Actions(brand, wordmark); branding.Margin = new Padding(0, 8, 0, 30); rail.Controls.Add(branding, 0, 0);
+            var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0),
+                FlowDirection = FlowDirection.TopDown, WrapContents = false };
             Nav(nav, "Главная", "home", delegate { SetNavigation("home"); });
             Nav(nav, "iPhone через ПК", "iphone", delegate { action("iphone"); });
             Nav(nav, "Подключения", "connections", delegate { action("connections"); });
@@ -49,38 +55,104 @@ namespace ProGo
             Nav(nav, "Настройки", "settings", delegate { action("settings"); });
             var stopAll = UiTheme.Button("Остановить все\nподключения", delegate { action("stop-all"); RefreshState(); }, false);
             stopAll.AutoSize = false; stopAll.Size = new Size(168, 60); nav.Controls.Add(stopAll);
-            rail.Controls.Add(nav);
+            rail.Controls.Add(nav, 0, 1);
             var version = UiTheme.Label("DESKTOP  /  " + typeof(MainWindow).Assembly.GetName().Version.ToString(3) + "\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
-            version.AutoSize = false; version.Size = new Size(178, 65); version.Dock = DockStyle.Bottom; rail.Controls.Add(version);
-            var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(28), ColumnCount = 1, RowCount = 5 };
+            version.Dock = DockStyle.Fill; version.Margin = new Padding(0, 12, 0, 0); rail.Controls.Add(version, 0, 2);
+            rail.SizeChanged += delegate { version.MaximumSize = new Size(Math.Max(1, rail.ClientSize.Width - rail.Padding.Horizontal), 0); };
+            nav.SizeChanged += delegate {
+                int width = Math.Max(1, nav.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+                foreach (Control button in nav.Controls) { button.MinimumSize = Size.Empty; button.Width = width; button.Height = Math.Max(42, button.GetPreferredSize(new Size(width, 0)).Height); }
+            };
+            var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 85)); content.RowStyles.Add(new RowStyle(SizeType.Absolute, 207));
-            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 176)); content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 42)); shell.Controls.Add(content, 1, 0);
-            var heading = new Panel { Dock = DockStyle.Fill };
-            heading.Controls.Add(UiTheme.Label("Ваш интернет. Ваш маршрут.", UiTheme.Title, UiTheme.Text));
-            var intro = UiTheme.Label("Подключение к серверу и настройки приложений.", UiTheme.Body, UiTheme.Muted); intro.Location = new Point(0, 48); heading.Controls.Add(intro); content.Controls.Add(heading, 0, 0);
-            var hero = new SurfacePanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 18) };
-            var eyebrow = UiTheme.Label("ПОДКЛЮЧЕНИЕ К СЕРВЕРУ", UiTheme.Strong, UiTheme.Accent); eyebrow.Location = new Point(22, 17); hero.Controls.Add(eyebrow);
-            connection = UiTheme.Label("Готовы подключиться?", UiTheme.Title, UiTheme.Text); connection.Location = new Point(20, 44); hero.Controls.Add(connection);
-            subtitle = UiTheme.Label("", UiTheme.Body, UiTheme.Muted); subtitle.Location = new Point(22, 95); subtitle.MaximumSize = new Size(630, 30); subtitle.AutoEllipsis = true; hero.Controls.Add(subtitle);
-            var heroActions = new FlowLayoutPanel { Location = new Point(22, 131), Width = 650, Height = 48 };
+            content.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); content.RowStyles.Add(new RowStyle(SizeType.AutoSize)); shell.Controls.Add(content, 1, 0);
+            viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0) }; content.Controls.Add(viewport, 0, 0);
+            body = Stack(); body.Dock = DockStyle.Top; viewport.Controls.Add(body);
+            var heading = Stack(UiTheme.Label("Ваш интернет. Ваш маршрут.", UiTheme.Title, UiTheme.Text),
+                UiTheme.Label("Подключение к серверу и настройки приложений.", UiTheme.Body, UiTheme.Muted));
+            heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading);
+            var eyebrow = UiTheme.Label("ПОДКЛЮЧЕНИЕ К СЕРВЕРУ", UiTheme.Strong, UiTheme.Accent);
+            connection = UiTheme.Label("Готовы подключиться?", UiTheme.Title, UiTheme.Text);
+            subtitle = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
             connect = UiTheme.Button("Подключиться", delegate { action("connect"); RefreshState(); }, true);
-            heroActions.Controls.Add(connect); heroActions.Controls.Add(UiTheme.Button("Отключить прокси на ПК", delegate { action("stop"); RefreshState(); }, false));
-            heroActions.Controls.Add(UiTheme.Button("Проверить маршрут", delegate { action("route-check"); }, false)); hero.Controls.Add(heroActions); content.Controls.Add(hero, 0, 1);
-            var cards = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
+            var heroActions = Actions(connect, UiTheme.Button("Отключить прокси на ПК", delegate { action("stop"); RefreshState(); }, false),
+                UiTheme.Button("Проверить маршрут", delegate { action("route-check"); }, false));
+            body.Controls.Add(Surface(eyebrow, connection, subtitle, heroActions));
+            cards = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
             for (int i = 0; i < 3; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 3));
+            cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             windowsState = Card(cards, 0, "WINDOWS", "Параметры Windows", "windows-on", action);
             terminalState = Card(cards, 1, "CLI И CODEX", "Для новых терминалов", "cli-start", action);
-            phoneState = Card(cards, 2, "IPHONE", "Через домашний ПК", "iphone", action); content.Controls.Add(cards, 0, 2);
-            var bottom = new SurfacePanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 14) };
-            var title = UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text); title.Location = new Point(20, 16); bottom.Controls.Add(title);
-            recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted); recovery.Location = new Point(20, 48); recovery.MaximumSize = new Size(620, 0); bottom.Controls.Add(recovery); content.Controls.Add(bottom, 0, 3);
-            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0) };
-            footer.Controls.Add(UiTheme.Button("Обновить ProGo", delegate { action("update"); }, false));
-            footer.Controls.Add(UiTheme.Button("Открыть Codex", delegate { action("codex-open"); }, false));
-            footer.Controls.Add(UiTheme.Button("Помощь", delegate { action("help"); }, false)); content.Controls.Add(footer, 0, 4);
+            phoneState = Card(cards, 2, "IPHONE", "Через домашний ПК", "iphone", action); body.Controls.Add(cards);
+            recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+            body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery));
+            var footer = Actions(UiTheme.Button("Обновить ProGo", delegate { action("update"); }, false),
+                UiTheme.Button("Открыть Codex", delegate { action("codex-open"); }, false), UiTheme.Button("Помощь", delegate { action("help"); }, false));
+            footer.Margin = new Padding(0, 12, 0, 0); content.Controls.Add(footer, 0, 1);
+            viewport.SizeChanged += delegate { FitDashboard(); };
+            body.Layout += delegate { FitDashboard(); };
+            Shown += delegate { FitDashboard(); };
             timer.Tick += delegate { RefreshState(); }; timer.Start(); RefreshState();
+        }
+        private static TableLayoutPanel Stack(params Control[] controls)
+        {
+            var stack = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 1, RowCount = 0, Margin = new Padding(0) };
+            stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            foreach (var control in controls) { stack.RowStyles.Add(new RowStyle(SizeType.AutoSize)); stack.Controls.Add(control, 0, stack.RowCount++); }
+            bool sizing = false;
+            stack.Layout += delegate {
+                if (sizing) return; sizing = true;
+                try {
+                    foreach (Control child in stack.Controls) {
+                        int width = Math.Max(1, stack.ClientSize.Width - stack.Padding.Horizontal - child.Margin.Horizontal);
+                        var label = child as Label;
+                        if (label != null) label.MaximumSize = new Size(width, 0);
+                    }
+                } finally { sizing = false; }
+            };
+            return stack;
+        }
+        private static FlowLayoutPanel Actions(params Control[] controls)
+        {
+            var flow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(0) };
+            flow.Controls.AddRange(controls); return flow;
+        }
+        private static SurfacePanel Surface(params Control[] controls)
+        {
+            var panel = new SurfacePanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Padding = new Padding(18), Margin = new Padding(0, 0, 0, 16) };
+            panel.Controls.Add(Stack(controls)); return panel;
+        }
+        private void FitDashboard()
+        {
+            if (fitting || cards == null || viewport.ClientSize.Width < 1) return;
+            fitting = true;
+            try {
+                // Reserve a vertical scrollbar gutter so changing text cannot oscillate widths.
+                body.Width = Math.Max(1, viewport.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+                int minimumCard = 210;
+                foreach (var card in statusCards) {
+                    var stack = (TableLayoutPanel)card.Controls[0];
+                    foreach (Control control in stack.Controls) {
+                        var button = control as Button;
+                        if (button != null) minimumCard = Math.Max(minimumCard, button.GetPreferredSize(Size.Empty).Width + card.Padding.Horizontal);
+                    }
+                }
+                int columns = body.Width >= minimumCard * 3 + 24 ? 3 : 1;
+                if (cards.ColumnCount != columns) {
+                    cards.SuspendLayout();
+                    cards.ColumnCount = columns; cards.RowCount = columns == 3 ? 1 : 3;
+                    cards.ColumnStyles.Clear(); cards.RowStyles.Clear();
+                    for (int i = 0; i < columns; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / columns));
+                    for (int i = 0; i < cards.RowCount; i++) cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    for (int i = 0; i < statusCards.Count; i++) cards.SetCellPosition(statusCards[i], new TableLayoutPanelCellPosition(columns == 3 ? i : 0, columns == 3 ? 0 : i));
+                    cards.ResumeLayout(true);
+                }
+                for (int i = 0; i < statusCards.Count; i++) statusCards[i].Margin = new Padding(columns == 3 && i != 0 ? 6 : 0, 0, columns == 3 && i != 2 ? 6 : 0, 16);
+            } finally { fitting = false; }
         }
         private void Nav(FlowLayoutPanel panel, string text, string route, EventHandler action)
         {
@@ -94,10 +166,10 @@ namespace ProGo
         }
         private Label Card(TableLayoutPanel cards, int column, string title, string description, string actionName, Action<string> action)
         {
-            var card = new SurfacePanel { Dock = DockStyle.Fill, Margin = new Padding(column == 0 ? 0 : 6, 0, column == 2 ? 0 : 6, 18), Padding = new Padding(16) };
-            var name = UiTheme.Label(title, UiTheme.Strong, UiTheme.Muted); name.Location = new Point(16, 14); card.Controls.Add(name);
-            var state = UiTheme.Label("Выключено", UiTheme.Heading, UiTheme.Text); state.Location = new Point(14, 40); card.Controls.Add(state);
-            var caption = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted); caption.Location = new Point(16, 72); card.Controls.Add(caption);
+            var name = UiTheme.Label(title, UiTheme.Strong, UiTheme.Muted);
+            var heading = Actions(name);
+            var state = UiTheme.Label("Выключено", UiTheme.Heading, UiTheme.Text);
+            var caption = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted);
             var open = UiTheme.Button(column == 2 ? "Открыть мастер" : column == 1 ? "Запустить CLI" : "Включить", delegate {
                 action(column == 0 ? (SystemProxyService.IsApplied(settings.Current) ? "windows-off" : "windows-on") :
                     column == 1 ? (CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) ? "cli-off" : "cli-start") : actionName);
@@ -105,12 +177,14 @@ namespace ProGo
             }, false);
             if (column == 0) {
                 windowsToggle = open;
-                var configure = new LinkLabel { Text = "Настройки", AutoSize = true, Location = new Point(108, 14), Font = UiTheme.Body,
+                var configure = new LinkLabel { Text = "Настройки", AutoSize = true, Margin = new Padding(12, 0, 0, 8), Font = UiTheme.Body,
                     LinkColor = UiTheme.Accent, ActiveLinkColor = UiTheme.Text, VisitedLinkColor = UiTheme.Accent, AccessibleName = "Настройки прокси Windows" };
-                configure.LinkClicked += delegate { action("windows-settings"); }; card.Controls.Add(configure);
+                configure.LinkClicked += delegate { action("windows-settings"); }; heading.Controls.Add(configure);
             }
             if (column == 1) cliToggle = open;
-            open.Location = new Point(16, 100); open.MinimumSize = new Size(100, 32); open.Height = 32; open.Padding = new Padding(7, 0, 7, 0); card.Controls.Add(open); cards.Controls.Add(card, column, 0); return state;
+            open.MinimumSize = new Size(100, 32); open.Padding = new Padding(7, 0, 7, 0);
+            var card = Surface(heading, state, caption, open); card.Padding = new Padding(16);
+            statusCards.Add(card); cards.Controls.Add(card, column, 0); return state;
         }
         internal void RefreshConnectionState() { RefreshState(); }
         internal void SetRoutePending(bool cli, bool windows, bool any)

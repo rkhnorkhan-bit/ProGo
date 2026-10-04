@@ -505,6 +505,31 @@ file-write and integration errors. No live server or credentials are used.
 Together with F15a, this completes F15 after successful native CI/review:
 **14/30 closed; 16 remaining**. No merge, release or version bump is included.
 
+## Stage 13a — F16: adaptive dashboard layout
+
+The dashboard shell fits the client area instead of forcing a minimum internal
+970-pixel canvas. Headings, connection details and recovery text wrap to their
+container; stacked AutoSize rows replace fixed Y positions and section heights.
+Status cards change from three columns to one when the content area is narrow,
+and return to three columns when widened. Action/header rows wrap; navigation and
+the main body permit vertical scrolling while the footer remains outside the
+scrolling body. The window minimum is reduced to 760 by 560 pixels.
+
+All command routes, ordinary **Запустить CLI**, state text, pending-action logic
+and application-owned proxy/tunnel lifetime remain unchanged. No preferences or
+network integrations are applied by layout.
+
+Native Windows geometry fixtures cover normal/minimum client sizes, a client area
+that fits 1366 by 768, long synthetic status text and constrained form.Scale
+125/150/200% stress cases. They check wrapping, row separation, footer visibility,
+horizontal overflow, vertically reachable actions, navigation and resizing back
+to three columns. Screenshots accompany the checks. These synthetic scaling
+fixtures are explicitly not proof of native Windows DPI support.
+
+F16 remains **open**: settings automation cards and a real DPI/display matrix are
+separate work. Progress remains **14/30 closed; 16 remaining**. No merge, release
+or version bump is included.
+
 ## Remaining stages
 
 F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary

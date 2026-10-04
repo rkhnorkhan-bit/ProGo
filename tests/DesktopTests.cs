@@ -80,6 +80,7 @@ namespace ProGo
                     UiControls(settings);
                     SettingsActionBoundaries(settings);
                     SettingsValidationAndErrors(settings);
+                    DashboardLayout(settings);
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
