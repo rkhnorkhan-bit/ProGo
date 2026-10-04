@@ -555,6 +555,27 @@ F16 remains **open**: the remaining settings pages and real DPI/display validati
 are separate work. Progress remains **14/30 closed; 16 remaining**. No merge,
 release or version bump is included.
 
+## Stage 13c — F16: adaptive settings pages
+
+Connection, Storage, Diagnostics and Application Port pages now use a vertically
+scrollable, width-constrained body. Field captions sit above their controls;
+AutoSize rows replace fixed row heights and the fixed label column. Hints wrap to
+the available width, preference captions use measured wrapped height, and SSH and
+port action groups can wrap onto additional lines. The footer stays outside each
+page viewport. Existing settings values, commands and Save/error behavior remain
+unchanged; clipboard, vault, SSH, port migration and updater contracts are intact.
+
+Native Windows fixtures cover all four pages at normal/minimum sizes,
+1366-compatible geometry and constrained form.Scale 125/150/200%, including long
+synthetic hints/captions. Checks cover container bounds, row separation, complete
+text, vertically reachable fields/actions, footer visibility, pending edits across
+tab changes, port-pick cancellation, copying the effective address and refused
+Save preservation. Screenshots capture page tops/bottoms and pending/error states.
+Existing action, validation, SSH editor and automation layout checks stay required.
+
+F16 remains **open** for actual Windows DPI/display validation. Progress remains
+**14/30 closed; 16 remaining**. No merge, release or version bump is included.
+
 ## Remaining stages
 
 F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary

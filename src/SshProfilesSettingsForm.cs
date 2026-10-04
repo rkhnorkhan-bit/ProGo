@@ -87,7 +87,7 @@ namespace ProGo
             var connection = FormTable(Page(tabs, "Подключение"));
             sshProfiles.DropDownStyle = ComboBoxStyle.DropDownList;
             AddLabeled(connection, 0, "Сервер", sshProfiles);
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+            var actions = SettingsActions();
             actions.Controls.Add(UiTheme.Button("Добавить", delegate { AddProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Изменить", delegate { EditProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Удалить", delegate { RemoveProfile(); }, false));
@@ -98,54 +98,47 @@ namespace ProGo
                 try { SshInteractiveLogin.Open(selected); }
                 catch (Exception ex) { MessageBox.Show(this, ex.Message, "Первый вход SSH", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
             }, false));
-            connection.Controls.Add(actions, 0, 1); connection.SetColumnSpan(actions, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            AddSettingsRow(connection, 1, actions);
             AddLabeled(connection, 2, "Адрес SOCKS-туннеля", host);
             port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Порт SOCKS-туннеля", port);
             autoStart.Text = "Подключаться к серверу при запуске ProGo"; autoStart.AutoSize = true;
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
-            connection.Controls.Add(autoStart, 0, 4); connection.SetColumnSpan(autoStart, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-            connection.Controls.Add(autoSwitchProfile, 0, 5); connection.SetColumnSpan(autoSwitchProfile, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+            AddSettingsRow(connection, 4, autoStart);
+            AddSettingsRow(connection, 5, autoSwitchProfile);
             var help = UiTheme.Label("Фоновое подключение использует SSH-ключ и не запрашивает пароль. «Первый вход» открывает видимое окно SSH: сверьте отпечаток ключа сервера, войдите и завершите сеанс командой exit. Вход по паролю сам по себе не настраивает SSH-ключ для ProGo. Затем нажмите «Запустить CLI» один раз — ProGo дождётся готовности. Для iPhone используйте отдельный мастер.", UiTheme.Body, UiTheme.Muted);
-            help.MaximumSize = new Size(740, 0); connection.Controls.Add(help, 0, 7); connection.SetColumnSpan(help, 2);
+            AddSettingsRow(connection, 7, help);
             currentConnection.Name = "currentConnectionSettings";
-            currentConnection.MaximumSize = new Size(740, 0);
-            connection.Controls.Add(currentConnection, 0, 6); connection.SetColumnSpan(currentConnection, 2);
+            AddSettingsRow(connection, 6, currentConnection);
             var privacy = FormTable(Page(tabs, "Хранилище"));
             clearSeconds.Minimum = 5; clearSeconds.Maximum = 3600;
             AddLabeled(privacy, 0, "Очищать буфер через, сек.", clearSeconds);
             var privacyHint = UiTheme.Label("Скопированный секрет исчезнет из буфера через указанное время. Хранилище открывается вашим PIN-кодом.", UiTheme.Body, UiTheme.Muted);
-            privacyHint.MaximumSize = new Size(710, 0); privacy.Controls.Add(privacyHint, 0, 1); privacy.SetColumnSpan(privacyHint, 2);
+            AddSettingsRow(privacy, 1, privacyHint);
             var diagnostic = FormTable(Page(tabs, "Диагностика"));
             AddLabeled(diagnostic, 0, "Сайт проверки", endpoint);
             AddLabeled(diagnostic, 1, "Журнал приложения", new TextBox { ReadOnly = true, Text = AppPaths.LogPath });
             AddLabeled(diagnostic, 2, "Файл подключений SSH", new TextBox { ReadOnly = true, Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "config") });
             var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус и обновления». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
-            av.MaximumSize = new Size(710, 0); diagnostic.Controls.Add(av, 0, 4); diagnostic.SetColumnSpan(av, 2);
+            AddSettingsRow(diagnostic, 4, av);
             currentDiagnostic.Name = "currentDiagnosticSettings";
-            currentDiagnostic.MaximumSize = new Size(710, 0);
-            diagnostic.Controls.Add(currentDiagnostic, 0, 3); diagnostic.SetColumnSpan(currentDiagnostic, 2);
+            AddSettingsRow(diagnostic, 3, currentDiagnostic);
             var appPorts = FormTable(Page(tabs, "Порт приложений"));
             autoHttpPort.Text = "Выбирать свободный порт автоматически";
             autoHttpPort.AutoSize = true;
-            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-            appPorts.Controls.Add(autoHttpPort, 0, 0); appPorts.SetColumnSpan(autoHttpPort, 2);
+            AddSettingsRow(appPorts, 0, autoHttpPort);
             httpPort.Minimum = 1; httpPort.Maximum = 65535;
             AddLabeled(appPorts, 1, "Порт на этом компьютере", httpPort);
             autoHttpPort.CheckedChanged += delegate { httpPort.Enabled = !autoHttpPort.Checked && !pickFreePort; };
             AddLabeled(appPorts, 2, "Текущий адрес", proxyAddress);
-            var portActions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+            var portActions = SettingsActions();
             pickPortButton = UiTheme.Button("Подобрать свободный", delegate { TogglePortSelection(); }, false);
             pickPortButton.Name = "togglePortSelection";
             portActions.Controls.Add(pickPortButton);
             portActions.Controls.Add(UiTheme.Button("Скопировать адрес", delegate { Clipboard.SetText(proxyAddress.Text); }, false));
-            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
-            appPorts.Controls.Add(portActions, 0, 3); appPorts.SetColumnSpan(portActions, 2);
+            AddSettingsRow(appPorts, 3, portActions);
             var portHelp = UiTheme.Label("Автоматически: ProGo сначала использует последний порт. Если он занят — выбирает другой. Без галочки используется только указанный порт.\n\nПри смене порта настройки Windows, терминала и ярлыка Codex, включённые через ProGo, обновятся вместе. Открытые терминалы и Codex нужно перезапустить.", UiTheme.Body, UiTheme.Muted);
-            portHelp.MaximumSize = new Size(740, 0);
-            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 155));
-            appPorts.Controls.Add(portHelp, 0, 4); appPorts.SetColumnSpan(portHelp, 2);
-            portNotice.MaximumSize = new Size(740, 0);
-            appPorts.Controls.Add(portNotice, 0, 5); appPorts.SetColumnSpan(portNotice, 2);
+            AddSettingsRow(appPorts, 4, portHelp);
+            AddSettingsRow(appPorts, 5, portNotice);
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 FlowDirection = FlowDirection.RightToLeft, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 12, 0, 0) };
             var save = UiTheme.Button("Сохранить", Save, true);
@@ -186,9 +179,59 @@ namespace ProGo
         }
         private static TableLayoutPanel FormTable(TabPage page)
         {
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(18), ColumnCount = 2, AutoScroll = true };
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 230)); table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            page.Controls.Add(table); return table;
+            var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Name = "settingsViewport" };
+            var table = new TableLayoutPanel { Dock = DockStyle.None, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                Padding = new Padding(18), ColumnCount = 1, RowCount = 0, AutoSize = false, Name = "settingsPageBody" };
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            viewport.Controls.Add(table); page.Controls.Add(viewport);
+            bool sizing = false;
+            Action fit = delegate {
+                if (sizing || viewport.ClientSize.Width < 1) return;
+                sizing = true;
+                try {
+                    int width = Math.Max(1, viewport.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+                    if (table.Width != width) table.Width = width;
+                    foreach (Control child in table.Controls) {
+                        int available = Math.Max(1, width - table.Padding.Horizontal - child.Margin.Horizontal);
+                        var label = child as Label;
+                        if (label != null) label.MaximumSize = new Size(available, 0);
+                        var option = child as CheckBox;
+                        if (option != null) FitPreferenceCaption(option, available);
+                    }
+                    int height = table.GetPreferredSize(new Size(width, 0)).Height;
+                    if (table.Height != height) table.Height = height;
+                } finally { sizing = false; }
+            };
+            viewport.ClientSizeChanged += delegate { fit(); };
+            table.Layout += delegate { fit(); };
+            return table;
+        }
+        private static FlowLayoutPanel SettingsActions()
+        {
+            return new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = true, Margin = new Padding(0) };
+        }
+        private static void AddSettingsRow(TableLayoutPanel table, int row, Control control)
+        {
+            table.RowCount = Math.Max(table.RowCount, row + 1);
+            while (table.RowStyles.Count < table.RowCount) table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            control.Dock = DockStyle.Top;
+            var option = control as CheckBox;
+            if (option != null) {
+                option.AutoSize = false; option.TextAlign = ContentAlignment.TopLeft; option.CheckAlign = ContentAlignment.TopLeft;
+                option.Margin = new Padding(0, 4, 0, 8);
+                option.TextChanged += delegate { table.PerformLayout(); };
+                option.FontChanged += delegate { table.PerformLayout(); };
+            }
+            table.Controls.Add(control, 0, row);
+        }
+        private static void FitPreferenceCaption(CheckBox option, int width)
+        {
+            // AutoSize can report a single-line height for a width-constrained caption.
+            int textWidth = Math.Max(1, width - SystemInformation.MenuCheckSize.Width - 8);
+            int height = TextRenderer.MeasureText(option.Text, option.Font,
+                new Size(textWidth, int.MaxValue), TextFormatFlags.WordBreak).Height;
+            option.Height = Math.Max(SystemInformation.MenuCheckSize.Height, height) + 4;
         }
         private void AutomationCard(FlowLayoutPanel flow, CheckBox toggle, string title, string description, string onLabel, string on, string offLabel, string off)
         {
@@ -218,12 +261,7 @@ namespace ProGo
                         if (child is Label) child.MaximumSize = new Size(width, 0);
                         var option = child as CheckBox;
                         if (option != null) {
-                            // CheckBox's AutoSize preferred height can remain one line even
-                            // when MaximumSize narrows the text. Measure wrapped text instead.
-                            int textWidth = Math.Max(1, width - SystemInformation.MenuCheckSize.Width - 8);
-                            int height = TextRenderer.MeasureText(option.Text, option.Font,
-                                new Size(textWidth, int.MaxValue), TextFormatFlags.WordBreak).Height;
-                            option.Height = Math.Max(SystemInformation.MenuCheckSize.Height, height) + 4;
+                            FitPreferenceCaption(option, width);
                         }
                     }
                 } finally { sizing = false; }
@@ -266,9 +304,16 @@ namespace ProGo
         }
         private static void AddLabeled(TableLayoutPanel panel, int row, string label, Control control)
         {
-            panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-            panel.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-            control.Dock = DockStyle.Fill; control.Margin = new Padding(0, 8, 0, 8); panel.Controls.Add(control, 1, row);
+            var field = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 1, RowCount = 2, Margin = new Padding(0, 0, 0, 12) };
+            field.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            field.RowStyles.Add(new RowStyle(SizeType.AutoSize)); field.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var caption = UiTheme.Label(label, UiTheme.Body, UiTheme.Text);
+            caption.Dock = DockStyle.Top; caption.Margin = new Padding(0, 0, 0, 6);
+            control.Dock = DockStyle.Top; control.Margin = new Padding(0);
+            field.Controls.Add(caption, 0, 0); field.Controls.Add(control, 0, 1);
+            field.Layout += delegate { caption.MaximumSize = new Size(Math.Max(1, field.ClientSize.Width), 0); };
+            AddSettingsRow(panel, row, field);
         }
 
         private void LoadValues()
