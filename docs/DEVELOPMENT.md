@@ -213,3 +213,23 @@ cover cleanup acknowledgement/refusal alongside existing activation tests.
 Maintenance transactions additionally reject a stopped owner's unresolved journal.
 Uninstall acquires the same lease as update/restore, blocking normal starts while
 removal is in progress. No fixture uses a live VPS or downloaded executable.
+
+### Audit stage F07
+
+`BackupRetentionTests.cs` exercises temporary mixed backup directories without
+user settings, and `BackupRetentionTests.ps1` runs the updater's real backup
+function in a temporary installation. Manual contents and unknown/legacy folders
+survive a pool exceeding twenty entries. Tests cover shared ten-slot policy,
+protected latest kinds, active backup pinning, manifest revalidation and an
+unapproved new candidate. The installed C# policy source must hash-match the
+app source. `DesktopBackupRetentionTests.cs` renders the exact cleanup list and
+checks cancellation without deleting files.
+
+During F07 validation two intermediate Windows runs failed the existing F06
+shutdown assertion for external `AutoDetect` preservation (37197398077 and
+37197771162). The fixture previously treated visible proxy registry fields as
+startup completion, although Apply still had to finish its WinINet notification
+and value correction. The fixture now waits for the completed-apply log from
+the current process before editing/snapshotting the external route, runs that
+scenario three times, and prints expected/actual typed values on any failure.
+Assertions remain exact; no Windows proxy runtime logic changes belong to F07.

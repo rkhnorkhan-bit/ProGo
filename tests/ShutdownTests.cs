@@ -28,6 +28,19 @@ namespace ProGo
                 return process.ExitCode;
             }
         }
+        private static int LogOffset() { return File.Exists(AppPaths.LogPath) ? File.ReadAllText(AppPaths.LogPath).Length : 0; }
+        private static bool WindowsApplyCompleted(int offset, int port) {
+            try {
+                string log = File.ReadAllText(AppPaths.LogPath);
+                return log.Length >= offset && log.Substring(offset).Contains("Current-user Windows proxy enabled. port=" + port + ".");
+            } catch (IOException) { return false; }
+        }
+        private static void CheckField(string name, WindowsProxyValue expected, string context) {
+            var actual = SystemProxyService.ReadCurrent().Values[name];
+            string detail = actual.Matches(expected) ? "" : " expected=" + new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(expected) +
+                " actual=" + new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(actual);
+            Check(actual.Matches(expected), context + ": " + name + detail);
+        }
         private static bool PortOpen(int port) {
             try { using (var client = new TcpClient()) { client.Connect(IPAddress.Loopback, port); return true; } }
             catch (SocketException) { return false; }
@@ -88,9 +101,11 @@ namespace ProGo
                 prefs.SocksPort = ((IPEndPoint)listener.LocalEndpoint).Port; prefs.TestEndpoint = "http://127.0.0.1:1/";
                 var reserved = new TcpListener(IPAddress.Loopback, 0); reserved.Start(); prefs.HttpProxyPort = ((IPEndPoint)reserved.LocalEndpoint).Port; reserved.Stop();
                 using (var settings = new SettingsService()) settings.Save(prefs);
+                int applyLogOffset = LogOffset();
                 primary = Process.Start(new ProcessStartInfo(installed) { UseShellExecute = false, CreateNoWindow = true });
                 Wait(() => !primary.HasExited && File.Exists(SystemProxyService.BackupPath) && SystemProxyService.IsApplied(prefs) &&
-                    CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) && PortOpen(prefs.HttpProxyPort), "actual proxy modes ready");
+                    CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) && PortOpen(prefs.HttpProxyPort) &&
+                    WindowsApplyCompleted(applyLogOffset, prefs.HttpProxyPort), "actual proxy modes fully applied");
                 string settingsBefore = File.ReadAllText(AppPaths.SettingsPath);
                 using (var locked = File.Open(SystemProxyService.BackupPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     Check(Uninstall(uninstall) != 0, "actual uninstall reports refused cleanup of a locked journal");
@@ -102,12 +117,17 @@ namespace ProGo
                 primary.Dispose(); primary = null;
                 Check(!File.Exists(installed) && !File.Exists(startup) && !Directory.Exists(menu) && File.Exists(AppPaths.SettingsPath), "successful uninstall removes executable/shortcuts and retains user data");
                 Check(!File.Exists(SystemProxyService.BackupPath) && !File.Exists(CliProxyEnvironmentService.BackupPath) && !PortOpen(prefs.HttpProxyPort), "successful uninstall leaves no owned backup or dead local listener");
-                foreach (var name in SystemProxyService.FieldNames) Check(SystemProxyService.ReadCurrent().Values[name].Matches(baseline.Values[name]), "uninstall restores original Windows field: " + name);
+                foreach (var name in SystemProxyService.FieldNames) CheckField(name, baseline.Values[name], "uninstall restores original Windows field");
                 foreach (var pair in environment) Check(Environment.GetEnvironmentVariable(pair.Key, EnvironmentVariableTarget.User) == pair.Value, "new-terminal user environment restored: " + pair.Key);
 
+                // ProxyServer is written before WinINet refresh and its typed-value
+                // correction finish. Do not edit/snapshot halfway through startup.
+                for (int externalAttempt = 1; externalAttempt <= 3; externalAttempt++) {
                 File.Copy(args[0], installed);
+                applyLogOffset = LogOffset();
                 primary = Process.Start(new ProcessStartInfo(installed) { UseShellExecute = false, CreateNoWindow = true });
-                Wait(() => !primary.HasExited && File.Exists(SystemProxyService.BackupPath) && SystemProxyService.IsApplied(prefs) && CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort), "external-edit fixture ready");
+                Wait(() => !primary.HasExited && File.Exists(SystemProxyService.BackupPath) && SystemProxyService.IsApplied(prefs) && CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) &&
+                    WindowsApplyCompleted(applyLogOffset, prefs.HttpProxyPort), "external-edit fixture fully applied");
                 using (var key = Registry.CurrentUser.OpenSubKey(keyPath, true)) {
                     key.SetValue("ProxyServer", "external.example.org:9090", RegistryValueKind.String);
                     key.SetValue("ProxyOverride", "external.example.org", RegistryValueKind.String);
@@ -117,8 +137,10 @@ namespace ProGo
                 var external = SystemProxyService.ReadCurrent();
                 Check(Uninstall(uninstall) == 0 && primary.WaitForExit(10000), "uninstall also exits cleanly after later external proxy changes");
                 primary.Dispose(); primary = null;
-                foreach (var name in SystemProxyService.FieldNames) Check(SystemProxyService.ReadCurrent().Values[name].Matches(external.Values[name]), "external Windows field survives uninstall: " + name);
+                foreach (var name in SystemProxyService.FieldNames) CheckField(name, external.Values[name], "external Windows field survives uninstall attempt " + externalAttempt);
                 Check(Environment.GetEnvironmentVariable("HTTP_PROXY", EnvironmentVariableTarget.User) == CliProxyBridgeService.UrlFor(1881), "later terminal proxy at the old default port survives repeated uninstall cleanup");
+
+                }
 
                 File.Copy(args[0], installed); File.WriteAllText(SystemProxyService.BackupPath, "{}");
                 Check(Uninstall(uninstall) != 0 && File.Exists(installed) && File.Exists(SystemProxyService.BackupPath), "stopped/crashed application with unresolved cleanup cannot be uninstalled");

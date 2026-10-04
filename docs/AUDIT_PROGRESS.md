@@ -240,9 +240,30 @@ replacement and retain existing staging/self-check/rollback tests.
 F06 is complete when these Windows checks and the Linux VPN regressions pass.
 Version/release publishing is outside this stage.
 
+## Stage 8 — F07: shared backup retention and cleanup preview
+
+Scope: approved F07 only. App and updater use the same installed/compiled
+`BackupRetention` class. Keep all manual and unrecognised folders, ten latest
+known automatic copies, and the latest baseline and pre-update (ordered by the
+existing timestamped names). Missing/unreadable/ambiguous manifests fail closed;
+legacy display inference never grants automatic deletion eligibility. The copy
+just created for an active operation is also pinned against clock reversal.
+
+Manual cleanup previews every candidate path in a scrollable, read-only list
+and requires an explicit click; cancellation changes nothing. Apply only the
+confirmed subset after checking the current policy and unchanged manifests.
+Changed/manual folders and junctions are skipped. No version/release changes.
+
+Verification: more than twenty mixed copies, original manual payload retention,
+unknown/legacy/ambiguous manifests, protected latest baseline/pre-update,
+relabelled and unapproved candidates, native preview/cancel screenshot, and the
+actual updater backup function plus existing update/rollback transactions.
+Installed policy source must hash-match the class compiled into the app.
+F07 is complete when the exact Windows and Linux CI run passes.
+
 ## Remaining stages
 
-F07–F10 and F14–F30 remain separate work (21 findings). Preserve the ordinary
+F08–F10 and F14–F30 remain separate work after F07 (20 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described
