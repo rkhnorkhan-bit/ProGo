@@ -198,7 +198,8 @@ namespace ProGo
                 ColumnCount = 1, RowCount = 4, Margin = new Padding(0) };
             stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int row = 0; row < 4; row++) stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            toggle.Text = title; toggle.AutoSize = true; toggle.Font = UiTheme.Strong;
+            toggle.Text = title; toggle.AutoSize = false; toggle.Font = UiTheme.Strong;
+            toggle.Dock = DockStyle.Top; toggle.TextAlign = ContentAlignment.TopLeft; toggle.CheckAlign = ContentAlignment.TopLeft;
             toggle.Margin = new Padding(0, 0, 0, 8);
             var hint = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted);
             var immediate = UiTheme.Label("Ручное управление · применяется сразу", UiTheme.Body, UiTheme.Accent);
@@ -213,11 +214,22 @@ namespace ProGo
                 if (sizing) return; sizing = true;
                 try {
                     foreach (Control child in stack.Controls) {
-                        if (child is Label || child is CheckBox)
-                            child.MaximumSize = new Size(Math.Max(1, stack.ClientSize.Width - child.Margin.Horizontal), 0);
+                        int width = Math.Max(1, stack.ClientSize.Width - child.Margin.Horizontal);
+                        if (child is Label) child.MaximumSize = new Size(width, 0);
+                        var option = child as CheckBox;
+                        if (option != null) {
+                            // CheckBox's AutoSize preferred height can remain one line even
+                            // when MaximumSize narrows the text. Measure wrapped text instead.
+                            int textWidth = Math.Max(1, width - SystemInformation.MenuCheckSize.Width - 8);
+                            int height = TextRenderer.MeasureText(option.Text, option.Font,
+                                new Size(textWidth, int.MaxValue), TextFormatFlags.WordBreak).Height;
+                            option.Height = Math.Max(SystemInformation.MenuCheckSize.Height, height) + 4;
+                        }
                     }
                 } finally { sizing = false; }
             };
+            toggle.TextChanged += delegate { stack.PerformLayout(); };
+            toggle.FontChanged += delegate { stack.PerformLayout(); };
             card.Controls.Add(stack); flow.Controls.Add(card);
         }
         private void RequestManualAction(string action)

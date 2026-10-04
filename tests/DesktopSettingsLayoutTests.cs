@@ -62,7 +62,9 @@ namespace ProGo
                     Check(Descendants(card).OfType<Label>().All(l => l.AutoSize && !l.AutoEllipsis &&
                         l.GetPreferredSize(new Size(l.Width, 0)).Height <= l.Height), name + " gives complete wrapped hints enough height");
                     var toggle = Descendants(card).OfType<CheckBox>().Single();
-                    Check(toggle.GetPreferredSize(new Size(toggle.Width, 0)).Height <= toggle.Height, name + " gives the preference caption enough height");
+                    var textSize = TextRenderer.MeasureText(toggle.Text, toggle.Font,
+                        new Size(Math.Max(1, toggle.ClientSize.Width - SystemInformation.MenuCheckSize.Width - 8), int.MaxValue), TextFormatFlags.WordBreak);
+                    Check(textSize.Height <= toggle.ClientSize.Height, name + " gives the complete wrapped preference caption enough height: text=" + textSize + " control=" + toggle.ClientSize);
                 }
                 var root = (TableLayoutPanel)tabs.Parent;
                 Check(root.Controls.OfType<Label>().Where(l => l.Visible).All(l => l.GetPreferredSize(new Size(l.Width, 0)).Height <= l.Height),
