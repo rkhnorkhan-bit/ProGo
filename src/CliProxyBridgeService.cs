@@ -520,6 +520,11 @@ namespace ProGo
             foreach (var name in Names) if (!IsUserValue(name, Expected(name, port))) return false;
             return true;
         }
+        internal static bool HasProxyEndpoint(int port)
+        {
+            foreach (var name in Names) if (name != "NO_PROXY" && IsUserValue(name, Expected(name, port))) return true;
+            return false;
+        }
         internal static bool IsPartiallyApplied(int port)
         {
             if (IsAppliedToUserEnvironment(port)) return false;
@@ -546,7 +551,14 @@ namespace ProGo
 
         public static bool OpenPowerShellWithEnvironment(int port, out string message)
         {
-            message = null;
+            Process process;
+            bool opened = OpenPowerShellWithEnvironment(port, out message, out process);
+            if (process != null) process.Dispose();
+            return opened;
+        }
+        internal static bool OpenPowerShellWithEnvironment(int port, out string message, out Process process)
+        {
+            message = null; process = null;
             var proxyUrl = CliProxyBridgeService.UrlFor(port);
             var powerShell = ResolvePowerShell();
             try
@@ -558,7 +570,8 @@ namespace ProGo
                     Arguments = "-NoExit -Command \"Write-Host 'ProGo CLI proxy is active: " + proxyUrl + "'; Get-ChildItem Env: | Where-Object { $_.Name -match 'proxy' } | Sort-Object Name\""
                 };
                 ApplyProcessEnvironment(psi, port);
-                Process.Start(psi);
+                process = Process.Start(psi);
+                if (process == null) throw new InvalidOperationException("PowerShell process was not created.");
                 SafeLog.Info("PowerShell opened with CLI proxy environment. proxy=" + proxyUrl + ".");
                 return true;
             }

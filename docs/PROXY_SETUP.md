@@ -81,7 +81,7 @@ automation alone does not change those values. Disconnect/exit restores owned se
 
 **Запустить CLI** starts the HTTP bridge and applies its actual port to the current
 Windows user's environment. Run `codex` normally afterwards. The automatic setting
-**Включать прокси для обычного запуска Codex** and **Codex — включить прокси** use
+**Включать прокси для терминалов и Codex** and the legacy terminal/Codex aliases use
 the same environment setup. No special shortcut is required.
 
 Completely close and reopen an already running terminal, IDE or Codex app once so it
@@ -92,7 +92,25 @@ launch with an explicit process environment. Codex installation is separate.
 The scoped Start Menu shortcut is optional under **Дополнительно: ярлык Codex**.
 Creating/removing it does not enable/disable the shared user proxy environment.
 Manual CLI/Codex off restores only ProGo-owned user values; it cannot change the
-environment of processes that are already running. Windows system proxy is separate.
+environment of processes that are already running. Completely restart old terminals
+and Codex after turning it off; a new tab in an existing terminal may retain its
+old environment. Windows system proxy is separate.
+
+The HTTP bridge is shared by Windows, the CLI user environment, windows opened
+explicitly through ProGo, and the optional owned Codex shortcut. Turning off CLI
+releases its listening port when it is the last consumer. While another consumer
+remains, the dashboard names it and the service stays available. Closing the last
+tracked scoped window releases the port within the UI timer interval (about one
+second). An owned shortcut retains the endpoint until **Удалить отдельный ярлык**.
+Windows opened separately through that shortcut are not tracked individually.
+
+**Отключить прокси на ПК** is the explicit full desktop stop: it restores owned
+Windows/CLI settings, stops the shared listener and SSH tunnel, and ends scoped
+windows' access through that endpoint. It does not kill those windows. Reopen them
+through ProGo to reconnect. **Остановить все подключения** also stops the phone
+relay. Failed owned-settings cleanup retains the service and its retry journal.
+These actions do not turn off the saved automatic preferences; their pending
+automatic setup is cancelled for the current session as before.
 
 ## Windows applications
 

@@ -154,6 +154,9 @@ namespace ProGo
                     var text = CleanupDialog(context, "Execute", "stop");
                     Check(text.Contains("Очистка прокси Windows не завершена") && text.Contains("продолжает работать") && text.Contains("Windows — выключить"), "actual stop dialog exposes incomplete cleanup and the concrete retry action");
                     Check(bridge.IsRunning && File.Exists(SystemProxyService.BackupPath), "desktop stop preserves its bridge when a registry field cannot be restored");
+                    var consumers = (AppProxyConsumers)Field(context, "appConsumers");
+                    consumers.Observe(); consumers.ReleaseIfUnused();
+                    Check(consumers.WindowsCleanupPending && bridge.IsRunning, "failed Windows cleanup records a consumer that the service timer cannot discard");
                     text = CleanupDialog(context, "ExitProGo");
                     Check(text.Contains("Очистка прокси Windows не завершена") && bridge.IsRunning && ((NotifyIcon)Field(context, "tray")).Visible,
                         "normal Quit refuses teardown and keeps the application usable after cleanup failure");
@@ -163,6 +166,7 @@ namespace ProGo
                         "update/restore gate refuses to launch a helper after cleanup failure");
                     deny = false; Call(context, "Execute", "stop");
                     Check(!bridge.IsRunning && !File.Exists(SystemProxyService.BackupPath), "retrying actual desktop stop completes cleanup before stopping the service");
+                    Check(!consumers.WindowsCleanupPending, "successful Windows cleanup settles its explicit retained consumer");
                     Check(!(bool)context.GetType().GetMethod("BeginMaintenance", PrivateInstance).Invoke(context, new object[] { new Func<bool>(() => false) }) && ((NotifyIcon)Field(context, "tray")).Visible,
                         "a refused maintenance handoff leaves the cleaned application open for retry");
                     context.Dispose(); context.Dispose();

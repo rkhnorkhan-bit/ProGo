@@ -181,7 +181,7 @@ namespace ProGo
             if (File.Exists(ShortcutPath)) File.Delete(ShortcutPath);
             File.Delete(LauncherPath);
         }
-        public static void Open(int port)
+        public static Process Open(int port)
         {
             // Launch in a scoped child process. Never modify Codex config, PATH or API keys.
             var start = new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"), "/D /K codex")
@@ -190,7 +190,7 @@ namespace ProGo
                 WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             };
             CliProxyEnvironmentService.ApplyProcessEnvironment(start, port);
-            Process.Start(start);
+            return Process.Start(start);
         }
     }
 }

@@ -357,9 +357,38 @@ This handles caught runtime failures; it does not claim filesystem-wide atomicit
 or automatic recovery after a forced process termination/power loss. No version
 bump or published release.
 
+## Stage 10 — F10 shared application-proxy consumers
+
+Scope: manual CLI off, Windows off and optional scoped consumers share one
+loopback HTTP listener. No new transport or persisted setting is introduced.
+
+- The listener is released after the last Windows/CLI consumer is disabled.
+  Ordinary **Запустить CLI** and its aliases still use the shared environment.
+- Windows, partial proxy endpoints, unfinished cleanup journals, windows explicitly
+  opened through ProGo, and its owned Codex shortcut retain the endpoint. Window
+  handles are pruned after exit; no PID lookup or user-process termination occurs.
+- Dashboard service status names remaining consumers independently of CLI state.
+  CLI off explains restarting old terminals and the existing explicit full-stop
+  command. Full desktop stop closes the endpoint but leaves user windows open.
+
+Verified: full Windows/Linux CI passed, including 413 desktop checks, 39 shutdown
+checks, 88 maintenance checks, 52 backup-integrity checks, 33 home-VPN checks and
+18 relay integration tests. Consumer fixtures rebind the real listening port,
+exercise both release orders, ordinary CLI aliases, scoped PowerShell handles,
+partial endpoints, optional shortcut removal, UI timer release and full stop.
+Actual failed Windows/CLI cleanup records an explicit retained consumer; it cannot
+be discarded by the timer even if the journal becomes unavailable. A successful
+explicit retry settles it. Production tracking never kills user processes.
+
+Native screenshots distinguish CLI off/Windows retained from the stopped service;
+the fixture explicitly refreshes paint before capture. This stage does not claim
+to change an already-running terminal's environment or track windows launched
+outside ProGo. The audit now has **12 of 30 findings closed** (F01–F08 and
+F10–F13); **18 remain**. No version bump or published release.
+
 ## Remaining stages
 
-F09–F10 and F14–F30 remain separate work (19 findings). Preserve the ordinary
+F09 and F14–F30 remain separate work (18 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described
