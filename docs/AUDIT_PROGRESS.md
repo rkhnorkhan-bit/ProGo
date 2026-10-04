@@ -290,6 +290,34 @@ commit failure. Current restore still uses its earlier file-by-file commit;
 preflight alone does not prevent mutation between validation and copying.
 No vault format, encryption or decoy semantics change in stage 9a.
 
+## Stage 9b1 — F08: explicit restore scope and prepared input
+
+Restore now defaults to the program only. The native chooser offers program,
+user data, or both, with the exact payload list. Data-bearing choices need a
+separate unchecked consent box; switching scope clears that consent. A final
+confirmation defaults to No. Absent user data and historical logs are preserved,
+and a copy with no user payloads only offers program scope. The helper checks
+scope/consent independently; command-line invocation defaults to Program.
+
+The chooser prepares a separate copy asynchronously before maintenance cleanup.
+Cancellation prevents handoff; a preparation error leaves the running app and
+connections untouched. Preparation retains the original recorded digest index,
+verifies the copied bytes, rejects links and never generates retroactive evidence.
+The helper takes its own verified copy before acknowledging handoff, so disposing
+the UI copy or later changing the source cannot affect its selected input. It
+revalidates before commit and only copies the selected program/data roots.
+
+Verification: standalone prepared-copy isolation/disposal/cancellation and scope
+checks; native chooser defaults, consent reset, cancel, UI heartbeat and normal/
+enlarged screenshots; real helper refusal without consent, preserved opaque
+vault/settings in Program scope, preserved exe/version/scripts in Data scope,
+and source mutation after pre-handoff preparation. Existing CLI and maintenance
+regressions remain required. No vault encryption/format/decoy semantics change.
+
+F08 remains **open**. Stage 9b2 still must add a protective current-state snapshot,
+installed self-check and rollback after any commit failure. This stage does not
+make the existing file-by-file commit atomic. No version bump or public release.
+
 ## Remaining stages
 
 F08–F10 and F14–F30 remain separate work after F07 (20 findings). Preserve the ordinary

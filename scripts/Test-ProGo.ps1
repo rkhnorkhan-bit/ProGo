@@ -199,7 +199,7 @@ if ($updateScriptText -match [regex]::Escape("raw.githubusercontent.com/rkhnorkh
 if ($updateScriptText -match [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater core still uses main VERSION instead of published release" }
 
 $restoreScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
-foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
+foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "Scope", "ConfirmData", "RestoreNames", "Prepare", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
     if ($restoreScriptText -notmatch [regex]::Escape($required)) {
         Fail "restore script marker missing: $required"
     }

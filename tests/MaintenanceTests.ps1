@@ -140,6 +140,25 @@ try {
     Check ((Run (DriverInfo 'update')) -eq 0) 'actual update transaction validates staging and installed executable'
     Check ((Get-Content (Join-Path $manualCopy 'payload.txt')).Trim() -eq 'original manual copy' -and (Test-Path $unknownCopy)) 'actual update transaction preserves old manual contents and unknown directory beyond twenty copies'
     Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq ((Get-Content (Join-Path $release 'VERSION')).Trim())) 'successful update commits the fixture release'
+    $beforeConsentRefusal = Snapshot
+    Check ((Run (DriverInfo 'restore-no-consent')) -ne 0) 'actual helper rejects user-data replacement without explicit consent'
+    Check ((Snapshot) -eq $beforeConsentRefusal) 'missing consent leaves installed files and logs untouched'
+    $dataBeforeProgram = [IO.File]::ReadAllBytes((Join-Path $install 'settings.json'))
+    Set-Content (Join-Path $install 'vault.enc.json') 'current opaque vault'
+    Set-Content (Join-Path $backup 'vault.enc.json') 'selected opaque vault'
+    [ProGo.BackupIntegrity]::Write($backup)
+    Check ((Run (DriverInfo 'restore-program')) -eq 0) 'program-only restore completes with no data consent'
+    Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $install 'settings.json'))) -eq [Convert]::ToBase64String($dataBeforeProgram) -and ((Get-Content (Join-Path $install 'vault.enc.json')).Trim()) -eq 'current opaque vault') 'program-only restore preserves current settings and opaque vault bytes'
+    Set-Content (Join-Path $install 'VERSION') 'data-only-program-marker'
+    $exeBeforeData = (Get-FileHash (Join-Path $install 'ProGo.exe')).Hash
+    $scriptsBeforeData = @(Get-ChildItem (Join-Path $install 'scripts') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.Name + ':' + (Get-FileHash $_.FullName).Hash }) -join ';'
+    Check ((Run (DriverInfo 'restore-data')) -eq 0) 'data-only restore completes with explicit consent'
+    Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq 'data-only-program-marker' -and (Get-FileHash (Join-Path $install 'ProGo.exe')).Hash -eq $exeBeforeData -and (@(Get-ChildItem (Join-Path $install 'scripts') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.Name + ':' + (Get-FileHash $_.FullName).Hash }) -join ';') -eq $scriptsBeforeData) 'data-only restore preserves executable, version and all script bytes'
+    Check (((Get-Content (Join-Path $install 'vault.enc.json')).Trim()) -eq 'selected opaque vault') 'data-only restore applies selected opaque vault without changing encryption'
+    Check ((Run (DriverInfo 'restore-source-changed')) -eq 0) 'helper applies prepared input after original source changes'
+    Check ((Get-Content (Join-Path $install 'settings.json') -Raw).Contains('12345')) 'post-preparation source mutation does not reach installed settings'
+    Set-Content (Join-Path $backup 'settings.json') '{"SocksPort":12345}'
+    [ProGo.BackupIntegrity]::Write($backup)
     Check ((Run (DriverInfo 'restore')) -eq 0) 'actual restore transaction completes under exclusive ownership'
     Check ((Get-Content (Join-Path $install 'settings.json') -Raw).Contains('12345')) 'restore applies the selected backup settings'
     Check ((Run (DriverInfo 'rollback')) -ne 0) 'post-commit failure is reported'

@@ -27,9 +27,13 @@ if ($Mode -eq 'startup') {
 }
 $env:LOCALAPPDATA = $Fixture
 $BackupDir = Join-Path $Fixture 'backup'
+$Scope = 'All'; $ConfirmData = $true
+if ($Mode -eq 'restore-program') { $Scope = 'Program'; $ConfirmData = $false }
+if ($Mode -eq 'restore-data') { $Scope = 'Data' }
+if ($Mode -eq 'restore-no-consent') { $ConfirmData = $false }
 $WaitPid = 0; $NoLaunch = $true; $Force = $true; $NoReleasePackage = $false
 $ReleasePackageUrl = ''; $SourceZipUrl = ''; $RemoteVersionUrl = ''
-if ($Mode -eq 'restore') { $file = Join-Path $Scripts 'Restore-ProGoBackup.ps1' }
+if ($Mode.StartsWith('restore')) { $file = Join-Path $Scripts 'Restore-ProGoBackup.ps1' }
 else { $file = Join-Path $Scripts 'Update-ProGo.Core.ps1' }
 # Execute the actual local transaction body. Only network and modal UI are
 # replaced by fixtures; installation, checks, rollback and lease lifetime stay real.
@@ -45,6 +49,9 @@ function Show-UserMessage($Text, $Title) {}
 function Show-UpdateDialog($Text, $Title, $Kind) {}
 function Test-UpdateRequired { $State.RemoteVersion = (Get-Content (Join-Path $Release 'VERSION')).Trim(); return $true }
 function Get-ReleaseDirForUpdate { return $Release }
+if ($Mode -eq 'restore-source-changed') {
+    function Wait-ProGoExit($TargetProcessId, $TimeoutMs) { Set-Content (Join-Path $Fixture 'backup\settings.json') 'source changed after preparation' }
+}
 if ($Mode -eq 'rollback') {
     function Install-StagingToMain($TargetDir) {
         $State.MainWasChanged = $true

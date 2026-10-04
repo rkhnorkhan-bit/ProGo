@@ -507,24 +507,32 @@ namespace ProGo
             string backupDir;
             if (!BackupPickerForm.TryPick(backups, out backupDir)) return;
 
-            string validationError;
-            if (!BackupService.TryValidateRestore(backupDir, out validationError))
+            try
             {
-                MessageBox.Show(validationError, "Копия не прошла проверку", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                using (var options = new RestoreOptionsForm(backupDir))
+                {
+                    if (options.ShowDialog() != DialogResult.OK) return;
+                    using (var prepared = options.TakePreparedCopy())
+                    {
+                        if (closing) return;
+                        var names = BackupIntegrity.RestoreNames(prepared.Path, options.Scope, options.DataConfirmed);
+                        var result = MessageBox.Show(
+                            "Копия проверена. Версия в копии: " + File.ReadAllText(Path.Combine(prepared.Path, "VERSION")).Trim() +
+                            "\n\nБудет восстановлено:\n" + String.Join("\n", names) +
+                            (options.Scope == "Program" ? "\n\nТекущие настройки и хранилище сохранятся." : "\n\nПеречисленные пользовательские данные будут заменены данными из копии.") +
+                            "\n\nProGo закроется и запустится снова. Начать восстановление?",
+                            "Подтвердите восстановление", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+                        if (result != DialogResult.Yes) return;
+                        if (!BeginMaintenance(() => BackupService.StartRestore(prepared.Path, options.Scope, options.DataConfirmed))) return;
+                        SafeLog.Info("Restore requested by user. scope=" + options.Scope + ".");
+                    }
+                }
             }
-
-            var result = MessageBox.Show(
-                "ProGo будет закрыт, восстановит выбранную резервную копию и запустится заново.\n\nВыбранная копия:\n" + backupDir + "\n\nПродолжить?",
-                "Восстановление ProGo",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-
-            if (result != DialogResult.Yes) return;
-
-            if (!BeginMaintenance(() => BackupService.StartRestore(backupDir))) return;
-
-            SafeLog.Info("Restore requested by user: " + backupDir + ".");
+            catch (Exception ex)
+            {
+                SafeLog.Error("Restore preparation or cleanup failed.", ex);
+                if (!closing) MessageBox.Show("Восстановление не запущено: " + ex.Message, "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private bool checkingUpdate;

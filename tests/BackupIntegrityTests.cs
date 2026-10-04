@@ -95,6 +95,40 @@ internal static class BackupIntegrityTests
             Fixture();
             FileAt("unexpected.json", "foreign data");
             Reject(() => BackupIntegrity.Write(root), "writer refuses unexpected payload instead of certifying it");
+            Fixture();
+            var originalIndex = File.ReadAllText(Path.Combine(root, BackupIntegrity.IndexName));
+            string preparedPath;
+            using (var copy = BackupIntegrity.Prepare(root))
+            {
+                preparedPath = copy.Path;
+                Check(preparedPath != root, "preparation owns an independent directory");
+                Check(File.ReadAllText(Path.Combine(copy.Path, BackupIntegrity.IndexName)) == originalIndex, "preparation retains recorded digests rather than rehashing modified source");
+                FileAt("settings.json", "source changed after preparation");
+                BackupIntegrity.Validate(copy.Path);
+                Check(File.ReadAllText(Path.Combine(copy.Path, "settings.json")) == "{}", "prepared payload remains independent after source mutation");
+                var program = BackupIntegrity.RestoreNames(copy.Path, "Program", false);
+                Check(Array.IndexOf(program, "ProGo.exe") >= 0 && Array.IndexOf(program, "settings.json") < 0 && Array.IndexOf(program, "vault.enc.json") < 0 && Array.IndexOf(program, "progo.log") < 0, "default program scope excludes user data and historical logs");
+                var data = BackupIntegrity.RestoreNames(copy.Path, "Data", true);
+                Check(data.Length == 2 && Array.IndexOf(data, "ProGo.exe") < 0 && Array.IndexOf(data, "scripts") < 0, "data scope excludes program and scripts");
+                var all = BackupIntegrity.RestoreNames(copy.Path, "All", true);
+                Check(all.Length == program.Length + data.Length, "all scope combines only selected program and user payloads");
+                Reject(() => BackupIntegrity.RestoreNames(copy.Path, "Data", false), "data scope requires independent consent");
+                Reject(() => BackupIntegrity.RestoreNames(copy.Path, "All", false), "combined scope also requires independent consent");
+                Reject(() => BackupIntegrity.RestoreNames(copy.Path, "Unknown", true), "unknown scope is rejected");
+            }
+            Check(!Directory.Exists(preparedPath), "disposing prepared copy leaves original backup intact");
+            Check(Directory.Exists(root), "prepared-copy cleanup never deletes source directory");
+            Reject(() => BackupIntegrity.Prepare(root), "damaged source cannot become a newly certified prepared copy");
+            Fixture(); File.Delete(Path.Combine(root, "vault.enc.json"));
+            Check(BackupIntegrity.RestoreNames(root, "Data", true).Length == 1, "missing vault is excluded rather than deleting current vault");
+            File.Delete(Path.Combine(root, "settings.json"));
+            Reject(() => BackupIntegrity.RestoreNames(root, "All", true), "empty data scope cannot claim user data restoration");
+            using (var cancellation = new System.Threading.CancellationTokenSource())
+            {
+                cancellation.Cancel(); bool cancelled = false;
+                try { BackupIntegrity.Prepare(root, cancellation.Token); } catch (OperationCanceledException) { cancelled = true; }
+                Check(cancelled, "cancelled preparation refuses new snapshot before any read");
+            }
             Console.WriteLine("Backup integrity tests PASS: " + passed); return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
