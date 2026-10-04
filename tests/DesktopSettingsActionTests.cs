@@ -30,7 +30,7 @@ namespace ProGo
                         form.ManualActionRequested += delegate(string action) { Call(context, "Execute", action); };
                         form.Show(); Application.DoEvents();
                         var tabs = Descendants(form).OfType<TabControl>().Single();
-                        Check(Descendants(form).OfType<Label>().Any(l => l.Text.Contains("«Отмена» их не откатывает")) &&
+                        Check(Descendants(form).OfType<Label>().Any(l => l.Text.Contains("«Отменить изменения» их не откатывает")) &&
                             Descendants(tabs.TabPages[0]).OfType<Label>().Count(l => l.Text == "Ручное управление · применяется сразу") == 3,
                             "settings distinguishes saved preferences from immediate commands before clicking");
                         var host = (TextBox)Field(form, "host"); var port = (NumericUpDown)Field(form, "port");
@@ -82,7 +82,7 @@ namespace ProGo
                     Check(!port.Enabled && automatic.Checked && !(bool)Field(form, "pickFreePort"), "cancel selection respects automatic mode rather than enabling manual port");
                     automatic.Checked = false;
                     bool? capturedPick = null; int capturedPort = 0;
-                    form.SaveRequested = delegate(AppSettings candidate, bool choose) { capturedPick = choose; capturedPort = candidate.HttpProxyPort; return "Fixture refuses save"; };
+                    form.SaveRequested = delegate(AppSettings candidate, bool choose) { capturedPick = choose; capturedPort = candidate.HttpProxyPort; return new SettingsSaveError(SettingsField.HttpProxyPort, "Fixture refuses save"); };
                     ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
                     Check(capturedPick == false && capturedPort == 31881, "saving after cancellation submits entered port without one-time selection");
                     pick.PerformClick(); ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();

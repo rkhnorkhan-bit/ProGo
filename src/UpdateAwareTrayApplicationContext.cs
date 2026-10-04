@@ -165,8 +165,8 @@ namespace ProGo
                 form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
                     bool changed = proposed.SocksHost != settings.Current.SocksHost || proposed.SocksPort != settings.Current.SocksPort || SshConnection.Signature(proposed) != SshConnection.Signature(settings.Current);
                     var oldPort = settings.Current.HttpProxyPort;
-                    string message;
-                    if (!cliProxy.Reconfigure(proposed, pickFree, out message)) return message;
+                    SettingsSaveError error;
+                    if (!cliProxy.ReconfigureDetailed(proposed, pickFree, out error)) return error;
                     if (changed) {
                         reconnectAfterSave = proxy.CurrentPid.HasValue || proxy.IsConnecting;
                         pendingRoutes.Clear(); proxy.StopTunnel(); RefreshPendingRoutes(); health.Invalidate();

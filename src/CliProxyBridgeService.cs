@@ -51,7 +51,16 @@ namespace ProGo
 
         public bool Reconfigure(AppSettings proposed, bool pickFreePort, out string message)
         {
-            return Configure(proposed, pickFreePort, running, out message);
+            SettingsSaveError error;
+            bool applied = ReconfigureDetailed(proposed, pickFreePort, out error);
+            message = error == null ? null : error.Message;
+            return applied;
+        }
+
+        internal bool ReconfigureDetailed(AppSettings proposed, bool pickFreePort, out SettingsSaveError error)
+        {
+            error = SettingsValidation.Check(proposed);
+            return error == null && ConfigureDetailed(proposed, pickFreePort, running, out error);
         }
 
         private static TcpListener Bind(int port)
@@ -63,7 +72,16 @@ namespace ProGo
 
         private bool Configure(AppSettings proposed, bool pickFreePort, bool keepRunning, out string message)
         {
-            message = null;
+            SettingsSaveError error;
+            bool applied = ConfigureDetailed(proposed, pickFreePort, keepRunning, out error);
+            message = error == null ? null : error.Message;
+            return applied;
+        }
+
+        private bool ConfigureDetailed(AppSettings proposed, bool pickFreePort, bool keepRunning, out SettingsSaveError error)
+        {
+            error = null;
+            var failedField = SettingsField.HttpProxyPort;
             TcpListener candidate = null;
             ProxyIntegrationState integrations = null;
             var previous = settings.Current;
@@ -83,10 +101,13 @@ namespace ProGo
                 }
                 if (proposed.HttpProxyPort != previous.HttpProxyPort)
                 {
+                    failedField = SettingsField.Applications;
                     integrations = ProxyIntegrationState.Capture();
                     integrations.MoveOwned(proposed.HttpProxyPort);
                 }
+                failedField = SettingsField.SettingsFile;
                 settings.Save(proposed);
+                failedField = SettingsField.General;
                 if (keepRunning && !reuse)
                 {
                     // The replacement port is already bound. Commit before releasing the old listener.
@@ -113,10 +134,21 @@ namespace ProGo
                     try { integrations.Restore(); } catch (Exception rollback) { rollbackFailed = true; SafeLog.Error("Proxy integration rollback failed.", rollback); }
                 SafeLog.Error("Application proxy configuration failed.", ex);
                 var socket = ex as SocketException;
-                message = socket != null && (socket.SocketErrorCode == SocketError.AddressAlreadyInUse || socket.SocketErrorCode == SocketError.AccessDenied)
-                    ? "Порт " + proposed.HttpProxyPort + " занят или зарезервирован Windows. Откройте Настройки → Порт приложений и нажмите «Подобрать свободный» или включите автоматический выбор."
-                    : "Не удалось применить порт приложений. Прежние настройки сохранены. Подробности — в журнале ProGo.";
-                if (rollbackFailed) message = "Смена порта отменена, но часть настроек приложений не удалось восстановить. Откройте журнал ProGo и заново примените настройки прокси.";
+                string message;
+                if (failedField == SettingsField.HttpProxyPort && socket != null &&
+                    (socket.SocketErrorCode == SocketError.AddressAlreadyInUse || socket.SocketErrorCode == SocketError.AccessDenied))
+                    message = "Порт " + proposed.HttpProxyPort + " занят или зарезервирован Windows. Нажмите «Подобрать свободный» или включите автоматический выбор.";
+                else if (failedField == SettingsField.SettingsFile)
+                    message = "Не удалось сохранить файл настроек. Проверьте доступ к папке приложения и не открыт ли файл другой программой. Подробности — в журнале ProGo.";
+                else if (failedField == SettingsField.Applications)
+                    message = "Не удалось обновить настройки приложений Windows или терминалов. Прежние настройки сохранены. Подробности — в журнале ProGo.";
+                else
+                    message = "Не удалось применить настройки. Прежние настройки сохранены. Подробности — в журнале ProGo.";
+                if (rollbackFailed) {
+                    failedField = SettingsField.Applications;
+                    message = "Операция отменена, но часть настроек приложений не удалось восстановить. Откройте журнал ProGo и заново примените настройки прокси.";
+                }
+                error = new SettingsSaveError(failedField, message);
                 return false;
             }
             finally { if (candidate != null) candidate.Stop(); }

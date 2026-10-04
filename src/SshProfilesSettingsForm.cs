@@ -22,7 +22,7 @@ namespace ProGo
         private readonly CheckBox autoRestart = new CheckBox();
         private readonly CheckBox autoWindows = new CheckBox();
         public event Action<string> ManualActionRequested;
-        public Func<AppSettings, bool, string> SaveRequested;
+        public Func<AppSettings, bool, SettingsSaveError> SaveRequested;
         private readonly CheckBox autoHttpPort = new CheckBox();
         private readonly NumericUpDown httpPort = new NumericUpDown();
         private readonly TextBox proxyAddress = new TextBox { ReadOnly = true };
@@ -35,6 +35,7 @@ namespace ProGo
         private readonly Label currentConnection = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
         private readonly Label currentDiagnostic = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
         private Button pickPortButton;
+        private readonly Label saveError = UiTheme.Label("", UiTheme.Body, UiTheme.Error);
         public Func<string> CurrentProxyEndpoint;
         public string ProxyEndpointText { set { proxyAddress.Text = value; } }
 
@@ -44,12 +45,13 @@ namespace ProGo
             service = settingsService;
             Text = "Настройки · ProGo";
             ClientSize = new Size(900, 700); MinimumSize = new Size(850, 650);
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 4 };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
             root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
-            root.Controls.Add(UiTheme.Label("Поля и галочки — после «Сохранить». Ручные команды — сразу; «Отмена» их не откатывает.", UiTheme.Body, UiTheme.Muted), 0, 1);
+            root.Controls.Add(UiTheme.Label("Поля и галочки — после «Сохранить».\nРучные команды — сразу; «Отменить изменения» их не откатывает.", UiTheme.Body, UiTheme.Muted), 0, 1);
             var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed };
             root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
             var automation = Page(tabs, "Автоматика");
@@ -138,7 +140,11 @@ namespace ProGo
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 12, 0, 0) };
             var save = UiTheme.Button("Сохранить", Save, true);
             var cancel = UiTheme.Button("Отменить изменения", null, false); cancel.DialogResult = DialogResult.Cancel;
-            buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 3);
+            buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 4);
+            saveError.Name = "settingsSaveError"; saveError.Visible = false;
+            saveError.MaximumSize = new Size(830, 0);
+            root.SizeChanged += delegate { saveError.MaximumSize = new Size(Math.Max(300, root.ClientSize.Width - root.Padding.Horizontal), 0); };
+            root.Controls.Add(saveError, 0, 3);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
             currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
@@ -374,15 +380,42 @@ namespace ProGo
                 ClipboardClearSeconds = (int)clearSeconds.Value,
                 TestEndpoint = endpoint.Text.Trim()
             };
-            string error = null;
-            if (SaveRequested != null) error = SaveRequested(proposed, pickFreePort);
-            else using (var bridge = new CliProxyBridgeService(service)) bridge.Reconfigure(proposed, pickFreePort, out error);
-            if (error != null)
-            {
-                DialogResult = DialogResult.None; settingsTabs.SelectedIndex = 4;
-                portNotice.ForeColor = Color.FromArgb(255, 152, 128); portNotice.Text = error; return;
+            var error = SettingsValidation.Check(proposed);
+            if (error == null) {
+                try {
+                    if (SaveRequested != null) error = SaveRequested(proposed, pickFreePort);
+                    else using (var bridge = new CliProxyBridgeService(service)) bridge.ReconfigureDetailed(proposed, pickFreePort, out error);
+                } catch (Exception ex) {
+                    SafeLog.Error("Settings application failed.", ex);
+                    error = new SettingsSaveError(SettingsField.General, "Не удалось завершить применение настроек. Проверьте текущее состояние и журнал ProGo.");
+                }
             }
+            if (error != null) { ShowSaveError(error); return; }
             DialogResult = DialogResult.OK; Close();
+        }
+
+        private void ShowSaveError(SettingsSaveError error)
+        {
+            DialogResult = DialogResult.None;
+            Control field = null;
+            switch (error.Field) {
+                case SettingsField.SocksHost: settingsTabs.SelectedIndex = 1; field = host; break;
+                case SettingsField.SocksPort: settingsTabs.SelectedIndex = 1; field = port; break;
+                case SettingsField.SshProfile: settingsTabs.SelectedIndex = 1; field = sshProfiles; break;
+                case SettingsField.TestEndpoint: settingsTabs.SelectedIndex = 3; field = endpoint; break;
+                case SettingsField.HttpProxyPort: settingsTabs.SelectedIndex = 4; field = httpPort; break;
+                case SettingsField.ClipboardClearSeconds: settingsTabs.SelectedIndex = 2; field = clearSeconds; break;
+                case SettingsField.Applications: settingsTabs.SelectedIndex = 0; break;
+                // A file-write or unclassified failure belongs to the whole Save,
+                // so keep the user's current page and all uncommitted controls.
+            }
+            saveError.Text = error.Message;
+            saveError.Visible = true;
+            if (field != null) {
+                var panel = field.Parent as ScrollableControl;
+                if (panel != null) panel.ScrollControlIntoView(field);
+                field.Focus();
+            }
         }
 
         private List<SshProfileSetting> CloneProfiles()

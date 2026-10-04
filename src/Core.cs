@@ -181,6 +181,65 @@ namespace ProGo
         }
     }
 
+    internal enum SettingsField { General, SocksHost, SocksPort, SshProfile, TestEndpoint, HttpProxyPort, ClipboardClearSeconds, SettingsFile, Applications }
+    internal enum SettingsErrorSection { General, Connections, Diagnostics, Ports, Storage, Applications }
+
+    internal sealed class SettingsSaveError
+    {
+        internal readonly SettingsField Field;
+        internal readonly string Message;
+        internal SettingsSaveError(SettingsField field, string message) { Field = field; Message = message; }
+        internal SettingsErrorSection Section {
+            get {
+                switch (Field) {
+                    case SettingsField.SocksHost: case SettingsField.SocksPort: case SettingsField.SshProfile: return SettingsErrorSection.Connections;
+                    case SettingsField.TestEndpoint: return SettingsErrorSection.Diagnostics;
+                    case SettingsField.HttpProxyPort: return SettingsErrorSection.Ports;
+                    case SettingsField.ClipboardClearSeconds: return SettingsErrorSection.Storage;
+                    case SettingsField.Applications: return SettingsErrorSection.Applications;
+                    default: return SettingsErrorSection.General;
+                }
+            }
+        }
+    }
+
+    internal static class SettingsValidation
+    {
+        internal static SettingsSaveError Check(AppSettings settings)
+        {
+            if (settings == null) return new SettingsSaveError(SettingsField.General, "Настройки не переданы. Откройте окно настроек заново.");
+            var host = settings.SocksHost ?? "";
+            var bareHost = host.Trim('[', ']');
+            var type = Uri.CheckHostName(bareHost);
+            bool brackets = host.IndexOfAny(new[] { '[', ']' }) >= 0;
+            if ((brackets && (type != UriHostNameType.IPv6 || host != "[" + bareHost + "]")) || host.Length == 0 || host.Length > 253 || host[0] == '-' ||
+                !Regex.IsMatch(host, @"\A[A-Za-z0-9_.:\[\]-]+\z") || type == UriHostNameType.Unknown ||
+                (Regex.IsMatch(host, @"\A[0-9.]+\z") && type != UriHostNameType.IPv4))
+                return new SettingsSaveError(SettingsField.SocksHost, "Адрес SOCKS-туннеля: укажите IP или домен без логина, порта и https://.");
+            if (settings.SocksPort < 1 || settings.SocksPort > 65535)
+                return new SettingsSaveError(SettingsField.SocksPort, "Порт SOCKS-туннеля должен быть от 1 до 65535.");
+            if (settings.HttpProxyPort < 1 || settings.HttpProxyPort > 65535)
+                return new SettingsSaveError(SettingsField.HttpProxyPort, "Порт приложений должен быть от 1 до 65535.");
+            if (settings.ClipboardClearSeconds < 5 || settings.ClipboardClearSeconds > 3600)
+                return new SettingsSaveError(SettingsField.ClipboardClearSeconds, "Время очистки буфера должно быть от 5 до 3600 секунд.");
+            var address = settings.TestEndpoint ?? "";
+            Uri endpoint;
+            if (address.Length == 0 || Regex.IsMatch(address, @"[\s\\\x00]") ||
+                !Uri.TryCreate(address, UriKind.Absolute, out endpoint) ||
+                (endpoint.Scheme != Uri.UriSchemeHttp && endpoint.Scheme != Uri.UriSchemeHttps) ||
+                String.IsNullOrWhiteSpace(endpoint.Host) || endpoint.UserInfo.Length != 0 ||
+                endpoint.Port < 1 || endpoint.Port > 65535 || Uri.CheckHostName(endpoint.Host.Trim('[', ']')) == UriHostNameType.Unknown)
+                return new SettingsSaveError(SettingsField.TestEndpoint, "Сайт проверки: укажите полный адрес http:// или https:// без логина, пароля и пробелов.");
+            if (settings.AutoStartSocks && String.IsNullOrWhiteSpace(settings.SshProfile))
+                return new SettingsSaveError(SettingsField.SshProfile, "Выберите SSH-сервер для подключения при запуске или снимите эту галочку.");
+            try {
+                if (!String.IsNullOrWhiteSpace(settings.SshProfile)) SshConnection.Validate(SshConnection.Resolve(settings, settings.SshProfile));
+                if (settings.SshProfiles != null) foreach (var profile in settings.SshProfiles) SshConnection.Validate(profile);
+            } catch (ArgumentException ex) { return new SettingsSaveError(SettingsField.SshProfile, "SSH-подключение: " + ex.Message); }
+            return null;
+        }
+    }
+
     internal sealed class SettingsService : IDisposable
     {
         private readonly JavaScriptSerializer serializer = new JavaScriptSerializer();
