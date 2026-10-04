@@ -37,7 +37,7 @@ namespace ProGo
                     Check(bridge.IsRunning && SystemProxyService.IsApplied(settings.Current) && !CliProxyEnvironmentService.HasProxyEndpoint(port), "CLI off retains the independent Windows consumer");
                     AssertBridge(port); main.RefreshConnectionState();
                     Check(((Button)Field(main, "cliToggle")).Text == "Запустить CLI" && ((Label)Field(main, "recovery")).Text.Contains("работает для: Windows"), "dashboard distinguishes CLI off from the shared Windows service");
-                    Shot(main, "main-cli-off-windows-retained");
+                    main.Refresh(); Shot(main, "main-cli-off-windows-retained");
                     Call(context, "Execute", "windows-off");
                     Check(!bridge.IsRunning, "Windows off releases the last consumer");
                     AssertPortReleased(port, "last Windows off frees the actual listening port");
@@ -102,7 +102,7 @@ namespace ProGo
                             Check(!bridge.IsRunning && consumers.WindowCount == 0 && !observer.HasExited, "explicit full desktop stop closes the service without killing the user's terminal");
                             main.RefreshConnectionState();
                             Check(((Label)Field(main, "recovery")).Text.Contains("служба остановлена"), "dashboard honestly reports a stopped shared service");
-                            Shot(main, "main-shared-proxy-stopped");
+                            main.Refresh(); Shot(main, "main-shared-proxy-stopped");
                         } finally { if (!observer.HasExited) { observer.Kill(); observer.WaitForExit(5000); } }
                     }
                     main.Close();

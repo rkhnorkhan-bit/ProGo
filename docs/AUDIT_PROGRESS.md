@@ -371,15 +371,24 @@ loopback HTTP listener. No new transport or persisted setting is introduced.
   CLI off explains restarting old terminals and the existing explicit full-stop
   command. Full desktop stop closes the endpoint but leaves user windows open.
 
-Validation pending: real Windows listener rebinding, both consumer-release orders,
-ordinary CLI aliases, scoped PowerShell handles, cleanup-journal retention, optional
-shortcut removal, UI timer release, explicit full stop and native screenshots.
-This stage does not claim to change an already-running terminal's environment or
-track windows launched outside ProGo. No version bump or published release.
+Verified: full Windows/Linux CI passed, including 413 desktop checks, 39 shutdown
+checks, 88 maintenance checks, 52 backup-integrity checks, 33 home-VPN checks and
+18 relay integration tests. Consumer fixtures rebind the real listening port,
+exercise both release orders, ordinary CLI aliases, scoped PowerShell handles,
+partial endpoints, optional shortcut removal, UI timer release and full stop.
+Actual failed Windows/CLI cleanup records an explicit retained consumer; it cannot
+be discarded by the timer even if the journal becomes unavailable. A successful
+explicit retry settles it. Production tracking never kills user processes.
+
+Native screenshots distinguish CLI off/Windows retained from the stopped service;
+the fixture explicitly refreshes paint before capture. This stage does not claim
+to change an already-running terminal's environment or track windows launched
+outside ProGo. The audit now has **12 of 30 findings closed** (F01–F08 and
+F10–F13); **18 remain**. No version bump or published release.
 
 ## Remaining stages
 
-F09–F10 and F14–F30 remain separate work (19 findings). Preserve the ordinary
+F09 and F14–F30 remain separate work (18 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described
