@@ -11,7 +11,7 @@ internal static class BackupIntegrityTests
     private static void Reject(Action action, string name)
     {
         bool rejected = false;
-        try { action(); } catch (IOException) { rejected = true; }
+        try { action(); } catch (InvalidDataException) { rejected = true; } catch (IOException) { rejected = true; }
         Check(rejected, name);
     }
     private static void FileAt(string name, string contents)
@@ -84,6 +84,10 @@ internal static class BackupIntegrityTests
             using (var locked = File.Open(Path.Combine(root, "settings.json"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 Reject(() => BackupIntegrity.Validate(root), "locked payload refused without source mutation");
             BackupIntegrity.Validate(root); Check(true, "unlocked unmodified copy remains valid");
+            Fixture(); File.Delete(Path.Combine(root, "settings.json")); Directory.CreateDirectory(Path.Combine(root, "settings.json"));
+            Reject(() => BackupIntegrity.Write(root), "empty directory cannot stand in for a user-data file");
+            Reject(() => BackupIntegrity.Validate(root), "validation also refuses a directory substituted for a payload file");
+            Fixture();
             FileAt("unexpected.json", "foreign data");
             Reject(() => BackupIntegrity.Write(root), "writer refuses unexpected payload instead of certifying it");
             Console.WriteLine("Backup integrity tests PASS: " + passed); return 0;

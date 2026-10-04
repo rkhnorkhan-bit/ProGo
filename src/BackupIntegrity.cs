@@ -121,7 +121,12 @@ namespace ProGo
                 var path = relative.Length == 0 ? name : relative + "/" + name;
                 if (relative.Length == 0 && (name == "manifest.txt" || name == IndexName)) continue;
                 CheckPath(path);
-                if (Directory.Exists(entry)) Walk(root, path, files);
+                if (Directory.Exists(entry))
+                {
+                    if (relative.Length == 0 && name != "scripts")
+                        throw new InvalidDataException("Вместо файла копии обнаружена папка: " + name + ".");
+                    Walk(root, path, files);
+                }
                 else files.Add(path);
             }
         }
