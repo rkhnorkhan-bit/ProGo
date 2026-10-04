@@ -318,6 +318,36 @@ F08 remains **open**. Stage 9b2 still must add a protective current-state snapsh
 installed self-check and rollback after any commit failure. This stage does not
 make the existing file-by-file commit atomic. No version bump or public release.
 
+## Stage 9b2 — F08: protective snapshot, verified commit and rollback
+
+The helper rejects locked selected payloads before the first replacement, saves
+an independently verified full program/settings/opaque-vault snapshot in
+`backups/backup-...-pre-restore-...`, and copies selected input to same-volume
+staging. Recovery snapshots are preserved by the existing retention policy.
+Commit moves existing roots aside instead of deleting scripts or overwriting
+files in place. Exact file hashes, directory composition and missing roots are
+verified after commit, then the installed executable runs `--self-check` under
+the maintenance permit with a bounded wait. Selected bytes are checked again
+before ordinary restart. No vault content is decoded or re-encrypted.
+
+Failures reverse the recorded root moves and verify the original selected state,
+including roots that were absent before the operation. Restart failure also
+enters rollback. If another process prevents rollback, the helper reports an
+incomplete recovery and preserves both previous roots and the protective backup;
+it never reports success or deletes that recovery input. Cleanup failure is
+reported without replacing the operation outcome. The ownership gate stays held
+through commit, checks and rollback.
+
+Validation: real exclusive/read-sharing Windows file locks; partial staging copy,
+mid-commit move failure, installed-byte corruption, self-check refusal, restart
+failure, original script restoration, originally absent vault, retained recovery
+input after rollback refusal, subsequent successful recovery and shared
+retention protection. These run the actual helper transaction in disposable CI.
+F08 acceptance will be assessed after the full exact-head Windows/Linux run.
+This handles caught runtime failures; it does not claim filesystem-wide atomicity
+or automatic recovery after a forced process termination/power loss. No version
+bump or published release.
+
 ## Remaining stages
 
 F08–F10 and F14–F30 remain separate work after F07 (20 findings). Preserve the ordinary

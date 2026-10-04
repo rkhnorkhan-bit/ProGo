@@ -52,6 +52,40 @@ function Get-ReleaseDirForUpdate { return $Release }
 if ($Mode -eq 'restore-source-changed') {
     function Wait-ProGoExit($TargetProcessId, $TimeoutMs) { Set-Content (Join-Path $Fixture 'backup\settings.json') 'source changed after preparation' }
 }
+# Faults are inserted at I/O/check boundaries; the actual commit and rollback stay real.
+if ($Mode -eq 'restore-stage-copy-fail') {
+    $realCopy = ${function:Copy-RestoreRoots}
+    function Copy-RestoreRoots($Source, $Target, $Names) {
+        if ($Target.EndsWith('\stage')) {
+            New-Item -ItemType Directory -Path $Target | Out-Null
+            Copy-Item -LiteralPath (Join-Path $Source 'ProGo.exe') -Destination (Join-Path $Target 'ProGo.exe')
+            throw 'Injected staging copy failure'
+        }
+        & $realCopy $Source $Target $Names
+    }
+}
+if ($Mode -eq 'restore-commit-fail' -or $Mode -eq 'restore-rollback-fail') {
+    $realMove = ${function:Move-RestoreRoot}; $script:moveCount = 0
+    function Move-RestoreRoot($From, $To) {
+        $script:moveCount++
+        if ($script:moveCount -eq 4 -or ($Mode -eq 'restore-rollback-fail' -and $From.Contains('\previous\'))) {
+            throw 'Injected root move failure'
+        }
+        & $realMove $From $To
+    }
+}
+if ($Mode -eq 'restore-installed-corrupt' -or $Mode -eq 'restore-self-check-fail' -or $Mode -eq 'restore-launch-fail') {
+    $realCommit = ${function:Commit-Restore}
+    function Commit-Restore {
+        & $realCommit
+        if ($Mode -eq 'restore-installed-corrupt') { Set-Content -LiteralPath (Join-Path $InstallDir 'VERSION') 'unexpected-installed-bytes' }
+    }
+    if ($Mode -eq 'restore-self-check-fail') { function Test-RestoredApplication { throw 'Injected self-check failure' } }
+    if ($Mode -eq 'restore-launch-fail') {
+        $script:launchCount = 0
+        function Start-ProGo { $script:launchCount++; if ($script:launchCount -eq 1) { throw 'Injected launch failure' } }
+    }
+}
 if ($Mode -eq 'rollback') {
     function Install-StagingToMain($TargetDir) {
         $State.MainWasChanged = $true
