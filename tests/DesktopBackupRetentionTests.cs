@@ -63,6 +63,81 @@ namespace ProGo
             }
         }
 
+        private static void RestoreScopeAndPreparationUi()
+        {
+            var root = Path.Combine(work, "restore-options-fixture"); Directory.CreateDirectory(root);
+            Directory.CreateDirectory(Path.Combine(root, "scripts"));
+            File.WriteAllText(Path.Combine(root, "ProGo.exe"), "fixture; never execute");
+            File.WriteAllText(Path.Combine(root, "VERSION"), "0.0.1");
+            File.WriteAllText(Path.Combine(root, "manifest.txt"), "product=ProGo\nversion=0.0.1\n");
+            File.WriteAllText(Path.Combine(root, "settings.json"), "{}");
+            File.WriteAllText(Path.Combine(root, "vault.enc.json"), "opaque encrypted fixture");
+            foreach (var name in new[] { "Start-ProGo.ps1", "Restore-ProGoBackup.ps1", "Update-ProGo.Core.ps1" })
+                File.WriteAllText(Path.Combine(root, "scripts", name), "fixture; never execute");
+            // Long enough to exercise UI pumping during real local digest/copy work.
+            File.WriteAllBytes(Path.Combine(root, "progo.log"), new byte[16 * 1024 * 1024]);
+            BackupIntegrity.Write(root);
+            using (var form = new RestoreOptionsForm(root))
+            {
+                form.Show(); Application.DoEvents();
+                var consent = Descendants(form).OfType<CheckBox>().Single();
+                var data = Descendants(form).OfType<RadioButton>().Single(r => r.Name == "RestoreData");
+                var all = Descendants(form).OfType<RadioButton>().Single(r => r.Name == "RestoreAll");
+                var program = Descendants(form).OfType<RadioButton>().Single(r => r.Name == "RestoreProgram");
+                var prepare = Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию");
+                var contents = Descendants(form).OfType<TextBox>().Single();
+                Check(form.Scope == "Program" && !form.DataConfirmed && !consent.Enabled && prepare.Enabled, "restore defaults to program without consent to replace user data");
+                Check(form.AcceptButton == null && ((Button)form.CancelButton).Focused, "restore options do not grant destructive Enter confirmation");
+                Check(!contents.Text.Contains("vault.enc.json") && !contents.Text.Contains("progo.log"), "program preview excludes user payloads and historic logs");
+                Shot(form, "restore-scope-program");
+                data.Checked = true;
+                Check(!prepare.Enabled && consent.Enabled && !consent.Checked && contents.Text.Contains("vault.enc.json") && !contents.Text.Contains("ProGo.exe"), "data restore exposes exact payloads and requires separate consent");
+                consent.Checked = true;
+                Check(form.DataConfirmed && prepare.Enabled, "data consent enables preparation without initiating restoration");
+                all.Checked = true;
+                Check(!consent.Checked && !prepare.Enabled, "changing data scope clears previous consent");
+                Shot(form, "restore-scope-all");
+                form.Scale(new SizeF(1.5f, 1.5f)); Application.DoEvents(); Shot(form, "restore-scope-all-150");
+                Check(contents.RectangleToScreen(contents.ClientRectangle).Bottom < prepare.RectangleToScreen(prepare.ClientRectangle).Top && consent.RectangleToScreen(consent.ClientRectangle).Bottom <= contents.RectangleToScreen(contents.ClientRectangle).Top, "scaled scope preview and consent do not overlap actions");
+                program.Checked = true;
+                Check(!consent.Enabled && !form.DataConfirmed, "returning to program scope removes data authorization");
+                ((Button)form.CancelButton).PerformClick();
+                Check(form.DialogResult == DialogResult.Cancel && File.ReadAllText(Path.Combine(root, "settings.json")) == "{}", "scope cancellation leaves original copy untouched");
+            }
+            using (var form = new RestoreOptionsForm(root))
+            using (var pulse = new System.Windows.Forms.Timer { Interval = 10 })
+            {
+                int pulses = 0; pulse.Tick += delegate { pulses++; };
+                form.Shown += delegate { pulse.Start(); Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию").PerformClick(); };
+                Check(form.ShowDialog() == DialogResult.OK && pulses > 0, "real snapshot preparation keeps the native modal UI responsive");
+                using (var prepared = form.TakePreparedCopy())
+                {
+                    BackupIntegrity.Validate(prepared.Path);
+                    Check(File.ReadAllText(Path.Combine(prepared.Path, "settings.json")) == "{}", "prepared result reaches caller with original verified payload");
+                    var args = BackupService.RestoreArguments("restore.ps1", prepared.Path, "Program", false, 123);
+                    Check(args.Contains("-Scope Program") && !args.Contains("-ConfirmData"), "normal restore launcher carries a safe explicit scope");
+                    args = BackupService.RestoreArguments("restore.ps1", prepared.Path, "All", true, 123);
+                    Check(args.Contains("-Scope All -ConfirmData"), "confirmed data scope reaches installed helper explicitly");
+                    bool rejected = false;
+                    try { BackupService.RestoreArguments("restore.ps1", prepared.Path, "All", false, 123); } catch (InvalidDataException) { rejected = true; }
+                    Check(rejected, "launcher refuses missing data consent before starting a helper");
+                }
+            }
+            using (var form = new RestoreOptionsForm(root))
+            {
+                form.Shown += delegate {
+                    Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию").PerformClick();
+                    ((Button)form.CancelButton).PerformClick();
+                };
+                Check(form.ShowDialog() == DialogResult.Cancel, "cancel during real asynchronous preparation cannot complete as an accepted restore");
+            }
+            using (var form = new RestoreOptionsForm(Path.Combine(root, "missing-copy")))
+                Check(!Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию").Enabled, "missing source disables preparation instead of throwing from the chooser");
+            File.Delete(Path.Combine(root, "settings.json")); File.Delete(Path.Combine(root, "vault.enc.json"));
+            using (var form = new RestoreOptionsForm(root))
+                Check(Descendants(form).OfType<RadioButton>().Where(r => r.Name != "RestoreProgram").All(r => !r.Enabled), "copy without user payloads offers program scope only");
+        }
+
         private static void BackupCleanupPreview()
         {
             var root = Path.Combine(work, "backup-preview"); Directory.CreateDirectory(root);

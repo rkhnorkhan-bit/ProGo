@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 
 namespace ProGo
 {
@@ -15,6 +16,84 @@ namespace ProGo
         private static readonly string[] Required = { "ProGo.exe", "VERSION",
             "scripts/Start-ProGo.ps1", "scripts/Restore-ProGoBackup.ps1",
             "scripts/Update-ProGo.Core.ps1" };
+
+        public static PreparedBackup Prepare(string directory)
+        {
+            return Prepare(directory, CancellationToken.None);
+        }
+
+        public static PreparedBackup Prepare(string directory, CancellationToken cancellation)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            var root = Root(directory);
+            Validate(root);
+            cancellation.ThrowIfCancellationRequested();
+            // Capture the recorded evidence, never generate new digests from live input.
+            var index = File.ReadAllBytes(Path.Combine(root, IndexName));
+            var manifest = File.ReadAllBytes(Path.Combine(root, "manifest.txt"));
+            var files = Inventory(root);
+            var copy = new PreparedBackup(Path.Combine(Path.GetTempPath(), "ProGo-restore-" + Guid.NewGuid().ToString("N")));
+            Directory.CreateDirectory(copy.Path);
+            try
+            {
+                foreach (var relative in files)
+                {
+                    cancellation.ThrowIfCancellationRequested();
+                    var source = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+                    var target = Path.Combine(copy.Path, relative.Replace('/', Path.DirectorySeparatorChar));
+                    // Check the complete path again immediately before reading it.
+                    var parent = Path.GetDirectoryName(source);
+                    while (!String.Equals(parent, root, StringComparison.OrdinalIgnoreCase))
+                    { RejectReparse(parent); parent = Path.GetDirectoryName(parent); }
+                    RejectReparse(root); RejectReparse(source);
+                    Directory.CreateDirectory(Path.GetDirectoryName(target));
+                    using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        var buffer = new byte[65536]; int read;
+                        while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                        { cancellation.ThrowIfCancellationRequested(); output.Write(buffer, 0, read); }
+                    }
+                }
+                File.WriteAllBytes(Path.Combine(copy.Path, IndexName), index);
+                File.WriteAllBytes(Path.Combine(copy.Path, "manifest.txt"), manifest);
+                cancellation.ThrowIfCancellationRequested();
+                Validate(copy.Path);
+                cancellation.ThrowIfCancellationRequested();
+                return copy;
+            }
+            catch { copy.Dispose(); throw; }
+        }
+
+        public static string[] RestoreNames(string directory, string scope, bool confirmData)
+        {
+            var root = Root(directory);
+            if (scope != "Program" && scope != "Data" && scope != "All")
+                throw new InvalidDataException("Неизвестный состав восстановления.");
+            var names = new List<string>();
+            if (scope != "Data")
+            {
+                names.Add("ProGo.exe"); names.Add("VERSION"); names.Add("scripts");
+                if (File.Exists(Path.Combine(root, "ProGo.ico"))) names.Add("ProGo.ico");
+            }
+            if (scope != "Program")
+            {
+                if (!confirmData) throw new InvalidDataException("Замена настроек и хранилища требует отдельного подтверждения.");
+                var count = names.Count;
+                foreach (var name in new[] { "settings.json", "vault.enc.json" })
+                    if (File.Exists(Path.Combine(root, name))) names.Add(name);
+                if (count == names.Count) throw new InvalidDataException("В копии нет настроек или хранилища для восстановления.");
+            }
+            return names.ToArray();
+        }
+
+        internal static void DeletePrepared(string directory)
+        {
+            if (!Directory.Exists(directory)) return;
+            var root = Root(directory);
+            Inventory(root); // Refuse links before recursive deletion of our own copy.
+            Directory.Delete(root, true);
+        }
 
         public static void Write(string directory)
         {
@@ -95,7 +174,9 @@ namespace ProGo
         private static string Root(string directory)
         {
             if (String.IsNullOrWhiteSpace(directory)) throw new InvalidDataException("Не выбрана папка копии.");
-            var root = Path.GetFullPath(directory);
+            var full = Path.GetFullPath(directory);
+            var root = full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (root.Length < Path.GetPathRoot(full).Length) root = Path.GetPathRoot(full);
             if (!Directory.Exists(root)) throw new DirectoryNotFoundException("Папка копии не найдена.");
             RejectReparse(root);
             return root;
@@ -158,4 +239,12 @@ namespace ProGo
                 throw new InvalidDataException("Копия содержит ссылку или junction: " + Path.GetFileName(path) + ".");
         }
     }
+
+    public sealed class PreparedBackup : IDisposable
+    {
+        public string Path { get; private set; }
+        internal PreparedBackup(string path) { Path = path; }
+        public void Dispose() { BackupIntegrity.DeletePrepared(Path); }
+    }
+
 }

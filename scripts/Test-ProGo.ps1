@@ -199,7 +199,7 @@ if ($updateScriptText -match [regex]::Escape("raw.githubusercontent.com/rkhnorkh
 if ($updateScriptText -match [regex]::Escape("api.github.com/repos/rkhnorkhan-bit/ProGo/contents/VERSION?ref=main")) { Fail "updater core still uses main VERSION instead of published release" }
 
 $restoreScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Restore-ProGoBackup.ps1")
-foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "vault.enc.json", "settings.json", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
+foreach ($required in @("BackupDir", "manifest.txt", "ProGo.exe", "Scope", "ConfirmData", "RestoreNames", "Prepare", "Copy-DirectoryIfExists", "Start-ProGo", "progo-restore.log", "U8")) {
     if ($restoreScriptText -notmatch [regex]::Escape($required)) {
         Fail "restore script marker missing: $required"
     }
@@ -245,6 +245,11 @@ foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.
         Fail "PowerShell parser errors in $scriptName"
     }
     if ($tokens.Count -eq 0) { Fail "PowerShell parser returned no tokens for $scriptName" }
+    # Match Windows PowerShell's direct -File decoding, not only explicit UTF-8 text.
+    $fileTokens = $null; $fileErrors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$fileTokens, [ref]$fileErrors)
+    if (@($fileErrors).Count -gt 0) { Fail ("PowerShell file parser errors in " + $scriptName + ": " + (($fileErrors | ForEach-Object { $_.Message }) -join '; ')) }
+
 }
 
 & $Build

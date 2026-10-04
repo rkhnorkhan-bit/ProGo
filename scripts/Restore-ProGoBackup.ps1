@@ -1,5 +1,7 @@
 param(
     [Parameter(Mandatory=$true)][string]$BackupDir,
+    [ValidateSet("Program", "Data", "All")][string]$Scope = "Program",
+    [switch]$ConfirmData,
     [int]$WaitPid = 0,
     [switch]$NoLaunch
 )
@@ -110,11 +112,18 @@ function Start-ProGo {
 
 . (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
 $Maintenance = [ProGo.MaintenanceOperation]::Enter()
+$Prepared = $null
 try {
     . (Join-Path $PSScriptRoot 'BackupIntegrity-ProGo.ps1')
-    [ProGo.BackupIntegrity]::Validate($BackupDir)
+    # Reject a data-replacement request without consent before touching installed state.
+    [void][ProGo.BackupIntegrity]::RestoreNames($BackupDir, $Scope, [bool]$ConfirmData)
+    # The helper takes its own copy before acknowledgement. The UI may then dispose
+    # its prepared copy while this operation waits for the old process to exit.
+    $Prepared = [ProGo.BackupIntegrity]::Prepare($BackupDir)
+    $BackupDir = $Prepared.Path
+    $RestoreNames = [ProGo.BackupIntegrity]::RestoreNames($BackupDir, $Scope, [bool]$ConfirmData)
     Write-RestoreLog "ProGo restore started."
-    Write-RestoreLog "BackupDir=$BackupDir"
+    Write-RestoreLog "Restore scope=$Scope; files=$($RestoreNames -join ',')"
 
     if (-not (Test-Path $BackupDir)) {
         Fail "Backup folder does not exist: $BackupDir"
@@ -129,21 +138,19 @@ try {
     Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
     [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
     [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
+    [ProGo.BackupIntegrity]::Validate($BackupDir)
     $exePath = Join-Path $InstallDir "ProGo.exe"
-    Wait-FileUnlocked -Path $exePath -TimeoutSeconds 30
+    if ($Scope -ne "Data") { Wait-FileUnlocked -Path $exePath -TimeoutSeconds 30 }
 
-    Copy-IfExists "ProGo.exe"
-    Copy-IfExists "ProGo.ico"
-    Copy-IfExists "VERSION"
-    Copy-IfExists "vault.enc.json"
-    Copy-IfExists "settings.json"
-    Copy-IfExists "progo.log"
-    Copy-DirectoryIfExists "scripts"
+    foreach ($name in $RestoreNames) {
+        if ($name -eq "scripts") { Copy-DirectoryIfExists $name }
+        else { Copy-IfExists $name }
+    }
 
     Start-ProGo
 
     Write-RestoreLog "ProGo restore completed."
-    Show-UserMessage ((U8 "UHJvR28g0LLQvtGB0YHRgtCw0L3QvtCy0LvQtdC9INC40Lcg0YDQtdC30LXRgNCy0L3QvtC5INC60L7Qv9C40Lg6IA==") + $BackupDir) (U8 "0J7RgtC60LDRgiBQcm9Hbw==")
+    Show-UserMessage ( (U8 "0JLRi9Cx0YDQsNC90L3Ri9C1INGE0LDQudC70Ysg0LLQvtGB0YHRgtCw0L3QvtCy0LvQtdC90YsuINCh0L7RgdGC0LDQsjog") + ($RestoreNames -join ", ")) (U8 "0J7RgtC60LDRgiBQcm9Hbw==")
 } finally {
-    $Maintenance.Dispose()
+    try { if ($null -ne $Prepared) { $Prepared.Dispose() } } finally { $Maintenance.Dispose() }
 }

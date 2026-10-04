@@ -250,3 +250,17 @@ The index detects damage, not authenticity. Existing copies without the index
 are preserved but refused by the new automatic restore; create a new complete
 copy after installing these helpers. An old installed helper does not gain these
 checks until upgraded. F08b still owns restore staging, scope consent and rollback.
+
+### Audit stage F08b1
+
+`BackupIntegrityTests.cs` now tests independent prepared copies that retain the
+recorded SHA-256 evidence, cancellation/disposal, explicit scopes and consent.
+`DesktopBackupRetentionTests.cs` exercises the native restore chooser, safe
+Program default, consent reset, background preparation with a UI heartbeat,
+cancellation, launcher arguments and normal/enlarged screenshots. It uses a
+synthetic opaque vault and never executes the copied fixture program.
+`MaintenanceTests.ps1` executes the actual installed helper with independent
+scope/consent checking, verifying exact preservation of current user data or
+program/script bytes and independence from post-preparation source mutation.
+Fixtures remain restricted to disposable Windows CI. F08b2 owns rollback and
+installed self-check; no stage here may be described as a completed transaction.

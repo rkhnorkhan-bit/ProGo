@@ -72,6 +72,7 @@ namespace ProGo
                     Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
                     BackupCreationIntegrity();
                     BackupCleanupPreview();
+                    RestoreScopeAndPreparationUi();
                     using (var errors = WatchStartupErrors()) {
                     UnifiedCliActions(settings);
                     UiControls(settings);

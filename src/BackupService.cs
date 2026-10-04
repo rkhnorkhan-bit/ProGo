@@ -186,7 +186,16 @@ namespace ProGo
             catch (Exception ex) { error = ex.Message; return false; }
         }
 
-        public static bool StartRestore(string backupDir)
+        internal static string RestoreArguments(string script, string backupDir, string scope, bool confirmData, int currentPid)
+        {
+            BackupIntegrity.RestoreNames(backupDir, scope, confirmData);
+            return "-NoProfile -ExecutionPolicy Bypass -File \"" + script + "\" -BackupDir \"" + backupDir + "\" -Scope " + scope +
+                (scope != "Program" && confirmData ? " -ConfirmData" : "") + " -WaitPid " + currentPid;
+        }
+
+        public static bool StartRestore(string backupDir) { return StartRestore(backupDir, "Program", false); }
+
+        internal static bool StartRestore(string backupDir, string scope, bool confirmData)
         {
             try
             {
@@ -218,7 +227,7 @@ namespace ProGo
                 if (!File.Exists(powershell)) powershell = "powershell.exe";
 
                 var currentPid = Process.GetCurrentProcess().Id;
-                var args = "-NoProfile -ExecutionPolicy Bypass -File \"" + script + "\" -BackupDir \"" + backupDir + "\" -WaitPid " + currentPid;
+                var args = RestoreArguments(script, backupDir, scope, confirmData, currentPid);
 
                 var psi = new ProcessStartInfo(powershell, args)
                 {
