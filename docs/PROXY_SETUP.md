@@ -110,3 +110,16 @@ are not overwritten on exit. Machine-wide WinHTTP is not modified.
 
 Apps that ignore system settings can connect directly; this feature is not a full
 Windows VPN. The [iPhone wizard](HOME_IKEV2.md) is a separate native IKEv2 route.
+
+## Restoring Windows settings
+
+**Windows — выключить** restores only values still owned by ProGo. Later changes
+to the endpoint, bypass list or PAC are preserved. If another application replaced
+the proxy endpoint, its associated Windows flags are preserved as well.
+
+If a registry field or recovery-journal write fails, ProGo reports incomplete
+cleanup and keeps the journal for retry. Manual desktop stop and normal Quit keep
+the local service running on that failure. Correct the reported write/access
+problem, then retry **Windows — выключить** or desktop stop. A successful retry
+does not revisit fields already preserved as external changes.
+Graceful uninstall cleanup is being handled separately in audit stage F06b.

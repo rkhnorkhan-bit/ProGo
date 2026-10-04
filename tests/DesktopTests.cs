@@ -74,6 +74,7 @@ namespace ProGo
                     UnifiedCliActions(settings);
                     UiControls(settings);
                     HealthChecks(settings);
+                    WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
                     AsyncCliStartup(settings);
                     }
@@ -368,6 +369,7 @@ namespace ProGo
                 Check(Environment.GetEnvironmentVariable("HTTPS_PROXY", EnvironmentVariableTarget.User) == "http://other.example.org:8080", "later external environment changes are preserved");
             }
             finally { foreach (var pair in original) Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.User); if (File.Exists(backup)) File.Delete(backup); }
+            var originalWindows = SystemProxyService.ReadCurrent();
             string error;
             if (!SystemProxyService.Apply(AppSettings.Defaults(), out error)) throw new Exception(error);
             try
@@ -380,7 +382,7 @@ namespace ProGo
                     Check(!SystemProxyService.IsOwned, "exit does not own another application's Windows proxy");
                 }
             }
-            finally { if (!SystemProxyService.Restore(out error)) throw new Exception(error); }
+            finally { try { if (!SystemProxyService.Restore(out error)) throw new Exception(error); } finally { SystemProxyService.RestoreSnapshot(originalWindows); } }
             Check(!File.Exists(SystemProxyService.BackupPath), "successful Windows restore clears its backup");
             CodexProxyService.Enable(31881);
             try { Check(CodexProxyService.IsConfigured, "Codex Start Menu shortcut created"); }
@@ -504,6 +506,7 @@ namespace ProGo
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("SKIP: port integration registry checks require isolated CI"); return; }
             string[] names = CliProxyEnvironmentService.Names;
             var originals = names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
+            var originalWindows = SystemProxyService.ReadCurrent();
             string error;
             using (var bridge = new CliProxyBridgeService(settings))
             {
@@ -553,6 +556,7 @@ namespace ProGo
                     foreach (var pair in originals) Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.User);
                     if (File.Exists(CliProxyEnvironmentService.BackupPath)) File.Delete(CliProxyEnvironmentService.BackupPath);
                     SystemProxyService.Restore(out error);
+                    SystemProxyService.RestoreSnapshot(originalWindows);
                     CodexProxyService.Disable();
                 }
             }

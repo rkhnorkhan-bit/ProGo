@@ -180,3 +180,15 @@ dollar signs in the key path; no credentials or real SSH login are used.
 The recovery child captures actual native argv for initial start and recovery,
 and cancels stale startup after editing fields without changing the profile ID.
 Broader deadlines/cancellation remain F14.
+
+### Audit stage F06a
+
+`DesktopWindowsRestoreTests.cs` runs only on disposable Windows CI. It reads and
+restores the original fixture registry/environment in finally, using synthetic
+routes and no live server. It exercises actual HKCU proxy fields, raw registry
+types/absence, external endpoint/auxiliary edits, legacy backups, repeated apply,
+per-field denial and a locked recovery journal. Retry tests deliberately give a
+settled external field a ProGo-looking value; cleanup must not reclaim it.
+Native stop/Quit actions show real cleanup-warning dialogs and retain the HTTP
+bridge after a denied registry write, then clean up successfully on retry.
+Uninstall/IPC and maintenance shutdown refusal remain the separate F06b stage.
