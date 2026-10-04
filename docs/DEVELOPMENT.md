@@ -224,3 +224,10 @@ protected latest kinds, active backup pinning, manifest revalidation and an
 unapproved new candidate. The installed C# policy source must hash-match the
 app source. `DesktopBackupRetentionTests.cs` renders the exact cleanup list and
 checks cancellation without deleting files.
+
+During F07 validation an intermediate Windows run failed the existing F06
+shutdown assertion for preservation of external `AutoDetect` (run 37197398077).
+The next run passed that assertion and all 25 shutdown checks. F07 adds no
+Windows registry writes; the cause of the intermittent failure is unconfirmed.
+Repeat native validation and retain this evidence rather than weakening the
+assertion or claiming F07 fixes Windows proxy restoration.
