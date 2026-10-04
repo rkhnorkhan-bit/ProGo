@@ -507,6 +507,13 @@ namespace ProGo
             string backupDir;
             if (!BackupPickerForm.TryPick(backups, out backupDir)) return;
 
+            string validationError;
+            if (!BackupService.TryValidateRestore(backupDir, out validationError))
+            {
+                MessageBox.Show(validationError, "Копия не прошла проверку", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             var result = MessageBox.Show(
                 "ProGo будет закрыт, восстановит выбранную резервную копию и запустится заново.\n\nВыбранная копия:\n" + backupDir + "\n\nПродолжить?",
                 "Восстановление ProGo",

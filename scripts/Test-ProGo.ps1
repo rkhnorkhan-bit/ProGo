@@ -235,7 +235,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
@@ -255,7 +255,7 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
@@ -293,6 +293,15 @@ if ($LASTEXITCODE -ne 0) { Fail 'Backup retention tests failed' }
 $retentionSource = Join-Path $Root 'release\scripts\BackupRetention.cs'
 if (-not (Test-Path $retentionSource) -or (Get-FileHash $retentionSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BackupRetention.cs')).Hash) { Fail 'app and updater backup policies differ' }
 & (Join-Path $Root 'tests\BackupRetentionTests.ps1') (Join-Path $Root 'release\scripts')
+
+$integritySource = Join-Path $Root 'release\scripts\BackupIntegrity.cs'
+if (-not (Test-Path $integritySource) -or (Get-FileHash $integritySource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BackupIntegrity.cs')).Hash) { Fail 'app and helpers backup integrity implementations differ' }
+$IntegrityHarness = Join-Path $Root 'build\BackupIntegrityTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$IntegrityHarness" (Join-Path $Root 'src\BackupIntegrity.cs') (Join-Path $Root 'tests\BackupIntegrityTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity harness build failed' }
+& $IntegrityHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity tests failed' }
+& (Join-Path $Root 'tests\BackupIntegrityTests.ps1') (Join-Path $Root 'release\scripts')
 
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
 $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)

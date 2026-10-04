@@ -91,7 +91,7 @@ $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is bootstrap-only. Do not include it in the runtime release:
 # some endpoint protection tools block downloaded bootstrap installers during self-update builds.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $ReleaseScripts $scriptName) -Force
@@ -100,6 +100,7 @@ foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-Pr
 
 Copy-Item (Join-Path $Src "MaintenanceOperation.cs") -Destination (Join-Path $ReleaseScripts "MaintenanceOperation.cs") -Force
 Copy-Item (Join-Path $Src "BackupRetention.cs") -Destination (Join-Path $ReleaseScripts "BackupRetention.cs") -Force
+Copy-Item (Join-Path $Src "BackupIntegrity.cs") -Destination (Join-Path $ReleaseScripts "BackupIntegrity.cs") -Force
 
 # Keep optional VPN resources inside scripts so existing transactional updaters
 # install and back up them together with the other runtime helpers.

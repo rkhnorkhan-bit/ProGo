@@ -70,6 +70,7 @@ namespace ProGo
                     PortIntegrations(settings);
                     BridgeRoundTrip(settings, false); BridgeRoundTrip(settings, true);
                     Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+                    BackupCreationIntegrity();
                     BackupCleanupPreview();
                     using (var errors = WatchStartupErrors()) {
                     UnifiedCliActions(settings);

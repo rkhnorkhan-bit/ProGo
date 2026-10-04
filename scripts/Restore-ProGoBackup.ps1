@@ -111,6 +111,8 @@ function Start-ProGo {
 . (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
 $Maintenance = [ProGo.MaintenanceOperation]::Enter()
 try {
+    . (Join-Path $PSScriptRoot 'BackupIntegrity-ProGo.ps1')
+    [ProGo.BackupIntegrity]::Validate($BackupDir)
     Write-RestoreLog "ProGo restore started."
     Write-RestoreLog "BackupDir=$BackupDir"
 

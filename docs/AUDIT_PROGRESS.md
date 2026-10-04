@@ -261,6 +261,31 @@ actual updater backup function plus existing update/rollback transactions.
 Installed policy source must hash-match the class compiled into the app.
 F07 is complete when the exact Windows and Linux CI run passes.
 
+## Stage 9a — F08: backup integrity before restore shutdown
+
+App and updater write the same SHA-256 inventory for the files actually copied.
+Manifest `contains` lists actual payload roots; update outcome metadata may change
+without invalidating immutable payload digests. Existing-file copy errors abort
+updater backup creation instead of silently certifying partial data.
+
+The application validates the selected copy before confirmation and maintenance
+cleanup. The installed restore helper revalidates before handoff and waiting for
+exit. Missing/extra/changed files, absent required program/helpers, ambiguous
+product/version metadata, unsafe paths and reparse points fail closed. No digest
+is retroactively generated while checking a legacy copy. Legacy copies remain
+available on disk, with clear refusal guidance; this is not a trust signature.
+
+Verification: standalone corruption/completeness/metadata/path/lock tests, native
+junction tests, actual application and updater backup writers, installed-source
+hash parity and a real restore refusal leaving installed payload/logs unchanged.
+Earlier Windows/CLI startup and maintenance ownership checks remain required.
+
+F08 is **not complete**: stage 9b must add explicit program/data selection,
+immutable staging, protective snapshot, installed self-check and rollback on
+commit failure. Current restore still uses its earlier file-by-file commit;
+preflight alone does not prevent mutation between validation and copying.
+No vault format, encryption or decoy semantics change in stage 9a.
+
 ## Remaining stages
 
 F08–F10 and F14–F30 remain separate work after F07 (20 findings). Preserve the ordinary
