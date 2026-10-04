@@ -548,6 +548,7 @@ try {
     [ProGo.MaintenanceOperation]::ConfirmHandoff()
     Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
     [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
+    [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
 
     $Exe = Join-Path $InstallDir "ProGo.exe"
     Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30

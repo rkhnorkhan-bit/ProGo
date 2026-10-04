@@ -78,7 +78,7 @@ namespace ProGo
                         }
 
                         context.StartAutomation();
-                        instance.Attach(context.RequestShowStatus);
+                        instance.Attach(context.RequestShowStatus, context.RequestShutdown, context.CompleteShutdown, context.CancelShutdown);
 
                         Application.Run(context);
                     }

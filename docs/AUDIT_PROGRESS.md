@@ -210,14 +210,39 @@ Earlier port transaction/rollback and desktop scope regressions remain required.
 Registry comparison/write is best-effort: Windows provides no atomic per-value
 compare-and-swap against concurrent writes by unrelated processes.
 
-F06 remains partial. Stage 7b will add graceful IPC cleanup to uninstall and cover
-maintenance/shutdown refusal paths before removing/stopping the application.
-No uninstall script or IPC protocol is changed in this stage.
+Stage 7a leaves uninstall/IPC and maintenance shutdown to stage 7b.
+
+## Stage 7b — F06: graceful uninstall and maintenance cleanup
+
+- Uninstall acquires the existing exclusive maintenance lease. Same-user/SYSTEM
+  IPC requests owned Windows/CLI cleanup on the UI thread; only successful cleanup
+  is acknowledged before exit is scheduled. Wait for the lifetime owner to exit
+  before removing the executable or shortcuts. Never kill by process name.
+- Refused/missing confirmation leaves the running app and installed files intact.
+  A lost response reopens the cleaned app for retry rather than leaving controls
+  locked. Keep the existing activation command and ACLs.
+- Update/restore launch helpers only after successful cleanup. Failed cleanup
+  keeps the local service/app running; failed helper handoff keeps the cleaned app
+  open. Existing exclusive leases, validation, permits and rollback remain intact.
+- Uninstall/update/restore refuse file changes when a stopped/crashed owner left a
+  recovery journal. Open ProGo, retry Windows/CLI off, then repeat maintenance.
+  Older live builds without the cleanup protocol must be closed manually; no
+  force-stop fallback. CLI cleanup without a journal is an idempotent no-op.
+
+Verification: native UI maintenance gate tests; same-user IPC refusal/success and
+activation regressions; actual compiled ProGo with both proxy modes and the real
+uninstall script. Lock a journal and verify retained service/executable/shortcuts,
+then unlock/retry and check original Windows/user-environment values and removal.
+Verify later external proxy values, competing maintenance, missing handlers and
+stopped-owner journals. Update/restore transactions reject pending cleanup before
+replacement and retain existing staging/self-check/rollback tests.
+
+F06 is complete when these Windows checks and the Linux VPN regressions pass.
+Version/release publishing is outside this stage.
 
 ## Remaining stages
 
-F06–F10 and F14–F30 remain separate work (22 findings). F06 is partial until
-its uninstall/IPC and maintenance shutdown stage is verified. Preserve the ordinary
+F07–F10 and F14–F30 remain separate work (21 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

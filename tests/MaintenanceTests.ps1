@@ -108,6 +108,13 @@ try {
     }
     $holder.Kill(); [void]$holder.WaitForExit(5000); $holder.Dispose(); $holder = $null
 
+    $pending = Join-Path $install 'system-proxy-backup.json'
+    Set-Content $pending '{}'
+    foreach ($mode in @('update','restore')) {
+        Check ((Run (DriverInfo $mode)) -ne 0) "transaction refuses replacement after stopped owner left pending cleanup: $mode"
+        Check ((Get-Content (Join-Path $install 'settings.json') -Raw) -eq $settingsBefore -and (Test-Path $pending)) "pending cleanup preserves settings and journal: $mode"
+    }
+    Remove-Item $pending # Isolated synthetic journal only.
     Check ((Run (DriverInfo 'update')) -eq 0) 'actual update transaction validates staging and installed executable'
     Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq ((Get-Content (Join-Path $release 'VERSION')).Trim())) 'successful update commits the fixture release'
     Check ((Run (DriverInfo 'restore')) -eq 0) 'actual restore transaction completes under exclusive ownership'
