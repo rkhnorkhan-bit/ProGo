@@ -39,7 +39,12 @@ namespace ProGo
                 ((Timer)Field(form, "timer")).Stop();
                 // This is intentionally a constrained form.Scale stress test, not native DPI coverage.
                 if (scale != 1f) form.Scale(new SizeF(scale, scale));
-                form.MinimumSize = Size.Empty; form.ClientSize = available;
+                form.MinimumSize = Size.Empty;
+                // CI's virtual desktop can be smaller than this fixture. Override the
+                // native maximum tracking size so WinForms cannot cache a large client
+                // area behind a narrower HWND and silently crop DrawToBitmap.
+                form.MaximumSize = new Size(available.Width + 80, available.Height + 100);
+                form.ClientSize = available;
                 if (longText) {
                     ((Label)Field(form, "connection")).Text = "Соединение с сервером требует повторной проверки";
                     ((Label)Field(form, "subtitle")).Text = "Прокси отвечает, но доступ в интернет пока не подтверждён. Проверьте маршрут и настройки подключения.";
@@ -47,6 +52,8 @@ namespace ProGo
                         "Автонастройка Windows: ошибка. Проверьте настройки и повторите подключение.", 4));
                 }
                 Application.DoEvents(); form.PerformLayout(); Application.DoEvents();
+                Check(form.ClientSize == available && form.Width > available.Width && form.Height > available.Height,
+                    name + " renders the requested client area inside the actual window: window=" + form.Size + " client=" + form.ClientSize);
                 var viewport = (Panel)Field(form, "viewport");
                 var cards = (TableLayoutPanel)Field(form, "cards");
                 var body = (TableLayoutPanel)Field(form, "body");

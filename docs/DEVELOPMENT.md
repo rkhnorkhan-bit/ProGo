@@ -349,5 +349,8 @@ command preservation at wide/minimum client sizes and a 1366 by 768-compatible
 window, with long synthetic text. Constrained form.Scale 125/150/200% tests keep
 the physical client area fixed, allow vertical scrolling and check that all
 actions are reachable without horizontal scrolling. Screenshots include the
-scrolled status area. Do not describe this as native DPI coverage: display DPI,
+scrolled status area. Fixture MaximumSize explicitly overrides the native tracking
+limit on smaller CI virtual desktops; assert the actual window can hold the full
+requested client area before capturing. This verifies 1366-compatible geometry,
+not a real 1366 display session. Do not describe this as native DPI coverage: display DPI,
 work-area constraints and settings automation layout remain the next F16 stage.
