@@ -203,3 +203,11 @@ an enabled mode. Closing Settings does not close the shared connection.
 **Подобрать свободный** schedules a one-time choice for Save. Before saving, press
 **Отменить подбор** to keep the entered port and selected automatic/manual mode.
 Neither selection nor cancellation changes the current port by itself.
+
+Before Save, ProGo checks the SOCKS address (IP/domain without scheme, login or
+port), port ranges and complete HTTP/HTTPS test URL without credentials. A field
+error selects its page and focuses the field. A file-write error stays on the
+current page and appears above Save/Cancel; correct the access/lock condition and
+retry without reopening the form. Validation checks syntax, not server or
+internet availability. Invalid fields from older settings must be corrected when
+explicitly saving; loading those settings does not rewrite their format.

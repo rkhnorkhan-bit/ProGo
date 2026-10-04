@@ -476,9 +476,38 @@ F15 remains **open**: structured field validation and error routing belong to
 stage 12b. Progress remains **13/30 closed; 17 remaining**. No merge, release or
 version bump is included.
 
+## Stage 12b — F15: validation and structured Save errors
+
+The form and explicit bridge reconfiguration validate SOCKS host/ports, diagnostic
+HTTP(S) URL, clipboard duration and SSH settings before binding, migration or
+persistence. Scheme/login/port text in the SOCKS host, malformed URLs, URL
+credentials, whitespace/control characters and out-of-range fields are refused
+with a named field/section. IPv4, IPv6 (including bracketed host literals), DNS,
+HTTP and HTTPS remain supported. Validation does not test reachability or keys.
+Legacy settings load normalization and ordinary bridge startup are unchanged;
+explicitly saving invalid old fields requires correcting them first.
+
+Save returns a structured error rather than an unclassified string. Port-binding
+failures target app ports; integration failures target the application controls;
+file-write failures are general Save errors and retain the current page. One
+inline error area remains visible above Save/Cancel. Field failures select the
+appropriate page and focus the field; all edits remain available for correction
+and retry. Unexpected application callbacks are logged and shown as general
+errors without claiming that a possibly applied operation was rolled back.
+The existing bind-before-release transaction and rollback logic remain intact.
+
+Native tests cover valid/invalid fields, refusal before an occupied-port bind,
+exact preservation of listener/settings/Windows/CLI state, real occupied ports,
+file replacement denial and retry, integration snapshot-read denial, field focus,
+correct section selection and callback failures. Screenshots show address/URL,
+file-write and integration errors. No live server or credentials are used.
+
+Together with F15a, this completes F15 after successful native CI/review:
+**14/30 closed; 16 remaining**. No merge, release or version bump is included.
+
 ## Remaining stages
 
-F09 and F15–F30 remain separate work (17 findings). Preserve the ordinary
+F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

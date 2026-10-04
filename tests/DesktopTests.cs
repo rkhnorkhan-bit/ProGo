@@ -79,6 +79,7 @@ namespace ProGo
                     SharedBridgeConsumers(settings);
                     UiControls(settings);
                     SettingsActionBoundaries(settings);
+                    SettingsValidationAndErrors(settings);
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
@@ -126,7 +127,7 @@ namespace ProGo
                             Check(manualAction == "cli-off", "settings exposes one shared CLI and Codex off command");
                             cliToggle.Checked = true;
                             AppSettings capturedSettings = null;
-                            form.SaveRequested = delegate(AppSettings proposed, bool pickFree) { capturedSettings = proposed; return "Test save rejected"; };
+                            form.SaveRequested = delegate(AppSettings proposed, bool pickFree) { capturedSettings = proposed; return new SettingsSaveError(SettingsField.SettingsFile, "Test save rejected"); };
                             ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
                             Check(capturedSettings != null && capturedSettings.AutoCliProxy, "settings saves the unified automatic option");
                             tabs.SelectedIndex = 0; Shot(form, "settings-unified-cli");
@@ -138,7 +139,7 @@ namespace ProGo
                             var autoPort = Descendants(portTab).OfType<CheckBox>().Single();
                             var portNumber = Descendants(portTab).OfType<NumericUpDown>().Single();
                             autoPort.Checked = false; Check(portNumber.Enabled, "manual port is editable");
-                            form.SaveRequested = delegate { return "Порт занят. Подберите свободный порт."; };
+                            form.SaveRequested = delegate { return new SettingsSaveError(SettingsField.HttpProxyPort, "Порт занят. Подберите свободный порт."); };
                             ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
                             Check(form.Visible && form.DialogResult != DialogResult.OK && tabs.SelectedIndex == 4, "failed save keeps settings open on port controls");
                             Shot(form, "settings-port-conflict");

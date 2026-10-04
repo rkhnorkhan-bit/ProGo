@@ -330,3 +330,14 @@ Port-selection tests verify cancellation, mode/value preservation and rejected
 Save retries without applying a real port migration. Native screenshots separate
 preferences from immediate controls. The form refresh timer only reads state and
 must stop/dispose on close; structured validation/error routing remains F15b.
+
+### Audit stage F15b
+
+`DesktopSettingsValidationTests.cs` checks the shared field/section validator and
+runs native Windows fixtures for invalid form fields, an actual occupied port,
+File.Replace denial and a locked integration journal. Refused application must
+preserve the exact settings bytes, listening endpoint and existing Windows/CLI
+state. A corrected condition succeeds from the same form. Native screenshots
+show focused address/URL errors and general write/application errors.
+Only explicit reconfiguration is validated; startup/load compatibility and the
+existing transaction/rollback regressions remain required.
