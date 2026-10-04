@@ -197,10 +197,11 @@ namespace ProGo
                         result.Fields.Add(new WindowsProxyFieldResult { Name = field.Name, State = state });
                     }
                 }
+                if (result.Fields.Any(f => f.State == WindowsProxyRestoreState.Restored))
+                    RefreshPreservingKinds(backup, result, writer);
                 // Persist settled fields even after partial failure; retries must not revisit external values.
                 SaveBackup(backup);
                 if (result.Completed) File.Delete(BackupPath);
-                RefreshSystemProxy();
                 SafeLog.Info(result.Completed ? "Owned Windows proxy settings settled." : "Windows proxy cleanup incomplete; backup retained.");
             } catch (Exception ex) {
                 result.Completed = false; result.Error = "Не удалось прочитать, сохранить или удалить копию восстановления. Подробности в журнале.";
@@ -377,7 +378,7 @@ namespace ProGo
                 var originals = OriginalValues(backup);
                 foreach (var name in FieldNames) WriteValue(key, name, originals[name]);
             }
-            RefreshSystemProxy();
+            RefreshPreservingKinds(null, null, WriteValue);
         }
 
         private static int ReadDword(object value, int fallback)
@@ -390,6 +391,32 @@ namespace ProGo
         private static string BuildProxyServer(AppSettings settings)
         {
             return "http=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort + ";https=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort;
+        }
+
+        private static void RefreshPreservingKinds(SystemProxyBackup backup, WindowsProxyRestoreResult result,
+            Action<RegistryKey, string, WindowsProxyValue> writer)
+        {
+            var before = ReadCurrent().Values;
+            RefreshSystemProxy();
+            using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey)) {
+                foreach (var name in FieldNames) {
+                    var expected = before[name]; var current = ReadValue(key, name);
+                    // WinINet rewrites REG_EXPAND_SZ as REG_SZ while refreshing. Restore only
+                    // that kind, using the live pre-notification value, never a stale backup value.
+                    if (!expected.Exists || expected.Kind != RegistryValueKind.ExpandString ||
+                        !current.Exists || current.Kind != RegistryValueKind.String || current.Data != expected.Data) continue;
+                    try { writer(key, name, expected); }
+                    catch (Exception ex) {
+                        if (backup == null || result == null) throw;
+                        var field = backup.OwnedFields.First(f => f.Name == name);
+                        field.Original = expected; field.Applied = current; field.Pending = true;
+                        var outcome = result.Fields.FirstOrDefault(f => f.Name == name);
+                        if (outcome == null) { outcome = new WindowsProxyFieldResult { Name = name }; result.Fields.Add(outcome); }
+                        outcome.State = WindowsProxyRestoreState.Failed; result.Completed = false;
+                        SafeLog.Error("Windows proxy registry kind restore failed: " + name, ex);
+                    }
+                }
+            }
         }
 
         private static void RefreshSystemProxy()

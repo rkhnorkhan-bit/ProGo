@@ -92,6 +92,19 @@ namespace ProGo
                 }
                 Check(SystemProxyService.RestoreOwned().Completed && !File.Exists(SystemProxyService.BackupPath), "retry after releasing journal lock safely completes");
 
+                SystemProxyService.RestoreSnapshot(baseline);
+                Check(SystemProxyService.Apply(prefs, out message), "WinINet type-correction failure fixture applies route");
+                int overrideWrites = 0;
+                result = SystemProxyService.RestoreOwned(delegate(RegistryKey key, string name, WindowsProxyValue value) {
+                    if (name == "ProxyOverride" && ++overrideWrites > 1) throw new UnauthorizedAccessException("fixture kind correction denied");
+                    SystemProxyService.WriteValue(key, name, value);
+                });
+                Check(!result.Completed && result.Fields.Single(f => f.Name == "ProxyOverride").State == WindowsProxyRestoreState.Failed && File.Exists(SystemProxyService.BackupPath), "denied WinINet kind correction remains a reported pending field");
+                saved = new JavaScriptSerializer().Deserialize<SystemProxyBackup>(File.ReadAllText(SystemProxyService.BackupPath));
+                Check(saved.OwnedFields.Single(f => f.Pending).Name == "ProxyOverride", "kind retry records the actual normalization value without reviving settled fields");
+                result = SystemProxyService.RestoreOwned();
+                Check(result.Completed && SystemProxyService.ReadCurrent().Values["ProxyOverride"].Matches(baseline.Values["ProxyOverride"]) && SystemProxyService.ReadCurrent().Values["AutoConfigURL"].Matches(baseline.Values["AutoConfigURL"]), "kind retry preserves both its failed field and other live typed values across another refresh");
+
                 // Old snapshots have AppliedServer but no new ownership/type journal.
                 SystemProxyService.RestoreSnapshot(baseline);
                 Check(SystemProxyService.Apply(prefs, out message), "legacy backup migration fixture applies route");

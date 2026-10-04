@@ -192,3 +192,8 @@ settled external field a ProGo-looking value; cleanup must not reclaim it.
 Native stop/Quit actions show real cleanup-warning dialogs and retain the HTTP
 bridge after a denied registry write, then clean up successfully on retry.
 Uninstall/IPC and maintenance shutdown refusal remain the separate F06b stage.
+
+WinINet's native refresh normalizes REG_EXPAND_SZ proxy values to REG_SZ. The
+restore path retains each live pre-notification value and corrects only that
+observed kind change when the data still matches. A correction write failure is
+also a pending, reported field; it never restores a stale external value.
