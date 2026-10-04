@@ -59,8 +59,10 @@ namespace ProGo
                 bool missing = false;
                 try { DiagnosticProcess.Run(Path.Combine(marker, "missing.exe"), "", 1500, CancellationToken.None); } catch (System.ComponentModel.Win32Exception) { missing = true; }
                 Check(missing, "SSH missing executable fails without a ready result");
-                var captured = DiagnosticProcess.Run(Application.ExecutablePath, "-G fixture-large", 3000, CancellationToken.None);
-                Check(captured.ExitCode == 0 && captured.Truncated && captured.Output.Length == DiagnosticProcess.CaptureLimit && captured.Error.Length == DiagnosticProcess.CaptureLimit, "SSH drains oversized stdout and stderr together with bounded capture");
+                for (int attempt = 0; attempt < 5; attempt++) {
+                    var captured = DiagnosticProcess.Run(Application.ExecutablePath, "-G fixture-large", 3000, CancellationToken.None);
+                    Check(captured.ExitCode == 0 && captured.Truncated && captured.Output.Length == DiagnosticProcess.CaptureLimit && captured.Error.Length == DiagnosticProcess.CaptureLimit, "SSH drains oversized stdout and stderr together with bounded capture " + attempt);
+                }
                 var oversized = FixtureCheck(new SshProfileSetting { Target = "fixture-large" }, CancellationToken.None);
                 Check(!oversized.SshResolved && oversized.Error.Contains("размер"), "SSH truncated output never reports success");
                 unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "--diagnostic-child") { UseShellExecute = false, CreateNoWindow = true });

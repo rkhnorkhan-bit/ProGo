@@ -401,13 +401,14 @@ allows up to 2 seconds to confirm cleanup. Descendants cannot keep the pipe open
 or survive normal root exit. No user terminal or persistent SSH tunnel uses this
 runner. Cleanup failure is reported rather than presented as confirmed cancellation.
 
-Verified in Windows/Linux CI: 432 desktop checks (19 new diagnostic checks),
-88 maintenance, 39 shutdown, 52 backup-integrity, 33 home-VPN checks and 18 relay
-tests passed. Native fixtures cover stalled descendants, parallel oversized
-output, timeout, cancellation, normal parent exit, unrelated-process preservation,
-UI heartbeat, retry and closing during work. Existing real OpenSSH `-G`
-structured-profile tests passed. Native pending/cancelled/success screenshots
-were inspected. No live VPS is used.
+Validation: the Windows/Linux CI suite adds 23 desktop diagnostic checks to
+existing OpenSSH, CLI, maintenance, shutdown, home-VPN and relay regressions.
+Native fixtures cover stalled descendants, concurrent oversized output repeated
+five times, timeout, cancellation, normal parent exit, unrelated-process
+preservation, UI heartbeat, retry and closing during work. Pending/cancelled/
+success screenshots are captured for native review. The .NET Framework
+anonymous-pipe async fallback is avoided with two dedicated background readers.
+No live VPS is used.
 
 F14 remains **open**: route, latency and speed worker cancellation belongs to
 stage 11b. Audit progress remains **12/30 closed; 18 remaining**. No release or

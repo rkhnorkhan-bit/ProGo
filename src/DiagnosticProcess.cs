@@ -23,16 +23,24 @@ namespace ProGo
     {
         internal const int CaptureLimit = 128 * 1024;
         private sealed class Capture { internal string Text; internal bool Truncated; }
-        private static async Task<Capture> Drain(StreamReader reader)
+        private static Task<Capture> Drain(StreamReader reader)
         {
-            var text = new StringBuilder(); var buffer = new char[4096]; bool truncated = false;
-            int count;
-            while ((count = await reader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) != 0) {
-                int keep = Math.Min(count, CaptureLimit - text.Length);
-                if (keep > 0) text.Append(buffer, 0, keep);
-                if (keep < count) truncated = true; // Keep draining both pipes without unbounded memory.
-            }
-            return new Capture { Text = text.ToString(), Truncated = truncated };
+            // .NET Framework anonymous pipes are synchronous handles. Dedicated readers
+            // avoid its BeginRead/EndRead fallback race and thread-pool starvation.
+            var done = new TaskCompletionSource<Capture>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var worker = new Thread(() => {
+                try {
+                    var text = new StringBuilder(); var buffer = new char[4096]; bool truncated = false;
+                    int count;
+                    while ((count = reader.Read(buffer, 0, buffer.Length)) != 0) {
+                        int keep = Math.Min(count, CaptureLimit - text.Length);
+                        if (keep > 0) text.Append(buffer, 0, keep);
+                        if (keep < count) truncated = true; // Drain both pipes with bounded memory.
+                    }
+                    done.TrySetResult(new Capture { Text = text.ToString(), Truncated = truncated });
+                } catch (Exception ex) { done.TrySetException(ex); }
+            }) { IsBackground = true, Name = "ProGo diagnostic output" };
+            worker.Start(); return done.Task;
         }
         private static void CheckDeadline(Stopwatch watch, int timeoutMs, CancellationToken token)
         {

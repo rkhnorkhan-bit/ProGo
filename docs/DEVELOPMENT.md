@@ -301,3 +301,9 @@ See Microsoft's [job objects](https://learn.microsoft.com/en-us/windows/win32/pr
 and [creation flags](https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags)
 for the ownership and startup guarantees. The separate cleanup confirmation
 allowance is at most 2 seconds; cleanup failure must remain visible to the caller.
+
+The diagnostic uses separate background threads for synchronous anonymous-pipe
+readers on .NET Framework. This avoids its BeginRead/EndRead fallback (including
+state changes at pipe EOF) and keeps both streams draining without consuming
+blocked thread-pool workers. See the [Microsoft reference source](https://github.com/microsoft/referencesource/blob/main/System.Core/System/IO/Pipes/PipeStream.cs).
+The oversized-output fixture repeats five times to exercise the completion edge.
