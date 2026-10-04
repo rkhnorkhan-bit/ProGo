@@ -11,6 +11,7 @@ namespace ProGo
     internal static class ShutdownTests
     {
         private static int passed;
+        private static string uninstallError;
         private static void Check(bool value, string name) { if (!value) throw new Exception(name); passed++; Console.WriteLine("PASS: " + name); }
         private static void Wait(Func<bool> test, string name) {
             var deadline = DateTime.UtcNow.AddSeconds(12);
@@ -23,8 +24,7 @@ namespace ProGo
             })) {
                 var output = process.StandardOutput.ReadToEndAsync(); var error = process.StandardError.ReadToEndAsync();
                 if (!process.WaitForExit(30000)) { process.Kill(); throw new Exception("Uninstall fixture timed out"); }
-                output.Wait(); error.Wait();
-                // Fixture failures are expected; never print runtime proxy settings or user paths.
+                output.Wait(); error.Wait(); uninstallError = error.Result;
                 return process.ExitCode;
             }
         }
@@ -128,7 +128,16 @@ namespace ProGo
                     Check(Uninstall(uninstall) != 0 && File.Exists(installed), "missing cleanup handler cannot masquerade as successful removal");
                 }
                 Console.WriteLine("Shutdown tests PASS: " + passed); return 0;
-            } catch (Exception ex) { Console.WriteLine("FAIL: " + ex); return 1; }
+            } catch (Exception ex) {
+                Console.WriteLine("FAIL: " + ex);
+                // Disposable CI uses only synthetic settings; retain unexpected shutdown evidence.
+                Console.WriteLine("Uninstall diagnostic: " + uninstallError);
+                if (File.Exists(AppPaths.LogPath)) {
+                    var log = File.ReadAllLines(AppPaths.LogPath);
+                    Console.WriteLine(String.Join("\n", log.Skip(Math.Max(0, log.Length - 20))));
+                }
+                return 1;
+            }
             finally {
                 StopFixture(primary); listener.Stop();
                 CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();

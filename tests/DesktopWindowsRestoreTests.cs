@@ -165,6 +165,8 @@ namespace ProGo
                     Check(!bridge.IsRunning && !File.Exists(SystemProxyService.BackupPath), "retrying actual desktop stop completes cleanup before stopping the service");
                     Check(!(bool)context.GetType().GetMethod("BeginMaintenance", PrivateInstance).Invoke(context, new object[] { new Func<bool>(() => false) }) && ((NotifyIcon)Field(context, "tray")).Visible,
                         "a refused maintenance handoff leaves the cleaned application open for retry");
+                    context.Dispose(); context.Dispose();
+                    Check(true, "repeated native context disposal cannot resurrect cleanup or throw after a successful shutdown");
                 }
             }
         }

@@ -26,7 +26,7 @@ namespace ProGo
         private long nextRouteRequest;
         private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
         private volatile bool closing;
-        private bool shutdownPrepared;
+        private bool shutdownPrepared, disposed;
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
         public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null)
@@ -584,6 +584,8 @@ namespace ProGo
         {
             if (disposing)
             {
+                if (disposed) return; // WinForms and Program's using scope can both dispose the context.
+                disposed = true;
                 closing = true; pendingRoutes.Clear(); routeLifetime.Cancel(); routeLifetime.Dispose();
                 health.Changed -= HealthChanged;
                 if (ownsHealth) health.Dispose();
