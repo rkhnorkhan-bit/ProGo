@@ -1,12 +1,36 @@
 using System;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace ProGo
 {
     internal static partial class DesktopTests
     {
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DashboardRect { public int Left, Top, Right, Bottom; }
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetClientRect(IntPtr window, out DashboardRect rectangle);
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
+        private static Size DashboardNativeClient(Form form)
+        {
+            DashboardRect rect;
+            if (!GetClientRect(form.Handle, out rect)) throw new System.ComponentModel.Win32Exception();
+            return new Size(rect.Right - rect.Left, rect.Bottom - rect.Top);
+        }
+        private static void DashboardFixtureSize(Form form, Size available)
+        {
+            form.MinimumSize = Size.Empty; form.ClientSize = available;
+            var actual = DashboardNativeClient(form);
+            // Form.SetBoundsCore unconditionally clamps to MaxWindowTrackSize.
+            // Resize only this fixture HWND to render a full target width even when
+            // the CI virtual desktop is smaller; never change display settings.
+            if (actual != available && !SetWindowPos(form.Handle, IntPtr.Zero, 0, 0,
+                form.Width + available.Width - actual.Width, form.Height + available.Height - actual.Height, 0x0016))
+                throw new System.ComponentModel.Win32Exception();
+        }
         private static void DashboardLayout(SettingsService settings)
         {
             using (var proxy = new ProxyService(settings))
@@ -39,12 +63,7 @@ namespace ProGo
                 ((Timer)Field(form, "timer")).Stop();
                 // This is intentionally a constrained form.Scale stress test, not native DPI coverage.
                 if (scale != 1f) form.Scale(new SizeF(scale, scale));
-                form.MinimumSize = Size.Empty;
-                // CI's virtual desktop can be smaller than this fixture. Override the
-                // native maximum tracking size so WinForms cannot cache a large client
-                // area behind a narrower HWND and silently crop DrawToBitmap.
-                form.MaximumSize = new Size(available.Width + 80, available.Height + 100);
-                form.ClientSize = available;
+                DashboardFixtureSize(form, available);
                 if (longText) {
                     ((Label)Field(form, "connection")).Text = "Соединение с сервером требует повторной проверки";
                     ((Label)Field(form, "subtitle")).Text = "Прокси отвечает, но доступ в интернет пока не подтверждён. Проверьте маршрут и настройки подключения.";
@@ -52,8 +71,8 @@ namespace ProGo
                         "Автонастройка Windows: ошибка. Проверьте настройки и повторите подключение.", 4));
                 }
                 Application.DoEvents(); form.PerformLayout(); Application.DoEvents();
-                Check(form.ClientSize == available && form.Width > available.Width && form.Height > available.Height,
-                    name + " renders the requested client area inside the actual window: window=" + form.Size + " client=" + form.ClientSize);
+                Check(form.ClientSize == available && DashboardNativeClient(form) == available,
+                    name + " renders the requested client area inside the actual window: window=" + form.Size + " native=" + DashboardNativeClient(form));
                 var viewport = (Panel)Field(form, "viewport");
                 var cards = (TableLayoutPanel)Field(form, "cards");
                 var body = (TableLayoutPanel)Field(form, "body");
