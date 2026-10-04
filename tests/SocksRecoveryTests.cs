@@ -36,6 +36,8 @@ internal static class SocksRecoveryTests
             Test("async launch failure schedules the first recovery delay once", AsyncLaunchFailure);
             Test("recovery respects configured profile fallback", Fallback);
             Test("manual profile fallback remains available", ManualFallback);
+            Test("structured SSH fields reach native child and automatic recovery", StructuredArguments);
+            Test("editing SSH fields cancels stale readiness under the same profile ID", StructuredEditCancellation);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
             return 0;
         }
@@ -325,8 +327,47 @@ internal static class SocksRecoveryTests
         }
     }
 
+    private static void StructuredArguments()
+    {
+        var capture = Path.Combine(Path.GetTempPath(), "progo-argv-" + Guid.NewGuid().ToString("N"));
+        var before = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_ARGV");
+        try {
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_ARGV", capture);
+            using (var f = new Fixture()) {
+                var p = new SshProfileSetting { Target = "progo-id", Server = "ready", User = "ubuntu", Port = 2222,
+                    IdentityFile = Path.Combine(Path.GetTempPath(), "O'Brien $key", "key file") };
+                f.Settings.SshProfile = p.Target; f.Settings.SshProfiles.Add(p); f.Start();
+                var args = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(capture));
+                Assert(args[Array.IndexOf(args, "-p") + 1] == "2222" && args[Array.IndexOf(args, "-l") + 1] == "ubuntu" && args[Array.IndexOf(args, "-i") + 1] == p.IdentityFile && args[args.Length - 1] == "ready", "Native SSH arguments corrupted explicit fields/key path");
+                File.Delete(capture); f.Crash(); f.Tick(5); f.Ready();
+                args = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(capture));
+                Assert(args[Array.IndexOf(args, "-p") + 1] == "2222" && args[Array.IndexOf(args, "-i") + 1] == p.IdentityFile && Array.IndexOf(args, "BatchMode=yes") >= 0, "Recovery lost structured fields or hidden BatchMode");
+            }
+        } finally { Environment.SetEnvironmentVariable("PROGO_TEST_SSH_ARGV", before); if (File.Exists(capture)) File.Delete(capture); }
+    }
+
+    private static void StructuredEditCancellation()
+    {
+        var release = Path.Combine(Path.GetTempPath(), "progo-edit-ready-" + Guid.NewGuid().ToString("N"));
+        var previous = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_RELEASE");
+        Environment.SetEnvironmentVariable("PROGO_TEST_SSH_RELEASE", release);
+        try {
+            using (var f = new Fixture()) {
+                f.Settings.SshProfile = "progo-slow";
+                f.Settings.SshProfiles.Add(new SshProfileSetting { Target = "progo-slow", Server = "slow", User = "ubuntu", Port = 22 });
+                var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                WaitFor(delegate { return f.Proxy.CurrentPid.HasValue; });
+                var changed = f.Settings.Clone(); changed.SshProfiles[0].Port = 2222; f.Settings = changed;
+                try { task.Wait(5000); } catch (AggregateException e) { Assert(e.InnerException is OperationCanceledException, "Unexpected startup error after edit"); }
+                Assert(task.IsCanceled && !f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue, "Old profile's pending readiness survived a port edit");
+            }
+        } finally { Environment.SetEnvironmentVariable("PROGO_TEST_SSH_RELEASE", previous); if (File.Exists(release)) File.Delete(release); }
+    }
+
     private static int FakeSsh(string[] args)
     {
+        var capture = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_ARGV");
+        if (!String.IsNullOrEmpty(capture)) File.WriteAllText(capture, new JavaScriptSerializer().Serialize(args));
         var mode = args[args.Length - 1];
         if (mode == "denied") { Console.Error.WriteLine("Permission denied (publickey)."); return 1; }
         if (mode == "die" || (mode == "batch-only" && Array.IndexOf(args, "BatchMode=yes") < 0)) return 1;

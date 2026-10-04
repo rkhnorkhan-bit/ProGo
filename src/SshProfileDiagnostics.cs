@@ -14,6 +14,7 @@ namespace ProGo
         public string ConfigPath { get; set; }
         public string ResolvedHostName { get; set; }
         public string ResolvedUser { get; set; }
+        public string ResolvedPort { get; set; }
         public string ResolvedIdentityFile { get; set; }
         public bool SshAvailable { get; set; }
         public bool SshResolved { get; set; }
@@ -45,6 +46,7 @@ namespace ProGo
             sb.AppendLine("профиль резолвится: " + (SshResolved ? "да" : "нет"));
 
             if (!String.IsNullOrWhiteSpace(ResolvedHostName)) sb.AppendLine("hostname: " + ResolvedHostName);
+            if (!String.IsNullOrWhiteSpace(ResolvedPort)) sb.AppendLine("Порт SSH: " + ResolvedPort);
             if (!String.IsNullOrWhiteSpace(ResolvedUser)) sb.AppendLine("user: " + ResolvedUser);
             if (!String.IsNullOrWhiteSpace(ResolvedIdentityFile)) sb.AppendLine("identityfile: " + ResolvedIdentityFile);
 
@@ -65,9 +67,13 @@ namespace ProGo
     {
         public static SshProfileDiagnosticResult Check(string target)
         {
+            return Check(new SshProfileSetting { Target = (target ?? String.Empty).Trim() });
+        }
+        public static SshProfileDiagnosticResult Check(SshProfileSetting profile)
+        {
             var result = new SshProfileDiagnosticResult
             {
-                Target = (target ?? String.Empty).Trim(),
+                Target = profile == null ? "" : profile.Address,
                 ConfigPath = GetConfigPath()
             };
 
@@ -77,9 +83,9 @@ namespace ProGo
                 return result;
             }
 
-            result.LooksDirectTarget = LooksLikeDirectTarget(result.Target);
+            result.LooksDirectTarget = profile.IsDirect || LooksLikeDirectTarget(result.Target);
             result.FoundInConfig = IsTargetDeclaredInConfig(result.Target, result.ConfigPath);
-            RunSshG(result);
+            RunSshG(result, profile);
             return result;
         }
 
@@ -135,11 +141,11 @@ namespace ProGo
             return Regex.IsMatch(target, regex, RegexOptions.IgnoreCase);
         }
 
-        private static void RunSshG(SshProfileDiagnosticResult result)
+        private static void RunSshG(SshProfileDiagnosticResult result, SshProfileSetting profile)
         {
             try
             {
-                var psi = new ProcessStartInfo("ssh.exe", "-G " + QuoteArg(result.Target))
+                var psi = new ProcessStartInfo("ssh.exe", "-G " + SshConnection.CommandArguments(profile))
                 {
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -197,16 +203,11 @@ namespace ProGo
                 var value = line.Substring(space + 1).Trim();
 
                 if (String.Equals(key, "hostname", StringComparison.OrdinalIgnoreCase)) result.ResolvedHostName = value;
+                else if (String.Equals(key, "port", StringComparison.OrdinalIgnoreCase)) result.ResolvedPort = value;
                 else if (String.Equals(key, "user", StringComparison.OrdinalIgnoreCase)) result.ResolvedUser = value;
                 else if (String.Equals(key, "identityfile", StringComparison.OrdinalIgnoreCase) && String.IsNullOrWhiteSpace(result.ResolvedIdentityFile)) result.ResolvedIdentityFile = value;
             }
         }
 
-        private static string QuoteArg(string value)
-        {
-            if (value == null) return "\"\"";
-            if (value.IndexOfAny(new[] { ' ', '\t', '"' }) < 0) return value;
-            return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
-        }
     }
 }

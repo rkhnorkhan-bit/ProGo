@@ -159,13 +159,32 @@ from one connection, stop pending requests and verify no delayed settings write.
 Earlier fixtures now answer the SOCKS handshake and await command completion.
 Native screenshots cover pending CLI and the first-login control/guidance.
 
-F05 remains partial: the structured server/user/port/key editor and advanced
-alias compatibility are the next F05b stage. This stage does not claim to resolve
-all existing blocking operations covered separately by F14.
+## Stage 6b — F05: structured desktop SSH profiles
+
+- New profiles default to **По адресу сервера**, with distinct server, SSH login,
+  SSH port (22 by default) and optional private-key file controls. Explain the
+  distinction from SOCKS, standard keys/agent and unattended key authorization.
+  Passwords/key contents are not stored or uploaded; only the key path is saved.
+- Preserve existing aliases/direct targets in **Из SSH config (для опытных)**;
+  do not rewrite OpenSSH config. Stable selection IDs allow different ports/keys
+  on one host. Clone/save/load retain every field; display labels show addresses.
+- Background startup/recovery, visible first login and local `ssh.exe -G`
+  diagnostics share validated arguments. Explicit key paths use correct Windows
+  quoting; visible login uses literal PowerShell arguments. Keep BatchMode and
+  strict host-key checks on hidden attempts. Diagnostics also reports SSH port.
+- Editing the selected route's server/login/port/key restarts an active desktop
+  tunnel, invalidates health evidence and cancels stale pending readiness.
+  Renaming a connection does not restart it.
+
+Verification: native Windows settings/UI tests, real OpenSSH configuration
+resolution, an isolated PowerShell argv spy, native child argv capture on startup
+and recovery, stale-startup cancellation, plus the earlier one-click CLI tests.
+Screenshots cover new/legacy editor modes and enlarged controls. No real server
+or account credentials are used. F14 broader blocking operations remain separate.
 
 ## Remaining stages
 
-F05–F10 and F14–F30 remain separate work. In particular, F05 is partial until the structured connection editor is complete; F06 (Windows
+F06–F10 and F14–F30 remain separate work (22 findings). F06 (Windows
 restore ownership) remains untouched. Preserve the ordinary
 **Запустить CLI** entry point throughout.
 

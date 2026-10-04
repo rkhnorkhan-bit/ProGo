@@ -35,22 +35,99 @@ namespace ProGo
     internal sealed class SshProfileSetting
     {
         public string Name { get; set; }
+        // Target remains the stable selection key; old profiles use an OpenSSH alias/address.
         public string Target { get; set; }
+        public string Server { get; set; }
+        public string User { get; set; }
+        public int Port { get; set; }
+        public string IdentityFile { get; set; }
+        public SshProfileSetting() { Port = 22; }
+        internal bool IsDirect { get { return !String.IsNullOrWhiteSpace(Server); } }
+        internal string Address { get { return IsDirect ? User + "@" + Server + ":" + Port : Target ?? ""; } }
 
         public SshProfileSetting Clone()
         {
             return new SshProfileSetting
             {
                 Name = Name,
-                Target = Target
+                Target = Target, Server = Server, User = User, Port = Port, IdentityFile = IdentityFile
             };
         }
 
         public override string ToString()
         {
-            if (String.IsNullOrWhiteSpace(Name)) return Target ?? String.Empty;
-            if (String.Equals(Name, Target, StringComparison.OrdinalIgnoreCase)) return Name;
-            return Name + " — " + Target;
+            if (String.IsNullOrWhiteSpace(Name)) return Address;
+            if (String.Equals(Name, Address, StringComparison.OrdinalIgnoreCase)) return Name;
+            return Name + " — " + Address;
+        }
+    }
+
+
+    // One source of SSH arguments for background tunnels, first login and diagnostics.
+    internal static class SshConnection
+    {
+        internal static SshProfileSetting Resolve(AppSettings settings, string target)
+        {
+            if (settings.SshProfiles != null)
+                foreach (var profile in settings.SshProfiles)
+                    if (profile != null && String.Equals(profile.Target, target, StringComparison.OrdinalIgnoreCase)) return profile.Clone();
+            return new SshProfileSetting { Target = target };
+        }
+        internal static string Signature(AppSettings settings)
+        {
+            var p = Resolve(settings, settings.SshProfile);
+            // Display names do not change the route. Use serialization to avoid ambiguous separators.
+            return new JavaScriptSerializer().Serialize(new[] { p.Target, p.Server, p.User,
+                p.IsDirect ? p.Port.ToString(CultureInfo.InvariantCulture) : "", p.IdentityFile });
+        }
+        internal static void Validate(SshProfileSetting profile)
+        {
+            if (profile == null) throw new ArgumentException("Выберите SSH-подключение.");
+            if (!profile.IsDirect) {
+                var target = profile.Target ?? "";
+                if (target.Length == 0 || target[0] == '-' || !Regex.IsMatch(target, @"\A[A-Za-z0-9_.@:\[\]-]+\z"))
+                    throw new ArgumentException("Укажите имя из SSH config или user@host без пробелов и параметров команды.");
+                return;
+            }
+            var server = profile.Server ?? "";
+            var host = server.Trim('[', ']');
+            if (server.Length == 0 || server[0] == '-' || !Regex.IsMatch(server, @"\A[A-Za-z0-9_.:\[\]-]+\z") ||
+                Uri.CheckHostName(host) == UriHostNameType.Unknown)
+                throw new ArgumentException("Сервер: укажите IP-адрес или доменное имя без логина, порта и https://.");
+            if (!Regex.IsMatch(profile.User ?? "", @"\A[A-Za-z0-9_][A-Za-z0-9_.-]*\$?\z"))
+                throw new ArgumentException("Логин SSH: укажите пользователя сервера, например ubuntu или root.");
+            if (profile.Port < 1 || profile.Port > 65535) throw new ArgumentException("Порт SSH должен быть от 1 до 65535.");
+            var key = profile.IdentityFile ?? "";
+            if (key.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0 || (key.Length > 0 && !Path.IsPathRooted(key)))
+                throw new ArgumentException("Выберите файл закрытого SSH-ключа на этом компьютере или оставьте поле пустым.");
+        }
+        internal static string[] Arguments(SshProfileSetting profile)
+        {
+            Validate(profile);
+            if (!profile.IsDirect) return new[] { profile.Target };
+            var args = new List<string> { "-p", profile.Port.ToString(CultureInfo.InvariantCulture), "-l", profile.User };
+            if (!String.IsNullOrWhiteSpace(profile.IdentityFile)) {
+                args.Add("-i"); args.Add(profile.IdentityFile); args.Add("-o"); args.Add("IdentitiesOnly=yes");
+            }
+            args.Add(profile.Server);
+            return args.ToArray();
+        }
+        internal static string CommandArguments(SshProfileSetting profile)
+        {
+            return String.Join(" ", Array.ConvertAll(Arguments(profile), Quote));
+        }
+        // Windows CRT/OpenSSH quoting: only slashes before quotes or the closing quote are doubled.
+        internal static string Quote(string value)
+        {
+            if (value == null) return "\"\"";
+            if (value.Length > 0 && value.IndexOfAny(new[] { ' ', '\t', '"' }) < 0) return value;
+            var result = new StringBuilder("\""); int slashes = 0;
+            foreach (var c in value) {
+                if (c == '\\') { slashes++; continue; }
+                result.Append('\\', c == '"' ? slashes * 2 + 1 : slashes);
+                result.Append(c); slashes = 0;
+            }
+            result.Append('\\', slashes * 2); result.Append('"'); return result.ToString();
         }
     }
 
@@ -196,7 +273,10 @@ namespace ProGo
                     var name = (profile.Name ?? String.Empty).Trim();
                     if (String.IsNullOrWhiteSpace(name)) name = target;
                     if (ContainsTarget(normalized, target)) continue;
-                    normalized.Add(new SshProfileSetting { Name = name, Target = target });
+                    var copy = profile.Clone(); copy.Name = name; copy.Target = target;
+                    copy.Server = (copy.Server ?? "").Trim(); copy.User = (copy.User ?? "").Trim();
+                    copy.IdentityFile = (copy.IdentityFile ?? "").Trim();
+                    normalized.Add(copy);
                 }
             }
 

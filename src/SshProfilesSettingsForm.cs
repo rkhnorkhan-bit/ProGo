@@ -73,7 +73,7 @@ namespace ProGo
             actions.Controls.Add(UiTheme.Button("Первый вход", delegate {
                 var selected = SelectedProfile();
                 if (selected == null) { MessageBox.Show(this, "Сначала добавьте и выберите сервер.", "Первый вход SSH"); return; }
-                try { SshInteractiveLogin.Open(selected.Target); }
+                try { SshInteractiveLogin.Open(selected); }
                 catch (Exception ex) { MessageBox.Show(this, ex.Message, "Первый вход SSH", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
             }, false));
             connection.Controls.Add(actions, 0, 1); connection.SetColumnSpan(actions, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
@@ -262,7 +262,7 @@ namespace ProGo
             var selected = SelectedProfile();
             if (selected == null)
             {
-                MessageBox.Show("SSH-профиль — это имя подключения для ssh.exe. Пример: my-vps.\n\nСначала добавьте профиль кнопкой «Добавить».", "Что такое SSH-профиль", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Сначала добавьте сервер кнопкой «Добавить»: укажите адрес, логин SSH, порт и ключ.", "Подключение к серверу", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -289,7 +289,7 @@ namespace ProGo
                 return;
             }
 
-            var result = SshProfileDiagnostics.Check(selected.Target);
+            var result = SshProfileDiagnostics.Check(selected);
             MessageBox.Show(result.ToReport(), "Проверить SSH-профиль", MessageBoxButtons.OK, result.SshResolved ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
 
@@ -346,83 +346,105 @@ namespace ProGo
 
     internal sealed class SshProfileEditorForm : ProGoForm
     {
-        private readonly TextBox name = new TextBox();
-        private readonly TextBox target = new TextBox();
+        private readonly TextBox name = new TextBox { Name = "connectionName" };
+        private readonly ComboBox mode = new ComboBox { Name = "connectionMode", DropDownStyle = ComboBoxStyle.DropDownList };
+        private readonly TextBox server = new TextBox { Name = "sshServer" };
+        private readonly TextBox user = new TextBox { Name = "sshUser" };
+        private readonly NumericUpDown port = new NumericUpDown { Name = "sshPort", Minimum = 1, Maximum = 65535, Value = 22 };
+        private readonly TextBox key = new TextBox { Name = "sshKey" };
+        private readonly TextBox target = new TextBox { Name = "sshAlias" };
+        private readonly Button browse = new Button { Text = "Выбрать…", Width = 105, Dock = DockStyle.Right };
+        private readonly Label guidance = new Label { AutoSize = true, Dock = DockStyle.Fill, ForeColor = UiTheme.Muted, Tag = "styled" };
         public SshProfileSetting Profile { get; private set; }
 
         public SshProfileEditorForm(SshProfileSetting profile)
         {
             Profile = profile == null ? new SshProfileSetting() : profile.Clone();
-            Text = String.IsNullOrWhiteSpace(Profile.Target) ? "Добавить подключение" : "Изменить подключение";
+            Text = profile == null ? "Добавить подключение" : "Изменить подключение";
             AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterParent;
-            ClientSize = new Size(690, 340);
-            MinimumSize = new Size(690, 340);
-
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 2, RowCount = 6 };
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+            ClientSize = new Size(760, 610);
+            MinimumSize = new Size(760, 610);
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 2, RowCount = 11 };
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
+            for (int i = 0; i < 7; i++) table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
             table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             Controls.Add(table);
-
-            var hint = new Label
-            {
-                Text = "Укажите адрес сервера с именем пользователя или готовое имя подключения из файла SSH. ProGo подключается встроенным клиентом Windows.",
-                AutoSize = true,
-                MaximumSize = new Size(620, 0), ForeColor = UiTheme.Muted, Tag = "styled"
-            };
-            table.Controls.Add(hint, 0, 0);
-            table.SetColumnSpan(hint, 2);
-
+            var hint = new Label { Text = "Введите данные SSH из панели вашего VPS. Пароль здесь не сохраняется: фоновое подключение использует SSH-ключ.",
+                AutoSize = true, Dock = DockStyle.Fill, ForeColor = UiTheme.Muted, Tag = "styled" };
+            table.Controls.Add(hint, 0, 0); table.SetColumnSpan(hint, 2);
+            mode.Items.AddRange(new object[] { "По адресу сервера", "Из SSH config (для опытных)" });
             Add(table, 1, "Название", name);
-            Add(table, 2, "Адрес подключения", target);
-
-            var examples = new Label
-            {
-                Text = "Примеры: my-vps или user@vpn.example.org",
-                AutoSize = true
+            Add(table, 2, "Способ подключения", mode);
+            Add(table, 3, "Сервер (IP или домен)", server);
+            Add(table, 4, "Логин SSH", user);
+            Add(table, 5, "Порт SSH", port);
+            var keyPanel = new Panel { Dock = DockStyle.Fill };
+            key.Dock = DockStyle.Fill; keyPanel.Controls.Add(key); keyPanel.Controls.Add(browse);
+            Add(table, 6, "Закрытый SSH-ключ", keyPanel);
+            Add(table, 7, "Имя из SSH config", target);
+            table.Controls.Add(guidance, 0, 8); table.SetColumnSpan(guidance, 2);
+            browse.Click += delegate {
+                using (var picker = new OpenFileDialog { Title = "Выберите закрытый SSH-ключ (не .pub)", Filter = "Все файлы (*.*)|*.*", CheckFileExists = true }) {
+                    if (picker.ShowDialog(this) == DialogResult.OK) key.Text = picker.FileName;
+                }
             };
-            table.Controls.Add(examples, 1, 3);
-
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK, Tag = "primary" };
+            var save = new Button { Name = "saveConnection", Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK, Tag = "primary" };
             var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
-            save.Click += Save;
-            buttons.Controls.Add(cancel);
-            buttons.Controls.Add(save);
-            table.Controls.Add(buttons, 0, 5);
-            table.SetColumnSpan(buttons, 2);
-            AcceptButton = save;
-            CancelButton = cancel;
-
-            name.Text = Profile.Name ?? String.Empty;
-            target.Text = Profile.Target ?? String.Empty;
+            save.Click += Save; buttons.Controls.Add(cancel); buttons.Controls.Add(save);
+            table.Controls.Add(buttons, 0, 10); table.SetColumnSpan(buttons, 2);
+            AcceptButton = save; CancelButton = cancel;
+            name.Text = Profile.Name ?? ""; server.Text = Profile.Server ?? ""; user.Text = Profile.User ?? "";
+            port.Value = Math.Max(1, Math.Min(65535, Profile.Port)); key.Text = Profile.IdentityFile ?? "";
+            target.Text = Profile.IsDirect ? "" : Profile.Target ?? "";
+            mode.SelectedIndexChanged += delegate { UpdateMode(); };
+            // Existing aliases remain aliases until the user explicitly switches modes.
+            mode.SelectedIndex = profile == null || Profile.IsDirect ? 0 : 1;
+            UpdateMode();
         }
-
+        private void UpdateMode()
+        {
+            bool direct = mode.SelectedIndex == 0;
+            server.Enabled = user.Enabled = port.Enabled = key.Enabled = browse.Enabled = direct;
+            target.Enabled = !direct;
+            guidance.Text = direct ? "Сервер: например vpn.example.org. Порт SSH обычно 22 — это не порт SOCKS.\r\nКлюч: выберите закрытый файл. Пустое поле использует стандартные ключи и SSH-агент Windows. Ключ должен быть разрешён на VPS; для проверки используйте «Первый вход»." :
+                "Введите имя из %USERPROFILE%\\.ssh\\config, например my-vps, или прежний адрес user@host. Сервер, порт и ключ берутся из настроек OpenSSH. Файл config не изменяется.";
+        }
         private static void Add(TableLayoutPanel table, int row, string label, Control control)
         {
             table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-            control.Dock = DockStyle.Fill;
-            table.Controls.Add(control, 1, row);
+            control.Dock = DockStyle.Fill; table.Controls.Add(control, 1, row);
         }
-
         private void Save(object sender, EventArgs e)
         {
-            var targetText = target.Text.Trim();
-            if (String.IsNullOrWhiteSpace(targetText))
-            {
-                MessageBox.Show("Укажите Адрес подключения: например my-vps или user@vpn.example.org.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                DialogResult = DialogResult.None;
-                return;
+            var candidate = Profile.Clone();
+            if (mode.SelectedIndex == 0) {
+                candidate.Server = server.Text.Trim(); candidate.User = user.Text.Trim(); candidate.Port = (int)port.Value;
+                candidate.IdentityFile = key.Text.Trim();
+                if (String.IsNullOrWhiteSpace(candidate.Server)) { Refuse("Укажите IP-адрес или домен в поле «Сервер»."); return; }
+                if (String.IsNullOrWhiteSpace(candidate.Target)) candidate.Target = "progo-" + Guid.NewGuid().ToString("N");
+            } else {
+                candidate.Target = target.Text.Trim(); candidate.Server = ""; candidate.User = ""; candidate.Port = 22; candidate.IdentityFile = "";
             }
-
-            Profile.Target = targetText;
-            Profile.Name = String.IsNullOrWhiteSpace(name.Text) ? targetText : name.Text.Trim();
+            try {
+                SshConnection.Validate(candidate);
+                if (candidate.IsDirect && !String.IsNullOrWhiteSpace(candidate.IdentityFile)) {
+                    if (!System.IO.File.Exists(candidate.IdentityFile)) throw new ArgumentException("Файл ключа не найден. Выберите существующий файл на этом компьютере.");
+                    if (candidate.IdentityFile.EndsWith(".pub", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Это открытый ключ (.pub). Выберите закрытый ключ — обычно файл без расширения .pub.");
+                }
+            } catch (ArgumentException ex) { Refuse(ex.Message); return; }
+            candidate.Name = String.IsNullOrWhiteSpace(name.Text) ? candidate.Address : name.Text.Trim();
+            Profile = candidate;
+        }
+        private void Refuse(string message)
+        {
+            DialogResult = DialogResult.None;
+            MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

@@ -168,4 +168,15 @@ checks UI heartbeat and both modes on one connection, and cancels pending
 requests before any late configuration write. Existing UI/manual aliases now
 use a loopback SOCKS greeting fixture and await completion. The visible-login
 launch configuration is validated without a real SSH server or credentials.
-Structured profile fields remain F05b; broader deadlines/cancellation remain F14.
+### Audit stage F05b
+
+`DesktopSshEditorTests.cs` checks legacy settings round trips, structured profile
+cloning/persistence, distinct ports on one host and unchanged alias selection.
+Native editor actions create/edit both modes, capture normal/scaled screenshots,
+and verify visible fields. Actual Windows OpenSSH `-G` resolves an explicit
+server/login/port/private-key path without making a network connection. A local
+PowerShell spy evaluates the visible-login command with spaces, apostrophes and
+dollar signs in the key path; no credentials or real SSH login are used.
+The recovery child captures actual native argv for initial start and recovery,
+and cancels stale startup after editing fields without changing the profile ID.
+Broader deadlines/cancellation remain F14.
