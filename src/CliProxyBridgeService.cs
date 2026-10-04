@@ -530,6 +530,7 @@ namespace ProGo
         public static void ClearUserEnvironmentIfOwned()
         {
             var saved = ReadBackup();
+            if (saved == null) return; // A completed cleanup must not reclaim a later matching external value.
             int port = OwnedPort(saved);
             // Windows environment names are case-insensitive. Restore only values still owned by ProGo.
             foreach (var name in Names)

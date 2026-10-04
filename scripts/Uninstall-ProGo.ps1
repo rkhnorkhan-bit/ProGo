@@ -11,33 +11,34 @@ $StartupShortcut = Join-Path $Startup "ProGo.lnk"
 $Programs = [Environment]::GetFolderPath("Programs")
 $MenuDir = Join-Path $Programs "ProGo"
 
-Get-Process -Name "ProGo" -ErrorAction SilentlyContinue | ForEach-Object {
-    try {
-        $_.CloseMainWindow() | Out-Null
-        Start-Sleep -Milliseconds 700
-        if (-not $_.HasExited) { $_.Kill() }
-    } catch {}
-}
+. (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
+$Maintenance = [ProGo.MaintenanceOperation]::Enter()
+try {
+    # Same-user IPC restores owned preferences before the process exits.
+    # Missing/refused confirmation aborts before any shortcut or executable removal.
+    [ProGo.MaintenanceOperation]::StopApplication($InstallDir)
 
-foreach ($path in @($StartupShortcut, $MenuDir)) {
-    if (Test-Path $path) {
-        Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
+    foreach ($path in @($StartupShortcut, $MenuDir)) {
+        if (Test-Path $path) {
+            Remove-Item $path -Recurse -Force
+        }
     }
-}
 
-$Exe = Join-Path $InstallDir "ProGo.exe"
-if (Test-Path $Exe) {
-    Remove-Item $Exe -Force
-}
+    $Exe = Join-Path $InstallDir "ProGo.exe"
+    if (Test-Path $Exe) {
+        Remove-Item $Exe -Force
+    }
 
-if ($RemoveUserData) {
-    $answer = Read-Host "This removes vault/settings/logs from $InstallDir. Type DELETE to confirm"
-    if ($answer -eq "DELETE") {
-        Remove-Item $InstallDir -Recurse -Force
-        Write-Host "User data removed."
+    if ($RemoveUserData) {
+        $answer = Read-Host "This removes vault/settings/logs from $InstallDir. Type DELETE to confirm"
+        if ($answer -eq "DELETE") {
+            Remove-Item $InstallDir -Recurse -Force
+            Write-Host "User data removed."
+        } else {
+            Write-Host "User data kept."
+        }
     } else {
-        Write-Host "User data kept."
+        Write-Host "Uninstall OK. User vault/settings/logs kept in $InstallDir."
     }
-} else {
-    Write-Host "Uninstall OK. User vault/settings/logs kept in $InstallDir."
-}
+
+} finally { $Maintenance.Dispose() }

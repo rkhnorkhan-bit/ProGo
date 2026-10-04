@@ -120,8 +120,21 @@ namespace ProGo
                     using (var client = new NamedPipeClientStream(".", "ProGo.Show." + WindowsIdentity.GetCurrent().User.Value, PipeDirection.InOut))
                     {
                         client.Connect(3000); client.WriteByte(99);
-                        Check(client.ReadByte() == 0, "IPC rejects commands other than window activation");
+                        Check(client.ReadByte() == 0, "IPC rejects unknown commands");
                     }
+                    int cleanupCalls = 0, completedCalls = 0;
+                    owner.Attach(delegate { System.Threading.Interlocked.Increment(ref activations); },
+                        () => { cleanupCalls++; return false; }, () => completedCalls++);
+                    using (var refused = new NamedPipeClientStream(".", "ProGo.Show." + WindowsIdentity.GetCurrent().User.Value, PipeDirection.InOut)) {
+                        refused.Connect(3000); refused.WriteByte(2);
+                        Check(refused.ReadByte() == 0 && cleanupCalls == 1 && completedCalls == 0, "IPC refusal cannot acknowledge or schedule shutdown");
+                    }
+                    owner.Attach(delegate { System.Threading.Interlocked.Increment(ref activations); }, () => true, () => completedCalls++);
+                    using (var accepted = new NamedPipeClientStream(".", "ProGo.Show." + WindowsIdentity.GetCurrent().User.Value, PipeDirection.InOut)) {
+                        accepted.Connect(3000); accepted.WriteByte(2);
+                        Check(accepted.ReadByte() == 2, "IPC confirms only completed cleanup");
+                    }
+                    Wait(() => completedCalls == 1, "completion follows cleanup acknowledgement");
                     using (var idle = new NamedPipeClientStream(".", "ProGo.Show." + WindowsIdentity.GetCurrent().User.Value, PipeDirection.InOut))
                     {
                         idle.Connect(3000);

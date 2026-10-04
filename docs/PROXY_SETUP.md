@@ -122,4 +122,10 @@ cleanup and keeps the journal for retry. Manual desktop stop and normal Quit kee
 the local service running on that failure. Correct the reported write/access
 problem, then retry **Windows — выключить** or desktop stop. A successful retry
 does not revisit fields already preserved as external changes.
-Graceful uninstall cleanup is being handled separately in audit stage F06b.
+Uninstall requests this cleanup from the running app before removing files or
+shortcuts. If cleanup is refused or cannot be confirmed, removal is cancelled.
+Update/restore also require successful cleanup before replacing files. If a crash
+left a recovery journal, reopen ProGo and retry Windows/CLI off before maintenance.
+Older running builds without cleanup IPC must be closed through their own Quit
+command; uninstall does not force-kill them. A failed updater handoff after
+successful cleanup leaves the app open; reconnect manually if needed.

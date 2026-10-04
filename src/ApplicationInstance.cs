@@ -7,7 +7,7 @@ using System.Security.Principal;
 namespace ProGo
 {
     // The lifetime mutex is held by the startup/UI thread, before any settings,
-    // backups or proxy services are created. IPC has one command: show the UI.
+    // backups or proxy services are created. IPC supports window activation and confirmed owned-proxy cleanup.
     internal sealed class ApplicationInstance : IDisposable
     {
         private readonly System.Threading.Mutex mutex;
@@ -16,7 +16,8 @@ namespace ProGo
         private readonly object gate = new object();
         private readonly System.Threading.Thread receiver;
         private NamedPipeServerStream pipe;
-        private Action activate;
+        private Action activate, shutdownCompleted, shutdownCancelled;
+        private Func<bool> prepareShutdown;
         private bool pendingActivation, stopping;
         internal bool IsOwner { get; private set; }
 
@@ -59,11 +60,11 @@ namespace ProGo
                 PipeOptions.Asynchronous, 16, 16, security);
         }
 
-        internal void Attach(Action showWindow)
+        internal void Attach(Action showWindow, Func<bool> shutdown = null, Action finishShutdown = null, Action cancelShutdown = null)
         {
             if (!IsOwner) throw new InvalidOperationException("Only the instance owner can attach its window.");
             bool show;
-            lock (gate) { activate = showWindow; show = pendingActivation; pendingActivation = false; }
+            lock (gate) { activate = showWindow; prepareShutdown = shutdown; shutdownCompleted = finishShutdown; shutdownCancelled = cancelShutdown; show = pendingActivation; pendingActivation = false; }
             if (show) showWindow();
         }
 
@@ -112,7 +113,8 @@ namespace ProGo
                 try
                 {
                     current.WaitForConnection();
-                    if (ReadCommand(current) == 1)
+                    int command = ReadCommand(current);
+                    if (command == 1)
                     {
                         Action show;
                         lock (gate)
@@ -123,6 +125,17 @@ namespace ProGo
                         }
                         if (show != null) show();
                         current.WriteByte(1);
+                    }
+                    else if (command == 2) {
+                        Func<bool> prepare; Action finish, cancel;
+                        lock (gate) { prepare = prepareShutdown; finish = shutdownCompleted; cancel = shutdownCancelled; }
+                        bool cleaned = false;
+                        try { cleaned = prepare != null && finish != null && prepare(); }
+                        catch (Exception ex) { SafeLog.Error("Requested proxy cleanup failed.", ex); }
+                        try { current.WriteByte(cleaned ? (byte)2 : (byte)0); current.Flush(); }
+                        catch { if (cleaned && cancel != null) cancel(); throw; }
+                        // Exit only after the requester receives cleanup confirmation.
+                        if (cleaned) finish();
                     }
                     else current.WriteByte(0);
                 }
@@ -143,7 +156,7 @@ namespace ProGo
             lock (gate)
             {
                 if (stopping) return;
-                stopping = true; activate = null;
+                stopping = true; activate = null; prepareShutdown = null; shutdownCompleted = null; shutdownCancelled = null;
                 if (pipe != null) pipe.Dispose();
             }
             if (receiver != null) receiver.Join(2000);

@@ -157,8 +157,16 @@ namespace ProGo
                     text = CleanupDialog(context, "ExitProGo");
                     Check(text.Contains("Очистка прокси Windows не завершена") && bridge.IsRunning && ((NotifyIcon)Field(context, "tray")).Visible,
                         "normal Quit refuses teardown and keeps the application usable after cleanup failure");
+                    bool launched = false;
+                    text = CleanupDialog(context, "BeginMaintenance", new Func<bool>(() => { launched = true; return true; }));
+                    Check(!launched && text.Contains("Очистка прокси Windows не завершена") && bridge.IsRunning,
+                        "update/restore gate refuses to launch a helper after cleanup failure");
                     deny = false; Call(context, "Execute", "stop");
                     Check(!bridge.IsRunning && !File.Exists(SystemProxyService.BackupPath), "retrying actual desktop stop completes cleanup before stopping the service");
+                    Check(!(bool)context.GetType().GetMethod("BeginMaintenance", PrivateInstance).Invoke(context, new object[] { new Func<bool>(() => false) }) && ((NotifyIcon)Field(context, "tray")).Visible,
+                        "a refused maintenance handoff leaves the cleaned application open for retry");
+                    context.Dispose(); context.Dispose();
+                    Check(true, "repeated native context disposal cannot resurrect cleanup or throw after a successful shutdown");
                 }
             }
         }

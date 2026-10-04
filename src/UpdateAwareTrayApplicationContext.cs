@@ -26,6 +26,7 @@ namespace ProGo
         private long nextRouteRequest;
         private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
         private volatile bool closing;
+        private bool shutdownPrepared, disposed;
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
         public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null)
@@ -201,6 +202,7 @@ namespace ProGo
         }
         private void Execute(string action)
         {
+            if (closing || shutdownPrepared) return;
             var routed = RouteAction(action);
             if (routed != null) { BeginRouteAction(routed); return; }
             string navigation = action == "windows-settings" ? "settings" : action == "route-check" ? "diagnostics" : action;
@@ -249,7 +251,7 @@ namespace ProGo
         }
         private void BeginRouteAction(string action)
         {
-            if (closing || pendingRoutes.ContainsKey(action)) return;
+            if (closing || shutdownPrepared || pendingRoutes.ContainsKey(action)) return;
             long request = ++nextRouteRequest; pendingRoutes[action] = request;
             // A reconnect invalidates all previous requests before a new connection is awaited.
             if (action == "restart" || (action == "connect" && proxy.CurrentPid.HasValue)) {
@@ -363,15 +365,54 @@ namespace ProGo
             using (var form = new VaultForm(session, clipboard, settings)) form.ShowDialog();
         }
 
-        private void ExitProGo()
+        private bool PrepareShutdown(bool dialog)
         {
+            if (closing) return false;
+            if (shutdownPrepared) return true;
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             try { DisconnectApps(); }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            homeVpn.Stop();
-            tray.Visible = false;
-            ExitThread();
+            catch (Exception ex) {
+                SafeLog.Error("Shutdown refused: owned proxy cleanup incomplete.", ex);
+                if (dialog) MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", ex.Message, ToolTipIcon.Warning);
+                return false;
+            }
+            shutdownPrepared = true;
+            proxy.StopTunnel();
+            return true;
+        }
+        // Called by the same-user pipe receiver; registry/environment changes stay on the UI thread.
+        internal bool RequestShutdown()
+        {
+            if (activationDispatcher.IsDisposed || closing) return false;
+            if (activationDispatcher.InvokeRequired)
+                return (bool)activationDispatcher.Invoke(new Func<bool>(() => PrepareShutdown(false)));
+            return PrepareShutdown(false);
+        }
+        internal void CompleteShutdown()
+        {
+            if (activationDispatcher.IsDisposed) return;
+            activationDispatcher.BeginInvoke(new Action(delegate {
+                if (!shutdownPrepared || closing) return;
+                closing = true; homeVpn.Stop(); tray.Visible = false; ExitThread();
+            }));
+        }
+        internal void CancelShutdown()
+        {
+            if (!activationDispatcher.IsDisposed)
+                activationDispatcher.BeginInvoke(new Action(delegate { if (!closing) shutdownPrepared = false; }));
+        }
+        private bool BeginMaintenance(Func<bool> launch)
+        {
+            if (!PrepareShutdown(true)) return false;
+            bool handedOff = false;
+            try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
+            finally { if (!handedOff) shutdownPrepared = false; }
+        }
+        private void ExitProGo()
+        {
+            if (PrepareShutdown(true)) CompleteShutdown();
         }
 
         private void OpenLogFile(string path, string title)
@@ -473,11 +514,9 @@ namespace ProGo
 
             if (result != DialogResult.Yes) return;
 
-            if (!BackupService.StartRestore(backupDir)) return;
+            if (!BeginMaintenance(() => BackupService.StartRestore(backupDir))) return;
 
             SafeLog.Info("Restore requested by user: " + backupDir + ".");
-            tray.Visible = false;
-            ExitThread();
         }
 
         private bool checkingUpdate;
@@ -522,11 +561,9 @@ namespace ProGo
 
             if (result != DialogResult.Yes) return;
 
-            if (!UpdateLauncher.StartUpdater()) return;
+            if (!BeginMaintenance(UpdateLauncher.StartUpdater)) return;
 
             SafeLog.Info("Update requested by user. local=" + check.LocalVersion + "; remote=" + check.RemoteVersion + ".");
-            tray.Visible = false;
-            ExitThread();
         }
 
         private void UpdateTooltip()
@@ -547,6 +584,8 @@ namespace ProGo
         {
             if (disposing)
             {
+                if (disposed) return; // WinForms and Program's using scope can both dispose the context.
+                disposed = true;
                 closing = true; pendingRoutes.Clear(); routeLifetime.Cancel(); routeLifetime.Dispose();
                 health.Changed -= HealthChanged;
                 if (ownsHealth) health.Dispose();

@@ -297,5 +297,10 @@ if ($LASTEXITCODE -ne 0) { Fail 'Instance harness build failed' }
 & $InstanceHarness $Exe $PSScriptRoot
 if ($LASTEXITCODE -ne 0) { Fail 'Instance tests failed' }
 & (Join-Path $Root 'tests\MaintenanceTests.ps1') $Exe (Join-Path $Root 'release\scripts')
+$ShutdownHarness = Join-Path $Root 'build\ShutdownTests.exe'
+& $Csc /nologo /target:exe /main:ProGo.ShutdownTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$ShutdownHarness" $DesktopSources (Join-Path $Root 'tests\ShutdownTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Shutdown harness build failed' }
+& $ShutdownHarness $Exe (Join-Path $Root 'release\scripts')
+if ($LASTEXITCODE -ne 0) { Fail 'Shutdown tests failed' }
 & (Join-Path $Root 'tests\UpdatePackageTests.ps1')
 Write-Host "ProGo tests PASS."

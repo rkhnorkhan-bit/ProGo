@@ -191,10 +191,25 @@ per-field denial and a locked recovery journal. Retry tests deliberately give a
 settled external field a ProGo-looking value; cleanup must not reclaim it.
 Native stop/Quit actions show real cleanup-warning dialogs and retain the HTTP
 bridge after a denied registry write, then clean up successfully on retry.
-Uninstall/IPC and maintenance shutdown refusal remain the separate F06b stage.
+Uninstall/IPC and maintenance shutdown refusal are covered by F06b below.
 
 Native CI shows that WinINet refresh normalizes REG_EXPAND_SZ proxy values to
 REG_SZ and can remove AutoDetect. Apply/restore retain live pre-notification
 values and correct only an unchanged-data kind conversion or a removed Boolean
 AutoDetect value, after another live comparison. A correction failure during
 cleanup is a pending, reported field; it never restores a stale external value.
+
+### Audit stage F06b
+
+`ShutdownTests.cs` runs only on disposable Windows CI, with a synthetic SOCKS
+listener, temporary installed executable/helper scripts and fixture shortcuts.
+It restores the original registry/settings/environment in finally. The real
+uninstall entry point refuses a locked cleanup journal without killing ProGo or
+removing shortcuts, then succeeds on retry. It verifies original values, external
+changes (including the former default CLI port), no dangling owned listener,
+retained user data, pending journals, competing leases and absent IPC handlers.
+Native UI tests refuse update/restore handoff on cleanup failure; instance tests
+cover cleanup acknowledgement/refusal alongside existing activation tests.
+Maintenance transactions additionally reject a stopped owner's unresolved journal.
+Uninstall acquires the same lease as update/restore, blocking normal starts while
+removal is in progress. No fixture uses a live VPS or downloaded executable.
