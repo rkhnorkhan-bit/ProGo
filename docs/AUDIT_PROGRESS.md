@@ -530,6 +530,31 @@ F16 remains **open**: settings automation cards and a real DPI/display matrix ar
 separate work. Progress remains **14/30 closed; 16 remaining**. No merge, release
 or version bump is included.
 
+## Stage 13b — F16: adaptive automation settings
+
+Automation cards use stacked AutoSize rows instead of fixed heights and Y
+positions. Their width follows the scroll viewport, hints and preference captions
+wrap, and manual action rows can wrap onto another line. Header/error rows and
+the Save/Cancel footer size to content; the footer stays outside the scroll area.
+Tab headers use multiple rows when needed to keep all five sections available.
+
+This changes layout only. Saved preferences, immediate command routes, pending
+edits, port-selection behavior and refresh-timer ownership remain unchanged.
+The Windows-settings entry still scrolls its actual controls into view. Other
+settings page contents are intentionally outside this bounded stage.
+
+Native Windows fixtures cover normal/minimum sizes, 1366-compatible geometry,
+long synthetic hints and constrained form.Scale 125/150/200% stress cases. They
+check row separation, wrapping, no horizontal overflow, reachable manual actions,
+exact routing of all six commands, retained pending edits, visible tab headers,
+Save errors/retry controls and reflow on widening. Screenshots accompany the
+checks. The existing saved/immediate command and validation fixtures remain
+required. Synthetic scaling is not native Windows DPI evidence.
+
+F16 remains **open**: the remaining settings pages and real DPI/display validation
+are separate work. Progress remains **14/30 closed; 16 remaining**. No merge,
+release or version bump is included.
+
 ## Remaining stages
 
 F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary

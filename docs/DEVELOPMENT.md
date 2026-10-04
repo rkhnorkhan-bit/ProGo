@@ -356,3 +356,17 @@ GetClientRect must equal the requested size before capturing. Display settings
 are unchanged. This verifies 1366-compatible geometry,
 not a real 1366 display session. Do not describe this as native DPI coverage: display DPI,
 work-area constraints and settings automation layout remain the next F16 stage.
+
+### Audit stage F16b
+
+`DesktopSettingsLayoutTests.cs` checks the automation settings viewport at normal
+and minimum sizes, 1366-compatible geometry, long synthetic text and constrained
+form.Scale 125/150/200%. It uses the F16a native HWND sizing fixture and requires
+GetClientRect to match the requested client area. It checks non-overlapping rows,
+wrapped captions/hints, vertical reachability and exact routing of all six manual
+commands, pending-edit/settings-byte preservation, visible tab headers and
+Save/error/retry footer controls. Widening must reflow the existing cards without
+duplicating controls. Existing settings action, targeted Windows-entry and
+structured validation/error tests stay required. No display settings, external
+server or real credentials are used. This is not native DPI coverage; remaining
+settings page layout and actual DPI/work-area validation remain separate F16 work.
