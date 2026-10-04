@@ -33,7 +33,7 @@ namespace ProGo
                 var result = SystemProxyService.RestoreOwned();
                 Check(result.Completed && result.Fields.Count == 5 && !File.Exists(SystemProxyService.BackupPath), "owned Windows restore settles all five fields and removes completed journal");
                 foreach (var name in SystemProxyService.FieldNames)
-                    Check(SystemProxyService.ReadCurrent().Values[name].Matches(baseline.Values[name]), "original registry value and kind restored: " + name);
+                    Check(SystemProxyService.ReadCurrent().Values[name].Matches(baseline.Values[name]), "original registry value and kind restored: " + name + "; expected=" + new JavaScriptSerializer().Serialize(baseline.Values[name]) + "; actual=" + new JavaScriptSerializer().Serialize(SystemProxyService.ReadCurrent().Values[name]) + "; outcome=" + result.Fields.Single(f => f.Name == name).State);
                 Check(SystemProxyService.RestoreOwned().Completed, "Windows off without ownership is idempotent");
 
                 Check(SystemProxyService.Apply(prefs, out message), "external Windows route fixture applies ProGo first");
