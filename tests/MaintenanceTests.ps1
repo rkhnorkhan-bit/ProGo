@@ -115,12 +115,26 @@ try {
         Check ((Get-Content (Join-Path $install 'settings.json') -Raw) -eq $settingsBefore -and (Test-Path $pending)) "pending cleanup preserves settings and journal: $mode"
     }
     Remove-Item $pending # Isolated synthetic journal only.
+    $mixedRoot = Join-Path $install 'backups'
+    New-Item -ItemType Directory $mixedRoot -Force | Out-Null
+    foreach ($i in 0..29) {
+        $dir = Join-Path $mixedRoot ('backup-20260101-{0:D4}' -f $i)
+        New-Item -ItemType Directory $dir | Out-Null
+        Set-Content (Join-Path $dir 'manifest.txt') @('product=ProGo','backup_kind=automatic')
+    }
+    $manualCopy = Join-Path $mixedRoot 'backup-20250101-manual'
+    $unknownCopy = Join-Path $mixedRoot 'unknown-directory'
+    New-Item -ItemType Directory $manualCopy,$unknownCopy | Out-Null
+    Set-Content (Join-Path $manualCopy 'manifest.txt') @('product=ProGo','backup_kind=manual')
+    Set-Content (Join-Path $manualCopy 'payload.txt') 'original manual copy'
     Check ((Run (DriverInfo 'update')) -eq 0) 'actual update transaction validates staging and installed executable'
+    Check ((Get-Content (Join-Path $manualCopy 'payload.txt')).Trim() -eq 'original manual copy' -and (Test-Path $unknownCopy)) 'actual update transaction preserves old manual contents and unknown directory beyond twenty copies'
     Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq ((Get-Content (Join-Path $release 'VERSION')).Trim())) 'successful update commits the fixture release'
     Check ((Run (DriverInfo 'restore')) -eq 0) 'actual restore transaction completes under exclusive ownership'
     Check ((Get-Content (Join-Path $install 'settings.json') -Raw).Contains('12345')) 'restore applies the selected backup settings'
     Check ((Run (DriverInfo 'rollback')) -ne 0) 'post-commit failure is reported'
     Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq '0.0.1') 'failed update rolls back while retaining exclusive ownership'
+    Check ((Test-Path (Join-Path $manualCopy 'payload.txt')) -and (Test-Path $unknownCopy)) 'failed update rollback also preserves protected backup folders'
     Check ((Run (DriverInfo 'startup')) -eq 0) 'failure cleanup releases ownership for subsequent startup'
     Write-Host "Maintenance tests PASS: $passed"
 } finally {

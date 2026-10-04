@@ -99,6 +99,7 @@ foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-Pr
 }
 
 Copy-Item (Join-Path $Src "MaintenanceOperation.cs") -Destination (Join-Path $ReleaseScripts "MaintenanceOperation.cs") -Force
+Copy-Item (Join-Path $Src "BackupRetention.cs") -Destination (Join-Path $ReleaseScripts "BackupRetention.cs") -Force
 
 # Keep optional VPN resources inside scripts so existing transactional updaters
 # install and back up them together with the other runtime helpers.

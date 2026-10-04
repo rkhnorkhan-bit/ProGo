@@ -129,3 +129,15 @@ left a recovery journal, reopen ProGo and retry Windows/CLI off before maintenan
 Older running builds without cleanup IPC must be closed through their own Quit
 command; uninstall does not force-kill them. A failed updater handoff after
 successful cleanup leaves the app open; reconnect manually if needed.
+
+## Backup retention
+
+App and updater share one manifest-aware policy: keep all manual and unknown
+folders, ten latest known automatic backups, the latest baseline and pre-update,
+and the backup currently being created. Legacy folders with missing or ambiguous
+metadata are preserved. Automatic cleanup never infers deletion eligibility
+from a folder name. Generated timestamped names determine newest-first order.
+
+**Удалить старые автоматические копии…** shows every candidate path before an
+explicit confirmation. Cancel keeps all copies. A changed manifest or junction
+is skipped during revalidation; newly eligible folders wait for the next review.

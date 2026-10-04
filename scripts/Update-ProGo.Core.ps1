@@ -323,10 +323,10 @@ function Backup-InstalledState {
 
     Write-UpdateLog "Installed-state backup created: $backupDir"
 
-    $oldBackups = @(Get-ChildItem -Path $BackupsDir -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -Skip 20)
-    foreach ($old in $oldBackups) {
-        Remove-Item $old.FullName -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    # Manifest-aware policy is shared with BackupService. Unknown/manual folders
+    # and the latest baseline/pre-update are never pruned by a directory count.
+    $cleanup = [ProGo.BackupRetention]::Apply([ProGo.BackupRetention]::Plan($BackupsDir, $backupDir))
+    Write-UpdateLog "Backup retention: deleted=$($cleanup.Deleted); kept=$($cleanup.Kept); failed=$($cleanup.Failed); skipped=$($cleanup.Skipped)"
 
     return $backupDir
 }

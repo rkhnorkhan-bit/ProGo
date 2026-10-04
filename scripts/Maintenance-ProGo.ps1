@@ -7,3 +7,9 @@ if (-not ('ProGo.MaintenanceOperation' -as [type])) {
     if (-not (Test-Path $source)) { $source = Join-Path (Split-Path -Parent $PSScriptRoot) 'src\MaintenanceOperation.cs' }
     Add-Type -Path $source
 }
+# Shared manifest retention policy: identical to the class compiled into ProGo.
+if (-not ('ProGo.BackupRetention' -as [type])) {
+    $source = Join-Path $PSScriptRoot 'BackupRetention.cs'
+    if (-not (Test-Path $source)) { $source = Join-Path (Split-Path -Parent $PSScriptRoot) 'src\BackupRetention.cs' }
+    Add-Type -Path $source
+}

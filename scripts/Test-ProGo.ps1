@@ -285,9 +285,18 @@ if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
 
+$RetentionHarness = Join-Path $Root 'build\BackupRetentionTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$RetentionHarness" (Join-Path $Root 'src\BackupRetention.cs') (Join-Path $Root 'tests\BackupRetentionTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Backup retention harness build failed' }
+& $RetentionHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Backup retention tests failed' }
+$retentionSource = Join-Path $Root 'release\scripts\BackupRetention.cs'
+if (-not (Test-Path $retentionSource) -or (Get-FileHash $retentionSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BackupRetention.cs')).Hash) { Fail 'app and updater backup policies differ' }
+& (Join-Path $Root 'tests\BackupRetentionTests.ps1') (Join-Path $Root 'release\scripts')
+
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
 $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
-& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs') (Join-Path $Root 'tests\DesktopStartupTests.cs') (Join-Path $Root 'tests\DesktopSshEditorTests.cs') (Join-Path $Root 'tests\DesktopWindowsRestoreTests.cs')
+& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs') (Join-Path $Root 'tests\DesktopStartupTests.cs') (Join-Path $Root 'tests\DesktopSshEditorTests.cs') (Join-Path $Root 'tests\DesktopWindowsRestoreTests.cs') (Join-Path $Root 'tests\DesktopBackupRetentionTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
 & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }

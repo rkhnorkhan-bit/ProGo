@@ -51,8 +51,6 @@ namespace ProGo
 
     internal static class BackupService
     {
-        private const int MaxAutomaticBackups = 10;
-
         public static string BackupsRoot
         {
             get { return System.IO.Path.Combine(AppPaths.Root, "backups"); }
@@ -136,7 +134,7 @@ namespace ProGo
 
             WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
 
-            CleanupOldBackups(false);
+            ApplyCleanupPlan(BackupRetention.Plan(BackupsRoot, backupDir), false);
             SafeLog.Info("Backup created: " + backupDir + ".");
             return backupDir;
         }
@@ -160,58 +158,18 @@ namespace ProGo
 
         public static BackupCleanupResult CleanupOldBackups(bool includeSummary)
         {
-            Directory.CreateDirectory(BackupsRoot);
-            var backups = ListBackups();
-            var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            return ApplyCleanupPlan(BackupRetention.Plan(BackupsRoot), includeSummary);
+        }
 
-            foreach (var backup in backups)
-            {
-                if (backup.IsManual) keep.Add(backup.Path);
-            }
-
-            var latestBaseline = FirstOrNull(backups, delegate(BackupInfo b) { return b.IsBaseline; });
-            if (latestBaseline != null) keep.Add(latestBaseline.Path);
-
-            var latestPreUpdate = FirstOrNull(backups, delegate(BackupInfo b) { return b.IsPreUpdate; });
-            if (latestPreUpdate != null) keep.Add(latestPreUpdate.Path);
-
-            var automaticKept = 0;
-            foreach (var backup in backups)
-            {
-                if (backup.IsManual) continue;
-                if (automaticKept < MaxAutomaticBackups)
-                {
-                    keep.Add(backup.Path);
-                    automaticKept++;
-                }
-            }
-
-            var deleted = 0;
-            var failed = 0;
-            foreach (var backup in backups)
-            {
-                if (keep.Contains(backup.Path)) continue;
-
-                try
-                {
-                    Directory.Delete(backup.Path, true);
-                    deleted++;
-                }
-                catch (Exception ex)
-                {
-                    failed++;
-                    SafeLog.Error("Backup cleanup failed: " + backup.Path + ".", ex);
-                }
-            }
-
+        internal static BackupCleanupResult ApplyCleanupPlan(BackupRetentionPlan plan, bool includeSummary)
+        {
+            var result = BackupRetention.Apply(plan);
             var output = new BackupCleanupResult
             {
-                Deleted = deleted,
-                Kept = keep.Count,
-                Failed = failed,
-                Message = "Удалено: " + deleted + "; сохранено: " + keep.Count + "; ошибок: " + failed + "."
+                Deleted = result.Deleted, Kept = result.Kept, Failed = result.Failed,
+                Message = "Удалено: " + result.Deleted + "; сохранено: " + result.Kept +
+                    "; пропущено после повторной проверки: " + result.Skipped + "; ошибок: " + result.Failed + "."
             };
-
             if (includeSummary) SafeLog.Info("Backup cleanup finished. " + output.Message);
             return output;
         }
@@ -299,15 +257,6 @@ namespace ProGo
             var status = String.IsNullOrEmpty(info.Result) ? "unknown" : info.Result;
             var kind = String.IsNullOrEmpty(info.Kind) ? "backup" : info.Kind;
             return name + " | " + kind + " | v" + info.Version + target + " | " + status + " | " + info.Created;
-        }
-
-        private static BackupInfo FirstOrNull(List<BackupInfo> backups, Predicate<BackupInfo> predicate)
-        {
-            foreach (var backup in backups)
-            {
-                if (predicate(backup)) return backup;
-            }
-            return null;
         }
 
         private static void WriteManifest(string backupDir, string version, string targetVersion, string reason, string createdBy, string updateResult, string backupKind)

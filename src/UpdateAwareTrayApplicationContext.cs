@@ -460,17 +460,18 @@ namespace ProGo
 
         private void CleanupBackups()
         {
-            var result = MessageBox.Show(
-                "ProGo удалит старые автоматические резервные копии.\n\nБудут сохранены ручные копии, исходная копия и последняя копия перед обновлением.\n\nПродолжить?",
-                "Очистка резервных копий ProGo",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-
-            if (result != DialogResult.Yes) return;
-
             try
             {
-                var cleanup = BackupService.CleanupOldBackups(true);
+                var plan = BackupRetention.Plan(BackupService.BackupsRoot);
+                if (plan.Candidates.Count == 0)
+                {
+                    MessageBox.Show("Старых автоматических копий для удаления нет. Ручные и неизвестные папки сохраняются.",
+                        "Очистка резервных копий ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                using (var preview = new BackupCleanupForm(plan))
+                    if (preview.ShowDialog() != DialogResult.OK) return;
+                var cleanup = BackupService.ApplyCleanupPlan(plan, true);
                 MessageBox.Show(cleanup.Message, "Очистка резервных копий ProGo", MessageBoxButtons.OK, cleanup.Failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
             }
             catch (Exception ex)
