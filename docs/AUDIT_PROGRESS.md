@@ -284,7 +284,7 @@ junction tests, actual application and updater backup writers, installed-source
 hash parity and a real restore refusal leaving installed payload/logs unchanged.
 Earlier Windows/CLI startup and maintenance ownership checks remain required.
 
-F08 is **not complete**: stage 9b must add explicit program/data selection,
+Status after stage 9a: F08 was **not complete**; stage 9b still needed explicit program/data selection,
 immutable staging, protective snapshot, installed self-check and rollback on
 commit failure. Current restore still uses its earlier file-by-file commit;
 preflight alone does not prevent mutation between validation and copying.
@@ -314,7 +314,7 @@ vault/settings in Program scope, preserved exe/version/scripts in Data scope,
 and source mutation after pre-handoff preparation. Existing CLI and maintenance
 regressions remain required. No vault encryption/format/decoy semantics change.
 
-F08 remains **open**. Stage 9b2 still must add a protective current-state snapshot,
+Status after stage 9b1: F08 remained **open**. Stage 9b2 still needed a protective current-state snapshot,
 installed self-check and rollback after any commit failure. This stage does not
 make the existing file-by-file commit atomic. No version bump or public release.
 
@@ -343,14 +343,21 @@ mid-commit move failure, installed-byte corruption, self-check refusal, restart
 failure, original script restoration, originally absent vault, retained recovery
 input after rollback refusal, subsequent successful recovery and shared
 retention protection. These run the actual helper transaction in disposable CI.
-F08 acceptance will be assessed after the full exact-head Windows/Linux run.
+Verified: full Windows/Linux CI passed, including 80 maintenance checks, 52
+integrity checks, 374 desktop checks, 39 shutdown checks, ordinary Start CLI,
+33 home-VPN checks and 18 relay integration tests. Windows short-path alias
+expansion is covered by the real fixture; comparison uses relative child names
+rather than slicing absolute paths. F08 acceptance is complete for caught runtime
+errors: invalid input and locked targets leave the payload unchanged; good copies
+restore the declared scope; commit/check/restart failures recover original bytes.
+The audit now has **11 of 30 findings closed** (F01–F08 and F11–F13).
 This handles caught runtime failures; it does not claim filesystem-wide atomicity
 or automatic recovery after a forced process termination/power loss. No version
 bump or published release.
 
 ## Remaining stages
 
-F08–F10 and F14–F30 remain separate work after F07 (20 findings). Preserve the ordinary
+F09–F10 and F14–F30 remain separate work (19 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described
