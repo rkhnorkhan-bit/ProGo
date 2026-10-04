@@ -20,9 +20,15 @@ function ChildInfo($File, $Arguments, [switch]$NoPermit) {
     return $info
 }
 function Run($Info) {
+    $Info.RedirectStandardOutput = $true; $Info.RedirectStandardError = $true
     $p = [Diagnostics.Process]::Start($Info)
+    $stdout = $p.StandardOutput.ReadToEndAsync(); $stderr = $p.StandardError.ReadToEndAsync()
     try {
         if (-not $p.WaitForExit(20000)) { $p.Kill(); throw 'Maintenance child timed out' }
+        if ($p.ExitCode -ne 0) {
+            $details = $stdout.Result + $stderr.Result
+            Write-Host ("Fixture child exit=" + $p.ExitCode + "; " + $details.Substring([Math]::Max(0, $details.Length - 3000)))
+        }
         return $p.ExitCode
     } finally { $p.Dispose() }
 }
