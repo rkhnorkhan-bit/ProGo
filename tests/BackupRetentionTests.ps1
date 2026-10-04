@@ -1,7 +1,7 @@
 param([string]$Scripts)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
-. (Join-Path $Scripts 'Maintenance-ProGo.ps1')
+. (Join-Path $Scripts 'BackupRetention-ProGo.ps1')
 # Run the real updater backup function, without its network or installation body.
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $Scripts 'Update-ProGo.Core.ps1'), [ref]$tokens, [ref]$errors)

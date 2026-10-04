@@ -539,6 +539,7 @@ function Cleanup-TemporaryFiles {
 . (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
 $Maintenance = [ProGo.MaintenanceOperation]::Enter()
 try {
+    . (Join-Path $PSScriptRoot 'BackupRetention-ProGo.ps1')
     Write-UpdateLog "ProGo transactional update started."
 
     if (-not (Test-UpdateRequired)) {
