@@ -22,10 +22,13 @@ namespace ProGo
         }
         private static void DashboardFixtureSize(Form form, Size available)
         {
-            form.MinimumSize = Size.Empty; form.ClientSize = available;
+            form.MinimumSize = Size.Empty;
+            form.MaximumSize = new Size(available.Width + 80, available.Height + 100);
+            form.ClientSize = available;
             var actual = DashboardNativeClient(form);
             // Form.SetBoundsCore unconditionally clamps to MaxWindowTrackSize.
-            // Resize only this fixture HWND to render a full target width even when
+            // MaximumSize permits the native tracking bounds, then resize only this
+            // fixture HWND to render a full target width even when
             // the CI virtual desktop is smaller; never change display settings.
             if (actual != available && !SetWindowPos(form.Handle, IntPtr.Zero, 0, 0,
                 form.Width + available.Width - actual.Width, form.Height + available.Height - actual.Height, 0x0016))

@@ -349,7 +349,8 @@ command preservation at wide/minimum client sizes and a 1366 by 768-compatible
 window, with long synthetic text. Constrained form.Scale 125/150/200% tests keep
 the physical client area fixed, allow vertical scrolling and check that all
 actions are reachable without horizontal scrolling. Screenshots include the
-scrolled status area. The fixture uses SetWindowPos on its own HWND to bypass
+scrolled status area. The fixture allows larger native tracking bounds with
+MaximumSize and uses SetWindowPos on its own HWND to bypass
 Form.SetBoundsCore's MaxWindowTrackSize clamp on smaller CI virtual desktops.
 GetClientRect must equal the requested size before capturing. Display settings
 are unchanged. This verifies 1366-compatible geometry,
