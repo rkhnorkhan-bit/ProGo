@@ -93,7 +93,11 @@ namespace ProGo
         {
             foreach (var backup in ListBackups())
             {
-                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline) return true;
+                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline)
+                {
+                    string error;
+                    if (TryValidateRestore(backup.Path, out error)) return true;
+                }
             }
 
             return false;
@@ -133,6 +137,8 @@ namespace ProGo
             CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"));
 
             WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
+            BackupIntegrity.Write(backupDir);
+            BackupIntegrity.Validate(backupDir);
 
             ApplyCleanupPlan(BackupRetention.Plan(BackupsRoot, backupDir), false);
             SafeLog.Info("Backup created: " + backupDir + ".");
@@ -174,6 +180,12 @@ namespace ProGo
             return output;
         }
 
+        internal static bool TryValidateRestore(string backupDir, out string error)
+        {
+            try { BackupIntegrity.Validate(backupDir); error = String.Empty; return true; }
+            catch (Exception ex) { error = ex.Message; return false; }
+        }
+
         public static bool StartRestore(string backupDir)
         {
             try
@@ -192,6 +204,13 @@ namespace ProGo
                 if (String.IsNullOrEmpty(backupDir) || !Directory.Exists(backupDir))
                 {
                     MessageBox.Show("Резервная копия не найдена.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+
+                string validationError;
+                if (!TryValidateRestore(backupDir, out validationError))
+                {
+                    MessageBox.Show(validationError, "Копия не прошла проверку", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
                 }
 
@@ -270,7 +289,7 @@ namespace ProGo
             manifest.AppendLine("created_by=" + SafeManifest(createdBy));
             manifest.AppendLine("update_result=" + SafeManifest(updateResult));
             manifest.AppendLine("backup_kind=" + SafeManifest(backupKind));
-            manifest.AppendLine("contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log,progo-update.log");
+            manifest.AppendLine("contains=" + BackupIntegrity.Contents(backupDir));
             File.WriteAllText(System.IO.Path.Combine(backupDir, "manifest.txt"), manifest.ToString(), Encoding.UTF8);
         }
 

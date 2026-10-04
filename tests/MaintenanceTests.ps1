@@ -3,6 +3,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: maintenance integration requires isolated Windows CI'; return }
 . (Join-Path $Scripts 'Maintenance-ProGo.ps1')
+. (Join-Path $Scripts 'BackupIntegrity-ProGo.ps1')
 $passed = 0
 function Check($Value, $Name) { if (-not $Value) { throw $Name }; $script:passed++; Write-Host "PASS: $Name" }
 $fixture = Join-Path $env:TEMP ('ProGo-maintenance-test-' + [guid]::NewGuid().ToString('N'))
@@ -38,9 +39,18 @@ try {
     Set-Content (Join-Path $install 'VERSION') '0.0.1'
     Set-Content (Join-Path $install 'settings.json') '{}'
     Copy-Item $Scripts (Join-Path $install 'scripts') -Recurse
-    Set-Content (Join-Path $backup 'manifest.txt') 'version=0.0.1'
+    Copy-Item $Exe (Join-Path $backup 'ProGo.exe')
+    Copy-Item $Scripts (Join-Path $backup 'scripts') -Recurse
+    Set-Content (Join-Path $backup 'manifest.txt') @('product=ProGo','version=0.0.1')
     Set-Content (Join-Path $backup 'VERSION') '0.0.1'
     Set-Content (Join-Path $backup 'settings.json') '{"SocksPort":12345}'
+    [ProGo.BackupIntegrity]::Write($backup)
+    $beforeInvalidRestore = Snapshot
+    Add-Content (Join-Path $backup 'VERSION') 'damaged-fixture'
+    Check ((Run (DriverInfo 'restore')) -ne 0) 'actual restore refuses damaged backup before handoff'
+    Check ((Snapshot) -eq $beforeInvalidRestore) 'failed backup preflight leaves installed files and logs untouched'
+    Set-Content (Join-Path $backup 'VERSION') '0.0.1'
+    [ProGo.BackupIntegrity]::Validate($backup)
     $lease = [ProGo.MaintenanceOperation]::Enter()
     $before = Snapshot
     foreach ($script in @('Update-ProGo.Core.ps1','Update-ProGo.ps1','Restore-ProGoBackup.ps1')) {

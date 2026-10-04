@@ -141,3 +141,11 @@ from a folder name. Generated timestamped names determine newest-first order.
 **Удалить старые автоматические копии…** shows every candidate path before an
 explicit confirmation. Cancel keeps all copies. A changed manifest or junction
 is skipped during revalidation; newly eligible folders wait for the next review.
+
+### Проверка резервной копии перед восстановлением
+
+Новые копии содержат список файлов с контрольными суммами SHA-256. ProGo проверяет
+его до остановки приложения и отклоняет неполную или повреждённую копию. Старые
+копии без контрольных сумм сохраняются, но новый механизм восстановления их не
+применяет: после обновления создайте новую копию через «Создать копию сейчас».
+Контрольные суммы проверяют целостность, а не доверие к источнику копии.

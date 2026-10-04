@@ -302,10 +302,10 @@ function Backup-InstalledState {
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
     foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
-        try { Copy-FileIfExists $InstallDir $name $backupDir $false } catch { Write-UpdateLog "Backup warning for ${name}: $($_.Exception.Message)" }
+        Copy-FileIfExists $InstallDir $name $backupDir $false
     }
 
-    try { Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false } catch { Write-UpdateLog "Backup warning for scripts: $($_.Exception.Message)" }
+    Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false
 
     $manifest = @(
         "product=ProGo",
@@ -316,11 +316,13 @@ function Backup-InstalledState {
         "backup_kind=pre-update",
         "update_result=pending",
         "reason=before-transactional-update",
-        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log",
+        "contains=$([ProGo.BackupIntegrity]::Contents($backupDir))",
         "update_mode=$($State.UpdateMode)"
     )
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
+    [ProGo.BackupIntegrity]::Write($backupDir)
+    [ProGo.BackupIntegrity]::Validate($backupDir)
     Write-UpdateLog "Installed-state backup created: $backupDir"
 
     # Manifest-aware policy is shared with BackupService. Unknown/manual folders
@@ -540,6 +542,7 @@ function Cleanup-TemporaryFiles {
 $Maintenance = [ProGo.MaintenanceOperation]::Enter()
 try {
     . (Join-Path $PSScriptRoot 'BackupRetention-ProGo.ps1')
+    . (Join-Path $PSScriptRoot 'BackupIntegrity-ProGo.ps1')
     Write-UpdateLog "ProGo transactional update started."
 
     if (-not (Test-UpdateRequired)) {

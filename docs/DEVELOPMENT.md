@@ -233,3 +233,20 @@ and value correction. The fixture now waits for the completed-apply log from
 the current process before editing/snapshotting the external route, runs that
 scenario three times, and prints expected/actual typed values on any failure.
 Assertions remain exact; no Windows proxy runtime logic changes belong to F07.
+
+### Audit stage F08a
+
+`BackupIntegrityTests.cs` validates the shared local SHA-256 inventory against
+changed/missing/extra payloads, incomplete but freshly indexed copies, malformed
+metadata, traversal, duplicate paths and exclusive file locks. The native
+PowerShell junction fixture rejects traversal and preserves its target. Desktop
+checks run the actual application backup writer, verify its manifest, refuse a
+damaged opaque vault and retain installed data. The real updater backup function
+also validates through this shared class; maintenance integration refuses a
+corrupt copy before log writes/handoff and retains existing installed files.
+Build/install/repair ship the same local source for PowerShell Add-Type.
+
+The index detects damage, not authenticity. Existing copies without the index
+are preserved but refused by the new automatic restore; create a new complete
+copy after installing these helpers. An old installed helper does not gain these
+checks until upgraded. F08b still owns restore staging, scope consent and rollback.
