@@ -142,7 +142,7 @@ namespace ProGo
                     key.DeleteValue("AutoConfigURL", false);
                 }
 
-                RefreshSystemProxy();
+                RefreshPreservingValues(null, null, WriteValue);
                 SafeLog.Info("Current-user Windows proxy enabled. port=" + settings.HttpProxyPort + ".");
                 return true;
             }
@@ -198,7 +198,7 @@ namespace ProGo
                     }
                 }
                 if (result.Fields.Any(f => f.State == WindowsProxyRestoreState.Restored))
-                    RefreshPreservingKinds(backup, result, writer);
+                    RefreshPreservingValues(backup, result, writer);
                 // Persist settled fields even after partial failure; retries must not revisit external values.
                 SaveBackup(backup);
                 if (result.Completed) File.Delete(BackupPath);
@@ -378,7 +378,7 @@ namespace ProGo
                 var originals = OriginalValues(backup);
                 foreach (var name in FieldNames) WriteValue(key, name, originals[name]);
             }
-            RefreshPreservingKinds(null, null, WriteValue);
+            RefreshPreservingValues(null, null, WriteValue);
         }
 
         private static int ReadDword(object value, int fallback)
@@ -393,7 +393,7 @@ namespace ProGo
             return "http=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort + ";https=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort;
         }
 
-        private static void RefreshPreservingKinds(SystemProxyBackup backup, WindowsProxyRestoreResult result,
+        private static void RefreshPreservingValues(SystemProxyBackup backup, WindowsProxyRestoreResult result,
             Action<RegistryKey, string, WindowsProxyValue> writer)
         {
             var before = ReadCurrent().Values;
@@ -401,10 +401,14 @@ namespace ProGo
             using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey)) {
                 foreach (var name in FieldNames) {
                     var expected = before[name]; var current = ReadValue(key, name);
-                    // WinINet rewrites REG_EXPAND_SZ as REG_SZ while refreshing. Restore only
-                    // that kind, using the live pre-notification value, never a stale backup value.
-                    if (!expected.Exists || expected.Kind != RegistryValueKind.ExpandString ||
-                        !current.Exists || current.Kind != RegistryValueKind.String || current.Data != expected.Data) continue;
+                    // WinINet can normalize string kinds or remove AutoDetect during notification.
+                    // Correct only these observed effects from live pre-notification values.
+                    bool changedKind = expected.Exists && expected.Kind == RegistryValueKind.ExpandString &&
+                        current.Exists && current.Kind == RegistryValueKind.String && current.Data == expected.Data;
+                    bool removedAutoDetect = name == "AutoDetect" && expected.Exists &&
+                        expected.Kind == RegistryValueKind.DWord && (expected.Data == "0" || expected.Data == "1") && !current.Exists;
+                    if (!changedKind && !removedAutoDetect) continue;
+                    if (!ReadValue(key, name).Matches(current)) continue;
                     try { writer(key, name, expected); }
                     catch (Exception ex) {
                         if (backup == null || result == null) throw;
@@ -413,7 +417,7 @@ namespace ProGo
                         var outcome = result.Fields.FirstOrDefault(f => f.Name == name);
                         if (outcome == null) { outcome = new WindowsProxyFieldResult { Name = name }; result.Fields.Add(outcome); }
                         outcome.State = WindowsProxyRestoreState.Failed; result.Completed = false;
-                        SafeLog.Error("Windows proxy registry kind restore failed: " + name, ex);
+                        SafeLog.Error("Windows proxy refresh correction failed: " + name, ex);
                     }
                 }
             }

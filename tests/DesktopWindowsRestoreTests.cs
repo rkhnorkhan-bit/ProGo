@@ -105,6 +105,19 @@ namespace ProGo
                 result = SystemProxyService.RestoreOwned();
                 Check(result.Completed && SystemProxyService.ReadCurrent().Values["ProxyOverride"].Matches(baseline.Values["ProxyOverride"]) && SystemProxyService.ReadCurrent().Values["AutoConfigURL"].Matches(baseline.Values["AutoConfigURL"]), "kind retry preserves both its failed field and other live typed values across another refresh");
 
+                SystemProxyService.RestoreSnapshot(baseline);
+                Check(SystemProxyService.Apply(prefs, out message), "WinINet flag-correction failure fixture applies route");
+                int autoDetectWrites = 0;
+                result = SystemProxyService.RestoreOwned(delegate(RegistryKey key, string name, WindowsProxyValue value) {
+                    if (name == "AutoDetect" && ++autoDetectWrites > 1) throw new UnauthorizedAccessException("fixture flag correction denied");
+                    SystemProxyService.WriteValue(key, name, value);
+                });
+                Check(!result.Completed && result.Fields.Single(f => f.Name == "AutoDetect").State == WindowsProxyRestoreState.Failed, "denied AutoDetect refresh correction is reported instead of declaring cleanup complete");
+                saved = new JavaScriptSerializer().Deserialize<SystemProxyBackup>(File.ReadAllText(SystemProxyService.BackupPath));
+                Check(saved.OwnedFields.Single(f => f.Pending).Name == "AutoDetect", "removed AutoDetect stays the sole retryable field");
+                result = SystemProxyService.RestoreOwned();
+                Check(result.Completed && SystemProxyService.ReadCurrent().Values["AutoDetect"].Matches(baseline.Values["AutoDetect"]), "retry restores the original AutoDetect presence and value after notification");
+
                 // Old snapshots have AppliedServer but no new ownership/type journal.
                 SystemProxyService.RestoreSnapshot(baseline);
                 Check(SystemProxyService.Apply(prefs, out message), "legacy backup migration fixture applies route");
