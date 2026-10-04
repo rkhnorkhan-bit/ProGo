@@ -53,6 +53,16 @@ if ($Mode -eq 'restore-source-changed') {
     function Wait-ProGoExit($TargetProcessId, $TimeoutMs) { Set-Content (Join-Path $Fixture 'backup\settings.json') 'source changed after preparation' }
 }
 # Faults are inserted at I/O/check boundaries; the actual commit and rollback stay real.
+if ($Mode -eq 'restore-prepared-corrupt' -or $Mode -eq 'restore-stage-corrupt') {
+    $realCopy = ${function:Copy-RestoreRoots}
+    function Copy-RestoreRoots($Source, $Target, $Names) {
+        & $realCopy $Source $Target $Names
+        if ($Target.EndsWith('\stage')) {
+            $changedRoot = if ($Mode -eq 'restore-prepared-corrupt') { $Source } else { $Target }
+            Set-Content -LiteralPath (Join-Path $changedRoot 'VERSION') 'changed-after-staging'
+        }
+    }
+}
 if ($Mode -eq 'restore-stage-copy-fail') {
     $realCopy = ${function:Copy-RestoreRoots}
     function Copy-RestoreRoots($Source, $Target, $Names) {

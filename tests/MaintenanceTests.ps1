@@ -203,7 +203,7 @@ try {
     Set-Content (Join-Path $install 'settings.json') '{"SocksPort":23456}'
     Set-Content (Join-Path $install 'scripts\old-only.ps1') '# previous script'
     Remove-Item -LiteralPath (Join-Path $install 'vault.enc.json') -Force
-    foreach ($mode in @('restore-stage-copy-fail','restore-commit-fail','restore-installed-corrupt','restore-self-check-fail','restore-launch-fail')) {
+    foreach ($mode in @('restore-stage-copy-fail','restore-prepared-corrupt','restore-stage-corrupt','restore-commit-fail','restore-installed-corrupt','restore-self-check-fail','restore-launch-fail')) {
         $beforeFailure = PayloadSnapshot
         Check ((Run (DriverInfo $mode)) -ne 0) "real restore reports failure: $mode"
         Check ((PayloadSnapshot) -eq $beforeFailure) "failed restore preserves all original bytes, scripts and missing vault: $mode"

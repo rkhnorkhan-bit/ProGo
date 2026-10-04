@@ -339,7 +339,7 @@ reported without replacing the operation outcome. The ownership gate stays held
 through commit, checks and rollback.
 
 Validation: real exclusive/read-sharing Windows file locks; partial staging copy,
-mid-commit move failure, installed-byte corruption, self-check refusal, restart
+late prepared/staged input corruption, mid-commit move failure, installed-byte corruption, self-check refusal, restart
 failure, original script restoration, originally absent vault, retained recovery
 input after rollback refusal, subsequent successful recovery and shared
 retention protection. These run the actual helper transaction in disposable CI.
@@ -347,7 +347,9 @@ Verified: full Windows/Linux CI passed, including 80 maintenance checks, 52
 integrity checks, 374 desktop checks, 39 shutdown checks, ordinary Start CLI,
 33 home-VPN checks and 18 relay integration tests. Windows short-path alias
 expansion is covered by the real fixture; comparison uses relative child names
-rather than slicing absolute paths. F08 acceptance is complete for caught runtime
+rather than slicing absolute paths. Additional late-input mutation checks require
+revalidation of recorded evidence and selected staging immediately before commit.
+F08 acceptance is complete for caught runtime
 errors: invalid input and locked targets leave the payload unchanged; good copies
 restore the declared scope; commit/check/restart failures recover original bytes.
 The audit now has **11 of 30 findings closed** (F01–F08 and F11–F13).

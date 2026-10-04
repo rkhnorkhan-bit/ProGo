@@ -254,6 +254,10 @@ try {
     $expected = Get-RestoreState $BackupDir $RestoreNames
     if ($Transaction.Before -cne (Get-RestoreState $Protection $RestoreNames)) { throw 'Current state changed after protective backup.' }
     Assert-RestoreUnlocked $RestoreNames
+    # Recheck recorded evidence after staging I/O, immediately before replacing roots.
+    [ProGo.BackupIntegrity]::Validate($BackupDir)
+    [ProGo.BackupIntegrity]::Validate($Protection)
+    if ((Get-RestoreState $Transaction.Stage $RestoreNames) -cne $expected) { throw 'Staged payload changed before commit.' }
     Commit-Restore
     if ((Get-RestoreState $InstallDir $RestoreNames) -cne $expected) { throw 'Installed payload does not match the prepared copy.' }
     Test-RestoredApplication
