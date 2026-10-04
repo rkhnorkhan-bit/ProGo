@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics;
+using System.Threading;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -42,7 +42,7 @@ namespace ProGo
 
             sb.AppendLine();
             sb.AppendLine("Проверка ssh.exe -G:");
-            sb.AppendLine("ssh.exe доступен: " + (SshAvailable ? "да" : "нет"));
+            sb.AppendLine("ssh.exe доступен: " + (SshAvailable ? "да" : "не подтверждено"));
             sb.AppendLine("профиль резолвится: " + (SshResolved ? "да" : "нет"));
 
             if (!String.IsNullOrWhiteSpace(ResolvedHostName)) sb.AppendLine("hostname: " + ResolvedHostName);
@@ -71,6 +71,11 @@ namespace ProGo
         }
         public static SshProfileDiagnosticResult Check(SshProfileSetting profile)
         {
+            return Check(profile, CancellationToken.None);
+        }
+        internal static SshProfileDiagnosticResult Check(SshProfileSetting profile, CancellationToken token, string executable = "ssh.exe", int timeoutMs = 7000)
+        {
+            token.ThrowIfCancellationRequested();
             var result = new SshProfileDiagnosticResult
             {
                 Target = profile == null ? "" : profile.Address,
@@ -85,7 +90,7 @@ namespace ProGo
 
             result.LooksDirectTarget = profile.IsDirect || LooksLikeDirectTarget(result.Target);
             result.FoundInConfig = IsTargetDeclaredInConfig(result.Target, result.ConfigPath);
-            RunSshG(result, profile);
+            RunSshG(result, profile, token, executable, timeoutMs);
             return result;
         }
 
@@ -141,52 +146,23 @@ namespace ProGo
             return Regex.IsMatch(target, regex, RegexOptions.IgnoreCase);
         }
 
-        private static void RunSshG(SshProfileDiagnosticResult result, SshProfileSetting profile)
+        private static void RunSshG(SshProfileDiagnosticResult result, SshProfileSetting profile, CancellationToken token, string executable, int timeoutMs)
         {
             try
             {
-                var psi = new ProcessStartInfo("ssh.exe", "-G " + SshConnection.CommandArguments(profile))
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                using (var process = Process.Start(psi))
-                {
-                    if (process == null)
-                    {
-                        result.Error = "Не удалось запустить ssh.exe.";
-                        return;
-                    }
-
-                    result.SshAvailable = true;
-
-                    var output = process.StandardOutput.ReadToEnd();
-                    var error = process.StandardError.ReadToEnd();
-                    if (!process.WaitForExit(7000))
-                    {
-                        try { process.Kill(); }
-                        catch { }
-                        result.Error = "ssh.exe -G не завершился за 7 секунд.";
-                        return;
-                    }
-
-                    if (process.ExitCode != 0)
-                    {
-                        result.Error = String.IsNullOrWhiteSpace(error) ? ("ssh.exe -G завершился с кодом " + process.ExitCode + ".") : error.Trim();
-                        return;
-                    }
-
-                    result.SshResolved = true;
-                    ParseSshG(output, result);
+                // ssh.exe -G resolves configuration only; the shared runner owns this diagnostic tree.
+                var captured = DiagnosticProcess.Run(executable, "-G " + SshConnection.CommandArguments(profile), timeoutMs, token);
+                result.SshAvailable = true;
+                if (captured.ExitCode != 0) {
+                    result.Error = String.IsNullOrWhiteSpace(captured.Error) ? "ssh.exe -G завершился с кодом " + captured.ExitCode + "." : SafeLog.Redact(captured.Error.Trim());
+                    return;
                 }
+                if (captured.Truncated) { result.Error = "Вывод SSH превышает допустимый размер. Проверка не завершена."; return; }
+                result.SshResolved = true; ParseSshG(captured.Output, result);
             }
-            catch (Exception ex)
-            {
-                result.Error = ex.GetType().Name + ": " + ex.Message;
-            }
+            catch (OperationCanceledException) { throw; }
+            catch (TimeoutException) { result.Error = "Проверка SSH превысила лимит времени. Её процессы остановлены; можно повторить."; }
+            catch (Exception ex) { result.Error = ex.GetType().Name + ": " + SafeLog.Redact(ex.Message); }
         }
 
         private static void ParseSshG(string text, SshProfileDiagnosticResult result)

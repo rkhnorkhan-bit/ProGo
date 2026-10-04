@@ -23,6 +23,7 @@ namespace ProGo
         [STAThread]
         private static int Main(string[] args)
         {
+            if (args.Length > 0 && (args[0] == "-G" || args[0] == "--diagnostic-child")) return DiagnosticFixture(args);
             using (var guard = new System.Threading.Timer(delegate {
                 Console.WriteLine("FAIL: desktop fixture watchdog; last check: " + lastCheck);
                 Console.Out.Flush(); Environment.Exit(1);
@@ -80,6 +81,7 @@ namespace ProGo
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
+                    SshDiagnostics();
                     AsyncCliStartup(settings);
                     }
                     using (var proxy = new ProxyService(settings))

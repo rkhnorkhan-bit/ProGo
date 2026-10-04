@@ -386,6 +386,34 @@ to change an already-running terminal's environment or track windows launched
 outside ProGo. The audit now has **12 of 30 findings closed** (F01–F08 and
 F10–F13); **18 remain**. No version bump or published release.
 
+## Stage 11a — F14: cancellable SSH settings diagnostics
+
+The profile chooser opens a background SSH settings check with cancel, retry and
+close controls. A running check cannot be duplicated; it uses a profile snapshot
+and does not claim server reachability. Closing the window requests cancellation
+without waiting on the UI thread. Ordinary CLI startup remains unchanged.
+
+A Windows job owns this short-lived diagnostic tree. Creation is suspended until
+containment succeeds, with only the three standard pipe handles inherited.
+Stdout/stderr drain concurrently with a 128K-character capture limit per stream. The
+7-second execution deadline includes pipe completion; cancellation/timeout also
+allows up to 2 seconds to confirm cleanup. Descendants cannot keep the pipe open
+or survive normal root exit. No user terminal or persistent SSH tunnel uses this
+runner. Cleanup failure is reported rather than presented as confirmed cancellation.
+
+Validation: the Windows/Linux CI suite adds 23 desktop diagnostic checks to
+existing OpenSSH, CLI, maintenance, shutdown, home-VPN and relay regressions.
+Native fixtures cover stalled descendants, concurrent oversized output repeated
+five times, timeout, cancellation, normal parent exit, unrelated-process
+preservation, UI heartbeat, retry and closing during work. Pending/cancelled/
+success screenshots are captured for native review. The .NET Framework
+anonymous-pipe async fallback is avoided with two dedicated background readers.
+No live VPS is used.
+
+F14 remains **open**: route, latency and speed worker cancellation belongs to
+stage 11b. Audit progress remains **12/30 closed; 18 remaining**. No release or
+version bump is included.
+
 ## Remaining stages
 
 F09 and F14–F30 remain separate work (18 findings). Preserve the ordinary

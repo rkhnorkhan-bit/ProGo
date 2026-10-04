@@ -289,8 +289,7 @@ namespace ProGo
                 return;
             }
 
-            var result = SshProfileDiagnostics.Check(selected);
-            MessageBox.Show(result.ToReport(), "Проверить SSH-профиль", MessageBoxButtons.OK, result.SshResolved ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+            using (var diagnostic = new SshDiagnosticForm(selected)) diagnostic.ShowDialog(this);
         }
 
         private bool ContainsTarget(string target)
