@@ -307,3 +307,15 @@ readers on .NET Framework. This avoids its BeginRead/EndRead fallback (including
 state changes at pipe EOF) and keeps both streams draining without consuming
 blocked thread-pool workers. See the [Microsoft reference source](https://github.com/microsoft/referencesource/blob/main/System.Core/System/IO/Pipes/PipeStream.cs).
 The oversized-output fixture repeats five times to exercise the completion edge.
+
+### Audit stage F14b
+
+`DesktopRouteDiagnosticTests.cs` runs real curl through a loopback SOCKS/HTTP
+fixture, including NO_PROXY=* and remote DNS; it never contacts the test hostname.
+Latency fixtures drip SOCKS fragments inside individual read timeouts and verify
+the aggregate deadline plus socket closure. Route/speed wrappers use disposable
+process descendants for timeout/cancel checks. Native windows verify heartbeat,
+accessible cancellation buttons, duplicate suppression, settings snapshots,
+repeat after cancellation, unchanged cancellation timestamps and close during
+three active measurements. The existing CLI startup/alias checks remain required.
+Route/speed use `DiagnosticProcess`; shared tunnel lifetime stays application-owned.

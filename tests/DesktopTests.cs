@@ -82,6 +82,7 @@ namespace ProGo
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
                     SshDiagnostics();
+                    RouteDiagnostics(settings);
                     AsyncCliStartup(settings);
                     }
                     using (var proxy = new ProxyService(settings))

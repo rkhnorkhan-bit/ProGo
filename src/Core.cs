@@ -7,6 +7,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
+using CancellationToken = System.Threading.CancellationToken;
+using CancellationTokenSource = System.Threading.CancellationTokenSource;
 
 namespace ProGo
 {
@@ -365,7 +367,11 @@ namespace ProGo
         private const string SpeedTestUrl = "https://speed.cloudflare.com/__down?bytes=10000000";
 
         public static int? MeasureSocksLatencyMs(AppSettings settings, int timeoutMs)
+        { return MeasureSocksLatencyMs(settings, timeoutMs, CancellationToken.None); }
+
+        internal static int? MeasureSocksLatencyMs(AppSettings settings, int timeoutMs, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
             if (settings == null) return null;
 
             Uri target;
@@ -377,22 +383,25 @@ namespace ProGo
                 ? (String.Equals(target.Scheme, "https", StringComparison.OrdinalIgnoreCase) ? 443 : 80)
                 : target.Port;
 
+            using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+            deadline.CancelAfter(Math.Max(1, timeoutMs));
             try
             {
                 var stopwatch = Stopwatch.StartNew();
                 using (var client = new TcpClient())
+                using (deadline.Token.Register(delegate { client.Close(); }))
                 {
                     var connect = client.BeginConnect(settings.SocksHost, settings.SocksPort, null, null);
-                    if (!connect.AsyncWaitHandle.WaitOne(Math.Max(1000, timeoutMs)))
-                    {
-                        return null;
+                    using (connect.AsyncWaitHandle) {
+                        if (System.Threading.WaitHandle.WaitAny(new[] { connect.AsyncWaitHandle, deadline.Token.WaitHandle }, Math.Max(1, timeoutMs)) != 0) {
+                            token.ThrowIfCancellationRequested(); return null;
+                        }
+                        client.EndConnect(connect);
                     }
-
-                    client.EndConnect(connect);
                     using (var stream = client.GetStream())
                     {
-                        stream.ReadTimeout = Math.Max(1000, timeoutMs);
-                        stream.WriteTimeout = Math.Max(1000, timeoutMs);
+                        stream.ReadTimeout = Math.Max(1, timeoutMs);
+                        stream.WriteTimeout = Math.Max(1, timeoutMs);
 
                         var greeting = new byte[] { 0x05, 0x01, 0x00 };
                         stream.Write(greeting, 0, greeting.Length);
@@ -442,6 +451,8 @@ namespace ProGo
                         var remainder = new byte[addressBytes + 2];
                         if (!ReadExact(stream, remainder, 0, remainder.Length)) return null;
 
+                        token.ThrowIfCancellationRequested();
+                        if (deadline.IsCancellationRequested) return null;
                         stopwatch.Stop();
                         return (int)Math.Max(1, Math.Round(stopwatch.Elapsed.TotalMilliseconds));
                     }
@@ -449,73 +460,45 @@ namespace ProGo
             }
             catch
             {
-                return null;
+                token.ThrowIfCancellationRequested(); return null;
+            }
+            finally { token.ThrowIfCancellationRequested(); }
             }
         }
 
         public static double? MeasureDownloadMbps(AppSettings settings, out string error)
+        { return MeasureDownloadMbps(settings, CancellationToken.None, out error); }
+
+        internal static double? MeasureDownloadMbps(AppSettings settings, CancellationToken token, out string error,
+            Func<string, int, CancellationToken, DiagnosticProcessResult> run = null)
         {
-            error = null;
-            if (settings == null)
-            {
-                error = "Настройки недоступны.";
-                return null;
-            }
-
-            try
-            {
-                var testUrl = SpeedTestUrl + "&t=" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
-                var args =
-                    "--socks5-hostname \"" + settings.SocksHost + ":" + settings.SocksPort + "\" " +
-                    "-L -sS --connect-timeout 10 --max-time 35 -o NUL -w \"%{speed_download}\" \"" + testUrl + "\"";
-
-                var psi = new ProcessStartInfo("curl.exe", args)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                using (var process = Process.Start(psi))
-                {
-                    if (process == null)
-                    {
-                        error = "Не удалось запустить curl.exe.";
-                        return null;
-                    }
-
-                    var output = process.StandardOutput.ReadToEnd();
-                    var stderr = process.StandardError.ReadToEnd();
-                    if (!process.WaitForExit(40000))
-                    {
-                        try { process.Kill(); } catch { }
-                        error = "Тест скорости превысил лимит времени.";
-                        return null;
-                    }
-
-                    if (process.ExitCode != 0)
-                    {
-                        error = String.IsNullOrWhiteSpace(stderr) ? "curl завершился с ошибкой." : SafeLog.Redact(stderr.Trim());
-                        return null;
-                    }
-
-                    double bytesPerSecond;
-                    if (!Double.TryParse(output.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out bytesPerSecond) || bytesPerSecond <= 0)
-                    {
-                        error = "Не удалось разобрать результат теста скорости.";
-                        return null;
-                    }
-
-                    return bytesPerSecond * 8.0 / 1000000.0;
+            token.ThrowIfCancellationRequested(); error = null;
+            if (settings == null) { error = "Настройки недоступны."; return null; }
+            try {
+                var current = settings.Clone();
+                current.TestEndpoint = SpeedTestUrl + "&t=" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+                var arguments = ConnectionHealthMonitor.InternetArguments(current, true);
+                if (run == null) run = RunCurl;
+                var captured = run(arguments, 40000, token);
+                token.ThrowIfCancellationRequested();
+                if (captured.ExitCode != 0 || captured.Truncated) {
+                    error = captured.Truncated ? "Вывод теста скорости превышает допустимый размер." :
+                        String.IsNullOrWhiteSpace(captured.Error) ? "curl завершился с ошибкой." : SafeLog.Redact((captured.Error ?? "").Trim());
+                    return null;
                 }
+                double bytesPerSecond;
+                if (!Double.TryParse(captured.Output.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out bytesPerSecond) ||
+                    Double.IsNaN(bytesPerSecond) || Double.IsInfinity(bytesPerSecond) || bytesPerSecond <= 0) {
+                    error = "Не удалось разобрать результат теста скорости."; return null;
+                }
+                return bytesPerSecond / 125000.0;
             }
-            catch (Exception ex)
-            {
-                error = SafeLog.Redact(ex.Message);
-                return null;
-            }
+            catch (OperationCanceledException) { throw; }
+            catch (TimeoutException) { error = "Тест скорости превысил лимит времени; его процессы остановлены."; return null; }
+            catch (Exception ex) { error = SafeLog.Redact(ex.Message); return null; }
         }
+        internal static DiagnosticProcessResult RunCurl(string arguments, int timeoutMs, CancellationToken token)
+        { return DiagnosticProcess.Run("curl.exe", arguments, timeoutMs, token); }
 
         private static bool ReadExact(NetworkStream stream, byte[] buffer, int offset, int count)
         {
@@ -533,38 +516,29 @@ namespace ProGo
     internal static class RouteTester
     {
         public static string Test(AppSettings settings, ProxyService proxy)
-        {
-            if (!proxy.IsListening())
-            {
-                return "SOCKS-порт не слушает. Сначала запустите SOCKS-туннель.";
-            }
+        { return Test(settings, proxy, CancellationToken.None); }
 
-            try
-            {
-                var psi = new ProcessStartInfo("curl.exe", "--socks5-hostname " + settings.SocksHost + ":" + settings.SocksPort + " -I -sS -m 15 " + settings.TestEndpoint)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-                using (var process = Process.Start(psi))
-                {
-                    var output = process.StandardOutput.ReadToEnd();
-                    var error = process.StandardError.ReadToEnd();
-                    process.WaitForExit(20000);
-                    var text = output + Environment.NewLine + error;
-                    if (text.IndexOf(" 401", StringComparison.OrdinalIgnoreCase) >= 0) return "SOCKS-маршрут работает. Сервер ответил HTTP 401 без авторизации — это ожидаемый результат.";
-                    if (text.IndexOf(" 200", StringComparison.OrdinalIgnoreCase) >= 0) return "Соединение работает. HTTP 200.";
-                    if (text.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0 || text.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0) return "Тайм-аут соединения.";
-                    return "Маршрут проверен. Технический ответ: " + SafeLog.Redact(text.Trim());
-                }
+        internal static string Test(AppSettings settings, ProxyService proxy, CancellationToken token,
+            Func<string, int, CancellationToken, DiagnosticProcessResult> run = null)
+        {
+            token.ThrowIfCancellationRequested();
+            try {
+                // curl itself checks SOCKS; avoid adding a separate socket deadline first.
+                if (run == null) run = ConnectionMetrics.RunCurl;
+                var captured = run(ConnectionHealthMonitor.InternetArguments(settings), 10000, token);
+                token.ThrowIfCancellationRequested();
+                if (captured.Truncated) return "Не удалось проверить маршрут: ответ превышает допустимый размер.";
+                if (captured.ExitCode != 0) return "Не удалось проверить маршрут через SOCKS. " + SafeLog.Redact((captured.Error ?? "").Trim());
+                int status;
+                if (!Int32.TryParse(captured.Output.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out status) || status < 100 || status > 599)
+                    return "Не удалось разобрать ответ проверки маршрута.";
+                if (status == 401) return "SOCKS-маршрут работает. Сервер ответил HTTP 401 без авторизации — это ожидаемый результат.";
+                if (status == 200) return "Соединение работает. HTTP 200.";
+                return "SOCKS-маршрут работает. Сервер ответил HTTP " + status + ".";
             }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Route test failed.", ex);
-                return "Не удалось проверить маршрут через SOCKS.";
-            }
+            catch (OperationCanceledException) { throw; }
+            catch (TimeoutException) { return "Тайм-аут проверки маршрута; её процессы остановлены."; }
+            catch (Exception ex) { SafeLog.Error("Route test failed.", ex); return "Не удалось проверить маршрут через SOCKS."; }
         }
     }
 }
