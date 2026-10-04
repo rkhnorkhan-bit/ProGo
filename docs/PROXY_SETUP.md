@@ -190,3 +190,16 @@ ProGo остановится только после подготовки и ф�
 ProGo до восстановления; пути защитной копии и сохранённой рабочей папки указаны
 в `progo-restore.log`. Принудительное завершение восстановления и выключение ПК
 не входят в автоматический откат при обычных ошибках.
+
+## Saving preferences and manual commands
+
+In Settings, edited fields and automatic-action checkboxes take effect after
+**Сохранить**. Buttons under **Ручное управление · применяется сразу** use the saved
+connection and application-proxy settings. The displayed saved values help compare
+them with pending edits. **Отменить изменения** discards pending edits; it does not
+undo commands already applied. Use the corresponding manual Off command to undo
+an enabled mode. Closing Settings does not close the shared connection.
+
+**Подобрать свободный** schedules a one-time choice for Save. Before saving, press
+**Отменить подбор** to keep the entered port and selected automatic/manual mode.
+Neither selection nor cancellation changes the current port by itself.

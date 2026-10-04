@@ -78,6 +78,7 @@ namespace ProGo
                     UnifiedCliActions(settings);
                     SharedBridgeConsumers(settings);
                     UiControls(settings);
+                    SettingsActionBoundaries(settings);
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
