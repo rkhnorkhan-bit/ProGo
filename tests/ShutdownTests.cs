@@ -76,7 +76,7 @@ namespace ProGo
                         if (stream.ReadByte() == 5 && stream.ReadByte() == 1 && stream.ReadByte() == 0) stream.Write(new byte[] { 5, 0 }, 0, 2);
                     } } catch (SocketException) { } catch (ObjectDisposedException) { }
                 });
-                var prefs = AppSettings.Defaults(); prefs.AutoCliProxy = true; prefs.AutoWindowsProxy = true;
+                var prefs = AppSettings.Defaults(); prefs.AutoCliProxy = true; prefs.AutoSystemProxy = true;
                 prefs.AutoStartSocks = false; prefs.AutoRestartSocks = false;
                 prefs.SocksPort = ((IPEndPoint)listener.LocalEndpoint).Port; prefs.TestEndpoint = "http://127.0.0.1:1/";
                 var reserved = new TcpListener(IPAddress.Loopback, 0); reserved.Start(); prefs.HttpProxyPort = ((IPEndPoint)reserved.LocalEndpoint).Port; reserved.Stop();
