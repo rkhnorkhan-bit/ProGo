@@ -50,8 +50,10 @@ namespace ProGo
                 var viewport = (Panel)Field(form, "viewport");
                 var cards = (TableLayoutPanel)Field(form, "cards");
                 var body = (TableLayoutPanel)Field(form, "body");
+                Shot(form, name);
                 Check(!viewport.HorizontalScroll.Visible && body.Width <= viewport.ClientSize.Width,
-                    name + " has no horizontal scrolling: body=" + body.Size + " viewport=" + viewport.ClientSize);
+                    name + " has no horizontal scrolling: body=" + body.Bounds + " viewport=" + viewport.ClientSize +
+                    " display=" + viewport.DisplayRectangle + " scroll=" + viewport.AutoScrollPosition);
                 Check(cards.Controls.Cast<Control>().All(c => c.Width > 0 && c.Right <= cards.ClientSize.Width), name + " keeps cards inside content width");
                 foreach (string field in new[] { "connection", "subtitle", "recovery", "windowsState", "terminalState", "phoneState" }) {
                     var label = (Label)Field(form, field);

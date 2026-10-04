@@ -67,7 +67,10 @@ namespace ProGo
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             content.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); content.RowStyles.Add(new RowStyle(SizeType.AutoSize)); shell.Controls.Add(content, 1, 0);
             viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0) }; content.Controls.Add(viewport, 0, 0);
-            body = Stack(); body.Dock = DockStyle.None; body.AutoSize = false; viewport.Controls.Add(body);
+            // A right anchor constrains horizontal scrolling; keeping this child undocked
+            // lets vertical reflow retain its scroll origin instead of redocking at the top.
+            body = Stack(); body.Dock = DockStyle.None; body.AutoSize = false;
+            body.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right; viewport.Controls.Add(body);
             var heading = Stack(UiTheme.Label("Ваш интернет. Ваш маршрут.", UiTheme.Title, UiTheme.Text),
                 UiTheme.Label("Подключение к серверу и настройки приложений.", UiTheme.Body, UiTheme.Muted));
             heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading);
