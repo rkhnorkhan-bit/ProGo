@@ -150,7 +150,7 @@ try {
     Start-ProGo
 
     Write-RestoreLog "ProGo restore completed."
-    Show-UserMessage ("Выбранные файлы восстановлены. Состав: " + ($RestoreNames -join ", ")) (U8 "0J7RgtC60LDRgiBQcm9Hbw==")
+    Show-UserMessage ( (U8 "0JLRi9Cx0YDQsNC90L3Ri9C1INGE0LDQudC70Ysg0LLQvtGB0YHRgtCw0L3QvtCy0LvQtdC90YsuINCh0L7RgdGC0LDQsjog") + ($RestoreNames -join ", ")) (U8 "0J7RgtC60LDRgiBQcm9Hbw==")
 } finally {
     try { if ($null -ne $Prepared) { $Prepared.Dispose() } } finally { $Maintenance.Dispose() }
 }

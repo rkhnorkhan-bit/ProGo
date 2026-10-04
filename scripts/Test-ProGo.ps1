@@ -245,6 +245,11 @@ foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.
         Fail "PowerShell parser errors in $scriptName"
     }
     if ($tokens.Count -eq 0) { Fail "PowerShell parser returned no tokens for $scriptName" }
+    # Match Windows PowerShell's direct -File decoding, not only explicit UTF-8 text.
+    $fileTokens = $null; $fileErrors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$fileTokens, [ref]$fileErrors)
+    if (@($fileErrors).Count -gt 0) { Fail ("PowerShell file parser errors in " + $scriptName + ": " + (($fileErrors | ForEach-Object { $_.Message }) -join '; ')) }
+
 }
 
 & $Build

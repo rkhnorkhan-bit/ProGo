@@ -39,7 +39,7 @@ else { $file = Join-Path $Scripts 'Update-ProGo.Core.ps1' }
 # replaced by fixtures; installation, checks, rollback and lease lifetime stay real.
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$errors)
-if ($errors.Count) { throw 'Transaction does not parse' }
+if ($errors.Count) { throw ('Transaction does not parse: ' + (($errors | ForEach-Object { $_.Message + ' at ' + $_.Extent.StartLineNumber }) -join '; ')) }
 foreach ($statement in $ast.EndBlock.Statements) {
     if ($statement -is [Management.Automation.Language.FunctionDefinitionAst]) {
         . ([scriptblock]::Create($statement.Extent.Text.Replace('$PSScriptRoot','$Scripts')))
