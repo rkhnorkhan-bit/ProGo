@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ProGo
@@ -16,6 +17,36 @@ namespace ProGo
             File.WriteAllText(Path.Combine(path, "payload.txt"), "synthetic backup");
             return path;
         }
+        private static void Link(string link, string target)
+        {
+            using (var process = Process.Start(new ProcessStartInfo("cmd.exe", "/c mklink /J \"" + link + "\" \"" + target + "\"")
+                { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true }))
+            {
+                if (!process.WaitForExit(5000) || process.ExitCode != 0) throw new Exception("Cannot create isolated junction fixture");
+            }
+        }
+        private static void Junctions(string root)
+        {
+            string target = Path.Combine(root, "junction-target"), pool = Path.Combine(root, "junction-pool");
+            Directory.CreateDirectory(target); File.WriteAllText(Path.Combine(target, "payload.txt"), "must survive");
+            for (int i = 0; i < 12; i++) Add(pool, i, "automatic");
+            string nested = Path.Combine(pool, "backup-20260101-0000", "linked"), top = Path.Combine(pool, "top-link");
+            try
+            {
+                Link(nested, target); Link(top, target);
+                var plan = BackupRetention.Plan(pool);
+                Check(!plan.Candidates.Any(c => c.Path == top), "junction at backup root is never a deletion candidate");
+                var result = BackupRetention.Apply(plan);
+                Check(result.Deleted == 1 && result.Skipped == 1 && result.Failed == 0, "nested junction is skipped without traversing its target");
+                Check(File.ReadAllText(Path.Combine(target, "payload.txt")) == "must survive", "junction target contents survive cleanup");
+            }
+            finally
+            {
+                foreach (var path in new[] { nested, top })
+                    if (Directory.Exists(path)) Directory.Delete(path, false);
+            }
+        }
+
         private static int Main()
         {
             string root = Path.Combine(Path.GetTempPath(), "ProGo-retention-" + Guid.NewGuid().ToString("N"));
@@ -52,6 +83,7 @@ namespace ProGo
                 File.Delete(Path.Combine(unapproved, "manifest.txt")); Directory.CreateDirectory(Path.Combine(unapproved, "manifest.txt"));
                 Check(BackupRetention.Apply(next).Skipped == 1 && Directory.Exists(unapproved), "unreadable or absent manifest fails closed");
                 Check(BackupRetention.Plan(root).Candidates.Count == 0, "repeated automatic cleanup is idempotent");
+                Junctions(root);
                 Console.WriteLine("Backup retention tests PASS: " + passed); return 0;
             }
             catch (Exception ex) { Console.WriteLine(ex); return 1; }

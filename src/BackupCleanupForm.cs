@@ -30,6 +30,7 @@ namespace ProGo
             remove.Enabled = plan.Candidates.Count > 0;
             actions.Controls.Add(cancel); actions.Controls.Add(remove); root.Controls.Add(actions, 0, 3);
             Controls.Add(root); CancelButton = cancel;
+            Shown += delegate { paths.Select(0, 0); cancel.Focus(); };
             // Enter must not implicitly confirm a destructive list.
         }
     }
