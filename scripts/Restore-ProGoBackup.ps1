@@ -87,7 +87,12 @@ function Copy-RestoreRoots($Source, $Target, $Names) {
             Copy-Item -LiteralPath $path -Destination (Join-Path $Target $name) -Recurse -Force -ErrorAction Stop
         }
     }
-    if ((Get-RestoreState $Source $Names) -cne (Get-RestoreState $Target $Names)) { throw 'Restore copy verification failed.' }
+    $sourceState = Get-RestoreState $Source $Names
+    $copiedState = Get-RestoreState $Target $Names
+    if ($sourceState -cne $copiedState) {
+        $changed = @(Compare-Object ($sourceState -split "`n") ($copiedState -split "`n") | ForEach-Object { $_.InputObject.Split(':')[0] } | Select-Object -Unique -First 4)
+        throw ("Restore copy verification failed at $Target; roots: " + ($changed -join ', '))
+    }
 }
 
 function Backup-BeforeRestore {
