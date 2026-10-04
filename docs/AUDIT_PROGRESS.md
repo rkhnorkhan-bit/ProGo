@@ -444,6 +444,38 @@ Together with F14a and earlier asynchronous route/startup corrections, this stag
 completes F14. After successful native CI/review preparation, progress is
 **13/30 closed; 17 remaining**. No merge, release or version bump is included.
 
+## Stage 12a — F15: saved preferences and immediate manual commands
+
+The settings header explicitly distinguishes Save-only fields/preferences from
+immediate manual commands and explains that Cancel does not undo those commands.
+Each automation card separates its preference description from a marked immediate
+control area. The cancel button is named **Отменить изменения**. Existing CLI,
+Windows and reconnect/stop commands still route through the application owner.
+
+The automation, connection and diagnostics pages display saved SSH/SOCKS/app-proxy
+parameters and the saved test URL alongside uncommitted edits. A lightweight UI
+timer reads current settings/application endpoint only; it performs no network or
+writes and stops/disposes with the form. A manual command never commits edited
+fields or toggles. Its asynchronous application can update the effective endpoint
+without resetting those edits. These labels describe configuration, not proof of
+server connectivity or internet access.
+
+The one-time free-port button becomes **Отменить подбор** while selected. Cancelling
+restores the exact entered port and the selected automatic/manual mode, without
+binding a listener, migrating integrations or persisting anything. A rejected Save
+keeps the request cancellable. Existing port transaction behavior is unchanged.
+
+Native Windows fixtures exercise a real CLI command through a loopback SOCKS
+server with different uncommitted settings, cancel the modal dialog and verify
+that the applied manual effect remains until explicit Off. They also cover exact
+field/preference preservation, live effective labels, in-place port-selection
+cancellation in both modes, retries after a rejected Save and refresh-timer cleanup.
+Screenshots cover immediate control and pending/cancelled port selection.
+
+F15 remains **open**: structured field validation and error routing belong to
+stage 12b. Progress remains **13/30 closed; 17 remaining**. No merge, release or
+version bump is included.
+
 ## Remaining stages
 
 F09 and F15–F30 remain separate work (17 findings). Preserve the ordinary

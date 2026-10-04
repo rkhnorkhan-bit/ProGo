@@ -30,6 +30,12 @@ namespace ProGo
         private TabControl settingsTabs;
         private bool pickFreePort;
         private int initialHttpPort;
+        private readonly Timer currentValuesTimer = new Timer { Interval = 500 };
+        private readonly Label currentAutomation = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private readonly Label currentConnection = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private readonly Label currentDiagnostic = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private Button pickPortButton;
+        public Func<string> CurrentProxyEndpoint;
         public string ProxyEndpointText { set { proxyAddress.Text = value; } }
 
 
@@ -40,10 +46,10 @@ namespace ProGo
             ClientSize = new Size(900, 700); MinimumSize = new Size(850, 650);
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 4 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
             root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
-            root.Controls.Add(UiTheme.Label("Автоматика, подключения и личные настройки — в одном месте.", UiTheme.Body, UiTheme.Muted), 0, 1);
+            root.Controls.Add(UiTheme.Label("Поля и галочки — после «Сохранить». Ручные команды — сразу; «Отмена» их не откатывает.", UiTheme.Body, UiTheme.Muted), 0, 1);
             var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed };
             root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
             var automation = Page(tabs, "Автоматика");
@@ -51,6 +57,8 @@ namespace ProGo
             automation.Controls.Add(autoFlow);
             autoFlow.SizeChanged += delegate {
                 foreach (Control child in autoFlow.Controls) {
+                    var label = child as Label;
+                    if (label != null) label.MaximumSize = new Size(Math.Max(560, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4), 0);
                     var card = child as SurfacePanel; if (card == null) continue;
                     card.Width = Math.Max(600, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4);
                     foreach (Control item in card.Controls) {
@@ -58,7 +66,10 @@ namespace ProGo
                     }
                 }
             };
-            autoFlow.Controls.Add(UiTheme.Label("Галочка — автоматически. Кнопки — вручную в любой момент.", UiTheme.Body, UiTheme.Muted));
+            autoFlow.Controls.Add(UiTheme.Label("Предпочтения: галочки начинают действовать после сохранения.", UiTheme.Body, UiTheme.Muted));
+            currentAutomation.Name = "currentAutomationSettings";
+            currentAutomation.MaximumSize = new Size(740, 0);
+            autoFlow.Controls.Add(currentAutomation);
             AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды отключения он сам не включится.", "Перезапустить", "restart", "Отключить прокси на ПК", "stop");
             AutomationCard(autoFlow, autoCli, "Включать прокси для терминалов и Codex", "Включать общий прокси после подключения ProGo. Затем откройте новый терминал или перезапустите уже открытый Codex. Отдельный ярлык не нужен.", "Включить", "cli-start", "Выключить", "cli-off");
             AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", "Включить", "windows-on", "Выключить", "windows-off");
@@ -84,7 +95,10 @@ namespace ProGo
             connection.Controls.Add(autoStart, 0, 4); connection.SetColumnSpan(autoStart, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
             connection.Controls.Add(autoSwitchProfile, 0, 5); connection.SetColumnSpan(autoSwitchProfile, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
             var help = UiTheme.Label("Фоновое подключение использует SSH-ключ и не запрашивает пароль. «Первый вход» открывает видимое окно SSH: сверьте отпечаток ключа сервера, войдите и завершите сеанс командой exit. Вход по паролю сам по себе не настраивает SSH-ключ для ProGo. Затем нажмите «Запустить CLI» один раз — ProGo дождётся готовности. Для iPhone используйте отдельный мастер.", UiTheme.Body, UiTheme.Muted);
-            help.MaximumSize = new Size(740, 0); connection.Controls.Add(help, 0, 6); connection.SetColumnSpan(help, 2);
+            help.MaximumSize = new Size(740, 0); connection.Controls.Add(help, 0, 7); connection.SetColumnSpan(help, 2);
+            currentConnection.Name = "currentConnectionSettings";
+            currentConnection.MaximumSize = new Size(740, 0);
+            connection.Controls.Add(currentConnection, 0, 6); connection.SetColumnSpan(currentConnection, 2);
             var privacy = FormTable(Page(tabs, "Хранилище"));
             clearSeconds.Minimum = 5; clearSeconds.Maximum = 3600;
             AddLabeled(privacy, 0, "Очищать буфер через, сек.", clearSeconds);
@@ -95,7 +109,10 @@ namespace ProGo
             AddLabeled(diagnostic, 1, "Журнал приложения", new TextBox { ReadOnly = true, Text = AppPaths.LogPath });
             AddLabeled(diagnostic, 2, "Файл подключений SSH", new TextBox { ReadOnly = true, Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "config") });
             var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус и обновления». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
-            av.MaximumSize = new Size(710, 0); diagnostic.Controls.Add(av, 0, 3); diagnostic.SetColumnSpan(av, 2);
+            av.MaximumSize = new Size(710, 0); diagnostic.Controls.Add(av, 0, 4); diagnostic.SetColumnSpan(av, 2);
+            currentDiagnostic.Name = "currentDiagnosticSettings";
+            currentDiagnostic.MaximumSize = new Size(710, 0);
+            diagnostic.Controls.Add(currentDiagnostic, 0, 3); diagnostic.SetColumnSpan(currentDiagnostic, 2);
             var appPorts = FormTable(Page(tabs, "Порт приложений"));
             autoHttpPort.Text = "Выбирать свободный порт автоматически";
             autoHttpPort.AutoSize = true;
@@ -106,11 +123,9 @@ namespace ProGo
             autoHttpPort.CheckedChanged += delegate { httpPort.Enabled = !autoHttpPort.Checked && !pickFreePort; };
             AddLabeled(appPorts, 2, "Текущий адрес", proxyAddress);
             var portActions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
-            portActions.Controls.Add(UiTheme.Button("Подобрать свободный", delegate {
-                pickFreePort = true; httpPort.Enabled = false;
-                portNotice.ForeColor = UiTheme.Accent;
-                portNotice.Text = "Новый свободный порт будет выбран при сохранении. Режим выбора порта останется прежним.";
-            }, false));
+            pickPortButton = UiTheme.Button("Подобрать свободный", delegate { TogglePortSelection(); }, false);
+            pickPortButton.Name = "togglePortSelection";
+            portActions.Controls.Add(pickPortButton);
             portActions.Controls.Add(UiTheme.Button("Скопировать адрес", delegate { Clipboard.SetText(proxyAddress.Text); }, false));
             appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
             appPorts.Controls.Add(portActions, 0, 3); appPorts.SetColumnSpan(portActions, 2);
@@ -122,10 +137,14 @@ namespace ProGo
             appPorts.Controls.Add(portNotice, 0, 5); appPorts.SetColumnSpan(portNotice, 2);
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 12, 0, 0) };
             var save = UiTheme.Button("Сохранить", Save, true);
-            var cancel = UiTheme.Button("Отмена", null, false); cancel.DialogResult = DialogResult.Cancel;
+            var cancel = UiTheme.Button("Отменить изменения", null, false); cancel.DialogResult = DialogResult.Cancel;
             buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 3);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
+            currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
+            RefreshCurrentValues();
+            FormClosed += delegate { currentValuesTimer.Stop(); };
+            Shown += delegate { RefreshCurrentValues(); currentValuesTimer.Start(); };
             Shown += delegate {
                 if (section == SettingsSection.Windows) {
                     autoWindows.Focus();
@@ -152,13 +171,47 @@ namespace ProGo
         }
         private void AutomationCard(FlowLayoutPanel flow, CheckBox toggle, string title, string description, string onLabel, string on, string offLabel, string off)
         {
-            var card = new SurfacePanel { Width = 740, Height = 148, Margin = new Padding(0, 6, 0, 8), Padding = new Padding(16) };
+            var card = new SurfacePanel { Width = 740, Height = 174, Margin = new Padding(0, 6, 0, 8), Padding = new Padding(16) };
             toggle.Text = title; toggle.AutoSize = true; toggle.Font = UiTheme.Strong; toggle.Location = new Point(16, 12);
             var hint = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted); hint.MaximumSize = new Size(694, 0); hint.Location = new Point(16, 42);
-            var actions = new FlowLayoutPanel { Location = new Point(16, 100), Width = 698, Height = 42 };
-            actions.Controls.Add(UiTheme.Button(onLabel, delegate { if (ManualActionRequested != null) ManualActionRequested(on); }, false));
-            actions.Controls.Add(UiTheme.Button(offLabel, delegate { if (ManualActionRequested != null) ManualActionRequested(off); }, false));
-            card.Controls.Add(toggle); card.Controls.Add(hint); card.Controls.Add(actions); flow.Controls.Add(card);
+            var immediate = UiTheme.Label("Ручное управление · применяется сразу", UiTheme.Body, UiTheme.Accent);
+            immediate.Location = new Point(16, 98);
+            var actions = new FlowLayoutPanel { Location = new Point(16, 122), Width = 698, Height = 42 };
+            actions.Controls.Add(UiTheme.Button(onLabel, delegate { RequestManualAction(on); }, false));
+            actions.Controls.Add(UiTheme.Button(offLabel, delegate { RequestManualAction(off); }, false));
+            card.Controls.Add(toggle); card.Controls.Add(hint); card.Controls.Add(immediate); card.Controls.Add(actions); flow.Controls.Add(card);
+        }
+        private void RequestManualAction(string action)
+        {
+            // Manual commands deliberately use the application's saved settings,
+            // never the uncommitted controls in this dialog.
+            if (ManualActionRequested != null) ManualActionRequested(action);
+            RefreshCurrentValues();
+        }
+        internal void RefreshCurrentValues()
+        {
+            var current = service.Current;
+            var appEndpoint = CurrentProxyEndpoint == null ? CliProxyBridgeService.UrlFor(current.HttpProxyPort) : CurrentProxyEndpoint();
+            proxyAddress.Text = appEndpoint;
+            currentAutomation.Text = "Сохранено для ручных команд: SSH " + (String.IsNullOrWhiteSpace(current.SshProfile) ? "не выбран" : current.SshProfile) + "\nSOCKS " + current.SocksHost + ":" + current.SocksPort + " · приложения " + appEndpoint;
+            currentConnection.Text = "Сохранено: SSH " + (String.IsNullOrWhiteSpace(current.SshProfile) ? "не выбран" : current.SshProfile) +
+                "\nSOCKS " + current.SocksHost + ":" + current.SocksPort + ". Поля выше — изменения до сохранения.";
+            currentDiagnostic.Text = "Сохранённый сайт проверки: " + current.TestEndpoint;
+        }
+        private void TogglePortSelection()
+        {
+            pickFreePort = !pickFreePort;
+            httpPort.Enabled = !autoHttpPort.Checked && !pickFreePort;
+            pickPortButton.Text = pickFreePort ? "Отменить подбор" : "Подобрать свободный";
+            portNotice.ForeColor = UiTheme.Accent;
+            portNotice.Text = pickFreePort
+                ? "Свободный порт будет выбран только при сохранении. Нажмите «Отменить подбор», чтобы оставить введённый порт."
+                : "Разовый подбор отменён. При сохранении используется выбранный вами режим и порт.";
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) currentValuesTimer.Dispose();
+            base.Dispose(disposing);
         }
         private static void AddLabeled(TableLayoutPanel panel, int row, string label, Control control)
         {

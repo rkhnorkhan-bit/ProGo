@@ -319,3 +319,14 @@ accessible cancellation buttons, duplicate suppression, settings snapshots,
 repeat after cancellation, unchanged cancellation timestamps and close during
 three active measurements. The existing CLI startup/alias checks remain required.
 Route/speed use `DiagnosticProcess`; shared tunnel lifetime stays application-owned.
+
+### Audit stage F15a
+
+`DesktopSettingsActionTests.cs` runs only in disposable Windows CI. A loopback
+SOCKS fixture and the actual application command handler verify that manual CLI
+On uses saved settings while form fields/preferences remain uncommitted. Modal
+Cancel retains that manual effect; explicit Off restores the captured environment.
+Port-selection tests verify cancellation, mode/value preservation and rejected
+Save retries without applying a real port migration. Native screenshots separate
+preferences from immediate controls. The form refresh timer only reads state and
+must stop/dispose on close; structured validation/error routing remains F15b.

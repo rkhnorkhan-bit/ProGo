@@ -161,6 +161,7 @@ namespace ProGo
             {
                 form.ManualActionRequested += Execute;
                 form.ProxyEndpointText = cliProxy.ProxyUrl;
+                form.CurrentProxyEndpoint = delegate { return cliProxy.ProxyUrl; };
                 form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
                     bool changed = proposed.SocksHost != settings.Current.SocksHost || proposed.SocksPort != settings.Current.SocksPort || SshConnection.Signature(proposed) != SshConnection.Signature(settings.Current);
                     var oldPort = settings.Current.HttpProxyPort;
