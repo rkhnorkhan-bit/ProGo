@@ -182,10 +182,42 @@ and recovery, stale-startup cancellation, plus the earlier one-click CLI tests.
 Screenshots cover new/legacy editor modes and enlarged controls. No real server
 or account credentials are used. F14 broader blocking operations remain separate.
 
+## Stage 7a — F06: owned Windows proxy restoration
+
+- Every Windows-off/desktop-cleanup path uses per-field ownership checks instead
+  of unconditional restoration. Preserve a later external endpoint together with
+  its associated flags, bypass and PAC. Restore other fields only when their
+  current values still match ProGo's recorded write; already-original fields
+  require no mutation.
+- Record original/applied values with absence and registry kinds, including
+  unexpanded REG_EXPAND_SZ. Repeated applies/port changes preserve the original
+  owned baseline; an explicit re-enable after an external route captures that
+  newer baseline. Old AppliedServer backups migrate conservatively using their
+  historical DWord/String contract; they cannot recover types never recorded.
+- Return a result for each pending field. Keep failed fields in an atomic retry
+  journal; settled external fields are not revisited on a later retry. Do not
+  suppress registry deletion, journal-save or journal-delete errors.
+- A failed manual desktop stop keeps its local bridge/tunnel alive, with a visible
+  cleanup warning and retry instruction. Normal Quit refuses teardown on failure.
+  Framework disposal reports failures and retains the journal; external forced
+  termination cannot be prevented by this path.
+
+Verification: isolated Windows registry fixtures cover changed endpoints,
+flags/PAC/bypass, typed originals, repeated apply, missing/legacy backups, denied
+writes, locked journals and retry ownership. Actual native stop/Quit dialogs show
+failure and leave the local service running until a successful cleanup retry.
+Earlier port transaction/rollback and desktop scope regressions remain required.
+Registry comparison/write is best-effort: Windows provides no atomic per-value
+compare-and-swap against concurrent writes by unrelated processes.
+
+F06 remains partial. Stage 7b will add graceful IPC cleanup to uninstall and cover
+maintenance/shutdown refusal paths before removing/stopping the application.
+No uninstall script or IPC protocol is changed in this stage.
+
 ## Remaining stages
 
-F06–F10 and F14–F30 remain separate work (22 findings). F06 (Windows
-restore ownership) remains untouched. Preserve the ordinary
+F06–F10 and F14–F30 remain separate work (22 findings). F06 is partial until
+its uninstall/IPC and maintenance shutdown stage is verified. Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

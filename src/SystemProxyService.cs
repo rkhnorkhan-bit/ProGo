@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Web.Script.Serialization;
 using Microsoft.Win32;
@@ -20,6 +22,52 @@ namespace ProGo
         public int AutoDetect { get; set; }
         public string CreatedAtUtc { get; set; }
         public string AppliedServer { get; set; }
+        public Dictionary<string, WindowsProxyValue> Values { get; set; }
+        public List<WindowsProxyFieldBackup> OwnedFields { get; set; }
+    }
+
+    // Raw registry values preserve absence and REG_EXPAND_SZ without expanding paths.
+    internal sealed class WindowsProxyValue
+    {
+        public bool Exists { get; set; }
+        public RegistryValueKind Kind { get; set; }
+        public string Data { get; set; }
+        internal static WindowsProxyValue From(object value, RegistryValueKind kind)
+        {
+            return new WindowsProxyValue { Exists = true, Kind = kind, Data = new JavaScriptSerializer().Serialize(value) };
+        }
+        internal bool Matches(WindowsProxyValue other)
+        {
+            return other != null && Exists == other.Exists && (!Exists || (Kind == other.Kind && Data == other.Data));
+        }
+    }
+    internal sealed class WindowsProxyFieldBackup
+    {
+        public string Name { get; set; }
+        public WindowsProxyValue Original { get; set; }
+        public WindowsProxyValue Applied { get; set; }
+        public bool Pending { get; set; }
+    }
+    internal enum WindowsProxyRestoreState { Restored, AlreadyOriginal, PreservedExternal, Failed }
+    internal sealed class WindowsProxyFieldResult
+    {
+        internal string Name;
+        internal WindowsProxyRestoreState State;
+    }
+    internal sealed class WindowsProxyRestoreResult
+    {
+        internal readonly List<WindowsProxyFieldResult> Fields = new List<WindowsProxyFieldResult>();
+        internal bool Completed = true;
+        internal string Error;
+        internal bool PreservedExternal { get { return Fields.Any(f => f.State == WindowsProxyRestoreState.PreservedExternal); } }
+        internal string Message {
+            get {
+                if (Completed) return PreservedExternal ? "Позднейшие настройки Windows сохранены: они больше не принадлежат ProGo." : "Настройки Windows восстановлены.";
+                var failed = Fields.Where(f => f.State == WindowsProxyRestoreState.Failed).Select(f => f.Name).ToArray();
+                return "Очистка прокси Windows не завершена." + (failed.Length == 0 ? "" : " Не восстановлены: " + String.Join(", ", failed) + ".") +
+                    " " + (Error ?? "Проверьте права записи в настройки текущего пользователя.") + " Копия сохранена; повторите «Windows — выключить» после устранения причины.";
+            }
+        }
     }
 
     internal static class SystemProxyService
@@ -32,6 +80,7 @@ namespace ProGo
         private const int SMTO_ABORTIFHUNG = 0x0002;
         private const string BackupFileName = "system-proxy-backup.json";
         private const string DefaultProxyOverride = "localhost;127.0.0.1;::1;<local>";
+        internal static readonly string[] FieldNames = { "ProxyEnable", "ProxyServer", "ProxyOverride", "AutoDetect", "AutoConfigURL" };
 
         [DllImport("wininet.dll", SetLastError = true)]
         private static extern bool InternetSetOption(IntPtr hInternet, int dwOption, IntPtr lpBuffer, int dwBufferLength);
@@ -62,10 +111,21 @@ namespace ProGo
             try
             {
                 AppPaths.EnsureDirectories();
-                SaveBackupIfNeeded();
-                var owned = LoadBackup();
+                var current = ReadCurrent();
+                var owned = File.Exists(BackupPath) ? LoadBackup() : current;
+                if (owned == null) throw new IOException("Windows proxy backup is unreadable.");
+                var oldFields = GetOwnedFields(owned);
+                var priorServer = oldFields == null ? null : oldFields.First(f => f.Name == "ProxyServer");
+                var serverOwned = priorServer != null && priorServer.Pending && current.Values["ProxyServer"].Matches(priorServer.Applied);
+                var applied = AppliedValues(BuildProxyServer(settings));
+                owned.OwnedFields = FieldNames.Select(name => {
+                    var old = oldFields == null ? null : oldFields.First(f => f.Name == name);
+                    var original = serverOwned && old != null && old.Pending && current.Values[name].Matches(old.Applied) ? old.Original : current.Values[name];
+                    return new WindowsProxyFieldBackup { Name = name, Original = original, Applied = applied[name], Pending = true };
+                }).ToList();
                 owned.AppliedServer = BuildProxyServer(settings);
-                File.WriteAllText(BackupPath, new JavaScriptSerializer().Serialize(owned));
+                if (String.IsNullOrEmpty(owned.CreatedAtUtc)) owned.CreatedAtUtc = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                SaveBackup(owned); // Persist intended ownership before the first registry mutation.
 
                 using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey))
                 {
@@ -79,10 +139,10 @@ namespace ProGo
                     key.SetValue("ProxyServer", BuildProxyServer(settings), RegistryValueKind.String);
                     key.SetValue("ProxyOverride", DefaultProxyOverride, RegistryValueKind.String);
                     key.SetValue("AutoDetect", 0, RegistryValueKind.DWord);
-                    DeleteValueSafe(key, "AutoConfigURL");
+                    key.DeleteValue("AutoConfigURL", false);
                 }
 
-                RefreshSystemProxy();
+                RefreshPreservingValues(null, null, WriteValue);
                 SafeLog.Info("Current-user Windows proxy enabled. port=" + settings.HttpProxyPort + ".");
                 return true;
             }
@@ -94,36 +154,60 @@ namespace ProGo
             }
         }
 
+        // Compatibility entry point; every production off path is ownership-aware.
         public static bool Restore(out string message)
         {
-            message = null;
-            try
-            {
-                AppPaths.EnsureDirectories();
-                if (!File.Exists(BackupPath))
-                {
-                    message = "Резервная копия предыдущих Windows proxy-настроек не найдена. Нечего восстанавливать.";
-                    return false;
+            var result = RestoreOwned(); message = result.Message; return result.Completed;
+        }
+        internal static WindowsProxyRestoreResult RestoreOwned()
+        {
+            return RestoreOwned(WriteValue);
+        }
+        // Writer seam is used by isolated native CI to simulate a single denied field.
+        internal static WindowsProxyRestoreResult RestoreOwned(Action<RegistryKey, string, WindowsProxyValue> writer)
+        {
+            var result = new WindowsProxyRestoreResult();
+            if (!File.Exists(BackupPath)) return result; // An idempotent off must not modify unrelated settings.
+            try {
+                var backup = LoadBackup(); var fields = GetOwnedFields(backup);
+                if (fields == null) throw new IOException("В копии нет подтверждённых значений ProGo. Чужие настройки не изменены.");
+                backup.OwnedFields = fields;
+                using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey)) {
+                    if (key == null) throw new IOException("Не удалось открыть настройки текущего пользователя.");
+                    // Refuse the entire old route when a later application replaced its endpoint.
+                    // Original values can also be present after a partly completed restore/apply.
+                    var server = fields.First(f => f.Name == "ProxyServer");
+                    foreach (var field in fields.Where(f => f.Pending)) {
+                        var current = ReadValue(key, field.Name);
+                        var endpoint = ReadValue(key, "ProxyServer");
+                        bool externalRoute = !endpoint.Matches(server.Applied) && !endpoint.Matches(server.Original);
+                        var state = WindowsProxyRestoreState.AlreadyOriginal;
+                        if (!current.Matches(field.Original)) {
+                            if (externalRoute || !current.Matches(field.Applied)) state = WindowsProxyRestoreState.PreservedExternal;
+                            else try {
+                                // Recheck each field immediately before writing; there is no registry-wide compare-and-swap.
+                                if (!ReadValue(key, field.Name).Matches(field.Applied)) state = WindowsProxyRestoreState.PreservedExternal;
+                                else { writer(key, field.Name, field.Original); state = WindowsProxyRestoreState.Restored; }
+                            } catch (Exception ex) {
+                                state = WindowsProxyRestoreState.Failed; result.Completed = false;
+                                SafeLog.Error("Windows proxy field restore failed: " + field.Name, ex);
+                            }
+                        }
+                        field.Pending = state == WindowsProxyRestoreState.Failed;
+                        result.Fields.Add(new WindowsProxyFieldResult { Name = field.Name, State = state });
+                    }
                 }
-
-                var backup = LoadBackup();
-                if (backup == null)
-                {
-                    message = "Не удалось прочитать резервную копию Windows proxy-настроек.";
-                    return false;
-                }
-
-                RestoreSnapshot(backup);
-                try { File.Delete(BackupPath); } catch { }
-                SafeLog.Info("Current-user Windows proxy restored.");
-                return true;
+                if (result.Fields.Any(f => f.State == WindowsProxyRestoreState.Restored))
+                    RefreshPreservingValues(backup, result, writer);
+                // Persist settled fields even after partial failure; retries must not revisit external values.
+                SaveBackup(backup);
+                if (result.Completed) File.Delete(BackupPath);
+                SafeLog.Info(result.Completed ? "Owned Windows proxy settings settled." : "Windows proxy cleanup incomplete; backup retained.");
+            } catch (Exception ex) {
+                result.Completed = false; result.Error = "Не удалось прочитать, сохранить или удалить копию восстановления. Подробности в журнале.";
+                SafeLog.Error("Owned Windows proxy cleanup failed.", ex);
             }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Current-user Windows proxy restore failed.", ex);
-                message = "Не удалось восстановить системный прокси Windows. Подробности записаны в журнал.";
-                return false;
-            }
+            return result;
         }
 
         public static bool IsApplied(AppSettings settings)
@@ -147,7 +231,11 @@ namespace ProGo
         {
             get
             {
-                try { var saved = LoadBackup(); var now = ReadCurrent(); return saved != null && !String.IsNullOrWhiteSpace(saved.AppliedServer) && now.ProxyServer == saved.AppliedServer; }
+                try {
+                    var fields = GetOwnedFields(LoadBackup()); var now = ReadCurrent();
+                    var server = fields == null ? null : fields.First(f => f.Name == "ProxyServer");
+                    return server != null && server.Pending && now.Values["ProxyServer"].Matches(server.Applied);
+                }
                 catch { return false; }
             }
         }
@@ -167,14 +255,79 @@ namespace ProGo
             }
         }
 
-        private static void SaveBackupIfNeeded()
+        private static void SaveBackup(SystemProxyBackup backup)
         {
-            if (File.Exists(BackupPath)) return;
-
-            var backup = ReadCurrent();
-            backup.CreatedAtUtc = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-            var serializer = new JavaScriptSerializer();
-            File.WriteAllText(BackupPath, serializer.Serialize(backup));
+            AppPaths.EnsureDirectories();
+            var pending = BackupPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                File.WriteAllText(pending, new JavaScriptSerializer().Serialize(backup));
+                if (File.Exists(BackupPath)) File.Replace(pending, BackupPath, null); else File.Move(pending, BackupPath);
+            } finally { if (File.Exists(pending)) File.Delete(pending); }
+        }
+        private static Dictionary<string, WindowsProxyValue> AppliedValues(string server)
+        {
+            return new Dictionary<string, WindowsProxyValue> {
+                { "ProxyEnable", WindowsProxyValue.From(1, RegistryValueKind.DWord) },
+                { "ProxyServer", WindowsProxyValue.From(server, RegistryValueKind.String) },
+                { "ProxyOverride", WindowsProxyValue.From(DefaultProxyOverride, RegistryValueKind.String) },
+                { "AutoDetect", WindowsProxyValue.From(0, RegistryValueKind.DWord) },
+                { "AutoConfigURL", new WindowsProxyValue() }
+            };
+        }
+        private static List<WindowsProxyFieldBackup> GetOwnedFields(SystemProxyBackup backup)
+        {
+            if (backup == null) return null;
+            if (backup.OwnedFields != null) {
+                if (backup.OwnedFields.Count != FieldNames.Length || FieldNames.Any(n => backup.OwnedFields.Count(f => f != null && f.Name == n && f.Original != null && f.Applied != null) != 1))
+                    throw new IOException("Некорректный список полей восстановления.");
+                return backup.OwnedFields;
+            }
+            if (String.IsNullOrWhiteSpace(backup.AppliedServer)) return null;
+            var originals = OriginalValues(backup); var applied = AppliedValues(backup.AppliedServer);
+            return FieldNames.Select(n => new WindowsProxyFieldBackup { Name = n, Original = originals[n], Applied = applied[n], Pending = true }).ToList();
+        }
+        private static Dictionary<string, WindowsProxyValue> OriginalValues(SystemProxyBackup backup)
+        {
+            if (backup.Values != null) return backup.Values;
+            // Older backups did not record kinds; retain the original documented DWord/String contract.
+            return new Dictionary<string, WindowsProxyValue> {
+                { "ProxyEnable", backup.HadProxyEnable ? WindowsProxyValue.From(backup.ProxyEnable, RegistryValueKind.DWord) : new WindowsProxyValue() },
+                { "ProxyServer", backup.HadProxyServer ? WindowsProxyValue.From(backup.ProxyServer ?? "", RegistryValueKind.String) : new WindowsProxyValue() },
+                { "ProxyOverride", backup.HadProxyOverride ? WindowsProxyValue.From(backup.ProxyOverride ?? "", RegistryValueKind.String) : new WindowsProxyValue() },
+                { "AutoDetect", backup.HadAutoDetect ? WindowsProxyValue.From(backup.AutoDetect, RegistryValueKind.DWord) : new WindowsProxyValue() },
+                { "AutoConfigURL", backup.HadAutoConfigUrl ? WindowsProxyValue.From(backup.AutoConfigUrl ?? "", RegistryValueKind.String) : new WindowsProxyValue() }
+            };
+        }
+        private static WindowsProxyValue ReadValue(RegistryKey key, string name)
+        {
+            var value = key == null ? null : key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+            return value == null ? new WindowsProxyValue() : WindowsProxyValue.From(value, key.GetValueKind(name));
+        }
+        internal static void WriteValue(RegistryKey key, string name, WindowsProxyValue value)
+        {
+            if (!value.Exists) { key.DeleteValue(name, false); return; }
+            var json = new JavaScriptSerializer(); object raw;
+            switch (value.Kind) {
+                case RegistryValueKind.DWord: raw = json.Deserialize<int>(value.Data); break;
+                case RegistryValueKind.QWord: raw = json.Deserialize<long>(value.Data); break;
+                case RegistryValueKind.Binary:
+                case RegistryValueKind.None: raw = json.Deserialize<byte[]>(value.Data); break;
+                case RegistryValueKind.MultiString: raw = json.Deserialize<string[]>(value.Data); break;
+                case RegistryValueKind.String:
+                case RegistryValueKind.ExpandString: raw = json.Deserialize<string>(value.Data); break;
+                default: throw new IOException("Неподдерживаемый тип поля " + name + ".");
+            }
+            key.SetValue(name, raw, value.Kind);
+        }
+        internal static void UpdateOwnedServer(SystemProxyBackup backup, string server)
+        {
+            var fields = GetOwnedFields(backup);
+            if (fields != null) {
+                var field = fields.First(f => f.Name == "ProxyServer");
+                field.Applied = WindowsProxyValue.From(server, RegistryValueKind.String); field.Pending = true;
+                backup.OwnedFields = fields;
+            }
+            backup.AppliedServer = server;
         }
 
         private static SystemProxyBackup LoadBackup()
@@ -185,9 +338,10 @@ namespace ProGo
 
         internal static SystemProxyBackup ReadCurrent()
         {
-            var backup = new SystemProxyBackup();
+            var backup = new SystemProxyBackup { Values = new Dictionary<string, WindowsProxyValue>() };
             using (var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKey, false))
             {
+                foreach (var name in FieldNames) backup.Values[name] = ReadValue(key, name);
                 if (key == null) return backup;
 
                 object value;
@@ -216,18 +370,15 @@ namespace ProGo
             return backup;
         }
 
+        // Full snapshots are restricted to local transaction rollback and isolated fixture cleanup.
         internal static void RestoreSnapshot(SystemProxyBackup backup)
         {
-            using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey))
-            {
+            using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey)) {
                 if (key == null) throw new IOException("Не удалось открыть настройки прокси Windows.");
-                RestoreDword(key, "ProxyEnable", backup.HadProxyEnable, backup.ProxyEnable);
-                RestoreString(key, "ProxyServer", backup.HadProxyServer, backup.ProxyServer);
-                RestoreString(key, "ProxyOverride", backup.HadProxyOverride, backup.ProxyOverride);
-                RestoreString(key, "AutoConfigURL", backup.HadAutoConfigUrl, backup.AutoConfigUrl);
-                RestoreDword(key, "AutoDetect", backup.HadAutoDetect, backup.AutoDetect);
+                var originals = OriginalValues(backup);
+                foreach (var name in FieldNames) WriteValue(key, name, originals[name]);
             }
-            RefreshSystemProxy();
+            RefreshPreservingValues(null, null, WriteValue);
         }
 
         private static int ReadDword(object value, int fallback)
@@ -242,34 +393,34 @@ namespace ProGo
             return "http=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort + ";https=" + CliProxyBridgeService.Host + ":" + settings.HttpProxyPort;
         }
 
-        private static void RestoreDword(RegistryKey key, string name, bool hadValue, int value)
+        private static void RefreshPreservingValues(SystemProxyBackup backup, WindowsProxyRestoreResult result,
+            Action<RegistryKey, string, WindowsProxyValue> writer)
         {
-            if (hadValue)
-            {
-                key.SetValue(name, value, RegistryValueKind.DWord);
+            var before = ReadCurrent().Values;
+            RefreshSystemProxy();
+            using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey)) {
+                foreach (var name in FieldNames) {
+                    var expected = before[name]; var current = ReadValue(key, name);
+                    // WinINet can normalize string kinds or remove AutoDetect during notification.
+                    // Correct only these observed effects from live pre-notification values.
+                    bool changedKind = expected.Exists && expected.Kind == RegistryValueKind.ExpandString &&
+                        current.Exists && current.Kind == RegistryValueKind.String && current.Data == expected.Data;
+                    bool removedAutoDetect = name == "AutoDetect" && expected.Exists &&
+                        expected.Kind == RegistryValueKind.DWord && (expected.Data == "0" || expected.Data == "1") && !current.Exists;
+                    if (!changedKind && !removedAutoDetect) continue;
+                    if (!ReadValue(key, name).Matches(current)) continue;
+                    try { writer(key, name, expected); }
+                    catch (Exception ex) {
+                        if (backup == null || result == null) throw;
+                        var field = backup.OwnedFields.First(f => f.Name == name);
+                        field.Original = expected; field.Applied = current; field.Pending = true;
+                        var outcome = result.Fields.FirstOrDefault(f => f.Name == name);
+                        if (outcome == null) { outcome = new WindowsProxyFieldResult { Name = name }; result.Fields.Add(outcome); }
+                        outcome.State = WindowsProxyRestoreState.Failed; result.Completed = false;
+                        SafeLog.Error("Windows proxy refresh correction failed: " + name, ex);
+                    }
+                }
             }
-            else
-            {
-                DeleteValueSafe(key, name);
-            }
-        }
-
-        private static void RestoreString(RegistryKey key, string name, bool hadValue, string value)
-        {
-            if (hadValue)
-            {
-                key.SetValue(name, value ?? String.Empty, RegistryValueKind.String);
-            }
-            else
-            {
-                DeleteValueSafe(key, name);
-            }
-        }
-
-        private static void DeleteValueSafe(RegistryKey key, string name)
-        {
-            try { key.DeleteValue(name, false); }
-            catch { }
         }
 
         private static void RefreshSystemProxy()

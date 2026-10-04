@@ -18,6 +18,7 @@ namespace ProGo
         private readonly NotifyIcon tray;
         private readonly System.Drawing.Icon icon;
         private readonly ConnectionHealthMonitor health;
+        private readonly Func<WindowsProxyRestoreResult> restoreWindows;
         private readonly bool ownsHealth;
         private readonly Timer statusTimer = new Timer { Interval = 1000 };
         private Timer startupShowTimer;
@@ -27,9 +28,10 @@ namespace ProGo
         private volatile bool closing;
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null)
         {
             settings = settingsService;
+            restoreWindows = windowsRestore ?? (() => SystemProxyService.RestoreOwned());
             proxy = proxyService;
             cliProxy = cliProxyService;
             homeVpn = homeVpnService;
@@ -222,7 +224,7 @@ namespace ProGo
                     case "cli-off":
                     case "terminal-off":
                     case "codex-off": DisableCli(); break;
-                    case "windows-off": CancelPendingRoute("windows-on"); automation.Cancel(ProxyFeature.Windows); string m; if (!SystemProxyService.Restore(out m)) throw new InvalidOperationException(m); break;
+                    case "windows-off": CancelPendingRoute("windows-on"); automation.Cancel(ProxyFeature.Windows); RestoreWindowsProxy(); break;
                     case "codex-shortcut-off": CodexProxyService.Disable(); break;
                     case "help": ShowHelp(); break;
                     case "update": StartUpdate(); break;
@@ -332,11 +334,21 @@ namespace ProGo
         {
             tray.ShowBalloonTip(6000, "CLI-прокси включён", "Codex можно запускать обычным способом. Полностью перезапустите уже открытый терминал или приложение с Codex. Отдельный ярлык не нужен.", ToolTipIcon.Info);
         }
+        private void RestoreWindowsProxy()
+        {
+            var result = restoreWindows();
+            if (!result.Completed) throw new InvalidOperationException(result.Message);
+            if (result.PreservedExternal) tray.ShowBalloonTip(5000, "Настройки Windows сохранены", result.Message, ToolTipIcon.Info);
+        }
         private void DisconnectApps()
         {
+            var errors = new List<string>();
             try { CliProxyEnvironmentService.ClearUserEnvironmentIfOwned(); }
-            catch (Exception ex) { SafeLog.Error("Environment restore failed.", ex); }
-            if (SystemProxyService.IsOwned) { string message; SystemProxyService.Restore(out message); }
+            catch (Exception ex) { SafeLog.Error("Environment restore failed.", ex); errors.Add("Не удалось восстановить настройки терминалов. Повторите выключение CLI."); }
+            try { RestoreWindowsProxy(); }
+            catch (Exception ex) { SafeLog.Error("Windows proxy cleanup incomplete.", ex); errors.Add(ex.Message); }
+            // Keep the local service alive while owned settings may still reference it.
+            if (errors.Count != 0) throw new InvalidOperationException(String.Join("\n\n", errors.ToArray()) + "\n\nПрокси на ПК продолжает работать, чтобы не оборвать доступ. Повторите отключение после устранения ошибки.");
             cliProxy.Stop();
         }
         private void ShowHelp()
@@ -353,8 +365,11 @@ namespace ProGo
 
         private void ExitProGo()
         {
+            pendingRoutes.Clear(); RefreshPendingRoutes();
+            foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
+            try { DisconnectApps(); }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             homeVpn.Stop();
-            DisconnectApps();
             tray.Visible = false;
             ExitThread();
         }
@@ -545,7 +560,11 @@ namespace ProGo
                 automationTimer.Stop(); automationTimer.Dispose();
                 activationDispatcher.Dispose();
                 if (mainWindow != null) mainWindow.Dispose();
-                DisconnectApps();
+                try { DisconnectApps(); }
+                catch (Exception ex) {
+                    SafeLog.Error("Application teardown left pending proxy cleanup.", ex);
+                    MessageBox.Show(ex.Message, "Очистка ProGo не завершена", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
                 tray.Dispose();
                 icon.Dispose();
             }
