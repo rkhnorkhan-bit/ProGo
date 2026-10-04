@@ -395,7 +395,7 @@ without waiting on the UI thread. Ordinary CLI startup remains unchanged.
 
 A Windows job owns this short-lived diagnostic tree. Creation is suspended until
 containment succeeds, with only the three standard pipe handles inherited.
-Stdout/stderr drain concurrently with a 128 KiB capture limit per stream. The
+Stdout/stderr drain concurrently with a 128K-character capture limit per stream. The
 7-second execution deadline includes pipe completion; cancellation/timeout also
 allows up to 2 seconds to confirm cleanup. Descendants cannot keep the pipe open
 or survive normal root exit. No user terminal or persistent SSH tunnel uses this
