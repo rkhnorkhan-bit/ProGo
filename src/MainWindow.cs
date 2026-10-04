@@ -61,7 +61,12 @@ namespace ProGo
             rail.SizeChanged += delegate { version.MaximumSize = new Size(Math.Max(1, rail.ClientSize.Width - rail.Padding.Horizontal), 0); };
             nav.ClientSizeChanged += delegate {
                 int width = Math.Max(1, nav.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
-                foreach (Control button in nav.Controls) { button.MinimumSize = Size.Empty; button.Width = Math.Max(1, width - button.Margin.Horizontal); button.Height = Math.Max(42, button.GetPreferredSize(new Size(button.Width, 0)).Height); }
+                foreach (Control button in nav.Controls) {
+                    button.MinimumSize = Size.Empty; button.Width = Math.Max(1, width - button.Margin.Horizontal);
+                    int textHeight = TextRenderer.MeasureText(button.Text, button.Font,
+                        new Size(Math.Max(1, button.Width - button.Padding.Horizontal - 12), int.MaxValue), TextFormatFlags.WordBreak).Height;
+                    button.Height = Math.Max(Math.Max(42, button.GetPreferredSize(new Size(button.Width, 0)).Height), textHeight + button.Padding.Vertical + 12);
+                }
             };
             var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -189,7 +194,7 @@ namespace ProGo
             }
             if (column == 1) cliToggle = open;
             open.MinimumSize = new Size(100, 32); open.Padding = new Padding(7, 0, 7, 0);
-            var card = Surface(heading, state, caption, open); card.Padding = new Padding(16);
+            var card = Surface(heading, state, caption, open); card.Dock = DockStyle.Fill; card.Padding = new Padding(16);
             statusCards.Add(card); cards.Controls.Add(card, column, 0); return state;
         }
         internal void RefreshConnectionState() { RefreshState(); }

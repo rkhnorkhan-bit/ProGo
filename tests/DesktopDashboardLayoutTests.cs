@@ -55,6 +55,8 @@ namespace ProGo
                     name + " has no horizontal scrolling: body=" + body.Bounds + " viewport=" + viewport.ClientSize +
                     " display=" + viewport.DisplayRectangle + " scroll=" + viewport.AutoScrollPosition);
                 Check(cards.Controls.Cast<Control>().All(c => c.Width > 0 && c.Right <= cards.ClientSize.Width), name + " keeps cards inside content width");
+                Check(cards.ColumnCount == 1 || cards.Controls.Cast<Control>().Select(c => c.Height).Distinct().Count() == 1,
+                    name + " aligns card heights in a shared row");
                 foreach (string field in new[] { "connection", "subtitle", "recovery", "windowsState", "terminalState", "phoneState" }) {
                     var label = (Label)Field(form, field);
                     Check(label.AutoSize && !label.AutoEllipsis && label.Right <= label.Parent.ClientSize.Width && label.Bottom <= label.Parent.ClientSize.Height,
@@ -70,19 +72,23 @@ namespace ProGo
                     Check(form.ClientRectangle.Contains(form.RectangleToClient(button.RectangleToScreen(button.ClientRectangle))), name + " keeps footer visible: " + text);
                 }
                 Shot(form, name);
-                foreach (string field in new[] { "connect", "windowsToggle", "cliToggle" }) {
-                    var button = (Button)Field(form, field);
+                if (longText) { viewport.ScrollControlIntoView((Label)Field(form, "recovery")); Application.DoEvents(); Shot(form, name + "-status"); }
+                var actions = Descendants(body).OfType<Button>().ToArray();
+                foreach (var button in actions) {
                     viewport.ScrollControlIntoView(button); Application.DoEvents();
                     var area = viewport.RectangleToClient(button.RectangleToScreen(button.ClientRectangle));
-                    Check(viewport.ClientRectangle.Contains(area), name + " makes action reachable by vertical scroll: " + field + " " + area);
+                    Check(viewport.ClientRectangle.Contains(area), name + " makes action reachable by vertical scroll: " + button.Text + " " + area);
                 }
                 var cli = (Button)Field(form, "cliToggle"); cli.PerformClick();
                 Check(action == (cli.Text == "Выключить CLI" ? "cli-off" : "cli-start"), name + " keeps ordinary CLI command");
                 var nav = (System.Collections.Generic.Dictionary<string, Button>)Field(form, "navigation");
                 var navPanel = (FlowLayoutPanel)nav["settings"].Parent;
+                Check(navPanel.Controls.Cast<Control>().All(b => {
+                    var textArea = new Size(Math.Max(1, b.ClientSize.Width - b.Padding.Horizontal), int.MaxValue);
+                    return TextRenderer.MeasureText(b.Text, b.Font, textArea, TextFormatFlags.WordBreak).Height <= b.ClientSize.Height - b.Padding.Vertical;
+                }), name + " gives wrapped navigation names enough height");
                 navPanel.ScrollControlIntoView(nav["settings"]); Application.DoEvents();
                 Check(!navPanel.HorizontalScroll.Visible && navPanel.ClientRectangle.Contains(nav["settings"].Bounds), name + " keeps navigation reachable");
-                if (longText) { viewport.ScrollControlIntoView((Label)Field(form, "recovery")); Application.DoEvents(); Shot(form, name + "-status"); }
                 form.Close();
             }
         }
