@@ -59,15 +59,15 @@ namespace ProGo
             var version = UiTheme.Label("DESKTOP  /  " + typeof(MainWindow).Assembly.GetName().Version.ToString(3) + "\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
             version.Dock = DockStyle.Fill; version.Margin = new Padding(0, 12, 0, 0); rail.Controls.Add(version, 0, 2);
             rail.SizeChanged += delegate { version.MaximumSize = new Size(Math.Max(1, rail.ClientSize.Width - rail.Padding.Horizontal), 0); };
-            nav.SizeChanged += delegate {
+            nav.ClientSizeChanged += delegate {
                 int width = Math.Max(1, nav.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
-                foreach (Control button in nav.Controls) { button.MinimumSize = Size.Empty; button.Width = width; button.Height = Math.Max(42, button.GetPreferredSize(new Size(width, 0)).Height); }
+                foreach (Control button in nav.Controls) { button.MinimumSize = Size.Empty; button.Width = Math.Max(1, width - button.Margin.Horizontal); button.Height = Math.Max(42, button.GetPreferredSize(new Size(button.Width, 0)).Height); }
             };
             var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             content.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); content.RowStyles.Add(new RowStyle(SizeType.AutoSize)); shell.Controls.Add(content, 1, 0);
             viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0) }; content.Controls.Add(viewport, 0, 0);
-            body = Stack(); body.Dock = DockStyle.Top; viewport.Controls.Add(body);
+            body = Stack(); body.Dock = DockStyle.None; body.AutoSize = false; viewport.Controls.Add(body);
             var heading = Stack(UiTheme.Label("Ваш интернет. Ваш маршрут.", UiTheme.Title, UiTheme.Text),
                 UiTheme.Label("Подключение к серверу и настройки приложений.", UiTheme.Body, UiTheme.Muted));
             heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading);
@@ -90,7 +90,7 @@ namespace ProGo
             var footer = Actions(UiTheme.Button("Обновить ProGo", delegate { action("update"); }, false),
                 UiTheme.Button("Открыть Codex", delegate { action("codex-open"); }, false), UiTheme.Button("Помощь", delegate { action("help"); }, false));
             footer.Margin = new Padding(0, 12, 0, 0); content.Controls.Add(footer, 0, 1);
-            viewport.SizeChanged += delegate { FitDashboard(); };
+            viewport.ClientSizeChanged += delegate { FitDashboard(); };
             body.Layout += delegate { FitDashboard(); };
             Shown += delegate { FitDashboard(); };
             timer.Tick += delegate { RefreshState(); }; timer.Start(); RefreshState();
@@ -132,7 +132,8 @@ namespace ProGo
             fitting = true;
             try {
                 // Reserve a vertical scrollbar gutter so changing text cannot oscillate widths.
-                body.Width = Math.Max(1, viewport.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+                int width = Math.Max(1, viewport.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+                if (body.Width != width) body.Width = width;
                 int minimumCard = 210;
                 foreach (var card in statusCards) {
                     var stack = (TableLayoutPanel)card.Controls[0];
@@ -152,6 +153,8 @@ namespace ProGo
                     cards.ResumeLayout(true);
                 }
                 for (int i = 0; i < statusCards.Count; i++) statusCards[i].Margin = new Padding(columns == 3 && i != 0 ? 6 : 0, 0, columns == 3 && i != 2 ? 6 : 0, 16);
+                int height = body.GetPreferredSize(new Size(width, 0)).Height;
+                if (body.Height != height) body.Height = height;
             } finally { fitting = false; }
         }
         private void Nav(FlowLayoutPanel panel, string text, string route, EventHandler action)
