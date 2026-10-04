@@ -284,7 +284,7 @@ junction tests, actual application and updater backup writers, installed-source
 hash parity and a real restore refusal leaving installed payload/logs unchanged.
 Earlier Windows/CLI startup and maintenance ownership checks remain required.
 
-F08 is **not complete**: stage 9b must add explicit program/data selection,
+Status after stage 9a: F08 was **not complete**; stage 9b still needed explicit program/data selection,
 immutable staging, protective snapshot, installed self-check and rollback on
 commit failure. Current restore still uses its earlier file-by-file commit;
 preflight alone does not prevent mutation between validation and copying.
@@ -314,13 +314,52 @@ vault/settings in Program scope, preserved exe/version/scripts in Data scope,
 and source mutation after pre-handoff preparation. Existing CLI and maintenance
 regressions remain required. No vault encryption/format/decoy semantics change.
 
-F08 remains **open**. Stage 9b2 still must add a protective current-state snapshot,
+Status after stage 9b1: F08 remained **open**. Stage 9b2 still needed a protective current-state snapshot,
 installed self-check and rollback after any commit failure. This stage does not
 make the existing file-by-file commit atomic. No version bump or public release.
 
+## Stage 9b2 — F08: protective snapshot, verified commit and rollback
+
+The helper rejects locked selected payloads before the first replacement, saves
+an independently verified full program/settings/opaque-vault snapshot in
+`backups/backup-...-pre-restore-...`, and copies selected input to same-volume
+staging. Recovery snapshots are preserved by the existing retention policy.
+Commit moves existing roots aside instead of deleting scripts or overwriting
+files in place. Exact file hashes, directory composition and missing roots are
+verified after commit, then the installed executable runs `--self-check` under
+the maintenance permit with a bounded wait. Selected bytes are checked again
+before ordinary restart. No vault content is decoded or re-encrypted.
+
+Failures reverse the recorded root moves and verify the original selected state,
+including roots that were absent before the operation. Restart failure also
+enters rollback. If another process prevents rollback, the helper reports an
+incomplete recovery and preserves both previous roots and the protective backup;
+it never reports success or deletes that recovery input. Cleanup failure is
+reported without replacing the operation outcome. The ownership gate stays held
+through commit, checks and rollback.
+
+Validation: real exclusive/read-sharing Windows file locks; partial staging copy,
+late prepared/staged input corruption, mid-commit move failure, installed-byte corruption, self-check refusal, restart
+failure, original script restoration, originally absent vault, retained recovery
+input after rollback refusal, subsequent successful recovery and shared
+retention protection. These run the actual helper transaction in disposable CI.
+Verified: full Windows/Linux CI passed, including 80 maintenance checks, 52
+integrity checks, 374 desktop checks, 39 shutdown checks, ordinary Start CLI,
+33 home-VPN checks and 18 relay integration tests. Windows short-path alias
+expansion is covered by the real fixture; comparison uses relative child names
+rather than slicing absolute paths. Additional late-input mutation checks require
+revalidation of recorded evidence and selected staging immediately before commit.
+F08 acceptance is complete for caught runtime
+errors: invalid input and locked targets leave the payload unchanged; good copies
+restore the declared scope; commit/check/restart failures recover original bytes.
+The audit now has **11 of 30 findings closed** (F01–F08 and F11–F13).
+This handles caught runtime failures; it does not claim filesystem-wide atomicity
+or automatic recovery after a forced process termination/power loss. No version
+bump or published release.
+
 ## Remaining stages
 
-F08–F10 and F14–F30 remain separate work after F07 (20 findings). Preserve the ordinary
+F09–F10 and F14–F30 remain separate work (19 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

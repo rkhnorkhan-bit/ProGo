@@ -264,3 +264,15 @@ scope/consent checking, verifying exact preservation of current user data or
 program/script bytes and independence from post-preparation source mutation.
 Fixtures remain restricted to disposable Windows CI. F08b2 owns rollback and
 installed self-check; no stage here may be described as a completed transaction.
+
+### Audit stage F08b2
+
+Maintenance integration runs the actual restore body with real Windows exclusive
+and readable-but-nonreplaceable locks. Faults are injected at staging I/O, root
+move, installed self-check and restart boundaries; commit/rollback remain the
+production functions. Exact program, settings, opaque-vault, script directory
+and absent-root states must match the original after failure. A rollback-denied
+fixture must retain recovery roots and log their paths. The fixtures also verify
+protective-snapshot integrity/retention and successful restoration after faults.
+No tests decode vaults, use a real VPS, or replace user secrets. Forced termination
+and power-loss recovery are outside the caught-error rollback claim.

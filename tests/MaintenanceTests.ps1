@@ -4,6 +4,7 @@ $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: maintenance integration requires isolated Windows CI'; return }
 . (Join-Path $Scripts 'Maintenance-ProGo.ps1')
 . (Join-Path $Scripts 'BackupIntegrity-ProGo.ps1')
+. (Join-Path $Scripts 'BackupRetention-ProGo.ps1')
 $passed = 0
 function Check($Value, $Name) { if (-not $Value) { throw $Name }; $script:passed++; Write-Host "PASS: $Name" }
 $fixture = Join-Path $env:TEMP ('ProGo-maintenance-test-' + [guid]::NewGuid().ToString('N'))
@@ -33,6 +34,17 @@ function Run($Info) {
     } finally { $p.Dispose() }
 }
 function DriverInfo($Mode) { return (ChildInfo $ps "-NoProfile -File `"$driver`" -Mode $Mode -Scripts `"$Scripts`" -Fixture `"$fixture`" -Release `"$release`"") }
+function PayloadSnapshot {
+    $names = @('ProGo.exe','VERSION','scripts','ProGo.ico','settings.json','vault.enc.json')
+    return (@(foreach ($name in $names) {
+        $path = Join-Path $install $name
+        if (-not (Test-Path -LiteralPath $path)) { $name + ':absent'; continue }
+        foreach ($item in @(Get-Item -LiteralPath $path) + @(if ((Get-Item -LiteralPath $path).PSIsContainer) { Get-ChildItem -LiteralPath $path -Recurse -Force })) {
+            if ($item.PSIsContainer) { $item.FullName.Substring($install.Length) + ':directory' }
+            else { $item.FullName.Substring($install.Length) + ':' + (Get-FileHash -LiteralPath $item.FullName).Hash }
+        }
+    }) | Sort-Object) -join "`n"
+}
 function Snapshot {
     return (@(Get-ChildItem $install -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName + ':' + (Get-FileHash $_.FullName).Hash }) -join "`n")
 }
@@ -167,6 +179,51 @@ try {
     [ProGo.BackupIntegrity]::Write($backup)
     Check ((Run (DriverInfo 'restore')) -eq 0) 'actual restore transaction completes under exclusive ownership'
     Check ((Get-Content (Join-Path $install 'settings.json') -Raw).Contains('12345')) 'restore applies the selected backup settings'
+    $protected = @(Get-ChildItem $mixedRoot -Directory | Where-Object { $_.Name -like '*-pre-restore-*' })
+    Check ($protected.Count -ge 4) 'each successful restore retains an independent protective backup'
+    foreach ($copy in $protected) { [ProGo.BackupIntegrity]::Validate($copy.FullName) }
+    Check ($true) 'all protective snapshots pass recorded integrity checks'
+    $protectedBeforeRetention = $protected.Count
+    [void][ProGo.BackupRetention]::Apply([ProGo.BackupRetention]::Plan($mixedRoot))
+    Check (@(Get-ChildItem $mixedRoot -Directory | Where-Object { $_.Name -like '*-pre-restore-*' }).Count -eq $protectedBeforeRetention) 'ordinary retention preserves recovery snapshots'
+
+    # Real exclusive Windows locks must refuse before the first installed root moves.
+    $beforeLocks = PayloadSnapshot
+    $lockedPath = Join-Path $install 'vault.enc.json'
+    $locked = [IO.File]::Open($lockedPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+    try { Check ((Run (DriverInfo 'restore')) -ne 0) 'locked selected vault refuses restore before mutation' } finally { $locked.Dispose() }
+    Check ((PayloadSnapshot) -eq $beforeLocks) 'exclusive lock refusal preserves all installed payload bytes'
+    $unchanged = PayloadSnapshot
+    # Repeat with a read-only-share lock: hashes can be read but replacement is forbidden.
+    $locked = [IO.File]::Open($lockedPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try { Check ((Run (DriverInfo 'restore')) -ne 0) 'readable but nonreplaceable selected vault refuses restore' } finally { $locked.Dispose() }
+    Check ((PayloadSnapshot) -eq $unchanged) 'lock refusal preserves every program and data byte'
+
+    Set-Content (Join-Path $install 'VERSION') 'previous-installed-version'
+    Set-Content (Join-Path $install 'settings.json') '{"SocksPort":23456}'
+    Set-Content (Join-Path $install 'scripts\old-only.ps1') '# previous script'
+    Remove-Item -LiteralPath (Join-Path $install 'vault.enc.json') -Force
+    foreach ($mode in @('restore-stage-copy-fail','restore-prepared-corrupt','restore-stage-corrupt','restore-commit-fail','restore-installed-corrupt','restore-self-check-fail','restore-launch-fail')) {
+        $beforeFailure = PayloadSnapshot
+        Check ((Run (DriverInfo $mode)) -ne 0) "real restore reports failure: $mode"
+        Check ((PayloadSnapshot) -eq $beforeFailure) "failed restore preserves all original bytes, scripts and missing vault: $mode"
+        Check (@(Get-ChildItem $install -Directory | Where-Object { $_.Name -like 'restore-txn-*' }).Count -eq 0) "verified failure cleanup removes disposable transaction: $mode"
+        Check ((Run (DriverInfo 'startup')) -eq 0) "failed restore releases maintenance ownership: $mode"
+    }
+    # When rollback itself is denied, retain both original roots and the verified backup;
+    # never emit the success marker or erase the remaining recovery input.
+    Check ((Run (DriverInfo 'restore-rollback-fail')) -ne 0) 'rollback failure is reported rather than successful restore'
+    $recovery = @(Get-ChildItem $install -Directory | Where-Object { $_.Name -like 'restore-txn-*' })
+    Check ($recovery.Count -eq 1 -and (Test-Path (Join-Path $recovery[0].FullName 'previous\ProGo.exe'))) 'incomplete rollback retains original program roots'
+    Check ((Get-Content -LiteralPath (Join-Path $install 'progo-restore.log') -Raw).Contains('Rollback incomplete. Recovery files retained:')) 'incomplete rollback log identifies retained recovery paths'
+    # Repair only the disposable fixture so unrelated updater regressions can continue.
+    foreach ($name in @('ProGo.exe','VERSION')) {
+        $old = Join-Path $recovery[0].FullName ('previous\' + $name)
+        if (Test-Path -LiteralPath $old) { Copy-Item -LiteralPath $old -Destination (Join-Path $install $name) -Force }
+    }
+    Remove-Item -LiteralPath $recovery[0].FullName -Recurse -Force
+    Check ((Run (DriverInfo 'restore')) -eq 0) 'next full restore succeeds after recovery and releases prior faults'
+
     Check ((Run (DriverInfo 'rollback')) -ne 0) 'post-commit failure is reported'
     Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq '0.0.1') 'failed update rolls back while retaining exclusive ownership'
     Check ((Test-Path (Join-Path $manualCopy 'payload.txt')) -and (Test-Path $unknownCopy)) 'failed update rollback also preserves protected backup folders'
