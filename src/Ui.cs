@@ -5,6 +5,9 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using System.Threading.Tasks;
+using CancellationToken = System.Threading.CancellationToken;
+using CancellationTokenSource = System.Threading.CancellationTokenSource;
 
 namespace ProGo
 {
@@ -24,7 +27,13 @@ namespace ProGo
         private readonly Label recovery;
         private readonly Button speedButton;
         private readonly Button checkButton;
-        private readonly Func<AppSettings, ProxyService, string> routeProbe;
+        private readonly Func<AppSettings, ProxyService, CancellationToken, string> routeProbe;
+        private readonly Func<AppSettings, CancellationToken, int?> pingProbe;
+        private readonly Func<AppSettings, CancellationToken, Tuple<double?, string>> speedProbe;
+        private CancellationTokenSource routeCancellation, pingCancellation, speedCancellation;
+        internal Task RouteWork { get; private set; }
+        internal Task PingWork { get; private set; }
+        internal Task SpeedWork { get; private set; }
         private readonly Func<DateTime> now;
         private readonly Timer pingTimer;
         private int pingInFlight;
@@ -33,12 +42,16 @@ namespace ProGo
         private bool closing;
 
         public StatusForm(SettingsService settingsService, ProxyService proxyService, bool checkRouteOnOpen = false,
-            Func<AppSettings, ProxyService, string> routeProbe = null, Func<DateTime> clock = null, ConnectionHealthMonitor health = null)
+            Func<AppSettings, ProxyService, CancellationToken, string> routeProbe = null, Func<DateTime> clock = null, ConnectionHealthMonitor health = null,
+            Func<AppSettings, CancellationToken, int?> pingProbe = null,
+            Func<AppSettings, CancellationToken, Tuple<double?, string>> speedProbe = null)
         {
             settings = settingsService;
             proxy = proxyService;
             this.health = health;
-            this.routeProbe = routeProbe ?? new Func<AppSettings, ProxyService, string>(RouteTester.Test);
+            this.routeProbe = routeProbe ?? ((s, p, token) => RouteTester.Test(s, p, token));
+            this.pingProbe = pingProbe ?? ((s, token) => ConnectionMetrics.MeasureSocksLatencyMs(s, 4000, token));
+            this.speedProbe = speedProbe ?? ((s, token) => { string error; var value = ConnectionMetrics.MeasureDownloadMbps(s, token, out error); return Tuple.Create(value, error); });
             now = clock ?? (() => DateTime.Now);
             Text = "Маршрут и скорость · ProGo";
             AutoScaleMode = AutoScaleMode.Dpi;
@@ -83,11 +96,11 @@ namespace ProGo
                 RefreshState(false);
                 QueuePingMeasure();
             };
-            speedButton.Click += delegate { StartSpeedTest(); };
+            speedButton.Click += delegate { if (speedInFlight != 0) CancelMeasurement(speedCancellation); else StartSpeedTest(); };
             checkButton.Click += delegate
             {
-                QueueRouteMeasure();
-                QueuePingMeasure();
+                if (routeInFlight != 0) { CancelMeasurement(routeCancellation); CancelMeasurement(pingCancellation); }
+                else { QueueRouteMeasure(); QueuePingMeasure(); }
             };
             buttons.Controls.Add(close);
             buttons.Controls.Add(restart);
@@ -102,7 +115,7 @@ namespace ProGo
             FormClosed += delegate
             {
                 closing = true;
-                pingTimer.Stop();
+                CancelMeasurements(); pingTimer.Stop();
             };
 
             RefreshState(false);
@@ -132,117 +145,66 @@ namespace ProGo
             recovery.Text = proxy.RecoveryStatus;
         }
 
+        private static void CancelMeasurement(CancellationTokenSource source)
+        { if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { } }
+        private void CancelMeasurements()
+        { CancelMeasurement(routeCancellation); CancelMeasurement(pingCancellation); CancelMeasurement(speedCancellation); }
+
+        // The worker disposes its source even when the application message loop has ended.
+        // Completion/cancellation cannot publish into a closed window or replace a newer run.
+        private async Task RunMeasurement<T>(CancellationTokenSource source, Func<CancellationToken, T> measure,
+            Action<T> apply, Action cancelled, Action failed, Action finish)
+        {
+            var token = source.Token;
+            try {
+                var result = await Task.Run(() => { try { return measure(token); } finally { source.Dispose(); } });
+                if (closing || IsDisposed) return;
+                token.ThrowIfCancellationRequested(); apply(result);
+            }
+            catch (OperationCanceledException) { if (!closing && !IsDisposed) cancelled(); }
+            catch (Exception ex) { SafeLog.Error("Diagnostic measurement failed.", ex); if (!closing && !IsDisposed) failed(); }
+            finally { finish(); }
+        }
         private void QueueRouteMeasure()
         {
             if (closing || System.Threading.Interlocked.Exchange(ref routeInFlight, 1) != 0) return;
-            var current = settings.Current.Clone();
-            checkButton.Enabled = false; checkButton.Text = "Проверяем…";
-            route.Text = "Проверяем маршрут через SOCKS…";
-            System.Threading.ThreadPool.QueueUserWorkItem(delegate {
-                string result;
-                try { result = routeProbe(current, proxy); }
-                catch (Exception ex) { SafeLog.Error("Route test failed.", ex); result = "Не удалось проверить маршрут через SOCKS."; }
-                var completed = now();
-                try {
-                    if (closing || IsDisposed || !IsHandleCreated) return;
-                    BeginInvoke((Action)delegate {
-                        if (closing || IsDisposed) return;
-                        route.Text = result;
-                        checkedAt.Text = completed.ToString("yyyy-MM-dd HH:mm:ss") + "\nSOCKS → " + SafeLog.Redact(current.TestEndpoint);
-                        checkButton.Text = "Проверить маршрут"; checkButton.Enabled = true;
-                        System.Threading.Interlocked.Exchange(ref routeInFlight, 0);
-                    });
-                }
-                catch (InvalidOperationException) { System.Threading.Interlocked.Exchange(ref routeInFlight, 0); }
-                finally { if (closing || IsDisposed) System.Threading.Interlocked.Exchange(ref routeInFlight, 0); }
+            var current = settings.Current.Clone(); var source = new CancellationTokenSource(); routeCancellation = source;
+            checkButton.Text = "Отменить проверку";
+            route.Text = "Проверяем маршрут через SOCKS… Лимит — 10 секунд.";
+            RouteWork = RunMeasurement(source, token => routeProbe(current, proxy, token), result => {
+                route.Text = result;
+                checkedAt.Text = now().ToString("yyyy-MM-dd HH:mm:ss") + "\nSOCKS → " + SafeLog.Redact(current.TestEndpoint);
+            }, () => route.Text = "Проверка маршрута отменена.", () => route.Text = "Не удалось проверить маршрут через SOCKS.", () => {
+                routeCancellation = null; System.Threading.Interlocked.Exchange(ref routeInFlight, 0);
+                if (!closing && !IsDisposed) checkButton.Text = "Проверить маршрут";
             });
         }
-
         private void QueuePingMeasure()
         {
-            if (closing) return;
-            if (System.Threading.Interlocked.Exchange(ref pingInFlight, 1) != 0) return;
-
-            var current = settings.Current;
-            System.Threading.ThreadPool.QueueUserWorkItem(delegate
-            {
-                int? latency = null;
-                try
-                {
-                    latency = ConnectionMetrics.MeasureSocksLatencyMs(current, 4000);
-                }
-                finally
-                {
-                    System.Threading.Interlocked.Exchange(ref pingInFlight, 0);
-                }
-                var completed = now();
-
-                try
-                {
-                    if (closing || IsDisposed || !IsHandleCreated) return;
-                    BeginInvoke((Action)delegate
-                    {
-                        if (closing || IsDisposed) return;
-                        ping.Text = (latency.HasValue ? latency.Value + " ms" : "Нет ответа") + "\nSOCKS · " + completed.ToString("HH:mm:ss");
-                        RefreshState(false);
-                    });
-                }
-                catch
-                {
-                    // Form may be closing while the background measurement completes.
-                }
+            if (closing || System.Threading.Interlocked.Exchange(ref pingInFlight, 1) != 0) return;
+            var current = settings.Current.Clone(); var source = new CancellationTokenSource(); pingCancellation = source;
+            PingWork = RunMeasurement(source, token => pingProbe(current, token), latency => {
+                ping.Text = (latency.HasValue ? latency.Value + " ms" : "Нет ответа") + "\nSOCKS · " + now().ToString("HH:mm:ss");
+                RefreshState(false);
+            }, () => ping.Text = "Измерение задержки отменено.", () => ping.Text = "Не удалось измерить задержку.", () => {
+                pingCancellation = null; System.Threading.Interlocked.Exchange(ref pingInFlight, 0);
             });
         }
-
         private void StartSpeedTest()
         {
-            if (closing) return;
-            if (System.Threading.Interlocked.Exchange(ref speedInFlight, 1) != 0) return;
-
-            speedButton.Enabled = false;
-            speed.Text = "Измерение...";
-
-            var current = settings.Current;
-            System.Threading.ThreadPool.QueueUserWorkItem(delegate
-            {
-                string error;
-                var mbps = ConnectionMetrics.MeasureDownloadMbps(current, out error);
-                var completed = now();
-
-                try
-                {
-                    if (closing || IsDisposed || !IsHandleCreated) return;
-                    BeginInvoke((Action)delegate
-                    {
-                        if (closing || IsDisposed) return;
-
-                        if (mbps.HasValue)
-                        {
-                            speed.Text = mbps.Value.ToString("0.0") + " Мбит/с ↓";
-                            SafeLog.Info("Speed test completed. Mbps=" + mbps.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + ".");
-                        }
-                        else
-                        {
-                            speed.Text = "Не удалось измерить";
-                            if (!String.IsNullOrWhiteSpace(error))
-                            {
-                                SafeLog.Error("Speed test failed: " + error + ".", new InvalidOperationException(error));
-                            }
-                        }
-
-                        speed.Text += "\nCloudflare через SOCKS · " + completed.ToString("HH:mm:ss");
-
-                        speedButton.Enabled = true;
-                    });
+            if (closing || System.Threading.Interlocked.Exchange(ref speedInFlight, 1) != 0) return;
+            var current = settings.Current.Clone(); var source = new CancellationTokenSource(); speedCancellation = source;
+            speedButton.Text = "Отменить замер"; speed.Text = "Измеряем через SOCKS… Лимит — 40 секунд.";
+            SpeedWork = RunMeasurement(source, token => speedProbe(current, token), result => {
+                if (result.Item1.HasValue) speed.Text = result.Item1.Value.ToString("0.0") + " Мбит/с ↓";
+                else {
+                    speed.Text = "Не удалось измерить";
+                    if (!String.IsNullOrWhiteSpace(result.Item2)) SafeLog.Error("Speed test failed: " + result.Item2 + ".", new InvalidOperationException(result.Item2));
                 }
-                catch
-                {
-                    // Form may be closing while the speed test completes.
-                }
-                finally
-                {
-                    System.Threading.Interlocked.Exchange(ref speedInFlight, 0);
-                }
+                speed.Text += "\nCloudflare через SOCKS · " + now().ToString("HH:mm:ss");
+            }, () => speed.Text = "Измерение скорости отменено.", () => speed.Text = "Не удалось измерить скорость.", () => {
+                speedCancellation = null; System.Threading.Interlocked.Exchange(ref speedInFlight, 0);
+                if (!closing && !IsDisposed) speedButton.Text = "Измерить скорость";
             });
         }
 
@@ -251,6 +213,7 @@ namespace ProGo
             if (disposing)
             {
                 closing = true;
+                CancelMeasurements();
                 if (pingTimer != null)
                 {
                     pingTimer.Stop();

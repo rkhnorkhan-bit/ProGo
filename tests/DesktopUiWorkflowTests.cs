@@ -198,12 +198,12 @@ namespace ProGo
                 form.Show(); Application.DoEvents();
                 var route = (Label)Field(form, "route"); var time = (Label)Field(form, "checkedAt"); var button = (Button)Field(form, "checkButton");
                 Check(calls == 0 && route.Text == "Маршрут ещё не проверен" && time.Text == "Ещё не проверен", "diagnostics does not invent a first route check");
-                button.PerformClick(); PumpUntil(() => button.Enabled && calls == 1);
+                button.PerformClick(); PumpUntil(() => button.Text == "Проверить маршрут" && calls == 1);
                 Check(route.Text == "Fixture route answer" && time.Text.Contains("2020-01-01 12:00:00") && time.Text.Contains("SOCKS →"), "route result shows its source and actual completion time");
                 string previous = time.Text; clock = clock.AddHours(1); Call(form, "RefreshState", false);
                 Call(form, "QueuePingMeasure"); PumpUntil(() => ((Label)Field(form, "ping")).Text.Contains("SOCKS ·"));
                 Check(time.Text == previous && ((Label)Field(form, "state")).Text.Contains("13:00:00"), "status and ping refresh leave route time unchanged");
-                button.PerformClick(); PumpUntil(() => button.Enabled && calls == 2);
+                button.PerformClick(); PumpUntil(() => button.Text == "Проверить маршрут" && calls == 2);
                 Check(time.Text.Contains("13:00:00"), "explicit repeat refreshes route timestamp");
                 form.Size = form.MinimumSize; Application.DoEvents();
                 Check(Descendants(form).OfType<Button>().All(b => b.Visible && b.Top >= 0 && b.Bottom <= b.Parent.ClientSize.Height),
@@ -216,7 +216,7 @@ namespace ProGo
             using (var form = new StatusForm(settings, proxy, true, delegate { Interlocked.Increment(ref calls); entered.Set(); release.Wait(5000); finished.Set(); throw new InvalidOperationException("Fixture route failure"); }, () => clock)) {
                 form.Show(); PumpUntil(() => entered.IsSet);
                 Call(form, "QueueRouteMeasure"); Call(form, "QueueRouteMeasure");
-                Check(calls == 3 && !((Button)Field(form, "checkButton")).Enabled, "route runs automatically once and suppresses concurrent checks");
+                Check(calls == 3 && ((Button)Field(form, "checkButton")).Text == "Отменить проверку", "route runs automatically once and suppresses concurrent checks");
                 form.Close(); release.Set(); PumpUntil(() => finished.IsSet); Application.DoEvents();
                 Check(form.IsDisposed, "closing diagnostics ignores an in-flight failure without reopening UI");
             }

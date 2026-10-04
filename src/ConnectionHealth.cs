@@ -174,7 +174,7 @@ namespace ProGo
             }
             catch { return false; }
         }
-        internal static string InternetArguments(AppSettings s)
+        internal static string InternetArguments(AppSettings s, bool download = false)
         {
             Uri endpoint;
             if (!Uri.TryCreate(s.TestEndpoint, UriKind.Absolute, out endpoint) ||
@@ -186,7 +186,10 @@ namespace ProGo
             if (Uri.CheckHostName(host.Trim('[', ']')) == UriHostNameType.Unknown) throw new ArgumentException("Проверьте адрес локального прокси.");
             if (host.Contains(":") && !host.StartsWith("[")) host = "[" + host + "]";
             // NO_PROXY must never bypass the explicit SOCKS route, including custom local test endpoints.
-            return "--socks5-hostname \"" + host + ":" + s.SocksPort + "\" --noproxy \"\" --connect-timeout 3 --max-time 8 --head --silent --show-error --output NUL --write-out \"%{http_code}\" --url \"" + endpoint.AbsoluteUri + "\"";
+            return "--socks5-hostname " + SshConnection.Quote(host + ":" + s.SocksPort) + " --noproxy \"\" " +
+                (download ? "--connect-timeout 10 --max-time 35 --location " : "--connect-timeout 3 --max-time 8 --head ") +
+                "--silent --show-error --output NUL --write-out " + SshConnection.Quote(download ? "%{speed_download}" : "%{http_code}") +
+                " --url " + SshConnection.Quote(endpoint.AbsoluteUri);
         }
         internal static InternetProbeResult CheckInternet(AppSettings s, CancellationToken token)
         {

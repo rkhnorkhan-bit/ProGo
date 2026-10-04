@@ -414,9 +414,39 @@ F14 remains **open**: route, latency and speed worker cancellation belongs to
 stage 11b. Audit progress remains **12/30 closed; 18 remaining**. No release or
 version bump is included.
 
+## Stage 11b — F14: cancellable route, latency and speed measurements
+
+The route and speed buttons remain enabled as cancellation commands while their
+measurement is running. Duplicate requests are suppressed. Cancelled work does
+not invent a completed route timestamp; a subsequent click starts a fresh run.
+Closing/disposal requests cancellation for route, latency and speed immediately,
+without waiting on the UI thread. Each worker owns a settings snapshot and
+releases its cancellation source independently of UI completion. Late results
+cannot touch a closed window.
+
+Route (10 seconds) and speed (40 seconds) use the F14a short-lived process owner,
+with concurrent bounded output and up to 2 additional seconds for owned-tree
+cleanup. The SOCKS latency exchange has one 4-second deadline covering connect,
+greeting, CONNECT and fragmented reads; cancellation closes its owned socket.
+Explicit SOCKS arguments disable inherited NO_PROXY bypass, quote the endpoint,
+and reject invalid/credential-bearing URLs. HTTP transport proof requires a
+successful curl exit and a complete numeric status; oversized or malformed output
+cannot claim success. Reconnection remains an explicit application operation;
+closing the diagnostics does not stop an already-running shared SSH tunnel.
+
+Validation covers native curl against a disposable loopback SOCKS/HTTP fixture,
+fragmented/silent socket deadlines, real diagnostic process-tree timeout/cancel,
+UI heartbeat, cancellation, repeat, settings snapshots, closing all three active
+measurements and existing ordinary CLI/SSH startup regressions. Screenshots cover
+pending, cancelled and repeated results. No live VPS or credentials are used.
+
+Together with F14a and earlier asynchronous route/startup corrections, this stage
+completes F14. After successful native CI/review preparation, progress is
+**13/30 closed; 17 remaining**. No merge, release or version bump is included.
+
 ## Remaining stages
 
-F09 and F14–F30 remain separate work (18 findings). Preserve the ordinary
+F09 and F15–F30 remain separate work (17 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described
