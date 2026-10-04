@@ -33,6 +33,13 @@ The harness exercises the actual process manager using disposable loopback-only
 child processes and a test clock, including crashes, backoff, manual stop,
 opt-out, port conflicts, and profile fallback. It does not use real SSH servers.
 
+`tests/DesktopBridgeConsumerTests.cs` runs only on the disposable Windows CI
+runner. It exercises real loopback listener release/rebinding, Windows/CLI settings,
+scoped PowerShell process handles and the normal UI timer. Fixture cleanup may kill
+only the child it explicitly created; production consumer tracking only disposes
+handles. Native dashboard screenshots distinguish CLI off/Windows retained from a
+stopped shared service. No real SSH endpoint or Codex installation is used.
+
 ## Install locally
 
 ```powershell

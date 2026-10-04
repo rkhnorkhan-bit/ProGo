@@ -12,6 +12,7 @@ namespace ProGo
         private readonly HomeVpnService home;
         private readonly CliProxyBridgeService appProxy;
         private readonly AutomationPlan automation;
+        private readonly AppProxyConsumers appConsumers;
         private readonly ConnectionHealthMonitor health;
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
@@ -20,9 +21,9 @@ namespace ProGo
         private readonly Dictionary<string, Button> navigation = new Dictionary<string, Button>();
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
-        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null)
+        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<string> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null, AppProxyConsumers appConsumers = null)
         {
-            this.appProxy = appProxy;
+            this.appProxy = appProxy; this.appConsumers = appConsumers;
             this.automation = automation;
             this.health = health;
             this.settings = settings; this.proxy = proxy; this.home = home;
@@ -137,7 +138,8 @@ namespace ProGo
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +
-                (appProxy != null && appProxy.IsRunning ? " · работает" : " · выключен");
+                (appProxy != null && appProxy.IsRunning ? " · работает" +
+                    (appConsumers == null ? "" : " для: " + appConsumers.Summary) : " · служба остановлена");
             if (automation != null)
             {
                 string automaticStatus = automation.GetStatusText(ready);

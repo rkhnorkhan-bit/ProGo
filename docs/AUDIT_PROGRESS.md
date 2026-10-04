@@ -357,6 +357,26 @@ This handles caught runtime failures; it does not claim filesystem-wide atomicit
 or automatic recovery after a forced process termination/power loss. No version
 bump or published release.
 
+## Stage 10 — F10 shared application-proxy consumers
+
+Scope: manual CLI off, Windows off and optional scoped consumers share one
+loopback HTTP listener. No new transport or persisted setting is introduced.
+
+- The listener is released after the last Windows/CLI consumer is disabled.
+  Ordinary **Запустить CLI** and its aliases still use the shared environment.
+- Windows, partial proxy endpoints, unfinished cleanup journals, windows explicitly
+  opened through ProGo, and its owned Codex shortcut retain the endpoint. Window
+  handles are pruned after exit; no PID lookup or user-process termination occurs.
+- Dashboard service status names remaining consumers independently of CLI state.
+  CLI off explains restarting old terminals and the existing explicit full-stop
+  command. Full desktop stop closes the endpoint but leaves user windows open.
+
+Validation pending: real Windows listener rebinding, both consumer-release orders,
+ordinary CLI aliases, scoped PowerShell handles, cleanup-journal retention, optional
+shortcut removal, UI timer release, explicit full stop and native screenshots.
+This stage does not claim to change an already-running terminal's environment or
+track windows launched outside ProGo. No version bump or published release.
+
 ## Remaining stages
 
 F09–F10 and F14–F30 remain separate work (19 findings). Preserve the ordinary
