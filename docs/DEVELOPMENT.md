@@ -283,3 +283,21 @@ fixture must retain recovery roots and log their paths. The fixtures also verify
 protective-snapshot integrity/retention and successful restoration after faults.
 No tests decode vaults, use a real VPS, or replace user secrets. Forced termination
 and power-loss recovery are outside the caught-error rollback claim.
+
+### Audit stage F14a
+
+`DesktopSshDiagnosticTests.cs` uses the harness itself as a local `ssh -G` and
+pipe-holding descendant fixture. It checks process-tree cleanup on cancellation,
+timeout and normal root exit, bounded parallel output capture and unrelated
+process preservation. Native diagnostic windows exercise UI heartbeat, a frozen
+profile snapshot, cancellation, retry and close during work. Screenshots cover
+pending, cancelled and successful states. These tests run only in Windows CI.
+
+`DiagnosticProcess` is exclusively for short-lived owned diagnostics, never user
+terminals or persistent tunnels. It creates the process suspended, restricts
+inherited handles, assigns a kill-on-close Windows job, then resumes execution.
+See Microsoft's [job objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects),
+[CreateProcessW](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw)
+and [creation flags](https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags)
+for the ownership and startup guarantees. The separate cleanup confirmation
+allowance is at most 2 seconds; cleanup failure must remain visible to the caller.
