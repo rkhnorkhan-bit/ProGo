@@ -13,6 +13,8 @@ namespace ProGo
         private readonly SettingsService settings;
         private readonly List<Process> windows = new List<Process>();
         private bool observing;
+        internal bool CliCleanupPending { get; set; }
+        internal bool WindowsCleanupPending { get; set; }
         internal AppProxyConsumers(CliProxyBridgeService bridge, SettingsService settings)
         {
             this.bridge = bridge; this.settings = settings;
@@ -39,8 +41,8 @@ namespace ProGo
             get {
                 PruneWindows(); var names = new List<string>();
                 // A pending ownership journal also retains the listener after a failed cleanup.
-                if (SystemProxyService.IsApplied(settings.Current) || File.Exists(SystemProxyService.BackupPath)) names.Add("Windows");
-                if (CliProxyEnvironmentService.HasProxyEndpoint(bridge.Port) || File.Exists(CliProxyEnvironmentService.BackupPath)) names.Add("терминалы и Codex");
+                if (WindowsCleanupPending || SystemProxyService.IsApplied(settings.Current) || File.Exists(SystemProxyService.BackupPath)) names.Add("Windows");
+                if (CliCleanupPending || CliProxyEnvironmentService.HasProxyEndpoint(bridge.Port) || File.Exists(CliProxyEnvironmentService.BackupPath)) names.Add("терминалы и Codex");
                 if (windows.Count != 0) names.Add("отдельные окна: " + windows.Count);
                 try { if (CodexProxyService.IsOwned) names.Add("ярлык Codex"); }
                 catch { names.Add("ярлык Codex: нужна проверка"); }

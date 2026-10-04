@@ -51,7 +51,13 @@ namespace ProGo
                     string error; Check(bridge.Start(out error), "cleanup journal fixture starts listener"); consumers.Observe();
                     File.WriteAllText(CliProxyEnvironmentService.BackupPath, "invalid fixture journal"); consumers.ReleaseIfUnused();
                     Check(bridge.IsRunning, "uncertain CLI cleanup retains the listener rather than cutting access");
-                    File.Delete(CliProxyEnvironmentService.BackupPath);
+                    var warning = CleanupDialog(context, "Execute", "cli-off");
+                    Check(warning.Length > 0 && consumers.CliCleanupPending, "failed actual CLI off records an explicit pending cleanup consumer");
+                    File.Delete(CliProxyEnvironmentService.BackupPath); consumers.ReleaseIfUnused();
+                    Check(bridge.IsRunning, "cleanup failure keeps access even if its journal becomes unavailable");
+                    Call(context, "Execute", "cli-off");
+                    Check(!bridge.IsRunning && !consumers.CliCleanupPending, "successful explicit cleanup retry releases the retained service");
+                    Check(bridge.Start(out error), "NO_PROXY fixture starts listener"); consumers.Observe();
                     Environment.SetEnvironmentVariable("NO_PROXY", "localhost,127.0.0.1,::1", EnvironmentVariableTarget.User);
                     consumers.ReleaseIfUnused();
                     Check(!bridge.IsRunning, "NO_PROXY alone is not an HTTP proxy consumer");

@@ -336,7 +336,7 @@ namespace ProGo
         {
             CancelPendingRoute("cli-start");
             automation.Cancel(ProxyFeature.Cli);
-            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+            RestoreCliEnvironment();
             appConsumers.Observe(); appConsumers.ReleaseIfUnused();
             var remaining = appConsumers.Summary;
             tray.ShowBalloonTip(7000, "Прокси для новых терминалов выключен",
@@ -347,16 +347,26 @@ namespace ProGo
         {
             tray.ShowBalloonTip(6000, "CLI-прокси включён", "Codex можно запускать обычным способом. Полностью перезапустите уже открытый терминал или приложение с Codex. Отдельный ярлык не нужен.", ToolTipIcon.Info);
         }
+        private void RestoreCliEnvironment()
+        {
+            try {
+                CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+                appConsumers.CliCleanupPending = false;
+            } catch { appConsumers.CliCleanupPending = true; throw; }
+        }
         private void RestoreWindowsProxy()
         {
-            var result = restoreWindows();
-            if (!result.Completed) throw new InvalidOperationException(result.Message);
-            if (result.PreservedExternal) tray.ShowBalloonTip(5000, "Настройки Windows сохранены", result.Message, ToolTipIcon.Info);
+            try {
+                var result = restoreWindows();
+                if (!result.Completed) throw new InvalidOperationException(result.Message);
+                appConsumers.WindowsCleanupPending = false;
+                if (result.PreservedExternal) tray.ShowBalloonTip(5000, "Настройки Windows сохранены", result.Message, ToolTipIcon.Info);
+            } catch { appConsumers.WindowsCleanupPending = true; throw; }
         }
         private void DisconnectApps()
         {
             var errors = new List<string>();
-            try { CliProxyEnvironmentService.ClearUserEnvironmentIfOwned(); }
+            try { RestoreCliEnvironment(); }
             catch (Exception ex) { SafeLog.Error("Environment restore failed.", ex); errors.Add("Не удалось восстановить настройки терминалов. Повторите выключение CLI."); }
             try { RestoreWindowsProxy(); }
             catch (Exception ex) { SafeLog.Error("Windows proxy cleanup incomplete.", ex); errors.Add(ex.Message); }
