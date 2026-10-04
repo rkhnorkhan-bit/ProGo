@@ -74,7 +74,7 @@ namespace ProGo
                     });
                     CheckModal(context, main, "windows-settings", "settings", delegate(Form form) {
                         var option = Descendants(form).OfType<CheckBox>().Single(c => c.Text == "Включать прокси для приложений Windows");
-                        var flow = (FlowLayoutPanel)option.Parent.Parent;
+                        var flow = (FlowLayoutPanel)option.Parent.Parent.Parent;
                         var bounds = flow.RectangleToClient(option.Parent.RectangleToScreen(option.Parent.ClientRectangle));
                         Shot(form, "settings-windows-route");
                         var controls = Descendants(option.Parent).Where(c => c is CheckBox || c is Button).ToArray();

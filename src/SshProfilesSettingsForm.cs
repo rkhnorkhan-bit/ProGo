@@ -47,27 +47,36 @@ namespace ProGo
             ClientSize = new Size(900, 700); MinimumSize = new Size(850, 650);
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
             root.Controls.Add(UiTheme.Label("Поля и галочки — после «Сохранить».\nРучные команды — сразу; «Отменить изменения» их не откатывает.", UiTheme.Body, UiTheme.Muted), 0, 1);
-            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed };
+            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed, Multiline = true };
             root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
             var automation = Page(tabs, "Автоматика");
             var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, AutoScrollMargin = new Size(0, 18), FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
             automation.Controls.Add(autoFlow);
-            autoFlow.SizeChanged += delegate {
-                foreach (Control child in autoFlow.Controls) {
-                    var label = child as Label;
-                    if (label != null) label.MaximumSize = new Size(Math.Max(560, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4), 0);
-                    var card = child as SurfacePanel; if (card == null) continue;
-                    card.Width = Math.Max(600, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4);
-                    foreach (Control item in card.Controls) {
-                        var hint = item as Label; if (hint != null) hint.MaximumSize = new Size(card.Width - 38, 0);
+            bool fittingAutomation = false;
+            Action fitAutomation = delegate {
+                if (fittingAutomation || autoFlow.ClientSize.Width < 1) return;
+                fittingAutomation = true;
+                try {
+                    // Reserve a vertical scrollbar gutter; changing text must not oscillate widths.
+                    int width = Math.Max(1, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
+                    foreach (Control child in autoFlow.Controls) {
+                        int available = Math.Max(1, width - child.Margin.Horizontal);
+                        var label = child as Label;
+                        if (label != null) label.MaximumSize = new Size(available, 0);
+                        var card = child as SurfacePanel;
+                        if (card == null) continue;
+                        card.MaximumSize = new Size(available, 0);
+                        card.MinimumSize = new Size(available, 0);
                     }
-                }
+                } finally { fittingAutomation = false; }
             };
+            autoFlow.ClientSizeChanged += delegate { fitAutomation(); };
+            autoFlow.Layout += delegate { fitAutomation(); };
             autoFlow.Controls.Add(UiTheme.Label("Предпочтения: галочки начинают действовать после сохранения.", UiTheme.Body, UiTheme.Muted));
             currentAutomation.Name = "currentAutomationSettings";
             currentAutomation.MaximumSize = new Size(740, 0);
@@ -137,13 +146,19 @@ namespace ProGo
             appPorts.Controls.Add(portHelp, 0, 4); appPorts.SetColumnSpan(portHelp, 2);
             portNotice.MaximumSize = new Size(740, 0);
             appPorts.Controls.Add(portNotice, 0, 5); appPorts.SetColumnSpan(portNotice, 2);
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 12, 0, 0) };
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.RightToLeft, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 12, 0, 0) };
             var save = UiTheme.Button("Сохранить", Save, true);
             var cancel = UiTheme.Button("Отменить изменения", null, false); cancel.DialogResult = DialogResult.Cancel;
             buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 4);
             saveError.Name = "settingsSaveError"; saveError.Visible = false;
             saveError.MaximumSize = new Size(830, 0);
-            root.SizeChanged += delegate { saveError.MaximumSize = new Size(Math.Max(300, root.ClientSize.Width - root.Padding.Horizontal), 0); };
+            root.Layout += delegate {
+                foreach (Control child in root.Controls) {
+                    var label = child as Label;
+                    if (label != null) label.MaximumSize = new Size(Math.Max(1, root.ClientSize.Width - root.Padding.Horizontal - label.Margin.Horizontal), 0);
+                }
+            };
             root.Controls.Add(saveError, 0, 3);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
@@ -156,7 +171,7 @@ namespace ProGo
                     autoWindows.Focus();
                     BeginInvoke((Action)delegate {
                         if (IsDisposed) return;
-                        var card = autoWindows.Parent;
+                        var card = autoWindows.Parent.Parent;
                         autoFlow.ScrollControlIntoView(card);
                         int overflow = card.Bottom + autoFlow.Padding.Bottom - autoFlow.ClientSize.Height;
                         if (overflow > 0) autoFlow.AutoScrollPosition = new Point(0, -autoFlow.AutoScrollPosition.Y + overflow);
@@ -177,15 +192,33 @@ namespace ProGo
         }
         private void AutomationCard(FlowLayoutPanel flow, CheckBox toggle, string title, string description, string onLabel, string on, string offLabel, string off)
         {
-            var card = new SurfacePanel { Width = 740, Height = 174, Margin = new Padding(0, 6, 0, 8), Padding = new Padding(16) };
-            toggle.Text = title; toggle.AutoSize = true; toggle.Font = UiTheme.Strong; toggle.Location = new Point(16, 12);
-            var hint = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted); hint.MaximumSize = new Size(694, 0); hint.Location = new Point(16, 42);
+            var card = new SurfacePanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Margin = new Padding(0, 6, 0, 8), Padding = new Padding(16) };
+            var stack = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 1, RowCount = 4, Margin = new Padding(0) };
+            stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            for (int row = 0; row < 4; row++) stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            toggle.Text = title; toggle.AutoSize = true; toggle.Font = UiTheme.Strong;
+            toggle.Margin = new Padding(0, 0, 0, 8);
+            var hint = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted);
             var immediate = UiTheme.Label("Ручное управление · применяется сразу", UiTheme.Body, UiTheme.Accent);
-            immediate.Location = new Point(16, 98);
-            var actions = new FlowLayoutPanel { Location = new Point(16, 122), Width = 698, Height = 42 };
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = true, Margin = new Padding(0) };
             actions.Controls.Add(UiTheme.Button(onLabel, delegate { RequestManualAction(on); }, false));
             actions.Controls.Add(UiTheme.Button(offLabel, delegate { RequestManualAction(off); }, false));
-            card.Controls.Add(toggle); card.Controls.Add(hint); card.Controls.Add(immediate); card.Controls.Add(actions); flow.Controls.Add(card);
+            stack.Controls.Add(toggle, 0, 0); stack.Controls.Add(hint, 0, 1);
+            stack.Controls.Add(immediate, 0, 2); stack.Controls.Add(actions, 0, 3);
+            bool sizing = false;
+            stack.Layout += delegate {
+                if (sizing) return; sizing = true;
+                try {
+                    foreach (Control child in stack.Controls) {
+                        if (child is Label || child is CheckBox)
+                            child.MaximumSize = new Size(Math.Max(1, stack.ClientSize.Width - child.Margin.Horizontal), 0);
+                    }
+                } finally { sizing = false; }
+            };
+            card.Controls.Add(stack); flow.Controls.Add(card);
         }
         private void RequestManualAction(string action)
         {
