@@ -79,7 +79,7 @@ namespace ProGo
                 var limits = new ExtendedLimits(); limits.Basic.LimitFlags = 0x2000; // KILL_ON_JOB_CLOSE; no breakaway.
                 Native(SetInformationJobObject(job, 9, ref limits, Marshal.SizeOf(typeof(ExtendedLimits))));
                 ProcessInfo child = new ProcessInfo(); SafeFileHandle process = null, thread = null;
-                IntPtr attributes = IntPtr.Zero, handles = IntPtr.Zero; bool initialized = false, assigned = false;
+                IntPtr attributes = IntPtr.Zero, handles = IntPtr.Zero; bool initialized = false, assigned = false, cleanupAttempted = false;
                 Task<Capture> readOutput = null, readError = null;
                 try {
                     var inherited = new[] { input.ClientSafePipeHandle.DangerousGetHandle(), output.ClientSafePipeHandle.DangerousGetHandle(), error.ClientSafePipeHandle.DangerousGetHandle() };
@@ -110,7 +110,7 @@ namespace ProGo
                     }
                     uint code; Native(GetExitCodeProcess(process, out code));
                     // A Match exec helper must not survive its parent or hold its pipe open.
-                    Settle(job);
+                    cleanupAttempted = true; Settle(job);
                     while (!readOutput.IsCompleted || !readError.IsCompleted) {
                         CheckDeadline(watch, timeoutMs, token); Thread.Sleep(10);
                     }
@@ -120,8 +120,8 @@ namespace ProGo
                 }
                 finally {
                     try {
-                        if (assigned) Settle(job);
-                        else if (process != null) { Native(TerminateProcess(process, 1)); if (WaitForSingleObject(process, 2000) != 0) throw new IOException("Suspended diagnostic process cleanup failed."); }
+                        if (assigned && !cleanupAttempted) Settle(job);
+                        else if (!assigned && process != null) { Native(TerminateProcess(process, 1)); if (WaitForSingleObject(process, 2000) != 0) throw new IOException("Suspended diagnostic process cleanup failed."); }
                     } finally {
                         if (readOutput != null) readOutput.ContinueWith(t => { var observed = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
                         if (readError != null) readError.ContinueWith(t => { var observed = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
