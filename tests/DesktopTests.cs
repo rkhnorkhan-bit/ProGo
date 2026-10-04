@@ -82,6 +82,7 @@ namespace ProGo
                     SettingsValidationAndErrors(settings);
                     DashboardLayout(settings);
                     SettingsAutomationLayout(settings);
+                    SettingsPagesLayout(settings);
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);

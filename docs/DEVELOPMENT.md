@@ -370,3 +370,15 @@ duplicating controls. Existing settings action, targeted Windows-entry and
 structured validation/error tests stay required. No display settings, external
 server or real credentials are used. This is not native DPI coverage; remaining
 settings page layout and actual DPI/work-area validation remain separate F16 work.
+
+### Audit stage F16c
+
+`DesktopSettingsPagesLayoutTests.cs` covers the four non-automation settings pages
+on isolated Windows CI. The native HWND sizing fixture verifies the actual client
+area before checking bounds, row separation, wrapping and scroll reachability.
+The matrix includes normal/minimum sizes, a 1366-compatible window, long synthetic
+text and constrained form.Scale 125/150/200%. It also checks pending field values
+across tab changes, port-pick cancellation, read-only effective-address copying
+and refused Save preservation. Clipboard content is synthetic and cleared after
+the copy assertion. Existing functional and validation fixtures remain required.
+These screenshots and scaling checks do not establish actual DPI/display support.
