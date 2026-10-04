@@ -49,9 +49,10 @@ namespace ProGo
                     Shot(form, name + "-" + index);
                     Check(!viewport.HorizontalScroll.Visible && body.Width <= viewport.ClientSize.Width,
                         prefix + " fits without horizontal scrolling: body=" + body.Bounds + " viewport=" + viewport.ClientSize);
-                    Check(Descendants(body).Where(c => c.Parent == body || c.Parent is TableLayoutPanel || c.Parent is FlowLayoutPanel)
-                        .All(c => c.Left >= 0 && c.Right <= c.Parent.ClientSize.Width && c.Top >= 0 && c.Bottom <= c.Parent.ClientSize.Height),
-                        prefix + " keeps rows, fields and buttons inside their containers");
+                    var clipped = Descendants(body).Where(c => c.Parent == body || c.Parent is TableLayoutPanel || c.Parent is FlowLayoutPanel)
+                        .Where(c => c.Left < 0 || c.Right > c.Parent.ClientSize.Width || c.Top < 0 || c.Bottom > c.Parent.ClientSize.Height).ToArray();
+                    Check(clipped.Length == 0, prefix + " keeps rows, fields and buttons inside their containers: " +
+                        string.Join("; ", clipped.Select(c => c.GetType().Name + " " + c.Bounds + " parent=" + c.Parent.ClientSize)));
                     Check(Descendants(body).OfType<TableLayoutPanel>().Concat(new[] { body }).All(t => {
                         var rows = t.Controls.Cast<Control>().OrderBy(c => c.Top).ToArray();
                         return rows.Zip(rows.Skip(1), (a, b) => a.Bottom <= b.Top).All(v => v);

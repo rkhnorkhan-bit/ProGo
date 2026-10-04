@@ -312,6 +312,13 @@ namespace ProGo
             caption.Dock = DockStyle.Top; caption.Margin = new Padding(0, 0, 0, 6);
             control.Dock = DockStyle.Top; control.Margin = new Padding(0);
             field.Controls.Add(caption, 0, 0); field.Controls.Add(control, 0, 1);
+            if (control is ComboBox) {
+                // Owner-drawn ComboBox height follows ItemHeight; preferred size may
+                // still report the smaller font-based height. Reserve the native height.
+                field.RowStyles[1].SizeType = SizeType.Absolute;
+                field.RowStyles[1].Height = control.Height;
+                control.SizeChanged += delegate { field.RowStyles[1].Height = control.Height; };
+            }
             field.Layout += delegate { caption.MaximumSize = new Size(Math.Max(1, field.ClientSize.Width), 0); };
             AddSettingsRow(panel, row, field);
         }
