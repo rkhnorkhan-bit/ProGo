@@ -42,9 +42,16 @@ namespace ProGo
             string installed = Path.Combine(AppPaths.Root, "ProGo.exe"), scripts = Path.Combine(AppPaths.Root, "scripts");
             string startup = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "ProGo.lnk");
             string menu = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "ProGo");
-            if (File.Exists(installed) || Directory.Exists(scripts) || File.Exists(startup) || Directory.Exists(menu) ||
-                File.Exists(SystemProxyService.BackupPath) || File.Exists(CliProxyEnvironmentService.BackupPath) || Process.GetProcessesByName("ProGo").Length != 0)
-                throw new Exception("Shutdown fixture is not isolated");
+            bool hadScripts = Directory.Exists(scripts), hadMenu = Directory.Exists(menu);
+            var occupied = new System.Collections.Generic.List<string>();
+            if (File.Exists(installed)) occupied.Add("executable");
+            if (hadScripts && Directory.GetFileSystemEntries(scripts).Length != 0) occupied.Add("nonempty scripts");
+            if (File.Exists(startup)) occupied.Add("startup shortcut");
+            if (hadMenu && Directory.GetFileSystemEntries(menu).Length != 0) occupied.Add("nonempty menu");
+            if (File.Exists(SystemProxyService.BackupPath)) occupied.Add("Windows journal");
+            if (File.Exists(CliProxyEnvironmentService.BackupPath)) occupied.Add("CLI journal");
+            if (Process.GetProcessesByName("ProGo").Length != 0) occupied.Add("running owner");
+            if (occupied.Count != 0) { Console.WriteLine("FAIL: shutdown fixture is not isolated: " + String.Join(", ", occupied)); return 1; }
             var beforeWindows = SystemProxyService.ReadCurrent();
             var beforeEnvironment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
             byte[] beforeSettings = File.Exists(AppPaths.SettingsPath) ? File.ReadAllBytes(AppPaths.SettingsPath) : null;
@@ -121,7 +128,7 @@ namespace ProGo
                     Check(Uninstall(uninstall) != 0 && File.Exists(installed), "missing cleanup handler cannot masquerade as successful removal");
                 }
                 Console.WriteLine("Shutdown tests PASS: " + passed); return 0;
-            } catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
+            } catch (Exception ex) { Console.WriteLine("FAIL: " + ex); return 1; }
             finally {
                 StopFixture(primary); listener.Stop();
                 CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
@@ -132,6 +139,8 @@ namespace ProGo
                 File.Delete(installed); File.Delete(startup);
                 if (Directory.Exists(menu)) Directory.Delete(menu, true);
                 if (Directory.Exists(scripts)) Directory.Delete(scripts, true);
+                if (hadScripts) Directory.CreateDirectory(scripts);
+                if (hadMenu) Directory.CreateDirectory(menu);
             }
         }
     }
