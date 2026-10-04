@@ -59,6 +59,17 @@ function Assert-RestoreTree($Path, [switch]$Shallow) {
     }
 }
 
+function Get-RestoreChildren($Path, $Prefix) {
+    foreach ($child in @(Get-ChildItem -LiteralPath $Path -Force | Sort-Object Name)) {
+        if (($child.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Restore refuses links: $($child.FullName)" }
+        $relative = $Prefix + '\' + $child.Name
+        if ($child.PSIsContainer) {
+            $relative + ':directory'
+            Get-RestoreChildren $child.FullName $relative
+        } else { $relative + ':' + (Get-FileHash -LiteralPath $child.FullName -Algorithm SHA256).Hash }
+    }
+}
+
 function Get-RestoreState($Root, $Names) {
     $lines = New-Object System.Collections.Generic.List[string]
     foreach ($name in $Names) {
@@ -68,11 +79,8 @@ function Get-RestoreState($Root, $Names) {
         $item = Get-Item -LiteralPath $path -Force
         if ($item.PSIsContainer) {
             $lines.Add($name + ':directory')
-            foreach ($child in @(Get-ChildItem -LiteralPath $path -Force -Recurse | Sort-Object FullName)) {
-                $relative = $child.FullName.Substring($Root.Length).TrimStart('\')
-                if ($child.PSIsContainer) { $lines.Add($relative + ':directory') }
-                else { $lines.Add($relative + ':' + (Get-FileHash -LiteralPath $child.FullName -Algorithm SHA256).Hash) }
-            }
+            # Relative names must not depend on Windows expanding an 8.3 root alias.
+            foreach ($line in @(Get-RestoreChildren $path $name)) { $lines.Add($line) }
         } else { $lines.Add($name + ':' + (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash) }
     }
     return ($lines -join "`n")
@@ -169,7 +177,10 @@ function Undo-Restore {
 
 function Test-RestoredApplication {
     $exe = Join-Path $InstallDir 'ProGo.exe'
-    $process = Start-Process -FilePath $exe -ArgumentList '--self-check' -WorkingDirectory $InstallDir -PassThru
+    $info = New-Object Diagnostics.ProcessStartInfo
+    $info.FileName = $exe; $info.Arguments = '--self-check'; $info.WorkingDirectory = $InstallDir
+    $info.UseShellExecute = $false; $info.CreateNoWindow = $true
+    $process = [Diagnostics.Process]::Start($info)
     try {
         if (-not $process.WaitForExit(30000)) { $process.Kill(); $process.WaitForExit(); throw 'Restored application self-check timed out.' }
         if ($process.ExitCode -ne 0) { throw "Restored application self-check failed: exit=$($process.ExitCode)" }
@@ -271,6 +282,7 @@ try {
     # Keep pre-handoff refusal free of installed-state side effects.
     if ($null -ne $Prepared) {
         $notice = if ($rollbackFailed) { U8 "0J3QtSDRg9C00LDQu9C+0YHRjCDQv9C+0LvQvdC+0YHRgtGM0Y4g0LLQtdGA0L3Rg9GC0Ywg0L/RgNC10LbQvdC40LUg0YTQsNC50LvRiy4g0J3QtSDQt9Cw0L/Rg9GB0LrQsNC50YLQtSBQcm9HbyDQtNC+INCy0L7RgdGB0YLQsNC90L7QstC70LXQvdC40Y8uINCh0L7RhdGA0LDQvdC10L3RiyDQt9Cw0YnQuNGC0L3QsNGPINC60L7Qv9C40Y8g0Lgg0YDQsNCx0L7Rh9Cw0Y8g0L/QsNC/0LrQsCDQstC+0YHRgdGC0LDQvdC+0LLQu9C10L3QuNGPOyDQuNGFINC/0YPRgtC4INGD0LrQsNC30LDQvdGLINCyIHByb2dvLXJlc3RvcmUubG9nLiDQl9Cw0YnQuNGC0L3QsNGPINC60L7Qv9C40Y86IA==" } else { U8 "0JLQvtGB0YHRgtCw0L3QvtCy0LvQtdC90LjQtSDQvdC1INCy0YvQv9C+0LvQvdC10L3Qvi4g0J/RgNC10LbQvdC40LUg0YTQsNC50LvRiyDRgdC+0YXRgNCw0L3QtdC90Ysg0LjQu9C4INCy0L7Qt9Cy0YDQsNGJ0LXQvdGLLiDQn9C+0LTRgNC+0LHQvdC+0YHRgtC4IOKAlCDQsiBwcm9nby1yZXN0b3JlLmxvZy4g0JfQsNGJ0LjRgtC90LDRjyDQutC+0L/QuNGPOiA=" }
+        if ($null -ne $Transaction -and $Transaction.Complete) { $notice = U8 "0JLQvtGB0YHRgtCw0L3QvtCy0LvQtdC90LjQtSDQt9Cw0LLQtdGA0YjQtdC90L4sINC90L4g0L3QtSDRg9C00LDQu9C+0YHRjCDQt9Cw0L/QuNGB0LDRgtGMINC40LvQuCDQv9C+0LrQsNC30LDRgtGMINC40YLQvtCz0L7QstC+0LUg0YHQvtC+0LHRidC10L3QuNC1LiDQn9C+0LTRgNC+0LHQvdC+0YHRgtC4IOKAlCDQsiBwcm9nby1yZXN0b3JlLmxvZy4g0JfQsNGJ0LjRgtC90LDRjyDQutC+0L/QuNGPOiA=" }
         Show-UserMessage ($notice + $Protection) 'ProGo'
     }
     throw
