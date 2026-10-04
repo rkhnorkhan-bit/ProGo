@@ -8,6 +8,11 @@ namespace ProGo
 {
     internal static partial class DesktopTests
     {
+        private static void AssertPortReleased(int port, string message)
+        {
+            var released = Occupy(port);
+            try { Check(true, message); } finally { released.Stop(); }
+        }
         private static void SharedBridgeConsumers(SettingsService settings)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
@@ -35,7 +40,7 @@ namespace ProGo
                     Shot(main, "main-cli-off-windows-retained");
                     Call(context, "Execute", "windows-off");
                     Check(!bridge.IsRunning, "Windows off releases the last consumer");
-                    using (var released = Occupy(port)) Check(true, "last Windows off frees the actual listening port");
+                    AssertPortReleased(port, "last Windows off frees the actual listening port");
                     Call(context, "EnableFeature", ProxyFeature.Cli); Call(context, "EnableFeature", ProxyFeature.Windows);
                     Call(context, "Execute", "windows-off");
                     Check(bridge.IsRunning && CliProxyEnvironmentService.HasProxyEndpoint(bridge.Port), "Windows off preserves ordinary CLI");
@@ -80,7 +85,7 @@ namespace ProGo
                             Check(consumers.WindowCount == 0, "UI timer frees the listener after the last tracked window closes");
                         } finally { if (!observer.HasExited) { observer.Kill(); observer.WaitForExit(5000); } }
                     }
-                    using (var released = Occupy(settings.Current.HttpProxyPort)) Check(true, "last tracked window releases the port");
+                    AssertPortReleased(settings.Current.HttpProxyPort, "last tracked window releases the port");
 
                     Check(bridge.Start(out error), "full stop window fixture starts listener");
                     Check(CliProxyEnvironmentService.OpenPowerShellWithEnvironment(bridge.Port, out error, out window), "full stop fixture opens a scoped child");

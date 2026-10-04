@@ -443,7 +443,7 @@ namespace ProGo
                         Check(!ApplyOnce(plan, ProxyFeature.Cli, true) && CliProxyEnvironmentService.Names.All(n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User) == originalEnvironment[n]),
                             "manual off and legacy alias restore one environment and cancel pending setup " + off[i]);
                         Check(!bridge.IsRunning, "last CLI consumer stops the bridge " + off[i]);
-                        using (var released = Occupy(settings.Current.HttpProxyPort)) Check(true, "CLI off releases its listening port " + off[i]);
+                        AssertPortReleased(settings.Current.HttpProxyPort, "CLI off releases its listening port " + off[i]);
                     }
                 }
             }
