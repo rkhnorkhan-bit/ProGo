@@ -39,7 +39,7 @@ namespace ProGo
         internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard)
         {
             this.service = service; this.clipboard = clipboard;
-            Text = "iPhone через домашний ПК"; AutoScaleMode = AutoScaleMode.Dpi;
+            Text = "VPN для телефона"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(750, 650); MinimumSize = new Size(700, 620);
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), RowCount = 5, ColumnCount = 1 };
@@ -95,7 +95,7 @@ namespace ProGo
                 Paragraph("Попросите владельца открыть «Доступ друзей» → «Создать токен». Вставьте полученный токен целиком. Он даёт доступ к VPN и должен оставаться личным.");
                 token = Field("Токен PROGO1.…", draftToken); token.UseSystemPasswordChar = true;
                 Action("Вставить из буфера", delegate { if (Clipboard.ContainsText()) token.Text = Clipboard.GetText().Trim(); });
-                Paragraph("Токен содержит отдельный SSH-ключ только для VPN и учётную запись iPhone. Это не пароль администратора. Импортируйте токен только от знакомого владельца VPS.");
+                Paragraph("Токен содержит отдельный SSH-ключ только для VPN и учётную запись VPN телефона. Это не пароль администратора. Импортируйте токен только от знакомого владельца VPS.");
                 next.Text = "Проверить токен и подключиться";
             }
             else if (step == 2)
@@ -143,7 +143,7 @@ namespace ProGo
                 internetCheck.SelectedIndexChanged += delegate { if (internetCheck.SelectedIndex >= 0) verification.SetInternet((PhoneInternet)internetCheck.SelectedIndex); RefreshStatus(); };
                 body.Controls.Add(internetCheck);
                 counters = Paragraph("");
-                Paragraph("На iPhone выключите Wi-Fi, выберите профиль ProGo и включите VPN. Затем откройте сайт проверки IP: должен отображаться выход вашего VPS. Счётчики подтверждают пересылку, а статус «Подключено» проверяется на телефоне.");
+                Paragraph("На телефоне выключите Wi-Fi, выберите профиль ProGo и включите VPN. Затем откройте сайт проверки IP: должен отображаться выход вашего VPS. Счётчики подтверждают пересылку, а статус «Подключено» проверяется на телефоне.");
                 Action("Установить на телефон по QR", async delegate { await ShowQr(); });
                 Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); });
                 Action("Настроить роутер / создать профиль снова", delegate { ShowStep(2); });
@@ -157,7 +157,7 @@ namespace ProGo
                         SetProgress("Правила выхода VPN обновлены. Переподключите VPN на телефоне и откройте сайт для проверки.");
                     });
                 });
-                Paragraph("Режим экспериментальный: IKEv2 нужно проверить с вашим iPhone и провайдером. При обрыве SSH/SOCKS при включённом автовосстановлении ProGo повторяет подключение; телефон может переподключать VPN несколько секунд.");
+                Paragraph("Режим экспериментальный: IKEv2 нужно проверить с вашим телефоном и провайдером. При обрыве SSH/SOCKS при включённом автовосстановлении ProGo повторяет подключение; телефон может переподключать VPN несколько секунд.");
             }
             UiTheme.Apply(body); body.ResumeLayout(); RefreshStatus();
         }

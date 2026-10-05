@@ -122,7 +122,7 @@ namespace ProGo
                 if (String.IsNullOrEmpty(scriptPath) || !File.Exists(scriptPath))
                 {
                     MessageBox.Show(
-                        "Файл обновления отсутствует. Откройте «Помощь → Антивирус и обновления» для восстановления установки.",
+                        "Файл обновления отсутствует. Откройте «Помощь → Антивирус» для восстановления установки.",
                         "Обновление ProGo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);

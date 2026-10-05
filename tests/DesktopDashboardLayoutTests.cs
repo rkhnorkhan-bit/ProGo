@@ -96,7 +96,7 @@ namespace ProGo
                     var controls = t.Controls.Cast<Control>().OrderBy(c => t.GetRow(c)).ToArray();
                     return controls.Zip(controls.Skip(1), (a, b) => a.Bottom <= b.Top).All(v => v);
                 }), name + " has no overlapping stack rows");
-                foreach (string text in new[] { "Обновить ProGo", "Открыть Codex", "Помощь" }) {
+                foreach (string text in new[] { "Обновить ProGo", "Открыть Codex CLI с прокси", "Помощь" }) {
                     var button = Descendants(form).OfType<Button>().Single(b => b.Text == text);
                     Check(form.ClientRectangle.Contains(form.RectangleToClient(button.RectangleToScreen(button.ClientRectangle))), name + " keeps footer visible: " + text);
                 }

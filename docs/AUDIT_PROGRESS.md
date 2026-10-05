@@ -680,9 +680,31 @@ copying, normal disposal, shared copy binding and native QR copy/close behavior.
 F21 is closed after these checks pass. Progress: **16/30 closed; 14 remaining**.
 No merge, release or version bump is included.
 
+## Stage 17 — F24: task help, platform-neutral names and version consistency
+
+The dashboard/tray/wizard use VPN for phone/Phone names, while iPhone-only file
+export stays explicitly labelled. Codex and terminals share one name; the direct
+Codex action describes its scoped proxy launch and the ordinary Start CLI remains.
+Command identifiers/handlers are retained. Help starts with connection guidance
+and provides six topics: connection, Codex/terminals, ports, phone, recovery and
+antivirus. Local application/update logs have separate callbacks.
+
+Both README files now match VERSION and current shared CLI environment, optional
+shortcut, explicit SSH fields/key readiness, manual phone verification and QR
+platform differences. Proxy/home instructions use the same names. The build
+checks README headings before replacing local build output, generates assembly
+metadata from VERSION, verifies compiled version and ships both instructions.
+Public-content validation checks source/package headings against VERSION too.
+
+Python regressions cover a version change, stale/missing headings and invalid
+version source. Native Windows regressions cover help topics, wrapping/scrolling,
+callbacks, compiled metadata and preserved phone/Codex command routing; normal
+and minimum screenshots are inspected. F24 is closed after these checks pass.
+Progress: **17/30 closed; 13 remaining**. No merge, release or version bump.
+
 ## Remaining stages
 
-F09, F16–F17, F19–F20 and F22–F30 remain separate work (14 findings). Preserve the ordinary
+F09, F16–F17, F19–F20, F22–F23 and F25–F30 remain separate work (13 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

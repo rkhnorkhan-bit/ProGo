@@ -105,7 +105,7 @@ namespace ProGo
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
             AddSettingsRow(connection, 4, autoStart);
             AddSettingsRow(connection, 5, autoSwitchProfile);
-            var help = UiTheme.Label("Фоновое подключение использует SSH-ключ и не запрашивает пароль. «Первый вход» открывает видимое окно SSH: сверьте отпечаток ключа сервера, войдите и завершите сеанс командой exit. Вход по паролю сам по себе не настраивает SSH-ключ для ProGo. Затем нажмите «Запустить CLI» один раз — ProGo дождётся готовности. Для iPhone используйте отдельный мастер.", UiTheme.Body, UiTheme.Muted);
+            var help = UiTheme.Label("Фоновое подключение использует SSH-ключ и не запрашивает пароль. «Первый вход» открывает видимое окно SSH: сверьте отпечаток ключа сервера, войдите и завершите сеанс командой exit. Вход по паролю сам по себе не настраивает SSH-ключ для ProGo. Затем нажмите «Запустить CLI» один раз — ProGo дождётся готовности. Для iPhone и Android используйте «VPN для телефона».", UiTheme.Body, UiTheme.Muted);
             AddSettingsRow(connection, 7, help);
             currentConnection.Name = "currentConnectionSettings";
             AddSettingsRow(connection, 6, currentConnection);
@@ -118,7 +118,7 @@ namespace ProGo
             AddLabeled(diagnostic, 0, "Сайт проверки", endpoint);
             AddLabeled(diagnostic, 1, "Журнал приложения", new TextBox { ReadOnly = true, Text = AppPaths.LogPath });
             AddLabeled(diagnostic, 2, "Файл подключений SSH", new TextBox { ReadOnly = true, Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "config") });
-            var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус и обновления». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
+            var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
             AddSettingsRow(diagnostic, 4, av);
             currentDiagnostic.Name = "currentDiagnosticSettings";
             AddSettingsRow(diagnostic, 3, currentDiagnostic);

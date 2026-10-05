@@ -48,7 +48,7 @@ namespace ProGo
             var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0),
                 FlowDirection = FlowDirection.TopDown, WrapContents = false };
             Nav(nav, "Главная", "home", delegate { SetNavigation("home"); });
-            Nav(nav, "iPhone через ПК", "iphone", delegate { action("iphone"); });
+            Nav(nav, "VPN для телефона", "iphone", delegate { action("iphone"); });
             Nav(nav, "Подключения", "connections", delegate { action("connections"); });
             Nav(nav, "Хранилище", "vault", delegate { action("vault"); });
             Nav(nav, "Диагностика", "diagnostics", delegate { action("diagnostics"); });
@@ -91,12 +91,12 @@ namespace ProGo
             for (int i = 0; i < 3; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 3));
             cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             windowsState = Card(cards, 0, "WINDOWS", "Параметры Windows", "windows-on", action);
-            terminalState = Card(cards, 1, "CLI И CODEX", "Для новых терминалов", "cli-start", action);
-            phoneState = Card(cards, 2, "IPHONE", "Через домашний ПК", "iphone", action); body.Controls.Add(cards);
+            terminalState = Card(cards, 1, "CODEX И ТЕРМИНАЛЫ", "Для новых терминалов", "cli-start", action);
+            phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", "iphone", action); body.Controls.Add(cards);
             recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
             body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery));
             var footer = Actions(UiTheme.Button("Обновить ProGo", delegate { action("update"); }, false),
-                UiTheme.Button("Открыть Codex", delegate { action("codex-open"); }, false), UiTheme.Button("Помощь", delegate { action("help"); }, false));
+                UiTheme.Button("Открыть Codex CLI с прокси", delegate { action("codex-open"); }, false), UiTheme.Button("Помощь", delegate { action("help"); }, false));
             footer.Margin = new Padding(0, 12, 0, 0); content.Controls.Add(footer, 0, 1);
             viewport.ClientSizeChanged += delegate { FitDashboard(); };
             body.Layout += delegate { FitDashboard(); };

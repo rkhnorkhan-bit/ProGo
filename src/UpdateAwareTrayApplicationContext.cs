@@ -98,8 +98,8 @@ namespace ProGo
             apps.DropDownItems.Add(new ToolStripSeparator());
             var extra = new ToolStripMenuItem("Дополнительно: ярлык Codex");
             Item(extra, "Создать отдельный ярлык", "codex-shortcut-on"); Item(extra, "Удалить отдельный ярлык", "codex-shortcut-off"); apps.DropDownItems.Add(extra);
-            Item(apps, "Открыть Codex через ProGo", "codex-open"); menu.Items.Add(apps);
-            menu.Items.Add("iPhone через домашний ПК…", null, delegate { Execute("iphone"); });
+            Item(apps, "Открыть Codex CLI с прокси", "codex-open"); menu.Items.Add(apps);
+            menu.Items.Add("VPN для телефона…", null, delegate { Execute("iphone"); });
             menu.Items.Add("Остановить VPN для телефона", null, delegate { Execute("phone-stop"); });
             menu.Items.Add("Хранилище паролей и ключей…", null, delegate { Execute("vault"); });
             menu.Items.Add("Настройки и автоматика…", null, delegate { Execute("settings"); });
@@ -122,7 +122,7 @@ namespace ProGo
         private ToolStripMenuItem BuildLogsMenu()
         {
             var logs = new ToolStripMenuItem("Помощь и журналы");
-            logs.DropDownItems.Add("Антивирус и обновления…", null, delegate { ShowHelp(); });
+            logs.DropDownItems.Add("Открыть помощь…", null, delegate { ShowHelp(); });
             logs.DropDownItems.Add("Журнал приложения", null, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); });
             logs.DropDownItems.Add("Журнал обновления", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); });
             logs.DropDownItems.Add("Папка приложения", null, delegate { OpenProGoFolder(); }); return logs;
@@ -377,7 +377,7 @@ namespace ProGo
         }
         private void ShowHelp()
         {
-            using (var form = new HelpForm(delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); })) form.ShowDialog();
+            using (var form = new HelpForm(delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); }, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); })) form.ShowDialog();
         }
 
         private void ShowVault()
