@@ -40,6 +40,27 @@ only the child it explicitly created; production consumer tracking only disposes
 handles. Native dashboard screenshots distinguish CLI off/Windows retained from a
 stopped shared service. No real SSH endpoint or Codex installation is used.
 
+## Local journal limits
+
+`BoundedLog.cs` is compiled into the app and shipped as reviewed local source for
+PowerShell helpers. `Log-ProGo.ps1` only defines a writer until first use, so it
+cannot mutate files before maintenance ownership checks. Build/install/repair
+ship both files; updater transactions already copy the entire scripts directory.
+
+`progo.log`, `update.log` and `progo-restore.log` each retain at most 1 MiB active
+plus two 1 MiB archives. Record text is capped at 4096 characters plus marker and
+newline. Rotation is size-based, not an age-retention promise. A busy mutex or
+file skips a record; disk/ACL errors cannot replace the operation's real result.
+No retry loop, unbounded fallback, background thread or new setting is added.
+Old oversized active files converge on successful rotation; old legacy logs and
+backup copies are deliberately untouched. Raw logs may still contain personal
+context: sanitized diagnostic export/preview remains the next F25 substage.
+
+`BoundedLogTests.cs` exercises the production .NET implementation in disposable
+directories. `BoundedLogTests.ps1` uses shipped writers and a disposable bootstrap
+process, including locked-log error handling. Existing maintenance tests verify
+that refused operations still make no filesystem changes.
+
 ## Install locally
 
 ```powershell

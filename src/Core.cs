@@ -370,7 +370,6 @@ namespace ProGo
 
     internal static class SafeLog
     {
-        private static readonly object Gate = new object();
         private static readonly Regex[] Redactions = new[]
         {
             new Regex("(?i)(pin|secret|token|password|authorization|api[_ -]?key)\\s*[:=]\\s*[^\\s,;]+", RegexOptions.Compiled),
@@ -398,10 +397,7 @@ namespace ProGo
                     line += " | " + Redact(ex.GetType().Name + ": " + ex.Message);
                 }
 
-                lock (Gate)
-                {
-                    File.AppendAllText(AppPaths.LogPath, line + Environment.NewLine);
-                }
+                BoundedLog.TryWrite(AppPaths.LogPath, line);
             }
             catch
             {

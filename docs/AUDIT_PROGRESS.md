@@ -756,6 +756,34 @@ Together with F20a this completes the approved F20 scope. Expiry, quotas, billin
 and last-use tracking are not introduced. Progress: **18/30 closed; 12 remaining**.
 No merge, release or version bump. Native and server CI are required before review.
 
+## Stage F25a — bounded application and maintenance journals
+
+Application, update (including bootstrap failure) and restore writers share one
+best-effort implementation. Each active journal is capped at 1 MiB with two
+bounded recent archives (`.1`, `.2`); an individual record is limited to 4096
+characters plus a truncation marker/newline. Rotation preserves the recent tail
+of an oversized historical active file before truncating it. A named nonwaiting
+mutex and exclusive writer handle serialize cooperating writers. Busy, read-only
+or failed rotations skip the record; they never fall back to unlimited appending.
+Filesystem I/O itself is synchronous; this is not a disk-stall timeout guarantee.
+
+Updates write only `update.log`. An existing `progo-update.log` is retained
+unchanged and remains available when the current file is absent. Recent-error
+reading seeks to a bounded tail instead of loading a potentially huge legacy file.
+Local log opening remains available. Historical legacy logs, backup copies and
+unwritable oversized files are not purged automatically. An oversized active file
+is bounded after its next successful rotation; a failure preserves its contents.
+
+Native tests cover repeated rotation, Unicode/truncation, migration, concurrent
+writers, locked/read-only targets and bounded reads. Installed PowerShell tests
+exercise actual updater/restore writers and the real bootstrap's original-error
+preservation with a locked log. Packaging verifies identical shared source;
+existing maintenance refusal gates must still leave filesystem state unchanged.
+
+F25 remains **open**: sanitized diagnostic export with preview is F25b. In
+particular, existing Copy log is not yet a privacy-safe diagnostic export.
+Progress remains **18/30 closed; 12 remaining**. No merge, release or version bump.
+
 ## Remaining stages
 
 F09, F16–F17, F19, F22–F23 and F25–F30 remain separate work (12 findings). Preserve the ordinary

@@ -235,7 +235,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
@@ -260,7 +260,7 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
@@ -285,10 +285,19 @@ foreach ($relativePath in @(
 
 $RecoveryHarness = Join-Path $Root "build\SocksRecoveryTests.exe"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "src\DiagnosticProcess.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\BoundedLog.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "src\DiagnosticProcess.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery tests failed" }
+
+$LogHarness = Join-Path $Root 'build\BoundedLogTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$LogHarness" (Join-Path $Root 'src\BoundedLog.cs') (Join-Path $Root 'tests\BoundedLogTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Bounded log harness build failed' }
+& $LogHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Bounded log tests failed' }
+$logSource = Join-Path $Root 'release\scripts\BoundedLog.cs'
+if (-not (Test-Path $logSource) -or (Get-FileHash $logSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BoundedLog.cs')).Hash) { Fail 'app and helper log policies differ' }
+& (Join-Path $Root 'tests\BoundedLogTests.ps1') (Join-Path $Root 'release\scripts')
 
 $RetentionHarness = Join-Path $Root 'build\BackupRetentionTests.exe'
 & $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$RetentionHarness" (Join-Path $Root 'src\BackupRetention.cs') (Join-Path $Root 'tests\BackupRetentionTests.cs')
