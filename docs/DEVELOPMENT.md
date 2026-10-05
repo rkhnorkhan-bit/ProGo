@@ -445,5 +445,25 @@ with synthetic identities. It checks duplicate names, hidden/revoked selection,
 UTC/unknown dates, empty results and shared clipboard lifetime. It does not issue
 real invitations. `test_invitation_metadata.py` verifies the server list whitelist
 and legacy compatibility without provisioning; the existing isolated Ubuntu smoke
-suite still validates authorization and revocation. Reissue failure handling stays
-open under F20 and must not be claimed from these UI checks.
+suite still validates authorization and revocation. Reissue failure handling is covered separately by F20b below.
+
+## Friend invitation reissue (F20b)
+
+`HomeInvitationReissueTests.cs` exercises the production two-step coordinator with
+acknowledgement gates, synchronous/asynchronous transport failures, malformed
+responses, retained-name/ID selection and no blind retries. Native Windows tests
+click the actual dialog actions, cancel confirmation, hold both operation stages,
+refuse close while pending, reconcile failed operations, and capture success and
+uncertain-outcome screenshots. No real credentials or VPS are used in UI tests.
+The isolated Ubuntu provisioning smoke additionally repeats an existing revoke,
+issues a fresh restricted identity, rejects the old token and confirms the other
+live tunnel survives. Server authorization/token/state contracts are unchanged.
+
+A missing revoke acknowledgement stops before issue, even when persisted state
+might already be revoked. Missing/invalid issue output is treated as unknown:
+no automatic retry/rollback or name-based attribution of server records. Mutations
+remain disabled until an explicit successful list refresh, which clears selection.
+Reissue can select an already revoked record and repeats the idempotent revoke
+before issuing. Operations across the two SSH calls are not atomic; simultaneous
+owner sessions and forced termination still require manual list reconciliation.
+VPS waiting/cancellation remains the separate F23 scope.

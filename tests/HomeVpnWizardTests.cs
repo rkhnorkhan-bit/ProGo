@@ -82,6 +82,7 @@ namespace ProGo
                 {
                 ClipboardChecks(clipboard, clipboardSettings);
                 InvitationChecks(clipboard, work);
+                HomeInvitationReissueTests.Run(Check, text, clipboard, work);
                 using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }, clipboard))
                 {
                     qrForm.Show(); Application.DoEvents();
