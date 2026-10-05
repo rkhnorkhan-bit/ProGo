@@ -36,7 +36,7 @@ try {
     Initialize-ProGoShortcuts $install $prior $false $false $programs $startup
     Check ((Test-Path $main) -and (Test-Path $auto) -and -not (Test-Path $old)) 'first install creates one main launcher and startup'
     $link = Read-Link $main
-    Check ($link.Target -eq $exe -and $link.Arguments -eq '--show' -and $link.Directory -eq $install) 'Unicode main launcher opens the installed app visibly'
+    Check ($link.Target -eq $exe -and $link.Arguments -eq '--show' -and $link.Directory -eq $install) ("Unicode main launcher opens the installed app visibly: expected target=[$exe], directory=[$install]; actual target=[$($link.Target)], args=[$($link.Arguments)], directory=[$($link.Directory)]")
     $link = Read-Link $auto
     Check ($link.Target -eq $exe -and $link.Arguments -eq '') 'startup runs quietly without changing SSH preferences'
     $prior = Test-ProGoExistingInstallation $install
