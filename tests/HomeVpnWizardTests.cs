@@ -100,10 +100,63 @@ namespace ProGo
                     show.Invoke(form, new object[] { 0 }); Application.DoEvents();
                     AllControls(form).OfType<Button>().Single(b => b.Text == "Подключиться к готовому VPS").PerformClick(); Application.DoEvents();
                     Check(AllControls(form).OfType<TextBox>().Single().UseSystemPasswordChar, "friend token input is masked");
+                    var state = (PhoneVerification)typeof(HomeVpnWizardForm).GetField("verification", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(form);
+                    var issue = typeof(HomeVpnWizardForm).GetMethod("RecordProfileIssue", BindingFlags.Instance | BindingFlags.NonPublic);
+                    var advance = typeof(HomeVpnWizardForm).GetMethod("Advance", BindingFlags.Instance | BindingFlags.NonPublic);
+                    show.Invoke(form, new object[] { 3 }); Application.DoEvents();
+                    var next = (Button)typeof(HomeVpnWizardForm).GetField("next", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(form);
+                    Check(!next.Enabled && next.Text == "Перейти к проверке", "profile step cannot advance without explicit installation confirmation");
+                    issue.Invoke(form, null);
+                    Check(state.Issued && !state.Installed && !next.Enabled, "issuing QR or saving profile does not confirm installation");
+                    var expiredQr = new PhoneProfileLink { Url = qr.Url, Matrix = qr.Matrix, Expires = 1 };
+                    using (var expired = new PhoneProfileQrForm(expiredQr, delegate { return System.Threading.Tasks.Task.FromResult(0); })) {
+                        expired.Show(form); Application.DoEvents();
+                        Check(AllControls(expired).OfType<Label>().Any(l => l.Text.Contains("Время истекло")) && !AllControls(expired).OfType<PictureBox>().Single().Visible,
+                            "expired QR hides code and explains regeneration"); expired.Close();
+                    }
+                    Check(!state.Installed && !next.Enabled, "closing expired QR cannot mark installation successful");
+                    int revoked = 0;
+                    using (var revokedQr = new PhoneProfileQrForm(qr, delegate { revoked++; return System.Threading.Tasks.Task.FromResult(0); })) {
+                        revokedQr.Show(form); Application.DoEvents(); AllControls(revokedQr).OfType<Button>().Single(b => b.Text == "Отозвать ссылку").PerformClick(); Application.DoEvents();
+                        Check(revoked == 1 && AllControls(revokedQr).OfType<Label>().Any(l => l.Text.Contains("Ссылка отозвана")), "QR revoke completes without claiming installation"); revokedQr.Close();
+                    }
+                    Check(!state.Installed && !next.Enabled, "closing revoked QR cannot mark installation successful");
+                    ((System.Threading.Tasks.Task)advance.Invoke(form, null)).GetAwaiter().GetResult(); Application.DoEvents();
+                    Check(!next.Enabled && AllControls(form).OfType<Label>().Any(l => l.Text.Contains("Подтвердите установку")), "advance guard refuses issuance-only state with corrective text");
+                    var installed = AllControls(form).OfType<CheckBox>().Single(); installed.Checked = true;
+                    Check(state.Installed && next.Enabled, "explicit phone installation confirmation enables verification step");
+                    ((System.Threading.Tasks.Task)advance.Invoke(form, null)).GetAwaiter().GetResult(); Application.DoEvents();
+                    var result = AllControls(form).OfType<ComboBox>().Single();
+                    Check(result.Enabled && result.SelectedIndex == 0 && state.Internet == PhoneInternet.Unknown, "installed profile is not an internet pass");
+                    result.SelectedIndex = 1;
+                    Check(state.Describe(1, 1).Contains("доступа в интернет нет"), "connected VPN with no internet is distinct from packet exchange");
+                    result.SelectedIndex = 2;
+                    Check(state.Describe(1, 1).Contains("По вашей проверке: сайт открылся"), "internet success is explicitly attributed to the phone user's check");
+                    AllControls(form).OfType<CheckBox>().Single().Checked = false;
+                    Check(!result.Enabled && result.SelectedIndex == 0 && state.Internet == PhoneInternet.Unknown, "removing installation confirmation clears stale internet success");
+                    state.SetInternet(PhoneInternet.Passed);
+                    Check(state.Internet == PhoneInternet.Unknown, "unconfirmed installation cannot carry an internet success result");
+                    Check(state.Describe(0, 0).Contains("Пакетов от телефона пока нет"), "verification distinguishes no incoming packets");
+                    Check(state.Describe(1, 0).Contains("ответа VPS пока нет"), "verification distinguishes incoming packets with no reply");
+                    Check(state.Describe(1, 1).Contains("Авторизация VPN и интернет этим не подтверждаются"), "returned packets cannot claim authentication or internet access");
+                    show.Invoke(form, new object[] { 3 }); issue.Invoke(form, null); Application.DoEvents();
+                    Check(state.Issued && !state.Installed && !next.Enabled && AllControls(form).OfType<Button>().Any(b => b.Text == "Установить на телефон по QR"),
+                        "profile issuance can be repeated after expired or revoked QR without auto-confirming installation");
+                    AllControls(form).OfType<CheckBox>().Single().Checked = true; state.SetInternet(PhoneInternet.Passed); issue.Invoke(form, null);
+                    Check(!state.Installed && state.Internet == PhoneInternet.Unknown && !AllControls(form).OfType<CheckBox>().Single().Checked,
+                        "new profile issuance resets both user confirmations and controls");
+                    state.Reset(); Check(!state.Issued && !state.Installed && state.Internet == PhoneInternet.Unknown, "route reset invalidates all phone verification evidence");
                     foreach (int step in new[] { 0, 1, 2, 3, 4 })
                     {
                         show.Invoke(form, new object[] { step }); Application.DoEvents();
-                        if (step == 3) Check(AllControls(form).OfType<Button>().Any(b => b.Text == "Установить на телефон по QR"), "phone step offers QR installation");
+                        if (step == 3) {
+                            Check(AllControls(form).OfType<Button>().Any(b => b.Text == "Установить на телефон по QR"), "phone step offers QR installation");
+                            var confirmation = AllControls(form).OfType<CheckBox>().Single();
+                            var viewport = (FlowLayoutPanel)confirmation.Parent;
+                            viewport.AutoScrollPosition = Point.Empty; Application.DoEvents();
+                            Check(viewport.ClientRectangle.Contains(viewport.RectangleToClient(confirmation.RectangleToScreen(confirmation.ClientRectangle))),
+                                "required installation confirmation is visible at the top of the phone step without scrolling");
+                        }
                         using (var bitmap = new System.Drawing.Bitmap(form.Width, form.Height))
                         { form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size)); bitmap.Save(Path.Combine(work, "wizard-" + step + ".png")); }
                     }

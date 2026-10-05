@@ -636,9 +636,34 @@ F17 remains **open** for other forms and actual Windows contrast/Narrator
 validation. Progress remains **14/30 closed; 16 remaining**. No merge, release
 or version bump is included.
 
+## Stage 15 — F18: phone profile issuance and verification
+
+Profile issuance, user-confirmed installation, incoming/returned relay packets
+and user-reported phone internet results are separate states. QR creation and
+file export only record issuance; QR closing, expiration and revocation never
+confirm installation. A new issuance or route reset clears prior confirmations.
+The profile step requires explicit installation confirmation before advancing.
+The final page provides a short mobile-data/VPN/IP verification procedure and
+labels its result as the user's check, not an automated phone test.
+
+Final status distinguishes no incoming packets, incoming packets without a VPS
+reply, replies without proof of VPN authorization/internet, and the user's report
+of a connected VPN with no internet. Internet success requires confirmation and
+an explicit report that the site opened with the VPS exit IP. Confirmation is
+session-only; reopening the wizard does not restore a previous success claim.
+
+Native Windows fixtures cover expired/revoked QR dialogs, guarded advancement,
+repeat issuance, confirmation/reset controls and the final status matrix.
+Existing profile export, QR rendering, relay and provisioning checks remain
+required. F18 is closed by these state/UX criteria; this does not claim a real
+phone internet test or close F19's provider/network acceptance requirements.
+
+Progress: **15/30 closed; 15 remaining**. F16/F17 remain open for their stated
+acceptance gaps. No merge, release or version bump is included.
+
 ## Remaining stages
 
-F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary
+F09, F16–F17 and F19–F30 remain separate work (15 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

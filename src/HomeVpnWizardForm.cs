@@ -22,7 +22,11 @@ namespace ProGo
         private readonly Button next = new Button();
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
-        private bool own, busy, routerDone, profileSaved;
+        private bool own, busy, routerDone;
+        private readonly PhoneVerification verification = new PhoneVerification();
+        private CheckBox installedCheck;
+        private ComboBox internetCheck;
+        private Label profileState;
         private TextBox host, login, key, token, home;
         private NumericUpDown port;
         private CheckBox routerCheck;
@@ -60,7 +64,7 @@ namespace ProGo
         {
             step = value; progress.Step = value; body.SuspendLayout();
             foreach (Control control in body.Controls.Cast<Control>().ToArray()) control.Dispose();
-            body.Controls.Clear(); counters = null; host = login = key = token = home = null; port = null; routerCheck = null;
+            body.Controls.Clear(); counters = null; installedCheck = null; internetCheck = null; profileState = null; host = login = key = token = home = null; port = null; routerCheck = null;
             status.Text = ""; status.ForeColor = UiTheme.Muted;
             string[] titles = { "Как подключаемся?", own ? "Данные вашего VPS" : "Токен приглашения", "Подготовьте домашний роутер", "Добавьте VPN на телефон", "Проверка и управление" };
             heading.Text = (step + 1) + ". " + titles[step];
@@ -117,17 +121,26 @@ namespace ProGo
                 Paragraph("Сканируйте QR камерой телефона. Откроется защищённая страница с выбором iPhone или Android; сервер, логин и пароль уже будут заполнены.");
                 Action("Установить на телефон по QR", async delegate { await ShowQr(); });
                 Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); });
-                Paragraph("iPhone: откройте страницу в Safari, разрешите загрузку и подтвердите установку в Настройки → Основные → VPN и управление устройством. Android: импортируйте профиль в strongSwan VPN Client.");
-                Paragraph("Первая выдача требует HTTPS-домена на VPS. Владелец настраивает его здесь один раз; для друзей адрес сохраняется в новых токенах.");
                 Action("Сохранить профиль iPhone файлом…", SaveProfile);
+                profileState = Paragraph(verification.IssuanceText);
+                Paragraph("iPhone: откройте страницу в Safari, разрешите загрузку и подтвердите установку в Настройки → Основные → VPN и управление устройством. Android: импортируйте профиль в strongSwan VPN Client.");
+                AddInstallationConfirmation();
+                Paragraph("Первая выдача требует HTTPS-домена на VPS. Владелец настраивает его здесь один раз; для друзей адрес сохраняется в новых токенах.");
                 Paragraph("После установки выключите Wi-Fi на телефоне, выберите «ProGo — домашний VPN» и включите VPN. Компьютер и канал ProGo должны оставаться включёнными.");
-                next.Text = "Профиль установлен — проверить";
+                next.Text = "Перейти к проверке";
             }
             else
             {
                 Paragraph(service.Access == null ? "Сначала добавьте VPS или токен." : "VPS: " + service.Access.Host + "\nДомашний адрес: " + (service.HomeAddress ?? "ещё не указан"));
-                Action("Запустить канал", async delegate { await RunStep(async delegate { await service.StartAsync(); RefreshStatus(); }); });
-                Action("Остановить VPN для телефона", delegate { service.Stop(); RefreshStatus(); });
+                Action("Запустить канал", async delegate { await RunStep(async delegate { await service.StartAsync(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); });
+                Action("Остановить VPN для телефона", delegate { service.Stop(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); });
+                AddInstallationConfirmation();
+                Paragraph("Проверка на телефоне: 1. Выключите Wi-Fi и включите VPN ProGo. 2. Убедитесь, что телефон показывает «Подключено». 3. Откройте сайт проверки IP и сравните IPv4 с адресом выхода VPS. 4. Отметьте результат ниже. Это ваша проверка, ProGo не выполняет её на телефоне автоматически.");
+                internetCheck = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 640, AccessibleName = "Результат проверки интернета на телефоне" };
+                internetCheck.Items.AddRange(new object[] { "Ещё не проверял", "VPN подключён, но интернета нет", "Сайт открылся, IP совпадает с VPS" });
+                internetCheck.SelectedIndex = (int)verification.Internet; internetCheck.Enabled = verification.Installed;
+                internetCheck.SelectedIndexChanged += delegate { if (internetCheck.SelectedIndex >= 0) verification.SetInternet((PhoneInternet)internetCheck.SelectedIndex); RefreshStatus(); };
+                body.Controls.Add(internetCheck);
                 counters = Paragraph("");
                 Paragraph("На iPhone выключите Wi-Fi, выберите профиль ProGo и включите VPN. Затем откройте сайт проверки IP: должен отображаться выход вашего VPS. Счётчики подтверждают пересылку, а статус «Подключено» проверяется на телефоне.");
                 Action("Установить на телефон по QR", async delegate { await ShowQr(); });
@@ -173,16 +186,16 @@ namespace ProGo
                         }
                         value = preparedToken;
                     }
-                    service.UseToken(value, own ? draftOwner : null);
+                    service.UseToken(value, own ? draftOwner : null); verification.Reset();
                     SetProgress("Проверяем защищённый канал к VPS…"); await service.StartAsync(); draftToken = "";
                 }
                 else if (step == 2)
                 {
                     if (!routerDone) throw new InvalidOperationException("Сначала настройте обе записи на роутере и отметьте галочку.");
                     service.SetHomeAddress(draftHome);
-                    profileSaved = false;
+                    verification.Reset();
                 }
-                else if (step == 3 && !profileSaved) throw new InvalidOperationException("Сначала откройте QR или сохраните профиль, затем установите его на телефон.");
+                else if (step == 3 && !verification.Installed) throw new InvalidOperationException("Подтвердите установку профиля в настройках телефона. Создание QR или сохранение файла не подтверждает установку.");
                 ShowStep(step + 1);
             });
         }
@@ -192,7 +205,7 @@ namespace ProGo
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await action(); }
             catch (Exception ex) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; }
-            finally { busy = false; if (!IsDisposed) { body.Enabled = true; back.Enabled = next.Enabled = true; } }
+            finally { busy = false; if (!IsDisposed) { body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed; } }
         }
         private void SetProgress(string text) { status.Text = text; }
         private Label Paragraph(string text)
@@ -231,10 +244,10 @@ namespace ProGo
                 var origin = service.ShareOrigin;
                 var access = service.Access;
                 var link = await HomeProfileShare.CreateAsync(origin, access, service.HomeAddress);
+                RecordProfileIssue();
                 using (var dialog = new PhoneProfileQrForm(link, delegate { return HomeProfileShare.RevokeAsync(origin, access); }))
                     dialog.ShowDialog(this);
-                profileSaved = true;
-                SetProgress("После установки выберите VPN ProGo на телефоне. Закрытие окна не отзывает ссылку; она действует до истечения срока.");
+                SetProgress("QR создан; установка не подтверждена. Если код истёк или ссылка отозвана, создайте новый QR. Закрытие окна не подтверждает сканирование и не отзывает ссылку.");
             });
         }
         private void SaveProfile(object sender, EventArgs args)
@@ -246,7 +259,7 @@ namespace ProGo
                 {
                     if (File.Exists(dialog.FileName)) throw new IOException("Выберите новое имя файла: старый профиль сохранён.");
                     service.Access.WriteProfile(dialog.FileName, service.HomeAddress);
-                    profileSaved = true; status.Text = "Профиль сохранён. Передайте файл на iPhone и установите его.";
+                    RecordProfileIssue(); status.Text = "Профиль сохранён. Передайте файл на iPhone и установите его.";
                 }
                 catch (Exception ex) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; }
             }
@@ -307,12 +320,33 @@ namespace ProGo
                 status.Text = "";
             });
         }
+        private void AddInstallationConfirmation()
+        {
+            installedCheck = new CheckBox { Text = "Я установил профиль ProGo в настройках телефона", AutoSize = true,
+                Checked = verification.Installed, AccessibleDescription = "Подтверждение пользователя. QR и сохранение файла сами по себе не подтверждают установку." };
+            installedCheck.CheckedChanged += delegate {
+                verification.SetInstalled(installedCheck.Checked);
+                if (internetCheck != null) { internetCheck.SelectedIndex = (int)verification.Internet; internetCheck.Enabled = verification.Installed; }
+                RefreshStatus();
+            };
+            body.Controls.Add(installedCheck);
+        }
+        private void RecordProfileIssue()
+        {
+            verification.RecordIssue();
+            if (installedCheck != null) installedCheck.Checked = false;
+            if (internetCheck != null) { internetCheck.SelectedIndex = 0; internetCheck.Enabled = false; }
+            RefreshStatus();
+        }
         private void RefreshStatus()
         {
+            if (!busy) next.Enabled = step != 3 || verification.Installed;
+            if (internetCheck != null && internetCheck.SelectedIndex != (int)verification.Internet) internetCheck.SelectedIndex = (int)verification.Internet;
+            if (profileState != null) profileState.Text = verification.IssuanceText;
             if (step != 4 || counters == null) return;
-            counters.Text = (service.Relay.IsRunning ? "Канал ПК → VPS запущен. Подключение телефона и интернет ещё не проверены." : "Канал остановлен.") + "\nSOCKS: " + service.RecoveryStatus
+            counters.Text = (service.Relay.IsRunning ? "Канал ПК → VPS запущен. Это ещё не подтверждение подключения телефона." : "Канал остановлен.") + "\nSOCKS: " + service.RecoveryStatus
+                + "\n" + verification.Describe(service.Relay.Received, service.Relay.Returned)
                 + "\nПакеты: от телефона " + service.Relay.Received + ", на VPS " + service.Relay.Sent + ", обратно " + service.Relay.Returned
-                + (service.Relay.Received == 0 ? "\nПакетов от телефона пока нет: проверьте выбранный профиль и проброс портов." : "")
                 + (service.Relay.LastError == null ? "" : "\n" + service.Relay.LastError);
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -326,4 +360,29 @@ namespace ProGo
             base.Dispose(disposing);
         }
     }
+    internal enum PhoneInternet { Unknown, Failed, Passed }
+    internal sealed class PhoneVerification
+    {
+        internal bool Issued { get; private set; }
+        internal bool Installed { get; private set; }
+        internal PhoneInternet Internet { get; private set; }
+        internal void SetInternet(PhoneInternet value) { Internet = Installed ? value : PhoneInternet.Unknown; }
+        internal string IssuanceText { get { return Issued
+            ? "Профиль выдан: файл сохранён или ссылка создана. Получение телефоном не подтверждено."
+            : "В этом мастере профиль ещё не выдан. Ранее установленный профиль можно подтвердить вручную."; } }
+        internal void Reset() { Issued = Installed = false; Internet = PhoneInternet.Unknown; }
+        internal void RecordIssue() { Reset(); Issued = true; }
+        internal void SetInstalled(bool value) { if (Installed != value) Internet = PhoneInternet.Unknown; Installed = value; }
+        internal string Describe(long received, long returned)
+        {
+            string packets = received == 0 ? "Пакетов от телефона пока нет: проверьте профиль и проброс портов."
+                : returned == 0 ? "Пакеты от телефона получены, но ответа VPS пока нет."
+                : "Ответы VPS приходят. Авторизация VPN и интернет этим не подтверждаются.";
+            string internet = Internet == PhoneInternet.Failed ? "По вашей проверке: VPN подключён, но доступа в интернет нет."
+                : Internet == PhoneInternet.Passed ? "По вашей проверке: сайт открылся и выходной IP совпал с VPS."
+                : "Интернет на телефоне ещё не проверен.";
+            return IssuanceText + "\nУстановка: " + (Installed ? "подтверждена вами." : "не подтверждена.") + "\n" + packets + "\n" + internet;
+        }
+    }
+
 }
