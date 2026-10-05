@@ -661,9 +661,28 @@ phone internet test or close F19's provider/network acceptance requirements.
 Progress: **15/30 closed; 15 remaining**. F16/F17 remain open for their stated
 acceptance gaps. No merge, release or version bump is included.
 
+## Stage 16 — F21: shared secret clipboard policy
+
+Vault secrets, friend invitations and QR links use the same application-owned
+clipboard service and configured timer. Native clipboard sequence ownership plus
+text comparison preserves later copies, including identical text copied again.
+Repeated secret copies restart the timer for the latest value. Closing a QR or
+invitation window does not dispose the shared application service.
+
+Normal application disposal attempts immediate owned-content cleanup. Busy
+clipboard failures are reported without secret values; forced termination cannot
+guarantee cleanup. UI explains that clipboard history and synchronized copies
+remain, and QR expiry is independent of the local clipboard cleanup timer.
+Ordinary local proxy address copying keeps its existing untimed behavior.
+
+Windows fixtures exercise the actual timer, replacement/identical copies, repeat
+copying, normal disposal, shared copy binding and native QR copy/close behavior.
+F21 is closed after these checks pass. Progress: **16/30 closed; 14 remaining**.
+No merge, release or version bump is included.
+
 ## Remaining stages
 
-F09, F16–F17 and F19–F30 remain separate work (15 findings). Preserve the ordinary
+F09, F16–F17, F19–F20 and F22–F30 remain separate work (14 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

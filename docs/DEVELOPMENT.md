@@ -419,3 +419,11 @@ user-reported internet choices and packet/no-reply status distinctions. The wiza
 never treats relay counters as authentication or internet proof. Confirmation is
 session-only and manual phone results are labelled as such. Tests use local QR
 fixtures and a revoke stub; they do not perform real phone/provider acceptance.
+
+## Secret clipboard validation (F21)
+
+`HomeVpnWizardTests.cs` exercises the actual Windows clipboard/timer with synthetic
+values, later identical/different copies, repeat ownership, normal disposal,
+shared invitation button binding and native QR copy/close. Only the current
+owned clipboard entry is cleared; history/cloud copies and forced termination
+are outside the cleanup guarantee. No fixture uses a real invitation or VPS.

@@ -223,7 +223,7 @@ namespace ProGo
                     case "connections": ShowSettings(SettingsSection.Connections); break;
                     case "windows-settings": ShowSettings(SettingsSection.Windows); break;
                     case "vault": ShowVault(); break;
-                    case "iphone": using (var form = new HomeVpnWizardForm(homeVpn)) form.ShowDialog(mainWindow); break;
+                    case "iphone": using (var form = new HomeVpnWizardForm(homeVpn, clipboard)) form.ShowDialog(mainWindow); break;
                     case "diagnostics":
                     case "route-check": using (var form = new StatusForm(settings, proxy, action == "route-check", null, null, health)) form.ShowDialog(mainWindow); break;
                     case "cli-off":

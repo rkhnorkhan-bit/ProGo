@@ -77,18 +77,27 @@ namespace ProGo
                 bool wrongOrigin = false; try { HomeProfileShare.Validate(invalidQr, "vpn.example.org"); } catch (InvalidOperationException) { wrongOrigin = true; }
                 Check(wrongOrigin, "QR cannot redirect to another origin");
                 Application.EnableVisualStyles();
-                using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }))
+                using (var clipboardSettings = new SettingsService())
+                using (var clipboard = new ClipboardService(clipboardSettings))
+                {
+                ClipboardChecks(clipboard, clipboardSettings);
+                using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }, clipboard))
                 {
                     qrForm.Show(); Application.DoEvents();
                     Check(AllControls(qrForm).OfType<PictureBox>().Any(p => p.Image != null), "native dialog renders QR");
                     Check(AllControls(qrForm).OfType<Button>().Any(b => b.Text == "Отозвать ссылку"), "QR revocation action is present");
+                    AllControls(qrForm).OfType<Button>().Single(b => b.Text == "Скопировать ссылку").PerformClick();
+                    Check(Clipboard.GetText() == qr.Url && AllControls(qrForm).OfType<Label>().Any(l => l.Text.StartsWith("Скопировано.") && l.Text.Contains("5 сек.")), "QR copy uses shared secret timer and visible duration");
                     using (var shot = new Bitmap(qrForm.Width, qrForm.Height))
                     { qrForm.DrawToBitmap(shot, new Rectangle(Point.Empty, shot.Size)); shot.Save(Path.Combine(work, "qr-dialog.png")); }
                     qrForm.Close();
+                    Check(Clipboard.ContainsText() && Clipboard.GetText() == qr.Url, "closing QR retains application-owned pending clipboard timer");
+                    ClearClipboard(clipboard);
+                    Check(!Clipboard.ContainsText(), "QR URL clears through shared timer callback");
                 }
                 using (var relay = new Ikev2RelayService())
                 using (var service = new HomeVpnService(relay))
-                using (var form = new HomeVpnWizardForm(service))
+                using (var form = new HomeVpnWizardForm(service, clipboard))
                 {
                     form.Show(); Application.DoEvents();
                     var show = typeof(HomeVpnWizardForm).GetMethod("ShowStep", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -109,14 +118,14 @@ namespace ProGo
                     issue.Invoke(form, null);
                     Check(state.Issued && !state.Installed && !next.Enabled, "issuing QR or saving profile does not confirm installation");
                     var expiredQr = new PhoneProfileLink { Url = qr.Url, Matrix = qr.Matrix, Expires = 1 };
-                    using (var expired = new PhoneProfileQrForm(expiredQr, delegate { return System.Threading.Tasks.Task.FromResult(0); })) {
+                    using (var expired = new PhoneProfileQrForm(expiredQr, delegate { return System.Threading.Tasks.Task.FromResult(0); }, clipboard)) {
                         expired.Show(form); Application.DoEvents();
                         Check(AllControls(expired).OfType<Label>().Any(l => l.Text.Contains("Время истекло")) && !AllControls(expired).OfType<PictureBox>().Single().Visible,
                             "expired QR hides code and explains regeneration"); expired.Close();
                     }
                     Check(!state.Installed && !next.Enabled, "closing expired QR cannot mark installation successful");
                     int revoked = 0;
-                    using (var revokedQr = new PhoneProfileQrForm(qr, delegate { revoked++; return System.Threading.Tasks.Task.FromResult(0); })) {
+                    using (var revokedQr = new PhoneProfileQrForm(qr, delegate { revoked++; return System.Threading.Tasks.Task.FromResult(0); }, clipboard)) {
                         revokedQr.Show(form); Application.DoEvents(); AllControls(revokedQr).OfType<Button>().Single(b => b.Text == "Отозвать ссылку").PerformClick(); Application.DoEvents();
                         Check(revoked == 1 && AllControls(revokedQr).OfType<Label>().Any(l => l.Text.Contains("Ссылка отозвана")), "QR revoke completes without claiming installation"); revokedQr.Close();
                     }
@@ -162,9 +171,49 @@ namespace ProGo
                     }
                     form.Close();
                 }
+                }
                 Console.WriteLine("Home VPN PASS: " + passed + " checks."); return 0;
             }
             catch (Exception ex) { Console.Error.WriteLine("Home VPN test failed: " + ex.GetType().Name + ": " + ex.Message); return 1; }
+        }
+        private static void ClearClipboard(ClipboardService clipboard)
+        {
+            typeof(ClipboardService).GetMethod("ClearIfStillOwned", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(clipboard, new object[] { null, EventArgs.Empty });
+        }
+        private static void ClipboardChecks(ClipboardService clipboard, SettingsService settings)
+        {
+            settings.Current.ClipboardClearSeconds = 5;
+            const string secret = "fixture-secret-clipboard-no-log";
+            try {
+                clipboard.CopySecret(secret);
+                Check(Clipboard.GetText() == secret, "secret copy writes current clipboard");
+                var timer = (System.Windows.Forms.Timer)typeof(ClipboardService).GetField("timer", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clipboard);
+                Check(timer.Enabled && timer.Interval == 5000, "secret copy arms configured Windows timer");
+                Clipboard.SetText("new-user-content"); ClearClipboard(clipboard);
+                Check(Clipboard.GetText() == "new-user-content", "timer preserves newly copied different content");
+                clipboard.CopySecret(secret); Clipboard.SetText(secret); ClearClipboard(clipboard);
+                Check(Clipboard.GetText() == secret, "sequence ownership preserves a new copy of identical text");
+                clipboard.CopySecret(secret); clipboard.CopySecret("second-fixture-secret"); ClearClipboard(clipboard);
+                Check(!Clipboard.ContainsText(), "repeat secret copy replaces timer ownership");
+                using (var dialog = new Form()) {
+                    var button = new Button(); var notice = new Label(); dialog.Controls.Add(button); dialog.Controls.Add(notice); dialog.Show();
+                    clipboard.BindSecretCopy(button, delegate { return secret; }, notice); button.PerformClick();
+                    Check(Clipboard.GetText() == secret && notice.Text.Contains("5 сек.") && notice.Text.Contains("История"), "invitation copy binding schedules timer and explains history limit");
+                    dialog.Close();
+                }
+                var deadline = DateTime.UtcNow.AddSeconds(7);
+                while (Clipboard.ContainsText() && DateTime.UtcNow < deadline) { Application.DoEvents(); System.Threading.Thread.Sleep(20); }
+                Check(!Clipboard.ContainsText(), "real Windows timer clears owned secret without manual callback");
+                using (var exit = new ClipboardService(settings)) { exit.CopySecret(secret); }
+                Check(!Clipboard.ContainsText(), "normal application disposal clears owned secret immediately");
+                using (var exit = new ClipboardService(settings)) { exit.CopySecret(secret); Clipboard.SetText("user-content-on-exit"); }
+                Check(Clipboard.GetText() == "user-content-on-exit", "normal application disposal preserves new user content");
+                var repeated = new ClipboardService(settings); repeated.Dispose(); repeated.Dispose();
+                bool disposed = false; try { repeated.CopySecret(secret); } catch (ObjectDisposedException) { disposed = true; }
+                Check(disposed, "disposed secret service cannot restart timer");
+                Check(!File.ReadAllText(AppPaths.LogPath).Contains(secret) && !File.ReadAllText(AppPaths.LogPath).Contains("second-fixture-secret"), "clipboard logs never contain secret values");
+            } finally { Clipboard.Clear(); }
         }
         private static IEnumerable<Control> AllControls(Control parent)
         {

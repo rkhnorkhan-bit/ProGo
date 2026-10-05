@@ -14,6 +14,7 @@ namespace ProGo
     internal sealed class HomeVpnWizardForm : ProGoForm
     {
         private readonly HomeVpnService service;
+        private readonly ClipboardService clipboard;
         private readonly FlowLayoutPanel body = new FlowLayoutPanel();
         private readonly WizardProgress progress = new WizardProgress();
         private readonly Label heading = new Label();
@@ -35,9 +36,9 @@ namespace ProGo
         private string preparedToken, preparedOwner;
         private Label counters;
 
-        internal HomeVpnWizardForm(HomeVpnService service)
+        internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard)
         {
-            this.service = service;
+            this.service = service; this.clipboard = clipboard;
             Text = "iPhone через домашний ПК"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(750, 650); MinimumSize = new Size(700, 620);
@@ -245,7 +246,7 @@ namespace ProGo
                 var access = service.Access;
                 var link = await HomeProfileShare.CreateAsync(origin, access, service.HomeAddress);
                 RecordProfileIssue();
-                using (var dialog = new PhoneProfileQrForm(link, delegate { return HomeProfileShare.RevokeAsync(origin, access); }))
+                using (var dialog = new PhoneProfileQrForm(link, delegate { return HomeProfileShare.RevokeAsync(origin, access); }, clipboard))
                     dialog.ShowDialog(this);
                 SetProgress("QR создан; установка не подтверждена. Если код истёк или ссылка отозвана, создайте новый QR. Закрытие окна не подтверждает сканирование и не отзывает ссылку.");
             });
@@ -288,12 +289,14 @@ namespace ProGo
                         {
                             var value = await HomeVpnService.AdminAsync(service.Owner, "invite", label.Text, null, delegate { });
                             var access = HomeVpnAccess.Parse(value);
-                            using (var share = new ProGoForm { Text = "Личный токен для друга", Size = new Size(630, 290), StartPosition = FormStartPosition.CenterParent })
+                            using (var share = new ProGoForm { Text = "Личный токен для друга", Size = new Size(630, 350), StartPosition = FormStartPosition.CenterParent })
                             {
-                                var description = new Label { Dock = DockStyle.Top, Height = 80, Padding = new Padding(12), Text = "Отправьте токен другу лично. Он выберет в ProGo «Подключиться к готовому VPS». Токен даёт доступ к VPN до отзыва владельцем; не публикуйте его." };
+                                var description = new Label { Dock = DockStyle.Top, Height = 110, Padding = new Padding(12), Text = "Отправьте токен другу лично. Он выберет в ProGo «Подключиться к готовому VPS». Токен даёт доступ к VPN до отзыва владельцем; не публикуйте его. " + clipboard.CopyNotice };
                                 var secret = new TextBox { Dock = DockStyle.Top, UseSystemPasswordChar = true, Text = value };
                                 var copy = new Button { Dock = DockStyle.Top, Text = "Скопировать токен", Height = 36 };
-                                copy.Click += delegate { Clipboard.SetText(value); copy.Text = "Скопировано — передайте другу"; };
+                                var copyNotice = new Label { Dock = DockStyle.Top, Height = 65 };
+                                clipboard.BindSecretCopy(copy, delegate { return value; }, copyNotice);
+                                share.Controls.Add(copyNotice);
                                 share.Controls.Add(copy); share.Controls.Add(secret); share.Controls.Add(description); share.ShowDialog(dialog);
                             }
                             list.Items.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label.Text });
