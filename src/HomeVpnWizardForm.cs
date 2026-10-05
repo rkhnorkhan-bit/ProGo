@@ -271,52 +271,44 @@ namespace ProGo
             {
                 var response = await HomeVpnService.AdminAsync(service.Owner, "list", null, null, SetProgress);
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(response);
-                using (var dialog = new ProGoForm { Text = "Доступ друзей", Size = new Size(630, 440), StartPosition = FormStartPosition.CenterParent })
+                using (var dialog = new ProGoForm { Text = "Доступ друзей", Size = new Size(800, 670), StartPosition = FormStartPosition.CenterParent })
                 {
-                    var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), FlowDirection = FlowDirection.TopDown, WrapContents = false };
-                    var list = new ListBox { Width = 570, Height = 175 }; foreach (var item in items) list.Items.Add(item);
-                    var label = new TextBox { Width = 570, Text = "Друг" };
+                    var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+                    var list = new HomeInvitationList(items) { Width = 740, Height = 365 };
+                    var label = new TextBox { Width = 740, Text = "Друг", AccessibleName = "Имя нового приглашения" };
                     var create = new Button { AutoSize = true, Text = "Создать отдельный токен" };
-                    var revoke = new Button { AutoSize = true, Text = "Отозвать выбранный доступ" };
+                    var revoke = new Button { AutoSize = true, Text = "Отозвать выбранный доступ", Enabled = false };
                     panel.Controls.Add(list); panel.Controls.Add(new Label { Text = "Имя для нового приглашения", AutoSize = true }); panel.Controls.Add(label);
                     panel.Controls.Add(create); panel.Controls.Add(revoke); dialog.Controls.Add(panel);
                     bool working = false;
+                    list.SelectionChanged += delegate { revoke.Enabled = !working && list.CanRevoke; };
                     dialog.FormClosing += delegate(object s, FormClosingEventArgs e) { if (working) e.Cancel = true; };
                     create.Click += async delegate
                     {
-                        working = true; create.Enabled = revoke.Enabled = false;
+                        working = true; create.Enabled = revoke.Enabled = list.Enabled = label.Enabled = false;
                         try
                         {
                             var value = await HomeVpnService.AdminAsync(service.Owner, "invite", label.Text, null, delegate { });
                             var access = HomeVpnAccess.Parse(value);
-                            using (var share = new ProGoForm { Text = "Личный токен для друга", Size = new Size(630, 350), StartPosition = FormStartPosition.CenterParent })
-                            {
-                                var description = new Label { Dock = DockStyle.Top, Height = 110, Padding = new Padding(12), Text = "Отправьте токен другу лично. Он выберет в ProGo «Подключиться к готовому VPS». Токен даёт доступ к VPN до отзыва владельцем; не публикуйте его. " + clipboard.CopyNotice };
-                                var secret = new TextBox { Dock = DockStyle.Top, UseSystemPasswordChar = true, Text = value };
-                                var copy = new Button { Dock = DockStyle.Top, Text = "Скопировать токен", Height = 36 };
-                                var copyNotice = new Label { Dock = DockStyle.Top, Height = 65 };
-                                clipboard.BindSecretCopy(copy, delegate { return value; }, copyNotice);
-                                share.Controls.Add(copyNotice);
-                                share.Controls.Add(copy); share.Controls.Add(secret); share.Controls.Add(description); share.ShowDialog(dialog);
-                            }
-                            list.Items.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label.Text });
+                            list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label.Text });
+                            using (var share = HomeInvitationList.TokenDialog(value, clipboard)) share.ShowDialog(dialog);
                         }
                         catch (Exception ex) { MessageBox.Show(dialog, ex.Message, "Не удалось создать токен"); }
-                        finally { working = false; create.Enabled = revoke.Enabled = true; }
+                        finally { working = false; create.Enabled = list.Enabled = label.Enabled = true; revoke.Enabled = list.CanRevoke; }
                     };
                     revoke.Click += async delegate
                     {
-                        var selected = list.SelectedItem as HomeVpnInvitation;
+                        var selected = list.Selected;
                         if (selected == null || selected.Revoked) return;
-                        if (MessageBox.Show(dialog, "Отключить доступ «" + selected.Name + "»? Его действующие соединения будут закрыты.", "Отзыв доступа", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
-                        working = true; create.Enabled = revoke.Enabled = false;
+                        if (MessageBox.Show(dialog, "Отключить доступ «" + selected.Name + "»?\r\nID: " + selected.Id + "\r\nСоздан: " + selected.CreatedText + "\r\nЕго действующие соединения будут закрыты.", "Отзыв доступа", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+                        working = true; create.Enabled = revoke.Enabled = list.Enabled = label.Enabled = false;
                         try
                         {
                             await HomeVpnService.AdminAsync(service.Owner, "revoke", null, selected.Id, delegate { });
-                            selected.Revoked = true; var index = list.SelectedIndex; list.Items[index] = selected;
+                            selected.Revoked = true; list.RefreshSelection();
                         }
                         catch (Exception ex) { MessageBox.Show(dialog, ex.Message, "Не удалось отозвать доступ"); }
-                        finally { working = false; create.Enabled = revoke.Enabled = true; }
+                        finally { working = false; create.Enabled = list.Enabled = label.Enabled = true; revoke.Enabled = list.CanRevoke; }
                     };
                     dialog.ShowDialog(this);
                 }

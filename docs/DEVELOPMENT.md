@@ -437,3 +437,13 @@ claim Narrator or physical DPI acceptance. `test_public_docs.py` checks VERSION
 changes and missing/stale headings. Build checks both README files before clearing
 build output, verifies assembly metadata and packages both instructions. Public
 content validation also verifies package documentation against its VERSION file.
+
+## Friend invitation presentation (F20a)
+
+`HomeVpnWizardTests.cs` exercises native friend search/selection and token dialogs
+with synthetic identities. It checks duplicate names, hidden/revoked selection,
+UTC/unknown dates, empty results and shared clipboard lifetime. It does not issue
+real invitations. `test_invitation_metadata.py` verifies the server list whitelist
+and legacy compatibility without provisioning; the existing isolated Ubuntu smoke
+suite still validates authorization and revocation. Reissue failure handling stays
+open under F20 and must not be claimed from these UI checks.
