@@ -112,7 +112,7 @@ namespace ProGo
             var privacy = FormTable(Page(tabs, "Хранилище"));
             clearSeconds.Minimum = 5; clearSeconds.Maximum = 3600;
             AddLabeled(privacy, 0, "Очищать буфер через, сек.", clearSeconds);
-            var privacyHint = UiTheme.Label("Скопированный секрет исчезнет из буфера через указанное время. Хранилище открывается вашим PIN-кодом.", UiTheme.Body, UiTheme.Muted);
+            var privacyHint = UiTheme.Label("Секреты хранилища, токены друзей и ссылки QR очищаются из текущего буфера через указанное время и при выходе из ProGo, если после них ничего не скопировано. История буфера и синхронизированные копии не очищаются. При аварийном завершении очистка не гарантируется.", UiTheme.Body, UiTheme.Muted);
             AddSettingsRow(privacy, 1, privacyHint);
             var diagnostic = FormTable(Page(tabs, "Диагностика"));
             AddLabeled(diagnostic, 0, "Сайт проверки", endpoint);

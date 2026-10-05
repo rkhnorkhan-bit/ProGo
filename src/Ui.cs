@@ -383,7 +383,7 @@ namespace ProGo
             var selected = SelectedEntry();
             if (selected == null) return;
             clipboard.CopySecret(selected.secret);
-            MessageBox.Show("Секрет скопирован. Буфер обмена будет очищен через " + settings.Current.ClipboardClearSeconds + " сек.", "Хранилище секретов");
+            MessageBox.Show("Секрет скопирован. " + clipboard.CopyNotice, "Хранилище секретов");
         }
 
         internal static string DisplayType(string type)

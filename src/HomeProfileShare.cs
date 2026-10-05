@@ -169,7 +169,7 @@ namespace ProGo
     {
         private readonly System.Windows.Forms.Timer clock = new System.Windows.Forms.Timer();
         private readonly Bitmap bitmap;
-        internal PhoneProfileQrForm(PhoneProfileLink link, Func<Task> revoke)
+        internal PhoneProfileQrForm(PhoneProfileLink link, Func<Task> revoke, ClipboardService clipboard)
         {
             Text = "VPN на телефоне — сканируйте QR"; ClientSize = new Size(570, 700);
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterParent;
@@ -179,7 +179,9 @@ namespace ProGo
             var picture = new PictureBox { Image = bitmap, Size = bitmap.Size, SizeMode = PictureBoxSizeMode.Normal, BackColor = Color.White };
             panel.Controls.Add(picture);
             var status = new Label { AutoSize = true, MaximumSize = new Size(510, 0) }; panel.Controls.Add(status);
-            var copy = new Button { Text = "Скопировать ссылку", AutoSize = true, MinimumSize = new Size(230, 38) }; copy.Click += delegate { Clipboard.SetText(link.Url); };
+            var copy = new Button { Text = "Скопировать ссылку", AutoSize = true, MinimumSize = new Size(230, 38) };
+            var copyNotice = new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = clipboard.CopyNotice };
+            clipboard.BindSecretCopy(copy, delegate { return link.Url; }, copyNotice);
             var cancel = new Button { Text = "Отозвать ссылку", AutoSize = true, MinimumSize = new Size(230, 38) };
             var error = new Label { AutoSize = true, MaximumSize = new Size(510, 0) };
             cancel.Click += async delegate
@@ -188,7 +190,7 @@ namespace ProGo
                 try { await revoke(); clock.Stop(); status.Text = "Ссылка отозвана. Уже установленный VPN продолжает работать."; picture.Visible = false; copy.Enabled = false; }
                 catch (Exception) { error.Text = "Отозвать не удалось: проверьте соединение. Ссылка автоматически истечёт через 15 минут после создания."; cancel.Enabled = true; }
             };
-            panel.Controls.Add(copy); panel.Controls.Add(cancel);
+            panel.Controls.Add(copy); panel.Controls.Add(copyNotice); panel.Controls.Add(cancel);
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "Ссылка для одного телефона: после «Получить профиль» повторно воспользоваться QR нельзя. Для другого телефона создайте новый QR. Не публикуйте код. Android использует strongSwan VPN Client.", Margin = new Padding(0, 8, 0, 8) });
             panel.Controls.Add(error); Controls.Add(panel);
             clock.Interval = 1000;
