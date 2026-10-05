@@ -74,6 +74,7 @@ namespace ProGo
                     BackupCreationIntegrity();
                     BackupCleanupPreview();
                     RestoreScopeAndPreparationUi();
+                    BackupAccessibility();
                     using (var errors = WatchStartupErrors()) {
                     UnifiedCliActions(settings);
                     SharedBridgeConsumers(settings);

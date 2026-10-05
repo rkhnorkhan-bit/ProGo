@@ -402,3 +402,11 @@ backward. It verifies accessible object names/descriptions, read-only field
 reachability, skipping disabled controls, both SSH modes, contextual manual CLI
 routing, port-pick state names, refused-Save focus and uncommitted field retention.
 It does not alter OS accessibility settings or substitute for a Narrator run.
+
+## Backup keyboard validation (F17c)
+
+`DesktopBackupAccessibilityTests.cs` runs only on isolated native Windows CI.
+Dialog-key fixtures cover restore scope arrows, Tab/Shift+Tab, unavailable scopes,
+separate consent/reset, named read-only previews, cancellation and Enter without
+implicit approval. Cleanup cases cover populated/empty lists and disabled removal.
+Screenshots and accessible-object assertions do not establish Narrator acceptance.
