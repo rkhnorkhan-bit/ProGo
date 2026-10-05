@@ -1,6 +1,24 @@
-param([string]$Scripts)
+param([string]$Scripts, [switch]$Isolated)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: real clipboard preview test requires isolated Windows CI'; return }
+if (-not $Isolated) {
+    # Build-ProGo already loaded BrandIcon in the parent. The real updater starts
+    # in a fresh PowerShell process, so exercise its actual type-loading boundary.
+    $info = New-Object Diagnostics.ProcessStartInfo
+    $info.FileName = Join-Path $PSHOME 'powershell.exe'
+    $info.Arguments = '-NoProfile -STA -ExecutionPolicy Bypass -File "' + $PSCommandPath + '" -Scripts "' + $Scripts + '" -Isolated'
+    $info.UseShellExecute = $false; $info.CreateNoWindow = $true
+    $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
+    $child = [Diagnostics.Process]::Start($info)
+    $stdout = $child.StandardOutput.ReadToEndAsync(); $stderr = $child.StandardError.ReadToEndAsync()
+    try {
+        if (-not $child.WaitForExit(30000)) { $child.Kill(); $child.WaitForExit(); throw 'Diagnostic preview child timed out' }
+        Write-Host $stdout.Result
+        if ($child.ExitCode -ne 0) { Write-Host $stderr.Result; throw 'Diagnostic preview child failed' }
+    } finally { $child.Dispose() }
+    return
+}
 Add-Type -AssemblyName System.Windows.Forms
 $work = Join-Path $env:TEMP ('ProGo-diagnostic-helper-' + [guid]::NewGuid().ToString('N'))
 $timer = New-Object Windows.Forms.Timer
@@ -40,7 +58,7 @@ try {
     })
     [Windows.Forms.Clipboard]::SetText('unrelated clipboard fixture')
     $timer.Start(); Copy-LogToClipboard
-    if (-not $script:seen -or $null -ne $script:probeError) { throw ('Installed preview failed: ' + $script:probeError) }
+    if (-not $script:seen -or $null -ne $script:probeError) { if ($Error.Count) { Write-Host ($Error[0] | Out-String) }; throw ('Installed preview failed: ' + $script:probeError) }
     if ([Windows.Forms.Clipboard]::GetText() -ne 'unrelated clipboard fixture') { throw 'Opening/cancelling updater preview changed clipboard' }
     Write-Host 'PASS: real updater action opens shared sanitized preview without automatic clipboard writes'
     $script:copyReport = $true; $script:seen = $false
