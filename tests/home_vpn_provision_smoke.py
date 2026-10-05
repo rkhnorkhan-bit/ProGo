@@ -87,6 +87,14 @@ def main():
             check(original.poll() is None and probe(22223), 'owner tunnel survives friend revocation')
             rejected = start_tunnel(b, 22226, 17878)
             check(rejected.poll() is not None, 'revoked token cannot reconnect')
+            setup.revoke(data, b['InviteId'])
+            replacement = decode(setup.issue(data, 'Test friend', 'vpn.example.org', 22222))
+            check(replacement['InviteId'] != b['InviteId'] and replacement['User'] != b['User']
+                  and replacement['Password'] != b['Password'], 'reissue after repeated revoke has independent credentials')
+            renewed = start_tunnel(replacement, 22227, 17878)
+            check(renewed.poll() is None and probe(22227), 'replacement restricted token reaches VPN receiver')
+            check(original.poll() is None and probe(22223), 'other invitation remains connected after reissue')
+            check(start_tunnel(b, 22228, 17878).poll() is not None, 'old token remains rejected after replacement is issued')
             again = setup.prepare()
             check(again['server_id'] == data['server_id'], 'repeated setup preserves CA and invitation state')
             # Reproduce the older direct-VPN installer blocking every forwarded

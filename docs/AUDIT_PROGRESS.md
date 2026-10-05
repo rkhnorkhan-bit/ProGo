@@ -728,9 +728,37 @@ F20 remains **open** for the guided reissue workflow and its partial-failure
 handling. Expiry, quotas and billing remain separately scoped server/product work.
 Progress remains **17/30 closed; 13 remaining**. No merge, release or version bump.
 
+## Stage F20b — lost-token reissue and explicit partial outcomes
+
+The friend dialog offers a confirmed reissue for the selected full identity. It
+snapshots the selected name/ID, completes the existing revoke command before a
+single issue request, validates the replacement token/identity and presents it
+through the shared one-time token dialog. No administrator credentials are shared.
+Pending operations freeze editing/actions and prevent losing their result by
+closing the dialog. Revoked records may be selected for a safe repeat of revoke;
+a separate repeat-revoke action can complete it without creating unwanted access.
+
+A lost/invalid revoke acknowledgement never proceeds to issue. A failed issue
+leaves the old access revoked and explicitly warns that a new record may exist.
+There is no automatic retry, rollback or attribution based on duplicate names.
+An explicit successful list refresh is required before further mutations; it
+clears selection and exposes the server records for review. The same reconciliation
+gate also protects ordinary create/revoke errors. The operation is intentionally
+not described as atomic, and multi-owner ambiguity is stated in the help.
+
+Validation: production coordinator and real native-dialog actions exercise both
+partial outcomes, deferred completions, cancellation before work, retry blocking,
+selection identity, token verification and reconciliation. Isolated Ubuntu tests
+repeat revoke and reissue, validate new restricted credentials, reject old access
+and keep the other invitation connected. No real user's VPS is modified.
+
+Together with F20a this completes the approved F20 scope. Expiry, quotas, billing
+and last-use tracking are not introduced. Progress: **18/30 closed; 12 remaining**.
+No merge, release or version bump. Native and server CI are required before review.
+
 ## Remaining stages
 
-F09, F16–F17, F19–F20, F22–F23 and F25–F30 remain separate work (13 findings). Preserve the ordinary
+F09, F16–F17, F19, F22–F23 and F25–F30 remain separate work (12 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

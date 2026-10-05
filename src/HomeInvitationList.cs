@@ -35,6 +35,7 @@ namespace ProGo
             UiTheme.ConfigureKeyboardOrder(this);
         }
         internal void Add(HomeVpnInvitation item) { items.Add(item); search.Text = ""; RefreshItems(item.Id); }
+        internal void Replace(IEnumerable<HomeVpnInvitation> values) { items.Clear(); items.AddRange(values.Where(i => i != null)); search.Text = ""; RefreshItems(null); }
         internal void RefreshSelection() { RefreshItems(Selected == null ? null : Selected.Id); }
         private void RefreshItems(string selectedId)
         {
@@ -65,7 +66,7 @@ namespace ProGo
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text =
                 "Токен показывается только сейчас. Передайте его другу лично до закрытия окна: повторно показать этот токен нельзя. Он выберет «Подключиться к готовому VPS». Токен действует до отзыва владельцем и даёт только VPN-доступ." });
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text =
-                "Это приглашение в ProGo, а не QR-ссылка установки профиля. QR создаётся отдельно и действует ограниченное время. При потере токена отзовите старый доступ и создайте новый. Не публикуйте токен." });
+                "Это приглашение в ProGo, а не QR-ссылка установки профиля. QR создаётся отдельно и действует ограниченное время. При потере токена выберите друга в списке и нажмите «Перевыпустить потерянный токен». Не публикуйте токен." });
             panel.Controls.Add(new TextBox { Width = 600, UseSystemPasswordChar = true, ReadOnly = true, Text = value, AccessibleName = "Личный токен приглашения" });
             var copy = new Button { AutoSize = true, Text = "Скопировать токен", MinimumSize = new Size(230, 38) };
             var notice = new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text = clipboard.CopyNotice };
