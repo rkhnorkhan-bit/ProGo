@@ -81,6 +81,7 @@ namespace ProGo
                 using (var clipboard = new ClipboardService(clipboardSettings))
                 {
                 ClipboardChecks(clipboard, clipboardSettings);
+                InvitationChecks(clipboard, work);
                 using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }, clipboard))
                 {
                     qrForm.Show(); Application.DoEvents();
@@ -176,6 +177,55 @@ namespace ProGo
             }
             catch (Exception ex) { Console.Error.WriteLine("Home VPN test failed: " + ex.GetType().Name + ": " + ex.Message); return 1; }
         }
+        private static void InvitationChecks(ClipboardService clipboard, string work)
+        {
+            var first = Json.Deserialize<HomeVpnInvitation>("{\"Id\":\"aaaaaaaaaaaaaaaaaaaaaaaa\",\"Name\":\"Друг\",\"Revoked\":false,\"Created\":\"2026-01-02T06:04:05+03:00\"}");
+            var second = new HomeVpnInvitation { Id = new string('b', 24), Name = "Друг", Revoked = true };
+            Check(first.CreatedText == "2026-01-02 03:04 UTC", "server creation timestamp is displayed in explicit UTC");
+            Check(second.CreatedText == "Дата не передана сервером", "legacy invitation does not invent creation date");
+            Check(new HomeVpnInvitation { Created = "invalid" }.CreatedText == "Дата не передана сервером", "invalid date remains unknown");
+            Check(new HomeVpnInvitation { Id = "x", Name = "Short" }.ToString().Contains("(x)"), "short legacy identifier does not crash invitation list");
+            using (var form = new ProGoForm { Text = "Доступ друзей — проверка", ClientSize = new Size(740, 400) })
+            using (var view = new HomeInvitationList(new[] { first, second }) { Dock = DockStyle.Fill }) {
+                form.Controls.Add(view); form.Show(); Application.DoEvents();
+                var search = AllControls(view).OfType<TextBox>().Single(); var list = AllControls(view).OfType<ListBox>().Single();
+                var labels = AllControls(view).OfType<Label>().ToArray();
+                Check(list.Items.Count == 2 && view.Selected == null && !view.CanRevoke, "friend list requires explicit selection before revocation");
+                Check(search.AccessibilityObject.Name.Contains("идентификатор") && list.AccessibilityObject.Name == "Приглашения друзей", "friend search and list have meaningful accessible names");
+                list.SelectedIndex = 0; Application.DoEvents();
+                Check(view.Selected == first && view.CanRevoke && labels.Any(l => l.Text.Contains(first.CreatedText) && l.Text.Contains("без командной оболочки")), "selected invitation shows date, status and restricted scope");
+                search.Text = "ДРУГ"; Application.DoEvents();
+                Check(list.Items.Count == 2 && view.Selected == first, "case-insensitive name search preserves visible selection");
+                search.Text = "bbbb"; Application.DoEvents();
+                Check(list.Items.Count == 1 && view.Selected == null && !view.CanRevoke, "filtering out a selected friend clears destructive-action selection");
+                list.SelectedIndex = 0;
+                Check(view.Selected == second && !view.CanRevoke, "duplicate names resolve by identity and revoked access cannot be revoked again");
+                search.Text = "missing";
+                Check(list.Items.Count == 0 && labels.Any(l => l.Text.Contains("Совпадений нет")), "empty search has corrective guidance");
+                search.Text = ""; list.SelectedIndex = 0; first.Revoked = true; view.RefreshSelection();
+                Check(view.Selected == first && !view.CanRevoke && second.Revoked, "refresh retains revoked identity without changing other rows");
+                var added = new HomeVpnInvitation { Id = new string('c', 24), Name = "Новый" }; view.Add(added);
+                Check(view.Selected == added && view.CanRevoke && list.Items.Count == 3, "new invitation becomes the visible selected record");
+                using (var shot = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(shot, new Rectangle(Point.Empty, shot.Size)); shot.Save(Path.Combine(work, "friends-list.png")); }
+                form.Close();
+            }
+            using (var empty = new HomeInvitationList(new HomeVpnInvitation[0])) {
+                Check(!empty.CanRevoke && AllControls(empty).OfType<Label>().Any(l => l.Text.Contains("Приглашений пока нет")), "empty invitation list explains how to begin");
+            }
+            using (var dialog = HomeInvitationList.TokenDialog("fixture-invite-only", clipboard)) {
+                dialog.Show(); Application.DoEvents();
+                var text = String.Join(" ", AllControls(dialog).OfType<Label>().Select(l => l.Text));
+                Check(text.Contains("только сейчас") && text.Contains("повторно показать") && text.Contains("не QR-ссылка"), "token dialog explains one-time display and distinct QR purpose");
+                var field = AllControls(dialog).OfType<TextBox>().Single();
+                Check(field.ReadOnly && field.UseSystemPasswordChar, "issued token is masked and read-only");
+                AllControls(dialog).OfType<Button>().Single().PerformClick();
+                Check(Clipboard.GetText() == "fixture-invite-only", "actual invitation copy uses shared clipboard service");
+                using (var shot = new Bitmap(dialog.Width, dialog.Height)) { dialog.DrawToBitmap(shot, new Rectangle(Point.Empty, shot.Size)); shot.Save(Path.Combine(work, "friends-token.png")); }
+                dialog.Close();
+            }
+            ClearClipboard(clipboard); Check(!Clipboard.ContainsText(), "invitation token cleanup survives closing its dialog");
+        }
+
         private static void ClearClipboard(ClipboardService clipboard)
         {
             typeof(ClipboardService).GetMethod("ClearIfStillOwned", BindingFlags.Instance | BindingFlags.NonPublic)

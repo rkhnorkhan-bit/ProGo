@@ -30,7 +30,21 @@ namespace ProGo
         public string Id { get; set; }
         public string Name { get; set; }
         public bool Revoked { get; set; }
-        public override string ToString() { return Name + " — " + (Revoked ? "отозван" : "активен") + " (" + Id.Substring(0, 8) + ")"; }
+        public string Created { get; set; }
+        internal string Status { get { return Revoked ? "Отозван" : "Активен до отзыва"; } }
+        internal string CreatedText {
+            get {
+                DateTimeOffset value;
+                return DateTimeOffset.TryParse(Created, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal, out value)
+                    ? value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
+                    : "Дата не передана сервером";
+            }
+        }
+        public override string ToString() {
+            var id = Id ?? "";
+            return (Name ?? "Без имени") + " — " + Status + " (" + id.Substring(0, Math.Min(8, id.Length)) + ")";
+        }
     }
 
     internal sealed class HomeVpnService : IDisposable

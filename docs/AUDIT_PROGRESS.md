@@ -702,6 +702,32 @@ callbacks, compiled metadata and preserved phone/Codex command routing; normal
 and minimum screenshots are inspected. F24 is closed after these checks pass.
 Progress: **17/30 closed; 13 remaining**. No merge, release or version bump.
 
+## Stage F20a — friend invitation visibility and selection
+
+The invitation list now supports case-insensitive name/ID search and explicit
+selection. Details show server creation time in UTC, status, full identity and
+restricted VPN scope. Missing/invalid legacy timestamps remain unknown; a freshly
+issued token's creation timestamp arrives when the list is reopened. The server
+list exports only whitelisted public metadata, including its existing timestamp.
+Filtering a selected row away clears the destructive-action selection; duplicate
+names remain distinguishable. Confirmation includes ID/date. Search/name changes
+are disabled during an existing create/revoke operation.
+
+The issued-token dialog explicitly describes one-time display, personal delivery,
+VPN-only rights, its distinction from QR and manual lost-token recovery. It uses
+the shared clipboard cleanup service and a masked read-only field. New rows are
+selected before the token dialog opens. Existing server authorization/revocation
+contracts and token format remain unchanged.
+
+Native Windows fixtures cover duplicate names, search/selection reset, revoked and
+empty lists, UTC/legacy dates, token presentation/copy/cleanup. Python fixtures
+verify metadata whitelisting and nonmutation. Isolated server CI still checks
+invitation scope and independent revocation.
+
+F20 remains **open** for the guided reissue workflow and its partial-failure
+handling. Expiry, quotas and billing remain separately scoped server/product work.
+Progress remains **17/30 closed; 13 remaining**. No merge, release or version bump.
+
 ## Remaining stages
 
 F09, F16–F17, F19–F20, F22–F23 and F25–F30 remain separate work (13 findings). Preserve the ordinary

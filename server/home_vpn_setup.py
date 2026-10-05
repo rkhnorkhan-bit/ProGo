@@ -394,6 +394,12 @@ def revoke(data, identifier):
     # old IKE SAs expire through DPD without disrupting other clients.
 
 
+def invitation_summaries(data):
+    # Public metadata only; credentials and private state never enter the list.
+    return [dict(Id=i['id'], Name=i['name'], Revoked=i['revoked'], Created=i.get('created'))
+            for i in data['invites']]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['setup', 'invite', 'revoke', 'list', 'network', 'share', 'repair'])
@@ -431,7 +437,7 @@ def main():
         revoke(data, args.id or '')
         result = 'Access revoked.'
     else:
-        result = json.dumps([dict(Id=i['id'], Name=i['name'], Revoked=i['revoked']) for i in data['invites']])
+        result = json.dumps(invitation_summaries(data))
     # Export exclusively to the caller's new path. An existing/symlink file is
     # never overwritten by a privileged installer.
     with open(args.output, 'x', encoding='utf-8') as stream:
