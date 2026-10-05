@@ -12,6 +12,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
 $UpdateLog = Join-Path $InstallDir "update.log"
 $LegacyUpdateLog = Join-Path $InstallDir "progo-update.log"
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -30,10 +31,8 @@ $State = @{
 $BackupDir = $null
 
 function Write-UpdateLog($Message) {
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz") + " " + $Message
-    Add-Content -Path $UpdateLog -Value $line -Encoding UTF8
-    Add-Content -Path $LegacyUpdateLog -Value $line -Encoding UTF8
+    try { Write-ProGoLog -Path $UpdateLog -Message $line } catch { }
     Write-Host $Message
 }
 
@@ -65,10 +64,10 @@ function Copy-LogToClipboard {
 
 function Open-UpdateLog {
     try {
-        if (-not (Test-Path $UpdateLog)) {
-            New-Item -ItemType File -Path $UpdateLog -Force | Out-Null
-        }
-        Start-Process -FilePath "notepad.exe" -ArgumentList $UpdateLog | Out-Null
+        $path = $UpdateLog
+        if (-not (Test-Path $path) -and (Test-Path $LegacyUpdateLog)) { $path = $LegacyUpdateLog }
+        if (-not (Test-Path $path)) { New-Item -ItemType File -Path $path -Force | Out-Null }
+        Start-Process -FilePath "notepad.exe" -ArgumentList $path | Out-Null
     } catch {
         Write-Host (('Не удалось открыть файл: ') + $_.Exception.Message)
     }

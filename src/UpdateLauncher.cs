@@ -208,25 +208,7 @@ namespace ProGo
 
         private static string ReadRecentUpdaterLogs()
         {
-            var builder = new StringBuilder();
-            AppendRecentFileText(builder, Path.Combine(AppPaths.Root, "update.log"));
-            AppendRecentFileText(builder, Path.Combine(AppPaths.Root, "progo-update.log"));
-            return builder.ToString();
-        }
-
-        private static void AppendRecentFileText(StringBuilder builder, string path)
-        {
-            try
-            {
-                if (String.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
-                var text = File.ReadAllText(path);
-                if (text.Length > 12000) text = text.Substring(text.Length - 12000);
-                builder.AppendLine(text);
-            }
-            catch
-            {
-                // Failure diagnostics must never break updater launch handling.
-            }
+            return BoundedLog.ReadTail(BoundedLog.UpdaterLogPath(AppPaths.Root), 12000);
         }
 
         private static string ResolveUpdateScriptPath()

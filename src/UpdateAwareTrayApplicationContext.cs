@@ -442,6 +442,8 @@ namespace ProGo
             try
             {
                 AppPaths.EnsureDirectories();
+                if (String.Equals(path, Path.Combine(AppPaths.Root, "update.log"), StringComparison.OrdinalIgnoreCase))
+                    path = BoundedLog.UpdaterLogPath(AppPaths.Root);
                 if (!File.Exists(path)) File.WriteAllText(path, "");
                 Process.Start("notepad.exe", path);
             }

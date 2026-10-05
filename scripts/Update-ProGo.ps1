@@ -11,6 +11,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
 $LocalCoreScriptPath = Join-Path $PSScriptRoot "Update-ProGo.Core.ps1"
 
 . (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
@@ -38,8 +39,7 @@ try {
     & $LocalCoreScriptPath @coreArgs
 } catch {
     if ($_.Exception.ToString().Contains("already in progress")) { throw }
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-    Add-Content -LiteralPath (Join-Path $InstallDir "update.log") -Value ("Installed updater failed: " + $_.Exception.Message) -Encoding UTF8
+    try { Write-ProGoLog -Path (Join-Path $InstallDir "update.log") -Message ("Installed updater failed: " + $_.Exception.Message) } catch { }
     # Existing process stays alive after an early launch failure. Relaunch only if it exited.
     if (-not $NoLaunch -and $WaitPid -gt 0) {
         $old = Get-Process -Id $WaitPid -ErrorAction SilentlyContinue

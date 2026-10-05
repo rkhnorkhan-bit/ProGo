@@ -10,6 +10,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
 $RestoreLog = Join-Path $InstallDir "progo-restore.log"
 
 function U8($Base64) {
@@ -17,9 +18,8 @@ function U8($Base64) {
 }
 
 function Write-RestoreLog($Message) {
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz") + " " + $Message
-    Add-Content -Path $RestoreLog -Value $line -Encoding UTF8
+    try { Write-ProGoLog -Path $RestoreLog -Message $line } catch { }
     Write-Host $Message
 }
 
