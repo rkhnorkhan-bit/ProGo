@@ -576,6 +576,30 @@ Existing action, validation, SSH editor and automation layout checks stay requir
 F16 remains **open** for actual Windows DPI/display validation. Progress remains
 **14/30 closed; 16 remaining**. No merge, release or version bump is included.
 
+## Stage 14a — F17: system contrast palette
+
+Forms, surfaces and semantic labels select the Windows system palette when high
+contrast is enabled. Fields/selectors, primary and secondary buttons, links,
+grid headers/selection, tab drawing, wizard progress and empty-vault text use
+matching system colors. The normal dark palette is retained for the return path;
+status/error messages keep their text and latest semantic foreground.
+
+Open forms and the tray menu observe system preference changes and queue refresh
+on their UI thread. Window disposal releases the subscription and prevents queued
+refresh from touching a closed control. Menu opening also refreshes the palette.
+Theme changes do not commit pending settings or execute network/proxy commands.
+
+Isolated Windows fixtures replace only the private contrast-state source in the
+test process and exercise the same queued preference handler. They cover startup,
+live transitions, semantic colors, custom drawing, nested menus, pending edits,
+ordinary CLI routing and subscription disposal; screenshots accompany the checks.
+They do not change Windows contrast settings or establish Narrator coverage.
+
+F17 remains **open** for keyboard/field accessibility and real Windows contrast
+and Narrator validation. F16 remains open for real DPI/display validation.
+Progress remains **14/30 closed; 16 remaining**. No merge, release or version bump
+is included.
+
 ## Remaining stages
 
 F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary

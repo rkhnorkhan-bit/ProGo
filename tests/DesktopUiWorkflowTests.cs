@@ -117,6 +117,8 @@ namespace ProGo
                     });
                     main.Close();
                     RouteTimes(settings, proxy);
+                    var ownedMenu = tray.ContextMenuStrip; context.Dispose();
+                    Check(ownedMenu.IsDisposed, "application teardown disposes its tray menu and theme observer");
                 }
             }
             finally {

@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace ProGo
 {
@@ -10,14 +11,15 @@ namespace ProGo
     internal class ProGoForm : Form
     {
         private readonly Icon brand = BrandIcon.Create();
+        private IDisposable themeObservation;
         public ProGoForm()
         {
             Font = UiTheme.Body;
             AutoScaleDimensions = new SizeF(96, 96);
             AutoScaleMode = AutoScaleMode.Dpi;
             Icon = brand;
-            BackColor = UiTheme.Background;
-            ForeColor = UiTheme.Text;
+            BackColor = UiTheme.WindowBackground;
+            ForeColor = UiTheme.WindowText;
             StartPosition = FormStartPosition.CenterScreen;
             DoubleBuffered = true;
         }
@@ -29,14 +31,24 @@ namespace ProGo
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            if (!SystemInformation.HighContrast)
-                try { int dark = 1; DwmSetWindowAttribute(Handle, 20, ref dark, 4); } catch { }
+            if (themeObservation == null) themeObservation = UiTheme.Observe(this, RefreshTheme);
+            RefreshTheme();
+        }
+        private void RefreshTheme()
+        {
+            UiTheme.Apply(this);
+            if (IsHandleCreated)
+                try { int dark = UiTheme.HighContrast ? 0 : 1; DwmSetWindowAttribute(Handle, 20, ref dark, 4); } catch { }
+            Invalidate(true);
         }
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr handle, int attribute, ref int value, int size);
         protected override void Dispose(bool disposing)
         {
-            if (disposing) brand.Dispose();
+            if (disposing) {
+                if (themeObservation != null) { themeObservation.Dispose(); themeObservation = null; }
+                brand.Dispose();
+            }
             base.Dispose(disposing);
         }
     }
@@ -56,9 +68,57 @@ namespace ProGo
         public static readonly Font Title = new Font("Segoe UI", 23f, FontStyle.Bold);
         public static readonly Font Heading = new Font("Segoe UI", 14f, FontStyle.Bold);
 
+        // The source is private and always reads Windows in production. Tests replace it
+        // only inside an isolated process; they never change the user's system theme.
+        private static Func<bool> contrastSource = () => SystemInformation.HighContrast;
+        internal static bool HighContrast { get { return contrastSource(); } }
+        internal static Color WindowBackground { get { return HighContrast ? SystemColors.Window : Background; } }
+        internal static Color WindowText { get { return HighContrast ? SystemColors.WindowText : Text; } }
+        internal static Color SurfaceBackground { get { return HighContrast ? SystemColors.Window : Surface; } }
+        internal static Color TextColor(Color normal) { return HighContrast ? SystemColors.WindowText : normal; }
+
+        internal static IDisposable Observe(Control owner, Action refresh)
+        {
+            return new PreferenceObservation(owner, refresh);
+        }
+        private sealed class PreferenceObservation : IDisposable
+        {
+            private readonly Control owner;
+            private readonly Action refresh;
+            private volatile bool disposed;
+            internal PreferenceObservation(Control owner, Action refresh)
+            {
+                this.owner = owner; this.refresh = refresh;
+                SystemEvents.UserPreferenceChanged += Changed;
+            }
+            private void Changed(object sender, UserPreferenceChangedEventArgs e)
+            {
+                if (disposed || owner.IsDisposed || !owner.IsHandleCreated) return;
+                // SystemEvents may run off the UI thread. Do not block that thread,
+                // and recheck disposal when the queued refresh reaches the window.
+                try { owner.BeginInvoke((Action)delegate {
+                    if (!disposed && !owner.IsDisposed && owner.IsHandleCreated) refresh();
+                }); } catch (InvalidOperationException) { }
+            }
+            public void Dispose()
+            {
+                if (disposed) return;
+                disposed = true; SystemEvents.UserPreferenceChanged -= Changed;
+            }
+        }
+        private sealed class ThemeLabel : Label
+        {
+            private Color normalForeground = UiTheme.Text;
+            public override Color ForeColor {
+                get { return base.ForeColor; }
+                set { normalForeground = value; RefreshPalette(); }
+            }
+            internal void RefreshPalette() { base.ForeColor = TextColor(normalForeground); BackColor = Color.Transparent; }
+        }
+        internal static Label StatusLabel(Color color) { return new ThemeLabel { ForeColor = color }; }
         public static Label Label(string text, Font font, Color color)
         {
-            return new Label { Text = text, Font = font, ForeColor = color, AutoSize = true, Tag = "styled", Margin = new Padding(0, 0, 0, 8) };
+            return new ThemeLabel { Text = text, Font = font, ForeColor = color, AutoSize = true, Tag = "styled", Margin = new Padding(0, 0, 0, 8) };
         }
         public static Button Button(string text, EventHandler click, bool primary)
         {
@@ -69,56 +129,80 @@ namespace ProGo
         }
         public static void Apply(Control root)
         {
-            if (SystemInformation.HighContrast) return;
+            ApplyControl(root);
+            // Parents must receive their palette before panels inherit it.
             foreach (Control c in root.Controls) Apply(c);
-            if (Equals(root.Tag, "styled")) return;
-            root.ForeColor = Text;
+            root.Invalidate();
+        }
+        private static void ApplyControl(Control root)
+        {
+            var label = root as ThemeLabel;
+            if (label != null) { label.RefreshPalette(); return; }
+            root.ForeColor = WindowText;
             var button = root as Button;
             if (button != null) { StyleButton(button); return; }
             var grid = root as DataGridView;
             if (grid != null)
             {
-                grid.BackgroundColor = Surface; grid.GridColor = Border; grid.BorderStyle = BorderStyle.None;
+                grid.BackgroundColor = SurfaceBackground; grid.GridColor = HighContrast ? SystemColors.WindowText : Border; grid.BorderStyle = BorderStyle.None;
                 grid.EnableHeadersVisualStyles = false;
-                grid.ColumnHeadersDefaultCellStyle.BackColor = Field; grid.ColumnHeadersDefaultCellStyle.ForeColor = Muted;
-                grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Field;
-                grid.DefaultCellStyle.BackColor = Surface; grid.DefaultCellStyle.ForeColor = Text;
-                grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(38, 76, 84); grid.DefaultCellStyle.SelectionForeColor = Text;
-                grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(25, 34, 49);
+                grid.ColumnHeadersDefaultCellStyle.BackColor = HighContrast ? SystemColors.Control : Field;
+                grid.ColumnHeadersDefaultCellStyle.ForeColor = HighContrast ? SystemColors.ControlText : Muted;
+                grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = grid.ColumnHeadersDefaultCellStyle.BackColor;
+                grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = grid.ColumnHeadersDefaultCellStyle.ForeColor;
+                grid.DefaultCellStyle.BackColor = SurfaceBackground; grid.DefaultCellStyle.ForeColor = WindowText;
+                grid.DefaultCellStyle.SelectionBackColor = HighContrast ? SystemColors.Highlight : Color.FromArgb(38, 76, 84);
+                grid.DefaultCellStyle.SelectionForeColor = HighContrast ? SystemColors.HighlightText : Text;
+                grid.AlternatingRowsDefaultCellStyle.BackColor = HighContrast ? SystemColors.Window : Color.FromArgb(25, 34, 49);
                 grid.RowTemplate.Height = 32; grid.RowHeadersVisible = false;
                 return;
             }
             if (root is TextBoxBase || root is ComboBox || root is NumericUpDown || root is ListBox)
             {
-                root.BackColor = Field;
+                root.BackColor = HighContrast ? SystemColors.Window : Field;
                 var combo = root as ComboBox;
                 if (combo != null)
                 {
-                    combo.FlatStyle = FlatStyle.Flat; combo.DrawMode = DrawMode.OwnerDrawFixed;
-                    combo.ItemHeight = Math.Max(24, combo.Font.Height + 8);
-                    combo.DrawItem -= DrawComboItem; combo.DrawItem += DrawComboItem;
+                    combo.DrawItem -= DrawComboItem;
+                    combo.FlatStyle = HighContrast ? FlatStyle.Standard : FlatStyle.Flat;
+                    combo.DrawMode = HighContrast ? DrawMode.Normal : DrawMode.OwnerDrawFixed;
+                    if (!HighContrast) {
+                        combo.ItemHeight = Math.Max(24, combo.Font.Height + 8);
+                        combo.DrawItem += DrawComboItem;
+                    }
                 }
                 var box = root as TextBoxBase; if (box != null) box.BorderStyle = BorderStyle.FixedSingle;
-                var list = root as ListBox; if (list != null) { list.BorderStyle = BorderStyle.None; list.ItemHeight = 28; }
+                var list = root as ListBox; if (list != null) { list.BorderStyle = HighContrast ? BorderStyle.FixedSingle : BorderStyle.None; list.ItemHeight = 28; }
             }
-            else if (root is TabControl || root is TabPage) root.BackColor = Background;
-            else if (root is Panel) root.BackColor = root.Parent == null ? Background : root.Parent.BackColor;
-            else if (root is Form) root.BackColor = Background;
+            else if (root is TabControl || root is TabPage || root is Form || root is WizardProgress) root.BackColor = WindowBackground;
+            else if (root is Panel) root.BackColor = Equals(root.Tag, "styled") ? SurfaceBackground : root.Parent == null ? WindowBackground : root.Parent.BackColor;
             else if (root is Label || root is CheckBox || root is RadioButton || root is PictureBox) root.BackColor = Color.Transparent;
+            var link = root as LinkLabel;
+            if (link != null) {
+                link.LinkColor = HighContrast ? SystemColors.HotTrack : Accent;
+                link.ActiveLinkColor = HighContrast ? SystemColors.WindowText : Text;
+                link.VisitedLinkColor = HighContrast ? SystemColors.HotTrack : Accent;
+                link.DisabledLinkColor = HighContrast ? SystemColors.GrayText : Muted;
+            }
         }
         private static void DrawComboItem(object sender, DrawItemEventArgs e)
         {
             var combo = (ComboBox)sender;
             bool selected = (e.State & DrawItemState.Selected) != 0;
-            using (var brush = new SolidBrush(selected ? Border : Field)) e.Graphics.FillRectangle(brush, e.Bounds);
+            using (var brush = new SolidBrush(HighContrast ? (selected ? SystemColors.Highlight : SystemColors.Window) : selected ? Border : Field)) e.Graphics.FillRectangle(brush, e.Bounds);
             string value = e.Index >= 0 ? combo.GetItemText(combo.Items[e.Index]) : combo.Text;
             var bounds = e.Bounds; bounds.Inflate(-5, 0);
-            TextRenderer.DrawText(e.Graphics, value, combo.Font, bounds, Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            TextRenderer.DrawText(e.Graphics, value, combo.Font, bounds, HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) : Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
             if ((e.State & DrawItemState.Focus) != 0) e.DrawFocusRectangle();
         }
         private static void StyleButton(Button b)
         {
-            if (SystemInformation.HighContrast) return;
+            b.AccessibleName = b.Text;
+            if (HighContrast) {
+                b.FlatStyle = FlatStyle.Standard;
+                b.BackColor = SystemColors.Control; b.ForeColor = SystemColors.ControlText; b.UseVisualStyleBackColor = true;
+                return;
+            }
             bool primary = Equals(b.Tag, "primary");
             b.FlatStyle = FlatStyle.Flat;
             b.FlatAppearance.BorderSize = primary ? 0 : 1;
@@ -133,18 +217,27 @@ namespace ProGo
         public static void Menu(ContextMenuStrip menu)
         {
             menu.Font = Body; menu.ShowImageMargin = false; menu.ShowCheckMargin = true;
-            if (SystemInformation.HighContrast) return;
-            menu.Renderer = new ToolStripProfessionalRenderer(new MenuColors());
-            StyleItems(menu.Items);
+            ApplyMenu(menu);
+            menu.Opening -= MenuOpening; menu.Opening += MenuOpening;
+            var observation = Observe(menu, () => ApplyMenu(menu));
+            menu.Disposed += delegate { observation.Dispose(); };
+        }
+        private static void MenuOpening(object sender, System.ComponentModel.CancelEventArgs e) { ApplyMenu((ContextMenuStrip)sender); }
+        private static void ApplyMenu(ContextMenuStrip menu)
+        {
+            menu.Renderer = HighContrast ? (ToolStripRenderer)new ToolStripSystemRenderer() : new ToolStripProfessionalRenderer(new MenuColors());
+            menu.ForeColor = HighContrast ? SystemColors.MenuText : Text;
+            menu.BackColor = HighContrast ? SystemColors.Menu : Surface;
+            StyleItems(menu.Items); menu.Invalidate(true);
         }
         private static void StyleItems(ToolStripItemCollection items)
         {
             foreach (ToolStripItem item in items)
             {
-                item.ForeColor = Text; item.BackColor = Surface;
+                item.ForeColor = HighContrast ? SystemColors.MenuText : Text; item.BackColor = HighContrast ? SystemColors.Menu : Surface;
                 item.Padding = new Padding(6, 5, 6, 5);
                 var sub = item as ToolStripMenuItem;
-                if (sub != null) { sub.DropDown.Font = Body; StyleItems(sub.DropDownItems); }
+                if (sub != null) { sub.DropDown.Font = Body; sub.DropDown.Renderer = HighContrast ? (ToolStripRenderer)new ToolStripSystemRenderer() : new ToolStripProfessionalRenderer(new MenuColors()); StyleItems(sub.DropDownItems); }
             }
         }
         private sealed class MenuColors : ProfessionalColorTable
@@ -171,13 +264,13 @@ namespace ProGo
         }
         protected override void OnPaint(PaintEventArgs e)
         {
-            var background = SystemInformation.HighContrast ? SystemColors.Window : UiTheme.Background;
+            var background = UiTheme.HighContrast ? SystemColors.Window : UiTheme.Background;
             e.Graphics.Clear(background);
             for (int i = 0; i < TabCount; i++)
             {
                 var bounds = GetTabRect(i); bool selected = i == SelectedIndex;
-                var fill = SystemInformation.HighContrast ? (selected ? SystemColors.Highlight : SystemColors.Window) : (selected ? UiTheme.Field : UiTheme.Background);
-                var color = SystemInformation.HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) : (selected ? UiTheme.Accent : UiTheme.Muted);
+                var fill = UiTheme.HighContrast ? (selected ? SystemColors.Highlight : SystemColors.Window) : (selected ? UiTheme.Field : UiTheme.Background);
+                var color = UiTheme.HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) : (selected ? UiTheme.Accent : UiTheme.Muted);
                 using (var brush = new SolidBrush(fill)) e.Graphics.FillRectangle(brush, bounds);
                 TextRenderer.DrawText(e.Graphics, TabPages[i].Text, UiTheme.Strong, bounds, color, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 if (selected) using (var pen = new Pen(color, 2)) e.Graphics.DrawLine(pen, bounds.Left + 16, bounds.Bottom - 2, bounds.Right - 16, bounds.Bottom - 2);
@@ -189,11 +282,11 @@ namespace ProGo
 
     internal sealed class SurfacePanel : Panel
     {
-        public SurfacePanel() { DoubleBuffered = true; BackColor = UiTheme.Surface; Tag = "styled"; Padding = new Padding(22); }
+        public SurfacePanel() { DoubleBuffered = true; BackColor = UiTheme.SurfaceBackground; Tag = "styled"; Padding = new Padding(22); }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            using (var pen = new Pen(UiTheme.Border)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+            using (var pen = new Pen(UiTheme.HighContrast ? SystemColors.WindowText : UiTheme.Border)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
         }
     }
 }
@@ -204,7 +297,7 @@ namespace ProGo
     {
         private int step;
         internal int Step { get { return step; } set { step = value; AccessibleName = "Шаг " + (value + 1) + " из 5"; Invalidate(); } }
-        internal WizardProgress() { DoubleBuffered = true; Tag = "styled"; Height = 64; }
+        internal WizardProgress() { DoubleBuffered = true; Tag = "styled"; Height = 64; BackColor = UiTheme.WindowBackground; }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e); e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
@@ -213,10 +306,10 @@ namespace ProGo
             for (int i = 0; i < 5; i++)
             {
                 int x = i * width;
-                using (var fill = new SolidBrush(i <= step ? UiTheme.Accent : UiTheme.Field)) e.Graphics.FillEllipse(fill, x + 1, 4, 26, 26);
-                TextRenderer.DrawText(e.Graphics, (i + 1).ToString(), UiTheme.Strong, new Rectangle(x + 1, 4, 26, 26), i <= step ? UiTheme.Background : UiTheme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-                if (i < 4) using (var pen = new Pen(UiTheme.Border, 2)) e.Graphics.DrawLine(pen, x + 39, 17, x + width - 12, 17);
-                TextRenderer.DrawText(e.Graphics, titles[i], UiTheme.Body, new Point(x, 38), i == step ? UiTheme.Accent : UiTheme.Muted);
+                using (var fill = new SolidBrush(UiTheme.HighContrast ? (i <= step ? SystemColors.Highlight : SystemColors.Window) : i <= step ? UiTheme.Accent : UiTheme.Field)) e.Graphics.FillEllipse(fill, x + 1, 4, 26, 26);
+                TextRenderer.DrawText(e.Graphics, (i + 1).ToString(), UiTheme.Strong, new Rectangle(x + 1, 4, 26, 26), UiTheme.HighContrast ? (i <= step ? SystemColors.HighlightText : SystemColors.WindowText) : i <= step ? UiTheme.Background : UiTheme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                if (i < 4) using (var pen = new Pen(UiTheme.HighContrast ? SystemColors.WindowText : UiTheme.Border, 2)) e.Graphics.DrawLine(pen, x + 39, 17, x + width - 12, 17);
+                TextRenderer.DrawText(e.Graphics, titles[i], UiTheme.HighContrast && i == step ? UiTheme.Strong : UiTheme.Body, new Point(x, 38), UiTheme.TextColor(i == step ? UiTheme.Accent : UiTheme.Muted));
             }
         }
     }

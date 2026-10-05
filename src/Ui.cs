@@ -275,7 +275,7 @@ namespace ProGo
             {
                 if (grid.Rows.Count != 0) return;
                 TextRenderer.DrawText(e.Graphics, "Здесь будут ваши записи\nНажмите «Добавить», чтобы сохранить первый секрет.", UiTheme.Body,
-                    new Rectangle(20, 70, Math.Max(1, grid.Width - 40), 80), UiTheme.Muted,
+                    new Rectangle(20, 70, Math.Max(1, grid.Width - 40), 80), UiTheme.TextColor(UiTheme.Muted),
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
             };
             root.Controls.Add(grid, 0, 1);
