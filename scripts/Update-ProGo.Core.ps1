@@ -38,27 +38,10 @@ function Write-UpdateLog($Message) {
 
 function Copy-LogToClipboard {
     try {
-        Add-Type -AssemblyName System.Windows.Forms
-        $text = ""
-        if (Test-Path $UpdateLog) {
-            $text = Get-Content -Raw -Path $UpdateLog
-        } elseif (Test-Path $LegacyUpdateLog) {
-            $text = Get-Content -Raw -Path $LegacyUpdateLog
-        }
-
-        if ([string]::IsNullOrWhiteSpace($text)) {
-            $text = "update.log is empty or not found: $UpdateLog"
-        }
-
-        try {
-            [System.Windows.Forms.Clipboard]::SetText($text)
-        } catch {
-            Set-Clipboard -Value $text
-        }
-
-        [void][System.Windows.Forms.MessageBox]::Show(('Журнал обновления скопирован в буфер обмена.'), "ProGo", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        . (Join-Path $PSScriptRoot 'Diagnostics-ProGo.ps1')
+        Show-ProGoDiagnostics -Root $InstallDir
     } catch {
-        Write-Host (('Не удалось скопировать журнал: ') + $_.Exception.Message)
+        Write-Host 'Не удалось открыть предпросмотр диагностики. Личный журнал доступен на этом компьютере.'
     }
 }
 
@@ -138,7 +121,7 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $form.Controls.Add($openLog)
 
         $copyLog = New-Object System.Windows.Forms.Button
-        $copyLog.Text = 'Копировать журнал'
+        $copyLog.Text = 'Диагностика…'
         $copyLog.Left = 232
         $copyLog.Top = 200
         $copyLog.Width = 150

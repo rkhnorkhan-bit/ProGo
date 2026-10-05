@@ -784,9 +784,39 @@ F25 remains **open**: sanitized diagnostic export with preview is F25b. In
 particular, existing Copy log is not yet a privacy-safe diagnostic export.
 Progress remains **18/30 closed; 12 remaining**. No merge, release or version bump.
 
+## Stage F25b — reviewed diagnostic export without raw personal context
+
+Help/tray and the updater now open the same diagnostic preview. The former
+updater Copy log action no longer copies a raw file. Users explicitly copy or
+save the reviewed snapshot, cancel without side effects, or continue to open the
+original local journals separately. Export failures show fixed actionable text,
+never raw exception details. The dialog follows the existing theme/keyboard rules.
+
+The report is an allowlisted projection of application/update/restore events,
+including two rotated generations and legacy-update fallback. Only fixed event
+codes, validated timestamps normalized to UTC, a validated version and counters
+are emitted. Raw messages, dynamic parameters, exception text, addresses, paths,
+identities and unknown lines are excluded instead of trusting regex redaction to
+recognize every secret. Each source reads at most 64 KiB and contributes at most
+60 recent events. The preview explicitly explains this loss of detail; missing,
+locked and truncated sources have fixed statuses. Source files are never changed.
+No automatic sending, upload, clipboard write or file creation occurs on opening.
+
+Tests cover secret/address/path fixtures in known and unknown lines, multiline
+keys, version injection, archives/legacy, large/locked files and read-only source
+behavior. Native UI checks cover exact snapshot copy/save, errors/cancellation,
+keyboard defaults and normal/minimum/scaled layout. A Windows PowerShell test
+runs the actual updater action and verifies both cancellation and explicit copy
+through the shipped shared preview. Build/install/repair ship identical sources.
+
+F25 is complete after native/server CI and screenshot review pass. Together with
+F25a: **19/30 closed; 11 remaining**. The earlier immediate CLI port-rebind test
+conflict remains an unconfirmed cause; its strict assertion and diagnostic output
+are retained. No merge, release or version bump.
+
 ## Remaining stages
 
-F09, F16–F17, F19, F22–F23 and F25–F30 remain separate work (12 findings). Preserve the ordinary
+F09, F16–F17, F19, F22–F23 and F26–F30 remain separate work (11 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

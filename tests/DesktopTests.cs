@@ -75,6 +75,7 @@ namespace ProGo
                     BackupCleanupPreview();
                     RestoreScopeAndPreparationUi();
                     BackupAccessibility();
+                    DiagnosticPreviewWorkflow();
                     using (var errors = WatchStartupErrors()) {
                     UnifiedCliActions(settings);
                     SharedBridgeConsumers(settings);
@@ -343,8 +344,8 @@ namespace ProGo
         }
         private static void HelpTopics()
         {
-            int updateLogs = 0, appLogs = 0;
-            using (var form = new HelpForm(delegate { updateLogs++; }, delegate { appLogs++; })) {
+            int updateLogs = 0, appLogs = 0, reports = 0;
+            using (var form = new HelpForm(delegate { updateLogs++; }, delegate { appLogs++; }, delegate { reports++; })) {
                 form.Show(); Application.DoEvents();
                 var tabs = Descendants(form).OfType<TabControl>().Single();
                 Check(tabs.SelectedIndex == 0 && tabs.TabPages[0].Text == "Начало", "help opens task overview instead of antivirus-only topic");
@@ -366,6 +367,8 @@ namespace ProGo
                 Check(overview.Contains(typeof(HelpForm).Assembly.GetName().Version.ToString(3)), "help version comes from compiled assembly metadata");
                 Descendants(tabs.SelectedTab).OfType<Button>().Single(b => b.Text == "Журнал приложения").PerformClick();
                 Check(appLogs == 1 && updateLogs == 0, "help application log routes to its own callback");
+                Descendants(tabs.SelectedTab).OfType<Button>().Single(b => b.Text == "Передать диагностику…").PerformClick();
+                Check(reports == 1 && appLogs == 1 && updateLogs == 0, "help diagnostic export uses its own preview callback");
                 tabs.SelectedIndex = 1;
                 Check(String.Join(" ", Descendants(tabs.SelectedTab).OfType<Label>().Select(l => l.Text)).Contains("без обязательного ярлыка"), "help preserves ordinary CLI workflow guidance");
                 tabs.SelectedIndex = 3;

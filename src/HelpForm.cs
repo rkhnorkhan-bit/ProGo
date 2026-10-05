@@ -7,7 +7,7 @@ namespace ProGo
 {
     internal sealed class HelpForm : ProGoForm
     {
-        internal HelpForm(Action openLog, Action openAppLog = null)
+        internal HelpForm(Action openLog, Action openAppLog = null, Action exportDiagnostics = null)
         {
             Text = "Помощь · ProGo"; ClientSize = new Size(820, 620); MinimumSize = new Size(700, 540);
             var tabs = new TabControl { Dock = DockStyle.Fill, Multiline = true, AccessibleName = "Темы помощи ProGo" };
@@ -17,7 +17,8 @@ namespace ProGo
             Paragraph(start, "1. Настройки → Подключение → Добавить → По адресу сервера: укажите адрес, SSH-порт, пользователя и путь к ключу. Режим «Из SSH config (для опытных)» использует уже настроенное подключение OpenSSH.");
             Paragraph(start, "2. «Первый вход» открывает обычное окно SSH. Сверьте отпечаток ключа сервера. Парольный вход сам по себе не разрешает фоновое подключение: для него нужен доступный SSH-ключ или агент.");
             Paragraph(start, "3. Нажмите «Запустить CLI» для Codex и терминалов либо включите Windows. Проверка SOCKS подтверждает готовность прокси; «Проверить маршрут» отдельно проверяет интернет. Это не VPN для всего трафика ПК.");
-            Paragraph(start, "«Диагностика» проверяет настройки, маршрут и скорость. При ошибке исправьте указанную причину и повторите проверку. Личный журнал может содержать адреса и пути: не публикуйте его целиком.");
+            Paragraph(start, "«Диагностика» проверяет настройки, маршрут и скорость. При ошибке исправьте указанную причину и повторите проверку. «Передать диагностику…» открывает отчёт из известных событий без исходных параметров. Проверьте его перед копированием или сохранением. Личный журнал содержит больше подробностей и может включать адреса и пути: не публикуйте его целиком.");
+            if (exportDiagnostics != null) start.Controls.Add(UiTheme.Button("Передать диагностику…", delegate { exportDiagnostics(); }, true));
             if (openAppLog != null) start.Controls.Add(UiTheme.Button("Журнал приложения", delegate { openAppLog(); }, false));
 
             var cli = Topic(tabs, "Codex и терминалы", "Обычный запуск без обязательного ярлыка");

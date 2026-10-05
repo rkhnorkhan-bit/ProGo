@@ -54,12 +54,34 @@ file skips a record; disk/ACL errors cannot replace the operation's real result.
 No retry loop, unbounded fallback, background thread or new setting is added.
 Old oversized active files converge on successful rotation; old legacy logs and
 backup copies are deliberately untouched. Raw logs may still contain personal
-context: sanitized diagnostic export/preview remains the next F25 substage.
+context; use the reviewed diagnostic export for sharing.
 
 `BoundedLogTests.cs` exercises the production .NET implementation in disposable
 directories. `BoundedLogTests.ps1` uses shipped writers and a disposable bootstrap
 process, including locked-log error handling. Existing maintenance tests verify
 that refused operations still make no filesystem changes.
+
+## Diagnostic export contract
+
+`DiagnosticReport` emits only fixed event codes, validated UTC timestamps/version
+and counters. Do not pass dynamic parameters, raw exceptions or unmatched text
+through to the output. New event prefixes require an explicit fixed code mapping;
+unknown lines stay excluded. This deliberately trades detail for a bounded,
+shareable summary. Do not describe it as a complete copy of the source journals.
+
+The fixed source list covers application/update/restore current logs and two
+archives. Legacy update.log fallback remains read-only. Each source reads up to
+64 KiB, discards a partial initial line and retains at most 60 recognized events.
+No settings, vault, keys, registry, environment, profile or network lookup is used.
+
+The shared `DiagnosticPreview` displays an immutable snapshot. Explicit copy/save
+must use that same snapshot; never reread raw logs at export time or fall back to
+raw copying after an error. Save uses the native chooser with overwrite consent;
+closing/cancelling does not export. Errors shown to the user omit exception text.
+App and updater share the same form/theme and report source, packaged locally.
+`DiagnosticReportTests`, `DesktopDiagnosticTests` and `DiagnosticPreviewTests.ps1`
+cover privacy, bounded reads, UI action boundaries and the actual installed updater
+entry point. Physical DPI/screen-reader acceptance remains separately scoped.
 
 ## Install locally
 

@@ -123,6 +123,7 @@ namespace ProGo
         {
             var logs = new ToolStripMenuItem("Помощь и журналы");
             logs.DropDownItems.Add("Открыть помощь…", null, delegate { ShowHelp(); });
+            logs.DropDownItems.Add("Передать диагностику…", null, delegate { ShowDiagnosticPreview(); });
             logs.DropDownItems.Add("Журнал приложения", null, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); });
             logs.DropDownItems.Add("Журнал обновления", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); });
             logs.DropDownItems.Add("Папка приложения", null, delegate { OpenProGoFolder(); }); return logs;
@@ -377,7 +378,13 @@ namespace ProGo
         }
         private void ShowHelp()
         {
-            using (var form = new HelpForm(delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); }, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); })) form.ShowDialog();
+            using (var form = new HelpForm(delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); }, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); }, ShowDiagnosticPreview)) form.ShowDialog();
+        }
+
+        private void ShowDiagnosticPreview()
+        {
+            try { DiagnosticPreview.Show(AppPaths.Root, typeof(DiagnosticPreview).Assembly.GetName().Version.ToString(3)); }
+            catch { MessageBox.Show("Не удалось подготовить отчёт. Личный журнал можно открыть на этом компьютере.", AppConstants.ProductName); }
         }
 
         private void ShowVault()
