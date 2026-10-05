@@ -393,3 +393,12 @@ open windows back to the dark palette and verify pending edits, textual errors,
 ordinary CLI routing and subscription disposal. Screenshots cover the dashboard,
 all settings pages and a grid/progress/menu fixture. This is palette and lifecycle
 coverage, not a real Windows contrast-theme or Narrator acceptance run.
+
+## Settings keyboard validation (F17b)
+
+`DesktopSettingsAccessibilityTests.cs` uses native dialog-key handling in the
+isolated Windows CI process to traverse settings and SSH fields forward and
+backward. It verifies accessible object names/descriptions, read-only field
+reachability, skipping disabled controls, both SSH modes, contextual manual CLI
+routing, port-pick state names, refused-Save focus and uncommitted field retention.
+It does not alter OS accessibility settings or substitute for a Narrator run.
