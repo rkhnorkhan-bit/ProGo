@@ -39,11 +39,13 @@ namespace ProGo
             create.Click += async delegate { await RunAsync(CreateAsync); };
             revoke.Click += async delegate {
                 var selected = list.Selected;
-                if (selected == null || selected.Revoked || needsRefresh || working) return;
+                if (selected == null || needsRefresh || working) return;
                 if (!Confirm(Identity(selected) + "\r\nОтозвать этот доступ? Его соединения будут закрыты.")) return;
                 await RunAsync(async delegate {
-                    try { await admin("revoke", null, selected.Id); selected.Revoked = true; list.RefreshSelection(); status.Text = "Выбранный доступ отозван."; }
-                    catch { RequireRefresh("Завершение отзыва не подтверждено. Обновите список. Если статус уже «Отозван», повторный перевыпуск сначала завершит отзыв, затем создаст новый токен."); }
+                    try {
+                        if (await admin("revoke", null, selected.Id) != "Access revoked.") throw new InvalidOperationException();
+                        selected.Revoked = true; list.RefreshSelection(); status.Text = "Выбранный доступ отозван."; }
+                    catch { RequireRefresh("Завершение отзыва не подтверждено. Обновите список. Если статус уже «Отозван», выберите запись и нажмите «Повторить отзыв», чтобы завершить операцию без выдачи нового токена."); }
                 });
             };
             reissue.Click += async delegate {
@@ -72,7 +74,8 @@ namespace ProGo
             list.Enabled = name.Enabled = !working;
             refresh.Enabled = !working;
             create.Enabled = !working && !needsRefresh;
-            revoke.Enabled = !working && !needsRefresh && list.CanRevoke;
+            revoke.Enabled = !working && !needsRefresh && list.Selected != null;
+            revoke.Text = list.Selected != null && list.Selected.Revoked ? "Повторить отзыв" : "Отозвать выбранный доступ";
             reissue.Enabled = !working && !needsRefresh && list.Selected != null;
         }
         private void RequireRefresh(string message) { needsRefresh = true; status.Text = message; }

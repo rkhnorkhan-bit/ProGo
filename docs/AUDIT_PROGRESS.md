@@ -735,7 +735,8 @@ snapshots the selected name/ID, completes the existing revoke command before a
 single issue request, validates the replacement token/identity and presents it
 through the shared one-time token dialog. No administrator credentials are shared.
 Pending operations freeze editing/actions and prevent losing their result by
-closing the dialog. Revoked records may be selected for a safe repeat of revoke.
+closing the dialog. Revoked records may be selected for a safe repeat of revoke;
+a separate repeat-revoke action can complete it without creating unwanted access.
 
 A lost/invalid revoke acknowledgement never proceeds to issue. A failed issue
 leaves the old access revoked and explicitly warns that a new record may exist.

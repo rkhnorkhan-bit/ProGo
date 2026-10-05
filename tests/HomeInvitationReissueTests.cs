@@ -127,9 +127,12 @@ namespace ProGo
                 check(list.Items.Count == 3 && list.SelectedIndex == -1 && Button(form, "Создать отдельный токен").Enabled,
                     "successful explicit refresh shows server identities without choosing a destructive target");
                 list.SelectedIndex = 0;
-                check(Button(form, "Перевыпустить потерянный токен").Enabled && !Button(form, "Отозвать выбранный доступ").Enabled,
-                    "already revoked selection can complete a previously uncertain revoke before reissue");
+                check(Button(form, "Перевыпустить потерянный токен").Enabled && Button(form, "Повторить отзыв").Enabled,
+                    "already revoked selection offers reissue and independent completion of revoke");
                 check(calls.SequenceEqual(new[] { "revoke", "invite", "list", "list" }), "reconciliation does not create or revoke other invitations");
+                Button(form, "Повторить отзыв").PerformClick(); Application.DoEvents();
+                check(calls.Last() == "revoke" && calls.Count == 5 && Labels(form).Contains("Выбранный доступ отозван"),
+                    "completing uncertain revocation does not require creating unwanted replacement access");
                 form.Close();
             }
             calls.Clear();
