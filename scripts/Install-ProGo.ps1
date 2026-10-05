@@ -22,6 +22,8 @@ if (-not (Test-Path $VersionFile)) {
 }
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+. (Join-Path $PSScriptRoot "Shortcuts-ProGo.ps1")
+$WasInstalled = Test-ProGoExistingInstallation -InstallDirectory $InstallDir
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $InstallDir "backups") -Force | Out-Null
 Copy-Item $Exe -Destination (Join-Path $InstallDir "ProGo.exe") -Force
@@ -35,13 +37,14 @@ if (Test-Path $Icon) {
 $InstalledScripts = Join-Path $InstallDir "scripts"
 New-Item -ItemType Directory -Path $InstalledScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is only for first-time bootstrap. It is intentionally not deployed into the installed runtime app.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Shortcuts-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
     }
 }
 
+Copy-Item (Join-Path $ReleaseDir "scripts\ApplicationShortcuts.cs") -Destination (Join-Path $InstalledScripts "ApplicationShortcuts.cs") -Force
 Copy-Item (Join-Path $ReleaseDir "scripts\MaintenanceOperation.cs") -Destination (Join-Path $InstalledScripts "MaintenanceOperation.cs") -Force
 Copy-Item (Join-Path $ReleaseDir "scripts\BackupRetention.cs") -Destination (Join-Path $InstalledScripts "BackupRetention.cs") -Force
 Copy-Item (Join-Path $ReleaseDir "scripts\BackupIntegrity.cs") -Destination (Join-Path $InstalledScripts "BackupIntegrity.cs") -Force
@@ -53,30 +56,7 @@ Copy-Item (Join-Path $ReleaseDir "scripts\BrandIcon.cs") -Destination (Join-Path
 
 Copy-Item (Join-Path $ReleaseDir "scripts\home-vpn") -Destination $InstalledScripts -Recurse -Force
 
-function New-ProGoShortcut($ShortcutPath, $Arguments) {
-    $Shell = New-Object -ComObject WScript.Shell
-    $Shortcut = $Shell.CreateShortcut($ShortcutPath)
-    $Shortcut.TargetPath = Join-Path $InstallDir "ProGo.exe"
-    $Shortcut.Arguments = $Arguments
-    $Shortcut.WorkingDirectory = $InstallDir
-    $Shortcut.Description = "ProGo tray proxy and local vault"
-    $IconPath = Join-Path $InstallDir "ProGo.ico"
-    if (Test-Path $IconPath) { $Shortcut.IconLocation = $IconPath }
-    $Shortcut.Save()
-}
-
-if (-not $NoStartup) {
-    $Startup = [Environment]::GetFolderPath("Startup")
-    New-ProGoShortcut -ShortcutPath (Join-Path $Startup "ProGo.lnk") -Arguments ""
-}
-
-if (-not $NoStartMenuShortcut) {
-    $Programs = [Environment]::GetFolderPath("Programs")
-    $MenuDir = Join-Path $Programs "ProGo"
-    New-Item -ItemType Directory -Path $MenuDir -Force | Out-Null
-    New-ProGoShortcut -ShortcutPath (Join-Path $MenuDir "ProGo.lnk") -Arguments "--show"
-    New-ProGoShortcut -ShortcutPath (Join-Path $MenuDir "ProGo Status.lnk") -Arguments "--show"
-}
+Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut)
 
 Write-Host "Install OK: $InstallDir"
 Write-Host "Installed version: $((Get-Content -Raw -Path $VersionFile).Trim())"

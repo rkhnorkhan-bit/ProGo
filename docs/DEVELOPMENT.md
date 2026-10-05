@@ -510,3 +510,21 @@ Reissue can select an already revoked record and repeats the idempotent revoke
 before issuing. Operations across the two SSH calls are not atomic; simultaneous
 owner sessions and forced termination still require manual list reconciliation.
 VPS waiting/cancellation remains the separate F23 scope.
+
+## Shortcut migration (F26a)
+
+`ApplicationShortcuts.cs` is shared by the app and installed PowerShell helper.
+The installer must capture `IsExistingInstallation` before copying the executable,
+VERSION or settings. Reinstallation never recreates or rewrites a Startup link;
+its absence and Windows' separate disabled state are user choices. The first
+installation keeps its previous default, with independent opt-out switches.
+This is unrelated to `AutoStartSocks` and must not change that setting.
+
+The installed app migrates only a recognized legacy menu entry. Portable builds,
+self-check and a second instance must not run the migration. Check exact target
+and arguments; preserve customized/unreadable shortcuts. Ensure the replacement
+exists before removing the old link, and make a failed migration nonfatal.
+Never recreate an intentionally removed main menu entry unless the user runs the
+installer to restore it. `ApplicationShortcutsTests.ps1` uses the shipped helper,
+real Shell links and an independent Shell automation reader in disposable folders; it does
+not edit the user's real Startup/Programs folders or registry.

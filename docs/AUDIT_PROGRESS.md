@@ -814,6 +814,34 @@ F25a: **19/30 closed; 11 remaining**. The earlier immediate CLI port-rebind test
 conflict remains an unconfirmed cause; its strict assertion and diagnostic output
 are retained. No merge, release or version bump.
 
+## Stage F26a — shortcut migration and startup preference preservation
+
+The installer now creates one main `ProGo.lnk` with `--show`, not a second
+identical `ProGo Status.lnk`. It records whether an installation already exists
+before copying files. Existing installs (including retained settings/version
+markers after removal or repair) never recreate an absent Windows Startup link.
+An existing Startup link is not rewritten, preserving custom arguments and the
+Windows StartupApproved state. First installs retain the established default;
+`-NoStartup` and `-NoStartMenuShortcut` remain independent opt-outs.
+
+Installed application startup migrates the recognized old menu entry using the
+same packaged Unicode Shell implementation as the installer. Migration verifies
+both target and arguments, creates/verifies a primary before removing the old
+entry, and preserves unrelated/customized/unreadable links. Failure cannot stop
+application startup; a later launch can retry. Portable execution, self-check,
+secondary-instance activation and an intentionally absent menu do not create
+shortcuts. No connection setting, CLI entry point or Windows proxy setting changes.
+
+Native PowerShell tests use actual Shell links under disposable directories,
+including Unicode paths, first/repeated installation, independent opt-outs,
+missing executable, foreign/custom/corrupt links, locked deletion/retry and
+installed-versus-portable migration. Build/install/repair ship identical source.
+Windows/server CI is required before the stage is ready for review.
+
+F26 remains **open** for the visible Windows-startup preference and the remaining
+uninstall phone-firewall acceptance. Progress remains **19/30 closed; 11 remaining**.
+No merge, release or version bump.
+
 ## Remaining stages
 
 F09, F16–F17, F19, F22–F23 and F26–F30 remain separate work (11 findings). Preserve the ordinary
