@@ -30,11 +30,12 @@ Copy-IfExists $releaseExe (Join-Path $InstallDir "ProGo.exe")
 Copy-IfExists $releaseVersion (Join-Path $InstallDir "VERSION")
 Copy-IfExists $releaseIcon (Join-Path $InstallDir "ProGo.ico")
 
-foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Shortcuts-ProGo.ps1")) {
     $candidate = Join-Path $PSScriptRoot $scriptName
     Copy-IfExists $candidate (Join-Path $ScriptsDir $scriptName)
 }
 
+Copy-IfExists (Join-Path $ReleaseDir "scripts\ApplicationShortcuts.cs") (Join-Path $ScriptsDir "ApplicationShortcuts.cs")
 Copy-IfExists (Join-Path $ReleaseDir "scripts\MaintenanceOperation.cs") (Join-Path $ScriptsDir "MaintenanceOperation.cs")
 Copy-IfExists (Join-Path $ReleaseDir "scripts\BackupRetention.cs") (Join-Path $ScriptsDir "BackupRetention.cs")
 Copy-IfExists (Join-Path $ReleaseDir "scripts\BackupIntegrity.cs") (Join-Path $ScriptsDir "BackupIntegrity.cs")

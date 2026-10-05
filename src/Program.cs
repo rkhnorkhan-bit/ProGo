@@ -58,6 +58,11 @@ namespace ProGo
                     }
 
                     SafeLog.Info("ProGo started.");
+                    try {
+                        ApplicationShortcuts.MigrateForExecutable(Application.ExecutablePath, AppPaths.Root,
+                            Environment.GetFolderPath(Environment.SpecialFolder.Programs),
+                            Environment.GetFolderPath(Environment.SpecialFolder.Startup));
+                    } catch { SafeLog.Info("Start menu shortcut migration skipped; existing shortcuts preserved."); }
 
                     // Backup creation must never block tray startup. It logs internally on failure.
                     BackupService.EnsureVersionBackupExists("startup");
