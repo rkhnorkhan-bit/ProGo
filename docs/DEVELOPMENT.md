@@ -410,3 +410,12 @@ Dialog-key fixtures cover restore scope arrows, Tab/Shift+Tab, unavailable scope
 separate consent/reset, named read-only previews, cancellation and Enter without
 implicit approval. Cleanup cases cover populated/empty lists and disabled removal.
 Screenshots and accessible-object assertions do not establish Narrator acceptance.
+
+## Phone verification states (F18)
+
+`HomeVpnWizardTests.cs` exercises issuance without installation, expired/revoked
+QR windows, explicit confirmation and guarded advancement, repeat issuance/reset,
+user-reported internet choices and packet/no-reply status distinctions. The wizard
+never treats relay counters as authentication or internet proof. Confirmation is
+session-only and manual phone results are labelled as such. Tests use local QR
+fixtures and a revoke stub; they do not perform real phone/provider acceptance.
