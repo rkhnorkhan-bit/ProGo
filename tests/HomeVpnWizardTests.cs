@@ -149,7 +149,14 @@ namespace ProGo
                     foreach (int step in new[] { 0, 1, 2, 3, 4 })
                     {
                         show.Invoke(form, new object[] { step }); Application.DoEvents();
-                        if (step == 3) Check(AllControls(form).OfType<Button>().Any(b => b.Text == "Установить на телефон по QR"), "phone step offers QR installation");
+                        if (step == 3) {
+                            Check(AllControls(form).OfType<Button>().Any(b => b.Text == "Установить на телефон по QR"), "phone step offers QR installation");
+                            var confirmation = AllControls(form).OfType<CheckBox>().Single();
+                            var viewport = (FlowLayoutPanel)confirmation.Parent;
+                            viewport.AutoScrollPosition = Point.Empty; Application.DoEvents();
+                            Check(viewport.ClientRectangle.Contains(viewport.RectangleToClient(confirmation.RectangleToScreen(confirmation.ClientRectangle))),
+                                "required installation confirmation is visible at the top of the phone step without scrolling");
+                        }
                         using (var bitmap = new System.Drawing.Bitmap(form.Width, form.Height))
                         { form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size)); bitmap.Save(Path.Combine(work, "wizard-" + step + ".png")); }
                     }
