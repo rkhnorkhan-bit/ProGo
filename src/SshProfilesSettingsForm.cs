@@ -175,7 +175,7 @@ namespace ProGo
         }
         private static TabPage Page(TabControl tabs, string title)
         {
-            var page = new TabPage(title) { BackColor = UiTheme.Background, Padding = new Padding(6) }; tabs.TabPages.Add(page); return page;
+            var page = new TabPage(title) { BackColor = UiTheme.WindowBackground, Padding = new Padding(6) }; tabs.TabPages.Add(page); return page;
         }
         private static TableLayoutPanel FormTable(TabPage page)
         {
@@ -536,11 +536,12 @@ namespace ProGo
         private readonly TextBox key = new TextBox { Name = "sshKey" };
         private readonly TextBox target = new TextBox { Name = "sshAlias" };
         private readonly Button browse = new Button { Text = "Выбрать…", Width = 105, Dock = DockStyle.Right };
-        private readonly Label guidance = new Label { AutoSize = true, Dock = DockStyle.Fill, ForeColor = UiTheme.Muted, Tag = "styled" };
+        private readonly Label guidance = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
         public SshProfileSetting Profile { get; private set; }
 
         public SshProfileEditorForm(SshProfileSetting profile)
         {
+            guidance.Dock = DockStyle.Fill; guidance.Margin = new Padding(3);
             Profile = profile == null ? new SshProfileSetting() : profile.Clone();
             Text = profile == null ? "Добавить подключение" : "Изменить подключение";
             AutoScaleMode = AutoScaleMode.Dpi;
@@ -556,8 +557,8 @@ namespace ProGo
             table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             Controls.Add(table);
-            var hint = new Label { Text = "Введите данные SSH из панели вашего VPS. Пароль здесь не сохраняется: фоновое подключение использует SSH-ключ.",
-                AutoSize = true, Dock = DockStyle.Fill, ForeColor = UiTheme.Muted, Tag = "styled" };
+            var hint = UiTheme.Label("Введите данные SSH из панели вашего VPS. Пароль здесь не сохраняется: фоновое подключение использует SSH-ключ.", UiTheme.Body, UiTheme.Muted);
+            hint.Dock = DockStyle.Fill; hint.Margin = new Padding(3);
             table.Controls.Add(hint, 0, 0); table.SetColumnSpan(hint, 2);
             mode.Items.AddRange(new object[] { "По адресу сервера", "Из SSH config (для опытных)" });
             Add(table, 1, "Название", name);

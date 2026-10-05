@@ -17,7 +17,7 @@ namespace ProGo
         private readonly FlowLayoutPanel body = new FlowLayoutPanel();
         private readonly WizardProgress progress = new WizardProgress();
         private readonly Label heading = new Label();
-        private readonly Label status = new Label();
+        private readonly Label status = UiTheme.StatusLabel(UiTheme.Muted);
         private readonly Button back = new Button();
         private readonly Button next = new Button();
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();

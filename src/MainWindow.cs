@@ -37,7 +37,7 @@ namespace ProGo
             shell.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 210)); shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             var rail = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-                BackColor = UiTheme.Surface, Tag = "styled", Padding = new Padding(20), Margin = new Padding(0) };
+                BackColor = UiTheme.SurfaceBackground, Tag = "styled", Padding = new Padding(20), Margin = new Padding(0) };
             rail.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             rail.RowStyles.Add(new RowStyle(SizeType.AutoSize)); rail.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             rail.RowStyles.Add(new RowStyle(SizeType.AutoSize));

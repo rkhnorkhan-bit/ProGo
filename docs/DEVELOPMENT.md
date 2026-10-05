@@ -382,3 +382,14 @@ across tab changes, port-pick cancellation, read-only effective-address copying
 and refused Save preservation. Clipboard content is synthetic and cleared after
 the copy assertion. Existing functional and validation fixtures remain required.
 These screenshots and scaling checks do not establish actual DPI/display support.
+
+## Contrast theme validation (F17a)
+
+`DesktopContrastThemeTests.cs` runs only on the isolated Windows CI process.
+A private test seam temporarily replaces the Windows high-contrast query without
+changing OS settings; cleanup restores it. Fixtures dispatch the real preference
+handler from a worker thread, inspect native controls and custom painting, switch
+open windows back to the dark palette and verify pending edits, textual errors,
+ordinary CLI routing and subscription disposal. Screenshots cover the dashboard,
+all settings pages and a grid/progress/menu fixture. This is palette and lifecycle
+coverage, not a real Windows contrast-theme or Narrator acceptance run.
