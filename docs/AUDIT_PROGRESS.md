@@ -600,6 +600,25 @@ and Narrator validation. F16 remains open for real DPI/display validation.
 Progress remains **14/30 closed; 16 remaining**. No merge, release or version bump
 is included.
 
+## Stage 14b — F17: settings and SSH keyboard navigation
+
+Settings and the structured SSH editor now assign Tab order from visual table
+rows and action groups, including left-to-right traversal of reversed footers.
+Native input internals remain untouched. Field captions supply explicit accessible
+names, read-only paths remain focusable for copying, and same-caption manual
+buttons describe their target and immediate effect. The port-pick button updates
+its accessible action name when selection is pending or cancelled.
+
+Isolated Windows fixtures exercise native dialog Tab/Shift+Tab traversal across
+all five settings pages and both SSH modes, disabled port/SSH fields, accessible
+objects, the ordinary CLI action and refused-Save focus/pending values. They do
+not establish actual Narrator behavior. Existing persistence, validation, SSH,
+proxy ownership and layout checks remain required.
+
+F17 remains **open** for the remaining forms and real Windows contrast/Narrator
+validation; F16 remains open for actual DPI/display validation. Progress remains
+**14/30 closed; 16 remaining**. No merge, release or version bump is included.
+
 ## Remaining stages
 
 F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary

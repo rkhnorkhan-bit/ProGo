@@ -153,6 +153,7 @@ namespace ProGo
                 }
             };
             root.Controls.Add(saveError, 0, 3);
+            ConfigureKeyboardOrder(root);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
             currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
@@ -175,7 +176,7 @@ namespace ProGo
         }
         private static TabPage Page(TabControl tabs, string title)
         {
-            var page = new TabPage(title) { BackColor = UiTheme.WindowBackground, Padding = new Padding(6) }; tabs.TabPages.Add(page); return page;
+            var page = new TabPage(title) { AccessibleName = title, BackColor = UiTheme.WindowBackground, Padding = new Padding(6) }; tabs.TabPages.Add(page); return page;
         }
         private static TableLayoutPanel FormTable(TabPage page)
         {
@@ -241,6 +242,7 @@ namespace ProGo
                 ColumnCount = 1, RowCount = 4, Margin = new Padding(0) };
             stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int row = 0; row < 4; row++) stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            toggle.AccessibleDescription = "Автоматическое действие после сохранения настроек. " + description;
             toggle.Text = title; toggle.AutoSize = false; toggle.Font = UiTheme.Strong;
             toggle.Dock = DockStyle.Top; toggle.TextAlign = ContentAlignment.TopLeft; toggle.CheckAlign = ContentAlignment.TopLeft;
             toggle.Margin = new Padding(0, 0, 0, 8);
@@ -248,8 +250,10 @@ namespace ProGo
             var immediate = UiTheme.Label("Ручное управление · применяется сразу", UiTheme.Body, UiTheme.Accent);
             var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = true, Margin = new Padding(0) };
-            actions.Controls.Add(UiTheme.Button(onLabel, delegate { RequestManualAction(on); }, false));
-            actions.Controls.Add(UiTheme.Button(offLabel, delegate { RequestManualAction(off); }, false));
+            var onButton = UiTheme.Button(onLabel, delegate { RequestManualAction(on); }, false);
+            var offButton = UiTheme.Button(offLabel, delegate { RequestManualAction(off); }, false);
+            onButton.AccessibleDescription = offButton.AccessibleDescription = title + ". Ручное действие применяется сразу.";
+            actions.Controls.Add(onButton); actions.Controls.Add(offButton);
             stack.Controls.Add(toggle, 0, 0); stack.Controls.Add(hint, 0, 1);
             stack.Controls.Add(immediate, 0, 2); stack.Controls.Add(actions, 0, 3);
             bool sizing = false;
@@ -292,6 +296,7 @@ namespace ProGo
             pickFreePort = !pickFreePort;
             httpPort.Enabled = !autoHttpPort.Checked && !pickFreePort;
             pickPortButton.Text = pickFreePort ? "Отменить подбор" : "Подобрать свободный";
+            pickPortButton.AccessibleName = pickPortButton.Text;
             portNotice.ForeColor = UiTheme.Accent;
             portNotice.Text = pickFreePort
                 ? "Свободный порт будет выбран только при сохранении. Нажмите «Отменить подбор», чтобы оставить введённый порт."
@@ -310,6 +315,11 @@ namespace ProGo
             field.RowStyles.Add(new RowStyle(SizeType.AutoSize)); field.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             var caption = UiTheme.Label(label, UiTheme.Body, UiTheme.Text);
             caption.Dock = DockStyle.Top; caption.Margin = new Padding(0, 0, 0, 6);
+            control.AccessibleName = label;
+            var readOnly = control as TextBox;
+            control.AccessibleDescription = readOnly != null && readOnly.ReadOnly
+                ? "Только чтение. Значение можно выделить и скопировать."
+                : "Изменения применяются после сохранения настроек.";
             control.Dock = DockStyle.Top; control.Margin = new Padding(0);
             field.Controls.Add(caption, 0, 0); field.Controls.Add(control, 0, 1);
             if (control is ComboBox) {
@@ -321,6 +331,25 @@ namespace ProGo
             }
             field.Layout += delegate { caption.MaximumSize = new Size(Math.Max(1, field.ClientSize.Width), 0); };
             AddSettingsRow(panel, row, field);
+        }
+
+        // Follow visual rows rather than construction order (some status rows are added later).
+        // Reversed footer flows are traversed left-to-right; native input internals are untouched.
+        internal static void ConfigureKeyboardOrder(Control parent)
+        {
+            var children = new List<Control>();
+            foreach (Control child in parent.Controls) children.Add(child);
+            var table = parent as TableLayoutPanel;
+            if (table != null) children.Sort(delegate(Control a, Control b) {
+                int row = table.GetRow(a).CompareTo(table.GetRow(b));
+                return row != 0 ? row : table.GetColumn(a).CompareTo(table.GetColumn(b));
+            });
+            var flow = parent as FlowLayoutPanel;
+            if (flow != null && flow.FlowDirection == FlowDirection.RightToLeft) children.Reverse();
+            for (int i = 0; i < children.Count; i++) {
+                var child = children[i]; child.TabIndex = i;
+                if (child is Panel || child is TabControl || child is TabPage) ConfigureKeyboardOrder(child);
+            }
         }
 
         private void LoadValues()
@@ -567,6 +596,9 @@ namespace ProGo
             Add(table, 4, "Логин SSH", user);
             Add(table, 5, "Порт SSH", port);
             var keyPanel = new Panel { Dock = DockStyle.Fill };
+            key.AccessibleName = "Закрытый SSH-ключ";
+            key.AccessibleDescription = "Путь к закрытому файлу ключа. Пустое поле использует стандартные ключи и SSH-агент Windows.";
+            browse.AccessibleDescription = "Выбрать закрытый SSH-ключ на этом компьютере.";
             key.Dock = DockStyle.Fill; keyPanel.Controls.Add(key); keyPanel.Controls.Add(browse);
             Add(table, 6, "Закрытый SSH-ключ", keyPanel);
             Add(table, 7, "Имя из SSH config", target);
@@ -589,6 +621,7 @@ namespace ProGo
             // Existing aliases remain aliases until the user explicitly switches modes.
             mode.SelectedIndex = profile == null || Profile.IsDirect ? 0 : 1;
             UpdateMode();
+            SshProfilesSettingsForm.ConfigureKeyboardOrder(table);
         }
         private void UpdateMode()
         {
@@ -601,6 +634,7 @@ namespace ProGo
         private static void Add(TableLayoutPanel table, int row, string label, Control control)
         {
             table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+            control.AccessibleName = label;
             control.Dock = DockStyle.Fill; table.Controls.Add(control, 1, row);
         }
         private void Save(object sender, EventArgs e)
