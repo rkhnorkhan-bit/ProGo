@@ -526,5 +526,5 @@ and arguments; preserve customized/unreadable shortcuts. Ensure the replacement
 exists before removing the old link, and make a failed migration nonfatal.
 Never recreate an intentionally removed main menu entry unless the user runs the
 installer to restore it. `ApplicationShortcutsTests.ps1` uses the shipped helper,
-real Shell links and an independent WScript reader in disposable folders; it does
+real Shell links and an independent Shell automation reader in disposable folders; it does
 not edit the user's real Startup/Programs folders or registry.

@@ -11,17 +11,31 @@ function Refused([scriptblock]$action) {
     try { [void](& $action); return $false } catch { return $true }
 }
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-shortcuts-' + [guid]::NewGuid().ToString('N'))
-$shell = New-Object -ComObject WScript.Shell
+$shell = New-Object -ComObject Shell.Application
+$bootstrap = New-Object -ComObject WScript.Shell
 function Seed([string]$path, [string]$target, [string]$arguments) {
     [void][IO.Directory]::CreateDirectory((Split-Path -Parent $path))
-    $link = $shell.CreateShortcut($path)
-    try { $link.TargetPath = $target; $link.Arguments = $arguments; $link.Save() }
-    finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) }
+    # WScript is only used to create an empty link at an ASCII fixture path.
+    # Its legacy path accessor loses Unicode on an English Windows locale.
+    if (-not (Test-Path $path)) {
+        $empty = $bootstrap.CreateShortcut($path)
+        try { $empty.TargetPath = Join-Path $fixture 'placeholder.exe'; $empty.Save() }
+        finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($empty) }
+    }
+    $folder = $shell.NameSpace((Split-Path -Parent $path))
+    $item = $folder.ParseName((Split-Path -Leaf $path)); $link = $item.GetLink
+    try { $link.Path = $target; $link.Arguments = $arguments; $link.Save() }
+    finally {
+        foreach ($obj in @($link, $item, $folder)) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($obj) }
+    }
 }
 function Read-Link([string]$path) {
-    $link = $shell.CreateShortcut($path)
-    try { return @{ Target=$link.TargetPath; Arguments=$link.Arguments; Directory=$link.WorkingDirectory } }
-    finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) }
+    $folder = $shell.NameSpace((Split-Path -Parent $path))
+    $item = $folder.ParseName((Split-Path -Leaf $path)); $link = $item.GetLink
+    try { return @{ Target=$link.Path; Arguments=$link.Arguments; Directory=$link.WorkingDirectory } }
+    finally {
+        foreach ($obj in @($link, $item, $folder)) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($obj) }
+    }
 }
 try {
     $install = Join-Path $fixture 'Программа с пробелами'
@@ -109,5 +123,6 @@ try {
     Write-Host "Application shortcut tests passed: $script:passed"
 } finally {
     [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+    [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($bootstrap)
     if (Test-Path $fixture) { Remove-Item -LiteralPath $fixture -Recurse -Force }
 }
