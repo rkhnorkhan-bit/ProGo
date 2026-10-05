@@ -10,8 +10,24 @@ namespace ProGo
     {
         private static void AssertPortReleased(int port, string message)
         {
-            var released = Occupy(port);
-            try { Check(true, message); } finally { released.Stop(); }
+            try
+            {
+                var released = Occupy(port);
+                try { Check(true, message); } finally { released.Stop(); }
+            }
+            catch (System.Net.Sockets.SocketException ex)
+            {
+                // Keep the same strict rebind assertion; collect evidence before
+                // PowerShell truncates a native stderr exception to its first line.
+                Console.WriteLine("Port rebind failed: " + port + "; " + message + "; " + ex.SocketErrorCode);
+                var network = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+                foreach (var endpoint in network.GetActiveTcpListeners().Where(e => e.Port == port))
+                    Console.WriteLine("Remaining listener: " + endpoint);
+                foreach (var connection in network.GetActiveTcpConnections().Where(c => c.LocalEndPoint.Port == port || c.RemoteEndPoint.Port == port))
+                    Console.WriteLine("Remaining connection: " + connection.LocalEndPoint + " -> " + connection.RemoteEndPoint + "; " + connection.State);
+                Console.WriteLine(ex.ToString());
+                throw;
+            }
         }
         private static void SharedBridgeConsumers(SettingsService settings)
         {
