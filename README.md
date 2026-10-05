@@ -1,6 +1,6 @@
-# ProGo 0.2.1
+# ProGo 0.2.2
 
-A lightweight native Windows app for SSH proxy connections, a home-entry iPhone VPN,
+A lightweight native Windows app for SSH proxy connections, a home-entry iPhone/Android VPN,
 and an encrypted local vault. Russian interface, no telemetry, no vendor-operated backend.
 
 **[Инструкция на русском](https://github.com/rkhnorkhan-bit/ProGo/blob/main/README.ru.md)** ·
@@ -46,10 +46,11 @@ Restart already open terminals and Codex after changing it.
 
 ## Home VPN
 
-Open **iPhone через домашний ПК…**. Choose an existing VPS token or add an Ubuntu VPS
+Open **VPN для телефона…**. Choose an existing VPS token or add an Ubuntu VPS
 with SSH. The wizard provisions the VPN service, shows router forwarding rules,
 offers a temporary QR link for iPhone and Android strongSwan profiles, and reports
-transport counters. QR delivery needs a dedicated HTTPS domain on the VPS, configured
+transport counters. Confirm installation manually; packet counters do not prove
+phone authorization or internet. Verify the mobile-data route and VPS exit IP. QR delivery needs a dedicated HTTPS domain on the VPS, configured
 once by its owner. File export remains available. Owners can issue and revoke separate
 invitations. The **Исправить выход VPN в интернет** action repairs the known conflict
 with the older ProGo IPv4 forwarding policy. [Setup and limits](https://github.com/rkhnorkhan-bit/ProGo/blob/main/docs/HOME_IKEV2.md).
@@ -57,6 +58,13 @@ with the older ProGo IPv4 forwarding policy. [Setup and limits](https://github.c
 0.2.0 fixes iOS rejecting profiles with `Invalid DH group (0)`. Export a new profile
 from the wizard and reinstall it; the server does not require reprovisioning.
 The home route remains experimental and must be verified with the actual phone/provider.
+
+## Help
+
+**Помощь** on the dashboard or **Помощь и журналы → Открыть помощь…** in the tray
+opens connection, Codex/terminals, ports, phone, restore and antivirus topics.
+**Открыть Codex CLI с прокси** is an optional scoped launch; ordinary `codex` works
+after **Запустить CLI** and a full restart of existing terminals/IDE processes.
 
 ## Updates and antivirus
 
@@ -72,8 +80,7 @@ validation cancel the update rather than weakening checks. No antivirus exclusio
 security disabling or detection-evasion behavior is included.
 
 The executable is currently **unsigned**. SHA-256 is an integrity check, not an
-Authenticode publisher signature or antivirus approval. Use **Помощь и журналы →
-Антивирус и обновления…** to reach logs, the official release, and Kaspersky OpenTIP.
+Authenticode publisher signature or antivirus approval. Use **Помощь и журналы → Открыть помощь… → Антивирус** to reach logs, the official release, and Kaspersky OpenTIP.
 Record the exact detection name before assuming a false positive.
 
 If an older updater is blocked, use the official release via a browser after resolving

@@ -29,6 +29,13 @@ if (-not (Test-Path $VersionFile)) {
     throw "VERSION file not found: $VersionFile"
 }
 
+$Version = (Get-Content -Raw $VersionFile).Trim()
+if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid version' }
+foreach ($readmeName in @('README.md', 'README.ru.md')) {
+    $heading = (Get-Content -LiteralPath (Join-Path $Root $readmeName) -Encoding UTF8 -TotalCount 1)
+    if ($heading -ne "# ProGo $Version") { throw "Documentation version mismatch: $readmeName; update heading to VERSION before building." }
+}
+
 if (Test-Path $Release) {
     Remove-Item $Release -Recurse -Force
 }
@@ -80,8 +87,14 @@ if ($LASTEXITCODE -ne 0) {
     throw "Build failed with exit code $LASTEXITCODE"
 }
 
+if ([Reflection.AssemblyName]::GetAssemblyName($Out).Version.ToString(3) -ne $Version) {
+    throw 'Compiled application version does not match VERSION'
+}
+
 $Readme = Join-Path $Root "README.md"
+$RussianReadme = Join-Path $Root "README.ru.md"
 $License = Join-Path $Root "LICENSE.md"
+Copy-Item $RussianReadme -Destination (Join-Path $Release "README.ru.md") -Force
 if (Test-Path $Readme) { Copy-Item $Readme -Destination (Join-Path $Release "README.md") -Force }
 if (Test-Path $License) { Copy-Item $License -Destination (Join-Path $Release "LICENSE.md") -Force }
 Copy-Item $IconPath -Destination (Join-Path $Release "ProGo.ico") -Force

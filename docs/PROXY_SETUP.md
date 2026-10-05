@@ -25,18 +25,18 @@ The SSH port is independent of the SOCKS and local HTTP proxy ports.
 
 ## Automatic and manual controls
 
-**Настройки → Автоматика** exposes recovery, terminal environment, Windows proxy,
-and normal Codex launch as independent startup options. Codex and terminal setup use
-the same user proxy environment; manual off cancels both pending environment actions. Startup actions wait for SOCKS
-readiness and run once. Manual off cancels an outstanding action for the session;
-it is not undone on the next timer tick. Unchecking disables future automatic work;
-use the adjacent button to disable a currently active feature. New Windows and Codex
-options default to false. Existing recovery and environment preferences are retained.
+**Настройки → Автоматика** exposes recovery, one shared terminal/Codex environment,
+and Windows proxy options. Normal Codex launch and terminals use the same current-user
+proxy environment. Startup actions wait for SOCKS readiness. Manual off cancels pending
+work for that session; the next launch or explicit preference off/on re-arms it.
+Unchecking disables future automatic work; use the adjacent button to disable an
+already active feature. New installations default to manual CLI/Windows control.
+Either legacy terminal/Codex switch enables the unified option; explicit new off wins.
 
 Recovery checks the owned SSH process and SOCKS handshake every five seconds,
 uses a 20-second startup grace period, and retries with capped exponential backoff.
 It never adopts or kills a process belonging to someone else. Manual stop cancels
-retries. Automatic recovery also applies to the independent iPhone tunnel.
+retries. Automatic recovery also applies to the independent phone tunnel.
 
 ## Application port
 
@@ -58,7 +58,7 @@ The bridge remains loopback-only. SSH, SOCKS, router and IKEv2 ports are indepen
 
 ## Command line
 
-**Запустить CLI** on the dashboard, or **Прокси для приложений → Запустить CLI (Codex и терминалы)** applies the selected port.
+**Запустить CLI** on the dashboard, or **Прокси для приложений → Запустить CLI (терминалы и Codex)** applies the selected port.
 For example, when the dashboard shows port 1881:
 
 ```text
@@ -86,7 +86,7 @@ the same environment setup. No special shortcut is required.
 
 Completely close and reopen an already running terminal, IDE or Codex app once so it
 inherits the updated environment. Opening another tab in an existing terminal may
-reuse its old environment. **Открыть Codex через ProGo** remains a convenient direct
+reuse its old environment. **Открыть Codex CLI с прокси** remains a convenient direct
 launch with an explicit process environment. Codex installation is separate.
 
 The scoped Start Menu shortcut is optional under **Дополнительно: ярлык Codex**.
@@ -127,7 +127,7 @@ only while the applied proxy still belongs to ProGo. Other apps' later proxy cha
 are not overwritten on exit. Machine-wide WinHTTP is not modified.
 
 Apps that ignore system settings can connect directly; this feature is not a full
-Windows VPN. The [iPhone wizard](HOME_IKEV2.md) is a separate native IKEv2 route.
+Windows VPN. The [phone wizard](HOME_IKEV2.md) is a separate native IKEv2 route.
 
 ## Restoring Windows settings
 

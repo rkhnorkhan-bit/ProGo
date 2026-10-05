@@ -427,3 +427,13 @@ values, later identical/different copies, repeat ownership, normal disposal,
 shared invitation button binding and native QR copy/close. Only the current
 owned clipboard entry is cleared; history/cloud copies and forced termination
 are outside the cleanup guarantee. No fixture uses a real invitation or VPS.
+
+## Task help and documentation version (F24)
+
+`DesktopTests.cs` opens all six native help topics at normal/minimum sizes, checks
+named scrollable text, log callbacks, compiled metadata and retained phone/scoped
+Codex routing alongside the ordinary Start CLI regression. Screenshots do not
+claim Narrator or physical DPI acceptance. `test_public_docs.py` checks VERSION
+changes and missing/stale headings. Build checks both README files before clearing
+build output, verifies assembly metadata and packages both instructions. Public
+content validation also verifies package documentation against its VERSION file.

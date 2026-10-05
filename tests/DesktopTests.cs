@@ -104,6 +104,10 @@ namespace ProGo
                             dashboard.Show(); Application.DoEvents();
                             Descendants(dashboard).OfType<Button>().Single(b => b.Text == "Запустить CLI").PerformClick();
                             Check(clicked == "cli-start", "dashboard restores direct Start CLI action");
+                            Descendants(dashboard).OfType<Button>().Single(b => b.Text == "VPN для телефона").PerformClick();
+                            Check(clicked == "iphone", "platform-neutral phone name retains existing wizard command");
+                            Descendants(dashboard).OfType<Button>().Single(b => b.Text == "Открыть Codex CLI с прокси").PerformClick();
+                            Check(clicked == "codex-open", "explicit Codex label preserves scoped launch routing");
                             Shot(dashboard, "main"); dashboard.Close();
                         }
                         var failedAutomation = new AutomationPlan();
@@ -153,7 +157,7 @@ namespace ProGo
                             Check(!portNumber.Enabled && !autoPort.Checked, "pick-free request preserves manual mode until save");
                             form.Close();
                         }
-                        Snapshot(new HelpForm(delegate { }), "help");
+                        HelpTopics();
                         Snapshot(new PinForm(true), "pin");
                         Snapshot(new EntryForm(new VaultEntry()), "entry");
                         Snapshot(new SshProfileEditorForm(null), "server");
@@ -337,6 +341,44 @@ namespace ProGo
                 rearmed.Cancel(ProxyFeature.Cli); rearmed.Update(disabled, configured);
             }, out error) == AutomationResult.None && ApplyOnce(rearmed, ProxyFeature.Cli, true), "old completion cannot remove a newly rearmed task");
         }
+        private static void HelpTopics()
+        {
+            int updateLogs = 0, appLogs = 0;
+            using (var form = new HelpForm(delegate { updateLogs++; }, delegate { appLogs++; })) {
+                form.Show(); Application.DoEvents();
+                var tabs = Descendants(form).OfType<TabControl>().Single();
+                Check(tabs.SelectedIndex == 0 && tabs.TabPages[0].Text == "Начало", "help opens task overview instead of antivirus-only topic");
+                Check(tabs.TabPages.Cast<TabPage>().Select(p => p.Text).SequenceEqual(new[] { "Начало", "Codex и терминалы", "Порты", "Телефон", "Восстановление", "Антивирус" }), "help exposes all six task topics");
+                Check(tabs.AccessibilityObject.Name == "Темы помощи ProGo", "help topics have accessible name");
+                foreach (var size in new[] { new Size(820, 620), new Size(700, 540) }) {
+                    form.ClientSize = size;
+                    foreach (TabPage page in tabs.TabPages) {
+                        tabs.SelectedTab = page; Application.DoEvents();
+                        var panel = page.Controls.OfType<FlowLayoutPanel>().Single();
+                        Check(panel.AutoScroll && panel.AccessibilityObject.Name.Contains(page.Text), "help topic is named and scrollable: " + page.Text);
+                        var labels = panel.Controls.OfType<Label>().ToArray();
+                        Check(labels.All(l => l.Width <= panel.ClientSize.Width - panel.Padding.Horizontal), "help text fits topic width: " + page.Text);
+                        Shot(form, "help-" + tabs.SelectedIndex + "-" + size.Width);
+                    }
+                }
+                tabs.SelectedIndex = 0; Application.DoEvents();
+                var overview = String.Join(" ", Descendants(tabs.SelectedTab).OfType<Label>().Select(l => l.Text));
+                Check(overview.Contains(typeof(HelpForm).Assembly.GetName().Version.ToString(3)), "help version comes from compiled assembly metadata");
+                Descendants(tabs.SelectedTab).OfType<Button>().Single(b => b.Text == "Журнал приложения").PerformClick();
+                Check(appLogs == 1 && updateLogs == 0, "help application log routes to its own callback");
+                tabs.SelectedIndex = 1;
+                Check(String.Join(" ", Descendants(tabs.SelectedTab).OfType<Label>().Select(l => l.Text)).Contains("без обязательного ярлыка"), "help preserves ordinary CLI workflow guidance");
+                tabs.SelectedIndex = 3;
+                var phone = String.Join(" ", Descendants(tabs.SelectedTab).OfType<Label>().Select(l => l.Text));
+                Check(phone.Contains("Android") && phone.Contains("strongSwan") && phone.Contains("не подтверждает установку"), "phone help distinguishes Android, delivery and installation");
+                tabs.SelectedIndex = 5; Application.DoEvents();
+                Descendants(tabs.SelectedTab).OfType<Button>().Single(b => b.Text == "Журнал обновления").PerformClick();
+                Check(updateLogs == 1 && appLogs == 1, "antivirus help retains separate update log callback");
+                Check(Descendants(tabs.SelectedTab).OfType<Button>().Any(b => b.Text == "Kaspersky OpenTIP"), "antivirus vendor action stays in its own topic");
+                form.Close();
+            }
+        }
+
         private static void Snapshot(Form form, string name, bool dispose = true)
         {
             try { form.Show(); Application.DoEvents(); Shot(form, name); Check(form.Visible, "native UI opens: " + name); }
@@ -440,7 +482,7 @@ namespace ProGo
                     var labels = MenuItems(tray.ContextMenuStrip.Items).Select(i => i.Text).ToArray();
                     Check(labels.Count(t => t == "Запустить CLI (терминалы и Codex)") == 1 && labels.Count(t => t == "Выключить прокси для терминалов и Codex") == 1 &&
                         !labels.Contains("Codex — включить прокси") && !labels.Contains("Codex — выключить прокси"), "tray exposes one shared CLI and Codex action pair");
-                    Check(labels.Contains("Создать отдельный ярлык") && labels.Contains("Открыть Codex через ProGo"), "scoped Codex actions remain additional choices");
+                    Check(labels.Contains("Создать отдельный ярлык") && labels.Contains("Открыть Codex CLI с прокси"), "scoped Codex actions remain additional choices");
                     string[] on = { "cli-start", "terminal-on", "codex-on" }, off = { "cli-off", "terminal-off", "codex-off" };
                     for (int i = 0; i < on.Length; i++)
                     {
