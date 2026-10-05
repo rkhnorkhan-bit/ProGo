@@ -643,6 +643,8 @@ namespace ProGo
                     MessageBox.Show(ex.Message, "Очистка ProGo не завершена", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 appConsumers.Dispose();
+                // The application owns this menu and its system-theme subscription.
+                if (tray.ContextMenuStrip != null) tray.ContextMenuStrip.Dispose();
                 tray.Dispose();
                 icon.Dispose();
             }
