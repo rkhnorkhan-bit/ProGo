@@ -12,7 +12,7 @@ namespace ProGo
     internal static class HomeInvitationReissueTests
     {
         private const string OldId = "aaaaaaaaaaaaaaaaaaaaaaaa";
-        private const string OtherId = "bbbbbbbbbbbbbbbbbbbbbbbb";
+        private const string OtherId = "cccccccccccccccccccccccc";
         private static HomeVpnInvitation[] Items() {
             return new[] { new HomeVpnInvitation { Id = OldId, Name = "Друг", Created = "2026-01-01T00:00:00Z" },
                 new HomeVpnInvitation { Id = OtherId, Name = "Друг" } };
@@ -29,7 +29,7 @@ namespace ProGo
             }, progress.Add);
             check(!pending.IsCompleted && calls.SequenceEqual(new[] { "revoke:" + OldId }), "reissue waits for revoke acknowledgement before issuing anything");
             gate.SetResult("Access revoked."); var done = pending.GetAwaiter().GetResult();
-            check(done.State == InvitationReissueState.Complete && done.Token == token && done.Replacement.Id == access.InviteId,
+            check(done.State == InvitationReissueState.Complete && done.Token == token && done.Replacement.Id == access.InviteId && done.Replacement.Id != OtherId,
                 "reissue returns the validated new token and separate identity");
             check(calls.SequenceEqual(new[] { "revoke:" + OldId, "invite:Друг" }) && progress.Count == 2,
                 "reissue performs one revoke then one invite with visible stages");
