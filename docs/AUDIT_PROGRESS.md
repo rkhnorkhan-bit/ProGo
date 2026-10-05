@@ -619,6 +619,23 @@ F17 remains **open** for the remaining forms and real Windows contrast/Narrator
 validation; F16 remains open for actual DPI/display validation. Progress remains
 **14/30 closed; 16 remaining**. No merge, release or version bump is included.
 
+## Stage 14c — F17: backup dialog keyboard navigation
+
+Restore and cleanup previews now expose explicit accessible list names and
+read-only descriptions. Restore status and consent explain their purpose.
+The existing visual-row Tab-order helper is shared through UiTheme and applied
+to both dialogs; settings and SSH use the same unchanged helper.
+
+Windows fixtures exercise Tab/Shift+Tab, radio-group arrows, disabled scopes and
+actions, consent reset, preview Enter behavior and cancellation without modifying
+source data or deleting candidates. Safe initial cancel focus and the absence of
+an implicit destructive Enter default remain unchanged. Existing real preparation,
+retention, restore and maintenance checks stay required.
+
+F17 remains **open** for other forms and actual Windows contrast/Narrator
+validation. Progress remains **14/30 closed; 16 remaining**. No merge, release
+or version bump is included.
+
 ## Remaining stages
 
 F09 and F16–F30 remain separate work (16 findings). Preserve the ordinary

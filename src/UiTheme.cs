@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -76,6 +77,25 @@ namespace ProGo
         internal static Color WindowText { get { return HighContrast ? SystemColors.WindowText : Text; } }
         internal static Color SurfaceBackground { get { return HighContrast ? SystemColors.Window : Surface; } }
         internal static Color TextColor(Color normal) { return HighContrast ? SystemColors.WindowText : normal; }
+
+        // Follow visual rows rather than construction order (some status rows are added later).
+        // Reversed footer flows are traversed left-to-right; native input internals are untouched.
+        internal static void ConfigureKeyboardOrder(Control parent)
+        {
+            var children = new List<Control>();
+            foreach (Control child in parent.Controls) children.Add(child);
+            var table = parent as TableLayoutPanel;
+            if (table != null) children.Sort(delegate(Control a, Control b) {
+                int row = table.GetRow(a).CompareTo(table.GetRow(b));
+                return row != 0 ? row : table.GetColumn(a).CompareTo(table.GetColumn(b));
+            });
+            var flow = parent as FlowLayoutPanel;
+            if (flow != null && flow.FlowDirection == FlowDirection.RightToLeft) children.Reverse();
+            for (int i = 0; i < children.Count; i++) {
+                var child = children[i]; child.TabIndex = i;
+                if (child is Panel || child is TabControl || child is TabPage) ConfigureKeyboardOrder(child);
+            }
+        }
 
         internal static IDisposable Observe(Control owner, Action refresh)
         {

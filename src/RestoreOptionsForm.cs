@@ -13,7 +13,7 @@ namespace ProGo
         private readonly RadioButton data = new RadioButton { Name = "RestoreData", Text = "Настройки и хранилище — версия программы сохранится", AutoSize = true };
         private readonly RadioButton all = new RadioButton { Name = "RestoreAll", Text = "Программа, настройки и хранилище", AutoSize = true };
         private readonly CheckBox consent = new CheckBox { Name = "RestoreDataConsent", Text = "Подтверждаю замену перечисленных ниже пользовательских данных", AutoSize = true };
-        private readonly TextBox contents = new TextBox { Name = "RestoreContents", Multiline = true, ReadOnly = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Vertical };
+        private readonly TextBox contents = new TextBox { Name = "RestoreContents", AccessibleName = "Состав восстановления", AccessibleDescription = "Только чтение. Точный список файлов для выбранного состава восстановления; его можно выделить и скопировать.", Multiline = true, ReadOnly = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Vertical };
         private readonly Label status = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private readonly Button prepare;
@@ -43,6 +43,9 @@ namespace ProGo
             cancel = UiTheme.Button("Отмена", delegate { if (busy) { cancellation.Cancel(); status.Text = "Отмена подготовки…"; } else DialogResult = DialogResult.Cancel; }, false);
             prepare = UiTheme.Button("Проверить и подготовить копию", async delegate { await PrepareCopy(); }, true);
             actions.Controls.Add(cancel); actions.Controls.Add(prepare); root.Controls.Add(actions, 0, 5);
+            status.AccessibleName = "Состояние подготовки копии";
+            consent.AccessibleDescription = "Разрешение заменить пользовательские данные. Смена состава восстановления сбрасывает подтверждение.";
+            UiTheme.ConfigureKeyboardOrder(root);
             Controls.Add(root); CancelButton = cancel; // No destructive Enter default.
             var hasData = File.Exists(Path.Combine(source, "settings.json")) || File.Exists(Path.Combine(source, "vault.enc.json"));
             data.Enabled = all.Enabled = hasData;

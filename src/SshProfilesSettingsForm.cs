@@ -153,7 +153,7 @@ namespace ProGo
                 }
             };
             root.Controls.Add(saveError, 0, 3);
-            ConfigureKeyboardOrder(root);
+            UiTheme.ConfigureKeyboardOrder(root);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
             currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
@@ -331,25 +331,6 @@ namespace ProGo
             }
             field.Layout += delegate { caption.MaximumSize = new Size(Math.Max(1, field.ClientSize.Width), 0); };
             AddSettingsRow(panel, row, field);
-        }
-
-        // Follow visual rows rather than construction order (some status rows are added later).
-        // Reversed footer flows are traversed left-to-right; native input internals are untouched.
-        internal static void ConfigureKeyboardOrder(Control parent)
-        {
-            var children = new List<Control>();
-            foreach (Control child in parent.Controls) children.Add(child);
-            var table = parent as TableLayoutPanel;
-            if (table != null) children.Sort(delegate(Control a, Control b) {
-                int row = table.GetRow(a).CompareTo(table.GetRow(b));
-                return row != 0 ? row : table.GetColumn(a).CompareTo(table.GetColumn(b));
-            });
-            var flow = parent as FlowLayoutPanel;
-            if (flow != null && flow.FlowDirection == FlowDirection.RightToLeft) children.Reverse();
-            for (int i = 0; i < children.Count; i++) {
-                var child = children[i]; child.TabIndex = i;
-                if (child is Panel || child is TabControl || child is TabPage) ConfigureKeyboardOrder(child);
-            }
         }
 
         private void LoadValues()
@@ -621,7 +602,7 @@ namespace ProGo
             // Existing aliases remain aliases until the user explicitly switches modes.
             mode.SelectedIndex = profile == null || Profile.IsDirect ? 0 : 1;
             UpdateMode();
-            SshProfilesSettingsForm.ConfigureKeyboardOrder(table);
+            UiTheme.ConfigureKeyboardOrder(table);
         }
         private void UpdateMode()
         {
