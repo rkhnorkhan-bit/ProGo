@@ -77,6 +77,7 @@ namespace ProGo
                     BackupAccessibility();
                     DiagnosticPreviewWorkflow();
                     using (var errors = WatchStartupErrors()) {
+                    CommandCatalogContract();
                     UnifiedCliActions(settings);
                     SharedBridgeConsumers(settings);
                     UiControls(settings);

@@ -33,12 +33,31 @@ namespace ProGo
             File.WriteAllText(path, "$ErrorActionPreference = 'Stop'\r\n" + body);
             try { return Uninstall(path); } finally { File.Delete(path); }
         }
-        private static int LogOffset() { return File.Exists(AppPaths.LogPath) ? File.ReadAllText(AppPaths.LogPath).Length : 0; }
-        private static bool WindowsApplyCompleted(int offset, int port) {
+        private static string LogMarker(string path = null) {
+            string marker = "SHUTDOWN_FIXTURE_" + Guid.NewGuid().ToString("N");
+            if (!BoundedLog.TryWrite(path ?? AppPaths.LogPath, marker)) throw new IOException("Cannot record startup fixture boundary");
+            return marker;
+        }
+        private static bool WindowsApplyCompleted(string marker, int port, string path = null) {
+            path = path ?? AppPaths.LogPath;
+            // Sharing must not suppress the application's best-effort completion write.
+            // Follow rotation; an offset in only the current file is not a stable boundary.
+            string log = BoundedLog.ReadTail(path + ".2", BoundedLog.MaxFileBytes) +
+                BoundedLog.ReadTail(path + ".1", BoundedLog.MaxFileBytes) + BoundedLog.ReadTail(path, BoundedLog.MaxFileBytes);
+            int boundary = log.LastIndexOf(marker, StringComparison.Ordinal);
+            return boundary >= 0 && log.Substring(boundary + marker.Length).Contains("Current-user Windows proxy enabled. port=" + port + ".");
+        }
+        private static void CheckLogBarrier() {
+            string path = Path.Combine(Path.GetTempPath(), "progo-shutdown-log-" + Guid.NewGuid().ToString("N"));
             try {
-                string log = File.ReadAllText(AppPaths.LogPath);
-                return log.Length >= offset && log.Substring(offset).Contains("Current-user Windows proxy enabled. port=" + port + ".");
-            } catch (IOException) { return false; }
+                BoundedLog.TryWrite(path, "Current-user Windows proxy enabled. port=1881.");
+                string marker = LogMarker(path);
+                Check(!WindowsApplyCompleted(marker, 1881, path), "an old completion record cannot satisfy a new startup");
+                File.AppendAllText(path, new String('x', BoundedLog.MaxFileBytes - (int)new FileInfo(path).Length));
+                Check(BoundedLog.TryWrite(path, "Current-user Windows proxy enabled. port=1881."), "fixture rotates through the production journal writer");
+                Check(WindowsApplyCompleted(marker, 1881, path), "startup completion remains observable across log rotation");
+                Check(!WindowsApplyCompleted("missing-marker", 1881, path), "missing startup boundary cannot claim completion");
+            } finally { File.Delete(path); File.Delete(path + ".1"); File.Delete(path + ".2"); }
         }
         private static void CheckField(string name, WindowsProxyValue expected, string context) {
             var actual = SystemProxyService.ReadCurrent().Values[name];
@@ -76,6 +95,7 @@ namespace ProGo
             bool firewallSeeded = false;
             var listener = new TcpListener(IPAddress.Loopback, 0); Process primary = null;
             try {
+                CheckLogBarrier();
                 AppPaths.EnsureDirectories(); Directory.CreateDirectory(scripts);
                 foreach (string file in new[] { "Uninstall-ProGo.ps1", "Maintenance-ProGo.ps1", "MaintenanceOperation.cs", "Firewall-ProGo.ps1", "Enable-HomeVpnFirewall.ps1" }) File.Copy(Path.Combine(args[1], file), Path.Combine(scripts, file));
                 string uninstall = Path.Combine(scripts, "Uninstall-ProGo.ps1");
@@ -123,11 +143,11 @@ namespace ProGo
                 prefs.SocksPort = ((IPEndPoint)listener.LocalEndpoint).Port; prefs.TestEndpoint = "http://127.0.0.1:1/";
                 var reserved = new TcpListener(IPAddress.Loopback, 0); reserved.Start(); prefs.HttpProxyPort = ((IPEndPoint)reserved.LocalEndpoint).Port; reserved.Stop();
                 using (var settings = new SettingsService()) settings.Save(prefs);
-                int applyLogOffset = LogOffset();
+                string applyLogMarker = LogMarker();
                 primary = Process.Start(new ProcessStartInfo(installed) { UseShellExecute = false, CreateNoWindow = true });
                 Wait(() => !primary.HasExited && File.Exists(SystemProxyService.BackupPath) && SystemProxyService.IsApplied(prefs) &&
-                    CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) && PortOpen(prefs.HttpProxyPort) &&
-                    WindowsApplyCompleted(applyLogOffset, prefs.HttpProxyPort), "actual proxy modes fully applied");
+                    CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) &&
+                    WindowsApplyCompleted(applyLogMarker, prefs.HttpProxyPort) && PortOpen(prefs.HttpProxyPort), "actual proxy modes fully applied");
                 string settingsBefore = File.ReadAllText(AppPaths.SettingsPath);
                 using (var locked = File.Open(SystemProxyService.BackupPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     Check(Uninstall(uninstall) != 0, "actual uninstall reports refused cleanup of a locked journal");
@@ -148,10 +168,10 @@ namespace ProGo
                 // correction finish. Do not edit/snapshot halfway through startup.
                 for (int externalAttempt = 1; externalAttempt <= 3; externalAttempt++) {
                 File.Copy(args[0], installed);
-                applyLogOffset = LogOffset();
+                applyLogMarker = LogMarker();
                 primary = Process.Start(new ProcessStartInfo(installed) { UseShellExecute = false, CreateNoWindow = true });
                 Wait(() => !primary.HasExited && File.Exists(SystemProxyService.BackupPath) && SystemProxyService.IsApplied(prefs) && CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) &&
-                    WindowsApplyCompleted(applyLogOffset, prefs.HttpProxyPort), "external-edit fixture fully applied");
+                    WindowsApplyCompleted(applyLogMarker, prefs.HttpProxyPort), "external-edit fixture fully applied");
                 using (var key = Registry.CurrentUser.OpenSubKey(keyPath, true)) {
                     key.SetValue("ProxyServer", "external.example.org:9090", RegistryValueKind.String);
                     key.SetValue("ProxyOverride", "external.example.org", RegistryValueKind.String);
