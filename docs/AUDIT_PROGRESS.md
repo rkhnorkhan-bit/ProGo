@@ -870,9 +870,39 @@ Windows/server CI and screenshot review are required before review readiness.
 F26 remains **open** for uninstall phone-firewall acceptance. Progress remains
 **19/30 closed; 11 remaining**. No merge, release or version bump.
 
+## Stage F26c — uninstall phone firewall cleanup
+
+Uninstall now confirms phone firewall cleanup after the existing same-user shutdown
+handshake and before removing shortcuts, the executable or user data. Only local
+PersistentStore rules with the two legacy names, the exact installed executable,
+inbound Allow, UDP and the corresponding fixed phone port qualify. Same-named
+rules for another executable or a different direction/action/protocol/port are
+preserved with a warning; unrelated rules and policy stores are untouched.
+Missing executables and already absent rules are valid cleanup states.
+
+Policy read/removal failures stop uninstall instead of being treated as absence.
+A non-administrator launches only the installed removal helper through Windows
+UAC, carrying the original user's explicit executable path. Cancellation, a failed
+child or remaining owned rules retains program files/shortcuts for retry. The app
+may already have stopped and some rules may already be removed; retry completes
+cleanup without re-opening ports. No execution-policy bypass or elevation of the
+whole per-user uninstall is added. Maintenance ownership remains held throughout.
+
+The shipped manual removal command uses the same policy; build/install/repair
+ship the helper. Tests use real disabled Windows firewall rules on disposable CI
+and cover exact selection, another installation, changed protocol/port/direction,
+missing executable, repeat removal, provider/removal denial and successful retry.
+Elevated launch cancellation/arguments/false success use injected command boundaries;
+these do not claim actual interactive UAC acceptance. The real uninstall fixture
+checks refusal before file deletion and removes two actual rules on successful retry.
+
+After Windows/server CI passes, F26 implementation is complete across F26a–c:
+**20/30 closed; 10 remaining**. Actual Windows sign-in and interactive UAC checks
+remain manual acceptance, separate from CI. No merge, release or version bump.
+
 ## Remaining stages
 
-F09, F16–F17, F19, F22–F23 and F26–F30 remain separate work (11 findings). Preserve the ordinary
+F09, F16–F17, F19, F22–F23 and F27–F30 remain separate work (10 findings). Preserve the ordinary
 **Запустить CLI** entry point throughout.
 
 F09 changes to the vault/decoy contract require a separate decision as described

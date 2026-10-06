@@ -12,11 +12,16 @@ $Programs = [Environment]::GetFolderPath("Programs")
 $MenuDir = Join-Path $Programs "ProGo"
 
 . (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
+. (Join-Path $PSScriptRoot 'Firewall-ProGo.ps1')
 $Maintenance = [ProGo.MaintenanceOperation]::Enter()
 try {
     # Same-user IPC restores owned preferences before the process exits.
     # Missing/refused confirmation aborts before any shortcut or executable removal.
     [ProGo.MaintenanceOperation]::StopApplication($InstallDir)
+
+    # Firewall cleanup is confirmed before any executable/shortcut/data removal.
+    # A cancelled elevation or query/removal failure leaves the installation retryable.
+    Complete-ProGoHomeFirewallCleanup (Join-Path $InstallDir 'ProGo.exe') (Join-Path $PSScriptRoot 'Enable-HomeVpnFirewall.ps1')
 
     foreach ($path in @($StartupShortcut, $MenuDir)) {
         if (Test-Path $path) {

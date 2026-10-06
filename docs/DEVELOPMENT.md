@@ -545,3 +545,26 @@ and open `ms-settings:startupapps` on explicit request; do not write undocumente
 StartupApproved registry values or bypass Windows/user restrictions. Keyboard and
 synthetic layout checks include the new field, but actual sign-in and display/DPI
 validation remain distinct from CI.
+
+## Phone firewall cleanup (F26c)
+
+`Firewall-ProGo.ps1` contains definitions only and is shipped with the installer,
+repair and removal entry points. Removal selects local PersistentStore rules by
+exact name, executable, direction/action, UDP and expected phone port. Do not
+replace this with a name prefix, port-wide deletion, firewall reset or silent
+query-error handling. Re-read candidates before deletion and verify the result.
+NetSecurity does not provide an atomic compare-and-delete guarantee against an
+administrator concurrently changing policy; this is not a policy locking system.
+
+Uninstall holds its maintenance lease and first obtains the existing application
+cleanup acknowledgement. It then runs firewall cleanup before file removal. Only
+the firewall child is elevated; do not restart the entire per-user uninstaller as
+a different administrator. An absent rule set requires no UAC. Failed or cancelled
+cleanup retains the installation for retry, but does not automatically restart the
+already stopped app or recreate rules removed earlier in the attempt.
+
+`HomeFirewallTests.ps1` and `ShutdownTests.cs` may run only on disposable Windows
+CI. Real rule fixtures are disabled, refuse existing names, and clean up in finally.
+They never enable firewall access or contact a VPS. UAC denial and child-exit paths
+use function/cmdlet boundary injection, not a real desktop UAC interaction. Actual
+interactive elevation and Windows sign-in remain separate manual acceptance.
