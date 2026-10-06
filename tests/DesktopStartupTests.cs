@@ -64,6 +64,11 @@ namespace ProGo
                         "ordinary Start CLI returns immediately and exposes pending state on one click");
                     Call(context, "Execute", "terminal-on"); Call(context, "Execute", "codex-on");
                     Check(context.PendingRouteCount == 1, "repeated CLI aliases share the one pending user request");
+                    var pendingPreferences = File.ReadAllBytes(AppPaths.SettingsPath);
+                    Call(context, "Execute", "future-unknown"); Call(context, "Execute", (object)null);
+                    Check(context.PendingRouteCount == 1 && pendingPreferences.SequenceEqual(File.ReadAllBytes(AppPaths.SettingsPath)) &&
+                        !CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort),
+                        "unknown commands neither cancel pending CLI nor apply settings or environment");
                     int ticks = 0;
                     using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) {
                         timer.Tick += delegate { ticks++; }; timer.Start(); PumpUntil(() => ticks >= 3);
@@ -73,6 +78,11 @@ namespace ProGo
                         Check(ticks >= 3 && bridge.IsRunning && CliProxyEnvironmentService.IsAppliedToUserEnvironment(bridge.Port) && button.Text == "Выключить CLI",
                             "one click finishes slow SSH, bridge and ordinary CLI while the UI keeps responding");
                     }
+                    var activePid = proxy.CurrentPid;
+                    Call(context, "Execute", "0"); Call(context, "Execute", "cli-start;stop");
+                    Check(context.PendingRouteCount == 0 && proxy.CurrentPid == activePid && bridge.IsRunning &&
+                        CliProxyEnvironmentService.IsAppliedToUserEnvironment(bridge.Port),
+                        "unknown commands leave active ordinary CLI and its connection intact");
                     var pid = proxy.CurrentPid;
                     Call(context, "Execute", "cli-start"); PumpUntil(() => context.PendingRouteCount == 0);
                     Check(proxy.CurrentPid == pid, "ready CLI request keeps the existing owned SSH process");

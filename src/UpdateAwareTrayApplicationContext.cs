@@ -23,7 +23,7 @@ namespace ProGo
         private readonly bool ownsHealth;
         private readonly Timer statusTimer = new Timer { Interval = 1000 };
         private Timer startupShowTimer;
-        private readonly Dictionary<string, long> pendingRoutes = new Dictionary<string, long>();
+        private readonly Dictionary<AppCommand, long> pendingRoutes = new Dictionary<AppCommand, long>();
         private long nextRouteRequest;
         private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
         private volatile bool closing;
@@ -207,33 +207,33 @@ namespace ProGo
         private void Execute(string action)
         {
             if (closing || shutdownPrepared) return;
-            var routed = RouteAction(action);
-            if (routed != null) { BeginRouteAction(routed); return; }
-            string navigation = action == "windows-settings" ? "settings" : action == "route-check" ? "diagnostics" : action;
-            bool isPage = navigation == "settings" || navigation == "connections" || navigation == "vault" || navigation == "iphone" || navigation == "diagnostics";
+            AppCommandDefinition command;
+            if (!AppCommands.TryResolve(action, out command)) { SafeLog.Info("Unknown user action ignored."); return; }
+            if (command.RequiresRoute) { BeginRouteAction(command.Command); return; }
+            string navigation = command.Navigation;
+            bool isPage = navigation != null;
             if (isPage && mainWindow != null) mainWindow.SetNavigation(navigation);
             try
             {
-                switch (action)
+                switch (command.Command)
                 {
-                    case "stop":
+                    case AppCommand.StopDesktop:
                         StopDesktop(); break;
-                    case "phone-stop": homeVpn.Stop(); break;
-                    case "stop-all": try { StopDesktop(); } finally { homeVpn.Stop(); } break;
-                    case "settings": ShowSettings(); break;
-                    case "connections": ShowSettings(SettingsSection.Connections); break;
-                    case "windows-settings": ShowSettings(SettingsSection.Windows); break;
-                    case "vault": ShowVault(); break;
-                    case "iphone": using (var form = new HomeVpnWizardForm(homeVpn, clipboard)) form.ShowDialog(mainWindow); break;
-                    case "diagnostics":
-                    case "route-check": using (var form = new StatusForm(settings, proxy, action == "route-check", null, null, health)) form.ShowDialog(mainWindow); break;
-                    case "cli-off":
-                    case "terminal-off":
-                    case "codex-off": DisableCli(); break;
-                    case "windows-off": CancelPendingRoute("windows-on"); automation.Cancel(ProxyFeature.Windows); RestoreWindowsProxy(); appConsumers.Observe(); appConsumers.ReleaseIfUnused(); break;
-                    case "codex-shortcut-off": CodexProxyService.Disable(); appConsumers.Observe(); appConsumers.ReleaseIfUnused(); break;
-                    case "help": ShowHelp(); break;
-                    case "update": StartUpdate(); break;
+                    case AppCommand.StopPhone: homeVpn.Stop(); break;
+                    case AppCommand.StopAll: try { StopDesktop(); } finally { homeVpn.Stop(); } break;
+                    case AppCommand.Settings: ShowSettings(); break;
+                    case AppCommand.Connections: ShowSettings(SettingsSection.Connections); break;
+                    case AppCommand.WindowsSettings: ShowSettings(SettingsSection.Windows); break;
+                    case AppCommand.Vault: ShowVault(); break;
+                    case AppCommand.Phone: using (var form = new HomeVpnWizardForm(homeVpn, clipboard)) form.ShowDialog(mainWindow); break;
+                    case AppCommand.Diagnostics:
+                    case AppCommand.CheckRoute: using (var form = new StatusForm(settings, proxy, command.Command == AppCommand.CheckRoute, null, null, health)) form.ShowDialog(mainWindow); break;
+                    case AppCommand.StopCli: DisableCli(); break;
+                    case AppCommand.DisableWindows: CancelPendingRoute(AppCommand.EnableWindows); automation.Cancel(ProxyFeature.Windows); RestoreWindowsProxy(); appConsumers.Observe(); appConsumers.ReleaseIfUnused(); break;
+                    case AppCommand.RemoveCodexShortcut: CodexProxyService.Disable(); appConsumers.Observe(); appConsumers.ReleaseIfUnused(); break;
+                    case AppCommand.Help: ShowHelp(); break;
+                    case AppCommand.Update: StartUpdate(); break;
+                    default: throw new InvalidOperationException("Команда ProGo не поддерживается.");
                 }
                 UpdateTooltip();
             }
@@ -247,24 +247,18 @@ namespace ProGo
             DisconnectApps(); proxy.StopTunnel();
             health.Invalidate();
         }
-        private static string RouteAction(string action)
-        {
-            if (action == "terminal-on" || action == "codex-on") return "cli-start";
-            return action == "cli-start" || action == "windows-on" || action == "connect" || action == "restart" ||
-                action == "codex-shortcut-on" || action == "codex-open" || action == "terminal-open" ? action : null;
-        }
-        private void BeginRouteAction(string action)
+        private void BeginRouteAction(AppCommand action)
         {
             if (closing || shutdownPrepared || pendingRoutes.ContainsKey(action)) return;
             long request = ++nextRouteRequest; pendingRoutes[action] = request;
             // A reconnect invalidates all previous requests before a new connection is awaited.
-            if (action == "restart" || (action == "connect" && proxy.CurrentPid.HasValue)) {
+            if (action == AppCommand.Reconnect || (action == AppCommand.Connect && proxy.CurrentPid.HasValue)) {
                 pendingRoutes.Clear(); pendingRoutes[action] = request; proxy.StopTunnel();
             }
             health.Invalidate(); RefreshPendingRoutes();
             CompleteRouteAction(action, request);
         }
-        private async void CompleteRouteAction(string action, long request)
+        private async void CompleteRouteAction(AppCommand action, long request)
         {
             bool ready = false, cancelled = false; Exception failure = null;
             try { ready = await proxy.StartTunnelAsync(routeLifetime.Token).ConfigureAwait(false); }
@@ -282,16 +276,19 @@ namespace ProGo
                         if (failure != null) throw failure;
                         if (!ready) throw new InvalidOperationException(proxy.StartupError ?? "Прокси не готов. Проверьте сервер и SSH-ключ в «Подключениях».");
                         switch (action) {
-                            case "cli-start": EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
-                            case "windows-on": EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
-                            case "codex-shortcut-on": EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
-                            case "codex-open": EnsureBridge(); appConsumers.TrackWindow(CodexProxyService.Open(cliProxy.Port)); break;
-                            case "terminal-open": EnsureBridge(); string error; Process window; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error, out window)) throw new InvalidOperationException(error); appConsumers.TrackWindow(window); break;
+                            case AppCommand.Connect:
+                            case AppCommand.Reconnect: break;
+                            case AppCommand.StartCli: EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
+                            case AppCommand.EnableWindows: EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
+                            case AppCommand.CreateCodexShortcut: EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
+                            case AppCommand.OpenCodex: EnsureBridge(); appConsumers.TrackWindow(CodexProxyService.Open(cliProxy.Port)); break;
+                            case AppCommand.OpenTerminal: EnsureBridge(); string error; Process window; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error, out window)) throw new InvalidOperationException(error); appConsumers.TrackWindow(window); break;
+                            default: throw new InvalidOperationException("Команда подключения ProGo не поддерживается.");
                         }
                         health.Invalidate();
                     }
                     catch (Exception ex) {
-                        SafeLog.Error("User connection action failed: " + action, ex);
+                        SafeLog.Error("User connection action failed: " + AppCommands.Get(action).LegacyId, ex);
                         MessageBox.Show(mainWindow, ex.Message, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                     finally {
@@ -306,9 +303,9 @@ namespace ProGo
         private void RefreshPendingRoutes()
         {
             if (mainWindow != null && !mainWindow.IsDisposed)
-                mainWindow.SetRoutePending(pendingRoutes.ContainsKey("cli-start"), pendingRoutes.ContainsKey("windows-on"), pendingRoutes.Count > 0);
+                mainWindow.SetRoutePending(pendingRoutes.ContainsKey(AppCommand.StartCli), pendingRoutes.ContainsKey(AppCommand.EnableWindows), pendingRoutes.Count > 0);
         }
-        private void CancelPendingRoute(string action)
+        private void CancelPendingRoute(AppCommand action)
         {
             pendingRoutes.Remove(action);
             if (pendingRoutes.Count == 0 && proxy.IsConnecting) proxy.StopTunnel();
@@ -336,7 +333,7 @@ namespace ProGo
         }
         private void DisableCli()
         {
-            CancelPendingRoute("cli-start");
+            CancelPendingRoute(AppCommand.StartCli);
             automation.Cancel(ProxyFeature.Cli);
             RestoreCliEnvironment();
             appConsumers.Observe(); appConsumers.ReleaseIfUnused();

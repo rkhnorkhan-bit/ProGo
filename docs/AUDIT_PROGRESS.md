@@ -900,6 +900,30 @@ After Windows/server CI passes, F26 implementation is complete across F26a–c:
 **20/30 closed; 10 remaining**. Actual Windows sign-in and interactive UAC checks
 remain manual acceptance, separate from CI. No merge, release or version bump.
 
+## Stage F28a — typed dispatch and proven dead paths
+
+The application now resolves every existing UI action ID through one immutable
+command definition before dispatch. Definitions hold canonical identity, route
+readiness requirement and navigation destination. The handler and pending route
+queue use `AppCommand`, so the four legacy terminal/Codex aliases share the exact
+CLI operation identity for start, deduplication and cancellation. Existing IDs
+remain an explicit compatibility boundary for unchanged UI surfaces and tests.
+Unknown/nonexact IDs are ignored before any route or preference mutation; they
+cannot be parsed as enum numbers or default to Connect. Logs omit unknown input.
+
+The ordinary Start CLI, independent desktop/phone/full stop, saved-setting manual
+actions, async startup/cancellation and target-page behavior retain their existing
+regressions. New checks cover catalogue identity/unique round trips and aliases,
+invalid input, and actual ignored commands while CLI is pending and active.
+The unused `PortForm` and private `SafeTarget`/`ClearUserIfOwned` methods are removed
+only after repository-wide reference checks; current port settings remain intact.
+
+This stage deliberately stops at dispatch. UI callbacks still emit compatibility
+IDs; shared display names, effect/availability state and remaining direct menu
+callbacks belong to the next F28 stage. F28 remains open. Windows/server CI is
+required before review readiness; no additional visual or product behavior is
+introduced. Progress remains **20/30 closed; 10 remaining**. No merge or release.
+
 ## Remaining stages
 
 F09, F16–F17, F19, F22–F23 and F27–F30 remain separate work (10 findings). Preserve the ordinary

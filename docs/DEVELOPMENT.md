@@ -568,3 +568,24 @@ CI. Real rule fixtures are disabled, refuse existing names, and clean up in fina
 They never enable firewall access or contact a VPS. UAC denial and child-exit paths
 use function/cmdlet boundary injection, not a real desktop UAC interaction. Actual
 interactive elevation and Windows sign-in remain separate manual acceptance.
+
+## Command dispatch boundary (F28a)
+
+`AppCommands` is the single explicit ID-to-operation mapping. It has no WinForms,
+settings, registry or network dependency. Definitions are immutable and canonical
+IDs are case-sensitive. The legacy terminal/Codex on/off IDs must resolve to the
+same objects as ordinary CLI on/off; do not register independent operations for
+aliases. Do not use Enum.Parse on external/string IDs: numeric or unknown input
+must never default to a valid command. Unknown IDs are not included in logs.
+
+The application context uses typed commands in both dispatch and the pending
+route dictionary. Pending work still finishes on the persistent UI dispatcher;
+request-generation and stop/cancellation rules are unchanged. Presentation event
+signatures remain string-based until the next bounded F28 stage; do not claim all
+surfaces already use a shared name/availability catalogue. Backup/log/exit menu
+callbacks remain separately scoped for that migration.
+
+Native regression tests exercise ignored commands during pending and active CLI
+alongside existing exact on/off, alias deduplication, shared route and cancellation
+checks. Removed private helpers and the old port dialog had no repository callers
+or reflection references; the active settings port tests remain required.

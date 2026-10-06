@@ -12,6 +12,26 @@ namespace ProGo
 {
     internal static partial class DesktopTests
     {
+        private static void CommandCatalogContract()
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            foreach (AppCommand command in Enum.GetValues(typeof(AppCommand))) {
+                var definition = AppCommands.Get(command); AppCommandDefinition resolved;
+                Check(definition.Command == command && !String.IsNullOrWhiteSpace(definition.LegacyId) && ids.Add(definition.LegacyId) &&
+                    AppCommands.TryResolve(definition.LegacyId, out resolved) && Object.ReferenceEquals(definition, resolved),
+                    "every typed command has one unique round-trippable compatibility ID: " + command);
+            }
+            foreach (var pair in new[] { new[] { "terminal-on", "cli-start" }, new[] { "codex-on", "cli-start" },
+                new[] { "terminal-off", "cli-off" }, new[] { "codex-off", "cli-off" } }) {
+                AppCommandDefinition alias, canonical;
+                Check(AppCommands.TryResolve(pair[0], out alias) && AppCommands.TryResolve(pair[1], out canonical) && Object.ReferenceEquals(alias, canonical),
+                    "legacy alias shares the canonical operation identity: " + pair[0]);
+            }
+            foreach (string invalid in new[] { null, "", " ", "CONNECT", " connect", "0", "Connect", "cli-start;stop", "future-unknown" }) {
+                AppCommandDefinition rejected;
+                Check(!AppCommands.TryResolve(invalid, out rejected) && rejected == null, "unknown or nonexact command cannot default to a connection");
+            }
+        }
         private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
         private static object Field(object target, string name) { return target.GetType().GetField(name, PrivateInstance).GetValue(target); }
         private static void Call(object target, string name, params object[] args) { target.GetType().GetMethod(name, PrivateInstance).Invoke(target, args); }

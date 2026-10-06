@@ -603,49 +603,4 @@ namespace ProGo
         }
     }
 
-    internal sealed class PortForm : ProGoForm
-    {
-        private readonly NumericUpDown port = new NumericUpDown();
-        public int Port { get { return (int)port.Value; } }
-
-        private PortForm(int current)
-        {
-            Text = "Порт SOCKS";
-            AutoScaleMode = AutoScaleMode.Dpi;
-            StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(480, 210);
-            MinimumSize = Size;
-            port.Minimum = 1;
-            port.Maximum = 65535;
-            port.Value = current >= 1 && current <= 65535 ? current : 1080;
-
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 1, RowCount = 3 };
-            Controls.Add(table);
-            table.Controls.Add(new Label { Text = "Укажите локальный порт SOCKS:", AutoSize = true }, 0, 0);
-            port.Dock = DockStyle.Fill;
-            table.Controls.Add(port, 0, 1);
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var ok = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
-            buttons.Controls.Add(cancel);
-            buttons.Controls.Add(ok);
-            table.Controls.Add(buttons, 0, 2);
-            AcceptButton = ok;
-            CancelButton = cancel;
-        }
-
-        public static bool TryGetPort(int current, out int value)
-        {
-            using (var form = new PortForm(current))
-            {
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    value = form.Port;
-                    return true;
-                }
-            }
-            value = current;
-            return false;
-        }
-    }
 }

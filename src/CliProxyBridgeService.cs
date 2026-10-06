@@ -474,11 +474,6 @@ namespace ProGo
             stream.Write(bytes, 0, bytes.Length);
         }
 
-        private static string SafeTarget(string host, int port)
-        {
-            if (String.IsNullOrWhiteSpace(host)) return "unknown";
-            return host + ":" + port;
-        }
 
         public void Dispose()
         {
@@ -651,13 +646,6 @@ namespace ProGo
             return String.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static void ClearUserIfOwned(string name, string expected)
-        {
-            if (IsUserValue(name, expected))
-            {
-                Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
-            }
-        }
 
         internal static void BroadcastEnvironmentChange()
         {
