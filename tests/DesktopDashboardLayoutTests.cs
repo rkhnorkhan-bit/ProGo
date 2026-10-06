@@ -61,7 +61,7 @@ namespace ProGo
             float scale, Size available, bool longText, string name)
         {
             string action = null;
-            using (var form = new MainWindow(settings, proxy, home, delegate(string value) { action = value; })) {
+            using (var form = new MainWindow(settings, proxy, home, delegate(AppCommand value) { action = AppCommands.Get(value).LegacyId; })) {
                 form.Show(); Application.DoEvents();
                 ((Timer)Field(form, "timer")).Stop();
                 // This is intentionally a constrained form.Scale stress test, not native DPI coverage.

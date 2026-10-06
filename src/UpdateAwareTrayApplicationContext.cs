@@ -83,26 +83,26 @@ namespace ProGo
             menu.Items.Add("Открыть ProGo", null, delegate { ShowStatus(); });
             menu.Items.Add(new ToolStripSeparator());
             var connection = new ToolStripMenuItem("Подключение");
-            Item(connection, "Подключиться к серверу", "connect");
-            Item(connection, "Отключить прокси на ПК", "stop");
-            Item(connection, "Остановить все подключения", "stop-all");
-            Item(connection, "Переподключиться", "restart");
-            Item(connection, "Проверить маршрут", "route-check");
-            Item(connection, "Открыть диагностику и скорость", "diagnostics");
+            Item(connection.DropDownItems, AppCommand.Connect);
+            Item(connection.DropDownItems, AppCommand.StopDesktop);
+            Item(connection.DropDownItems, AppCommand.StopAll);
+            Item(connection.DropDownItems, AppCommand.Reconnect);
+            Item(connection.DropDownItems, AppCommand.CheckRoute);
+            Item(connection.DropDownItems, AppCommand.Diagnostics);
             menu.Items.Add(connection);
             var apps = new ToolStripMenuItem("Прокси для приложений");
-            Item(apps, "Windows — включить", "windows-on"); Item(apps, "Windows — выключить", "windows-off");
+            Item(apps.DropDownItems, AppCommand.EnableWindows); Item(apps.DropDownItems, AppCommand.DisableWindows);
             apps.DropDownItems.Add(new ToolStripSeparator());
-            Item(apps, "Запустить CLI (терминалы и Codex)", "cli-start"); Item(apps, "Выключить прокси для терминалов и Codex", "cli-off");
-            Item(apps, "Открыть терминал с прокси", "terminal-open");
+            Item(apps.DropDownItems, AppCommand.StartCli); Item(apps.DropDownItems, AppCommand.StopCli);
+            Item(apps.DropDownItems, AppCommand.OpenTerminal);
             apps.DropDownItems.Add(new ToolStripSeparator());
             var extra = new ToolStripMenuItem("Дополнительно: ярлык Codex");
-            Item(extra, "Создать отдельный ярлык", "codex-shortcut-on"); Item(extra, "Удалить отдельный ярлык", "codex-shortcut-off"); apps.DropDownItems.Add(extra);
-            Item(apps, "Открыть Codex CLI с прокси", "codex-open"); menu.Items.Add(apps);
-            menu.Items.Add("VPN для телефона…", null, delegate { Execute("iphone"); });
-            menu.Items.Add("Остановить VPN для телефона", null, delegate { Execute("phone-stop"); });
-            menu.Items.Add("Хранилище паролей и ключей…", null, delegate { Execute("vault"); });
-            menu.Items.Add("Настройки и автоматика…", null, delegate { Execute("settings"); });
+            Item(extra.DropDownItems, AppCommand.CreateCodexShortcut); Item(extra.DropDownItems, AppCommand.RemoveCodexShortcut); apps.DropDownItems.Add(extra);
+            Item(apps.DropDownItems, AppCommand.OpenCodex); menu.Items.Add(apps);
+            Item(menu.Items, AppCommand.Phone);
+            Item(menu.Items, AppCommand.StopPhone);
+            Item(menu.Items, AppCommand.Vault);
+            Item(menu.Items, AppCommand.Settings);
             menu.Items.Add(new ToolStripSeparator());
             var backups = new ToolStripMenuItem("Резервные копии");
             backups.DropDownItems.Add("Создать копию сейчас", null, delegate { CreateBackup(); });
@@ -110,19 +110,20 @@ namespace ProGo
             backups.DropDownItems.Add("Открыть папку с копиями", null, delegate { OpenBackups(); });
             backups.DropDownItems.Add("Удалить старые автоматические копии…", null, delegate { CleanupBackups(); }); menu.Items.Add(backups);
             menu.Items.Add(BuildLogsMenu());
-            menu.Items.Add("Проверить обновления…", null, delegate { StartUpdate(); });
+            Item(menu.Items, AppCommand.Update);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Завершить работу ProGo", null, delegate { ExitProGo(); });
             UiTheme.Menu(menu); return menu;
         }
-        private void Item(ToolStripMenuItem menu, string text, string action)
+        private void Item(ToolStripItemCollection items, AppCommand command)
         {
-            menu.DropDownItems.Add(text, null, delegate { Execute(action); });
+            var item = items.Add(AppCommands.Get(command).Label, null, delegate { ExecuteCommand(command); });
+            item.Tag = command;
         }
         private ToolStripMenuItem BuildLogsMenu()
         {
             var logs = new ToolStripMenuItem("Помощь и журналы");
-            logs.DropDownItems.Add("Открыть помощь…", null, delegate { ShowHelp(); });
+            Item(logs.DropDownItems, AppCommand.Help);
             logs.DropDownItems.Add("Передать диагностику…", null, delegate { ShowDiagnosticPreview(); });
             logs.DropDownItems.Add("Журнал приложения", null, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); });
             logs.DropDownItems.Add("Журнал обновления", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); });
@@ -131,7 +132,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, Execute, cliProxy, automation, health, appConsumers);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, ExecuteCommand, cliProxy, automation, health, appConsumers);
             RefreshPendingRoutes();
             mainWindow.FormClosing += DashboardClosing;
             mainWindow.FormClosed += delegate { mainWindow = null; };
@@ -160,7 +161,7 @@ namespace ProGo
             bool reconnectAfterSave = false;
             using (var form = new SshProfilesSettingsForm(settings, section))
             {
-                form.ManualActionRequested += Execute;
+                form.ManualActionRequested += ExecuteCommand;
                 form.ProxyEndpointText = cliProxy.ProxyUrl;
                 form.CurrentProxyEndpoint = delegate { return cliProxy.ProxyUrl; };
                 form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
@@ -209,7 +210,13 @@ namespace ProGo
             if (closing || shutdownPrepared) return;
             AppCommandDefinition command;
             if (!AppCommands.TryResolve(action, out command)) { SafeLog.Info("Unknown user action ignored."); return; }
-            if (command.RequiresRoute) { BeginRouteAction(command.Command); return; }
+            ExecuteCommand(command.Command);
+        }
+        private void ExecuteCommand(AppCommand action)
+        {
+            if (closing || shutdownPrepared) return;
+            var command = AppCommands.Get(action);
+            if (command.RequiresRoute) { BeginRouteAction(action); return; }
             string navigation = command.Navigation;
             bool isPage = navigation != null;
             if (isPage && mainWindow != null) mainWindow.SetNavigation(navigation);
@@ -237,7 +244,7 @@ namespace ProGo
                 }
                 UpdateTooltip();
             }
-            catch (Exception ex) { SafeLog.Error("User action failed: " + action, ex); MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            catch (Exception ex) { SafeLog.Error("User action failed: " + command.LegacyId, ex); MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
             finally { if (isPage && mainWindow != null && !mainWindow.IsDisposed) mainWindow.SetNavigation("home"); }
         }
         private void StopDesktop()

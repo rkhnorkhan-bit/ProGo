@@ -31,7 +31,7 @@ namespace ProGo
                 Check(manual.All(b => !String.IsNullOrEmpty(b.AccessibilityObject.Description)) &&
                     manual.Where(b => b.Text == "Включить").Select(b => b.AccessibilityObject.Description).Distinct().Count() == 2,
                     "same-caption manual buttons expose their target and immediate-action semantics");
-                string command = null; form.ManualActionRequested += action => command = action;
+                string command = null; form.ManualActionRequested += action => command = AppCommands.Get(action).LegacyId;
                 var cli = manual.Single(b => b.Text == "Включить" && b.AccessibleDescription.Contains("Codex"));
                 cli.PerformClick(); Check(command == "cli-start", "accessible manual CLI action retains the ordinary cli-start route");
                 tabs.SelectedIndex = 1; Application.DoEvents();

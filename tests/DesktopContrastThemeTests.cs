@@ -22,7 +22,7 @@ namespace ProGo
                 using (var proxy = new ProxyService(settings))
                 using (var relay = new Ikev2RelayService())
                 using (var home = new HomeVpnService(relay))
-                using (var dashboard = new MainWindow(settings, proxy, home, delegate(string route) { Check(route == "cli-start", "theme changes preserve ordinary CLI routing"); }))
+                using (var dashboard = new MainWindow(settings, proxy, home, delegate(AppCommand route) { Check(route == AppCommand.StartCli, "theme changes preserve ordinary CLI routing"); }))
                 using (var form = new SshProfilesSettingsForm(settings)) {
                     dashboard.Show(); form.Show(); Application.DoEvents();
                     ((Timer)Field(form, "currentValuesTimer")).Stop();

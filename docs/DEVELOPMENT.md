@@ -596,3 +596,18 @@ satisfy it; deterministic tests force real writer rotation. Probe the HTTP liste
 only after that completion to avoid flooding the journal during the operation.
 Keep the original readiness predicates/deadline; this is fixture synchronization,
 not a change to application startup or the best-effort logging guarantee.
+
+## Typed presentation callbacks (F28b)
+
+MainWindow and SshProfilesSettingsForm callbacks carry AppCommand, never ad-hoc
+string IDs. ExecuteCommand is the shared application entry; Execute(string)
+remains the strict compatibility adapter. Keep these method names distinct for
+legacy reflection fixtures. Typed UI commands must not bypass pending-route or
+shutdown guards. Tray item Tag carries its command identity, not display text.
+
+Full/compact/manual captions belong to the command definition. Compact/manual
+variants are explicit context wording, not separate operations or settings.
+Existing accessibility/layout and exact legacy ID tests remain useful across this
+migration. Native integration additionally starts CLI from the tray and stops it
+from settings while observing the dashboard. This does not yet centralize command
+availability or migrate all direct backup/log/exit callbacks; those remain F28.

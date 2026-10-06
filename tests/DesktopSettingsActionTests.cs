@@ -27,7 +27,7 @@ namespace ProGo
                 using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false)) {
                     using (var form = new SshProfilesSettingsForm(settings)) {
                         form.CurrentProxyEndpoint = delegate { return bridge.ProxyUrl; };
-                        form.ManualActionRequested += delegate(string action) { Call(context, "Execute", action); };
+                        form.ManualActionRequested += delegate(AppCommand action) { Call(context, "ExecuteCommand", action); };
                         form.Show(); Application.DoEvents();
                         var tabs = Descendants(form).OfType<TabControl>().Single();
                         Check(Descendants(form).OfType<Label>().Any(l => l.Text.Contains("«Отменить изменения» их не откатывает")) &&
