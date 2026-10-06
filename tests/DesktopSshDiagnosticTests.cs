@@ -96,20 +96,42 @@ namespace ProGo
                     PumpUntil(() => File.Exists(Path.Combine(marker, "child.pid")) && ticks >= 3);
                     var retry = (Button)Field(form, "retry"); var cancel = (Button)Field(form, "cancel");
                     Check(!retry.Enabled && calls == 1 && !form.Work.IsCompleted, "SSH busy guard and UI heartbeat remain active on a stalled profile snapshot");
+                    var report = (TextBox)Field(form, "report"); var status = (Label)Field(form, "status");
+                    Check(report.ReadOnly && report.AccessibilityObject.Name == "Результат проверки настроек SSH" &&
+                        report.AccessibilityObject.Description.Contains("Только чтение"), "SSH report has a named read-only keyboard surface");
+                    Check(status.AccessibilityObject.Name == "Состояние проверки SSH" && status.AccessibilityObject.Description == status.Text,
+                        "SSH accessible status exposes current progress text");
+                    Check(cancel.AccessibilityObject.Name == "Отменить проверку" && cancel.AccessibilityObject.Description.Contains("Окно остаётся"),
+                        "SSH active cancel explains its scoped effect");
+                    KeyboardWalk(form, new Control[] { report, cancel }, "SSH running skips unavailable retry");
                     retry.PerformClick(); Check(calls == 1, "SSH repeat cannot start during a running check");
                     form.Refresh(); Shot(form, "ssh-diagnostic-pending");
-                    cancel.PerformClick(); PumpUntil(() => form.Work.IsCompleted);
+                    typeof(Form).GetMethod("ProcessDialogKey", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        .Invoke(form, new object[] { Keys.Escape });
+                    PumpUntil(() => form.Work.IsCompleted);
                     Check(((Label)Field(form, "status")).Text.Contains("отменена") && retry.Enabled && cancel.Text == "Закрыть", "SSH cancel restores retry and close controls");
+                    Check(form.Visible && cancel.AccessibilityObject.Name == "Закрыть" &&
+                        cancel.AccessibilityObject.Description.Contains("Закрывает результаты") && status.AccessibilityObject.Description == status.Text,
+                        "SSH Escape cancels without closing and updates accessible close action and status");
+                    KeyboardWalk(form, new Control[] { report, retry, cancel }, "SSH cancelled offers retry before close");
                     Check(DiagnosticGone(Path.Combine(marker, "root.pid")) && DiagnosticGone(Path.Combine(marker, "child.pid")), "SSH UI cancel closes owned processes");
                     form.Refresh(); Shot(form, "ssh-diagnostic-cancelled"); DiagnosticMarkers(marker);
                     retry.PerformClick(); PumpUntil(() => calls == 2 && File.Exists(Path.Combine(marker, "child.pid")));
+                    Check(cancel.AccessibilityObject.Name == "Отменить проверку" && !retry.Enabled,
+                        "SSH repeated check restores accessible cancel semantics");
                     var running = form.Work; form.Close(); PumpUntil(() => running.IsCompleted);
                     Check(form.IsDisposed && DiagnosticGone(Path.Combine(marker, "child.pid")), "SSH closing the window cancels retry without late UI access");
                 }
                 using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "fixture-ok" }, FixtureCheck)) {
                     form.Show(); PumpUntil(() => form.Work != null && form.Work.IsCompleted);
                     Check(((TextBox)Field(form, "report")).Text.Contains("fixture.example.org") && ((Label)Field(form, "status")).Text.Contains("прочитаны"), "SSH successful diagnostic displays local resolution without claiming server reachability");
-                    form.Refresh(); Shot(form, "ssh-diagnostic-success"); form.Close();
+                    var report = (TextBox)Field(form, "report"); var retry = (Button)Field(form, "retry"); var cancel = (Button)Field(form, "cancel");
+                    KeyboardWalk(form, new Control[] { report, retry, cancel }, "SSH completed report");
+                    Check(form.AcceptButton == null && cancel.AccessibilityObject.Name == "Закрыть", "SSH results do not implicitly repeat a check on Enter");
+                    form.Refresh(); Shot(form, "ssh-diagnostic-success");
+                    typeof(Form).GetMethod("ProcessDialogKey", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        .Invoke(form, new object[] { Keys.Escape });
+                    Check(form.IsDisposed, "SSH Escape closes completed results");
                 }
                 Check(!unrelated.HasExited, "SSH UI cleanup leaves the unrelated process running");
             }

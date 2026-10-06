@@ -115,8 +115,8 @@ namespace ProGo
             port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Порт SOCKS-туннеля", port);
             autoStart.Text = "Подключаться к серверу при запуске ProGo"; autoStart.AutoSize = true;
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
-            autoLaunch.Text = "Запускать ProGo при входе в Windows";
-            autoLaunch.AccessibleDescription = "Применяется после сохранения. Запуск приложения и подключение к серверу настраиваются отдельно.";
+            autoLaunch.Text = "Запускать вместе с системой";
+            autoLaunch.AccessibleDescription = "Запускать ProGo после входа пользователя в Windows. Применяется после сохранения. Подключение к серверу настраивается отдельно.";
             AddSettingsRow(connection, 4, autoLaunch);
             AddSettingsRow(connection, 5, startupNotice);
             var startupActions = SettingsActions();
@@ -391,7 +391,7 @@ namespace ProGo
                     autoLaunch.Checked = startupSnapshot.Registered;
                     autoLaunch.Enabled = true;
                     startupNotice.Text = (startupSnapshot.Registered ? "ProGo добавлен в автозагрузку." : "ProGo не добавлен в автозагрузку.") +
-                        " Галочка применяется после сохранения. Windows может отдельно запретить запуск: проверьте разрешение кнопкой ниже. Подключение к серверу задаётся следующей галочкой.";
+                        " Запуск — после входа пользователя в Windows. Галочка применяется после сохранения. Windows может отдельно запретить запуск: проверьте разрешение кнопкой ниже. Подключение к серверу задаётся следующей галочкой.";
                 } catch {
                     startupNotice.Text = "Не удалось проверить автозапуск: ярлык недоступен или изменён вне ProGo. Он сохранён без изменений. Проверьте параметры Windows и снова откройте это окно.";
                 }

@@ -647,3 +647,18 @@ editing, public browser links and maintenance IPC are outside this UI catalogue.
 Tests verify exact tray membership, descriptions and real restore/report dialog
 cancellation; shutdown refusal now goes through the typed Exit command. Native
 accessible metadata assertions do not substitute for physical Narrator acceptance.
+
+
+## SSH diagnostic accessibility (F17d)
+
+Keep report text read-only, named and keyboard-selectable. Diagnostic status must
+expose its current text alongside a stable accessible name. Cancel becomes Close
+after work settles; both its accessible name and explanation must follow that
+transition and a subsequent retry. Explicit tab order follows visual content and
+skips disabled Retry. No default Accept action may implicitly repeat diagnostics.
+Escape cancels active work without closing results; after completion it closes.
+The existing diagnostic process-tree tests exercise these native UI transitions.
+
+The Windows startup checkbox is presented as “Запускать вместе с системой”, with
+an explicit user-sign-in explanation. It remains the F26b installed shortcut
+preference, separate from automatic SSH connection and subject to Save/Cancel.
