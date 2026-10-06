@@ -14,6 +14,11 @@ namespace ProGo
         private readonly ComboBox sshProfiles = new ComboBox();
         private readonly CheckBox autoSwitchProfile = new CheckBox();
         private readonly CheckBox autoStart = new CheckBox();
+        private readonly CheckBox autoLaunch = new CheckBox();
+        private readonly Label startupNotice = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private readonly ApplicationShortcuts startupShortcuts;
+        private ApplicationShortcuts.StartupSnapshot startupSnapshot;
+        private Button startupSettingsButton;
         private readonly CheckBox autoCli = new CheckBox();
         private readonly NumericUpDown clearSeconds = new NumericUpDown();
         private readonly TextBox endpoint = new TextBox();
@@ -40,9 +45,14 @@ namespace ProGo
         public string ProxyEndpointText { set { proxyAddress.Text = value; } }
 
 
-        public SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section = SettingsSection.Automation)
+        public SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section = SettingsSection.Automation, ApplicationShortcuts shortcuts = null, Action openStartupSettings = null)
         {
             service = settingsService;
+            startupShortcuts = shortcuts;
+            if (startupShortcuts == null && String.Equals(Application.ExecutablePath,
+                System.IO.Path.Combine(AppPaths.Root, "ProGo.exe"), StringComparison.OrdinalIgnoreCase))
+                startupShortcuts = new ApplicationShortcuts(AppPaths.Root,
+                    Environment.GetFolderPath(Environment.SpecialFolder.Programs), Environment.GetFolderPath(Environment.SpecialFolder.Startup));
             Text = "Настройки · ProGo";
             ClientSize = new Size(900, 700); MinimumSize = new Size(850, 650);
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
@@ -103,12 +113,28 @@ namespace ProGo
             port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Порт SOCKS-туннеля", port);
             autoStart.Text = "Подключаться к серверу при запуске ProGo"; autoStart.AutoSize = true;
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
-            AddSettingsRow(connection, 4, autoStart);
-            AddSettingsRow(connection, 5, autoSwitchProfile);
+            autoLaunch.Text = "Запускать ProGo при входе в Windows";
+            autoLaunch.AccessibleDescription = "Применяется после сохранения. Запуск приложения и подключение к серверу настраиваются отдельно.";
+            AddSettingsRow(connection, 4, autoLaunch);
+            AddSettingsRow(connection, 5, startupNotice);
+            var startupActions = SettingsActions();
+            startupSettingsButton = UiTheme.Button("Автозагрузка в Windows…", delegate {
+                try {
+                    if (openStartupSettings != null) openStartupSettings();
+                    else System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ms-settings:startupapps") { UseShellExecute = true });
+                } catch {
+                    ShowSaveError(new SettingsSaveError(SettingsField.Startup, "Не удалось открыть параметры Windows. Откройте «Параметры» → «Приложения» → «Автозагрузка»."));
+                }
+            }, false);
+            startupSettingsButton.AccessibleDescription = "Открывает параметры Windows. Изменения в этом окне ProGo не сохраняются.";
+            startupActions.Controls.Add(startupSettingsButton);
+            AddSettingsRow(connection, 6, startupActions);
+            AddSettingsRow(connection, 7, autoStart);
+            AddSettingsRow(connection, 8, autoSwitchProfile);
             var help = UiTheme.Label("Фоновое подключение использует SSH-ключ и не запрашивает пароль. «Первый вход» открывает видимое окно SSH: сверьте отпечаток ключа сервера, войдите и завершите сеанс командой exit. Вход по паролю сам по себе не настраивает SSH-ключ для ProGo. Затем нажмите «Запустить CLI» один раз — ProGo дождётся готовности. Для iPhone и Android используйте «VPN для телефона».", UiTheme.Body, UiTheme.Muted);
-            AddSettingsRow(connection, 7, help);
+            AddSettingsRow(connection, 10, help);
             currentConnection.Name = "currentConnectionSettings";
-            AddSettingsRow(connection, 6, currentConnection);
+            AddSettingsRow(connection, 9, currentConnection);
             var privacy = FormTable(Page(tabs, "Хранилище"));
             clearSeconds.Minimum = 5; clearSeconds.Maximum = 3600;
             AddLabeled(privacy, 0, "Очищать буфер через, сек.", clearSeconds);
@@ -345,6 +371,19 @@ namespace ProGo
             proxyAddress.Text = CliProxyBridgeService.UrlFor(s.HttpProxyPort);
             autoSwitchProfile.Checked = s.AutoSwitchSshProfile;
             autoStart.Checked = s.AutoStartSocks;
+            autoLaunch.Enabled = false;
+            if (startupShortcuts == null) startupNotice.Text = "Эта копия запущена вне папки установки ProGo. Настройка автозапуска доступна в установленной программе.";
+            else {
+                try {
+                    startupSnapshot = startupShortcuts.ReadStartup();
+                    autoLaunch.Checked = startupSnapshot.Registered;
+                    autoLaunch.Enabled = true;
+                    startupNotice.Text = (startupSnapshot.Registered ? "ProGo добавлен в автозагрузку." : "ProGo не добавлен в автозагрузку.") +
+                        " Галочка применяется после сохранения. Windows может отдельно запретить запуск: проверьте разрешение кнопкой ниже. Подключение к серверу задаётся следующей галочкой.";
+                } catch {
+                    startupNotice.Text = "Не удалось проверить автозапуск: ярлык недоступен или изменён вне ProGo. Он сохранён без изменений. Проверьте параметры Windows и снова откройте это окно.";
+                }
+            }
             autoCli.Checked = s.AutoCliProxy;
             autoRestart.Checked = s.AutoRestartSocks;
             autoWindows.Checked = s.AutoSystemProxy;
@@ -488,6 +527,11 @@ namespace ProGo
                 TestEndpoint = endpoint.Text.Trim()
             };
             var error = SettingsValidation.Check(proposed);
+            ApplicationShortcuts.StartupChange startupChange = null;
+            if (error == null && startupSnapshot != null && autoLaunch.Checked != startupSnapshot.Registered) {
+                try { startupChange = startupShortcuts.ChangeStartup(startupSnapshot, autoLaunch.Checked); }
+                catch { error = new SettingsSaveError(SettingsField.Startup, "Не удалось изменить автозапуск. Ярлык недоступен или изменился вне ProGo. Проверьте его и снова откройте настройки; остальные параметры не применены."); }
+            }
             if (error == null) {
                 try {
                     if (SaveRequested != null) error = SaveRequested(proposed, pickFreePort);
@@ -497,7 +541,11 @@ namespace ProGo
                     error = new SettingsSaveError(SettingsField.General, "Не удалось завершить применение настроек. Проверьте текущее состояние и журнал ProGo.");
                 }
             }
-            if (error != null) { ShowSaveError(error); return; }
+            if (error != null) {
+                if (startupChange != null && !startupChange.TryRollback())
+                    error = new SettingsSaveError(SettingsField.Startup, "Настройки не удалось полностью применить, а автозапуск — вернуть к прежнему состоянию. Проверьте автозагрузку Windows и снова откройте настройки.");
+                ShowSaveError(error); return;
+            }
             DialogResult = DialogResult.OK; Close();
         }
 
@@ -506,6 +554,7 @@ namespace ProGo
             DialogResult = DialogResult.None;
             Control field = null;
             switch (error.Field) {
+                case SettingsField.Startup: settingsTabs.SelectedIndex = 1; field = autoLaunch.Enabled ? (Control)autoLaunch : startupSettingsButton; break;
                 case SettingsField.SocksHost: settingsTabs.SelectedIndex = 1; field = host; break;
                 case SettingsField.SocksPort: settingsTabs.SelectedIndex = 1; field = port; break;
                 case SettingsField.SshProfile: settingsTabs.SelectedIndex = 1; field = sshProfiles; break;

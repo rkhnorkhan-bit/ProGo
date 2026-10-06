@@ -842,6 +842,34 @@ F26 remains **open** for the visible Windows-startup preference and the remainin
 uninstall phone-firewall acceptance. Progress remains **19/30 closed; 11 remaining**.
 No merge, release or version bump.
 
+## Stage F26b — explicit Windows startup preference
+
+Settings → Connection now separates launching ProGo at Windows sign-in from
+connecting to SSH when ProGo starts. The new checkbox reads the actual owned
+Startup shortcut; no new JSON default can override a previous opt-out. Portable
+copies and unreadable/customized shortcuts show an unavailable state without
+blocking unrelated settings. A separate button opens Windows Startup settings;
+the UI explicitly distinguishes shortcut registration from Windows' permission.
+The application does not edit undocumented StartupApproved registry values.
+
+Changes apply only on Save, after field validation. A failed settings/port apply
+rolls registration back; removing registration restores exact prior shortcut bytes
+if the downstream save fails. A stale snapshot refuses an external change before
+other settings apply. Rollback preserves a later external edit and surfaces an
+explicit incomplete-recovery error. Cancel, window close, status refresh and the
+Windows-settings button cannot commit staged changes. The existing ordinary CLI
+launch and SSH auto-connect behavior are preserved.
+
+Tests extend the actual shipped Shell-link suite with explicit enable/disable,
+rollback, external conflicts and unavailable/oversized inputs. Native UI tests
+exercise Save/Cancel, real settings-file denial and retry, independent SSH choice,
+keyboard traversal, failure focus and safe handling of portable/customized states.
+Existing minimum/scaled connection layout tests include the new controls.
+Windows/server CI and screenshot review are required before review readiness.
+
+F26 remains **open** for uninstall phone-firewall acceptance. Progress remains
+**19/30 closed; 11 remaining**. No merge, release or version bump.
+
 ## Remaining stages
 
 F09, F16–F17, F19, F22–F23 and F26–F30 remain separate work (11 findings). Preserve the ordinary

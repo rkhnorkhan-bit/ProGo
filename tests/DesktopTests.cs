@@ -82,6 +82,7 @@ namespace ProGo
                     UiControls(settings);
                     SettingsActionBoundaries(settings);
                     SettingsValidationAndErrors(settings);
+                    StartupSettingsWorkflow(settings);
                     DashboardLayout(settings);
                     SettingsAutomationLayout(settings);
                     SettingsPagesLayout(settings);

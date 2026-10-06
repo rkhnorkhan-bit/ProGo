@@ -114,6 +114,38 @@ try {
     Remove-Item $main
     Initialize-ProGoShortcuts $install $false $false $true $programs $startup
     Check ((Test-Path $auto) -and -not (Test-Path $main)) 'startup can be installed without menu'
+    $snapshot = $manager.ReadStartup()
+    Check $snapshot.Registered 'startup registration is read from the real owned link'
+    $startupBytes = [IO.File]::ReadAllBytes($auto)
+    $change = $manager.ChangeStartup($snapshot, $false)
+    Check (-not (Test-Path $auto)) 'explicit off removes only the startup registration'
+    Check ($change.TryRollback()) 'off rollback restores previous registration'
+    Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes($auto)) -eq [Convert]::ToBase64String($startupBytes)) 'rollback restores exact shortcut bytes'
+    $null = $manager.ChangeStartup($manager.ReadStartup(), $false)
+    $absent = $manager.ReadStartup()
+    Check (-not $absent.Registered) 'absent registration is distinguished from enabled'
+    $change = $manager.ChangeStartup($absent, $true)
+    Check ((Read-Link $auto).Target -eq $exe -and (Read-Link $auto).Arguments -eq '') 'explicit on uses the installed executable without SSH arguments'
+    Check ($change.TryRollback() -and -not (Test-Path $auto)) 'failed-save rollback removes newly added registration'
+    $change = $manager.ChangeStartup($manager.ReadStartup(), $true)
+    Seed $auto $exe '--external-change'
+    $externalHash = (Get-FileHash $auto).Hash
+    Check (-not $change.TryRollback() -and (Get-FileHash $auto).Hash -eq $externalHash) 'rollback refuses to delete a later external edit'
+    Check (Refused { $manager.ReadStartup() }) 'customized startup is reported as unavailable, never as a safe default'
+    Remove-Item $auto
+    $stale = $manager.ReadStartup()
+    Seed $auto $exe ''
+    Check (Refused { $manager.ChangeStartup($stale, $true) }) 'stale absent snapshot refuses a concurrently added link'
+    $snapshot = $manager.ReadStartup()
+    $locked = [IO.File]::Open($auto, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try { Check (Refused { $manager.ChangeStartup($snapshot, $false) }) 'locked startup removal fails without applying other state' }
+    finally { $locked.Dispose() }
+    Check (Test-Path $auto) 'locked startup remains after refused removal'
+    [IO.File]::WriteAllText($auto, 'invalid shortcut')
+    Check (Refused { $manager.ReadStartup() }) 'malformed startup cannot be mistaken for an opt-out'
+    [IO.File]::WriteAllBytes($auto, (New-Object byte[] 65537))
+    Check (Refused { $manager.ReadStartup() }) 'oversized startup is refused before COM parsing'
+    Remove-Item $auto
     Remove-Item $exe
     Check (Test-ProGoExistingInstallation $install) 'retained settings prevent re-enabling startup after uninstall'
     Remove-Item $settings
