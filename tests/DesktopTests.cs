@@ -102,7 +102,7 @@ namespace ProGo
                     using (var clipboard = new ClipboardService(settings))
                     {
                         string clicked = null;
-                        using (var dashboard = new MainWindow(settings, proxy, home, delegate(string action) { clicked = action; }))
+                        using (var dashboard = new MainWindow(settings, proxy, home, delegate(AppCommand action) { clicked = AppCommands.Get(action).LegacyId; }))
                         {
                             dashboard.Show(); Application.DoEvents();
                             Descendants(dashboard).OfType<Button>().Single(b => b.Text == "Запустить CLI").PerformClick();
@@ -132,7 +132,7 @@ namespace ProGo
                             Check(Descendants(tabs.TabPages[0]).OfType<CheckBox>().Count() == 3, "three automatic options with one shared CLI and Codex mode");
                             var cliToggle = Descendants(tabs.TabPages[0]).OfType<CheckBox>().Single(c => c.Text == "Включать прокси для терминалов и Codex");
                             string manualAction = null;
-                            form.ManualActionRequested += delegate(string action) { manualAction = action; };
+                            form.ManualActionRequested += delegate(AppCommand action) { manualAction = AppCommands.Get(action).LegacyId; };
                             var cliCard = cliToggle.Parent;
                             Descendants(cliCard).OfType<Button>().Single(b => b.Text == "Включить").PerformClick();
                             Check(manualAction == "cli-start", "settings uses the same Start CLI command as the dashboard");

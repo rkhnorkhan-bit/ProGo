@@ -17,6 +17,8 @@ namespace ProGo
             var ids = new HashSet<string>(StringComparer.Ordinal);
             foreach (AppCommand command in Enum.GetValues(typeof(AppCommand))) {
                 var definition = AppCommands.Get(command); AppCommandDefinition resolved;
+                Check(!String.IsNullOrWhiteSpace(definition.Label) && !String.IsNullOrWhiteSpace(definition.CompactLabel) &&
+                    !String.IsNullOrWhiteSpace(definition.ManualLabel), "every command has catalogued presentation: " + command);
                 Check(definition.Command == command && !String.IsNullOrWhiteSpace(definition.LegacyId) && ids.Add(definition.LegacyId) &&
                     AppCommands.TryResolve(definition.LegacyId, out resolved) && Object.ReferenceEquals(definition, resolved),
                     "every typed command has one unique round-trippable compatibility ID: " + command);
@@ -85,6 +87,16 @@ namespace ProGo
                     var nav = (Dictionary<string, Button>)Field(main, "navigation");
                     var plan = (AutomationPlan)Field(context, "automation");
                     var tray = (NotifyIcon)Field(context, "tray");
+                    var commandItems = MenuItems(tray.ContextMenuStrip.Items).Where(i => i.Tag is AppCommand).ToArray();
+                    var expectedTray = new[] { AppCommand.Connect, AppCommand.StopDesktop, AppCommand.StopAll, AppCommand.Reconnect,
+                        AppCommand.CheckRoute, AppCommand.Diagnostics, AppCommand.EnableWindows, AppCommand.DisableWindows,
+                        AppCommand.StartCli, AppCommand.StopCli, AppCommand.OpenTerminal, AppCommand.CreateCodexShortcut,
+                        AppCommand.RemoveCodexShortcut, AppCommand.OpenCodex, AppCommand.Phone, AppCommand.StopPhone,
+                        AppCommand.Vault, AppCommand.Settings, AppCommand.Help, AppCommand.Update };
+                    Check(commandItems.Select(i => (AppCommand)i.Tag).OrderBy(c => c).SequenceEqual(expectedTray.OrderBy(c => c)),
+                        "tray exposes every migrated operation exactly once without an alias duplicate");
+                    foreach (var item in commandItems)
+                        Check(item.Text == AppCommands.Get((AppCommand)item.Tag).Label, "tray caption comes from its operation: " + item.Tag);
                     Check(MenuItems(tray.ContextMenuStrip.Items).Any(i => i.Text == "Отключить прокси на ПК") &&
                         MenuItems(tray.ContextMenuStrip.Items).Any(i => i.Text == "Остановить VPN для телефона") &&
                         MenuItems(tray.ContextMenuStrip.Items).Any(i => i.Text == "Остановить все подключения"), "tray exposes three explicit stop scopes");
@@ -119,6 +131,20 @@ namespace ProGo
                     Shot(main, "main-cli-enabled");
                     ((Button)Field(main, "cliToggle")).PerformClick();
                     Check(((Button)Field(main, "cliToggle")).Text == "Запустить CLI" && !ApplyOnce(plan, ProxyFeature.Cli, true), "CLI off cancels automation and preserves Start CLI");
+                    commandItems.Single(i => (AppCommand)i.Tag == AppCommand.StartCli).PerformClick();
+                    PumpUntil(() => context.PendingRouteCount == 0); main.RefreshConnectionState();
+                    Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) &&
+                        ((Button)Field(main, "cliToggle")).Text == "Выключить CLI", "typed tray Start CLI applies the ordinary mode and updates dashboard");
+                    using (var form = new SshProfilesSettingsForm(settings)) {
+                        form.ManualActionRequested += action => Call(context, "ExecuteCommand", action);
+                        form.Show(); Application.DoEvents();
+                        var option = (CheckBox)Field(form, "autoCli");
+                        Descendants(option.Parent).OfType<Button>().Single(b => b.Text == "Выключить").PerformClick();
+                        form.Close();
+                    }
+                    main.RefreshConnectionState();
+                    Check(!CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) &&
+                        ((Button)Field(main, "cliToggle")).Text == "Запустить CLI", "typed settings Off reverses tray Start CLI without saving preferences");
                     CheckStopScopes(context, proxy, home, relay, plan, configured);
                     main.Close(); Application.DoEvents();
                     Check(settings.Current.TrayCloseExplained && tray.Visible, "first dashboard close explains tray without exiting");

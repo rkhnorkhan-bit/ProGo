@@ -26,7 +26,7 @@ namespace ProGo
 
         private readonly CheckBox autoRestart = new CheckBox();
         private readonly CheckBox autoWindows = new CheckBox();
-        public event Action<string> ManualActionRequested;
+        public event Action<AppCommand> ManualActionRequested;
         public Func<AppSettings, bool, SettingsSaveError> SaveRequested;
         private readonly CheckBox autoHttpPort = new CheckBox();
         private readonly NumericUpDown httpPort = new NumericUpDown();
@@ -91,9 +91,9 @@ namespace ProGo
             currentAutomation.Name = "currentAutomationSettings";
             currentAutomation.MaximumSize = new Size(740, 0);
             autoFlow.Controls.Add(currentAutomation);
-            AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды отключения он сам не включится.", "Перезапустить", "restart", "Отключить прокси на ПК", "stop");
-            AutomationCard(autoFlow, autoCli, "Включать прокси для терминалов и Codex", "Включать общий прокси после подключения ProGo. Затем откройте новый терминал или перезапустите уже открытый Codex. Отдельный ярлык не нужен.", "Включить", "cli-start", "Выключить", "cli-off");
-            AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", "Включить", "windows-on", "Выключить", "windows-off");
+            AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды отключения он сам не включится.", AppCommand.Reconnect, AppCommand.StopDesktop);
+            AutomationCard(autoFlow, autoCli, "Включать прокси для терминалов и Codex", "Включать общий прокси после подключения ProGo. Затем откройте новый терминал или перезапустите уже открытый Codex. Отдельный ярлык не нужен.", AppCommand.StartCli, AppCommand.StopCli);
+            AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", AppCommand.EnableWindows, AppCommand.DisableWindows);
             var connection = FormTable(Page(tabs, "Подключение"));
             sshProfiles.DropDownStyle = ComboBoxStyle.DropDownList;
             AddLabeled(connection, 0, "Сервер", sshProfiles);
@@ -260,7 +260,7 @@ namespace ProGo
                 new Size(textWidth, int.MaxValue), TextFormatFlags.WordBreak).Height;
             option.Height = Math.Max(SystemInformation.MenuCheckSize.Height, height) + 4;
         }
-        private void AutomationCard(FlowLayoutPanel flow, CheckBox toggle, string title, string description, string onLabel, string on, string offLabel, string off)
+        private void AutomationCard(FlowLayoutPanel flow, CheckBox toggle, string title, string description, AppCommand on, AppCommand off)
         {
             var card = new SurfacePanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 Margin = new Padding(0, 6, 0, 8), Padding = new Padding(16) };
@@ -276,8 +276,8 @@ namespace ProGo
             var immediate = UiTheme.Label("Ручное управление · применяется сразу", UiTheme.Body, UiTheme.Accent);
             var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = true, Margin = new Padding(0) };
-            var onButton = UiTheme.Button(onLabel, delegate { RequestManualAction(on); }, false);
-            var offButton = UiTheme.Button(offLabel, delegate { RequestManualAction(off); }, false);
+            var onButton = UiTheme.Button(AppCommands.Get(on).ManualLabel, delegate { RequestManualAction(on); }, false);
+            var offButton = UiTheme.Button(AppCommands.Get(off).ManualLabel, delegate { RequestManualAction(off); }, false);
             onButton.AccessibleDescription = offButton.AccessibleDescription = title + ". Ручное действие применяется сразу.";
             actions.Controls.Add(onButton); actions.Controls.Add(offButton);
             stack.Controls.Add(toggle, 0, 0); stack.Controls.Add(hint, 0, 1);
@@ -300,7 +300,7 @@ namespace ProGo
             toggle.FontChanged += delegate { stack.PerformLayout(); };
             card.Controls.Add(stack); flow.Controls.Add(card);
         }
-        private void RequestManualAction(string action)
+        private void RequestManualAction(AppCommand action)
         {
             // Manual commands deliberately use the application's saved settings,
             // never the uncommitted controls in this dialog.

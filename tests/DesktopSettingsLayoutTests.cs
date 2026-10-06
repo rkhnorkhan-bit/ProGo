@@ -75,7 +75,7 @@ namespace ProGo
                     Check(form.ClientRectangle.Contains(form.RectangleToClient(button.RectangleToScreen(button.ClientRectangle))), name + " keeps footer visible: " + button.Text);
                 Shot(form, name);
                 string action = null; int count = 0;
-                form.ManualActionRequested += delegate(string value) { action = value; count++; };
+                form.ManualActionRequested += delegate(AppCommand value) { action = AppCommands.Get(value).LegacyId; count++; };
                 var host = (TextBox)Field(form, "host"); host.Text = "pending.example.org";
                 var option = (CheckBox)Field(form, "autoCli"); option.Checked = !option.Checked;
                 bool pendingOption = option.Checked;

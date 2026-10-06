@@ -942,3 +942,27 @@ F09, F16–F17, F19, F22–F23 and F27–F30 remain separate work (10 findings).
 F09 changes to the vault/decoy contract require a separate decision as described
 in `DEVELOPMENT.md`. A public release/version bump follows verified stages;
 preview changes must not be presented as already installed on users' devices.
+
+## Stage F28b — typed presentation callbacks and shared captions
+
+The dashboard, immediate settings controls and 20 catalogued tray items now send
+`AppCommand` directly to the same application handler. Compatibility string IDs
+remain a separate checked adapter for existing callers/tests; legacy aliases and
+pending route ownership are unchanged. Menu items carry their typed identity,
+so tests can check duplicates without treating visible wording as an identifier.
+
+`AppCommands` owns full, compact and immediate-settings captions. Existing short
+card labels, navigation wording and ordinary **Запустить CLI** are retained;
+contextual wizard entry and transient pending-state text are still local. Tray
+Help/Update now enter the same dispatcher as their dashboard counterparts; no
+updater implementation, release flow or launch semantics change. Settings actions
+still use saved values and do not save/cancel pending form edits.
+
+Native tests retain exact legacy action expectations at typed callback boundaries,
+check every migrated tray identity/caption and exercise tray CLI On followed by
+settings Off with dashboard observation. Existing geometry, keyboard, contrast,
+startup/cancellation and ordinary Codex environment tests remain required.
+Local public-content validation passes; native Windows/server CI is required for
+this branch. Shared availability/effect metadata and the remaining direct
+backup/log/exit callbacks are separate F28 work. **20/30 closed; 10 remaining**.
+No merge, version bump or release.
