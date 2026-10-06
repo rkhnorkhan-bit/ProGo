@@ -30,6 +30,88 @@ namespace ProGo
             };
             timer.Start(); return timer;
         }
+        private static void CommandAvailabilityWorkflow(SettingsService settings)
+        {
+            var source = new[] { AppCommand.StartCli };
+            var waiting = new AppCommandState(source, true, false); source[0] = AppCommand.EnableWindows;
+            Check(waiting.IsPending(AppCommand.StartCli) && !waiting.IsPending(AppCommand.EnableWindows), "command state owns an immutable pending snapshot");
+            Check(!AppCommands.CanExecute(AppCommand.StartCli, waiting) && !AppCommands.CanExecute(AppCommand.Connect, waiting) &&
+                AppCommands.CanExecute(AppCommand.EnableWindows, waiting) && AppCommands.CanExecute(AppCommand.Reconnect, waiting),
+                "waiting blocks duplicate/plain connect but permits independent mode and explicit reconnect");
+            Check(new[] { AppCommand.StopCli, AppCommand.DisableWindows, AppCommand.StopDesktop, AppCommand.StopPhone, AppCommand.StopAll, AppCommand.Settings }
+                .All(c => AppCommands.CanExecute(c, waiting)), "waiting never disables cancellation or settings");
+            var stopping = new AppCommandState(new AppCommand[0], false, true);
+            Check(Enum.GetValues(typeof(AppCommand)).Cast<AppCommand>().All(c => !AppCommands.CanExecute(c, stopping)), "prepared shutdown blocks every catalogued operation");
+            var background = new AppCommandState(new AppCommand[0], true, false);
+            Check(!AppCommands.CanExecute(AppCommand.Connect, background) && AppCommands.CanExecute(AppCommand.StartCli, background),
+                "manual CLI can join background startup without plain Connect replacing it");
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
+            var original = settings.Current.Clone();
+            var environment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
+            var release = Path.Combine(Path.GetTempPath(), "progo-command-ready-" + Guid.NewGuid().ToString("N"));
+            var oldRelease = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_RELEASE");
+            var reserve = Occupy(0); int port = Number(reserve); reserve.Stop();
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_RELEASE", release);
+            try {
+                var config = original.Clone(); config.SocksHost = "127.0.0.1"; config.SocksPort = port; config.SshProfile = "slow";
+                config.AutoRestartSocks = false; config.AutoSwitchSshProfile = false; config.AutoCliProxy = false; config.AutoSystemProxy = false;
+                config.TestEndpoint = "http://127.0.0.1:1/"; settings.Save(config);
+                foreach (var name in CliProxyEnvironmentService.Names) Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
+                var executable = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "SocksRecoveryTests.exe");
+                using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), executable, () => DateTime.UtcNow, false))
+                using (var bridge = new CliProxyBridgeService(settings))
+                using (var relay = new Ikev2RelayService())
+                using (var home = new HomeVpnService(relay))
+                using (var clipboard = new ClipboardService(settings))
+                using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false)) {
+                    context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow");
+                    var tray = (NotifyIcon)Field(context, "tray");
+                    var menu = MenuItems(tray.ContextMenuStrip.Items).Where(i => i.Tag is AppCommand).ToDictionary(i => (AppCommand)i.Tag);
+                    ((Button)Field(main, "cliToggle")).PerformClick(); PumpUntil(() => proxy.CurrentPid.HasValue);
+                    Check(!menu[AppCommand.StartCli].Enabled && !menu[AppCommand.Connect].Enabled && menu[AppCommand.EnableWindows].Enabled && menu[AppCommand.StopCli].Enabled &&
+                        !((Button)Field(main, "cliToggle")).Enabled && !((Button)Field(main, "connect")).Enabled,
+                        "dashboard and tray agree while CLI waits for explicitly gated SOCKS");
+                    var pid = proxy.CurrentPid;
+                    Call(context, "Execute", "connect"); Call(context, "Execute", "codex-on");
+                    Check(context.PendingRouteCount == 1 && proxy.CurrentPid == pid, "dispatcher rejects stale plain Connect and duplicate alias without replacing pending route");
+                    var bytes = File.ReadAllBytes(AppPaths.SettingsPath);
+                    CheckModal(context, main, "settings", "settings", delegate(Form dialog) {
+                        var form = (SshProfilesSettingsForm)dialog;
+                        var manual = (System.Collections.Generic.Dictionary<AppCommand, Button>)Field(form, "manualCommands");
+                        Check(!manual[AppCommand.StartCli].Enabled && manual[AppCommand.StopCli].Enabled && manual[AppCommand.EnableWindows].Enabled,
+                            "newly opened real settings reflects pending CLI and leaves cancellation available");
+                        var host = (TextBox)Field(form, "host"); host.Text = "pending.example.org";
+                        manual[AppCommand.EnableWindows].PerformClick();
+                        Check(context.PendingRouteCount == 2 && !manual[AppCommand.EnableWindows].Enabled && !menu[AppCommand.EnableWindows].Enabled,
+                            "settings and tray refresh immediately when independent Windows joins pending route");
+                        manual[AppCommand.StopCli].PerformClick();
+                        Check(context.PendingRouteCount == 1 && manual[AppCommand.StartCli].Enabled && menu[AppCommand.StartCli].Enabled &&
+                            !manual[AppCommand.EnableWindows].Enabled && proxy.CurrentPid == pid,
+                            "settings cancellation re-enables only CLI and preserves the shared Windows startup");
+                        Check(host.Text == "pending.example.org" && bytes.SequenceEqual(File.ReadAllBytes(AppPaths.SettingsPath)),
+                            "availability refresh and cancellation preserve unsaved fields and saved settings bytes");
+                        Shot(form, "settings-command-pending");
+                    });
+                    Check(Field(context, "CommandStateChanged") == null, "closed modal settings releases command state subscription");
+                    menu[AppCommand.DisableWindows].PerformClick(); PumpUntil(() => !proxy.IsConnecting);
+                    Check(context.PendingRouteCount == 0 && !bridge.IsRunning && !SystemProxyService.IsOwned &&
+                        !CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort), "last pending mode cancels from tray without a late proxy application");
+                    File.WriteAllText(release, "ready");
+                    menu[AppCommand.StartCli].PerformClick(); PumpUntil(() => context.PendingRouteCount == 0);
+                    Check(bridge.IsRunning && menu[AppCommand.StartCli].Enabled && menu[AppCommand.Connect].Enabled &&
+                        ((Button)Field(main, "cliToggle")).Enabled, "successful retry restores command availability on tray and dashboard");
+                    Check(context.RequestShutdown() && menu.Values.All(i => !i.Enabled), "prepared shutdown disables catalogued tray actions");
+                    context.CancelShutdown(); PumpUntil(() => menu[AppCommand.StartCli].Enabled);
+                    Check(((Button)Field(main, "cliToggle")).Enabled, "cancelled shutdown restores dashboard and tray command availability");
+                    main.Close();
+                }
+            } finally {
+                Environment.SetEnvironmentVariable("PROGO_TEST_SSH_RELEASE", oldRelease);
+                if (File.Exists(release)) File.Delete(release);
+                settings.Save(original);
+                foreach (var item in environment) Environment.SetEnvironmentVariable(item.Key, item.Value, EnvironmentVariableTarget.User);
+            }
+        }
         private static void AsyncCliStartup(SettingsService settings)
         {
             var login = SshInteractiveLogin.CreateStartInfo("my-vps");

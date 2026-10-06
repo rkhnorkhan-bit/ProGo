@@ -27,6 +27,8 @@ namespace ProGo
         private readonly CheckBox autoRestart = new CheckBox();
         private readonly CheckBox autoWindows = new CheckBox();
         public event Action<AppCommand> ManualActionRequested;
+        internal Func<AppCommandState> CommandState;
+        private readonly Dictionary<AppCommand, Button> manualCommands = new Dictionary<AppCommand, Button>();
         public Func<AppSettings, bool, SettingsSaveError> SaveRequested;
         private readonly CheckBox autoHttpPort = new CheckBox();
         private readonly NumericUpDown httpPort = new NumericUpDown();
@@ -279,6 +281,7 @@ namespace ProGo
             var onButton = UiTheme.Button(AppCommands.Get(on).ManualLabel, delegate { RequestManualAction(on); }, false);
             var offButton = UiTheme.Button(AppCommands.Get(off).ManualLabel, delegate { RequestManualAction(off); }, false);
             onButton.AccessibleDescription = offButton.AccessibleDescription = title + ". Ручное действие применяется сразу.";
+            manualCommands.Add(on, onButton); manualCommands.Add(off, offButton);
             actions.Controls.Add(onButton); actions.Controls.Add(offButton);
             stack.Controls.Add(toggle, 0, 0); stack.Controls.Add(hint, 0, 1);
             stack.Controls.Add(immediate, 0, 2); stack.Controls.Add(actions, 0, 3);
@@ -304,11 +307,19 @@ namespace ProGo
         {
             // Manual commands deliberately use the application's saved settings,
             // never the uncommitted controls in this dialog.
+            if (CommandState != null && !AppCommands.CanExecute(action, CommandState())) { RefreshCommandAvailability(); return; }
             if (ManualActionRequested != null) ManualActionRequested(action);
             RefreshCurrentValues();
         }
+        internal void RefreshCommandAvailability()
+        {
+            if (IsDisposed) return;
+            var state = CommandState == null ? new AppCommandState(new AppCommand[0], false, false) : CommandState();
+            foreach (var item in manualCommands) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
+        }
         internal void RefreshCurrentValues()
         {
+            RefreshCommandAvailability();
             var current = service.Current;
             var appEndpoint = CurrentProxyEndpoint == null ? CliProxyBridgeService.UrlFor(current.HttpProxyPort) : CurrentProxyEndpoint();
             proxyAddress.Text = appEndpoint;

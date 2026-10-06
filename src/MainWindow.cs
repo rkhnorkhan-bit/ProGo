@@ -17,7 +17,8 @@ namespace ProGo
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
         private Button windowsToggle, cliToggle;
-        private bool cliPending, windowsPending, routePending;
+        private readonly Func<AppCommandState> commandState;
+        private Button openCodex;
         private readonly Dictionary<string, Button> navigation = new Dictionary<string, Button>();
         private readonly Timer timer = new Timer { Interval = 2000 };
         private readonly Bitmap logo = BrandIcon.Draw(56);
@@ -25,8 +26,9 @@ namespace ProGo
         private readonly TableLayoutPanel body, cards;
         private readonly List<SurfacePanel> statusCards = new List<SurfacePanel>();
         private bool fitting;
-        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<AppCommand> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null, AppProxyConsumers appConsumers = null)
+        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<AppCommand> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null, AppProxyConsumers appConsumers = null, Func<AppCommandState> commandState = null)
         {
+            this.commandState = commandState;
             this.appProxy = appProxy; this.appConsumers = appConsumers;
             this.automation = automation;
             this.health = health;
@@ -95,8 +97,9 @@ namespace ProGo
             phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards);
             recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
             body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery));
+            openCodex = UiTheme.Button(AppCommands.Get(AppCommand.OpenCodex).CompactLabel, delegate { action(AppCommand.OpenCodex); }, false);
             var footer = Actions(UiTheme.Button(AppCommands.Get(AppCommand.Update).CompactLabel, delegate { action(AppCommand.Update); }, false),
-                UiTheme.Button(AppCommands.Get(AppCommand.OpenCodex).CompactLabel, delegate { action(AppCommand.OpenCodex); }, false), UiTheme.Button(AppCommands.Get(AppCommand.Help).CompactLabel, delegate { action(AppCommand.Help); }, false));
+                openCodex, UiTheme.Button(AppCommands.Get(AppCommand.Help).CompactLabel, delegate { action(AppCommand.Help); }, false));
             footer.Margin = new Padding(0, 12, 0, 0); content.Controls.Add(footer, 0, 1);
             viewport.ClientSizeChanged += delegate { FitDashboard(); };
             body.Layout += delegate { FitDashboard(); };
@@ -198,12 +201,10 @@ namespace ProGo
             statusCards.Add(card); cards.Controls.Add(card, column, 0); return state;
         }
         internal void RefreshConnectionState() { RefreshState(); }
-        internal void SetRoutePending(bool cli, bool windows, bool any)
-        {
-            cliPending = cli; windowsPending = windows; routePending = any; RefreshState();
-        }
         private void RefreshState()
         {
+            var commands = commandState == null ? new AppCommandState(new AppCommand[0], proxy.IsConnecting, false) : commandState();
+            bool cliPending = commands.IsPending(AppCommand.StartCli), windowsPending = commands.IsPending(AppCommand.EnableWindows);
             var status = health == null ? new ConnectionHealthSnapshot("", ConnectionProbeState.Unknown, ConnectionProbeState.Unknown) : health.Current;
             bool ready = status.SocksReady;
             connection.Text = status.Title;
@@ -211,7 +212,8 @@ namespace ProGo
             connection.ForeColor = status.InternetVerified ? UiTheme.Accent : status.Socks == ConnectionProbeState.Failed ? UiTheme.Error : UiTheme.Text;
             subtitle.Text = status.Summary;
             connect.Text = AppCommands.Get(ready ? AppCommand.Reconnect : AppCommand.Connect).CompactLabel;
-            connect.Enabled = !routePending && !proxy.IsConnecting;
+            connect.Enabled = AppCommands.CanExecute(AppCommand.Connect, commands);
+            openCodex.Enabled = AppCommands.CanExecute(AppCommand.OpenCodex, commands);
             bool windowsApplied = SystemProxyService.IsApplied(settings.Current), cliApplied = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort);
             windowsState.Text = windowsApplied ? "Настроено" : "Не настроено";
             terminalState.Text = cliApplied ? "Настроено" : CliProxyEnvironmentService.IsPartiallyApplied(settings.Current.HttpProxyPort) ? "Частично" : "Не настроено";
@@ -219,7 +221,8 @@ namespace ProGo
             cliToggle.Text = AppCommands.Get(cliApplied ? AppCommand.StopCli : AppCommand.StartCli).CompactLabel;
             if (cliPending) cliToggle.Text = "Подключаем CLI…";
             if (windowsPending) windowsToggle.Text = "Подключаем…";
-            cliToggle.Enabled = !cliPending; windowsToggle.Enabled = !windowsPending;
+            cliToggle.Enabled = AppCommands.CanExecute(cliPending || !cliApplied ? AppCommand.StartCli : AppCommand.StopCli, commands);
+            windowsToggle.Enabled = AppCommands.CanExecute(windowsPending || !windowsApplied ? AppCommand.EnableWindows : AppCommand.DisableWindows, commands);
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +

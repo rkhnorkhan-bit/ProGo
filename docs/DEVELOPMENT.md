@@ -611,3 +611,22 @@ Existing accessibility/layout and exact legacy ID tests remain useful across thi
 migration. Native integration additionally starts CLI from the tray and stops it
 from settings while observing the dashboard. This does not yet centralize command
 availability or migrate all direct backup/log/exit callbacks; those remain F28.
+
+## Pending command availability (F28c)
+
+AppCommandState copies the pending collection and is read only on the UI thread.
+AppCommands.CanExecute is shared by route controls, tray, immediate settings and
+the dispatcher; UI disabling alone is insufficient against stale events. Keep
+Off/Stop usable during startup. Different route consumers may join one startup;
+plain Connect cannot replace pending work, while explicit Reconnect intentionally
+can. Prepared shutdown blocks catalogue commands until cancelled.
+
+ShowSettings scopes CommandStateChanged subscription with finally. Refreshing
+availability must neither save staged fields nor reset them. Existing timers and
+menu Opening refresh background-startup state; no polling worker or network test
+belongs here. Remaining direct backup/log/exit callbacks are not yet catalogue
+commands and are separately scoped.
+
+DesktopStartupTests uses a release-file-gated disposable SOCKS child to exercise
+cross-surface availability and cancellation, retaining the original real startup
+and stop regressions. It restores the fixture environment/settings in finally.

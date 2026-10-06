@@ -78,6 +78,7 @@ namespace ProGo
                     DiagnosticPreviewWorkflow();
                     using (var errors = WatchStartupErrors()) {
                     CommandCatalogContract();
+                    CommandAvailabilityWorkflow(settings);
                     UnifiedCliActions(settings);
                     SharedBridgeConsumers(settings);
                     UiControls(settings);
