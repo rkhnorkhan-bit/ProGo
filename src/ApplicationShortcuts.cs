@@ -74,7 +74,10 @@ namespace ProGo
             if (!Equal(expected.Bytes, current.Bytes)) throw new IOException("Startup changed outside this window. Reopen settings.");
             if (enabled == current.Registered) return new StartupChange(this, current.Bytes, current.Bytes);
             byte[] after = null;
-            if (enabled) after = EnsureLink(startup, "");
+            if (enabled) {
+                after = EnsureLink(startup, "");
+                if (after == null) throw new IOException("Startup was added concurrently. Reopen settings.");
+            }
             else File.Delete(startup);
             return new StartupChange(this, current.Bytes, after);
         }
@@ -140,7 +143,7 @@ namespace ProGo
             CheckLocation(path);
             if (File.Exists(path)) {
                 if (!Matches(path, arguments)) throw new IOException("An unrelated or customized shortcut already exists. It was preserved.");
-                return File.ReadAllBytes(path);
+                return null; // An existing link was not created by this operation.
             }
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             string temporary = Path.Combine(Path.GetDirectoryName(path), "progo-" + Guid.NewGuid().ToString("N") + ".lnk");
