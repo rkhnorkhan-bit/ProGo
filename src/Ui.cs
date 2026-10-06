@@ -108,6 +108,15 @@ namespace ProGo
             buttons.Controls.Add(checkButton);
             table.Controls.Add(buttons, 0, 9);
             table.SetColumnSpan(buttons, 2);
+            close.AccessibleDescription = "Закрывает диагностику и отменяет её измерения. Не отключает подключение ProGo.";
+            restart.AccessibleDescription = "Останавливает текущий SSH-туннель ПК и повторно подключается по сохранённым настройкам.";
+            DescribeMeasurementButton(checkButton, "Проверить маршрут",
+                "Проверяет доступ к сайту через SOCKS и измеряет задержку. Настройки подключения не изменяются.",
+                "Отменяет проверку маршрута и текущий замер задержки. Измерение скорости управляется отдельно.");
+            DescribeMeasurementButton(speedButton, "Измерить скорость",
+                "Загружает тестовые данные через SOCKS для измерения скорости. Использует интернет-трафик.",
+                "Отменяет текущий замер скорости. Проверка маршрута управляется отдельно.");
+            UiTheme.ConfigureKeyboardOrder(this);
             CancelButton = close;
 
             pingTimer = new Timer { Interval = 2000 };
@@ -126,11 +135,24 @@ namespace ProGo
             Shown += delegate { QueuePingMeasure(); pingTimer.Start(); if (checkRouteOnOpen) QueueRouteMeasure(); };
         }
 
+        private static void DescribeMeasurementButton(Button button, string idleText, string idleEffect, string cancelEffect)
+        {
+            Action refresh = delegate {
+                button.AccessibleName = button.Text;
+                button.AccessibleDescription = button.Text == idleText ? idleEffect : cancelEffect;
+            };
+            button.TextChanged += delegate { refresh(); };
+            refresh();
+        }
+
         private static Label AddRow(TableLayoutPanel table, int row, string name)
         {
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
             table.Controls.Add(new Label { Text = name, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
             var value = new Label { Text = "—", AutoSize = true, Anchor = AnchorStyles.Left, MaximumSize = new Size(400, 0) };
+            value.AccessibleName = name;
+            value.AccessibleDescription = value.Text;
+            value.TextChanged += delegate { value.AccessibleDescription = value.Text; };
             table.Controls.Add(value, 1, row);
             return value;
         }

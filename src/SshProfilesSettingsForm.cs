@@ -115,7 +115,7 @@ namespace ProGo
             port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Порт SOCKS-туннеля", port);
             autoStart.Text = "Подключаться к серверу при запуске ProGo"; autoStart.AutoSize = true;
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
-            autoLaunch.Text = "Запускать вместе с системой";
+            autoLaunch.Text = "Запускать ProGo при входе в Windows";
             autoLaunch.AccessibleDescription = "Запускать ProGo после входа пользователя в Windows. Применяется после сохранения. Подключение к серверу настраивается отдельно.";
             AddSettingsRow(connection, 4, autoLaunch);
             AddSettingsRow(connection, 5, startupNotice);

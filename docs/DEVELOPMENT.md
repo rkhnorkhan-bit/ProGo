@@ -659,6 +659,18 @@ skips disabled Retry. No default Accept action may implicitly repeat diagnostics
 Escape cancels active work without closing results; after completion it closes.
 The existing diagnostic process-tree tests exercise these native UI transitions.
 
-The Windows startup checkbox is presented as “Запускать вместе с системой”, with
+The Windows startup checkbox is presented as “Запускать ProGo при входе в Windows”, with
 an explicit user-sign-in explanation. It remains the F26b installed shortcut
 preference, separate from automatic SSH connection and subject to Save/Cancel.
+
+
+## Route diagnostic accessibility (F17e)
+
+StatusForm's values expose their row names and current text through accessibility.
+Route and speed buttons must announce their current action, including cancellation
+scope, after every text transition. Their order follows the visible left-to-right
+footer: route, speed, reconnect, close. Do not introduce a default Accept action
+that reconnects or starts a download implicitly. Escape closes the modal window
+and uses the existing FormClosed cancellation for all measurement workers.
+DesktopRouteDiagnosticTests verifies native keyboard traversal and modal Escape
+with isolated injected probes; it is not physical Narrator/DPI acceptance.
