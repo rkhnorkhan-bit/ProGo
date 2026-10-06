@@ -28,6 +28,11 @@ namespace ProGo
                 return process.ExitCode;
             }
         }
+        private static int FirewallFixture(string body) {
+            string path = Path.Combine(Path.GetTempPath(), "progo-firewall-fixture-" + Guid.NewGuid().ToString("N") + ".ps1");
+            File.WriteAllText(path, "$ErrorActionPreference = 'Stop'\r\n" + body);
+            try { return Uninstall(path); } finally { File.Delete(path); }
+        }
         private static int LogOffset() { return File.Exists(AppPaths.LogPath) ? File.ReadAllText(AppPaths.LogPath).Length : 0; }
         private static bool WindowsApplyCompleted(int offset, int port) {
             try {
@@ -68,10 +73,11 @@ namespace ProGo
             var beforeWindows = SystemProxyService.ReadCurrent();
             var beforeEnvironment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
             byte[] beforeSettings = File.Exists(AppPaths.SettingsPath) ? File.ReadAllBytes(AppPaths.SettingsPath) : null;
+            bool firewallSeeded = false;
             var listener = new TcpListener(IPAddress.Loopback, 0); Process primary = null;
             try {
                 AppPaths.EnsureDirectories(); Directory.CreateDirectory(scripts);
-                foreach (string file in new[] { "Uninstall-ProGo.ps1", "Maintenance-ProGo.ps1", "MaintenanceOperation.cs" }) File.Copy(Path.Combine(args[1], file), Path.Combine(scripts, file));
+                foreach (string file in new[] { "Uninstall-ProGo.ps1", "Maintenance-ProGo.ps1", "MaintenanceOperation.cs", "Firewall-ProGo.ps1", "Enable-HomeVpnFirewall.ps1" }) File.Copy(Path.Combine(args[1], file), Path.Combine(scripts, file));
                 string uninstall = Path.Combine(scripts, "Uninstall-ProGo.ps1");
                 File.Copy(args[0], installed);
                 Directory.CreateDirectory(Path.GetDirectoryName(startup)); Directory.CreateDirectory(menu);
@@ -88,6 +94,22 @@ namespace ProGo
                 var environment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
                 using (var lease = MaintenanceOperation.Enter())
                     Check(Uninstall(uninstall) != 0 && File.Exists(installed) && File.Exists(startup), "competing uninstall refuses before touching application or shortcuts");
+
+                string firewallHelper = Path.Combine(scripts, "Firewall-ProGo.ps1");
+                byte[] firewallSource = File.ReadAllBytes(firewallHelper);
+                try {
+                    File.AppendAllText(firewallHelper, "\r\nfunction Complete-ProGoHomeFirewallCleanup { throw 'synthetic firewall denial' }\r\n");
+                    Check(Uninstall(uninstall) != 0 && File.Exists(installed) && File.Exists(startup) && Directory.Exists(menu),
+                        "actual uninstall retains executable and shortcuts when firewall cleanup fails");
+                } finally { File.WriteAllBytes(firewallHelper, firewallSource); }
+                // Real disabled rules on disposable CI, no public network exposure.
+                string fixtureExe = installed.Replace("'", "''");
+                Check(FirewallFixture("if (@(Get-NetFirewallRule -PolicyStore PersistentStore | Where-Object { $_.Name -in @('ProGo-Home-IKE','ProGo-Home-NAT-T') }).Count) { throw 'fixture occupied' }") == 0,
+                    "shutdown firewall fixture starts without existing phone rules");
+                firewallSeeded = true;
+                Check(FirewallFixture("New-NetFirewallRule -Name ProGo-Home-IKE -DisplayName ProGo-Home-IKE -Direction Inbound -Action Allow -Protocol UDP -LocalPort 15000 -Program '" + fixtureExe + "' -Enabled False | Out-Null\r\n" +
+                    "New-NetFirewallRule -Name ProGo-Home-NAT-T -DisplayName ProGo-Home-NAT-T -Direction Inbound -Action Allow -Protocol UDP -LocalPort 14500 -Program '" + fixtureExe + "' -Enabled False | Out-Null") == 0,
+                    "real phone firewall rules seeded for actual uninstall");
 
                 listener.Start();
                 System.Threading.Tasks.Task.Run(async delegate {
@@ -115,6 +137,8 @@ namespace ProGo
                 }
                 Check(Uninstall(uninstall) == 0 && primary.WaitForExit(10000), "retry receives IPC cleanup confirmation and waits for the actual owner to exit");
                 primary.Dispose(); primary = null;
+                Check(FirewallFixture("if (@(Get-NetFirewallRule -PolicyStore PersistentStore | Where-Object { $_.Name -in @('ProGo-Home-IKE','ProGo-Home-NAT-T') }).Count) { throw 'rules remain' }") == 0,
+                    "actual uninstall confirms both real phone firewall rules removed");
                 Check(!File.Exists(installed) && !File.Exists(startup) && !Directory.Exists(menu) && File.Exists(AppPaths.SettingsPath), "successful uninstall removes executable/shortcuts and retains user data");
                 Check(!File.Exists(SystemProxyService.BackupPath) && !File.Exists(CliProxyEnvironmentService.BackupPath) && !PortOpen(prefs.HttpProxyPort), "successful uninstall leaves no owned backup or dead local listener");
                 foreach (var name in SystemProxyService.FieldNames) CheckField(name, baseline.Values[name], "uninstall restores original Windows field");
@@ -162,6 +186,7 @@ namespace ProGo
             }
             finally {
                 StopFixture(primary); listener.Stop();
+                if (firewallSeeded) FirewallFixture("Get-NetFirewallRule -PolicyStore PersistentStore | Where-Object { $_.Name -in @('ProGo-Home-IKE','ProGo-Home-NAT-T') } | Remove-NetFirewallRule");
                 CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
                 foreach (var pair in beforeEnvironment) Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.User);
                 SystemProxyService.RestoreSnapshot(beforeWindows);
