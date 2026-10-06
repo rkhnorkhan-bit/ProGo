@@ -53,7 +53,7 @@ namespace ProGo
                 Visible = true,
                 ContextMenuStrip = BuildMenu()
             };
-            tray.DoubleClick += delegate { ShowStatus(); };
+            tray.DoubleClick += delegate { ExecuteCommand(AppCommand.ShowMain); };
             UpdateTooltip();
             this.health.Changed += HealthChanged;
             statusTimer.Tick += delegate { appConsumers.ReleaseIfUnused(); UpdateTooltip(); RefreshPendingRoutes(); };
@@ -82,7 +82,7 @@ namespace ProGo
         private ContextMenuStrip BuildMenu()
         {
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Открыть ProGo", null, delegate { ShowStatus(); });
+            Item(menu.Items, AppCommand.ShowMain);
             menu.Items.Add(new ToolStripSeparator());
             var connection = new ToolStripMenuItem("Подключение");
             Item(connection.DropDownItems, AppCommand.Connect);
@@ -107,30 +107,33 @@ namespace ProGo
             Item(menu.Items, AppCommand.Settings);
             menu.Items.Add(new ToolStripSeparator());
             var backups = new ToolStripMenuItem("Резервные копии");
-            backups.DropDownItems.Add("Создать копию сейчас", null, delegate { CreateBackup(); });
-            backups.DropDownItems.Add("Восстановить из копии…", null, delegate { StartRestore(); });
-            backups.DropDownItems.Add("Открыть папку с копиями", null, delegate { OpenBackups(); });
-            backups.DropDownItems.Add("Удалить старые автоматические копии…", null, delegate { CleanupBackups(); }); menu.Items.Add(backups);
+            Item(backups.DropDownItems, AppCommand.CreateBackup);
+            Item(backups.DropDownItems, AppCommand.RestoreBackup);
+            Item(backups.DropDownItems, AppCommand.OpenBackups);
+            Item(backups.DropDownItems, AppCommand.CleanupBackups); menu.Items.Add(backups);
             menu.Items.Add(BuildLogsMenu());
             Item(menu.Items, AppCommand.Update);
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Завершить работу ProGo", null, delegate { ExitProGo(); });
+            Item(menu.Items, AppCommand.Exit);
             menu.Opening += delegate { RefreshPendingRoutes(); };
             UiTheme.Menu(menu); return menu;
         }
         private void Item(ToolStripItemCollection items, AppCommand command)
         {
             var item = items.Add(AppCommands.Get(command).Label, null, delegate { ExecuteCommand(command); });
+            item.ToolTipText = AppCommands.Get(command).Effect;
+            if (item.Owner != null) item.Owner.ShowItemToolTips = true;
+            item.AccessibleDescription = item.ToolTipText;
             item.Tag = command; commandItems.Add(command, item);
         }
         private ToolStripMenuItem BuildLogsMenu()
         {
             var logs = new ToolStripMenuItem("Помощь и журналы");
             Item(logs.DropDownItems, AppCommand.Help);
-            logs.DropDownItems.Add("Передать диагностику…", null, delegate { ShowDiagnosticPreview(); });
-            logs.DropDownItems.Add("Журнал приложения", null, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); });
-            logs.DropDownItems.Add("Журнал обновления", null, delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); });
-            logs.DropDownItems.Add("Папка приложения", null, delegate { OpenProGoFolder(); }); return logs;
+            Item(logs.DropDownItems, AppCommand.ExportDiagnostics);
+            Item(logs.DropDownItems, AppCommand.OpenAppLog);
+            Item(logs.DropDownItems, AppCommand.OpenUpdateLog);
+            Item(logs.DropDownItems, AppCommand.OpenFolder); return logs;
         }
         private void ShowStatus()
         {
@@ -232,6 +235,16 @@ namespace ProGo
             {
                 switch (command.Command)
                 {
+                    case AppCommand.ShowMain: ShowStatus(); break;
+                    case AppCommand.CreateBackup: CreateBackup(); break;
+                    case AppCommand.RestoreBackup: StartRestore(); break;
+                    case AppCommand.OpenBackups: OpenBackups(); break;
+                    case AppCommand.CleanupBackups: CleanupBackups(); break;
+                    case AppCommand.ExportDiagnostics: ShowDiagnosticPreview(); break;
+                    case AppCommand.OpenAppLog: OpenLogFile(AppPaths.LogPath, "журнал приложения"); break;
+                    case AppCommand.OpenUpdateLog: OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); break;
+                    case AppCommand.OpenFolder: OpenProGoFolder(); break;
+                    case AppCommand.Exit: ExitProGo(); break;
                     case AppCommand.StopDesktop:
                         StopDesktop(); break;
                     case AppCommand.StopPhone: homeVpn.Stop(); break;
@@ -394,7 +407,7 @@ namespace ProGo
         }
         private void ShowHelp()
         {
-            using (var form = new HelpForm(delegate { OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); }, delegate { OpenLogFile(AppPaths.LogPath, "журнал приложения"); }, ShowDiagnosticPreview)) form.ShowDialog();
+            using (var form = new HelpForm(ExecuteCommand)) form.ShowDialog();
         }
 
         private void ShowDiagnosticPreview()

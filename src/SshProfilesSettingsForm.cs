@@ -278,9 +278,10 @@ namespace ProGo
             var immediate = UiTheme.Label("Ручное управление · применяется сразу", UiTheme.Body, UiTheme.Accent);
             var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = true, Margin = new Padding(0) };
-            var onButton = UiTheme.Button(AppCommands.Get(on).ManualLabel, delegate { RequestManualAction(on); }, false);
-            var offButton = UiTheme.Button(AppCommands.Get(off).ManualLabel, delegate { RequestManualAction(off); }, false);
-            onButton.AccessibleDescription = offButton.AccessibleDescription = title + ". Ручное действие применяется сразу.";
+            var onButton = AppCommandUi.Button(on, delegate { RequestManualAction(on); }, false, true);
+            var offButton = AppCommandUi.Button(off, delegate { RequestManualAction(off); }, false, true);
+            onButton.AccessibleDescription += " Ручное действие применяется сразу.";
+            offButton.AccessibleDescription += " Ручное действие применяется сразу.";
             manualCommands.Add(on, onButton); manualCommands.Add(off, offButton);
             actions.Controls.Add(onButton); actions.Controls.Add(offButton);
             stack.Controls.Add(toggle, 0, 0); stack.Controls.Add(hint, 0, 1);

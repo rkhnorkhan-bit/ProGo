@@ -18,7 +18,7 @@ namespace ProGo
             foreach (AppCommand command in Enum.GetValues(typeof(AppCommand))) {
                 var definition = AppCommands.Get(command); AppCommandDefinition resolved;
                 Check(!String.IsNullOrWhiteSpace(definition.Label) && !String.IsNullOrWhiteSpace(definition.CompactLabel) &&
-                    !String.IsNullOrWhiteSpace(definition.ManualLabel), "every command has catalogued presentation: " + command);
+                    !String.IsNullOrWhiteSpace(definition.ManualLabel) && !String.IsNullOrWhiteSpace(definition.Effect), "every command has catalogued presentation: " + command);
                 Check(definition.Command == command && !String.IsNullOrWhiteSpace(definition.LegacyId) && ids.Add(definition.LegacyId) &&
                     AppCommands.TryResolve(definition.LegacyId, out resolved) && Object.ReferenceEquals(definition, resolved),
                     "every typed command has one unique round-trippable compatibility ID: " + command);
@@ -92,11 +92,13 @@ namespace ProGo
                         AppCommand.CheckRoute, AppCommand.Diagnostics, AppCommand.EnableWindows, AppCommand.DisableWindows,
                         AppCommand.StartCli, AppCommand.StopCli, AppCommand.OpenTerminal, AppCommand.CreateCodexShortcut,
                         AppCommand.RemoveCodexShortcut, AppCommand.OpenCodex, AppCommand.Phone, AppCommand.StopPhone,
-                        AppCommand.Vault, AppCommand.Settings, AppCommand.Help, AppCommand.Update };
+                        AppCommand.Vault, AppCommand.Settings, AppCommand.Help, AppCommand.Update,
+                        AppCommand.ShowMain, AppCommand.CreateBackup, AppCommand.RestoreBackup, AppCommand.OpenBackups, AppCommand.CleanupBackups, AppCommand.ExportDiagnostics, AppCommand.OpenAppLog, AppCommand.OpenUpdateLog, AppCommand.OpenFolder, AppCommand.Exit };
                     Check(commandItems.Select(i => (AppCommand)i.Tag).OrderBy(c => c).SequenceEqual(expectedTray.OrderBy(c => c)),
                         "tray exposes every migrated operation exactly once without an alias duplicate");
                     foreach (var item in commandItems)
-                        Check(item.Text == AppCommands.Get((AppCommand)item.Tag).Label, "tray caption comes from its operation: " + item.Tag);
+                        Check(item.Text == AppCommands.Get((AppCommand)item.Tag).Label &&
+                            item.ToolTipText == AppCommands.Get((AppCommand)item.Tag).Effect && item.AccessibleDescription == item.ToolTipText && item.Owner.ShowItemToolTips, "tray caption comes from its operation: " + item.Tag);
                     Check(MenuItems(tray.ContextMenuStrip.Items).Any(i => i.Text == "Отключить прокси на ПК") &&
                         MenuItems(tray.ContextMenuStrip.Items).Any(i => i.Text == "Остановить VPN для телефона") &&
                         MenuItems(tray.ContextMenuStrip.Items).Any(i => i.Text == "Остановить все подключения"), "tray exposes three explicit stop scopes");
@@ -145,6 +147,7 @@ namespace ProGo
                     main.RefreshConnectionState();
                     Check(!CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) &&
                         ((Button)Field(main, "cliToggle")).Text == "Запустить CLI", "typed settings Off reverses tray Start CLI without saving preferences");
+                    ServiceCommandDialogs(context, main, commandItems);
                     CheckStopScopes(context, proxy, home, relay, plan, configured);
                     main.Close(); Application.DoEvents();
                     Check(settings.Current.TrayCloseExplained && tray.Visible, "first dashboard close explains tray without exiting");
@@ -171,6 +174,45 @@ namespace ProGo
                 listener.Stop(); settings.Save(original);
                 foreach (var item in environment) Environment.SetEnvironmentVariable(item.Key, item.Value, EnvironmentVariableTarget.User);
             }
+        }
+        private static void ServiceCommandDialogs(UpdateAwareTrayApplicationContext context, MainWindow main, ToolStripItem[] items)
+        {
+            items.Single(i => (AppCommand)i.Tag == AppCommand.ShowMain).PerformClick();
+            Check(Object.ReferenceEquals(main, Field(context, "mainWindow")), "catalogued ShowMain reuses the existing dashboard");
+            Check(Descendants(main).OfType<Button>().Single(b => b.Text == "Запустить CLI").AccessibleDescription == AppCommands.Get(AppCommand.StartCli).Effect, "dashboard CLI describes its real ordinary-launch effect");
+            var root = System.IO.Path.Combine(BackupService.BackupsRoot, "command-cancel-" + Guid.NewGuid().ToString("N"));
+            System.IO.Directory.CreateDirectory(root);
+            var settingsBytes = System.IO.File.ReadAllBytes(AppPaths.SettingsPath);
+            try {
+                CloseServiceDialog(items.Single(i => (AppCommand)i.Tag == AppCommand.RestoreBackup), typeof(BackupPickerForm), delegate(Form form) {
+                    Check(form.CancelButton != null, "catalogued restore opens the cancellable backup chooser before maintenance");
+                });
+                Check(!((bool)Field(context, "shutdownPrepared")) && ((NotifyIcon)Field(context, "tray")).Visible &&
+                    settingsBytes.SequenceEqual(System.IO.File.ReadAllBytes(AppPaths.SettingsPath)) && System.IO.Directory.Exists(root),
+                    "cancelled catalogued restore leaves settings, backup and application intact");
+                CloseServiceDialog(items.Single(i => (AppCommand)i.Tag == AppCommand.ExportDiagnostics), typeof(DiagnosticPreviewForm), delegate(Form form) {
+                    Check(form.AcceptButton == null && Descendants(form).OfType<TextBox>().Single().ReadOnly,
+                        "catalogued diagnostic export opens review without implicit Enter export");
+                });
+                Check(settingsBytes.SequenceEqual(System.IO.File.ReadAllBytes(AppPaths.SettingsPath)), "closing catalogued report does not write preferences");
+            } finally { System.IO.Directory.Delete(root, true); }
+        }
+        private static void CloseServiceDialog(ToolStripItem command, Type expected, Action<Form> inspect)
+        {
+            bool seen = false; Exception failure = null;
+            using (var timer = new System.Windows.Forms.Timer { Interval = 150 }) {
+                timer.Tick += delegate {
+                    var form = Application.OpenForms.Cast<Form>().FirstOrDefault(f => expected.IsInstanceOfType(f));
+                    if (form == null) return;
+                    timer.Stop(); seen = true;
+                    try { inspect(form); }
+                    catch (Exception ex) { failure = ex; }
+                    finally { form.DialogResult = DialogResult.Cancel; form.Close(); }
+                };
+                timer.Start(); command.PerformClick();
+            }
+            if (failure != null) throw failure;
+            Check(seen, "real tray command dispatches its expected dialog: " + command.Tag);
         }
         private static void CheckModal(UpdateAwareTrayApplicationContext context, MainWindow main, string action, string selected, Action<Form> inspect)
         {

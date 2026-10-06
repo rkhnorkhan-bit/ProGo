@@ -50,12 +50,12 @@ namespace ProGo
             var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0),
                 FlowDirection = FlowDirection.TopDown, WrapContents = false };
             Nav(nav, "Главная", "home", delegate { SetNavigation("home"); });
-            Nav(nav, AppCommands.Get(AppCommand.Phone).CompactLabel, "iphone", delegate { action(AppCommand.Phone); });
-            Nav(nav, AppCommands.Get(AppCommand.Connections).CompactLabel, "connections", delegate { action(AppCommand.Connections); });
-            Nav(nav, AppCommands.Get(AppCommand.Vault).CompactLabel, "vault", delegate { action(AppCommand.Vault); });
-            Nav(nav, AppCommands.Get(AppCommand.Diagnostics).CompactLabel, "diagnostics", delegate { action(AppCommand.Diagnostics); });
-            Nav(nav, AppCommands.Get(AppCommand.Settings).CompactLabel, "settings", delegate { action(AppCommand.Settings); });
-            var stopAll = UiTheme.Button(AppCommands.Get(AppCommand.StopAll).CompactLabel, delegate { action(AppCommand.StopAll); RefreshState(); }, false);
+            CommandNav(nav, AppCommand.Phone, action);
+            CommandNav(nav, AppCommand.Connections, action);
+            CommandNav(nav, AppCommand.Vault, action);
+            CommandNav(nav, AppCommand.Diagnostics, action);
+            CommandNav(nav, AppCommand.Settings, action);
+            var stopAll = AppCommandUi.Button(AppCommand.StopAll, delegate { action(AppCommand.StopAll); RefreshState(); }, false);
             stopAll.AutoSize = false; stopAll.Size = new Size(168, 60); nav.Controls.Add(stopAll);
             rail.Controls.Add(nav, 0, 1);
             var version = UiTheme.Label("DESKTOP  /  " + typeof(MainWindow).Assembly.GetName().Version.ToString(3) + "\nЛёгкий. Ваш. Под контролем.", UiTheme.Body, UiTheme.Muted);
@@ -84,9 +84,9 @@ namespace ProGo
             var eyebrow = UiTheme.Label("ПОДКЛЮЧЕНИЕ К СЕРВЕРУ", UiTheme.Strong, UiTheme.Accent);
             connection = UiTheme.Label("Готовы подключиться?", UiTheme.Title, UiTheme.Text);
             subtitle = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
-            connect = UiTheme.Button(AppCommands.Get(AppCommand.Connect).CompactLabel, delegate { action(AppCommand.Connect); RefreshState(); }, true);
-            var heroActions = Actions(connect, UiTheme.Button(AppCommands.Get(AppCommand.StopDesktop).CompactLabel, delegate { action(AppCommand.StopDesktop); RefreshState(); }, false),
-                UiTheme.Button(AppCommands.Get(AppCommand.CheckRoute).CompactLabel, delegate { action(AppCommand.CheckRoute); }, false));
+            connect = AppCommandUi.Button(AppCommand.Connect, delegate { action(AppCommand.Connect); RefreshState(); }, true);
+            var heroActions = Actions(connect, AppCommandUi.Button(AppCommand.StopDesktop, delegate { action(AppCommand.StopDesktop); RefreshState(); }, false),
+                AppCommandUi.Button(AppCommand.CheckRoute, delegate { action(AppCommand.CheckRoute); }, false));
             body.Controls.Add(Surface(eyebrow, connection, subtitle, heroActions));
             cards = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
@@ -97,9 +97,9 @@ namespace ProGo
             phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards);
             recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
             body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery));
-            openCodex = UiTheme.Button(AppCommands.Get(AppCommand.OpenCodex).CompactLabel, delegate { action(AppCommand.OpenCodex); }, false);
-            var footer = Actions(UiTheme.Button(AppCommands.Get(AppCommand.Update).CompactLabel, delegate { action(AppCommand.Update); }, false),
-                openCodex, UiTheme.Button(AppCommands.Get(AppCommand.Help).CompactLabel, delegate { action(AppCommand.Help); }, false));
+            openCodex = AppCommandUi.Button(AppCommand.OpenCodex, delegate { action(AppCommand.OpenCodex); }, false);
+            var footer = Actions(AppCommandUi.Button(AppCommand.Update, delegate { action(AppCommand.Update); }, false),
+                openCodex, AppCommandUi.Button(AppCommand.Help, delegate { action(AppCommand.Help); }, false));
             footer.Margin = new Padding(0, 12, 0, 0); content.Controls.Add(footer, 0, 1);
             viewport.ClientSizeChanged += delegate { FitDashboard(); };
             body.Layout += delegate { FitDashboard(); };
@@ -168,10 +168,16 @@ namespace ProGo
                 if (body.Height != height) body.Height = height;
             } finally { fitting = false; }
         }
-        private void Nav(FlowLayoutPanel panel, string text, string route, EventHandler action)
+        private void CommandNav(FlowLayoutPanel panel, AppCommand command, Action<AppCommand> action)
+        {
+            var definition = AppCommands.Get(command);
+            Nav(panel, definition.CompactLabel, definition.Navigation, delegate { action(command); }, definition.Effect);
+        }
+        private void Nav(FlowLayoutPanel panel, string text, string route, EventHandler action, string effect = null)
         {
             var button = UiTheme.Button(text, action, route == "home"); button.AutoSize = false; button.Size = new Size(168, 42);
             button.TextAlign = ContentAlignment.MiddleLeft; button.Margin = new Padding(0, 0, 0, 10); panel.Controls.Add(button);
+            button.AccessibleDescription = effect;
             navigation.Add(route, button);
         }
         internal void SetNavigation(string route)
@@ -184,14 +190,15 @@ namespace ProGo
             var heading = Actions(name);
             var state = UiTheme.Label("Выключено", UiTheme.Heading, UiTheme.Text);
             var caption = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted);
-            var open = UiTheme.Button(column == 2 ? "Открыть мастер" : AppCommands.Get(command).CompactLabel, delegate {
+            var open = UiTheme.Button(AppCommands.Get(command).CardLabel, delegate {
                 action(column == 0 ? (SystemProxyService.IsApplied(settings.Current) ? AppCommand.DisableWindows : AppCommand.EnableWindows) :
                     column == 1 ? (CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) ? AppCommand.StopCli : AppCommand.StartCli) : command);
                 RefreshState();
             }, false);
+            open.AccessibleDescription = AppCommands.Get(command).Effect;
             if (column == 0) {
                 windowsToggle = open;
-                var configure = new LinkLabel { Text = "Настройки", AutoSize = true, Margin = new Padding(12, 0, 0, 8), Font = UiTheme.Body,
+                var configure = new LinkLabel { Text = AppCommands.Get(AppCommand.WindowsSettings).CompactLabel, AccessibleDescription = AppCommands.Get(AppCommand.WindowsSettings).Effect, AutoSize = true, Margin = new Padding(12, 0, 0, 8), Font = UiTheme.Body,
                     LinkColor = UiTheme.Accent, ActiveLinkColor = UiTheme.Text, VisitedLinkColor = UiTheme.Accent, AccessibleName = "Настройки прокси Windows" };
                 configure.LinkClicked += delegate { action(AppCommand.WindowsSettings); }; heading.Controls.Add(configure);
             }
@@ -212,6 +219,7 @@ namespace ProGo
             connection.ForeColor = status.InternetVerified ? UiTheme.Accent : status.Socks == ConnectionProbeState.Failed ? UiTheme.Error : UiTheme.Text;
             subtitle.Text = status.Summary;
             connect.Text = AppCommands.Get(ready ? AppCommand.Reconnect : AppCommand.Connect).CompactLabel;
+            connect.AccessibleDescription = AppCommands.Get(ready ? AppCommand.Reconnect : AppCommand.Connect).Effect;
             connect.Enabled = AppCommands.CanExecute(AppCommand.Connect, commands);
             openCodex.Enabled = AppCommands.CanExecute(AppCommand.OpenCodex, commands);
             bool windowsApplied = SystemProxyService.IsApplied(settings.Current), cliApplied = CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort);
@@ -223,6 +231,8 @@ namespace ProGo
             if (windowsPending) windowsToggle.Text = "Подключаем…";
             cliToggle.Enabled = AppCommands.CanExecute(cliPending || !cliApplied ? AppCommand.StartCli : AppCommand.StopCli, commands);
             windowsToggle.Enabled = AppCommands.CanExecute(windowsPending || !windowsApplied ? AppCommand.EnableWindows : AppCommand.DisableWindows, commands);
+            cliToggle.AccessibleDescription = AppCommands.Get(cliPending || !cliApplied ? AppCommand.StartCli : AppCommand.StopCli).Effect;
+            windowsToggle.AccessibleDescription = AppCommands.Get(windowsPending || !windowsApplied ? AppCommand.EnableWindows : AppCommand.DisableWindows).Effect;
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
             phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +

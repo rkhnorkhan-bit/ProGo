@@ -630,3 +630,20 @@ commands and are separately scoped.
 DesktopStartupTests uses a release-file-gated disposable SOCKS child to exercise
 cross-surface availability and cancellation, retaining the original real startup
 and stop regressions. It restores the fixture environment/settings in finally.
+
+## Service command catalogue and effects (F28d)
+
+Every actionable tray entry uses Item(collection, AppCommand); do not introduce
+anonymous direct callbacks for a new global operation. Register its identity,
+labels and effect, then handle it through ExecuteCommand. The string adapter is
+compatibility-only, not a second implementation. Help routes journal/report
+commands through the same dispatcher. Preserve operation-specific validation,
+confirmation and cleanup refusal inside the existing service routines.
+
+AppCommands and AppCommandState remain independent of WinForms. AppCommandUi
+binds catalogue captions/effects to native buttons; tray effects are tooltips and
+accessible descriptions. Context variants are presentation only. Local form
+editing, public browser links and maintenance IPC are outside this UI catalogue.
+Tests verify exact tray membership, descriptions and real restore/report dialog
+cancellation; shutdown refusal now goes through the typed Exit command. Native
+accessible metadata assertions do not substitute for physical Narrator acceptance.
