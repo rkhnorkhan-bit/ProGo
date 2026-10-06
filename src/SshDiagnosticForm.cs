@@ -30,9 +30,24 @@ namespace ProGo
             cancel = UiTheme.Button("Отменить проверку", delegate { if (busy) CancelWork(); else Close(); }, false); cancel.Name = "SshDiagnosticCancel";
             retry = UiTheme.Button("Проверить ещё раз", delegate { Work = Run(); }, true); retry.Name = "SshDiagnosticRetry";
             actions.Controls.Add(cancel); actions.Controls.Add(retry); root.Controls.Add(actions, 0, 3); Controls.Add(root);
+            report.AccessibleName = "Результат проверки настроек SSH";
+            report.AccessibleDescription = "Только чтение. Настройки OpenSSH и локальная проверка; не подтверждает доступность сервера. Можно выделить и скопировать текст.";
+            status.AccessibleName = "Состояние проверки SSH";
+            status.TextChanged += delegate { status.AccessibleDescription = status.Text; };
+            retry.AccessibleDescription = "Повторяет локальную проверку выбранного сервера. Во время проверки недоступна.";
+            cancel.TextChanged += delegate { DescribeCancel(); };
+            DescribeCancel();
+            UiTheme.ConfigureKeyboardOrder(this);
             CancelButton = cancel;
             Shown += delegate { Work = Run(); cancel.Focus(); };
             FormClosing += delegate { closing = true; CancelWork(); };
+        }
+        private void DescribeCancel()
+        {
+            cancel.AccessibleName = cancel.Text;
+            cancel.AccessibleDescription = cancel.Text == "Закрыть"
+                ? "Закрывает результаты проверки. Повторная проверка не запускается."
+                : "Отменяет текущую проверку и останавливает только её процессы. Окно остаётся открытым для повтора.";
         }
         private void CancelWork()
         {

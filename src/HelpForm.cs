@@ -21,7 +21,7 @@ namespace ProGo
             start.Controls.Add(AppCommandUi.Button(AppCommand.ExportDiagnostics, delegate { action(AppCommand.ExportDiagnostics); }, true));
             start.Controls.Add(AppCommandUi.Button(AppCommand.OpenAppLog, delegate { action(AppCommand.OpenAppLog); }));
 
-            Paragraph(start, "Настройки → Подключение: «Запускать ProGo при входе в Windows» управляет запуском программы. «Подключаться к серверу при запуске ProGo» — отдельная настройка соединения. Обе применяются после сохранения. Если Windows запретила автозапуск, откройте «Автозагрузка в Windows…» и проверьте разрешение для ProGo.");
+            Paragraph(start, "Настройки → Подключение: «Запускать вместе с системой» запускает ProGo после входа пользователя в Windows. «Подключаться к серверу при запуске ProGo» — отдельная настройка соединения. Обе применяются после сохранения. Если Windows запретила автозапуск, откройте «Автозагрузка в Windows…» и проверьте разрешение для ProGo.");
 
             var cli = Topic(tabs, "Codex и терминалы", "Обычный запуск без обязательного ярлыка");
             Paragraph(cli, "«Запустить CLI» включает общий локальный прокси и переменные прокси текущего пользователя. После этого запускайте codex обычным способом. Сам Codex CLI устанавливается отдельно.");

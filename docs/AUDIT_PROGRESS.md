@@ -1021,3 +1021,31 @@ Together F28a-d complete the scoped F28 audit correction. Acceptance requires gr
 Windows/server CI for this head; no physical Narrator/DPI or antivirus claim is
 made. Progress after acceptance: **21/30 closed; 9 remaining**: F09, F16, F17,
 F19, F22, F23, F27, F29, F30. No merge, version bump or release.
+
+
+## Stage F17d — SSH diagnostic keyboard access and startup wording
+
+At the owner's request, Settings → Connection now labels the existing Windows
+startup preference “Запускать вместе с системой”. Visible guidance and its
+accessible description clarify that this launches ProGo after user sign-in;
+SSH auto-connect remains a separate preference. Help uses the same wording.
+This reuses F26b's owned shortcut and Save/Cancel/rollback implementation rather
+than adding a second registration or changing an existing user's preference.
+
+The SSH diagnostic report and progress have named accessibility surfaces.
+Progress descriptions track current text; the Cancel/Close button's accessible
+name and effect follow running, cancelled and completed states. Explicit keyboard
+order follows report → retry → close, skipping retry while running. Escape keeps
+its existing cancel-while-running / close-when-complete behavior.
+
+Native regression coverage extends the existing process-tree diagnostic fixture:
+Tab and Shift+Tab during work/after cancellation/after completion, Escape
+cancellation and closing, current accessible action names, retained retry, and
+owned child cleanup. Existing startup Save/Cancel/rollback tests now also verify
+the requested wording and sign-in explanation. No new worker, setting, network
+request or shell-registration implementation is introduced.
+
+Windows/server CI is required for acceptance. F17 stays open for remaining forms
+and actual Narrator/contrast-theme acceptance; synthetic accessibility checks do
+not replace those. Progress remains **21/30 closed; 9 remaining**. No merge,
+version bump or release.
