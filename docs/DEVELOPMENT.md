@@ -589,3 +589,10 @@ Native regression tests exercise ignored commands during pending and active CLI
 alongside existing exact on/off, alias deduplication, shared route and cancellation
 checks. Removed private helpers and the old port dialog had no repository callers
 or reflection references; the active settings port tests remain required.
+
+The shutdown fixture's completion barrier follows bounded-log rotation using a
+unique pre-launch marker and shared reads. A previous startup's completion cannot
+satisfy it; deterministic tests force real writer rotation. Probe the HTTP listener
+only after that completion to avoid flooding the journal during the operation.
+Keep the original readiness predicates/deadline; this is fixture synchronization,
+not a change to application startup or the best-effort logging guarantee.

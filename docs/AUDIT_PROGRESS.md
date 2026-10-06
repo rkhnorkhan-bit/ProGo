@@ -918,6 +918,16 @@ invalid input, and actual ignored commands while CLI is pending and active.
 The unused `PortForm` and private `SafeTarget`/`ClearUserIfOwned` methods are removed
 only after repository-wide reference checks; current port settings remain intact.
 
+The initial CI run 37498255925 passed all 1531 desktop assertions, then timed out
+in the unchanged shutdown startup-log barrier. The limited failure output does
+not prove the original cause. Review found that its current-file character offset
+cannot survive F25 rotation and its exclusive reader can suppress best-effort
+writes. The fixture now uses a unique pre-launch marker, shared bounded reads of
+current/two archived generations, and probes the HTTP listener only after the
+completion marker. Deterministic tests force rotation and reject stale completion.
+All original readiness predicates and the 12-second deadline remain required;
+no production logging, proxy or startup policy is changed.
+
 This stage deliberately stops at dispatch. UI callbacks still emit compatibility
 IDs; shared display names, effect/availability state and remaining direct menu
 callbacks belong to the next F28 stage. F28 remains open. Windows/server CI is
