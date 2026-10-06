@@ -992,3 +992,32 @@ validation passes; Windows/server CI is required for this branch.
 
 F28 remains open for effect metadata and remaining direct backup/log/exit commands.
 Progress: **20/30 closed; 10 remaining**. No merge, version bump or release.
+
+## Stage F28d — remaining service commands and operation descriptions
+
+The remaining tray actions (main window, backup create/restore/folder/cleanup,
+report preview, personal journals, application folder and exit) now enter the
+same typed dispatcher. All 30 actionable tray items have catalogue identities;
+Connections and Windows Settings add the two form-only entries. Help's journal
+and report buttons also dispatch typed commands. Local field editors, browser
+links and same-user maintenance IPC remain their separate, scoped interfaces.
+
+All 32 operations declare their visible/context labels and effect description.
+Tray tooltips and accessible descriptions, dashboard action descriptions and
+immediate settings/help descriptions use this metadata. Short contextual labels
+remain explicit variants of one operation, not separate handlers. Navigation
+bindings are typed; action strings remain only in the checked compatibility map.
+The catalogue/state model has no WinForms dependency; AppCommandUi handles the
+small native button presentation adapter.
+
+Backup selection, validation/confirmation, cleanup previews and shutdown refusal
+bodies are preserved. Tests now invoke Exit through the actual command boundary
+when cleanup fails, cancel Restore from the real tray chooser, close the real
+report preview without export, and verify main-window reuse. Catalogue tests cover
+all identities/descriptions and exact tray membership without alias duplication;
+existing backup/restore/maintenance/ordinary CLI and pending-mode tests remain.
+
+Together F28a-d complete the scoped F28 audit correction. Acceptance requires green
+Windows/server CI for this head; no physical Narrator/DPI or antivirus claim is
+made. Progress after acceptance: **21/30 closed; 9 remaining**: F09, F16, F17,
+F19, F22, F23, F27, F29, F30. No merge, version bump or release.

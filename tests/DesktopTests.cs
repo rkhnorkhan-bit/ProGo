@@ -348,7 +348,12 @@ namespace ProGo
         private static void HelpTopics()
         {
             int updateLogs = 0, appLogs = 0, reports = 0;
-            using (var form = new HelpForm(delegate { updateLogs++; }, delegate { appLogs++; }, delegate { reports++; })) {
+            using (var form = new HelpForm(delegate(AppCommand command) {
+                if (command == AppCommand.OpenUpdateLog) updateLogs++;
+                else if (command == AppCommand.OpenAppLog) appLogs++;
+                else if (command == AppCommand.ExportDiagnostics) reports++;
+                else throw new Exception("Unexpected help command: " + command);
+            })) {
                 form.Show(); Application.DoEvents();
                 var tabs = Descendants(form).OfType<TabControl>().Single();
                 Check(tabs.SelectedIndex == 0 && tabs.TabPages[0].Text == "Начало", "help opens task overview instead of antivirus-only topic");

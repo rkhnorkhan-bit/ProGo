@@ -7,7 +7,7 @@ namespace ProGo
 {
     internal sealed class HelpForm : ProGoForm
     {
-        internal HelpForm(Action openLog, Action openAppLog = null, Action exportDiagnostics = null)
+        internal HelpForm(Action<AppCommand> action)
         {
             Text = "Помощь · ProGo"; ClientSize = new Size(820, 620); MinimumSize = new Size(700, 540);
             var tabs = new TabControl { Dock = DockStyle.Fill, Multiline = true, AccessibleName = "Темы помощи ProGo" };
@@ -18,8 +18,8 @@ namespace ProGo
             Paragraph(start, "2. «Первый вход» открывает обычное окно SSH. Сверьте отпечаток ключа сервера. Парольный вход сам по себе не разрешает фоновое подключение: для него нужен доступный SSH-ключ или агент.");
             Paragraph(start, "3. Нажмите «Запустить CLI» для Codex и терминалов либо включите Windows. Проверка SOCKS подтверждает готовность прокси; «Проверить маршрут» отдельно проверяет интернет. Это не VPN для всего трафика ПК.");
             Paragraph(start, "«Диагностика» проверяет настройки, маршрут и скорость. При ошибке исправьте указанную причину и повторите проверку. «Передать диагностику…» открывает отчёт из известных событий без исходных параметров. Проверьте его перед копированием или сохранением. Личный журнал содержит больше подробностей и может включать адреса и пути: не публикуйте его целиком.");
-            if (exportDiagnostics != null) start.Controls.Add(UiTheme.Button("Передать диагностику…", delegate { exportDiagnostics(); }, true));
-            if (openAppLog != null) start.Controls.Add(UiTheme.Button("Журнал приложения", delegate { openAppLog(); }, false));
+            start.Controls.Add(AppCommandUi.Button(AppCommand.ExportDiagnostics, delegate { action(AppCommand.ExportDiagnostics); }, true));
+            start.Controls.Add(AppCommandUi.Button(AppCommand.OpenAppLog, delegate { action(AppCommand.OpenAppLog); }));
 
             Paragraph(start, "Настройки → Подключение: «Запускать ProGo при входе в Windows» управляет запуском программы. «Подключаться к серверу при запуске ProGo» — отдельная настройка соединения. Обе применяются после сохранения. Если Windows запретила автозапуск, откройте «Автозагрузка в Windows…» и проверьте разрешение для ProGo.");
 
@@ -53,7 +53,7 @@ namespace ProGo
             Paragraph(antivirus, "Исполняемый файл пока без подписи Authenticode. SHA-256 проверяет целостность, но не заменяет подпись издателя и не гарантирует доверие антивируса. CI не подтверждает отсутствие обнаружений.");
             Paragraph(antivirus, "Если официальный файл блокируется, запросите проверку у вендора, например через Kaspersky OpenTIP. Не отключайте защиту ради установки. Восстановление заблокированного обновлятора описано в инструкции официального выпуска.");
             antivirus.Controls.Add(UiTheme.Button("Официальный выпуск", delegate { Open("https://github.com/rkhnorkhan-bit/ProGo/releases/latest"); }, true));
-            antivirus.Controls.Add(UiTheme.Button("Журнал обновления", delegate { openLog(); }, false));
+            antivirus.Controls.Add(AppCommandUi.Button(AppCommand.OpenUpdateLog, delegate { action(AppCommand.OpenUpdateLog); }));
             antivirus.Controls.Add(UiTheme.Button("Kaspersky OpenTIP", delegate { Open("https://opentip.kaspersky.com/"); }, false));
             UiTheme.ConfigureKeyboardOrder(this);
         }

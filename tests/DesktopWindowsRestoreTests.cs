@@ -157,7 +157,7 @@ namespace ProGo
                     var consumers = (AppProxyConsumers)Field(context, "appConsumers");
                     consumers.Observe(); consumers.ReleaseIfUnused();
                     Check(consumers.WindowsCleanupPending && bridge.IsRunning, "failed Windows cleanup records a consumer that the service timer cannot discard");
-                    text = CleanupDialog(context, "ExitProGo");
+                    text = CleanupDialog(context, "ExecuteCommand", AppCommand.Exit);
                     Check(text.Contains("Очистка прокси Windows не завершена") && bridge.IsRunning && ((NotifyIcon)Field(context, "tray")).Visible,
                         "normal Quit refuses teardown and keeps the application usable after cleanup failure");
                     bool launched = false;
