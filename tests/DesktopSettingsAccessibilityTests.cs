@@ -35,10 +35,11 @@ namespace ProGo
                 var cli = manual.Single(b => b.Text == "Включить" && b.AccessibleDescription.Contains("Codex"));
                 cli.PerformClick(); Check(command == "cli-start", "accessible manual CLI action retains the ordinary cli-start route");
                 tabs.SelectedIndex = 1; Application.DoEvents();
-                var connectionActions = Descendants(tabs.TabPages[1]).OfType<Button>().Cast<Control>();
+                var startupButton = (Control)Field(form, "startupSettingsButton");
+                var connectionActions = Descendants(tabs.TabPages[1]).OfType<Button>().Where(b => b != startupButton).Cast<Control>();
                 KeyboardWalk(form, new[] { (Control)Field(form, "sshProfiles") }.Concat(connectionActions).Concat(new[] {
-                    (Control)Field(form, "host"), (Control)Field(form, "port"), (Control)Field(form, "autoStart"),
-                    (Control)Field(form, "autoSwitchProfile"), cancel, save }).ToArray(), "connection");
+                    (Control)Field(form, "host"), (Control)Field(form, "port"), (Control)Field(form, "autoLaunch"), startupButton, (Control)Field(form, "autoStart"),
+                    (Control)Field(form, "autoSwitchProfile"), cancel, save }).Where(c => c.Enabled).ToArray(), "connection");
                 ((TextBox)Field(form, "host")).Text = "pending.example.org";
                 tabs.SelectedIndex = 2; Application.DoEvents();
                 KeyboardWalk(form, new[] { (Control)Field(form, "clearSeconds"), cancel, save }, "storage");

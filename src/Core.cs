@@ -181,7 +181,7 @@ namespace ProGo
         }
     }
 
-    internal enum SettingsField { General, SocksHost, SocksPort, SshProfile, TestEndpoint, HttpProxyPort, ClipboardClearSeconds, SettingsFile, Applications }
+    internal enum SettingsField { General, SocksHost, SocksPort, SshProfile, TestEndpoint, HttpProxyPort, ClipboardClearSeconds, SettingsFile, Applications, Startup }
     internal enum SettingsErrorSection { General, Connections, Diagnostics, Ports, Storage, Applications }
 
     internal sealed class SettingsSaveError
@@ -192,7 +192,7 @@ namespace ProGo
         internal SettingsErrorSection Section {
             get {
                 switch (Field) {
-                    case SettingsField.SocksHost: case SettingsField.SocksPort: case SettingsField.SshProfile: return SettingsErrorSection.Connections;
+                    case SettingsField.Startup: case SettingsField.SocksHost: case SettingsField.SocksPort: case SettingsField.SshProfile: return SettingsErrorSection.Connections;
                     case SettingsField.TestEndpoint: return SettingsErrorSection.Diagnostics;
                     case SettingsField.HttpProxyPort: return SettingsErrorSection.Ports;
                     case SettingsField.ClipboardClearSeconds: return SettingsErrorSection.Storage;

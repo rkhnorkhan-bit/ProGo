@@ -528,3 +528,20 @@ Never recreate an intentionally removed main menu entry unless the user runs the
 installer to restore it. `ApplicationShortcutsTests.ps1` uses the shipped helper,
 real Shell links and an independent Shell automation reader in disposable folders; it does
 not edit the user's real Startup/Programs folders or registry.
+
+## Windows startup setting (F26b)
+
+The settings checkbox stages a change to the current user's installed Startup
+shortcut. It does not duplicate startup state in AppSettings and must not change
+AutoStartSocks. Use an immutable owned snapshot; validate fields before changing
+registration, roll it back if the ordinary settings apply fails, and never revert
+a later external edit. An incomplete rollback is a visible error, not success.
+Read failures/custom shortcuts disable only startup editing; unchanged or
+unavailable startup must not block saving unrelated settings. Portable copies do
+not register their executable or edit another installation.
+
+Registration is not proof of effective Windows permission. Explain the distinction
+and open `ms-settings:startupapps` on explicit request; do not write undocumented
+StartupApproved registry values or bypass Windows/user restrictions. Keyboard and
+synthetic layout checks include the new field, but actual sign-in and display/DPI
+validation remain distinct from CI.

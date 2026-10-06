@@ -28,6 +28,84 @@ namespace ProGo
                 File.Exists(Path.Combine(directory, "settings.json"));
         }
 
+        public sealed class StartupSnapshot
+        {
+            internal readonly byte[] Bytes;
+            internal readonly ApplicationShortcuts Owner;
+            public bool Registered { get { return Bytes != null; } }
+            internal StartupSnapshot(ApplicationShortcuts owner, byte[] bytes) { Owner = owner; Bytes = bytes; }
+        }
+
+        public sealed class StartupChange
+        {
+            private readonly ApplicationShortcuts owner;
+            private readonly byte[] before, after;
+            internal StartupChange(ApplicationShortcuts owner, byte[] before, byte[] after)
+            { this.owner = owner; this.before = before; this.after = after; }
+
+            public bool TryRollback()
+            {
+                try {
+                    if (!Equal(owner.ReadStartupBytes(), after)) return false;
+                    if (before == null) { if (after != null) File.Delete(owner.startup); }
+                    else if (after == null) {
+                        // Never overwrite a concurrently created shortcut.
+                        using (var stream = new FileStream(owner.startup, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                            stream.Write(before, 0, before.Length);
+                    }
+                    return true;
+                } catch { return false; }
+            }
+        }
+
+        public StartupSnapshot ReadStartup()
+        {
+            if (!File.Exists(executable)) throw new IOException("Installed executable is missing.");
+            byte[] bytes = ReadStartupBytes();
+            if (bytes != null && (!Matches(startup, "") || !Equal(bytes, ReadStartupBytes())))
+                throw new IOException("Startup shortcut was customized or changed. It was preserved.");
+            return new StartupSnapshot(this, bytes);
+        }
+
+        public StartupChange ChangeStartup(StartupSnapshot expected, bool enabled)
+        {
+            if (expected == null || expected.Owner != this) throw new ArgumentException("A current startup snapshot is required.");
+            var current = ReadStartup();
+            if (!Equal(expected.Bytes, current.Bytes)) throw new IOException("Startup changed outside this window. Reopen settings.");
+            if (enabled == current.Registered) return new StartupChange(this, current.Bytes, current.Bytes);
+            byte[] after = null;
+            if (enabled) {
+                after = EnsureLink(startup, "");
+                if (after == null) throw new IOException("Startup was added concurrently. Reopen settings.");
+            }
+            else File.Delete(startup);
+            return new StartupChange(this, current.Bytes, after);
+        }
+
+        private byte[] ReadStartupBytes()
+        {
+            CheckLocation(startup);
+            try {
+                using (var stream = new FileStream(startup, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    if (stream.Length > 65536) throw new IOException("Startup shortcut is too large.");
+                    byte[] bytes = new byte[(int)stream.Length];
+                    int offset = 0, read;
+                    while (offset < bytes.Length && (read = stream.Read(bytes, offset, bytes.Length - offset)) > 0) offset += read;
+                    if (offset != bytes.Length) throw new IOException("Startup shortcut could not be read completely.");
+                    return bytes;
+                }
+            } catch (FileNotFoundException) { return null; }
+            catch (DirectoryNotFoundException) { return null; }
+        }
+
+        private static bool Equal(byte[] left, byte[] right)
+        {
+            if (left == null || right == null) return left == right;
+            if (left.Length != right.Length) return false;
+            for (int i = 0; i < left.Length; i++) if (left[i] != right[i]) return false;
+            return true;
+        }
+
         public void Install(bool wasInstalled, bool noStartup, bool noStartMenu)
         {
             if (!File.Exists(executable)) throw new IOException("Installed executable is missing.");
@@ -60,12 +138,12 @@ namespace ProGo
             return new ApplicationShortcuts(installDirectory, programsDirectory, startupDirectory).MigrateMenu();
         }
 
-        private void EnsureLink(string path, string arguments)
+        private byte[] EnsureLink(string path, string arguments)
         {
             CheckLocation(path);
             if (File.Exists(path)) {
                 if (!Matches(path, arguments)) throw new IOException("An unrelated or customized shortcut already exists. It was preserved.");
-                return;
+                return null; // An existing link was not created by this operation.
             }
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             string temporary = Path.Combine(Path.GetDirectoryName(path), "progo-" + Guid.NewGuid().ToString("N") + ".lnk");
@@ -79,8 +157,10 @@ namespace ProGo
                 string icon = Path.Combine(root, "ProGo.ico");
                 if (File.Exists(icon)) link.SetIconLocation(icon, 0);
                 ((IPersistFile)native).Save(temporary, true);
+                byte[] bytes = File.ReadAllBytes(temporary);
                 // Do not overwrite a shortcut created concurrently.
                 File.Move(temporary, path);
+                return bytes;
             } finally {
                 if (native != null) Marshal.FinalReleaseComObject(native);
                 if (File.Exists(temporary)) File.Delete(temporary);
