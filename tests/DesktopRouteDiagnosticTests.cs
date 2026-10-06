@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -38,6 +39,7 @@ namespace ProGo
             LatencyDeadlines(current);
             RouteProcessDeadlines(current);
             RouteCancellationUi(settings);
+            RouteEscapeUi(settings);
         }
         private static void RouteCurlTransport(AppSettings config)
         {
@@ -120,6 +122,35 @@ namespace ProGo
                 }
             } finally { Environment.SetEnvironmentVariable("PROGO_DIAGNOSTIC_MARKER", previous); }
         }
+        private static void RouteEscapeUi(SettingsService settings)
+        {
+            int entered = 0; bool escaped = false;
+            using (var proxy = new ProxyService(settings))
+            using (var form = new StatusForm(settings, proxy, true,
+                (s, p, token) => { Interlocked.Increment(ref entered); token.WaitHandle.WaitOne(); token.ThrowIfCancellationRequested(); return ""; },
+                null, null,
+                (s, token) => { Interlocked.Increment(ref entered); token.WaitHandle.WaitOne(); token.ThrowIfCancellationRequested(); return null; },
+                (s, token) => { Interlocked.Increment(ref entered); token.WaitHandle.WaitOne(); token.ThrowIfCancellationRequested(); return Tuple.Create((double?)null, (string)null); }))
+            using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) {
+                form.Shown += delegate { Call(form, "StartSpeedTest"); };
+                timer.Tick += delegate {
+                    if (Volatile.Read(ref entered) < 3) return;
+                    timer.Stop();
+                    Check(form.AcceptButton == null, "route dialog has no implicit reconnect or measurement default");
+                    escaped = true;
+                    typeof(Form).GetMethod("ProcessDialogKey", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        .Invoke(form, new object[] { Keys.Escape });
+                };
+                timer.Start();
+                Check(form.ShowDialog() == DialogResult.Cancel && escaped && !form.Visible,
+                    "Escape closes the actual modal route dialog while measurements run");
+                PumpUntil(() => form.RouteWork.IsCompleted && form.PingWork.IsCompleted && form.SpeedWork.IsCompleted);
+                Check((int)Field(form, "routeInFlight") == 0 && (int)Field(form, "speedInFlight") == 0 &&
+                    (int)Field(form, "pingInFlight") == 0 && entered == 3,
+                    "modal Escape settles all owned measurements without a repeat");
+            }
+        }
+
         private static void RouteCancellationUi(SettingsService settings)
         {
             int routeCalls = 0, speedCalls = 0, ticks = 0; string routeSnapshot = null;
@@ -141,15 +172,34 @@ namespace ProGo
                     settings.Current.TestEndpoint = "https://other.example.org/changed";
                     var check = (Button)Field(form, "checkButton"); var speed = (Button)Field(form, "speedButton");
                     Check(check.Enabled && speed.Enabled && check.Text.Contains("Отменить") && speed.Text.Contains("Отменить"), "busy route and speed keep accessible cancel controls and a UI heartbeat");
+                    var close = (Button)form.CancelButton;
+                    var restart = Descendants(form).OfType<Button>().Single(b => b.Text == "Переподключиться");
+                    Check(check.AccessibilityObject.Name == check.Text && speed.AccessibilityObject.Name == speed.Text &&
+                        check.AccessibilityObject.Description.Contains("Отменяет") && speed.AccessibilityObject.Description.Contains("Отменяет"),
+                        "running diagnostic buttons announce cancellation rather than a new measurement");
+                    KeyboardWalk(form, new Control[] { check, speed, restart, close }, "route measurements running");
+                    foreach (string name in new[] { "state", "address", "pid", "env", "ping", "speed", "route", "checkedAt", "recovery" }) {
+                        var value = (Label)Field(form, name);
+                        Check(!String.IsNullOrEmpty(value.AccessibilityObject.Name) && value.AccessibilityObject.Description == value.Text,
+                            "diagnostic value has a named current accessible result: " + name);
+                    }
                     Call(form, "QueueRouteMeasure"); Call(form, "StartSpeedTest");
                     Check(routeCalls == 1 && speedCalls == 1 && routeSnapshot == saved.TestEndpoint, "duplicate guards and diagnostic settings snapshots survive edits");
                     form.Refresh(); Shot(form, "route-diagnostics-pending");
                     check.PerformClick(); speed.PerformClick(); PumpUntil(() => form.RouteWork.IsCompleted && form.SpeedWork.IsCompleted && form.PingWork.IsCompleted);
                     Check(((Label)Field(form, "route")).Text.Contains("отменена") && ((Label)Field(form, "speed")).Text.Contains("отменено") && ((Label)Field(form, "checkedAt")).Text == "Ещё не проверен", "cancelled diagnostics do not invent a completion timestamp");
                     Check(check.Text == "Проверить маршрут" && speed.Text == "Измерить скорость", "cancel restores explicit repeat commands");
+                    Check(check.AccessibilityObject.Name == check.Text && speed.AccessibilityObject.Name == speed.Text &&
+                        check.AccessibilityObject.Description.Contains("Проверяет") && speed.AccessibilityObject.Description.Contains("интернет-трафик"),
+                        "cancelled diagnostic buttons announce retry and download traffic");
+                    KeyboardWalk(form, new Control[] { check, speed, restart, close }, "route measurements cancelled");
                     form.Refresh(); Shot(form, "route-diagnostics-cancelled");
                     check.PerformClick(); speed.PerformClick(); PumpUntil(() => form.RouteWork.IsCompleted && form.SpeedWork.IsCompleted && routeCalls == 2 && speedCalls == 2);
                     Check(((Label)Field(form, "route")).Text == "Fixture route answer" && ((Label)Field(form, "speed")).Text.Contains(10.0.ToString("0.0")) && ((Label)Field(form, "checkedAt")).Text.Contains("2020-01-01"), "route and speed can complete a fresh repeat after cancellation");
+                    Check(((Label)Field(form, "route")).AccessibilityObject.Description == "Fixture route answer" &&
+                        ((Label)Field(form, "speed")).AccessibilityObject.Description == ((Label)Field(form, "speed")).Text,
+                        "accessible diagnostic results track successful repeat");
+                    KeyboardWalk(form, new Control[] { check, speed, restart, close }, "route measurements complete");
                     form.Refresh(); Shot(form, "route-diagnostics-repeated");
                     // Close while ping and a new speed measurement are still waiting on their tokens.
                     speed.PerformClick(); check.PerformClick(); PumpUntil(() => speedCalls == 3 && routeCalls == 3);

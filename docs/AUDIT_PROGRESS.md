@@ -1049,3 +1049,28 @@ Windows/server CI is required for acceptance. F17 stays open for remaining forms
 and actual Narrator/contrast-theme acceptance; synthetic accessibility checks do
 not replace those. Progress remains **21/30 closed; 9 remaining**. No merge,
 version bump or release.
+
+
+## Stage F17e — route diagnostic accessibility and final startup label
+
+The owner preferred the more precise startup wording after F17d. Settings/help
+and the native startup fixture again use “Запускать ProGo при входе в Windows”.
+Sign-in guidance, shortcut ownership, Save/Cancel and rollback remain unchanged.
+This supersedes F17d's checkbox wording, not its behavior.
+
+Route/speed diagnostics now expose a stable accessible name and current result
+for every value. Route and speed action names/descriptions follow start, cancel
+and retry, including the download traffic explanation and independent cancellation
+scope. The explicit tab order follows the visual buttons from left to right.
+Closing and reconnecting have separate effect descriptions. No probe, deadline,
+connection, timer, cancellation implementation or default action changes.
+
+Native coverage extends the existing injected-measurement fixture with forward
+and backward keyboard traversal during work, after cancellation and completion,
+and current accessible result/action checks. A separate actual modal window
+checks Escape while route/latency/speed are all active: all three workers settle
+without starting a repeat. Existing process/socket deadline tests are retained.
+
+Windows/server CI is required for acceptance. F17 remains open for the remaining
+forms and actual Narrator/contrast acceptance. Progress remains **21/30 closed;
+9 remaining**. No merge, version bump or release.

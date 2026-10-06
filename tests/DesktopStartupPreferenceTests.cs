@@ -27,7 +27,7 @@ namespace ProGo
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts, () => opened++)) {
                     form.Show(); Application.DoEvents();
                     var launch = (CheckBox)Field(form, "autoLaunch");
-                    Check(launch.Enabled && !launch.Checked && launch.AccessibilityObject.Name == "Запускать вместе с системой",
+                    Check(launch.Enabled && !launch.Checked && launch.AccessibilityObject.Name == "Запускать ProGo при входе в Windows",
                         "startup checkbox reads real absent registration with an accessible name");
                     Check(launch.AccessibilityObject.Description.Contains("после входа пользователя в Windows") &&
                         ((Label)Field(form, "startupNotice")).Text.Contains("после входа пользователя в Windows"),
