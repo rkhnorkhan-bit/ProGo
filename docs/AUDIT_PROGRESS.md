@@ -966,3 +966,29 @@ Local public-content validation passes; native Windows/server CI is required for
 this branch. Shared availability/effect metadata and the remaining direct
 backup/log/exit callbacks are separate F28 work. **20/30 closed; 10 remaining**.
 No merge, version bump or release.
+
+## Stage F28c — shared pending-command availability
+
+The catalogue now evaluates an immutable UI-thread snapshot of pending commands,
+connection startup and prepared shutdown. Dashboard route controls, catalogued
+tray actions, settings manual controls and the dispatcher use the same rule.
+Repeated pending operations are unavailable; CLI and Windows can still join the
+same startup. Off/Stop and settings remain available during startup. Plain Connect
+can no longer replace another waiting operation via a stale UI or legacy call;
+explicit Reconnect retains its intentional replacement semantics.
+
+Pending changes refresh open settings immediately through a scoped subscription,
+removed in finally when the dialog closes. Existing UI timers handle background
+startup state, and the tray rechecks on opening. Prepared/cancelled shutdown also
+refreshes availability. This adds no retry loop, network probe, persisted setting,
+new worker or startup/cleanup behavior.
+
+Native regression coverage uses the existing disposable SSH child's release-file
+gate, not a fixed sleep. It checks all three surfaces, stale compatibility calls,
+shared CLI/Windows startup, scoped cancellation, unsaved settings preservation,
+subscription disposal, successful retry and shutdown cancellation. Pure checks
+cover snapshot ownership and cancellation/independent-mode rules. Public source
+validation passes; Windows/server CI is required for this branch.
+
+F28 remains open for effect metadata and remaining direct backup/log/exit commands.
+Progress: **20/30 closed; 10 remaining**. No merge, version bump or release.

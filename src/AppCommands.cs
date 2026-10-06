@@ -12,6 +12,17 @@ namespace ProGo
         CreateCodexShortcut, RemoveCodexShortcut, OpenCodex, OpenTerminal, Help, Update
     }
 
+    // UI-thread snapshot: never retain the application's mutable pending collection.
+    internal sealed class AppCommandState
+    {
+        private readonly HashSet<AppCommand> pending;
+        internal readonly bool Connecting, Stopping;
+        internal AppCommandState(IEnumerable<AppCommand> pending, bool connecting, bool stopping)
+        { this.pending = new HashSet<AppCommand>(pending); Connecting = connecting; Stopping = stopping; }
+        internal bool IsPending(AppCommand command) { return pending.Contains(command); }
+        internal bool HasPending { get { return pending.Count != 0; } }
+    }
+
     internal sealed class AppCommandDefinition
     {
         internal readonly AppCommand Command;
@@ -63,6 +74,17 @@ namespace ProGo
             var definition = new AppCommandDefinition(command, id, route, navigation, label, compactLabel, manualLabel);
             byCommand.Add(command, definition); byId.Add(id, definition);
             foreach (var alias in aliases) byId.Add(alias, definition);
+        }
+
+        internal static bool CanExecute(AppCommand command, AppCommandState state)
+        {
+            var definition = Get(command);
+            if (state.Stopping) return false;
+            if (!definition.RequiresRoute) return true; // Off/Stop must remain usable to cancel waiting work.
+            if (state.IsPending(command)) return false;
+            // Plain Connect must not restart a route other modes are waiting for.
+            // Explicit Reconnect deliberately retains its existing replacement semantics.
+            return command != AppCommand.Connect || (!state.HasPending && !state.Connecting);
         }
 
         internal static AppCommandDefinition Get(AppCommand command) { return byCommand[command]; }

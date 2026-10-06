@@ -25,6 +25,8 @@ namespace ProGo
         private Timer startupShowTimer;
         private readonly Dictionary<AppCommand, long> pendingRoutes = new Dictionary<AppCommand, long>();
         private long nextRouteRequest;
+        private readonly Dictionary<AppCommand, ToolStripItem> commandItems = new Dictionary<AppCommand, ToolStripItem>();
+        private event Action CommandStateChanged;
         private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
         private volatile bool closing;
         private bool shutdownPrepared, disposed;
@@ -54,7 +56,7 @@ namespace ProGo
             tray.DoubleClick += delegate { ShowStatus(); };
             UpdateTooltip();
             this.health.Changed += HealthChanged;
-            statusTimer.Tick += delegate { appConsumers.ReleaseIfUnused(); UpdateTooltip(); };
+            statusTimer.Tick += delegate { appConsumers.ReleaseIfUnused(); UpdateTooltip(); RefreshPendingRoutes(); };
             statusTimer.Start();
             if (ownsHealth) this.health.Start();
 
@@ -113,12 +115,13 @@ namespace ProGo
             Item(menu.Items, AppCommand.Update);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Завершить работу ProGo", null, delegate { ExitProGo(); });
+            menu.Opening += delegate { RefreshPendingRoutes(); };
             UiTheme.Menu(menu); return menu;
         }
         private void Item(ToolStripItemCollection items, AppCommand command)
         {
             var item = items.Add(AppCommands.Get(command).Label, null, delegate { ExecuteCommand(command); });
-            item.Tag = command;
+            item.Tag = command; commandItems.Add(command, item);
         }
         private ToolStripMenuItem BuildLogsMenu()
         {
@@ -132,7 +135,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, ExecuteCommand, cliProxy, automation, health, appConsumers);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, ExecuteCommand, cliProxy, automation, health, appConsumers, GetCommandState);
             RefreshPendingRoutes();
             mainWindow.FormClosing += DashboardClosing;
             mainWindow.FormClosed += delegate { mainWindow = null; };
@@ -162,6 +165,7 @@ namespace ProGo
             using (var form = new SshProfilesSettingsForm(settings, section))
             {
                 form.ManualActionRequested += ExecuteCommand;
+                form.CommandState = GetCommandState;
                 form.ProxyEndpointText = cliProxy.ProxyUrl;
                 form.CurrentProxyEndpoint = delegate { return cliProxy.ProxyUrl; };
                 form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
@@ -176,12 +180,15 @@ namespace ProGo
                     NotifyPortChange(oldPort);
                     return null;
                 };
-                if (form.ShowDialog(mainWindow) == DialogResult.OK)
-                {
-                    homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
-                    automation.Update(before, settings.Current);
-                    if (reconnectAfterSave || (!before.AutoStartSocks && settings.Current.AutoStartSocks)) proxy.StartTunnelAsync(System.Threading.CancellationToken.None);
-                }
+                CommandStateChanged += form.RefreshCommandAvailability;
+                try {
+                    if (form.ShowDialog(mainWindow) == DialogResult.OK)
+                    {
+                        homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
+                        automation.Update(before, settings.Current);
+                        if (reconnectAfterSave || (!before.AutoStartSocks && settings.Current.AutoStartSocks)) proxy.StartTunnelAsync(System.Threading.CancellationToken.None);
+                    }
+                } finally { CommandStateChanged -= form.RefreshCommandAvailability; }
             }
             UpdateTooltip();
         }
@@ -216,6 +223,7 @@ namespace ProGo
         {
             if (closing || shutdownPrepared) return;
             var command = AppCommands.Get(action);
+            if (!AppCommands.CanExecute(action, GetCommandState())) return;
             if (command.RequiresRoute) { BeginRouteAction(action); return; }
             string navigation = command.Navigation;
             bool isPage = navigation != null;
@@ -256,7 +264,7 @@ namespace ProGo
         }
         private void BeginRouteAction(AppCommand action)
         {
-            if (closing || shutdownPrepared || pendingRoutes.ContainsKey(action)) return;
+            if (!AppCommands.CanExecute(action, GetCommandState())) return;
             long request = ++nextRouteRequest; pendingRoutes[action] = request;
             // A reconnect invalidates all previous requests before a new connection is awaited.
             if (action == AppCommand.Reconnect || (action == AppCommand.Connect && proxy.CurrentPid.HasValue)) {
@@ -307,10 +315,14 @@ namespace ProGo
             }
             catch (InvalidOperationException ex) { if (!closing) SafeLog.Error("Connection result could not reach the application UI.", ex); }
         }
+        private AppCommandState GetCommandState()
+        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting, closing || shutdownPrepared); }
         private void RefreshPendingRoutes()
         {
-            if (mainWindow != null && !mainWindow.IsDisposed)
-                mainWindow.SetRoutePending(pendingRoutes.ContainsKey(AppCommand.StartCli), pendingRoutes.ContainsKey(AppCommand.EnableWindows), pendingRoutes.Count > 0);
+            var state = GetCommandState();
+            foreach (var item in commandItems) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
+            if (mainWindow != null && !mainWindow.IsDisposed) mainWindow.RefreshConnectionState();
+            if (CommandStateChanged != null) CommandStateChanged();
         }
         private void CancelPendingRoute(AppCommand action)
         {
@@ -412,7 +424,7 @@ namespace ProGo
                 return false;
             }
             shutdownPrepared = true;
-            proxy.StopTunnel();
+            proxy.StopTunnel(); RefreshPendingRoutes();
             return true;
         }
         // Called by the same-user pipe receiver; registry/environment changes stay on the UI thread.
@@ -434,14 +446,14 @@ namespace ProGo
         internal void CancelShutdown()
         {
             if (!activationDispatcher.IsDisposed)
-                activationDispatcher.BeginInvoke(new Action(delegate { if (!closing) shutdownPrepared = false; }));
+                activationDispatcher.BeginInvoke(new Action(delegate { if (!closing) { shutdownPrepared = false; RefreshPendingRoutes(); } }));
         }
         private bool BeginMaintenance(Func<bool> launch)
         {
             if (!PrepareShutdown(true)) return false;
             bool handedOff = false;
             try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
-            finally { if (!handedOff) shutdownPrepared = false; }
+            finally { if (!handedOff) { shutdownPrepared = false; RefreshPendingRoutes(); } }
         }
         private void ExitProGo()
         {
