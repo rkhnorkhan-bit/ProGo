@@ -738,3 +738,25 @@ Native tests use nonfunctional QR images and injected revoke tasks; they never
 contact a real share service or write the clipboard. Server tests verify real QR
 encoding independently. These checks do not substitute for physical Narrator,
 real DPI, scanning or live high-contrast acceptance.
+
+
+### Audit stage F17j — friends keyboard contract
+
+Keep friend search, full selected identity, count and operation descriptions current.
+Repeat revoke must follow server-backed selected status without changing command
+arguments. Explain new issuance, revoke, reissue and reconciliation independently.
+Do not expose a token in accessible metadata or introduce a text-field Enter default.
+
+Manager and token Close/Escape dismiss the window without changing access. Preserve
+the manager's pending-close guard and mutation gate after uncertain outcomes. Keep
+Close and current errors/clipboard notices in a fixed footer; body focus scrolls
+its action into view. The token remains a one-time masked display using the shared
+clipboard policy. No issuance, transport, persistence or lifetime changes belong
+in this stage.
+
+DesktopFriendsAccessibilityTests uses isolated native Windows controls, synthetic
+duplicate identities and injected administrative responses. It walks Tab/Shift+Tab,
+native list arrows, cancellation, pending and reconciliation states; no token is
+issued and no clipboard or private access files are written. Existing reissue/server
+suites remain mandatory. These checks do not establish physical Narrator, live
+contrast or real DPI acceptance.

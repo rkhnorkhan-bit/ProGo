@@ -1191,3 +1191,31 @@ both origin modes and failed/expired QR presentation.
 Windows/server CI is required for acceptance. Actual Narrator/live system contrast
 and other forms remain outstanding; F17 stays open. Progress remains **21/30 closed;
 9 remaining**. No merge, release or version change.
+
+
+## Stage F17j — friends and token keyboard access
+
+Friend search and selection explain filtering, native arrows, full identity and
+revocation scope. Counts, selected details and operation results expose their
+current text. Repeat revoke follows the current selected status; duplicate names
+never replace the selected ID. Pending operations show a current busy result.
+
+The manager and one-time token dialog provide Close/Escape without an implicit
+issuance or copy default from a text field. Close and corrective/clipboard results
+stay in a fixed footer outside scrolling actions. Focus brings body actions into
+view. The existing busy-close guard, confirmation, uncertain-operation mutation
+gate, server reconciliation, issuance and shared clipboard policy are preserved.
+The token remains masked and absent from accessible names/descriptions.
+
+Isolated Windows fixtures walk Tab/Shift+Tab in unselected, selected, empty-search,
+uncertain, failed-refresh and reconciled states. Native list arrows distinguish
+active/revoked duplicate names. Injected pending/rejected revoke and failed/successful
+list responses verify existing identity, closure and mutation gates. The token
+fixture checks masked metadata, safe text-field Enter, visible focused actions and
+Escape. Fixtures never issue a token, execute SSH or write the clipboard; opaque
+private access files and directory existence must remain unchanged. Existing
+issuance/reissue, clipboard and server suites remain required.
+
+Windows/server CI is required for acceptance. Actual Narrator/live contrast and
+remaining forms are outstanding; F17 remains open. Progress remains **21/30 closed;
+9 remaining**. No merge, release or version change.
