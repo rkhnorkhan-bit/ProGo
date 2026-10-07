@@ -66,10 +66,11 @@ namespace ProGo
             using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
                 deadline.CancelAfter(timeoutMilliseconds);
+                HttpWebRequest request = null;
                 try
                 {
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                    var request = (HttpWebRequest)WebRequest.Create(endpoint);
+                    request = (HttpWebRequest)WebRequest.Create(endpoint);
                     request.UserAgent = "ProGo-Updater";
                     request.Accept = "application/vnd.github+json";
                     // Fixtures must not depend on the current user's proxy settings.
@@ -123,6 +124,9 @@ namespace ProGo
                 }
                 catch (Exception ex)
                 {
+                    if (request != null) request.Abort();
+                    var webError = ex as WebException;
+                    if (webError != null && webError.Response != null) webError.Response.Close();
                     // User cancellation is not a failed update check. Abort may surface
                     // as WebException/IOException instead of OperationCanceledException.
                     cancellationToken.ThrowIfCancellationRequested();

@@ -33,7 +33,7 @@ namespace ProGo
             internal string Request;
             internal Uri Endpoint;
             private TcpClient client;
-            internal Server(string body, string mode = "complete", int status = 200)
+            internal Server(string body, string mode = "complete", int status = 200, int requests = 1)
             {
                 listener.Start();
                 Endpoint = new Uri("http://" + IPAddress.Loopback + ":" + ((IPEndPoint)listener.LocalEndpoint).Port + "/release");
@@ -41,7 +41,8 @@ namespace ProGo
                 worker = Task.Run(async delegate {
                     try
                     {
-                        using (var accepted = await accept.ConfigureAwait(false))
+                        for (int round = 0; round < requests; round++)
+                        using (var accepted = await (round == 0 ? accept : listener.AcceptTcpClientAsync()).ConfigureAwait(false))
                         {
                             client = accepted; accepted.ReceiveTimeout = 5000;
                             using (var stream = accepted.GetStream())
@@ -60,7 +61,7 @@ namespace ProGo
                                     byte[] payload = Encoding.UTF8.GetBytes(body);
                                     int length = mode == "declared-oversize" ? 2 * 1024 * 1024 + 1 : payload.Length;
                                     string framing = mode == "stream-oversize" ? "Transfer-Encoding: chunked\r\n" : "Content-Length: " + length + "\r\n";
-                                    byte[] prefix = Encoding.ASCII.GetBytes("HTTP/1.1 " + status + " Fixture\r\nContent-Type: application/json; charset=utf-8\r\n" + framing + "Connection: close\r\n\r\n");
+                                    byte[] prefix = Encoding.ASCII.GetBytes("HTTP/1.1 " + (requests > 1 && round == requests - 1 ? 200 : status) + " Fixture\r\nContent-Type: application/json; charset=utf-8\r\n" + framing + "Connection: close\r\n\r\n");
                                     stream.Write(prefix, 0, prefix.Length);
                                     if (mode == "body-stall") stream.Write(payload, 0, 1);
                                     else if (mode == "stream-oversize")
@@ -147,6 +148,13 @@ namespace ProGo
                 Check(Reply("{\"tag_name\":\"0.3.0\"}", "bad").Availability == UpdateAvailability.Error, "invalid installed version rejected");
                 var failure = Reply("fixture private detail", "0.2.2", 503);
                 Check(failure.Availability == UpdateAvailability.Error && !failure.ErrorMessage.Contains("fixture private detail"), "HTTP failure is a generic retryable error");
+                using (var server = new Server("{\"tag_name\":\"0.3.0\"}", "complete", 503, 4))
+                    for (int attempt = 0; attempt < 4; attempt++)
+                    {
+                        var retry = Finish(UpdateLauncher.CheckForUpdateAsync(server.Endpoint, "0.2.2", 3000, CancellationToken.None));
+                        Check(retry.Availability == (attempt < 3 ? UpdateAvailability.Error : UpdateAvailability.Available),
+                            "same endpoint retry " + attempt + " does not retain failed HTTP responses");
+                    }
                 foreach (string mode in new[] { "headers-stall", "body-stall" })
                 {
                     Stalled(mode, false); Stalled(mode, true);
