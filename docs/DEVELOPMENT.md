@@ -725,6 +725,9 @@ SSH setup and save order unchanged. No Enter default may configure a server.
 Close/Escape discards the address draft; its availability follows the existing
 operation guard. Owner/friend mode skips invisible setup controls in Tab order.
 
+Close stays in a separate footer outside the scrollable QR content, so a multiline
+revoke error cannot leave the keyboard-focused Close partly outside the viewport.
+
 `PhoneProfileQrForm` exposes the graphic purpose without the secret URL in names
 or descriptions. Countdown, clipboard notice and revoke errors expose current
 text. Closing only dismisses the window; it neither revokes a link nor confirms

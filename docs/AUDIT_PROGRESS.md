@@ -1166,6 +1166,9 @@ button for friends. A named Close/Escape action dismisses the draft without savi
 it is disabled during the existing operation/blocked-close guard. The same dialog
 factory is used by the production modal entry point and the native UI fixture.
 
+Close stays in a separate footer outside the scrollable QR content, so a multiline
+revoke error cannot leave the keyboard-focused Close partly outside the viewport.
+
 The QR graphic has a stable accessible name and non-secret description, without a
 Tab stop or URL in metadata. Named lifetime, clipboard and revoke results follow
 their current text. Actions explain copying, server-side revocation and ordinary

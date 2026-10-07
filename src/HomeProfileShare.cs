@@ -224,7 +224,13 @@ namespace ProGo
             };
             panel.Controls.Add(copy); panel.Controls.Add(copyNotice); panel.Controls.Add(cancel);
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "Ссылка для одного телефона: после «Получить профиль» повторно воспользоваться QR нельзя. Для другого телефона создайте новый QR. Не публикуйте код. Android использует strongSwan VPN Client.", Margin = new Padding(0, 8, 0, 8) });
-            panel.Controls.Add(error); panel.Controls.Add(close); Controls.Add(panel);
+            panel.Controls.Add(error);
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false,
+                Padding = new Padding(18, 0, 18, 12), Margin = Padding.Empty };
+            footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
             clock.Interval = 1000;
             EventHandler update = delegate
