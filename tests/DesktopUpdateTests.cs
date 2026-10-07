@@ -58,6 +58,7 @@ namespace ProGo
                     "newer release exposes installation only after successful check");
                 Check(details.ReadOnly && details.Text.Contains("<script>plain text</script>") && details.Text.Length < 3200 && details.Text.Contains("Описание сокращено"),
                     "release notes are bounded plain text without active links or markup");
+                Check(details.Text.Contains("https://example.org)\r\n<script>plain text</script>\r\n"), "release preview preserves separate native Windows lines");
                 Check(form.AcceptedResult == null && form.AcceptButton == null && !primary.ContainsFocus, "successful check never accepts installation or moves focus to install automatically");
                 foreach (bool minimum in new[] { false, true }) {
                     if (minimum) form.Size = new Size(560, 380); else form.ClientSize = new Size(640, 440);
@@ -71,7 +72,7 @@ namespace ProGo
                 }
                 details.Focus(); dialogKey.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
                 Check(form.Visible && form.AcceptedResult == null, "Enter while reading notes does not install");
-                primary.PerformClick();
+                primary.Focus(); dialogKey.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
                 Check(!form.Visible && form.DialogResult == DialogResult.OK && form.AcceptedResult.RemoteVersion == "0.3.0",
                     "only explicit install accepts the reviewed release without starting a helper in the form");
             }

@@ -107,7 +107,7 @@ namespace ProGo
                 status.Text = "Доступна версия " + result.RemoteVersion;
                 version.Text += " · Новая версия: " + result.RemoteVersion;
                 notice.Text = "Установка закроет ProGo и запустит его снова. Начать её можно кнопкой ниже.";
-                details.Text = "Что нового\r\n\r\n" + UpdateLauncher.SummarizeReleaseNotes(result.ReleaseNotes);
+                details.Text = "Что нового\r\n\r\n" + UpdateLauncher.SummarizeReleaseNotes(result.ReleaseNotes).Replace("\n", "\r\n");
                 primary.Text = "Установить обновление";
                 primary.AccessibleDescription = "Подтверждает установку показанной новой версии. ProGo закроется и передаст управление установленному помощнику обновления.";
                 primary.Visible = true; primary.Enabled = true;
