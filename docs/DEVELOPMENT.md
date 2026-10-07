@@ -900,3 +900,36 @@ still complete the transaction. Settings and opaque vault hashes must remain.
 Windows/server CI is required. F23 remains open for a cancellable install window,
 bounded helper transport and safe VPS waiting cancellation. No CLI, update trust,
 automatic installation, version or release changes belong to this substage.
+
+
+### Audit stage F23d — installed helper transport
+
+InstalledUpdateTransport.cs is compiled locally by the installed core and copied
+by both Build-ProGo and Install-ProGo. Keep bootstrap network-free. The core's
+Read-UpdateMetadata/Save-UpdatePackage adapters use the transport; release identity,
+SHA-256 and archive checks stay outside it and must still run before staging.
+
+Production metadata has a 10-second total network deadline and 2 MiB cap; compressed
+packages have 180 seconds and 64 MiB. Abort pending headers and close stalled streams
+with a linked deadline/caller token. Redirects share that deadline, are limited to
+five and cannot downgrade HTTPS, target a non-web URI or redirect a public origin
+to loopback. Default user proxy behavior stays; only internal HTTP loopback fixtures
+bypass it. Decode metadata as UTF-8 with BOM detection; package bytes stay unchanged.
+
+Create the destination exclusively, never truncate an existing path. Close all
+streams/registrations before deleting the partial file on timeout/cancellation/error.
+Caller cancellation is OperationCanceledException carrying its original token;
+timeout and HTTP failures have retryable messages without endpoints or response bodies.
+Transport completion alone does not authorize extraction or installation.
+
+InstalledUpdateTransportTests.cs uses actual loopback sockets in isolated Windows CI
+for headers/body stalls, total deadlines under slow traffic, cancellation identity,
+metadata decoding, declared/chunked limits, incomplete responses, HTTP failures,
+redirects, retries, byte-exact files and existing-target preservation. The PowerShell
+adapter fixture compiles the shipped local source and exercises both production URL
+guards without network. Keep the full transaction/progress and package-trust suites.
+
+This stage does not wire caller cancellation into the core or add an install window.
+That requires a later pre-commit cancellation/relaunch design respecting maintenance
+ownership; do not permit cancellation during commit/rollback merely by closing UI.
+F23 remains open; no CLI behavior, automatic update, version or release changes.

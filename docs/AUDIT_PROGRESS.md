@@ -1363,3 +1363,32 @@ This bounded substage does not add a cancellable installation window, transport
 deadline or safe VPS wait cancellation; those parts of F23 remain open. The CLI,
 update trust policy and automatic installation behavior are unchanged. Progress
 remains **21/30 closed; 9 remaining**. No merge, version bump or release.
+
+
+## Stage F23d — bounded installed-helper network transport
+
+The installed helper now obtains release metadata through a local compiled transport
+with a 10-second total network deadline, and downloads the package with a 180-second
+deadline. Limits are 2 MiB for metadata and 64 MiB for the compressed package, checked
+against both declared and streamed lengths. These are failure bounds, not promised
+download times. Metadata's deadline fits inside the existing 15-second handoff wait.
+
+The transport API accepts caller cancellation; abort and stream closure interrupt
+headers, stalled bodies and slow continuous responses. Cancellation keeps its caller
+identity. Failed or interrupted downloads close and delete their own partial file;
+an existing target is never overwritten or removed. HTTPS redirects are bounded and
+share the same deadline; downgrade and non-web destinations are refused. Current-user
+proxy routing remains, with proxy bypass only for internal loopback fixtures.
+
+The core retains stable-release/version/asset-location/digest/archive checks and all
+backup, staging, commit, rollback and maintenance ordering. No remote source is
+compiled or evaluated. The helper source ships with the release and installer.
+Real Windows sockets cover deadlines, cancellation, oversize/truncated responses,
+HTTP errors, redirects, retry and byte-exact packages; PowerShell tests cover the
+installed source loader/adapters. The real transaction regression suite remains.
+
+This is transport groundwork for the installation window: there is no visible
+Cancel button for downloads yet, and the core currently calls with no caller token.
+F23 remains open for that window, pre-commit cancellation/relaunch integration and
+safe VPS waiting cancellation. Progress remains **21/30 closed; 9 remaining**.
+No merge, version bump or release.

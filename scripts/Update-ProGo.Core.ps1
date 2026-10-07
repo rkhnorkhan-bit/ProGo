@@ -212,10 +212,25 @@ function Get-LocalVersion {
     return "0.0.0"
 }
 
+function Initialize-UpdateTransport {
+    if (-not ('ProGo.InstalledUpdateTransport' -as [type])) {
+        # Local installed source only; no network-loaded code or policy bypass.
+        Add-Type -Path (Join-Path $PSScriptRoot 'InstalledUpdateTransport.cs')
+    }
+}
+
+function Read-UpdateMetadata($Url) {
+    Initialize-UpdateTransport
+    return [ProGo.InstalledUpdateTransport]::ReadMetadata($Url, [Threading.CancellationToken]::None)
+}
+
+function Save-UpdatePackage($Url, $Path) {
+    Initialize-UpdateTransport
+    [ProGo.InstalledUpdateTransport]::DownloadPackage($Url, $Path, [Threading.CancellationToken]::None)
+}
+
 function Get-RemoteVersion {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $response = Invoke-WebRequest -Uri $RemoteVersionUrl -Headers @{ "User-Agent" = "ProGo-Updater" } -UseBasicParsing -ErrorAction Stop
-    $payload = $response.Content | ConvertFrom-Json
+    $payload = (Read-UpdateMetadata $RemoteVersionUrl) | ConvertFrom-Json
     if ($payload.draft -or $payload.prerelease) { throw "Only stable published releases are accepted." }
     $version = ([string]$payload.tag_name).TrimStart('v')
     if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid release version." }
@@ -480,7 +495,7 @@ function Try-GetReleasePackage($DestinationRoot) {
     Write-UpdateLog "update_mode=release-package"
     Write-UpdateLog "Downloading published package: $($State.ReleaseUrl)"
     Show-UpdatePhase download
-    Invoke-WebRequest -Uri $State.ReleaseUrl -OutFile $packageZip -UseBasicParsing -ErrorAction Stop
+    Save-UpdatePackage $State.ReleaseUrl $packageZip
     Show-UpdatePhase package
     $actual = (Get-FileHash -LiteralPath $packageZip -Algorithm SHA256).Hash
     if ($actual -ine $State.ReleaseSha256) { throw "Package SHA-256 mismatch. No installed files were changed." }

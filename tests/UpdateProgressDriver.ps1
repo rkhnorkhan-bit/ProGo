@@ -30,19 +30,17 @@ function Show-UpdateDialog($Text, $Title, $Kind) {
     [void]$script:events.Add(@{ Kind = 'dialog'; Icon = $Kind })
 }
 function Show-UserMessage($Text, $Title) { Show-UpdateDialog $Text $Title 'Information' }
-function Invoke-WebRequest {
-    param($Uri, $Headers, $OutFile, [switch]$UseBasicParsing, $ErrorAction)
-    if ($OutFile) {
-        if ($Mode -eq 'download-failure') { throw 'Injected download failure' }
-        Copy-Item -LiteralPath $Package -Destination $OutFile
-        return
-    }
+function Save-UpdatePackage($Url, $Path) {
+    if ($Mode -eq 'download-failure') { throw 'Injected download failure' }
+    Copy-Item -LiteralPath $Package -Destination $Path
+}
+function Read-UpdateMetadata($Url) {
     $version = (Get-Content -Raw (Join-Path $Release 'VERSION')).Trim()
     $digest = (Get-FileHash -LiteralPath $Package -Algorithm SHA256).Hash
     if ($Mode -eq 'hash-failure') { $digest = '0' * 64 }
     $asset = @{ name = 'ProGo-release.zip'; digest = 'sha256:' + $digest;
         browser_download_url = 'https://github.com/rkhnorkhan-bit/ProGo/releases/download/v' + $version + '/ProGo-release.zip' }
-    return @{ Content = (@{ tag_name = 'v' + $version; draft = $false; prerelease = $false; assets = @($asset) } | ConvertTo-Json -Depth 5) }
+    return (@{ tag_name = 'v' + $version; draft = $false; prerelease = $false; assets = @($asset) } | ConvertTo-Json -Depth 5)
 }
 if ($Mode -eq 'stage-failure') { function Test-StagingCopy($TargetDir) { throw 'Injected staging check failure' } }
 if ($Mode -eq 'commit-failure' -or $Mode -eq 'rollback-failure') {
