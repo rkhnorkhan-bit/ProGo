@@ -1127,3 +1127,31 @@ input values are not written to test output. Screenshots retain masked inputs.
 Windows/server CI is required for acceptance. Actual Narrator/contrast and real DPI
 acceptance remain outstanding; F17 stays open. Progress remains **21/30 closed;
 9 remaining**. No merge, version bump or release.
+
+
+## Stage F17h — five-step phone VPN wizard accessibility
+
+The VPN wizard gives owner/token/home fields and its read-only router instructions
+accessible names. Tokens remain masked and their descriptions never include the
+value. Actions describe local draft navigation, server setup, firewall elevation,
+profile issuance, manual confirmation and phone-only stop scopes. The current
+heading, operation result, issuance and phone counters expose stable names and
+current descriptions. The progress indicator exposes the current step as static
+text without participating in Tab traversal.
+
+Keyboard order is rebuilt with each step. The router grid uses StandardTab; the
+ordinary Back/Next handlers and busy/installation gates are retained. No SSH,
+firewall, profile sharing, access persistence, verification or recovery logic changes.
+
+Isolated native fixtures walk both entry modes and all five steps, with/without
+installation confirmation and after an injected operation failure. Native router
+Tab reaches the home field. Actual Back handlers retain owner/token/home drafts;
+profile issuance and user internet evidence remain distinct. An injected pending
+operation preserves the blocked-close behavior and names its corrective result.
+Fixtures never execute SSH/firewall/QR operations; encrypted private access bytes
+and directory existence are checked unchanged. Screenshots use synthetic fields
+and mask the token. Existing VPN/wizard state suites remain required.
+
+Windows/server CI is required for acceptance. F17 remains open for remaining
+forms and actual Narrator/live system contrast acceptance; F16 real DPI is separate.
+Progress remains **21/30 closed; 9 remaining**. No merge, version bump or release.

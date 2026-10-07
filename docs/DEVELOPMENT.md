@@ -701,3 +701,17 @@ clipboard ownership and cryptographic behavior; their change controls still appl
 DesktopVaultAccessibilityTests uses synthetic non-persisting records only in native
 isolated CI and checks unchanged vault bytes/existence. It is not actual Narrator,
 DPI, security-policy or cryptography acceptance.
+
+
+## VPN wizard keyboard presentation (F17h)
+
+Rebuild visual Tab order after every wizard step rebuild. Keep progress informational
+and out of Tab traversal; name the active step and current operation/issuance/phone
+results. Field names must follow their visible labels; token metadata must not contain
+its value. Describe each action next to its handler, including server/firewall changes
+and the distinction between profile issuance, user confirmation and tested internet.
+Preserve existing busy, installation and Back/Next semantics. Keyboard work must
+not start SSH, change recovery or introduce a second verification state model.
+DesktopWizardAccessibilityTests injects a pending task and synthetic presentation
+only in isolated Windows CI, checking unchanged private access files. It does not
+establish physical phone, Narrator, real DPI or real contrast acceptance.
