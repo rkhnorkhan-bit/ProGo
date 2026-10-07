@@ -1,16 +1,97 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace ProGo
 {
     internal static partial class DesktopTests
     {
+        [DllImport("user32.dll", EntryPoint = "SendMessageW")]
+        private static extern IntPtr BackupPickerListKey(IntPtr window, int message, IntPtr key, IntPtr data);
+
+        private static void BackupPickerAccessibility()
+        {
+            var privateBefore = WizardPrivateSnapshot(); bool privateExisted = Directory.Exists(HomeVpnPrivateFiles.Root);
+            var settingsBefore = File.ReadAllBytes(AppPaths.SettingsPath);
+            var root = Path.Combine(work, "backup-picker-keyboard"); Directory.CreateDirectory(root);
+            var firstPath = Path.Combine(root, "first"); var secondPath = Path.Combine(root, "second");
+            Directory.CreateDirectory(firstPath); Directory.CreateDirectory(secondPath);
+            var firstFile = Path.Combine(firstPath, "VERSION"); var secondFile = Path.Combine(secondPath, "VERSION");
+            File.WriteAllText(firstFile, "0.0.1"); File.WriteAllText(secondFile, "0.0.2");
+            var items = new List<BackupInfo> {
+                new BackupInfo { Path = firstPath, DisplayName = "Сохранённая копия", Version = "0.0.1", Kind = "manual", Result = "manual", Reason = "fixture", Created = "2026-01-01" },
+                new BackupInfo { Path = secondPath, DisplayName = "Сохранённая копия", Version = "0.0.2", TargetVersion = "0.0.3", Kind = "pre-update", Result = "ok", Reason = "fixture", Created = "2026-01-02" }
+            };
+            var key = typeof(Form).GetMethod("ProcessDialogKey", PrivateInstance);
+            using (var form = new BackupPickerForm(items)) {
+                form.Show(); Application.DoEvents();
+                var list = (ListBox)Field(form, "list"); var details = (TextBox)Field(form, "details");
+                var next = (Control)form.AcceptButton; var cancel = (Control)form.CancelButton;
+                Check(list.SelectedIndex == 0 && details.Text.Contains(firstPath) && details.Text.Contains("0.0.1"),
+                    "backup picker retains its existing first-copy selection and current details");
+                Check(list.AccessibilityObject.Name == "Сохранённые копии" && list.AccessibilityObject.Description.Contains("Стрелки") &&
+                    details.AccessibilityObject.Name == "Сведения о выбранной копии" && details.ReadOnly && details.AccessibilityObject.Description.Contains("Только чтение"),
+                    "backup picker exposes named selection and read-only current details");
+                Check(next.AccessibilityObject.Description.Contains("отдельного подтверждения") && cancel.AccessibilityObject.Description.Contains("без изменения"),
+                    "backup picker distinguishes next-step verification from cancellation");
+                KeyboardWalk(form, new Control[] { list, details, next, cancel }, "backup picker");
+                list.Focus(); BackupPickerListKey(list.Handle, 0x100, new IntPtr(0x28), new IntPtr(1)); Application.DoEvents();
+                Check(list.SelectedIndex == 1 && details.Text.Contains(secondPath) && !details.Text.Contains(firstPath) && details.Text.Contains("0.0.3") && form.SelectedBackupPath == null,
+                    "native picker Down distinguishes duplicate labels and updates details without committing selection");
+                BackupPickerListKey(list.Handle, 0x100, new IntPtr(0x26), new IntPtr(1)); Application.DoEvents();
+                Check(list.SelectedIndex == 0 && details.Text.Contains(firstPath) && !details.Text.Contains(secondPath), "native picker Up replaces stale details");
+                foreach (var control in new Control[] { list, details, next, cancel })
+                    Check(form.ClientRectangle.Contains(form.RectangleToClient(control.RectangleToScreen(control.ClientRectangle))), "backup picker keeps named keyboard controls visible");
+                Shot(form, "keyboard-backup-picker"); form.Close();
+            }
+            // Exercise the real modal selector. It returns only a path; this fixture
+            // never enters RestoreOptions, prepares a copy or launches maintenance.
+            using (var timer = new Timer { Interval = 100 }) {
+                timer.Tick += delegate {
+                    var form = Application.OpenForms.OfType<BackupPickerForm>().Single(); timer.Stop();
+                    var list = (ListBox)Field(form, "list"); list.SelectedIndex = 1; list.Focus();
+                    key.Invoke(form, new object[] { Keys.Enter });
+                };
+                timer.Start(); string selected;
+                Check(BackupPickerForm.TryPick(items, out selected) && selected == secondPath,
+                    "modal picker Enter returns the selected backing path despite duplicate display names");
+            }
+            foreach (var empty in new[] { false, true }) {
+                using (var timer = new Timer { Interval = 100 }) {
+                    timer.Tick += delegate {
+                        var form = Application.OpenForms.OfType<BackupPickerForm>().Single(); timer.Stop();
+                        var list = (ListBox)Field(form, "list"); var details = (TextBox)Field(form, "details");
+                        if (empty) {
+                            Check(list.Items.Count == 0 && !((Control)form.AcceptButton).Enabled && details.Text.Contains("Нет сохранённых копий"),
+                                "empty backup picker explains absence and disables next step");
+                            KeyboardWalk(form, new Control[] { list, details, (Control)form.CancelButton }, "empty backup picker skips disabled next step");
+                            key.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
+                            Check(form.DialogResult == DialogResult.None && form.SelectedBackupPath == null, "empty picker Enter cannot accept a missing copy");
+                            Shot(form, "keyboard-backup-picker-empty");
+                        }
+                        details.Focus(); key.Invoke(form, new object[] { Keys.Escape });
+                    };
+                    timer.Start(); string selected;
+                    Check(!BackupPickerForm.TryPick(empty ? new List<BackupInfo>() : items, out selected) && selected == null,
+                        "modal picker Escape returns no selection for " + (empty ? "empty" : "populated") + " list");
+                }
+            }
+            Check(File.ReadAllText(firstFile) == "0.0.1" && File.ReadAllText(secondFile) == "0.0.2" &&
+                File.ReadAllBytes(AppPaths.SettingsPath).SequenceEqual(settingsBefore), "picker navigation, acceptance and cancellation leave copies and settings untouched");
+            var privateAfter = WizardPrivateSnapshot();
+            Check(Directory.Exists(HomeVpnPrivateFiles.Root) == privateExisted && privateBefore.Count == privateAfter.Count &&
+                privateBefore.All(pair => privateAfter.ContainsKey(pair.Key) && privateAfter[pair.Key].SequenceEqual(pair.Value)),
+                "backup picker leaves opaque private access files and directory existence unchanged");
+        }
+
         private static void BackupAccessibility()
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("SKIP: backup keyboard fixtures require isolated native CI"); return; }
+            BackupPickerAccessibility();
             var root = Path.Combine(work, "backup-keyboard-fixture"); Directory.CreateDirectory(root);
             File.WriteAllText(Path.Combine(root, "ProGo.exe"), "fixture; never execute");
             File.WriteAllText(Path.Combine(root, "VERSION"), "0.0.1");
