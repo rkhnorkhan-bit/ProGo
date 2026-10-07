@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
@@ -36,49 +38,103 @@ namespace ProGo
             public bool prerelease { get; set; }
         }
 
+        private const int UpdateCheckTimeoutMilliseconds = 15000;
+        private const int MaxReleaseMetadataBytes = 2 * 1024 * 1024;
+
         public static UpdateCheckResult CheckForUpdate()
         {
-            var localVersion = ReadInstalledVersion();
+            return CheckForUpdateAsync(CancellationToken.None).GetAwaiter().GetResult();
+        }
 
-            try
+        public static Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken)
+        {
+            return CheckForUpdateAsync(new Uri(LatestReleaseApiUrl), ReadInstalledVersion(),
+                UpdateCheckTimeoutMilliseconds, cancellationToken);
+        }
+
+        // An explicit endpoint/deadline permits real loopback transport tests without
+        // changing the application's fixed release URL or installing an update.
+        internal static async Task<UpdateCheckResult> CheckForUpdateAsync(Uri endpoint,
+            string localVersion, int timeoutMilliseconds, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (timeoutMilliseconds <= 0) throw new ArgumentOutOfRangeException("timeoutMilliseconds");
+            if (endpoint == null || (endpoint.Scheme != Uri.UriSchemeHttps &&
+                !(endpoint.IsLoopback && endpoint.Scheme == Uri.UriSchemeHttp)))
+                throw new ArgumentException("Release metadata requires HTTPS or a loopback fixture.", "endpoint");
+
+            using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                string json;
-                using (var client = new WebClient())
+                deadline.CancelAfter(timeoutMilliseconds);
+                try
                 {
-                    client.Headers.Add("User-Agent", "ProGo-Updater");
-                    client.Headers.Add("Accept", "application/vnd.github+json");
-                    json = client.DownloadString(LatestReleaseApiUrl);
-                }
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    var request = (HttpWebRequest)WebRequest.Create(endpoint);
+                    request.UserAgent = "ProGo-Updater";
+                    request.Accept = "application/vnd.github+json";
+                    // Fixtures must not depend on the current user's proxy settings.
+                    if (endpoint.IsLoopback) request.Proxy = null;
+                    string json;
+                    // HttpWebRequest's Timeout does not bound asynchronous requests.
+                    // Abort also interrupts pending headers and response-body reads.
+                    using (deadline.Token.Register(request.Abort))
+                    using (var response = (HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false))
+                    using (var stream = response.GetResponseStream())
+                    using (deadline.Token.Register(stream.Close))
+                    using (var bytes = new MemoryStream())
+                    {
+                        if (response.ContentLength > MaxReleaseMetadataBytes)
+                            throw new InvalidDataException("Release metadata exceeds the size limit.");
+                        var buffer = new byte[8192];
+                        while (true)
+                        {
+                            deadline.Token.ThrowIfCancellationRequested();
+                            int count = await stream.ReadAsync(buffer, 0, buffer.Length, deadline.Token).ConfigureAwait(false);
+                            if (count == 0) break;
+                            if (bytes.Length + count > MaxReleaseMetadataBytes)
+                                throw new InvalidDataException("Release metadata exceeds the size limit.");
+                            bytes.Write(buffer, 0, count);
+                        }
+                        bytes.Position = 0;
+                        using (var reader = new StreamReader(bytes, Encoding.UTF8, true))
+                            json = reader.ReadToEnd();
+                    }
+                    deadline.Token.ThrowIfCancellationRequested();
+                    var serializer = new JavaScriptSerializer();
+                    var release = serializer.Deserialize<GitHubReleaseInfo>(json);
+                    var remoteVersion = NormalizeVersion(release == null ? null : release.tag_name);
 
-                var serializer = new JavaScriptSerializer();
-                var release = serializer.Deserialize<GitHubReleaseInfo>(json);
-                var remoteVersion = NormalizeVersion(release == null ? null : release.tag_name);
+                    Version local;
+                    Version remote;
+                    if (!Version.TryParse(localVersion, out local))
+                        return ErrorResult(localVersion, remoteVersion, "Не удалось определить установленную версию ProGo.");
+                    if (!Version.TryParse(remoteVersion, out remote))
+                        return ErrorResult(localVersion, remoteVersion, "GitHub вернул некорректную версию релиза.");
 
-                Version local;
-                Version remote;
-                if (!Version.TryParse(localVersion, out local))
-                {
-                    return ErrorResult(localVersion, remoteVersion, "Не удалось определить установленную версию ProGo.");
+                    deadline.Token.ThrowIfCancellationRequested();
+                    var availability = remote > local ? UpdateAvailability.Available : UpdateAvailability.UpToDate;
+                    SafeLog.Info("Update check completed. local=" + localVersion + "; remote=" + remoteVersion + "; result=" + availability + ".");
+                    return new UpdateCheckResult
+                    {
+                        Availability = availability,
+                        LocalVersion = localVersion,
+                        RemoteVersion = remoteVersion
+                    };
                 }
-                if (!Version.TryParse(remoteVersion, out remote))
+                catch (Exception ex)
                 {
-                    return ErrorResult(localVersion, remoteVersion, "GitHub вернул некорректную версию релиза.");
+                    // User cancellation is not a failed update check. Abort may surface
+                    // as WebException/IOException instead of OperationCanceledException.
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (deadline.IsCancellationRequested)
+                    {
+                        SafeLog.Info("Update check timed out.");
+                        return ErrorResult(localVersion, null,
+                            "Время ожидания ответа GitHub истекло. Повторите проверку обновлений.");
+                    }
+                    SafeLog.Error("Update check failed.", ex);
+                    return ErrorResult(localVersion, null, "Не удалось проверить обновления на GitHub.");
                 }
-
-                var availability = remote > local ? UpdateAvailability.Available : UpdateAvailability.UpToDate;
-                SafeLog.Info("Update check completed. local=" + localVersion + "; remote=" + remoteVersion + "; result=" + availability + ".");
-                return new UpdateCheckResult
-                {
-                    Availability = availability,
-                    LocalVersion = localVersion,
-                    RemoteVersion = remoteVersion
-                };
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Update check failed.", ex);
-                return ErrorResult(localVersion, null, "Не удалось проверить обновления на GitHub.");
             }
         }
 

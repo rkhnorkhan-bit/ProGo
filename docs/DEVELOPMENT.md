@@ -823,3 +823,29 @@ never opens real logs, URLs, clipboard exports or connection commands. Settings 
 opaque private access files/existence remain unchanged. Existing topic content,
 ordinary CLI and autostart wording tests remain required. Native fixtures do not
 establish physical Narrator, live contrast or actual DPI acceptance.
+
+
+### Audit stage F23a — bounded update metadata checks
+
+The fixed GitHub latest-release URL, request headers, installed VERSION lookup and
+version comparison remain. The compatibility `CheckForUpdate()` delegates to the
+same async implementation with a 15-second total network deadline. Await continuations
+must not capture the UI synchronization context. Cancellation aborts the request
+and closes an open response stream, including stalled headers/body reads. A caller
+cancellation remains a canceled task with the caller's token; it is not logged as a
+failed update check. Deadline expiry returns a localized error with a retry action.
+
+Release metadata is bounded to 2 MiB for declared and streamed lengths before JSON
+parsing. Preserve UTF-8/BOM reading. Dispose requests' registrations, responses and
+streams on success, failure and cancellation. Keep current-user proxy behavior for
+GitHub; only the explicit internal loopback fixture bypasses proxy settings. No
+user-editable update endpoint, installation-policy change, maintenance handoff,
+CLI launch change or release/version bump belongs in this substage.
+
+UpdateCheckTests uses actual loopback TCP sockets on isolated Windows/.NET Framework
+CI. It covers success/current/older/invalid metadata and versions, HTTP errors,
+headers/body stalls, caller cancellation before and during a request, retries and
+both declared/chunked oversized responses. Settings/vault bytes and existence must
+remain unchanged. It does not contact GitHub, launch the updater or mutate user
+proxy settings. F23 remains open: visible check/cancel progress, release notes and
+safe cancellation of VPS waiting are later, separate substages.
