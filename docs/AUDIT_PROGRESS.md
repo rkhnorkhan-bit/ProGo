@@ -1219,3 +1219,26 @@ issuance/reissue, clipboard and server suites remain required.
 Windows/server CI is required for acceptance. Actual Narrator/live contrast and
 remaining forms are outstanding; F17 remains open. Progress remains **21/30 closed;
 9 remaining**. No merge, release or version change.
+
+
+## Stage F17k — diagnostic export preview keyboard access
+
+The diagnostic preview exposes the transfer guidance and read-only snapshot purpose.
+Copy, Save As and Close descriptions distinguish reviewed export, file-choice
+cancellation, external sending and connection scope. The named export result
+tracks its current guidance, failure, cancellation or success text. Existing action
+handlers, report projection, snapshot lifetime, layout and Enter/Escape defaults
+are retained; no log collection or export-policy changes.
+
+Native coverage extends the existing preview fixture with Tab/Shift+Tab at normal
+and minimum widths, visible actions, safe text-field Enter and focused Close Enter.
+Injected copy/save failures retain keyboard access and generic corrective results;
+explicit successful retries replace stale errors. Cancelled saving followed by
+Escape adds no export. Source log bytes and opaque private access files/existence
+must remain unchanged. Copy/save callbacks are isolated from real clipboard/file
+exports; the existing updater helper fixture still checks actual reviewed clipboard
+copying through the shared production dialog.
+
+Windows/server CI is required for acceptance. Actual Narrator/live contrast and
+remaining help navigation are outstanding; F17 remains open. Progress remains
+**21/30 closed; 9 remaining**. No merge, version bump or release.

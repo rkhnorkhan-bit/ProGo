@@ -760,3 +760,25 @@ native list arrows, cancellation, pending and reconciliation states; no token is
 issued and no clipboard or private access files are written. Existing reissue/server
 suites remain mandatory. These checks do not establish physical Narrator, live
 contrast or real DPI acceptance.
+
+
+### Audit stage F17k — diagnostic preview keyboard contract
+
+`DiagnosticPreviewForm` names its transfer guidance and read-only reviewed report.
+Keep the export result's accessible description current for initial guidance,
+failures, cancellations and successes. Action descriptions must distinguish
+clipboard copying, file choice, ordinary closure and external sending. Neither
+metadata nor exceptions may reintroduce original log text into the exported report.
+
+Preserve the allowlisted immutable report snapshot, shared updater entry point,
+explicit copy/save callbacks and native Enter/Escape behavior. Text-field Enter
+must not trigger export; focused buttons retain ordinary keyboard activation.
+This stage does not change report collection, sanitization, transport or storage.
+
+The existing native preview fixture walks Tab/Shift+Tab at normal/minimum widths,
+checks current errors, successful retry and cancelled saving, and closes via
+Enter/Escape without extra exports. Its injected callbacks never write the real
+clipboard or a saved report. Source logs and opaque private access bytes remain
+unchanged. The separate updater helper fixture continues to verify the actual
+clipboard path. Native fixtures do not establish physical Narrator, live contrast
+or real DPI acceptance.
