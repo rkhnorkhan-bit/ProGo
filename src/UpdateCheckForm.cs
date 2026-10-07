@@ -67,7 +67,7 @@ namespace ProGo
         private void StartCheck()
         {
             if (running != null || IsDisposed || Disposing) return;
-            SetChecking(); running = new CancellationTokenSource();
+            SetChecking(); close.Focus(); running = new CancellationTokenSource();
             CheckWork = RunCheck(running, ++generation);
         }
         private async Task RunCheck(CancellationTokenSource cancellation, long request)

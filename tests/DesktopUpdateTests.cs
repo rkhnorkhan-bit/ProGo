@@ -50,15 +50,15 @@ namespace ProGo
                 Check(!String.Join(" ", Descendants(form).Select(c => c.Text)).Contains("private-fixture-detail"), "update exception details stay out of user interface");
                 Check(((Label)Field(form, "notice")).Text.Contains("журнале приложения"), "failed update points to the existing application journal");
                 KeyboardWalk(form, new Control[] { details, primary, close }, "update failed retry"); Shot(form, "update-check-error");
-                primary.PerformClick(); PumpUntil(() => Volatile.Read(ref retries) == 2);
-                Check(form.IsChecking && close.Text == "Отменить" && !primary.Visible, "retry replaces stale error with visible progress");
+                primary.Focus(); primary.PerformClick(); PumpUntil(() => Volatile.Read(ref retries) == 2);
+                Check(form.IsChecking && close.Text == "Отменить" && !primary.Visible && close.Focused, "retry replaces stale error with visible progress");
                 retryReply.SetResult(UpdateOffer("[Описание](https://example.org)\n<script>plain text</script>\n" + new String('x', 5000)));
                 PumpUntil(() => !form.IsChecking);
                 Check(status.Text == "Доступна версия 0.3.0" && primary.Text == "Установить обновление" && primary.Enabled,
                     "newer release exposes installation only after successful check");
                 Check(details.ReadOnly && details.Text.Contains("<script>plain text</script>") && details.Text.Length < 3200 && details.Text.Contains("Описание сокращено"),
                     "release notes are bounded plain text without active links or markup");
-                Check(form.AcceptedResult == null && form.AcceptButton == null, "successful check never accepts installation automatically");
+                Check(form.AcceptedResult == null && form.AcceptButton == null && !primary.ContainsFocus, "successful check never accepts installation or moves focus to install automatically");
                 foreach (bool minimum in new[] { false, true }) {
                     if (minimum) form.Size = new Size(560, 380); else form.ClientSize = new Size(640, 440);
                     Application.DoEvents();
