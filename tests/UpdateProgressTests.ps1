@@ -1,4 +1,4 @@
-param([string]$Exe, [string]$Scripts)
+﻿param([string]$Exe, [string]$Scripts)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: update progress transaction tests require isolated Windows CI'; return }

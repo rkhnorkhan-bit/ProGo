@@ -1,4 +1,4 @@
-param([string]$Mode, [string]$Scripts, [string]$Fixture, [string]$Release, [string]$Package)
+﻿param([string]$Mode, [string]$Scripts, [string]$Fixture, [string]$Release, [string]$Package)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Requires isolated Windows CI' }
