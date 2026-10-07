@@ -217,7 +217,8 @@ namespace ProGo
         }
         private static void StyleButton(Button b)
         {
-            b.AccessibleName = b.Text;
+            // Styling must not replace an explicit accessible purpose. Without an
+            // override, the native button automatically announces its current Text.
             if (HighContrast) {
                 b.FlatStyle = FlatStyle.Standard;
                 b.BackColor = SystemColors.Control; b.ForeColor = SystemColors.ControlText; b.UseVisualStyleBackColor = true;
@@ -232,7 +233,6 @@ namespace ProGo
             b.BackColor = primary ? Accent : Field; b.ForeColor = primary ? Background : Text;
             b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false;
             if (b.Height < 30 && b.Dock == DockStyle.None) b.Height = 32;
-            b.AccessibleName = b.Text;
         }
         public static void Menu(ContextMenuStrip menu)
         {

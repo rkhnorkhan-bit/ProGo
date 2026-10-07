@@ -34,6 +34,71 @@ namespace ProGo
                 form.Width + available.Width - actual.Width, form.Height + available.Height - actual.Height, 0x0016))
                 throw new System.ComponentModel.Win32Exception();
         }
+        private static void DashboardKeyboard(SettingsService settings)
+        {
+            int commands = 0; AppCommand? last = null;
+            var pending = new AppCommandState(new AppCommand[0], false, false);
+            using (var health = new ConnectionHealthMonitor(() => settings.Current,
+                delegate { return true; }, delegate { return new InternetProbeResult(true, 200); }))
+            using (var proxy = new ProxyService(settings))
+            using (var relay = new Ikev2RelayService())
+            using (var home = new HomeVpnService(relay))
+            using (var form = new MainWindow(settings, proxy, home, command => { commands++; last = command; },
+                null, null, health, null, () => pending)) {
+                form.Show(); Application.DoEvents(); ((Timer)Field(form, "timer")).Stop();
+                var navigation = (System.Collections.Generic.Dictionary<string, Button>)Field(form, "navigation");
+                var connect = (Button)Field(form, "connect"); var windows = (Button)Field(form, "windowsToggle");
+                var cli = (Button)Field(form, "cliToggle");
+                Func<AppCommand, Button> button = command => Descendants(form).OfType<Button>().Single(b => b.Text == AppCommands.Get(command).CompactLabel);
+                var order = new Control[] {
+                    navigation["home"], navigation["iphone"], navigation["connections"], navigation["vault"], navigation["diagnostics"], navigation["settings"],
+                    button(AppCommand.StopAll), connect, button(AppCommand.StopDesktop), button(AppCommand.CheckRoute),
+                    Descendants(form).OfType<LinkLabel>().Single(), windows, cli,
+                    Descendants(form).OfType<Button>().Single(b => b.Text == "Открыть мастер"),
+                    button(AppCommand.Update), button(AppCommand.OpenCodex), button(AppCommand.Help)
+                };
+                foreach (var size in new[] { new Size(1200, 710), new Size(744, 521) }) {
+                    DashboardFixtureSize(form, size); Application.DoEvents();
+                    Check(((TableLayoutPanel)Field(form, "cards")).ColumnCount == (size.Width > 1000 ? 3 : 1),
+                        "dashboard keyboard fixture reaches its wide/narrow layout " + size.Width);
+                    KeyboardWalk(form, order, "dashboard " + size.Width);
+                    Check(commands == 0, "dashboard keyboard traversal dispatches no actions " + size.Width);
+                }
+                Check(form.AcceptButton == null && form.CancelButton == null, "dashboard has no implicit connect or disconnect default");
+                Check(order.All(c => !String.IsNullOrEmpty(c.AccessibilityObject.Name) && !String.IsNullOrEmpty(c.AccessibilityObject.Description)),
+                    "all dashboard actions expose their name and effect");
+                foreach (string field in new[] { "connection", "subtitle", "windowsState", "terminalState", "phoneState", "recovery" }) {
+                    var value = (Label)Field(form, field);
+                    Check(!String.IsNullOrEmpty(value.AccessibilityObject.Name) && value.AccessibilityObject.Description == value.Text,
+                        "dashboard status has a named current result: " + field);
+                }
+                Check(connect.AccessibilityObject.Name == "Подключиться", "dashboard announces unverified connection action");
+                HealthRefresh(health); form.RefreshConnectionState();
+                Check(connect.AccessibilityObject.Name == "Переподключиться" &&
+                    ((Label)Field(form, "connection")).AccessibilityObject.Description == ((Label)Field(form, "connection")).Text,
+                    "dashboard accessible action and result track fresh connection evidence");
+                string purpose = windows.AccessibilityObject.Name;
+                UiTheme.Apply(form);
+                Check(windows.AccessibilityObject.Name == purpose && purpose.Contains("прокси Windows"),
+                    "palette application preserves dashboard-specific button purpose");
+                pending = new AppCommandState(new[] { AppCommand.StartCli, AppCommand.EnableWindows }, true, false);
+                form.RefreshConnectionState();
+                Check(!connect.Enabled && !cli.Enabled && !windows.Enabled && cli.AccessibilityObject.Name == "Подключаем CLI…" &&
+                    windows.AccessibilityObject.Name.Contains("Подключаем"), "dashboard pending actions are named and disabled");
+                KeyboardWalk(form, order.Where(c => c.Enabled).ToArray(), "dashboard pending skips unavailable actions");
+                Check(commands == 0, "pending keyboard traversal never dispatches a disabled action");
+                pending = new AppCommandState(new AppCommand[0], false, false); form.RefreshConnectionState();
+                Check(cli.Enabled && windows.Enabled && connect.Enabled, "dashboard cancelled pending state restores keyboard actions");
+                var expected = cli.Text == "Выключить CLI" ? AppCommand.StopCli : AppCommand.StartCli;
+                cli.PerformClick(); Check(commands == 1 && last == expected, "dashboard keyboard changes preserve ordinary CLI dispatch");
+                Shot(form, "keyboard-dashboard-narrow"); form.Close();
+            }
+            using (var button = UiTheme.Button("Первое действие", null, false)) {
+                button.Text = "Новое действие"; UiTheme.Apply(button);
+                Check(button.AccessibilityObject.Name == "Новое действие", "native button name follows its caption without a stale style override");
+            }
+        }
+
         private static void DashboardLayout(SettingsService settings)
         {
             using (var proxy = new ProxyService(settings))

@@ -49,7 +49,7 @@ namespace ProGo
             var branding = Actions(brand, wordmark); branding.Margin = new Padding(0, 8, 0, 30); rail.Controls.Add(branding, 0, 0);
             var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0),
                 FlowDirection = FlowDirection.TopDown, WrapContents = false };
-            Nav(nav, "Главная", "home", delegate { SetNavigation("home"); });
+            Nav(nav, "Главная", "home", delegate { SetNavigation("home"); }, "Показывает главное окно с состоянием подключений.");
             CommandNav(nav, AppCommand.Phone, action);
             CommandNav(nav, AppCommand.Connections, action);
             CommandNav(nav, AppCommand.Vault, action);
@@ -104,7 +104,20 @@ namespace ProGo
             viewport.ClientSizeChanged += delegate { FitDashboard(); };
             body.Layout += delegate { FitDashboard(); };
             Shown += delegate { FitDashboard(); };
+            DescribeStatus(connection, "Подключение к серверу");
+            DescribeStatus(subtitle, "Результат проверки подключения");
+            DescribeStatus(windowsState, "Состояние прокси Windows");
+            DescribeStatus(terminalState, "Состояние прокси терминалов и Codex");
+            DescribeStatus(phoneState, "Состояние VPN телефона");
+            DescribeStatus(recovery, "Восстановление и прокси приложений");
+            UiTheme.ConfigureKeyboardOrder(this);
             timer.Tick += delegate { RefreshState(); }; timer.Start(); RefreshState();
+        }
+        private static void DescribeStatus(Label label, string name)
+        {
+            label.AccessibleName = name;
+            label.AccessibleDescription = label.Text;
+            label.TextChanged += delegate { label.AccessibleDescription = label.Text; };
         }
         private static TableLayoutPanel Stack(params Control[] controls)
         {
@@ -162,6 +175,7 @@ namespace ProGo
                     for (int i = 0; i < cards.RowCount; i++) cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                     for (int i = 0; i < statusCards.Count; i++) cards.SetCellPosition(statusCards[i], new TableLayoutPanelCellPosition(columns == 3 ? i : 0, columns == 3 ? 0 : i));
                     cards.ResumeLayout(true);
+                    UiTheme.ConfigureKeyboardOrder(cards);
                 }
                 for (int i = 0; i < statusCards.Count; i++) statusCards[i].Margin = new Padding(columns == 3 && i != 0 ? 6 : 0, 0, columns == 3 && i != 2 ? 6 : 0, 16);
                 int height = body.GetPreferredSize(new Size(width, 0)).Height;

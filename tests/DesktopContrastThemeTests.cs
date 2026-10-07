@@ -33,7 +33,10 @@ namespace ProGo
                     ((Button)form.AcceptButton).PerformClick();
                     var error = (Label)Field(form, "saveError");
                     Check(error.ForeColor == UiTheme.Error && error.Visible, "normal theme exposes a textual save error");
+                    string windowsPurpose = ((Button)Field(dashboard, "windowsToggle")).AccessibilityObject.Name;
                     contrast = true; ContrastNotify(form); ContrastNotify(dashboard);
+                    Check(((Button)Field(dashboard, "windowsToggle")).AccessibilityObject.Name == windowsPurpose && windowsPurpose.Contains("прокси Windows"),
+                        "live contrast changes preserve the explicit Windows proxy action name");
                     ContrastCheck(form, "settings"); ContrastCheck(dashboard, "dashboard");
                     Check(error.Text.Contains("Ошибка сохранения") && error.ForeColor == SystemColors.WindowText, "contrast error retains its message with readable system text");
                     var tabs = Descendants(form).OfType<TabControl>().Single();
