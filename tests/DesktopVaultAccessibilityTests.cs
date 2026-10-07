@@ -41,8 +41,10 @@ namespace ProGo
                 KeyboardWalk(form, order, "vault populated list");
                 grid.Focus(); grid.CurrentCell = grid.Rows[0].Cells[0];
                 var gridKey = typeof(DataGridView).GetMethod("ProcessDialogKey", BindingFlags.Instance | BindingFlags.NonPublic);
-                gridKey.Invoke(grid, new object[] { Keys.Down }); Application.DoEvents();
-                Check(grid.ContainsFocus && grid.CurrentCell.RowIndex == 1 && grid.SelectedRows.Count == 1, "native grid arrow selects another record without editing");
+                typeof(DataGridView).GetMethod("ProcessDataGridViewKey", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(grid, new object[] { new KeyEventArgs(Keys.Down) }); Application.DoEvents();
+                Check(grid.ContainsFocus && grid.CurrentCell.RowIndex == 1 && grid.SelectedRows.Count == 1,
+                    "native grid arrow selects another record without editing; focus=" + grid.ContainsFocus + " row=" + grid.CurrentCell.RowIndex + " selected=" + grid.SelectedRows.Count);
                 gridKey.Invoke(grid, new object[] { Keys.Tab }); Application.DoEvents();
                 Check(actions[0].ContainsFocus, "native grid Tab leaves the cells for Add");
                 grid.Focus(); gridKey.Invoke(grid, new object[] { Keys.Tab | Keys.Shift }); Application.DoEvents();
