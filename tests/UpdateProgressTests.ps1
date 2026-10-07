@@ -56,11 +56,14 @@ try {
             if ($phases -ne $wanted) { Write-Host $text; Write-Host $stderr.Result }
             Check ($phases -eq $wanted) "actual transaction exposes only reached phases in order: $mode"
             Check (($process.ExitCode -eq 0) -eq ($mode -in @('success','current','render-failure'))) "progress does not mask the transaction outcome: $mode"
-            $records = @($events | Where-Object { $_.Kind -eq 'progress' -and -not $_.Completed })
+            # Expand-Archive emits its own legitimate byte/file progress too.
+            # Validate this helper's fixed indicator, without confusing hosts.
+            $records = @($events | Where-Object { $_.Kind -eq 'progress' -and $_.Id -eq 23 -and -not $_.Completed })
+            Check ($records.Count -eq $wanted.Split(',').Length) "each reached helper phase produces its own progress record: $mode"
             Check (@($records | Where-Object { $_.Id -ne 23 -or $_.Activity -ne 'Обновление ProGo' -or $_.Percent -ne -1 -or [string]::IsNullOrWhiteSpace($_.Operation) }).Count -eq 0) "progress carries explanations without made-up percentages: $mode"
-            Check ($events[-1].Kind -eq 'progress' -and $events[-1].Completed) "finally clears progress even after rollback or host failure: $mode"
+            Check ($events[-1].Kind -eq 'progress' -and $events[-1].Id -eq 23 -and $events[-1].Completed) "finally requests helper progress clearance even after rollback or host failure: $mode"
             foreach ($i in 0..($events.Count - 1)) {
-                if ($events[$i].Kind -eq 'dialog') { Check ($i -gt 0 -and $events[$i - 1].Kind -eq 'progress' -and $events[$i - 1].Completed) "progress clears before the result dialog: $mode" }
+                if ($events[$i].Kind -eq 'dialog') { Check ($i -gt 0 -and $events[$i - 1].Kind -eq 'progress' -and $events[$i - 1].Id -eq 23 -and $events[$i - 1].Completed) "helper progress clears before the result dialog: $mode" }
             }
             Check ((Get-FileHash (Join-Path $install 'settings.json')).Hash -eq $settings -and (Get-FileHash (Join-Path $install 'vault.enc.json')).Hash -eq $vault) "progress preserves settings and opaque vault: $mode"
             if ($mode -in @('success','render-failure')) {
