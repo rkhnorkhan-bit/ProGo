@@ -156,7 +156,10 @@ namespace ProGo
                             Task task = package ? InstalledUpdateTransport.DownloadPackageAsync(server.Endpoint, target, 3000, 65536, CancellationToken.None) :
                                 (Task)InstalledUpdateTransport.ReadMetadataAsync(server.Endpoint, 3000, 65536, CancellationToken.None);
                             try { Finish(task); throw new Exception("Invalid body accepted."); }
-                            catch (IOException) { Check(true, mode + " rejected for " + (package ? "package" : "metadata")); }
+                            catch (Exception error) {
+                                Check(error is InvalidDataException || error is IOException,
+                                    mode + " rejected for " + (package ? "package" : "metadata"));
+                            }
                             if (package) Check(!File.Exists(target), "invalid package leaves no partial file");
                         }
                 using (var server = new Server(Text("private fixture detail"), "complete", 503)) {
@@ -197,6 +200,7 @@ namespace ProGo
                 Console.WriteLine("Installed update transport tests PASS: " + passed);
                 return 0;
             }
+            catch (Exception error) { Console.WriteLine("FAIL: " + error); return 1; }
             finally { Directory.Delete(root, true); }
         }
     }
