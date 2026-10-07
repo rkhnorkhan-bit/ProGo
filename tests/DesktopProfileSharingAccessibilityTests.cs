@@ -76,11 +76,12 @@ namespace ProGo
                         picture.Visible && copy.Enabled, "QR failed revocation exposes a named corrective result and keeps the link usable");
                     KeyboardWalk(form, new Control[] { copy, revoke, close }, "QR failure allows retry");
                     dialogKey.Invoke(form, new object[] { Keys.Tab }); dialogKey.Invoke(form, new object[] { Keys.Tab }); Application.DoEvents();
-                    Check(close.ContainsFocus && close.Parent.ClientRectangle.Contains(close.Bounds), "QR Tab reaches fully visible Close after a multiline error");
+                    Check(close.ContainsFocus && close.Parent.ClientRectangle.Contains(close.Bounds) && error.Visible && error.Parent.ClientRectangle.Contains(error.Bounds),
+                        "QR Tab reaches fully visible Close and corrective error outside scrolling content");
                     Shot(form, "keyboard-qr-retry");
                     revoke.PerformClick(); Application.DoEvents();
                     Check(revoked == 2 && !clock.Enabled && !picture.Visible && !copy.Enabled && !revoke.Enabled &&
-                        status.Text.StartsWith("Ссылка отозвана") && status.AccessibilityObject.Description == status.Text,
+                        status.Text.StartsWith("Ссылка отозвана") && status.AccessibilityObject.Description == status.Text && !error.Visible && error.AccessibilityObject.Description == "",
                         "QR successful retry removes copy and revoke actions while naming the real result");
                     KeyboardWalk(form, new Control[] { close }, "QR revoked");
                     close.Focus(); dialogKey.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();

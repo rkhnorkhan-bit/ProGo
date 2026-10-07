@@ -210,7 +210,7 @@ namespace ProGo
             clipboard.BindSecretCopy(copy, delegate { return link.Url; }, copyNotice);
             var cancel = new Button { Text = "Отозвать ссылку", AutoSize = true, MinimumSize = new Size(230, 38) };
             cancel.AccessibleDescription = "Отзывает временную ссылку на сервере. Уже установленный VPN продолжает работать.";
-            var error = new Label { AutoSize = true, MaximumSize = new Size(510, 0) };
+            var error = new Label { AutoSize = true, MaximumSize = new Size(510, 0), Visible = false };
             HomeProfileShare.DescribeStatus(error, "Результат отзыва ссылки");
             var close = new Button { Text = "Закрыть", AutoSize = true, MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel,
                 AccessibleDescription = "Закрывает окно без отзыва ссылки. Ссылка остаётся доступной до использования, отзыва или истечения срока." };
@@ -218,19 +218,18 @@ namespace ProGo
             CancelButton = close;
             cancel.Click += async delegate
             {
-                cancel.Enabled = false;
+                cancel.Enabled = false; error.Text = ""; error.Visible = false;
                 try { await revoke(); clock.Stop(); status.Text = "Ссылка отозвана. Уже установленный VPN продолжает работать."; picture.Visible = false; copy.Enabled = false; }
-                catch (Exception) { error.Text = "Отозвать не удалось: проверьте соединение. Ссылка автоматически истечёт через 15 минут после создания."; cancel.Enabled = true; }
+                catch (Exception) { error.Text = "Отозвать не удалось: проверьте соединение. Ссылка автоматически истечёт через 15 минут после создания."; error.Visible = true; cancel.Enabled = true; }
             };
             panel.Controls.Add(copy); panel.Controls.Add(copyNotice); panel.Controls.Add(cancel);
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "Ссылка для одного телефона: после «Получить профиль» повторно воспользоваться QR нельзя. Для другого телефона создайте новый QR. Не публикуйте код. Android использует strongSwan VPN Client.", Margin = new Padding(0, 8, 0, 8) });
-            panel.Controls.Add(error);
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false,
+            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false, FlowDirection = FlowDirection.TopDown,
                 Padding = new Padding(18, 0, 18, 12), Margin = Padding.Empty };
-            footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); Controls.Add(layout);
+            footer.Controls.Add(error); footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
             clock.Interval = 1000;
             EventHandler update = delegate
