@@ -332,6 +332,8 @@ if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity harness build failed' }
 if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity tests failed' }
 & (Join-Path $Root 'tests\BackupIntegrityTests.ps1') (Join-Path $Root 'release\scripts')
 
+# Validate the changed helper transaction before the longer native UI suite.
+& (Join-Path $Root 'tests\UpdateProgressTests.ps1') $Exe (Join-Path $Root 'release\scripts')
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
 $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
 $UpdateCheckHarness = Join-Path $Root 'build\UpdateCheckTests.exe'
@@ -355,5 +357,4 @@ if ($LASTEXITCODE -ne 0) { Fail 'Shutdown harness build failed' }
 & $ShutdownHarness $Exe (Join-Path $Root 'release\scripts')
 if ($LASTEXITCODE -ne 0) { Fail 'Shutdown tests failed' }
 & (Join-Path $Root 'tests\UpdatePackageTests.ps1')
-& (Join-Path $Root 'tests\UpdateProgressTests.ps1') $Exe (Join-Path $Root 'release\scripts')
 Write-Host "ProGo tests PASS."

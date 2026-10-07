@@ -9,6 +9,8 @@ $work = Join-Path $env:TEMP ('ProGo-update-progress-' + [guid]::NewGuid().ToStri
 $release = Split-Path -Parent $Exe
 $version = (Get-Content -Raw (Join-Path $release 'VERSION')).Trim()
 $expected = 'metadata,waiting,download,package,backup,staging,stage-check,install,installed-check,restart'
+$runtimeSettings = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'ProGo\settings.json'
+$originalSettings = if (Test-Path $runtimeSettings) { [IO.File]::ReadAllBytes($runtimeSettings) } else { $null }
 try {
     New-Item -ItemType Directory $work | Out-Null
     $package = Join-Path $work 'release.zip'
@@ -37,7 +39,9 @@ try {
         try {
             if (-not $process.WaitForExit(30000)) { $process.Kill(); $process.WaitForExit(); throw "Progress fixture timed out: $mode" }
             $text = $stdout.Result
-            $events = @(Get-Content -LiteralPath (Join-Path $fixture 'progress.json') -Raw -Encoding UTF8 | ConvertFrom-Json)
+            # Windows PowerShell 5.1 returns a JSON array as one pipeline object.
+            # Assign it directly; @() would wrap it in an extra array layer.
+            $events = Get-Content -LiteralPath (Join-Path $fixture 'progress.json') -Raw -Encoding UTF8 | ConvertFrom-Json
             $phases = (@($events | Where-Object { $_.Kind -eq 'phase' } | ForEach-Object { $_.Phase })) -join ','
             $wanted = switch ($mode) {
                 current { 'metadata' }
@@ -71,4 +75,10 @@ try {
         } finally { $process.Dispose() }
     }
     Write-Host "Updater progress tests PASS: $passed"
-} finally { if (Test-Path $work) { Remove-Item -LiteralPath $work -Recurse -Force } }
+} finally {
+    # Compiled self-check uses Windows' real known-folder API, not just the child's
+    # LOCALAPPDATA override. Preserve that isolated runner input as well.
+    if ($null -ne $originalSettings) { [IO.File]::WriteAllBytes($runtimeSettings, $originalSettings) }
+    else { Remove-Item -LiteralPath $runtimeSettings -ErrorAction SilentlyContinue }
+    if (Test-Path $work) { Remove-Item -LiteralPath $work -Recurse -Force }
+}
