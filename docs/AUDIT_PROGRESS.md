@@ -1291,3 +1291,26 @@ Windows/server CI and native screenshot review are required for this substage.
 Known help/backup selector gaps now have native fixture coverage, but physical
 Narrator/live contrast and real DPI acceptance remain outstanding; F17 stays open.
 Progress remains **21/30 closed; 9 remaining**. No merge, version bump or release.
+
+
+## Stage F23a — deadline and cancellation for update checks
+
+Update metadata checks now share an async transport with a 15-second total network
+deadline. Abort/stream closure interrupts waiting for headers or a stalled body;
+caller cancellation stays distinct from a failure result. Timeouts explain retry.
+Declared and streamed metadata lengths are limited to 2 MiB before parsing.
+
+The existing synchronous entry point delegates to that transport. The fixed GitHub
+release URL, headers, version comparison and default proxy route remain; no update
+installation, maintenance handoff, CLI behavior or automatic installation policy
+changes belong here. The cancellation API is groundwork: this substage does not
+add a visible Cancel button or claim that the whole F23 UI is finished.
+
+An isolated Windows socket fixture covers valid/current/older releases, malformed
+JSON and versions, HTTP failure, stalled headers/body with deadlines and cancellation,
+pre-canceled requests, retries and declared/chunked oversized metadata. Settings and
+vault bytes/existence remain unchanged. Acceptance requires Windows/server CI.
+
+F23 remains open for visible progress/cancel controls, release notes and safe VPS
+waiting cancellation. Progress remains **21/30 closed; 9 remaining**. No merge,
+version bump or release.
