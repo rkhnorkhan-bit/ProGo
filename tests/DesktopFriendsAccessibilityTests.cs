@@ -15,6 +15,26 @@ namespace ProGo
         [DllImport("user32.dll", EntryPoint = "SendMessageW")]
         private static extern IntPtr InvitationListKey(IntPtr window, int message, IntPtr key, IntPtr data);
 
+        // Real dialog keys start at the focused child. Calling Form directly skips
+        // traversal inside the nested HomeInvitationList ContainerControl.
+        private static void FriendKeyboardWalk(Form form, Control[] controls, string name)
+        {
+            Check(controls[0].Focus(), name + " first field accepts focus");
+            var dialogKey = typeof(Control).GetMethod("ProcessDialogKey", PrivateInstance);
+            Action<Keys> send = value => {
+                var focused = Descendants(form).Single(c => c.Focused);
+                dialogKey.Invoke(focused, new object[] { value }); Application.DoEvents();
+            };
+            for (int i = 1; i < controls.Length; i++) {
+                send(Keys.Tab);
+                Check(controls[i].ContainsFocus, name + " Tab reaches " + controls[i].GetType().Name + " " + controls[i].AccessibilityObject.Name);
+            }
+            for (int i = controls.Length - 2; i >= 0; i--) {
+                send(Keys.Tab | Keys.Shift);
+                Check(controls[i].ContainsFocus, name + " Shift+Tab returns to " + controls[i].GetType().Name + " " + controls[i].AccessibilityObject.Name);
+            }
+        }
+
         private static void FriendsAccessibility(SettingsService settings)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") {
@@ -40,7 +60,7 @@ namespace ProGo
                     var details = (Label)Field(view, "details"); var count = (Label)Field(view, "count"); var name = (TextBox)Field(form, "name");
                     var create = (Button)Field(form, "create"); var revoke = (Button)Field(form, "revoke"); var reissue = (Button)Field(form, "reissue");
                     var refresh = (Button)Field(form, "refresh"); var close = (Button)form.CancelButton; var status = (Label)Field(form, "status");
-                    Action<string> walk = state => KeyboardWalk(form, new Control[] { search, rows, name, create, revoke, reissue, refresh, close }.Where(c => c.Enabled).ToArray(), "friends " + state);
+                    Action<string> walk = state => FriendKeyboardWalk(form, new Control[] { search, rows, name, create, revoke, reissue, refresh, close }.Where(c => c.Enabled).ToArray(), "friends " + state);
                     Check(form.AcceptButton == null && !revoke.Enabled && !reissue.Enabled && view.Selected == null, "friends starts without implicit mutation or destructive selection");
                     Check(search.AccessibilityObject.Description.Contains("без изменения") && rows.AccessibilityObject.Description.Contains("Стрелки") &&
                         name.AccessibilityObject.Description.Contains("а не этот текст"), "friend search, selection and new-name field explain independent effects");
@@ -105,7 +125,7 @@ namespace ProGo
                         "friend token actions explain one-time display, dismissal and the current clipboard policy");
                     Check(Descendants(token).All(c => !(c.AccessibilityObject.Name ?? "").Contains(input.Text) && !(c.AccessibilityObject.Description ?? "").Contains(input.Text)),
                         "friend token metadata never includes the masked secret");
-                    KeyboardWalk(token, new Control[] { input, copy, close }, "friend token");
+                    FriendKeyboardWalk(token, new Control[] { input, copy, close }, "friend token");
                     input.Focus(); key.Invoke(token, new object[] { Keys.Enter }); Application.DoEvents();
                     Check(notice.Text == clipboard.CopyNotice && token.Visible, "friend token Enter in read-only field does not copy or close");
                     copy.Focus(); Application.DoEvents(); Check(copy.Parent.ClientRectangle.Contains(copy.Bounds), "friend token copy is scrolled fully into view for keyboard focus");
