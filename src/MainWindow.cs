@@ -76,27 +76,29 @@ namespace ProGo
             viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0) }; content.Controls.Add(viewport, 0, 0);
             // A right anchor constrains horizontal scrolling; keeping this child undocked
             // lets vertical reflow retain its scroll origin instead of redocking at the top.
-            body = Stack(); body.Dock = DockStyle.None; body.AutoSize = false;
+            body = Stack(); body.RowCount = 4;
+            for (int i = 0; i < body.RowCount; i++) body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            body.Dock = DockStyle.None; body.AutoSize = false;
             body.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right; viewport.Controls.Add(body);
             var heading = Stack(UiTheme.Label("Ваш интернет. Ваш маршрут.", UiTheme.Title, UiTheme.Text),
                 UiTheme.Label("Подключение к серверу и настройки приложений.", UiTheme.Body, UiTheme.Muted));
-            heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading);
+            heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading, 0, 0);
             var eyebrow = UiTheme.Label("ПОДКЛЮЧЕНИЕ К СЕРВЕРУ", UiTheme.Strong, UiTheme.Accent);
             connection = UiTheme.Label("Готовы подключиться?", UiTheme.Title, UiTheme.Text);
             subtitle = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
             connect = AppCommandUi.Button(AppCommand.Connect, delegate { action(AppCommand.Connect); RefreshState(); }, true);
             var heroActions = Actions(connect, AppCommandUi.Button(AppCommand.StopDesktop, delegate { action(AppCommand.StopDesktop); RefreshState(); }, false),
                 AppCommandUi.Button(AppCommand.CheckRoute, delegate { action(AppCommand.CheckRoute); }, false));
-            body.Controls.Add(Surface(eyebrow, connection, subtitle, heroActions));
+            body.Controls.Add(Surface(eyebrow, connection, subtitle, heroActions), 0, 1);
             cards = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
             for (int i = 0; i < 3; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 3));
             cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             windowsState = Card(cards, 0, "WINDOWS", "Параметры Windows", AppCommand.EnableWindows, action);
             terminalState = Card(cards, 1, "CODEX И ТЕРМИНАЛЫ", "Для новых терминалов", AppCommand.StartCli, action);
-            phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards);
+            phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards, 0, 2);
             recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
-            body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery));
+            body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery), 0, 3);
             openCodex = AppCommandUi.Button(AppCommand.OpenCodex, delegate { action(AppCommand.OpenCodex); }, false);
             var footer = Actions(AppCommandUi.Button(AppCommand.Update, delegate { action(AppCommand.Update); }, false),
                 openCodex, AppCommandUi.Button(AppCommand.Help, delegate { action(AppCommand.Help); }, false));
