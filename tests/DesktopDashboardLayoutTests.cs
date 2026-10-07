@@ -61,6 +61,7 @@ namespace ProGo
                     DashboardFixtureSize(form, size); Application.DoEvents();
                     Check(((TableLayoutPanel)Field(form, "cards")).ColumnCount == (size.Width > 1000 ? 3 : 1),
                         "dashboard keyboard fixture reaches its wide/narrow layout " + size.Width);
+                    Console.WriteLine("Dashboard traversal: " + String.Join(" | ", Descendants(form).Where(c => c.TabStop).Select(c => c.GetType().Name + ":" + c.Text + " tab=" + c.TabIndex)));
                     KeyboardWalk(form, order, "dashboard " + size.Width);
                     Check(commands == 0, "dashboard keyboard traversal dispatches no actions " + size.Width);
                 }
