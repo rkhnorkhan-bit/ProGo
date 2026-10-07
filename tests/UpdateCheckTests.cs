@@ -36,7 +36,7 @@ namespace ProGo
             internal Server(string body, string mode = "complete", int status = 200)
             {
                 listener.Start();
-                Endpoint = new Uri("http://localhost:" + ((IPEndPoint)listener.LocalEndpoint).Port + "/release");
+                Endpoint = new Uri("http://" + IPAddress.Loopback + ":" + ((IPEndPoint)listener.LocalEndpoint).Port + "/release");
                 var accept = listener.AcceptTcpClientAsync();
                 worker = Task.Run(async delegate {
                     try
