@@ -46,6 +46,10 @@ namespace ProGo
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int i = 0; i < 5; i++) layout.RowStyles.Add(new RowStyle(i == 2 ? SizeType.Percent : SizeType.AutoSize, i == 2 ? 100 : 0));
             heading.AutoSize = true; heading.Font = UiTheme.Heading; heading.Margin = new Padding(0, 0, 0, 8);
+            DescribeStatus(heading, "Текущий шаг настройки VPN");
+            DescribeStatus(status, "Результат операции настройки VPN");
+            progress.TabStop = false; progress.AccessibleRole = AccessibleRole.StaticText;
+            back.AccessibleDescription = "Возвращает к предыдущему шагу. Введённые данные остаются в этом мастере.";
             progress.Dock = DockStyle.Top; progress.Height = 64; progress.Margin = new Padding(0, 0, 0, 16);
             body.Dock = DockStyle.Fill; body.FlowDirection = FlowDirection.TopDown; body.WrapContents = false; body.AutoScroll = true;
             status.AutoSize = true; status.MaximumSize = new Size(680, 0); status.Margin = new Padding(0, 8, 0, 8);
@@ -69,24 +73,30 @@ namespace ProGo
             status.Text = ""; status.ForeColor = UiTheme.Muted;
             string[] titles = { "Как подключаемся?", own ? "Данные вашего VPS" : "Токен приглашения", "Подготовьте домашний роутер", "Добавьте VPN на телефон", "Проверка и управление" };
             heading.Text = (step + 1) + ". " + titles[step];
+            progress.AccessibleDescription = heading.Text;
+            next.AccessibleDescription = step == 4 ? "Закрывает мастер. Работающий канал VPN остаётся включённым."
+                : step == 3 ? "Переходит к проверке после вашего подтверждения установки. Интернет на телефоне автоматически не проверяется."
+                : step == 2 ? "Сохраняет внешний домашний адрес после подтверждения переадресации портов. Настройки роутера автоматически не проверяются."
+                : own ? "Настраивает VPN на вашем VPS через SSH и запускает канал. Изменяет настройки сервера."
+                : "Проверяет токен приглашения, сохраняет доступ и запускает канал к VPS.";
             back.Visible = step > 0; next.Visible = step > 0; next.Text = step == 4 ? "Закрыть" : "Далее";
             if (step == 0)
             {
                 Paragraph("Мастер подключит телефон через этот ПК и VPS. iPhone использует встроенный IKEv2, Android — strongSwan VPN Client. Компьютер должен оставаться включённым и иметь доступный извне домашний адрес.");
-                Action("Подключиться к готовому VPS", delegate { own = false; ShowStep(1); });
+                Action("Подключиться к готовому VPS", delegate { own = false; ShowStep(1); }, "Открывает ввод личного токена приглашения владельца VPS.");
                 Paragraph("Владелец VPS выдаёт вам токен. Пароль администратора не требуется.");
-                Action("Добавить свой VPS", delegate { own = true; ShowStep(1); });
+                Action("Добавить свой VPS", delegate { own = true; ShowStep(1); }, "Открывает ввод SSH-данных вашего VPS. Настройка сервера начнётся после подтверждения следующего шага.");
                 Paragraph("Введите SSH-данные сервера Ubuntu. ProGo установит VPN и создаст личный доступ. Здесь же можно будет выдать отдельные токены друзьям.");
-                if (service.Access != null) Action("Вернуться к текущему подключению", delegate { ShowStep(4); });
+                if (service.Access != null) Action("Вернуться к текущему подключению", delegate { ShowStep(4); }, "Открывает состояние текущего канала без повторной настройки VPS.");
             }
             else if (step == 1 && own)
             {
                 Paragraph("Укажите свой Ubuntu VPS. ProGo добавит VPN-сервер, ограниченные SSH-учётные записи и правила выхода VPN в интернет.");
                 host = Field("Адрес VPS (IP или имя)", draftOwner.Host);
-                Paragraph("SSH-порт"); port = new NumericUpDown { Minimum = 1, Maximum = 65535, Value = draftOwner.Port, Width = 120 }; body.Controls.Add(port);
+                Paragraph("SSH-порт"); port = new NumericUpDown { Minimum = 1, Maximum = 65535, Value = draftOwner.Port, Width = 120, AccessibleName = "SSH-порт", AccessibleDescription = "Порт подключения SSH к вашему VPS." }; body.Controls.Add(port);
                 login = Field("SSH-пользователь: root или пользователь с sudo без пароля", draftOwner.Login);
                 key = Field("Файл SSH-ключа (необязательно)", draftOwner.KeyFile);
-                Action("Выбрать файл ключа…", delegate { using (var dialog = new OpenFileDialog()) if (dialog.ShowDialog(this) == DialogResult.OK) key.Text = dialog.FileName; });
+                Action("Выбрать файл ключа…", delegate { using (var dialog = new OpenFileDialog()) if (dialog.ShowDialog(this) == DialogResult.OK) key.Text = dialog.FileName; }, "Выбирает локальный файл закрытого SSH-ключа. Подключение к серверу ещё не выполняется.");
                 Paragraph("Если ключ не указан, SSH использует ваш агент/обычные ключи или попросит пароль в отдельном окне. Пароль не сохраняется в ProGo. При первом входе сверяйте отпечаток ключа сервера.");
                 next.Text = "Настроить VPS и продолжить";
             }
@@ -94,7 +104,8 @@ namespace ProGo
             {
                 Paragraph("Попросите владельца открыть «Доступ друзей» → «Создать токен». Вставьте полученный токен целиком. Он даёт доступ к VPN и должен оставаться личным.");
                 token = Field("Токен PROGO1.…", draftToken); token.UseSystemPasswordChar = true;
-                Action("Вставить из буфера", delegate { if (Clipboard.ContainsText()) token.Text = Clipboard.GetText().Trim(); });
+                token.AccessibleDescription = "Личный токен приглашения. Содержимое скрыто; вставьте токен целиком.";
+                Action("Вставить из буфера", delegate { if (Clipboard.ContainsText()) token.Text = Clipboard.GetText().Trim(); }, "Вставляет личный токен из текущего буфера обмена. Проверка выполняется при продолжении.");
                 Paragraph("Токен содержит отдельный SSH-ключ только для VPN и учётную запись VPN телефона. Это не пароль администратора. Импортируйте токен только от знакомого владельца VPS.");
                 next.Text = "Проверить токен и подключиться";
             }
@@ -106,24 +117,26 @@ namespace ProGo
                     .SelectMany(n => n.GetIPProperties().UnicastAddresses).Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork)
                     .Select(a => a.Address.ToString()).ToArray());
                 Paragraph("Локальные IPv4-адреса ПК: " + addresses + ". Выберите адрес подключения к домашнему роутеру.");
-                Action("1. Разрешить соединения в Windows", async delegate { await RunStep(AllowFirewall); });
+                Action("1. Разрешить соединения в Windows", async delegate { await RunStep(AllowFirewall); }, "Запрашивает права администратора и добавляет входящие UDP-правила Windows для VPN. Роутер настраивается отдельно.");
                 Paragraph("2. На роутере откройте «Переадресация портов» / «Port forwarding». Создайте две записи:");
                 var grid = new DataGridView { Width = 655, Height = 102, ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
-                    RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
+                    RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, StandardTab = true,
+                    AccessibleName = "Правила переадресации портов", AccessibleDescription = "Только чтение: две UDP-записи для домашнего роутера. Стрелки перемещаются по таблице; Tab переходит к домашнему адресу." };
                 grid.Columns.Add("protocol", "Протокол"); grid.Columns.Add("external", "Порт снаружи"); grid.Columns.Add("destination", "Адрес назначения"); grid.Columns.Add("local", "Порт на ПК");
                 grid.Rows.Add("UDP", "500", "Локальный IP этого ПК", "15000"); grid.Rows.Add("UDP", "4500", "Локальный IP этого ПК", "14500"); body.Controls.Add(grid);
                 Paragraph("Закрепите выбранный IP за ПК в DHCP роутера. При CGNAT попросите провайдера подключить публичный IPv4. ProGo не может изменить настройки вашего роутера самостоятельно.");
                 home = Field("3. Внешний IPv4 дома или DDNS (из настроек WAN роутера)", draftHome);
                 Paragraph("Это адрес домашнего роутера, а не VPS и не локальный IP ПК.");
-                routerCheck = new CheckBox { Text = "Оба UDP-порта направлены на этот ПК", AutoSize = true, Checked = routerDone }; body.Controls.Add(routerCheck);
+                routerCheck = new CheckBox { Text = "Оба UDP-порта направлены на этот ПК", AutoSize = true, Checked = routerDone,
+                    AccessibleDescription = "Ваше подтверждение настройки роутера. ProGo не проверяет эти правила автоматически." }; body.Controls.Add(routerCheck);
             }
             else if (step == 3)
             {
                 Paragraph("Сканируйте QR камерой телефона. Откроется защищённая страница с выбором iPhone или Android; сервер, логин и пароль уже будут заполнены.");
-                Action("Установить на телефон по QR", async delegate { await ShowQr(); });
-                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); });
-                Action("Сохранить профиль iPhone файлом…", SaveProfile);
-                profileState = Paragraph(verification.IssuanceText);
+                Action("Установить на телефон по QR", async delegate { await ShowQr(); }, "Создаёт временную ссылку и QR для установки профиля. Предыдущая ссылка доступа перестаёт работать; установка телефоном не подтверждается.");
+                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); }, "Открывает настройку HTTPS-адреса выдачи профилей на VPS.");
+                Action("Сохранить профиль iPhone файлом…", SaveProfile, "Открывает выбор нового файла профиля iPhone. Сохранение файла не подтверждает установку на телефоне.");
+                profileState = Paragraph(verification.IssuanceText); DescribeStatus(profileState, "Выдача профиля VPN");
                 Paragraph("iPhone: откройте страницу в Safari, разрешите загрузку и подтвердите установку в Настройки → Основные → VPN и управление устройством. Android: импортируйте профиль в strongSwan VPN Client.");
                 AddInstallationConfirmation();
                 Paragraph("Первая выдача требует HTTPS-домена на VPS. Владелец настраивает его здесь один раз; для друзей адрес сохраняется в новых токенах.");
@@ -133,22 +146,23 @@ namespace ProGo
             else
             {
                 Paragraph(service.Access == null ? "Сначала добавьте VPS или токен." : "VPS: " + service.Access.Host + "\nДомашний адрес: " + (service.HomeAddress ?? "ещё не указан"));
-                Action("Запустить канал", async delegate { await RunStep(async delegate { await service.StartAsync(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); });
-                Action("Остановить VPN для телефона", delegate { service.Stop(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); });
+                Action("Запустить канал", async delegate { await RunStep(async delegate { await service.StartAsync(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); }, "Запускает канал этого ПК к VPS. Подключение телефона и интернет проверяются отдельно.");
+                Action("Остановить VPN для телефона", delegate { service.Stop(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }, "Останавливает только VPN телефона и сбрасывает результат проверки интернета. Прокси на ПК не отключается.");
                 AddInstallationConfirmation();
                 Paragraph("Проверка на телефоне: 1. Выключите Wi-Fi и включите VPN ProGo. 2. Убедитесь, что телефон показывает «Подключено». 3. Откройте сайт проверки IP и сравните IPv4 с адресом выхода VPS. 4. Отметьте результат ниже. Это ваша проверка, ProGo не выполняет её на телефоне автоматически.");
-                internetCheck = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 640, AccessibleName = "Результат проверки интернета на телефоне" };
+                internetCheck = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 640, AccessibleName = "Результат проверки интернета на телефоне",
+                    AccessibleDescription = "Выберите результат своей проверки на телефоне. Доступно после подтверждения установки профиля; счётчики пакетов не подтверждают интернет." };
                 internetCheck.Items.AddRange(new object[] { "Ещё не проверял", "VPN подключён, но интернета нет", "Сайт открылся, IP совпадает с VPS" });
                 internetCheck.SelectedIndex = (int)verification.Internet; internetCheck.Enabled = verification.Installed;
                 internetCheck.SelectedIndexChanged += delegate { if (internetCheck.SelectedIndex >= 0) verification.SetInternet((PhoneInternet)internetCheck.SelectedIndex); RefreshStatus(); };
                 body.Controls.Add(internetCheck);
-                counters = Paragraph("");
+                counters = Paragraph(""); DescribeStatus(counters, "Состояние канала и проверки телефона");
                 Paragraph("На телефоне выключите Wi-Fi, выберите профиль ProGo и включите VPN. Затем откройте сайт проверки IP: должен отображаться выход вашего VPS. Счётчики подтверждают пересылку, а статус «Подключено» проверяется на телефоне.");
-                Action("Установить на телефон по QR", async delegate { await ShowQr(); });
-                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); });
-                Action("Настроить роутер / создать профиль снова", delegate { ShowStep(2); });
-                Action("Выбрать другой VPS или токен", delegate { ShowStep(0); });
-                if (service.Owner != null) Action("Доступ друзей…", async delegate { await ManageInvitations(); });
+                Action("Установить на телефон по QR", async delegate { await ShowQr(); }, "Создаёт временную ссылку и QR для установки профиля. Предыдущая ссылка доступа перестаёт работать; установка телефоном не подтверждается.");
+                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); }, "Открывает настройку HTTPS-адреса выдачи профилей на VPS.");
+                Action("Настроить роутер / создать профиль снова", delegate { ShowStep(2); }, "Возвращает к домашнему адресу и правилам роутера для повторной выдачи профиля.");
+                Action("Выбрать другой VPS или токен", delegate { ShowStep(0); }, "Открывает выбор другого доступа. Сам переход не останавливает текущий канал.");
+                if (service.Owner != null) Action("Доступ друзей…", async delegate { await ManageInvitations(); }, "Запрашивает список друзей на VPS и открывает управление отдельными токенами доступа.");
                 if (service.Owner != null) Action("Исправить выход VPN в интернет", async delegate
                 {
                     await RunStep(async delegate
@@ -156,10 +170,17 @@ namespace ProGo
                         await HomeVpnService.AdminAsync(service.Owner, "repair", null, null, SetProgress);
                         SetProgress("Правила выхода VPN обновлены. Переподключите VPN на телефоне и откройте сайт для проверки.");
                     });
-                });
+                }, "Обновляет правила выхода VPN на VPS через SSH. После этого переподключите VPN на телефоне и проверьте интернет.");
                 Paragraph("Режим экспериментальный: IKEv2 нужно проверить с вашим телефоном и провайдером. При обрыве SSH/SOCKS при включённом автовосстановлении ProGo повторяет подключение; телефон может переподключать VPN несколько секунд.");
             }
+            UiTheme.ConfigureKeyboardOrder(this);
             UiTheme.Apply(body); body.ResumeLayout(); RefreshStatus();
+        }
+
+        private static void DescribeStatus(Label label, string name)
+        {
+            label.AccessibleName = name; label.AccessibleDescription = label.Text;
+            label.TextChanged += delegate { label.AccessibleDescription = label.Text; };
         }
 
         private void Remember()
@@ -216,11 +237,11 @@ namespace ProGo
         }
         private TextBox Field(string title, string value)
         {
-            Paragraph(title); var field = new TextBox { Text = value ?? "", Width = 640, Margin = new Padding(0, 0, 0, 12) }; body.Controls.Add(field); return field;
+            Paragraph(title); var field = new TextBox { Text = value ?? "", AccessibleName = title, Width = 640, Margin = new Padding(0, 0, 0, 12) }; body.Controls.Add(field); return field;
         }
-        private void Action(string title, EventHandler handler)
+        private void Action(string title, EventHandler handler, string description)
         {
-            var button = new Button { Text = title, AutoSize = true, MinimumSize = new Size(260, 36), Margin = new Padding(0, 0, 0, 12) };
+            var button = new Button { Text = title, AccessibleDescription = description, AutoSize = true, MinimumSize = new Size(260, 36), Margin = new Padding(0, 0, 0, 12) };
             button.Click += handler; body.Controls.Add(button);
         }
         private async Task AllowFirewall()
