@@ -74,7 +74,10 @@ namespace ProGo
                     pending.SetException(new InvalidOperationException("fixture failure")); PumpUntil(() => revoke.Enabled);
                     Check(error.Text.StartsWith("Отозвать не удалось") && error.AccessibilityObject.Description == error.Text &&
                         picture.Visible && copy.Enabled, "QR failed revocation exposes a named corrective result and keeps the link usable");
-                    KeyboardWalk(form, new Control[] { copy, revoke, close }, "QR failure allows retry"); Shot(form, "keyboard-qr-retry");
+                    KeyboardWalk(form, new Control[] { copy, revoke, close }, "QR failure allows retry");
+                    dialogKey.Invoke(form, new object[] { Keys.Tab }); dialogKey.Invoke(form, new object[] { Keys.Tab }); Application.DoEvents();
+                    Check(close.ContainsFocus && close.Parent.ClientRectangle.Contains(close.Bounds), "QR Tab scrolls Close fully into view after a multiline error");
+                    Shot(form, "keyboard-qr-retry");
                     revoke.PerformClick(); Application.DoEvents();
                     Check(revoked == 2 && !clock.Enabled && !picture.Visible && !copy.Enabled && !revoke.Enabled &&
                         status.Text.StartsWith("Ссылка отозвана") && status.AccessibilityObject.Description == status.Text,
@@ -82,6 +85,11 @@ namespace ProGo
                     KeyboardWalk(form, new Control[] { close }, "QR revoked");
                     close.Focus(); dialogKey.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
                     Check(!form.Visible && revoked == 2, "QR Enter on Close never issues a second revoke");
+                }
+                using (var active = new PhoneProfileQrForm(link, () => { revoked++; return Task.FromResult(0); }, clipboard)) {
+                    active.Show(); Application.DoEvents(); ((Timer)Field(active, "clock")).Stop();
+                    ((Button)active.CancelButton).Focus(); dialogKey.Invoke(active, new object[] { Keys.Escape }); Application.DoEvents();
+                    Check(!active.Visible && revoked == 2, "QR Escape dismisses an active link without revocation");
                 }
                 link.Expires = 1;
                 using (var form = new PhoneProfileQrForm(link, () => { revoked++; return Task.FromResult(0); }, clipboard)) {
