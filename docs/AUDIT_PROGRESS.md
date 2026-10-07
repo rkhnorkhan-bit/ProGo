@@ -1242,3 +1242,26 @@ copying through the shared production dialog.
 Windows/server CI is required for acceptance. Actual Narrator/live contrast and
 remaining help navigation are outstanding; F17 remains open. Progress remains
 **21/30 closed; 9 remaining**. No merge, version bump or release.
+
+
+## Stage F17l — backup selection keyboard access
+
+The backup selector exposes named selection guidance, its list and read-only
+current details. Buttons explain the next verification step and cancellation;
+selection itself does not restore data. Tab order follows the visible flow, with
+the disabled next step skipped in an empty list. The empty details pane explains
+that no copies are available. Native first-item selection and Enter/Escape defaults,
+selected backing paths and all downstream verification/confirmation gates remain.
+
+Isolated Windows fixtures exercise Tab/Shift+Tab, native list arrows and changing
+details with duplicate display labels. The real modal TryPick route verifies Enter
+returns the selected path and Escape returns none for populated/empty lists.
+Named keyboard controls remain visible at the existing initial size. Fixtures do
+not prepare/restore backups, launch maintenance or write real clipboard exports;
+synthetic copy bytes, settings and opaque private access files/existence must remain
+unchanged. Existing backup integrity, scoped restore and maintenance suites remain
+required.
+
+Windows/server CI is required for acceptance. Help navigation, physical Narrator
+and live contrast remain outstanding; F17 stays open. Progress remains **21/30
+closed; 9 remaining**. No merge, version bump or release.

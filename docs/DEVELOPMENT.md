@@ -782,3 +782,22 @@ clipboard or a saved report. Source logs and opaque private access bytes remain
 unchanged. The separate updater helper fixture continues to verify the actual
 clipboard path. Native fixtures do not establish physical Narrator, live contrast
 or real DPI acceptance.
+
+
+### Audit stage F17l — backup picker keyboard contract
+
+`BackupPickerForm` names its list, selection guidance and read-only details. Action
+descriptions distinguish returning the selected path for the next verification step
+from restoring data. Preserve first-item selection, native arrows, Enter acceptance,
+Escape cancellation and the later scope/consent/preparation/final-confirmation gates.
+Duplicate display names must never substitute for the selected backing path.
+
+Keep Tab/Shift+Tab in visual order: copies, details, next step, cancellation. An
+empty list exposes guidance and skips the disabled next step. No backup discovery,
+retention, preparation, restoration, persistence or CLI changes belong in this stage.
+
+The existing native backup fixture exercises arrows, visible controls, Tab/Shift+Tab
+and the real modal TryPick route for Enter/Escape with synthetic duplicate labels.
+It never prepares/restores a copy or launches maintenance. Source copies, settings
+and opaque private access files/existence remain unchanged. Native fixture results
+do not establish physical Narrator, live contrast or real DPI acceptance.

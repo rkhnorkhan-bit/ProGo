@@ -446,25 +446,33 @@ namespace ProGo
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
             root.Controls.Add(UiTheme.Label("Вернуться к сохранённой версии", UiTheme.Heading, UiTheme.Text), 0, 0);
-            root.Controls.Add(UiTheme.Label(items.Count == 0 ? "Сохранённых копий пока нет." : "Выберите копию. Перед восстановлением ProGo запросит подтверждение.", UiTheme.Body, UiTheme.Muted), 0, 1);
-            list = new ListBox { Dock = DockStyle.Fill };
+            var guidance = UiTheme.Label(items.Count == 0 ? "Сохранённых копий пока нет." : "Выберите копию. Перед восстановлением ProGo запросит подтверждение.", UiTheme.Body, UiTheme.Muted);
+            guidance.AccessibleName = "Выбор копии перед восстановлением"; guidance.AccessibleDescription = guidance.Text;
+            root.Controls.Add(guidance, 0, 1);
+            list = new ListBox { Dock = DockStyle.Fill, AccessibleName = "Сохранённые копии",
+                AccessibleDescription = "Стрелки меняют выбранную копию и сведения о ней. Выбор в списке не запускает восстановление." };
             list.SelectedIndexChanged += delegate { UpdateDetails(); };
             foreach (var backup in backups) list.Items.Add(backup.DisplayName);
-            details = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical };
+            details = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
+                AccessibleName = "Сведения о выбранной копии",
+                AccessibleDescription = "Только чтение: папка, версия, тип, статус, причина и время создания выбранной копии. Сведения меняются при выборе другой копии." };
             root.Controls.Add(list, 0, 2); root.Controls.Add(details, 0, 3);
             var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
             var cancel = UiTheme.Button("Отмена", delegate { DialogResult = DialogResult.Cancel; }, false);
+            cancel.AccessibleDescription = "Закрыть выбор копии без восстановления и без изменения сохранённых копий.";
             var ok = UiTheme.Button("Восстановить", delegate { Accept(); }, true); ok.Enabled = items.Count > 0;
+            ok.AccessibleDescription = "Перейти к выбору состава и проверке выбранной копии. Само восстановление потребует отдельного подтверждения.";
             actions.Controls.Add(cancel); actions.Controls.Add(ok); root.Controls.Add(actions, 0, 4);
             Controls.Add(root); AcceptButton = ok; CancelButton = cancel;
-            if (list.Items.Count > 0) list.SelectedIndex = 0;
+            UiTheme.ConfigureKeyboardOrder(this);
+            if (list.Items.Count > 0) list.SelectedIndex = 0; else UpdateDetails();
         }
 
         private void UpdateDetails()
         {
             if (list.SelectedIndex < 0 || list.SelectedIndex >= backups.Count)
             {
-                details.Text = "Выберите сохранённую копию в списке выше.";
+                details.Text = backups.Count == 0 ? "Нет сохранённых копий для восстановления." : "Выберите сохранённую копию в списке выше.";
                 return;
             }
 
