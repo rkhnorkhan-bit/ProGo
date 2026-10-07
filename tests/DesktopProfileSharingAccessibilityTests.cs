@@ -66,8 +66,8 @@ namespace ProGo
                     Check(status.AccessibilityObject.Description == status.Text && notice.AccessibilityObject.Description == clipboard.CopyNotice,
                         "QR link lifetime and clipboard notice expose their current text");
                     KeyboardWalk(form, new Control[] { copy, revoke, close }, "QR active");
-                    copy.Focus(); dialogKey.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
-                    Check(revoked == 0 && notice.Text == clipboard.CopyNotice, "QR Enter has no implicit copy or revoke default");
+                    Check(Descendants(form).All(c => !(c.AccessibilityObject.Name ?? "").Contains(link.Url) &&
+                        !(c.AccessibilityObject.Description ?? "").Contains(link.Url)), "QR metadata never includes the personal link");
                     revoke.PerformClick(); Application.DoEvents();
                     Check(revoked == 1 && !revoke.Enabled && copy.Enabled && close.Enabled, "QR pending revocation prevents duplicate requests and retains existing independent actions");
                     KeyboardWalk(form, new Control[] { copy, close }, "QR pending skips revoke");
@@ -80,8 +80,8 @@ namespace ProGo
                         status.Text.StartsWith("Ссылка отозвана") && status.AccessibilityObject.Description == status.Text,
                         "QR successful retry removes copy and revoke actions while naming the real result");
                     KeyboardWalk(form, new Control[] { close }, "QR revoked");
-                    dialogKey.Invoke(form, new object[] { Keys.Escape }); Application.DoEvents();
-                    Check(!form.Visible && revoked == 2, "QR Escape after revocation never issues a second revoke");
+                    close.Focus(); dialogKey.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
+                    Check(!form.Visible && revoked == 2, "QR Enter on Close never issues a second revoke");
                 }
                 link.Expires = 1;
                 using (var form = new PhoneProfileQrForm(link, () => { revoked++; return Task.FromResult(0); }, clipboard)) {
