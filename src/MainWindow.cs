@@ -49,7 +49,7 @@ namespace ProGo
             var branding = Actions(brand, wordmark); branding.Margin = new Padding(0, 8, 0, 30); rail.Controls.Add(branding, 0, 0);
             var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0),
                 FlowDirection = FlowDirection.TopDown, WrapContents = false };
-            Nav(nav, "Главная", "home", delegate { SetNavigation("home"); });
+            Nav(nav, "Главная", "home", delegate { SetNavigation("home"); }, "Показывает главное окно с состоянием подключений.");
             CommandNav(nav, AppCommand.Phone, action);
             CommandNav(nav, AppCommand.Connections, action);
             CommandNav(nav, AppCommand.Vault, action);
@@ -76,27 +76,29 @@ namespace ProGo
             viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0) }; content.Controls.Add(viewport, 0, 0);
             // A right anchor constrains horizontal scrolling; keeping this child undocked
             // lets vertical reflow retain its scroll origin instead of redocking at the top.
-            body = Stack(); body.Dock = DockStyle.None; body.AutoSize = false;
+            body = Stack(); body.RowCount = 4;
+            for (int i = 0; i < body.RowCount; i++) body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            body.Dock = DockStyle.None; body.AutoSize = false;
             body.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right; viewport.Controls.Add(body);
             var heading = Stack(UiTheme.Label("Ваш интернет. Ваш маршрут.", UiTheme.Title, UiTheme.Text),
                 UiTheme.Label("Подключение к серверу и настройки приложений.", UiTheme.Body, UiTheme.Muted));
-            heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading);
+            heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading, 0, 0);
             var eyebrow = UiTheme.Label("ПОДКЛЮЧЕНИЕ К СЕРВЕРУ", UiTheme.Strong, UiTheme.Accent);
             connection = UiTheme.Label("Готовы подключиться?", UiTheme.Title, UiTheme.Text);
             subtitle = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
             connect = AppCommandUi.Button(AppCommand.Connect, delegate { action(AppCommand.Connect); RefreshState(); }, true);
             var heroActions = Actions(connect, AppCommandUi.Button(AppCommand.StopDesktop, delegate { action(AppCommand.StopDesktop); RefreshState(); }, false),
                 AppCommandUi.Button(AppCommand.CheckRoute, delegate { action(AppCommand.CheckRoute); }, false));
-            body.Controls.Add(Surface(eyebrow, connection, subtitle, heroActions));
+            body.Controls.Add(Surface(eyebrow, connection, subtitle, heroActions), 0, 1);
             cards = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
             for (int i = 0; i < 3; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 3));
             cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             windowsState = Card(cards, 0, "WINDOWS", "Параметры Windows", AppCommand.EnableWindows, action);
             terminalState = Card(cards, 1, "CODEX И ТЕРМИНАЛЫ", "Для новых терминалов", AppCommand.StartCli, action);
-            phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards);
+            phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards, 0, 2);
             recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
-            body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery));
+            body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery), 0, 3);
             openCodex = AppCommandUi.Button(AppCommand.OpenCodex, delegate { action(AppCommand.OpenCodex); }, false);
             var footer = Actions(AppCommandUi.Button(AppCommand.Update, delegate { action(AppCommand.Update); }, false),
                 openCodex, AppCommandUi.Button(AppCommand.Help, delegate { action(AppCommand.Help); }, false));
@@ -104,7 +106,20 @@ namespace ProGo
             viewport.ClientSizeChanged += delegate { FitDashboard(); };
             body.Layout += delegate { FitDashboard(); };
             Shown += delegate { FitDashboard(); };
+            DescribeStatus(connection, "Подключение к серверу");
+            DescribeStatus(subtitle, "Результат проверки подключения");
+            DescribeStatus(windowsState, "Состояние прокси Windows");
+            DescribeStatus(terminalState, "Состояние прокси терминалов и Codex");
+            DescribeStatus(phoneState, "Состояние VPN телефона");
+            DescribeStatus(recovery, "Восстановление и прокси приложений");
+            UiTheme.ConfigureKeyboardOrder(this);
             timer.Tick += delegate { RefreshState(); }; timer.Start(); RefreshState();
+        }
+        private static void DescribeStatus(Label label, string name)
+        {
+            label.AccessibleName = name;
+            label.AccessibleDescription = label.Text;
+            label.TextChanged += delegate { label.AccessibleDescription = label.Text; };
         }
         private static TableLayoutPanel Stack(params Control[] controls)
         {
@@ -162,6 +177,7 @@ namespace ProGo
                     for (int i = 0; i < cards.RowCount; i++) cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                     for (int i = 0; i < statusCards.Count; i++) cards.SetCellPosition(statusCards[i], new TableLayoutPanelCellPosition(columns == 3 ? i : 0, columns == 3 ? 0 : i));
                     cards.ResumeLayout(true);
+                    UiTheme.ConfigureKeyboardOrder(cards);
                 }
                 for (int i = 0; i < statusCards.Count; i++) statusCards[i].Margin = new Padding(columns == 3 && i != 0 ? 6 : 0, 0, columns == 3 && i != 2 ? 6 : 0, 16);
                 int height = body.GetPreferredSize(new Size(width, 0)).Height;

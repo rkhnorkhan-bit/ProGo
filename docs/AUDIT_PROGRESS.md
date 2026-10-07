@@ -1074,3 +1074,29 @@ without starting a repeat. Existing process/socket deadline tests are retained.
 Windows/server CI is required for acceptance. F17 remains open for the remaining
 forms and actual Narrator/contrast acceptance. Progress remains **21/30 closed;
 9 remaining**. No merge, version bump or release.
+
+
+## Stage F17f — dashboard keyboard order and accessible state
+
+The dashboard now declares keyboard order through navigation, connection actions,
+Windows/CLI/phone cards and footer actions. Card reflow retains the same logical
+sequence in one or three columns. Status labels expose stable names and current
+text. The local Home action also describes its purpose.
+
+Button styling no longer assigns AccessibleName: native buttons derive their name
+from the current caption unless the caller explicitly supplies a more precise
+purpose. This removes stale Connect/Reconnect names and preserves the dashboard's
+Windows proxy qualifier across initial/live palette application. Existing explicit
+names, effect descriptions and handlers remain authoritative.
+
+Native coverage walks Tab and Shift+Tab across both dashboard widths, verifies
+pending commands are skipped and cancellation restores availability, checks fresh
+connection evidence and named status values, and preserves ordinary CLI dispatch.
+It also verifies live contrast refresh does not replace the Windows-specific name
+and that traversal itself triggers no command. Existing layout and command-policy
+suites remain in place. No settings, connection lifecycle or startup wording changes.
+
+Windows/server CI is required for acceptance. These are native control and
+synthetic contrast/layout checks, not physical Narrator or real DPI acceptance.
+F17 remains open for other forms and physical acceptance. Progress remains
+**21/30 closed; 9 remaining**. No merge, version bump or release.

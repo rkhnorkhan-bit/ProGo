@@ -674,3 +674,17 @@ that reconnects or starts a download implicitly. Escape closes the modal window
 and uses the existing FormClosed cancellation for all measurement workers.
 DesktopRouteDiagnosticTests verifies native keyboard traversal and modal Escape
 with isolated injected probes; it is not physical Narrator/DPI acceptance.
+
+
+## Dashboard keyboard and button names (F17f)
+
+UiTheme controls presentation, not AccessibleName. Leave native button caption
+fallback intact unless a caller supplies a more precise purpose; never replace
+that purpose during palette application. Dynamic explicit names are the caller's
+responsibility. Dashboard status values have stable names and current descriptions.
+Configure traversal in visual order and retain it after card reflow. Pending
+availability comes from AppCommandState; keyboard work must not add another state
+model, dispatch actions on focus, or change CLI/connection semantics.
+DesktopDashboardLayoutTests covers wide/narrow and pending traversal with isolated
+callbacks and injected health evidence. DesktopContrastThemeTests verifies the
+explicit Windows action name survives live palette updates.
