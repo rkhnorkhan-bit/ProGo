@@ -92,11 +92,11 @@ namespace ProGo
             var key = typeof(Form).GetMethod("ProcessDialogKey", BindingFlags.Instance | BindingFlags.NonPublic);
             for (int i = 1; i < controls.Length; i++) {
                 key.Invoke(form, new object[] { Keys.Tab }); Application.DoEvents();
-                Check(controls[i].ContainsFocus, name + " Tab reaches " + controls[i].GetType().Name + " " + controls[i].AccessibilityObject.Name + "; focused=" + String.Join(" | ", Descendants(form).Where(c => c.Focused).Select(c => c.GetType().Name + ":" + c.Text + " tab=" + c.TabIndex)));
+                Check(controls[i].ContainsFocus, name + " Tab reaches " + controls[i].GetType().Name + " " + controls[i].AccessibilityObject.Name + "; focused=" + String.Join(" | ", Descendants(form).Where(c => c.Focused).Select(c => c.GetType().Name + ":" + c.AccessibilityObject.Name + " tab=" + c.TabIndex)));
             }
             for (int i = controls.Length - 2; i >= 0; i--) {
                 key.Invoke(form, new object[] { Keys.Tab | Keys.Shift }); Application.DoEvents();
-                Check(controls[i].ContainsFocus, name + " Shift+Tab returns to " + controls[i].GetType().Name + " " + controls[i].AccessibilityObject.Name + "; focused=" + String.Join(" | ", Descendants(form).Where(c => c.Focused).Select(c => c.GetType().Name + ":" + c.Text + " tab=" + c.TabIndex)));
+                Check(controls[i].ContainsFocus, name + " Shift+Tab returns to " + controls[i].GetType().Name + " " + controls[i].AccessibilityObject.Name + "; focused=" + String.Join(" | ", Descendants(form).Where(c => c.Focused).Select(c => c.GetType().Name + ":" + c.AccessibilityObject.Name + " tab=" + c.TabIndex)));
             }
         }
     }

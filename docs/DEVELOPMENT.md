@@ -688,3 +688,16 @@ model, dispatch actions on focus, or change CLI/connection semantics.
 DesktopDashboardLayoutTests covers wide/narrow and pending traversal with isolated
 callbacks and injected health evidence. DesktopContrastThemeTests verifies the
 explicit Windows action name survives live palette updates.
+
+
+## Vault keyboard presentation (F17g)
+
+Vault/Entry/PIN presentation must give fields their visible label as accessible
+name and declare visual keyboard order. The read-only grid uses StandardTab and
+native arrows; neither Tab nor focus selects an action. Do not copy secret/PIN
+values into accessible names, descriptions or test focus logs. Show-secret changes
+masking and its description only. Preserve ordinary Save/Cancel, PIN validation,
+clipboard ownership and cryptographic behavior; their change controls still apply.
+DesktopVaultAccessibilityTests uses synthetic non-persisting records only in native
+isolated CI and checks unchanged vault bytes/existence. It is not actual Narrator,
+DPI, security-policy or cryptography acceptance.

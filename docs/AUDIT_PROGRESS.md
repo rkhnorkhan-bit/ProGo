@@ -1100,3 +1100,30 @@ Windows/server CI is required for acceptance. These are native control and
 synthetic contrast/layout checks, not physical Narrator or real DPI acceptance.
 F17 remains open for other forms and physical acceptance. Progress remains
 **21/30 closed; 9 remaining**. No merge, version bump or release.
+
+
+## Stage F17g — vault, entry editor and PIN keyboard access
+
+Vault search/type filters and the read-only record list now expose distinct names
+and descriptions. The list uses arrows for row selection and StandardTab to move
+to actions. Explicit visual keyboard order covers filters, list and footer; actions
+explain confirmation, saving, closure and the existing clipboard cleanup policy.
+
+Entry fields inherit their visible label as AccessibleName. The show-secret toggle
+and secret description track hidden/visible presentation without including the
+secret in the name or description. Save/Cancel expose their effects. Create/unlock
+PIN fields have distinct names and masked-input guidance; their existing default
+buttons, validation and four-digit policy are retained. No encryption, KDF, vault
+format, decoy behavior, persistence, clipboard implementation or PIN policy changes.
+
+Isolated native fixtures walk forward/backward through all three forms, including
+empty search results and both PIN modes. Native grid key handling verifies arrow
+selection and Tab/Shift+Tab exit. Search/type filters, masked/show/hide presentation,
+editor cancellation and existing clone Save are covered. Records are synthetic;
+the session cannot persist. Vault bytes/existence are checked unchanged. Focus
+failure diagnostics log accessible control names instead of field text, so masked
+input values are not written to test output. Screenshots retain masked inputs.
+
+Windows/server CI is required for acceptance. Actual Narrator/contrast and real DPI
+acceptance remain outstanding; F17 stays open. Progress remains **21/30 closed;
+9 remaining**. No merge, version bump or release.
