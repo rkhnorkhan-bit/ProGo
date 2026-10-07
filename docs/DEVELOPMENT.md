@@ -801,3 +801,25 @@ and the real modal TryPick route for Enter/Escape with synthetic duplicate label
 It never prepares/restores a copy or launches maintenance. Source copies, settings
 and opaque private access files/existence remain unchanged. Native fixture results
 do not establish physical Narrator, live contrast or real DPI acceptance.
+
+
+### Audit stage F17m — help keyboard reading contract
+
+Keep all six help topics and their existing instructions, routes and external URLs.
+`HelpTopicPanel` is a named, focusable read-only pane; only when it has direct focus
+may Up/Down, PageUp/PageDown and Home/End scroll its content. Preserve native topic
+arrows, Tab/Shift+Tab, mouse scrolling and focused button activation. Topic action
+focus must bring the button into view. No implicit action default belongs in help.
+
+Close/Escape dismiss help independently of connection/setting state. Close and the
+keyboard guide stay outside scrolling content. A visible focus rectangle identifies
+the instruction pane. Action descriptions distinguish reviewed diagnostic preview,
+private logs, external browsing and automatic installation/uploading.
+
+DesktopHelpAccessibilityTests uses native Windows controls and real command
+preprocessing, walks every topic at normal client and minimum window sizes and verifies bounded
+scrolling and visible focused actions. The preview callback is injected; the fixture
+never opens real logs, URLs, clipboard exports or connection commands. Settings and
+opaque private access files/existence remain unchanged. Existing topic content,
+ordinary CLI and autostart wording tests remain required. Native fixtures do not
+establish physical Narrator, live contrast or actual DPI acceptance.
