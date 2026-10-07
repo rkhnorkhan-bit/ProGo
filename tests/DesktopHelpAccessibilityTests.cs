@@ -61,7 +61,9 @@ namespace ProGo
                         HelpKeyboardWalk(form, new Control[] { tabs, body }.Concat(actions).Concat(new Control[] { close }).ToArray(), name);
                         foreach (var action in actions) {
                             action.Focus(); Application.DoEvents();
-                            Check(body.RectangleToScreen(body.ClientRectangle).Contains(action.RectangleToScreen(action.ClientRectangle)), name + " brings focused action fully into view");
+                            var viewport = body.RectangleToScreen(body.ClientRectangle); var bounds = action.RectangleToScreen(action.ClientRectangle);
+                            if (!viewport.Contains(bounds)) Shot(form, "keyboard-help-focus-failure");
+                            Check(viewport.Contains(bounds), name + " brings focused action fully into view; viewport=" + viewport + "; action=" + bounds);
                             Check(!String.IsNullOrEmpty(action.AccessibilityObject.Description), name + " describes action effect");
                         }
                         body.Focus();

@@ -88,7 +88,14 @@ namespace ProGo
         private static void AddAction(FlowLayoutPanel body, Button button, string description)
         {
             button.AccessibleDescription = description;
-            button.Enter += delegate { body.ScrollControlIntoView(button); };
+            button.Enter += delegate {
+                body.ScrollControlIntoView(button);
+                // The containing tab may finish its own focus scroll after Enter.
+                // Reconcile once focus is settled, without moving inactive topics.
+                body.BeginInvoke(new Action(delegate {
+                    if (!body.IsDisposed && !button.IsDisposed && button.Focused) body.ScrollControlIntoView(button);
+                }));
+            };
             body.Controls.Add(button);
         }
         private static void Paragraph(Control body, string text)
