@@ -37,10 +37,11 @@ namespace ProGo
             {
                 listener.Start();
                 Endpoint = new Uri("http://localhost:" + ((IPEndPoint)listener.LocalEndpoint).Port + "/release");
+                var accept = listener.AcceptTcpClientAsync();
                 worker = Task.Run(async delegate {
                     try
                     {
-                        using (var accepted = await listener.AcceptTcpClientAsync().ConfigureAwait(false))
+                        using (var accepted = await accept.ConfigureAwait(false))
                         {
                             client = accepted; accepted.ReceiveTimeout = 5000;
                             using (var stream = accepted.GetStream())
