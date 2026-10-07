@@ -91,6 +91,7 @@ namespace ProGo
                     SettingsPagesLayout(settings);
                     ContrastThemes(settings);
                     SettingsAccessibility(settings);
+                    HelpAccessibility();
                     VaultAccessibility(settings);
                     WizardAccessibility(settings);
                     ProfileSharingAccessibility(settings);

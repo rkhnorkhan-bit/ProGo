@@ -519,7 +519,7 @@ All command routes, ordinary **Запустить CLI**, state text, pending-act
 and application-owned proxy/tunnel lifetime remain unchanged. No preferences or
 network integrations are applied by layout.
 
-Native Windows geometry fixtures cover normal/minimum client sizes, a client area
+Native Windows geometry fixtures cover normal client and minimum window sizes, a client area
 that fits 1366 by 768, long synthetic status text and constrained form.Scale
 125/150/200% stress cases. They check wrapping, row separation, footer visibility,
 horizontal overflow, vertically reachable actions, navigation and resizing back
@@ -1265,3 +1265,29 @@ required.
 Windows/server CI is required for acceptance. Help navigation, physical Narrator
 and live contrast remain outstanding; F17 stays open. Progress remains **21/30
 closed; 9 remaining**. No merge, version bump or release.
+
+
+## Stage F17m — help topics and keyboard reading
+
+Help retains its six topics, instruction text and action routes. Each instruction
+pane is named, keyboard focusable and exposes its read-only purpose. Up/Down,
+PageUp/PageDown and Home/End scroll only the directly focused instruction. Native
+topic arrows and Tab/Shift+Tab retain ordinary navigation; focused actions scroll
+into view. A visible focus rectangle identifies the reading pane.
+
+A fixed footer provides keyboard guidance and Close. Escape and focused Close Enter
+dismiss help without changing settings or stopping connections. Enter in instruction
+text has no implicit export/log/browsing action. Descriptions distinguish diagnostic
+preview from private logs, page opening, file upload and package installation.
+
+Native Windows coverage exercises all topics at normal client and minimum window sizes, topic
+arrows, visual-order Tab/Shift+Tab, bounded line/page/end scrolling, visible focused
+actions and independent closure. An injected focused preview command verifies the
+existing route once; no real log/browser/clipboard or connection action is executed.
+Settings and opaque private access files/existence must remain unchanged. Existing
+help content, ordinary CLI and autostart wording contracts remain required.
+
+Windows/server CI and native screenshot review are required for this substage.
+Known help/backup selector gaps now have native fixture coverage, but physical
+Narrator/live contrast and real DPI acceptance remain outstanding; F17 stays open.
+Progress remains **21/30 closed; 9 remaining**. No merge, version bump or release.
