@@ -14,6 +14,7 @@ namespace ProGo
         private readonly Button revoke = new Button { AutoSize = true, Text = "Отозвать выбранный доступ" };
         private readonly Button reissue = new Button { AutoSize = true, Text = "Перевыпустить потерянный токен" };
         private readonly Button refresh = new Button { AutoSize = true, Text = "Обновить список" };
+        private readonly Button close = new Button { AutoSize = true, Text = "Закрыть", MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel };
         private readonly Label status = new Label { AutoSize = true, MaximumSize = new Size(740, 0), AccessibleName = "Результат операции с доступом" };
         private readonly Func<string, string, string, Task<string>> admin;
         private bool working, needsRefresh;
@@ -28,8 +29,23 @@ namespace ProGo
             list = new HomeInvitationList(items) { Width = 740, Height = 365 };
             panel.Controls.Add(list);
             panel.Controls.Add(new Label { AutoSize = true, Text = "Имя для нового приглашения (перевыпуск сохраняет имя выбранного друга)" });
-            panel.Controls.Add(name); panel.Controls.Add(create); panel.Controls.Add(revoke); panel.Controls.Add(reissue); panel.Controls.Add(refresh); panel.Controls.Add(status);
-            Controls.Add(panel);
+            name.AccessibleDescription = "Имя для отдельного нового приглашения. Перевыпуск сохраняет имя выбранного друга, а не этот текст.";
+            create.AccessibleDescription = "Создаёт отдельное приглашение на VPS и показывает новый личный токен. Другие доступы сохраняются.";
+            reissue.AccessibleDescription = "После подтверждения отзывает выбранный ID и выдаёт новый токен с тем же именем. Старый доступ не восстанавливается при ошибке выдачи.";
+            refresh.AccessibleDescription = "Получает текущий список с VPS и снимает блокировку изменений только после успешного ответа. Не создаёт и не отзывает приглашения.";
+            close.AccessibleDescription = "Закрывает окно без изменения доступа друзей. Пока операция выполняется, закрытие недоступно.";
+            status.AccessibleDescription = status.Text; status.TextChanged += delegate { status.AccessibleDescription = status.Text; };
+            close.Click += delegate { Close(); }; CancelButton = close;
+            panel.Controls.Add(name); panel.Controls.Add(create); panel.Controls.Add(revoke); panel.Controls.Add(reissue); panel.Controls.Add(refresh);
+            foreach (Control input in new Control[] { list, name, create, revoke, reissue, refresh }) {
+                var target = input; target.Enter += delegate { panel.ScrollControlIntoView(target); };
+            }
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false, FlowDirection = FlowDirection.TopDown,
+                Padding = new Padding(16, 0, 16, 12), Margin = Padding.Empty };
+            footer.Controls.Add(status); footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); Controls.Add(layout);
             Confirm = text => MessageBox.Show(this, text, "Изменение доступа", MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
             ShowToken = token => { using (var dialog = HomeInvitationList.TokenDialog(token, clipboard)) dialog.ShowDialog(this); };
@@ -72,16 +88,19 @@ namespace ProGo
         }
         private void UpdateActions() {
             list.Enabled = name.Enabled = !working;
-            refresh.Enabled = !working;
+            refresh.Enabled = close.Enabled = !working;
             create.Enabled = !working && !needsRefresh;
             revoke.Enabled = !working && !needsRefresh && list.Selected != null;
             revoke.Text = list.Selected != null && list.Selected.Revoked ? "Повторить отзыв" : "Отозвать выбранный доступ";
+            revoke.AccessibleDescription = list.Selected != null && list.Selected.Revoked
+                ? "После подтверждения повторно завершает отзыв выбранного ID на VPS. Новый токен не создаётся."
+                : "После подтверждения отзывает выбранный ID на VPS и закрывает соединения этого приглашения. Другие доступы сохраняются.";
             reissue.Enabled = !working && !needsRefresh && list.Selected != null;
         }
         private void RequireRefresh(string message) { needsRefresh = true; status.Text = message; }
         private async Task RunAsync(Func<Task> action) {
             if (working) return;
-            working = true; UpdateActions();
+            working = true; status.Text = "Выполнение операции с доступом…"; UpdateActions();
             try { await action(); }
             catch { RequireRefresh("Операция не завершена. Обновите список перед следующим изменением доступа. Подробности SSH доступны в его окне."); }
             finally { working = false; UpdateActions(); }

@@ -20,6 +20,8 @@ namespace ProGo
         internal HomeInvitationList(IEnumerable<HomeVpnInvitation> values)
         {
             items = values.Where(i => i != null).ToList();
+            search.AccessibleDescription = "Фильтрует список по имени или ID без изменения доступа. Одинаковые имена могут принадлежать разным приглашениям.";
+            list.AccessibleDescription = "Стрелки выбирают запись; Tab выходит из списка. Проверьте полный ID и статус в сведениях о выбранном доступе.";
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int i = 0; i < 5; i++) layout.RowStyles.Add(new RowStyle(i == 2 ? SizeType.Percent : SizeType.AutoSize, i == 2 ? 100 : 0));
@@ -49,6 +51,7 @@ namespace ProGo
             list.EndUpdate();
             count.Text = items.Count == 0 ? "Приглашений пока нет. Создайте отдельный токен для друга." :
                 list.Items.Count == 0 ? "Совпадений нет. Измените поиск." : "Показано: " + list.Items.Count + " из " + items.Count;
+            count.AccessibleDescription = count.Text;
             DescribeSelection();
         }
         private void DescribeSelection()
@@ -57,6 +60,7 @@ namespace ProGo
             details.Text = item == null ? "Выберите запись, чтобы увидеть дату, статус и права доступа." :
                 "Имя: " + item.Name + "\r\nСоздан: " + item.CreatedText + "\r\nСтатус: " + item.Status + "\r\nID: " + item.Id +
                 "\r\nПрава: VPN через ProGo; без командной оболочки, SFTP и управления VPS. Отзыв закрывает соединения этого приглашения.";
+            details.AccessibleDescription = details.Text;
             var handler = SelectionChanged; if (handler != null) handler(this, EventArgs.Empty);
         }
         internal static Form TokenDialog(string value, ClipboardService clipboard)
@@ -67,11 +71,26 @@ namespace ProGo
                 "Токен показывается только сейчас. Передайте его другу лично до закрытия окна: повторно показать этот токен нельзя. Он выберет «Подключиться к готовому VPS». Токен действует до отзыва владельцем и даёт только VPN-доступ." });
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text =
                 "Это приглашение в ProGo, а не QR-ссылка установки профиля. QR создаётся отдельно и действует ограниченное время. При потере токена выберите друга в списке и нажмите «Перевыпустить потерянный токен». Не публикуйте токен." });
-            panel.Controls.Add(new TextBox { Width = 600, UseSystemPasswordChar = true, ReadOnly = true, Text = value, AccessibleName = "Личный токен приглашения" });
+            var token = new TextBox { Width = 600, UseSystemPasswordChar = true, ReadOnly = true, Text = value, AccessibleName = "Личный токен приглашения",
+                AccessibleDescription = "Только чтение. Токен скрыт; передайте его через кнопку копирования до закрытия этого окна." };
+            token.Enter += delegate { panel.ScrollControlIntoView(token); }; panel.Controls.Add(token);
             var copy = new Button { AutoSize = true, Text = "Скопировать токен", MinimumSize = new Size(230, 38) };
             var notice = new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text = clipboard.CopyNotice };
+            copy.AccessibleDescription = "Копирует личный токен для передачи другу. " + clipboard.CopyNotice;
+            copy.Enter += delegate { panel.ScrollControlIntoView(copy); };
+            notice.AccessibleName = "Результат копирования токена"; notice.AccessibleDescription = notice.Text;
+            notice.TextChanged += delegate { notice.AccessibleDescription = notice.Text; };
             clipboard.BindSecretCopy(copy, delegate { return value; }, notice);
-            panel.Controls.Add(copy); panel.Controls.Add(notice); form.Controls.Add(panel);
+            var close = new Button { AutoSize = true, Text = "Закрыть", MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel,
+                AccessibleDescription = "Закрывает окно без отзыва доступа. Повторно показать этот токен нельзя; потерянный токен придётся перевыпустить." };
+            close.Click += delegate { form.Close(); }; form.CancelButton = close;
+            panel.Controls.Add(copy);
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false, FlowDirection = FlowDirection.TopDown,
+                Padding = new Padding(18, 0, 18, 12), Margin = Padding.Empty };
+            footer.Controls.Add(notice); footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); form.Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(form); return form;
         }
     }

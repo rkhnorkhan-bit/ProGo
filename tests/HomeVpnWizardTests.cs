@@ -219,7 +219,7 @@ namespace ProGo
                 Check(text.Contains("только сейчас") && text.Contains("повторно показать") && text.Contains("не QR-ссылка"), "token dialog explains one-time display and distinct QR purpose");
                 var field = AllControls(dialog).OfType<TextBox>().Single();
                 Check(field.ReadOnly && field.UseSystemPasswordChar, "issued token is masked and read-only");
-                AllControls(dialog).OfType<Button>().Single().PerformClick();
+                AllControls(dialog).OfType<Button>().Single(b => b.Text == "Скопировать токен").PerformClick();
                 Check(Clipboard.GetText() == "fixture-invite-only", "actual invitation copy uses shared clipboard service");
                 using (var shot = new Bitmap(dialog.Width, dialog.Height)) { dialog.DrawToBitmap(shot, new Rectangle(Point.Empty, shot.Size)); shot.Save(Path.Combine(work, "friends-token.png")); }
                 dialog.Close();
