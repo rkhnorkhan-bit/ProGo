@@ -1336,3 +1336,30 @@ and native screenshot review are required for acceptance.
 
 F23 remains open for download/install phase UX and safe VPS waiting cancellation.
 Progress remains **21/30 closed; 9 remaining**. No merge, version bump or release.
+
+
+## Stage F23c — readable phases in the installed update helper
+
+The existing visible PowerShell helper now names ten reached phases: release
+metadata, application shutdown/file access, download, package validation, backup,
+staging, staging check, installation, installed check and restart. Each phase has
+a Russian explanation. Phase numbers describe work, not byte percentages or a
+promised duration. Plain console text remains if the host suppresses progress.
+File replacement explicitly asks the user to wait and keep the window open.
+
+Rollback is a separate unnumbered attempt, never presented as completed recovery.
+NoLaunch explains manual launch instead of claiming the app restarted. Progress
+clears before a result dialog and in finally, including failed rollback. Rendering
+failure must not alter package verification, commit, rollback or lease cleanup.
+
+An isolated Windows fixture executes the real installed transaction and package
+checks with local synthetic network replies and final dialogs. It covers success,
+current version, download/hash/staging/commit/restart/rollback failures and a host
+that refuses progress rendering. It checks reached phase order, terminal outcome,
+progress clearance, preserved settings/vault and released maintenance ownership.
+Existing real package, application/maintenance and server suites remain required.
+
+This bounded substage does not add a cancellable installation window, transport
+deadline or safe VPS wait cancellation; those parts of F23 remain open. The CLI,
+update trust policy and automatic installation behavior are unchanged. Progress
+remains **21/30 closed; 9 remaining**. No merge, version bump or release.
