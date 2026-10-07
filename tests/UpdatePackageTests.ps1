@@ -24,11 +24,8 @@ $zip = Join-Path $work 'fixture.zip'
 Compress-Archive -Path (Join-Path $fixture '*') -DestinationPath $zip -Force
 $digest = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
 $release = @{ tag_name = 'v0.2.0'; draft = $false; prerelease = $false; assets = @(@{ name = 'ProGo-release.zip'; browser_download_url = 'https://github.com/rkhnorkhan-bit/ProGo/releases/download/v0.2.0/ProGo-release.zip'; digest = "sha256:$digest" }) }
-function Invoke-WebRequest {
-    param($Uri, $Headers, $OutFile, [switch]$UseBasicParsing, $ErrorAction)
-    if ($OutFile) { Copy-Item -LiteralPath $zip -Destination $OutFile; return }
-    return @{ Content = ($release | ConvertTo-Json -Depth 5) }
-}
+function Save-UpdatePackage($Url, $Path) { Copy-Item -LiteralPath $zip -Destination $Path }
+function Read-UpdateMetadata($Url) { return ($release | ConvertTo-Json -Depth 5) }
 $State.RemoteVersion = Get-RemoteVersion
 if ($State.RemoteVersion -ne '0.2.0') { throw 'Wrong release version' }
 $valid = Try-GetReleasePackage (Join-Path $work 'valid')

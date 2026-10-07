@@ -113,6 +113,7 @@ foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-Pr
 
 Copy-Item (Join-Path $Src "ApplicationShortcuts.cs") -Destination (Join-Path $ReleaseScripts "ApplicationShortcuts.cs") -Force
 Copy-Item (Join-Path $Src "MaintenanceOperation.cs") -Destination (Join-Path $ReleaseScripts "MaintenanceOperation.cs") -Force
+Copy-Item (Join-Path $Src "InstalledUpdateTransport.cs") -Destination (Join-Path $ReleaseScripts "InstalledUpdateTransport.cs") -Force
 Copy-Item (Join-Path $Src "BackupRetention.cs") -Destination (Join-Path $ReleaseScripts "BackupRetention.cs") -Force
 Copy-Item (Join-Path $Src "BackupIntegrity.cs") -Destination (Join-Path $ReleaseScripts "BackupIntegrity.cs") -Force
 Copy-Item (Join-Path $Src "BoundedLog.cs") -Destination (Join-Path $ReleaseScripts "BoundedLog.cs") -Force

@@ -332,6 +332,16 @@ if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity harness build failed' }
 if ($LASTEXITCODE -ne 0) { Fail 'Backup integrity tests failed' }
 & (Join-Path $Root 'tests\BackupIntegrityTests.ps1') (Join-Path $Root 'release\scripts')
 
+# Exercise actual sockets and the installed Add-Type loader before the longer UI suite.
+$TransportSource = Join-Path $Root 'release\scripts\InstalledUpdateTransport.cs'
+if (-not (Test-Path $TransportSource) -or (Get-FileHash $TransportSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\InstalledUpdateTransport.cs')).Hash) { Fail 'installed update transport differs from source' }
+$TransportHarness = Join-Path $Root 'build\InstalledUpdateTransportTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$TransportHarness" $TransportSource (Join-Path $Root 'tests\InstalledUpdateTransportTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Installed update transport harness build failed' }
+& $TransportHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Installed update transport tests failed' }
+& (Join-Path $Root 'tests\InstalledUpdateTransportTests.ps1') (Join-Path $Root 'release\scripts')
+
 # Validate the changed helper transaction before the longer native UI suite.
 & (Join-Path $Root 'tests\UpdateProgressTests.ps1') $Exe (Join-Path $Root 'release\scripts')
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
