@@ -24,6 +24,7 @@ namespace ProGo
         public string LocalVersion { get; set; }
         public string RemoteVersion { get; set; }
         public string ErrorMessage { get; set; }
+        public string ReleaseNotes { get; set; }
     }
 
     internal static class UpdateLauncher
@@ -34,6 +35,7 @@ namespace ProGo
         private sealed class GitHubReleaseInfo
         {
             public string tag_name { get; set; }
+            public string body { get; set; }
             public bool draft { get; set; }
             public bool prerelease { get; set; }
         }
@@ -119,7 +121,8 @@ namespace ProGo
                     {
                         Availability = availability,
                         LocalVersion = localVersion,
-                        RemoteVersion = remoteVersion
+                        RemoteVersion = remoteVersion,
+                        ReleaseNotes = SummarizeReleaseNotes(release.body)
                     };
                 }
                 catch (Exception ex)
@@ -153,7 +156,7 @@ namespace ProGo
             };
         }
 
-        private static string ReadInstalledVersion()
+        internal static string ReadInstalledVersion()
         {
             try
             {
@@ -165,6 +168,22 @@ namespace ProGo
             {
                 return "0.0.0";
             }
+        }
+
+        internal static string SummarizeReleaseNotes(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return "Описание изменений для этой версии не опубликовано.";
+            var text = new StringBuilder();
+            bool shortened = false;
+            foreach (char character in value) {
+                if (character == '\r') continue;
+                if (Char.IsControl(character) && character != '\n' && character != '\t') continue;
+                if (text.Length == 3000) { shortened = true; break; }
+                text.Append(character);
+            }
+            var result = text.ToString().Trim();
+            if (result.Length == 0) return "Описание изменений для этой версии не опубликовано.";
+            return result + (shortened ? "\n\n… Описание сокращено." : "");
         }
 
         private static string NormalizeVersion(string value)

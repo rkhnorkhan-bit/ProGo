@@ -1314,3 +1314,25 @@ vault bytes/existence remain unchanged. Acceptance requires Windows/server CI.
 F23 remains open for visible progress/cancel controls, release notes and safe VPS
 waiting cancellation. Progress remains **21/30 closed; 9 remaining**. No merge,
 version bump or release.
+
+
+## Stage F23b — visible update checks, cancellation and release notes
+
+One update window now shows progress, installed/new versions, errors and explicit
+retry, or a bounded plain-text “what's new” preview with missing/shortened notices.
+Repeated dashboard/tray commands activate the existing check. The window exposes
+Cancel while checking; Escape, title Close, disposal and successful app shutdown
+cancel waiting work. Generation/handle checks suppress late results after closure.
+
+No default installation button is assigned. Only explicit installation activation
+returns the reviewed available result to the existing maintenance handoff. Existing
+CLI routes and installer code remain. Synthetic fixtures do not install packages.
+
+Native Windows acceptance covers each state, retries, cancellation/late results,
+repeated modal commands, shutdown and keyboard/action visibility at normal/minimum
+sizes. Settings/vault bytes and existence remain unchanged. Real socket metadata
+fixtures also cover release-note decoding/normalization/limits. Windows/server CI
+and native screenshot review are required for acceptance.
+
+F23 remains open for download/install phase UX and safe VPS waiting cancellation.
+Progress remains **21/30 closed; 9 remaining**. No merge, version bump or release.
