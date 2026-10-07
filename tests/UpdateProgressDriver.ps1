@@ -24,7 +24,7 @@ function Write-Progress {
     param($Id, $Activity, $Status, $CurrentOperation, $PercentComplete, [switch]$Completed)
     [void]$script:events.Add(@{ Kind = 'progress'; Id = $Id; Activity = $Activity; Status = $Status;
         Operation = $CurrentOperation; Percent = $PercentComplete; Completed = [bool]$Completed })
-    if ($Mode -eq 'render-failure') { throw 'Injected progress host rendering failure' }
+    if ($Mode -eq 'render-failure' -and $Id -eq 23) { throw 'Injected helper progress rendering failure' }
 }
 function Show-UpdateDialog($Text, $Title, $Kind) {
     [void]$script:events.Add(@{ Kind = 'dialog'; Icon = $Kind })
