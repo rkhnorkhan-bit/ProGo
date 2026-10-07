@@ -715,3 +715,26 @@ not start SSH, change recovery or introduce a second verification state model.
 DesktopWizardAccessibilityTests injects a pending task and synthetic presentation
 only in isolated Windows CI, checking unchanged private access files. It does not
 establish physical phone, Narrator, real DPI or real contrast acceptance.
+
+
+### Audit stage F17i — profile-sharing keyboard contract
+
+`HomeProfileShare.Configure` uses `CreateConfigureForm` for the same production
+modal dialog and native fixture. Keep address validation, HTTPS ownership check,
+SSH setup and save order unchanged. No Enter default may configure a server.
+Close/Escape discards the address draft; its availability follows the existing
+operation guard. Owner/friend mode skips invisible setup controls in Tab order.
+
+Close and revoke errors stay in a separate footer outside the scrollable QR content,
+so a multiline error remains visible alongside the keyboard-focused Close. Starting
+another revoke attempt clears the earlier error; a successful retry cannot keep
+showing stale failure text.
+
+`PhoneProfileQrForm` exposes the graphic purpose without the secret URL in names
+or descriptions. Countdown, clipboard notice and revoke errors expose current
+text. Closing only dismisses the window; it neither revokes a link nor confirms
+installation. Keep copy/revoke/expiry gates and shared clipboard policy intact.
+Native tests use nonfunctional QR images and injected revoke tasks; they never
+contact a real share service or write the clipboard. Server tests verify real QR
+encoding independently. These checks do not substitute for physical Narrator,
+real DPI, scanning or live high-contrast acceptance.
