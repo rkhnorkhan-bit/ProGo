@@ -28,11 +28,15 @@ namespace ProGo
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             var notice = new Label { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12),
+                AccessibleName = "Перед передачей диагностики",
                 Text = "Просмотрите отчёт перед передачей. Здесь только время и известные события — без исходного текста ошибок, адресов и личных путей. Оригиналы остаются на компьютере. Ничего не отправляется автоматически." };
+            notice.AccessibleDescription = notice.Text;
             var preview = new TextBox { Name = "diagnosticText", Multiline = true, ReadOnly = true, WordWrap = false,
                 ScrollBars = ScrollBars.Both, Dock = DockStyle.Fill, Text = report.Text, TabIndex = 0,
-                AccessibleName = "Предпросмотр диагностического отчёта", AccessibleDescription = "Именно этот текст будет скопирован или сохранён." };
+                AccessibleName = "Предпросмотр диагностического отчёта", AccessibleDescription = "Только чтение. Именно этот снимок отчёта будет скопирован или сохранён; исходные журналы не перечитываются. Можно выделить текст для просмотра." };
             status = new Label { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 10), Text = "Проверьте текст, затем выберите действие.", AccessibleName = "Результат передачи диагностики" };
+            status.AccessibleDescription = status.Text;
+            status.TextChanged += delegate { status.AccessibleDescription = status.Text; };
             var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0), TabIndex = 1 };
             var copyButton = UiTheme.Button("Копировать отчёт", delegate {
                 try { (copy ?? new Action<string>(Clipboard.SetText))(this.report.Text); status.Text = "Отчёт скопирован. Внешняя отправка остаётся за вами."; }
@@ -43,6 +47,9 @@ namespace ProGo
                 catch { status.Text = "Не удалось сохранить отчёт. Проверьте доступ к выбранной папке."; }
             }, false);
             var close = UiTheme.Button("Закрыть", delegate { Close(); }, false); close.DialogResult = DialogResult.Cancel;
+            copyButton.AccessibleDescription = "Копирует только показанный отчёт в буфер обмена. Ничего не отправляется; исходные журналы не копируются.";
+            saveButton.AccessibleDescription = "Открывает выбор файла для сохранения только показанного отчёта. Отмена выбора не сохраняет файл; внешней отправки нет.";
+            close.AccessibleDescription = "Закрывает предпросмотр без копирования и сохранения. Исходные журналы остаются на компьютере; подключение ProGo не отключается.";
             actions.Controls.Add(copyButton); actions.Controls.Add(saveButton); actions.Controls.Add(close);
             layout.Controls.Add(notice, 0, 0); layout.Controls.Add(preview, 0, 1); layout.Controls.Add(status, 0, 2); layout.Controls.Add(actions, 0, 3);
             Controls.Add(layout); CancelButton = close; AcceptButton = null;
