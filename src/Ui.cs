@@ -275,9 +275,13 @@ namespace ProGo
             var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
             filters.Controls.Add(new Label { Text = "Поиск", AutoSize = true, Padding = new Padding(0, 7, 0, 0) });
             search.Width = 300;
+            search.AccessibleName = "Поиск записей";
+            search.AccessibleDescription = "Фильтрует записи по названию, логину, сайту, меткам и заметкам. Содержимое секретов не используется.";
             search.TextChanged += delegate { Reload(); };
             filters.Controls.Add(search);
             filters.Controls.Add(new Label { Text = "Фильтр по типу", AutoSize = true, Padding = new Padding(12, 7, 0, 0) });
+            typeFilter.AccessibleName = "Фильтр по типу записи";
+            typeFilter.AccessibleDescription = "Показывает записи выбранного типа; «Все» снимает фильтр по типу.";
             typeFilter.DropDownStyle = ComboBoxStyle.DropDownList;
             typeFilter.Items.AddRange(new object[] { "Все", "API-ключ", "Пароль", "Токен", "SSH", "Заметка", "Другое" });
             typeFilter.SelectedIndex = 0;
@@ -287,6 +291,9 @@ namespace ProGo
 
             grid.Dock = DockStyle.Fill;
             grid.ReadOnly = true;
+            grid.StandardTab = true;
+            grid.AccessibleName = "Записи хранилища";
+            grid.AccessibleDescription = "Список записей без содержимого секретов. Стрелки выбирают запись; Tab переходит к действиям. Для редактирования используйте «Изменить».";
             grid.AllowUserToAddRows = false;
             grid.AllowUserToDeleteRows = false;
             grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
@@ -309,6 +316,12 @@ namespace ProGo
             var delete = new Button { Text = "Удалить", Width = 100 };
             var edit = new Button { Text = "Изменить", Width = 100 };
             var add = new Button { Text = "Добавить", Width = 100 };
+            close.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
+            lockButton.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
+            copy.AccessibleDescription = "Копирует секрет выбранной записи. " + clipboard.CopyNotice;
+            delete.AccessibleDescription = "Удаляет выбранную запись после подтверждения. Удаление нельзя отменить.";
+            edit.AccessibleDescription = "Открывает выбранную запись. Изменения применяются только после сохранения.";
+            add.AccessibleDescription = "Открывает новую запись. Запись добавляется только после сохранения.";
             add.Click += delegate { AddEntry(); };
             edit.Click += delegate { EditSelected(); };
             delete.Click += delegate { DeleteSelected(); };
@@ -321,6 +334,7 @@ namespace ProGo
             buttons.Controls.Add(add);
             root.Controls.Add(buttons, 0, 2);
             CancelButton = close;
+            UiTheme.ConfigureKeyboardOrder(this);
             Reload();
         }
 
@@ -476,12 +490,19 @@ namespace ProGo
             Add(table, 6, "Заметки", notes);
 
             var show = new CheckBox { Text = "Показать секрет", AutoSize = true };
-            show.CheckedChanged += delegate { secret.UseSystemPasswordChar = !show.Checked; };
+            show.AccessibleDescription = "Показывает или скрывает содержимое секрета на экране. Не сохраняет запись.";
+            secret.AccessibleDescription = "Содержимое секрета скрыто. Показать его можно флажком «Показать секрет».";
+            show.CheckedChanged += delegate {
+                secret.UseSystemPasswordChar = !show.Checked;
+                secret.AccessibleDescription = show.Checked ? "Содержимое секрета отображается на экране." : "Содержимое секрета скрыто. Показать его можно флажком «Показать секрет».";
+            };
             table.Controls.Add(show, 1, 7);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
             var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK };
             var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
+            save.AccessibleDescription = "Проверяет поля и сохраняет запись в хранилище.";
+            cancel.AccessibleDescription = "Закрывает редактор без сохранения изменений.";
             save.Click += Save;
             buttons.Controls.Add(cancel);
             buttons.Controls.Add(save);
@@ -490,12 +511,14 @@ namespace ProGo
             AcceptButton = save;
             CancelButton = cancel;
             LoadEntry(entry);
+            UiTheme.ConfigureKeyboardOrder(this);
         }
 
         private static void Add(TableLayoutPanel table, int row, string label, Control control)
         {
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, row == 6 ? 92 : 42));
             table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+            control.AccessibleName = label;
             control.Dock = DockStyle.Fill;
             table.Controls.Add(control, 1, row);
         }
@@ -562,6 +585,8 @@ namespace ProGo
             Controls.Add(table);
             pin.UseSystemPasswordChar = true;
             confirm.UseSystemPasswordChar = true;
+            pin.AccessibleDescription = "Введите PIN-код из четырёх цифр. Ввод скрыт.";
+            confirm.AccessibleDescription = "Повторите PIN-код из четырёх цифр. Ввод скрыт.";
             Add(table, 0, "PIN-код", pin);
             if (create) Add(table, 1, "Повторите PIN-код", confirm);
             var hint = new Label { Text = "PIN-код должен содержать ровно 4 цифры.", AutoSize = true };
@@ -571,6 +596,8 @@ namespace ProGo
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
             var ok = new Button { Text = create ? "Создать" : "Открыть", Width = 100, DialogResult = DialogResult.OK };
             var cancel = new Button { Text = "Отмена", Width = 100, DialogResult = DialogResult.Cancel };
+            ok.AccessibleDescription = create ? "Проверяет PIN-код и его повтор. Создание хранилища выполняется после подтверждения." : "Передаёт PIN-код для открытия хранилища. Доступ зависит от проверки PIN-кода.";
+            cancel.AccessibleDescription = "Закрывает окно без создания или открытия хранилища.";
             ok.Click += ValidatePin;
             buttons.Controls.Add(cancel);
             buttons.Controls.Add(ok);
@@ -578,12 +605,14 @@ namespace ProGo
             table.SetColumnSpan(buttons, 2);
             AcceptButton = ok;
             CancelButton = cancel;
+            UiTheme.ConfigureKeyboardOrder(this);
         }
 
         private static void Add(TableLayoutPanel table, int row, string label, Control control)
         {
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
             table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+            control.AccessibleName = label;
             control.Dock = DockStyle.Fill;
             table.Controls.Add(control, 1, row);
         }

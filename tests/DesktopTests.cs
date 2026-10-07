@@ -91,6 +91,7 @@ namespace ProGo
                     SettingsPagesLayout(settings);
                     ContrastThemes(settings);
                     SettingsAccessibility(settings);
+                    VaultAccessibility(settings);
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
