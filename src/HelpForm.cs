@@ -106,6 +106,17 @@ namespace ProGo
         private sealed class HelpTopicPanel : FlowLayoutPanel
         {
             internal HelpTopicPanel() { SetStyle(ControlStyles.Selectable, true); TabStop = true; }
+            protected override void OnLayout(LayoutEventArgs e)
+            {
+                base.OnLayout(e);
+                // Flow layout's native scroll extent may omit the bottom inset.
+                // Include every laid-out child, its margin and the reading padding.
+                int bottom = Padding.Top;
+                foreach (Control child in Controls)
+                    bottom = Math.Max(bottom, child.Bottom - AutoScrollPosition.Y + child.Margin.Bottom);
+                var extent = new Size(0, bottom + Padding.Bottom);
+                if (AutoScrollMinSize != extent) AutoScrollMinSize = extent;
+            }
             protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
             {
                 if (Focused) {

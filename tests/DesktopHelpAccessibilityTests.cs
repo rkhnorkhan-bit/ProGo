@@ -80,7 +80,12 @@ namespace ProGo
                         scroll(Keys.End); int end = body.AutoScrollPosition.Y;
                         scroll(Keys.Down); Check(body.AutoScrollPosition.Y == end, name + " Down cannot scroll beyond end");
                         scroll(Keys.Up); Check(end == 0 ? body.AutoScrollPosition.Y == 0 : body.AutoScrollPosition.Y > end, name + " Up returns toward start");
-                        scroll(Keys.End); key.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
+                        scroll(Keys.End);
+                        var last = body.Controls.Cast<Control>().Last();
+                        var lastViewport = body.RectangleToScreen(body.ClientRectangle); var lastBounds = last.RectangleToScreen(last.ClientRectangle);
+                        if (!lastViewport.Contains(lastBounds)) Shot(form, "keyboard-help-end-failure");
+                        Check(lastViewport.Contains(lastBounds), name + " End reveals the complete last instruction or action; viewport=" + lastViewport + "; last=" + lastBounds);
+                        key.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
                         Check(form.Visible && calls.Count == 0, name + " Enter in instruction does not open logs, export or close");
                         Check(form.ClientRectangle.Contains(form.RectangleToClient(close.RectangleToScreen(close.ClientRectangle))) &&
                             form.ClientRectangle.Contains(form.RectangleToClient(guidance.RectangleToScreen(guidance.ClientRectangle))), name + " keeps Close and keyboard guide visible at instruction end");
