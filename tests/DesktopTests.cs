@@ -76,6 +76,7 @@ namespace ProGo
                     RestoreScopeAndPreparationUi();
                     BackupAccessibility();
                     DiagnosticPreviewWorkflow();
+                    UpdateChecksUi(settings);
                     using (var errors = WatchStartupErrors()) {
                     CommandCatalogContract();
                     CommandAvailabilityWorkflow(settings);

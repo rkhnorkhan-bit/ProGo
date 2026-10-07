@@ -140,6 +140,13 @@ namespace ProGo
             {
                 var newer = Reply("{\"tag_name\":\" v0.3.0 \",\"body\":\"Описание\"}");
                 Check(newer.Availability == UpdateAvailability.Available && newer.RemoteVersion == "0.3.0", "newer normalized version is available");
+                Check(newer.ReleaseNotes == "Описание", "release notes survive the real metadata transport");
+                Check(UpdateLauncher.SummarizeReleaseNotes(null).Contains("не опубликовано"), "missing release notes have a fallback");
+                Check(UpdateLauncher.SummarizeReleaseNotes("\u0000\u0001").Contains("не опубликовано"), "control-only notes have a fallback");
+                Check(UpdateLauncher.SummarizeReleaseNotes("Первая\r\nВторая\u0000") == "Первая\nВторая", "release notes normalize line endings and remove control characters");
+                var largeNotes = UpdateLauncher.SummarizeReleaseNotes(new String('x', 5000));
+                Check(largeNotes.Length < 3100 && largeNotes.Contains("Описание сокращено"), "release notes preview is bounded and marked");
+
                 Check(Reply("\uFEFF{\"tag_name\":\"0.2.2\"}").Availability == UpdateAvailability.UpToDate, "equal version is current");
                 Check(Reply("{\"tag_name\":\"0.1.0\"}").Availability == UpdateAvailability.UpToDate, "older release never offers downgrade");
                 Check(Reply("{\"tag_name\":\"bad\"}").Availability == UpdateAvailability.Error, "invalid remote version rejected");

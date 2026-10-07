@@ -20,6 +20,8 @@ namespace ProGo
         private readonly System.Drawing.Icon icon;
         private readonly ConnectionHealthMonitor health;
         private readonly Func<WindowsProxyRestoreResult> restoreWindows;
+        private readonly Func<UpdateCheckForm> createUpdateForm;
+        private UpdateCheckForm updateForm;
         private readonly bool ownsHealth;
         private readonly Timer statusTimer = new Timer { Interval = 1000 };
         private Timer startupShowTimer;
@@ -32,9 +34,10 @@ namespace ProGo
         private bool shutdownPrepared, disposed;
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null)
         {
             settings = settingsService;
+            createUpdateForm = updateFormFactory ?? (() => new UpdateCheckForm());
             restoreWindows = windowsRestore ?? (() => SystemProxyService.RestoreOwned());
             proxy = proxyService;
             cliProxy = cliProxyService;
@@ -437,6 +440,7 @@ namespace ProGo
                 return false;
             }
             shutdownPrepared = true;
+            if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
             proxy.StopTunnel(); RefreshPendingRoutes();
             return true;
         }
@@ -595,50 +599,19 @@ namespace ProGo
             }
         }
 
-        private bool checkingUpdate;
-        private async void StartUpdate()
+        private void StartUpdate()
         {
-            if (checkingUpdate) return;
-            checkingUpdate = true;
+            if (updateForm != null && !updateForm.IsDisposed) { updateForm.Activate(); return; }
             UpdateCheckResult check;
-            try { check = await System.Threading.Tasks.Task.Run(() => UpdateLauncher.CheckForUpdate()); }
-            finally { checkingUpdate = false; }
-
-
-            if (check.Availability == UpdateAvailability.Error)
-            {
-                MessageBox.Show(
-                    (check.ErrorMessage ?? "Не удалось проверить наличие обновлений.") +
-                    "\n\nТекущая версия: " + (check.LocalVersion ?? "неизвестна") +
-                    "\n\nПроверьте подключение к GitHub и повторите попытку.",
-                    "Проверка обновлений ProGo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
+            using (var form = createUpdateForm()) {
+                updateForm = form;
+                try {
+                    if (form.ShowDialog(mainWindow) != DialogResult.OK || closing || shutdownPrepared) return;
+                    check = form.AcceptedResult;
+                } finally { updateForm = null; }
             }
-
-            if (check.Availability == UpdateAvailability.UpToDate)
-            {
-                MessageBox.Show(
-                    "У вас установлена актуальная версия ProGo.\n\nВерсия: " + check.LocalVersion,
-                    "Обновление ProGo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-                return;
-            }
-
-            var result = MessageBox.Show(
-                "Доступна новая версия ProGo — " + check.RemoteVersion + ".\n\n" +
-                "Текущая версия: " + check.LocalVersion + "\n\n" +
-                "Установить обновление сейчас?",
-                "Доступно обновление ProGo",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-
-            if (result != DialogResult.Yes) return;
-
+            if (check == null || check.Availability != UpdateAvailability.Available) return;
             if (!BeginMaintenance(UpdateLauncher.StartUpdater)) return;
-
             SafeLog.Info("Update requested by user. local=" + check.LocalVersion + "; remote=" + check.RemoteVersion + ".");
         }
 
@@ -662,7 +635,9 @@ namespace ProGo
             {
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
-                closing = true; pendingRoutes.Clear(); routeLifetime.Cancel(); routeLifetime.Dispose();
+                closing = true;
+                if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
+                pendingRoutes.Clear(); routeLifetime.Cancel(); routeLifetime.Dispose();
                 health.Changed -= HealthChanged;
                 if (ownsHealth) health.Dispose();
                 statusTimer.Stop(); statusTimer.Dispose();

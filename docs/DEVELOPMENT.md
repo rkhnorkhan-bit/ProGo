@@ -849,3 +849,33 @@ both declared/chunked oversized responses. Settings/vault bytes and existence mu
 remain unchanged. It does not contact GitHub, launch the updater or mutate user
 proxy settings. F23 remains open: visible check/cancel progress, release notes and
 safe cancellation of VPS waiting are later, separate substages.
+
+
+### Audit stage F23b — update check window and release notes
+
+Use one owned UpdateCheckForm for progress, cancellation, result, explicit retry
+and installation consent. The same dashboard/tray update route reactivates an
+existing window rather than starting a second request. Escape, Cancel, title Close,
+disposal and successful application shutdown cancel waiting metadata work. Late
+completions cannot reopen a closed form or cross the maintenance handoff. A refused
+shutdown retains the running application as before.
+
+Await transport work outside the UI thread and dispatch completion through the
+form's live handle with a request generation guard. Worker-owned cancellation
+sources are disposed after the work finishes, including when the window closes.
+Do not redirect ordinary CLI commands or change route/consumer settings.
+
+Show current/new versions and bounded release notes as read-only plain text. Strip
+control characters, normalize line endings, cap at 3000 characters, mark shortening
+and disclose missing notes. Never render active markup, open links automatically,
+or execute release text. Enter while reading is not consent: no AcceptButton. Only
+focused installation activation returns an accepted result to the existing guarded
+BeginMaintenance/StartUpdater handoff. Checking and reading never install anything.
+
+Native Windows fixtures cover pending/error/current/available states, explicit
+retry, all cancellation paths, late ignored results, repeated modal commands and
+shutdown cancellation, keyboard order and action visibility at normal/minimum size.
+Synthetic replies never contact GitHub or start an updater. Settings/vault bytes
+and existence remain unchanged. Existing transport and CLI/maintenance suites are
+required. F23 remains open for download/install phase UX and safe VPS wait cancellation;
+physical Narrator/live contrast and actual DPI acceptance remain separately open.
