@@ -93,6 +93,7 @@ namespace ProGo
                     SettingsAccessibility(settings);
                     VaultAccessibility(settings);
                     WizardAccessibility(settings);
+                    ProfileSharingAccessibility(settings);
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);

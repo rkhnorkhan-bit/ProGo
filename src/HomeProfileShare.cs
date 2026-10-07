@@ -130,22 +130,36 @@ namespace ProGo
 
         internal static bool Configure(IWin32Window parent, HomeVpnService service)
         {
-            using (var dialog = new ProGoForm { Text = "QR: адрес выдачи профиля", ClientSize = new Size(660, 480), StartPosition = FormStartPosition.CenterParent, AutoScaleMode = AutoScaleMode.Dpi })
+            using (var dialog = CreateConfigureForm(service)) return dialog.ShowDialog(parent) == DialogResult.OK;
+        }
+
+        internal static ProGoForm CreateConfigureForm(HomeVpnService service)
+        {
+            var dialog = new ProGoForm { Text = "QR: адрес выдачи профиля", ClientSize = new Size(660, 480), StartPosition = FormStartPosition.CenterParent, AutoScaleMode = AutoScaleMode.Dpi };
             {
                 var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
                 panel.Controls.Add(new Label { Text = "Один раз настройте защищённую выдачу", AutoSize = true, Font = UiTheme.Heading, MaximumSize = new Size(605, 0), Margin = new Padding(0, 0, 0, 16) });
                 panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text = service.Owner == null
                     ? "Попросите владельца VPS прислать HTTPS-адрес выдачи профилей. Для новых токенов он заполняется автоматически."
                     : "Создайте отдельный поддомен, например vpn.example.org. Его DNS-записи A/AAAA должны указывать на ваш VPS. Разрешите TCP 80 и 443 в панели хостинга. ProGo установит сервис выдачи и настроит сертификат через Caddy. Существующие сайты сохраняются; при конфликте настройка остановится.", Margin = new Padding(0, 0, 0, 16) });
-                var address = new TextBox { Width = 600, Text = service.ShareOrigin ?? "" }; panel.Controls.Add(address);
+                panel.Controls.Add(new Label { Text = "HTTPS-адрес выдачи профиля", AutoSize = true });
+                var address = new TextBox { Width = 600, Text = service.ShareOrigin ?? "", AccessibleName = "HTTPS-адрес выдачи профиля",
+                    AccessibleDescription = "Домен без пути и порта, например vpn.example.org. Адрес сохраняется только после успешной проверки принадлежности VPS." }; panel.Controls.Add(address);
                 var install = new Button { Text = "Настроить HTTPS на VPS", AutoSize = true, MinimumSize = new Size(260, 38), Visible = service.Owner != null };
                 var verify = new Button { Text = "Адрес уже настроен — проверить", AutoSize = true, MinimumSize = new Size(300, 38) };
                 var status = new Label { AutoSize = true, MaximumSize = new Size(600, 0) };
-                panel.Controls.Add(install); panel.Controls.Add(verify); panel.Controls.Add(status); dialog.Controls.Add(panel);
+                install.AccessibleDescription = "Устанавливает HTTPS-выдачу профилей на VPS через SSH, затем проверяет её и сохраняет адрес. Изменяет настройки сервера.";
+                verify.AccessibleDescription = "Проверяет HTTPS и принадлежность вашему VPS. После успешной проверки сохраняет адрес; не запускает настройку сервера.";
+                DescribeStatus(status, "Результат настройки HTTPS-выдачи");
+                var close = new Button { Text = "Закрыть", AutoSize = true, MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel,
+                    AccessibleDescription = "Закрывает окно без сохранения введённого адреса. Пока настройка выполняется, закрытие недоступно." };
+                close.Click += delegate { dialog.Close(); };
+                dialog.CancelButton = close;
+                panel.Controls.Add(install); panel.Controls.Add(verify); panel.Controls.Add(close); panel.Controls.Add(status); dialog.Controls.Add(panel);
                 bool working = false;
                 Func<bool, Task> run = async delegate(bool setup)
                 {
-                    working = true; install.Enabled = verify.Enabled = address.Enabled = false;
+                    working = true; install.Enabled = verify.Enabled = address.Enabled = close.Enabled = false;
                     try
                     {
                         string origin = Origin(address.Text);
@@ -155,13 +169,20 @@ namespace ProGo
                         service.SetShareOrigin(origin); dialog.DialogResult = DialogResult.OK;
                     }
                     catch (Exception ex) { status.Text = ex.Message; }
-                    finally { working = false; install.Enabled = verify.Enabled = address.Enabled = true; }
+                    finally { working = false; install.Enabled = verify.Enabled = address.Enabled = close.Enabled = true; }
                 };
                 install.Click += async delegate { await run(true); };
                 verify.Click += async delegate { await run(false); };
                 dialog.FormClosing += delegate(object s, FormClosingEventArgs e) { if (working && dialog.DialogResult != DialogResult.OK) e.Cancel = true; };
-                return dialog.ShowDialog(parent) == DialogResult.OK;
+                UiTheme.ConfigureKeyboardOrder(dialog);
+                return dialog;
             }
+        }
+
+        internal static void DescribeStatus(Label label, string name)
+        {
+            label.AccessibleName = name; label.AccessibleDescription = label.Text;
+            label.TextChanged += delegate { label.AccessibleDescription = label.Text; };
         }
     }
 
@@ -176,14 +197,25 @@ namespace ProGo
             var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(18), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "Откройте камеру телефона и наведите на код. На странице выберите iPhone или Android.", Margin = new Padding(0, 0, 0, 12) });
             bitmap = HomeProfileShare.Render(link, 400);
-            var picture = new PictureBox { Image = bitmap, Size = bitmap.Size, SizeMode = PictureBoxSizeMode.Normal, BackColor = Color.White };
+            var picture = new PictureBox { Image = bitmap, Size = bitmap.Size, SizeMode = PictureBoxSizeMode.Normal, BackColor = Color.White,
+                TabStop = false, AccessibleRole = AccessibleRole.Graphic, AccessibleName = "QR-код выдачи профиля VPN",
+                AccessibleDescription = "Личная временная ссылка. Наведите камеру телефона или используйте кнопку копирования ссылки. Установка профиля подтверждается отдельно." };
             panel.Controls.Add(picture);
             var status = new Label { AutoSize = true, MaximumSize = new Size(510, 0) }; panel.Controls.Add(status);
             var copy = new Button { Text = "Скопировать ссылку", AutoSize = true, MinimumSize = new Size(230, 38) };
+            copy.AccessibleDescription = "Копирует личную временную ссылку. " + clipboard.CopyNotice;
             var copyNotice = new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = clipboard.CopyNotice };
+            HomeProfileShare.DescribeStatus(status, "Срок действия ссылки на профиль");
+            HomeProfileShare.DescribeStatus(copyNotice, "Результат копирования ссылки");
             clipboard.BindSecretCopy(copy, delegate { return link.Url; }, copyNotice);
             var cancel = new Button { Text = "Отозвать ссылку", AutoSize = true, MinimumSize = new Size(230, 38) };
+            cancel.AccessibleDescription = "Отзывает временную ссылку на сервере. Уже установленный VPN продолжает работать.";
             var error = new Label { AutoSize = true, MaximumSize = new Size(510, 0) };
+            HomeProfileShare.DescribeStatus(error, "Результат отзыва ссылки");
+            var close = new Button { Text = "Закрыть", AutoSize = true, MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel,
+                AccessibleDescription = "Закрывает окно без отзыва ссылки. Ссылка остаётся доступной до использования, отзыва или истечения срока." };
+            close.Click += delegate { Close(); };
+            CancelButton = close;
             cancel.Click += async delegate
             {
                 cancel.Enabled = false;
@@ -192,7 +224,8 @@ namespace ProGo
             };
             panel.Controls.Add(copy); panel.Controls.Add(copyNotice); panel.Controls.Add(cancel);
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "Ссылка для одного телефона: после «Получить профиль» повторно воспользоваться QR нельзя. Для другого телефона создайте новый QR. Не публикуйте код. Android использует strongSwan VPN Client.", Margin = new Padding(0, 8, 0, 8) });
-            panel.Controls.Add(error); Controls.Add(panel);
+            panel.Controls.Add(error); panel.Controls.Add(close); Controls.Add(panel);
+            UiTheme.ConfigureKeyboardOrder(this);
             clock.Interval = 1000;
             EventHandler update = delegate
             {

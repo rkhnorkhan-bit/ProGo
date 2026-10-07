@@ -1155,3 +1155,34 @@ and mask the token. Existing VPN/wizard state suites remain required.
 Windows/server CI is required for acceptance. F17 remains open for remaining
 forms and actual Narrator/live system contrast acceptance; F16 real DPI is separate.
 Progress remains **21/30 closed; 9 remaining**. No merge, version bump or release.
+
+
+## Stage F17i — profile-sharing dialogs keyboard access
+
+The HTTPS-origin dialog labels its address input and exposes the current validation
+or setup result. Action descriptions distinguish SSH/server changes from verification
+and saving only after verified ownership. Explicit keyboard order skips the setup
+button for friends. A named Close/Escape action dismisses the draft without saving;
+it is disabled during the existing operation/blocked-close guard. The same dialog
+factory is used by the production modal entry point and the native UI fixture.
+
+The QR graphic has a stable accessible name and non-secret description, without a
+Tab stop or URL in metadata. Named lifetime, clipboard and revoke results follow
+their current text. Actions explain copying, server-side revocation and ordinary
+closure. Close/Escape preserves the existing close behavior: it does not revoke a
+link, confirm phone installation or stop an installed VPN. Explicit Tab order skips
+unavailable copying/revocation. QR expiry, requests and clipboard policy are unchanged.
+
+Isolated native fixtures walk owner/friend origin forms, validate invalid input
+before any HTTPS/SSH request, check safe Enter defaults, and dismiss uncommitted
+addresses via Escape. Synthetic QR fixtures exercise pending/rejected/successful
+revocation, retry, expiry, action availability and closure without extra requests.
+The QR matrix is intentionally nonfunctional; these tests verify control behavior,
+not scanning. Existing independent QR-decoding/server tests remain required.
+No external requests or clipboard writes occur in these fixtures; opaque private
+access files and directory existence must remain unchanged. Screenshots cover
+both origin modes and failed/expired QR presentation.
+
+Windows/server CI is required for acceptance. Actual Narrator/live system contrast
+and other forms remain outstanding; F17 stays open. Progress remains **21/30 closed;
+9 remaining**. No merge, release or version change.
