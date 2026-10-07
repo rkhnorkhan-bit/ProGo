@@ -36,6 +36,38 @@ function Write-UpdateLog($Message) {
     Write-Host $Message
 }
 
+function Show-UpdatePhase {
+    param([ValidateSet('metadata','waiting','download','package','backup','staging','stage-check','install','installed-check','restart','rollback')][string]$Phase)
+    # Phase numbers describe work, never invented byte percentages or time estimates.
+    $phases = @{
+        metadata = @(1, 'Проверяю выпуск обновления', 'Получаю версию и сведения о пакете с GitHub.')
+        waiting = @(2, 'Ожидаю завершения ProGo', 'Приложение сохраняет состояние и освобождает файлы. Ожидание может занять до 30 секунд; затем проверяется доступ к файлам.')
+        download = @(3, 'Скачиваю обновление', 'Скорость зависит от подключения. Установленные файлы ещё не заменяются.')
+        package = @(4, 'Проверяю скачанный пакет', 'Проверяю контрольную сумму, содержимое архива и версию. Установка начнётся только после проверки.')
+        backup = @(5, 'Сохраняю резервную копию', 'Сохраняю текущую программу и настройки перед заменой файлов.')
+        staging = @(6, 'Подготавливаю новую версию', 'Собираю отдельную копию для проверки. Установленные файлы ещё не заменяются.')
+        'stage-check' = @(7, 'Проверяю новую версию', 'Запускаю встроенную проверку подготовленной копии.')
+        install = @(8, 'Устанавливаю обновление', 'Идёт замена файлов. Дождитесь результата; не закрывайте окно.')
+        'installed-check' = @(9, 'Проверяю установленную версию', 'Проверяю версию и запускаю встроенную проверку после установки.')
+        restart = @(10, 'Запускаю ProGo', 'Проверяю, что приложение запустилось. Дождитесь результата.')
+        rollback = @(0, 'Восстанавливаю предыдущую версию', 'Обновление не завершилось. Пытаюсь вернуть файлы из резервной копии; дождитесь результата.')
+    }
+    $item = $phases[$Phase]
+    $title = if ($Phase -eq 'rollback') { $item[1] } else { 'Этап {0} из 10: {1}' -f $item[0], $item[1] }
+    if ($Phase -eq 'restart' -and $NoLaunch) {
+        $title = 'Этап 10 из 10: Завершаю обновление'
+        $item[2] = 'Автоматический запуск отключён. После завершения можно открыть ProGo вручную.'
+    }
+    # Progress is presentation only. Hosts may suppress it or refuse rendering;
+    # that must never abort installation, rollback or ownership cleanup.
+    try { Write-Host $title; Write-Host $item[2] } catch { }
+    try { Write-Progress -Id 23 -Activity 'Обновление ProGo' -Status $title -CurrentOperation $item[2] -PercentComplete -1 } catch { }
+}
+
+function Clear-UpdateProgress {
+    try { Write-Progress -Id 23 -Activity 'Обновление ProGo' -Completed } catch { }
+}
+
 function Copy-LogToClipboard {
     try {
         . (Join-Path $PSScriptRoot 'Diagnostics-ProGo.ps1')
@@ -206,6 +238,7 @@ function Test-UpdateRequired {
 
     if ([version]$State.LocalVersion -ge [version]$State.RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
+        Clear-UpdateProgress
         Show-UserMessage (('У вас актуальная версия ProGo: ') + $State.LocalVersion) ('Обновление ProGo')
         return $false
     }
@@ -446,7 +479,9 @@ function Try-GetReleasePackage($DestinationRoot) {
     $packageZip = Join-Path $DestinationRoot "ProGo-release.zip"
     Write-UpdateLog "update_mode=release-package"
     Write-UpdateLog "Downloading published package: $($State.ReleaseUrl)"
+    Show-UpdatePhase download
     Invoke-WebRequest -Uri $State.ReleaseUrl -OutFile $packageZip -UseBasicParsing -ErrorAction Stop
+    Show-UpdatePhase package
     $actual = (Get-FileHash -LiteralPath $packageZip -Algorithm SHA256).Hash
     if ($actual -ine $State.ReleaseSha256) { throw "Package SHA-256 mismatch. No installed files were changed." }
     Write-UpdateLog "Package SHA-256 verified: $actual"
@@ -527,11 +562,14 @@ try {
     . (Join-Path $PSScriptRoot 'BackupIntegrity-ProGo.ps1')
     Write-UpdateLog "ProGo transactional update started."
 
+    Show-UpdatePhase metadata
     if (-not (Test-UpdateRequired)) {
+        Clear-UpdateProgress
         return
     }
 
     [ProGo.MaintenanceOperation]::ConfirmHandoff()
+    Show-UpdatePhase waiting
     Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
     [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
     [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
@@ -543,15 +581,20 @@ try {
 
     $ReleaseDir = Get-ReleaseDirForUpdate
 
+    Show-UpdatePhase backup
     $BackupDir = Backup-InstalledState
     Write-UpdateLog "Backup before update: $BackupDir"
 
+    Show-UpdatePhase staging
     New-StagingCopy -TargetDir $StageDir
     Apply-ReleaseToStaging -ReleaseDir $ReleaseDir -TargetDir $StageDir
+    Show-UpdatePhase stage-check
     Test-StagingCopy -TargetDir $StageDir
 
+    Show-UpdatePhase install
     Install-StagingToMain -TargetDir $StageDir
 
+    Show-UpdatePhase installed-check
     $installedVersion = ((Get-Content -Raw -Path (Join-Path $InstallDir "VERSION")).Trim())
     if ($installedVersion -ne $State.RemoteVersion) {
         Fail "Installed version mismatch after commit: installed=$installedVersion remote=$($State.RemoteVersion)"
@@ -562,10 +605,13 @@ try {
         Fail "Main self-check failed after commit with exit code $($mainCheck.ExitCode)"
     }
 
+    Show-UpdatePhase restart
     Start-UpdatedProGo -ExePath (Join-Path $InstallDir "ProGo.exe")
 
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "success"
     Write-UpdateLog "ProGo transactional update completed."
+    Clear-UpdateProgress
+    try { Write-Host 'Обновление завершено. Резервная копия сохранена.' } catch { }
     Show-UpdateDialog (('ProGo обновлён. Резервная копия сохранена:
 ') + $BackupDir) ('Обновление ProGo') "Information"
 } catch {
@@ -575,16 +621,19 @@ try {
 
     if ($State.MainWasChanged) {
         [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
+        Show-UpdatePhase rollback
         Restore-BackupToMain -SourceBackupDir $BackupDir
         Write-UpdateLog "Rollback completed after failed main commit."
     } else {
         Write-UpdateLog "Main application was not changed; rollback is not required."
     }
 
+    Clear-UpdateProgress
+    try { Write-Host 'Обновление не выполнено. Подробности доступны в журнале обновления.' } catch { }
     Show-UpdateDialog (('Обновление ProGo не выполнено. Основное приложение сохранено или восстановлено из резервной копии. Подробности в update.log.
 
 ') + $message) ('Обновление ProGo') "Error"
     throw
 } finally {
-    try { Cleanup-TemporaryFiles } finally { $Maintenance.Dispose() }
+    try { Cleanup-TemporaryFiles } finally { try { Clear-UpdateProgress } finally { $Maintenance.Dispose() } }
 }

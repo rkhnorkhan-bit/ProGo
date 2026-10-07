@@ -879,3 +879,24 @@ Synthetic replies never contact GitHub or start an updater. Settings/vault bytes
 and existence remain unchanged. Existing transport and CLI/maintenance suites are
 required. F23 remains open for download/install phase UX and safe VPS wait cancellation;
 physical Narrator/live contrast and actual DPI acceptance remain separately open.
+
+### Audit stage F23c — reached installation phases
+
+The installed PowerShell core shows a fixed Russian phase title/explanation before
+each real operation. Its existing visible console remains the presentation host.
+Numbered phases are not byte percentages; Write-Progress uses indeterminate -1.
+Plain text remains available when progress rendering is suppressed. Display calls
+are best effort and cannot stop installation, rollback or lease disposal. Rollback
+is described as an attempt, and NoLaunch cannot claim an automatic restart.
+
+Clear the indicator before current/success/error dialogs and in finally, including
+failed rollback. Never introduce a cancellable commit merely by closing a window.
+`UpdateProgressTests.ps1` runs the installed transaction in isolated Windows child
+processes. Metadata/download replies are local fixtures; package/hash/archive,
+backup, staging, commit, validation, rollback and ownership stay real unless a
+fault is injected at that named boundary. The progress-host failure fixture must
+still complete the transaction. Settings and opaque vault hashes must remain.
+
+Windows/server CI is required. F23 remains open for a cancellable install window,
+bounded helper transport and safe VPS waiting cancellation. No CLI, update trust,
+automatic installation, version or release changes belong to this substage.
