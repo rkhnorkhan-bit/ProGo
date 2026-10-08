@@ -42,7 +42,8 @@ namespace ProGo
                 if (Interlocked.Increment(ref retries) == 1) throw new IOException("private-fixture-detail");
                 return retryReply.Task;
             }, "0.2.2")) {
-                form.Show(); PumpUntil(() => !form.IsChecking);
+                // Shown may be queued; an idle form has not necessarily started its check.
+                form.Show(); PumpUntil(() => form.CheckWork != null && !form.IsChecking);
                 var status = (Label)Field(form, "status"); var primary = (Button)Field(form, "primary"); var close = (Button)Field(form, "close");
                 var details = (TextBox)Field(form, "details");
                 Check(status.Text == "Не удалось проверить обновления" && primary.Text == "Повторить проверку" && primary.Enabled,
@@ -53,7 +54,7 @@ namespace ProGo
                 primary.Focus(); primary.PerformClick(); PumpUntil(() => Volatile.Read(ref retries) == 2);
                 Check(form.IsChecking && close.Text == "Отменить" && !primary.Visible && close.Focused, "retry replaces stale error with visible progress");
                 retryReply.SetResult(UpdateOffer("[Описание](https://example.org)\n<script>plain text</script>\n" + new String('x', 5000)));
-                PumpUntil(() => !form.IsChecking);
+                PumpUntil(() => form.CheckWork != null && !form.IsChecking);
                 Check(status.Text == "Доступна версия 0.3.0" && primary.Text == "Установить обновление" && primary.Enabled,
                     "newer release exposes installation only after successful check");
                 Check(details.ReadOnly && details.Text.Contains("<script>plain text</script>") && details.Text.Length < 3200 && details.Text.Contains("Описание сокращено"),
@@ -80,7 +81,7 @@ namespace ProGo
                 new UpdateCheckResult { Availability = UpdateAvailability.UpToDate, LocalVersion = "0.2.2" },
                 new UpdateCheckResult { Availability = UpdateAvailability.Error, LocalVersion = "0.2.2", ErrorMessage = "Время ожидания ответа GitHub истекло. Повторите проверку обновлений." }
             }) using (var form = new UpdateCheckForm(token => Task.FromResult(result), "0.2.2")) {
-                form.Show(); PumpUntil(() => !form.IsChecking);
+                form.Show(); PumpUntil(() => form.CheckWork != null && !form.IsChecking);
                 Check(form.AcceptedResult == null && ((Button)Field(form, "primary")).Text != "Установить обновление", "current/error result does not offer installation");
                 if (result.Availability == UpdateAvailability.UpToDate) {
                     Check(!((Button)Field(form, "primary")).Visible, "current version exposes Close only"); Shot(form, "update-check-current");
@@ -88,7 +89,7 @@ namespace ProGo
                 dialogKey.Invoke(form, new object[] { Keys.Escape }); Check(!form.Visible, "Escape closes completed check");
             }
             using (var form = new UpdateCheckForm(token => Task.FromResult(UpdateOffer(null)), "0.2.2")) {
-                form.Show(); PumpUntil(() => !form.IsChecking);
+                form.Show(); PumpUntil(() => form.CheckWork != null && !form.IsChecking);
                 Check(((TextBox)Field(form, "details")).Text.Contains("не опубликовано"), "release without notes has an honest fallback");
                 ((Button)Field(form, "close")).PerformClick(); Check(form.AcceptedResult == null, "Later does not authorize installation");
             }
