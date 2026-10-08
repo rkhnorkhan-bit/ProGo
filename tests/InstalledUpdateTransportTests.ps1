@@ -1,6 +1,7 @@
 ﻿param([string]$Scripts)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+$UpdateWindow = $null
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Requires isolated Windows CI' }
 # Load only the transport adapter definitions, not transaction top-level actions.
 $tokens = $null; $errors = $null

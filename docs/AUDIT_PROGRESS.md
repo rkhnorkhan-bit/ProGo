@@ -1392,3 +1392,41 @@ Cancel button for downloads yet, and the core currently calls with no caller tok
 F23 remains open for that window, pre-commit cancellation/relaunch integration and
 safe VPS waiting cancellation. Progress remains **21/30 closed; 9 remaining**.
 No merge, version bump or release.
+
+
+## Stage F23e — native installation window and download cancellation
+
+The installed helper shows one themed native window with the reached phase and a
+read-only explanation. Dashboard/tray launch no longer opens a second console;
+direct PowerShell invocation keeps its ordinary console text. No default action is
+assigned. Accessible status/explanation names, keyboard cancellation, native scroll
+and wrapping/resizing reuse the existing theme, icon and high-contrast handling.
+The shipped local window source is compiled with the installed theme/icon sources.
+
+The PowerShell transaction/mutex stays on its original thread. Only presentation
+runs on a separate STA message loop. The Cancel download button is available only
+while transferring the archive; button, Escape and title Close request the same
+transport token. The window stays visible while the interrupted transfer unwinds.
+Closing it cannot terminate validation, backup, staging, commit, rollback or restart.
+An atomic cancellation/EndDownload boundary prevents an accepted cancellation from
+crossing package validation. Presentation does not implement that safety decision.
+
+Only a requested download cancellation before MainWasChanged becomes the dedicated
+UpdateDownloadCancelledException marker. After closing the window and completing
+temporary-work cleanup/lease disposal, the installed bootstrap treats that marker
+as cancellation rather than failure. Existing recovery relaunches the installed
+app only if its initiating process exited and NoLaunch is false. A surviving app is
+kept; other OperationCanceledException errors cannot claim files were unchanged.
+The cancellation notice makes no unverified claim that the app successfully started.
+
+Native Windows fixtures exercise real socket/body cancellation for the three UI
+paths, the validation race, protected-phase Close/Enter, layout and accessible names
+at normal/minimum/scaled sizes and synthetic high contrast. Native screenshots are
+required for review. Existing transaction fixtures add cancellation before/during
+the completed-download boundary, opaque settings/vault/executable/helper preservation,
+no extraction/backup, window/temporary cleanup, bootstrap outcome/relaunch rules and
+released ownership. Network transport, package trust, CLI and server suites remain.
+
+F23 remains open for safe VPS waiting cancellation. Physical Narrator/live contrast
+and actual DPI acceptance remain separately open. Progress stays 21/30 closed,
+9 remaining. No merge, automatic installation, version bump or release.

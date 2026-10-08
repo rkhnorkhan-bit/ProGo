@@ -29,6 +29,7 @@ $State = @{
     UpdateMode = "unknown"
 }
 $BackupDir = $null
+$UpdateWindow = $null
 
 function Write-UpdateLog($Message) {
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz") + " " + $Message
@@ -58,6 +59,7 @@ function Show-UpdatePhase {
         $title = 'Этап 10 из 10: Завершаю обновление'
         $item[2] = 'Автоматический запуск отключён. После завершения можно открыть ProGo вручную.'
     }
+    if ($null -ne $UpdateWindow) { $UpdateWindow.ShowPhase($title, $item[2]) }
     # Progress is presentation only. Hosts may suppress it or refuse rendering;
     # that must never abort installation, rollback or ownership cleanup.
     try { Write-Host $title; Write-Host $item[2] } catch { }
@@ -66,6 +68,29 @@ function Show-UpdatePhase {
 
 function Clear-UpdateProgress {
     try { Write-Progress -Id 23 -Activity 'Обновление ProGo' -Completed } catch { }
+}
+
+function Initialize-UpdateWindow {
+    if (-not ('ProGo.UpdateInstallSession' -as [type])) {
+        $sources = @('UpdateInstallSession.cs','UiTheme.cs','BrandIcon.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
+        Add-Type -Path $sources -ReferencedAssemblies System.dll,System.Core.dll,System.Drawing.dll,System.Windows.Forms.dll -ErrorAction Stop
+    }
+    $script:UpdateWindow = [ProGo.UpdateInstallSession]::Open()
+}
+
+function Close-UpdateWindow {
+    $window = $UpdateWindow
+    $script:UpdateWindow = $null
+    if ($null -ne $window) { $window.Dispose() }
+}
+
+function Test-UpdateCancelled($ErrorObject) {
+    $exception = $ErrorObject.Exception
+    while ($null -ne $exception) {
+        if ($exception -is [OperationCanceledException]) { return $true }
+        $exception = $exception.InnerException
+    }
+    return $false
 }
 
 function Copy-LogToClipboard {
@@ -226,7 +251,8 @@ function Read-UpdateMetadata($Url) {
 
 function Save-UpdatePackage($Url, $Path) {
     Initialize-UpdateTransport
-    [ProGo.InstalledUpdateTransport]::DownloadPackage($Url, $Path, [Threading.CancellationToken]::None)
+    $token = if ($null -ne $UpdateWindow) { $UpdateWindow.Token } else { [Threading.CancellationToken]::None }
+    [ProGo.InstalledUpdateTransport]::DownloadPackage($Url, $Path, $token)
 }
 
 function Get-RemoteVersion {
@@ -254,6 +280,7 @@ function Test-UpdateRequired {
     if ([version]$State.LocalVersion -ge [version]$State.RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
         Clear-UpdateProgress
+        Close-UpdateWindow
         Show-UserMessage (('У вас актуальная версия ProGo: ') + $State.LocalVersion) ('Обновление ProGo')
         return $false
     }
@@ -495,7 +522,9 @@ function Try-GetReleasePackage($DestinationRoot) {
     Write-UpdateLog "update_mode=release-package"
     Write-UpdateLog "Downloading published package: $($State.ReleaseUrl)"
     Show-UpdatePhase download
+    if ($null -ne $UpdateWindow) { $UpdateWindow.BeginDownload() }
     Save-UpdatePackage $State.ReleaseUrl $packageZip
+    if ($null -ne $UpdateWindow) { $UpdateWindow.EndDownload() }
     Show-UpdatePhase package
     $actual = (Get-FileHash -LiteralPath $packageZip -Algorithm SHA256).Hash
     if ($actual -ine $State.ReleaseSha256) { throw "Package SHA-256 mismatch. No installed files were changed." }
@@ -577,6 +606,7 @@ try {
     . (Join-Path $PSScriptRoot 'BackupIntegrity-ProGo.ps1')
     Write-UpdateLog "ProGo transactional update started."
 
+    Initialize-UpdateWindow
     Show-UpdatePhase metadata
     if (-not (Test-UpdateRequired)) {
         Clear-UpdateProgress
@@ -626,10 +656,17 @@ try {
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "success"
     Write-UpdateLog "ProGo transactional update completed."
     Clear-UpdateProgress
+    Close-UpdateWindow
     try { Write-Host 'Обновление завершено. Резервная копия сохранена.' } catch { }
     Show-UpdateDialog (('ProGo обновлён. Резервная копия сохранена:
 ') + $BackupDir) ('Обновление ProGo') "Information"
 } catch {
+    if (-not $State.MainWasChanged -and $null -ne $UpdateWindow -and $UpdateWindow.CancellationRequested -and (Test-UpdateCancelled $_)) {
+        Write-UpdateLog 'Download cancelled before validation or installation. Installed files were not changed.'
+        Clear-UpdateProgress
+        Close-UpdateWindow
+        throw (New-Object ProGo.UpdateDownloadCancelledException)
+    }
     $message = $_.Exception.Message
     Write-UpdateLog "TRANSACTION FAILED: $message"
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "failed"
@@ -644,11 +681,12 @@ try {
     }
 
     Clear-UpdateProgress
+    Close-UpdateWindow
     try { Write-Host 'Обновление не выполнено. Подробности доступны в журнале обновления.' } catch { }
     Show-UpdateDialog (('Обновление ProGo не выполнено. Основное приложение сохранено или восстановлено из резервной копии. Подробности в update.log.
 
 ') + $message) ('Обновление ProGo') "Error"
     throw
 } finally {
-    try { Cleanup-TemporaryFiles } finally { try { Clear-UpdateProgress } finally { $Maintenance.Dispose() } }
+    try { Cleanup-TemporaryFiles } finally { try { Clear-UpdateProgress } finally { try { Close-UpdateWindow } finally { $Maintenance.Dispose() } } }
 }

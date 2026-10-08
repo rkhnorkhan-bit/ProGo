@@ -216,7 +216,7 @@ namespace ProGo
                 var psi = new ProcessStartInfo(powershell, args)
                 {
                     UseShellExecute = false,
-                    CreateNoWindow = false,
+                    CreateNoWindow = true,
                     WorkingDirectory = AppPaths.Root
                 };
 
