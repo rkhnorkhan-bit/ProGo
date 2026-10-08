@@ -93,6 +93,13 @@ namespace ProGo
                     Shot(form, work, "vps-preparation-pending"); form.ClientSize = new Size(440, 270); Application.DoEvents();
                     check(form.RectangleToClient(cancel.RectangleToScreen(cancel.ClientRectangle)).Bottom <= form.ClientSize.Height,
                         "preparation cancellation remains visible at minimum size"); Shot(form, work, "vps-preparation-minimum");
+                    var heading = (Label)Field(form, "heading"); var viewport = (FlowLayoutPanel)Field(form, "viewport");
+                    check(heading.Visible && heading.Top >= 0 && heading.Bottom <= viewport.ClientSize.Height
+                        && heading.GetPreferredSize(new Size(heading.Width, 0)).Height <= heading.Height,
+                        "minimum preparation window retains its complete visible heading");
+                    check(!viewport.HorizontalScroll.Visible && heading.Right <= viewport.ClientSize.Width && status.Right <= viewport.ClientSize.Width
+                        && status.GetPreferredSize(new Size(status.Width, 0)).Height <= status.Height,
+                        "minimum preparation text wraps without clipping or horizontal scrolling");
                 }
                 var watch = Stopwatch.StartNew();
                 if (route == "button") cancel.PerformClick();

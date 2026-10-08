@@ -15,6 +15,9 @@ namespace ProGo
     internal sealed class HomeVpnPreparationForm : ProGoForm
     {
         private readonly Label status = UiTheme.StatusLabel(UiTheme.Muted);
+        private readonly Label heading = UiTheme.Label("Копирование помощника на VPS", UiTheme.Heading, UiTheme.Text);
+        private readonly FlowLayoutPanel viewport = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true,
+            FlowDirection = FlowDirection.TopDown, WrapContents = false, Margin = Padding.Empty };
         private readonly Button cancel = new Button { Text = "Отменить подготовку", AutoSize = true, MinimumSize = new Size(220, 38) };
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private readonly TaskCompletionSource<object> completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -27,25 +30,23 @@ namespace ProGo
             this.copy = copy;
             Text = "Подготовка VPS"; ClientSize = new Size(610, 280); MinimumSize = new Size(450, 300);
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterParent;
-            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), ColumnCount = 1, RowCount = 3 };
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), ColumnCount = 1, RowCount = 2 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            var heading = new Label { Text = "Копирование помощника на VPS", Font = UiTheme.Heading, AutoSize = true, Margin = new Padding(0, 0, 0, 12) };
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            heading.Margin = new Padding(0, 0, 0, 12);
             status.Text = "Ожидание — до 5 минут. Если SSH запросит пароль или подтверждение ключа, ответьте в отдельном окне. Команды настройки VPS ещё не запускались. Можно отменить подготовку.";
             status.AutoSize = true; status.Margin = new Padding(0, 0, 0, 12);
             status.AccessibleName = "Ход подготовки VPS"; status.AccessibleDescription = status.Text;
             status.TextChanged += delegate { status.AccessibleDescription = status.Text; };
-            var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = Padding.Empty }; scroll.Controls.Add(status);
-            Action wrap = delegate {
-                heading.MaximumSize = new Size(Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal), 0);
-                status.MaximumSize = new Size(Math.Max(1, scroll.ClientSize.Width - SystemInformation.VerticalScrollBarWidth), 0);
+            viewport.Controls.Add(heading); viewport.Controls.Add(status);
+            viewport.SizeChanged += delegate {
+                int width = Math.Max(1, viewport.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+                heading.MaximumSize = status.MaximumSize = new Size(width, 0);
             };
-            layout.SizeChanged += delegate { wrap(); }; scroll.SizeChanged += delegate { wrap(); };
             cancel.AccessibleName = cancel.Text;
             cancel.AccessibleDescription = "Прерывает только копирование. Окно дождётся остановки его процессов; команды настройки VPS не запускаются.";
             cancel.Click += delegate { CancelCopy(); }; CancelButton = cancel; cancel.DialogResult = DialogResult.None;
-            layout.Controls.Add(heading, 0, 0); layout.Controls.Add(scroll, 0, 1); layout.Controls.Add(cancel, 0, 2); Controls.Add(layout);
+            layout.Controls.Add(viewport, 0, 0); layout.Controls.Add(cancel, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
         }
         protected override async void OnShown(EventArgs e)
