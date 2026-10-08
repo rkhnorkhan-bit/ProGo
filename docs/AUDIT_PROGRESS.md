@@ -1448,7 +1448,8 @@ A linked caller token interrupts the relay probe socket and prevents publishing 
 late relay. A cancelled startup cleans its owned SSH process and private temporary
 session before reporting cancellation. Cleanup uses a blocking process-ownership
 check; an unsettled process or locked private file remains an error with no queued
-close or successful-cancellation claim. Existing saved access is preserved. During
+close or successful-cancellation claim. Retry retains unsettled ownership and refuses
+to spawn another channel until cleanup succeeds. Existing saved access is preserved. During
 import it may already have been committed before the channel wait; the message
 explicitly describes retained saved access rather than rollback. Draft token input
 stays masked, the wizard does not advance, and a fresh explicit retry is available.

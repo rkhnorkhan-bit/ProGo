@@ -209,6 +209,10 @@ namespace ProGo
                         "cleanup failure refuses successful cancellation and queued close while explaining the unsettled result");
                     check((string)Field(service, "sessionDirectory") == session && HomeVpnPrivateFiles.Load("access") == token,
                         "cleanup failure retains private session ownership and saved access for recovery");
+                    int oldPid = Pid(); Controls(form).OfType<Button>().Single(b => b.Text == "Запустить канал").PerformClick();
+                    Pump(() => !(bool)Field(form, "busy"));
+                    check((string)Field(service, "sessionDirectory") == session && Pid() == oldPid && !relay.IsRunning && status.Text.Contains("ещё не очищен"),
+                        "retry cannot discard an unsettled private session or spawn another process while its file stays locked");
                 }
                 service.Stop(); check(!Directory.Exists(session), "explicit stop retries private session removal after its lock is released"); form.Close();
             }

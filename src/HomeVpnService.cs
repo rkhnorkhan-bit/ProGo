@@ -118,6 +118,8 @@ namespace ProGo
             if (Access == null) throw new InvalidOperationException("Сначала добавьте VPS или вставьте токен.");
             if (Relay.IsRunning || starting != null) return;
             Stop();
+            if (proxy != null || sessionDirectory != null)
+                throw new InvalidOperationException("Предыдущий запуск канала ещё не очищен. Закройте программы, использующие временные файлы, и повторите остановку VPN для телефона.");
             var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token); starting = cancellation;
             try
             {
@@ -175,11 +177,15 @@ namespace ProGo
         {
             if (starting != null) starting.Cancel();
             Relay.Stop();
-            if (proxy != null) { proxy.Dispose(); proxy = null; }
+            if (proxy != null) {
+                proxy.Dispose();
+                if (proxy.HasOwnedProcess) return; // Retain ownership; never overwrite an unsettled child.
+                proxy = null;
+            }
             if (sessionDirectory != null)
             {
-                try { Directory.Delete(sessionDirectory, true); } catch { }
-                sessionDirectory = null;
+                try { if (Directory.Exists(sessionDirectory)) Directory.Delete(sessionDirectory, true); sessionDirectory = null; }
+                catch { /* Keep ownership so cancellation/retry cannot claim cleanup succeeded. */ }
             }
         }
 
