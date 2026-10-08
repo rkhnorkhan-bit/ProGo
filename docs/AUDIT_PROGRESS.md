@@ -1455,7 +1455,8 @@ stays masked, the wizard does not advance, and a fresh explicit retry is availab
 
 Windows fixtures use this actual wizard/service/proxy/relay pipeline with a local
 owned SSH substitute: absent listener, silent receiver, all three cancellation
-routes, responsive UI, preserved credentials, cleanup, retry, pre-cancel, timeout,
+routes, disposal/late UI suppression, responsive UI, preserved credentials, cleanup,
+retry, pre-cancel, timeout, unrelated-process preservation,
 already-running preservation and a real locked-file cleanup failure. Native images
 cover pending, minimum-size and cancelled states. A pending protected server
 operation refuses title-close cancellation without claiming remote rollback.

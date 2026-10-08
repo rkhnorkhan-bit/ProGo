@@ -65,7 +65,7 @@ namespace ProGo
             cancelWait.Text = "Отменить запуск канала"; cancelWait.AutoSize = true; cancelWait.MinimumSize = new Size(180, 38);
             cancelWait.AccessibleName = cancelWait.Text;
             cancelWait.AccessibleDescription = "Отменяет только запуск канала к VPS. Сохранённый доступ остаётся; окно ждёт остановки процессов.";
-            cancelWait.Visible = false; cancelWait.Click += delegate { CancelChannelWait(); };
+            cancelWait.Visible = cancelWait.Enabled = false; cancelWait.Click += delegate { CancelChannelWait(); };
             footer.Controls.Add(cancelWait);
             layout.Controls.Add(heading, 0, 0); layout.Controls.Add(progress, 0, 1); layout.Controls.Add(body, 0, 2);
             layout.Controls.Add(status, 0, 3); layout.Controls.Add(footer, 0, 4); Controls.Add(layout);
@@ -264,7 +264,7 @@ namespace ProGo
                 catch (OperationCanceledException) { cancelledWait = source.IsCancellationRequested; throw; }
                 finally {
                     channelWait = null;
-                    if (!IsDisposed && !Disposing) { cancelWait.Visible = false; CancelButton = null; }
+                    if (!IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
                 }
             }
         }

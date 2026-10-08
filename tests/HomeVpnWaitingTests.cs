@@ -20,6 +20,7 @@ namespace ProGo
         // This executable is also the owned SSH substitute, never a live SSH client.
         internal static bool Fixture(string[] args)
         {
+            if (args.Length == 1 && args[0] == "unrelated-wait") { Thread.Sleep(60000); return true; }
             int index = Array.IndexOf(args, "-D");
             if (index < 0) return false;
             string folder = Environment.GetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE");
@@ -64,17 +65,20 @@ namespace ProGo
                 saved[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
             }
             Environment.SetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE", marker);
+            var unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "unrelated-wait") { UseShellExecute = false, CreateNoWindow = true });
             try {
                 foreach (string mode in new[] { "no-listener", "silent" }) {
-                    foreach (string route in new[] { "button", "escape", "close" }) NativeCancel(token, clipboard, work, mode, route);
+                    foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(token, clipboard, work, mode, route);
                 }
                 ImportCancel(token, clipboard);
                 CleanupFailure(token, clipboard);
                 ServiceChecks(token);
                 ProtectedOperation(clipboard);
+                check(!unrelated.HasExited, "all channel cancellation and cleanup paths preserve an unrelated process");
             }
             finally {
                 KillFixture(); Environment.SetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE", previous);
+                if (!unrelated.HasExited) { unrelated.Kill(); unrelated.WaitForExit(2000); } unrelated.Dispose();
                 foreach (var item in saved) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); }
             }
         }
@@ -134,11 +138,12 @@ namespace ProGo
                 var watch = Stopwatch.StartNew();
                 if (route == "button") cancel.PerformClick();
                 else if (route == "escape") typeof(Form).GetMethod("ProcessDialogKey", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(form, new object[] { Keys.Escape });
-                else form.Close();
+                else if (route == "close") form.Close();
+                else form.Dispose();
                 Pump(() => !(bool)Field(form, "busy"));
                 check(watch.ElapsedMilliseconds < 3500, "native cancellation settles without waiting for the network deadline"); Clean(service, pid);
                 check(accessBefore.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"))), "startup cancellation does not rewrite saved credentials");
-                if (route == "close") check(form.IsDisposed, "title close waits for cleanup before closing");
+                if (route == "close" || route == "dispose") check(form.IsDisposed, "close or disposal finishes without late UI access");
                 else {
                     check(form.Visible && !cancel.Visible && ((Control)Field(form, "body")).Enabled && status.Text.Contains("отменён") && status.ForeColor == UiTheme.Muted,
                         "button and Escape cancellation keep a retryable wizard with a cancellation outcome");
@@ -217,7 +222,8 @@ namespace ProGo
                 var task = (Task)typeof(HomeVpnWizardForm).GetMethod("RunStep", BindingFlags.NonPublic | BindingFlags.Instance)
                     .Invoke(form, new object[] { new Func<Task>(() => pending.Task) });
                 form.Close();
-                check(form.Visible && !((Button)Field(form, "cancelWait")).Visible && ((Label)Field(form, "status")).Text.Contains("не отменяет") && !task.IsCompleted,
+                check(form.Visible && !((Button)Field(form, "cancelWait")).Visible && !((Button)Field(form, "cancelWait")).Enabled
+                    && ((Label)Field(form, "status")).Text.Contains("не отменяет") && !task.IsCompleted,
                     "server-changing operation cannot be cancelled or declared rolled back by title close");
                 pending.SetResult(0); Pump(() => task.IsCompleted);
                 check(form.Visible && !(bool)Field(form, "busy"), "protected operation completion restores controls without a queued close"); form.Close();
