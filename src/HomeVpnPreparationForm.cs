@@ -57,7 +57,10 @@ namespace ProGo
         {
             Exception failure = null;
             try { cancellation.Token.ThrowIfCancellationRequested(); await copy(cancellation.Token); cancellation.Token.ThrowIfCancellationRequested(); }
-            catch (OperationCanceledException) { failure = cancellation.IsCancellationRequested ? new HomeVpnPreparationCancelledException() : new InvalidOperationException("Подготовка прервана. Команды настройки VPS не запускались; проверьте SSH."); }
+            catch (OperationCanceledException) {
+                if (cancellation.IsCancellationRequested) failure = new HomeVpnPreparationCancelledException();
+                else failure = new InvalidOperationException("Подготовка прервана. Команды настройки VPS не запускались; проверьте SSH.");
+            }
             catch (Exception ex) { failure = ex; }
             finally { running = false; cancellation.Dispose(); }
             if (failure == null) completion.TrySetResult(null); else completion.TrySetException(failure);
