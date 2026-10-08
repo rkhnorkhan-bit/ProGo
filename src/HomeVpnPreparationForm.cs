@@ -44,13 +44,13 @@ namespace ProGo
             layout.SizeChanged += delegate { wrap(); }; scroll.SizeChanged += delegate { wrap(); };
             cancel.AccessibleName = cancel.Text;
             cancel.AccessibleDescription = "Прерывает только копирование. Окно дождётся остановки его процессов; команды настройки VPS не запускаются.";
-            cancel.Click += delegate { CancelCopy(); }; CancelButton = cancel;
+            cancel.Click += delegate { CancelCopy(); }; CancelButton = cancel; cancel.DialogResult = DialogResult.None;
             layout.Controls.Add(heading, 0, 0); layout.Controls.Add(scroll, 0, 1); layout.Controls.Add(cancel, 0, 2); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
         }
         protected override async void OnShown(EventArgs e)
         {
-            base.OnShown(e); if (started) return; started = true; cancel.Focus();
+            base.OnShown(e); if (started || IsDisposed || Disposing) return; started = true; cancel.Focus();
             await Execute();
         }
         private async Task Execute()

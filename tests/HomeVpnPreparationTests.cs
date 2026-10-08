@@ -153,6 +153,7 @@ namespace ProGo
                     "cancelled own-VPS preparation never launches setup, commits a token or advances the wizard");
                 check(status.ForeColor == UiTheme.Muted && status.Text.StartsWith("Подготовка отменена") && ((TextBox)Field(form, "host")).Text == "vpn.example.org",
                     "wizard restores a retryable draft and explicit pre-configuration cancellation outcome");
+                Shot(form, Path.GetDirectoryName(folder), "vps-preparation-cancelled");
                 check(accessBefore.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat")))
                     && !Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Any(), "cancelled preparation preserves saved access and removes its private local work directory");
                 var pending = new TaskCompletionSource<object>();
@@ -177,6 +178,23 @@ namespace ProGo
             neverShown.Dispose();
             check(!spawned && neverShown.Completion.IsFaulted && neverShown.Completion.Exception.GetBaseException() is HomeVpnPreparationCancelledException,
                 "disposing a never-shown preparation window releases its source without starting work");
+            var settling = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using (var modal = new HomeVpnPreparationForm(token => settling.Task))
+            using (var timer = new System.Windows.Forms.Timer { Interval = 50 }) {
+                bool requested = false;
+                timer.Tick += delegate {
+                    if (!requested) {
+                        requested = true; ((Button)Field(modal, "cancel")).PerformClick();
+                        check(modal.Visible && !modal.Completion.IsCompleted, "modal cancel button leaves the waiting window open until settlement");
+                    } else {
+                        timer.Stop(); check(modal.Visible, "modal preparation cannot close through an implicit DialogResult while worker settles");
+                        settling.SetCanceled();
+                    }
+                };
+                timer.Start(); modal.ShowDialog();
+                check(modal.Completion.IsFaulted && modal.Completion.Exception.GetBaseException() is HomeVpnPreparationCancelledException,
+                    "modal cancellation returns its confirmed preparation outcome after settlement");
+            }
         }
         private static void CleanupFailure()
         {
