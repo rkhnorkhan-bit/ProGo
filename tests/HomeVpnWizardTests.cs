@@ -21,7 +21,7 @@ namespace ProGo
         {
             try
             {
-                if (HomeVpnWaitingTests.Fixture(args)) return 0;
+                if (HomeVpnPreparationTests.Fixture(args) || HomeVpnWaitingTests.Fixture(args)) return 0;
                 var text = File.ReadAllText(args[0]);
                 var access = HomeVpnAccess.Parse(text);
                 Check(access.User.StartsWith("pgv") && access.Identity.EndsWith(".vpn.progo.invalid"), "server-generated token is accepted");
@@ -85,6 +85,7 @@ namespace ProGo
                 InvitationChecks(clipboard, work);
                 HomeInvitationReissueTests.Run(Check, text, clipboard, work);
                 HomeVpnWaitingTests.Run(Check, text, clipboard, work);
+                HomeVpnPreparationTests.Run(Check, text, clipboard, work);
                 using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }, clipboard))
                 {
                     qrForm.Show(); Application.DoEvents();

@@ -209,6 +209,14 @@ namespace ProGo
 
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
+            return await AdminAsync(owner, action, label, identifier, progress,
+                (executable, arguments) => HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments), ConsoleAsync);
+        }
+
+        // Injected transports keep Windows fixtures isolated from live VPS credentials.
+        internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress,
+            Func<string, string, Task> copy, Func<string, string, string, Task> commandTransport)
+        {
             owner.Validate();
             if (action != "setup" && action != "invite" && action != "list" && action != "revoke" && action != "share" && action != "repair") throw new ArgumentException("Unknown action");
             if (action == "revoke" && !System.Text.RegularExpressions.Regex.IsMatch(identifier ?? "", @"\A[0-9a-f]{24}\z")) throw new ArgumentException("Invalid invitation");
@@ -220,6 +228,7 @@ namespace ProGo
             var name = "progo-" + Guid.NewGuid().ToString("N");
             var upload = Path.Combine(work, name); Directory.CreateDirectory(upload);
             var output = Path.Combine(work, "result.txt");
+            bool remoteStarted = false;
             try
             {
                 foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" })
@@ -227,7 +236,7 @@ namespace ProGo
                 var keyArgs = String.IsNullOrWhiteSpace(owner.KeyFile) ? "" : " -i " + Argument(owner.KeyFile);
                 var target = owner.Login + "@" + owner.Host;
                 progress("Копирование помощника на VPS. Если SSH спросит пароль или подтверждение ключа, ответьте в открывшемся окне.");
-                await ConsoleAsync("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"), null);
+                await copy("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"));
                 var remote = "/tmp/" + name;
                 var command = "trap 'rm -rf -- " + remote + "' EXIT; "
                     + (owner.Login == "root" ? "" : "sudo -n ") + "python3 -I " + remote + "/home_vpn_setup.py " + action
@@ -237,12 +246,18 @@ namespace ProGo
                 progress("Настройка VPS. Окно SSH показывает ход установки; для пользователя без root нужен sudo без запроса пароля.");
                 // A real console remains available for OpenSSH password/host-key prompts.
                 // Only stdout goes to a private local file; the token is never a command argument.
-                await ConsoleAsync("ssh.exe", "-o ConnectTimeout=15 -T -p " + owner.Port + keyArgs + " " + Argument(target) + " " + Argument(command), output);
+                remoteStarted = true;
+                await commandTransport("ssh.exe", "-o ConnectTimeout=15 -T -p " + owner.Port + keyArgs + " " + Argument(target) + " " + Argument(command), output);
                 var result = File.ReadAllText(output).Trim();
                 if (result.Length == 0 || result.Length > 32768) throw new InvalidOperationException("VPS не вернул результат.");
                 return result;
             }
-            finally { try { Directory.Delete(work, true); } catch { } }
+            finally {
+                try { Directory.Delete(work, true); }
+                catch {
+                    if (!remoteStarted) throw new IOException("Команды настройки VPS не запускались, но локальные файлы подготовки не удалось удалить. Закройте программы, использующие эти файлы; завершение подготовки пока не подтверждено.");
+                }
+            }
         }
 
         private static string Shell(string value) { return "'" + value.Replace("'", "'\"'\"'") + "'"; }

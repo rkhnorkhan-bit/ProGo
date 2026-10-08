@@ -39,6 +39,7 @@ namespace ProGo
         private string draftToken = "", draftHome;
         private string preparedToken, preparedOwner;
         private Label counters;
+        internal Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> Admin = HomeVpnService.AdminAsync;
 
         internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard)
         {
@@ -214,7 +215,7 @@ namespace ProGo
                         var ownerId = new JavaScriptSerializer().Serialize(draftOwner);
                         if (preparedToken == null || preparedOwner != ownerId)
                         {
-                            preparedToken = await HomeVpnService.AdminAsync(draftOwner, "setup", "My iPhone", null, SetProgress);
+                            preparedToken = await Admin(draftOwner, "setup", "My iPhone", null, SetProgress);
                             preparedOwner = ownerId;
                         }
                         value = preparedToken;
@@ -238,6 +239,11 @@ namespace ProGo
             cancelledWait = closeAfterWait = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await action(); }
+            catch (HomeVpnPreparationCancelledException ex)
+            {
+                closeAfterWait = false;
+                if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
+            }
             catch (OperationCanceledException)
             {
                 if (!IsDisposed && !Disposing) {
