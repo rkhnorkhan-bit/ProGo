@@ -93,7 +93,8 @@ try {
         $generic = [Management.Automation.ErrorRecord]::new([OperationCanceledException]::new(), 'fixture', [Management.Automation.ErrorCategory]::NotSpecified, $null)
         $facts = @{ Notice = $script:cancelNotice; Resumes = $script:resumed; GenericRejected = -not (Test-UpdaterCancellation $generic);
             MainUnchanged = -not $State.MainWasChanged; TransactionRemoved = -not (Test-Path $TransactionRoot);
-            NoBackup = [string]::IsNullOrWhiteSpace($BackupDir); WindowClosed = $null -eq $UpdateWindow }
+            NoBackup = [string]::IsNullOrWhiteSpace($BackupDir); WindowClosed = $null -eq $UpdateWindow;
+            SharedDiagnostics = [ProGo.UpdateInstallSession].Assembly -eq [ProGo.DiagnosticPreview].Assembly }
         [IO.File]::WriteAllText((Join-Path $Fixture 'cancellation.json'), ($facts | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
     }
 }

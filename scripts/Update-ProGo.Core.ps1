@@ -72,7 +72,7 @@ function Clear-UpdateProgress {
 
 function Initialize-UpdateWindow {
     if (-not ('ProGo.UpdateInstallSession' -as [type])) {
-        $sources = @('UpdateInstallSession.cs','UiTheme.cs','BrandIcon.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
+        $sources = @('UpdateInstallSession.cs','DiagnosticReport.cs','DiagnosticPreview.cs','UiTheme.cs','BrandIcon.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
         Add-Type -Path $sources -ReferencedAssemblies System.dll,System.Core.dll,System.Drawing.dll,System.Windows.Forms.dll -ErrorAction Stop
     }
     $script:UpdateWindow = [ProGo.UpdateInstallSession]::Open()

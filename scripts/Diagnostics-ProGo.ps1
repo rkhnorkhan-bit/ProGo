@@ -4,7 +4,7 @@
         if (-not ('ProGo.DiagnosticPreview' -as [type])) {
             $sourceRoot = $PSScriptRoot
             if (-not (Test-Path (Join-Path $sourceRoot 'DiagnosticReport.cs'))) { $sourceRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'src' }
-            $sources = @('DiagnosticReport.cs','DiagnosticPreview.cs','UiTheme.cs','BrandIcon.cs') | ForEach-Object { Join-Path $sourceRoot $_ }
+            $sources = @('DiagnosticReport.cs','DiagnosticPreview.cs','UpdateInstallSession.cs','UiTheme.cs','BrandIcon.cs') | ForEach-Object { Join-Path $sourceRoot $_ }
             Add-Type -Path $sources -ReferencedAssemblies System.dll,System.Core.dll,System.Drawing.dll,System.Windows.Forms.dll -ErrorAction Stop
         }
         $version = ''

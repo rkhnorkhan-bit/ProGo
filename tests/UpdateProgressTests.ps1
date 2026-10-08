@@ -78,6 +78,7 @@ try {
             }
             if ($mode -in @('download-cancel','boundary-cancel','cancel-alive')) {
                 $facts = Get-Content -LiteralPath (Join-Path $fixture 'cancellation.json') -Raw | ConvertFrom-Json
+                Check $facts.SharedDiagnostics "installed window and diagnostic preview share one local theme assembly: $mode"
                 Check ($facts.Notice -and $facts.GenericRejected) "bootstrap distinguishes safe download cancellation from other cancelled operations: $mode"
                 Check ($facts.Resumes -eq $(if ($mode -eq 'boundary-cancel') { 1 } else { 0 })) "cancel recovery obeys NoLaunch and keeps a surviving instance: $mode"
                 Check ($facts.MainUnchanged -and $facts.TransactionRemoved -and $facts.NoBackup -and $facts.WindowClosed) "cancel before validation closes UI and removes only its temporary work: $mode"
