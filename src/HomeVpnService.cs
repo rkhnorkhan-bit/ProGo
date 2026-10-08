@@ -66,12 +66,19 @@ namespace ProGo
         private string sessionDirectory;
         private CancellationTokenSource starting;
         private bool disposed;
+        private readonly string sshExecutable;
+        private readonly int ikePort, natPort, bridgePort;
         internal bool AutoRestart = true;
         internal string RecoveryStatus { get { return proxy == null ? "Не запущен" : proxy.RecoveryStatus; } }
 
         internal HomeVpnService(Ikev2RelayService relay)
+            : this(relay, "ssh.exe", Ikev2RelayService.IkePort, Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort) { }
+
+        // Isolated Windows fixtures use their own executable and unprivileged UDP ports.
+        internal HomeVpnService(Ikev2RelayService relay, string sshExecutable, int ikePort, int natPort, int bridgePort)
         {
-            Relay = relay;
+            Relay = relay; this.sshExecutable = sshExecutable;
+            this.ikePort = ikePort; this.natPort = natPort; this.bridgePort = bridgePort;
             try
             {
                 var token = HomeVpnPrivateFiles.Load("access");
@@ -101,11 +108,17 @@ namespace ProGo
 
         internal async Task StartAsync()
         {
+            await StartAsync(CancellationToken.None);
+        }
+
+        internal async Task StartAsync(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
             if (disposed) throw new ObjectDisposedException("HomeVpnService");
             if (Access == null) throw new InvalidOperationException("Сначала добавьте VPS или вставьте токен.");
             if (Relay.IsRunning || starting != null) return;
             Stop();
-            var cancellation = new CancellationTokenSource(); starting = cancellation;
+            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token); starting = cancellation;
             try
             {
                 HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
@@ -124,25 +137,38 @@ namespace ProGo
                 var reservation = new TcpListener(IPAddress.Loopback, 0); reservation.Start();
                 try { port = ((IPEndPoint)reservation.LocalEndpoint).Port; } finally { reservation.Stop(); }
                 var options = AppSettings.Defaults(); options.SocksPort = port; options.SshProfile = "progo-home";
-                proxy = new ProxyService(delegate { options.AutoRestartSocks = AutoRestart; return options; }, delegate { }, "ssh.exe", delegate { return DateTime.UtcNow; }, true,
-                    "-F " + Argument(config) + " ");
-                proxy.StartTunnel(false);
-                for (int i = 0; i < 40; i++)
-                {
-                    cancellation.Token.ThrowIfCancellationRequested();
-                    if (proxy.IsListening()) break;
-                    await Task.Delay(250, cancellation.Token);
-                }
+                proxy = new ProxyService(delegate { options.AutoRestartSocks = AutoRestart; return options; }, delegate { }, sshExecutable, delegate { return DateTime.UtcNow; }, true,
+                    "-F " + Argument(config) + " ", 10000);
+                // Reuse the owned asynchronous SOCKS handshake, deadline and cancellation.
+                if (!await proxy.StartTunnelAsync(cancellation.Token)) throw new InvalidOperationException("SOCKS не готов.");
                 cancellation.Token.ThrowIfCancellationRequested();
-                await Relay.StartAsync("127.0.0.1", port);
+                await Relay.StartAsync("127.0.0.1", port, ikePort, natPort, bridgePort, cancellation.Token);
                 cancellation.Token.ThrowIfCancellationRequested();
             }
             catch
             {
-                Stop();
+                CleanupFailedStart();
+                cancellation.Token.ThrowIfCancellationRequested();
                 throw new InvalidOperationException("Канал к VPS не готов. Проверьте интернет и токен: владелец мог отозвать доступ или изменить SSH-ключ сервера. Можно повторить запуск.");
             }
             finally { if (starting == cancellation) starting = null; cancellation.Dispose(); }
+        }
+
+        private void CleanupFailedStart()
+        {
+            Relay.Stop();
+            if (proxy != null)
+            {
+                proxy.Dispose();
+                if (proxy.HasOwnedProcess) throw new InvalidOperationException("Не удалось подтвердить остановку процесса канала. Повторите остановку VPN для телефона; отмена пока не подтверждена.");
+                proxy = null;
+            }
+            if (sessionDirectory != null)
+            {
+                try { if (Directory.Exists(sessionDirectory)) Directory.Delete(sessionDirectory, true); }
+                catch { throw new InvalidOperationException("Канал остановлен, но временные файлы доступа не удалось удалить. Закройте программы, использующие эти файлы; отмена пока не подтверждена."); }
+                sessionDirectory = null;
+            }
         }
 
         internal void Stop()

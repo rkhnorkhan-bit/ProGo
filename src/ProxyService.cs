@@ -78,6 +78,9 @@ namespace ProGo
             }
         }
 
+        // Cleanup confirmation must wait for ownership rather than use the nonblocking UI PID snapshot.
+        internal bool HasOwnedProcess { get { lock (gate) return sshProcess != null; } }
+
         internal DateTime? NextRecoveryUtc { get { lock (gate) { return retryAt; } } }
         internal int AutomaticRestarts { get { lock (gate) { return automaticRestarts; } } }
 

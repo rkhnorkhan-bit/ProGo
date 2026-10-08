@@ -971,3 +971,38 @@ released ownership. Network transport, package trust, CLI and server suites rema
 F23 remains open for safe VPS waiting cancellation. Physical Narrator/live contrast
 and actual DPI acceptance remain separately open. Progress stays 21/30 closed,
 9 remaining. No merge, automatic installation, version bump or release.
+
+
+## Stage F23f — cancellable phone-channel startup waiting
+
+The phone VPN wizard offers **Отменить запуск канала** while awaiting its local
+SSH/SOCKS handshake or the VPS relay receiver. Button and Escape request the same
+caller cancellation token; title Close keeps the window open until startup settles
+and then closes it. The wizard remains responsive, blocks competing actions,
+exposes current status to accessibility and restores retry after cancellation.
+SOCKS readiness uses the existing asynchronous owned proxy worker with a 10-second
+deadline instead of synchronously launching SSH and polling an open port. The
+receiver retains its 10-second handshake deadline. Failure is distinct from a
+requested cancellation; neither implies that phone internet has passed.
+
+A linked caller token interrupts the relay probe socket and prevents publishing a
+late relay. A cancelled startup cleans its owned SSH process and private temporary
+session before reporting cancellation. Cleanup uses a blocking process-ownership
+check; an unsettled process or locked private file remains an error with no queued
+close or successful-cancellation claim. Existing saved access is preserved. During
+import it may already have been committed before the channel wait; the message
+explicitly describes retained saved access rather than rollback. Draft token input
+stays masked, the wizard does not advance, and a fresh explicit retry is available.
+
+Windows fixtures use this actual wizard/service/proxy/relay pipeline with a local
+owned SSH substitute: absent listener, silent receiver, all three cancellation
+routes, responsive UI, preserved credentials, cleanup, retry, pre-cancel, timeout,
+already-running preservation and a real locked-file cleanup failure. Native images
+cover pending, minimum-size and cancelled states. A pending protected server
+operation refuses title-close cancellation without claiming remote rollback.
+
+This bounded substage does not terminate interactive SCP/SSH provisioning, repair,
+invitation or QR setup commands. Those can have already changed the server and need
+separate interruption/reconciliation semantics. F23 remains open for that VPS
+operation waiting work. Progress stays **21/30 closed; 9 remaining**. No merge,
+version bump, release or changes to ordinary CLI/system-proxy settings.
