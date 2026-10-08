@@ -1008,3 +1008,39 @@ invitation or QR setup commands. Those can have already changed the server and n
 separate interruption/reconciliation semantics. F23 remains open for that VPS
 operation waiting work. Progress stays **21/30 closed; 9 remaining**. No merge,
 version bump, release or changes to ordinary CLI/system-proxy settings.
+
+
+## Stage F23g — safe cancellation before VPS configuration
+
+Every owner operation first copies the public helper through SCP. That preparation
+now has one themed native waiting window with **Отменить подготовку**, accessible
+status, no default Enter action and a five-minute deadline. Button, Escape and title
+Close request the same cancellation. The window waits for the owned process tree
+to exit before returning; disposal suppresses late UI updates. OpenSSH password and
+host-key prompts remain in a real separate console. The prepared SCP console is
+contained before it can spawn children; cancellation, deadline, failure and normal
+parent exit settle its job without targeting unrelated processes. This owner is not
+used for user terminals, persistent tunnels or remote configuration commands.
+
+A confirmed preparation cancellation never crosses the remote-command boundary.
+The own-VPS wizard retains its entered draft and saved access, stays on the same
+step and offers an explicit retry without claiming token creation. Local temporary
+preparation files are removed before reporting cancellation; a real locked-file
+cleanup failure remains an error. Partially uploaded public helper files can remain
+in the remote temporary directory: no remote cleanup or rollback is claimed.
+
+Windows fixtures cover the actual console, root and descendant path, button/Escape/Close/
+disposal, UI heartbeat, native normal/minimum layout, accessible status, retry,
+pre-cancel, deadline, nonzero exit, orphan cleanup and unrelated-process preservation.
+The actual AdminAsync/own-VPS wizard boundary is exercised with isolated transports:
+no setup call or token commit after copy cancellation, unchanged protected access,
+private work cleanup, locked-file refusal and protected server-operation Close after
+a successful copy. Existing CLI, desktop proxy, relay, updater and server checks stay.
+
+Acceptance requires green Windows/server CI and review of native preparation images.
+This bounded stage only interrupts SCP before configuration. SSH provisioning,
+repair, invitation and QR setup remain protected once launched; interruption and
+reconciliation of their server result are the next F23 substage. In the friends
+window, the existing conservative refresh-before-mutation policy is retained even
+if preparation was cancelled. F23 stays open; **21/30 closed, 9 remaining**.
+No merge, version bump, release or changes to ordinary CLI/settings behavior.
