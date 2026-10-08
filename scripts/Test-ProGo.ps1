@@ -117,7 +117,7 @@ if ($proxySetupText -match [regex]::Escape("HTTP_PROXY=socks5h://")) { Fail "pro
 
 $updateLauncherSource = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $Root "src\UpdateLauncher.cs")
 if ($updateLauncherSource -match 'TryDownloadUpdateScript|ExecutionPolicy Bypass|RawUpdateScriptUrl') { Fail "updater must use installed files and respect execution policy" }
-if ($updateLauncherSource -notmatch 'CreateNoWindow = false') { Fail "updater must show its progress console" }
+if ($updateLauncherSource -notmatch 'CreateNoWindow = true') { Fail "updater must use its native install window instead of a second console" }
 if ($updateLauncherSource -notmatch 'MaintenanceOperation.StartHandoff') { Fail "updater ownership handoff guard missing" }
 
 $buildScriptText = Get-Content -Encoding UTF8 -Raw -Path $Build
@@ -344,6 +344,13 @@ if ($LASTEXITCODE -ne 0) { Fail 'Installed update transport tests failed' }
 
 # Validate the changed helper transaction before the longer native UI suite.
 & (Join-Path $Root 'tests\UpdateProgressTests.ps1') $Exe (Join-Path $Root 'release\scripts')
+$WindowSource = Join-Path $Root 'release\scripts\UpdateInstallSession.cs'
+if (-not (Test-Path $WindowSource) -or (Get-FileHash $WindowSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\UpdateInstallSession.cs')).Hash) { Fail 'installed update window differs from source' }
+$WindowHarness = Join-Path $Root 'build\UpdateInstallWindowTests.exe'
+& $Csc /nologo /target:exe /main:ProGo.UpdateInstallWindowTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll "/out:$WindowHarness" (Join-Path $Root 'src\UpdateInstallSession.cs') (Join-Path $Root 'src\UiTheme.cs') (Join-Path $Root 'src\BrandIcon.cs') $TransportSource (Join-Path $Root 'tests\InstalledUpdateTransportTests.cs') (Join-Path $Root 'tests\UpdateInstallWindowTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Install window harness build failed' }
+& $WindowHarness (Join-Path $Root 'build\desktop-shots')
+if ($LASTEXITCODE -ne 0) { Fail 'Install window tests failed' }
 $DesktopHarness = Join-Path $Root "build\DesktopTests.exe"
 $DesktopSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
 $UpdateCheckHarness = Join-Path $Root 'build\UpdateCheckTests.exe'

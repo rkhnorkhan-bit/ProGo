@@ -15,7 +15,7 @@ try {
     New-Item -ItemType Directory $work | Out-Null
     $package = Join-Path $work 'release.zip'
     Compress-Archive -Path (Join-Path $release '*') -DestinationPath $package
-    foreach ($mode in @('success','current','download-failure','hash-failure','stage-failure','commit-failure','restart-failure','rollback-failure','render-failure')) {
+    foreach ($mode in @('success','current','download-failure','hash-failure','stage-failure','commit-failure','restart-failure','rollback-failure','render-failure','download-cancel','boundary-cancel','cancel-alive')) {
         $fixture = Join-Path $work $mode
         $install = Join-Path $fixture 'ProGo'
         New-Item -ItemType Directory -Path $install -Force | Out-Null
@@ -45,6 +45,9 @@ try {
             $phases = (@($events | Where-Object { $_.Kind -eq 'phase' } | ForEach-Object { $_.Phase })) -join ','
             $wanted = switch ($mode) {
                 current { 'metadata' }
+                'download-cancel' { 'metadata,waiting,download' }
+                'boundary-cancel' { 'metadata,waiting,download' }
+                'cancel-alive' { 'metadata,waiting,download' }
                 'download-failure' { 'metadata,waiting,download' }
                 'hash-failure' { 'metadata,waiting,download,package' }
                 'stage-failure' { 'metadata,waiting,download,package,backup,staging,stage-check' }
@@ -72,6 +75,16 @@ try {
             } else { Check (-not $text.Contains('Обновление завершено. Резервная копия сохранена.')) "failed or current update never prints success: $mode" }
             if ($mode -notin @('success','render-failure','rollback-failure')) {
                 Check ((Get-Content -LiteralPath (Join-Path $install 'VERSION') -Raw).Trim() -eq $local) "failure/current keeps or rolls back the installed version: $mode"
+            }
+            if ($mode -in @('download-cancel','boundary-cancel','cancel-alive')) {
+                $facts = Get-Content -LiteralPath (Join-Path $fixture 'cancellation.json') -Raw | ConvertFrom-Json
+                Check $facts.SharedDiagnostics "installed window and diagnostic preview share one local theme assembly: $mode"
+                Check ($facts.Notice -and $facts.GenericRejected) "bootstrap distinguishes safe download cancellation from other cancelled operations: $mode"
+                Check ($facts.Resumes -eq $(if ($mode -eq 'boundary-cancel') { 1 } else { 0 })) "cancel recovery obeys NoLaunch and keeps a surviving instance: $mode"
+                Check ($facts.MainUnchanged -and $facts.TransactionRemoved -and $facts.NoBackup -and $facts.WindowClosed) "cancel before validation closes UI and removes only its temporary work: $mode"
+                Check ((Get-FileHash (Join-Path $install 'ProGo.exe')).Hash -eq (Get-FileHash $Exe).Hash -and
+                    (Get-FileHash (Join-Path $install 'scripts\Update-ProGo.Core.ps1')).Hash -eq (Get-FileHash (Join-Path $Scripts 'Update-ProGo.Core.ps1')).Hash) "cancel preserves installed executable and helper: $mode"
+                Check (@($events | Where-Object { $_.Kind -eq 'dialog' -and $_.Icon -eq 'Error' }).Count -eq 0) "download cancellation does not claim failure or rollback: $mode"
             }
             $lease = [ProGo.MaintenanceOperation]::Enter(); $lease.Dispose()
             Check ($true) "progress failure paths release maintenance ownership: $mode"

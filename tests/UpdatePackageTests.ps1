@@ -1,5 +1,6 @@
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+$UpdateWindow = $null
 $Root = Split-Path -Parent $PSScriptRoot
 # Load only pure updater functions, never its top-level installer/rollback actions.
 $tokens = $null; $errors = $null
