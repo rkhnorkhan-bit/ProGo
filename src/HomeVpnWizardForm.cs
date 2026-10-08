@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -21,6 +22,9 @@ namespace ProGo
         private readonly Label status = UiTheme.StatusLabel(UiTheme.Muted);
         private readonly Button back = new Button();
         private readonly Button next = new Button();
+        private readonly Button cancelWait = new Button();
+        private CancellationTokenSource channelWait;
+        private bool closeAfterWait, cancelledWait;
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
         private bool own, busy, routerDone;
@@ -53,10 +57,16 @@ namespace ProGo
             progress.Dock = DockStyle.Top; progress.Height = 64; progress.Margin = new Padding(0, 0, 0, 16);
             body.Dock = DockStyle.Fill; body.FlowDirection = FlowDirection.TopDown; body.WrapContents = false; body.AutoScroll = true;
             status.AutoSize = true; status.MaximumSize = new Size(680, 0); status.Margin = new Padding(0, 8, 0, 8);
+            layout.SizeChanged += delegate { status.MaximumSize = new Size(Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal - status.Margin.Horizontal), 0); };
             var footer = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill };
             back.Text = "Назад"; back.MinimumSize = new Size(120, 38); back.AutoSize = true; back.Click += delegate { Remember(); ShowStep(Math.Max(0, step - 1)); };
             next.Tag = "primary"; next.MinimumSize = new Size(180, 38); next.AutoSize = true; next.Click += async delegate { await Advance(); };
             footer.Controls.Add(back); footer.Controls.Add(next);
+            cancelWait.Text = "Отменить запуск канала"; cancelWait.AutoSize = true; cancelWait.MinimumSize = new Size(180, 38);
+            cancelWait.AccessibleName = cancelWait.Text;
+            cancelWait.AccessibleDescription = "Отменяет только запуск канала к VPS. Сохранённый доступ остаётся; окно ждёт остановки процессов.";
+            cancelWait.Visible = cancelWait.Enabled = false; cancelWait.Click += delegate { CancelChannelWait(); };
+            footer.Controls.Add(cancelWait);
             layout.Controls.Add(heading, 0, 0); layout.Controls.Add(progress, 0, 1); layout.Controls.Add(body, 0, 2);
             layout.Controls.Add(status, 0, 3); layout.Controls.Add(footer, 0, 4); Controls.Add(layout);
             draftOwner = service.Owner ?? new HomeVpnOwner { Host = "", Port = 22, Login = "root", KeyFile = "" };
@@ -67,6 +77,7 @@ namespace ProGo
 
         private void ShowStep(int value)
         {
+            if (IsDisposed || Disposing) return;
             step = value; progress.Step = value; body.SuspendLayout();
             foreach (Control control in body.Controls.Cast<Control>().ToArray()) control.Dispose();
             body.Controls.Clear(); counters = null; installedCheck = null; internetCheck = null; profileState = null; host = login = key = token = home = null; port = null; routerCheck = null;
@@ -146,7 +157,7 @@ namespace ProGo
             else
             {
                 Paragraph(service.Access == null ? "Сначала добавьте VPS или токен." : "VPS: " + service.Access.Host + "\nДомашний адрес: " + (service.HomeAddress ?? "ещё не указан"));
-                Action("Запустить канал", async delegate { await RunStep(async delegate { await service.StartAsync(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); }, "Запускает канал этого ПК к VPS. Подключение телефона и интернет проверяются отдельно.");
+                Action("Запустить канал", async delegate { await RunStep(async delegate { await StartChannel(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); }, "Запускает канал этого ПК к VPS. Подключение телефона и интернет проверяются отдельно.");
                 Action("Остановить VPN для телефона", delegate { service.Stop(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }, "Останавливает только VPN телефона и сбрасывает результат проверки интернета. Прокси на ПК не отключается.");
                 AddInstallationConfirmation();
                 Paragraph("Проверка на телефоне: 1. Выключите Wi-Fi и включите VPN ProGo. 2. Убедитесь, что телефон показывает «Подключено». 3. Откройте сайт проверки IP и сравните IPv4 с адресом выхода VPS. 4. Отметьте результат ниже. Это ваша проверка, ProGo не выполняет её на телефоне автоматически.");
@@ -209,7 +220,7 @@ namespace ProGo
                         value = preparedToken;
                     }
                     service.UseToken(value, own ? draftOwner : null); verification.Reset();
-                    SetProgress("Проверяем защищённый канал к VPS…"); await service.StartAsync(); draftToken = "";
+                    await StartChannel(); draftToken = "";
                 }
                 else if (step == 2)
                 {
@@ -224,12 +235,48 @@ namespace ProGo
         private async Task RunStep(Func<Task> action)
         {
             if (busy) return;
+            cancelledWait = closeAfterWait = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await action(); }
-            catch (Exception ex) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; }
-            finally { busy = false; if (!IsDisposed) { body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed; } }
+            catch (OperationCanceledException)
+            {
+                if (!IsDisposed && !Disposing) {
+                    status.ForeColor = cancelledWait ? UiTheme.Muted : UiTheme.Error;
+                    status.Text = cancelledWait ? "Запуск канала отменён. Сохранённый доступ к VPS остаётся; можно повторить запуск." : "Операция прервана. Результат не подтверждён.";
+                }
+            }
+            catch (Exception ex) { closeAfterWait = false; if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; } }
+            finally {
+                busy = false;
+                if (!IsDisposed && !Disposing) {
+                    body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
+                    if (closeAfterWait) Close();
+                }
+            }
         }
-        private void SetProgress(string text) { status.Text = text; }
+        private async Task StartChannel()
+        {
+            using (var source = new CancellationTokenSource()) {
+                channelWait = source; cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
+                UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus();
+                SetProgress("Ожидаем канал к VPS: до 10 секунд для SOCKS, затем до 10 секунд для приёмника. Можно отменить запуск; сохранённый доступ остаётся.");
+                try { await service.StartAsync(source.Token); SetProgress("Канал ПК → VPS запущен. Подключение VPN и интернет проверяются на телефоне отдельно."); }
+                catch (OperationCanceledException) { cancelledWait = source.IsCancellationRequested; throw; }
+                finally {
+                    channelWait = null;
+                    if (!IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                }
+            }
+        }
+        private void CancelChannelWait()
+        {
+            var source = channelWait;
+            if (source == null || source.IsCancellationRequested) return;
+            cancelWait.Enabled = false;
+            SetProgress("Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
+            source.Cancel();
+        }
+        private void SetProgress(string text) { if (!IsDisposed && !Disposing) status.Text = text; }
         private Label Paragraph(string text)
         {
             var label = new Label { Text = text, AutoSize = true, MaximumSize = new Size(650, 0), Margin = new Padding(0, 0, 0, 12) };
@@ -329,12 +376,16 @@ namespace ProGo
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (busy) { e.Cancel = true; status.Text = "Дождитесь окончания операции. При запросе SSH ответьте в открывшемся окне."; }
+            if (busy) {
+                e.Cancel = true;
+                if (channelWait != null) { closeAfterWait = true; CancelChannelWait(); }
+                else status.Text = "Дождитесь окончания операции. При запросе SSH ответьте в открывшемся окне. Изменения на VPS могли уже начаться; закрытие окна их не отменяет.";
+            }
             base.OnFormClosing(e);
         }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { refresh.Stop(); refresh.Dispose(); }
+            if (disposing) { if (channelWait != null) CancelChannelWait(); refresh.Stop(); refresh.Dispose(); }
             base.Dispose(disposing);
         }
     }
