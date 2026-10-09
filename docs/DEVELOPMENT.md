@@ -1044,3 +1044,58 @@ reconciliation of their server result are the next F23 substage. In the friends
 window, the existing conservative refresh-before-mutation policy is retained even
 if preparation was cancelled. F23 stays open; **21/30 closed, 9 remaining**.
 No merge, version bump, release or changes to ordinary CLI/settings behavior.
+
+
+### Audit stage F23h — private server operation recovery
+
+Owner actions in `home_vpn_setup.py` optionally accept `--request-id` as 32 lower
+case hexadecimal characters. Empty or invalid explicit IDs never fall back to the
+legacy path. Fingerprints bind action, host, port, name, invitation ID and domain;
+the export path is deliberately excluded. A private per-ID flock rejects parallel
+submission of that ID; the original global owner flock still serializes mutations
+across IDs and legacy clients. Network boot configuration remains outside that
+lock because setup waits for its unit. It rejects request IDs.
+
+Before native work, the helper durably saves a running receipt. On completion it
+atomically commits the exact bounded result before attempting the caller's new
+private output file. A lost export can therefore be recovered without regenerating
+access. Same-ID replay returns the stored result only; changed parameters are an
+error. An exception, process death or failed result commit cannot authorize another
+execution. A running receipt without its per-ID owner reads as unconfirmed. The
+status API is a snapshot: a not-found response does not prove that an earlier
+submission is not still pending before registration. Clients must retain the
+original request ID and must not interpret unknown state as rollback or auto-retry
+under a new ID. There is no remote cancellation or rollback in this protocol.
+
+`operation-status --request-id` uses the existing required `--output` contract and
+returns Version, RequestId, Action, State, Started, Finished and ResultAvailable.
+States are not-found, running, succeeded or unconfirmed. It does not create storage
+or expose token material or request parameters. `operation-result --request-id`
+exports the exact stored result through the same private new-file boundary. Cached
+invitation results require the corresponding access to remain active in current
+VPN state; replay/recovery cannot replace or reactivate revoked access. Other saved
+results, including lists, describe the original operation rather than fresh state.
+
+The root-only receipt directory is `/var/lib/progo-home/operations` (0700), with
+owned regular single-link records and locks (0600). Reads refuse symlinks, special
+files, unsafe modes/ownership, malformed metadata and oversized results. Unique
+temporary files, atomic replacement, file fsync and directory fsync cover record
+and directory entries before native effects/export. Successful invitation receipts
+retain the original token, including its private SSH key, only in this directory;
+status, terminal output and the QR publisher do not receive it. This stage does not
+expire, acknowledge or prune receipts. A later consumption/credential cleanup
+policy must keep an ID tombstone so deletion cannot silently permit duplicate work.
+
+`test_home_vpn_operations.py` covers all owner actions, same-ID and cross-ID races,
+the legacy owner lock, abrupt process exit, initial/directory/result storage failure,
+invalid IDs/results, exact replay, revoked access and unsafe/corrupt private files.
+The real isolated provisioning fixture issues once despite a failed export, retrieves
+the same token by result query and replay, rejects changed/empty IDs and revoked
+recovery, and checks that the real web user cannot read cached credentials. Its
+existing disposable-runner/root guard is retained. Both CI and release server gates
+run the new suite. Exact-head Windows/server CI is required for acceptance.
+
+Desktop AdminAsync still uses the legacy protected command path. Stable pending
+IDs, interrupted SSH wait presentation and reconciliation are the next bounded
+F23 stage. No new client cancellation claim, merge, release or version bump.
+The audit remains **21/30 closed; 9 remaining**, with F23 open.

@@ -6,8 +6,10 @@ is put in an invitation. All generated state is private and outside the checkout
 """
 import argparse
 import base64
+import contextlib
 import datetime as dt
 import fcntl
+import hashlib
 import ipaddress
 import importlib.util
 import json
@@ -17,6 +19,7 @@ import re
 import secrets
 import shutil
 import socket
+import stat
 import subprocess
 import sys
 import tempfile
@@ -27,6 +30,9 @@ CONFIG = pathlib.Path('/etc/swanctl/conf.d/progo-home.conf')
 SSH_CONFIG = pathlib.Path('/etc/ssh/sshd_config.d/70-progo-home.conf')
 MARKER = '# Managed by ProGo home VPN'
 GROUP = 'progo-home-relay'
+OWNER_LOCK = pathlib.Path('/run/progo-home-setup.lock')
+OWNER_ACTIONS = ('setup', 'invite', 'revoke', 'list', 'share', 'repair')
+RESULT_LIMIT = 32768
 
 
 def run(*args, capture=False, check=True):
@@ -59,7 +65,7 @@ def host(value):
 
 
 def invite_id(value):
-    if not re.fullmatch('[0-9a-f]{24}', value):
+    if not isinstance(value, str) or not re.fullmatch('[0-9a-f]{24}', value):
         raise ValueError('Invalid invitation ID')
     return value
 
@@ -400,30 +406,7 @@ def invitation_summaries(data):
             for i in data['invites']]
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['setup', 'invite', 'revoke', 'list', 'network', 'share', 'repair'])
-    parser.add_argument('--host')
-    parser.add_argument('--port', type=int, default=22)
-    parser.add_argument('--name', default='My iPhone')
-    parser.add_argument('--id')
-    parser.add_argument('--domain')
-    parser.add_argument('--output')
-    args = parser.parse_args()
-    if os.geteuid() != 0:
-        parser.error('Run through sudo or a root SSH account')
-    os.umask(0o077)
-    if args.action == 'network':
-        apply_network(state())
-        return
-    # Serialize owner operations across PCs. The boot-time network action is
-    # deliberately separate because setup waits for its systemd unit.
-    operation_lock = open('/run/progo-home-setup.lock', 'a')
-    fcntl.flock(operation_lock, fcntl.LOCK_EX)
-    if not args.output:
-        parser.error('--output is required; credentials are never printed to the terminal')
-    if os.path.lexists(args.output):
-        parser.error('The output file already exists')
+def perform_owner(args):
     data = prepare() if args.action == 'setup' else state()
     if args.action in ('setup', 'invite'):
         result = issue(data, args.name, host(args.host or ''), args.port)
@@ -438,6 +421,233 @@ def main():
         result = 'Access revoked.'
     else:
         result = json.dumps(invitation_summaries(data))
+    return result
+
+
+def request_id(value):
+    if not isinstance(value, str) or not re.fullmatch('[0-9a-f]{32}', value):
+        raise ValueError('Invalid operation request ID')
+    return value
+
+
+def sync_receipt_directory(path):
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def receipt_directory(create=False):
+    directory = ROOT / 'operations'
+    for path in (ROOT, directory):
+        if not path.exists() and not path.is_symlink():
+            if not create:
+                return None
+            path.mkdir(mode=0o700, exist_ok=True)
+        info = path.lstat()
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            raise RuntimeError('Operation storage must be an owned private directory')
+        if create:
+            sync_receipt_directory(path.parent)
+    return directory
+
+
+def receipt_open(path, flags):
+    fd = os.open(path, flags | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, 0o600)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077 or info.st_nlink != 1:
+            raise RuntimeError('Operation storage must be an owned private regular file')
+        return os.fdopen(fd, 'r+' if flags & os.O_RDWR else 'r', encoding='utf-8')
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def receipt_read(directory, identifier):
+    try:
+        with receipt_open(directory / (identifier + '.json'), os.O_RDONLY) as stream:
+            text = stream.read(RESULT_LIMIT * 7 + 1)
+    except FileNotFoundError:
+        return None
+    if len(text) > RESULT_LIMIT * 7:
+        raise RuntimeError('Operation record exceeds the limit')
+    record = json.loads(text)
+    if not isinstance(record, dict) or type(record.get('Version')) is not int or record.get('Version') != 1 or record.get('RequestId') != identifier \
+            or record.get('Action') not in OWNER_ACTIONS or record.get('State') not in ('running', 'succeeded', 'unconfirmed') \
+            or not isinstance(record.get('Fingerprint'), str) or not re.fullmatch('[0-9a-f]{64}', record['Fingerprint']) \
+            or set(record) - {'Version', 'RequestId', 'Fingerprint', 'Action', 'State', 'Started', 'Finished', 'Result', 'InviteId'}:
+        raise RuntimeError('Invalid operation record')
+    for name in ('Started', 'Finished'):
+        value = record.get(name)
+        if name == 'Finished' and record['State'] == 'running' and value is None:
+            continue
+        if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{6})?\+00:00', value):
+            raise RuntimeError('Invalid operation timestamp')
+        try:
+            dt.datetime.fromisoformat(value)
+        except ValueError:
+            raise RuntimeError('Invalid operation timestamp')
+    if record['State'] == 'succeeded':
+        bounded_result(record.get('Result'))
+        if record.get('InviteId') is not None:
+            invite_id(record['InviteId'])
+    return record
+
+
+def receipt_write(directory, identifier, record):
+    # A complete durable receipt precedes export. A crash can leave a running
+    # receipt, but never authorizes automatically executing the request again.
+    fd, temporary = tempfile.mkstemp(prefix='.receipt-', dir=directory)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            json.dump(record, stream, ensure_ascii=True, separators=(',', ':'))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, directory / (identifier + '.json'))
+        sync_receipt_directory(directory)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def bounded_result(result):
+    if not isinstance(result, str) or not result or len(result.encode('utf-8')) > RESULT_LIMIT:
+        raise RuntimeError('Operation result is missing or exceeds the limit')
+    return result
+
+
+def result_available(record):
+    if record['State'] != 'succeeded':
+        return False
+    identifier = record.get('InviteId')
+    if identifier is None:
+        return True
+    # Recovery never creates a replacement token or reactivates revoked access.
+    data = state()
+    return any(item['id'] == identifier and not item['revoked'] for item in data['invites'])
+
+
+def operation_status(identifier):
+    identifier = request_id(identifier)
+    directory = receipt_directory()
+    record, busy = None, False
+    if directory is not None:
+        try:
+            with receipt_open(directory / (identifier + '.lock'), os.O_RDONLY) as lock:
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    busy = True
+                record = receipt_read(directory, identifier)
+        except FileNotFoundError:
+            record = receipt_read(directory, identifier)
+    current = record['State'] if record else 'not-found'
+    if current == 'running' or (record is None and busy):
+        current = 'running' if busy else 'unconfirmed'
+    return dict(Version=1, RequestId=identifier, Action=record['Action'] if record else None,
+                State=current, Started=record.get('Started') if record else None,
+                Finished=record.get('Finished') if record else None,
+                ResultAvailable=result_available(record) if record else False)
+
+
+def operation_result(identifier):
+    identifier = request_id(identifier)
+    directory = receipt_directory()
+    record = receipt_read(directory, identifier) if directory is not None else None
+    if record is None or not result_available(record):
+        raise RuntimeError('Operation result is unavailable; do not repeat the mutation without reconciliation')
+    return record['Result']
+
+
+@contextlib.contextmanager
+def owner_operation_lock():
+    # Network boot setup stays separate: setup waits for its systemd unit.
+    with open(OWNER_LOCK, 'a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
+
+
+def tracked_operation(args, perform=None):
+    identifier = request_id(args.request_id)
+    if args.action not in OWNER_ACTIONS:
+        raise ValueError('Invalid owner action')
+    if not 1 <= args.port <= 65535 or len(args.name) > 80 or any(ord(c) < 32 for c in args.name):
+        raise ValueError('Invalid invitation name or SSH port')
+    if args.action in ('setup', 'invite'):
+        host(args.host or '')
+    if args.action == 'revoke':
+        invite_id(args.id or '')
+    parameters = {name: getattr(args, name) for name in ('action', 'host', 'port', 'name', 'id', 'domain')}
+    fingerprint = hashlib.sha256(json.dumps(parameters, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    directory = receipt_directory(create=True)
+    with receipt_open(directory / (identifier + '.lock'), os.O_RDWR | os.O_CREAT) as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError('Operation is running; query its status instead of submitting another request')
+        record = receipt_read(directory, identifier)
+        if record is not None:
+            if record['Fingerprint'] != fingerprint:
+                raise RuntimeError('Operation request ID is already bound to different parameters')
+            if not result_available(record):
+                raise RuntimeError('Operation result is unconfirmed or unavailable; reconcile before a new request')
+            return record['Result']
+        record = dict(Version=1, RequestId=identifier, Fingerprint=fingerprint, Action=args.action,
+                      State='running', Started=dt.datetime.now(dt.timezone.utc).isoformat())
+        receipt_write(directory, identifier, record)
+        try:
+            with owner_operation_lock():
+                result = bounded_result((perform or perform_owner)(args))
+            record.update(State='succeeded', Finished=dt.datetime.now(dt.timezone.utc).isoformat(), Result=result)
+            if result.startswith('PROGO1.'):
+                access = json.loads(base64.urlsafe_b64decode(result[7:] + '=' * (-len(result[7:]) % 4)))
+                record['InviteId'] = invite_id(access['InviteId'])
+            receipt_write(directory, identifier, record)
+            return result
+        except BaseException:
+            record.update(State='unconfirmed', Finished=dt.datetime.now(dt.timezone.utc).isoformat())
+            record.pop('Result', None)
+            record.pop('InviteId', None)
+            receipt_write(directory, identifier, record)
+            raise
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=[*OWNER_ACTIONS, 'network', 'operation-status', 'operation-result'])
+    parser.add_argument('--host')
+    parser.add_argument('--port', type=int, default=22)
+    parser.add_argument('--name', default='My iPhone')
+    parser.add_argument('--id')
+    parser.add_argument('--domain')
+    parser.add_argument('--request-id')
+    parser.add_argument('--output')
+    args = parser.parse_args()
+    if os.geteuid() != 0:
+        parser.error('Run through sudo or a root SSH account')
+    os.umask(0o077)
+    if args.action == 'network':
+        if args.request_id is not None:
+            parser.error('The boot network action cannot have a request ID')
+        apply_network(state())
+        return
+    if not args.output:
+        parser.error('--output is required; credentials are never printed to the terminal')
+    if os.path.lexists(args.output):
+        parser.error('The output file already exists')
+    if args.action == 'operation-status':
+        result = json.dumps(operation_status(args.request_id))
+    elif args.action == 'operation-result':
+        result = operation_result(args.request_id)
+    elif args.request_id is not None:
+        result = tracked_operation(args)
+    else:
+        # Older desktop clients keep their existing protected command behavior.
+        with owner_operation_lock():
+            result = perform_owner(args)
     # Export exclusively to the caller's new path. An existing/symlink file is
     # never overwritten by a privileged installer.
     with open(args.output, 'x', encoding='utf-8') as stream:
