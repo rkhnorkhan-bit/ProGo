@@ -47,7 +47,9 @@ namespace ProGo
         }
         private static Exception Failure(Task task)
         {
-            Pump(() => task.IsCompleted); if (!task.IsFaulted) throw new Exception("Expected recovery refusal"); return task.Exception.GetBaseException();
+            Pump(() => task.IsCompleted);
+            try { task.GetAwaiter().GetResult(); } catch (Exception ex) { return ex; }
+            throw new Exception("Expected recovery refusal");
         }
         private static HomeVpnSetupRequest Pending() { return HomeVpnSetupRecovery.Load(Owner, "My iPhone"); }
         private static Task<string> Admin(string action, Func<string, string, string, Task> transport, Func<string, string, Task> copy = null, HomeVpnOwner owner = null, string label = "My iPhone")
