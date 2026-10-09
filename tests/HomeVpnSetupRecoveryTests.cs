@@ -99,7 +99,13 @@ namespace ProGo
                         "failure of the second local access save retains the recoverable ID and result");
                 }
                 File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat.new"));
-                service.UseToken(token, Owner); HomeVpnSetupRecovery.ConfirmConsumed(Owner, token);
+                service.UseToken(token, Owner);
+                using (var held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    bool retained = false; try { HomeVpnSetupRecovery.ConfirmConsumed(Owner, token); } catch (HomeVpnSetupPendingException) { retained = true; }
+                    check(retained && Pending().RequestId == id && HomeVpnPrivateFiles.Load("access") == token,
+                        "locked journal refuses a completed consumption claim and retains the saved original access");
+                }
+                HomeVpnSetupRecovery.ConfirmConsumed(Owner, token);
                 check(!HomeVpnSetupRecovery.HasPending() && HomeVpnPrivateFiles.Load("access") == token
                     && Json.Deserialize<HomeVpnOwner>(HomeVpnPrivateFiles.Load("owner")).Host == Owner.Host, "request is consumed only after both protected access and owner saves succeed");
             }
@@ -135,6 +141,12 @@ namespace ProGo
                 int commands = 0;
                 var error = Failure(Admin("recover-setup", (exe, args, output) => { commands++; File.WriteAllBytes(output, data); return Task.FromResult(0); }));
                 check(error is HomeVpnSetupPendingException && commands == 1 && Pending().RequestId == request.RequestId, "invalid UTF-8 or oversized SSH output refuses recovery without a new command");
+            }
+            using (var held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                int commands = 0;
+                var error = Failure(Admin("recover-setup", (exe, args, output) => { commands++; return Write(output, args.Contains("operation-status") ? Json.Serialize(Status(request)) : token); }));
+                check(error is HomeVpnSetupPendingException && commands == 2 && Pending().RequestId == request.RequestId && Pending().Result == null,
+                    "failed atomic result storage retains the original ID without publishing or issuing access");
             }
             HomeVpnSetupRecovery.RetainResult(Owner, request, token);
             int revoked = 0;

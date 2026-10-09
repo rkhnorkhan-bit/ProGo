@@ -152,15 +152,15 @@ namespace ProGo
         {
             HomeVpnAccess access;
             try { access = HomeVpnAccess.Parse(token); }
-            catch (FormatException) { throw new HomeVpnSetupPendingException("VPS вернул неподтверждённый доступ. Запрос сохранён; новая выдача не запускалась."); }
+            catch (FormatException) { throw new HomeVpnSetupPendingException("VPS вернул неподтверждённый доступ. Запрос сохранён; повторная выдача не запускалась."); }
             if (!String.Equals(access.Host, request.Host, StringComparison.OrdinalIgnoreCase) || access.Port != request.Port)
-                throw new HomeVpnSetupPendingException("Результат настройки не соответствует выбранному VPS. Запрос сохранён; новый доступ не запрашивался.");
+                throw new HomeVpnSetupPendingException("Результат настройки не соответствует выбранному VPS. Запрос сохранён; повторная выдача не запрашивалась.");
         }
         internal static string RetainResult(HomeVpnOwner owner, HomeVpnSetupRequest request, string token)
         {
             ValidateResult(request, token);
             var current = Load(owner, request.Name);
-            if (current == null || current.RequestId != request.RequestId) throw new HomeVpnSetupPendingException("Сохранённый запрос настройки изменился. Новый доступ не запрашивался; результат прежнего запроса нужно проверить.");
+            if (current == null || current.RequestId != request.RequestId) throw new HomeVpnSetupPendingException("Сохранённый запрос настройки изменился. Повторный доступ не запрашивался; результат прежнего запроса нужно проверить.");
             request.Result = token.Trim(); Save(request);
             return token;
         }
