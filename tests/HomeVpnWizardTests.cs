@@ -86,6 +86,7 @@ namespace ProGo
                 HomeInvitationReissueTests.Run(Check, text, clipboard, work);
                 HomeVpnWaitingTests.Run(Check, text, clipboard, work);
                 HomeVpnPreparationTests.Run(Check, text, clipboard, work);
+                HomeVpnSetupRecoveryTests.Run(Check, text, clipboard, work);
                 using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }, clipboard))
                 {
                     qrForm.Show(); Application.DoEvents();
