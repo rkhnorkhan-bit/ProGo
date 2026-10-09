@@ -27,11 +27,11 @@ namespace ProGo
         private bool closeAfterWait, cancelledWait;
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
-        private bool own, busy, routerDone;
+        private bool own, busy, routerDone, recoverSetup, setupBlocked, fittingSetup;
         private readonly PhoneVerification verification = new PhoneVerification();
         private CheckBox installedCheck;
         private ComboBox internetCheck;
-        private Label profileState;
+        private Label profileState, setupState;
         private TextBox host, login, key, token, home;
         private NumericUpDown port;
         private CheckBox routerCheck;
@@ -57,11 +57,14 @@ namespace ProGo
             back.AccessibleDescription = "Возвращает к предыдущему шагу. Введённые данные остаются в этом мастере.";
             progress.Dock = DockStyle.Top; progress.Height = 64; progress.Margin = new Padding(0, 0, 0, 16);
             body.Dock = DockStyle.Fill; body.FlowDirection = FlowDirection.TopDown; body.WrapContents = false; body.AutoScroll = true;
+            body.ClientSizeChanged += delegate { FitSetupWidth(); };
+            body.Layout += delegate { FitSetupWidth(); };
             status.AutoSize = true; status.MaximumSize = new Size(680, 0); status.Margin = new Padding(0, 8, 0, 8);
             layout.SizeChanged += delegate { status.MaximumSize = new Size(Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal - status.Margin.Horizontal), 0); };
             var footer = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill };
             back.Text = "Назад"; back.MinimumSize = new Size(120, 38); back.AutoSize = true; back.Click += delegate { Remember(); ShowStep(Math.Max(0, step - 1)); };
             next.Tag = "primary"; next.MinimumSize = new Size(180, 38); next.AutoSize = true; next.Click += async delegate { await Advance(); };
+            next.TextChanged += delegate { next.AccessibleName = next.Text; };
             footer.Controls.Add(back); footer.Controls.Add(next);
             cancelWait.Text = "Отменить запуск канала"; cancelWait.AutoSize = true; cancelWait.MinimumSize = new Size(180, 38);
             cancelWait.AccessibleName = cancelWait.Text;
@@ -72,8 +75,18 @@ namespace ProGo
             layout.Controls.Add(status, 0, 3); layout.Controls.Add(footer, 0, 4); Controls.Add(layout);
             draftOwner = service.Owner ?? new HomeVpnOwner { Host = "", Port = 22, Login = "root", KeyFile = "" };
             draftHome = service.HomeAddress;
+            string pendingError = null;
+            try {
+                var pending = HomeVpnSetupRecovery.PendingOwner();
+                if (pending != null) {
+                    if (String.Equals(pending.Host, draftOwner.Host, StringComparison.OrdinalIgnoreCase) && pending.Port == draftOwner.Port && pending.Login == draftOwner.Login)
+                        pending.KeyFile = draftOwner.KeyFile;
+                    draftOwner = pending; own = true;
+                }
+            } catch (HomeVpnSetupPendingException ex) { own = true; pendingError = ex.Message; }
             refresh.Interval = 1000; refresh.Tick += delegate { RefreshStatus(); }; refresh.Start();
-            ShowStep(service.Access == null ? 0 : 4);
+            ShowStep(own ? 1 : service.Access == null ? 0 : 4);
+            if (pendingError != null) { status.ForeColor = UiTheme.Error; status.Text = pendingError; }
         }
 
         private void ShowStep(int value)
@@ -81,7 +94,8 @@ namespace ProGo
             if (IsDisposed || Disposing) return;
             step = value; progress.Step = value; body.SuspendLayout();
             foreach (Control control in body.Controls.Cast<Control>().ToArray()) control.Dispose();
-            body.Controls.Clear(); counters = null; installedCheck = null; internetCheck = null; profileState = null; host = login = key = token = home = null; port = null; routerCheck = null;
+            body.Controls.Clear(); counters = null; installedCheck = null; internetCheck = null; profileState = setupState = null; host = login = key = token = home = null; port = null; routerCheck = null;
+            setupBlocked = recoverSetup = false;
             status.Text = ""; status.ForeColor = UiTheme.Muted;
             string[] titles = { "Как подключаемся?", own ? "Данные вашего VPS" : "Токен приглашения", "Подготовьте домашний роутер", "Добавьте VPN на телефон", "Проверка и управление" };
             heading.Text = (step + 1) + ". " + titles[step];
@@ -103,14 +117,16 @@ namespace ProGo
             }
             else if (step == 1 && own)
             {
-                Paragraph("Укажите свой Ubuntu VPS. ProGo добавит VPN-сервер, ограниченные SSH-учётные записи и правила выхода VPN в интернет.");
+                setupState = Paragraph(""); DescribeStatus(setupState, "Режим настройки своего VPS");
                 host = Field("Адрес VPS (IP или имя)", draftOwner.Host);
                 Paragraph("SSH-порт"); port = new NumericUpDown { Minimum = 1, Maximum = 65535, Value = draftOwner.Port, Width = 120, AccessibleName = "SSH-порт", AccessibleDescription = "Порт подключения SSH к вашему VPS." }; body.Controls.Add(port);
                 login = Field("SSH-пользователь: root или пользователь с sudo без пароля", draftOwner.Login);
                 key = Field("Файл SSH-ключа (необязательно)", draftOwner.KeyFile);
                 Action("Выбрать файл ключа…", delegate { using (var dialog = new OpenFileDialog()) if (dialog.ShowDialog(this) == DialogResult.OK) key.Text = dialog.FileName; }, "Выбирает локальный файл закрытого SSH-ключа. Подключение к серверу ещё не выполняется.");
                 Paragraph("Если ключ не указан, SSH использует ваш агент/обычные ключи или попросит пароль в отдельном окне. Пароль не сохраняется в ProGo. При первом входе сверяйте отпечаток ключа сервера.");
-                next.Text = "Настроить VPS и продолжить";
+                host.TextChanged += delegate { UpdateSetupRecoveryState(); }; login.TextChanged += delegate { UpdateSetupRecoveryState(); };
+                key.TextChanged += delegate { UpdateSetupRecoveryState(); }; port.ValueChanged += delegate { UpdateSetupRecoveryState(); };
+                UpdateSetupRecoveryState();
             }
             else if (step == 1)
             {
@@ -186,7 +202,7 @@ namespace ProGo
                 Paragraph("Режим экспериментальный: IKEv2 нужно проверить с вашим телефоном и провайдером. При обрыве SSH/SOCKS при включённом автовосстановлении ProGo повторяет подключение; телефон может переподключать VPN несколько секунд.");
             }
             UiTheme.ConfigureKeyboardOrder(this);
-            UiTheme.Apply(body); body.ResumeLayout(); RefreshStatus();
+            UiTheme.Apply(body); body.ResumeLayout(); FitSetupWidth(); RefreshStatus();
         }
 
         private static void DescribeStatus(Label label, string name)
@@ -212,15 +228,19 @@ namespace ProGo
                     var value = draftToken;
                     if (own)
                     {
+                        // A recovery action stays read-only even if the pending file
+                        // disappears after the button was presented to the user.
+                        bool checking = recoverSetup || HomeVpnSetupRecovery.HasPending();
                         var ownerId = new JavaScriptSerializer().Serialize(draftOwner);
-                        if (preparedToken == null || preparedOwner != ownerId)
+                        if (checking || preparedToken == null || preparedOwner != ownerId)
                         {
-                            preparedToken = await Admin(draftOwner, "setup", "My iPhone", null, SetProgress);
+                            preparedToken = await Admin(draftOwner, checking ? "recover-setup" : "setup", "My iPhone", null, SetProgress);
                             preparedOwner = ownerId;
                         }
                         value = preparedToken;
                     }
                     service.UseToken(value, own ? draftOwner : null); verification.Reset();
+                    if (own) HomeVpnSetupRecovery.ConfirmConsumed(draftOwner, value);
                     await StartChannel(); draftToken = "";
                 }
                 else if (step == 2)
@@ -256,6 +276,7 @@ namespace ProGo
                 busy = false;
                 if (!IsDisposed && !Disposing) {
                     body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
+                    UpdateSetupRecoveryState();
                     if (closeAfterWait) Close();
                 }
             }
@@ -283,6 +304,45 @@ namespace ProGo
             source.Cancel();
         }
         private void SetProgress(string text) { if (!IsDisposed && !Disposing) status.Text = text; }
+        private void FitSetupWidth()
+        {
+            if (step != 1 || !own || fittingSetup || body.IsDisposed) return;
+            fittingSetup = true;
+            try {
+                int width = Math.Max(1, body.ClientSize.Width - body.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 6);
+                foreach (Control control in body.Controls) {
+                    int available = Math.Max(1, width - control.Margin.Horizontal);
+                    var label = control as Label;
+                    if (label != null) label.MaximumSize = new Size(Math.Min(650, available), 0);
+                    else if (control is TextBox) {
+                        // Constrain the preferred size too: FlowLayout uses it to
+                        // calculate the scroll extent, not just the visible bounds.
+                        int fieldWidth = Math.Min(640, available);
+                        control.MaximumSize = new Size(fieldWidth, 0);
+                        if (control.Width != fieldWidth) control.Width = fieldWidth;
+                    }
+                }
+            } finally { fittingSetup = false; }
+        }
+        private void UpdateSetupRecoveryState()
+        {
+            if (step != 1 || !own || setupState == null) return;
+            var entered = new HomeVpnOwner { Host = host.Text.Trim(), Port = (int)port.Value, Login = login.Text.Trim(), KeyFile = key.Text.Trim() };
+            bool retained = preparedToken != null && preparedOwner == new JavaScriptSerializer().Serialize(entered);
+            try {
+                recoverSetup = HomeVpnSetupRecovery.PendingOwner() != null; setupBlocked = false;
+                setupState.Text = recoverSetup
+                    ? "Ответ прошлой настройки не подтверждён. ProGo сохранил запрос и проверит его результат. Новый доступ не выдаётся. Используйте исходные SSH-данные; пароль при необходимости вводится в отдельном окне."
+                    : retained ? "Доступ к VPS уже сохранён. Продолжение запустит канал с этим доступом; повторная настройка сервера не требуется."
+                    : "Укажите свой Ubuntu VPS. ProGo добавит VPN-сервер, ограниченные SSH-учётные записи и правила выхода VPN в интернет.";
+            } catch (HomeVpnSetupPendingException ex) { recoverSetup = setupBlocked = true; setupState.Text = ex.Message; }
+            next.Text = recoverSetup ? "Проверить прошлую настройку" : retained ? "Запустить канал и продолжить" : "Настроить VPS и продолжить";
+            next.AccessibleName = next.Text;
+            next.AccessibleDescription = recoverSetup ? "Проверяет сохранённый запрос на VPS и получает исходный доступ. Новая настройка и повторная выдача доступа не выполняются."
+                : retained ? "Использует уже сохранённый доступ и запускает канал к VPS. Настройка сервера не повторяется."
+                : "Настраивает VPN на вашем VPS через SSH и запускает канал. Изменяет настройки сервера.";
+            next.Enabled = !busy && !setupBlocked;
+        }
         private Label Paragraph(string text)
         {
             var label = new Label { Text = text, AutoSize = true, MaximumSize = new Size(650, 0), Margin = new Padding(0, 0, 0, 12) };
@@ -371,7 +431,7 @@ namespace ProGo
         }
         private void RefreshStatus()
         {
-            if (!busy) next.Enabled = step != 3 || verification.Installed;
+            if (!busy) next.Enabled = !setupBlocked && (step != 3 || verification.Installed);
             if (internetCheck != null && internetCheck.SelectedIndex != (int)verification.Internet) internetCheck.SelectedIndex = (int)verification.Internet;
             if (profileState != null) profileState.Text = verification.IssuanceText;
             if (step != 4 || counters == null) return;

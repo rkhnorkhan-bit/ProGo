@@ -1544,3 +1544,48 @@ interactive SSH configuration stays protected and has no new wait-cancel button.
 That integration is the next bounded F23 substage. Acceptance requires green CI
 on the exact source commit. F23 stays open; **21/30 closed, 9 remaining**.
 No merge, version bump, release or changes to ordinary CLI/settings behavior.
+
+
+## Stage F23i — own-VPS setup recovery in the Windows wizard
+
+Own-VPS setup now registers a stable request after SCP preparation and before
+launching SSH. One pending request is kept per Windows user in a private DPAPI
+file: the ID, frozen VPS host, SSH port/account and setup name, plus a validated
+result when available. SSH administrator passwords and local key contents are
+not part of this record. Atomic local replacement and file flush precede dispatch;
+this is not a claim of full power-loss durability for Windows directory metadata.
+
+A lost response retains the original ID. Reopening the wizard restores its endpoint
+and presents one **Проверить прошлую настройку** action. It copies only the public
+helper, queries the original status and retrieves that original result. It never
+resubmits setup, including when status is not-found, running, unconfirmed, malformed
+or unavailable. Missing status is a snapshot, not proof that a prior command cannot
+still arrive. Changing VPS address/account/name cannot abandon the pending request;
+changing the local SSH-key selection is allowed for authenticating the same queries.
+Recovery-only presentation cannot fall back to fresh setup if its journal disappears.
+
+The result must pass existing token validation and match the frozen VPS host/port.
+It remains protected until both access and owner data are saved and verified locally.
+Only then is the pending request consumed. Failed storage retains it; a cached token
+cannot bypass a live status/result check while that request remains pending. If the
+subsequent channel startup fails, the wizard offers **Запустить канал и продолжить**
+with already saved access, without misleadingly offering repeat VPS setup.
+
+Fresh copy cancellation creates no request and never launches setup. Cancellation
+of copying for recovery explains that the earlier server command may have finished;
+it preserves that request and does not claim rollback. Corrupt local records block
+new setup and preserve saved VPN access. Native Windows fixtures exercise these
+boundaries with DPAPI, locked files, controlled transport failures, concurrency,
+restart presentation, keyboard names, UI heartbeat and normal/minimum screenshots.
+Server operation and public-content checks remain part of acceptance.
+
+This stage is limited to own-VPS setup recovery. Already launched interactive SSH
+waiting remains protected. Invitation, revocation, repair and QR setup retain their
+previous command path; their client recovery and wait cancellation are separate
+bounded F23 work. A failed status query may leave copied public helpers in the remote
+temporary directory; no remote cleanup or rollback is promised. The server's private
+result cache still has no expiry, consumption acknowledgment or automatic pruning.
+There is no forget-and-reissue control for an uncertain request in this stage.
+Acceptance requires green Windows/server CI on the exact commit and visual review
+of native recovery images. F23 stays open; **21/30 closed, 9 remaining**.
+No merge, version bump, release or changes to ordinary CLI/settings behavior.

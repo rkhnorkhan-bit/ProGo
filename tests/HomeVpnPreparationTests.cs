@@ -39,9 +39,10 @@ namespace ProGo
         {
             check = assert; folder = Path.Combine(work, "vps-preparation"); Directory.CreateDirectory(folder);
             var previous = new Dictionary<string, byte[]>();
-            foreach (string name in new[] { "access", "owner", "home-address" }) {
+            foreach (string name in new[] { "access", "owner", "home-address", HomeVpnSetupRecovery.StorageName }) {
                 string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"); previous[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
             }
+            File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat"));
             string helpers = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts", "home-vpn", "server"); Directory.CreateDirectory(helpers);
             foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" }) {
                 string target = Path.Combine(helpers, file); previous[target] = File.Exists(target) ? File.ReadAllBytes(target) : null;

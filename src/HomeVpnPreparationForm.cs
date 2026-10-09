@@ -9,7 +9,10 @@ namespace ProGo
     internal sealed class HomeVpnPreparationCancelledException : OperationCanceledException
     {
         internal HomeVpnPreparationCancelledException()
-            : base("Подготовка отменена. Команды настройки VPS не запускались. Можно повторить подготовку.") { }
+            : this(false) { }
+        internal HomeVpnPreparationCancelledException(bool recovery)
+            : base(recovery ? "Подготовка проверки отменена. Прежняя команда VPS могла завершиться; её запрос сохранён. Можно повторить проверку."
+                : "Подготовка отменена. Команды настройки VPS не запускались. Можно повторить подготовку.") { }
     }
 
     internal sealed class HomeVpnPreparationForm : ProGoForm
@@ -22,19 +25,23 @@ namespace ProGo
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private readonly TaskCompletionSource<object> completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<CancellationToken, Task> copy;
+        private readonly bool recovery;
         private bool running = true, started;
         internal Task Completion { get { return completion.Task; } }
 
-        internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy)
+        internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy) : this(copy, false) { }
+        internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy, bool recovery)
         {
-            this.copy = copy;
-            Text = "Подготовка VPS"; ClientSize = new Size(610, 280); MinimumSize = new Size(450, 300);
+            this.copy = copy; this.recovery = recovery;
+            Text = recovery ? "Подготовка проверки VPS" : "Подготовка VPS"; ClientSize = new Size(610, 280); MinimumSize = new Size(450, 300);
+            if (recovery) heading.Text = "Подготовка проверки VPS";
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterParent;
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), ColumnCount = 1, RowCount = 2 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             heading.Margin = new Padding(0, 0, 0, 12);
-            status.Text = "Ожидание — до 5 минут. Если SSH запросит пароль или подтверждение ключа, ответьте в отдельном окне. Команды настройки VPS ещё не запускались. Можно отменить подготовку.";
+            status.Text = recovery ? "Ожидание — до 5 минут. Если SSH запросит пароль или подтверждение ключа, ответьте в отдельном окне. Прежняя команда VPS могла завершиться. Можно отменить копирование; её запрос сохранён."
+                : "Ожидание — до 5 минут. Если SSH запросит пароль или подтверждение ключа, ответьте в отдельном окне. Команды настройки VPS ещё не запускались. Можно отменить подготовку.";
             status.AutoSize = true; status.Margin = new Padding(0, 0, 0, 12);
             status.AccessibleName = "Ход подготовки VPS"; status.AccessibleDescription = status.Text;
             status.TextChanged += delegate { status.AccessibleDescription = status.Text; };
@@ -44,7 +51,8 @@ namespace ProGo
                 heading.MaximumSize = status.MaximumSize = new Size(width, 0);
             };
             cancel.AccessibleName = cancel.Text;
-            cancel.AccessibleDescription = "Прерывает только копирование. Окно дождётся остановки его процессов; команды настройки VPS не запускаются.";
+            cancel.AccessibleDescription = recovery ? "Прерывает только копирование для проверки. Окно дождётся остановки его процессов; прежний запрос VPS сохранён, его результат ещё не подтверждён."
+                : "Прерывает только копирование. Окно дождётся остановки его процессов; команды настройки VPS не запускаются.";
             cancel.Click += delegate { CancelCopy(); }; CancelButton = cancel; cancel.DialogResult = DialogResult.None;
             layout.Controls.Add(viewport, 0, 0); layout.Controls.Add(cancel, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
@@ -59,8 +67,9 @@ namespace ProGo
             Exception failure = null;
             try { cancellation.Token.ThrowIfCancellationRequested(); await copy(cancellation.Token); cancellation.Token.ThrowIfCancellationRequested(); }
             catch (OperationCanceledException) {
-                if (cancellation.IsCancellationRequested) failure = new HomeVpnPreparationCancelledException();
-                else failure = new InvalidOperationException("Подготовка прервана. Команды настройки VPS не запускались; проверьте SSH.");
+                if (cancellation.IsCancellationRequested) failure = new HomeVpnPreparationCancelledException(recovery);
+                else failure = new InvalidOperationException(recovery ? "Подготовка проверки прервана. Прежний запрос VPS сохранён; проверьте SSH."
+                    : "Подготовка прервана. Команды настройки VPS не запускались; проверьте SSH.");
             }
             catch (Exception ex) { failure = ex; }
             finally { running = false; cancellation.Dispose(); }
@@ -72,7 +81,8 @@ namespace ProGo
             if (!running || cancellation.IsCancellationRequested) return;
             if (!IsDisposed && !Disposing) {
                 cancel.Enabled = false;
-                status.Text = "Останавливаем копирование и его процессы. Дождитесь результата. Команды настройки VPS не запускались.";
+                status.Text = recovery ? "Останавливаем копирование и его процессы. Дождитесь результата. Прежний запрос VPS сохранён; его результат ещё не проверен."
+                    : "Останавливаем копирование и его процессы. Дождитесь результата. Команды настройки VPS не запускались.";
             }
             cancellation.Cancel();
         }
@@ -86,13 +96,13 @@ namespace ProGo
             if (disposing && running) {
                 CancelCopy();
                 // A never-shown dialog has no worker that could release this source.
-                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(new HomeVpnPreparationCancelledException()); }
+                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(new HomeVpnPreparationCancelledException(recovery)); }
             }
             base.Dispose(disposing);
         }
-        internal static async Task CopyAsync(Form owner, string executable, string arguments)
+        internal static async Task CopyAsync(Form owner, string executable, string arguments, bool recovery = false)
         {
-            using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.CopyAsync(executable, arguments, HomeVpnPreparationProcess.TimeoutMs, token))) {
+            using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.CopyAsync(executable, arguments, HomeVpnPreparationProcess.TimeoutMs, token), recovery)) {
                 dialog.ShowDialog(owner); await dialog.Completion;
             }
         }

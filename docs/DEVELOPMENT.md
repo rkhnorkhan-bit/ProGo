@@ -1099,3 +1099,52 @@ Desktop AdminAsync still uses the legacy protected command path. Stable pending
 IDs, interrupted SSH wait presentation and reconciliation are the next bounded
 F23 stage. No new client cancellation claim, merge, release or version bump.
 The audit remains **21/30 closed; 9 remaining**, with F23 open.
+
+
+### Audit stage F23i — stable own-VPS requests and client reconciliation
+
+`HomeVpnSetupRecovery` keeps one pending own-VPS setup per Windows user in the
+private credential directory as `setup-request.dat`, protected by CurrentUser DPAPI.
+The seven-field record binds Version, RequestId, Host, Port, Login, Name and optional
+Result. Reads validate exact field types, bounds, canonical metadata, regular file
+and non-reparse root. A nonblocking in-process lease refuses concurrent setup or
+recovery in the existing single-instance desktop. SCP succeeds before registration;
+registration/save must succeed before the SSH setup command receives `--request-id`.
+A unique temporary file, file flush and atomic move/replace protect local saving.
+No administrator password, local private-key content, token or result is added to
+command arguments, logs or public diagnostics. Cached access is private DPAPI data.
+
+A pending request changes AdminAsync setup to two read-only commands:
+`operation-status --request-id`, then `operation-result --request-id` only after a
+strict completed/available status. Exact ID/action and bounded seven-field status
+are validated. Running, not-found, unconfirmed, unavailable, mismatched and corrupt
+responses retain the ID and refuse fresh mutation. Setup is never replayed by the
+client, even under the same ID. This avoids interpreting a not-found snapshot as
+permission to retry a delayed command. SSH result files are bounded strict UTF-8.
+Token validation and frozen host/port checks precede private result retention.
+
+The wizard resumes the stored endpoint after restart and changes its single next
+button to **Проверить прошлую настройку**. The internal `recover-setup` action refuses
+an absent journal rather than silently running setup after a stale preview. Pending
+recovery never uses the in-memory prepared-token shortcut: it queries live server
+state again. The local request is consumed only after UseToken saves access and
+owner and those stored values match; failure retains recovery metadata. A later
+channel failure has a channel-only retry with the saved token. Corrupt journal
+presentation disables setup while preserving the current saved access. Cancelled
+recovery preparation says only that copying was stopped and the prior result is
+still unknown; fresh preparation retains its no-configuration claim.
+
+The Windows harness adds isolated real DPAPI/native tests for lost setup/result
+responses, one issuance and stable IDs, status variants, cached revoked access,
+changed parameters, wrong-server results, malformed/oversized files, storage
+refusal, premature/failed consumption, concurrent dispatch, fresh versus recovery
+copy cancellation, reopened and corrupt-journal UI, responsive protected waiting,
+channel-only retry and normal/minimum native layout. Tests preserve prior private
+files and helper resources and never use live VPS credentials or SSH. Acceptance
+requires exact-head Windows/server CI and native screenshot review.
+
+Only own-VPS setup is integrated. Other owner actions remain on their prior path;
+interactive SSH wait cancellation, remote receipt acknowledgment/pruning and manual
+reconciliation of uncertain requests are deferred. Read-only status uncertainty
+can leave public helper copies remotely; no remote cleanup or rollback is claimed.
+VERSION remains unchanged, F23 open, **21/30 closed; 9 remaining**. No release/merge.
