@@ -228,7 +228,18 @@ namespace ProGo
                 EventHandler start = null;
                 start = delegate {
                     Application.Idle -= start;
-                    try { NativeRecoveryWindows(token, clipboard, work); }
+                    try {
+                        check(Application.MessageLoop, "native recovery owns a running Windows Forms message loop");
+                        // Earlier modeless tests can leave the thread's automatic
+                        // installation bookkeeping stale. Set a fresh context
+                        // inside the running loop, before any async UI operation.
+                        using (var ui = new WindowsFormsSynchronizationContext()) {
+                            var before = SynchronizationContext.Current;
+                            SynchronizationContext.SetSynchronizationContext(ui);
+                            try { NativeRecoveryWindows(token, clipboard, work); }
+                            finally { SynchronizationContext.SetSynchronizationContext(before); }
+                        }
+                    }
                     catch (Exception ex) { failure = ex; Console.Error.WriteLine("Native recovery fixture: " + ex.GetType().Name + "\n" + ex.StackTrace); }
                     finally { loop.ExitThread(); }
                 };
