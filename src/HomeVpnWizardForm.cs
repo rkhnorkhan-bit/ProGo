@@ -27,7 +27,7 @@ namespace ProGo
         private bool closeAfterWait, cancelledWait;
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
-        private bool own, busy, routerDone, recoverSetup, setupBlocked;
+        private bool own, busy, routerDone, recoverSetup, setupBlocked, fittingSetup;
         private readonly PhoneVerification verification = new PhoneVerification();
         private CheckBox installedCheck;
         private ComboBox internetCheck;
@@ -57,7 +57,7 @@ namespace ProGo
             back.AccessibleDescription = "Возвращает к предыдущему шагу. Введённые данные остаются в этом мастере.";
             progress.Dock = DockStyle.Top; progress.Height = 64; progress.Margin = new Padding(0, 0, 0, 16);
             body.Dock = DockStyle.Fill; body.FlowDirection = FlowDirection.TopDown; body.WrapContents = false; body.AutoScroll = true;
-            body.SizeChanged += delegate { FitSetupWidth(); };
+            body.ClientSizeChanged += delegate { FitSetupWidth(); };
             status.AutoSize = true; status.MaximumSize = new Size(680, 0); status.Margin = new Padding(0, 8, 0, 8);
             layout.SizeChanged += delegate { status.MaximumSize = new Size(Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal - status.Margin.Horizontal), 0); };
             var footer = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill };
@@ -305,13 +305,16 @@ namespace ProGo
         private void SetProgress(string text) { if (!IsDisposed && !Disposing) status.Text = text; }
         private void FitSetupWidth()
         {
-            if (step != 1 || !own) return;
-            int width = Math.Max(1, body.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
-            foreach (Control control in body.Controls) {
-                var label = control as Label;
-                if (label != null) label.MaximumSize = new Size(Math.Min(650, width), 0);
-                else if (control is TextBox) control.Width = Math.Min(640, width);
-            }
+            if (step != 1 || !own || fittingSetup || body.IsDisposed) return;
+            fittingSetup = true; body.SuspendLayout();
+            try {
+                int width = Math.Max(1, body.ClientSize.Width - body.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 6);
+                foreach (Control control in body.Controls) {
+                    var label = control as Label;
+                    if (label != null) label.MaximumSize = new Size(Math.Min(650, width), 0);
+                    else if (control is TextBox) control.Width = Math.Min(640, width);
+                }
+            } finally { body.ResumeLayout(true); fittingSetup = false; }
         }
         private void UpdateSetupRecoveryState()
         {

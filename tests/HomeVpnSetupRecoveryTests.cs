@@ -231,8 +231,11 @@ namespace ProGo
                     && Controls(form).OfType<Button>().Count(b => b.Text == next.Text) == 1 && !Controls(form).OfType<Button>().Any(b => b.Text == "Настроить VPS и продолжить"),
                     "recovery has one explicit accessible next action rather than duplicate issuance controls");
                 Shot(form, work, "vps-recovery-wizard"); form.ClientSize = new Size(684, 581); Application.DoEvents();
-                check(form.RectangleToClient(next.RectangleToScreen(next.ClientRectangle)).Bottom <= form.ClientSize.Height
-                    && !((FlowLayoutPanel)Field(form, "body")).HorizontalScroll.Visible, "minimum recovery wizard retains its action without horizontal scrolling"); Shot(form, work, "vps-recovery-wizard-minimum");
+                Shot(form, work, "vps-recovery-wizard-minimum");
+                var body = (FlowLayoutPanel)Field(form, "body");
+                var actionBounds = form.RectangleToClient(next.RectangleToScreen(next.ClientRectangle));
+                check(actionBounds.Bottom <= form.ClientSize.Height, "minimum recovery wizard retains its action: action=" + actionBounds + "; client=" + form.ClientSize);
+                check(!body.HorizontalScroll.Visible, "minimum recovery wizard has no horizontal scrolling: viewport=" + body.ClientSize + "; content=" + body.DisplayRectangle.Size);
                 typeof(HomeVpnWizardForm).GetField("preparedToken", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(form, token);
                 typeof(HomeVpnWizardForm).GetField("preparedOwner", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(form, Json.Serialize(Owner));
                 form.Admin = (owner, action, label, id, progress) => {
