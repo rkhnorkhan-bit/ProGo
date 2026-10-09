@@ -86,7 +86,6 @@ namespace ProGo
                 HomeInvitationReissueTests.Run(Check, text, clipboard, work);
                 HomeVpnWaitingTests.Run(Check, text, clipboard, work);
                 HomeVpnPreparationTests.Run(Check, text, clipboard, work);
-                HomeVpnSetupRecoveryTests.Run(Check, text, clipboard, work);
                 using (var qrForm = new PhoneProfileQrForm(qr, delegate { return System.Threading.Tasks.Task.FromResult(0); }, clipboard))
                 {
                     qrForm.Show(); Application.DoEvents();
@@ -177,6 +176,10 @@ namespace ProGo
                     }
                     form.Close();
                 }
+                // Recovery owns and exits a real UI message loop. Run it after
+                // the legacy modeless checks so its thread exit cannot close
+                // a later fixture window during that fixture's DoEvents pump.
+                HomeVpnSetupRecoveryTests.Run(Check, text, clipboard, work);
                 }
                 Console.WriteLine("Home VPN PASS: " + passed + " checks."); return 0;
             }
