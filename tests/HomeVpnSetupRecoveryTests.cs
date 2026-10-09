@@ -217,12 +217,31 @@ namespace ProGo
         private static void Shot(Form form, string work, string name) { using (var image = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(image, new Rectangle(Point.Empty, image.Size)); image.Save(Path.Combine(work, name + ".png")); } }
         private static void NativeRecovery(string token, ClipboardService clipboard, string work)
         {
+            // The console harness pumps messages without Application.Run; a
+            // preceding modal test can uninstall its automatic UI context.
+            var previous = SynchronizationContext.Current;
+            bool previousThreadCheck = Control.CheckForIllegalCrossThreadCalls;
+            Console.WriteLine("Native recovery fixture entry context: " + (previous == null ? "none" : previous.GetType().Name));
+            using (var context = new WindowsFormsSynchronizationContext()) {
+                SynchronizationContext.SetSynchronizationContext(context);
+                Control.CheckForIllegalCrossThreadCalls = true;
+                try { NativeRecoveryWindows(token, clipboard, work); }
+                catch (Exception ex) { Console.Error.WriteLine("Native recovery fixture: " + ex.GetType().Name + "\n" + ex.StackTrace); throw; }
+                finally {
+                    Control.CheckForIllegalCrossThreadCalls = previousThreadCheck;
+                    SynchronizationContext.SetSynchronizationContext(previous);
+                }
+            }
+        }
+        private static void NativeRecoveryWindows(string token, ClipboardService clipboard, string work)
+        {
             var request = HomeVpnSetupRecovery.Register(Owner, "My iPhone");
             using (var relay = new Ikev2RelayService())
             using (var service = new HomeVpnService(relay, Path.Combine(work, "absent-ssh-fixture.exe"), 15000, 14500, 17878))
             using (var form = new HomeVpnWizardForm(service, clipboard))
             using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
                 form.Show(); int ticks = 0, commands = 0; var response = new TaskCompletionSource<object>();
+                check(SynchronizationContext.Current is WindowsFormsSynchronizationContext, "native recovery has the Windows Forms UI continuation context");
                 heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
                 var next = (Button)Field(form, "next"); var state = (Label)Field(form, "setupState"); var status = (Label)Field(form, "status");
                 check((int)Field(form, "step") == 1 && ((TextBox)Field(form, "host")).Text == Owner.Host && ((TextBox)Field(form, "login")).Text == Owner.Login
@@ -259,6 +278,8 @@ namespace ProGo
                 next.PerformClick(); Pump(() => !(bool)Field(form, "busy"));
                 check(commands == 3 && !HomeVpnSetupRecovery.HasPending() && HomeVpnPrivateFiles.Load("access") == token && service.Owner.Host == Owner.Host,
                     "wizard consumes the original result after saving it even if subsequent isolated channel startup fails");
+                check(SynchronizationContext.Current is WindowsFormsSynchronizationContext && !form.InvokeRequired,
+                    "channel outcome is observed on the native UI thread with cross-thread checks enabled");
                 check((int)Field(form, "step") == 1 && next.Text == "Запустить канал и продолжить" && state.Text.Contains("Доступ к VPS уже сохранён"),
                     "channel failure offers channel startup with saved access rather than misleading repeat setup");
                 next.PerformClick(); Pump(() => !(bool)Field(form, "busy"));
