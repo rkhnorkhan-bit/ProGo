@@ -1503,3 +1503,44 @@ reconciliation of their server result are the next F23 substage. In the friends
 window, the existing conservative refresh-before-mutation policy is retained even
 if preparation was cancelled. F23 stays open; **21/30 closed, 9 remaining**.
 No merge, version bump, release or changes to ordinary CLI/settings behavior.
+
+
+## Stage F23h — recoverable VPS operation results
+
+The server helper accepts an optional owner request ID for setup, invitation,
+revocation, repair, listing and QR setup. It saves a private record before starting
+the command and commits its exact result before exporting it to SSH. A repeated
+ID with the same parameters returns that saved result without running the command
+again; changed parameters, a concurrent request or an uncertain result are refused.
+The existing owner lock still serializes different IDs and older desktop commands.
+The boot network action remains separate and cannot accept a request ID.
+
+Owner-only status queries contain state and timestamps, with no token, password,
+private key, host, invitation name or parameter fingerprint. A separate private
+result query retrieves the original result. Running records with no live owner,
+partial failures and interrupted result commits stay unconfirmed; recovery never
+assumes rollback or authorizes a blind new request. Missing status is a snapshot,
+not proof that a previously submitted command cannot still arrive. Revoked access
+cannot be recovered, recreated or reactivated through the stored result.
+
+Records and locks live under root-owned `operations` inside private VPN state:
+directories 0700, files 0600. Atomic replacement and file/directory sync precede
+execution/export. Symlinks, hardlinks, special files, invalid records, unsafe modes,
+ownership and oversized results are refused. Successful invitation records retain
+an additional private copy of the token for recovery; they are not public downloads
+or logs. This stage has no expiry, acknowledgment or automatic pruning. Record
+retention must preserve duplicate protection; desktop consumption and credential
+cleanup policy remain for the next integration stage.
+
+Verification adds 15 Linux tests for concurrency, process death, failed storage,
+private files, exact replay, changed parameters and revoked results. The isolated
+server smoke test loses the CLI export after a real invitation, queries completion,
+recovers the original token, verifies no second issuance and refuses revoked access.
+The actual QR web account cannot read operation credentials. CI and release gates
+run this suite alongside existing Windows, CLI, updater, relay and QR checks.
+
+This is the server foundation only. The desktop does not submit request IDs yet;
+interactive SSH configuration stays protected and has no new wait-cancel button.
+That integration is the next bounded F23 substage. Acceptance requires green CI
+on the exact source commit. F23 stays open; **21/30 closed, 9 remaining**.
+No merge, version bump, release or changes to ordinary CLI/settings behavior.

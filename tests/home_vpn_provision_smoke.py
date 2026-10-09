@@ -10,6 +10,7 @@ import ssl
 import subprocess
 import tempfile
 import time
+import uuid
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 
@@ -109,6 +110,7 @@ def main():
                   'legacy drop policy remains; only authenticated home VPN is excepted')
             check(pathlib.Path('/etc/systemd/system/progo-ikev2-network.service.d/80-progo-home.conf').exists(),
                   'legacy firewall reload reapplies home VPN compatibility')
+            data = test_operation_recovery(setup, root)
             test_https_sharing(setup, data, a)
         finally:
             for process in processes:
@@ -116,6 +118,68 @@ def main():
                     process.terminate()
                 process.wait(timeout=5)
             sshd.terminate(); sshd.wait(timeout=5)
+
+
+def test_operation_recovery(setup, folder):
+    """Lose a real CLI export after issuing access, then recover without reissue."""
+    identifier = uuid.uuid4().hex
+    command = ['python3', str(REPO / 'server/home_vpn_setup.py')]
+    invitation = ['invite', '--host', 'vpn.example.org', '--port', '22222', '--name', 'Recovery fixture',
+                  '--request-id', identifier]
+
+    def invoke(arguments, output):
+        return subprocess.run(command + arguments + ['--output', str(output)], capture_output=True, text=True, timeout=60)
+
+    before = len(setup.state()['invites'])
+    missing = folder / 'missing-parent' / 'result'
+    lost = invoke(invitation, missing)
+    check(lost.returncode != 0 and not missing.exists(), 'lost CLI export does not claim success to the caller')
+    check(len(setup.state()['invites']) == before + 1, 'lost export issued exactly one real invitation')
+    status_file = folder / 'operation-status'
+    status_call = invoke(['operation-status', '--request-id', identifier], status_file)
+    check(status_call.returncode == 0, 'owner can query completed operation after export failure')
+    status = json.loads(status_file.read_text())
+    check(status['State'] == 'succeeded' and status['ResultAvailable'] and status['RequestId'] == identifier,
+          'durable completion survives the lost CLI response')
+    check(set(status) == {'Version', 'RequestId', 'Action', 'State', 'Started', 'Finished', 'ResultAvailable'},
+          'status response contains no credentials or invitation parameters')
+    recovered = folder / 'recovered-result'
+    result_call = invoke(['operation-result', '--request-id', identifier], recovered)
+    check(result_call.returncode == 0, 'owner recovers the original private token')
+    token = recovered.read_text()
+    access = json.loads(base64.urlsafe_b64decode(token[7:] + '=' * (-len(token[7:]) % 4)))
+    replay_file = folder / 'replayed-result'
+    replay = invoke(invitation, replay_file)
+    check(replay.returncode == 0 and replay_file.read_text() == token
+          and len(setup.state()['invites']) == before + 1,
+          'same request ID returns identical access without a second invitation')
+    changed = list(invitation)
+    changed[changed.index('--name') + 1] = 'Changed fixture'
+    rebound = invoke(changed, folder / 'changed-result')
+    check(rebound.returncode != 0 and len(setup.state()['invites']) == before + 1,
+          'request ID cannot be rebound to changed invitation parameters')
+    empty = invoke(['invite', '--host', 'vpn.example.org', '--request-id', ''], folder / 'empty-id-result')
+    check(empty.returncode != 0 and len(setup.state()['invites']) == before + 1,
+          'empty explicit request ID never falls back to legacy issuance')
+    private = [token, access['Password'], access['PrivateKey']]
+    check(all(value not in call.stdout + call.stderr for value in private
+              for call in (lost, status_call, result_call, replay, rebound, empty)),
+          'operation recovery never prints token, password or private key')
+    operations = setup.ROOT / 'operations'
+    check(operations.stat().st_mode & 0o777 == 0o700 and all(
+          path.stat().st_uid == 0 and path.stat().st_mode & 0o777 == 0o600 for path in operations.iterdir()),
+          'operation results and locks stay root-owned and private')
+    setup.revoke(setup.state(), access['InviteId'])
+    after_revoke = folder / 'revoked-status'
+    revoked_status = invoke(['operation-status', '--request-id', identifier], after_revoke)
+    check(revoked_status.returncode == 0 and not json.loads(after_revoke.read_text())['ResultAvailable'],
+          'revoked access is unavailable for recovery')
+    revoked = invoke(['operation-result', '--request-id', identifier], folder / 'revoked-result')
+    replay_revoked = invoke(invitation, folder / 'replayed-revoked-result')
+    check(revoked.returncode != 0 and replay_revoked.returncode != 0
+          and len(setup.state()['invites']) == before + 1,
+          'recovery cannot recreate or reactivate revoked access')
+    return setup.state()
 
 
 def test_https_sharing(setup, data, owner):
@@ -167,6 +231,9 @@ def test_https_sharing(setup, data, owner):
     check(owner['Password'] not in settings and owner['PrivateKey'] not in settings, 'web service configuration contains hashes and public CA only')
     forbidden = subprocess.run(['runuser', '-u', 'progo-share', '--', 'cat', str(setup.ROOT / 'state.json')], capture_output=True)
     check(forbidden.returncode != 0, 'web process cannot read private VPN state')
+    receipt = next((setup.ROOT / 'operations').glob('*.json'))
+    forbidden = subprocess.run(['runuser', '-u', 'progo-share', '--', 'cat', str(receipt)], capture_output=True)
+    check(forbidden.returncode != 0, 'web process cannot read cached operation credentials')
     code, _, body = request('/api/share', 'POST', {'home': 'home.example.org'}, owner)
     check(code == 200, 'owner creates QR over actual TLS')
     token = json.loads(body)['Url'].split('#')[1]
