@@ -217,21 +217,33 @@ namespace ProGo
         private static void Shot(Form form, string work, string name) { using (var image = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(image, new Rectangle(Point.Empty, image.Size)); image.Save(Path.Combine(work, name + ".png")); } }
         private static void NativeRecovery(string token, ClipboardService clipboard, string work)
         {
-            // The console harness pumps messages without Application.Run; a
-            // preceding modal test can uninstall its automatic UI context.
+            // A top-level DoEvents pump uninstalls its UI context when it ends.
+            // Keep a real outer message loop, as the desktop does, while these
+            // fixtures pump nested messages and await channel startup.
             var previous = SynchronizationContext.Current;
             bool previousThreadCheck = Control.CheckForIllegalCrossThreadCalls;
-            Console.WriteLine("Native recovery fixture entry context: " + (previous == null ? "none" : previous.GetType().Name));
-            using (var context = new WindowsFormsSynchronizationContext()) {
-                SynchronizationContext.SetSynchronizationContext(context);
+            bool previousAutoInstall = WindowsFormsSynchronizationContext.AutoInstall;
+            Exception failure = null;
+            using (var loop = new ApplicationContext()) {
+                EventHandler start = null;
+                start = delegate {
+                    Application.Idle -= start;
+                    try { NativeRecoveryWindows(token, clipboard, work); }
+                    catch (Exception ex) { failure = ex; Console.Error.WriteLine("Native recovery fixture: " + ex.GetType().Name + "\n" + ex.StackTrace); }
+                    finally { loop.ExitThread(); }
+                };
                 Control.CheckForIllegalCrossThreadCalls = true;
-                try { NativeRecoveryWindows(token, clipboard, work); }
-                catch (Exception ex) { Console.Error.WriteLine("Native recovery fixture: " + ex.GetType().Name + "\n" + ex.StackTrace); throw; }
+                WindowsFormsSynchronizationContext.AutoInstall = true;
+                Application.Idle += start;
+                try { Application.Run(loop); }
                 finally {
+                    Application.Idle -= start;
                     Control.CheckForIllegalCrossThreadCalls = previousThreadCheck;
+                    WindowsFormsSynchronizationContext.AutoInstall = previousAutoInstall;
                     SynchronizationContext.SetSynchronizationContext(previous);
                 }
             }
+            if (failure != null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
         }
         private static void NativeRecoveryWindows(string token, ClipboardService clipboard, string work)
         {
