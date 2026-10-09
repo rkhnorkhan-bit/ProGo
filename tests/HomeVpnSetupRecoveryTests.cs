@@ -235,7 +235,12 @@ namespace ProGo
                 var body = (FlowLayoutPanel)Field(form, "body");
                 var actionBounds = form.RectangleToClient(next.RectangleToScreen(next.ClientRectangle));
                 check(actionBounds.Bottom <= form.ClientSize.Height, "minimum recovery wizard retains its action: action=" + actionBounds + "; client=" + form.ClientSize);
-                check(!body.HorizontalScroll.Visible, "minimum recovery wizard has no horizontal scrolling: viewport=" + body.ClientSize + "; content=" + body.DisplayRectangle.Size);
+                check(!body.HorizontalScroll.Visible, "minimum recovery wizard has no horizontal scrolling: viewport=" + body.ClientSize + "; content=" + body.DisplayRectangle.Size
+                    + (body.HorizontalScroll.Visible ? "; children=" + String.Join("; ", body.Controls.Cast<Control>().Select(c => c.GetType().Name + ":" + c.Bounds + "/preferred=" + c.PreferredSize + "/max=" + c.MaximumSize)) : ""));
+                form.ClientSize = new Size(750, 650); Application.DoEvents();
+                check(!body.HorizontalScroll.Visible, "recovery wizard can grow again without horizontal scrolling");
+                form.ClientSize = new Size(684, 581); Application.DoEvents();
+                check(!body.HorizontalScroll.Visible, "recovery wizard can shrink again without retaining a stale scroll extent");
                 typeof(HomeVpnWizardForm).GetField("preparedToken", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(form, token);
                 typeof(HomeVpnWizardForm).GetField("preparedOwner", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(form, Json.Serialize(Owner));
                 form.Admin = (owner, action, label, id, progress) => {

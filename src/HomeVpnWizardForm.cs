@@ -58,6 +58,7 @@ namespace ProGo
             progress.Dock = DockStyle.Top; progress.Height = 64; progress.Margin = new Padding(0, 0, 0, 16);
             body.Dock = DockStyle.Fill; body.FlowDirection = FlowDirection.TopDown; body.WrapContents = false; body.AutoScroll = true;
             body.ClientSizeChanged += delegate { FitSetupWidth(); };
+            body.Layout += delegate { FitSetupWidth(); };
             status.AutoSize = true; status.MaximumSize = new Size(680, 0); status.Margin = new Padding(0, 8, 0, 8);
             layout.SizeChanged += delegate { status.MaximumSize = new Size(Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal - status.Margin.Horizontal), 0); };
             var footer = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill };
@@ -306,15 +307,22 @@ namespace ProGo
         private void FitSetupWidth()
         {
             if (step != 1 || !own || fittingSetup || body.IsDisposed) return;
-            fittingSetup = true; body.SuspendLayout();
+            fittingSetup = true;
             try {
                 int width = Math.Max(1, body.ClientSize.Width - body.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 6);
                 foreach (Control control in body.Controls) {
+                    int available = Math.Max(1, width - control.Margin.Horizontal);
                     var label = control as Label;
-                    if (label != null) label.MaximumSize = new Size(Math.Min(650, width), 0);
-                    else if (control is TextBox) control.Width = Math.Min(640, width);
+                    if (label != null) label.MaximumSize = new Size(Math.Min(650, available), 0);
+                    else if (control is TextBox) {
+                        // Constrain the preferred size too: FlowLayout uses it to
+                        // calculate the scroll extent, not just the visible bounds.
+                        int fieldWidth = Math.Min(640, available);
+                        control.MaximumSize = new Size(fieldWidth, 0);
+                        if (control.Width != fieldWidth) control.Width = fieldWidth;
+                    }
                 }
-            } finally { body.ResumeLayout(true); fittingSetup = false; }
+            } finally { fittingSetup = false; }
         }
         private void UpdateSetupRecoveryState()
         {
