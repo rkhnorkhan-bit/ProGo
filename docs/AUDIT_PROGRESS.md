@@ -1589,3 +1589,72 @@ There is no forget-and-reissue control for an uncertain request in this stage.
 Acceptance requires green Windows/server CI on the exact commit and visual review
 of native recovery images. F23 stays open; **21/30 closed, 9 remaining**.
 No merge, version bump, release or changes to ordinary CLI/settings behavior.
+
+## Stage F23j — bounded cancellation of recoverable own-VPS SSH waiting
+
+Own-VPS setup and its read-only recovery queries now use the native waiting
+window with a five-minute deadline and **Прервать ожидание SSH**. Button, Escape,
+Close and disposal request cancellation and wait for the owned local console
+process tree to settle. OpenSSH retains a real console for passphrase and host-key
+prompts. A cancellation is never described as server rollback: the protected
+original request is retained and the next action queries its status, never blindly
+issues another setup. Cancellation accepted before local completion wins over a
+queued response. Other owner operations remain protected until their recovery
+journals exist; persistent tunnels and user terminals do not use this process owner.
+
+Windows regressions cover native cancellation routes, heartbeat, minimum layout,
+private-journal preservation, owned root/child exit, deadline, completion race and
+actual AdminAsync dispatch/recovery boundaries. Acceptance remains pending exact
+commit Windows/server CI and visual review of the new native images. No release,
+version bump, merge, installation or user VPS change. Audit remains 21/30.
+
+## Next stage — Windows Rescue SSH/proxy reliability and responsiveness
+
+Owner-requested follow-up after F23j. Read ProxyService, SshProfileDiagnostics,
+Core, settings, timers and agent integration; reproduce failures before changing
+runtime. Determine the installed executable version separately from repository
+VERSION. Record Windows/HDD/VHDX observations separately from isolated CI.
+
+- Preserve OpenSSH alias resolution and resolve `~/.ssh` for the current Windows
+  user. Diagnose missing legacy absolute key paths without replacing settings.
+- Detect Windows ssh-agent Running, Stopped and Disabled; guide privileged service
+  changes and ssh-add explicitly. Never store passphrases or remove key protection.
+- Diagnose background noninteractive authentication failures; bound retry and
+  prevent conflicts with unrelated local listeners.
+- Profile UI thread work, synchronous SSH/PowerShell calls, polls, timers, repeated
+  probes, logs/settings I/O and CPU/RAM/disk. Slow disk and offline/auth failures
+  must leave the UI responsive; long work needs cancellation and deadlines.
+- Verify independent tunnel/SOCKS5/HTTP CONNECT bridge and opt-in Windows proxy.
+  Display actual configured ports (SOCKS default 1080, bridge initial 1881), process
+  ownership, last refusal and recovery state. No global traffic capture by default.
+- Show executable, alias, agent, key accessibility and noninteractive auth status
+  with understandable Russian errors and secret-free diagnostics.
+- Add regressions, build and run available suites; deliver PASS/FAIL/NOT_CHECKED
+  with explicit live-machine gaps. Prepare an owner-review candidate, never
+  publish/install automatically. Service changes require owner consent; no VPS
+  configuration change without separate authorization. Existing settings survive.
+
+Live acceptance: working OpenSSH alias; unlocked encrypted key via agent; ProGo
+noninteractive connection; real SOCKS handshake and external proxy request;
+responsive UI under offline VPS/auth errors; bounded retries and disk activity.
+These cannot be marked PASS using synthetic CI alone. The owner's supplied real
+endpoint, account and key path are intentionally absent from repository examples.
+
+### F23j local verification (2026-10-10)
+
+PASS: `git diff --check`, public-content scan (161 source files), 15 server
+operation regressions, 3 home-profile tests, 2 invitation-metadata tests,
+3 public-documentation tests and 2 profile-share synchronization tests (25 total).
+
+NOT_CHECKED: Windows .NET Framework build, new native cancellation regressions,
+full Windows desktop/VPN suites, screenshot review, isolated provisioning smoke,
+installed Rescue version, physical HDD/VHDX profiling and live SSH/proxy route.
+No observed local test failures; this is not a FULL PASS or release candidate.
+
+The local F23j commit was created, but automatic approval review blocked pushing
+its feature branch, interpreting the owner's no-publication-without-consent
+constraint as also applying to source-branch publication. No push workaround,
+remote PR, release, installation, service change or VPS operation was attempted.
+The owner subsequently approved feature-branch publication and a draft PR on
+2026-10-10. GitHub connector upload is authorized; release and installation remain
+unapproved. Windows CI acceptance is still required.

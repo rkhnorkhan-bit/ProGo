@@ -11,7 +11,8 @@ using Microsoft.Win32.SafeHandles;
 namespace ProGo
 {
     // Only the preparatory SCP console, before any server configuration command.
-    // User terminals, persistent tunnels and remote mutations must not use this owner.
+    // User terminals and persistent tunnels must not use this owner.
+    // Remote waiting is allowed only with an already durable recoverable request ID.
     internal static class HomeVpnPreparationProcess
     {
         internal const int TimeoutMs = 300000;
@@ -25,15 +26,25 @@ namespace ProGo
                 if (code != 0) throw new IOException("Копирование не завершено. Команды настройки VPS не запускались. Проверьте SSH, пароль и подтверждение ключа в его окне, затем повторите подготовку.");
             });
         }
+        internal static Task CommandAsync(string executable, string arguments, string output, int timeoutMs, CancellationToken token)
+        {
+            return Task.Run(delegate {
+                var script = "$p=Start-Process -FilePath " + Literal(executable) + " -ArgumentList " + Literal(arguments)
+                    + " -NoNewWindow -PassThru -Wait -RedirectStandardOutput " + Literal(output) + "; exit $p.ExitCode";
+                var shell = Path.Combine(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\powershell.exe");
+                int code = Run(shell, "-NoProfile -EncodedCommand " + Convert.ToBase64String(Encoding.Unicode.GetBytes(script)), timeoutMs, token, true);
+                if (code != 0) throw new HomeVpnSetupPendingException("SSH не подтвердил результат. Команда VPS могла завершиться; запрос сохранён. Проверьте прежнюю настройку.");
+            });
+        }
         private static string Literal(string value) { return "'" + value.Replace("'", "''") + "'"; }
         private static void Native(bool success) { if (!success) throw new Win32Exception(Marshal.GetLastWin32Error()); }
-        private static void Deadline(Stopwatch watch, int timeoutMs, CancellationToken token)
+        private static void Deadline(Stopwatch watch, int timeoutMs, CancellationToken token, bool serverWait)
         {
             token.ThrowIfCancellationRequested();
             if (watch.ElapsedMilliseconds >= timeoutMs)
-                throw new TimeoutException("Время копирования истекло. Команды настройки VPS не запускались. Проверьте SSH и повторите подготовку.");
+                throw new TimeoutException(serverWait ? "Время ожидания SSH истекло. Команда VPS могла завершиться; запрос сохранён для проверки." : "Время копирования истекло. Команды настройки VPS не запускались. Проверьте SSH и повторите подготовку.");
         }
-        private static void Settle(SafeFileHandle job)
+        private static void Settle(SafeFileHandle job, bool serverWait)
         {
             Native(TerminateJobObject(job, 1));
             var watch = Stopwatch.StartNew();
@@ -42,47 +53,49 @@ namespace ProGo
                 Native(QueryInformationJobObject(job, 1, out info, Marshal.SizeOf(typeof(Accounting)), out returned));
                 if (info.ActiveProcesses == 0) return;
                 if (watch.ElapsedMilliseconds >= 2000)
-                    throw new IOException("Остановка процессов копирования не подтверждена. Команды настройки VPS не запускались; отмена пока не подтверждена.");
+                    throw new IOException(serverWait ? "Остановка локальных процессов SSH не подтверждена. Запрос VPS сохранён; результат не подтверждён." : "Остановка процессов копирования не подтверждена. Команды настройки VPS не запускались; отмена пока не подтверждена.");
                 Thread.Sleep(10);
             }
         }
         internal static int Run(string executable, string arguments, int timeoutMs, CancellationToken token)
+        { return Run(executable, arguments, timeoutMs, token, false); }
+        internal static int Run(string executable, string arguments, int timeoutMs, CancellationToken token, bool serverWait)
         {
             if (timeoutMs < 1) throw new ArgumentOutOfRangeException("timeoutMs");
-            var watch = Stopwatch.StartNew(); Deadline(watch, timeoutMs, token);
+            var watch = Stopwatch.StartNew(); Deadline(watch, timeoutMs, token, serverWait);
             using (var job = CreateJobObject(IntPtr.Zero, null)) {
                 if (job.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error());
                 var limits = new ExtendedLimits(); limits.Basic.LimitFlags = 0x2000; // KILL_ON_JOB_CLOSE; no breakaway.
                 Native(SetInformationJobObject(job, 9, ref limits, Marshal.SizeOf(typeof(ExtendedLimits))));
                 SafeFileHandle process = null, thread = null; bool assigned = false, settled = false;
                 try {
-                    var startup = new Startup { Size = Marshal.SizeOf(typeof(Startup)), Title = "ProGo — подготовка VPS" };
+                    var startup = new Startup { Size = Marshal.SizeOf(typeof(Startup)), Title = serverWait ? "ProGo — ожидание SSH" : "ProGo — подготовка VPS" };
                     ProcessInfo child;
-                    Deadline(watch, timeoutMs, token);
+                    Deadline(watch, timeoutMs, token, serverWait);
                     // A real new console preserves OpenSSH password and host-key prompts.
                     // Assign the suspended root before PowerShell/SCP can spawn descendants.
                     Native(CreateProcess(executable, new StringBuilder(HomeVpnService.Argument(executable) + " " + arguments),
                         IntPtr.Zero, IntPtr.Zero, false, 0x14, IntPtr.Zero, null, ref startup, out child)); // NEW_CONSOLE | SUSPENDED
                     process = new SafeFileHandle(child.Process, true); thread = new SafeFileHandle(child.Thread, true);
                     Native(AssignProcessToJobObject(job, process)); assigned = true;
-                    Deadline(watch, timeoutMs, token);
+                    Deadline(watch, timeoutMs, token, serverWait);
                     if (ResumeThread(thread) == UInt32.MaxValue) throw new Win32Exception(Marshal.GetLastWin32Error());
                     while (true) {
-                        Deadline(watch, timeoutMs, token);
+                        Deadline(watch, timeoutMs, token, serverWait);
                         uint wait = WaitForSingleObject(process, 50);
                         if (wait == 0) break;
                         if (wait != 258) throw new Win32Exception(Marshal.GetLastWin32Error());
                     }
                     uint code; Native(GetExitCodeProcess(process, out code));
-                    Settle(job); settled = true; Deadline(watch, timeoutMs, token);
+                    Settle(job, serverWait); settled = true; Deadline(watch, timeoutMs, token, serverWait);
                     return unchecked((int)code);
                 }
                 finally {
                     try {
-                        if (assigned && !settled) Settle(job);
+                        if (assigned && !settled) Settle(job, serverWait);
                         else if (!assigned && process != null) {
                             Native(TerminateProcess(process, 1));
-                            if (WaitForSingleObject(process, 2000) != 0) throw new IOException("Остановка процесса подготовки не подтверждена.");
+                            if (WaitForSingleObject(process, 2000) != 0) throw new IOException(serverWait ? "Остановка процесса SSH не подтверждена. Запрос VPS сохранён." : "Остановка процесса подготовки не подтверждена.");
                         }
                     } finally { if (process != null) process.Dispose(); if (thread != null) thread.Dispose(); }
                 }

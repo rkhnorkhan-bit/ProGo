@@ -51,7 +51,8 @@ namespace ProGo
             var unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "unrelated-wait") { UseShellExecute = false, CreateNoWindow = true });
             try {
                 foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(route, work);
-                ProcessChecks(); CompletionRace(); WizardBoundary(token, clipboard); CleanupFailure();
+                foreach (string route in new[] { "button", "escape", "close", "dispose" }) RemoteCancel(route, work);
+                RemoteBoundary(); RemoteDeadline(); ProcessChecks(); CompletionRace(); WizardBoundary(token, clipboard); CleanupFailure();
                 check(!unrelated.HasExited, "preparation cancellation, deadline and normal completion preserve an unrelated process");
             } finally {
                 KillFixtures(); if (!unrelated.HasExited) { unrelated.Kill(); unrelated.WaitForExit(2000); } unrelated.Dispose();
@@ -117,6 +118,79 @@ namespace ProGo
                 retry.Show(); Pump(() => retry.Completion.IsCompleted); retry.Completion.GetAwaiter().GetResult();
                 check(Gone(Id("pid")), "fresh explicit preparation retry succeeds and releases its child");
             }
+        }
+        private static void RemoteCancel(string route, string work)
+        {
+            Reset(); var owner = new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22 };
+            var request = HomeVpnSetupRecovery.Register(owner, "My iPhone");
+            var journal = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat"));
+            using (var form = new HomeVpnPreparationForm(ct => HomeVpnPreparationProcess.CommandAsync(Application.ExecutablePath,
+                Args("hold"), Path.Combine(folder, "result"), 20000, ct), true, true))
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start(); form.Show();
+                Pump(() => File.Exists(Path.Combine(folder, "child")) && ticks >= 3);
+                int root = Id("pid"), child = Id("child");
+                var cancel = (Button)Field(form, "cancel"); var status = (Label)Field(form, "status");
+                check(form.AcceptButton == null && form.CancelButton == cancel && cancel.AccessibilityObject.Name == "Прервать ожидание SSH"
+                    && status.AccessibilityObject.Description == status.Text && status.Text.Contains("могла уже"),
+                    "remote wait describes uncertainty and provides explicit keyboard cancellation without implicit Enter");
+                if (route == "button") {
+                    Shot(form, work, "vps-ssh-wait-pending"); form.ClientSize = new Size(440, 270); Application.DoEvents();
+                    var heading = (Label)Field(form, "heading"); var viewport = (FlowLayoutPanel)Field(form, "viewport");
+                    check(cancel.Bottom <= form.ClientSize.Height && heading.Visible && heading.Top >= 0 && heading.Bottom <= viewport.ClientSize.Height
+                        && !viewport.HorizontalScroll.Visible && status.Right <= viewport.ClientSize.Width,
+                        "minimum remote wait retains heading, wrapped status and cancellation");
+                    Shot(form, work, "vps-ssh-wait-minimum"); cancel.PerformClick();
+                } else if (route == "escape") typeof(Form).GetMethod("ProcessDialogKey", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(form, new object[] { Keys.Escape });
+                else if (route == "close") form.Close(); else form.Dispose();
+                if (route != "dispose") check(form.Visible && !form.Completion.IsCompleted && !cancel.Enabled, "remote wait stays open until local process settlement");
+                Pump(() => form.Completion.IsCompleted);
+                check(form.Completion.IsFaulted && form.Completion.Exception.GetBaseException() is HomeVpnSetupPendingException
+                    && form.Completion.Exception.GetBaseException().Message.Contains("могла завершиться") && Gone(root) && Gone(child),
+                    "remote wait cancellation settles only owned processes and reports an uncertain VPS result");
+                check(journal.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat")))
+                    && HomeVpnSetupRecovery.Load(owner, "My iPhone").RequestId == request.RequestId,
+                    "all cancellation routes preserve the exact protected original request");
+            }
+            File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat"));
+        }
+        private static void RemoteBoundary()
+        {
+            Reset(); var owner = new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22 }; int commands = 0;
+            var task = HomeVpnService.AdminAsync(owner, "setup", "My iPhone", null, delegate { },
+                (exe, args) => Task.FromResult(0), async (exe, args, output) => {
+                    commands++; check(HomeVpnSetupRecovery.HasPending() && args.Contains("--request-id"), "durable request precedes cancellable SSH dispatch");
+                    using (var form = new HomeVpnPreparationForm(ct => {
+                        var done = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+                        ct.Register(() => done.TrySetCanceled()); return done.Task;
+                    }, true, true)) {
+                        form.Show(); ((Button)Field(form, "cancel")).PerformClick(); await form.Completion;
+                    }
+                });
+            Pump(() => task.IsCompleted);
+            check(task.IsFaulted && task.Exception.GetBaseException() is HomeVpnSetupPendingException && commands == 1 && HomeVpnSetupRecovery.HasPending()
+                && !Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Any(), "cancelled SSH keeps recovery request, cleans private work and cannot commit access");
+            var id = HomeVpnSetupRecovery.Load(owner, "My iPhone").RequestId;
+            var retry = HomeVpnService.AdminAsync(owner, "setup", "My iPhone", null, delegate { }, (exe, args) => Task.FromResult(0), (exe, args, output) => {
+                commands++; check(args.Contains("operation-status") && args.Contains(id) && !args.Contains(" setup "), "explicit retry queries original status instead of resubmitting setup");
+                throw new IOException("fixture status unavailable");
+            });
+            Pump(() => retry.IsCompleted); check(retry.IsFaulted && commands == 2 && HomeVpnSetupRecovery.HasPending(), "unavailable recovery never discards uncertain request");
+            File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat"));
+            var ready = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using (var race = new HomeVpnPreparationForm(ct => ready.Task, true, true)) {
+                race.Show(); ((Button)Field(race, "cancel")).PerformClick(); ready.SetResult(null); Pump(() => race.Completion.IsCompleted);
+                check(race.Completion.IsFaulted && race.Completion.Exception.GetBaseException() is HomeVpnSetupPendingException, "accepted remote cancellation beats a queued successful local response");
+            }
+        }
+        private static void RemoteDeadline()
+        {
+            Reset(); var timeout = Task.Run(() => HomeVpnPreparationProcess.Run(Application.ExecutablePath, Args("hold"), 3000, CancellationToken.None, true));
+            Pump(() => File.Exists(Path.Combine(folder, "child"))); int root = Id("pid"), child = Id("child"); Pump(() => timeout.IsCompleted);
+            check(timeout.IsFaulted && timeout.Exception.GetBaseException() is TimeoutException && timeout.Exception.GetBaseException().Message.Contains("могла завершиться")
+                && !timeout.Exception.GetBaseException().Message.Contains("не запускались") && Gone(root) && Gone(child), "SSH deadline settles owned tree without claiming remote rollback");
+            Reset(); var complete = HomeVpnPreparationProcess.CommandAsync(Application.ExecutablePath, Args("complete"), Path.Combine(folder, "result"), 20000, CancellationToken.None);
+            Pump(() => complete.IsCompleted); complete.GetAwaiter().GetResult(); check(Gone(Id("pid")), "successful SSH waiting releases owned console");
         }
         private static void ProcessChecks()
         {

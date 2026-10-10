@@ -26,13 +26,15 @@ namespace ProGo
         private readonly TaskCompletionSource<object> completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<CancellationToken, Task> copy;
         private readonly bool recovery;
+        private readonly bool serverWait;
         private bool running = true, started;
         internal Task Completion { get { return completion.Task; } }
 
         internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy) : this(copy, false) { }
-        internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy, bool recovery)
+        internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy, bool recovery) : this(copy, recovery, false) { }
+        internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy, bool recovery, bool serverWait)
         {
-            this.copy = copy; this.recovery = recovery;
+            this.copy = copy; this.recovery = recovery; this.serverWait = serverWait;
             Text = recovery ? "Подготовка проверки VPS" : "Подготовка VPS"; ClientSize = new Size(610, 280); MinimumSize = new Size(450, 300);
             if (recovery) heading.Text = "Подготовка проверки VPS";
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterParent;
@@ -53,6 +55,12 @@ namespace ProGo
             cancel.AccessibleName = cancel.Text;
             cancel.AccessibleDescription = recovery ? "Прерывает только копирование для проверки. Окно дождётся остановки его процессов; прежний запрос VPS сохранён, его результат ещё не подтверждён."
                 : "Прерывает только копирование. Окно дождётся остановки его процессов; команды настройки VPS не запускаются.";
+            if (serverWait) {
+                Text = "Ожидание команды VPS"; heading.Text = "Ожидание результата SSH";
+                status.Text = "Ожидание — до 5 минут. Ответьте на запрос SSH в отдельном окне. Можно прервать локальное ожидание: команда VPS могла уже применить изменения. Запрос сохранён; затем проверьте прежнюю настройку.";
+                cancel.Text = "Прервать ожидание SSH"; cancel.AccessibleName = cancel.Text;
+                cancel.AccessibleDescription = "Останавливает только локальные процессы ожидания. Не отменяет изменения VPS. Запрос сохранён для проверки исходного результата.";
+            }
             cancel.Click += delegate { CancelCopy(); }; CancelButton = cancel; cancel.DialogResult = DialogResult.None;
             layout.Controls.Add(viewport, 0, 0); layout.Controls.Add(cancel, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
@@ -67,7 +75,8 @@ namespace ProGo
             Exception failure = null;
             try { cancellation.Token.ThrowIfCancellationRequested(); await copy(cancellation.Token); cancellation.Token.ThrowIfCancellationRequested(); }
             catch (OperationCanceledException) {
-                if (cancellation.IsCancellationRequested) failure = new HomeVpnPreparationCancelledException(recovery);
+                if (serverWait) failure = new HomeVpnSetupPendingException("Ожидание SSH прервано. Команда VPS могла завершиться; запрос сохранён. Проверьте прежнюю настройку, не запускайте её повторно.");
+                else if (cancellation.IsCancellationRequested) failure = new HomeVpnPreparationCancelledException(recovery);
                 else failure = new InvalidOperationException(recovery ? "Подготовка проверки прервана. Прежний запрос VPS сохранён; проверьте SSH."
                     : "Подготовка прервана. Команды настройки VPS не запускались; проверьте SSH.");
             }
@@ -81,7 +90,8 @@ namespace ProGo
             if (!running || cancellation.IsCancellationRequested) return;
             if (!IsDisposed && !Disposing) {
                 cancel.Enabled = false;
-                status.Text = recovery ? "Останавливаем копирование и его процессы. Дождитесь результата. Прежний запрос VPS сохранён; его результат ещё не проверен."
+                status.Text = serverWait ? "Останавливаем локальные процессы SSH. Дождитесь результата. Команда VPS могла завершиться; запрос сохранён для проверки."
+                    : recovery ? "Останавливаем копирование и его процессы. Дождитесь результата. Прежний запрос VPS сохранён; его результат ещё не проверен."
                     : "Останавливаем копирование и его процессы. Дождитесь результата. Команды настройки VPS не запускались.";
             }
             cancellation.Cancel();
@@ -96,9 +106,15 @@ namespace ProGo
             if (disposing && running) {
                 CancelCopy();
                 // A never-shown dialog has no worker that could release this source.
-                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(new HomeVpnPreparationCancelledException(recovery)); }
+                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(serverWait ? (Exception)new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage) : new HomeVpnPreparationCancelledException(recovery)); }
             }
             base.Dispose(disposing);
+        }
+        internal static async Task WaitForCommandAsync(Form owner, string executable, string arguments, string output)
+        {
+            using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.CommandAsync(executable, arguments, output, HomeVpnPreparationProcess.TimeoutMs, token), true, true)) {
+                dialog.ShowDialog(owner); await dialog.Completion;
+            }
         }
         internal static async Task CopyAsync(Form owner, string executable, string arguments, bool recovery = false)
         {
