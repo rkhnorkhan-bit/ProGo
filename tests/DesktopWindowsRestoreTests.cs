@@ -128,6 +128,7 @@ namespace ProGo
                 result = SystemProxyService.RestoreOwned();
                 Check(result.Completed && result.Fields.Count == 5 && !File.Exists(SystemProxyService.BackupPath), "legacy AppliedServer snapshots migrate to owned per-field restore");
                 SystemProxyService.RestoreSnapshot(baseline);
+                CliNotificationRestoration(settings);
                 WindowsCleanupFailureUi(settings);
             } finally {
                 settings.Save(configuration);
@@ -135,6 +136,83 @@ namespace ProGo
                 if (File.Exists(SystemProxyService.BackupPath)) File.Delete(SystemProxyService.BackupPath);
                 foreach (var pair in environment) Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.User);
                 if (File.Exists(CliProxyEnvironmentService.BackupPath)) File.Delete(CliProxyEnvironmentService.BackupPath);
+            }
+        }
+        private static void CliNotificationRestoration(SettingsService settings)
+        {
+            var original = SystemProxyService.ReadCurrent();
+            var configuration = settings.Current.Clone();
+            var environment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
+            if (File.Exists(CliProxyEnvironmentService.BackupPath) || File.Exists(SystemProxyService.BackupPath))
+                throw new Exception("CLI typed-value fixture is not isolated");
+            try {
+                foreach (var name in CliProxyEnvironmentService.Names) Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
+                var prefs = configuration.Clone(); prefs.AutoCliProxy = prefs.AutoSystemProxy = false; settings.Save(prefs);
+                using (var bridge = new CliProxyBridgeService(settings))
+                using (var consumers = new AppProxyConsumers(bridge, settings)) {
+                    string message;
+                    Check(bridge.Start(out message), "CLI typed-value fixture starts its actual listener");
+                    consumers.Observe();
+                    CliProxyEnvironmentService.ApplyUserEnvironment(bridge.Port);
+                    SeedExternalTypedRoute();
+                    var external = SystemProxyService.ReadCurrent();
+                    CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+                    foreach (var name in SystemProxyService.FieldNames)
+                        Check(SystemProxyService.ReadCurrent().Values[name].Matches(external.Values[name]), "actual CLI cleanup preserves the live external Windows field: " + name);
+                    Check(!File.Exists(CliProxyEnvironmentService.BackupPath), "successful typed CLI cleanup removes its ownership journal");
+
+                    CliProxyEnvironmentService.ApplyUserEnvironment(bridge.Port);
+                    SeedExternalTypedRoute(); external = SystemProxyService.ReadCurrent();
+                    bool refused = false;
+                    try {
+                        CliProxyEnvironmentService.ClearUserEnvironmentIfOwned(delegate(RegistryKey key, string name, WindowsProxyValue value) {
+                            if (name == "AutoDetect" || name == "ProxyOverride") throw new UnauthorizedAccessException("fixture typed correction denied");
+                            SystemProxyService.WriteValue(key, name, value);
+                        }, delegate {
+                            CliProxyEnvironmentService.BroadcastEnvironmentChange();
+                            // Reproduce the exact observed WinINet normalization after real setters/notification.
+                            using (var key = Registry.CurrentUser.OpenSubKey(ProxyRegistryPath, true)) {
+                                key.DeleteValue("AutoDetect", false);
+                                key.SetValue("ProxyOverride", "%USERPROFILE%;external.example.org", RegistryValueKind.String);
+                            }
+                        });
+                    } catch (IOException) { refused = true; }
+                    Check(refused && File.Exists(CliProxyEnvironmentService.BackupPath), "denied CLI notification corrections propagate failure and retain the journal");
+                    var journal = new JavaScriptSerializer().Deserialize<System.Collections.Generic.Dictionary<string, string>>(File.ReadAllText(CliProxyEnvironmentService.BackupPath));
+                    var pending = new JavaScriptSerializer().Deserialize<System.Collections.Generic.List<WindowsProxyFieldBackup>>(journal["ProGoPendingWindowsCorrections"]);
+                    Check(pending.Count == 2 && pending.All(f => f.Pending) && pending.Single(f => f.Name == "AutoDetect").Original.Matches(external.Values["AutoDetect"]) &&
+                        !pending.Single(f => f.Name == "AutoDetect").Applied.Exists, "CLI retry journal records only denied live values and their observed normalization");
+                    SettleConsumers(consumers, bridge);
+                    Check(bridge.IsRunning, "pending CLI typed corrections retain the actual shared listener");
+                    using (var key = Registry.CurrentUser.OpenSubKey(ProxyRegistryPath, true))
+                        key.SetValue("ProxyOverride", "intervening.example.org", RegistryValueKind.String);
+                    var intervening = SystemProxyService.ReadCurrent().Values["ProxyOverride"];
+                    CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
+                    var restored = SystemProxyService.ReadCurrent();
+                    Check(restored.Values["AutoDetect"].Matches(external.Values["AutoDetect"]) && restored.Values["ProxyOverride"].Matches(intervening),
+                        "CLI correction retry restores the still-matching failed flag and preserves a later external value");
+                    Check(restored.Values["ProxyServer"].Matches(external.Values["ProxyServer"]) && restored.Values["AutoConfigURL"].Matches(external.Values["AutoConfigURL"]),
+                        "CLI retry preserves the external route and live expandable PAC value");
+                    Check(!File.Exists(CliProxyEnvironmentService.BackupPath) && !File.Exists(SystemProxyService.BackupPath),
+                        "successful CLI retry settles its journal without creating Windows route ownership");
+                    consumers.Invalidate(); SettleConsumers(consumers, bridge);
+                    Check(!bridge.IsRunning, "successful typed cleanup retry releases the retained shared listener");
+                }
+            } finally {
+                if (File.Exists(CliProxyEnvironmentService.BackupPath)) File.Delete(CliProxyEnvironmentService.BackupPath);
+                foreach (var pair in environment) Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.User);
+                SystemProxyService.RestoreSnapshot(original);
+                settings.Save(configuration);
+            }
+        }
+        private static void SeedExternalTypedRoute()
+        {
+            using (var key = Registry.CurrentUser.CreateSubKey(ProxyRegistryPath)) {
+                key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
+                key.SetValue("ProxyServer", "external.example.org:9090", RegistryValueKind.String);
+                key.SetValue("ProxyOverride", "%USERPROFILE%;external.example.org", RegistryValueKind.ExpandString);
+                key.SetValue("AutoConfigURL", "https://external.example.org/%USERNAME%/proxy.pac", RegistryValueKind.ExpandString);
+                key.SetValue("AutoDetect", 0, RegistryValueKind.DWord);
             }
         }
         private static void WindowsCleanupFailureUi(SettingsService settings)

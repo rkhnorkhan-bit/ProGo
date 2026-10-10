@@ -1850,3 +1850,19 @@ Initial F29 workflow 38074165642 failed the new minimum-size footer assertion.
 An explicit route-dialog footer row fixes the source layout, and the retry is
 38074596898. Other captured action dialogs and the native icon matrix have been
 reviewed. Full retry and empty-state images still require verification.
+
+## Stage F31f — retain live typed Windows values during CLI cleanup
+
+The full user-environment restore, including the .NET setters' notifications,
+now preserves the immediately preceding live Windows typed values across known
+notification normalization. A later external proxy route is not replaced by an
+old ownership backup. Denied corrections retain exact expected/observed values
+atomically in the CLI retry journal; a retry applies only while that observed
+value still matches. Another later external value is preserved. The journal and
+listener remain until cleanup succeeds.
+
+Native regressions execute real environment setters/notifications and simulate
+known normalization plus denied writes. They check live external flags, typed
+PAC/bypass values, failed-journal content, actual listener retention, retry and
+an intervening external edit. Full repeated uninstall acceptance remains a
+required Windows gate; this stage has not passed it yet.
