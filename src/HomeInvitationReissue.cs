@@ -36,10 +36,13 @@ namespace ProGo
             try {
                 if (await admin("revoke", null, id) != "Access revoked.") throw new InvalidOperationException();
             }
+            catch (HomeVpnPreparationCancelledException) { throw; }
             catch { return new InvitationReissueResult { State = InvitationReissueState.RevokeUnconfirmed }; }
             progress("Старый доступ отозван. Шаг 2 из 2: создание нового токена…");
             try {
-                var token = await admin("invite", name, null);
+                // Source ID binds the replacement receipt to this acknowledged
+                // revoke. Recovery never repeats either of these mutations.
+                var token = await admin("invite", name, id);
                 var access = HomeVpnAccess.Parse(token);
                 if (access.InviteId == id) throw new InvalidOperationException();
                 return new InvitationReissueResult { State = InvitationReissueState.Complete, Token = token,

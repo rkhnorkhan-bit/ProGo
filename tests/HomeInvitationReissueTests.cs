@@ -24,7 +24,8 @@ namespace ProGo
             var progress = new List<string>();
             var gate = new TaskCompletionSource<string>();
             var pending = HomeInvitationReissue.RunAsync(OldId, "Друг", (action, name, id) => {
-                calls.Add(action + ":" + (id ?? name));
+                calls.Add(action + ":" + (action == "revoke" ? id : name));
+                if (action == "invite") check(id == OldId, "replacement issuance carries the immutable source invitation ID after revoke acknowledgement");
                 return action == "revoke" ? gate.Task : Task.FromResult(token);
             }, progress.Add);
             check(!pending.IsCompleted && calls.SequenceEqual(new[] { "revoke:" + OldId }), "reissue waits for revoke acknowledgement before issuing anything");
@@ -75,7 +76,7 @@ namespace ProGo
             var inviteGate = new TaskCompletionSource<string>(); string shown = null, confirmation = null;
             var items = Items();
             using (var form = new HomeInvitationsForm(items, (a,n,i) => {
-                calls.Add(a + ":" + (i ?? n)); return a == "revoke" ? revokeGate.Task : inviteGate.Task;
+                calls.Add(a + ":" + (a == "revoke" ? i : n)); return a == "revoke" ? revokeGate.Task : inviteGate.Task;
             }, clipboard)) {
                 form.ShowToken = value => shown = value;
                 form.Confirm = value => { confirmation = value; return false; };

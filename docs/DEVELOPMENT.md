@@ -1167,6 +1167,34 @@ never saves vault records or changes cryptographic/decoy contracts. The tray use
 `SystemInformation.SmallIconSize` at startup; actual display/DPI transitions remain
 separately tracked under F16, and actual Narrator acceptance under F17.
 
+### Audit stage F23k — native read-only list cancellation
+
+`HomeVpnPreparationTests` exercises the production `AdminAsync` list dispatch
+through the real owned PowerShell/SSH waiting dialog. The injected executable
+receives the original SSH argv, refuses a mutating action or request ID, counts
+queries and spawns a native descendant. Initial Friends tests cover button,
+Escape, title Close and a shortened real deadline with a native UI heartbeat;
+Refresh covers all three cancellation routes with both open and pre-existing
+reconciliation gates. Assertions preserve private access/journal bytes, actual
+rows, selection, filter and name draft and require one explicit retry without
+automatic access issuance. The production list-copy factory and a queued
+completion race also run in this existing fixture. Timer callback errors are
+reported after modal settlement rather than opening a WinForms error dialog.
+
+The fixture writes `vps-list-wait-pending.png`, `vps-list-wait-minimum.png`,
+`vps-list-first-cancelled.png` and `vps-list-refresh-cancelled.png` under the
+existing `build/vpn-fixture` screenshot artifact. Review them with the exact-head
+Windows build/full test run. `DesktopProfileSharingAccessibilityTests` also
+drains four real UI continuations (late revoke success/failure after QR Close or
+Dispose) and checks no UI publication, exception or duplicate request.
+
+List copying and SSH waits each retain their five-minute bound and own only
+their local process tree. Cancellation preserves access and permits explicit
+query retry; it stores no mutation recovery request. Other own-VPS mutations
+remain on the previous protected console path and require a later bounded wait
+stage. No server implementation or durable receipt policy changes in F23k.
+F23 remains open; native Windows and visual verification are required.
+
 
 ## F31i — owner-run Rescue measurement
 
@@ -1195,6 +1223,56 @@ PASS/FAIL/NOT_CHECKED contract. Process I/O includes cache/device operations; Wi
 Responding is not a click-latency measurement; port presence is not SOCKS/HTTP
 protocol or external reachability. Real Rescue/HDD/VHDX acceptance remains unchecked
 until the owner runs and reviews the relevant measurements.
+
+### Audit stage F23l — one recoverable invitation request
+
+`HomeVpnAdminRecovery` validates a bounded ten-field DPAPI journal with canonical
+owner endpoint, invite action/request ID, original name, nullable source invite ID,
+expected server ID and optional result. A nonwaiting lease prevents concurrent
+issuance/recovery in the desktop process; the persisted slot blocks later issuance
+after Close/restart. Register and result retention use flushed atomic writes.
+Recovery verifies the original owner and strict receipt status, then retrieves
+the original result only while available. `not-found` does not permit resubmission:
+a delayed original SSH command could still enter the server after that snapshot.
+The endpoint and authentication path are copied before the first await, so edits
+to the caller's settings object cannot redirect a running request. Each recovery
+SSH query has its own cleanup trap; the public helper is copied again only after
+a completed status permits the result query.
+
+Normal invitation stdout contains status JSON plus the exact token from a live
+receipt result check. All helper output remains on stderr; private stdout goes to
+the protected temporary local result file. The remote shell retains its cleanup
+trap. Reissue supplies its acknowledged old ID as receipt metadata for phase two,
+so recovery never redirects the replacement or repeats the revoke. Result binding
+checks the authoritative stored metadata, server identity and distinct new ID.
+
+Friends keeps a separate persisted-request gate across ordinary List refreshes.
+The explicit recovery action performs no mutation; token presentation must return
+from intentional modal UserClosing before local consumption. A failed handoff,
+corrupt journal, unavailable/revoked token or uncertain response retains the slot.
+The current saved owner access/token is never replaced by the friend's token.
+Owner review remains required for an unavailable or unconfirmed request; no UI
+action discards such a record and blindly issues again.
+
+`HomeVpnAdminRecoveryTests` runs the actual production command dispatcher with
+a substituted native SSH executable and retains its real argv. It covers the
+owned root/descendant, deadline, all cancellation routes, UI heartbeat, stable
+request IDs, reopening and List admission gates, availability rechecks, exact
+result retention and default modal Close versus Dispose. Supplementary real-form
+continuation tests check late success/failure after disposal. Waiting, reopened
+Friends and masked token-modal screenshots are written to the existing
+`build/vpn-fixture` artifact as `vps-invite-*.png`; review them with Windows CI.
+
+`admin-request.dat` joins the shared F22 encrypted archive allowlist. C# verifies
+composition, bytes, integrity, preparation, excluded live/unknown data and no
+automatic import; installed PowerShell helper tests verify the same shared writer
+and real Windows junction rejection. The archive remains CurrentUser DPAPI data,
+not a portable importer. Existing restore scopes preserve current live journals.
+
+Only invite issuance and reissue phase two are integrated. Phase-one/ordinary
+revoke, repair and HTTPS-service installation retain their protected console
+waits and remain explicit later F23 work. Setup recovery and server receipts are
+unchanged; no new server cleanup, acknowledgment or retention protocol.
 
 ## F31j — asynchronous Windows and CLI integration mutations
 
@@ -1240,6 +1318,42 @@ callback. They use loopback resources and never contact a live VPS. Local Linux
 checks pass; compilation/native Windows execution and actual Rescue/HDD/VHDX
 profiling remain NOT_CHECKED. F31 remains OPEN.
 
+### Audit stage F23m — ordinary owner console waits
+
+`HomeVpnWaitPurpose.OwnerCommand` is distinct from setup and invite recovery.
+`HomeVpnOwnerUnconfirmedException` uses fixed Russian messages for nonzero SSH,
+accepted cancellation, deadline and unconfirmed local settlement. It promises no
+saved journal, rollback or repeat. The shared runner owns only the suspended root
+and its native descendants; it retains the console for OpenSSH authentication.
+The existing dispatcher executable/copy/timeout seam remains the testing boundary.
+
+Revoke, repair and share use that runner. Reissue phase one rethrows preparation
+cancellation, and ordinary Friends revoke handles it without creating a new
+reconciliation gate: no SSH or replacement was dispatched. A started revoke still
+must return the exact acknowledgment before phase-two invitation issuance. Repair
+uses the wizard's existing Admin delegate. CreateConfigureForm has a narrow Admin
+and Verify overload so real controls can use native SSH fixtures without a VPS or
+an external HTTPS resource. Late disposed configuration continuations cannot
+publish controls or save an address. Command output is limited to 32768 bytes
+before reading, including the existing ordinary read-only List path.
+
+`HomeVpnOwnerWaitingTests.cs` is explicitly compiled by `Test-HomeVpnRelay.ps1`
+and dispatched before the other native fixtures in `HomeVpnWizardTests.Main`.
+Its real Application.Run loop keeps UI continuations alive after a nested modal
+closes. Native fixture commands inspect actual arguments, own a blocking child,
+and record attempt counts; tests preserve private files and an unrelated process.
+Its nine waiting/minimum/cancelled PNGs use the existing Windows test artifact.
+Native execution and screenshot review require Windows and are pending.
+
+Repeating revoke converges on the same frozen ID/account; repair reapplies owned
+network configuration and may restart services. Neither is automatically retried.
+Share also restarts its service and invalidates short-lived QR sessions, even for
+the same domain. A delayed old-domain share can overwrite newer-domain setup;
+List and health do not prove that old command is terminal. This transport stage
+adds no durable share admission guard and makes no restart-fence claim.
+HTTPS verification/QR retain per-I/O 20-second limits without total cancellation,
+an explicit later gap. F23 remains open pending those decisions and Windows proof.
+
 ## F31m — prepare CLI typed-value recovery before notifications
 
 A denied typed-value correction followed by failure to replace its CLI journal
@@ -1274,3 +1388,78 @@ proving that retry needs no retained in-memory receipt. Cases cover enable/off,
 intervening external values, and initial guard refusal before setters/notifications.
 Native tests require the isolated Windows CI runner; local native execution and
 Rescue/HDD/VHDX acceptance remain NOT_CHECKED. F31 remains OPEN.
+
+### Audit stage F23n — HTTPS request admission and recovery
+
+`HomeVpnShareRecovery` is share-only; it does not generalize the setup/admin
+recovery model. Its version-1 CurrentUser-DPAPI document has exactly eight typed
+fields: Version, RequestId, Action (`share`), Host, Port, Login, Domain, ServerId.
+Request IDs and ServerIds are lowercase 32-digit hex; host/domain are canonical,
+the domain is an HTTPS DNS origin without path/port, and the SSH endpoint is valid.
+The encrypted file is limited to 16384 bytes before reading, strict UTF-8 and
+4096-character JSON. Reparse, malformed and unreadable storage blocks admission.
+
+The share lease covers copying and SSH; durable registration occurs after copy
+but before command launch. `recover-share` accepts no caller domain/name and loads
+the original owner binding before transport. Status and result queries are read
+only, each owning remote EXIT cleanup. Submission uses the existing tracked share
+command followed by strict status/result export. No server files or protocol are
+changed. A valid original terminal status and exact original result create only
+an in-memory confirmation proof; health verification alone cannot clear storage.
+
+`ConfirmAsync` holds the share lease through verification and local saving. It
+rechecks all request fields and expected access identity after the await and save.
+The configuration window also guards disposal and changed active access/owner.
+Only after successful saving is the exact pending file removed. Failure leaves
+the request; recovery can retry reading and saving without another installation.
+The four-argument `CreateConfigureForm` seam replaces external Admin/Verify and
+the local save boundary while preserving actual controls and admission logic.
+
+`share-request.dat` joins the shared encrypted personal archive allowlist,
+archived-only without interpretation, portable import or automatic restore.
+F23's total HTTPS timeout/cancellation gap remains explicit, including slow
+response streams after successful SSH. Local admission covers this desktop's
+new tracked requests, not older/untracked or external owner commands.
+
+`HomeVpnShareRecoveryTests.cs` and the adapted owner-wait suite are explicit inputs
+to `Test-HomeVpnRelay.ps1`. The native child parses actual production SSH argv and
+requires the existing stable request/status/result commands without token material.
+The real UI loop exercises reopening/admission, verification/save faults, late
+disposal, storage/schema/status rejection and original-owner binding without a
+VPS. New waiting/pending/error PNGs stay in the existing Windows artifact.
+
+### Native console waits — confirmed owned local cleanup
+
+`AdminAsync` previously swallowed deletion errors after remote SSH dispatch,
+including cancelled read-only list queries. It could report cancellation while
+its protected local work directory remained. The operation now awaits a worker
+that deletes only its captured unique work directory. IO/access errors receive
+short retries for up to one second; an individual filesystem call itself is not
+forcibly interrupted. The existing recovery lease covers actual cleanup settlement.
+No copy, SSH command or remote mutation is replayed by cleanup.
+
+After confirmed deletion, the original result or exception is preserved. A
+persistent local failure produces a fixed Russian message without paths or raw
+exceptions. List queries explain preserved access/list/draft and unconfirmed local
+cleanup; remotely dispatched mutations retain their existing pending/uncertain
+exception families. The failed protected directory remains for local recovery;
+this stage introduces no delayed cleanup after the operation has settled.
+
+`HomeVpnPreparationTests` locks a real uploaded helper before cancelling the
+owned process tree. A UI timer releases one lock during pending cleanup, while
+another stays held through its failed settlement. The cases require responsive
+heartbeat, exact preserved private data, one read-only dispatch, and confirmed
+deletion or an explicit failed cleanup outcome. Native execution requires Windows
+CI. The separate fixture commit fixes atomic PID publication, awaited cancellation
+status checks, and isolates the native `ssh -G` argument smoke at its unchanged
+seven-second budget; it does not establish the cause of the earlier native timeout.
+The new pending cleanup also exposes UI callers that formerly relied on immediate
+post-modal completion. Wizard/Friends now resume inner operations and outer finish
+paths through a persistent owner control, using explicit awaiters rather than an
+ambient WinForms synchronization context. Closed owners cancel result consumption,
+observe faults and settle already queued continuations without a surviving message
+pump. Operations still await actual work settlement; closing an owner does not
+declare a running SSH command or filesystem cleanup complete. Progress updates
+are posted to the same owner and dropped after closure. Native tests deliberately
+clear the ambient context and check owner-thread updates and disposal races.
+Physical Rescue/HDD/VHDX acceptance remains NOT_CHECKED; F31 remains OPEN.

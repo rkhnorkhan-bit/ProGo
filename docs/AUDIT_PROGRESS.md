@@ -1908,6 +1908,91 @@ alone does not close F31 or certify UI latency, physical disk load, SOCKS protoc
 external HTTP/HTTPS or authentication. Owner instructions and evidence limits are
 in [RESCUE_MEASUREMENT.md](RESCUE_MEASUREMENT.md).
 
+## Stage F23k — bounded own-VPS list waiting (Windows verification pending)
+
+The read-only `list` action now uses the existing owned console runner for both
+helper copying and SSH. Each wait has a five-minute deadline and explicit button,
+Escape and title-close cancellation; the dialog remains open until its owned
+local process tree settles. The native OpenSSH console remains available for
+password and host-key prompts. List progress and failures describe the query;
+they do not claim that a recoverable mutation request was stored. The existing
+helper upload and server implementations are unchanged.
+
+Cancelling initial Friends leaves the wizard and saved access intact. Cancelling
+Refresh retains the actual rows, selection, filter, name draft and prior
+`needsRefresh` gate. A read-only cancellation creates no new mutation uncertainty
+and cannot clear an older gate. Only an explicit new Refresh retries the query;
+no invitation or token is issued automatically. Successful Refresh still clears
+selection and the prior reconciliation gate after receiving a valid current list.
+
+Production-dispatch native regressions replace only executable/copy transports,
+retain the real SSH arguments and exercise an actual native descendant. They
+cover initial Friends and Refresh cancellation routes, an actual deadline,
+UI heartbeat, request counters, byte-identical private access/recovery files,
+owned-tree settlement and explicit retry. The production list-copy factory and
+a queued completion/cancellation race are covered separately. Pending/minimum
+wait and cancelled wizard/Friends images join the existing Windows screenshot
+artifact. QR revocation additionally ignores late success/failure after dialog
+Close or Dispose; this is a UI lifetime guard, not revocation rollback.
+
+Local public-content and diff checks PASS. C#5/.NET Framework 4.8 build, native
+Windows execution and screenshot review are pending. **F23 remains OPEN; overall
+22/31.** Invite, revoke, reissue, repair and share command waits still
+use their existing protected path and are explicit later F23 work. No new server
+receipt policy, release, installation or live-VPS change is included.
+
+## Stage F23l — recover the original invitation (Windows verification pending)
+
+Invitation issuance, including the second step of reissue after a successful
+revoke acknowledgment, now saves one strict CurrentUser-DPAPI `admin-request.dat`
+before launching SSH. It binds the request ID, owner endpoint/login, invite action,
+original name, optional source invitation ID and expected server ID. Atomic
+replacement retains the exact validated token before handing it to the UI.
+Existing setup recovery and the server receipt implementation are unchanged.
+
+The invitation command uses the existing receipt status/result checks before
+private token handoff, with its existing remote cleanup trap. Its owned local
+console has a five-minute deadline and button/Escape/title-close cancellation.
+Cancellation stops local waiting and leaves the saved request; it does not claim
+to undo VPS effects. Explicit recovery submits only status/result queries. Running,
+not-found, unconfirmed, revoked/unavailable results, wrong bindings and corrupt
+local data retain the gate. A cached token cannot bypass a live availability check.
+No mutation is replayed, even under the original request ID.
+The running endpoint is frozen before its first await. Each recovery query owns
+its remote cleanup; after completed status the public helper is copied again
+before the separate result query. This does not change server receipts.
+
+Friends loads this durable gate when reopened or after app restart. Successful
+List cannot clear it or authorize fresh issuance. A recovered replacement keeps
+the original friend's name/source ID and never repeats the earlier revoke. The
+existing saved owner access remains unchanged. Only intentional normal closing
+of the delivered token's modal window consumes the local journal; a failed
+handoff or crash preserves it. This local consumption does not acknowledge or
+prune server receipts. Unconfirmed/unavailable results remain for owner review;
+there is no automatic forget-and-retry path.
+
+The shared backup writer recognizes only the encrypted persistent journal. Its
+manifest lists it as archived-only CurrentUser DPAPI data; Program/Data/All restore
+do not automatically import it or replace a live gate. Temporary admin folders
+and plaintext remain excluded. Older executables may ignore this new gate after
+downgrade, although the data is preserved; this stage does not promise backward
+safety from binaries that predate invitation recovery.
+
+Native production-dispatch regressions retain actual SSH argv, own a real native
+descendant, measure UI heartbeat, count submissions and check private request
+bytes across cancellation, deadline and restart. Default modal tests distinguish
+intentional Close from disposal. Late disposed Friends continuations preserve
+the journal and publish no token. Masked token, waiting and reopened-gate images
+join the existing Windows screenshot artifact. Synchronous local DPAPI/file
+operations remain an explicit F31 performance verification limitation.
+
+Local public-content/diff checks and existing server receipt tests PASS. Exact-head
+Windows C#5 build, native process/modal/DPAPI regressions, PowerShell archive tests
+and screenshot review remain pending. **F23 remains OPEN.** Reissue phase-one
+revoke and ordinary revoke/repair/share SSH waits still use the previous protected
+console path; bounding those waits is explicit later work. No universal receipt
+TTL, remote acknowledgment, rollback, release or live-VPS changes are included.
+
 ## F31j — serialize integration changes off the UI
 
 Prepared worker-only Windows/CLI enable and restore transactions behind one async
@@ -1930,6 +2015,58 @@ native Windows execution and Rescue/HDD/VHDX measurements **NOT_CHECKED**. Cold 
 start, settings/startup persistence, port migration and synchronous rollback still
 require the next bounded stage. **F31 remains OPEN; accepted status stays 22/31.**
 
+## Stage F23m — bounded ordinary owner SSH waits (Windows verification pending)
+
+Ordinary revoke, phase-one reissue revoke, network repair and HTTPS-service
+installation now use the existing owned SSH console runner with a five-minute
+deadline and button/Escape/title-close cancellation. Their separate OwnerCommand
+purpose reports fixed Russian uncertainty without claiming a saved recovery
+request, remote rollback or automatic retry. The real console still accepts
+OpenSSH password and host-key confirmation. The waiting dialog settles only its
+own local process tree. Ordinary output is checked against a 32768-byte limit
+before it is read; strict UTF-8 and the existing nonempty result check remain.
+
+Cancellation of helper preparation before SSH remains a preparation cancellation.
+It does not become an uncertain phase-one revoke and cannot issue a replacement.
+After a started revoke, phase two still requires the exact successful revoke
+acknowledgment. Repeating revoke uses the same frozen invitation ID; the old
+command cannot revoke a subsequently issued distinct ID. A List flag alone is
+not evidence that credential reload completed, so reissue repeats and acknowledges
+the selected revoke before issuance. No automatic revoke or repair repeat exists.
+
+Repair uses the existing wizard Admin seam. HTTPS configuration uses a narrow
+transport seam while retaining the real controls and its existing verification
+and save boundary. Disposed configuration windows ignore late UI/save callbacks.
+No owner/access format, server receipt or journal is added by this stage.
+
+**OPEN — HTTPS domain admission:** an old share command can be delayed before
+the server owner lock, then apply its old domain after a fresh List and a newer
+domain's successful setup. A read-only reproduction exercised the actual server
+main/preflight/legacy owner lock with only provisioning effects replaced by a
+temporary model: List, share(new.example.org), then delayed share(old.example.org).
+The final origin was old.example.org. Neither List nor HTTP health is a terminal
+fence for that old command. Existing manual operator review must not be described
+as a durable guard across restart. A narrowly scoped durable share guard requires
+separate review; it is not implemented here.
+
+**OPEN — HTTPS total wait:** VerifyAsync/QR HTTP operations retain 20-second
+per-I/O limits without a total deadline or cancellation. That remains separate
+work, including verification after a successful share SSH command. No new HTTP
+transport or retry protocol is hidden in this SSH-only stage.
+
+`HomeVpnOwnerWaitingTests` runs the real revoke/repair/share controls under an
+actual `Application.Run` loop and production dispatch with a native child
+executable. It checks heartbeat, deadline, button/Escape/close/dispose cancellation,
+owned descendants, one attempt, fixed nonzero/oversized errors and preserved
+private inputs. Phase-one tests distinguish zero-SSH copy cancellation from an
+unconfirmed revoke and require acknowledgment before one source-bound issuance.
+The Windows harness captures `vps-owner-{revoke,repair,share}-{waiting,minimum,cancelled}.png`
+for review in the existing artifact; generation and visual review are pending.
+
+Exact-head Windows C#5 build, native process/UI regressions and screenshot review
+are required before this stage can PASS. **F23 remains OPEN.** No real VPS,
+release publication or installation is part of F23m.
+
 ## F31m — survive failure to save a typed CLI correction
 
 CLI enable/off now prepare the existing typed-normalization recovery records on
@@ -1950,3 +2087,110 @@ Prepared normalization records describe anticipated effects, not proof of a prio
 notification. An identical later external normalization is indistinguishable;
 different values remain protected. Atomic replacement is process/restart recovery,
 without a power-loss durability claim. **F31 remains OPEN; accepted status 22/31.**
+
+## Stage F23n — durable HTTPS installation admission (Windows verification pending)
+
+This narrowly addresses F23m's delayed-domain race for newly submitted desktop
+commands. A CurrentUser-DPAPI `share-request.dat` pins one request ID, original
+SSH host/port/login, canonical domain and expected ServerId. It is atomically
+saved after helper preparation and before real SSH. A cancelled copy before
+registration submits no SSH and creates no request. After registration, unknown
+outcomes preserve the request across Close/restart; any new HTTPS installation
+is blocked. Corrupt, oversized, inaccessible or reparse storage also fails closed.
+
+Share now uses the existing server `--request-id` protocol without changing the
+server. Initial submission requires a strict original `operation-status` and
+`operation-result` frame. Recovery issues only those read-only commands, with
+independent EXIT cleanup and the same frozen owner/request. Running, not-found,
+unconfirmed, changed owner, changed request or changed domain never authorize
+another installation. List and HTTPS health cannot consume the request.
+
+The actual configuration window offers “Проверить прежнюю настройку HTTPS”.
+Pending requests disable both new installation and the ordinary verify/save
+route. Verified receipt plus exact original result precede HTTPS verification;
+only successful expected-ServerId verification and local address save consume
+the exact request. Save failure, window disposal, changed access and crashes
+preserve it. There is no automatic forget, replay, TTL, rollback or remote cleanup
+policy. Unconfirmed/not-found states require owner reconciliation; the application
+does not silently waive that requirement.
+
+The shared archive writer adds only the encrypted `share-request.dat` filename,
+preserving its bytes and digest as archived-only evidence with no automatic
+restore. C# and installed PowerShell helper cases cover composition, encrypted
+bytes, junction rejection, changed digest and plaintext rejection, additively
+with the existing admin-request cases.
+
+Available Linux tests: **PASS — 40**, including an actual server-main share
+delayed before receipt admission: not-found and running withhold the result;
+only the original terminal receipt exports its domain. **3 skipped** require the
+native Windows relay harness. Native C#5 build/UI/process/DPAPI/archive execution
+and screenshots remain **NOT_CHECKED** until exact-head Windows CI and review.
+
+`HomeVpnShareRecoveryTests` is explicitly compiled and run by the existing
+Windows wizard harness. Its actual Application.Run loop/native child examines
+production argv, frozen receipt IDs, read-only recovery, cancellation/deadline
+ownership, reopening the gated form, status/result rejection, protected storage
+and the real verification/save boundary. Existing owner-wait share cases retain
+their process/UI/output coverage and add zero-SSH copy cancellation. Generated
+waiting/minimum/pending/recovery/save-error screenshots use the existing artifact.
+Source/lifecycle/archive review found no blockers; native/visual proof is pending.
+
+**F23 remains OPEN.** HTTPS verification and QR operations still have per-I/O
+20-second limits without a total deadline/cancellation. Earlier untracked share
+commands, older clients, another machine and manual server changes cannot be
+retroactively fenced by this local request; existing installations require owner
+review before migration. No live VPS, release publication or installation occurs.
+
+
+## Stage F23p — bounded HTTPS waiting (Windows verification pending)
+
+HTTPS profile operations now use real asynchronous request-stream, response and
+body I/O. One 20-second deadline covers an entire verification, QR creation
+(including its health GET and authenticated POST together), or link revocation.
+Caller cancellation and deadline expiry abort only the owned request, including
+waiting for headers, body reads and gzip/deflate decompression. Response text is
+strict UTF-8 and capped at 64 KiB after decompression. There is no application
+retry, redirect, certificate-validation bypass or raw transport exception output.
+
+The QR creation waiting window supports its cancel button, Escape and title-bar
+Close, and settles the owned work before returning. The HTTPS configuration
+window supports Close/Escape during verification and read-only share recovery,
+retains its original fields/address/access and protected N request, and waits
+for local request settlement. Constructor-owned UI handles publish results
+independently of modal SynchronizationContext state; disposed owners discard late
+callbacks. A successful expected-server verification, frozen ownership checks,
+local save, matching N consumption and successful modal close have one UI
+acceptance boundary. An accepted cancellation before that boundary cannot save
+or consume the request. An already dispatched QR revocation remains independently
+owned after QR Close and is bounded by the same transport deadline.
+
+Russian errors distinguish a failed read-only check from an unconfirmed POST or
+DELETE. Aborting a local request cannot prove that VPS work stopped; a delayed
+POST or DELETE may have applied a change. ProGo neither retries it automatically
+nor adds a new QR receipt protocol, remote terminal fence, rollback or journal.
+The established short-lived link and owner reconciliation model is unchanged.
+The durable N request remains limited to tracked HTTPS installation admission.
+
+The existing Windows wizard harness explicitly compiles and runs
+`HomeProfileHttpTests`. Its real TcpListener/SslStream fixtures check delayed
+headers, continuous body trickle, shared health/POST budget, request Abort,
+independent concurrent requests, decoded gzip 64 KiB, exact wire GET/POST/DELETE
+attempts, refused redirects/authentication and strict rejection of an untrusted
+TLS certificate. Application.Run cases exercise successful waits, cancel button,
+Escape, Close, Dispose and null SynchronizationContext, protected-request retention
+in the actual configuration form, and successful HTTP followed by queued
+Cancel/Dispose before the production owner acceptance action. Waiting, minimum
+size and configuration screenshots use the existing vpn-fixture artifact.
+
+Available Linux checks: **PASS — 40 Python tests, 3 native relay skips**; public
+content scan and whitespace pass. Actual .NET Framework 4.8/C#5 build, loopback
+HTTP/TLS/UI cancellation tests and native screenshots remain **NOT_CHECKED** until
+exact-head Windows CI and visual review. This stage does not close F23 by itself.
+
+**F23 and F31 remain OPEN.** The ShareOrigin getter and protected local save still
+perform synchronous file/DPAPI work in an owner UI callback. A separate prepared
+worker + final frozen-binding acceptance boundary needs blocking-writer native
+regression tests; blindly moving SetShareOrigin to Task.Run would permit a late
+save after cancellation. Legacy SSH/UI operations and earlier/external/untracked
+server mutations retain the limitations recorded in the preceding stages.
+No live VPS, release publication or installation is part of this stage.

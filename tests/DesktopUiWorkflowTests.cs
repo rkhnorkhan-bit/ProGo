@@ -93,7 +93,9 @@ namespace ProGo
                         AppCommand.StartCli, AppCommand.StopCli, AppCommand.OpenTerminal, AppCommand.CreateCodexShortcut,
                         AppCommand.RemoveCodexShortcut, AppCommand.OpenCodex, AppCommand.Phone, AppCommand.StopPhone,
                         AppCommand.Vault, AppCommand.Settings, AppCommand.Help, AppCommand.Update,
-                        AppCommand.ShowMain, AppCommand.CreateBackup, AppCommand.RestoreBackup, AppCommand.OpenBackups, AppCommand.CleanupBackups, AppCommand.ExportDiagnostics, AppCommand.OpenAppLog, AppCommand.OpenUpdateLog, AppCommand.OpenFolder, AppCommand.Exit };
+                        AppCommand.ShowMain, AppCommand.CreateBackup, AppCommand.RestoreBackup, AppCommand.OpenBackups, AppCommand.CleanupBackups,
+                        AppCommand.ExportHomeVpn, AppCommand.ImportHomeVpn,
+                        AppCommand.ExportDiagnostics, AppCommand.OpenAppLog, AppCommand.OpenUpdateLog, AppCommand.OpenFolder, AppCommand.Exit };
                     Check(commandItems.Select(i => (AppCommand)i.Tag).OrderBy(c => c).SequenceEqual(expectedTray.OrderBy(c => c)),
                         "tray exposes every migrated operation exactly once without an alias duplicate");
                     foreach (var item in commandItems)

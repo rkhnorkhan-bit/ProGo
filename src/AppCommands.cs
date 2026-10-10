@@ -10,7 +10,8 @@ namespace ProGo
         Settings, Connections, WindowsSettings, Vault, Phone, Diagnostics, CheckRoute,
         StartCli, StopCli, EnableWindows, DisableWindows,
         CreateCodexShortcut, RemoveCodexShortcut, OpenCodex, OpenTerminal, Help, Update,
-        ShowMain, CreateBackup, RestoreBackup, OpenBackups, CleanupBackups, ExportDiagnostics, OpenAppLog, OpenUpdateLog, OpenFolder, Exit
+        ShowMain, CreateBackup, RestoreBackup, OpenBackups, CleanupBackups, ExportDiagnostics, OpenAppLog, OpenUpdateLog, OpenFolder, Exit,
+        ExportHomeVpn, ImportHomeVpn
     }
 
     // UI-thread snapshot: never retain the application's mutable pending collection.
@@ -74,6 +75,8 @@ namespace ProGo
             Add(AppCommand.RestoreBackup, "backup-restore", "Восстановить из копии…", "Выбрать и проверить резервную копию. Восстановление начнётся только после подтверждения.");
             Add(AppCommand.OpenBackups, "backups-open", "Открыть папку с копиями", "Открыть папку резервных копий в Проводнике.");
             Add(AppCommand.CleanupBackups, "backups-cleanup", "Удалить старые автоматические копии…", "Показать старые автоматические копии. Удаление требует подтверждения; ручные копии сохраняются.");
+            Add(AppCommand.ExportHomeVpn, "home-vpn-export", "Экспорт VPN на другой ПК…", "Создать отдельный защищённый архив личного VPN-доступа и незавершённых запросов. Нужна длинная парольная фраза; исходный VPS и доступ не изменяются.");
+            Add(AppCommand.ImportHomeVpn, "home-vpn-import", "Импорт защищённого VPN…", "Проверить архив, просмотреть состав и явно импортировать VPN в чистую установку. Подключение не запускается; существующий доступ не заменяется.");
             Add(AppCommand.ExportDiagnostics, "diagnostics-export", "Передать диагностику…", "Открыть предпросмотр отчёта. Копирование и сохранение выполняются отдельно; автоматической отправки нет.");
             Add(AppCommand.OpenAppLog, "log-app", "Журнал приложения", "Открыть личный журнал приложения в Блокноте. Он может содержать адреса и пути.");
             Add(AppCommand.OpenUpdateLog, "log-update", "Журнал обновления", "Открыть личный журнал обновления в Блокноте. Он может содержать адреса и пути.");
@@ -94,7 +97,7 @@ namespace ProGo
             if (state.Stopping) return false;
             if (state.Integrating && (definition.RequiresRoute || command == AppCommand.RemoveCodexShortcut)) return false;
             if (state.BackingUp && (command == AppCommand.CreateBackup || command == AppCommand.RestoreBackup ||
-                command == AppCommand.CleanupBackups || command == AppCommand.Update)) return false;
+                command == AppCommand.CleanupBackups || command == AppCommand.Update || command == AppCommand.ExportHomeVpn || command == AppCommand.ImportHomeVpn)) return false;
             if (!definition.RequiresRoute) return true; // Off/Stop must remain usable to cancel waiting work.
             if (state.IsPending(command)) return false;
             // Plain Connect must not restart a route other modes are waiting for.
