@@ -27,7 +27,8 @@ namespace ProGo
             if (!Uri.TryCreate(value, UriKind.Absolute, out uri) || uri.Scheme != "https" || uri.Port != 443
                 || uri.HostNameType != UriHostNameType.Dns || uri.Host.IndexOf('.') < 1 || uri.UserInfo != ""
                 || uri.AbsolutePath != "/" || uri.Query != "" || uri.Fragment != ""
-                || !Regex.IsMatch(uri.Host, @"\A[a-z0-9.-]{3,253}\z"))
+                || !Regex.IsMatch(uri.Host, @"\A[a-z0-9.-]{3,253}\z")
+                || Array.Exists(uri.Host.Split('.'), label => !Regex.IsMatch(label, @"\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\z")))
                 throw new ArgumentException("Укажите HTTPS-домен выдачи без пути и порта, например vpn.example.org.");
             return "https://" + uri.Host;
         }
@@ -141,6 +142,11 @@ namespace ProGo
         internal static ProGoForm CreateConfigureForm(HomeVpnService service,
             Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> admin,
             Func<string, HomeVpnAccess, Task> verifyOrigin)
+        { return CreateConfigureForm(service, admin, verifyOrigin, service.SetShareOrigin); }
+
+        internal static ProGoForm CreateConfigureForm(HomeVpnService service,
+            Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> admin,
+            Func<string, HomeVpnAccess, Task> verifyOrigin, Action<string> saveOrigin)
         {
             var dialog = new ProGoForm { Text = "QR: адрес выдачи профиля", ClientSize = new Size(660, 480), StartPosition = FormStartPosition.CenterParent, AutoScaleMode = AutoScaleMode.Dpi };
             {
@@ -154,6 +160,8 @@ namespace ProGo
                     AccessibleDescription = "Домен без пути и порта, например vpn.example.org. Адрес сохраняется только после успешной проверки принадлежности VPS." }; panel.Controls.Add(address);
                 var install = new Button { Text = "Настроить HTTPS на VPS", AutoSize = true, MinimumSize = new Size(260, 38), Visible = service.Owner != null };
                 var verify = new Button { Text = "Адрес уже настроен — проверить", AutoSize = true, MinimumSize = new Size(300, 38) };
+                var recover = new Button { Text = "Проверить прежнюю настройку HTTPS", AutoSize = true, MinimumSize = new Size(300, 38), Visible = false,
+                    AccessibleDescription = "Проверяет статус и адрес сохранённой команды на исходном VPS. Введённый новый домен не используется. Не запускает настройку повторно. Запрос снимается только после подтверждения и сохранения адреса." };
                 var status = new Label { AutoSize = true, MaximumSize = new Size(600, 0) };
                 install.AccessibleDescription = "Устанавливает HTTPS-выдачу профилей на VPS через SSH, затем проверяет её и сохраняет адрес. Изменяет настройки сервера.";
                 verify.AccessibleDescription = "Проверяет HTTPS и принадлежность вашему VPS. После успешной проверки сохраняет адрес; не запускает настройку сервера.";
@@ -162,27 +170,54 @@ namespace ProGo
                     AccessibleDescription = "Закрывает окно без сохранения введённого адреса. Пока настройка выполняется, закрытие недоступно." };
                 close.Click += delegate { dialog.Close(); };
                 dialog.CancelButton = close;
-                panel.Controls.Add(install); panel.Controls.Add(verify); panel.Controls.Add(close); panel.Controls.Add(status); dialog.Controls.Add(panel);
+                panel.Controls.Add(install); panel.Controls.Add(verify); panel.Controls.Add(recover); panel.Controls.Add(close); panel.Controls.Add(status); dialog.Controls.Add(panel);
                 bool working = false;
-                Func<bool, Task> run = async delegate(bool setup)
+                Action<bool> refreshGate = delegate(bool showMessage) {
+                    bool pending = true;
+                    try { pending = HomeVpnShareRecovery.HasPending(); if (pending && showMessage) status.Text = HomeVpnShareRecovery.PendingMessage; }
+                    catch (HomeVpnSharePendingException ex) { status.Text = ex.Message; }
+                    install.Enabled = !working && !pending; verify.Enabled = !working && !pending;
+                    recover.Visible = pending && service.Owner != null; recover.Enabled = !working;
+                    address.Enabled = close.Enabled = !working;
+                };
+                Func<int, Task> run = async delegate(int mode)
                 {
-                    working = true; install.Enabled = verify.Enabled = address.Enabled = close.Enabled = false;
+                    if (working) return;
+                    working = true; install.Enabled = verify.Enabled = recover.Enabled = address.Enabled = close.Enabled = false;
                     try
                     {
-                        string origin = Origin(address.Text);
-                        if (setup) await admin(service.Owner, "share", null, origin, delegate(string text) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = text; });
+                        var access = service.Access;
+                        var currentOwner = service.Owner;
+                        var owner = currentOwner == null ? null : new HomeVpnOwner { Host = currentOwner.Host, Port = currentOwner.Port, Login = currentOwner.Login, KeyFile = currentOwner.KeyFile };
+                        string origin;
+                        if (mode == 2) origin = await admin(owner, "recover-share", null, null, delegate(string text) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = text; });
+                        else {
+                            if (HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+                            origin = Origin(address.Text);
+                            if (mode == 1) origin = await admin(owner, "share", null, origin, delegate(string text) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = text; });
+                        }
                         if (dialog.IsDisposed || dialog.Disposing) return;
-                        status.Text = "Проверяем HTTPS и принадлежность VPS…";
-                        await verifyOrigin(origin, service.Access);
-                        if (dialog.IsDisposed || dialog.Disposing) return;
-                        service.SetShareOrigin(origin); dialog.DialogResult = DialogResult.OK;
+                        status.Text = "Проверяем HTTPS и принадлежность VPS: " + origin + "…";
+                        if (mode != 0) await HomeVpnShareRecovery.ConfirmAsync(owner, access, origin,
+                            () => verifyOrigin(origin, access), saveOrigin, () => !dialog.IsDisposed && !dialog.Disposing && Object.ReferenceEquals(service.Access, access)
+                                && service.Owner != null && service.Owner.Host == owner.Host && service.Owner.Port == owner.Port && service.Owner.Login == owner.Login);
+                        else {
+                            await verifyOrigin(origin, access);
+                            if (dialog.IsDisposed || dialog.Disposing) return;
+                            if (!Object.ReferenceEquals(service.Access, access)) throw new HomeVpnSharePendingException("Доступ к VPS изменился во время проверки. Адрес не сохранён; проверьте его для текущего VPS.");
+                            if (HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+                            saveOrigin(origin);
+                        }
+                        if (!dialog.IsDisposed && !dialog.Disposing) dialog.DialogResult = DialogResult.OK;
                     }
                     catch (Exception ex) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = ex.Message; }
-                    finally { working = false; if (!dialog.IsDisposed && !dialog.Disposing) install.Enabled = verify.Enabled = address.Enabled = close.Enabled = true; }
+                    finally { working = false; if (!dialog.IsDisposed && !dialog.Disposing) refreshGate(false); }
                 };
-                install.Click += async delegate { await run(true); };
-                verify.Click += async delegate { await run(false); };
+                install.Click += async delegate { await run(1); };
+                verify.Click += async delegate { await run(0); };
+                recover.Click += async delegate { await run(2); };
                 dialog.FormClosing += delegate(object s, FormClosingEventArgs e) { if (working && dialog.DialogResult != DialogResult.OK) e.Cancel = true; };
+                refreshGate(true);
                 UiTheme.ConfigureKeyboardOrder(dialog);
                 return dialog;
             }

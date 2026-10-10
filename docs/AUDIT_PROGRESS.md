@@ -2087,3 +2087,56 @@ Prepared normalization records describe anticipated effects, not proof of a prio
 notification. An identical later external normalization is indistinguishable;
 different values remain protected. Atomic replacement is process/restart recovery,
 without a power-loss durability claim. **F31 remains OPEN; accepted status 22/31.**
+
+## Stage F23n — durable HTTPS installation admission (Windows verification pending)
+
+This narrowly addresses F23m's delayed-domain race for newly submitted desktop
+commands. A CurrentUser-DPAPI `share-request.dat` pins one request ID, original
+SSH host/port/login, canonical domain and expected ServerId. It is atomically
+saved after helper preparation and before real SSH. A cancelled copy before
+registration submits no SSH and creates no request. After registration, unknown
+outcomes preserve the request across Close/restart; any new HTTPS installation
+is blocked. Corrupt, oversized, inaccessible or reparse storage also fails closed.
+
+Share now uses the existing server `--request-id` protocol without changing the
+server. Initial submission requires a strict original `operation-status` and
+`operation-result` frame. Recovery issues only those read-only commands, with
+independent EXIT cleanup and the same frozen owner/request. Running, not-found,
+unconfirmed, changed owner, changed request or changed domain never authorize
+another installation. List and HTTPS health cannot consume the request.
+
+The actual configuration window offers “Проверить прежнюю настройку HTTPS”.
+Pending requests disable both new installation and the ordinary verify/save
+route. Verified receipt plus exact original result precede HTTPS verification;
+only successful expected-ServerId verification and local address save consume
+the exact request. Save failure, window disposal, changed access and crashes
+preserve it. There is no automatic forget, replay, TTL, rollback or remote cleanup
+policy. Unconfirmed/not-found states require owner reconciliation; the application
+does not silently waive that requirement.
+
+The shared archive writer adds only the encrypted `share-request.dat` filename,
+preserving its bytes and digest as archived-only evidence with no automatic
+restore. C# and installed PowerShell helper cases cover composition, encrypted
+bytes, junction rejection, changed digest and plaintext rejection, additively
+with the existing admin-request cases.
+
+Available Linux tests: **PASS — 40**, including an actual server-main share
+delayed before receipt admission: not-found and running withhold the result;
+only the original terminal receipt exports its domain. **3 skipped** require the
+native Windows relay harness. Native C#5 build/UI/process/DPAPI/archive execution
+and screenshots remain **NOT_CHECKED** until exact-head Windows CI and review.
+
+`HomeVpnShareRecoveryTests` is explicitly compiled and run by the existing
+Windows wizard harness. Its actual Application.Run loop/native child examines
+production argv, frozen receipt IDs, read-only recovery, cancellation/deadline
+ownership, reopening the gated form, status/result rejection, protected storage
+and the real verification/save boundary. Existing owner-wait share cases retain
+their process/UI/output coverage and add zero-SSH copy cancellation. Generated
+waiting/minimum/pending/recovery/save-error screenshots use the existing artifact.
+Source/lifecycle/archive review found no blockers; native/visual proof is pending.
+
+**F23 remains OPEN.** HTTPS verification and QR operations still have per-I/O
+20-second limits without a total deadline/cancellation. Earlier untracked share
+commands, older clients, another machine and manual server changes cannot be
+retroactively fenced by this local request; existing installations require owner
+review before migration. No live VPS, release publication or installation occurs.

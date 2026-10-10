@@ -17,7 +17,7 @@ namespace ProGo
         internal HomeVpnOwnerUnconfirmedException(string message) : base(message) { }
     }
 
-    internal enum HomeVpnWaitPurpose { Copy, RecoveryCopy, SetupCommand, ListCopy, ListCommand, AdminCommand, OwnerCommand }
+    internal enum HomeVpnWaitPurpose { Copy, RecoveryCopy, SetupCommand, ListCopy, ListCommand, AdminCommand, OwnerCommand, ShareCommand }
 
     // Owns only short-lived SCP/SSH console waits.
     // User terminals and persistent tunnels must not use this owner.
@@ -48,6 +48,8 @@ namespace ProGo
         { return CommandAsync(executable, arguments, output, timeoutMs, token, HomeVpnWaitPurpose.AdminCommand); }
         internal static Task OwnerAsync(string executable, string arguments, string output, int timeoutMs, CancellationToken token)
         { return CommandAsync(executable, arguments, output, timeoutMs, token, HomeVpnWaitPurpose.OwnerCommand); }
+        internal static Task ShareAsync(string executable, string arguments, string output, int timeoutMs, CancellationToken token)
+        { return CommandAsync(executable, arguments, output, timeoutMs, token, HomeVpnWaitPurpose.ShareCommand); }
         private static Task CommandAsync(string executable, string arguments, string output, int timeoutMs, CancellationToken token, HomeVpnWaitPurpose purpose)
         {
             return Task.Run(delegate {
@@ -59,6 +61,7 @@ namespace ProGo
                     if (purpose == HomeVpnWaitPurpose.ListCommand) throw new IOException("SSH не вернул список. Существующий доступ и текущий список сохранены; повторите получение после проверки SSH.");
                     if (purpose == HomeVpnWaitPurpose.AdminCommand) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
                     if (purpose == HomeVpnWaitPurpose.OwnerCommand) throw new HomeVpnOwnerUnconfirmedException();
+                    if (purpose == HomeVpnWaitPurpose.ShareCommand) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
                     throw new HomeVpnSetupPendingException("SSH не подтвердил результат. Команда VPS могла завершиться; запрос сохранён. Проверьте прежнюю настройку.");
                 }
             });
@@ -73,6 +76,7 @@ namespace ProGo
                 throw new TimeoutException(List(purpose) ? "Время получения списка истекло. Существующий доступ и текущий список сохранены; повторите получение."
                     : purpose == HomeVpnWaitPurpose.AdminCommand ? "Время ожидания выдачи истекло. Запрос сохранён; команда VPS могла завершиться. Проверьте прежнюю выдачу без нового приглашения."
                     : purpose == HomeVpnWaitPurpose.OwnerCommand ? "Время ожидания SSH истекло. " + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage
+                    : purpose == HomeVpnWaitPurpose.ShareCommand ? "Время ожидания SSH истекло. " + HomeVpnShareRecovery.PendingMessage
                     : purpose == HomeVpnWaitPurpose.SetupCommand ? "Время ожидания SSH истекло. Команда VPS могла завершиться; запрос сохранён для проверки." : "Время копирования истекло. Команды настройки VPS не запускались. Проверьте SSH и повторите подготовку.");
         }
         private static void Settle(SafeFileHandle job, HomeVpnWaitPurpose purpose)
@@ -85,6 +89,7 @@ namespace ProGo
                 if (info.ActiveProcesses == 0) return;
                 if (watch.ElapsedMilliseconds >= 2000) {
                     if (purpose == HomeVpnWaitPurpose.OwnerCommand) throw new HomeVpnOwnerUnconfirmedException("Остановка локальных процессов SSH не подтверждена. " + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage);
+                    if (purpose == HomeVpnWaitPurpose.ShareCommand) throw new HomeVpnSharePendingException("Остановка локальных процессов SSH не подтверждена. " + HomeVpnShareRecovery.PendingMessage);
                     throw new IOException(List(purpose) ? "Остановка процессов получения списка не подтверждена. Существующий доступ сохранён; отмена пока не подтверждена."
                         : purpose == HomeVpnWaitPurpose.AdminCommand ? "Остановка локальных процессов выдачи не подтверждена. Запрос сохранён; результат VPS не подтверждён."
                         : purpose == HomeVpnWaitPurpose.SetupCommand ? "Остановка локальных процессов SSH не подтверждена. Запрос VPS сохранён; результат не подтверждён." : "Остановка процессов копирования не подтверждена. Команды настройки VPS не запускались; отмена пока не подтверждена.");
@@ -106,7 +111,7 @@ namespace ProGo
                 Native(SetInformationJobObject(job, 9, ref limits, Marshal.SizeOf(typeof(ExtendedLimits))));
                 SafeFileHandle process = null, thread = null; bool assigned = false, settled = false;
                 try {
-                    var startup = new Startup { Size = Marshal.SizeOf(typeof(Startup)), Title = List(purpose) ? "ProGo — получение списка" : purpose == HomeVpnWaitPurpose.AdminCommand ? "ProGo — доступ друзей" : purpose == HomeVpnWaitPurpose.OwnerCommand ? "ProGo — команда владельца VPS" : purpose == HomeVpnWaitPurpose.SetupCommand ? "ProGo — ожидание SSH" : "ProGo — подготовка VPS" };
+                    var startup = new Startup { Size = Marshal.SizeOf(typeof(Startup)), Title = List(purpose) ? "ProGo — получение списка" : purpose == HomeVpnWaitPurpose.ShareCommand ? "ProGo — настройка HTTPS" : purpose == HomeVpnWaitPurpose.AdminCommand ? "ProGo — доступ друзей" : purpose == HomeVpnWaitPurpose.OwnerCommand ? "ProGo — команда владельца VPS" : purpose == HomeVpnWaitPurpose.SetupCommand ? "ProGo — ожидание SSH" : "ProGo — подготовка VPS" };
                     ProcessInfo child;
                     Deadline(watch, timeoutMs, token, purpose);
                     // A real new console preserves OpenSSH password and host-key prompts.
@@ -134,6 +139,7 @@ namespace ProGo
                             Native(TerminateProcess(process, 1));
                             if (WaitForSingleObject(process, 2000) != 0) throw new IOException(List(purpose) ? "Остановка процесса получения списка не подтверждена. Существующий доступ сохранён."
                                 : purpose == HomeVpnWaitPurpose.OwnerCommand ? "Остановка локального процесса SSH не подтверждена. " + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage
+                                : purpose == HomeVpnWaitPurpose.ShareCommand ? "Остановка локального процесса SSH не подтверждена. " + HomeVpnShareRecovery.PendingMessage
                                 : purpose == HomeVpnWaitPurpose.AdminCommand ? "Остановка процесса выдачи не подтверждена. Запрос сохранён; результат VPS не подтверждён."
                                 : purpose == HomeVpnWaitPurpose.SetupCommand ? "Остановка процесса SSH не подтверждена. Запрос VPS сохранён." : "Остановка процесса подготовки не подтверждена.");
                         }

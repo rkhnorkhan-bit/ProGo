@@ -28,6 +28,7 @@ namespace ProGo
         private static HomeVpnOwner Owner { get { return new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22, KeyFile = "" }; } }
         private static string At(string name) { return Path.Combine(folder, name); }
         private static string PendingPath { get { return Path.Combine(HomeVpnPrivateFiles.Root, "admin-request.dat"); } }
+        private static string SharePendingPath { get { return Path.Combine(HomeVpnPrivateFiles.Root, "share-request.dat"); } }
 
         internal static bool Fixture(string[] args)
         {
@@ -56,6 +57,11 @@ namespace ProGo
                     || command.IndexOf("home_vpn_setup.py invite ", StringComparison.Ordinal) >= command.IndexOf("home_vpn_setup.py operation-status ", StringComparison.Ordinal)
                     || command.IndexOf("home_vpn_setup.py operation-status ", StringComparison.Ordinal) >= command.IndexOf("home_vpn_setup.py operation-result ", StringComparison.Ordinal))
                     throw new Exception("Reissue lost the acknowledged source ID or frozen production receipt command");
+            } else if (kind == "share") {
+                var request = HomeVpnShareRecovery.Pending();
+                var ids = Regex.Matches(command, @"--request-id ([0-9a-f]{32})").Cast<Match>().Select(match => match.Groups[1].Value).ToArray();
+                if (request == null || request.Domain != "qr.example.org" || ids.Length != 3 || ids.Any(id => id != request.RequestId)
+                    || !command.Contains("operation-status") || !command.Contains("operation-result")) throw new Exception("Share lost its saved request or production receipt framing");
             } else if (!copy && (command.Contains("--request-id") || command.Contains("operation-status") || command.Contains("operation-result")))
                 throw new Exception("An ordinary owner action fabricated a recovery request");
             if (kind == "revoke" && !command.Contains(" --id " + OldId)) throw new Exception("Revoke did not retain the selected ID");
@@ -77,7 +83,12 @@ namespace ProGo
                 Console.WriteLine(Json.Serialize(new Dictionary<string, object> { { "Version", 1 }, { "RequestId", request.RequestId }, { "Action", "invite" },
                     { "State", "succeeded" }, { "Started", "2026-01-01T00:00:00+00:00" }, { "Finished", "2026-01-01T00:00:01+00:00" }, { "ResultAvailable", true } }));
                 Console.WriteLine(token);
-            } else Console.Write(kind == "revoke" ? "Access revoked." : kind == "share" ? "https://qr.example.org" : "VPN network rules refreshed. Reconnect the phone and test internet access.");
+            } else if (kind == "share") {
+                var request = HomeVpnShareRecovery.Pending();
+                Console.WriteLine(Json.Serialize(new Dictionary<string, object> { { "Version", 1 }, { "RequestId", request.RequestId }, { "Action", "share" },
+                    { "State", "succeeded" }, { "Started", "2026-01-01T00:00:00+00:00" }, { "Finished", "2026-01-01T00:00:01+00:00" }, { "ResultAvailable", true } }));
+                Console.Write("https://qr.example.org");
+            } else Console.Write(kind == "revoke" ? "Access revoked." : "VPN network rules refreshed. Reconnect the phone and test internet access.");
             return true;
         }
 
@@ -86,7 +97,7 @@ namespace ProGo
             check = assert; folder = Path.Combine(work, "owner-wait"); HomeVpnPrivateFiles.SecureDirectory(folder);
             replacement = Replacement(token); sharePath = Path.Combine(HomeVpnPrivateFiles.Root, "share-" + HomeVpnAccess.Parse(token).ServerId + ".dat");
             var saved = new Dictionary<string, byte[]>();
-            foreach (string name in new[] { "access", "owner", "home-address", "setup-request", "admin-request" }) Save(saved, Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"));
+            foreach (string name in new[] { "access", "owner", "home-address", "setup-request", "admin-request", "share-request" }) Save(saved, Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"));
             Save(saved, sharePath);
             string helpers = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts", "home-vpn", "server"); Directory.CreateDirectory(helpers);
             foreach (string file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" }) {
@@ -98,14 +109,14 @@ namespace ProGo
             ThreadExceptionEventHandler handler = (sender, args) => { threadFailure = args.Exception; }; Application.ThreadException += handler;
             using (var unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "owner-wait-unrelated") { UseShellExecute = false, CreateNoWindow = true })) {
                 try {
-                    File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, "setup-request.dat")); File.Delete(PendingPath);
+                    File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, "setup-request.dat")); File.Delete(PendingPath); File.Delete(SharePendingPath);
                     HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", Json.Serialize(Owner));
                     Environment.SetEnvironmentVariable(Variable, folder);
                     foreach (string action in new[] { "revoke", "repair", "share" }) Entry(token, clipboard, action, "button", false, false);
                     foreach (string route in new[] { "escape", "close", "dispose", "deadline" }) Entry(token, clipboard, "repair", route, false, false);
                     Entry(token, clipboard, "reissue", "button", false, false);
                     Entry(token, clipboard, "reissue", "complete", false, true);
-                    foreach (string action in new[] { "revoke", "reissue" }) Entry(token, clipboard, action, "button", true, false);
+                    foreach (string action in new[] { "revoke", "reissue", "share" }) Entry(token, clipboard, action, "button", true, false);
                     Outputs(saved); AcceptedCancellation();
                     check(threadFailure == null, "ordinary owner waiting and UI completion cause no thread exception");
                     check(!unrelated.HasExited, "owner cancellation and deadlines preserve an unrelated process");
@@ -143,7 +154,7 @@ namespace ProGo
             }
         }
         private static void Reset(string mode)
-        { KillFixtures(); foreach (string file in Directory.GetFiles(folder)) File.Delete(file); File.Delete(PendingPath); copies = 0; File.WriteAllText(At("mode"), mode); File.WriteAllText(At("response"), replacement); }
+        { KillFixtures(); foreach (string file in Directory.GetFiles(folder)) File.Delete(file); File.Delete(PendingPath); File.Delete(SharePendingPath); copies = 0; File.WriteAllText(At("mode"), mode); File.WriteAllText(At("response"), replacement); }
         private static Task<string> Admin(HomeVpnOwner owner, string action, string label, string id, Action<string> progress, int timeout, bool realCopy)
         {
             return HomeVpnService.AdminAsync(owner, action, label, id, progress, (executable, arguments) => {
@@ -171,8 +182,8 @@ namespace ProGo
                             var cancel = (Button)Field(wait, "cancel"); var text = (Label)Field(wait, "status");
                             check(cancel.Enabled && wait.CancelButton == cancel && wait.AcceptButton == null && text.AccessibilityObject.Description == text.Text,
                                 "owner waiting exposes an accessible responsive cancellation control");
-                            if (!Calls().Contains("copy")) check(text.Text.Contains("5 минут") && !text.Text.Contains("запрос сохранён") && !text.Text.Contains("Запрос сохранён"),
-                                "ordinary owner progress gives a bounded wait without a fabricated saved request");
+                            if (!Calls().Contains("copy")) check(text.Text.Contains("5 минут") && (Calls().Contains("share") ? text.Text.Contains("HTTPS-запрос сохранён")
+                                : !text.Text.Contains("запрос сохранён") && !text.Text.Contains("Запрос сохранён")), "owner progress describes its actual ordinary or recoverable wait");
                             if (shot != null) { Shot(wait, shot + "-waiting"); wait.ClientSize = new Size(440, 270); Application.DoEvents();
                                 check(wait.RectangleToClient(cancel.RectangleToScreen(cancel.ClientRectangle)).Bottom <= wait.ClientSize.Height, "minimum owner wait retains its actual cancellation button"); Shot(wait, shot + "-minimum"); }
                             if (route == "button") cancel.PerformClick();
@@ -198,7 +209,7 @@ namespace ProGo
             Reset(success ? "complete" : "hold"); int verified = 0, shown = 0; HomeVpnInvitation first = null, second = null;
             using (var relay = new Ikev2RelayService())
             using (var service = new HomeVpnService(relay)) {
-                service.UseToken(token, Owner); var before = Snapshot(inputPaths);
+                service.UseToken(token, Owner); var before = Snapshot(inputPaths.Where(path => action != "share" || realCopy || path != SharePendingPath));
                 Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> admin = (owner, kind, label, id, progress) => Admin(owner, kind, label, id, progress, route == "deadline" ? 5000 : 20000, realCopy);
                 Form main; Button button; Func<bool> done; Func<string> status;
                 if (action == "repair") {
@@ -216,8 +227,11 @@ namespace ProGo
                     button = Controls(main).OfType<Button>().Single(control => control.Text == "Настроить HTTPS на VPS");
                     var address = Controls(main).OfType<TextBox>().Single(); done = () => address.Enabled;
                     status = () => {
-                        check(main.Visible && main.DialogResult == DialogResult.None && Controls(main).OfType<Button>().All(control => control.Enabled),
-                            "cancelled share restores independent actions without confirming or saving its HTTPS address");
+                        check(main.Visible && main.DialogResult == DialogResult.None
+                            && Controls(main).OfType<Button>().Single(control => control.Text == "Настроить HTTPS на VPS").Enabled == realCopy
+                            && Controls(main).OfType<Button>().Single(control => control.Text == "Адрес уже настроен — проверить").Enabled == realCopy
+                            && Controls(main).OfType<Button>().Single(control => control.Text == "Проверить прежнюю настройку HTTPS").Visible != realCopy,
+                            "cancelled share distinguishes pre-SSH preparation from its retained HTTPS request");
                         return Controls(main).OfType<Label>().Single(control => control.AccessibleName == "Результат настройки HTTPS-выдачи").Text;
                     };
                 } else {
@@ -246,8 +260,11 @@ namespace ProGo
                             "native owner cancellation settles its tree, preserves private files and makes one attempt: " + action + "/" + route + "/copy=" + realCopy);
                         check(Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Length == 0 && !File.Exists(PendingPath), "ordinary cancellation creates no issuance journal and cleans local work");
                         if (realCopy) check(result.Status.Contains("не запускались"), "pre-dispatch copy cancellation reports that server commands did not start: " + action);
-                        else check(result.Status.Contains("подтвержд") && !result.Status.Contains("запрос сохранён") && !result.Status.Contains("Запрос сохранён")
+                        else check(result.Status.Contains("подтвержд") && (action == "share" ? result.Status.Contains("Запрос сохранён")
+                            : !result.Status.Contains("запрос сохранён") && !result.Status.Contains("Запрос сохранён"))
                             && !result.Status.Contains("Правила выхода VPN обновлены"), "owner cancellation reports uncertainty without fabricated recovery or success: " + action + "/" + route);
+                        if (action == "share" && !realCopy) check(HomeVpnShareRecovery.Pending().Domain == "qr.example.org"
+                            && !Encoding.UTF8.GetString(File.ReadAllBytes(SharePendingPath)).Contains("qr.example.org"), "cancelled share retains its frozen DPAPI-protected request");
                         if (action == "repair" && !realCopy) check(result.Status.Contains(route == "deadline" ? "Время ожидания SSH истекло" : "Ожидание SSH прервано"),
                             "ordinary waiting distinguishes the deadline from requested cancellation: " + route);
                         if (first != null) check(!first.Revoked && !second.Revoked, "unconfirmed phase-one revoke never publishes a revoked row or mutates its duplicate");
@@ -260,7 +277,7 @@ namespace ProGo
         {
             foreach (string mode in new[] { "complete", "failure", "oversized" })
             foreach (string action in new[] { "revoke", "repair", "share" }) {
-                Reset(mode); var before = Snapshot(paths.Keys); Task<string> task = null;
+                Reset(mode); var before = Snapshot(paths.Keys.Where(path => action != "share" || path != SharePendingPath)); Task<string> task = null;
                 using (var host = new Form()) {
                     Loop(host, () => task = Admin(Owner, action, null, action == "revoke" ? OldId : action == "share" ? "QR.EXAMPLE.ORG" : null, delegate { }, 20000, false), () => task != null && task.IsCompleted, "complete", null, null);
                     Exception failure = null; string text = null; try { text = task.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
@@ -268,8 +285,10 @@ namespace ProGo
                         "production ordinary output makes one attempt and preserves private inputs/helpers: " + action + "/" + mode);
                     if (mode == "complete") check(failure == null && text == (action == "revoke" ? "Access revoked." : action == "share" ? "https://qr.example.org" : "VPN network rules refreshed. Reconnect the phone and test internet access."),
                         "ordinary production SSH returns its actual successful output: " + action);
-                    else check(failure is HomeVpnOwnerUnconfirmedException && failure.Message.Contains("подтвержд") && !failure.Message.Contains("synthetic-private")
-                        && !failure.Message.Contains("запрос сохранён"), "ordinary nonzero/oversized output fails honestly without leaking details or claiming a journal: " + action + "/" + mode);
+                    else check((action == "share" ? failure is HomeVpnSharePendingException : failure is HomeVpnOwnerUnconfirmedException)
+                        && failure.Message.Contains("подтвержд") && !failure.Message.Contains("synthetic-private")
+                        && (action == "share" || !failure.Message.Contains("запрос сохранён")), "owner nonzero/oversized output preserves its correct uncertainty and recovery boundary: " + action + "/" + mode);
+                    if (action == "share") check(HomeVpnShareRecovery.HasPending(), "share output alone never consumes its HTTPS request before verification and save");
                 }
             }
         }

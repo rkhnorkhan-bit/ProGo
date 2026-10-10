@@ -79,6 +79,62 @@ class OperationRecoveryTest(unittest.TestCase):
             self.assertNotIn(private, text)
         self.assertEqual(set(status), {'Version', 'RequestId', 'Action', 'State', 'Started', 'Finished', 'ResultAvailable'})
 
+    def test_tracked_share_delayed_before_admission_requires_original_terminal_receipt(self):
+        output = self.folder / 'share-result'
+        entered, admit, provisioned, finish = (threading.Event() for _ in range(4))
+        calls = []
+        original_lexists = os.path.lexists
+
+        def preflight(path):
+            if os.fspath(path) == str(output):
+                entered.set()
+                if not admit.wait(5):
+                    raise TimeoutError('Share preflight was not released')
+            return original_lexists(path)
+
+        def perform(args):
+            calls.append(args.domain)
+            provisioned.set()
+            if not finish.wait(5):
+                raise TimeoutError('Share effects were not released')
+            return 'https://' + args.domain
+
+        argv = ['home_vpn_setup.py', 'share', '--host', 'vpn.example.org', '--port', '22',
+                '--name', 'My iPhone', '--domain', 'old.example.org', '--request-id', '1' * 32,
+                '--output', str(output)]
+        with mock.patch.object(sys, 'argv', argv), mock.patch.object(helper.os.path, 'lexists', preflight), \
+                mock.patch.object(helper, 'perform_owner', perform):
+            with concurrent.futures.ThreadPoolExecutor(1) as pool:
+                task = pool.submit(helper.main)
+                try:
+                    self.assertTrue(entered.wait(5))
+                    status = helper.operation_status('1' * 32)
+                    self.assertEqual(status['State'], 'not-found')
+                    self.assertIsNone(status['Action'])
+                    self.assertFalse(status['ResultAvailable'])
+                    with self.assertRaises(RuntimeError):
+                        helper.operation_result('1' * 32)
+                    self.assertEqual(calls, [])
+                    admit.set()
+                    self.assertTrue(provisioned.wait(5))
+                    status = helper.operation_status('1' * 32)
+                    self.assertEqual((status['Action'], status['State'], status['ResultAvailable']), ('share', 'running', False))
+                    with self.assertRaises(RuntimeError):
+                        helper.operation_result('1' * 32)
+                finally:
+                    admit.set()
+                    finish.set()
+                task.result(timeout=5)
+        status = helper.operation_status('1' * 32)
+        self.assertEqual((status['Action'], status['State'], status['ResultAvailable']), ('share', 'succeeded', True))
+        self.assertIsNotNone(status['Started'])
+        self.assertIsNotNone(status['Finished'])
+        self.assertEqual(helper.operation_result('1' * 32), 'https://old.example.org')
+        self.assertEqual(output.read_text(), 'https://old.example.org')
+        with self.assertRaisesRegex(RuntimeError, 'different parameters'):
+            helper.tracked_operation(self.args('share', domain='new.example.org', name='My iPhone', id=None), perform)
+        self.assertEqual(calls, ['old.example.org'])
+
     def test_same_id_cannot_be_rebound_to_changed_parameters(self):
         calls = []
         helper.tracked_operation(self.args('repair'), lambda _: calls.append(1) or 'done')
