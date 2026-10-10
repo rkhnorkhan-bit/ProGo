@@ -147,8 +147,13 @@ namespace ProGo
             int root = Pid("pid"), child = Pid("child"); var failure = Failure(task);
             check(failure is HomeVpnSetupPendingException && failure.Message.Contains("Время ожидания") && Gone(root) && Gone(child)
                 && Pending() != null, "SSH deadline settles its tree and offers original-request recovery instead of repeated setup");
-            Reset(); task = Command("orphan", CancellationToken.None); Pump(() => task.IsCompleted); task.GetAwaiter().GetResult();
-            check(Gone(Pid("pid")) && Gone(Pid("child")), "normal SSH parent completion cannot leave an orphan client descendant");
+            // Exercise root exit at the owned job boundary. Start-Process -Wait
+            // intentionally waits for its client tree, so that wrapper is not
+            // an exiting-root fixture while a client descendant is still alive.
+            Reset(); var orphan = Task.Run(() => HomeVpnConsoleProcess.Run(Application.ExecutablePath, Args("orphan"), 5000,
+                CancellationToken.None, "ProGo — isolated console", "Isolated deadline", "Isolated settlement failure"));
+            Pump(() => orphan.IsCompleted);
+            check(orphan.GetAwaiter().GetResult() == 0 && Gone(Pid("pid")) && Gone(Pid("child")), "normal owned console root completion cannot leave an orphan client descendant");
             Reset(); failure = Failure(Command("fail", CancellationToken.None));
             check(failure is HomeVpnSetupPendingException && !failure.Message.Contains("PRIVATE-RESULT") && !failure.Message.Contains(folder),
                 "nonzero SSH result uses fixed recovery guidance without result text or private paths");
