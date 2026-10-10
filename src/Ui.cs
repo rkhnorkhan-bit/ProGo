@@ -76,6 +76,7 @@ namespace ProGo
             table.RowStyles[6].Height = 82;
             table.RowStyles[7].Height = 60;
             table.RowStyles[8].Height = 68;
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical));
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
             var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);

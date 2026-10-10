@@ -105,12 +105,14 @@ namespace ProGo
                     for (int i = 0; i < forms.Length; i++) {
                         var form = forms[i]; form.Show(); Application.DoEvents();
                         form.Size = form.MinimumSize; Application.DoEvents();
+                        Shot(form, "polish-standard-actions-" + i);
                         var actions = Descendants(form).OfType<Button>().Where(b => b.Dock == DockStyle.None).ToArray();
                         Check(actions.Length >= 2 && actions.All(b => b.MinimumSize.Height == UiTheme.ActionHeight && b.Padding == UiTheme.ActionPadding && b.Margin == UiTheme.ActionMargin),
                             "legacy dialog actions share standard height/padding/margins " + form.Text);
                         foreach (var button in actions) {
                             var rectangle = form.RectangleToClient(button.RectangleToScreen(button.ClientRectangle));
                             Check(form.ClientRectangle.Contains(rectangle), "standard action remains visible at dialog minimum " + form.Text + "/" + button.Text);
+                            Check(button.Parent.ClientRectangle.Contains(button.Bounds), "standard action stays within its footer viewport " + form.Text + "/" + button.Text);
                             var textArea = new Size(Math.Max(1, button.ClientSize.Width - button.Padding.Horizontal), Int32.MaxValue);
                             Check(TextRenderer.MeasureText(button.Text, button.Font, textArea, TextFormatFlags.WordBreak).Height <= button.ClientSize.Height - button.Padding.Vertical,
                                 "standard action caption fits without clipping " + form.Text + "/" + button.Text);
