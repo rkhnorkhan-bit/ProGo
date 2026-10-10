@@ -18,6 +18,12 @@ namespace ProGo
                 Thread.Sleep(Timeout.Infinite); return 0;
             }
             string mode = args[args.Length - 1];
+            if (mode == "fixture-agent-keys") { Console.WriteLine("256 SHA256:fixture PRIVATE_COMMENT_ONE (ED25519)\n256 SHA256:fixture PRIVATE_COMMENT_TWO (ED25519)"); return 0; }
+            if (mode == "fixture-agent-empty") { Console.Error.WriteLine("PRIVATE_EMPTY_ERROR"); return 1; }
+            if (mode == "fixture-agent-unavailable") { Console.Error.WriteLine("PRIVATE_CONNECTION_ERROR"); return 2; }
+            if (mode == "fixture-identities") {
+                Console.WriteLine("hostname fixture.example.org\nidentityfile C:/fixture/old-key\nidentityfile ~/.ssh/second-key\nidentityagent none\nidentitiesonly yes"); return 0;
+            }
             if (mode == "fixture-large") {
                 string block = new string('x', 8192);
                 for (int i = 0; i < 40; i++) { Console.Out.Write(block); Console.Error.Write(block); }
@@ -46,6 +52,17 @@ namespace ProGo
         { return SshProfileDiagnostics.Check(profile, token, Application.ExecutablePath, 1500); }
         private static void SshDiagnostics()
         {
+            string windows = Path.Combine(work, "synthetic-windows"), git = Path.Combine(work, "synthetic-git");
+            string nativeSsh = Path.Combine(windows, "System32", "OpenSSH", "ssh.exe"), gitSsh = Path.Combine(git, "ssh.exe");
+            Check(OpenSshClient.Select(windows, false, git, p => p == nativeSsh || p == gitSsh) == nativeSsh,
+                "Windows OpenSSH wins over another client's PATH entry so service-agent guidance matches the client");
+            string redirectedSsh = Path.Combine(windows, "Sysnative", "OpenSSH", "ssh.exe");
+            Check(OpenSshClient.Select(windows, true, git, p => p == redirectedSsh || p == gitSsh) == redirectedSsh,
+                "32-bit process resolves the native Windows OpenSSH directory on a 64-bit OS");
+            Check(OpenSshClient.Select(windows, false, "relative" + Path.PathSeparator + git, p => p == gitSsh) == gitSsh,
+                "missing optional Windows client keeps an explicit absolute PATH fallback and ignores relative entries");
+            Check(OpenSshClient.Select(windows, false, "", p => false) == "ssh.exe" && OpenSshClient.AgentExecutable("ssh.exe") == null,
+                "missing OpenSSH cannot claim an unrelated PATH agent utility belongs to its installation");
             using (var proxy = new ProxyService(() => new AppSettings(), delegate { }, "unused.exe", () => DateTime.UtcNow, false))
             using (var entered = new ManualResetEventSlim())
             using (var release = new ManualResetEventSlim()) {
@@ -62,6 +79,25 @@ namespace ProGo
             Environment.SetEnvironmentVariable("PROGO_DIAGNOSTIC_MARKER", marker);
             Process unrelated = null;
             try {
+                foreach (var mode in new[] { "fixture-agent-keys", "fixture-agent-empty", "fixture-agent-unavailable" }) {
+                    var keys = SshAgentDiagnostics.Keys(Application.ExecutablePath, CancellationToken.None, (exe, args, ms, token) => {
+                        Check(args == "-l" && ms == 3000, "agent inventory is a bounded read-only list operation: " + mode);
+                        return DiagnosticProcess.Run(exe, "-G " + mode, ms, token);
+                    });
+                    Check(!keys.Contains("PRIVATE_") && !keys.Contains("SHA256"), "agent inventory omits fingerprints, comments and raw error content: " + mode);
+                    Check(mode == "fixture-agent-keys" ? keys.Contains("ключей: 2") && keys.Contains("ещё не подтверждает") :
+                        mode == "fixture-agent-empty" ? keys.Contains("Загрузите") : keys.Contains("не получил ответ"), "agent inventory distinguishes reply, no usable keys and unavailable agent: " + mode);
+                }
+                var multi = FixtureCheck(new SshProfileSetting { Target = "fixture-identities" }, CancellationToken.None);
+                Check(multi.IdentityFiles.Count == 2 && multi.ToReport().Contains("second-key") && multi.ToReport().Contains("Использование агента отключено")
+                    && multi.ToReport().Contains("IdentitiesOnly: yes") && multi.ExecutablePath == Application.ExecutablePath,
+                    "diagnostics retain all resolved identity paths, chosen client and profile agent restrictions");
+                Check(SshAgentDiagnostics.Keys(null, CancellationToken.None).Contains("не найден"), "missing sibling ssh-add is not substituted with another installation");
+                using (var cancelled = new CancellationTokenSource()) {
+                    cancelled.Cancel(); bool rejected = false;
+                    try { SshAgentDiagnostics.Keys(Application.ExecutablePath, cancelled.Token); } catch (OperationCanceledException) { rejected = true; }
+                    Check(rejected, "cancelled agent inventory launches no process");
+                }
                 using (var cts = new CancellationTokenSource()) {
                     cts.Cancel(); bool cancelled = false;
                     try { DiagnosticProcess.Run(Application.ExecutablePath, "-G fixture-tree", 1500, cts.Token); } catch (OperationCanceledException) { cancelled = true; }

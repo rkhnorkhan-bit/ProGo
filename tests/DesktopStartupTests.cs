@@ -100,7 +100,20 @@ namespace ProGo
                     menu[AppCommand.StartCli].PerformClick(); PumpUntil(() => context.PendingRouteCount == 0);
                     Check(bridge.IsRunning && menu[AppCommand.StartCli].Enabled && menu[AppCommand.Connect].Enabled &&
                         ((Button)Field(main, "cliToggle")).Enabled, "successful retry restores command availability on tray and dashboard");
-                    Check(context.RequestShutdown() && menu.Values.All(i => !i.Enabled), "prepared shutdown disables catalogued tray actions");
+                    int uiThread = System.Threading.Thread.CurrentThread.ManagedThreadId, lifecycleThread = uiThread;
+                    var lifecycle = context.GetType().GetEvent("CommandStateChanged", PrivateInstance);
+                    Action observeLifecycle = () => { lifecycleThread = System.Threading.Thread.CurrentThread.ManagedThreadId; };
+                    lifecycle.GetAddMethod(true).Invoke(context, new object[] { observeLifecycle });
+                    var oldContext = System.Threading.SynchronizationContext.Current;
+                    System.Threading.Tasks.Task<bool> shutdown;
+                    try {
+                        System.Threading.SynchronizationContext.SetSynchronizationContext(null);
+                        shutdown = context.RequestShutdownAsync();
+                    } finally { System.Threading.SynchronizationContext.SetSynchronizationContext(oldContext); }
+                    PumpUntil(() => shutdown.IsCompleted);
+                    Check(lifecycleThread == uiThread, "shutdown completion returns to the persistent UI dispatcher after a modal context is removed");
+                    lifecycle.GetRemoveMethod(true).Invoke(context, new object[] { observeLifecycle });
+                    Check(shutdown.Result && menu.Values.All(i => !i.Enabled), "prepared shutdown disables catalogued tray actions");
                     context.CancelShutdown(); PumpUntil(() => menu[AppCommand.StartCli].Enabled);
                     Check(((Button)Field(main, "cliToggle")).Enabled, "cancelled shutdown restores dashboard and tray command availability");
                     main.Close();
@@ -112,8 +125,63 @@ namespace ProGo
                 foreach (var item in environment) Environment.SetEnvironmentVariable(item.Key, item.Value, EnvironmentVariableTarget.User);
             }
         }
+        private static void AsyncStopUiHeartbeat(SettingsService settings)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
+            var before = settings.Current.Clone();
+            var reserve = Occupy(0); int port = Number(reserve); reserve.Stop();
+            try {
+                var prefs = before.Clone(); prefs.SshProfile = "ready"; prefs.SocksHost = "127.0.0.1"; prefs.SocksPort = port;
+                prefs.AutoRestartSocks = false; prefs.AutoSwitchSshProfile = false; prefs.AutoCliProxy = false; prefs.AutoSystemProxy = false;
+                prefs.TestEndpoint = "http://127.0.0.1:1/"; settings.Save(prefs);
+                string fixture = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "SocksRecoveryTests.exe");
+                using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), fixture, () => DateTime.UtcNow, false))
+                using (var bridge = new CliProxyBridgeService(settings))
+                using (var relay = new Ikev2RelayService()) using (var home = new HomeVpnService(relay))
+                using (var clipboard = new ClipboardService(settings))
+                using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false)) {
+                    var start = proxy.StartTunnelAsync(System.Threading.CancellationToken.None); PumpUntil(() => start.IsCompleted);
+                    Check(start.Result, "UI stop regression has a real owned loopback SSH process"); int pid = proxy.CurrentPid.Value;
+                    context.RequestShowStatus(); var gate = Field(proxy, "gate");
+                    using (var entered = new System.Threading.ManualResetEventSlim()) using (var release = new System.Threading.ManualResetEventSlim())
+                    using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) {
+                        var held = System.Threading.Tasks.Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(5000); } });
+                        PumpUntil(() => entered.IsSet); int ticks = 0; timer.Tick += delegate { ticks++; }; timer.Start();
+                        try {
+                            var watch = Stopwatch.StartNew(); Call(context, "Execute", "restart");
+                            Check(watch.ElapsedMilliseconds < 400 && context.PendingRouteCount == 1 && proxy.IsStopping, "dashboard reconnect queues owned cleanup without waiting on background ownership");
+                            PumpUntil(() => ticks >= 3);
+                            Check(context.PendingRouteCount == 1 && proxy.IsStopping, "native UI timer continues while reconnect cleanup is blocked");
+                        } finally { release.Set(); PumpUntil(() => held.IsCompleted); }
+                        PumpUntil(() => context.PendingRouteCount == 0);
+                        Check(proxy.CurrentPid.HasValue && proxy.CurrentPid.Value != pid, "UI reconnect starts one fresh owned child after old cleanup");
+                        entered.Reset(); release.Reset();
+                        var heldAgain = System.Threading.Tasks.Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(5000); } });
+                        PumpUntil(() => entered.IsSet);
+                        int ownerThread = System.Threading.Thread.CurrentThread.ManagedThreadId, completionThread = 0;
+                        var lifecycle = context.GetType().GetEvent("CommandStateChanged", PrivateInstance);
+                        Action observeLifecycle = () => { completionThread = System.Threading.Thread.CurrentThread.ManagedThreadId; };
+                        lifecycle.GetAddMethod(true).Invoke(context, new object[] { observeLifecycle });
+                        var oldContext = System.Threading.SynchronizationContext.Current;
+                        System.Threading.Tasks.Task<bool> shutdown;
+                        try {
+                            System.Threading.SynchronizationContext.SetSynchronizationContext(null);
+                            shutdown = context.RequestShutdownAsync();
+                        } finally { System.Threading.SynchronizationContext.SetSynchronizationContext(oldContext); }
+                        int beforeTicks = ticks;
+                        try { PumpUntil(() => ticks >= beforeTicks + 3); Check(!shutdown.IsCompleted && proxy.IsStopping, "shutdown awaits owned cleanup while native UI heartbeat remains active"); }
+                        finally { release.Set(); PumpUntil(() => heldAgain.IsCompleted); }
+                        PumpUntil(() => shutdown.IsCompleted);
+                        Check(shutdown.Result && !proxy.CurrentPid.HasValue && !proxy.IsStopping, "shutdown is prepared only after its actual owned SSH child exits");
+                        Check(completionThread == ownerThread, "shutdown UI state remains owned by the native UI thread without a captured synchronization context");
+                        lifecycle.GetRemoveMethod(true).Invoke(context, new object[] { observeLifecycle });
+                    }
+                }
+            } finally { settings.Save(before); }
+        }
         private static void AsyncCliStartup(SettingsService settings)
         {
+            AsyncStopUiHeartbeat(settings);
             var login = SshInteractiveLogin.CreateStartInfo("my-vps");
             var command = Encoding.Unicode.GetString(Convert.FromBase64String(login.Arguments.Split(' ').Last()));
             Check(login.UseShellExecute && login.WindowStyle == ProcessWindowStyle.Normal && login.Arguments.Contains("-NoExit") && command.Contains("StrictHostKeyChecking=ask") &&

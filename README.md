@@ -59,6 +59,12 @@ with the older ProGo IPv4 forwarding policy. [Setup and limits](https://github.c
 from the wizard and reinstall it; the server does not require reprovisioning.
 The home route remains experimental and must be verified with the actual phone/provider.
 
+Profile delivery currently uses QR, a copied temporary link, or an iPhone file.
+ProGo does not send email, collect payments, or enforce subscription expiry and
+traffic quotas. Router forwarding is configured manually. The
+future email, access-management and billing stages require separate product
+decisions before implementation.
+
 ## Help
 
 **Помощь** on the dashboard or **Помощь и журналы → Открыть помощь…** in the tray

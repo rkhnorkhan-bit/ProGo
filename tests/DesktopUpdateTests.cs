@@ -118,7 +118,7 @@ namespace ProGo
                     try {
                         ticks++; Call(context, "StartUpdate");
                         Check(created == ticks && latest.Visible, "repeated context update activates the same modal check: " + shutdown);
-                        if (shutdown) Check(context.RequestShutdown(), "application shutdown cancels the modal check after cleanup succeeds");
+                        if (shutdown) { var cleanup = context.RequestShutdownAsync(); PumpUntil(() => cleanup.IsCompleted); Check(cleanup.Result, "application shutdown cancels the modal check after cleanup succeeds"); }
                         else latest.CancelAndClose();
                     } catch (Exception ex) { callbackError = ex; latest.CancelAndClose(); }
                 };

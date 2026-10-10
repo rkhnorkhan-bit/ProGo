@@ -693,7 +693,7 @@ namespace ProGo
             try {
                 SshConnection.Validate(candidate);
                 if (candidate.IsDirect && !String.IsNullOrWhiteSpace(candidate.IdentityFile)) {
-                    if (!System.IO.File.Exists(candidate.IdentityFile)) throw new ArgumentException("Файл ключа не найден. Выберите существующий файл на этом компьютере.");
+                    if (!System.IO.File.Exists(SshConnection.KeyPath(candidate.IdentityFile))) throw new ArgumentException("Файл ключа не найден. Выберите существующий файл на этом компьютере.");
                     if (candidate.IdentityFile.EndsWith(".pub", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Это открытый ключ (.pub). Выберите закрытый ключ — обычно файл без расширения .pub.");
                 }
             } catch (ArgumentException ex) { Refuse(ex.Message); return; }

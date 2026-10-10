@@ -53,7 +53,9 @@ namespace ProGo
                 var script = Encoding.Unicode.GetString(Convert.FromBase64String(login.Arguments.Split(' ').Last()));
                 Check(script.Contains("'-p' '2222'") && script.Contains("'-l' 'ubuntu'") && script.Contains("'-i' '" + path.Replace("'", "''") + "'") && script.Contains("StrictHostKeyChecking=ask"), "first login uses the same fields and literal quoted paths without shell interpolation");
                 var loginCapture = Path.Combine(work, "first-login-argv.json");
-                var spy = "function ssh.exe { ConvertTo-Json -InputObject @($args) -Compress | Set-Content -LiteralPath $env:PROGO_TEST_LOGIN_ARGV }; " + script;
+                var spyScript = Encoding.Unicode.GetString(Convert.FromBase64String(SshInteractiveLogin.CreateStartInfo(profile, "ssh.exe").Arguments.Split(' ').Last()));
+                Check(script.StartsWith("& '" + OpenSshClient.Executable.Replace("'", "''") + "' "), "visible first login uses the same chosen OpenSSH installation as background startup");
+                var spy = "function ssh.exe { ConvertTo-Json -InputObject @($args) -Compress | Set-Content -LiteralPath $env:PROGO_TEST_LOGIN_ARGV }; " + spyScript;
                 var start = new ProcessStartInfo("powershell.exe", "-NoProfile -NonInteractive -EncodedCommand " + Convert.ToBase64String(Encoding.Unicode.GetBytes(spy))) {
                     UseShellExecute = false, CreateNoWindow = true
                 };
@@ -68,6 +70,7 @@ namespace ProGo
                 var result = SshProfileDiagnostics.Check(profile);
                 Check(result.SshAvailable && result.SshResolved && result.ResolvedHostName == profile.Server && result.ResolvedUser == profile.User && result.ResolvedPort == "2222", "real Windows ssh.exe -G resolves structured server/user/port without network access: " + result.Error);
                 Check(result.ResolvedIdentityFile == path.Replace('\\', '/') || result.ResolvedIdentityFile == path, "real ssh.exe receives the unchanged key path with spaces and apostrophe");
+                PortableSshEditorPaths(profile);
                 foreach (var invalid in new[] { "server-option", "user-option", "port-zero", "port-large", "alias-newline", "alias-parameters", "key-newline", "key-relative" }) {
                     var p = profile.Clone();
                     if (invalid == "server-option") p.Server = "-oProxyCommand=anything";
@@ -108,6 +111,57 @@ namespace ProGo
                     Check(!form.Profile.IsDirect && form.Profile.Target == "my-vps", "saving an old alias does not rewrite it into a direct profile"); form.Close();
                 }
             } finally { settings.Save(old); File.Delete(path); }
+        }
+        private static void PortableSshEditorPaths(SshProfileSetting original)
+        {
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var folder = "progo-ssh-editor-" + Guid.NewGuid().ToString("N");
+            var directory = Path.Combine(home, folder); Directory.CreateDirectory(directory);
+            var key = Path.Combine(directory, "fixture_key");
+            try {
+                File.WriteAllText(key, "fixture only"); File.WriteAllText(key + ".pub", "public fixture only");
+                foreach (var separator in new[] { "/", "\\" }) {
+                    var portable = "~" + separator + folder + separator + "fixture_key";
+                    var profile = original.Clone(); profile.IdentityFile = portable;
+                    using (var form = new SshProfileEditorForm(profile)) {
+                        form.Show(); Application.DoEvents();
+                        ((Button)form.Controls.Find("saveConnection", true)[0]).PerformClick();
+                        Check(form.DialogResult == DialogResult.OK && form.Profile.IdentityFile == portable &&
+                            form.Profile.Target == original.Target && File.Exists(SshConnection.KeyPath(form.Profile.IdentityFile)),
+                            "actual SSH editor saves portable key against current home without rewriting stored path: " + separator);
+                        form.Close();
+                    }
+                }
+                foreach (var invalid in new[] { "fixture_key-missing", "fixture_key.pub" }) {
+                    var profile = original.Clone(); profile.IdentityFile = "~/" + folder + "/fixture_key";
+                    using (var form = new SshProfileEditorForm(profile)) {
+                        form.Show(); Application.DoEvents();
+                        form.Controls.Find("sshKey", true)[0].Text = "~/" + folder + "/" + invalid;
+                        var refusal = SaveRefusedSshEditor(form);
+                        Check(form.DialogResult == DialogResult.None && form.Profile.IdentityFile == profile.IdentityFile &&
+                            refusal.Contains(invalid.EndsWith(".pub", StringComparison.Ordinal) ? "открытый ключ" : "Файл ключа не найден"),
+                            "actual SSH editor rejects portable missing/public key and retains original profile: " + invalid);
+                        form.Close();
+                    }
+                }
+            } finally { Directory.Delete(directory, true); }
+        }
+        private static string SaveRefusedSshEditor(SshProfileEditorForm form)
+        {
+            var contents = new StringBuilder(); bool seen = false;
+            using (var timer = new System.Windows.Forms.Timer { Interval = 100 }) {
+                timer.Tick += delegate {
+                    var dialog = FindWindow("#32770", form.Text); if (dialog == IntPtr.Zero) return;
+                    seen = true; timer.Stop();
+                    EnumChildWindows(dialog, delegate(IntPtr child, IntPtr data) {
+                        var text = new StringBuilder(2048); GetWindowText(child, text, text.Capacity); contents.AppendLine(text.ToString()); return true;
+                    }, IntPtr.Zero);
+                    PostMessage(dialog, 0x0010, IntPtr.Zero, IntPtr.Zero);
+                };
+                timer.Start(); ((Button)form.Controls.Find("saveConnection", true)[0]).PerformClick();
+            }
+            Check(seen, "SSH key refusal opens a visible native explanation");
+            return contents.ToString();
         }
     }
 }

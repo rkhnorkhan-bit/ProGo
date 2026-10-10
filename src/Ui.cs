@@ -85,16 +85,16 @@ namespace ProGo
             restart.Click += async delegate
             {
                 if (health != null) health.Invalidate();
-                restart.Enabled = false;
-                try {
-                    proxy.StopTunnel();
-                    if (!await proxy.StartTunnelAsync(System.Threading.CancellationToken.None) && !IsDisposed)
-                        MessageBox.Show(this, proxy.StartupError, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                } catch (OperationCanceledException) { }
-                finally { if (health != null) health.Invalidate(); if (!IsDisposed) restart.Enabled = true; }
-                if (IsDisposed) return;
-                RefreshState(false);
-                QueuePingMeasure();
+                restart.Enabled = false; bool ready = false, cancelled = false;
+                try { ready = await proxy.RestartTunnelAsync(System.Threading.CancellationToken.None).ConfigureAwait(false); }
+                catch (OperationCanceledException) { cancelled = true; }
+                if (closing || IsDisposed) return;
+                try { BeginInvoke(new Action(delegate {
+                    if (closing || IsDisposed) return;
+                    try { if (!ready && !cancelled) MessageBox.Show(this, proxy.StartupError, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+                    finally { if (health != null) health.Invalidate(); restart.Enabled = true; }
+                    RefreshState(false); QueuePingMeasure();
+                })); } catch (InvalidOperationException) { }
             };
             speedButton.Click += delegate { if (speedInFlight != 0) CancelMeasurement(speedCancellation); else StartSpeedTest(); };
             checkButton.Click += delegate

@@ -30,6 +30,7 @@ internal static class SocksRecoveryTests
             Test("manual and automatic hidden attempts are noninteractive", BatchMode);
             Test("asynchronous slow startup shares one process and waits for SOCKS", AsyncSlowStartup);
             Test("stop cancels startup and immediate retry starts one fresh attempt", AsyncCancellation);
+            Test("asynchronous stop returns while an owned process gate is busy and serializes retry", AsyncStopSerialization);
             Test("startup timeout stops its owned child and gives guidance", AsyncTimeout);
             Test("SSH refusal explains key authorization without a hidden prompt", AsyncRefusal);
             Test("permanent SSH refusal pauses recovery until explicit retry", PermanentRefusal);
@@ -265,6 +266,35 @@ internal static class SocksRecoveryTests
             var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
             Assert(retry.Wait(5000) && retry.Result && f.Proxy.CurrentPid.HasValue, "Immediate retry after cancellation failed or resurrected the former intent");
             Assert(task.IsCanceled, "Stopped asynchronous request did not cancel");
+        }
+    }
+    private static void AsyncStopSerialization()
+    {
+        foreach (bool cancelQueued in new[] { false, true }) using (var f = new Fixture()) {
+            f.Start(); int previousPid = f.Proxy.CurrentPid.Value;
+            var gate = typeof(ProxyService).GetField("gate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(f.Proxy);
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+                var held = System.Threading.Tasks.Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(5000); } });
+                Assert(entered.Wait(3000), "Fixture gate was not held");
+                System.Threading.Tasks.Task<bool> stop = null, retry = null;
+                try {
+                    var watch = Stopwatch.StartNew(); stop = f.Proxy.StopTunnelAsync();
+                    Assert(watch.ElapsedMilliseconds < 200 && !stop.IsCompleted && f.Proxy.IsStopping, "Async stop waited for a busy ownership gate");
+                    Assert(!(bool)typeof(ProxyService).GetField("wanted", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(f.Proxy), "Stop did not cancel recovery intent immediately");
+                    retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                    Assert(!retry.IsCompleted, "New startup bypassed unfinished cleanup");
+                    using (var child = Process.GetProcessById(previousPid)) Assert(!child.HasExited, "Blocked cleanup lost its owned process");
+                    if (cancelQueued) Assert(Object.ReferenceEquals(stop, f.Proxy.StopTunnelAsync()), "Repeated stop did not share ongoing cleanup");
+                } finally { release.Set(); Assert(held.Wait(3000), "Fixture gate failed to release"); }
+                Assert(stop.Wait(5000) && stop.Result, "Owned cleanup did not complete");
+                if (cancelQueued) {
+                    WaitFor(() => retry.IsCompleted);
+                    Assert(retry.IsCanceled && !f.Proxy.CurrentPid.HasValue, "A late stop resurrected its queued startup");
+                    Assert(f.Proxy.StartTunnelAsync(CancellationToken.None).Result, "Fresh explicit startup after cancelled queue failed");
+                } else Assert(retry.Wait(5000) && retry.Result && f.Proxy.CurrentPid.HasValue && f.Proxy.CurrentPid != previousPid, "Old cleanup stopped or reused the fresh SSH process");
+                try { using (var child = Process.GetProcessById(previousPid)) Assert(child.HasExited, "Old owned SSH process was retained after cleanup"); } catch (ArgumentException) { }
+                f.Tick(600); Assert(f.Proxy.CurrentPid.HasValue, "A delayed stop killed the new startup");
+            }
         }
     }
     private static void AsyncTimeout()

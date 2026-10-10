@@ -60,7 +60,7 @@ namespace ProGo
         {
             if (busy || closing) return;
             busy = true; retry.Enabled = false; cancel.Enabled = true; cancel.Text = "Отменить проверку";
-            report.Clear(); status.Text = "Проверяем настройки SSH без подключения к серверу. Лимит — 7 секунд; остановка процессов — до 2 секунд. Можно отменить.";
+            report.Clear(); status.Text = "Проверяем настройки SSH и ключи агента без подключения к серверу. Лимит SSH — 7 секунд, агента — 3 секунды; остановка процессов — до 2 секунд. Можно отменить.";
             var source = new CancellationTokenSource(); cancellation = source; var token = source.Token;
             try {
                 var result = await Task.Run(() => { try { return check(profile.Clone(), token); } finally { source.Dispose(); } });
@@ -70,7 +70,7 @@ namespace ProGo
                 status.Text = result.SshResolved ? "Настройки SSH прочитаны. Доступность сервера проверяется подключением." : "Настройки SSH не проверены. Причина указана выше.";
             }
             catch (OperationCanceledException) { if (!closing && !IsDisposed) status.Text = "Проверка отменена. Можно повторить."; }
-            catch (Exception ex) { if (!closing && !IsDisposed) { report.Text = SafeLog.Redact(ex.Message); status.Text = "Не удалось завершить проверку. Можно повторить."; } }
+            catch { if (!closing && !IsDisposed) { report.Text = "Проверка не завершена. Проверьте OpenSSH и права доступа к настройкам."; status.Text = "Не удалось завершить проверку. Можно повторить."; } }
             finally {
                 cancellation = null; busy = false;
                 if (!closing && !IsDisposed) { retry.Enabled = cancel.Enabled = true; cancel.Text = "Закрыть"; }

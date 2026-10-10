@@ -182,7 +182,10 @@ namespace ProGo
                 }
                 Console.WriteLine("Desktop tests PASS: " + passed); return 0;
             }
-            catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
+            // PowerShell 5.1 Stop treats the first stderr line as a terminating error
+            // and can discard the remaining stack. Preserve the fixture diagnosis;
+            // the nonzero exit code remains the test failure signal.
+            catch (Exception ex) { Console.WriteLine("FAIL: " + ex); return 1; }
         }
         private static IEnumerable<Control> Descendants(Control c)
         {
