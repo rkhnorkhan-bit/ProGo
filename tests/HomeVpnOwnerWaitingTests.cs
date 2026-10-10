@@ -37,14 +37,14 @@ namespace ProGo
             bool copy = args.Length == 2 && args[0] == "owner-wait-copy";
             string path = child || copy ? args[1] : Environment.GetEnvironmentVariable(Variable);
             if (!child && !copy && (args.Length == 0 || args[0] != "-o" || String.IsNullOrEmpty(path))) return false;
-            if (child) { File.WriteAllText(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true; }
+            if (child) { HomeVpnFixtureFiles.Publish(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true; }
             string command = copy ? "" : args.Last();
             string kind = copy ? "copy" : new[] { "revoke", "repair", "share", "invite" }.FirstOrDefault(action => command.Contains("home_vpn_setup.py " + action + " "));
             if (kind == null || (!copy && (!args.Contains("-T") || !args.Contains("root@vpn.example.org") || !args.Contains("22")
                 || !command.Contains("trap 'rm -rf -- /tmp/") || !command.Contains(" --output /tmp/")))) throw new Exception("Unexpected production owner SSH dispatch");
             File.AppendAllText(Path.Combine(path, "calls"), kind + "\n");
             File.AppendAllText(Path.Combine(path, "argv"), Json.Serialize(args) + "\n");
-            File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            HomeVpnFixtureFiles.Publish(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
             string token = File.ReadAllText(Path.Combine(path, "response"));
             var access = HomeVpnAccess.Parse(token);
             if (!copy && (command.Contains(token) || command.Contains(access.Password) || command.Contains(access.PrivateKey)

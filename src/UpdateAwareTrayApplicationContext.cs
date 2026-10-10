@@ -50,6 +50,10 @@ namespace ProGo
         private Task<BackupResult> backupWorker;
         private Task backupCompletion = Task.FromResult(false);
         private BackupCreationForm backupForm;
+        private readonly Func<bool, HomeVpnPortableForm> createPortableForm;
+        private HomeVpnPortableForm portableForm;
+        internal Task PortableWork { get; private set; }
+        internal bool IsPortableRunning { get { return PortableWork != null && !PortableWork.IsCompleted; } }
         private readonly TaskCompletionSource<bool> backupOwnerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Action<CancellationToken> beforeBaselineProbe;
         private bool startupBackupScheduled, backupQueued;
@@ -67,7 +71,7 @@ namespace ProGo
         internal string BackupOperationKind { get { return backupOperationKind; } }
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000, Action<CancellationToken> beforeBaselineProbe = null, Action cliRestore = null, Action<ProxyFeature, AppSettings> integrationApply = null, int settingsShutdownTimeoutMilliseconds = 3000)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000, Action<CancellationToken> beforeBaselineProbe = null, Action cliRestore = null, Action<ProxyFeature, AppSettings> integrationApply = null, int settingsShutdownTimeoutMilliseconds = 3000, Func<bool, HomeVpnPortableForm> portableFormFactory = null)
         {
             settings = settingsService;
             if (settingsShutdownTimeoutMilliseconds < 1 || settingsShutdownTimeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("settingsShutdownTimeoutMilliseconds");
@@ -76,6 +80,8 @@ namespace ProGo
             this.beforeBaselineProbe = beforeBaselineProbe;
             if (backupShutdownTimeoutMilliseconds < 1 || backupShutdownTimeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("backupShutdownTimeoutMilliseconds");
             this.backupShutdownTimeoutMilliseconds = backupShutdownTimeoutMilliseconds;
+            createPortableForm = portableFormFactory ?? (exporting => new HomeVpnPortableForm(exporting, HomeVpnPrivateFiles.Root));
+            PortableWork = Task.FromResult(false);
             createUpdateForm = updateFormFactory ?? (() => new UpdateCheckForm());
             restoreWindows = windowsRestore ?? (() => SystemProxyService.RestoreOwned());
             restoreCli = cliRestore ?? (() => CliProxyEnvironmentService.ClearUserEnvironmentIfOwned());
@@ -165,7 +171,9 @@ namespace ProGo
             Item(backups.DropDownItems, AppCommand.CreateBackup);
             Item(backups.DropDownItems, AppCommand.RestoreBackup);
             Item(backups.DropDownItems, AppCommand.OpenBackups);
-            Item(backups.DropDownItems, AppCommand.CleanupBackups); menu.Items.Add(backups);
+            Item(backups.DropDownItems, AppCommand.CleanupBackups);
+            backups.DropDownItems.Add(new ToolStripSeparator());
+            Item(backups.DropDownItems, AppCommand.ExportHomeVpn); Item(backups.DropDownItems, AppCommand.ImportHomeVpn); menu.Items.Add(backups);
             menu.Items.Add(BuildLogsMenu());
             Item(menu.Items, AppCommand.Update);
             menu.Items.Add(new ToolStripSeparator());
@@ -399,6 +407,8 @@ namespace ProGo
                     case AppCommand.RestoreBackup: StartRestore(); break;
                     case AppCommand.OpenBackups: OpenBackups(); break;
                     case AppCommand.CleanupBackups: CleanupBackups(); break;
+                    case AppCommand.ExportHomeVpn: ShowPortableHomeVpn(true); break;
+                    case AppCommand.ImportHomeVpn: ShowPortableHomeVpn(false); break;
                     case AppCommand.ExportDiagnostics: ShowDiagnosticPreview(); break;
                     case AppCommand.OpenAppLog: OpenLogFile(AppPaths.LogPath, "журнал приложения"); break;
                     case AppCommand.OpenUpdateLog: OpenLogFile(Path.Combine(AppPaths.Root, "update.log"), "журнал обновления"); break;
@@ -524,7 +534,7 @@ namespace ProGo
             }
         }
         private AppCommandState GetCommandState()
-        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing, IsManualBackupRunning, IntegrationPending); }
+        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing, IsManualBackupRunning || IsPortableRunning, IntegrationPending); }
         private void RefreshPendingRoutes()
         {
             var state = GetCommandState();
@@ -785,6 +795,10 @@ namespace ProGo
             Exception failure = null;
             try {
                 CancelBackup();
+                CancelPortable(); var portable = PortableWork;
+                if (portable != null && !portable.IsCompleted && await Task.WhenAny(portable, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) != portable)
+                    throw new InvalidOperationException("Перенос VPN ещё не остановлен: накопитель не завершил текущую операцию. ProGo остаётся запущенным. Дождитесь завершения переноса и повторите выход или обслуживание.");
+                if (portable != null) try { await portable.ConfigureAwait(false); } catch (Exception) { }
                 var backup = backupWorker;
                 if (backup != null)
                 {
@@ -981,6 +995,21 @@ namespace ProGo
         }
 
         private void CreateBackup() { CreateManualBackupAsync(); }
+        private void CancelPortable()
+        { var form = portableForm; if (form != null && !form.IsDisposed) form.CancelCurrentOperation(); }
+
+        private void ShowPortableHomeVpn(bool exporting)
+        {
+            if (closing || shutdownPrepared || shutdownPreparing || IsBackupRunning) return;
+            if (portableForm != null && !portableForm.IsDisposed) { portableForm.Activate(); return; }
+            if (IsPortableRunning) return; // A forced form disposal still owns its worker.
+            var form = createPortableForm(exporting); portableForm = form;
+            form.CanStart = () => !closing && !shutdownPrepared && !shutdownPreparing && !IsBackupRunning && !IsPortableRunning;
+            form.WorkStarted += delegate { PortableWork = form.Work; if (!closing) RefreshPendingRoutes(); };
+            form.ResultApplied += delegate { if (!closing) RefreshPendingRoutes(); };
+            form.FormClosed += delegate { if (ReferenceEquals(portableForm, form)) portableForm = null; if (!closing) RefreshPendingRoutes(); };
+            form.Show(mainWindow);
+        }
 
         // Program queues this only after instance.Attach. No disk work starts until
         // the owner dispatcher receives its first message from Application.Run.
@@ -988,6 +1017,7 @@ namespace ProGo
         {
             if (startupBackupScheduled) return startupBackupCompletion;
             if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
+            if (IsPortableRunning) return Task.FromResult(false);
             if (activationDispatcher.InvokeRequired) throw new InvalidOperationException("Стартовая копия запускается владельцем интерфейса.");
             if (IsBackupRunning) return backupCompletion;
             if (backupForm != null && !backupForm.IsDisposed) backupForm.Close();
@@ -1022,6 +1052,7 @@ namespace ProGo
         internal Task CreateManualBackupAsync()
         {
             if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
+            if (IsPortableRunning) return Task.FromResult(false);
             if (IsBackupRunning) { ShowBackupProgress(); return backupCompletion; }
             return BeginBackup(false, new CancellationTokenSource(), null);
         }
@@ -1197,6 +1228,7 @@ namespace ProGo
                     uiCompletions.Clear();
                 }
                 CancelBackup(); backupOwnerClosed.TrySetResult(true);
+                CancelPortable(); if (portableForm != null && !portableForm.IsDisposed) portableForm.Dispose();
                 if (backupWorker == null) {
                     if (startupBackupCompletionSource != null) startupBackupCompletionSource.TrySetResult(false);
                     if (backupCancellation != null) { backupCancellation.Dispose(); backupCancellation = null; }

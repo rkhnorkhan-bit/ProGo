@@ -55,7 +55,7 @@ namespace ProGo
                 var loginCapture = Path.Combine(work, "first-login-argv.json");
                 var spyScript = Encoding.Unicode.GetString(Convert.FromBase64String(SshInteractiveLogin.CreateStartInfo(profile, "ssh.exe").Arguments.Split(' ').Last()));
                 Check(script.StartsWith("& '" + OpenSshClient.Executable.Replace("'", "''") + "' "), "visible first login uses the same chosen OpenSSH installation as background startup");
-                var spy = "function ssh.exe { ConvertTo-Json -InputObject @($args) -Compress | Set-Content -LiteralPath $env:PROGO_TEST_LOGIN_ARGV }; " + spyScript;
+                var spy = "function ssh.exe { ConvertTo-Json -InputObject @($args) -Compress | Set-Content -Encoding UTF8 -LiteralPath $env:PROGO_TEST_LOGIN_ARGV }; " + spyScript;
                 var start = new ProcessStartInfo("powershell.exe", "-NoProfile -NonInteractive -EncodedCommand " + Convert.ToBase64String(Encoding.Unicode.GetBytes(spy))) {
                     UseShellExecute = false, CreateNoWindow = true
                 };

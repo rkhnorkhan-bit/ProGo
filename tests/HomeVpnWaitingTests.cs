@@ -106,6 +106,20 @@ namespace ProGo
                 check(Int32.Parse(File.ReadAllText(path)) == Process.GetCurrentProcess().Id
                     && Directory.GetFiles(marker, "publication-probe.*.tmp").Length == 0,
                     "fixture PID readiness publishes complete readable data only after its writer closes");
+                staged.Reset(); release.Reset();
+                int next = Process.GetCurrentProcess().Id + 1;
+                writer = Task.Run(delegate {
+                    HomeVpnFixtureFiles.Publish(path, next.ToString(), delegate { staged.Set(); release.Wait(); });
+                });
+                bool oldComplete = false;
+                try {
+                    Pump(() => staged.IsSet || writer.IsCompleted);
+                    oldComplete = staged.IsSet && !writer.IsCompleted && Int32.Parse(File.ReadAllText(path)) == Process.GetCurrentProcess().Id;
+                } finally { release.Set(); Pump(() => writer.IsCompleted); }
+                writer.GetAwaiter().GetResult();
+                check(oldComplete && Int32.Parse(File.ReadAllText(path)) == next
+                    && Directory.GetFiles(marker, "publication-probe.*.tmp").Length == 0,
+                    "fixture recovery phases atomically replace a previous complete PID without exposing a staged writer");
             }
             File.Delete(path);
         }

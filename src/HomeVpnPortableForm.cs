@@ -31,7 +31,9 @@ namespace ProGo
         private bool closeAfterWork;
         internal Task Work { get; private set; }
         internal bool IsBusy { get; private set; }
+        internal Func<bool> CanStart { get; set; }
         internal void CancelCurrentOperation() { if (IsBusy) RequestCancel(false); }
+        internal event Action WorkStarted;
         internal event Action ResultApplied;
 
         internal HomeVpnPortableForm(bool export, string privateRoot, Action imported = null,
@@ -91,6 +93,7 @@ namespace ProGo
         private void PrepareArchive()
         {
             if (IsBusy) return;
+            if (!MayStart()) return;
             byte[] bytes = null;
             try {
                 if (export && password.Text != repeat.Text) throw new HomeVpnPortableException("Парольные фразы не совпадают. Повторите ввод; файл не создан.");
@@ -119,6 +122,7 @@ namespace ProGo
         private void ImportPrepared()
         {
             if (IsBusy || prepared == null) return;
+            if (!MayStart()) return;
             var current = prepared; prepared = null; accept.Enabled = false;
             try {
                 Start(delegate(CancellationToken token) {
@@ -138,12 +142,20 @@ namespace ProGo
             var current = cancellation; if (current != null) try { current.Cancel(); } catch (ObjectDisposedException) { }
             close.Enabled = false; status.Text = "Отмена запрошена. Ждём завершения текущего вызова без блокировки интерфейса. Прежние файлы сохраняются.";
         }
+        private bool MayStart()
+        {
+            if (CanStart == null || CanStart()) return true;
+            status.Text = "Дождитесь завершения резервного копирования или обслуживания. Перенос VPN не запущен; прежние данные сохранены.";
+            return false;
+        }
         private void Start(Func<CancellationToken, object> operation, Action<object> apply)
         {
             IsBusy = true; prepare.Enabled = accept.Enabled = password.Enabled = repeat.Enabled = false; close.Text = "Отменить";
             userCancelled = false; cancellation = new CancellationTokenSource(); var source = cancellation; source.CancelAfter(timeoutMilliseconds);
             status.Text = "Защищённый перенос выполняется в фоне. Интерфейс остаётся доступным.";
             Work = Run(source, operation, apply);
+            try { if (WorkStarted != null) WorkStarted(); }
+            catch (Exception) { status.Text = "Не удалось обновить состояние окна. Фоновая операция ещё отслеживается; дождитесь завершения или запросите отмену."; }
         }
         private async Task Run(CancellationTokenSource source, Func<CancellationToken, object> operation, Action<object> apply)
         {

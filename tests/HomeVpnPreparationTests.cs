@@ -497,7 +497,20 @@ namespace ProGo
                     writer.Write(value); writer.Flush();
                     if (beforeClose != null) beforeClose();
                 }
-                File.Move(pending, path);
+                // Recovery can issue status/result subprocesses without resetting
+                // the marker between them. Replace the previous complete PID.
+                var watch = Stopwatch.StartNew();
+                while (true) {
+                    try {
+                        if (File.Exists(path)) File.Replace(pending, path, null);
+                        else File.Move(pending, path);
+                        break;
+                    } catch (IOException) {
+                        // A short-lived fixture reader may hold a Windows share lock.
+                        if (watch.ElapsedMilliseconds >= 1000) throw;
+                        Thread.Sleep(10);
+                    }
+                }
             } finally { if (File.Exists(pending)) File.Delete(pending); }
         }
     }
