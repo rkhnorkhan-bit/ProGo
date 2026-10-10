@@ -139,6 +139,14 @@ namespace ProGo
                     var report = (TextBox)Field(form, "report"); var retry = (Button)Field(form, "retry"); var cancel = (Button)Field(form, "cancel");
                     KeyboardWalk(form, new Control[] { report, retry, cancel }, "SSH completed report");
                     Check(form.AcceptButton == null && cancel.AccessibilityObject.Name == "Закрыть", "SSH results do not implicitly repeat a check on Enter");
+                    int instruction = report.Text.IndexOf("Если агент отключён:", StringComparison.Ordinal);
+                    Check(instruction >= 0 && report.WordWrap && report.ScrollBars == ScrollBars.Vertical, "SSH agent instructions use vertical reading rather than horizontal scrolling");
+                    report.Select(instruction, 0); report.ScrollToCaret();
+                    var startLine = report.GetPositionFromCharIndex(instruction);
+                    var endLine = report.GetPositionFromCharIndex(report.Text.IndexOf("Без прав администратора", instruction, StringComparison.Ordinal));
+                    Check(endLine.Y > startLine.Y, "native report actually wraps long agent instructions onto subsequent lines");
+                    form.Refresh(); Shot(form, "ssh-agent-guidance");
+                    report.Select(0, 0); report.ScrollToCaret();
                     form.Refresh(); Shot(form, "ssh-diagnostic-success");
                     typeof(Form).GetMethod("ProcessDialogKey", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
                         .Invoke(form, new object[] { Keys.Escape });

@@ -11,7 +11,7 @@ namespace ProGo
         private readonly SshProfileSetting profile;
         private readonly Func<SshProfileSetting, CancellationToken, SshProfileDiagnosticResult> check;
         private readonly Label status = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
-        private readonly TextBox report = new TextBox { Name = "SshDiagnosticReport", ReadOnly = true, Multiline = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Both, WordWrap = false };
+        private readonly TextBox report = new TextBox { Name = "SshDiagnosticReport", ReadOnly = true, Multiline = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Vertical, WordWrap = true };
         private readonly Button retry, cancel;
         private CancellationTokenSource cancellation;
         private bool busy, closing;
