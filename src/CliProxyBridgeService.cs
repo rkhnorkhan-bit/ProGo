@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Microsoft.Win32;
 
 namespace ProGo
 {
@@ -23,6 +24,8 @@ namespace ProGo
         private TcpListener listener;
         private Thread acceptThread;
         private volatile bool running;
+        private long consumerRevision;
+        internal long ConsumerRevision { get { return Interlocked.Read(ref consumerRevision); } }
         private readonly HashSet<TcpClient> clients = new HashSet<TcpClient>();
 
         public CliProxyBridgeService(SettingsService settingsService)
@@ -151,11 +154,12 @@ namespace ProGo
                 error = new SettingsSaveError(failedField, message);
                 return false;
             }
-            finally { if (candidate != null) candidate.Stop(); }
+            finally { if (candidate != null) candidate.Stop(); Interlocked.Increment(ref consumerRevision); }
         }
 
         public void Stop()
         {
+            Interlocked.Increment(ref consumerRevision);
             running = false;
             try { if (listener != null) listener.Stop(); } catch { }
             listener = null;
@@ -493,6 +497,7 @@ namespace ProGo
         internal static string BackupPath { get { return Path.Combine(AppPaths.Root, "proxy-environment-backup.json"); } }
         internal static readonly string[] Names = { "ALL_PROXY", "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY" };
         private const string OwnedPortKey = "ProGoAppliedPort";
+        private const string PendingTypedValuesKey = "ProGoPendingWindowsCorrections";
         private static string Expected(string name, int port) { return name == "NO_PROXY" ? "localhost,127.0.0.1,::1" : CliProxyBridgeService.UrlFor(port); }
         private static Dictionary<string, string> ReadBackup()
         {
@@ -561,19 +566,68 @@ namespace ProGo
 
         public static void ClearUserEnvironmentIfOwned()
         {
+            ClearUserEnvironmentIfOwned(SystemProxyService.WriteValue, BroadcastEnvironmentChange);
+        }
+        // Native regression seams deny a correction or reproduce an observed notification
+        // normalization while still executing the real user-environment cleanup.
+        internal static void ClearUserEnvironmentIfOwned(Action<RegistryKey, string, WindowsProxyValue> writer,
+            Action notification)
+        {
             var saved = ReadBackup();
             if (saved == null) return; // A completed cleanup must not reclaim a later matching external value.
             int port = OwnedPort(saved);
-            // Windows environment names are case-insensitive. Restore only values still owned by ProGo.
-            foreach (var name in Names)
-            {
-                string previous = null;
-                if (saved != null) saved.TryGetValue(name, out previous);
-                if (IsUserValue(name, Expected(name, port))) SetUser(name, previous);
+            var corrections = ReadTypedCorrections(saved);
+            if (corrections.Count != 0) {
+                try { SystemProxyService.RetryTypedValues(corrections, writer); }
+                finally { SaveTypedCorrections(saved, corrections); }
             }
+            bool correctionFailed = false;
+            SystemProxyService.PreserveTypedValues(delegate {
+                // The .NET setter also broadcasts; protect the complete loop, not just the final notification.
+                // Windows names are case-insensitive. Restore only values still owned by ProGo.
+                foreach (var name in Names) {
+                    string previous; saved.TryGetValue(name, out previous);
+                    if (IsUserValue(name, Expected(name, port))) SetUser(name, previous);
+                }
+                notification();
+            }, writer, delegate(WindowsProxyFieldBackup correction, Exception failure) {
+                correctionFailed = true;
+                corrections.RemoveAll(f => f.Name == correction.Name);
+                corrections.Add(correction);
+                SaveTypedCorrections(saved, corrections);
+                SafeLog.Info("CLI notification typed-value correction pending: " + correction.Name + ".");
+            });
+            if (correctionFailed) throw new IOException("Не удалось сохранить типы настроек Windows после выключения CLI. Копия сохранена; повторите выключение после проверки прав записи.");
+            // A failed notification or typed-value correction must retain the retry journal.
             if (File.Exists(BackupPath)) File.Delete(BackupPath);
-            BroadcastEnvironmentChange();
             SafeLog.Info("Previous proxy environment restored where still owned by ProGo.");
+        }
+
+        private static List<WindowsProxyFieldBackup> ReadTypedCorrections(Dictionary<string, string> saved)
+        {
+            string json;
+            if (!saved.TryGetValue(PendingTypedValuesKey, out json)) return new List<WindowsProxyFieldBackup>();
+            var corrections = new JavaScriptSerializer().Deserialize<List<WindowsProxyFieldBackup>>(json);
+            if (corrections == null || corrections.Count > SystemProxyService.FieldNames.Length)
+                throw new IOException("Некорректная копия исправлений типов настроек Windows.");
+            var names = new HashSet<string>();
+            foreach (var correction in corrections) {
+                if (correction == null || Array.IndexOf(SystemProxyService.FieldNames, correction.Name) < 0 ||
+                    !names.Add(correction.Name) || !SystemProxyService.IsTypedNormalization(correction.Name, correction.Original, correction.Applied))
+                    throw new IOException("Некорректная копия исправлений типов настроек Windows.");
+            }
+            return corrections;
+        }
+        private static void SaveTypedCorrections(Dictionary<string, string> saved, List<WindowsProxyFieldBackup> corrections)
+        {
+            var pending = corrections.FindAll(f => f.Pending);
+            if (pending.Count == 0) saved.Remove(PendingTypedValuesKey);
+            else saved[PendingTypedValuesKey] = new JavaScriptSerializer().Serialize(pending);
+            string staging = BackupPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                File.WriteAllText(staging, new JavaScriptSerializer().Serialize(saved));
+                if (File.Exists(BackupPath)) File.Replace(staging, BackupPath, null); else File.Move(staging, BackupPath);
+            } finally { if (File.Exists(staging)) File.Delete(staging); }
         }
 
         public static bool OpenPowerShellWithEnvironment(int port, out string message)

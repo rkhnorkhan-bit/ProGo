@@ -396,29 +396,72 @@ namespace ProGo
         private static void RefreshPreservingValues(SystemProxyBackup backup, WindowsProxyRestoreResult result,
             Action<RegistryKey, string, WindowsProxyValue> writer)
         {
+            if (backup == null || result == null) {
+                PreserveTypedValues(RefreshSystemProxy, writer, null); return;
+            }
+            PreserveTypedValues(RefreshSystemProxy, writer, delegate(WindowsProxyFieldBackup correction, Exception ex) {
+                var field = backup.OwnedFields.First(f => f.Name == correction.Name);
+                field.Original = correction.Original; field.Applied = correction.Applied; field.Pending = true;
+                var outcome = result.Fields.FirstOrDefault(f => f.Name == correction.Name);
+                if (outcome == null) { outcome = new WindowsProxyFieldResult { Name = correction.Name }; result.Fields.Add(outcome); }
+                outcome.State = WindowsProxyRestoreState.Failed; result.Completed = false;
+                SafeLog.Error("Windows proxy refresh correction failed: " + correction.Name, ex);
+            });
+        }
+
+        internal static void PreserveTypedValues(Action notification)
+        {
+            PreserveTypedValues(notification, WriteValue, null);
+        }
+        // Protect live typed values around our own notifications, never an old route snapshot.
+        // Environment.SetEnvironmentVariable itself broadcasts before the final CLI notification.
+        internal static void PreserveTypedValues(Action notification,
+            Action<RegistryKey, string, WindowsProxyValue> writer,
+            Action<WindowsProxyFieldBackup, Exception> failed)
+        {
             var before = ReadCurrent().Values;
-            RefreshSystemProxy();
+            try { notification(); }
+            finally { CorrectTypedValues(before, writer, failed); }
+        }
+        internal static bool IsTypedNormalization(string name, WindowsProxyValue expected, WindowsProxyValue observed)
+        {
+            if (expected == null || observed == null) return false;
+            bool changedKind = expected.Exists && expected.Kind == RegistryValueKind.ExpandString &&
+                observed.Exists && observed.Kind == RegistryValueKind.String && observed.Data == expected.Data;
+            bool removedAutoDetect = name == "AutoDetect" && expected.Exists &&
+                expected.Kind == RegistryValueKind.DWord && (expected.Data == "0" || expected.Data == "1") && !observed.Exists;
+            return changedKind || removedAutoDetect;
+        }
+        private static void CorrectTypedValues(Dictionary<string, WindowsProxyValue> before,
+            Action<RegistryKey, string, WindowsProxyValue> writer,
+            Action<WindowsProxyFieldBackup, Exception> failed)
+        {
             using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey)) {
                 foreach (var name in FieldNames) {
                     var expected = before[name]; var current = ReadValue(key, name);
                     // WinINet can normalize string kinds or remove AutoDetect during notification.
                     // Correct only these observed effects from live pre-notification values.
-                    bool changedKind = expected.Exists && expected.Kind == RegistryValueKind.ExpandString &&
-                        current.Exists && current.Kind == RegistryValueKind.String && current.Data == expected.Data;
-                    bool removedAutoDetect = name == "AutoDetect" && expected.Exists &&
-                        expected.Kind == RegistryValueKind.DWord && (expected.Data == "0" || expected.Data == "1") && !current.Exists;
-                    if (!changedKind && !removedAutoDetect) continue;
+                    if (!IsTypedNormalization(name, expected, current)) continue;
                     if (!ReadValue(key, name).Matches(current)) continue;
                     try { writer(key, name, expected); }
                     catch (Exception ex) {
-                        if (backup == null || result == null) throw;
-                        var field = backup.OwnedFields.First(f => f.Name == name);
-                        field.Original = expected; field.Applied = current; field.Pending = true;
-                        var outcome = result.Fields.FirstOrDefault(f => f.Name == name);
-                        if (outcome == null) { outcome = new WindowsProxyFieldResult { Name = name }; result.Fields.Add(outcome); }
-                        outcome.State = WindowsProxyRestoreState.Failed; result.Completed = false;
-                        SafeLog.Error("Windows proxy refresh correction failed: " + name, ex);
+                        if (failed == null) throw;
+                        failed(new WindowsProxyFieldBackup { Name = name, Original = expected, Applied = current, Pending = true }, ex);
                     }
+                }
+            }
+        }
+
+        internal static void RetryTypedValues(List<WindowsProxyFieldBackup> corrections,
+            Action<RegistryKey, string, WindowsProxyValue> writer)
+        {
+            using (var key = Registry.CurrentUser.CreateSubKey(InternetSettingsKey)) {
+                foreach (var correction in corrections.Where(f => f.Pending)) {
+                    var current = ReadValue(key, correction.Name);
+                    if (current.Matches(correction.Applied) && !current.Matches(correction.Original) &&
+                        ReadValue(key, correction.Name).Matches(current)) writer(key, correction.Name, correction.Original);
+                    // A later different value is external; a retry must leave it alone.
+                    correction.Pending = false;
                 }
             }
         }

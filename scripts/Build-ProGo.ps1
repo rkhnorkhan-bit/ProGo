@@ -53,6 +53,18 @@ if ($Sources.Count -eq 0) {
 
 $Version = (Get-Content -Raw $VersionFile).Trim()
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid version' }
+# VERSION identifies the product release; the reviewed commit identifies a candidate build.
+# Local uncommitted changes must not masquerade as the exact reviewed commit.
+$BuildRevision = 'local'
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    $revisionOutput = & git -C $Root rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and "$revisionOutput" -match '^[0-9a-f]{40}$') {
+        $BuildRevision = "$revisionOutput"
+        $dirtyOutput = & git -C $Root status --porcelain --untracked-files=no 2>$null
+        if ($LASTEXITCODE -ne 0 -or $dirtyOutput) { $BuildRevision += '.modified' }
+    }
+}
+$BuildIdentity = "$Version+$BuildRevision"
 $VersionSource = Join-Path $BuildDir 'VersionInfo.cs'
 @"
 using System.Reflection;
@@ -61,6 +73,7 @@ using System.Reflection;
 [assembly: AssemblyProduct("ProGo")]
 [assembly: AssemblyVersion("$Version.0")]
 [assembly: AssemblyFileVersion("$Version.0")]
+[assembly: AssemblyInformationalVersion("$BuildIdentity")]
 "@ | Set-Content -LiteralPath $VersionSource -Encoding UTF8
 $Sources += $VersionSource
 
@@ -90,6 +103,10 @@ if ($LASTEXITCODE -ne 0) {
 if ([Reflection.AssemblyName]::GetAssemblyName($Out).Version.ToString(3) -ne $Version) {
     throw 'Compiled application version does not match VERSION'
 }
+$BuiltAssembly = [Reflection.Assembly]::Load([IO.File]::ReadAllBytes($Out))
+$BuiltIdentity = @($BuiltAssembly.GetCustomAttributes([Reflection.AssemblyInformationalVersionAttribute], $false))[0].InformationalVersion
+if ($BuiltIdentity -ne $BuildIdentity) { throw 'Compiled application build identity does not match source revision' }
+Write-Host "Build identity: $BuiltIdentity"
 
 $Readme = Join-Path $Root "README.md"
 $RussianReadme = Join-Path $Root "README.ru.md"

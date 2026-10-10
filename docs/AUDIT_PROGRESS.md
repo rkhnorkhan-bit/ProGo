@@ -1738,6 +1738,65 @@ agent/auth/proxy acceptance, other synchronous environment/settings paths and
 repeated Codex ownership-file reads. This stage does not publish/install a release
 or change a service, protected key or VPS configuration.
 
+## Stage F31d — nonblocking observation of application-proxy consumers
+
+The one-second application timer read the optional Codex launcher through
+`AppProxyConsumers.Summary`. The same tick could refresh the dashboard, and its
+own two-second timer read the summary again. With the launcher present and the
+main window open, that is roughly 2.5 logical launcher reads per second (9,000
+per hour), plus action/health refreshes. This is a call-path estimate, not a
+measurement of physical HDD I/O, CPU usage or Rescue/VHDX performance.
+
+The summary now uses a completed immutable snapshot and tracked process handles.
+One background observer reads registry/environment endpoints, ownership journals
+and the Codex launcher. Periodic external-change observation waits ten seconds
+between completed reads. Explicit integration changes invalidate immediately.
+Only one observer may be in flight, including after invalidation or slow I/O.
+Unknown/error/pending observations retain the listener and show a Russian status;
+no raw exceptions or secret contents enter the summary or logs.
+
+Results are consumed by the application timer on its UI thread. A confirmed empty
+result may release the service only for its current generation, bridge revision
+and port, after rechecking pending cleanup and live scoped windows. Bridge
+configuration/rollback and same-port replacement change the revision. Failed
+cleanup still retains its explicit consumer. Disposal does not wait for a file
+read; workers own no UI callbacks and cannot stop a listener after disposal.
+Even a matching result older than five seconds is treated as unknown and retried
+after ten seconds. A blocked read cannot release the listener using the empty
+consumer state captured before a later external proxy change.
+Native filesystem I/O is not forcibly cancellable; a blocked read keeps one
+observer in flight and conservatively retains the service rather than spawning
+new threads. Fresh ownership checks remain in destructive Codex actions; cached
+status never permits replacing or deleting a later external launcher.
+Codex observation rejects files larger than 64 KiB before reading, checks length
+again after its bounded read, and rejects reparse points in the path. Oversized,
+linked, inaccessible or changing files remain unknown; destructive ownership
+checks still read fresh state through their existing helpers.
+
+Regression coverage in the existing desktop harness includes 1,000 summary/timer
+calls while a probe is blocked, native UI heartbeat and injected read counts,
+ten-second polling, generation/actual port/same-port session invalidation,
+nonwaiting disposal, an actual exclusively locked launcher, bounded error retry,
+lock recovery and preservation/detection of a controlled external replacement.
+Existing last-consumer assertions await observation completion while retaining
+actual listener-rebind checks. Fixture-only external edits invalidate explicitly;
+the new fake-clock case separately proves periodic external-change detection.
+
+Validation: commit `08a337962c0d904ff381abdc60fd60b59f7d5d63`,
+[full Windows/server CI 38075927979](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38075927979)
+PASS, including desktop 2910, SOCKS 22, instance 26, maintenance 88, shutdown 47
+and relay 24. Public scan 164 source / 42 release files PASS; local diff PASS.
+F31 remains OPEN for real SSH-agent/VPS and HDD/VHDX measurements and the
+remaining synchronous paths. No merge, release, installation or service change.
+
+Candidate builds also embed `VERSION+commit` as AssemblyInformationalVersion and
+show that identity in the local SSH report. Product/assembly versions retain
+their existing values. A tracked dirty checkout receives `.modified`; a checkout
+without Git receives `local`. Build validation reads the compiled metadata and
+compares it with the requested identity, without locking the executable. This
+identifies the candidate actually running; the owner's previous installation
+still requires a report from that installation.
+
 ## F29 — native icon sizes and consistent task presentation (accepted)
 
 The tray now creates the brand icon at the current Windows small-icon size instead
@@ -1784,3 +1843,51 @@ No clipping or overlapping task actions was observed. Local diff checks PASS.
 **F29 CLOSED; overall 22/31.** Real monitor DPI transitions and Narrator/live
 system contrast acceptance remain F16 and F17. The subsequent watchdog-only
 test-harness change has a separate CI run; it changes no application behavior.
+
+## Stage F31e — retain explicit connection intent while saving settings
+
+An opportunistic CurrentPid getter returns no PID while a background worker owns
+the process gate. Settings previously treated that transient absence as a stopped
+connection and could fail to restart after changing the VPS or SOCKS endpoint.
+An independent nonblocking connection-request flag is now captured before the
+settings transaction. Accepted startup sets it synchronously; explicit Stop,
+Dispose and a later cancellation clear it. Pre-cancelled/stale requests do not
+create it. Saving settings after a user stop does not revive the connection.
+
+Native regression holds the gate around an actual running SSH/SOCKS child, saves
+through the real dialog, then checks replacement PID, SOCKS greeting at the new
+port and release of the old port. It repeats the save after explicit Stop.
+These native regressions passed in cumulative workflow 38075927979 above.
+
+## Earlier verification boundary (2026-10-10, superseded)
+
+F31c commit 5604607f06b16ffb4fffd2a3389f5a230dda725a: desktop 2743 PASS,
+instance and maintenance tests PASS, server job PASS. Full workflow 38073862920
+FAIL in uninstall acceptance: an external AutoDetect DWORD0 became absent.
+Native SSH report/agent-guidance screenshots reviewed; archive SHA256
+eef948afbb0b6c5f27fd0b5faf45cb2879bccd2632077637c005f6f63f97ddfa.
+This earlier failure was investigated by F31f; the cumulative candidate above
+passes the full suite, including real typed-value restoration and shutdown.
+
+Initial F29 workflow 38074165642 failed the new minimum-size footer assertion.
+An explicit route-dialog footer row fixes the source layout, and the retry is
+38074596898. Other captured action dialogs and the native icon matrix have been
+reviewed. F29 acceptance above records the subsequent fixes, full PASS and
+all nine final native images; these early failed runs are retained as history.
+
+## Stage F31f — retain live typed Windows values during CLI cleanup
+
+The full user-environment restore, including the .NET setters' notifications,
+now preserves the immediately preceding live Windows typed values across known
+notification normalization. A later external proxy route is not replaced by an
+old ownership backup. Denied corrections retain exact expected/observed values
+atomically in the CLI retry journal; a retry applies only while that observed
+value still matches. Another later external value is preserved. The journal and
+listener remain until cleanup succeeds.
+
+Native regressions execute real environment setters/notifications and simulate
+known normalization plus denied writes. They check live external flags, typed
+PAC/bypass values, failed-journal content, actual listener retention, retry and
+an intervening external edit. Full shutdown/uninstall acceptance passed in
+cumulative workflow 38075927979 (47 checks). Real owner-machine and external
+software acceptance remains separate; F31 is still OPEN.

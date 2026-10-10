@@ -21,6 +21,10 @@ namespace ProGo
         private Task<bool> startupTask, stopTask;
         private long operationEpoch;
         private volatile bool stopping;
+        // User intent is independent of the opportunistic PID/readiness snapshots.
+        // Settings can read it while a worker owns the process gate.
+        private volatile bool connectionRequested;
+        internal bool ConnectionRequested { get { return connectionRequested; } }
         internal bool IsStopping { get { return stopping; } }
         private CancellationTokenSource startupCancellation;
         private volatile bool connecting;
@@ -121,6 +125,7 @@ namespace ProGo
 
         public void StartTunnel(bool showErrors)
         {
+            lock (startupGate) { if (disposed) return; connectionRequested = true; }
             StartTunnelCore(showErrors, CancellationToken.None);
         }
 
@@ -131,9 +136,10 @@ namespace ProGo
         private Task<bool> StartTunnelAsync(CancellationToken token, long epoch)
         {
             lock (startupGate) {
-                if (epoch != operationEpoch) return CancelledStartup();
-                if (stopTask != null && !stopTask.IsCompleted) return ResumeAfterStop(stopTask, token, epoch);
+                if (epoch != operationEpoch || token.IsCancellationRequested) return CancelledStartup();
                 if (disposed) return Task.FromResult(false);
+                connectionRequested = true;
+                if (stopTask != null && !stopTask.IsCompleted) return ResumeAfterStop(stopTask, token, epoch);
                 if (startupTask != null && !startupTask.IsCompleted) {
                     if (startupCancellation != null && startupCancellation.IsCancellationRequested) return ResumeAfterCancellation(startupTask, token, epoch);
                     return startupTask;
@@ -271,7 +277,7 @@ namespace ProGo
         internal Task<bool> StopTunnelAsync()
         {
             lock (startupGate) {
-                wanted = false; operationEpoch++;
+                connectionRequested = false; wanted = false; operationEpoch++;
                 if (startupCancellation != null) startupCancellation.Cancel();
                 if (stopTask != null && !stopTask.IsCompleted) return stopTask;
                 var previous = startupTask; stopping = true;
@@ -518,8 +524,7 @@ namespace ProGo
 
         public void Dispose()
         {
-            disposed = true; wanted = false;
-            CancelStartup();
+            lock (startupGate) { disposed = true; connectionRequested = false; wanted = false; CancelStartup(); }
             if (recoveryTimer != null) recoveryTimer.Dispose();
             lock (gate) { retryAt = null; StopProcessOnly(); }
         }
