@@ -35,7 +35,7 @@ namespace ProGo
             bool child = args.Length == 2 && args[0] == "share-wait-child";
             string path = child ? args[1] : Environment.GetEnvironmentVariable(Variable);
             if (!child && (args.Length == 0 || args[0] != "-o" || String.IsNullOrEmpty(path))) return false;
-            if (child) { File.WriteAllText(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true; }
+            if (child) { HomeVpnFixtureFiles.Publish(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true; }
             string command = args.Last();
             string kind = command.Contains("home_vpn_setup.py share ") ? "share" : command.Contains("home_vpn_setup.py operation-status ") ? "status"
                 : command.Contains("home_vpn_setup.py operation-result ") ? "result" : null;
@@ -55,7 +55,7 @@ namespace ProGo
                 File.WriteAllText(Path.Combine(path, "receipt"), Json.Serialize(request));
             } else if (command.Contains("home_vpn_setup.py share ") || command.Contains(" --domain ")) throw new Exception("Recovery submitted a new domain installation");
             File.AppendAllText(Path.Combine(path, "calls"), kind + "\n"); File.AppendAllText(Path.Combine(path, "argv"), Json.Serialize(args) + "\n");
-            File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            HomeVpnFixtureFiles.Publish(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
             string mode = File.ReadAllText(Path.Combine(path, "mode"));
             if (kind == "share" && mode == "lost") { Environment.Exit(7); return true; }
             if (mode == "hold" || (kind == "status" && mode == "hold-status")) {
@@ -105,6 +105,7 @@ namespace ProGo
                     Cancelled("button", true); PendingGate();
                     foreach (string mode in new[] { "not-found", "busy", "running", "stale", "unavailable", "wrong-id", "wrong-action", "wrong-time", "wrong-result" }) RecoverForm(mode, false, false);
                     RecoverForm("complete", true, false); RecoverForm("complete", false, true); RecoverForm("complete", false, false);
+                    ConfirmedCleanupFailure();
                     foreach (bool failure in new[] { false, true }) DisposedVerification(failure);
                     ProofAndStorage();
                     check(threadFailure == null && !unrelated.HasExited, "HTTPS recovery settles without a UI exception or touching an unrelated native process");
@@ -272,6 +273,63 @@ namespace ProGo
             }
             check(disposed && verified == 1 && saved == 0 && updates == 0 && journal.SequenceEqual(File.ReadAllBytes(PendingPath)) && Same(before)
                 && Calls().SequenceEqual(new[] { "share", "status", "result" }), "disposing actual HTTPS form during verification prevents late save/publication and retains recovery: failure=" + lateFailure);
+        }
+        private static void ConfirmedCleanupFailure()
+        {
+            Reset("complete"); var before = Snapshot();
+            var previousWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*");
+            string ownedWork = null, helper = null; byte[] helperBytes = null, journal = null;
+            FileStream held = null; Task<string> operation = null; int verified = 0, saved = 0, pendingTicks = 0;
+            bool proofRead = false; Stopwatch cleanupWait = null; string message = null; DialogResult dialogResult = DialogResult.None;
+            using (var relay = new Ikev2RelayService())
+            using (var service = new HomeVpnService(relay))
+            using (var form = HomeProfileShare.CreateConfigureForm(service, (owner, action, name, id, progress) => {
+                check(action == "share", "cleanup fault retains the actual HTTPS installation action");
+                operation = HomeVpnService.AdminAsync(owner, action, name, id, progress, (exe, args) => {
+                    copies++;
+                    ownedWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Except(previousWork).Single();
+                    helper = Directory.GetFiles(ownedWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single();
+                    helperBytes = File.ReadAllBytes(helper);
+                    held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    return Task.FromResult(0);
+                }, Application.ExecutablePath, 20000);
+                return operation;
+            }, (origin, access) => { verified++; return Task.FromResult(0); }, origin => { saved++; service.SetShareOrigin(origin); })) {
+                try {
+                    var address = Controls(form).OfType<TextBox>().Single(); address.Text = "qr.example.org";
+                    Loop(form, () => Button(form, "Настроить HTTPS на VPS").PerformClick(),
+                        () => operation != null && operation.IsCompleted && address.Enabled, null,
+                        () => { message = StatusLabel(form).Text; dialogResult = form.DialogResult; }, delegate {
+                            if (!File.Exists(At("receipt")) || !File.Exists(At("pid")) || !Gone(Id("pid"))) return;
+                            if (cleanupWait == null) cleanupWait = Stopwatch.StartNew();
+                            if (journal == null) journal = File.ReadAllBytes(PendingPath);
+                            if (operation != null && !operation.IsCompleted) pendingTicks++;
+                        });
+                    Exception failure = null;
+                    try { operation.GetAwaiter().GetResult(); } catch (Exception error) { failure = error; }
+                    var request = HomeVpnShareRecovery.Pending();
+                    // The native command returned both the matching completion
+                    // receipt and exact origin before its local cleanup failed.
+                    // Verify that proof is present without consuming the request.
+                    try {
+                        HomeVpnShareRecovery.ConfirmAsync(Owner, HomeVpnAccess.Parse(token), Origin,
+                            () => { proofRead = true; throw new IOException("fixture-verification-stopped"); },
+                            origin => { saved++; }, () => true).GetAwaiter().GetResult();
+                    } catch (IOException) { }
+                    check(operation.IsFaulted && failure is HomeVpnSharePendingException && pendingTicks >= 3 && cleanupWait != null
+                        && cleanupWait.ElapsedMilliseconds < 2500 && proofRead && request != null && journal != null
+                        && journal.SequenceEqual(File.ReadAllBytes(PendingPath)) && verified == 0 && saved == 0 && Same(before)
+                        && copies == 1 && Calls().SequenceEqual(new[] { "share" }) && Gone(Id("pid"))
+                        && dialogResult == DialogResult.None && service.ShareOrigin == "https://previous.example.org"
+                        && Directory.Exists(ownedWork) && helperBytes.SequenceEqual(File.ReadAllBytes(helper))
+                        && message.Contains("Локальные файлы команды VPS не удалось удалить")
+                        && message.Contains("Запрос сохранён") && !message.Contains("fixture-") && !message.Contains(ownedWork),
+                        "confirmed native HTTPS proof with locked owned cleanup keeps its exact request, former origin and retry-only semantics without replay or false completion");
+                } finally {
+                    if (held != null) held.Dispose();
+                    if (ownedWork != null && Directory.Exists(ownedWork)) Directory.Delete(ownedWork, true);
+                }
+            }
         }
         private static bool Refused(Task task)
         { try { task.GetAwaiter().GetResult(); return false; } catch (HomeVpnSharePendingException) { return true; } }
