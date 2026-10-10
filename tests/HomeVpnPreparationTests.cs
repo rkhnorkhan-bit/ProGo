@@ -18,14 +18,23 @@ namespace ProGo
         private static string folder;
         internal static bool Fixture(string[] args)
         {
-            if (args.Length < 3 || (args[0] != "prepare-fixture" && args[0] != "prepare-child")) return false;
-            string path = args[1], mode = args[2];
+            bool list = args.Length > 0 && args[0] == "-o" && !String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROGO_LIST_WAIT_FIXTURE"));
+            if (!list && (args.Length < 3 || (args[0] != "prepare-fixture" && args[0] != "prepare-child"))) return false;
+            string path = list ? Environment.GetEnvironmentVariable("PROGO_LIST_WAIT_FIXTURE") : args[1];
+            string mode = list ? File.ReadAllText(Path.Combine(path, "list-mode")) : args[2];
+            if (list) {
+                if (!args.Last().Contains("home_vpn_setup.py list ") || args.Last().Contains("--request-id")) throw new Exception("Fixture expected a read-only production list command");
+                File.AppendAllText(Path.Combine(path, "list-calls"), "list\n");
+            }
             if (args[0] == "prepare-child") {
                 File.WriteAllText(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
             }
             File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
             File.WriteAllText(Path.Combine(path, "console"), GetConsoleCP().ToString());
-            if (mode == "complete") return true;
+            if (mode == "complete") {
+                if (list) { Console.OutputEncoding = new System.Text.UTF8Encoding(false); Console.WriteLine(File.ReadAllText(Path.Combine(path, "list-response"))); }
+                return true;
+            }
             if (mode == "fail") { Environment.Exit(7); return true; }
             using (var child = Process.Start(new ProcessStartInfo(Application.ExecutablePath,
                 "prepare-child " + HomeVpnService.Argument(path) + " " + mode) { UseShellExecute = false, CreateNoWindow = true })) {
@@ -53,6 +62,7 @@ namespace ProGo
                 foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(route, work);
                 foreach (string route in new[] { "button", "escape", "close", "dispose" }) RemoteCancel(route, work);
                 RemoteBoundary(); RemoteDeadline(); ProcessChecks(); CompletionRace(); WizardBoundary(token, clipboard); CleanupFailure();
+                ListWaiting(token, clipboard, work);
                 check(!unrelated.HasExited, "preparation cancellation, deadline and normal completion preserve an unrelated process");
             } finally {
                 KillFixtures(); if (!unrelated.HasExited) { unrelated.Kill(); unrelated.WaitForExit(2000); } unrelated.Dispose();
@@ -191,6 +201,171 @@ namespace ProGo
                 && !timeout.Exception.GetBaseException().Message.Contains("не запускались") && Gone(root) && Gone(child), "SSH deadline settles owned tree without claiming remote rollback");
             Reset(); var complete = HomeVpnPreparationProcess.CommandAsync(Application.ExecutablePath, Args("complete"), Path.Combine(folder, "result"), 20000, CancellationToken.None);
             Pump(() => complete.IsCompleted); complete.GetAwaiter().GetResult(); check(Gone(Id("pid")), "successful SSH waiting releases owned console");
+        }
+        private static void ListWaiting(string token, ClipboardService clipboard, string work)
+        {
+            string previous = Environment.GetEnvironmentVariable("PROGO_LIST_WAIT_FIXTURE");
+            Environment.SetEnvironmentVariable("PROGO_LIST_WAIT_FIXTURE", folder);
+            File.WriteAllText(Path.Combine(folder, "list-response"), new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(new[] {
+                new HomeVpnInvitation { Id = new string('a', 24), Name = "Друг", Revoked = true },
+                new HomeVpnInvitation { Id = new string('b', 24), Name = "Друг" } }));
+            try {
+                foreach (string route in new[] { "button", "escape", "close", "deadline" }) ListWizardWaiting(token, clipboard, work, route);
+                foreach (string route in new[] { "button", "escape", "close" }) ListRefreshWaiting(clipboard, work, route);
+                ListCopyWaiting();
+                var ready = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+                using (var race = new HomeVpnPreparationForm(ct => ready.Task, HomeVpnWaitPurpose.ListCommand)) {
+                    race.Show(); ((Button)Field(race, "cancel")).PerformClick(); ready.SetResult(null); Pump(() => race.Completion.IsCompleted);
+                    check(race.Completion.IsFaulted && race.Completion.Exception.GetBaseException() is HomeVpnListCancelledException,
+                        "accepted list cancellation cannot publish a queued successful response");
+                }
+            } finally { Reset(); Environment.SetEnvironmentVariable("PROGO_LIST_WAIT_FIXTURE", previous); }
+        }
+        private static void ListCopyWaiting()
+        {
+            Reset(); int root = 0, child = 0; bool observed = false; Exception callbackFailure = null;
+            using (var controller = new System.Windows.Forms.Timer { Interval = 20 }) {
+                controller.Tick += delegate {
+                    var wait = Application.OpenForms.OfType<HomeVpnPreparationForm>().FirstOrDefault();
+                    try {
+                        if (wait == null || !File.Exists(Path.Combine(folder, "child"))) return;
+                        controller.Stop(); observed = true; root = Id("pid"); child = Id("child");
+                        var status = (Label)Field(wait, "status");
+                        check(status.Text.Contains("не создаёт и не отзывает") && !status.Text.Contains("запрос сохранён") && !status.Text.Contains("прежн"),
+                            "production list preparation uses read-only copy without a false recovery-request promise");
+                        ((Button)Field(wait, "cancel")).PerformClick();
+                    } catch (Exception error) { callbackFailure = error; controller.Stop(); if (wait != null && !wait.IsDisposed) wait.Close(); }
+                }; controller.Start();
+                var copy = HomeVpnPreparationForm.CopyForListAsync(null, Application.ExecutablePath, Args("hold"));
+                Pump(() => copy.IsCompleted);
+                if (callbackFailure != null) throw new Exception("List copy UI controller failed", callbackFailure);
+                check(observed && copy.IsFaulted && copy.Exception.GetBaseException() is HomeVpnListCancelledException && Gone(root) && Gone(child),
+                    "production list-copy cancellation settles its owned tree and has its own retryable read-only result");
+            }
+        }
+        private static Dictionary<string, byte[]> ListPrivateSnapshot()
+        {
+            return new[] { "access", "owner", "home-address", HomeVpnSetupRecovery.StorageName }
+                .Select(name => Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"))
+                .ToDictionary(path => path, path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+        }
+        private static bool ListPrivateUnchanged(Dictionary<string, byte[]> previous)
+        {
+            return previous.All(pair => pair.Value == null ? !File.Exists(pair.Key) :
+                File.Exists(pair.Key) && pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)));
+        }
+        private static int ListCalls() { return File.Exists(Path.Combine(folder, "list-calls")) ? File.ReadAllLines(Path.Combine(folder, "list-calls")).Length : 0; }
+        private static void ListMode(string mode, bool fresh)
+        {
+            Reset(); File.WriteAllText(Path.Combine(folder, "list-mode"), mode);
+            if (fresh) File.Delete(Path.Combine(folder, "list-calls"));
+        }
+        private static void CancelList(HomeVpnPreparationForm form, string route)
+        {
+            if (route == "button") ((Button)Field(form, "cancel")).PerformClick();
+            else if (route == "escape") typeof(Form).GetMethod("ProcessDialogKey", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(form, new object[] { Keys.Escape });
+            else if (route == "close") form.Close();
+        }
+        private static void ListWizardWaiting(string token, ClipboardService clipboard, string work, string route)
+        {
+            ListMode("hold", true); int copies = 0, root = 0, child = 0, ticks = 0; bool observed = false;
+            Exception callbackFailure = null; var progressMessages = new List<string>();
+            using (var relay = new Ikev2RelayService())
+            using (var service = new HomeVpnService(relay))
+            using (var wizard = new HomeVpnWizardForm(service, clipboard))
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            using (var controller = new System.Windows.Forms.Timer { Interval = 20 }) {
+                service.UseToken(token, new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22 });
+                wizard.Admin = (owner, action, label, id, progress) => {
+                    check(action == "list", "initial Friends action dispatches only a read-only list");
+                    return HomeVpnService.AdminAsync(owner, action, label, id, message => { progressMessages.Add(message); progress(message); },
+                        (exe, args) => { copies++; return Task.FromResult(0); }, Application.ExecutablePath, route == "deadline" ? 5000 : 20000);
+                };
+                Call(wizard, "ShowStep", 4); wizard.Show();
+                var before = ListPrivateSnapshot(); heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                controller.Tick += delegate {
+                    var wait = Application.OpenForms.OfType<HomeVpnPreparationForm>().FirstOrDefault();
+                    try {
+                        if (wait == null || !File.Exists(Path.Combine(folder, "child")) || ticks < 3) return;
+                        controller.Stop(); observed = true; root = Id("pid"); child = Id("child");
+                        var status = (Label)Field(wait, "status"); var cancel = (Button)Field(wait, "cancel");
+                        check(cancel.Enabled && wait.CancelButton == cancel && status.AccessibilityObject.Description == status.Text
+                            && status.Text.Contains("5 минут") && !status.Text.Contains("запрос сохранён") && !status.Text.Contains("могла"),
+                            "production list dispatch provides responsive accessible cancellation and honest read-only progress");
+                        if (route == "button") { Shot(wait, work, "vps-list-wait-pending"); wait.ClientSize = new Size(440, 270); Application.DoEvents();
+                            check(cancel.Bottom <= wait.ClientSize.Height, "minimum list wait retains visible cancellation"); Shot(wait, work, "vps-list-wait-minimum"); }
+                        CancelList(wait, route);
+                    } catch (Exception error) { callbackFailure = error; controller.Stop(); if (wait != null && !wait.IsDisposed) wait.Close(); }
+                }; controller.Start();
+                var open = ((Control)Field(wizard, "body")).Controls.OfType<Button>().Single(b => b.Text == "Доступ друзей…"); open.PerformClick();
+                Pump(() => !(bool)Field(wizard, "busy"));
+                if (callbackFailure != null) throw new Exception("List waiting UI controller failed", callbackFailure);
+                var result = (Label)Field(wizard, "status");
+                check(progressMessages.Count == 2 && progressMessages[0].StartsWith("Подготовка получения списка друзей")
+                    && progressMessages[1].StartsWith("Получение списка друзей с VPS")
+                    && progressMessages.All(message => !message.Contains("Настройка VPS") && !message.Contains("запрос сохранён")),
+                    "production list progress describes both read-only phases without promising a retained setup request");
+                check(observed && ticks >= 3 && copies == 1 && ListCalls() == 1 && Gone(root) && Gone(child)
+                    && wizard.Visible && (int)Field(wizard, "step") == 4 && ListPrivateUnchanged(before)
+                    && !Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Any(),
+                    "initial Friends cancellation/deadline settles the real owned tree, preserves the wizard/access/journal, and never retries: " + route);
+                check(result.Text.Contains(route == "deadline" ? "Время получения списка истекло" : "Получение списка отменено")
+                    && !result.Text.Contains("запрос сохранён") && result.ForeColor == (route == "deadline" ? UiTheme.Error : UiTheme.Muted),
+                    "initial list outcome distinguishes requested cancellation from its deadline without server-recovery claims");
+                if (route == "button") {
+                    Shot(wizard, work, "vps-list-first-cancelled"); ListMode("complete", false);
+                    controller.Tick += delegate {
+                        var friends = Application.OpenForms.OfType<HomeInvitationsForm>().FirstOrDefault();
+                        try { if (friends != null) { controller.Stop(); friends.Close(); } }
+                        catch (Exception error) { callbackFailure = error; controller.Stop(); }
+                    }; controller.Start(); open.PerformClick(); Pump(() => !(bool)Field(wizard, "busy"));
+                    if (callbackFailure != null) throw new Exception("List retry UI controller failed", callbackFailure);
+                    check(copies == 2 && ListCalls() == 2 && ListPrivateUnchanged(before) && wizard.Visible,
+                        "only an explicit retry of initial Friends opens the recovered list without reissuing access");
+                }
+                wizard.Close();
+            }
+        }
+        private static void ListRefreshWaiting(ClipboardService clipboard, string work, string route)
+        {
+            ListMode("hold", true); int copies = 0, root = 0, child = 0, ticks = 0; bool observed = false, gated = route != "button";
+            Exception callbackFailure = null;
+            var first = new HomeVpnInvitation { Id = new string('a', 24), Name = "Друг" };
+            var second = new HomeVpnInvitation { Id = new string('b', 24), Name = "Друг" };
+            var owner = new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22 };
+            using (var friends = new HomeInvitationsForm(new[] { first, second }, (action, label, id) => {
+                check(action == "list", "Friends Refresh dispatches only a read-only list");
+                return HomeVpnService.AdminAsync(owner, action, label, id, delegate { }, (exe, args) => { copies++; return Task.FromResult(0); }, Application.ExecutablePath, 20000);
+            }, clipboard))
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            using (var controller = new System.Windows.Forms.Timer { Interval = 20 }) {
+                friends.Show(); var view = (HomeInvitationList)Field(friends, "list"); var rows = (ListBox)Field(view, "list");
+                var search = (TextBox)Field(view, "search"); var name = (TextBox)Field(friends, "name");
+                var refresh = (Button)Field(friends, "refresh"); var create = (Button)Field(friends, "create");
+                search.Text = "Друг"; rows.SelectedIndex = 0; name.Text = "Сохранённый черновик";
+                if (gated) Call(friends, "RequireRefresh", "Нужно проверить прошлое изменение");
+                var before = ListPrivateSnapshot(); heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                controller.Tick += delegate {
+                    var wait = Application.OpenForms.OfType<HomeVpnPreparationForm>().FirstOrDefault();
+                    try {
+                        if (wait == null || !File.Exists(Path.Combine(folder, "child")) || ticks < 3) return;
+                        controller.Stop(); observed = true; root = Id("pid"); child = Id("child"); CancelList(wait, route);
+                    } catch (Exception error) { callbackFailure = error; controller.Stop(); if (wait != null && !wait.IsDisposed) wait.Close(); }
+                }; controller.Start(); refresh.PerformClick(); Pump(() => refresh.Enabled);
+                if (callbackFailure != null) throw new Exception("List refresh UI controller failed", callbackFailure);
+                check(observed && ticks >= 3 && copies == 1 && ListCalls() == 1 && Gone(root) && Gone(child) && friends.Visible
+                    && rows.Items.Count == 2 && rows.Items[0] == first && rows.Items[1] == second && view.Selected == first
+                    && search.Text == "Друг" && name.Text == "Сохранённый черновик" && (bool)Field(friends, "needsRefresh") == gated
+                    && create.Enabled == !gated && ListPrivateUnchanged(before),
+                    "cancelled Refresh preserves actual rows/selection/search/name/access and the existing mutation gate: " + route);
+                check(((Label)Field(friends, "status")).Text.StartsWith("Получение списка отменено"), "Friends exposes a clear explicit-refresh retry after list cancellation");
+                if (route == "button") Shot(friends, work, "vps-list-refresh-cancelled");
+                ListMode("complete", false); refresh.PerformClick(); Pump(() => refresh.Enabled);
+                check(copies == 2 && ListCalls() == 2 && create.Enabled && !(bool)Field(friends, "needsRefresh") && view.Selected == null
+                    && rows.Items.Count == 2 && name.Text == "Сохранённый черновик" && ListPrivateUnchanged(before),
+                    "one explicit successful Refresh clears reconciliation without choosing/reissuing an identity or losing draft");
+                friends.Close();
+            }
         }
         private static void ProcessChecks()
         {

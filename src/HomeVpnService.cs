@@ -210,11 +210,25 @@ namespace ProGo
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
             return await AdminAsync(owner, action, label, identifier, progress,
-                (executable, arguments) => HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments,
-                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), (executable, arguments, output) =>
-                    action == "setup" || action == "recover-setup"
-                        ? HomeVpnPreparationForm.WaitForCommandAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output)
-                        : ConsoleAsync(executable, arguments, output));
+                (executable, arguments) => action == "list"
+                    ? HomeVpnPreparationForm.CopyForListAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments)
+                    : HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments,
+                        action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), null, HomeVpnPreparationProcess.TimeoutMs);
+        }
+
+        // Tests replace only the executable/copy, retaining the production dispatch
+        // to its real owned waiting window instead of injecting a command transport.
+        internal static Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress,
+            Func<string, string, Task> copy, string commandExecutable, int timeoutMs)
+        {
+            return AdminAsync(owner, action, label, identifier, progress, copy, (executable, arguments, output) => {
+                executable = commandExecutable ?? executable;
+                if (action == "setup" || action == "recover-setup")
+                    return HomeVpnPreparationForm.WaitForCommandAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output);
+                if (action == "list")
+                    return HomeVpnPreparationForm.WaitForListAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
+                return ConsoleAsync(executable, arguments, output);
+            });
         }
 
         // Injected transports keep Windows fixtures isolated from live VPS credentials.
@@ -246,7 +260,8 @@ namespace ProGo
                         File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts", "home-vpn", "server", file), Path.Combine(upload, file));
                     var keyArgs = String.IsNullOrWhiteSpace(owner.KeyFile) ? "" : " -i " + Argument(owner.KeyFile);
                     var target = owner.Login + "@" + owner.Host;
-                    progress(checking ? "Подготовка проверки прежней настройки VPS. Предыдущая команда могла завершиться; повторной выдачи доступа не будет."
+                    progress(action == "list" ? "Подготовка получения списка друзей. Существующий доступ и текущий список сохраняются; новые токены не создаются."
+                        : checking ? "Подготовка проверки прежней настройки VPS. Предыдущая команда могла завершиться; повторной выдачи доступа не будет."
                         : "Копирование помощника на VPS. Если SSH спросит пароль или подтверждение ключа, ответьте в открывшемся окне.");
                     await copy("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"));
                     var remote = "/tmp/" + name;
@@ -273,7 +288,8 @@ namespace ProGo
                     }
                     var command = "trap 'rm -rf -- " + remote + "' EXIT; " + prefix + action + options
                         + " --output " + remote + "/result 1>&2 && cat " + remote + "/result";
-                    progress(setup ? "Настройка VPS. ID запроса сохранён до запуска SSH. При потере ответа проверьте прежнюю настройку вместо повторной выдачи доступа."
+                    progress(action == "list" ? "Получение списка друзей с VPS. Ожидание — до 5 минут; его можно отменить. Доступ друзей не изменяется."
+                        : setup ? "Настройка VPS. ID запроса сохранён до запуска SSH. При потере ответа проверьте прежнюю настройку вместо повторной выдачи доступа."
                         : "Настройка VPS. Окно SSH показывает ход установки; для пользователя без root нужен sudo без запроса пароля.");
                     // A real console remains available for OpenSSH password/host-key prompts.
                     // Only stdout goes to a private local file; the token is never a command argument.

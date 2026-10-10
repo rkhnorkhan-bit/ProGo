@@ -15,6 +15,12 @@ namespace ProGo
                 : "Подготовка отменена. Команды настройки VPS не запускались. Можно повторить подготовку.") { }
     }
 
+    internal sealed class HomeVpnListCancelledException : OperationCanceledException
+    {
+        internal HomeVpnListCancelledException()
+            : base("Получение списка отменено. Существующий доступ, текущий список и введённые данные сохранены. Можно повторить получение списка.") { }
+    }
+
     internal sealed class HomeVpnPreparationForm : ProGoForm
     {
         private readonly Label status = UiTheme.StatusLabel(UiTheme.Muted);
@@ -25,7 +31,7 @@ namespace ProGo
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private readonly TaskCompletionSource<object> completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<CancellationToken, Task> copy;
-        private readonly bool recovery;
+        private readonly bool recovery, list;
         private readonly bool serverWait;
         private bool running = true, started;
         internal Task Completion { get { return completion.Task; } }
@@ -33,8 +39,12 @@ namespace ProGo
         internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy) : this(copy, false) { }
         internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy, bool recovery) : this(copy, recovery, false) { }
         internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy, bool recovery, bool serverWait)
+            : this(copy, serverWait ? HomeVpnWaitPurpose.SetupCommand : recovery ? HomeVpnWaitPurpose.RecoveryCopy : HomeVpnWaitPurpose.Copy) { }
+        internal HomeVpnPreparationForm(Func<CancellationToken, Task> copy, HomeVpnWaitPurpose purpose)
         {
-            this.copy = copy; this.recovery = recovery; this.serverWait = serverWait;
+            this.copy = copy; recovery = purpose == HomeVpnWaitPurpose.RecoveryCopy || purpose == HomeVpnWaitPurpose.SetupCommand;
+            serverWait = purpose == HomeVpnWaitPurpose.SetupCommand || purpose == HomeVpnWaitPurpose.ListCommand;
+            list = purpose == HomeVpnWaitPurpose.ListCopy || purpose == HomeVpnWaitPurpose.ListCommand;
             Text = recovery ? "Подготовка проверки VPS" : "Подготовка VPS"; ClientSize = new Size(610, 280); MinimumSize = new Size(450, 300);
             if (recovery) heading.Text = "Подготовка проверки VPS";
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterParent;
@@ -61,6 +71,14 @@ namespace ProGo
                 cancel.Text = "Прервать ожидание SSH"; cancel.AccessibleName = cancel.Text;
                 cancel.AccessibleDescription = "Останавливает только локальные процессы ожидания. Не отменяет изменения VPS. Запрос сохранён для проверки исходного результата.";
             }
+            if (list) {
+                Text = serverWait ? "Получение списка с VPS" : "Подготовка получения списка";
+                heading.Text = serverWait ? "Получение списка друзей" : "Подготовка получения списка";
+                status.Text = "Ожидание — до 5 минут. Если SSH запросит пароль или подтверждение ключа, ответьте в отдельном окне. Получение списка не создаёт и не отзывает доступ. Можно отменить ожидание; текущий список и введённые данные сохранятся.";
+                status.AccessibleName = "Ход получения списка друзей";
+                cancel.Text = "Отменить получение списка"; cancel.AccessibleName = cancel.Text;
+                cancel.AccessibleDescription = "Останавливает только локальные процессы получения списка. Существующий доступ, текущий список и введённые данные сохраняются. Новые токены не создаются.";
+            }
             cancel.Click += delegate { CancelCopy(); }; CancelButton = cancel; cancel.DialogResult = DialogResult.None;
             layout.Controls.Add(viewport, 0, 0); layout.Controls.Add(cancel, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
@@ -75,7 +93,9 @@ namespace ProGo
             Exception failure = null;
             try { cancellation.Token.ThrowIfCancellationRequested(); await copy(cancellation.Token); cancellation.Token.ThrowIfCancellationRequested(); }
             catch (OperationCanceledException) {
-                if (serverWait) failure = new HomeVpnSetupPendingException("Ожидание SSH прервано. Команда VPS могла завершиться; запрос сохранён. Проверьте прежнюю настройку, не запускайте её повторно.");
+                if (list) failure = cancellation.IsCancellationRequested ? (Exception)new HomeVpnListCancelledException()
+                    : new InvalidOperationException("Получение списка прервано. Существующий доступ и текущий список сохранены; проверьте SSH и повторите получение.");
+                else if (serverWait) failure = new HomeVpnSetupPendingException("Ожидание SSH прервано. Команда VPS могла завершиться; запрос сохранён. Проверьте прежнюю настройку, не запускайте её повторно.");
                 else if (cancellation.IsCancellationRequested) failure = new HomeVpnPreparationCancelledException(recovery);
                 else failure = new InvalidOperationException(recovery ? "Подготовка проверки прервана. Прежний запрос VPS сохранён; проверьте SSH."
                     : "Подготовка прервана. Команды настройки VPS не запускались; проверьте SSH.");
@@ -90,7 +110,8 @@ namespace ProGo
             if (!running || cancellation.IsCancellationRequested) return;
             if (!IsDisposed && !Disposing) {
                 cancel.Enabled = false;
-                status.Text = serverWait ? "Останавливаем локальные процессы SSH. Дождитесь результата. Команда VPS могла завершиться; запрос сохранён для проверки."
+                status.Text = list ? "Останавливаем локальные процессы получения списка. Дождитесь результата. Существующий доступ, текущий список и введённые данные сохраняются."
+                    : serverWait ? "Останавливаем локальные процессы SSH. Дождитесь результата. Команда VPS могла завершиться; запрос сохранён для проверки."
                     : recovery ? "Останавливаем копирование и его процессы. Дождитесь результата. Прежний запрос VPS сохранён; его результат ещё не проверен."
                     : "Останавливаем копирование и его процессы. Дождитесь результата. Команды настройки VPS не запускались.";
             }
@@ -106,7 +127,8 @@ namespace ProGo
             if (disposing && running) {
                 CancelCopy();
                 // A never-shown dialog has no worker that could release this source.
-                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(serverWait ? (Exception)new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage) : new HomeVpnPreparationCancelledException(recovery)); }
+                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(list ? (Exception)new HomeVpnListCancelledException()
+                    : serverWait ? (Exception)new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage) : new HomeVpnPreparationCancelledException(recovery)); }
             }
             base.Dispose(disposing);
         }
@@ -119,6 +141,18 @@ namespace ProGo
         internal static async Task CopyAsync(Form owner, string executable, string arguments, bool recovery = false)
         {
             using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.CopyAsync(executable, arguments, HomeVpnPreparationProcess.TimeoutMs, token), recovery)) {
+                dialog.ShowDialog(owner); await dialog.Completion;
+            }
+        }
+        internal static async Task WaitForListAsync(Form owner, string executable, string arguments, string output, int timeoutMs = HomeVpnPreparationProcess.TimeoutMs)
+        {
+            using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.ListAsync(executable, arguments, output, timeoutMs, token), HomeVpnWaitPurpose.ListCommand)) {
+                dialog.ShowDialog(owner); await dialog.Completion;
+            }
+        }
+        internal static async Task CopyForListAsync(Form owner, string executable, string arguments)
+        {
+            using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.CopyAsync(executable, arguments, HomeVpnPreparationProcess.TimeoutMs, token, true), HomeVpnWaitPurpose.ListCopy)) {
                 dialog.ShowDialog(owner); await dialog.Completion;
             }
         }

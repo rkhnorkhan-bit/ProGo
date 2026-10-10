@@ -1866,3 +1866,36 @@ known normalization plus denied writes. They check live external flags, typed
 PAC/bypass values, failed-journal content, actual listener retention, retry and
 an intervening external edit. Full repeated uninstall acceptance remains a
 required Windows gate; this stage has not passed it yet.
+
+## Stage F23k — bounded own-VPS list waiting (Windows verification pending)
+
+The read-only `list` action now uses the existing owned console runner for both
+helper copying and SSH. Each wait has a five-minute deadline and explicit button,
+Escape and title-close cancellation; the dialog remains open until its owned
+local process tree settles. The native OpenSSH console remains available for
+password and host-key prompts. List progress and failures describe the query;
+they do not claim that a recoverable mutation request was stored. The existing
+helper upload and server implementations are unchanged.
+
+Cancelling initial Friends leaves the wizard and saved access intact. Cancelling
+Refresh retains the actual rows, selection, filter, name draft and prior
+`needsRefresh` gate. A read-only cancellation creates no new mutation uncertainty
+and cannot clear an older gate. Only an explicit new Refresh retries the query;
+no invitation or token is issued automatically. Successful Refresh still clears
+selection and the prior reconciliation gate after receiving a valid current list.
+
+Production-dispatch native regressions replace only executable/copy transports,
+retain the real SSH arguments and exercise an actual native descendant. They
+cover initial Friends and Refresh cancellation routes, an actual deadline,
+UI heartbeat, request counters, byte-identical private access/recovery files,
+owned-tree settlement and explicit retry. The production list-copy factory and
+a queued completion/cancellation race are covered separately. Pending/minimum
+wait and cancelled wizard/Friends images join the existing Windows screenshot
+artifact. QR revocation additionally ignores late success/failure after dialog
+Close or Dispose; this is a UI lifetime guard, not revocation rollback.
+
+Local public-content and diff checks PASS. C#5/.NET Framework 4.8 build, native
+Windows execution and screenshot review are pending. **F23 remains OPEN; overall
+21/31 is unchanged.** Invite, revoke, reissue, repair and share command waits still
+use their existing protected path and are explicit later F23 work. No new server
+receipt policy, release, installation or live-VPS change is included.

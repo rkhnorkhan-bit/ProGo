@@ -259,6 +259,11 @@ namespace ProGo
             cancelledWait = closeAfterWait = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await action(); }
+            catch (HomeVpnListCancelledException ex)
+            {
+                closeAfterWait = false;
+                if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
+            }
             catch (HomeVpnPreparationCancelledException ex)
             {
                 closeAfterWait = false;
@@ -403,10 +408,10 @@ namespace ProGo
         {
             await RunStep(async delegate
             {
-                var response = await HomeVpnService.AdminAsync(service.Owner, "list", null, null, SetProgress);
+                var response = await Admin(service.Owner, "list", null, null, SetProgress);
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(response);
                 using (var dialog = new HomeInvitationsForm(items,
-                    (action, label, id) => HomeVpnService.AdminAsync(service.Owner, action, label, id, delegate { }), clipboard))
+                    (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard))
                     dialog.ShowDialog(this);
                 status.Text = "";
             });

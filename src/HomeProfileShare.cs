@@ -219,8 +219,15 @@ namespace ProGo
             cancel.Click += async delegate
             {
                 cancel.Enabled = false; error.Text = ""; error.Visible = false;
-                try { await revoke(); clock.Stop(); status.Text = "Ссылка отозвана. Уже установленный VPN продолжает работать."; picture.Visible = false; copy.Enabled = false; }
-                catch (Exception) { error.Text = "Отозвать не удалось: проверьте соединение. Ссылка автоматически истечёт через 15 минут после создания."; error.Visible = true; cancel.Enabled = true; }
+                try {
+                    await revoke();
+                    if (IsDisposed || Disposing) return;
+                    clock.Stop(); status.Text = "Ссылка отозвана. Уже установленный VPN продолжает работать."; picture.Visible = false; copy.Enabled = false;
+                }
+                catch (Exception) {
+                    if (IsDisposed || Disposing) return;
+                    error.Text = "Отозвать не удалось: проверьте соединение. Ссылка автоматически истечёт через 15 минут после создания."; error.Visible = true; cancel.Enabled = true;
+                }
             };
             panel.Controls.Add(copy); panel.Controls.Add(copyNotice); panel.Controls.Add(cancel);
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "Ссылка для одного телефона: после «Получить профиль» повторно воспользоваться QR нельзя. Для другого телефона создайте новый QR. Не публикуйте код. Android использует strongSwan VPN Client.", Margin = new Padding(0, 8, 0, 8) });

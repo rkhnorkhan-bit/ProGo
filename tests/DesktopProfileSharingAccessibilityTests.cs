@@ -92,6 +92,8 @@ namespace ProGo
                     ((Button)active.CancelButton).Focus(); dialogKey.Invoke(active, new object[] { Keys.Escape }); Application.DoEvents();
                     Check(!active.Visible && revoked == 2, "QR Escape dismisses an active link without revocation");
                 }
+                foreach (string route in new[] { "close", "dispose" })
+                    foreach (bool failure in new[] { false, true }) QrLateRevoke(link, clipboard, route, failure);
                 link.Expires = 1;
                 using (var form = new PhoneProfileQrForm(link, () => { revoked++; return Task.FromResult(0); }, clipboard)) {
                     form.Show(); Application.DoEvents(); ((Timer)Field(form, "clock")).Stop();
@@ -108,6 +110,48 @@ namespace ProGo
             var after = WizardPrivateSnapshot();
             Check(existed == System.IO.Directory.Exists(HomeVpnPrivateFiles.Root) && before.Keys.OrderBy(p => p).SequenceEqual(after.Keys.OrderBy(p => p)) &&
                 before.All(pair => after[pair.Key].SequenceEqual(pair.Value)), "profile-sharing fixtures leave private access files unchanged");
+        }
+        private static void QrLateRevoke(PhoneProfileLink link, ClipboardService clipboard, string route, bool failure)
+        {
+            var pending = new TaskCompletionSource<object>(); int calls = 0, threadErrors = 0;
+            System.Threading.ThreadExceptionEventHandler threadError = delegate { threadErrors++; };
+            Application.ThreadException += threadError;
+            try {
+                using (var form = new PhoneProfileQrForm(link, () => { calls++; return pending.Task; }, clipboard)) {
+                    form.Show(); Application.DoEvents();
+                    var context = System.Threading.SynchronizationContext.Current;
+                    Check(context is WindowsFormsSynchronizationContext, "QR late-response fixture captures the native UI continuation context");
+                    var clock = (Timer)Field(form, "clock"); clock.Stop();
+                    var revoke = Descendants(form).OfType<Button>().Single(b => b.Text == "Отозвать ссылку");
+                    var copy = Descendants(form).OfType<Button>().Single(b => b.Text == "Скопировать ссылку");
+                    var picture = Descendants(form).OfType<PictureBox>().Single();
+                    var status = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Срок действия ссылки на профиль");
+                    var error = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Результат отзыва ссылки");
+                    revoke.PerformClick(); Application.DoEvents();
+                    Check(calls == 1 && !pending.Task.IsCompleted && !revoke.Enabled && ((Button)form.CancelButton).Enabled,
+                        "QR late-response fixture starts exactly one revocation and permits independent dismissal");
+                    if (route == "close") form.Close(); else form.Dispose();
+                    Application.DoEvents();
+                    Check(form.IsDisposed && !pending.Task.IsCompleted && calls == 1,
+                        "QR " + route + " disposes the dialog while preserving its already dispatched revocation");
+                    string previousStatus = status.Text, previousError = error.Text;
+                    bool previousCopy = copy.Enabled, previousRevoke = revoke.Enabled, previousPicture = picture.Visible;
+                    int lateChanges = 0;
+                    EventHandler changed = delegate { lateChanges++; };
+                    status.TextChanged += changed; error.TextChanged += changed;
+                    copy.EnabledChanged += changed; revoke.EnabledChanged += changed; picture.VisibleChanged += changed;
+                    if (failure) pending.SetException(new InvalidOperationException("synthetic-private-late-revoke"));
+                    else pending.SetResult(null);
+                    // The continuation is inline or queued before this UI barrier.
+                    // Drain it deterministically, without a timing-based sleep.
+                    bool drained = false;
+                    context.Post(delegate { drained = true; }, null); PumpUntil(() => drained);
+                    Check(calls == 1 && threadErrors == 0 && lateChanges == 0 && !clock.Enabled && form.IsDisposed &&
+                        status.Text == previousStatus && error.Text == previousError && copy.Enabled == previousCopy &&
+                        revoke.Enabled == previousRevoke && picture.Visible == previousPicture,
+                        "QR late " + (failure ? "failure" : "success") + " after " + route + " causes no UI publication, exception, or duplicate revocation");
+                }
+            } finally { Application.ThreadException -= threadError; }
         }
     }
 }

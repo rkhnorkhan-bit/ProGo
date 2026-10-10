@@ -1166,3 +1166,31 @@ vault empty-state surface for empty collections versus search/type misses. It
 never saves vault records or changes cryptographic/decoy contracts. The tray uses
 `SystemInformation.SmallIconSize` at startup; actual display/DPI transitions remain
 separately tracked under F16, and actual Narrator acceptance under F17.
+
+### Audit stage F23k — native read-only list cancellation
+
+`HomeVpnPreparationTests` exercises the production `AdminAsync` list dispatch
+through the real owned PowerShell/SSH waiting dialog. The injected executable
+receives the original SSH argv, refuses a mutating action or request ID, counts
+queries and spawns a native descendant. Initial Friends tests cover button,
+Escape, title Close and a shortened real deadline with a native UI heartbeat;
+Refresh covers all three cancellation routes with both open and pre-existing
+reconciliation gates. Assertions preserve private access/journal bytes, actual
+rows, selection, filter and name draft and require one explicit retry without
+automatic access issuance. The production list-copy factory and a queued
+completion race also run in this existing fixture. Timer callback errors are
+reported after modal settlement rather than opening a WinForms error dialog.
+
+The fixture writes `vps-list-wait-pending.png`, `vps-list-wait-minimum.png`,
+`vps-list-first-cancelled.png` and `vps-list-refresh-cancelled.png` under the
+existing `build/vpn-fixture` screenshot artifact. Review them with the exact-head
+Windows build/full test run. `DesktopProfileSharingAccessibilityTests` also
+drains four real UI continuations (late revoke success/failure after QR Close or
+Dispose) and checks no UI publication, exception or duplicate request.
+
+List copying and SSH waits each retain their five-minute bound and own only
+their local process tree. Cancellation preserves access and permits explicit
+query retry; it stores no mutation recovery request. Other own-VPS mutations
+remain on the previous protected console path and require a later bounded wait
+stage. No server implementation or durable receipt policy changes in F23k.
+F23 remains open; native Windows and visual verification are required.

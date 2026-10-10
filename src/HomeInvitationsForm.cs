@@ -103,16 +103,21 @@ namespace ProGo
             working = true; status.Text = "Выполнение операции с доступом…"; UpdateActions();
             try { await action(); }
             catch { RequireRefresh("Операция не завершена. Обновите список перед следующим изменением доступа. Подробности SSH доступны в его окне."); }
-            finally { working = false; UpdateActions(); }
+            finally { working = false; if (!IsDisposed && !Disposing) UpdateActions(); }
         }
         private async Task RefreshAsync() {
             status.Text = "Получение списка с VPS…";
             try {
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(await admin("list", null, null));
                 if (items == null) throw new InvalidOperationException();
+                if (IsDisposed || Disposing) return;
                 list.Replace(items); needsRefresh = false;
                 status.Text = "Список обновлён. Проверьте дату и полный ID: одинаковое имя не означает тот же доступ. При потерянном ответе выдачи отзовите ненужные новые записи перед созданием ещё одного токена.";
-            } catch { RequireRefresh("Не удалось обновить список. Изменения доступа заблокированы: повторите «Обновить список» после восстановления SSH."); }
+            } catch (HomeVpnListCancelledException ex) {
+                // Cancellation of a read-only query adds no new uncertainty and
+                // must not clear an existing mutation/reconciliation gate.
+                if (!IsDisposed && !Disposing) status.Text = ex.Message;
+            } catch { if (!IsDisposed && !Disposing) RequireRefresh("Не удалось обновить список. Изменения доступа заблокированы: повторите «Обновить список» после восстановления SSH."); }
         }
         private async Task CreateAsync() {
             status.Text = "Создание отдельного токена…";
