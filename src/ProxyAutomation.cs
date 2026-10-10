@@ -37,24 +37,33 @@ namespace ProGo
         }
         internal AutomationResult TryApply(ProxyFeature feature, bool ready, Action<ProxyFeature> apply, out Exception error)
         {
-            error = null;
+            var attempt = BeginApply(feature, ready);
+            if (attempt == null) { error = null; return AutomationResult.None; }
+            Exception failure = null;
+            try { apply(feature); } catch (Exception ex) { failure = ex; }
+            return CompleteApply(feature, attempt, failure, out error);
+        }
+        // Both halves run on the UI owner; the native mutation between them may
+        // await a worker without retaining a modal SynchronizationContext.
+        internal object BeginApply(ProxyFeature feature, bool ready)
+        {
             PendingAction state;
             if (!ready || !pending.TryGetValue(feature, out state) || state.Paused || state.Applying || now() < state.RetryAt)
-                return AutomationResult.None;
+                return null;
             state.Applying = true;
+            return state;
+        }
+        internal AutomationResult CompleteApply(ProxyFeature feature, object attempt, Exception failure, out Exception error)
+        {
+            error = null;
+            var state = (PendingAction)attempt;
             try
             {
-                apply(feature);
                 if (!IsCurrent(feature, state)) return AutomationResult.None;
-                pending.Remove(feature);
-                return AutomationResult.Applied;
-            }
-            catch (Exception ex)
-            {
-                if (!IsCurrent(feature, state)) return AutomationResult.None;
-                error = ex;
+                if (failure == null) { pending.Remove(feature); return AutomationResult.Applied; }
+                error = failure;
                 state.Failures++;
-                if (PermanentFailure(ex) || state.Failures > RetrySeconds.Length)
+                if (PermanentFailure(failure) || state.Failures > RetrySeconds.Length)
                 {
                     state.Paused = true;
                     return AutomationResult.Paused;

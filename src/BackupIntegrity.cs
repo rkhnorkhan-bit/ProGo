@@ -106,7 +106,7 @@ namespace ProGo
 
         private static bool IsHomeArchiveFile(string name)
         {
-            if (name == "access.dat" || name == "owner.dat" || name == "home-address.dat" || name == "setup-request.dat") return true;
+            if (name == "access.dat" || name == "owner.dat" || name == "home-address.dat" || name == "setup-request.dat" || name == "admin-request.dat") return true;
             if (!name.StartsWith("share-", StringComparison.Ordinal) || !name.EndsWith(".dat", StringComparison.Ordinal) || name.Length != 42) return false;
             for (var i = 6; i < 38; i++)
                 if (!((name[i] >= '0' && name[i] <= '9') || (name[i] >= 'a' && name[i] <= 'f'))) return false;

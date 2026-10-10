@@ -1963,3 +1963,77 @@ Windows execution and screenshot review are pending. **F23 remains OPEN; overall
 22/31.** Invite, revoke, reissue, repair and share command waits still
 use their existing protected path and are explicit later F23 work. No new server
 receipt policy, release, installation or live-VPS change is included.
+
+## Stage F23l — recover the original invitation (Windows verification pending)
+
+Invitation issuance, including the second step of reissue after a successful
+revoke acknowledgment, now saves one strict CurrentUser-DPAPI `admin-request.dat`
+before launching SSH. It binds the request ID, owner endpoint/login, invite action,
+original name, optional source invitation ID and expected server ID. Atomic
+replacement retains the exact validated token before handing it to the UI.
+Existing setup recovery and the server receipt implementation are unchanged.
+
+The invitation command uses the existing receipt status/result checks before
+private token handoff, with its existing remote cleanup trap. Its owned local
+console has a five-minute deadline and button/Escape/title-close cancellation.
+Cancellation stops local waiting and leaves the saved request; it does not claim
+to undo VPS effects. Explicit recovery submits only status/result queries. Running,
+not-found, unconfirmed, revoked/unavailable results, wrong bindings and corrupt
+local data retain the gate. A cached token cannot bypass a live availability check.
+No mutation is replayed, even under the original request ID.
+The running endpoint is frozen before its first await. Each recovery query owns
+its remote cleanup; after completed status the public helper is copied again
+before the separate result query. This does not change server receipts.
+
+Friends loads this durable gate when reopened or after app restart. Successful
+List cannot clear it or authorize fresh issuance. A recovered replacement keeps
+the original friend's name/source ID and never repeats the earlier revoke. The
+existing saved owner access remains unchanged. Only intentional normal closing
+of the delivered token's modal window consumes the local journal; a failed
+handoff or crash preserves it. This local consumption does not acknowledge or
+prune server receipts. Unconfirmed/unavailable results remain for owner review;
+there is no automatic forget-and-retry path.
+
+The shared backup writer recognizes only the encrypted persistent journal. Its
+manifest lists it as archived-only CurrentUser DPAPI data; Program/Data/All restore
+do not automatically import it or replace a live gate. Temporary admin folders
+and plaintext remain excluded. Older executables may ignore this new gate after
+downgrade, although the data is preserved; this stage does not promise backward
+safety from binaries that predate invitation recovery.
+
+Native production-dispatch regressions retain actual SSH argv, own a real native
+descendant, measure UI heartbeat, count submissions and check private request
+bytes across cancellation, deadline and restart. Default modal tests distinguish
+intentional Close from disposal. Late disposed Friends continuations preserve
+the journal and publish no token. Masked token, waiting and reopened-gate images
+join the existing Windows screenshot artifact. Synchronous local DPAPI/file
+operations remain an explicit F31 performance verification limitation.
+
+Local public-content/diff checks and existing server receipt tests PASS. Exact-head
+Windows C#5 build, native process/modal/DPAPI regressions, PowerShell archive tests
+and screenshot review remain pending. **F23 remains OPEN.** Reissue phase-one
+revoke and ordinary revoke/repair/share SSH waits still use the previous protected
+console path; bounding those waits is explicit later work. No universal receipt
+TTL, remote acknowledgment, rollback, release or live-VPS changes are included.
+
+## F31j — serialize integration changes off the UI
+
+Prepared worker-only Windows/CLI enable and restore transactions behind one async
+gate shared by manual off/Stop, automation and prepared shutdown. Captured owner
+state, fresh native ownership checks, consumer/listener leases and explicit owner
+dispatch preserve ordering and listener availability. Pending settings Save refuses
+conflicting writes without waiting on the UI. CLI enable also preserves fresh live
+Windows value kinds and atomically retains denied corrections for conditional retry.
+
+Forced disposal cancels queued work and settles lost UI completions without starting
+a new native restore. Already active native work may settle after UI closure while
+its listener and failure journals remain available; only another owner Dispose or
+process exit releases that emergency listener. No false shutdown success is claimed.
+
+Native regressions cover actual delayed/denied writes and notifications, heartbeat,
+null synchronization context, external changes, enable/off ordering, pending Save,
+listener/error retry and close/shutdown settlement. At this local preparation stage:
+Python **36 PASS / 3 SKIP**, public-content and diff checks **PASS**; C# compilation,
+native Windows execution and Rescue/HDD/VHDX measurements **NOT_CHECKED**. Cold bridge
+start, settings/startup persistence, port migration and synchronous rollback still
+require the next bounded stage. **F31 remains OPEN; accepted status stays 22/31.**

@@ -1231,3 +1231,97 @@ PASS/FAIL/NOT_CHECKED contract. Process I/O includes cache/device operations; Wi
 Responding is not a click-latency measurement; port presence is not SOCKS/HTTP
 protocol or external reachability. Real Rescue/HDD/VHDX acceptance remains unchecked
 until the owner runs and reviews the relevant measurements.
+
+### Audit stage F23l — one recoverable invitation request
+
+`HomeVpnAdminRecovery` validates a bounded ten-field DPAPI journal with canonical
+owner endpoint, invite action/request ID, original name, nullable source invite ID,
+expected server ID and optional result. A nonwaiting lease prevents concurrent
+issuance/recovery in the desktop process; the persisted slot blocks later issuance
+after Close/restart. Register and result retention use flushed atomic writes.
+Recovery verifies the original owner and strict receipt status, then retrieves
+the original result only while available. `not-found` does not permit resubmission:
+a delayed original SSH command could still enter the server after that snapshot.
+The endpoint and authentication path are copied before the first await, so edits
+to the caller's settings object cannot redirect a running request. Each recovery
+SSH query has its own cleanup trap; the public helper is copied again only after
+a completed status permits the result query.
+
+Normal invitation stdout contains status JSON plus the exact token from a live
+receipt result check. All helper output remains on stderr; private stdout goes to
+the protected temporary local result file. The remote shell retains its cleanup
+trap. Reissue supplies its acknowledged old ID as receipt metadata for phase two,
+so recovery never redirects the replacement or repeats the revoke. Result binding
+checks the authoritative stored metadata, server identity and distinct new ID.
+
+Friends keeps a separate persisted-request gate across ordinary List refreshes.
+The explicit recovery action performs no mutation; token presentation must return
+from intentional modal UserClosing before local consumption. A failed handoff,
+corrupt journal, unavailable/revoked token or uncertain response retains the slot.
+The current saved owner access/token is never replaced by the friend's token.
+Owner review remains required for an unavailable or unconfirmed request; no UI
+action discards such a record and blindly issues again.
+
+`HomeVpnAdminRecoveryTests` runs the actual production command dispatcher with
+a substituted native SSH executable and retains its real argv. It covers the
+owned root/descendant, deadline, all cancellation routes, UI heartbeat, stable
+request IDs, reopening and List admission gates, availability rechecks, exact
+result retention and default modal Close versus Dispose. Supplementary real-form
+continuation tests check late success/failure after disposal. Waiting, reopened
+Friends and masked token-modal screenshots are written to the existing
+`build/vpn-fixture` artifact as `vps-invite-*.png`; review them with Windows CI.
+
+`admin-request.dat` joins the shared F22 encrypted archive allowlist. C# verifies
+composition, bytes, integrity, preparation, excluded live/unknown data and no
+automatic import; installed PowerShell helper tests verify the same shared writer
+and real Windows junction rejection. The archive remains CurrentUser DPAPI data,
+not a portable importer. Existing restore scopes preserve current live journals.
+
+Only invite issuance and reissue phase two are integrated. Phase-one/ordinary
+revoke, repair and HTTPS-service installation retain their protected console
+waits and remain explicit later F23 work. Setup recovery and server receipts are
+unchanged; no new server cleanup, acknowledgment or retention protocol.
+
+## F31j — asynchronous Windows and CLI integration mutations
+
+The application context serializes manual enable/off, automation, desktop Stop
+and prepared shutdown through one asynchronous integration gate. It captures
+settings and listener revision on its UI owner, performs fresh native ownership
+transactions on a worker, and publishes the result on the persistent owner
+dispatcher. This moves registry/file writes, environment setters and their
+notifications off the UI without moving listener or form operations to a worker.
+Manual off cancels its route intent immediately; an already active native enable
+finishes before the queued off restores its owned values. A blocked native call
+retains the gate and pending state instead of allowing another writer or declaring
+shutdown complete. Automation retains its existing bounded retry policy.
+
+A consumer mutation lease prevents timer observation from stopping an endpoint
+between its environment setters and completion. Failures retain ownership journals
+and cleanup state for explicit retry. CLI enable now uses the same fresh live typed
+Windows-value protection as CLI off: known notification normalization is corrected,
+denied corrections are recorded atomically, and later different external values
+are preserved. No old Windows snapshot is substituted for those live values.
+
+Settings remain inspectable while integration work is pending, but Save is disabled
+with an accessible explanation and a forced Save is refused before changing startup
+preferences. The existing synchronous reconfiguration acquires the same gate with
+a nonblocking attempt. It cannot overlap an active asynchronous native transaction.
+This gate does not yet make cold bridge configuration, settings/startup saving,
+port migration or rollback asynchronous; those paths remain a separate F31 stage.
+
+Prepared shutdown waits for actual settlement and disposes without repeating native
+cleanup. Forced owner disposal cancels queued gate waits, settles queued dispatcher
+tasks without a surviving message pump, and starts no new cleanup. An already
+active native mutation retains the bridge listener through a thread-safe lease.
+The worker never stops it or updates closed controls. That emergency listener is
+retained until another explicit owner Dispose or process exit; journals remain on
+failure. Forced teardown is not reported as prepared shutdown success.
+
+`DesktopIntegrationMutationTests.cs` is compiled into the normal Windows harness.
+The isolated native fixtures exercise real registry/environment writes and delayed
+notifications, UI heartbeat with a null SynchronizationContext, denial/retry,
+intervening external edits, enable/off ordering, pending Save, listener retention,
+prepared shutdown, active and queued forced closure, and a discarded final shutdown
+callback. They use loopback resources and never contact a live VPS. Local Linux
+checks pass; compilation/native Windows execution and actual Rescue/HDD/VHDX
+profiling remain NOT_CHECKED. F31 remains OPEN.

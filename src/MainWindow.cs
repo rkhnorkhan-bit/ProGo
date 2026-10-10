@@ -100,11 +100,15 @@ namespace ProGo
             terminalState = Card(cards, 1, "CODEX И ТЕРМИНАЛЫ", "Для новых терминалов", AppCommand.StartCli, action);
             phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards, 0, 2);
             recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
-            backupProgress = new LinkLabel { Name = "BackupProgress", AutoSize = true, Font = UiTheme.Body,
-                LinkColor = UiTheme.Accent, ActiveLinkColor = UiTheme.Text, VisitedLinkColor = UiTheme.Accent,
-                AccessibleName = "Состояние резервной копии", AccessibleDescription = "Открыть состояние стартовой или ручной копии. Ручная копия создаётся отдельной командой." };
-            backupProgress.LinkClicked += delegate { if (showBackupProgress != null) showBackupProgress(); };
-            body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery, backupProgress), 0, 3);
+            var recoveryControls = new List<Control> { UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery };
+            if (backupStatus != null) {
+                backupProgress = new LinkLabel { Name = "BackupProgress", AutoSize = true, Font = UiTheme.Body,
+                    LinkColor = UiTheme.Accent, ActiveLinkColor = UiTheme.Text, VisitedLinkColor = UiTheme.Accent,
+                    AccessibleName = "Состояние резервной копии", AccessibleDescription = "Открыть состояние стартовой или ручной копии. Ручная копия создаётся отдельной командой." };
+                backupProgress.LinkClicked += delegate { if (showBackupProgress != null) showBackupProgress(); };
+                recoveryControls.Add(backupProgress);
+            }
+            body.Controls.Add(Surface(recoveryControls.ToArray()), 0, 3);
             openCodex = AppCommandUi.Button(AppCommand.OpenCodex, delegate { action(AppCommand.OpenCodex); }, false);
             var footer = Actions(AppCommandUi.Button(AppCommand.Update, delegate { action(AppCommand.Update); }, false),
                 openCodex, AppCommandUi.Button(AppCommand.Help, delegate { action(AppCommand.Help); }, false));
@@ -232,8 +236,10 @@ namespace ProGo
         internal void RefreshConnectionState() { RefreshState(); }
         private void RefreshState()
         {
-            backupProgress.Text = backupStatus == null ? "" : backupStatus();
-            backupProgress.Visible = backupProgress.Text.Length > 0;
+            if (backupProgress != null) {
+                backupProgress.Text = backupStatus() ?? "";
+                backupProgress.Visible = backupProgress.Text.Length > 0;
+            }
             var commands = commandState == null ? new AppCommandState(new AppCommand[0], proxy.IsConnecting, false) : commandState();
             bool cliPending = commands.IsPending(AppCommand.StartCli), windowsPending = commands.IsPending(AppCommand.EnableWindows);
             var status = health == null ? new ConnectionHealthSnapshot("", ConnectionProbeState.Unknown, ConnectionProbeState.Unknown) : health.Current;

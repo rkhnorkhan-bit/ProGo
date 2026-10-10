@@ -17,9 +17,9 @@ namespace ProGo
     internal sealed class AppCommandState
     {
         private readonly HashSet<AppCommand> pending;
-        internal readonly bool Connecting, Stopping, BackingUp;
-        internal AppCommandState(IEnumerable<AppCommand> pending, bool connecting, bool stopping, bool backingUp = false)
-        { this.pending = new HashSet<AppCommand>(pending); Connecting = connecting; Stopping = stopping; BackingUp = backingUp; }
+        internal readonly bool Connecting, Stopping, BackingUp, Integrating;
+        internal AppCommandState(IEnumerable<AppCommand> pending, bool connecting, bool stopping, bool backingUp = false, bool integrating = false)
+        { this.pending = new HashSet<AppCommand>(pending); Connecting = connecting; Stopping = stopping; BackingUp = backingUp; Integrating = integrating; }
         internal bool IsPending(AppCommand command) { return pending.Contains(command); }
         internal bool HasPending { get { return pending.Count != 0; } }
     }
@@ -92,6 +92,7 @@ namespace ProGo
         {
             var definition = Get(command);
             if (state.Stopping) return false;
+            if (state.Integrating && (definition.RequiresRoute || command == AppCommand.RemoveCodexShortcut)) return false;
             if (state.BackingUp && (command == AppCommand.CreateBackup || command == AppCommand.RestoreBackup ||
                 command == AppCommand.CleanupBackups || command == AppCommand.Update)) return false;
             if (!definition.RequiresRoute) return true; // Off/Stop must remain usable to cancel waiting work.

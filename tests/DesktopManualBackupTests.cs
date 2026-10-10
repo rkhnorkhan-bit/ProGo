@@ -89,6 +89,7 @@ namespace ProGo
                             Check(context.IsManualBackupRunning && form.IsBusy, "real settings dialog can be opened and cancelled without waiting for the copy worker");
                         });
                         commands[AppCommand.StopDesktop].PerformClick();
+                        WaitIntegration(context);
                         PumpUntil(() => !proxy.IsStopping);
                         Check(cleanupCalls == 1 && context.IsManualBackupRunning && !pending.IsCompleted,
                             "real tray desktop stop executes its independent cleanup while manual backup remains blocked");

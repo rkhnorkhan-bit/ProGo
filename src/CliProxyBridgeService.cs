@@ -27,6 +27,25 @@ namespace ProGo
         private long consumerRevision;
         internal long ConsumerRevision { get { return Interlocked.Read(ref consumerRevision); } }
         private readonly HashSet<TcpClient> clients = new HashSet<TcpClient>();
+        private readonly object retentionGate = new object();
+        private int nativeMutationRetentions;
+        internal IDisposable RetainForNativeMutation()
+        {
+            lock (retentionGate) nativeMutationRetentions++;
+            return new NativeRetention(this);
+        }
+        private sealed class NativeRetention : IDisposable
+        {
+            private CliProxyBridgeService owner;
+            internal NativeRetention(CliProxyBridgeService owner) { this.owner = owner; }
+            public void Dispose()
+            {
+                var value = Interlocked.Exchange(ref owner, null);
+                if (value != null) lock (value.retentionGate) value.nativeMutationRetentions--;
+                // Only the owner UI may stop the listener. A forced Dispose during
+                // native work retains it until another owner Dispose/process exit.
+            }
+        }
 
         public CliProxyBridgeService(SettingsService settingsService)
         {
@@ -481,7 +500,10 @@ namespace ProGo
 
         public void Dispose()
         {
-            Stop();
+            lock (retentionGate) {
+                if (nativeMutationRetentions != 0) return;
+                Stop();
+            }
         }
     }
 
@@ -516,6 +538,10 @@ namespace ProGo
         }
         public static void ApplyUserEnvironment(int port)
         {
+            ApplyUserEnvironment(port, SystemProxyService.WriteValue, BroadcastEnvironmentChange);
+        }
+        internal static void ApplyUserEnvironment(int port, Action<RegistryKey, string, WindowsProxyValue> writer, Action notification)
+        {
             CliProxyBridgeService.UrlFor(port);
             AppPaths.EnsureDirectories();
             var saved = ReadBackup();
@@ -528,10 +554,24 @@ namespace ProGo
                     saved[name] = String.Equals(value, Expected(name, port), StringComparison.OrdinalIgnoreCase) ? null : value;
                 }
             }
+            var corrections = ReadTypedCorrections(saved);
+            if (corrections.Count != 0) {
+                try { SystemProxyService.RetryTypedValues(corrections, writer); }
+                finally { SaveTypedCorrections(saved, corrections); }
+            }
             saved[OwnedPortKey] = port.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            File.WriteAllText(BackupPath, new JavaScriptSerializer().Serialize(saved));
-            foreach (var name in Names) SetUser(name, Expected(name, port));
-            BroadcastEnvironmentChange();
+            SaveTypedCorrections(saved, corrections); // Ownership precedes every setter/notification.
+            bool correctionFailed = false;
+            SystemProxyService.PreserveTypedValues(delegate {
+                foreach (var name in Names) SetUser(name, Expected(name, port));
+                notification();
+            }, writer, delegate(WindowsProxyFieldBackup correction, Exception failure) {
+                correctionFailed = true;
+                corrections.RemoveAll(f => f.Name == correction.Name); corrections.Add(correction);
+                SaveTypedCorrections(saved, corrections);
+                SafeLog.Info("CLI notification typed-value correction pending: " + correction.Name + ".");
+            });
+            if (correctionFailed) throw new IOException("Не удалось сохранить типы настроек Windows после включения CLI. Копия сохранена; повторите выключение после проверки прав записи.");
             SafeLog.Info("Proxy environment applied for new terminals.");
         }
 
