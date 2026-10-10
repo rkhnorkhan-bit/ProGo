@@ -419,7 +419,17 @@ namespace ProGo
             Action<RegistryKey, string, WindowsProxyValue> writer,
             Action<WindowsProxyFieldBackup, Exception> failed)
         {
+            PreserveTypedValues(notification, writer, failed, null);
+        }
+        internal static void PreserveTypedValues(Action notification,
+            Action<RegistryKey, string, WindowsProxyValue> writer,
+            Action<WindowsProxyFieldBackup, Exception> failed,
+            Action<Dictionary<string, WindowsProxyValue>> prepare)
+        {
             var before = ReadCurrent().Values;
+            // A failed guard write must abort before any setter/notification.
+            // Use the exact same live snapshot for preparation and correction.
+            if (prepare != null) prepare(before);
             try { notification(); }
             finally { CorrectTypedValues(before, writer, failed); }
         }
