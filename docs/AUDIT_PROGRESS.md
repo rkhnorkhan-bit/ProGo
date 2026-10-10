@@ -1681,3 +1681,17 @@ authentication, bounded auth-failure retries, other synchronous UI paths,
 HDD/VHDX CPU/RAM/disk measurements, installed-version detection and the live
 SOCKS/HTTP route. Multiple VPS profiles and local ports remain independent
 settings; changing machines must not silently substitute a different key.
+
+## F31b — pause background recovery after permanent SSH refusal
+
+Classified key rejection and host-key refusal now pause automatic reconnection
+with visible corrective guidance. No scheduled restart remains after a permanent
+refusal; timer ticks and preference toggles do not launch more children. Explicit
+Connect after fixing the profile re-arms the attempt. Temporary network/process
+failures keep existing bounded backoff. Raw stderr remains excluded from logs.
+
+Regressions cover key and host-key refusal, twenty later timer advances, preference
+toggles, no automatic child starts and successful explicit retry through the
+existing noninteractive SOCKS handshake. Windows acceptance pending. No service,
+VPS, key-protection or host-key-verification changes. F31 remains open and overall
+progress remains 21/31 pending live and remaining audit evidence.

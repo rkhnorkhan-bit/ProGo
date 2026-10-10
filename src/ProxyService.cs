@@ -22,6 +22,7 @@ namespace ProGo
         private CancellationTokenSource startupCancellation;
         private volatile bool connecting;
         private volatile string startupError, sshError;
+        private string recoveryPause;
         internal bool IsConnecting { get { return connecting; } }
         internal string StartupError { get { return startupError; } }
         private readonly System.Threading.Timer recoveryTimer;
@@ -93,6 +94,7 @@ namespace ProGo
                 try
                 {
                     if (!readSettings().AutoRestartSocks) return "Выключено";
+                    if (recoveryPause != null) return "Автовосстановление приостановлено: " + recoveryPause + " После исправления нажмите «Подключить».";
                     if (!wanted) return "Ожидает запуска SOCKS";
                     if (portOccupied) return "Ожидание: порт занят другим процессом";
                     if (retryAt.HasValue)
@@ -194,6 +196,7 @@ namespace ProGo
                 token.ThrowIfCancellationRequested();
                 if (disposed) return;
                 var current = readSettings();
+                recoveryPause = null; sshError = null;
                 var targets = BuildProfileTargets(current);
                 if (targets.Count == 0)
                 {
@@ -265,7 +268,7 @@ namespace ProGo
             if (!System.Threading.Monitor.TryEnter(gate)) return;
             try
             {
-                if (disposed || connecting || !wanted || !readSettings().AutoRestartSocks) return;
+                if (disposed || connecting || !wanted || recoveryPause != null || !readSettings().AutoRestartSocks) return;
                 var now = utcNow();
                 if (sshProcess != null)
                 {
@@ -297,6 +300,7 @@ namespace ProGo
                     return;
                 }
 
+                if (sshError != null) { PauseRecovery(); return; }
                 if (!retryAt.HasValue) ScheduleRecovery();
                 if (!retryAt.HasValue || utcNow() < retryAt.Value) return;
                 // Do not kill/adopt another listener that has claimed the configured port.
@@ -325,9 +329,16 @@ namespace ProGo
             finally { System.Threading.Monitor.Exit(gate); }
         }
 
+        private void PauseRecovery()
+        {
+            // Only fixed, classified guidance is retained; raw stderr is never exported.
+            recoveryPause = sshError; retryAt = null;
+            SafeLog.Info("SOCKS recovery paused after permanent SSH refusal.");
+        }
         private void ScheduleRecovery()
         {
             if (!wanted || disposed) { retryAt = null; return; }
+            if (sshError != null) { PauseRecovery(); return; }
             failures = Math.Min(failures + 1, 1000);
             var seconds = Math.Min(60, 5 * (1 << Math.Min(failures - 1, 4)));
             retryAt = utcNow().AddSeconds(seconds);
