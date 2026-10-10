@@ -190,6 +190,11 @@ namespace ProGo
     {
         private readonly System.Windows.Forms.Timer clock = new System.Windows.Forms.Timer();
         private readonly Bitmap bitmap;
+        private readonly Control revokeDispatcher = new Control();
+        private readonly object revokeCompletionGate = new object();
+        private readonly System.Collections.Generic.HashSet<TaskCompletionSource<bool>> revokeCompletions = new System.Collections.Generic.HashSet<TaskCompletionSource<bool>>();
+        private volatile bool closed;
+        internal Task RevokeWork { get; private set; }
         internal PhoneProfileQrForm(PhoneProfileLink link, Func<Task> revoke, ClipboardService clipboard)
         {
             Text = "VPN на телефоне — сканируйте QR"; ClientSize = new Size(570, 700);
@@ -216,18 +221,15 @@ namespace ProGo
                 AccessibleDescription = "Закрывает окно без отзыва ссылки. Ссылка остаётся доступной до использования, отзыва или истечения срока." };
             close.Click += delegate { Close(); };
             CancelButton = close;
-            cancel.Click += async delegate
+            cancel.Click += delegate
             {
+                if (closed || !cancel.Enabled) return;
                 cancel.Enabled = false; error.Text = ""; error.Visible = false;
-                try {
-                    await revoke();
-                    if (IsDisposed || Disposing) return;
+                RevokeWork = RunRevoke(revoke, delegate {
                     clock.Stop(); status.Text = "Ссылка отозвана. Уже установленный VPN продолжает работать."; picture.Visible = false; copy.Enabled = false;
-                }
-                catch (Exception) {
-                    if (IsDisposed || Disposing) return;
+                }, delegate {
                     error.Text = "Отозвать не удалось: проверьте соединение. Ссылка автоматически истечёт через 15 минут после создания."; error.Visible = true; cancel.Enabled = true;
-                }
+                });
             };
             panel.Controls.Add(copy); panel.Controls.Add(copyNotice); panel.Controls.Add(cancel);
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "Ссылка для одного телефона: после «Получить профиль» повторно воспользоваться QR нельзя. Для другого телефона создайте новый QR. Не публикуйте код. Android использует strongSwan VPN Client.", Margin = new Padding(0, 8, 0, 8) });
@@ -238,18 +240,61 @@ namespace ProGo
                 Padding = new Padding(18, 0, 18, 12), Margin = Padding.Empty };
             footer.Controls.Add(error); footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
+            // Modal windows can remove SynchronizationContext. Keep a handle owned by
+            // this constructor's UI thread for completion, independently of that context.
+            revokeDispatcher.CreateControl();
+            FormClosed += delegate { CloseRevoke(); clock.Stop(); };
             clock.Interval = 1000;
             EventHandler update = delegate
             {
+                if (closed) return;
                 var left = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(link.Expires) - DateTime.UtcNow;
                 status.Text = left.TotalSeconds > 0 ? "Осталось " + ((int)left.TotalMinutes) + ":" + left.Seconds.ToString("00") : "Время истекло. Закройте окно и создайте новый QR.";
                 if (left.TotalSeconds <= 0) { clock.Stop(); picture.Visible = false; copy.Enabled = false; }
             };
             clock.Tick += update; update(this, EventArgs.Empty); clock.Start();
         }
+        private async Task RunRevoke(Func<Task> revoke, Action succeeded, Action failed)
+        {
+            bool failure = false;
+            try { await revoke().ConfigureAwait(false); }
+            catch (Exception) { failure = true; }
+            await DispatchRevokeCompletion(failure ? failed : succeeded).ConfigureAwait(false);
+        }
+        private Task<bool> DispatchRevokeCompletion(Action action)
+        {
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (revokeCompletionGate) {
+                if (closed) return Task.FromResult(false);
+                revokeCompletions.Add(completion);
+            }
+            try {
+                revokeDispatcher.BeginInvoke(new Action(delegate {
+                    try {
+                        if (closed || IsDisposed || Disposing) { completion.TrySetResult(false); return; }
+                        action(); completion.TrySetResult(true);
+                    } catch (Exception ex) { completion.TrySetException(ex); }
+                    finally { lock (revokeCompletionGate) revokeCompletions.Remove(completion); }
+                }));
+            } catch (InvalidOperationException) {
+                lock (revokeCompletionGate) revokeCompletions.Remove(completion);
+                completion.TrySetResult(false);
+            }
+            return completion.Task;
+        }
+        private void CloseRevoke()
+        {
+            closed = true;
+            lock (revokeCompletionGate) {
+                // Closing discards native callbacks. Their tasks must settle without a
+                // message loop; the already dispatched server request still completes.
+                foreach (var completion in revokeCompletions) completion.TrySetResult(false);
+                revokeCompletions.Clear();
+            }
+        }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { clock.Dispose(); if (bitmap != null) bitmap.Dispose(); }
+            if (disposing) { CloseRevoke(); revokeDispatcher.Dispose(); clock.Dispose(); if (bitmap != null) bitmap.Dispose(); }
             base.Dispose(disposing);
         }
     }

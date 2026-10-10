@@ -24,16 +24,22 @@ namespace ProGo
             209, 17, 140, 122, 0, 192, 79, 194, 151, 235 };
 
         public static void CopyPersonalArchives(string sourceDirectory, string destinationDirectory)
+        { CopyPersonalArchives(sourceDirectory, destinationDirectory, CancellationToken.None); }
+
+        public static void CopyPersonalArchives(string sourceDirectory, string destinationDirectory, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var source = Root(sourceDirectory); var destination = Root(destinationDirectory);
             foreach (var name in ProxyJournals)
             {
+                cancellation.ThrowIfCancellationRequested();
                 var path = Path.Combine(source, name); FileAttributes attributes;
                 if (!TryAttributes(path, out attributes)) continue;
                 RejectReparse(path);
                 if ((attributes & FileAttributes.Directory) != 0)
                     throw new InvalidDataException("Вместо снимка прокси обнаружена папка: " + name + ".");
                 File.Copy(path, Path.Combine(destination, name), false);
+                cancellation.ThrowIfCancellationRequested();
             }
             var home = Path.Combine(source, HomeArchive); FileAttributes homeAttributes;
             if (!TryAttributes(home, out homeAttributes)) return;
@@ -44,6 +50,7 @@ namespace ProGo
             // and recovery output. Only the known persistent DPAPI files are copied.
             foreach (var entry in Directory.GetFileSystemEntries(home))
             {
+                cancellation.ThrowIfCancellationRequested();
                 // Windows opens persistent names case-insensitively. Canonicalise
                 // the archive rather than silently omitting ACCESS.DAT after a move.
                 var name = Path.GetFileName(entry).ToLowerInvariant();
@@ -57,7 +64,12 @@ namespace ProGo
                     var target = Path.Combine(destination, HomeArchive);
                     Directory.CreateDirectory(target); RejectReparse(target);
                     using (var output = new FileStream(Path.Combine(target, name), FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                    { input.Position = 0; input.CopyTo(output); }
+                    {
+                        input.Position = 0; var buffer = new byte[65536]; int read;
+                        while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                        { cancellation.ThrowIfCancellationRequested(); output.Write(buffer, 0, read); }
+                        cancellation.ThrowIfCancellationRequested();
+                    }
                 }
             }
         }
@@ -118,7 +130,7 @@ namespace ProGo
         {
             cancellation.ThrowIfCancellationRequested();
             var root = Root(directory);
-            Validate(root);
+            Validate(root, cancellation);
             cancellation.ThrowIfCancellationRequested();
             // Capture the recorded evidence, never generate new digests from live input.
             var index = File.ReadAllBytes(Path.Combine(root, IndexName));
@@ -150,7 +162,7 @@ namespace ProGo
                 File.WriteAllBytes(Path.Combine(copy.Path, IndexName), index);
                 File.WriteAllBytes(Path.Combine(copy.Path, "manifest.txt"), manifest);
                 cancellation.ThrowIfCancellationRequested();
-                Validate(copy.Path);
+                Validate(copy.Path, cancellation);
                 cancellation.ThrowIfCancellationRequested();
                 return copy;
             }
@@ -188,11 +200,16 @@ namespace ProGo
         }
 
         public static void Write(string directory)
+        { Write(directory, CancellationToken.None); }
+
+        public static void Write(string directory, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var root = Root(directory);
             var files = Inventory(root);
             var text = new StringBuilder(Header + "\n");
-            foreach (var path in files) text.Append(Hash(root, path)).Append('\t').Append(path).Append('\n');
+            foreach (var path in files) text.Append(Hash(root, path, cancellation)).Append('\t').Append(path).Append('\n');
+            cancellation.ThrowIfCancellationRequested();
             var temporary = Path.Combine(root, IndexName + ".tmp");
             try
             {
@@ -205,7 +222,11 @@ namespace ProGo
         }
 
         public static void Validate(string directory)
+        { Validate(directory, CancellationToken.None); }
+
+        public static void Validate(string directory, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var root = Root(directory);
             var index = Path.Combine(root, IndexName);
             if (!File.Exists(index)) throw new InvalidDataException(
@@ -216,6 +237,7 @@ namespace ProGo
             var expected = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             for (var i = 1; i < lines.Length; i++)
             {
+                cancellation.ThrowIfCancellationRequested();
                 var split = lines[i].IndexOf('\t');
                 if (split != 64) throw new InvalidDataException("Повреждён список файлов копии.");
                 var digest = lines[i].Substring(0, split);
@@ -233,7 +255,7 @@ namespace ProGo
             foreach (var path in actual)
             {
                 string digest;
-                if (!expected.TryGetValue(path, out digest) || !String.Equals(Hash(root, path), digest, StringComparison.Ordinal))
+                if (!expected.TryGetValue(path, out digest) || !String.Equals(Hash(root, path, cancellation), digest, StringComparison.Ordinal))
                     throw new InvalidDataException("Файл копии изменён или повреждён: " + path + ".");
             }
             var manifest = Path.Combine(root, "manifest.txt");
@@ -328,13 +350,21 @@ namespace ProGo
             throw new InvalidDataException("Неизвестный файл в копии: " + path + ".");
         }
 
-        private static string Hash(string root, string relative)
+        private static string Hash(string root, string relative, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
             RejectReparse(path);
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var algorithm = SHA256.Create())
-                return BitConverter.ToString(algorithm.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+            {
+                var buffer = new byte[65536]; int read;
+                while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                { cancellation.ThrowIfCancellationRequested(); algorithm.TransformBlock(buffer, 0, read, buffer, 0); }
+                cancellation.ThrowIfCancellationRequested();
+                algorithm.TransformFinalBlock(new byte[0], 0, 0);
+                return BitConverter.ToString(algorithm.Hash).Replace("-", "").ToLowerInvariant();
+            }
         }
 
         private static void RejectReparse(string path)

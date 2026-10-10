@@ -37,6 +37,10 @@ internal static class BackupIntegrityTests
         try
         {
             Fixture(); BackupIntegrity.Validate(root); Check(true, "complete copy with nested paths validates");
+            File.WriteAllBytes(Path.Combine(root, "VERSION"), System.Text.Encoding.ASCII.GetBytes("0.0.1\n"));
+            BackupIntegrity.Write(root);
+            Check(File.ReadAllText(Path.Combine(root, BackupIntegrity.IndexName)).Contains("e6635045e1d2478ec4ca712d8c0e1dfcef8bb7b5b1e8e3bb560d37fe399a9e72\tVERSION\n"),
+                "chunked cancellable hashing preserves the existing v1 SHA-256 payload format");
             File.Delete(Path.Combine(root, "scripts", "Maintenance-ProGo.ps1"));
             File.Delete(Path.Combine(root, "scripts", "MaintenanceOperation.cs"));
             BackupIntegrity.Write(root); BackupIntegrity.Validate(root);

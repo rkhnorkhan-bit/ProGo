@@ -71,7 +71,7 @@ namespace ProGo
                     revoke.PerformClick(); Application.DoEvents();
                     Check(revoked == 1 && !revoke.Enabled && copy.Enabled && close.Enabled, "QR pending revocation prevents duplicate requests and retains existing independent actions");
                     KeyboardWalk(form, new Control[] { copy, close }, "QR pending skips revoke");
-                    pending.SetException(new InvalidOperationException("fixture failure")); PumpUntil(() => revoke.Enabled);
+                    pending.SetException(new InvalidOperationException("fixture failure")); PumpUntil(() => form.RevokeWork.IsCompleted); form.RevokeWork.GetAwaiter().GetResult();
                     Check(error.Text.StartsWith("Отозвать не удалось") && error.AccessibilityObject.Description == error.Text &&
                         picture.Visible && copy.Enabled, "QR failed revocation exposes a named corrective result and keeps the link usable");
                     KeyboardWalk(form, new Control[] { copy, revoke, close }, "QR failure allows retry");
@@ -79,7 +79,7 @@ namespace ProGo
                     Check(close.ContainsFocus && close.Parent.ClientRectangle.Contains(close.Bounds) && error.Visible && error.Parent.ClientRectangle.Contains(error.Bounds),
                         "QR Tab reaches fully visible Close and corrective error outside scrolling content");
                     Shot(form, "keyboard-qr-retry");
-                    revoke.PerformClick(); Application.DoEvents();
+                    revoke.PerformClick(); PumpUntil(() => form.RevokeWork.IsCompleted); form.RevokeWork.GetAwaiter().GetResult();
                     Check(revoked == 2 && !clock.Enabled && !picture.Visible && !copy.Enabled && !revoke.Enabled &&
                         status.Text.StartsWith("Ссылка отозвана") && status.AccessibilityObject.Description == status.Text && !error.Visible && error.AccessibilityObject.Description == "",
                         "QR successful retry removes copy and revoke actions while naming the real result");
@@ -94,6 +94,8 @@ namespace ProGo
                 }
                 foreach (string route in new[] { "close", "dispose" })
                     foreach (bool failure in new[] { false, true }) QrLateRevoke(link, clipboard, route, failure);
+                foreach (bool failure in new[] { false, true }) QrRevokeOwnerUi(link, clipboard, failure);
+                QrQueuedRevokeClose(link, clipboard);
                 link.Expires = 1;
                 using (var form = new PhoneProfileQrForm(link, () => { revoked++; return Task.FromResult(0); }, clipboard)) {
                     form.Show(); Application.DoEvents(); ((Timer)Field(form, "clock")).Stop();
@@ -113,22 +115,22 @@ namespace ProGo
         }
         private static void QrLateRevoke(PhoneProfileLink link, ClipboardService clipboard, string route, bool failure)
         {
-            var pending = new TaskCompletionSource<object>(); int calls = 0, threadErrors = 0;
+            var previousContext = System.Threading.SynchronizationContext.Current;
+            var pending = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously); int calls = 0, threadErrors = 0;
             System.Threading.ThreadExceptionEventHandler threadError = delegate { threadErrors++; };
             Application.ThreadException += threadError;
             try {
                 using (var form = new PhoneProfileQrForm(link, () => { calls++; return pending.Task; }, clipboard)) {
                     form.Show(); Application.DoEvents();
-                    var context = System.Threading.SynchronizationContext.Current;
-                    Check(context is WindowsFormsSynchronizationContext, "QR late-response fixture captures the native UI continuation context");
                     var clock = (Timer)Field(form, "clock"); clock.Stop();
                     var revoke = Descendants(form).OfType<Button>().Single(b => b.Text == "Отозвать ссылку");
                     var copy = Descendants(form).OfType<Button>().Single(b => b.Text == "Скопировать ссылку");
                     var picture = Descendants(form).OfType<PictureBox>().Single();
                     var status = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Срок действия ссылки на профиль");
                     var error = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Результат отзыва ссылки");
-                    revoke.PerformClick(); Application.DoEvents();
-                    Check(calls == 1 && !pending.Task.IsCompleted && !revoke.Enabled && ((Button)form.CancelButton).Enabled,
+                    System.Threading.SynchronizationContext.SetSynchronizationContext(null);
+                    revoke.PerformClick(); var work = form.RevokeWork;
+                    Check(calls == 1 && !pending.Task.IsCompleted && work != null && !work.IsCompleted && !revoke.Enabled && ((Button)form.CancelButton).Enabled,
                         "QR late-response fixture starts exactly one revocation and permits independent dismissal");
                     if (route == "close") form.Close(); else form.Dispose();
                     Application.DoEvents();
@@ -142,16 +144,76 @@ namespace ProGo
                     copy.EnabledChanged += changed; revoke.EnabledChanged += changed; picture.VisibleChanged += changed;
                     if (failure) pending.SetException(new InvalidOperationException("synthetic-private-late-revoke"));
                     else pending.SetResult(null);
-                    // The continuation is inline or queued before this UI barrier.
-                    // Drain it deterministically, without a timing-based sleep.
-                    bool drained = false;
-                    context.Post(delegate { drained = true; }, null); PumpUntil(() => drained);
+                    Check(work.Wait(3000), "QR actual revoke work settles after " + route + " without a UI message loop");
+                    work.GetAwaiter().GetResult(); Application.DoEvents();
                     Check(calls == 1 && threadErrors == 0 && lateChanges == 0 && !clock.Enabled && form.IsDisposed &&
                         status.Text == previousStatus && error.Text == previousError && copy.Enabled == previousCopy &&
                         revoke.Enabled == previousRevoke && picture.Visible == previousPicture,
                         "QR late " + (failure ? "failure" : "success") + " after " + route + " causes no UI publication, exception, or duplicate revocation");
                 }
-            } finally { Application.ThreadException -= threadError; }
+            } finally { Application.ThreadException -= threadError; System.Threading.SynchronizationContext.SetSynchronizationContext(previousContext); }
+        }
+        private static void QrRevokeOwnerUi(PhoneProfileLink link, ClipboardService clipboard, bool failure)
+        {
+            var previousContext = System.Threading.SynchronizationContext.Current;
+            var pending = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            int owner = System.Threading.Thread.CurrentThread.ManagedThreadId, wrongThread = 0, updates = 0, ticks = 0, calls = 0;
+            using (var form = new PhoneProfileQrForm(link, () => { calls++; return pending.Task; }, clipboard))
+            using (var heartbeat = new Timer { Interval = 20 }) {
+                try {
+                    form.Show(); Application.DoEvents(); ((Timer)Field(form, "clock")).Stop();
+                    var revoke = Descendants(form).OfType<Button>().Single(b => b.Text == "Отозвать ссылку");
+                    var copy = Descendants(form).OfType<Button>().Single(b => b.Text == "Скопировать ссылку");
+                    var picture = Descendants(form).OfType<PictureBox>().Single();
+                    var status = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Срок действия ссылки на профиль");
+                    var error = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Результат отзыва ссылки");
+                    EventHandler changed = delegate {
+                        System.Threading.Interlocked.Increment(ref updates);
+                        if (System.Threading.Thread.CurrentThread.ManagedThreadId != owner) System.Threading.Interlocked.Increment(ref wrongThread);
+                    };
+                    status.TextChanged += changed; error.TextChanged += changed;
+                    copy.EnabledChanged += changed; revoke.EnabledChanged += changed; picture.VisibleChanged += changed;
+                    heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                    System.Threading.SynchronizationContext.SetSynchronizationContext(null);
+                    revoke.PerformClick(); var work = form.RevokeWork; int beforeResult = updates;
+                    PumpUntil(() => ticks >= 3);
+                    Check(calls == 1 && !work.IsCompleted && !revoke.Enabled && copy.Enabled && ((Button)form.CancelButton).Enabled,
+                        "null-context QR pending revoke keeps the UI heartbeat and independent actions responsive");
+                    if (failure) pending.SetException(new InvalidOperationException("synthetic-private-live-revoke")); else pending.SetResult(null);
+                    PumpUntil(() => work.IsCompleted); work.GetAwaiter().GetResult();
+                    Check(wrongThread == 0 && updates > beforeResult && calls == 1 &&
+                        (failure ? revoke.Enabled && picture.Visible && copy.Enabled && error.Visible && error.Text.StartsWith("Отозвать не удалось") &&
+                            error.AccessibilityObject.Description == error.Text
+                        : !revoke.Enabled && !picture.Visible && !copy.Enabled && !error.Visible && status.Text.StartsWith("Ссылка отозвана") &&
+                            status.AccessibilityObject.Description == status.Text),
+                        "null-context QR " + (failure ? "failure" : "success") + " publishes controls and accessible result only on the actual UI owner");
+                } finally { System.Threading.SynchronizationContext.SetSynchronizationContext(previousContext); }
+            }
+        }
+        private static void QrQueuedRevokeClose(PhoneProfileLink link, ClipboardService clipboard)
+        {
+            var previousContext = System.Threading.SynchronizationContext.Current;
+            var pending = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously); int calls = 0;
+            using (var form = new PhoneProfileQrForm(link, () => { calls++; return pending.Task; }, clipboard)) {
+                try {
+                    form.Show(); Application.DoEvents(); var clock = (Timer)Field(form, "clock"); clock.Stop();
+                    var revoke = Descendants(form).OfType<Button>().Single(b => b.Text == "Отозвать ссылку");
+                    var status = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Срок действия ссылки на профиль");
+                    var error = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Результат отзыва ссылки");
+                    System.Threading.SynchronizationContext.SetSynchronizationContext(null);
+                    revoke.PerformClick(); var work = form.RevokeWork; pending.SetResult(null);
+                    var gate = Field(form, "revokeCompletionGate");
+                    var queued = (System.Collections.Generic.HashSet<TaskCompletionSource<bool>>)Field(form, "revokeCompletions");
+                    Check(System.Threading.SpinWait.SpinUntil(delegate { lock (gate) return queued.Count == 1; }, 3000),
+                        "completed QR revoke queues its result on the persistent UI dispatcher");
+                    form.Close(); string oldStatus = status.Text, oldError = error.Text; int lateChanges = 0;
+                    status.TextChanged += delegate { lateChanges++; }; error.TextChanged += delegate { lateChanges++; };
+                    Check(work.Wait(3000), "closing QR settles an already queued result without a UI message loop");
+                    work.GetAwaiter().GetResult(); Application.DoEvents();
+                    Check(calls == 1 && form.IsDisposed && !clock.Enabled && lateChanges == 0 && status.Text == oldStatus && error.Text == oldError,
+                        "discarded QR callback cannot publish into the closed dialog or repeat revocation");
+                } finally { System.Threading.SynchronizationContext.SetSynchronizationContext(previousContext); }
+            }
         }
     }
 }

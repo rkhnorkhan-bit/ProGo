@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace ProGo
@@ -53,6 +54,7 @@ namespace ProGo
 
     internal static class BackupService
     {
+        private static readonly SemaphoreSlim creationGate = new SemaphoreSlim(1, 1);
         public static string BackupsRoot
         {
             get { return System.IO.Path.Combine(AppPaths.Root, "backups"); }
@@ -106,7 +108,18 @@ namespace ProGo
         }
 
         public static string CreateBackup(string reason)
+        { return CreateBackup(reason, CancellationToken.None, null); }
+
+        internal static string CreateBackup(string reason, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
         {
+            creationGate.Wait(cancellation);
+            try { return CreateBackupCore(reason, cancellation, beforeCopy); }
+            finally { creationGate.Release(); }
+        }
+
+        private static string CreateBackupCore(string reason, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
+        {
+            cancellation.ThrowIfCancellationRequested();
             AppPaths.EnsureDirectories();
             Directory.CreateDirectory(BackupsRoot);
 
@@ -127,25 +140,33 @@ namespace ProGo
             }
 
             Directory.CreateDirectory(backupDir);
-
-            CopyFileIfExists("ProGo.exe", backupDir);
-            CopyFileIfExists("ProGo.ico", backupDir);
-            CopyFileIfExists("VERSION", backupDir);
-            CopyFileIfExists("vault.enc.json", backupDir);
-            CopyFileIfExists("settings.json", backupDir);
-            CopyFileIfExists("progo.log", backupDir);
-            CopyFileIfExists("update.log", backupDir);
-            CopyFileIfExists("progo-update.log", backupDir);
-            CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"));
-            BackupIntegrity.CopyPersonalArchives(AppPaths.Root, backupDir);
-
-            WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
-            BackupIntegrity.Write(backupDir);
-            BackupIntegrity.Validate(backupDir);
-
-            ApplyCleanupPlan(BackupRetention.Plan(BackupsRoot, backupDir), false);
-            SafeLog.Info("Backup created: " + backupDir + ".");
-            return backupDir;
+            var committed = false;
+            try
+            {
+                foreach (var name in new[] { "ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log" })
+                    CopyFileIfExists(name, backupDir, cancellation, beforeCopy);
+                CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"), cancellation, beforeCopy);
+                BackupIntegrity.CopyPersonalArchives(AppPaths.Root, backupDir, cancellation);
+                cancellation.ThrowIfCancellationRequested();
+                WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
+                BackupIntegrity.Write(backupDir, cancellation);
+                BackupIntegrity.Validate(backupDir, cancellation);
+                var cleanup = BackupRetention.Plan(BackupsRoot, backupDir);
+                cancellation.ThrowIfCancellationRequested();
+                // Once a complete copy is accepted, finish retention. Cancellation
+                // before this boundary never prunes any previous copy.
+                committed = true;
+                ApplyCleanupPlan(cleanup, false);
+                SafeLog.Info("Backup created: " + backupDir + ".");
+                return backupDir;
+            }
+            catch
+            {
+                if (!committed)
+                    try { RejectCopyLinks(backupDir); Directory.Delete(backupDir, true); }
+                    catch (Exception ex) { SafeLog.Error("Incomplete new backup could not be removed; previous copies are unchanged.", ex); }
+                throw;
+            }
         }
 
         public static List<BackupInfo> ListBackups()
@@ -256,19 +277,26 @@ namespace ProGo
 
         private static BackupInfo ReadBackupInfo(string dir)
         {
+            return ReadBackupInfo(dir, File.ReadAllLines);
+        }
+
+        internal static BackupInfo ReadBackupInfo(string dir, Func<string, string[]> readManifestLines)
+        {
+            var lastWriteTime = Directory.GetLastWriteTime(dir);
+            var manifest = ReadManifestLines(dir, readManifestLines);
             var info = new BackupInfo
             {
                 Path = dir,
-                LastWriteTime = Directory.GetLastWriteTime(dir),
-                Version = ReadManifestValue(dir, "version"),
-                TargetVersion = ReadManifestValue(dir, "target_version"),
-                Reason = ReadManifestValue(dir, "reason"),
-                CreatedBy = ReadManifestValue(dir, "created_by"),
-                Result = ReadManifestValue(dir, "update_result"),
-                Kind = ReadManifestValue(dir, "backup_kind"),
-                Created = ReadManifestValue(dir, "created"),
-                Contents = ReadManifestValue(dir, "contains"),
-                ArchiveContents = ReadManifestValue(dir, "archived_only")
+                LastWriteTime = lastWriteTime,
+                Version = ReadManifestValue(manifest, "version"),
+                TargetVersion = ReadManifestValue(manifest, "target_version"),
+                Reason = ReadManifestValue(manifest, "reason"),
+                CreatedBy = ReadManifestValue(manifest, "created_by"),
+                Result = ReadManifestValue(manifest, "update_result"),
+                Kind = ReadManifestValue(manifest, "backup_kind"),
+                Created = ReadManifestValue(manifest, "created"),
+                Contents = ReadManifestValue(manifest, "contains"),
+                ArchiveContents = ReadManifestValue(manifest, "archived_only")
             };
 
             if (String.IsNullOrEmpty(info.Version)) info.Version = InferVersionFromName(dir);
@@ -356,55 +384,94 @@ namespace ProGo
             return String.IsNullOrEmpty(value) ? String.Empty : value;
         }
 
-        private static void CopyFileIfExists(string fileName, string backupDir)
+        private static void CopyFileIfExists(string fileName, string backupDir, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
         {
+            cancellation.ThrowIfCancellationRequested();
             var source = System.IO.Path.Combine(AppPaths.Root, fileName);
             if (File.Exists(source))
             {
-                File.Copy(source, System.IO.Path.Combine(backupDir, fileName), true);
+                CopyFile(source, System.IO.Path.Combine(backupDir, fileName), fileName, cancellation, beforeCopy);
             }
         }
 
-        private static void CopyDirectoryIfExists(string source, string destination)
+        private static void CopyDirectoryIfExists(string source, string destination, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
         {
+            cancellation.ThrowIfCancellationRequested();
             if (!Directory.Exists(source)) return;
 
             Directory.CreateDirectory(destination);
             foreach (var dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
             {
+                cancellation.ThrowIfCancellationRequested();
                 var rel = dir.Substring(source.Length).TrimStart(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
                 Directory.CreateDirectory(System.IO.Path.Combine(destination, rel));
             }
 
             foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
             {
+                cancellation.ThrowIfCancellationRequested();
                 var rel = file.Substring(source.Length).TrimStart(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
                 var target = System.IO.Path.Combine(destination, rel);
                 var targetDir = System.IO.Path.GetDirectoryName(target);
                 if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
-                File.Copy(file, target, true);
+                CopyFile(file, target, "scripts/" + rel.Replace(System.IO.Path.DirectorySeparatorChar, '/'), cancellation, beforeCopy);
             }
         }
 
-        private static string ReadManifestValue(string backupDir, string key)
+        private static void CopyFile(string source, string target, string relative, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            if (beforeCopy != null) beforeCopy(relative, cancellation);
+            cancellation.ThrowIfCancellationRequested();
+            var sharing = FileShare.Read | FileShare.Delete;
+            if (relative.EndsWith(".log", StringComparison.OrdinalIgnoreCase)) sharing |= FileShare.Write;
+            using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, sharing))
+            using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                // A live log can grow. Copy the observed size rather than chase it.
+                var remaining = input.Length; var buffer = new byte[65536];
+                while (remaining > 0)
+                {
+                    cancellation.ThrowIfCancellationRequested();
+                    var read = input.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
+                    if (read == 0) throw new IOException("Файл изменился во время создания копии: " + relative + ".");
+                    output.Write(buffer, 0, read); remaining -= read;
+                }
+                cancellation.ThrowIfCancellationRequested();
+            }
+        }
+
+        private static void RejectCopyLinks(string directory)
+        {
+            if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+                throw new IOException("Незавершённая копия содержит ссылку; папка сохранена.");
+            foreach (var entry in Directory.GetFileSystemEntries(directory))
+            {
+                if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
+                    throw new IOException("Незавершённая копия содержит ссылку; папка сохранена.");
+                if (Directory.Exists(entry)) RejectCopyLinks(entry);
+            }
+        }
+
+        private static string[] ReadManifestLines(string backupDir, Func<string, string[]> reader)
         {
             try
             {
                 var manifest = System.IO.Path.Combine(backupDir, "manifest.txt");
-                if (!File.Exists(manifest)) return String.Empty;
-
-                foreach (var line in File.ReadAllLines(manifest))
-                {
-                    if (line.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return line.Substring(key.Length + 1).Trim();
-                    }
-                }
+                if (File.Exists(manifest)) return reader(manifest) ?? new string[0];
             }
             catch
             {
             }
 
+            return new string[0];
+        }
+
+        private static string ReadManifestValue(string[] manifest, string key)
+        {
+            foreach (var line in manifest)
+                if (line.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
+                    return line.Substring(key.Length + 1).Trim();
             return String.Empty;
         }
 
