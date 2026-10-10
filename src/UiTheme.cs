@@ -3,6 +3,9 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -51,6 +54,87 @@ namespace ProGo
                 brand.Dispose();
             }
             base.Dispose(disposing);
+        }
+    }
+
+    // Modal WinForms windows may restore a null SynchronizationContext. These
+    // awaits resume through a persistent owner handle rather than that ambient
+    // context. Closing drops UI work but still settles completed continuations.
+    internal sealed class OwnerUiDispatcher : IDisposable
+    {
+        private readonly Control dispatcher = new Control();
+        private readonly int ownerThread = Thread.CurrentThread.ManagedThreadId;
+        private readonly object gate = new object();
+        private readonly List<Continuation> pending = new List<Continuation>();
+        private volatile bool closed;
+        internal OwnerUiDispatcher() { dispatcher.CreateControl(); }
+        internal bool Closed { get { return closed; } }
+        internal bool OnOwner { get { return Thread.CurrentThread.ManagedThreadId == ownerThread; } }
+        internal OwnerAwaitable<T> Await<T>(Task<T> task) { return new OwnerAwaitable<T>(this, task); }
+        internal OwnerAwaitable<object> Await(Task task) { return Await(AsResult(task)); }
+        private static async Task<object> AsResult(Task task) { await task.ConfigureAwait(false); return null; }
+        internal void PostUpdate(Action update)
+        {
+            if (OnOwner) { if (!closed) update(); return; }
+            Post(delegate { if (!closed) update(); });
+        }
+        private void Post(Action continuation)
+        {
+            var work = new Continuation(continuation);
+            lock (gate) {
+                if (!closed) {
+                    pending.Add(work);
+                    try {
+                        dispatcher.BeginInvoke((Action)delegate {
+                            lock (gate) pending.Remove(work);
+                            work.Run();
+                        });
+                        return;
+                    } catch (InvalidOperationException) { pending.Remove(work); }
+                }
+            }
+            // An unexpectedly unavailable handle is treated as owner loss.
+            Close(); work.Run();
+        }
+        internal void Close()
+        {
+            Continuation[] callbacks;
+            lock (gate) { if (closed) return; closed = true; callbacks = pending.ToArray(); pending.Clear(); }
+            foreach (var callback in callbacks) callback.Run();
+        }
+        public void Dispose() { Close(); dispatcher.Dispose(); }
+        private sealed class Continuation
+        {
+            private readonly Action callback; private int settled;
+            internal Continuation(Action callback) { this.callback = callback; }
+            internal void Run() { if (Interlocked.Exchange(ref settled, 1) == 0) callback(); }
+        }
+        internal struct OwnerAwaitable<T>
+        {
+            private readonly OwnerUiDispatcher owner; private readonly Task<T> task;
+            internal OwnerAwaitable(OwnerUiDispatcher owner, Task<T> task) { this.owner = owner; this.task = task; }
+            public Awaiter GetAwaiter() { return new Awaiter(owner, task); }
+            internal struct Awaiter : INotifyCompletion
+            {
+                private readonly OwnerUiDispatcher owner; private readonly Task<T> task;
+                internal Awaiter(OwnerUiDispatcher owner, Task<T> task) { this.owner = owner; this.task = task; }
+                public bool IsCompleted { get { return task.IsCompleted && owner.OnOwner; } }
+                public void OnCompleted(Action continuation)
+                {
+                    var target = owner;
+                    task.ConfigureAwait(false).GetAwaiter().OnCompleted(() => target.Post(continuation));
+                }
+                public T GetResult()
+                {
+                    if (owner.Closed) {
+                        // Observe a fault even when the closed owner no longer
+                        // consumes its result. Actual work has already settled.
+                        var ignored = task.Exception;
+                        throw new OperationCanceledException("Окно закрыто; обновление интерфейса отменено.");
+                    }
+                    return task.GetAwaiter().GetResult();
+                }
+            }
         }
     }
 

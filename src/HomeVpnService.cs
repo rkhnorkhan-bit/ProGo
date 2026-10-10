@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,11 @@ using System.Web.Script.Serialization;
 
 namespace ProGo
 {
+    internal sealed class HomeVpnLocalCleanupException : IOException
+    {
+        internal HomeVpnLocalCleanupException(string message) : base(message) { }
+    }
+
     internal sealed class HomeVpnOwner
     {
         public string Host { get; set; }
@@ -272,6 +278,7 @@ namespace ProGo
                 var upload = Path.Combine(work, name); Directory.CreateDirectory(upload);
                 var output = Path.Combine(work, "result.txt");
                 bool remoteStarted = false;
+                return await CompleteAdminWorkAsync(work, action, checking, () => remoteStarted, async delegate {
                 try
                 {
                     foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" })
@@ -394,15 +401,46 @@ namespace ProGo
                     if (ex is OutOfMemoryException || !setup || request == null) throw;
                     throw new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage);
                 }
-                finally {
-                    try { Directory.Delete(work, true); }
-                    catch {
-                        if (!remoteStarted) throw new IOException(checking
-                            ? "Подготовка проверки прервана, но локальные файлы не удалось удалить. Прежний запрос сохранён; его результат не подтверждён. Закройте программы, использующие эти файлы."
-                            : "Команды настройки VPS не запускались, но локальные файлы подготовки не удалось удалить. Закройте программы, использующие эти файлы; завершение подготовки пока не подтверждено.");
-                    }
-                }
+                });
             }
+        }
+
+        private static async Task<string> CompleteAdminWorkAsync(string work, string action, bool checking, Func<bool> remoteStarted, Func<Task<string>> operation)
+        {
+            string result = null; ExceptionDispatchInfo failure = null;
+            try { result = await operation(); }
+            catch (Exception error) { failure = ExceptionDispatchInfo.Capture(error); }
+            // C# 5 cannot await inside finally. Keep the recovery lease above
+            // until this worker settles, then preserve the original outcome.
+            bool started = remoteStarted();
+            await Task.Run(() => DeleteAdminWork(work, action, checking, started));
+            if (failure != null) failure.Throw();
+            return result;
+        }
+
+        private static void DeleteAdminWork(string work, string action, bool checking, bool remoteStarted)
+        {
+            var watch = Stopwatch.StartNew();
+            while (true) {
+                try { Directory.Delete(work, true); return; }
+                catch (DirectoryNotFoundException) { if (!Directory.Exists(work)) return; }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+                long remaining = 1000 - watch.ElapsedMilliseconds;
+                if (remaining <= 0) break;
+                Thread.Sleep((int)Math.Min(50, remaining));
+            }
+            const string cleanup = "Локальные файлы команды VPS не удалось удалить. Завершение локальной очистки пока не подтверждено. Закройте программы, использующие эти файлы. ";
+            if (action == "list") throw new HomeVpnLocalCleanupException("Локальные файлы получения списка не удалось удалить. Существующий доступ, текущий список и введённые данные сохранены; завершение очистки пока не подтверждено. Закройте программы, использующие эти файлы, и повторите получение списка.");
+            if (remoteStarted) {
+                if (action == "setup" || action == "recover-setup") throw new HomeVpnSetupPendingException(cleanup + HomeVpnSetupRecovery.PendingMessage);
+                if (action == "invite" || action == "recover-invite") throw new HomeVpnAdminPendingException(cleanup + HomeVpnAdminRecovery.PendingMessage);
+                if (action == "share" || action == "recover-share") throw new HomeVpnSharePendingException(cleanup + HomeVpnShareRecovery.PendingMessage);
+                throw new HomeVpnOwnerUnconfirmedException(cleanup + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage);
+            }
+            throw new HomeVpnLocalCleanupException(checking
+                ? "Подготовка проверки прервана, но локальные файлы не удалось удалить. Прежний запрос сохранён; его результат не подтверждён. Закройте программы, использующие эти файлы."
+                : "Команда VPS не запускалась, но локальные файлы подготовки не удалось удалить. Закройте программы, использующие эти файлы; завершение подготовки пока не подтверждено.");
         }
 
         private static string ReadSetupOutput(string path)
