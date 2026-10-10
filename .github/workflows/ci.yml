@@ -10,6 +10,10 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: progo-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   vpn-server-test:
     runs-on: ubuntu-24.04
