@@ -69,10 +69,16 @@ namespace ProGo
             // not expand a spanning cell past the form's real minimum client width.
             var content = new Panel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding };
             Controls.Add(content);
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 9 };
+            var table = new TableLayoutPanel { Name = "StatusRows", Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 9 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            content.Controls.Add(table);
+            if (backupStatus != null) {
+                // The extra status row scrolls with the body instead of increasing the
+                // window's minimum height. Keep all absolute row heights and the footer.
+                var viewport = new Panel { Name = "StatusBodyViewport", Dock = DockStyle.Fill, AutoScroll = true };
+                table.Dock = DockStyle.Top; table.AutoSize = true; table.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                viewport.Controls.Add(table); content.Controls.Add(viewport);
+            } else content.Controls.Add(table);
 
             state = AddRow(table, 0, "Соединение");
             address = AddRow(table, 1, "Адрес");
@@ -89,7 +95,6 @@ namespace ProGo
             if (backupStatus != null) {
                 table.RowCount = 10; backupState = AddRow(table, 9, "Резервная копия");
                 table.RowStyles[9].Height = 90;
-                Height += 90; MinimumSize = new Size(790, 700);
             }
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom,

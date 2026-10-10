@@ -61,6 +61,7 @@ namespace ProGo
                             "cancel discards edits while deliberately retaining the already-applied manual CLI action");
                         Check(!settings.Current.AutoCliProxy && settings.Current.SocksHost == "127.0.0.1", "cancel never persists staged settings");
                         Call(context, "Execute", "cli-off");
+                        WaitIntegration(context);
                         Check(CliProxyEnvironmentService.Names.All(n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User) == environment[n]),
                             "explicit manual off restores environment after cancelled settings dialog");
                     }

@@ -316,23 +316,23 @@ namespace ProGo
                 using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false)) {
                     context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow");
                     var consumers = (AppProxyConsumers)Field(context, "appConsumers");
-                    Call(context, "EnableFeature", ProxyFeature.Cli); Call(context, "EnableFeature", ProxyFeature.Windows);
+                    Call(context, "EnableFeature", ProxyFeature.Cli); WaitIntegration(context); Call(context, "EnableFeature", ProxyFeature.Windows); WaitIntegration(context);
                     int port = bridge.Port;
-                    Call(context, "Execute", "cli-off");
+                    Call(context, "Execute", "cli-off"); WaitIntegration(context);
                     SettleConsumers(consumers, bridge);
                     Check(bridge.IsRunning && SystemProxyService.IsApplied(settings.Current) && !CliProxyEnvironmentService.HasProxyEndpoint(port), "CLI off retains the independent Windows consumer");
                     AssertBridge(port); main.RefreshConnectionState();
                     Check(((Button)Field(main, "cliToggle")).Text == "Запустить CLI" && ((Label)Field(main, "recovery")).Text.Contains("работает для: Windows"), "dashboard distinguishes CLI off from the shared Windows service");
                     main.Refresh(); Shot(main, "main-cli-off-windows-retained");
-                    Call(context, "Execute", "windows-off");
+                    Call(context, "Execute", "windows-off"); WaitIntegration(context);
                     SettleConsumers(consumers, bridge);
                     Check(!bridge.IsRunning, "Windows off releases the last consumer");
                     AssertPortReleased(port, "last Windows off frees the actual listening port");
-                    Call(context, "EnableFeature", ProxyFeature.Cli); Call(context, "EnableFeature", ProxyFeature.Windows);
-                    Call(context, "Execute", "windows-off");
+                    Call(context, "EnableFeature", ProxyFeature.Cli); WaitIntegration(context); Call(context, "EnableFeature", ProxyFeature.Windows); WaitIntegration(context);
+                    Call(context, "Execute", "windows-off"); WaitIntegration(context);
                     SettleConsumers(consumers, bridge);
                     Check(bridge.IsRunning && CliProxyEnvironmentService.HasProxyEndpoint(bridge.Port), "Windows off preserves ordinary CLI");
-                    Call(context, "Execute", "cli-off");
+                    Call(context, "Execute", "cli-off"); WaitIntegration(context);
                     SettleConsumers(consumers, bridge);
                     Check(!bridge.IsRunning, "reverse consumer release also stops the last listener");
 
@@ -344,7 +344,7 @@ namespace ProGo
                     Check(warning.Length > 0 && consumers.CliCleanupPending, "failed actual CLI off records an explicit pending cleanup consumer");
                     File.Delete(CliProxyEnvironmentService.BackupPath); consumers.Invalidate(); SettleConsumers(consumers, bridge);
                     Check(bridge.IsRunning, "cleanup failure keeps access even if its journal becomes unavailable");
-                    Call(context, "Execute", "cli-off");
+                    Call(context, "Execute", "cli-off"); WaitIntegration(context);
                     SettleConsumers(consumers, bridge);
                     Check(!bridge.IsRunning && !consumers.CliCleanupPending, "successful explicit cleanup retry releases the retained service");
                     Check(bridge.Start(out error), "NO_PROXY fixture starts listener"); consumers.Observe();
@@ -359,8 +359,8 @@ namespace ProGo
                     Environment.SetEnvironmentVariable("HTTPS_PROXY", null, EnvironmentVariableTarget.User); consumers.Invalidate(); SettleConsumers(consumers, bridge);
                     Check(!bridge.IsRunning, "external removal of the last endpoint releases the service");
 
-                    Call(context, "EnableFeature", ProxyFeature.Cli); CodexProxyService.Enable(bridge.Port);
-                    Call(context, "Execute", "cli-off");
+                    Call(context, "EnableFeature", ProxyFeature.Cli); WaitIntegration(context); CodexProxyService.Enable(bridge.Port);
+                    Call(context, "Execute", "cli-off"); WaitIntegration(context);
                     SettleConsumers(consumers, bridge);
                     Check(bridge.IsRunning && consumers.Summary == "ярлык Codex", "owned optional shortcut retains its shared endpoint without CLI environment");
                     Call(context, "Execute", "codex-shortcut-off");
@@ -374,7 +374,7 @@ namespace ProGo
                     consumers.TrackWindow(window);
                     using (var observer = Process.GetProcessById(window.Id)) {
                         try {
-                            Call(context, "Execute", "cli-off");
+                            Call(context, "Execute", "cli-off"); WaitIntegration(context);
                             SettleConsumers(consumers, bridge);
                             Check(bridge.IsRunning && consumers.WindowCount == 1 && consumers.Summary == "отдельные окна: 1", "CLI off preserves the live explicitly opened terminal");
                             AssertBridge(bridge.Port);
@@ -391,7 +391,7 @@ namespace ProGo
                     consumers.TrackWindow(window);
                     using (var observer = Process.GetProcessById(window.Id)) {
                         try {
-                            Call(context, "Execute", "stop");
+                            Call(context, "Execute", "stop"); WaitIntegration(context);
                             Check(!bridge.IsRunning && consumers.WindowCount == 0 && !observer.HasExited, "explicit full desktop stop closes the service without killing the user's terminal");
                             main.RefreshConnectionState();
                             Check(((Label)Field(main, "recovery")).Text.Contains("служба остановлена"), "dashboard honestly reports a stopped shared service");

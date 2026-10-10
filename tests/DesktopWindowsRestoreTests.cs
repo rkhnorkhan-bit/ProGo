@@ -244,6 +244,7 @@ namespace ProGo
                     Check(!launched && text.Contains("Очистка прокси Windows не завершена") && bridge.IsRunning,
                         "update/restore gate refuses to launch a helper after cleanup failure");
                     deny = false; Call(context, "Execute", "stop");
+                    WaitIntegration(context);
                     Check(!bridge.IsRunning && !File.Exists(SystemProxyService.BackupPath), "retrying actual desktop stop completes cleanup before stopping the service");
                     Check(!consumers.WindowsCleanupPending, "successful Windows cleanup settles its explicit retained consumer");
                     var handoff = (Task<bool>)context.GetType().GetMethod("BeginMaintenance", PrivateInstance).Invoke(context, new object[] { new Func<bool>(() => false) });
@@ -269,6 +270,8 @@ namespace ProGo
                 };
                 timer.Start();
                 var outcome = context.GetType().GetMethod(method, PrivateInstance).Invoke(context, args) as Task;
+                var application = context as UpdateAwareTrayApplicationContext;
+                if (outcome == null && application != null) outcome = application.IntegrationWork;
                 if (outcome != null) { PumpUntil(() => outcome.IsCompleted); outcome.GetAwaiter().GetResult(); }
             }
             Check(seen, "native cleanup warning is visible for " + method);

@@ -1195,3 +1195,47 @@ PASS/FAIL/NOT_CHECKED contract. Process I/O includes cache/device operations; Wi
 Responding is not a click-latency measurement; port presence is not SOCKS/HTTP
 protocol or external reachability. Real Rescue/HDD/VHDX acceptance remains unchecked
 until the owner runs and reviews the relevant measurements.
+
+## F31j — asynchronous Windows and CLI integration mutations
+
+The application context serializes manual enable/off, automation, desktop Stop
+and prepared shutdown through one asynchronous integration gate. It captures
+settings and listener revision on its UI owner, performs fresh native ownership
+transactions on a worker, and publishes the result on the persistent owner
+dispatcher. This moves registry/file writes, environment setters and their
+notifications off the UI without moving listener or form operations to a worker.
+Manual off cancels its route intent immediately; an already active native enable
+finishes before the queued off restores its owned values. A blocked native call
+retains the gate and pending state instead of allowing another writer or declaring
+shutdown complete. Automation retains its existing bounded retry policy.
+
+A consumer mutation lease prevents timer observation from stopping an endpoint
+between its environment setters and completion. Failures retain ownership journals
+and cleanup state for explicit retry. CLI enable now uses the same fresh live typed
+Windows-value protection as CLI off: known notification normalization is corrected,
+denied corrections are recorded atomically, and later different external values
+are preserved. No old Windows snapshot is substituted for those live values.
+
+Settings remain inspectable while integration work is pending, but Save is disabled
+with an accessible explanation and a forced Save is refused before changing startup
+preferences. The existing synchronous reconfiguration acquires the same gate with
+a nonblocking attempt. It cannot overlap an active asynchronous native transaction.
+This gate does not yet make cold bridge configuration, settings/startup saving,
+port migration or rollback asynchronous; those paths remain a separate F31 stage.
+
+Prepared shutdown waits for actual settlement and disposes without repeating native
+cleanup. Forced owner disposal cancels queued gate waits, settles queued dispatcher
+tasks without a surviving message pump, and starts no new cleanup. An already
+active native mutation retains the bridge listener through a thread-safe lease.
+The worker never stops it or updates closed controls. That emergency listener is
+retained until another explicit owner Dispose or process exit; journals remain on
+failure. Forced teardown is not reported as prepared shutdown success.
+
+`DesktopIntegrationMutationTests.cs` is compiled into the normal Windows harness.
+The isolated native fixtures exercise real registry/environment writes and delayed
+notifications, UI heartbeat with a null SynchronizationContext, denial/retry,
+intervening external edits, enable/off ordering, pending Save, listener retention,
+prepared shutdown, active and queued forced closure, and a discarded final shutdown
+callback. They use loopback resources and never contact a live VPS. Local Linux
+checks pass; compilation/native Windows execution and actual Rescue/HDD/VHDX
+profiling remain NOT_CHECKED. F31 remains OPEN.

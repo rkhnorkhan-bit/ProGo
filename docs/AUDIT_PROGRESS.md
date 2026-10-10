@@ -1907,3 +1907,25 @@ metrics are **NOT_CHECKED**; source/public-document checks pass locally. This st
 alone does not close F31 or certify UI latency, physical disk load, SOCKS protocol,
 external HTTP/HTTPS or authentication. Owner instructions and evidence limits are
 in [RESCUE_MEASUREMENT.md](RESCUE_MEASUREMENT.md).
+
+## F31j — serialize integration changes off the UI
+
+Prepared worker-only Windows/CLI enable and restore transactions behind one async
+gate shared by manual off/Stop, automation and prepared shutdown. Captured owner
+state, fresh native ownership checks, consumer/listener leases and explicit owner
+dispatch preserve ordering and listener availability. Pending settings Save refuses
+conflicting writes without waiting on the UI. CLI enable also preserves fresh live
+Windows value kinds and atomically retains denied corrections for conditional retry.
+
+Forced disposal cancels queued work and settles lost UI completions without starting
+a new native restore. Already active native work may settle after UI closure while
+its listener and failure journals remain available; only another owner Dispose or
+process exit releases that emergency listener. No false shutdown success is claimed.
+
+Native regressions cover actual delayed/denied writes and notifications, heartbeat,
+null synchronization context, external changes, enable/off ordering, pending Save,
+listener/error retry and close/shutdown settlement. At this local preparation stage:
+Python **36 PASS / 3 SKIP**, public-content and diff checks **PASS**; C# compilation,
+native Windows execution and Rescue/HDD/VHDX measurements **NOT_CHECKED**. Cold bridge
+start, settings/startup persistence, port migration and synchronous rollback still
+require the next bounded stage. **F31 remains OPEN; accepted status stays 22/31.**

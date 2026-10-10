@@ -317,6 +317,12 @@ namespace ProGo
             if (IsDisposed) return;
             var state = CommandState == null ? new AppCommandState(new AppCommand[0], false, false) : CommandState();
             foreach (var item in manualCommands) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
+            if (AcceptButton != null) {
+                var save = (Button)AcceptButton;
+                save.Enabled = !state.Integrating && !state.Stopping;
+                save.AccessibleDescription = state.Integrating ? "Сейчас ProGo изменяет настройки прокси. Сохранение станет доступным после завершения операции." :
+                    "Проверяет и сохраняет изменённые настройки программы.";
+            }
         }
         internal void RefreshCurrentValues()
         {
@@ -520,6 +526,9 @@ namespace ProGo
 
         private void Save(object sender, EventArgs e)
         {
+            if (CommandState != null && (CommandState().Integrating || CommandState().Stopping)) {
+                ShowSaveError(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси. Дождитесь завершения операции и повторите сохранение.")); return;
+            }
             var selected = SelectedProfile();
             var selectedTarget = selected == null ? String.Empty : selected.Target;
             var proposed = new AppSettings

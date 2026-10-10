@@ -33,6 +33,24 @@ namespace ProGo
         private DateTime workStartedUtc;
         private AppProxyConsumerSnapshot snapshot;
         private Task<AppProxyConsumerSnapshot> observation;
+        private int mutationLeases;
+        internal bool MutationPending { get { return System.Threading.Volatile.Read(ref mutationLeases) != 0; } }
+        internal IDisposable BeginMutation()
+        {
+            System.Threading.Interlocked.Increment(ref mutationLeases);
+            observing = true; Invalidate();
+            return new MutationLease(this);
+        }
+        private sealed class MutationLease : IDisposable
+        {
+            private AppProxyConsumers owner;
+            internal MutationLease(AppProxyConsumers owner) { this.owner = owner; }
+            public void Dispose()
+            {
+                var value = System.Threading.Interlocked.Exchange(ref owner, null);
+                if (value != null) System.Threading.Interlocked.Decrement(ref value.mutationLeases);
+            }
+        }
 
         internal bool CliCleanupPending
         {
@@ -82,6 +100,7 @@ namespace ProGo
             get {
                 PruneWindows(); var names = new List<string>();
                 var current = snapshot;
+                if (MutationPending) names.Add("применяем настройки прокси…");
                 if (WindowsCleanupPending || (current != null && current.Windows)) names.Add("Windows");
                 if (CliCleanupPending || (current != null && current.Cli)) names.Add("терминалы и Codex");
                 if (windows.Count != 0) names.Add("отдельные окна: " + windows.Count);
@@ -93,7 +112,7 @@ namespace ProGo
         }
         internal void ReleaseIfUnused()
         {
-            if (disposed) return;
+            if (disposed || MutationPending) return;
             PruneWindows();
             long revision = bridge.ConsumerRevision;
             if (observedBridgeRevision != revision) { observedBridgeRevision = revision; Invalidate(); }

@@ -85,6 +85,9 @@ namespace ProGo
                         Check(context.PendingRouteCount == 2 && !manual[AppCommand.EnableWindows].Enabled && !menu[AppCommand.EnableWindows].Enabled,
                             "settings and tray refresh immediately when independent Windows joins pending route");
                         manual[AppCommand.StopCli].PerformClick();
+                        Check(context.PendingRouteCount == 1 && proxy.CurrentPid.HasValue,
+                            "manual CLI off immediately cancels only its pending intent while retaining the shared Windows startup");
+                        WaitIntegration(context);
                         Check(context.PendingRouteCount == 1 && manual[AppCommand.StartCli].Enabled && menu[AppCommand.StartCli].Enabled &&
                             !manual[AppCommand.EnableWindows].Enabled && proxy.CurrentPid == pid,
                             "settings cancellation re-enables only CLI and preserves the shared Windows startup");
@@ -93,7 +96,7 @@ namespace ProGo
                         Shot(form, "settings-command-pending");
                     });
                     Check(Field(context, "CommandStateChanged") == null, "closed modal settings releases command state subscription");
-                    menu[AppCommand.DisableWindows].PerformClick(); PumpUntil(() => !proxy.IsConnecting);
+                    menu[AppCommand.DisableWindows].PerformClick(); WaitIntegration(context); PumpUntil(() => !proxy.IsConnecting);
                     Check(context.PendingRouteCount == 0 && !bridge.IsRunning && !SystemProxyService.IsOwned &&
                         !CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort), "last pending mode cancels from tray without a late proxy application");
                     File.WriteAllText(release, "ready");
@@ -292,10 +295,11 @@ namespace ProGo
                     Call(context, "Execute", "cli-start"); PumpUntil(() => context.PendingRouteCount == 0);
                     Check(proxy.CurrentPid == pid, "ready CLI request keeps the existing owned SSH process");
                     Call(context, "Execute", "stop");
+                    WaitIntegration(context);
                     Call(context, "Execute", "cli-start"); Call(context, "Execute", "windows-on");
                     PumpUntil(() => proxy.CurrentPid.HasValue);
                     Check(context.PendingRouteCount == 2, "CLI and Windows can await one shared SSH startup");
-                    Call(context, "Execute", "stop-all"); PumpUntil(() => !proxy.IsConnecting);
+                    Call(context, "Execute", "stop-all"); WaitIntegration(context); PumpUntil(() => !proxy.IsConnecting);
                     Check(context.PendingRouteCount == 0 && !proxy.CurrentPid.HasValue && !bridge.IsRunning &&
                         !CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) && !SystemProxyService.IsOwned,
                         "full stop cancels both waiting actions before any late environment or Windows write");
@@ -303,8 +307,8 @@ namespace ProGo
                     PumpUntil(() => context.PendingRouteCount == 0);
                     Check(proxy.CurrentPid.HasValue && CliProxyEnvironmentService.IsAppliedToUserEnvironment(bridge.Port) && SystemProxyService.IsApplied(settings.Current),
                         "a fresh shared attempt after cancellation applies both requested modes once ready");
-                    Call(context, "Execute", "stop"); Call(context, "Execute", "cli-start");
-                    PumpUntil(() => proxy.CurrentPid.HasValue); Call(context, "Execute", "cli-off"); PumpUntil(() => !proxy.IsConnecting);
+                    Call(context, "Execute", "stop"); WaitIntegration(context); Call(context, "Execute", "cli-start");
+                    PumpUntil(() => proxy.CurrentPid.HasValue); Call(context, "Execute", "cli-off"); WaitIntegration(context); PumpUntil(() => !proxy.IsConnecting);
                     Check(!CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) && context.PendingRouteCount == 0,
                         "manual CLI off cancels its pending intent without a delayed on");
                     using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections)) {
