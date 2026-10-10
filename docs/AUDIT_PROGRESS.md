@@ -4,6 +4,11 @@ Baseline: ProGo 0.2.2 (`4bb3365`). The approved audit compares 0.1.27,
 0.1.29 and 0.2.2. Each stage is scoped to an audit finding and has its own
 verification and review boundary.
 
+Current accepted status: **22/31 closed; 9 remaining** — F09, F16, F17,
+F19, F22, F23, F27, F30 and F31. F29 was accepted on 10 October 2026
+after full Windows/server CI and native image review below. Counts in earlier
+stage entries describe their historical state.
+
 ## Stage 1 — F02: automatic setup lost after an error
 
 Implementation:
@@ -1733,7 +1738,7 @@ agent/auth/proxy acceptance, other synchronous environment/settings paths and
 repeated Codex ownership-file reads. This stage does not publish/install a release
 or change a service, protected key or VPS configuration.
 
-## F29 — native icon sizes and consistent task presentation (verification pending)
+## F29 — native icon sizes and consistent task presentation (accepted)
 
 The tray now creates the brand icon at the current Windows small-icon size instead
 of supplying only a 64 px handle. The executable retains its existing seven-frame
@@ -1761,7 +1766,21 @@ vault views, task headings and standard-action dialogs. Existing tests cover
 textual tray states, high-contrast palettes and keyboard behavior; the native
 tray fixture now also checks unknown state and actual small-icon size.
 
-Local checks: `git diff --check` and public-content scan PASS. Windows build/full
-CI and screenshot review are pending. **F29 remains OPEN; overall 21/31.** Real
-monitor DPI transitions and Narrator/live system contrast acceptance remain F16
-and F17; no such acceptance is inferred from synthetic/native CI geometry.
+The minimum-width route footer was moved outside the two-column spanning table;
+all four actions now fit both the form and their actual footer viewport. Route,
+latency and speed completions use their persistent UI owner even after a modal
+window removes SynchronizationContext. Closing settles cancelled and already
+queued completions without a message loop or updates to disposed controls.
+
+Acceptance evidence: commit `4a270bc5578f67a149d993a12ecd4853ccffdcb1`,
+[full Windows/server CI 38075926016](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38075926016)
+PASS: desktop 2843, SOCKS 22, instance 26, maintenance 88, shutdown 47 and
+relay 24, plus the VPN/server and QR suites. Public scan: 164 source / 42 release
+files PASS. All nine F29 native images were inspected: 16/24 px icon matrix on
+both backgrounds, three editor dialogs, minimum route dialog, dashboard,
+settings, empty vault and no-match vault. Screenshot artifact 11678851422 SHA256:
+`6bb8f17f00bd5c3caa90e5346e9dbdd2e5dc6e439c526d1a88bdaeb545781aff`.
+No clipping or overlapping task actions was observed. Local diff checks PASS.
+**F29 CLOSED; overall 22/31.** Real monitor DPI transitions and Narrator/live
+system contrast acceptance remain F16 and F17. The subsequent watchdog-only
+test-harness change has a separate CI run; it changes no application behavior.
