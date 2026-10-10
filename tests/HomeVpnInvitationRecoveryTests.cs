@@ -223,6 +223,11 @@ namespace ProGo
                 Shot(form, work, "invitation-recovery-friends"); form.Size = form.MinimumSize; Application.DoEvents();
                 var panel = name.Parent as FlowLayoutPanel; create.Focus(); Application.DoEvents();
                 Shot(form, work, "invitation-recovery-friends-minimum");
+                if (panel.HorizontalScroll.Visible) {
+                    Console.WriteLine("Invitation viewport: client=" + panel.ClientSize + " display=" + panel.DisplayRectangle + " minimum=" + panel.AutoScrollMinSize);
+                    foreach (Control child in panel.Controls) Console.WriteLine("Invitation child: " + child.GetType().Name + " bounds=" + child.Bounds
+                        + " maximum=" + child.MaximumSize + " preferred=" + child.GetPreferredSize(panel.ClientSize));
+                }
                 check(!panel.HorizontalScroll.Visible, "minimum invitation recovery wraps content without horizontal scroll");
                 check(form.ClientRectangle.Contains(form.RectangleToClient(((Button)form.CancelButton).RectangleToScreen(((Button)form.CancelButton).ClientRectangle))),
                     "minimum invitation recovery keeps the Close footer visible");

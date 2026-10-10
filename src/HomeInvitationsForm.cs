@@ -54,7 +54,7 @@ namespace ProGo
                 MinimumSize = new Size(600, 620);
                 panel.SizeChanged += delegate {
                     int width = Math.Max(1, panel.ClientSize.Width - panel.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
-                    list.Width = width;
+                    list.MaximumSize = new Size(width, 0); list.Width = width;
                     // FlowLayout measures a TextBox's preferred width as well as
                     // its current bounds. Constrain both when the window shrinks.
                     name.MaximumSize = new Size(width, 0); name.Width = width;
