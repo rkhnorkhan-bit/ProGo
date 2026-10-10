@@ -40,9 +40,11 @@ namespace ProGo
             }
             return bitmap;
         }
-        public static Icon Create()
+        public static Icon Create() { return Create(64); }
+        // Tray icons use their native small-icon size rather than a downscaled 64 px handle.
+        public static Icon Create(int size)
         {
-            using (var bitmap = Draw(64))
+            using (var bitmap = Draw(size))
             {
                 var handle = bitmap.GetHicon();
                 try { using (var icon = Icon.FromHandle(handle)) return (Icon)icon.Clone(); }

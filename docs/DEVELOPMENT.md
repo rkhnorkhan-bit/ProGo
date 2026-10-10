@@ -1148,3 +1148,21 @@ interactive SSH wait cancellation, remote receipt acknowledgment/pruning and man
 reconciliation of uncertain requests are deferred. Read-only status uncertainty
 can leave public helper copies remotely; no remote cleanup or rollback is claimed.
 VERSION remains unchanged, F23 open, **21/30 closed; 9 remaining**. No release/merge.
+
+### Audit stage F29 — native icon and presentation regressions
+
+`DesktopVisualPolishTests.cs` is part of the ordinary desktop harness. It inspects
+`build/ProGo.ico`, creates real 16/24 px HICONs and writes
+`brand-icons-16-24-light-dark.png` to the existing screenshot artifact. The matrix
+includes actual-size and nearest-neighbor enlarged copies on white and dark
+backgrounds. Alpha/mark/contrast checks catch missing or invisible graphics;
+review the image before accepting recognizability.
+
+Standard actions share `UiTheme.ActionHeight`, padding and margins. Compact card,
+navigation and docked field actions are intentional variants. Dialog and dense
+view padding are explicit shared values. The harness checks minimum native dialog
+geometry, caption fit, palette refresh stability, task headings, and the named
+vault empty-state surface for empty collections versus search/type misses. It
+never saves vault records or changes cryptographic/decoy contracts. The tray uses
+`SystemInformation.SmallIconSize` at startup; actual display/DPI transitions remain
+separately tracked under F16, and actual Narrator acceptance under F17.

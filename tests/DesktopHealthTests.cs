@@ -205,6 +205,8 @@ namespace ProGo
                 using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false, monitor)) {
                     context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow"); var tray = (NotifyIcon)Field(context, "tray");
                     var title = (Label)Field(main, "connection"); var terminal = (Label)Field(main, "terminalState");
+                    Check(tray.Text.Contains("подключение не проверено") && tray.Icon.Size == SystemInformation.SmallIconSize,
+                        "native tray exposes an unverified textual state and uses the current small-icon size before a probe");
                     HealthRefresh(monitor); PumpUntil(() => tray.Text.Contains("выход не проверен"));
                     Check(title.Text == "Прокси отвечает" && title.ForeColor != UiTheme.Accent, "window and tray publish protocol-only state without a green internet claim");
                     Shot(main, "main-health-local-only");

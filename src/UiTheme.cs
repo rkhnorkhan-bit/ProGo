@@ -68,6 +68,12 @@ namespace ProGo
         public static readonly Font Strong = new Font("Segoe UI", 10f, FontStyle.Bold);
         public static readonly Font Title = new Font("Segoe UI", 23f, FontStyle.Bold);
         public static readonly Font Heading = new Font("Segoe UI", 14f, FontStyle.Bold);
+        // Standard dialogs/actions; dense data views and card actions are deliberate variants.
+        internal static readonly Padding DialogPadding = new Padding(24);
+        internal static readonly Padding DensePadding = new Padding(12);
+        internal static readonly Padding ActionPadding = new Padding(12, 4, 12, 4);
+        internal static readonly Padding ActionMargin = new Padding(0, 0, 10, 8);
+        internal const int ActionHeight = 38, CompactActionHeight = 32;
 
         // The source is private and always reads Windows in production. Tests replace it
         // only inside an isolated process; they never change the user's system theme.
@@ -140,9 +146,10 @@ namespace ProGo
         {
             return new ThemeLabel { Text = text, Font = font, ForeColor = color, AutoSize = true, Tag = "styled", Margin = new Padding(0, 0, 0, 8) };
         }
-        public static Button Button(string text, EventHandler click, bool primary)
+        public static Button Button(string text, EventHandler click, bool primary, DialogResult result = DialogResult.None)
         {
-            var b = new Button { Text = text, AutoSize = true, MinimumSize = new Size(118, 38), Padding = new Padding(12, 4, 12, 4), Margin = new Padding(0, 0, 10, 8), Tag = primary ? "primary" : null };
+            var b = new Button { Text = text, AutoSize = true, MinimumSize = new Size(118, ActionHeight), Padding = ActionPadding,
+                Margin = ActionMargin, DialogResult = result, Tag = primary ? "primary" : null };
             if (click != null) b.Click += click;
             StyleButton(b);
             return b;

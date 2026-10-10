@@ -17,17 +17,28 @@ namespace ProGo
     internal static partial class DesktopTests
     {
         private static int passed;
-        private static string lastCheck = "test startup";
+        private static volatile string lastCheck = "test startup";
+        private static readonly Stopwatch suiteWatch = Stopwatch.StartNew();
+        private static long lastProgressMilliseconds;
         private static string work;
-        private static void Check(bool value, string name) { lastCheck = name; if (!value) throw new Exception(name); passed++; Console.WriteLine("PASS: " + name); }
+        private static void Check(bool value, string name) {
+            lastCheck = name; if (!value) throw new Exception(name); passed++;
+            System.Threading.Interlocked.Exchange(ref lastProgressMilliseconds, suiteWatch.ElapsedMilliseconds);
+            Console.WriteLine("PASS: " + name);
+        }
         [STAThread]
         private static int Main(string[] args)
         {
             if (args.Length > 0 && (args[0] == "-G" || args[0] == "--diagnostic-child")) return DiagnosticFixture(args);
             using (var guard = new System.Threading.Timer(delegate {
-                Console.WriteLine("FAIL: desktop fixture watchdog; last check: " + lastCheck);
+                long elapsed = suiteWatch.ElapsedMilliseconds;
+                long stalled = elapsed - System.Threading.Interlocked.Read(ref lastProgressMilliseconds);
+                // Bound a stalled modal/worker independently of the growing number of tests.
+                // A hard total cap still rejects an endlessly advancing fixture.
+                if (stalled < 90000 && elapsed < 600000) return;
+                Console.WriteLine("FAIL: desktop fixture watchdog; elapsed=" + elapsed + "ms; no progress=" + stalled + "ms; last check: " + lastCheck);
                 Console.Out.Flush(); Environment.Exit(1);
-            }, null, 120000, System.Threading.Timeout.Infinite))
+            }, null, 1000, 1000))
             try
             {
                 work = Path.GetFullPath(args[0]); Directory.CreateDirectory(work);
@@ -100,6 +111,7 @@ namespace ProGo
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
+                    VisualPolish(settings);
                     SshDiagnostics();
                     RouteDiagnostics(settings);
                     AsyncCliStartup(settings);

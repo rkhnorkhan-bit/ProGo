@@ -36,10 +36,13 @@ namespace ProGo
         internal Task SpeedWork { get; private set; }
         private readonly Func<DateTime> now;
         private readonly Timer pingTimer;
+        private readonly Control measurementDispatcher = new Control();
+        private readonly object measurementCompletionGate = new object();
+        private readonly HashSet<TaskCompletionSource<bool>> measurementCompletions = new HashSet<TaskCompletionSource<bool>>();
         private int pingInFlight;
         private int speedInFlight;
         private int routeInFlight;
-        private bool closing;
+        private volatile bool closing;
 
         public StatusForm(SettingsService settingsService, ProxyService proxyService, bool checkRouteOnOpen = false,
             Func<AppSettings, ProxyService, CancellationToken, string> routeProbe = null, Func<DateTime> clock = null, ConnectionHealthMonitor health = null,
@@ -59,10 +62,14 @@ namespace ProGo
             ClientSize = new Size(820, 570);
             MinimumSize = new Size(790, 610);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 10 };
+            // Keep the footer outside the two-column table: its preferred width must
+            // not expand a spanning cell past the form's real minimum client width.
+            var content = new Panel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding };
+            Controls.Add(content);
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 9 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            Controls.Add(table);
+            content.Controls.Add(table);
 
             state = AddRow(table, 0, "Соединение");
             address = AddRow(table, 1, "Адрес");
@@ -77,11 +84,13 @@ namespace ProGo
             table.RowStyles[7].Height = 60;
             table.RowStyles[8].Height = 68;
 
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
-            var restart = new Button { Text = "Переподключиться", Width = 150 };
-            speedButton = new Button { Text = "Измерить скорость", Width = 150 };
-            checkButton = new Button { Text = "Проверить маршрут", Width = 160 };
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom,
+                Height = UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical,
+                FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
+            var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
+            var restart = UiTheme.Button("Переподключиться", null, false);
+            speedButton = UiTheme.Button("Измерить скорость", null, false);
+            checkButton = UiTheme.Button("Проверить маршрут", null, false);
             restart.Click += async delegate
             {
                 if (health != null) health.Invalidate();
@@ -106,8 +115,7 @@ namespace ProGo
             buttons.Controls.Add(restart);
             buttons.Controls.Add(speedButton);
             buttons.Controls.Add(checkButton);
-            table.Controls.Add(buttons, 0, 9);
-            table.SetColumnSpan(buttons, 2);
+            content.Controls.Add(buttons);
             close.AccessibleDescription = "Закрывает диагностику и отменяет её измерения. Не отключает подключение ProGo.";
             restart.AccessibleDescription = "Останавливает текущий SSH-туннель ПК и повторно подключается по сохранённым настройкам.";
             DescribeMeasurementButton(checkButton, "Проверить маршрут",
@@ -123,10 +131,12 @@ namespace ProGo
             pingTimer.Tick += delegate { QueuePingMeasure(); };
             FormClosed += delegate
             {
-                closing = true;
-                CancelMeasurements(); pingTimer.Stop();
+                CloseMeasurements(); pingTimer.Stop();
             };
 
+            // A modal window can replace/remove SynchronizationContext. This handle always
+            // belongs to the constructor's UI thread, even before the form itself is shown.
+            measurementDispatcher.CreateControl();
             RefreshState(false);
             route.Text = "Маршрут ещё не проверен";
             checkedAt.Text = "Ещё не проверен";
@@ -172,20 +182,66 @@ namespace ProGo
         private void CancelMeasurements()
         { CancelMeasurement(routeCancellation); CancelMeasurement(pingCancellation); CancelMeasurement(speedCancellation); }
 
+        private void CloseMeasurements()
+        {
+            closing = true; CancelMeasurements();
+            lock (measurementCompletionGate) {
+                // A close may discard queued native callbacks. Settle their tasks without
+                // waiting for the message loop or publishing into the closed form.
+                foreach (var completion in measurementCompletions) completion.TrySetResult(false);
+                measurementCompletions.Clear();
+            }
+        }
+        private Task<bool> DispatchMeasurementCompletion(Action action)
+        {
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (measurementCompletionGate) {
+                if (closing) return Task.FromResult(false);
+                measurementCompletions.Add(completion);
+            }
+            try {
+                measurementDispatcher.BeginInvoke(new Action(delegate {
+                    try {
+                        if (closing || IsDisposed) { completion.TrySetResult(false); return; }
+                        action(); completion.TrySetResult(true);
+                    } catch (Exception ex) { completion.TrySetException(ex); }
+                    finally { lock (measurementCompletionGate) measurementCompletions.Remove(completion); }
+                }));
+            } catch (InvalidOperationException) {
+                lock (measurementCompletionGate) measurementCompletions.Remove(completion);
+                completion.TrySetResult(false);
+            }
+            return completion.Task;
+        }
+
         // The worker disposes its source even when the application message loop has ended.
         // Completion/cancellation cannot publish into a closed window or replace a newer run.
         private async Task RunMeasurement<T>(CancellationTokenSource source, Func<CancellationToken, T> measure,
-            Action<T> apply, Action cancelled, Action failed, Action finish)
+            Action<T> apply, Action cancelled, Action failed, Action release, Action finishUi = null)
         {
-            var token = source.Token;
+            var token = source.Token; T result = default(T); bool wasCancelled = false; Exception failure = null;
+            int released = 0;
+            Action releaseOnce = delegate { if (System.Threading.Interlocked.Exchange(ref released, 1) == 0) release(); };
             try {
-                var result = await Task.Run(() => { try { return measure(token); } finally { source.Dispose(); } });
-                if (closing || IsDisposed) return;
-                token.ThrowIfCancellationRequested(); apply(result);
+                result = await Task.Run(() => { try { return measure(token); } finally { source.Dispose(); } }).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) { if (!closing && !IsDisposed) cancelled(); }
-            catch (Exception ex) { SafeLog.Error("Diagnostic measurement failed.", ex); if (!closing && !IsDisposed) failed(); }
-            finally { finish(); }
+            catch (OperationCanceledException) { wasCancelled = true; }
+            catch (Exception ex) { failure = ex; SafeLog.Error("Diagnostic measurement failed.", ex); }
+            try {
+                await DispatchMeasurementCompletion(delegate {
+                    try {
+                        if (wasCancelled || token.IsCancellationRequested) cancelled();
+                        else if (failure != null) failed();
+                        else apply(result);
+                    } catch (Exception ex) {
+                        SafeLog.Error("Diagnostic result publication failed.", ex);
+                        if (!closing && !IsDisposed) failed();
+                    } finally {
+                        releaseOnce();
+                        if (!closing && !IsDisposed && finishUi != null) finishUi();
+                    }
+                }).ConfigureAwait(false);
+            } finally { releaseOnce(); }
         }
         private void QueueRouteMeasure()
         {
@@ -198,8 +254,7 @@ namespace ProGo
                 checkedAt.Text = now().ToString("yyyy-MM-dd HH:mm:ss") + "\nSOCKS → " + SafeLog.Redact(current.TestEndpoint);
             }, () => route.Text = "Проверка маршрута отменена.", () => route.Text = "Не удалось проверить маршрут через SOCKS.", () => {
                 routeCancellation = null; System.Threading.Interlocked.Exchange(ref routeInFlight, 0);
-                if (!closing && !IsDisposed) checkButton.Text = "Проверить маршрут";
-            });
+            }, () => checkButton.Text = "Проверить маршрут");
         }
         private void QueuePingMeasure()
         {
@@ -226,16 +281,15 @@ namespace ProGo
                 speed.Text += "\nCloudflare через SOCKS · " + now().ToString("HH:mm:ss");
             }, () => speed.Text = "Измерение скорости отменено.", () => speed.Text = "Не удалось измерить скорость.", () => {
                 speedCancellation = null; System.Threading.Interlocked.Exchange(ref speedInFlight, 0);
-                if (!closing && !IsDisposed) speedButton.Text = "Измерить скорость";
-            });
+            }, () => speedButton.Text = "Измерить скорость");
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                closing = true;
-                CancelMeasurements();
+                CloseMeasurements();
+                measurementDispatcher.Dispose();
                 if (pingTimer != null)
                 {
                     pingTimer.Stop();
@@ -254,6 +308,8 @@ namespace ProGo
         private readonly TextBox search = new TextBox();
         private readonly ComboBox typeFilter = new ComboBox();
         private readonly DataGridView grid = new DataGridView();
+        private readonly Label emptyState = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private const string GridDescription = "Список записей без содержимого секретов. Стрелки выбирают запись; Tab переходит к действиям. Для редактирования используйте «Изменить».";
 
         public VaultForm(VaultSession vaultSession, ClipboardService clipboardService, SettingsService settingsService)
         {
@@ -266,10 +322,10 @@ namespace ProGo
             ClientSize = new Size(1040, 600);
             MinimumSize = new Size(980, 560);
 
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), RowCount = 3, ColumnCount = 1 };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding, RowCount = 3, ColumnCount = 1 };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical));
             Controls.Add(root);
 
             var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
@@ -293,29 +349,29 @@ namespace ProGo
             grid.ReadOnly = true;
             grid.StandardTab = true;
             grid.AccessibleName = "Записи хранилища";
-            grid.AccessibleDescription = "Список записей без содержимого секретов. Стрелки выбирают запись; Tab переходит к действиям. Для редактирования используйте «Изменить».";
+            grid.AccessibleDescription = GridDescription;
             grid.AllowUserToAddRows = false;
             grid.AllowUserToDeleteRows = false;
             grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             grid.MultiSelect = false;
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.DoubleClick += delegate { EditSelected(); };
-            grid.Paint += delegate(object sender, PaintEventArgs e)
-            {
-                if (grid.Rows.Count != 0) return;
-                TextRenderer.DrawText(e.Graphics, "Здесь будут ваши записи\nНажмите «Добавить», чтобы сохранить первый секрет.", UiTheme.Body,
-                    new Rectangle(20, 70, Math.Max(1, grid.Width - 40), 80), UiTheme.TextColor(UiTheme.Muted),
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
-            };
-            root.Controls.Add(grid, 0, 1);
+            var contents = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+            contents.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            contents.RowStyles.Add(new RowStyle(SizeType.AutoSize)); contents.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            emptyState.Dock = DockStyle.Fill; emptyState.Name = "vaultEmptyState";
+            emptyState.AccessibleName = "Состояние списка хранилища";
+            contents.SizeChanged += delegate { emptyState.MaximumSize = new Size(Math.Max(1, contents.ClientSize.Width - emptyState.Margin.Horizontal), 0); };
+            contents.Controls.Add(emptyState, 0, 0); contents.Controls.Add(grid, 0, 1);
+            root.Controls.Add(contents, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
-            var lockButton = new Button { Text = "Заблокировать", Width = 120, DialogResult = DialogResult.Cancel };
-            var copy = new Button { Text = "Копировать секрет", Width = 150 };
-            var delete = new Button { Text = "Удалить", Width = 100 };
-            var edit = new Button { Text = "Изменить", Width = 100 };
-            var add = new Button { Text = "Добавить", Width = 100 };
+            var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
+            var lockButton = UiTheme.Button("Заблокировать", null, false, DialogResult.Cancel);
+            var copy = UiTheme.Button("Копировать секрет", null, false);
+            var delete = UiTheme.Button("Удалить", null, false);
+            var edit = UiTheme.Button("Изменить", null, false);
+            var add = UiTheme.Button("Добавить", null, false);
             close.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
             lockButton.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
             copy.AccessibleDescription = "Копирует секрет выбранной записи. " + clipboard.CopyNotice;
@@ -356,6 +412,11 @@ namespace ProGo
                 var row = grid.Rows.Add(entry.name, DisplayType(entry.type), entry.login, entry.url_or_host, entry.tags, entry.updated_at);
                 grid.Rows[row].Tag = entry;
             }
+            emptyState.Text = grid.Rows.Count != 0 ? "" : session.Data.entries.Count == 0
+                ? "Записей пока нет. Добавить запись можно кнопкой «Добавить»."
+                : "Совпадений нет. Измените поиск или выберите «Все» в фильтре.";
+            emptyState.AccessibleDescription = emptyState.Text; emptyState.Visible = grid.Rows.Count == 0;
+            grid.AccessibleDescription = GridDescription + (grid.Rows.Count == 0 ? " " + emptyState.Text : "");
         }
 
         private bool MatchesType(VaultEntry entry)
@@ -470,7 +531,7 @@ namespace ProGo
             ClientSize = new Size(680, 570);
             MinimumSize = new Size(620, 540);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 9 };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 2, RowCount = 9 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(table);
@@ -499,8 +560,8 @@ namespace ProGo
             table.Controls.Add(show, 1, 7);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
+            var save = UiTheme.Button("Сохранить", null, true, DialogResult.OK);
+            var cancel = UiTheme.Button("Отмена", null, false, DialogResult.Cancel);
             save.AccessibleDescription = "Проверяет поля и сохраняет запись в хранилище.";
             cancel.AccessibleDescription = "Закрывает редактор без сохранения изменений.";
             save.Click += Save;
@@ -579,7 +640,7 @@ namespace ProGo
             ClientSize = new Size(520, create ? 260 : 220);
             MinimumSize = Size;
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = create ? 4 : 3 };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 2, RowCount = create ? 4 : 3 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(table);
@@ -594,8 +655,8 @@ namespace ProGo
             table.SetColumnSpan(hint, 2);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var ok = new Button { Text = create ? "Создать" : "Открыть", Width = 100, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Отмена", Width = 100, DialogResult = DialogResult.Cancel };
+            var ok = UiTheme.Button(create ? "Создать" : "Открыть", null, true, DialogResult.OK);
+            var cancel = UiTheme.Button("Отмена", null, false, DialogResult.Cancel);
             ok.AccessibleDescription = create ? "Проверяет PIN-код и его повтор. Создание хранилища выполняется после подтверждения." : "Передаёт PIN-код для открытия хранилища. Доступ зависит от проверки PIN-кода.";
             cancel.AccessibleDescription = "Закрывает окно без создания или открытия хранилища.";
             ok.Click += ValidatePin;

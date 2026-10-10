@@ -38,8 +38,91 @@ namespace ProGo
             RouteCurlTransport(current);
             LatencyDeadlines(current);
             RouteProcessDeadlines(current);
+            RouteMeasurementOwnerUi(settings);
             RouteCancellationUi(settings);
             RouteEscapeUi(settings);
+        }
+        private static void RouteMeasurementOwnerUi(SettingsService settings)
+        {
+            var previousContext = SynchronizationContext.Current;
+            int owner = Thread.CurrentThread.ManagedThreadId, phase = 0, entered = 0, wrongThread = 0, updates = 0, ticks = 0;
+            using (var release = new ManualResetEventSlim())
+            using (var proxy = new ProxyService(settings))
+            using (var form = new StatusForm(settings, proxy, false,
+                (s, p, token) => { Interlocked.Increment(ref entered); if (Volatile.Read(ref phase) == 1) release.Wait(token); else token.WaitHandle.WaitOne(); token.ThrowIfCancellationRequested(); return "UI owner route result"; },
+                null, null,
+                (s, token) => {
+                    if (Volatile.Read(ref phase) == 0) return null;
+                    Interlocked.Increment(ref entered); if (Volatile.Read(ref phase) == 1) release.Wait(token); else token.WaitHandle.WaitOne(); token.ThrowIfCancellationRequested(); return (int?)42;
+                },
+                (s, token) => { Interlocked.Increment(ref entered); if (Volatile.Read(ref phase) == 1) release.Wait(token); else token.WaitHandle.WaitOne(); token.ThrowIfCancellationRequested(); return Tuple.Create((double?)12.5, (string)null); }))
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                try {
+                    form.Show(); ((System.Windows.Forms.Timer)Field(form, "pingTimer")).Stop();
+                    PumpUntil(() => form.PingWork != null && form.PingWork.IsCompleted); form.PingWork.GetAwaiter().GetResult();
+                    foreach (var control in Descendants(form).Where(c => c is Label || c is Button))
+                        control.TextChanged += delegate {
+                            Interlocked.Increment(ref updates);
+                            if (Thread.CurrentThread.ManagedThreadId != owner) Interlocked.Increment(ref wrongThread);
+                        };
+                    heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                    Volatile.Write(ref phase, 1); SynchronizationContext.SetSynchronizationContext(null);
+                    Call(form, "QueueRouteMeasure"); Call(form, "StartSpeedTest"); Call(form, "QueuePingMeasure");
+                    var route = form.RouteWork; var speed = form.SpeedWork; var ping = form.PingWork;
+                    PumpUntil(() => Volatile.Read(ref entered) == 3 && ticks >= 3);
+                    Check(!route.IsCompleted && !speed.IsCompleted && !ping.IsCompleted, "diagnostic workers preserve UI heartbeat after the caller loses its synchronization context");
+                    release.Set(); PumpUntil(() => route.IsCompleted && speed.IsCompleted && ping.IsCompleted);
+                    Task.WhenAll(route, speed, ping).GetAwaiter().GetResult();
+                    Check(((Label)Field(form, "route")).Text == "UI owner route result" && ((Label)Field(form, "ping")).Text.Contains("42 ms") &&
+                        ((Label)Field(form, "speed")).Text.Contains(12.5.ToString("0.0")) && wrongThread == 0 && updates >= 6,
+                        "all three diagnostic results, status refresh and button finishes publish on the actual UI owner with null context");
+                    Check((int)Field(form, "routeInFlight") == 0 && (int)Field(form, "pingInFlight") == 0 && (int)Field(form, "speedInFlight") == 0,
+                        "UI-owned diagnostic completion settles every in-flight guard");
+                    Volatile.Write(ref phase, 2); SynchronizationContext.SetSynchronizationContext(null);
+                    Call(form, "QueueRouteMeasure"); Call(form, "StartSpeedTest"); Call(form, "QueuePingMeasure");
+                    route = form.RouteWork; speed = form.SpeedWork; ping = form.PingWork;
+                    PumpUntil(() => Volatile.Read(ref entered) == 6);
+                    int updatesBeforeClose = updates;
+                    var watch = Stopwatch.StartNew(); form.Close();
+                    Check(watch.ElapsedMilliseconds < 500 && Task.WaitAll(new[] { route, speed, ping }, 3000),
+                        "closing null-context diagnostics cancels and settles workers even without further UI pumping");
+                    Application.DoEvents();
+                    Check(wrongThread == 0 && updates == updatesBeforeClose && (int)Field(form, "routeInFlight") == 0 &&
+                        (int)Field(form, "pingInFlight") == 0 && (int)Field(form, "speedInFlight") == 0,
+                        "closed diagnostic cancellation releases all guards without late label or button updates");
+                } finally { SynchronizationContext.SetSynchronizationContext(previousContext); }
+            }
+            RouteQueuedCompletionClose(settings);
+        }
+        private static void RouteQueuedCompletionClose(SettingsService settings)
+        {
+            var previousContext = SynchronizationContext.Current;
+            int entered = 0, phase = 0, updates = 0;
+            using (var release = new ManualResetEventSlim())
+            using (var proxy = new ProxyService(settings))
+            using (var form = new StatusForm(settings, proxy, false,
+                (s, p, token) => { Interlocked.Increment(ref entered); release.Wait(token); return "Queued route result"; }, null, null,
+                (s, token) => { if (Volatile.Read(ref phase) == 0) return null; Interlocked.Increment(ref entered); release.Wait(token); return (int?)1; },
+                (s, token) => { Interlocked.Increment(ref entered); release.Wait(token); return Tuple.Create((double?)1, (string)null); })) {
+                try {
+                    form.Show(); ((System.Windows.Forms.Timer)Field(form, "pingTimer")).Stop();
+                    PumpUntil(() => form.PingWork != null && form.PingWork.IsCompleted); form.PingWork.GetAwaiter().GetResult();
+                    foreach (var control in Descendants(form).Where(c => c is Label || c is Button)) control.TextChanged += delegate { updates++; };
+                    Volatile.Write(ref phase, 1); SynchronizationContext.SetSynchronizationContext(null);
+                    Call(form, "QueueRouteMeasure"); Call(form, "StartSpeedTest"); Call(form, "QueuePingMeasure");
+                    PumpUntil(() => Volatile.Read(ref entered) == 3); release.Set();
+                    var gate = Field(form, "measurementCompletionGate");
+                    var queued = (System.Collections.Generic.HashSet<TaskCompletionSource<bool>>)Field(form, "measurementCompletions");
+                    Check(SpinWait.SpinUntil(delegate { lock (gate) return queued.Count == 3; }, 3000),
+                        "all completed diagnostic workers queue callbacks on their persistent UI dispatcher");
+                    int beforeClose = updates; form.Close();
+                    Check(Task.WaitAll(new[] { form.RouteWork, form.SpeedWork, form.PingWork }, 3000),
+                        "close settles already-queued diagnostic callbacks after native handle disposal without a message loop");
+                    Application.DoEvents();
+                    Check(updates == beforeClose && (int)Field(form, "routeInFlight") == 0 && (int)Field(form, "pingInFlight") == 0 && (int)Field(form, "speedInFlight") == 0,
+                        "discarded native callbacks cannot publish into the closed diagnostic window or strand guards");
+                } finally { SynchronizationContext.SetSynchronizationContext(previousContext); }
+            }
         }
         private static void RouteCurlTransport(AppSettings config)
         {
