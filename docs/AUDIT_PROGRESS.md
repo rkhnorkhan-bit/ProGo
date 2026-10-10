@@ -1589,3 +1589,37 @@ There is no forget-and-reissue control for an uncertain request in this stage.
 Acceptance requires green Windows/server CI on the exact commit and visual review
 of native recovery images. F23 stays open; **21/30 closed, 9 remaining**.
 No merge, version bump, release or changes to ordinary CLI/settings behavior.
+
+
+## Stage F23j — safe cancellation of own-VPS SSH waiting
+
+Own-VPS setup and its status/result queries now open one native waiting window
+for each SSH response, with a ten-minute local deadline and **Остановить ожидание**.
+Button, Escape, title Close and disposal stop the owned client process tree;
+ordinary Close waits for process settlement before returning. OpenSSH keeps a real
+console for password and host-key prompts. Stdout still goes only to the private
+local result file. User terminals, persistent tunnels and other VPS actions do not
+use this owner. The existing SCP preparation retains its earlier contract through
+the shared suspended-start/job containment implementation.
+
+Cancellation ends local waiting, not the server operation. The command may have
+finished or been interrupted; ProGo makes no rollback or remote cleanup claim.
+The original DPAPI request stays pending, no token is committed after an accepted
+cancellation, and the wizard remains on setup with **Проверить прошлую настройку**.
+Reopening restores that endpoint. Recovery queries retain the same ID and cannot
+submit setup. Cancelled status does not proceed to result; cancelled result is not
+consumed. Deadline and SSH failure keep recovery guidance. Failed local result-file
+cleanup refuses a confirmed cancellation outcome and preserves the request.
+
+Native Windows fixtures cover all four cancellation routes, process descendants,
+an unrelated process, pre-cancel, deadline, normal/nonzero completion, response
+races, modal settlement, UI heartbeat and keyboard access. Isolated AdminAsync and
+wizard fixtures check setup/status/result interruption, prior access preservation,
+private work cleanup/refusal, restart presentation and original-result recovery.
+Normal/minimum waiting and cancelled-wizard images require visual review. Server
+receipt tests and full Windows/server CI must pass on the exact source commit.
+
+This bounded stage integrates only own-VPS setup waiting. Invitation, revocation,
+repair and QR setup still need their own interrupted-result contracts. Receipt
+acknowledgment/pruning and manual resolution of unconfirmed requests remain deferred.
+F23 stays open; **21/30 closed, 9 remaining**. No merge, version bump or release.

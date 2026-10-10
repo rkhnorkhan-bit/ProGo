@@ -21,7 +21,7 @@ namespace ProGo
         {
             try
             {
-                if (HomeVpnPreparationTests.Fixture(args) || HomeVpnWaitingTests.Fixture(args)) return 0;
+                if (HomeVpnSetupWaitTests.Fixture(args) || HomeVpnPreparationTests.Fixture(args) || HomeVpnWaitingTests.Fixture(args)) return 0;
                 var text = File.ReadAllText(args[0]);
                 var access = HomeVpnAccess.Parse(text);
                 Check(access.User.StartsWith("pgv") && access.Identity.EndsWith(".vpn.progo.invalid"), "server-generated token is accepted");

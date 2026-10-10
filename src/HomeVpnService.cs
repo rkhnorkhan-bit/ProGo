@@ -209,9 +209,12 @@ namespace ProGo
 
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
+            Func<string, string, string, Task> transport = ConsoleAsync;
+            if (action == "setup" || action == "recover-setup")
+                transport = (executable, arguments, output) => HomeVpnSetupWaitForm.WaitAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output);
             return await AdminAsync(owner, action, label, identifier, progress,
                 (executable, arguments) => HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments,
-                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), ConsoleAsync);
+                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), transport);
         }
 
         // Injected transports keep Windows fixtures isolated from live VPS credentials.
@@ -284,6 +287,7 @@ namespace ProGo
                     if (checking) throw new HomeVpnPreparationCancelledException(true);
                     throw;
                 }
+                catch (HomeVpnSetupWaitCancelledException) { throw; }
                 catch (HomeVpnSetupPendingException) { throw; }
                 catch (Exception ex) {
                     if (ex is OutOfMemoryException || !setup || request == null) throw;
@@ -292,6 +296,7 @@ namespace ProGo
                 finally {
                     try { Directory.Delete(work, true); }
                     catch {
+                        if (setup && remoteStarted) throw new HomeVpnSetupPendingException("Ожидание SSH закончено, но локальные файлы результата не удалось удалить. Запрос VPS сохранён; закрытие операции пока не подтверждено. Закройте программы, использующие эти файлы, перед проверкой результата.");
                         if (!remoteStarted) throw new IOException(checking
                             ? "Подготовка проверки прервана, но локальные файлы не удалось удалить. Прежний запрос сохранён; его результат не подтверждён. Закройте программы, использующие эти файлы."
                             : "Команды настройки VPS не запускались, но локальные файлы подготовки не удалось удалить. Закройте программы, использующие эти файлы; завершение подготовки пока не подтверждено.");
