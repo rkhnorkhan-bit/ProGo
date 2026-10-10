@@ -4,6 +4,11 @@ Baseline: ProGo 0.2.2 (`4bb3365`). The approved audit compares 0.1.27,
 0.1.29 and 0.2.2. Each stage is scoped to an audit finding and has its own
 verification and review boundary.
 
+Current accepted status: **22/31 closed; 9 remaining** — F09, F16, F17,
+F19, F22, F23, F27, F30 and F31. F29 was accepted on 10 October 2026
+after full Windows/server CI and native image review below. Counts in earlier
+stage entries describe their historical state.
+
 ## Stage 1 — F02: automatic setup lost after an error
 
 Implementation:
@@ -1777,9 +1782,12 @@ Existing last-consumer assertions await observation completion while retaining
 actual listener-rebind checks. Fixture-only external edits invalidate explicitly;
 the new fake-clock case separately proves periodic external-change detection.
 
-Validation: local public-content and diff checks; Windows build/full CI and new
-native regressions remain pending. F31 remains OPEN for real SSH-agent/VPS and
-HDD/VHDX measurements. No merge, release, installation or system-service changes.
+Validation: commit `08a337962c0d904ff381abdc60fd60b59f7d5d63`,
+[full Windows/server CI 38075927979](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38075927979)
+PASS, including desktop 2910, SOCKS 22, instance 26, maintenance 88, shutdown 47
+and relay 24. Public scan 164 source / 42 release files PASS; local diff PASS.
+F31 remains OPEN for real SSH-agent/VPS and HDD/VHDX measurements and the
+remaining synchronous paths. No merge, release, installation or service change.
 
 Candidate builds also embed `VERSION+commit` as AssemblyInformationalVersion and
 show that identity in the local SSH report. Product/assembly versions retain
@@ -1789,7 +1797,7 @@ compares it with the requested identity, without locking the executable. This
 identifies the candidate actually running; the owner's previous installation
 still requires a report from that installation.
 
-## F29 — native icon sizes and consistent task presentation (verification pending)
+## F29 — native icon sizes and consistent task presentation (accepted)
 
 The tray now creates the brand icon at the current Windows small-icon size instead
 of supplying only a 64 px handle. The executable retains its existing seven-frame
@@ -1817,10 +1825,24 @@ vault views, task headings and standard-action dialogs. Existing tests cover
 textual tray states, high-contrast palettes and keyboard behavior; the native
 tray fixture now also checks unknown state and actual small-icon size.
 
-Local checks: `git diff --check` and public-content scan PASS. Windows build/full
-CI and screenshot review are pending. **F29 remains OPEN; overall 21/31.** Real
-monitor DPI transitions and Narrator/live system contrast acceptance remain F16
-and F17; no such acceptance is inferred from synthetic/native CI geometry.
+The minimum-width route footer was moved outside the two-column spanning table;
+all four actions now fit both the form and their actual footer viewport. Route,
+latency and speed completions use their persistent UI owner even after a modal
+window removes SynchronizationContext. Closing settles cancelled and already
+queued completions without a message loop or updates to disposed controls.
+
+Acceptance evidence: commit `4a270bc5578f67a149d993a12ecd4853ccffdcb1`,
+[full Windows/server CI 38075926016](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38075926016)
+PASS: desktop 2843, SOCKS 22, instance 26, maintenance 88, shutdown 47 and
+relay 24, plus the VPN/server and QR suites. Public scan: 164 source / 42 release
+files PASS. All nine F29 native images were inspected: 16/24 px icon matrix on
+both backgrounds, three editor dialogs, minimum route dialog, dashboard,
+settings, empty vault and no-match vault. Screenshot artifact 11678851422 SHA256:
+`6bb8f17f00bd5c3caa90e5346e9dbdd2e5dc6e439c526d1a88bdaeb545781aff`.
+No clipping or overlapping task actions was observed. Local diff checks PASS.
+**F29 CLOSED; overall 22/31.** Real monitor DPI transitions and Narrator/live
+system contrast acceptance remain F16 and F17. The subsequent watchdog-only
+test-harness change has a separate CI run; it changes no application behavior.
 
 ## Stage F31e — retain explicit connection intent while saving settings
 
@@ -1835,21 +1857,23 @@ create it. Saving settings after a user stop does not revive the connection.
 Native regression holds the gate around an actual running SSH/SOCKS child, saves
 through the real dialog, then checks replacement PID, SOCKS greeting at the new
 port and release of the old port. It repeats the save after explicit Stop.
-Windows validation remains pending for this stage.
+These native regressions passed in cumulative workflow 38075927979 above.
 
-## Current verification boundary (2026-10-10)
+## Earlier verification boundary (2026-10-10, superseded)
 
 F31c commit 5604607f06b16ffb4fffd2a3389f5a230dda725a: desktop 2743 PASS,
 instance and maintenance tests PASS, server job PASS. Full workflow 38073862920
 FAIL in uninstall acceptance: an external AutoDetect DWORD0 became absent.
 Native SSH report/agent-guidance screenshots reviewed; archive SHA256
 eef948afbb0b6c5f27fd0b5faf45cb2879bccd2632077637c005f6f63f97ddfa.
-This failure is an open gate; no full-pass candidate is inferred.
+This earlier failure was investigated by F31f; the cumulative candidate above
+passes the full suite, including real typed-value restoration and shutdown.
 
 Initial F29 workflow 38074165642 failed the new minimum-size footer assertion.
 An explicit route-dialog footer row fixes the source layout, and the retry is
 38074596898. Other captured action dialogs and the native icon matrix have been
-reviewed. Full retry and empty-state images still require verification.
+reviewed. F29 acceptance above records the subsequent fixes, full PASS and
+all nine final native images; these early failed runs are retained as history.
 
 ## Stage F31f — retain live typed Windows values during CLI cleanup
 
@@ -1864,5 +1888,6 @@ listener remain until cleanup succeeds.
 Native regressions execute real environment setters/notifications and simulate
 known normalization plus denied writes. They check live external flags, typed
 PAC/bypass values, failed-journal content, actual listener retention, retry and
-an intervening external edit. Full repeated uninstall acceptance remains a
-required Windows gate; this stage has not passed it yet.
+an intervening external edit. Full shutdown/uninstall acceptance passed in
+cumulative workflow 38075927979 (47 checks). Real owner-machine and external
+software acceptance remains separate; F31 is still OPEN.
