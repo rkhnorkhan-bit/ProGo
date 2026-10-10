@@ -360,8 +360,8 @@ namespace ProGo
                     Check(context.IsPortableRunning && Object.ReferenceEquals(context.PortableWork, form.Work) && calls == 1 &&
                         new[] { AppCommand.CreateBackup, AppCommand.RestoreBackup, AppCommand.CleanupBackups, AppCommand.Update, AppCommand.ExportHomeVpn, AppCommand.ImportHomeVpn }.All(command => !commands[command].Enabled) &&
                         commands[AppCommand.Settings].Enabled && commands[AppCommand.StopDesktop].Enabled, "real tray retains the actual portable task and disables competing backup or maintenance while independent controls remain usable");
-                    var manual = context.CreateManualBackupAsync(); var startup = context.StartStartupBackupAsync();
-                    Check(manual.IsCompleted && startup.IsCompleted && !context.IsBackupRunning && context.IsPortableRunning, "direct manual and startup backup entry points cannot bypass the portable worker gate");
+                    var manual = context.CreateManualBackupAsync(); var startup = context.StartStartupBackupAsync(); var restore = context.StartRestoreAsync();
+                    Check(manual.IsCompleted && startup.IsCompleted && restore.IsCompleted && context.RestoreWork == null && !context.IsBackupRunning && context.IsPortableRunning, "direct manual, startup and restore backup entry points cannot bypass the portable worker gate");
                     int before = pulses; var shutdown = context.RequestShutdownAsync(); Pump(() => shutdown.IsCompleted);
                     Check(!shutdown.Result && context.IsPortableRunning && !context.PortableWork.IsCompleted && cleanups == 0 && pulses > before && !(bool)Field(context, "shutdownPrepared"), "bounded shutdown refuses a held portable disk worker without blocking UI or handing off maintenance");
                     release.Set(); Pump(() => context.PortableWork.IsCompleted); Check(!context.PortableWork.IsFaulted && !File.Exists(output), "owner cancellation settles the actual export before publication");

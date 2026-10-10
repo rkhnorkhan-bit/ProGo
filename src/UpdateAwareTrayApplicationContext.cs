@@ -43,11 +43,23 @@ namespace ProGo
         private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
         private volatile bool closing;
         private bool shutdownPrepared, shutdownPreparing, disposed;
-        private Task<bool> shutdownTask;
+        private Task<bool> shutdownTask, reservedShutdownTask;
+        private BackupWorkSession maintenanceReservation;
+        private bool maintenanceHandedOff;
         private readonly Action<string, CancellationToken> beforeBackupCopy;
         private readonly int backupShutdownTimeoutMilliseconds;
         private CancellationTokenSource backupCancellation;
-        private Task<BackupResult> backupWorker;
+        private Task backupWorker;
+        private BackupWorkSession backupActivity;
+        private Task backupActivityWorkflow;
+        private BackupWorkProgressForm backupActivityForm;
+        private Form backupDialog;
+        internal Action<string, CancellationToken> BackupIoProbe;
+        internal Func<List<BackupInfo>, string> RestorePick;
+        internal Func<string, RestorePreview, RestoreChoice> RestoreChoose;
+        internal Func<RestorePreparedInfo, bool> RestoreConfirm;
+        internal Func<RestorePreparedInfo, ProcessStartInfo> RestoreLaunchInfo;
+        internal Task RestoreWork { get; private set; }
         private Task backupCompletion = Task.FromResult(false);
         private BackupCreationForm backupForm;
         private readonly Func<bool, HomeVpnPortableForm> createPortableForm;
@@ -63,7 +75,7 @@ namespace ProGo
         private BackupResult lastBackupResult;
         private bool lastBackupCancelled, lastBackupFailed;
         private ToolStripMenuItem backupStatusItem;
-        internal bool IsBackupRunning { get { return backupQueued || backupWorker != null; } }
+        internal bool IsBackupRunning { get { return backupQueued || backupWorker != null || backupActivity != null; } }
         internal bool IsManualBackupRunning { get { return IsBackupRunning; } }
         internal Task ManualBackupCompletion { get { return backupCompletion; } }
         internal Task StartupBackupCompletion { get { return startupBackupCompletion; } }
@@ -540,7 +552,7 @@ namespace ProGo
             var state = GetCommandState();
             foreach (var item in commandItems) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
             if (backupStatusItem != null) {
-                backupStatusItem.Text = "Состояние копии: " + (IsBackupRunning ? "проверка и копирование…" :
+                backupStatusItem.Text = "Состояние копии: " + (IsBackupRunning ? "операция выполняется…" :
                     String.IsNullOrEmpty(backupStatus) ? "ещё не проверена" : lastBackupFailed ? "ошибка" : lastBackupCancelled ? "отменено" : "готова");
                 backupStatusItem.Enabled = !String.IsNullOrEmpty(backupStatus);
                 backupStatusItem.ToolTipText = backupStatus + " Открыть состояние копии. Ручная копия создаётся отдельной командой после окончания проверки.";
@@ -780,30 +792,63 @@ namespace ProGo
             using (var form = new VaultForm(session, clipboard, settings)) form.ShowDialog();
         }
 
-        private Task<bool> PrepareShutdownAsync(bool dialog)
+        private Task<bool> PrepareShutdownAsync(bool dialog, BackupWorkSession preservedBackup = null)
         {
-            if (shutdownTask != null && !shutdownTask.IsCompleted) return shutdownTask;
             if (closing) return Task.FromResult(false);
+            // Preparing native shutdown for our restore is only a reservation,
+            // never an external IPC permission to exit before helper/tree settlement.
+            if (preservedBackup == null && maintenanceReservation != null) {
+                if (reservedShutdownTask != null && !reservedShutdownTask.IsCompleted) return reservedShutdownTask;
+                var reserved = maintenanceReservation; var preparation = shutdownTask;
+                CancelBackup(); shutdownPreparing = true;
+                reservedShutdownTask = SettleReservedShutdown(dialog, reserved, preparation);
+                RefreshPendingRoutes(); return reservedShutdownTask;
+            }
+            if (shutdownTask != null && !shutdownTask.IsCompleted) return shutdownTask;
             if (shutdownPrepared) return Task.FromResult(true);
-            shutdownTask = PrepareShutdownCore(dialog); return shutdownTask;
+            if (preservedBackup != null) maintenanceReservation = preservedBackup;
+            shutdownTask = PrepareShutdownCore(dialog, preservedBackup); return shutdownTask;
         }
-        private async Task<bool> PrepareShutdownCore(bool dialog)
+        private async Task<bool> SettleReservedShutdown(bool dialog, BackupWorkSession reserved, Task preparation)
+        {
+            var settlement = Task.WhenAll(reserved.CurrentWork, preparation ?? Task.FromResult(false), backupActivityWorkflow ?? Task.FromResult(false));
+            bool settled = await Task.WhenAny(settlement, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) == settlement;
+            if (settled) try { await settlement.ConfigureAwait(false); } catch (Exception) { }
+            var next = await DispatchUi(delegate {
+                if (!settled) {
+                    shutdownPrepared = false; shutdownPreparing = false;
+                    const string message = "Восстановление ещё не остановлено: помощник или накопитель не завершили работу и очистку. ProGo остаётся запущенным; дождитесь окончания и повторите выход.";
+                    if (dialog) MessageBox.Show(message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", message, ToolTipIcon.Warning);
+                    RefreshPendingRoutes(); return Task.FromResult(false);
+                }
+                if (maintenanceHandedOff && shutdownPrepared) return Task.FromResult(true);
+                shutdownPrepared = false; shutdownPreparing = false;
+                return PrepareShutdownAsync(dialog);
+            }).ConfigureAwait(false);
+            bool result = next != null && await next.ConfigureAwait(false);
+            await DispatchUi(delegate { shutdownPreparing = shutdownTask != null && !shutdownTask.IsCompleted; RefreshPendingRoutes(); return true; }).ConfigureAwait(false);
+            return result;
+        }
+        private async Task<bool> PrepareShutdownCore(bool dialog, BackupWorkSession preservedBackup)
         {
             shutdownPreparing = true;
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             Exception failure = null;
             try {
-                CancelBackup();
+                if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
                 CancelPortable(); var portable = PortableWork;
                 if (portable != null && !portable.IsCompleted && await Task.WhenAny(portable, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) != portable)
                     throw new InvalidOperationException("Перенос VPN ещё не остановлен: накопитель не завершил текущую операцию. ProGo остаётся запущенным. Дождитесь завершения переноса и повторите выход или обслуживание.");
                 if (portable != null) try { await portable.ConfigureAwait(false); } catch (Exception) { }
-                var backup = backupWorker;
+                var activeBackup = backupActivity;
+                var backup = ReferenceEquals(activeBackup, preservedBackup) && preservedBackup != null ? null :
+                    activeBackup == null ? backupWorker : Task.WhenAll(activeBackup.CurrentWork, backupActivityWorkflow ?? Task.FromResult(false));
                 if (backup != null)
                 {
                     if (await Task.WhenAny(backup, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) != backup)
-                        throw new InvalidOperationException("Копирование ещё не остановлено: накопитель не завершил текущую операцию. ProGo остаётся запущенным. Дождитесь завершения копирования и повторите выход или обслуживание.");
+                        throw new InvalidOperationException("Операция с копией ещё не остановлена: накопитель или помощник не завершили работу и очистку. ProGo остаётся запущенным. Дождитесь завершения и повторите выход или обслуживание.");
                     try { await backup.ConfigureAwait(false); }
                     catch (OperationCanceledException) { }
                     catch (Exception ex) { SafeLog.Error("Backup ended with an error before shutdown.", ex); }
@@ -831,10 +876,11 @@ namespace ProGo
                         else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", failure.Message, ToolTipIcon.Warning);
                         return false;
                     }
+                    if (preservedBackup != null && preservedBackup.Token.IsCancellationRequested) return false;
                     shutdownPrepared = true;
                     if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
                     return true;
-                } finally { shutdownPreparing = false; RefreshPendingRoutes(); }
+                } finally { shutdownPreparing = reservedShutdownTask != null && !reservedShutdownTask.IsCompleted; RefreshPendingRoutes(); }
             }).ConfigureAwait(false);
         }
         // A modal dialog may remove or replace SynchronizationContext. The persistent
@@ -900,21 +946,22 @@ namespace ProGo
         }
         internal void CompleteShutdown()
         {
-            if (closing || activationDispatcher.IsDisposed) return;
+            if (closing || activationDispatcher.IsDisposed || maintenanceReservation != null) return;
             try { activationDispatcher.BeginInvoke(new Action(delegate {
-                if (!shutdownPrepared || closing) return;
+                if (!shutdownPrepared || closing || maintenanceReservation != null) return;
                 closing = true; homeVpn.Stop(); tray.Visible = false; ExitThread();
             })); } catch (InvalidOperationException) { }
         }
         internal void CancelShutdown()
         {
-            if (closing || activationDispatcher.IsDisposed) return;
-            try { activationDispatcher.BeginInvoke(new Action(delegate { if (!closing) { shutdownPrepared = false; RefreshPendingRoutes(); } })); }
+            if (closing || activationDispatcher.IsDisposed || maintenanceHandedOff) return;
+            try { activationDispatcher.BeginInvoke(new Action(delegate { if (!closing && !maintenanceHandedOff) { shutdownPrepared = false; RefreshPendingRoutes(); } })); }
             catch (InvalidOperationException) { }
         }
         private async Task<bool> BeginMaintenance(Func<bool> launch)
         {
-            if (!await PrepareShutdownAsync(true).ConfigureAwait(false)) return false;
+            var preparation = await DispatchUi(() => PrepareShutdownAsync(true)).ConfigureAwait(false);
+            if (preparation == null || !await preparation.ConfigureAwait(false)) return false;
             return await DispatchUi(delegate {
                 bool handedOff = false;
                 try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
@@ -1095,11 +1142,23 @@ namespace ProGo
         private sealed class BackupResult { internal string Path, Contents; internal bool Existing; }
 
         private void CancelBackup()
-        { var cancellation = backupCancellation; if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { } }
+        {
+            var cancellation = backupCancellation; if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+            var activity = backupActivity;
+            if (activity != null) { activity.Cancel(); activity.FinishAsync(); }
+            if (backupDialog != null && !backupDialog.IsDisposed) backupDialog.Close();
+        }
 
         internal void ShowBackupProgress()
         {
             if (closing || String.IsNullOrEmpty(backupOperationKind)) return;
+            if (backupActivity != null || backupOperationKind == "restore" || backupOperationKind == "cleanup") {
+                if (backupActivityForm != null && !backupActivityForm.IsDisposed) { backupActivityForm.Activate(); return; }
+                var progress = new BackupWorkProgressForm(CancelBackup); backupActivityForm = progress;
+                progress.SetStatus(backupStatus); if (backupActivity == null) progress.Complete(backupStatus);
+                progress.FormClosed += delegate { if (ReferenceEquals(backupActivityForm, progress)) backupActivityForm = null; };
+                progress.Show(mainWindow); return;
+            }
             if (backupForm != null && !backupForm.IsDisposed) { backupForm.Activate(); return; }
             var form = new BackupCreationForm(CancelBackup, backupOperationKind == "baseline"); backupForm = form;
             form.FormClosed += delegate { if (ReferenceEquals(backupForm, form)) backupForm = null; };
@@ -1138,49 +1197,135 @@ namespace ProGo
             finally { cancellation.Dispose(); }
         }
 
-        private async void StartRestore()
+        private async void StartRestore() { await StartRestoreAsync().ConfigureAwait(false); }
+
+        internal Task StartRestoreAsync()
         {
-            var backups = BackupService.ListBackups();
-            if (backups.Count == 0)
-            {
-                MessageBox.Show("Резервные копии не найдены. Сначала создайте резервную копию или дождитесь следующего обновления версии.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
+                throw new InvalidOperationException("Восстановление запускается владельцем интерфейса.");
+            if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
+            if (IsPortableRunning) return Task.FromResult(false);
+            if (IsBackupRunning) { ShowBackupProgress(); return backupCompletion; }
+            BeginBackupActivity("restore", "Читаем список резервных копий в фоне.");
+            var activity = backupActivity;
+            RestoreWork = backupActivityWorkflow = backupCompletion = Task.Run(() => RunRestoreWorkflow(activity));
+            ShowBackupProgress(); return RestoreWork;
+        }
+        private void BeginBackupActivity(string kind, string message)
+        {
+            if (backupForm != null && !backupForm.IsDisposed) backupForm.Close();
+            if (backupActivityForm != null && !backupActivityForm.IsDisposed) backupActivityForm.Close();
+            backupActivity = new BackupWorkSession(BackupIoProbe); backupOperationKind = kind;
+            backupStatus = message; lastBackupResult = null; lastBackupCancelled = lastBackupFailed = false;
+            RefreshPendingRoutes();
+        }
+        private Task<bool> ActivityStatus(BackupWorkSession work, string message)
+        {
+            return DispatchUi(delegate {
+                if (!ReferenceEquals(backupActivity, work)) return false;
+                backupStatus = message;
+                if (backupActivityForm != null && !backupActivityForm.IsDisposed) backupActivityForm.SetStatus(message);
+                RefreshPendingRoutes(); return true;
+            });
+        }
+        private DialogResult ShowBackupDialog(Form form)
+        {
+            backupDialog = form;
+            try { return form.ShowDialog(mainWindow); }
+            finally { if (ReferenceEquals(backupDialog, form)) backupDialog = null; }
+        }
+        private sealed class BackupActivityResult
+        {
+            internal bool Accepted, Cancelled, Failed;
+            internal string Message;
+        }
+        private async Task RunRestoreWorkflow(BackupWorkSession work)
+        {
+            BackupActivityResult result;
+            try { result = await RestoreCore(work).ConfigureAwait(false); }
+            catch (OperationCanceledException) { result = new BackupActivityResult { Cancelled = true, Message = "Восстановление отменено до передачи управления помощнику. Текущие данные не заменены." }; }
+            catch (Exception ex) {
+                SafeLog.Error("Restore preparation or owned helper failed.", ex);
+                result = new BackupActivityResult { Failed = true, Message = "Восстановление не запущено: ошибка чтения, проверки или запуска помощника. Текущие данные не заменены; подробности — в журнале ProGo." };
             }
-
-            string backupDir;
-            if (!BackupPickerForm.TryPick(backups, out backupDir)) return;
-
-            PreparedBackup prepared = null;
-            try
-            {
-                try
-                {
-                    string scope; bool dataConfirmed;
-                    using (var options = new RestoreOptionsForm(backupDir))
-                    {
-                        if (options.ShowDialog() != DialogResult.OK) return;
-                        prepared = options.TakePreparedCopy();
-                        if (closing) return;
-                        scope = options.Scope; dataConfirmed = options.DataConfirmed;
-                        var names = BackupIntegrity.RestoreNames(prepared.Path, scope, dataConfirmed);
-                        var result = MessageBox.Show(
-                            "Копия проверена. Версия в копии: " + File.ReadAllText(Path.Combine(prepared.Path, "VERSION")).Trim() +
-                            "\n\nБудет восстановлено:\n" + String.Join("\n", names) +
-                            (scope == "Program" ? "\n\nТекущие настройки и хранилище сохранятся." : "\n\nПеречисленные пользовательские данные будут заменены данными из копии.") +
-                            "\nТекущие VPN-доступы и снимки прокси сохранятся; архивные не импортируются." +
-                            "\n\nProGo закроется и запустится снова. Начать восстановление?",
-                            "Подтвердите восстановление", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-                        if (result != DialogResult.Yes) return;
-                    } // The UI form is disposed on its owner thread before asynchronous cleanup.
-                    if (!await BeginMaintenance(() => BackupService.StartRestore(prepared.Path, scope, dataConfirmed)).ConfigureAwait(false)) return;
-                    SafeLog.Info("Restore requested by user. scope=" + scope + ".");
-                } finally { if (prepared != null) prepared.Dispose(); }
+            await CompleteBackupActivity(work, result).ConfigureAwait(false);
+        }
+        private async Task CompleteBackupActivity(BackupWorkSession work, BackupActivityResult result)
+        {
+            // The owned worker settles and deletes only its registered stages even
+            // when the owner disappears or stops pumping queued UI delegates.
+            await work.FinishAsync().ConfigureAwait(false);
+            work.BeforeOwnerCompletion();
+            if (work.CleanupError != null) {
+                result.Failed = true; result.Message += " " + work.CleanupError;
             }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Restore preparation or cleanup failed.", ex);
-                DispatchUi(delegate { MessageBox.Show("Восстановление не запущено: " + ex.Message, "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); return true; });
+            await DispatchUi(delegate {
+                if (!ReferenceEquals(backupActivity, work)) return false;
+                backupActivity = null; backupActivityWorkflow = null; backupStatus = result.Message;
+                if (ReferenceEquals(maintenanceReservation, work)) maintenanceReservation = null;
+                lastBackupCancelled = result.Cancelled; lastBackupFailed = result.Failed;
+                if (backupActivityForm != null && !backupActivityForm.IsDisposed) backupActivityForm.Complete(backupStatus);
+                if (result.Accepted) { maintenanceHandedOff = true; CompleteShutdown(); }
+                else shutdownPrepared = false;
+                RefreshPendingRoutes(); return true;
+            }).ConfigureAwait(false);
+        }
+        private async Task<BackupActivityResult> RestoreCore(BackupWorkSession work)
+        {
+            var backups = await work.Run("restore-list", token => BackupService.ListBackups(token)).ConfigureAwait(false);
+            work.Token.ThrowIfCancellationRequested();
+            if (backups.Count == 0) return new BackupActivityResult { Message = "Резервные копии не найдены. Сначала создайте резервную копию или дождитесь следующего обновления версии." };
+            await ActivityStatus(work, "Выберите резервную копию. Чтение файлов завершено.").ConfigureAwait(false);
+            var directory = await DispatchUi(delegate {
+                if (work.Token.IsCancellationRequested) return null;
+                if (RestorePick != null) return RestorePick(backups);
+                using (var picker = new BackupPickerForm(backups))
+                    return ShowBackupDialog(picker) == DialogResult.OK ? picker.SelectedBackupPath : null;
+            }).ConfigureAwait(false);
+            if (directory == null) throw new OperationCanceledException();
+            work.Token.ThrowIfCancellationRequested();
+            await ActivityStatus(work, "Читаем состав выбранной копии в фоне.").ConfigureAwait(false);
+            var preview = await work.Run("restore-preview", token => RestorePreview.Read(directory, token)).ConfigureAwait(false);
+            work.Token.ThrowIfCancellationRequested();
+            RestorePreparedInfo prepared;
+            if (RestoreChoose != null) {
+                var choice = await DispatchUi(() => work.Token.IsCancellationRequested ? null : RestoreChoose(directory, preview)).ConfigureAwait(false);
+                if (choice == null) throw new OperationCanceledException();
+                await ActivityStatus(work, "Проверяем хеши и готовим отдельную копию в фоне.").ConfigureAwait(false);
+                prepared = await work.Run("restore-prepare", token => work.Prepare(directory, choice.Scope, choice.ConfirmData, token)).ConfigureAwait(false);
+            } else {
+                prepared = await DispatchUi(delegate {
+                    if (work.Token.IsCancellationRequested) return null;
+                    using (var options = new RestoreOptionsForm(directory, preview, work))
+                        return ShowBackupDialog(options) == DialogResult.OK ? options.TakePreparedInfo() : null;
+                }).ConfigureAwait(false);
+                if (prepared == null) throw new OperationCanceledException();
             }
+            work.Token.ThrowIfCancellationRequested();
+            await ActivityStatus(work, "Копия проверена. Подтвердите состав восстановления.").ConfigureAwait(false);
+            var consent = await DispatchUi(delegate {
+                if (work.Token.IsCancellationRequested) return false;
+                if (RestoreConfirm != null) return RestoreConfirm(prepared);
+                using (var confirmation = new RestoreConfirmationForm(prepared))
+                    return ShowBackupDialog(confirmation) == DialogResult.OK;
+            }).ConfigureAwait(false);
+            if (!consent) throw new OperationCanceledException();
+            work.Token.ThrowIfCancellationRequested();
+            await ActivityStatus(work, "Завершаем текущие операции ProGo перед восстановлением.").ConfigureAwait(false);
+            var shutdown = await DispatchUi(() => work.Token.IsCancellationRequested ? Task.FromResult(false) : PrepareShutdownAsync(true, work)).ConfigureAwait(false);
+            if (shutdown == null || !await shutdown.ConfigureAwait(false))
+                return new BackupActivityResult { Failed = true, Message = "Восстановление не запущено: текущие операции ProGo ещё не завершены. Повторите восстановление после их окончания." };
+            work.Token.ThrowIfCancellationRequested();
+            await ActivityStatus(work, "Помощник запускается в фоне. Ждём подтверждения до 15 секунд; отмена доступна до передачи управления.").ConfigureAwait(false);
+            var factory = RestoreLaunchInfo;
+            var handoff = await work.Run("restore-launch", token => BackupService.LaunchRestore(prepared, token, factory)).ConfigureAwait(false);
+            // Accepted acknowledgement belongs to the helper; a late cancellation
+            // cannot relabel it or roll back its independently verified stage.
+            if (handoff.Accepted) {
+                SafeLog.Info("Restore requested by user. scope=" + prepared.Scope + ".");
+                return new BackupActivityResult { Accepted = true, Message = "Помощник принял восстановление. ProGo завершает работу; восстановление продолжит помощник." };
+            }
+            return new BackupActivityResult { Cancelled = work.Token.IsCancellationRequested, Failed = !work.Token.IsCancellationRequested, Message = handoff.Error };
         }
 
         private async void StartUpdate()
@@ -1234,6 +1379,8 @@ namespace ProGo
                     if (backupCancellation != null) { backupCancellation.Dispose(); backupCancellation = null; }
                 }
                 if (backupForm != null && !backupForm.IsDisposed) backupForm.Dispose();
+                if (backupActivityForm != null && !backupActivityForm.IsDisposed) backupActivityForm.Dispose();
+                if (backupDialog != null && !backupDialog.IsDisposed) backupDialog.Dispose();
                 if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
                 pendingRoutes.Clear(); routeLifetime.Cancel(); routeLifetime.Dispose();
                 health.Changed -= HealthChanged;

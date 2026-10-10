@@ -31,15 +31,18 @@ namespace ProGo
         {
             if (args.Length > 0 && args[0] == "--typed-correction-retry-child") return TypedCorrectionRetryChild(args);
             if (args.Length > 0 && (args[0] == "-G" || args[0] == "--diagnostic-child")) return DiagnosticFixture(args);
-            using (var guard = new System.Threading.Timer(delegate {
-                long elapsed = suiteWatch.ElapsedMilliseconds;
-                long stalled = elapsed - System.Threading.Interlocked.Read(ref lastProgressMilliseconds);
-                // Bound a stalled modal/worker independently of the growing number of tests.
-                // A hard total cap still rejects an endlessly advancing fixture.
-                if (stalled < 90000 && elapsed < 600000) return;
-                Console.WriteLine("FAIL: desktop fixture watchdog; elapsed=" + elapsed + "ms; no progress=" + stalled + "ms; last check: " + lastCheck);
-                Console.Out.Flush(); Environment.Exit(1);
-            }, null, 1000, 1000))
+            // The guard must not depend on the worker pool it is supervising.
+            new System.Threading.Thread(delegate() {
+                while (true) {
+                    System.Threading.Thread.Sleep(1000);
+                    long elapsed = suiteWatch.ElapsedMilliseconds;
+                    long stalled = elapsed - System.Threading.Interlocked.Read(ref lastProgressMilliseconds);
+                    // Keep the existing progress and total suite budgets.
+                    if (stalled < 90000 && elapsed < 600000) continue;
+                    Console.WriteLine("FAIL: desktop fixture watchdog; elapsed=" + elapsed + "ms; no progress=" + stalled + "ms; last check: " + lastCheck);
+                    Console.Out.Flush(); Environment.Exit(1);
+                }
+            }) { IsBackground = true }.Start();
             try
             {
                 work = Path.GetFullPath(args[0]); Directory.CreateDirectory(work);
@@ -90,6 +93,7 @@ namespace ProGo
                     StartupBackupLayout(settings);
                     SettingsPersistenceWorkflow();
                     AsyncSettingsWorkflow(settings);
+                    AsyncRestoreWorkflow();
                     BackupCleanupPreview();
                     RestoreScopeAndPreparationUi();
                     BackupAccessibility();
