@@ -99,7 +99,7 @@ namespace ProGo
             File.WriteAllText(Path.Combine(root, "vault.enc.json"), "opaque fixture");
             var dialogKey = typeof(Form).GetMethod("ProcessDialogKey", BindingFlags.Instance | BindingFlags.NonPublic);
             using (var form = new RestoreOptionsForm(root)) {
-                form.Show(); Application.DoEvents();
+                form.Show(); Application.DoEvents(); PumpUntil(() => form.PreviewReady);
                 var program = (RadioButton)Field(form, "program"); var data = (RadioButton)Field(form, "data");
                 var all = (RadioButton)Field(form, "all"); var consent = (CheckBox)Field(form, "consent");
                 var contents = (TextBox)Field(form, "contents"); var prepare = (Button)Field(form, "prepare");
@@ -129,7 +129,7 @@ namespace ProGo
             }
             File.Delete(Path.Combine(root, "settings.json")); File.Delete(Path.Combine(root, "vault.enc.json"));
             using (var form = new RestoreOptionsForm(root)) {
-                form.Show(); Application.DoEvents(); var program = (RadioButton)Field(form, "program");
+                form.Show(); Application.DoEvents(); PumpUntil(() => form.PreviewReady); var program = (RadioButton)Field(form, "program");
                 program.Focus(); dialogKey.Invoke(form, new object[] { Keys.Down }); Application.DoEvents();
                 Check(form.Scope == "Program" && !((RadioButton)Field(form, "data")).Enabled && !((RadioButton)Field(form, "all")).Enabled,
                     "arrows cannot select unavailable data scopes"); form.Close();

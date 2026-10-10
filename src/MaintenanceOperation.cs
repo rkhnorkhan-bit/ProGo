@@ -5,9 +5,20 @@ using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Threading;
+using System.ComponentModel;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.Win32.SafeHandles;
 
 namespace ProGo
 {
+    public sealed class MaintenanceHandoffResult
+    {
+        public bool Accepted { get; internal set; }
+        public string Error { get; internal set; }
+    }
     // Also compiled by the installed PowerShell scripts: one ownership protocol.
     public sealed class MaintenanceOperation : IDisposable
     {
@@ -159,6 +170,122 @@ namespace ProGo
                     return false;
                 }
             }
+        }
+        public static MaintenanceHandoffResult StartOwnedHandoff(ProcessStartInfo info, CancellationToken cancellation)
+        {
+            if (info.UseShellExecute) throw new ArgumentException("Maintenance handoff requires a child environment.");
+            cancellation.ThrowIfCancellationRequested();
+            string name = Prefix + "Ready." + Guid.NewGuid().ToString("N");
+            using (var ready = CreateEvent(name)) {
+                info.EnvironmentVariables[ReadyVariable] = name;
+                using (var process = new OwnedHandoffProcess(info)) {
+                    var deadline = Stopwatch.StartNew();
+                    while (deadline.ElapsedMilliseconds < 15000) {
+                        // Ready is the acceptance boundary. A late Cancel does
+                        // not stop a helper that already owns its verified copy.
+                        if (ready.WaitOne(100) && !process.HasExited) { process.Accept(); return new MaintenanceHandoffResult { Accepted = true }; }
+                        if (process.HasExited) return new MaintenanceHandoffResult { Error = "Помощник восстановления завершился без подтверждения. Приложение остаётся запущенным." };
+                        if (cancellation.IsCancellationRequested) break;
+                    }
+                    if (ready.WaitOne(0) && !process.HasExited) { process.Accept(); return new MaintenanceHandoffResult { Accepted = true }; }
+                    bool cancelled = cancellation.IsCancellationRequested;
+                    // Only this suspended-and-contained process tree is stopped.
+                    process.StopAndSettle();
+                    return new MaintenanceHandoffResult { Error = cancelled ?
+                        "Подготовка восстановления отменена до подтверждения помощника. Приложение остаётся запущенным." :
+                        "Помощник восстановления не подтвердил готовность за 15 секунд и остановлен. Приложение остаётся запущенным; повторите после проверки журнала." };
+                }
+            }
+        }
+        // Kept in this standalone installed source: maintenance scripts compile
+        // it without application dependencies. No child code runs before job
+        // containment. Accepted helpers are detached; pending trees are settled.
+        private sealed class OwnedHandoffProcess : IDisposable
+        {
+            private SafeFileHandle job, process, thread;
+            private bool assigned, accepted;
+            internal OwnedHandoffProcess(ProcessStartInfo info)
+            {
+                IntPtr environment = IntPtr.Zero;
+                try {
+                    job = CreateJobObject(IntPtr.Zero, null);
+                    if (job.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error());
+                    // No breakaway. Explicit confirmed cleanup is required before
+                    // closing this handle; accepted helpers must survive app exit.
+                    var limits = new ExtendedLimits();
+                    Native(SetInformationJobObject(job, 9, ref limits, Marshal.SizeOf(typeof(ExtendedLimits))));
+                    var names = new List<string>(); foreach (DictionaryEntry pair in info.EnvironmentVariables) names.Add((string)pair.Key);
+                    names.Sort(StringComparer.OrdinalIgnoreCase);
+                    var values = new StringBuilder(); foreach (var key in names) values.Append(key).Append('=').Append(info.EnvironmentVariables[key]).Append('\0');
+                    values.Append('\0'); environment = Marshal.StringToHGlobalUni(values.ToString());
+                    var file = Path.GetFullPath(ResolveExecutable(info.FileName));
+                    var startup = new Startup(); startup.Size = Marshal.SizeOf(typeof(Startup));
+                    ProcessInfo child;
+                    Native(CreateProcess(file, new StringBuilder("\"" + file + "\" " + info.Arguments), IntPtr.Zero, IntPtr.Zero, false,
+                        0x08000404, environment, String.IsNullOrEmpty(info.WorkingDirectory) ? null : info.WorkingDirectory,
+                        ref startup, out child)); // NO_WINDOW | UNICODE_ENVIRONMENT | SUSPENDED
+                    process = new SafeFileHandle(child.Process, true); thread = new SafeFileHandle(child.Thread, true);
+                    Native(AssignProcessToJobObject(job, process)); assigned = true;
+                    if (ResumeThread(thread) == UInt32.MaxValue) throw new Win32Exception(Marshal.GetLastWin32Error());
+                } catch { Dispose(); throw; }
+                finally { if (environment != IntPtr.Zero) Marshal.FreeHGlobal(environment); }
+            }
+            internal bool HasExited {
+                get { uint wait = WaitForSingleObject(process, 0); if (wait == 0) return true;
+                    if (wait != 258) throw new Win32Exception(Marshal.GetLastWin32Error()); return false; }
+            }
+            internal void Accept()
+            {
+                accepted = true;
+            }
+            internal void StopAndSettle()
+            {
+                if (process == null || accepted) return;
+                if (!assigned) {
+                    while (true) {
+                        TerminateProcess(process, 1);
+                        if (WaitForSingleObject(process, 100) == 0) break;
+                        Thread.Sleep(100);
+                    }
+                    return;
+                }
+                // Keep this job and caller stage owned until the entire tree is
+                // confirmed empty. UI shutdown independently refuses after 3s.
+                while (true) {
+                    TerminateJobObject(job, 1);
+                    Accounting state; uint returned;
+                    if (QueryInformationJobObject(job, 1, out state, Marshal.SizeOf(typeof(Accounting)), out returned) && state.ActiveProcesses == 0) break;
+                    Thread.Sleep(100);
+                }
+            }
+            public void Dispose()
+            {
+                try { if (!accepted) StopAndSettle(); }
+                finally { if (thread != null) thread.Dispose(); if (process != null) process.Dispose(); if (job != null) job.Dispose(); }
+            }
+            private static string ResolveExecutable(string value)
+            {
+                if (Path.IsPathRooted(value)) return value;
+                var path = new StringBuilder(32768); uint size = SearchPath(null, value, null, path.Capacity, path, IntPtr.Zero);
+                if (size == 0 || size >= path.Capacity) throw new Win32Exception(Marshal.GetLastWin32Error()); return path.ToString();
+            }
+            private static void Native(bool value) { if (!value) throw new Win32Exception(Marshal.GetLastWin32Error()); }
+            [StructLayout(LayoutKind.Sequential)] private struct BasicLimits { internal long ProcessTime, JobTime; internal uint LimitFlags; internal UIntPtr MinimumWorkingSet, MaximumWorkingSet; internal uint ActiveProcessLimit; internal UIntPtr Affinity; internal uint PriorityClass, SchedulingClass; }
+            [StructLayout(LayoutKind.Sequential)] private struct IoCounters { internal ulong ReadOperations, WriteOperations, OtherOperations, ReadBytes, WriteBytes, OtherBytes; }
+            [StructLayout(LayoutKind.Sequential)] private struct ExtendedLimits { internal BasicLimits Basic; internal IoCounters Io; internal UIntPtr ProcessMemory, JobMemory, PeakProcessMemory, PeakJobMemory; }
+            [StructLayout(LayoutKind.Sequential)] private struct Accounting { internal long UserTime, KernelTime, PeriodUserTime, PeriodKernelTime; internal uint PageFaults, TotalProcesses, ActiveProcesses, TerminatedProcesses; }
+            [StructLayout(LayoutKind.Sequential)] private struct Startup { internal int Size; internal IntPtr Reserved, Desktop, Title; internal uint X, Y, Width, Height, XChars, YChars, Fill, Flags; internal ushort ShowWindow, ReservedSize; internal IntPtr ReservedData, Input, Output, Error; }
+            [StructLayout(LayoutKind.Sequential)] private struct ProcessInfo { internal IntPtr Process, Thread; internal uint ProcessId, ThreadId; }
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern SafeFileHandle CreateJobObject(IntPtr security, string name);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern bool SetInformationJobObject(SafeFileHandle job, int type, ref ExtendedLimits value, int size);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern bool AssignProcessToJobObject(SafeFileHandle job, SafeFileHandle process);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern bool TerminateJobObject(SafeFileHandle job, uint code);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern bool QueryInformationJobObject(SafeFileHandle job, int type, out Accounting info, int size, out uint returned);
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern uint SearchPath(string path, string file, string extension, int size, StringBuilder buffer, IntPtr part);
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool CreateProcess(string app, StringBuilder command, IntPtr processSecurity, IntPtr threadSecurity, bool inherit, uint flags, IntPtr environment, string directory, ref Startup startup, out ProcessInfo child);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern uint ResumeThread(SafeFileHandle thread);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern uint WaitForSingleObject(SafeFileHandle process, uint milliseconds);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern bool TerminateProcess(SafeFileHandle process, uint code);
         }
         public void Dispose()
         {

@@ -127,21 +127,28 @@ namespace ProGo
         }
 
         public static PreparedBackup Prepare(string directory, CancellationToken cancellation)
+        { return Prepare(directory, cancellation, null, null); }
+
+        internal static PreparedBackup Prepare(string directory, CancellationToken cancellation,
+            Action<string, CancellationToken> beforeRead, Action<PreparedBackup> created)
         {
             cancellation.ThrowIfCancellationRequested();
             var root = Root(directory);
-            Validate(root, cancellation);
+            Validate(root, cancellation, beforeRead);
             cancellation.ThrowIfCancellationRequested();
             // Capture the recorded evidence, never generate new digests from live input.
             var index = File.ReadAllBytes(Path.Combine(root, IndexName));
             var manifest = File.ReadAllBytes(Path.Combine(root, "manifest.txt"));
-            var files = Inventory(root);
+            var files = Inventory(root, cancellation);
             var copy = new PreparedBackup(Path.Combine(Path.GetTempPath(), "ProGo-restore-" + Guid.NewGuid().ToString("N")));
             Directory.CreateDirectory(copy.Path);
             try
             {
+                if (created != null) created(copy);
                 foreach (var relative in files)
                 {
+                    cancellation.ThrowIfCancellationRequested();
+                    if (beforeRead != null) beforeRead("restore-copy:" + relative, cancellation);
                     cancellation.ThrowIfCancellationRequested();
                     var source = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
                     var target = Path.Combine(copy.Path, relative.Replace('/', Path.DirectorySeparatorChar));
@@ -162,7 +169,7 @@ namespace ProGo
                 File.WriteAllBytes(Path.Combine(copy.Path, IndexName), index);
                 File.WriteAllBytes(Path.Combine(copy.Path, "manifest.txt"), manifest);
                 cancellation.ThrowIfCancellationRequested();
-                Validate(copy.Path, cancellation);
+                Validate(copy.Path, cancellation, beforeRead);
                 cancellation.ThrowIfCancellationRequested();
                 return copy;
             }
@@ -225,6 +232,9 @@ namespace ProGo
         { Validate(directory, CancellationToken.None); }
 
         public static void Validate(string directory, CancellationToken cancellation)
+        { Validate(directory, cancellation, null); }
+
+        private static void Validate(string directory, CancellationToken cancellation, Action<string, CancellationToken> beforeRead)
         {
             cancellation.ThrowIfCancellationRequested();
             var root = Root(directory);
@@ -255,6 +265,9 @@ namespace ProGo
             foreach (var path in actual)
             {
                 string digest;
+                cancellation.ThrowIfCancellationRequested();
+                if (beforeRead != null) beforeRead("restore-hash:" + path, cancellation);
+                cancellation.ThrowIfCancellationRequested();
                 if (!expected.TryGetValue(path, out digest) || !String.Equals(Hash(root, path, cancellation), digest, StringComparison.Ordinal))
                     throw new InvalidDataException("Файл копии изменён или повреждён: " + path + ".");
             }

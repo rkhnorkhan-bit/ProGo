@@ -246,6 +246,24 @@ namespace ProGo
                 (scope != "Program" && confirmData ? " -ConfirmData" : "") + " -WaitPid " + currentPid;
         }
 
+        internal static MaintenanceHandoffResult LaunchRestore(RestorePreparedInfo prepared, CancellationToken token,
+            Func<RestorePreparedInfo, ProcessStartInfo> launchInfo = null)
+        {
+            token.ThrowIfCancellationRequested();
+            BackupIntegrity.Validate(prepared.Copy.Path, token);
+            token.ThrowIfCancellationRequested();
+            var script = Path.Combine(AppPaths.Root, "scripts", "Restore-ProGoBackup.ps1");
+            if (!File.Exists(script)) return new MaintenanceHandoffResult { Error = "Скрипт восстановления не найден. Приложение остаётся запущенным; проверьте установку ProGo." };
+            var powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            if (!File.Exists(powershell)) powershell = "powershell.exe";
+            var info = launchInfo == null ? new ProcessStartInfo(powershell,
+                RestoreArguments(script, prepared.Copy.Path, prepared.Scope, prepared.ConfirmData, Process.GetCurrentProcess().Id)) {
+                    UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = AppPaths.Root
+                } : launchInfo(prepared);
+            token.ThrowIfCancellationRequested();
+            return MaintenanceOperation.StartOwnedHandoff(info, token);
+        }
+
         public static bool StartRestore(string backupDir) { return StartRestore(backupDir, "Program", false); }
 
         internal static bool StartRestore(string backupDir, string scope, bool confirmData)
