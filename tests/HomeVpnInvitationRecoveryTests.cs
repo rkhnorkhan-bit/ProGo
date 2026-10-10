@@ -82,8 +82,8 @@ namespace ProGo
             })) == token && copies == 1 && issued == 1 && calls.Count == 2 && calls[0].Contains("operation-status") && calls[1].Contains("operation-result"),
                 "lost invitation recovers its exact original token without another issuance");
             check(Pending().Result == token && !Encoding.UTF8.GetString(File.ReadAllBytes(PendingPath)).Contains("PROGO1."), "validated friend token remains DPAPI-protected until explicit local confirmation");
-            var request = Pending(); int commands = 0;
-            check(Failure(Admin("recover-invite", (exe, args, output) => { commands++; return Write(output, Json.Serialize(Status(request, "succeeded", false))); })) is HomeVpnInvitationPendingException
+            var retainedRequest = Pending(); int commands = 0;
+            check(Failure(Admin("recover-invite", (exe, args, output) => { commands++; return Write(output, Json.Serialize(Status(retainedRequest, "succeeded", false))); })) is HomeVpnInvitationPendingException
                 && commands == 1 && Pending().Result == token, "cached token cannot bypass live availability checks or resurrect revoked access");
             bool refused = false; try { HomeVpnInvitationRecovery.ConfirmSaved(Owner, "PROGO1.invalid"); } catch (HomeVpnInvitationPendingException) { refused = true; }
             check(refused && Pending().RequestId == id, "different token cannot consume a pending invitation");
