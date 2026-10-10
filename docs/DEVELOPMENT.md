@@ -1396,3 +1396,42 @@ proving that retry needs no retained in-memory receipt. Cases cover enable/off,
 intervening external values, and initial guard refusal before setters/notifications.
 Native tests require the isolated Windows CI runner; local native execution and
 Rescue/HDD/VHDX acceptance remain NOT_CHECKED. F31 remains OPEN.
+
+### Audit stage F23n — HTTPS request admission and recovery
+
+`HomeVpnShareRecovery` is share-only; it does not generalize the setup/admin
+recovery model. Its version-1 CurrentUser-DPAPI document has exactly eight typed
+fields: Version, RequestId, Action (`share`), Host, Port, Login, Domain, ServerId.
+Request IDs and ServerIds are lowercase 32-digit hex; host/domain are canonical,
+the domain is an HTTPS DNS origin without path/port, and the SSH endpoint is valid.
+The encrypted file is limited to 16384 bytes before reading, strict UTF-8 and
+4096-character JSON. Reparse, malformed and unreadable storage blocks admission.
+
+The share lease covers copying and SSH; durable registration occurs after copy
+but before command launch. `recover-share` accepts no caller domain/name and loads
+the original owner binding before transport. Status and result queries are read
+only, each owning remote EXIT cleanup. Submission uses the existing tracked share
+command followed by strict status/result export. No server files or protocol are
+changed. A valid original terminal status and exact original result create only
+an in-memory confirmation proof; health verification alone cannot clear storage.
+
+`ConfirmAsync` holds the share lease through verification and local saving. It
+rechecks all request fields and expected access identity after the await and save.
+The configuration window also guards disposal and changed active access/owner.
+Only after successful saving is the exact pending file removed. Failure leaves
+the request; recovery can retry reading and saving without another installation.
+The four-argument `CreateConfigureForm` seam replaces external Admin/Verify and
+the local save boundary while preserving actual controls and admission logic.
+
+`share-request.dat` joins the shared encrypted personal archive allowlist,
+archived-only without interpretation, portable import or automatic restore.
+F23's total HTTPS timeout/cancellation gap remains explicit, including slow
+response streams after successful SSH. Local admission covers this desktop's
+new tracked requests, not older/untracked or external owner commands.
+
+`HomeVpnShareRecoveryTests.cs` and the adapted owner-wait suite are explicit inputs
+to `Test-HomeVpnRelay.ps1`. The native child parses actual production SSH argv and
+requires the existing stable request/status/result commands without token material.
+The real UI loop exercises reopening/admission, verification/save faults, late
+disposal, storage/schema/status rejection and original-owner binding without a
+VPS. New waiting/pending/error PNGs stay in the existing Windows artifact.

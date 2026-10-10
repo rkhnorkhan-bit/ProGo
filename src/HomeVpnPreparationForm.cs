@@ -31,7 +31,7 @@ namespace ProGo
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private readonly TaskCompletionSource<object> completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<CancellationToken, Task> copy;
-        private readonly bool recovery, list, adminWait, ownerWait;
+        private readonly bool recovery, list, adminWait, ownerWait, shareWait;
         private readonly bool serverWait;
         private bool running = true, started;
         internal Task Completion { get { return completion.Task; } }
@@ -47,6 +47,7 @@ namespace ProGo
             list = purpose == HomeVpnWaitPurpose.ListCopy || purpose == HomeVpnWaitPurpose.ListCommand;
             adminWait = purpose == HomeVpnWaitPurpose.AdminCommand;
             ownerWait = purpose == HomeVpnWaitPurpose.OwnerCommand;
+            shareWait = purpose == HomeVpnWaitPurpose.ShareCommand;
             Text = recovery ? "Подготовка проверки VPS" : "Подготовка VPS"; ClientSize = new Size(610, 280); MinimumSize = new Size(450, 300);
             if (recovery) heading.Text = "Подготовка проверки VPS";
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterParent;
@@ -95,6 +96,13 @@ namespace ProGo
                 cancel.Text = "Прервать ожидание SSH"; cancel.AccessibleName = cancel.Text;
                 cancel.AccessibleDescription = "Останавливает только собственные локальные процессы. Не откатывает и не повторяет команду VPS. Результат может оставаться неподтверждённым; проверьте VPS перед повтором.";
             }
+            if (shareWait) {
+                Text = "Ожидание SSH: настройка HTTPS"; heading.Text = "Настройка и проверка HTTPS";
+                status.Text = "Ожидание — до 5 минут. Ответьте на запрос SSH в отдельном окне. HTTPS-запрос сохранён до запуска команды. Прерывание останавливает только локальное ожидание: команда VPS могла завершиться или продолжать работу. Затем проверьте прежнюю настройку HTTPS; новую команду ProGo не запускает автоматически.";
+                status.AccessibleName = "Ход настройки или проверки HTTPS";
+                cancel.Text = "Прервать ожидание SSH"; cancel.AccessibleName = cancel.Text;
+                cancel.AccessibleDescription = "Останавливает только собственные локальные процессы. Не откатывает изменения VPS. HTTPS-запрос сохранён для проверки без новой настройки.";
+            }
             cancel.Click += delegate { CancelCopy(); }; CancelButton = cancel; cancel.DialogResult = DialogResult.None;
             layout.Controls.Add(viewport, 0, 0); layout.Controls.Add(cancel, 0, 1); Controls.Add(layout);
             UiTheme.ConfigureKeyboardOrder(this);
@@ -109,7 +117,8 @@ namespace ProGo
             Exception failure = null;
             try { cancellation.Token.ThrowIfCancellationRequested(); await copy(cancellation.Token); cancellation.Token.ThrowIfCancellationRequested(); }
             catch (OperationCanceledException) {
-                if (ownerWait) failure = new HomeVpnOwnerUnconfirmedException("Ожидание SSH прервано. " + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage);
+                if (shareWait) failure = new HomeVpnSharePendingException("Ожидание SSH прервано. " + HomeVpnShareRecovery.PendingMessage);
+                else if (ownerWait) failure = new HomeVpnOwnerUnconfirmedException("Ожидание SSH прервано. " + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage);
                 else if (adminWait) failure = new HomeVpnAdminPendingException("Ожидание SSH прервано. Команда VPS могла завершиться; запрос выдачи сохранён. Проверьте прежнюю выдачу без нового приглашения.");
                 else if (list) failure = cancellation.IsCancellationRequested ? (Exception)new HomeVpnListCancelledException()
                     : new InvalidOperationException("Получение списка прервано. Существующий доступ и текущий список сохранены; проверьте SSH и повторите получение.");
@@ -119,11 +128,14 @@ namespace ProGo
                     : "Подготовка прервана. Команды настройки VPS не запускались; проверьте SSH.");
             }
             catch (TimeoutException ex) {
-                failure = ownerWait ? (Exception)new HomeVpnOwnerUnconfirmedException("Время ожидания SSH истекло. " + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage)
+                failure = shareWait ? (Exception)new HomeVpnSharePendingException("Время ожидания SSH истекло. " + HomeVpnShareRecovery.PendingMessage)
+                    : ownerWait ? (Exception)new HomeVpnOwnerUnconfirmedException("Время ожидания SSH истекло. " + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage)
                     : adminWait ? (Exception)new HomeVpnAdminPendingException("Время ожидания SSH истекло. Команда VPS могла завершиться; запрос выдачи сохранён. Проверьте прежнюю выдачу без нового приглашения.") : ex;
             }
             catch (HomeVpnOwnerUnconfirmedException ex) { failure = ex; }
-            catch (Exception ex) { failure = ownerWait && !(ex is OutOfMemoryException) ? new HomeVpnOwnerUnconfirmedException() : ex; }
+            catch (HomeVpnSharePendingException ex) { failure = ex; }
+            catch (Exception ex) { failure = shareWait && !(ex is OutOfMemoryException) ? (Exception)new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage)
+                : ownerWait && !(ex is OutOfMemoryException) ? new HomeVpnOwnerUnconfirmedException() : ex; }
             finally { running = false; cancellation.Dispose(); }
             if (failure == null) completion.TrySetResult(null); else completion.TrySetException(failure);
             if (!IsDisposed && !Disposing) { cancel.Enabled = false; Close(); }
@@ -133,7 +145,8 @@ namespace ProGo
             if (!running || cancellation.IsCancellationRequested) return;
             if (!IsDisposed && !Disposing) {
                 cancel.Enabled = false;
-                status.Text = ownerWait ? "Останавливаем локальное ожидание SSH. Дождитесь результата. Команда VPS могла применить изменения или продолжать работу; ProGo не откатывает и не повторяет их."
+                status.Text = shareWait ? "Останавливаем локальное ожидание SSH. Дождитесь результата. Команда VPS могла завершиться; HTTPS-запрос сохранён для проверки без новой настройки."
+                    : ownerWait ? "Останавливаем локальное ожидание SSH. Дождитесь результата. Команда VPS могла применить изменения или продолжать работу; ProGo не откатывает и не повторяет их."
                     : adminWait ? "Останавливаем локальное ожидание SSH. Дождитесь результата. Изменения VPS не откатываются; запрос выдачи сохранён для проверки."
                     : list ? "Останавливаем локальные процессы получения списка. Дождитесь результата. Существующий доступ, текущий список и введённые данные сохраняются."
                     : serverWait ? "Останавливаем локальные процессы SSH. Дождитесь результата. Команда VPS могла завершиться; запрос сохранён для проверки."
@@ -152,7 +165,8 @@ namespace ProGo
             if (disposing && running) {
                 CancelCopy();
                 // A never-shown dialog has no worker that could release this source.
-                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(ownerWait ? (Exception)new HomeVpnPreparationCancelledException()
+                if (!started) { running = false; cancellation.Dispose(); completion.TrySetException(shareWait ? (Exception)new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage)
+                    : ownerWait ? (Exception)new HomeVpnPreparationCancelledException()
                     : adminWait ? (Exception)new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage)
                     : list ? (Exception)new HomeVpnListCancelledException()
                     : serverWait ? (Exception)new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage) : new HomeVpnPreparationCancelledException(recovery)); }
@@ -192,6 +206,12 @@ namespace ProGo
         internal static async Task WaitForOwnerAsync(Form owner, string executable, string arguments, string output, int timeoutMs)
         {
             using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.OwnerAsync(executable, arguments, output, timeoutMs, token), HomeVpnWaitPurpose.OwnerCommand)) {
+                dialog.ShowDialog(owner); await dialog.Completion;
+            }
+        }
+        internal static async Task WaitForShareAsync(Form owner, string executable, string arguments, string output, int timeoutMs)
+        {
+            using (var dialog = new HomeVpnPreparationForm(token => HomeVpnPreparationProcess.ShareAsync(executable, arguments, output, timeoutMs, token), HomeVpnWaitPurpose.ShareCommand)) {
                 dialog.ShowDialog(owner); await dialog.Completion;
             }
         }
