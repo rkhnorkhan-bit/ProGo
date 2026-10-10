@@ -206,7 +206,7 @@ namespace ProGo
         {
             cancellation.ThrowIfCancellationRequested();
             var root = Root(directory);
-            var files = Inventory(root);
+            var files = Inventory(root, cancellation);
             var text = new StringBuilder(Header + "\n");
             foreach (var path in files) text.Append(Hash(root, path, cancellation)).Append('\t').Append(path).Append('\n');
             cancellation.ThrowIfCancellationRequested();
@@ -248,7 +248,7 @@ namespace ProGo
                 if (expected.ContainsKey(path)) throw new InvalidDataException("Повторяющийся путь в списке файлов копии.");
                 expected.Add(path, digest);
             }
-            var actual = Inventory(root);
+            var actual = Inventory(root, cancellation);
             if (actual.Count != expected.Count) throw new InvalidDataException("Состав копии изменился: файлы добавлены или удалены.");
             foreach (var path in Required) if (!expected.ContainsKey(path))
                 throw new InvalidDataException("Копия неполная: отсутствует " + path + ".");
@@ -261,19 +261,23 @@ namespace ProGo
             var manifest = Path.Combine(root, "manifest.txt");
             RejectReparse(manifest);
             var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            cancellation.ThrowIfCancellationRequested();
             foreach (var line in File.ReadAllLines(manifest))
             {
+                cancellation.ThrowIfCancellationRequested();
                 var split = line.IndexOf('=');
                 if (split < 1) continue;
                 var key = line.Substring(0, split).Trim();
                 if (metadata.ContainsKey(key)) throw new InvalidDataException("Неоднозначные данные manifest.txt.");
                 metadata.Add(key, line.Substring(split + 1).Trim());
             }
+            cancellation.ThrowIfCancellationRequested();
             string product, version;
             if (!metadata.TryGetValue("product", out product) || product != "ProGo" ||
                 !metadata.TryGetValue("version", out version) || String.IsNullOrWhiteSpace(version) ||
                 version != File.ReadAllText(Path.Combine(root, "VERSION")).Trim())
                 throw new InvalidDataException("Название программы или версия копии не совпадает с manifest.txt.");
+            cancellation.ThrowIfCancellationRequested();
         }
 
         public static string Contents(string directory)
@@ -297,19 +301,25 @@ namespace ProGo
         }
 
         private static List<string> Inventory(string root)
+        { return Inventory(root, CancellationToken.None); }
+
+        private static List<string> Inventory(string root, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var files = new List<string>();
-            Walk(root, "", files);
+            Walk(root, "", files, cancellation);
             files.Sort(StringComparer.OrdinalIgnoreCase);
             return files;
         }
 
-        private static void Walk(string root, string relative, List<string> files)
+        private static void Walk(string root, string relative, List<string> files, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var directory = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
             RejectReparse(directory);
             foreach (var entry in Directory.GetFileSystemEntries(directory))
             {
+                cancellation.ThrowIfCancellationRequested();
                 RejectReparse(entry); // Inspect before recursion; never follow junctions.
                 var name = Path.GetFileName(entry);
                 var path = relative.Length == 0 ? name : relative + "/" + name;
@@ -321,7 +331,7 @@ namespace ProGo
                         throw new InvalidDataException("Вместо файла копии обнаружена папка: " + name + ".");
                     if (relative == HomeArchive)
                         throw new InvalidDataException("В копии не допускаются вложенные папки личных данных VPN.");
-                    Walk(root, path, files);
+                    Walk(root, path, files, cancellation);
                 }
                 else
                 {

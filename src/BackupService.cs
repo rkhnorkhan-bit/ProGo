@@ -81,29 +81,47 @@ namespace ProGo
         {
             try
             {
-                var version = CurrentVersion;
-                if (HasBackupForVersion(version)) return;
+                var dir = EnsureVersionBackupExists(reason, CancellationToken.None, null, null);
+                if (dir != null) SafeLog.Info("Version baseline backup created: " + dir + ".");
+            }
+            catch (Exception ex) { SafeLog.Error("Version baseline backup failed.", ex); }
+        }
 
-                var dir = CreateBackup(reason);
-                SafeLog.Info("Version baseline backup created: " + dir + ".");
-            }
-            catch (Exception ex)
+        // Scan and creation share the same gate: concurrent callers cannot both
+        // decide that the baseline is missing. A null result means a valid copy exists.
+        internal static string EnsureVersionBackupExists(string reason, CancellationToken cancellation,
+            Action<string, CancellationToken> beforeCopy, Action<CancellationToken> beforeProbe)
+        {
+            creationGate.Wait(cancellation);
+            try
             {
-                SafeLog.Error("Version baseline backup failed.", ex);
+                cancellation.ThrowIfCancellationRequested();
+                if (beforeProbe != null) beforeProbe(cancellation);
+                cancellation.ThrowIfCancellationRequested();
+                var file = System.IO.Path.Combine(AppPaths.Root, "VERSION");
+                var version = File.Exists(file) ? File.ReadAllText(file).Trim() : "0.0.0";
+                cancellation.ThrowIfCancellationRequested();
+                if (HasBackupForVersion(version, cancellation)) return null;
+                return CreateBackupCore(reason, cancellation, beforeCopy);
             }
+            finally { creationGate.Release(); }
         }
 
         public static bool HasBackupForVersion(string version)
+        { return HasBackupForVersion(version, CancellationToken.None); }
+
+        internal static bool HasBackupForVersion(string version, CancellationToken cancellation)
         {
-            foreach (var backup in ListBackups())
+            foreach (var backup in ListBackups(cancellation))
             {
+                cancellation.ThrowIfCancellationRequested();
                 if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline)
                 {
                     string error;
-                    if (TryValidateRestore(backup.Path, out error)) return true;
+                    if (TryValidateRestore(backup.Path, cancellation, out error)) return true;
                 }
             }
-
+            cancellation.ThrowIfCancellationRequested();
             return false;
         }
 
@@ -170,17 +188,24 @@ namespace ProGo
         }
 
         public static List<BackupInfo> ListBackups()
+        { return ListBackups(CancellationToken.None); }
+
+        internal static List<BackupInfo> ListBackups(CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var result = new List<BackupInfo>();
             if (!Directory.Exists(BackupsRoot)) return result;
 
             var dirs = Directory.GetDirectories(BackupsRoot);
+            cancellation.ThrowIfCancellationRequested();
             Array.Sort(dirs);
             Array.Reverse(dirs);
 
             foreach (var dir in dirs)
             {
+                cancellation.ThrowIfCancellationRequested();
                 result.Add(ReadBackupInfo(dir));
+                cancellation.ThrowIfCancellationRequested();
             }
 
             return result;
@@ -205,8 +230,12 @@ namespace ProGo
         }
 
         internal static bool TryValidateRestore(string backupDir, out string error)
+        { return TryValidateRestore(backupDir, CancellationToken.None, out error); }
+
+        private static bool TryValidateRestore(string backupDir, CancellationToken cancellation, out string error)
         {
-            try { BackupIntegrity.Validate(backupDir); error = String.Empty; return true; }
+            try { BackupIntegrity.Validate(backupDir, cancellation); error = String.Empty; return true; }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex) { error = ex.Message; return false; }
         }
 

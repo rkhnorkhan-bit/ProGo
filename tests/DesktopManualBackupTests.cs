@@ -71,7 +71,7 @@ namespace ProGo
                         int pulses = 0; pulse.Tick += delegate { pulses++; }; pulse.Start();
                         pending = context.CreateManualBackupAsync();
                         PumpUntil(() => entered.IsSet);
-                        var form = (BackupCreationForm)Field(context, "manualBackupForm");
+                        var form = (BackupCreationForm)Field(context, "backupForm");
                         int cancelResults = 0, cancelThread = 0;
                         form.ResultApplied += delegate { cancelResults++; cancelThread = Thread.CurrentThread.ManagedThreadId; };
                         PumpUntil(() => pulses >= 3);
@@ -111,7 +111,7 @@ namespace ProGo
                         entered.Reset(); release.Reset();
                         using (var lockedSettings = new FileStream(AppPaths.SettingsPath, FileMode.Open, FileAccess.Read, FileShare.None)) {
                             pending = context.CreateManualBackupAsync(); PumpUntil(() => entered.IsSet);
-                            var failedForm = (BackupCreationForm)Field(context, "manualBackupForm");
+                            var failedForm = (BackupCreationForm)Field(context, "backupForm");
                             int failedResults = 0, failedThread = 0;
                             failedForm.ResultApplied += delegate { failedResults++; failedThread = Thread.CurrentThread.ManagedThreadId; };
                             release.Set(); PumpUntil(() => pending.IsCompleted && !context.IsManualBackupRunning);
@@ -126,7 +126,7 @@ namespace ProGo
 
                         entered.Reset(); release.Reset();
                         pending = context.CreateManualBackupAsync(); PumpUntil(() => entered.IsSet);
-                        var retryForm = (BackupCreationForm)Field(context, "manualBackupForm");
+                        var retryForm = (BackupCreationForm)Field(context, "backupForm");
                         int successResults = 0, successThread = 0;
                         retryForm.ResultApplied += delegate { successResults++; successThread = Thread.CurrentThread.ManagedThreadId; };
                         Check(Volatile.Read(ref copies) == 3 && context.IsManualBackupRunning,
@@ -146,7 +146,7 @@ namespace ProGo
                         before = Directory.GetDirectories(BackupService.BackupsRoot);
                         entered.Reset(); release.Reset(); delayCancellation = true;
                         pending = context.CreateManualBackupAsync(); PumpUntil(() => entered.IsSet);
-                        var shutdownForm = (BackupCreationForm)Field(context, "manualBackupForm");
+                        var shutdownForm = (BackupCreationForm)Field(context, "backupForm");
                         int shutdownResults = 0; shutdownForm.ResultApplied += delegate { shutdownResults++; };
                         var shutdown = context.RequestShutdownAsync();
                         PumpUntil(() => cancellationObserved.IsSet);
@@ -176,7 +176,7 @@ namespace ProGo
                         () => new WindowsProxyRestoreResult(), null, slowDisk, 50))
                     {
                         pending = context.CreateManualBackupAsync(); PumpUntil(() => entered.IsSet);
-                        var timedForm = (BackupCreationForm)Field(context, "manualBackupForm"); int timedResults = 0;
+                        var timedForm = (BackupCreationForm)Field(context, "backupForm"); int timedResults = 0;
                         timedForm.ResultApplied += delegate { timedResults++; };
                         using (var pulse = new System.Windows.Forms.Timer { Interval = 10 }) {
                             int pulses = 0; pulse.Tick += delegate { pulses++; }; pulse.Start();
@@ -194,7 +194,7 @@ namespace ProGo
                         }
                         entered.Reset(); release.Reset();
                         pending = context.CreateManualBackupAsync(); PumpUntil(() => entered.IsSet);
-                        var form = (BackupCreationForm)Field(context, "manualBackupForm"); int lateResults = 0;
+                        var form = (BackupCreationForm)Field(context, "backupForm"); int lateResults = 0;
                         form.ResultApplied += delegate { lateResults++; };
                         var watch = Stopwatch.StartNew(); context.Dispose(); watch.Stop();
                         Check(watch.ElapsedMilliseconds < 500 && disposalToken.IsCancellationRequested && !pending.IsCompleted,

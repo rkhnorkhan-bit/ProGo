@@ -85,6 +85,7 @@ namespace ProGo
                     BackupCreationIntegrity();
                     BackupMetadataSnapshot();
                     ManualBackupWorkflow();
+                    StartupBackupWorkflow();
                     BackupCleanupPreview();
                     RestoreScopeAndPreparationUi();
                     BackupAccessibility();

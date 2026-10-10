@@ -36,19 +36,32 @@ namespace ProGo
         private Task<bool> shutdownTask;
         private readonly Action<string, CancellationToken> beforeBackupCopy;
         private readonly int backupShutdownTimeoutMilliseconds;
-        private CancellationTokenSource manualBackupCancellation;
-        private Task<ManualBackupResult> manualBackupWorker;
-        private Task manualBackupCompletion = Task.FromResult(false);
-        private BackupCreationForm manualBackupForm;
+        private CancellationTokenSource backupCancellation;
+        private Task<BackupResult> backupWorker;
+        private Task backupCompletion = Task.FromResult(false);
+        private BackupCreationForm backupForm;
         private readonly TaskCompletionSource<bool> backupOwnerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal bool IsManualBackupRunning { get { return manualBackupWorker != null; } }
-        internal Task ManualBackupCompletion { get { return manualBackupCompletion; } }
+        private readonly Action<CancellationToken> beforeBaselineProbe;
+        private bool startupBackupScheduled, backupQueued;
+        private Task startupBackupCompletion = Task.FromResult(false);
+        private TaskCompletionSource<bool> startupBackupCompletionSource;
+        private string backupOperationKind, backupStatus = "";
+        private BackupResult lastBackupResult;
+        private bool lastBackupCancelled, lastBackupFailed;
+        private ToolStripMenuItem backupStatusItem;
+        internal bool IsBackupRunning { get { return backupQueued || backupWorker != null; } }
+        internal bool IsManualBackupRunning { get { return IsBackupRunning; } }
+        internal Task ManualBackupCompletion { get { return backupCompletion; } }
+        internal Task StartupBackupCompletion { get { return startupBackupCompletion; } }
+        internal string BackupStatus { get { return backupStatus; } }
+        internal string BackupOperationKind { get { return backupOperationKind; } }
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000, Action<CancellationToken> beforeBaselineProbe = null)
         {
             settings = settingsService;
             this.beforeBackupCopy = beforeBackupCopy;
+            this.beforeBaselineProbe = beforeBaselineProbe;
             if (backupShutdownTimeoutMilliseconds < 1 || backupShutdownTimeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("backupShutdownTimeoutMilliseconds");
             this.backupShutdownTimeoutMilliseconds = backupShutdownTimeoutMilliseconds;
             createUpdateForm = updateFormFactory ?? (() => new UpdateCheckForm());
@@ -124,6 +137,10 @@ namespace ProGo
             Item(menu.Items, AppCommand.Settings);
             menu.Items.Add(new ToolStripSeparator());
             var backups = new ToolStripMenuItem("Резервные копии");
+            backupStatusItem = new ToolStripMenuItem("Состояние копии: ещё не проверена");
+            backupStatusItem.Name = "BackupProgress";
+            backupStatusItem.Click += delegate { ShowBackupProgress(); };
+            backups.DropDownItems.Add(backupStatusItem);
             Item(backups.DropDownItems, AppCommand.CreateBackup);
             Item(backups.DropDownItems, AppCommand.RestoreBackup);
             Item(backups.DropDownItems, AppCommand.OpenBackups);
@@ -155,7 +172,7 @@ namespace ProGo
         private void ShowStatus()
         {
             if (mainWindow != null && !mainWindow.IsDisposed) { mainWindow.Show(); mainWindow.WindowState = FormWindowState.Normal; mainWindow.Activate(); return; }
-            mainWindow = new MainWindow(settings, proxy, homeVpn, ExecuteCommand, cliProxy, automation, health, appConsumers, GetCommandState);
+            mainWindow = new MainWindow(settings, proxy, homeVpn, ExecuteCommand, cliProxy, automation, health, appConsumers, GetCommandState, () => BackupStatus, ShowBackupProgress);
             RefreshPendingRoutes();
             mainWindow.FormClosing += DashboardClosing;
             mainWindow.FormClosed += delegate { mainWindow = null; };
@@ -276,7 +293,7 @@ namespace ProGo
                     case AppCommand.Vault: ShowVault(); break;
                     case AppCommand.Phone: using (var form = new HomeVpnWizardForm(homeVpn, clipboard)) form.ShowDialog(mainWindow); break;
                     case AppCommand.Diagnostics:
-                    case AppCommand.CheckRoute: using (var form = new StatusForm(settings, proxy, command.Command == AppCommand.CheckRoute, null, null, health)) form.ShowDialog(mainWindow); break;
+                    case AppCommand.CheckRoute: using (var form = new StatusForm(settings, proxy, command.Command == AppCommand.CheckRoute, null, null, health, null, null, () => BackupStatus)) form.ShowDialog(mainWindow); break;
                     case AppCommand.StopCli: DisableCli(); break;
                     case AppCommand.DisableWindows: CancelPendingRoute(AppCommand.EnableWindows); automation.Cancel(ProxyFeature.Windows); RestoreWindowsProxy(); appConsumers.Observe(); appConsumers.ReleaseIfUnused(); break;
                     case AppCommand.RemoveCodexShortcut:
@@ -362,6 +379,13 @@ namespace ProGo
         {
             var state = GetCommandState();
             foreach (var item in commandItems) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
+            if (backupStatusItem != null) {
+                backupStatusItem.Text = "Состояние копии: " + (IsBackupRunning ? "проверка и копирование…" :
+                    String.IsNullOrEmpty(backupStatus) ? "ещё не проверена" : lastBackupFailed ? "ошибка" : lastBackupCancelled ? "отменено" : "готова");
+                backupStatusItem.Enabled = !String.IsNullOrEmpty(backupStatus);
+                backupStatusItem.ToolTipText = backupStatus + " Открыть состояние копии. Ручная копия создаётся отдельной командой после окончания проверки.";
+                backupStatusItem.AccessibleDescription = backupStatusItem.ToolTipText;
+            }
             if (mainWindow != null && !mainWindow.IsDisposed) mainWindow.RefreshConnectionState();
             if (CommandStateChanged != null) CommandStateChanged();
         }
@@ -467,8 +491,8 @@ namespace ProGo
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             Exception failure = null;
             try {
-                CancelManualBackup();
-                var backup = manualBackupWorker;
+                CancelBackup();
+                var backup = backupWorker;
                 if (backup != null)
                 {
                     if (await Task.WhenAny(backup, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) != backup)
@@ -631,42 +655,120 @@ namespace ProGo
 
         private void CreateBackup() { CreateManualBackupAsync(); }
 
+        // Program queues this only after instance.Attach. No disk work starts until
+        // the owner dispatcher receives its first message from Application.Run.
+        internal Task StartStartupBackupAsync()
+        {
+            if (startupBackupScheduled) return startupBackupCompletion;
+            if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
+            if (activationDispatcher.InvokeRequired) throw new InvalidOperationException("Стартовая копия запускается владельцем интерфейса.");
+            if (IsBackupRunning) return backupCompletion;
+            if (backupForm != null && !backupForm.IsDisposed) backupForm.Close();
+            startupBackupScheduled = true; backupQueued = true; backupOperationKind = "baseline";
+            backupStatus = "Стартовая резервная копия: проверка ожидает запуска интерфейса.";
+            var cancellation = new CancellationTokenSource(); backupCancellation = cancellation;
+            var source = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            startupBackupCompletionSource = source;
+            startupBackupCompletion = backupCompletion = source.Task;
+            RefreshPendingRoutes();
+            try { activationDispatcher.BeginInvoke(new Action(delegate {
+                backupQueued = false;
+                if (closing) { cancellation.Dispose(); source.TrySetResult(false); return; }
+                if (shutdownPrepared || shutdownPreparing || cancellation.IsCancellationRequested) {
+                    backupStatus = "Проверка стартовой копии отменена. Текущие данные не заменены.";
+                    backupCancellation = null; cancellation.Dispose();
+                    lastBackupCancelled = true; lastBackupFailed = false; lastBackupResult = null;
+                    if (backupForm != null && !backupForm.IsDisposed) backupForm.Complete(null, null, true, false);
+                    RefreshPendingRoutes(); source.TrySetResult(false); return;
+                }
+                BeginBackup(true, cancellation, source);
+            })); }
+            catch (InvalidOperationException) {
+                backupQueued = false; backupCancellation = null; cancellation.Dispose();
+                backupStatus = "Проверка стартовой копии не запущена: владелец интерфейса закрывается.";
+                lastBackupCancelled = true; lastBackupFailed = false; lastBackupResult = null;
+                if (!closing) RefreshPendingRoutes(); source.TrySetResult(false);
+            }
+            return startupBackupCompletion;
+        }
+
         internal Task CreateManualBackupAsync()
         {
             if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
-            if (manualBackupWorker != null) { if (manualBackupForm != null && !manualBackupForm.IsDisposed) manualBackupForm.Activate(); return manualBackupCompletion; }
-            if (manualBackupForm != null && !manualBackupForm.IsDisposed) manualBackupForm.Close();
-            var cancellation = new CancellationTokenSource(); manualBackupCancellation = cancellation;
-            var form = new BackupCreationForm(CancelManualBackup); manualBackupForm = form;
-            form.FormClosed += delegate { if (ReferenceEquals(manualBackupForm, form)) manualBackupForm = null; };
-            form.Show(mainWindow);
-            var token = cancellation.Token;
-            var worker = Task.Run(() => {
-                var path = BackupService.CreateBackup("manual", token, beforeBackupCopy);
-                return new ManualBackupResult { Path = path, Contents = BackupIntegrity.Contents(path) };
-            });
-            manualBackupWorker = worker;
-            manualBackupCompletion = CompleteManualBackupAsync(worker, form, cancellation);
-            RefreshPendingRoutes(); return manualBackupCompletion;
+            if (IsBackupRunning) { ShowBackupProgress(); return backupCompletion; }
+            return BeginBackup(false, new CancellationTokenSource(), null);
         }
 
-        private sealed class ManualBackupResult { internal string Path, Contents; }
-
-        private void CancelManualBackup()
-        { var cancellation = manualBackupCancellation; if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { } }
-
-        private async Task CompleteManualBackupAsync(Task<ManualBackupResult> worker, BackupCreationForm form, CancellationTokenSource cancellation)
+        private Task BeginBackup(bool baseline, CancellationTokenSource cancellation, TaskCompletionSource<bool> startupSource)
         {
-            ManualBackupResult result = null; bool cancelled = false, failed = false;
+            // Progress may already be open for the queued baseline. Closing a busy
+            // form requests cancellation, so keep it when its own actor starts.
+            if (backupForm != null && !backupForm.IsDisposed && !backupForm.IsBusy) backupForm.Close();
+            backupCancellation = cancellation; backupOperationKind = baseline ? "baseline" : "manual";
+            lastBackupResult = null; lastBackupCancelled = lastBackupFailed = false;
+            backupStatus = baseline ? "Стартовая резервная копия: проверяем и при необходимости создаём в фоне." : "Ручная резервная копия создаётся в фоне.";
+            var token = cancellation.Token;
+            var worker = Task.Run(() => {
+                try {
+                    var path = baseline ? BackupService.EnsureVersionBackupExists("startup", token, beforeBackupCopy, beforeBaselineProbe) :
+                        BackupService.CreateBackup("manual", token, beforeBackupCopy);
+                    // A returned path crossed the accepted-copy/retention boundary.
+                    // Late cancellation cannot relabel that committed copy as aborted.
+                    var result = new BackupResult { Path = path, Contents = path == null ? null : BackupIntegrity.Contents(path), Existing = path == null };
+                    if (baseline) SafeLog.Info(path == null ? "Existing version baseline backup verified." : "Version baseline backup created: " + path + ".");
+                    return result;
+                } catch (OperationCanceledException) { throw; }
+                catch (Exception ex) { SafeLog.Error(baseline ? "Version baseline backup failed." : "Manual backup failed.", ex); throw; }
+            });
+            backupWorker = worker;
+            var completion = CompleteBackupAsync(worker, cancellation, baseline);
+            backupCompletion = startupSource == null ? completion : startupSource.Task;
+            if (startupSource != null) CompleteStartupBackupAsync(completion, startupSource);
+            if (!baseline) ShowBackupProgress();
+            RefreshPendingRoutes(); return backupCompletion;
+        }
+
+        private async void CompleteStartupBackupAsync(Task completion, TaskCompletionSource<bool> source)
+        {
+            try { await completion.ConfigureAwait(false); source.TrySetResult(true); }
+            catch (Exception) { source.TrySetResult(false); }
+        }
+
+        private sealed class BackupResult { internal string Path, Contents; internal bool Existing; }
+
+        private void CancelBackup()
+        { var cancellation = backupCancellation; if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { } }
+
+        internal void ShowBackupProgress()
+        {
+            if (closing || String.IsNullOrEmpty(backupOperationKind)) return;
+            if (backupForm != null && !backupForm.IsDisposed) { backupForm.Activate(); return; }
+            var form = new BackupCreationForm(CancelBackup, backupOperationKind == "baseline"); backupForm = form;
+            form.FormClosed += delegate { if (ReferenceEquals(backupForm, form)) backupForm = null; };
+            if (!IsBackupRunning) form.Complete(lastBackupResult == null ? null : lastBackupResult.Path,
+                lastBackupResult == null ? null : lastBackupResult.Contents, lastBackupCancelled, lastBackupFailed,
+                lastBackupResult != null && lastBackupResult.Existing);
+            form.Show(mainWindow);
+        }
+
+        private async Task CompleteBackupAsync(Task<BackupResult> worker, CancellationTokenSource cancellation, bool baseline)
+        {
+            BackupResult result = null; bool cancelled = false, failed = false;
             try
             {
                 try { result = await worker.ConfigureAwait(false); }
                 catch (OperationCanceledException) { cancelled = true; }
-                catch (Exception ex) { failed = true; SafeLog.Error("Manual backup failed.", ex); }
+                catch (Exception) { failed = true; }
                 var completion = DispatchUi(delegate {
-                    if (!ReferenceEquals(manualBackupWorker, worker)) return false;
-                    manualBackupWorker = null; manualBackupCancellation = null;
-                    if (!form.IsDisposed) form.Complete(result == null ? null : result.Path, result == null ? null : result.Contents, cancelled, failed);
+                    if (!ReferenceEquals(backupWorker, worker)) return false;
+                    backupWorker = null; backupCancellation = null;
+                    lastBackupResult = result; lastBackupCancelled = cancelled; lastBackupFailed = failed;
+                    backupStatus = cancelled ? "Резервное копирование отменено. Текущие данные не заменены." :
+                        failed ? "Резервная копия не готова: ошибка проверки или копирования. Откройте состояние копии и журнал." :
+                        (result.Existing ? "Стартовая копия уже есть и проверена. Новая копия не создавалась." :
+                        (baseline ? "Стартовая резервная копия создана и проверена." : "Ручная резервная копия создана и проверена."));
+                    if (backupForm != null && !backupForm.IsDisposed) backupForm.Complete(result == null ? null : result.Path,
+                        result == null ? null : result.Contents, cancelled, failed, result != null && result.Existing);
                     RefreshPendingRoutes(); return true;
                 });
                 // A queued WinForms delegate may be discarded during Dispose. The
@@ -674,7 +776,7 @@ namespace ProGo
                 if (await Task.WhenAny(completion, backupOwnerClosed.Task).ConfigureAwait(false) == completion)
                     await completion.ConfigureAwait(false);
             }
-            catch (Exception ex) { SafeLog.Error("Backup completion failed.", ex); }
+            catch (Exception) { }
             finally { cancellation.Dispose(); }
         }
 
@@ -760,8 +862,12 @@ namespace ProGo
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
                 closing = true;
-                CancelManualBackup(); backupOwnerClosed.TrySetResult(true);
-                if (manualBackupForm != null && !manualBackupForm.IsDisposed) manualBackupForm.Dispose();
+                CancelBackup(); backupOwnerClosed.TrySetResult(true);
+                if (backupWorker == null) {
+                    if (startupBackupCompletionSource != null) startupBackupCompletionSource.TrySetResult(false);
+                    if (backupCancellation != null) { backupCancellation.Dispose(); backupCancellation = null; }
+                }
+                if (backupForm != null && !backupForm.IsDisposed) backupForm.Dispose();
                 if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
                 pendingRoutes.Clear(); routeLifetime.Cancel(); routeLifetime.Dispose();
                 health.Changed -= HealthChanged;
