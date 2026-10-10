@@ -23,6 +23,8 @@ namespace ProGo
         private TcpListener listener;
         private Thread acceptThread;
         private volatile bool running;
+        private long consumerRevision;
+        internal long ConsumerRevision { get { return Interlocked.Read(ref consumerRevision); } }
         private readonly HashSet<TcpClient> clients = new HashSet<TcpClient>();
 
         public CliProxyBridgeService(SettingsService settingsService)
@@ -151,11 +153,12 @@ namespace ProGo
                 error = new SettingsSaveError(failedField, message);
                 return false;
             }
-            finally { if (candidate != null) candidate.Stop(); }
+            finally { if (candidate != null) candidate.Stop(); Interlocked.Increment(ref consumerRevision); }
         }
 
         public void Stop()
         {
+            Interlocked.Increment(ref consumerRevision);
             running = false;
             try { if (listener != null) listener.Stop(); } catch { }
             listener = null;

@@ -1733,6 +1733,62 @@ agent/auth/proxy acceptance, other synchronous environment/settings paths and
 repeated Codex ownership-file reads. This stage does not publish/install a release
 or change a service, protected key or VPS configuration.
 
+## Stage F31d — nonblocking observation of application-proxy consumers
+
+The one-second application timer read the optional Codex launcher through
+`AppProxyConsumers.Summary`. The same tick could refresh the dashboard, and its
+own two-second timer read the summary again. With the launcher present and the
+main window open, that is roughly 2.5 logical launcher reads per second (9,000
+per hour), plus action/health refreshes. This is a call-path estimate, not a
+measurement of physical HDD I/O, CPU usage or Rescue/VHDX performance.
+
+The summary now uses a completed immutable snapshot and tracked process handles.
+One background observer reads registry/environment endpoints, ownership journals
+and the Codex launcher. Periodic external-change observation waits ten seconds
+between completed reads. Explicit integration changes invalidate immediately.
+Only one observer may be in flight, including after invalidation or slow I/O.
+Unknown/error/pending observations retain the listener and show a Russian status;
+no raw exceptions or secret contents enter the summary or logs.
+
+Results are consumed by the application timer on its UI thread. A confirmed empty
+result may release the service only for its current generation, bridge revision
+and port, after rechecking pending cleanup and live scoped windows. Bridge
+configuration/rollback and same-port replacement change the revision. Failed
+cleanup still retains its explicit consumer. Disposal does not wait for a file
+read; workers own no UI callbacks and cannot stop a listener after disposal.
+Even a matching result older than five seconds is treated as unknown and retried
+after ten seconds. A blocked read cannot release the listener using the empty
+consumer state captured before a later external proxy change.
+Native filesystem I/O is not forcibly cancellable; a blocked read keeps one
+observer in flight and conservatively retains the service rather than spawning
+new threads. Fresh ownership checks remain in destructive Codex actions; cached
+status never permits replacing or deleting a later external launcher.
+Codex observation rejects files larger than 64 KiB before reading, checks length
+again after its bounded read, and rejects reparse points in the path. Oversized,
+linked, inaccessible or changing files remain unknown; destructive ownership
+checks still read fresh state through their existing helpers.
+
+Regression coverage in the existing desktop harness includes 1,000 summary/timer
+calls while a probe is blocked, native UI heartbeat and injected read counts,
+ten-second polling, generation/actual port/same-port session invalidation,
+nonwaiting disposal, an actual exclusively locked launcher, bounded error retry,
+lock recovery and preservation/detection of a controlled external replacement.
+Existing last-consumer assertions await observation completion while retaining
+actual listener-rebind checks. Fixture-only external edits invalidate explicitly;
+the new fake-clock case separately proves periodic external-change detection.
+
+Validation: local public-content and diff checks; Windows build/full CI and new
+native regressions remain pending. F31 remains OPEN for real SSH-agent/VPS and
+HDD/VHDX measurements. No merge, release, installation or system-service changes.
+
+Candidate builds also embed `VERSION+commit` as AssemblyInformationalVersion and
+show that identity in the local SSH report. Product/assembly versions retain
+their existing values. A tracked dirty checkout receives `.modified`; a checkout
+without Git receives `local`. Build validation reads the compiled metadata and
+compares it with the requested identity, without locking the executable. This
+identifies the candidate actually running; the owner's previous installation
+still requires a report from that installation.
+
 ## F29 — native icon sizes and consistent task presentation (verification pending)
 
 The tray now creates the brand icon at the current Windows small-icon size instead
@@ -1765,3 +1821,32 @@ Local checks: `git diff --check` and public-content scan PASS. Windows build/ful
 CI and screenshot review are pending. **F29 remains OPEN; overall 21/31.** Real
 monitor DPI transitions and Narrator/live system contrast acceptance remain F16
 and F17; no such acceptance is inferred from synthetic/native CI geometry.
+
+## Stage F31e — retain explicit connection intent while saving settings
+
+An opportunistic CurrentPid getter returns no PID while a background worker owns
+the process gate. Settings previously treated that transient absence as a stopped
+connection and could fail to restart after changing the VPS or SOCKS endpoint.
+An independent nonblocking connection-request flag is now captured before the
+settings transaction. Accepted startup sets it synchronously; explicit Stop,
+Dispose and a later cancellation clear it. Pre-cancelled/stale requests do not
+create it. Saving settings after a user stop does not revive the connection.
+
+Native regression holds the gate around an actual running SSH/SOCKS child, saves
+through the real dialog, then checks replacement PID, SOCKS greeting at the new
+port and release of the old port. It repeats the save after explicit Stop.
+Windows validation remains pending for this stage.
+
+## Current verification boundary (2026-10-10)
+
+F31c commit 5604607f06b16ffb4fffd2a3389f5a230dda725a: desktop 2743 PASS,
+instance and maintenance tests PASS, server job PASS. Full workflow 38073862920
+FAIL in uninstall acceptance: an external AutoDetect DWORD0 became absent.
+Native SSH report/agent-guidance screenshots reviewed; archive SHA256
+eef948afbb0b6c5f27fd0b5faf45cb2879bccd2632077637c005f6f63f97ddfa.
+This failure is an open gate; no full-pass candidate is inferred.
+
+Initial F29 workflow 38074165642 failed the new minimum-size footer assertion.
+An explicit route-dialog footer row fixes the source layout, and the retry is
+38074596898. Other captured action dialogs and the native icon matrix have been
+reviewed. Full retry and empty-state images still require verification.

@@ -111,7 +111,8 @@ internal static class SocksRecoveryTests
     {
         using (var f = new Fixture())
         {
-            f.Tick(3600); Assert(!f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue, "Idle app started SSH");
+            f.Tick(3600); Assert(!f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue && !f.Proxy.ConnectionRequested, "Idle app started SSH or created connection intent");
+            using (var cancelled = new CancellationTokenSource()) { cancelled.Cancel(); Assert(f.Proxy.StartTunnelAsync(cancelled.Token).IsCanceled && !f.Proxy.ConnectionRequested, "Pre-cancelled start created user connection intent"); }
         }
     }
 
@@ -157,7 +158,7 @@ internal static class SocksRecoveryTests
             f.Start(); f.Crash(); f.Proxy.StopTunnel(); f.Tick(600);
             Assert(!f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue, "Manual stop resurrected SSH");
             f.Start(); f.Crash(); f.Proxy.Dispose(); f.Tick(600); f.Proxy.StartTunnel(false);
-            Assert(!f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue, "Dispose resurrected SSH");
+            Assert(!f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue && !f.Proxy.ConnectionRequested, "Dispose resurrected SSH or user intent");
         }
     }
 
@@ -272,6 +273,7 @@ internal static class SocksRecoveryTests
     {
         foreach (bool cancelQueued in new[] { false, true }) using (var f = new Fixture()) {
             f.Start(); int previousPid = f.Proxy.CurrentPid.Value;
+            Assert(f.Proxy.ConnectionRequested, "A running explicit connection lost its user intent");
             var gate = typeof(ProxyService).GetField("gate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(f.Proxy);
             using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
                 var held = System.Threading.Tasks.Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(5000); } });
@@ -280,16 +282,17 @@ internal static class SocksRecoveryTests
                 try {
                     var watch = Stopwatch.StartNew(); stop = f.Proxy.StopTunnelAsync();
                     Assert(watch.ElapsedMilliseconds < 200 && !stop.IsCompleted && f.Proxy.IsStopping, "Async stop waited for a busy ownership gate");
+                    Assert(!f.Proxy.ConnectionRequested, "Stop did not clear user intent before background cleanup");
                     Assert(!(bool)typeof(ProxyService).GetField("wanted", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(f.Proxy), "Stop did not cancel recovery intent immediately");
                     retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
-                    Assert(!retry.IsCompleted, "New startup bypassed unfinished cleanup");
+                    Assert(!retry.IsCompleted && f.Proxy.ConnectionRequested, "Queued startup did not expose intent independently of cleanup");
                     using (var child = Process.GetProcessById(previousPid)) Assert(!child.HasExited, "Blocked cleanup lost its owned process");
-                    if (cancelQueued) Assert(Object.ReferenceEquals(stop, f.Proxy.StopTunnelAsync()), "Repeated stop did not share ongoing cleanup");
+                    if (cancelQueued) { Assert(Object.ReferenceEquals(stop, f.Proxy.StopTunnelAsync()), "Repeated stop did not share ongoing cleanup"); Assert(!f.Proxy.ConnectionRequested, "A later stop failed to cancel queued connection intent"); }
                 } finally { release.Set(); Assert(held.Wait(3000), "Fixture gate failed to release"); }
                 Assert(stop.Wait(5000) && stop.Result, "Owned cleanup did not complete");
                 if (cancelQueued) {
                     WaitFor(() => retry.IsCompleted);
-                    Assert(retry.IsCanceled && !f.Proxy.CurrentPid.HasValue, "A late stop resurrected its queued startup");
+                    Assert(retry.IsCanceled && !f.Proxy.CurrentPid.HasValue && !f.Proxy.ConnectionRequested, "A late stop resurrected its queued startup or user intent");
                     Assert(f.Proxy.StartTunnelAsync(CancellationToken.None).Result, "Fresh explicit startup after cancelled queue failed");
                 } else Assert(retry.Wait(5000) && retry.Result && f.Proxy.CurrentPid.HasValue && f.Proxy.CurrentPid != previousPid, "Old cleanup stopped or reused the fresh SSH process");
                 try { using (var child = Process.GetProcessById(previousPid)) Assert(child.HasExited, "Old owned SSH process was retained after cleanup"); } catch (ArgumentException) { }

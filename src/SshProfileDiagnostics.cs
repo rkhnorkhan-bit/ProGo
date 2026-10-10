@@ -34,7 +34,9 @@ namespace ProGo
         {
             var sb = new StringBuilder();
             sb.AppendLine("SSH target: " + (Target ?? ""));
-            sb.AppendLine("Версия запущенного ProGo: " + System.Reflection.Assembly.GetEntryAssembly().GetName().Version);
+            var assembly = System.Reflection.Assembly.GetEntryAssembly() ?? typeof(SshProfileDiagnosticResult).Assembly;
+            var identity = (System.Reflection.AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
+            sb.AppendLine("Сборка запущенного ProGo: " + (identity == null ? assembly.GetName().Version.ToString() : identity.InformationalVersion));
             sb.AppendLine();
             sb.AppendLine("Что это:");
             if (LooksDirectTarget)

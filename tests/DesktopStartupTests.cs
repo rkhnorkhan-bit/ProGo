@@ -125,6 +125,60 @@ namespace ProGo
                 foreach (var item in environment) Environment.SetEnvironmentVariable(item.Key, item.Value, EnvironmentVariableTarget.User);
             }
         }
+        private static void SettingsSaveConnectionIntent(SettingsService settings)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
+            var before = settings.Current.Clone();
+            try {
+                var reserve = Occupy(0); int firstPort = Number(reserve); reserve.Stop();
+                var prefs = before.Clone(); prefs.SshProfile = "ready"; prefs.SocksHost = "127.0.0.1"; prefs.SocksPort = firstPort;
+                prefs.AutoRestartSocks = false; prefs.AutoSwitchSshProfile = false; prefs.AutoStartSocks = false;
+                prefs.AutoCliProxy = false; prefs.AutoSystemProxy = false; prefs.TestEndpoint = "http://127.0.0.1:1/"; settings.Save(prefs);
+                string fixture = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "SocksRecoveryTests.exe");
+                using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), fixture, () => DateTime.UtcNow, false))
+                using (var bridge = new CliProxyBridgeService(settings)) using (var relay = new Ikev2RelayService())
+                using (var home = new HomeVpnService(relay)) using (var clipboard = new ClipboardService(settings))
+                using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false)) {
+                    var start = proxy.StartTunnelAsync(System.Threading.CancellationToken.None); PumpUntil(() => start.IsCompleted);
+                    Check(start.Result && proxy.CurrentPid.HasValue, "settings reconnect regression starts an actual owned SOCKS child");
+                    int firstPid = proxy.CurrentPid.Value; context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow");
+                    var gate = Field(proxy, "gate");
+                    foreach (bool stopped in new[] { false, true }) {
+                        if (stopped) { var stop = proxy.StopTunnelAsync(); PumpUntil(() => stop.IsCompleted); Check(stop.Result, "explicit stop settles the owned child before changing settings"); }
+                        var next = Occupy(0); int nextPort = Number(next); next.Stop();
+                        using (var entered = new System.Threading.ManualResetEventSlim()) using (var release = new System.Threading.ManualResetEventSlim()) {
+                            var held = System.Threading.Tasks.Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(5000); } });
+                            PumpUntil(() => entered.IsSet);
+                            try {
+                                Check(!proxy.CurrentPid.HasValue && !proxy.IsConnecting && proxy.ConnectionRequested == !stopped,
+                                    "busy process snapshot stays distinct from immediate user connection intent: " + stopped);
+                                CheckModal(context, main, "settings", "settings", delegate(Form dialog) {
+                                    ((NumericUpDown)Field(dialog, "port")).Value = nextPort;
+                                    var watch = Stopwatch.StartNew(); ((Button)dialog.AcceptButton).PerformClick();
+                                    Check(watch.ElapsedMilliseconds < 400 && dialog.DialogResult == DialogResult.OK && settings.Current.SocksPort == nextPort,
+                                        "actual settings save completes while background ownership is busy: " + stopped);
+                                });
+                                Check(proxy.ConnectionRequested == !stopped, "settings preserves the original user connection request without waiting for a PID: " + stopped);
+                            } finally { release.Set(); PumpUntil(() => held.IsCompleted); }
+                        }
+                        if (!stopped) {
+                            PumpUntil(() => !proxy.IsStopping && !proxy.IsConnecting && proxy.CurrentPid.HasValue && proxy.IsListening());
+                            Check(proxy.CurrentPid.Value != firstPid && settings.Current.SocksPort == nextPort &&
+                                ConnectionHealthMonitor.CheckSocks(settings.Current, System.Threading.CancellationToken.None),
+                                "saved SOCKS port replaces the old owned process despite its unavailable PID snapshot");
+                            var old = prefs.Clone(); old.SocksPort = firstPort;
+                            Check(!ConnectionHealthMonitor.CheckSocks(old, System.Threading.CancellationToken.None), "previous SOCKS port is released after settings reconnect");
+                        } else {
+                            PumpUntil(() => !proxy.IsStopping); int ticks = 0;
+                            using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) { timer.Tick += delegate { ticks++; }; timer.Start(); PumpUntil(() => ticks >= 3); }
+                            Check(!proxy.ConnectionRequested && !proxy.IsConnecting && !proxy.CurrentPid.HasValue && !proxy.IsListening(),
+                                "saving another endpoint after explicit stop does not revive a user-disabled connection");
+                        }
+                    }
+                    main.Close();
+                }
+            } finally { settings.Save(before); }
+        }
         private static void AsyncStopUiHeartbeat(SettingsService settings)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
@@ -181,6 +235,7 @@ namespace ProGo
         }
         private static void AsyncCliStartup(SettingsService settings)
         {
+            SettingsSaveConnectionIntent(settings);
             AsyncStopUiHeartbeat(settings);
             var login = SshInteractiveLogin.CreateStartInfo("my-vps");
             var command = Encoding.Unicode.GetString(Convert.FromBase64String(login.Arguments.Split(' ').Last()));

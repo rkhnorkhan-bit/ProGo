@@ -178,10 +178,14 @@ namespace ProGo
                 form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
                     bool changed = proposed.SocksHost != settings.Current.SocksHost || proposed.SocksPort != settings.Current.SocksPort || SshConnection.Signature(proposed) != SshConnection.Signature(settings.Current);
                     var oldPort = settings.Current.HttpProxyPort;
+                    bool reconnectRequested = changed && proxy.ConnectionRequested;
                     SettingsSaveError error;
-                    if (!cliProxy.ReconfigureDetailed(proposed, pickFree, out error)) return error;
+                    bool configured;
+                    try { configured = cliProxy.ReconfigureDetailed(proposed, pickFree, out error); }
+                    finally { appConsumers.Invalidate(); appConsumers.ReleaseIfUnused(); }
+                    if (!configured) return error;
                     if (changed) {
-                        reconnectAfterSave = proxy.CurrentPid.HasValue || proxy.IsConnecting;
+                        reconnectAfterSave = reconnectRequested;
                         pendingRoutes.Clear(); ObserveStop(proxy.StopTunnelAsync()); RefreshPendingRoutes(); health.Invalidate();
                     }
                     NotifyPortChange(oldPort);
@@ -262,7 +266,10 @@ namespace ProGo
                     case AppCommand.CheckRoute: using (var form = new StatusForm(settings, proxy, command.Command == AppCommand.CheckRoute, null, null, health)) form.ShowDialog(mainWindow); break;
                     case AppCommand.StopCli: DisableCli(); break;
                     case AppCommand.DisableWindows: CancelPendingRoute(AppCommand.EnableWindows); automation.Cancel(ProxyFeature.Windows); RestoreWindowsProxy(); appConsumers.Observe(); appConsumers.ReleaseIfUnused(); break;
-                    case AppCommand.RemoveCodexShortcut: CodexProxyService.Disable(); appConsumers.Observe(); appConsumers.ReleaseIfUnused(); break;
+                    case AppCommand.RemoveCodexShortcut:
+                        try { CodexProxyService.Disable(); }
+                        finally { appConsumers.Observe(); appConsumers.ReleaseIfUnused(); }
+                        break;
                     case AppCommand.Help: ShowHelp(); break;
                     case AppCommand.Update: StartUpdate(); break;
                     default: throw new InvalidOperationException("Команда ProGo не поддерживается.");
@@ -312,7 +319,11 @@ namespace ProGo
                             case AppCommand.Reconnect: break;
                             case AppCommand.StartCli: EnableFeature(ProxyFeature.Cli); automation.Cancel(ProxyFeature.Cli); CliReadyNotice(); break;
                             case AppCommand.EnableWindows: EnableFeature(ProxyFeature.Windows); automation.Cancel(ProxyFeature.Windows); break;
-                            case AppCommand.CreateCodexShortcut: EnsureBridge(); CodexProxyService.Enable(cliProxy.Port); break;
+                            case AppCommand.CreateCodexShortcut:
+                                EnsureBridge();
+                                try { CodexProxyService.Enable(cliProxy.Port); }
+                                finally { appConsumers.Invalidate(); }
+                                break;
                             case AppCommand.OpenCodex: EnsureBridge(); appConsumers.TrackWindow(CodexProxyService.Open(cliProxy.Port)); break;
                             case AppCommand.OpenTerminal: EnsureBridge(); string error; Process window; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error, out window)) throw new InvalidOperationException(error); appConsumers.TrackWindow(window); break;
                             default: throw new InvalidOperationException("Команда подключения ProGo не поддерживается.");
@@ -365,7 +376,7 @@ namespace ProGo
             try {
                 if (feature == ProxyFeature.Cli) CliProxyEnvironmentService.ApplyUserEnvironment(cliProxy.Port);
                 else { string message; if (!SystemProxyService.Apply(settings.Current, out message)) throw new InvalidOperationException(message); }
-            } finally { appConsumers.ReleaseIfUnused(); }
+            } finally { appConsumers.Invalidate(); appConsumers.ReleaseIfUnused(); }
         }
         private void DisableCli()
         {
@@ -388,6 +399,7 @@ namespace ProGo
                 CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
                 appConsumers.CliCleanupPending = false;
             } catch { appConsumers.CliCleanupPending = true; throw; }
+            finally { appConsumers.Invalidate(); }
         }
         private void RestoreWindowsProxy()
         {
@@ -397,6 +409,7 @@ namespace ProGo
                 appConsumers.WindowsCleanupPending = false;
                 if (result.PreservedExternal) tray.ShowBalloonTip(5000, "Настройки Windows сохранены", result.Message, ToolTipIcon.Info);
             } catch { appConsumers.WindowsCleanupPending = true; throw; }
+            finally { appConsumers.Invalidate(); }
         }
         private void DisconnectApps()
         {
