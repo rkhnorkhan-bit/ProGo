@@ -155,21 +155,30 @@ namespace ProGo
             } catch (HomeVpnSharePendingException) { throw; }
             catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeVpnSharePendingException("VPS вернул неподтверждённый статус HTTPS. Запрос сохранён; новая настройка не запускалась."); }
         }
-        internal static async Task ConfirmAsync(HomeVpnOwner owner, HomeVpnAccess access, string origin, Func<Task> verify, Action<string> save, Func<bool> canSave)
+        internal static Task ConfirmAsync(HomeVpnOwner owner, HomeVpnAccess access, string origin, Func<Task> verify, Action<string> save, Func<bool> canSave)
+        { return ConfirmAsync(owner, access, origin, verify, save, canSave, CancellationToken.None, action => { action(); return Task.FromResult(true); }); }
+        internal static async Task ConfirmAsync(HomeVpnOwner owner, HomeVpnAccess access, string origin, Func<Task> verify, Action<string> save, Func<bool> canSave,
+            CancellationToken token, Func<Action, Task<bool>> finalizeOnOwner)
         {
-            using (var lease = await AcquireAsync()) {
+            using (var lease = await AcquireAsync().ConfigureAwait(false)) {
                 var request = Load(owner);
                 if (!Same(request, completed) || completedOrigin != origin || !SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
                 RequireResult(owner, request, origin);
-                await verify();
-                if (!canSave() || !SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
-                RequireResult(owner, request, origin);
-                try { save(origin); }
-                catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeVpnSharePendingException("Подтверждённый HTTPS-адрес не удалось сохранить. Запрос сохранён; повторяйте только проверку прежней настройки."); }
-                if (!canSave() || !SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
-                RequireResult(owner, request, origin);
-                try { File.Delete(PathFor()); completed = null; completedOrigin = null; }
-                catch { throw new HomeVpnSharePendingException("HTTPS-адрес сохранён, но завершение запроса не удалось сохранить. Запрос остаётся для проверки; новая настройка заблокирована."); }
+                await verify().ConfigureAwait(false);
+                // Save and consumption have one owner-thread acceptance boundary.
+                // A Cancel/Dispose callback cannot interleave between these checks.
+                bool accepted = await finalizeOnOwner(delegate {
+                    token.ThrowIfCancellationRequested();
+                    if (!canSave() || !SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
+                    RequireResult(owner, request, origin);
+                    try { save(origin); }
+                    catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeVpnSharePendingException("Подтверждённый HTTPS-адрес не удалось сохранить. Запрос сохранён; повторяйте только проверку прежней настройки."); }
+                    if (!canSave() || !SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
+                    RequireResult(owner, request, origin);
+                    try { File.Delete(PathFor()); completed = null; completedOrigin = null; }
+                    catch { throw new HomeVpnSharePendingException("HTTPS-адрес сохранён, но завершение запроса не удалось сохранить. Запрос остаётся для проверки; новая настройка заблокирована."); }
+                }).ConfigureAwait(false);
+                if (!accepted) throw new HomeVpnSharePendingException(PendingMessage);
             }
         }
     }
