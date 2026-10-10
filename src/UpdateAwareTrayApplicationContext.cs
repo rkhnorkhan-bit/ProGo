@@ -439,23 +439,40 @@ namespace ProGo
             shutdownPreparing = true;
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
+            Exception failure = null;
             try {
                 DisconnectApps();
-                if (!await proxy.StopTunnelAsync()) throw new InvalidOperationException("Не удалось остановить SSH-процесс. ProGo остаётся запущенным; повторите отключение.");
-                if (closing) return false;
-                shutdownPrepared = true;
-                if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
-                return true;
-            }
-            catch (Exception ex) {
-                SafeLog.Error("Shutdown refused: owned proxy cleanup incomplete.", ex);
-                if (!closing) {
-                    if (dialog) MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", ex.Message, ToolTipIcon.Warning);
-                }
-                return false;
-            }
-            finally { shutdownPreparing = false; if (!closing) RefreshPendingRoutes(); }
+                if (!await proxy.StopTunnelAsync().ConfigureAwait(false)) throw new InvalidOperationException("Не удалось остановить SSH-процесс. ProGo остаётся запущенным; повторите отключение.");
+            } catch (Exception ex) { failure = ex; }
+            return await DispatchUi(delegate {
+                try {
+                    if (failure != null) {
+                        SafeLog.Error("Shutdown refused: owned proxy cleanup incomplete.", failure);
+                        if (dialog) MessageBox.Show(failure.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", failure.Message, ToolTipIcon.Warning);
+                        return false;
+                    }
+                    shutdownPrepared = true;
+                    if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
+                    return true;
+                } finally { shutdownPreparing = false; RefreshPendingRoutes(); }
+            }).ConfigureAwait(false);
+        }
+        // A modal dialog may remove or replace SynchronizationContext. The persistent
+        // application control is the owner of every lifecycle/UI completion instead.
+        private Task<T> DispatchUi<T>(Func<T> action)
+        {
+            if (closing || activationDispatcher.IsDisposed) return Task.FromResult(default(T));
+            if (!activationDispatcher.InvokeRequired) return Task.FromResult(action());
+            var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            try {
+                activationDispatcher.BeginInvoke(new Action(delegate {
+                    if (closing || activationDispatcher.IsDisposed) { completion.TrySetResult(default(T)); return; }
+                    try { completion.TrySetResult(action()); }
+                    catch (Exception ex) { completion.TrySetException(ex); }
+                }));
+            } catch (InvalidOperationException) { completion.TrySetResult(default(T)); }
+            return completion.Task;
         }
         // Pipe worker may await the UI-owned cleanup; no synchronous wait runs on UI.
         internal Task<bool> RequestShutdownAsync()
@@ -473,9 +490,13 @@ namespace ProGo
         }
         private async void ObserveStop(Task<bool> work)
         {
-            try { if (!await work && !closing) tray.ShowBalloonTip(7000, "Подключение ещё не остановлено", "Не удалось остановить SSH-процесс. Повторите отключение; ProGo сохраняет управление этим процессом.", ToolTipIcon.Warning); }
-            catch (Exception ex) { if (!closing) SafeLog.Error("SSH asynchronous stop failed.", ex); }
-            finally { if (!closing) RefreshPendingRoutes(); }
+            bool stopped = false;
+            try { stopped = await work.ConfigureAwait(false); }
+            catch (Exception ex) { SafeLog.Error("SSH asynchronous stop failed.", ex); }
+            await DispatchUi(delegate {
+                if (!stopped) tray.ShowBalloonTip(7000, "Подключение ещё не остановлено", "Не удалось остановить SSH-процесс. Повторите отключение; ProGo сохраняет управление этим процессом.", ToolTipIcon.Warning);
+                RefreshPendingRoutes(); return true;
+            }).ConfigureAwait(false);
         }
         internal void CompleteShutdown()
         {
@@ -492,14 +513,16 @@ namespace ProGo
         }
         private async Task<bool> BeginMaintenance(Func<bool> launch)
         {
-            if (!await PrepareShutdownAsync(true)) return false;
-            bool handedOff = false;
-            try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
-            finally { if (!handedOff) { shutdownPrepared = false; RefreshPendingRoutes(); } }
+            if (!await PrepareShutdownAsync(true).ConfigureAwait(false)) return false;
+            return await DispatchUi(delegate {
+                bool handedOff = false;
+                try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
+                finally { if (!handedOff) { shutdownPrepared = false; RefreshPendingRoutes(); } }
+            }).ConfigureAwait(false);
         }
         private async void ExitProGo()
         {
-            if (await PrepareShutdownAsync(true)) CompleteShutdown();
+            if (await PrepareShutdownAsync(true).ConfigureAwait(false)) CompleteShutdown();
         }
 
         private void OpenLogFile(string path, string title)
@@ -596,31 +619,35 @@ namespace ProGo
             string backupDir;
             if (!BackupPickerForm.TryPick(backups, out backupDir)) return;
 
+            PreparedBackup prepared = null;
             try
             {
-                using (var options = new RestoreOptionsForm(backupDir))
+                try
                 {
-                    if (options.ShowDialog() != DialogResult.OK) return;
-                    using (var prepared = options.TakePreparedCopy())
+                    string scope; bool dataConfirmed;
+                    using (var options = new RestoreOptionsForm(backupDir))
                     {
+                        if (options.ShowDialog() != DialogResult.OK) return;
+                        prepared = options.TakePreparedCopy();
                         if (closing) return;
-                        var names = BackupIntegrity.RestoreNames(prepared.Path, options.Scope, options.DataConfirmed);
+                        scope = options.Scope; dataConfirmed = options.DataConfirmed;
+                        var names = BackupIntegrity.RestoreNames(prepared.Path, scope, dataConfirmed);
                         var result = MessageBox.Show(
                             "Копия проверена. Версия в копии: " + File.ReadAllText(Path.Combine(prepared.Path, "VERSION")).Trim() +
                             "\n\nБудет восстановлено:\n" + String.Join("\n", names) +
-                            (options.Scope == "Program" ? "\n\nТекущие настройки и хранилище сохранятся." : "\n\nПеречисленные пользовательские данные будут заменены данными из копии.") +
+                            (scope == "Program" ? "\n\nТекущие настройки и хранилище сохранятся." : "\n\nПеречисленные пользовательские данные будут заменены данными из копии.") +
                             "\n\nProGo закроется и запустится снова. Начать восстановление?",
                             "Подтвердите восстановление", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
                         if (result != DialogResult.Yes) return;
-                        if (!await BeginMaintenance(() => BackupService.StartRestore(prepared.Path, options.Scope, options.DataConfirmed))) return;
-                        SafeLog.Info("Restore requested by user. scope=" + options.Scope + ".");
-                    }
-                }
+                    } // The UI form is disposed on its owner thread before asynchronous cleanup.
+                    if (!await BeginMaintenance(() => BackupService.StartRestore(prepared.Path, scope, dataConfirmed)).ConfigureAwait(false)) return;
+                    SafeLog.Info("Restore requested by user. scope=" + scope + ".");
+                } finally { if (prepared != null) prepared.Dispose(); }
             }
             catch (Exception ex)
             {
                 SafeLog.Error("Restore preparation or cleanup failed.", ex);
-                if (!closing) MessageBox.Show("Восстановление не запущено: " + ex.Message, "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                DispatchUi(delegate { MessageBox.Show("Восстановление не запущено: " + ex.Message, "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); return true; });
             }
         }
 
@@ -636,7 +663,7 @@ namespace ProGo
                 } finally { updateForm = null; }
             }
             if (check == null || check.Availability != UpdateAvailability.Available) return;
-            if (!await BeginMaintenance(UpdateLauncher.StartUpdater)) return;
+            if (!await BeginMaintenance(UpdateLauncher.StartUpdater).ConfigureAwait(false)) return;
             SafeLog.Info("Update requested by user. local=" + check.LocalVersion + "; remote=" + check.RemoteVersion + ".");
         }
 

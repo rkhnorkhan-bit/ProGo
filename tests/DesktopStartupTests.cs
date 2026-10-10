@@ -100,7 +100,19 @@ namespace ProGo
                     menu[AppCommand.StartCli].PerformClick(); PumpUntil(() => context.PendingRouteCount == 0);
                     Check(bridge.IsRunning && menu[AppCommand.StartCli].Enabled && menu[AppCommand.Connect].Enabled &&
                         ((Button)Field(main, "cliToggle")).Enabled, "successful retry restores command availability on tray and dashboard");
-                    var shutdown = context.RequestShutdownAsync(); PumpUntil(() => shutdown.IsCompleted);
+                    int uiThread = System.Threading.Thread.CurrentThread.ManagedThreadId, lifecycleThread = uiThread;
+                    var lifecycle = context.GetType().GetEvent("CommandStateChanged", PrivateInstance);
+                    Action observeLifecycle = () => { lifecycleThread = System.Threading.Thread.CurrentThread.ManagedThreadId; };
+                    lifecycle.GetAddMethod(true).Invoke(context, new object[] { observeLifecycle });
+                    var oldContext = System.Threading.SynchronizationContext.Current;
+                    System.Threading.Tasks.Task<bool> shutdown;
+                    try {
+                        System.Threading.SynchronizationContext.SetSynchronizationContext(null);
+                        shutdown = context.RequestShutdownAsync();
+                    } finally { System.Threading.SynchronizationContext.SetSynchronizationContext(oldContext); }
+                    PumpUntil(() => shutdown.IsCompleted);
+                    Check(lifecycleThread == uiThread, "shutdown completion returns to the persistent UI dispatcher after a modal context is removed");
+                    lifecycle.GetRemoveMethod(true).Invoke(context, new object[] { observeLifecycle });
                     Check(shutdown.Result && menu.Values.All(i => !i.Enabled), "prepared shutdown disables catalogued tray actions");
                     context.CancelShutdown(); PumpUntil(() => menu[AppCommand.StartCli].Enabled);
                     Check(((Button)Field(main, "cliToggle")).Enabled, "cancelled shutdown restores dashboard and tray command availability");
@@ -146,11 +158,23 @@ namespace ProGo
                         entered.Reset(); release.Reset();
                         var heldAgain = System.Threading.Tasks.Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(5000); } });
                         PumpUntil(() => entered.IsSet);
-                        var shutdown = context.RequestShutdownAsync(); int beforeTicks = ticks;
+                        int ownerThread = System.Threading.Thread.CurrentThread.ManagedThreadId, completionThread = 0;
+                        var lifecycle = context.GetType().GetEvent("CommandStateChanged", PrivateInstance);
+                        Action observeLifecycle = () => { completionThread = System.Threading.Thread.CurrentThread.ManagedThreadId; };
+                        lifecycle.GetAddMethod(true).Invoke(context, new object[] { observeLifecycle });
+                        var oldContext = System.Threading.SynchronizationContext.Current;
+                        System.Threading.Tasks.Task<bool> shutdown;
+                        try {
+                            System.Threading.SynchronizationContext.SetSynchronizationContext(null);
+                            shutdown = context.RequestShutdownAsync();
+                        } finally { System.Threading.SynchronizationContext.SetSynchronizationContext(oldContext); }
+                        int beforeTicks = ticks;
                         try { PumpUntil(() => ticks >= beforeTicks + 3); Check(!shutdown.IsCompleted && proxy.IsStopping, "shutdown awaits owned cleanup while native UI heartbeat remains active"); }
                         finally { release.Set(); PumpUntil(() => heldAgain.IsCompleted); }
                         PumpUntil(() => shutdown.IsCompleted);
                         Check(shutdown.Result && !proxy.CurrentPid.HasValue && !proxy.IsStopping, "shutdown is prepared only after its actual owned SSH child exits");
+                        Check(completionThread == ownerThread, "shutdown UI state remains owned by the native UI thread without a captured synchronization context");
+                        lifecycle.GetRemoveMethod(true).Invoke(context, new object[] { observeLifecycle });
                     }
                 }
             } finally { settings.Save(before); }
