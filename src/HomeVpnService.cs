@@ -214,7 +214,8 @@ namespace ProGo
                 transport = (executable, arguments, output) => HomeVpnSetupWaitForm.WaitAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output);
             return await AdminAsync(owner, action, label, identifier, progress,
                 (executable, arguments) => HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments,
-                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), transport);
+                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())
+                    || action == "recover-invite" || (action == "create-invite" && HomeVpnInvitationRecovery.Load(owner) != null)), transport);
         }
 
         // Injected transports keep Windows fixtures isolated from live VPS credentials.
@@ -222,6 +223,8 @@ namespace ProGo
             Func<string, string, Task> copy, Func<string, string, string, Task> commandTransport)
         {
             owner.Validate();
+            if (action == "create-invite" || action == "recover-invite")
+                return await HomeVpnInvitationService.RunAsync(owner, action == "recover-invite", label, progress, copy, commandTransport);
             bool setup = action == "setup" || action == "recover-setup";
             if (!setup && action != "invite" && action != "list" && action != "revoke" && action != "share" && action != "repair") throw new ArgumentException("Unknown action");
             if (action == "revoke" && !System.Text.RegularExpressions.Regex.IsMatch(identifier ?? "", @"\A[0-9a-f]{24}\z")) throw new ArgumentException("Invalid invitation");

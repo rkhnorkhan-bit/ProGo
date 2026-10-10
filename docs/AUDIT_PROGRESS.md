@@ -1623,3 +1623,38 @@ This bounded stage integrates only own-VPS setup waiting. Invitation, revocation
 repair and QR setup still need their own interrupted-result contracts. Receipt
 acknowledgment/pruning and manual resolution of unconfirmed requests remain deferred.
 F23 stays open; **21/30 closed, 9 remaining**. No merge, version bump or release.
+
+
+## Stage F23k — original-result recovery for separate friend invitations
+
+Separate friend-token creation now registers one private DPAPI request after SCP
+and before SSH issuance. It binds the original VPS, SSH port/account, friend name
+and stable ID; no administrator password or local SSH key content is stored.
+Lost replies retain that ID. The friends window reopens with one **Проверить выдачу
+токена** action and the frozen name. Status/result queries retrieve the original
+token only after completed/available status; they cannot submit invitation creation.
+The initial friends-list query is skipped for a pending or unreadable request so
+its recovery window remains reachable independently of that query.
+
+Closing the token window leaves the request and validated token protected locally.
+**Токен сохранён — завершить** explicitly consumes that matching local result;
+it does not confirm delivery to the friend, revoke access or acknowledge a remote
+receipt. Failed consumption keeps retry guidance and the request. A successful list
+refresh cannot unlock new creation, revocation or reissue while a request remains.
+Recovered IDs do not duplicate existing list rows. A missing journal after recovery
+presentation, corrupt metadata, changed parameters, unknown status, wrong-server
+results and revoked/unavailable results refuse fresh issuance and retain guidance.
+The owner's own access and setup request are not consumed by friend-token handling.
+
+Verification uses real Windows DPAPI and native forms with isolated SSH transports:
+one issuance after a lost response, original-ID recovery, availability guards, strict
+bounded UTF-8 and status parsing, storage refusal, exclusive dispatch, fresh/recovery
+copy cancellation, cleanup refusal, restarted UI, list-refresh gates, local confirmation,
+masked token metadata and normal/minimum friends/token screenshots. Full exact-head
+Windows/server CI and native screenshot review are acceptance requirements.
+
+Scope is separate token creation and its local receipt only. Reissue, revocation,
+repair and QR setup keep their protected command paths. Already launched invitation
+SSH waiting, remote acknowledgment/pruning and manual resolution of unconfirmed
+requests remain separate F23 work. F23 stays open: **21/30 closed, 9 remaining**.
+No merge, version bump, release, vault contract or ordinary CLI/settings changes.

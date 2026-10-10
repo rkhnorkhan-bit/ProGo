@@ -408,10 +408,15 @@ namespace ProGo
         {
             await RunStep(async delegate
             {
-                var response = await HomeVpnService.AdminAsync(service.Owner, "list", null, null, SetProgress);
-                var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(response);
+                bool recover = false;
+                try { recover = HomeVpnInvitationRecovery.Load(service.Owner) != null; }
+                catch (HomeVpnInvitationPendingException) { recover = true; }
+                // A pending or unreadable invitation must be reachable even when
+                // the initial list query fails. Its window owns recovery guidance.
+                var items = new HomeVpnInvitation[0];
+                if (!recover) items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(await Admin(service.Owner, "list", null, null, SetProgress));
                 using (var dialog = new HomeInvitationsForm(items,
-                    (action, label, id) => HomeVpnService.AdminAsync(service.Owner, action, label, id, delegate { }), clipboard))
+                    (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard, service.Owner))
                     dialog.ShowDialog(this);
                 status.Text = "";
             });

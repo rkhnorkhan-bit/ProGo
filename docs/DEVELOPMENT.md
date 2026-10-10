@@ -1185,3 +1185,51 @@ tests remain in the full CI. Native images and exact-head green CI are acceptanc
 Only own-VPS waiting is integrated. F23 remains open for other server commands and
 uncertain-request/receipt lifecycle work. VERSION and audit count stay unchanged:
 **21/30 closed; 9 remaining**. No merge or release.
+
+
+### Audit stage F23k — separate invitation requests and local token receipt
+
+`create-invite` and `recover-invite` are internal desktop actions routed through
+HomeVpnInvitationService. Their remote mutation is the existing `invite` command
+with a stable request ID. Other `invite` callers (reissue), list/revoke/repair/share,
+and own-VPS setup keep their existing paths. The invitation journal is separate
+from setup and the owner's access: `invitation-request.dat`, CurrentUser DPAPI,
+exact seven-field metadata, bounded reads, regular non-reparse storage, unique
+atomic replace/move and file flush before dispatch. A nonblocking lease covers
+preparation, registration, queries and consumption. Administrator passwords and
+local key contents are not saved. SSH endpoint/key arguments are frozen before
+awaiting the copy. Changed local key selection can authenticate the same queries.
+
+SCP must succeed before a new request is registered, and registration must succeed
+before its one remote invitation. A pending `create-invite` becomes read-only recovery;
+`recover-invite` refuses a missing journal. Neither replays `invite`, even under the
+same ID. Status validates ID, action `invite`, state, timestamps and result availability.
+Only then is the original bounded strict UTF-8 token fetched and validated against
+the frozen VPS host/port. A cached local token cannot bypass the live query or revive
+revoked access. Lost status/result, unavailable state and failed storage preserve
+the original request; failed work cleanup cannot claim completion. Unknown status
+may leave only public helper copies on the VPS; no rollback/remote cleanup is promised.
+
+Production friends windows receive the owner context. Existing injected legacy
+fixtures retain their old constructor contract. A pending/unreadable request bypasses
+the wizard's initial list query and opens recovery guidance. The single create button
+becomes **Проверить выдачу токена**; friend name is frozen and mutations remain blocked
+through list refresh. Observed recovery cannot silently revert to fresh issuance
+after record disappearance. Recovered list rows retain unique IDs and existing dates.
+
+Tracked token dialogs explain retained recovery and add **Токен сохранён — завершить**.
+Close/Escape/disposal do not consume the request. Only this explicit callback can
+delete the matching retained local token request; failed delete leaves the dialog and
+retry notice. It confirms a user's local saving, not friend delivery or remote receipt
+acknowledgment. After consumption the server's private receipt is unchanged. Legacy
+reissue token dialogs retain one-time display and their prior Close behavior.
+
+HomeVpnInvitationRecoveryTests run in the existing real UI message loop with native
+cross-thread checks and DPAPI. They substitute only SSH/SCP and cover lost replies,
+strict statuses/results, changed parameters, storage/concurrency/copy/cleanup faults,
+reopening/list gates, wizard entry without initial SSH, same-ID row uniqueness,
+masked token controls and explicit/local-only consumption. Four native images cover
+friends recovery and token receipt at normal/minimum sizes. Exact-head full CI and
+visual review are required. VERSION stays unchanged; F23 remains open, **21/30 closed;
+9 remaining**. Invitation SSH cancellation and other mutation/lifecycle work are not
+part of this bounded stage. No merge or release.
