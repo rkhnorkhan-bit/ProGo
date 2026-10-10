@@ -27,8 +27,8 @@ namespace ProGo
         {
             if (args.Length != 3 || args[0] != "setup-wait-fixture") return false;
             string path = args[1], mode = args[2];
-            File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
-            File.WriteAllText(Path.Combine(path, "console"), GetConsoleCP().ToString());
+            HomeVpnPreparationTests.PublishMarker(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            HomeVpnPreparationTests.PublishMarker(Path.Combine(path, "console"), GetConsoleCP().ToString());
             Console.WriteLine("PRIVATE-RESULT"); Console.Out.Flush(); Console.Error.WriteLine("Isolated SSH progress");
             if (mode == "complete") return true;
             if (mode == "fail") { Environment.Exit(7); return true; }

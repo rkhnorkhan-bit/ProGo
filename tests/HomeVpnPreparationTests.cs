@@ -21,10 +21,10 @@ namespace ProGo
             if (args.Length < 3 || (args[0] != "prepare-fixture" && args[0] != "prepare-child")) return false;
             string path = args[1], mode = args[2];
             if (args[0] == "prepare-child") {
-                File.WriteAllText(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
+                PublishMarker(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
             }
-            File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
-            File.WriteAllText(Path.Combine(path, "console"), GetConsoleCP().ToString());
+            PublishMarker(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            PublishMarker(Path.Combine(path, "console"), GetConsoleCP().ToString());
             if (mode == "complete") return true;
             if (mode == "fail") { Environment.Exit(7); return true; }
             using (var child = Process.Start(new ProcessStartInfo(Application.ExecutablePath,
@@ -34,6 +34,12 @@ namespace ProGo
                 if (mode == "orphan") return true;
                 Thread.Sleep(60000); return true;
             }
+        }
+        internal static void PublishMarker(string path, string value)
+        {
+            // A marker is a readiness signal: publish only its closed, full value.
+            File.WriteAllText(path + ".new", value);
+            File.Move(path + ".new", path);
         }
         internal static void Run(Action<bool, string> assert, string token, ClipboardService clipboard, string work)
         {

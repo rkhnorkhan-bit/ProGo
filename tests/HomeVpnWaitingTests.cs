@@ -25,11 +25,7 @@ namespace ProGo
             if (index < 0) return false;
             string folder = Environment.GetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE");
             if (String.IsNullOrEmpty(folder)) throw new Exception("Missing isolated fixture folder");
-            // Publish readiness only after closing the writer; File.Exists must
-            // never expose a locked or partially written PID to the UI fixture.
-            string pidPath = Path.Combine(folder, "pid");
-            File.WriteAllText(pidPath + ".new", Process.GetCurrentProcess().Id.ToString());
-            File.Move(pidPath + ".new", pidPath);
+            HomeVpnPreparationTests.PublishMarker(Path.Combine(folder, "pid"), Process.GetCurrentProcess().Id.ToString());
             string mode = File.ReadAllText(Path.Combine(folder, "mode"));
             if (mode == "no-listener") { Thread.Sleep(60000); return true; }
             int port = Int32.Parse(args[index + 1].Split(':').Last());
