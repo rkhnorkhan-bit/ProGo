@@ -611,7 +611,9 @@ namespace ProGo
             try
             {
                 var dir = BackupService.CreateBackup("manual");
-                MessageBox.Show("Резервная копия создана:\n" + dir, "Резервная копия ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Резервная копия создана:\n" + dir + "\n\nСостав: " + BackupIntegrity.Contents(dir) +
+                    "\nVPN-файлы и снимки прокси — только архив; они не импортируются автоматически. DPAPI не обеспечивает перенос VPN на другой ПК/пользователя.",
+                    "Резервная копия ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
@@ -649,6 +651,7 @@ namespace ProGo
                             "Копия проверена. Версия в копии: " + File.ReadAllText(Path.Combine(prepared.Path, "VERSION")).Trim() +
                             "\n\nБудет восстановлено:\n" + String.Join("\n", names) +
                             (scope == "Program" ? "\n\nТекущие настройки и хранилище сохранятся." : "\n\nПеречисленные пользовательские данные будут заменены данными из копии.") +
+                            "\nТекущие VPN-доступы и снимки прокси сохранятся; архивные не импортируются." +
                             "\n\nProGo закроется и запустится снова. Начать восстановление?",
                             "Подтвердите восстановление", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
                         if (result != DialogResult.Yes) return;

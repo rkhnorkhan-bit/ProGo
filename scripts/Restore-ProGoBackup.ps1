@@ -110,12 +110,15 @@ function Backup-BeforeRestore {
     if (Test-Path -LiteralPath $root) { Assert-RestoreTree $root -Shallow } else { New-Item -ItemType Directory -Path $root | Out-Null }
     $path = Join-Path $root ('backup-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-pre-restore-' + [guid]::NewGuid().ToString('N'))
     Copy-RestoreRoots $InstallDir $path $names
+    [ProGo.BackupIntegrity]::CopyPersonalArchives($InstallDir, $path)
     if ($before -cne (Get-RestoreState $path $names)) { throw 'Current state changed during protective backup.' }
     $version = ([IO.File]::ReadAllText((Join-Path $path 'VERSION'))).Trim()
-    Set-Content -LiteralPath (Join-Path $path 'manifest.txt') -Encoding UTF8 -Value @(
+    $manifest = @(
         'product=ProGo', "version=$version", "created=$([DateTimeOffset]::Now.ToString('o'))",
         'created_by=restore', 'backup_kind=pre-restore', 'reason=before-transactional-restore',
         "contains=$([ProGo.BackupIntegrity]::Contents($path))")
+    $manifest += [ProGo.BackupIntegrity]::CompositionLines($path)
+    Set-Content -LiteralPath (Join-Path $path 'manifest.txt') -Encoding UTF8 -Value $manifest
     [ProGo.BackupIntegrity]::Write($path)
     [ProGo.BackupIntegrity]::Validate($path)
     Write-RestoreLog "Protective backup verified: $path"

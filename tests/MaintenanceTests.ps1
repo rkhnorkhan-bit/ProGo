@@ -35,7 +35,7 @@ function Run($Info) {
 }
 function DriverInfo($Mode) { return (ChildInfo $ps "-NoProfile -File `"$driver`" -Mode $Mode -Scripts `"$Scripts`" -Fixture `"$fixture`" -Release `"$release`"") }
 function PayloadSnapshot {
-    $names = @('ProGo.exe','VERSION','scripts','ProGo.ico','settings.json','vault.enc.json')
+    $names = @('ProGo.exe','VERSION','scripts','ProGo.ico','settings.json','vault.enc.json','home-vpn-private')
     return (@(foreach ($name in $names) {
         $path = Join-Path $install $name
         if (-not (Test-Path -LiteralPath $path)) { $name + ':absent'; continue }
@@ -164,24 +164,36 @@ try {
     $dataBeforeProgram = [IO.File]::ReadAllBytes((Join-Path $install 'settings.json'))
     Set-Content (Join-Path $install 'vault.enc.json') 'current opaque vault'
     Set-Content (Join-Path $backup 'vault.enc.json') 'selected opaque vault'
+    Add-Type -AssemblyName System.Security
+    New-Item -ItemType Directory (Join-Path $install 'home-vpn-private'),(Join-Path $backup 'home-vpn-private') | Out-Null
+    $homeCurrent = [Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes('synthetic current VPN access; never log'), $null, [Security.Cryptography.DataProtectionScope]::CurrentUser)
+    $homeOld = [Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes('synthetic old VPN access; never log'), $null, [Security.Cryptography.DataProtectionScope]::CurrentUser)
+    [IO.File]::WriteAllBytes((Join-Path $install 'home-vpn-private\access.dat'), $homeCurrent)
+    [IO.File]::WriteAllBytes((Join-Path $backup 'home-vpn-private\access.dat'), $homeOld)
     [ProGo.BackupIntegrity]::Write($backup)
     Check ((Run (DriverInfo 'restore-program')) -eq 0) 'program-only restore completes with no data consent'
     Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $install 'settings.json'))) -eq [Convert]::ToBase64String($dataBeforeProgram) -and ((Get-Content (Join-Path $install 'vault.enc.json')).Trim()) -eq 'current opaque vault') 'program-only restore preserves current settings and opaque vault bytes'
+    Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $install 'home-vpn-private\access.dat'))) -eq [Convert]::ToBase64String($homeCurrent)) 'actual program rollback preserves current VPN access instead of importing historical DPAPI data'
     Set-Content (Join-Path $install 'VERSION') 'data-only-program-marker'
     $exeBeforeData = (Get-FileHash (Join-Path $install 'ProGo.exe')).Hash
     $scriptsBeforeData = @(Get-ChildItem (Join-Path $install 'scripts') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.Name + ':' + (Get-FileHash $_.FullName).Hash }) -join ';'
     Check ((Run (DriverInfo 'restore-data')) -eq 0) 'data-only restore completes with explicit consent'
     Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq 'data-only-program-marker' -and (Get-FileHash (Join-Path $install 'ProGo.exe')).Hash -eq $exeBeforeData -and (@(Get-ChildItem (Join-Path $install 'scripts') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.Name + ':' + (Get-FileHash $_.FullName).Hash }) -join ';') -eq $scriptsBeforeData) 'data-only restore preserves executable, version and all script bytes'
     Check (((Get-Content (Join-Path $install 'vault.enc.json')).Trim()) -eq 'selected opaque vault') 'data-only restore applies selected opaque vault without changing encryption'
+    Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $install 'home-vpn-private\access.dat'))) -eq [Convert]::ToBase64String($homeCurrent)) 'explicit Data restore still preserves current VPN identity'
     Check ((Run (DriverInfo 'restore-source-changed')) -eq 0) 'helper applies prepared input after original source changes'
     Check ((Get-Content (Join-Path $install 'settings.json') -Raw).Contains('12345')) 'post-preparation source mutation does not reach installed settings'
     Set-Content (Join-Path $backup 'settings.json') '{"SocksPort":12345}'
     [ProGo.BackupIntegrity]::Write($backup)
     Check ((Run (DriverInfo 'restore')) -eq 0) 'actual restore transaction completes under exclusive ownership'
     Check ((Get-Content (Join-Path $install 'settings.json') -Raw).Contains('12345')) 'restore applies the selected backup settings'
+    Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $install 'home-vpn-private\access.dat'))) -eq [Convert]::ToBase64String($homeCurrent)) 'combined restore does not reactivate archived VPN access'
     $protected = @(Get-ChildItem $mixedRoot -Directory | Where-Object { $_.Name -like '*-pre-restore-*' })
     Check ($protected.Count -ge 4) 'each successful restore retains an independent protective backup'
-    foreach ($copy in $protected) { [ProGo.BackupIntegrity]::Validate($copy.FullName) }
+    foreach ($copy in $protected) {
+        [ProGo.BackupIntegrity]::Validate($copy.FullName)
+        Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $copy.FullName 'home-vpn-private\access.dat'))) -eq [Convert]::ToBase64String($homeCurrent)) 'actual protective restore copy retains encrypted current VPN evidence'
+    }
     Check ($true) 'all protective snapshots pass recorded integrity checks'
     $protectedBeforeRetention = $protected.Count
     [void][ProGo.BackupRetention]::Apply([ProGo.BackupRetention]::Plan($mixedRoot))

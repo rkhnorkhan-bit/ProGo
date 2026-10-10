@@ -16,6 +16,98 @@ namespace ProGo
         private static readonly string[] Required = { "ProGo.exe", "VERSION",
             "scripts/Start-ProGo.ps1", "scripts/Restore-ProGoBackup.ps1",
             "scripts/Update-ProGo.Core.ps1" };
+        private const string HomeArchive = "home-vpn-private";
+        private static readonly string[] ProxyJournals = { "system-proxy-backup.json", "proxy-environment-backup.json" };
+        // Windows DPAPI envelope header. This recognises encrypted storage, but does
+        // not decrypt it or promise that another account/computer can import it.
+        private static readonly byte[] DpapiHeader = { 1, 0, 0, 0, 208, 140, 157, 223, 1, 21,
+            209, 17, 140, 122, 0, 192, 79, 194, 151, 235 };
+
+        public static void CopyPersonalArchives(string sourceDirectory, string destinationDirectory)
+        {
+            var source = Root(sourceDirectory); var destination = Root(destinationDirectory);
+            foreach (var name in ProxyJournals)
+            {
+                var path = Path.Combine(source, name); FileAttributes attributes;
+                if (!TryAttributes(path, out attributes)) continue;
+                RejectReparse(path);
+                if ((attributes & FileAttributes.Directory) != 0)
+                    throw new InvalidDataException("Вместо снимка прокси обнаружена папка: " + name + ".");
+                File.Copy(path, Path.Combine(destination, name), false);
+            }
+            var home = Path.Combine(source, HomeArchive); FileAttributes homeAttributes;
+            if (!TryAttributes(home, out homeAttributes)) return;
+            RejectReparse(home);
+            if ((homeAttributes & FileAttributes.Directory) == 0)
+                throw new InvalidDataException("Папка личных данных VPN недоступна.");
+            // Never recurse: live session/admin folders can hold plaintext SSH keys
+            // and recovery output. Only the known persistent DPAPI files are copied.
+            foreach (var entry in Directory.GetFileSystemEntries(home))
+            {
+                // Windows opens persistent names case-insensitively. Canonicalise
+                // the archive rather than silently omitting ACCESS.DAT after a move.
+                var name = Path.GetFileName(entry).ToLowerInvariant();
+                if (!IsHomeArchiveFile(name)) continue;
+                RejectReparse(entry);
+                if ((File.GetAttributes(entry) & FileAttributes.Directory) != 0)
+                    throw new InvalidDataException("Вместо защищённого файла VPN обнаружена папка: " + name + ".");
+                using (var input = new FileStream(entry, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    CheckProtectedEnvelope(input);
+                    var target = Path.Combine(destination, HomeArchive);
+                    Directory.CreateDirectory(target); RejectReparse(target);
+                    using (var output = new FileStream(Path.Combine(target, name), FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    { input.Position = 0; input.CopyTo(output); }
+                }
+            }
+        }
+
+        public static string[] ArchiveNames(string directory)
+        {
+            var names = new List<string>();
+            foreach (var path in Inventory(Root(directory)))
+                if (path.StartsWith(HomeArchive + "/", StringComparison.Ordinal) || Array.IndexOf(ProxyJournals, path) >= 0)
+                    names.Add(path);
+            return names.ToArray();
+        }
+
+        public static string[] CompositionLines(string directory)
+        {
+            var data = new List<string>(); var root = Root(directory);
+            foreach (var name in new[] { "settings.json", "vault.enc.json" })
+                if (File.Exists(Path.Combine(root, name))) data.Add(name);
+            return new[] { "composition_version=2",
+                "restore_program=" + String.Join(",", RestoreNames(root, "Program", false)),
+                "restore_data=" + String.Join(",", data.ToArray()),
+                "archived_only=" + String.Join(",", ArchiveNames(root)),
+                "home_vpn_protection=DPAPI-CurrentUser;not-a-portable-export;no-automatic-import",
+                "proxy_journals=archived-only;not-reapplied",
+                "home_vpn_excluded=session-and-admin-folders;temporary-and-unknown-files" };
+        }
+
+        private static bool TryAttributes(string path, out FileAttributes attributes)
+        {
+            try { attributes = File.GetAttributes(path); return true; }
+            catch (FileNotFoundException) { attributes = 0; return false; }
+            catch (DirectoryNotFoundException) { attributes = 0; return false; }
+        }
+
+        private static bool IsHomeArchiveFile(string name)
+        {
+            if (name == "access.dat" || name == "owner.dat" || name == "home-address.dat" || name == "setup-request.dat") return true;
+            if (!name.StartsWith("share-", StringComparison.Ordinal) || !name.EndsWith(".dat", StringComparison.Ordinal) || name.Length != 42) return false;
+            for (var i = 6; i < 38; i++)
+                if (!((name[i] >= '0' && name[i] <= '9') || (name[i] >= 'a' && name[i] <= 'f'))) return false;
+            return true;
+        }
+
+        private static void CheckProtectedEnvelope(Stream input)
+        {
+            foreach (var expected in DpapiHeader)
+                if (input.ReadByte() != expected) throw new InvalidDataException(
+                    "Файл личных данных VPN не имеет формата DPAPI. Открытые ключи и доступы не включены в копию.");
+            if (input.ReadByte() < 0) throw new InvalidDataException("Защищённый файл VPN неполный.");
+        }
 
         public static PreparedBackup Prepare(string directory)
         {
@@ -203,11 +295,20 @@ namespace ProGo
                 CheckPath(path);
                 if (Directory.Exists(entry))
                 {
-                    if (relative.Length == 0 && name != "scripts")
+                    if (relative.Length == 0 && name != "scripts" && name != HomeArchive)
                         throw new InvalidDataException("Вместо файла копии обнаружена папка: " + name + ".");
+                    if (relative == HomeArchive)
+                        throw new InvalidDataException("В копии не допускаются вложенные папки личных данных VPN.");
                     Walk(root, path, files);
                 }
-                else files.Add(path);
+                else
+                {
+                    if (relative.Length == 0 && name == HomeArchive)
+                        throw new InvalidDataException("Вместо папки личных данных VPN обнаружен файл.");
+                    if (relative == HomeArchive)
+                        using (var input = new FileStream(entry, FileMode.Open, FileAccess.Read, FileShare.Read)) CheckProtectedEnvelope(input);
+                    files.Add(path);
+                }
             }
         }
 
@@ -219,6 +320,9 @@ namespace ProGo
             foreach (var part in path.Split('/')) if (part.Length == 0 || part == "." || part == "..")
                 throw new InvalidDataException("Небезопасный путь в копии.");
             if (path.StartsWith("scripts/", StringComparison.Ordinal) || path == "scripts") return;
+            if (path == HomeArchive || (path.StartsWith(HomeArchive + "/", StringComparison.Ordinal) &&
+                IsHomeArchiveFile(path.Substring(HomeArchive.Length + 1)))) return;
+            if (Array.IndexOf(ProxyJournals, path) >= 0) return;
             foreach (var name in new[] { "ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json",
                 "progo.log", "update.log", "progo-update.log" }) if (path == name) return;
             throw new InvalidDataException("Неизвестный файл в копии: " + path + ".");

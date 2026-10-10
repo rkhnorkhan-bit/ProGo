@@ -67,7 +67,7 @@ namespace ProGo
                 // Preview may list data, but permission is checked separately before preparation.
                 contents.Lines = BackupIntegrity.RestoreNames(source, Scope, true);
                 prepare.Enabled = !busy && (Scope == "Program" || consent.Checked);
-                status.Text = "Ниже — точный состав. Отсутствующие в копии данные сохранятся. Журналы не заменяются.\nСначала подготовим и проверим отдельную копию; ProGo пока останется запущенным.";
+                status.Text = "Ниже — точный состав. Текущие VPN-доступы, снимки прокси и журналы сохранятся.\nАрхив VPN защищён DPAPI: это не перенос на другой ПК/пользователя; автоматического импорта нет.\nСначала проверим отдельную копию; ProGo пока останется запущенным.";
             }
             catch (Exception ex)
             {

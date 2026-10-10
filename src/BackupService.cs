@@ -18,6 +18,8 @@ namespace ProGo
         public string Result { get; set; }
         public string Kind { get; set; }
         public string Created { get; set; }
+        public string Contents { get; set; }
+        public string ArchiveContents { get; set; }
         public DateTime LastWriteTime { get; set; }
 
         public bool IsManual
@@ -135,6 +137,7 @@ namespace ProGo
             CopyFileIfExists("update.log", backupDir);
             CopyFileIfExists("progo-update.log", backupDir);
             CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"));
+            BackupIntegrity.CopyPersonalArchives(AppPaths.Root, backupDir);
 
             WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
             BackupIntegrity.Write(backupDir);
@@ -263,7 +266,9 @@ namespace ProGo
                 CreatedBy = ReadManifestValue(dir, "created_by"),
                 Result = ReadManifestValue(dir, "update_result"),
                 Kind = ReadManifestValue(dir, "backup_kind"),
-                Created = ReadManifestValue(dir, "created")
+                Created = ReadManifestValue(dir, "created"),
+                Contents = ReadManifestValue(dir, "contains"),
+                ArchiveContents = ReadManifestValue(dir, "archived_only")
             };
 
             if (String.IsNullOrEmpty(info.Version)) info.Version = InferVersionFromName(dir);
@@ -299,6 +304,7 @@ namespace ProGo
             manifest.AppendLine("update_result=" + SafeManifest(updateResult));
             manifest.AppendLine("backup_kind=" + SafeManifest(backupKind));
             manifest.AppendLine("contains=" + BackupIntegrity.Contents(backupDir));
+            foreach (var line in BackupIntegrity.CompositionLines(backupDir)) manifest.AppendLine(line);
             File.WriteAllText(System.IO.Path.Combine(backupDir, "manifest.txt"), manifest.ToString(), Encoding.UTF8);
         }
 
@@ -455,7 +461,7 @@ namespace ProGo
             foreach (var backup in backups) list.Items.Add(backup.DisplayName);
             details = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
                 AccessibleName = "Сведения о выбранной копии",
-                AccessibleDescription = "Только чтение: папка, версия, тип, статус, причина и время создания выбранной копии. Сведения меняются при выборе другой копии." };
+                AccessibleDescription = "Только чтение: папка, версия, тип, статус, причина, время и заявленный состав выбранной копии. Сведения меняются при выборе другой копии; проверка выполняется перед восстановлением." };
             root.Controls.Add(list, 0, 2); root.Controls.Add(details, 0, 3);
             var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
             var cancel = UiTheme.Button("Отмена", delegate { DialogResult = DialogResult.Cancel; }, false);
@@ -484,7 +490,10 @@ namespace ProGo
                 "Тип: " + backup.Kind + Environment.NewLine +
                 "Статус: " + backup.Result + Environment.NewLine +
                 "Причина: " + backup.Reason + Environment.NewLine +
-                "Создано: " + backup.Created;
+                "Создано: " + backup.Created + Environment.NewLine +
+                "Состав по manifest.txt: " + (String.IsNullOrEmpty(backup.Contents) ? "не указан" : backup.Contents) + Environment.NewLine +
+                "Архив без автоматического импорта по manifest.txt: " + (String.IsNullOrEmpty(backup.ArchiveContents) ? "нет перечисленных архивных файлов" : backup.ArchiveContents) + Environment.NewLine +
+                "VPN-файлы DPAPI не являются переносом доступа на другой ПК/пользователя. Перед восстановлением проверим фактический состав.";
         }
 
         private void Accept()

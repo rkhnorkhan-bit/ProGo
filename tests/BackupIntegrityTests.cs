@@ -96,6 +96,49 @@ internal static class BackupIntegrityTests
             FileAt("unexpected.json", "foreign data");
             Reject(() => BackupIntegrity.Write(root), "writer refuses unexpected payload instead of certifying it");
             Fixture();
+            var archiveSource = Path.Combine(root, "..", "ProGo-personal-archive-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(archiveSource, "home-vpn-private", "session-fixture"));
+            try
+            {
+                var protectedBytes = new byte[] { 1, 0, 0, 0, 208, 140, 157, 223, 1, 21, 209, 17, 140, 122, 0, 192, 79, 194, 151, 235, 99 };
+                var sourceKey = Path.Combine(archiveSource, "home-vpn-private", "ACCESS.DAT");
+                File.WriteAllBytes(sourceKey, protectedBytes);
+                File.WriteAllBytes(Path.Combine(archiveSource, "home-vpn-private", "SHARE-0123456789ABCDEF0123456789ABCDEF.DAT"), protectedBytes);
+                File.WriteAllText(Path.Combine(archiveSource, "home-vpn-private", "session-fixture", "access"), "plaintext session key; must not be copied");
+                File.WriteAllText(Path.Combine(archiveSource, "home-vpn-private", "access.dat.new"), "temporary key; must not be copied");
+                File.WriteAllText(Path.Combine(archiveSource, "home-vpn-private", "unknown.dat"), "unknown plaintext; must not be copied");
+                File.WriteAllText(Path.Combine(archiveSource, "system-proxy-backup.json"), "historical ownership fixture");
+                BackupIntegrity.CopyPersonalArchives(archiveSource, root);
+                BackupIntegrity.Write(root); BackupIntegrity.Validate(root);
+                Check(Convert.ToBase64String(File.ReadAllBytes(Path.Combine(root, "home-vpn-private", "access.dat"))) == Convert.ToBase64String(protectedBytes), "personal archive canonicalises Windows filenames and preserves recognised DPAPI envelope bytes without decrypting");
+                Check(Directory.GetFileSystemEntries(Path.Combine(root, "home-vpn-private")).Length == 2, "archive excludes live sessions, unknown files and temporary plaintext");
+                var archives = BackupIntegrity.ArchiveNames(root);
+                Check(archives.Length == 3 && Array.IndexOf(archives, "system-proxy-backup.json") >= 0, "actual archived-only composition includes known encrypted access and proxy ownership evidence");
+                Check(String.Join("\n", BackupIntegrity.CompositionLines(root)).Contains("not-a-portable-export"), "composition makes DPAPI portability limit explicit");
+                using (var copy = BackupIntegrity.Prepare(root))
+                {
+                    Check(BackupIntegrity.ArchiveNames(copy.Path).Length == 3, "preparation retains verified archived evidence independently");
+                    foreach (var scope in new[] { "Program", "Data", "All" })
+                        Check(Array.IndexOf(BackupIntegrity.RestoreNames(copy.Path, scope, true), "home-vpn-private") < 0 &&
+                            Array.IndexOf(BackupIntegrity.RestoreNames(copy.Path, scope, true), "system-proxy-backup.json") < 0,
+                            "restore never activates historical machine/user ownership or VPN access: " + scope);
+                }
+                File.AppendAllText(Path.Combine(root, "system-proxy-backup.json"), "changed");
+                Reject(() => BackupIntegrity.Validate(root), "damaged archived ownership evidence is not a valid backup");
+                Fixture();
+                using (var locked = File.Open(sourceKey, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                    Reject(() => BackupIntegrity.CopyPersonalArchives(archiveSource, root), "locked encrypted source is not silently omitted from claimed composition");
+                Fixture();
+                File.WriteAllText(sourceKey, "-----BEGIN OPENSSH PRIVATE KEY-----");
+                Reject(() => BackupIntegrity.CopyPersonalArchives(archiveSource, root), "known VPN filename cannot cause a plaintext key to enter the backup");
+                Check(!File.Exists(Path.Combine(root, "home-vpn-private", "access.dat")), "rejected plaintext input is never written into an archive");
+                Fixture(); FileAt("home-vpn-private/access.dat", "plaintext key");
+                Reject(() => BackupIntegrity.Write(root), "integrity writer refuses plaintext VPN even if placed directly in a backup");
+                Fixture(); FileAt("home-vpn-private/admin-fixture/result.txt", "plaintext recovery token");
+                Reject(() => BackupIntegrity.Write(root), "integrity writer refuses temporary VPN recovery trees");
+            }
+            finally { Directory.Delete(archiveSource, true); }
+            Fixture();
             var originalIndex = File.ReadAllText(Path.Combine(root, BackupIntegrity.IndexName));
             string preparedPath;
             using (var copy = BackupIntegrity.Prepare(root))

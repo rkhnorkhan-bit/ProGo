@@ -363,6 +363,7 @@ function Backup-InstalledState {
     }
 
     Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false
+    [ProGo.BackupIntegrity]::CopyPersonalArchives($InstallDir, $backupDir)
 
     $manifest = @(
         "product=ProGo",
@@ -376,6 +377,7 @@ function Backup-InstalledState {
         "contains=$([ProGo.BackupIntegrity]::Contents($backupDir))",
         "update_mode=$($State.UpdateMode)"
     )
+    $manifest += [ProGo.BackupIntegrity]::CompositionLines($backupDir)
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
     [ProGo.BackupIntegrity]::Write($backupDir)
@@ -474,7 +476,9 @@ function Restore-BackupToMain($SourceBackupDir) {
 
     Write-UpdateLog "Rolling back main application from backup: $SourceBackupDir"
 
-    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log")) {
+    # Updating only replaces program files. A failure must not rewind current
+    # settings, vault, VPN access, ownership journals or logs to a historical copy.
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
         try { Copy-FileIfExists $SourceBackupDir $name $InstallDir $false } catch { Write-UpdateLog "Rollback warning for ${name}: $($_.Exception.Message)" }
     }
 
