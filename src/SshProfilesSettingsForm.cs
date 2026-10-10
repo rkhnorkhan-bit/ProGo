@@ -1,11 +1,22 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Threading.Tasks;
+using CancellationToken = System.Threading.CancellationToken;
+using CancellationTokenSource = System.Threading.CancellationTokenSource;
 
 namespace ProGo
 {
     internal enum SettingsSection { Automation, Connections, Windows }
+    internal sealed class SettingsApplyRequest
+    {
+        internal AppSettings Proposed;
+        internal SettingsRevisionSnapshot Expected;
+        internal bool PickFree, AutoLaunch;
+        internal ApplicationShortcuts Startup;
+        internal ApplicationShortcuts.StartupSnapshot StartupSnapshot;
+    }
     internal sealed class SshProfilesSettingsForm : ProGoForm
     {
         private readonly SettingsService service;
@@ -29,7 +40,14 @@ namespace ProGo
         public event Action<AppCommand> ManualActionRequested;
         internal Func<AppCommandState> CommandState;
         private readonly Dictionary<AppCommand, Button> manualCommands = new Dictionary<AppCommand, Button>();
+        // Synchronous injection retained for isolated legacy harnesses only.
         public Func<AppSettings, bool, SettingsSaveError> SaveRequested;
+        internal Func<SettingsApplyRequest, CancellationToken, Task<SettingsSaveError>> SaveRequestedAsync;
+        internal Task<SettingsSaveError> SaveWork { get; private set; }
+        private volatile bool savePending;
+        internal bool IsSavePending { get { return savePending; } }
+        private CancellationTokenSource saveCancellation;
+        private Button saveButton, cancelButton;
         private readonly CheckBox autoHttpPort = new CheckBox();
         private readonly NumericUpDown httpPort = new NumericUpDown();
         private readonly TextBox proxyAddress = new TextBox { ReadOnly = true };
@@ -169,8 +187,8 @@ namespace ProGo
             AddSettingsRow(appPorts, 5, portNotice);
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 FlowDirection = FlowDirection.RightToLeft, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 12, 0, 0) };
-            var save = UiTheme.Button("Сохранить", Save, true);
-            var cancel = UiTheme.Button("Отменить изменения", null, false); cancel.DialogResult = DialogResult.Cancel;
+            var save = UiTheme.Button("Сохранить", Save, true); saveButton = save;
+            var cancel = UiTheme.Button("Отменить изменения", delegate { if (savePending) CancelSave(); }, false); cancel.DialogResult = DialogResult.Cancel; cancelButton = cancel;
             buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 4);
             saveError.Name = "settingsSaveError"; saveError.Visible = false;
             saveError.MaximumSize = new Size(830, 0);
@@ -183,6 +201,9 @@ namespace ProGo
             root.Controls.Add(saveError, 0, 3);
             UiTheme.ConfigureKeyboardOrder(root);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
+            FormClosing += delegate(object sender, FormClosingEventArgs e) {
+                if (savePending && e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; DialogResult = DialogResult.None; CancelSave(); }
+            };
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
             currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
             RefreshCurrentValues();
@@ -317,6 +338,12 @@ namespace ProGo
             if (IsDisposed) return;
             var state = CommandState == null ? new AppCommandState(new AppCommand[0], false, false) : CommandState();
             foreach (var item in manualCommands) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
+            if (AcceptButton != null) {
+                var save = (Button)AcceptButton;
+                save.Enabled = !savePending && !state.Integrating && !state.Stopping;
+                save.AccessibleDescription = state.Integrating ? "Сейчас ProGo изменяет настройки прокси. Сохранение станет доступным после завершения операции." :
+                    "Проверяет и сохраняет изменённые настройки программы.";
+            }
         }
         internal void RefreshCurrentValues()
         {
@@ -342,7 +369,12 @@ namespace ProGo
         }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) currentValuesTimer.Dispose();
+            if (disposing) {
+                var cancellation = saveCancellation;
+                if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+                if (SaveWork != null && SaveWork.IsCompleted) savePending = false;
+                currentValuesTimer.Dispose();
+            }
             base.Dispose(disposing);
         }
         private static void AddLabeled(TableLayoutPanel panel, int row, string label, Control control)
@@ -518,26 +550,83 @@ namespace ProGo
             return false;
         }
 
+        private AppSettings ReadProposed(AppSettings current)
+        {
+            var proposed = current.Clone(); var selected = SelectedProfile();
+            proposed.SocksHost = host.Text.Trim(); proposed.SocksPort = (int)port.Value;
+            proposed.HttpProxyPort = (int)httpPort.Value == initialHttpPort && !pickFreePort ? current.HttpProxyPort : (int)httpPort.Value;
+            proposed.AutoHttpProxyPort = autoHttpPort.Checked;
+            proposed.SshProfile = selected == null ? String.Empty : selected.Target; proposed.SshProfiles = CloneProfiles();
+            proposed.AutoSwitchSshProfile = autoSwitchProfile.Checked; proposed.AutoStartSocks = autoStart.Checked;
+            proposed.AutoRestartSocks = autoRestart.Checked; proposed.AutoSystemProxy = autoWindows.Checked;
+            proposed.AutoCliProxy = autoCli.Checked; proposed.ClipboardClearSeconds = (int)clearSeconds.Value;
+            proposed.TestEndpoint = endpoint.Text.Trim(); return proposed;
+        }
         private void Save(object sender, EventArgs e)
         {
-            var selected = SelectedProfile();
-            var selectedTarget = selected == null ? String.Empty : selected.Target;
-            var proposed = new AppSettings
-            {
-                SocksHost = host.Text.Trim(),
-                SocksPort = (int)port.Value,
-                HttpProxyPort = (int)httpPort.Value == initialHttpPort && !pickFreePort ? service.Current.HttpProxyPort : (int)httpPort.Value,
-                AutoHttpProxyPort = autoHttpPort.Checked,
-                SshProfile = selectedTarget,
-                SshProfiles = CloneProfiles(),
-                AutoSwitchSshProfile = autoSwitchProfile.Checked,
-                AutoStartSocks = autoStart.Checked,
-                AutoRestartSocks = autoRestart.Checked,
-                AutoSystemProxy = autoWindows.Checked,
-                AutoCliProxy = autoCli.Checked,
-                ClipboardClearSeconds = (int)clearSeconds.Value,
-                TestEndpoint = endpoint.Text.Trim()
-            };
+            if (savePending) return;
+            if (SaveRequestedAsync == null && SaveRequested != null) { SaveLegacy(sender, e); return; }
+            if (CommandState != null && (CommandState().Integrating || CommandState().Stopping)) {
+                ShowSaveError(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси. Дождитесь завершения операции и повторите сохранение.")); return;
+            }
+            var expected = service.Capture(); var proposed = ReadProposed(expected.Settings);
+            var error = SettingsValidation.Check(proposed); if (error != null) { ShowSaveError(error); return; }
+            var request = new SettingsApplyRequest { Proposed = proposed, Expected = expected, PickFree = pickFreePort,
+                Startup = startupShortcuts, StartupSnapshot = startupSnapshot, AutoLaunch = autoLaunch.Checked };
+            var cancellation = new CancellationTokenSource(); saveCancellation = cancellation; savePending = true;
+            saveButton.Enabled = false; settingsTabs.Enabled = false;
+            cancelButton.DialogResult = DialogResult.None; cancelButton.Text = "Отменить применение";
+            saveError.Text = "Применение настроек… Можно запросить отмену; ProGo дождётся текущей операции Windows."; saveError.Visible = true;
+            try { SaveWork = SaveRequestedAsync == null ? DefaultSaveAsync(request, cancellation.Token) : SaveRequestedAsync(request, cancellation.Token); }
+            catch (Exception ex) { SafeLog.Error("Settings application could not start.", ex); SaveWork = Task.FromResult(new SettingsSaveError(SettingsField.General, "Не удалось начать применение настроек. Проверьте журнал ProGo.")); }
+            FinishSaveAsync(SaveWork, cancellation);
+        }
+        private void CancelSave()
+        {
+            var cancellation = saveCancellation;
+            if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+            if (!IsDisposed) { saveError.Text = "Отмена запрошена. Ожидаем завершения операции Windows; уже сохранённые настройки будут применены."; saveError.Visible = true; }
+        }
+        private async void FinishSaveAsync(Task<SettingsSaveError> work, CancellationTokenSource cancellation)
+        {
+            SettingsSaveError error;
+            try { error = await work.ConfigureAwait(false); }
+            catch (Exception ex) { SafeLog.Error("Settings application failed.", ex); error = new SettingsSaveError(SettingsField.General, "Не удалось завершить применение настроек. Проверьте текущее состояние и журнал ProGo."); }
+            cancellation.Dispose();
+            if (IsDisposed || !IsHandleCreated) { savePending = false; return; }
+            try { BeginInvoke(new Action(delegate {
+                if (IsDisposed) return;
+                savePending = false;
+                saveCancellation = null; saveButton.Enabled = true; settingsTabs.Enabled = true;
+                cancelButton.DialogResult = DialogResult.Cancel; cancelButton.Text = "Отменить изменения";
+                if (error != null) { ShowSaveError(error); return; }
+                DialogResult = DialogResult.OK; Close();
+            })); } catch (InvalidOperationException) { }
+        }
+        private Task<SettingsSaveError> DefaultSaveAsync(SettingsApplyRequest request, CancellationToken token)
+        {
+            return Task.Run(delegate {
+                ApplicationShortcuts.StartupChange startup = null; SettingsSaveError error = null; bool accepted = false;
+                try {
+                    token.ThrowIfCancellationRequested();
+                    if (request.Startup != null && request.StartupSnapshot != null && request.AutoLaunch != request.StartupSnapshot.Registered)
+                        startup = request.Startup.ChangeStartup(request.StartupSnapshot, request.AutoLaunch);
+                    using (var bridge = new CliProxyBridgeService(service)) {
+                        var prepared = bridge.PrepareConfiguration(request.Proposed, request.PickFree, false, request.Expected, true, token, out error);
+                        if (prepared != null) { bridge.PublishPrepared(prepared); accepted = true; }
+                    }
+                } catch (OperationCanceledException) { error = new SettingsSaveError(SettingsField.General, "Применение настроек отменено."); }
+                catch (Exception ex) { SafeLog.Error("Standalone settings application failed.", ex); error = new SettingsSaveError(SettingsField.Startup, "Не удалось применить настройки автозапуска. Проверьте доступ и снова откройте настройки."); }
+                finally { if (!accepted && startup != null && !startup.TryRollback()) error = new SettingsSaveError(SettingsField.Startup, "Не удалось полностью вернуть автозапуск. Позднейшие изменения сохранены; проверьте настройки Windows."); }
+                return error;
+            });
+        }
+        private void SaveLegacy(object sender, EventArgs e)
+        {
+            if (CommandState != null && (CommandState().Integrating || CommandState().Stopping)) {
+                ShowSaveError(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси. Дождитесь завершения операции и повторите сохранение.")); return;
+            }
+            var proposed = ReadProposed(service.Capture().Settings);
             var error = SettingsValidation.Check(proposed);
             ApplicationShortcuts.StartupChange startupChange = null;
             if (error == null && startupSnapshot != null && autoLaunch.Checked != startupSnapshot.Registered) {

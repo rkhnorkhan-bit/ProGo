@@ -13,10 +13,14 @@ namespace ProGo
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
             AppPaths.EnsureDirectories();
             var names = new[] { "ProGo.exe", "VERSION", "settings.json", "vault.enc.json", "progo.log",
+                "home-vpn-private/access.dat", "home-vpn-private/session-f22-fixture/access", "home-vpn-private/unknown.dat",
+                "system-proxy-backup.json", "proxy-environment-backup.json",
                 "scripts/Start-ProGo.ps1", "scripts/Restore-ProGoBackup.ps1", "scripts/Update-ProGo.Core.ps1",
                 "scripts/Maintenance-ProGo.ps1", "scripts/MaintenanceOperation.cs" };
             var originals = names.ToDictionary(n => n, n => File.Exists(Path.Combine(AppPaths.Root, n)) ? File.ReadAllBytes(Path.Combine(AppPaths.Root, n)) : null);
             var hadScripts = Directory.Exists(Path.Combine(AppPaths.Root, "scripts"));
+            var home = Path.Combine(AppPaths.Root, "home-vpn-private");
+            var hadHome = Directory.Exists(home); var hadSession = Directory.Exists(Path.Combine(home, "session-f22-fixture"));
             string backup = null;
             try
             {
@@ -26,10 +30,17 @@ namespace ProGo
                     Directory.CreateDirectory(Path.GetDirectoryName(file));
                     File.WriteAllText(file, name == "VERSION" ? "0.0.1" : "opaque synthetic fixture; never execute");
                 }
+                var protectedBytes = System.Security.Cryptography.ProtectedData.Protect(System.Text.Encoding.UTF8.GetBytes("synthetic VPN access; never log"), null, System.Security.Cryptography.DataProtectionScope.CurrentUser);
+                File.WriteAllBytes(Path.Combine(home, "access.dat"), protectedBytes);
                 backup = BackupService.CreateBackup("manual");
                 string error;
                 Check(BackupService.TryValidateRestore(backup, out error), "actual app backup writer produces a complete shared digest index");
                 Check(File.ReadAllText(Path.Combine(backup, "manifest.txt")).Contains("contains=" + BackupIntegrity.Contents(backup)), "app manifest describes actual copied roots");
+                Check(File.ReadAllBytes(Path.Combine(backup, "home-vpn-private", "access.dat")).SequenceEqual(protectedBytes) &&
+                    !Directory.Exists(Path.Combine(backup, "home-vpn-private", "session-f22-fixture")) && !File.Exists(Path.Combine(backup, "home-vpn-private", "unknown.dat")),
+                    "actual app writer archives encrypted VPN bytes and excludes plaintext session and unknown files");
+                Check(BackupIntegrity.ArchiveNames(backup).Contains("system-proxy-backup.json") && BackupIntegrity.ArchiveNames(backup).Contains("proxy-environment-backup.json") &&
+                    File.ReadAllText(Path.Combine(backup, "manifest.txt")).Contains("not-a-portable-export"), "app copy contains archived ownership evidence with explicit portability limit");
                 var installedVault = File.ReadAllBytes(AppPaths.VaultPath);
                 File.AppendAllText(Path.Combine(backup, "vault.enc.json"), "damage");
                 Check(!BackupService.TryValidateRestore(backup, out error) && error.Contains("vault.enc.json"), "application preflight rejects damaged opaque vault with a specific message");
@@ -60,6 +71,8 @@ namespace ProGo
                     else if (File.Exists(file)) File.Delete(file);
                 }
                 if (!hadScripts && Directory.Exists(Path.Combine(AppPaths.Root, "scripts"))) Directory.Delete(Path.Combine(AppPaths.Root, "scripts"));
+                if (!hadSession && Directory.Exists(Path.Combine(home, "session-f22-fixture"))) Directory.Delete(Path.Combine(home, "session-f22-fixture"));
+                if (!hadHome && Directory.Exists(home) && Directory.GetFileSystemEntries(home).Length == 0) Directory.Delete(home);
             }
         }
 
@@ -72,6 +85,10 @@ namespace ProGo
             File.WriteAllText(Path.Combine(root, "manifest.txt"), "product=ProGo\nversion=0.0.1\n");
             File.WriteAllText(Path.Combine(root, "settings.json"), "{}");
             File.WriteAllText(Path.Combine(root, "vault.enc.json"), "opaque encrypted fixture");
+            Directory.CreateDirectory(Path.Combine(root, "home-vpn-private"));
+            File.WriteAllBytes(Path.Combine(root, "home-vpn-private", "access.dat"), System.Security.Cryptography.ProtectedData.Protect(
+                System.Text.Encoding.UTF8.GetBytes("synthetic archived VPN access; never log"), null, System.Security.Cryptography.DataProtectionScope.CurrentUser));
+            File.WriteAllText(Path.Combine(root, "system-proxy-backup.json"), "historical ownership fixture");
             foreach (var name in new[] { "Start-ProGo.ps1", "Restore-ProGoBackup.ps1", "Update-ProGo.Core.ps1" })
                 File.WriteAllText(Path.Combine(root, "scripts", name), "fixture; never execute");
             // Long enough to exercise UI pumping during real local digest/copy work.
@@ -79,7 +96,7 @@ namespace ProGo
             BackupIntegrity.Write(root);
             using (var form = new RestoreOptionsForm(root))
             {
-                form.Show(); Application.DoEvents();
+                form.Show(); Application.DoEvents(); PumpUntil(() => form.PreviewReady);
                 var consent = Descendants(form).OfType<CheckBox>().Single();
                 var data = Descendants(form).OfType<RadioButton>().Single(r => r.Name == "RestoreData");
                 var all = Descendants(form).OfType<RadioButton>().Single(r => r.Name == "RestoreAll");
@@ -89,6 +106,10 @@ namespace ProGo
                 Check(form.Scope == "Program" && !form.DataConfirmed && !consent.Enabled && prepare.Enabled, "restore defaults to program without consent to replace user data");
                 Check(form.AcceptButton == null && ((Button)form.CancelButton).Focused, "restore options do not grant destructive Enter confirmation");
                 Check(!contents.Text.Contains("vault.enc.json") && !contents.Text.Contains("progo.log"), "program preview excludes user payloads and historic logs");
+                var status = Descendants(form).OfType<Label>().Single(l => l.AccessibleName == "Состояние подготовки копии");
+                Check(status.Text.Contains("DPAPI") && status.Text.Contains("автоматического импорта нет") &&
+                    !contents.Text.Contains("home-vpn-private") && !contents.Text.Contains("system-proxy-backup.json"),
+                    "restore UI explains nonportable archive and excludes historical ownership from actual restore preview");
                 Shot(form, "restore-scope-program");
                 data.Checked = true;
                 Check(!prepare.Enabled && consent.Enabled && !consent.Checked && contents.Text.Contains("vault.enc.json") && !contents.Text.Contains("ProGo.exe"), "data restore exposes exact payloads and requires separate consent");
@@ -104,7 +125,7 @@ namespace ProGo
                 ((Button)form.CancelButton).PerformClick();
                 Check(form.DialogResult == DialogResult.Cancel && File.ReadAllText(Path.Combine(root, "settings.json")) == "{}", "scope cancellation leaves original copy untouched");
             }
-            using (var form = new RestoreOptionsForm(root))
+            using (var form = new RestoreOptionsForm(root, RestorePreview.Read(root, System.Threading.CancellationToken.None), null))
             using (var pulse = new System.Windows.Forms.Timer { Interval = 10 })
             {
                 int pulses = 0; pulse.Tick += delegate { pulses++; };
@@ -123,7 +144,7 @@ namespace ProGo
                     Check(rejected, "launcher refuses missing data consent before starting a helper");
                 }
             }
-            using (var form = new RestoreOptionsForm(root))
+            using (var form = new RestoreOptionsForm(root, RestorePreview.Read(root, System.Threading.CancellationToken.None), null))
             {
                 form.Shown += delegate {
                     Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию").PerformClick();
@@ -134,8 +155,11 @@ namespace ProGo
             using (var form = new RestoreOptionsForm(Path.Combine(root, "missing-copy")))
                 Check(!Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию").Enabled, "missing source disables preparation instead of throwing from the chooser");
             File.Delete(Path.Combine(root, "settings.json")); File.Delete(Path.Combine(root, "vault.enc.json"));
-            using (var form = new RestoreOptionsForm(root))
+            using (var form = new RestoreOptionsForm(root)) {
+                form.Show(); PumpUntil(() => form.PreviewReady);
                 Check(Descendants(form).OfType<RadioButton>().Where(r => r.Name != "RestoreProgram").All(r => !r.Enabled), "copy without user payloads offers program scope only");
+                form.Close();
+            }
         }
 
         private static void BackupCleanupPreview()

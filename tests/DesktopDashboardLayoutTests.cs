@@ -53,7 +53,7 @@ namespace ProGo
                 var order = new Control[] {
                     navigation["home"], navigation["iphone"], navigation["connections"], navigation["vault"], navigation["diagnostics"], navigation["settings"],
                     button(AppCommand.StopAll), connect, button(AppCommand.StopDesktop), button(AppCommand.CheckRoute),
-                    Descendants(form).OfType<LinkLabel>().Single(), windows, cli,
+                    Descendants(form).OfType<LinkLabel>().Single(l => l.Text == "Настройки"), windows, cli,
                     Descendants(form).OfType<Button>().Single(b => b.Text == "Открыть мастер"),
                     button(AppCommand.Update), button(AppCommand.OpenCodex), button(AppCommand.Help)
                 };

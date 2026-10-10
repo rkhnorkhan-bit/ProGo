@@ -12,6 +12,10 @@ namespace ProGo
     {
         private readonly Func<AppSettings> readSettings;
         private readonly Action<AppSettings> saveSettings;
+        private readonly Func<SettingsRevisionSnapshot> captureSettings;
+        private readonly Func<SettingsRevisionSnapshot, string, bool> trySelectProfile;
+        private readonly Action<bool> setAutoRestart;
+        private SettingsRevisionSnapshot ownedSettingsSnapshot;
         private readonly string sshExecutable;
         private readonly Func<DateTime> utcNow;
         private readonly string sshOptions;
@@ -50,14 +54,18 @@ namespace ProGo
         private string selectedConnectionAtStart;
 
         public ProxyService(SettingsService settings)
-            : this(delegate { return settings.Current; }, settings.Save, OpenSshClient.Executable, delegate { return DateTime.UtcNow; }, true)
+            : this(delegate { return settings.Current; }, settings.Save, OpenSshClient.Executable, delegate { return DateTime.UtcNow; }, true,
+                "", 20000, settings.Capture, settings.TrySelectWorkingProfile, settings.SetAutoRestart)
         {
         }
 
         // The test harness uses a local child process and a clock, never real SSH credentials.
         internal ProxyService(Func<AppSettings> read, Action<AppSettings> save, string executable,
-            Func<DateTime> clock, bool startTimer, string extraOptions = "", int startupTimeoutMs = 20000)
+            Func<DateTime> clock, bool startTimer, string extraOptions = "", int startupTimeoutMs = 20000,
+            Func<SettingsRevisionSnapshot> captureSettings = null, Func<SettingsRevisionSnapshot, string, bool> trySelectProfile = null,
+            Action<bool> setAutoRestart = null)
         {
+            this.captureSettings = captureSettings; this.trySelectProfile = trySelectProfile; this.setAutoRestart = setAutoRestart;
             readSettings = read; saveSettings = save; sshExecutable = executable; utcNow = clock;
             sshOptions = extraOptions;
             this.startupTimeoutMs = startupTimeoutMs;
@@ -116,9 +124,8 @@ namespace ProGo
         {
             lock (gate)
             {
-                var current = readSettings();
-                current.AutoRestartSocks = enabled;
-                saveSettings(current);
+                if (setAutoRestart != null) setAutoRestart(enabled);
+                else { var current = readSettings().Clone(); current.AutoRestartSocks = enabled; saveSettings(current); }
                 SafeLog.Info("SOCKS automatic recovery " + (enabled ? "enabled." : "disabled."));
             }
         }
@@ -151,11 +158,12 @@ namespace ProGo
                     using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(source.Token)) {
                         deadline.CancelAfter(startupTimeoutMs);
                         try {
-                            var current = readSettings().Clone();
+                            var snapshot = CaptureConnectionSettings();
+                            var current = snapshot.Settings;
                             if (BuildProfileTargets(current).Count == 0 && !IsListening()) {
                                 startupError = "Сервер не выбран. Откройте «Подключения» и добавьте сервер."; return false;
                             }
-                            StartTunnelCore(false, deadline.Token);
+                            StartTunnelCore(false, deadline.Token, snapshot);
                             while (true) {
                                 deadline.Token.ThrowIfCancellationRequested();
                                 var changed = readSettings();
@@ -215,13 +223,17 @@ namespace ProGo
             return await StartTunnelAsync(token, epoch).ConfigureAwait(false);
         }
 
-        private void StartTunnelCore(bool showErrors, CancellationToken token)
+        private SettingsRevisionSnapshot CaptureConnectionSettings()
+        { return captureSettings == null ? new SettingsRevisionSnapshot(readSettings().Clone(), -1) : captureSettings(); }
+
+        private void StartTunnelCore(bool showErrors, CancellationToken token, SettingsRevisionSnapshot snapshot = null)
         {
             lock (gate)
             {
                 token.ThrowIfCancellationRequested();
                 if (disposed) return;
-                var current = readSettings();
+                snapshot = snapshot ?? CaptureConnectionSettings();
+                var current = snapshot.Settings;
                 recoveryPause = null; sshError = null;
                 var targets = BuildProfileTargets(current);
                 if (targets.Count == 0)
@@ -245,7 +257,7 @@ namespace ProGo
                 {
                     token.ThrowIfCancellationRequested();
                     if (!wanted || disposed) return;
-                    if (StartSingleTunnel(target, false))
+                    if (StartSingleTunnel(target, false, snapshot))
                     {
                         if (!current.AutoSwitchSshProfile) return;
                         for (var i = 0; i < 10 && wanted && !disposed; i++)
@@ -255,7 +267,7 @@ namespace ProGo
                             if (IsOwnedProcessAlive() && IsListening())
                             {
                                 token.ThrowIfCancellationRequested();
-                                SelectWorkingProfile(current, target);
+                                SelectWorkingProfile(target);
                                 return;
                             }
                             if (!IsOwnedProcessAlive()) break;
@@ -333,7 +345,7 @@ namespace ProGo
                             var current = readSettings();
                             if (current.AutoSwitchSshProfile && current.SshProfile == selectedAtStart && SshConnection.Signature(current) == selectedConnectionAtStart &&
                                 current.SocksHost == ownedHost && current.SocksPort == ownedPort)
-                                SelectWorkingProfile(current, ownedTarget);
+                                SelectWorkingProfile(ownedTarget);
                             SafeLog.Info("SOCKS listener is ready.");
                         }
                         // A brief successful connection must not reset a crash loop's backoff.
@@ -360,12 +372,13 @@ namespace ProGo
                 }
                 portOccupied = false;
                 if (!wanted || disposed || !readSettings().AutoRestartSocks) return;
-                var settings = readSettings();
+                var snapshot = CaptureConnectionSettings();
+                var settings = snapshot.Settings;
                 var targets = BuildProfileTargets(settings);
                 if (targets.Count == 0) { wanted = false; retryAt = null; return; }
                 var index = settings.AutoSwitchSshProfile ? Math.Max(0, failures - 1) % targets.Count : 0;
                 retryAt = null;
-                if (StartSingleTunnel(targets[index], true)) automaticRestarts++;
+                if (StartSingleTunnel(targets[index], true, snapshot)) automaticRestarts++;
                 else ScheduleRecovery();
             }
             catch (Exception ex)
@@ -393,12 +406,12 @@ namespace ProGo
                 SafeLog.Info("SOCKS interrupted; next recovery attempt in " + seconds + " seconds.");
         }
 
-        private bool StartSingleTunnel(string target, bool automatic)
+        private bool StartSingleTunnel(string target, bool automatic, SettingsRevisionSnapshot snapshot)
         {
             if (!wanted || disposed || IsOwnedProcessAlive()) return false;
             try
             {
-                var current = readSettings();
+                var current = snapshot.Settings;
                 var endpoint = current.SocksHost + ":" + current.SocksPort;
                 var args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=yes {1}",
                     SshConnection.Quote(endpoint), SshConnection.CommandArguments(SshConnection.Resolve(current, target)));
@@ -420,6 +433,7 @@ namespace ProGo
                 startedAt = utcNow(); healthySince = null; missingListener = 0;
                 ownedHost = current.SocksHost; ownedPort = current.SocksPort; ownedTarget = target;
                 selectedAtStart = current.SshProfile; selectedConnectionAtStart = SshConnection.Signature(current);
+                ownedSettingsSnapshot = snapshot;
                 SafeLog.Info(automatic ? "SOCKS automatic restart requested." : "SOCKS start requested.");
                 return true;
             }
@@ -452,14 +466,26 @@ namespace ProGo
             }
         }
 
-        private void SelectWorkingProfile(AppSettings current, string target)
+        private bool SelectWorkingProfile(string target)
         {
-            if (!String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase))
+            var expected = ownedSettingsSnapshot;
+            if (expected == null) return false;
+            bool changed;
+            if (trySelectProfile != null) changed = trySelectProfile(expected, target);
+            else
             {
-                current.SshProfile = target;
-                saveSettings(current);
-                SafeLog.Info("SSH profile auto-switched after successful listener startup.");
+                // Compatibility for independent options/test delegates. Production
+                // uses the atomic revision check supplied by SettingsService.
+                var current = readSettings();
+                if (!current.AutoSwitchSshProfile || current.SshProfile != expected.Settings.SshProfile ||
+                    current.SocksHost != expected.Settings.SocksHost || current.SocksPort != expected.Settings.SocksPort ||
+                    SshConnection.Signature(current) != SshConnection.Signature(expected.Settings) ||
+                    String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase)) return false;
+                var candidate = current.Clone(); candidate.SshProfile = target;
+                saveSettings(candidate); changed = true;
             }
+            if (changed) SafeLog.Info("SSH profile auto-switched after successful listener startup.");
+            return changed;
         }
 
         private static List<string> BuildProfileTargets(AppSettings settings)

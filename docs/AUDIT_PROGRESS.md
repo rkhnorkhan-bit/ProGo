@@ -1891,3 +1891,62 @@ PAC/bypass values, failed-journal content, actual listener retention, retry and
 an intervening external edit. Full shutdown/uninstall acceptance passed in
 cumulative workflow 38075927979 (47 checks). Real owner-machine and external
 software acceptance remains separate; F31 is still OPEN.
+
+## F31i — read-only installed-version and Rescue observation helper
+
+Prepared a separate owner-run bounded measurement for the actual selected PID/EXE,
+resource version/build identity, CPU/RAM/process I/O, visible-window Windows hung
+flag, SSH child process counts without arguments, OpenSSH path/resource version,
+read-only SCM agent state/start mode and explicitly supplied local TCP listener
+ports. No automatic run, network/VPS/authentication attempt, key/log/settings read,
+service/proxy mutation or implicit report file is added.
+
+The native harness and actual packaged PowerShell helper are included in the full
+Windows test pipeline. At this preparation stage native execution and real Rescue
+metrics are **NOT_CHECKED**; source/public-document checks pass locally. This stage
+alone does not close F31 or certify UI latency, physical disk load, SOCKS protocol,
+external HTTP/HTTPS or authentication. Owner instructions and evidence limits are
+in [RESCUE_MEASUREMENT.md](RESCUE_MEASUREMENT.md).
+
+## F31j — serialize integration changes off the UI
+
+Prepared worker-only Windows/CLI enable and restore transactions behind one async
+gate shared by manual off/Stop, automation and prepared shutdown. Captured owner
+state, fresh native ownership checks, consumer/listener leases and explicit owner
+dispatch preserve ordering and listener availability. Pending settings Save refuses
+conflicting writes without waiting on the UI. CLI enable also preserves fresh live
+Windows value kinds and atomically retains denied corrections for conditional retry.
+
+Forced disposal cancels queued work and settles lost UI completions without starting
+a new native restore. Already active native work may settle after UI closure while
+its listener and failure journals remain available; only another owner Dispose or
+process exit releases that emergency listener. No false shutdown success is claimed.
+
+Native regressions cover actual delayed/denied writes and notifications, heartbeat,
+null synchronization context, external changes, enable/off ordering, pending Save,
+listener/error retry and close/shutdown settlement. At this local preparation stage:
+Python **36 PASS / 3 SKIP**, public-content and diff checks **PASS**; C# compilation,
+native Windows execution and Rescue/HDD/VHDX measurements **NOT_CHECKED**. Cold bridge
+start, settings/startup persistence, port migration and synchronous rollback still
+require the next bounded stage. **F31 remains OPEN; accepted status stays 22/31.**
+
+## F31m — survive failure to save a typed CLI correction
+
+CLI enable/off now prepare the existing typed-normalization recovery records on
+disk before their first setter or notification. They use the same fresh raw
+snapshot as correction, refuse to proceed if preparation cannot be saved, and
+narrow the guard only after the full correction pass. A later save failure retains
+the prepared expectations across process restart; retry compares exact live values
+and preserves different external edits. No full snapshot rollback or new UI/native
+mutation path is added.
+
+Native fixtures lock the actual target after guard preparation, deny multiple
+corrections, verify heartbeat/listener and byte preservation, then retry actual
+cleanup in a separate process. They also cover initial preparation refusal and
+later different external values. Compilation/native execution and real Rescue
+measurements are NOT_CHECKED at this local stage.
+
+Prepared normalization records describe anticipated effects, not proof of a prior
+notification. An identical later external normalization is indistinguishable;
+different values remain protected. Atomic replacement is process/restart recovery,
+without a power-loss durability claim. **F31 remains OPEN; accepted status 22/31.**

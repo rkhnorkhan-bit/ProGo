@@ -18,6 +18,8 @@ namespace ProGo
         private readonly Button connect;
         private Button windowsToggle, cliToggle;
         private readonly Func<AppCommandState> commandState;
+        private readonly Func<string> backupStatus;
+        private readonly LinkLabel backupProgress;
         private Button openCodex;
         private readonly Dictionary<string, Button> navigation = new Dictionary<string, Button>();
         private readonly Timer timer = new Timer { Interval = 2000 };
@@ -26,9 +28,9 @@ namespace ProGo
         private readonly TableLayoutPanel body, cards;
         private readonly List<SurfacePanel> statusCards = new List<SurfacePanel>();
         private bool fitting;
-        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<AppCommand> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null, AppProxyConsumers appConsumers = null, Func<AppCommandState> commandState = null)
+        internal MainWindow(SettingsService settings, ProxyService proxy, HomeVpnService home, Action<AppCommand> action, CliProxyBridgeService appProxy = null, AutomationPlan automation = null, ConnectionHealthMonitor health = null, AppProxyConsumers appConsumers = null, Func<AppCommandState> commandState = null, Func<string> backupStatus = null, Action showBackupProgress = null)
         {
-            this.commandState = commandState;
+            this.commandState = commandState; this.backupStatus = backupStatus;
             this.appProxy = appProxy; this.appConsumers = appConsumers;
             this.automation = automation;
             this.health = health;
@@ -98,7 +100,15 @@ namespace ProGo
             terminalState = Card(cards, 1, "CODEX И ТЕРМИНАЛЫ", "Для новых терминалов", AppCommand.StartCli, action);
             phoneState = Card(cards, 2, "ТЕЛЕФОН", "Через домашний ПК", AppCommand.Phone, action); body.Controls.Add(cards, 0, 2);
             recovery = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
-            body.Controls.Add(Surface(UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery), 0, 3);
+            var recoveryControls = new List<Control> { UiTheme.Label("Соединение под контролем", UiTheme.Strong, UiTheme.Text), recovery };
+            if (backupStatus != null) {
+                backupProgress = new LinkLabel { Name = "BackupProgress", AutoSize = true, Font = UiTheme.Body,
+                    LinkColor = UiTheme.Accent, ActiveLinkColor = UiTheme.Text, VisitedLinkColor = UiTheme.Accent,
+                    AccessibleName = "Состояние резервной копии", AccessibleDescription = "Открыть состояние стартовой или ручной копии. Ручная копия создаётся отдельной командой." };
+                backupProgress.LinkClicked += delegate { if (showBackupProgress != null) showBackupProgress(); };
+                recoveryControls.Add(backupProgress);
+            }
+            body.Controls.Add(Surface(recoveryControls.ToArray()), 0, 3);
             openCodex = AppCommandUi.Button(AppCommand.OpenCodex, delegate { action(AppCommand.OpenCodex); }, false);
             var footer = Actions(AppCommandUi.Button(AppCommand.Update, delegate { action(AppCommand.Update); }, false),
                 openCodex, AppCommandUi.Button(AppCommand.Help, delegate { action(AppCommand.Help); }, false));
@@ -226,6 +236,10 @@ namespace ProGo
         internal void RefreshConnectionState() { RefreshState(); }
         private void RefreshState()
         {
+            if (backupProgress != null) {
+                backupProgress.Text = backupStatus() ?? "";
+                backupProgress.Visible = backupProgress.Text.Length > 0;
+            }
             var commands = commandState == null ? new AppCommandState(new AppCommand[0], proxy.IsConnecting, false) : commandState();
             bool cliPending = commands.IsPending(AppCommand.StartCli), windowsPending = commands.IsPending(AppCommand.EnableWindows);
             var status = health == null ? new ConnectionHealthSnapshot("", ConnectionProbeState.Unknown, ConnectionProbeState.Unknown) : health.Current;

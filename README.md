@@ -80,6 +80,14 @@ digest before extraction. Archive paths and staging are checked before replaceme
 backup and rollback are retained. Settings, vault data and VPN credentials are preserved.
 The first upgrade from an older release still uses that release's package validation.
 
+Backup restoration defaults to program files. Replacing `settings.json` and
+`vault.enc.json` requires a separate choice and confirmation. Current VPN access and
+proxy ownership journals are preserved in every restore scope and failed-update
+rollback. Persistent encrypted VPN files and previous proxy snapshots are also
+archived, with no automatic import. Windows DPAPI is tied to the user account;
+this is not a portable VPN export for another PC. Each copy's `manifest.txt`
+lists its actual composition and restoration limits.
+
 The updater no longer downloads/evaluates PowerShell text in memory or compiles
 remote source as a fallback. It respects execution policy. Missing digests and failed
 validation cancel the update rather than weakening checks. No antivirus exclusions,

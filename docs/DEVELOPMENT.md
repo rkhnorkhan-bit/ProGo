@@ -1166,3 +1166,111 @@ vault empty-state surface for empty collections versus search/type misses. It
 never saves vault records or changes cryptographic/decoy contracts. The tray uses
 `SystemInformation.SmallIconSize` at startup; actual display/DPI transitions remain
 separately tracked under F16, and actual Narrator acceptance under F17.
+
+
+## F31i — owner-run Rescue measurement
+
+`Measure-RescueProGo.ps1` is an optional read-only helper shipped with the same
+`RescueMeasurement.cs` as the app. It identifies the selected running image by PID
+and Win32 path/resource versions, without using repository VERSION. Resource
+ProductVersion on older releases may not identify a commit. The owner explicitly
+selects actual SOCKS/HTTP ports; zero keeps the check NOT_CHECKED.
+
+The collector uses one outstanding bounded probe, a total sampling deadline and
+cancellation. A blocked inventory/sample ends the session without another worker.
+Native tests read real current-process times, memory and I/O, read SCM status/start
+mode without changes, and observe a fixture TCP listener without connecting. They
+verify real owned child exit and SSH-named process ancestry without command-line
+access. Synthetic data verifies metrics, unknown values, counter reset, cancellation,
+blocking and sanitized failure text. The shipped PowerShell action is exercised for
+stdout, explicit report writing, file-only selection and PID/image mismatch.
+
+No SSH subprocess, network authentication, agent key listing, service configuration,
+proxy/settings mutation, log/private-file read or owner-machine action occurs.
+Resource/compiler loading happens before the timed collection. The optional report
+is the only write made by the helper and requires explicit ReportPath.
+
+See [RESCUE_MEASUREMENT.md](RESCUE_MEASUREMENT.md) for owner instructions and the
+PASS/FAIL/NOT_CHECKED contract. Process I/O includes cache/device operations; Windows
+Responding is not a click-latency measurement; port presence is not SOCKS/HTTP
+protocol or external reachability. Real Rescue/HDD/VHDX acceptance remains unchecked
+until the owner runs and reviews the relevant measurements.
+
+## F31j — asynchronous Windows and CLI integration mutations
+
+The application context serializes manual enable/off, automation, desktop Stop
+and prepared shutdown through one asynchronous integration gate. It captures
+settings and listener revision on its UI owner, performs fresh native ownership
+transactions on a worker, and publishes the result on the persistent owner
+dispatcher. This moves registry/file writes, environment setters and their
+notifications off the UI without moving listener or form operations to a worker.
+Manual off cancels its route intent immediately; an already active native enable
+finishes before the queued off restores its owned values. A blocked native call
+retains the gate and pending state instead of allowing another writer or declaring
+shutdown complete. Automation retains its existing bounded retry policy.
+
+A consumer mutation lease prevents timer observation from stopping an endpoint
+between its environment setters and completion. Failures retain ownership journals
+and cleanup state for explicit retry. CLI enable now uses the same fresh live typed
+Windows-value protection as CLI off: known notification normalization is corrected,
+denied corrections are recorded atomically, and later different external values
+are preserved. No old Windows snapshot is substituted for those live values.
+
+Settings remain inspectable while integration work is pending, but Save is disabled
+with an accessible explanation and a forced Save is refused before changing startup
+preferences. The existing synchronous reconfiguration acquires the same gate with
+a nonblocking attempt. It cannot overlap an active asynchronous native transaction.
+This gate does not yet make cold bridge configuration, settings/startup saving,
+port migration or rollback asynchronous; those paths remain a separate F31 stage.
+
+Prepared shutdown waits for actual settlement and disposes without repeating native
+cleanup. Forced owner disposal cancels queued gate waits, settles queued dispatcher
+tasks without a surviving message pump, and starts no new cleanup. An already
+active native mutation retains the bridge listener through a thread-safe lease.
+The worker never stops it or updates closed controls. That emergency listener is
+retained until another explicit owner Dispose or process exit; journals remain on
+failure. Forced teardown is not reported as prepared shutdown success.
+
+`DesktopIntegrationMutationTests.cs` is compiled into the normal Windows harness.
+The isolated native fixtures exercise real registry/environment writes and delayed
+notifications, UI heartbeat with a null SynchronizationContext, denial/retry,
+intervening external edits, enable/off ordering, pending Save, listener retention,
+prepared shutdown, active and queued forced closure, and a discarded final shutdown
+callback. They use loopback resources and never contact a live VPS. Local Linux
+checks pass; compilation/native Windows execution and actual Rescue/HDD/VHDX
+profiling remain NOT_CHECKED. F31 remains OPEN.
+
+## F31m — prepare CLI typed-value recovery before notifications
+
+A denied typed-value correction followed by failure to replace its CLI journal
+could previously lose the expected registry kind. A later off would see only the
+normalized live value and could report cleanup complete without repairing it.
+CLI enable and off now atomically prepare recovery guards before their first
+environment setter or notification. Preparation uses the exact raw live snapshot
+that the subsequent correction pass uses; preparation failure starts no setter or
+notification. The existing journal field and strict normalization validator remain
+compatible: guards include only ExpandString to String with unchanged serialized
+content, and AutoDetect DWORD 0/1 to absence. No full Windows snapshot is restored.
+
+After the complete correction pass, the journal is narrowed to actual failed
+fields. A notification, correction infrastructure or final save failure leaves
+the prepared on-disk guard intact, including expectations for fields not yet
+checked. Retry reads that journal and conditionally repairs only an exact current
+normalized value, with a second live check before writing. Already corrected and
+different external values are left alone. The F31j worker/gate and listener failure
+lease remain unchanged. Successful off removes its journal only after this work.
+
+A prepared Applied value describes an anticipated notification normalization; it
+does not prove that notification ran. A later external edit identical to that
+normalization cannot be distinguished, including after interruption before the
+notification. Recovery follows the existing exact-value normalization policy and
+preserves different external values. Atomic replacement provides process/restart
+recovery; power-loss durability has not been established.
+
+`DesktopTypedCorrectionRecoveryTests.cs` exercises actual locked journal targets,
+denied registry corrections, unchanged guard bytes, owner UI heartbeat and retained
+listeners. A separate harness child reads the journal and runs real CLI cleanup,
+proving that retry needs no retained in-memory receipt. Cases cover enable/off,
+intervening external values, and initial guard refusal before setters/notifications.
+Native tests require the isolated Windows CI runner; local native execution and
+Rescue/HDD/VHDX acceptance remain NOT_CHECKED. F31 remains OPEN.

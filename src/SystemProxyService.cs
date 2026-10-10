@@ -298,7 +298,7 @@ namespace ProGo
                 { "AutoConfigURL", backup.HadAutoConfigUrl ? WindowsProxyValue.From(backup.AutoConfigUrl ?? "", RegistryValueKind.String) : new WindowsProxyValue() }
             };
         }
-        private static WindowsProxyValue ReadValue(RegistryKey key, string name)
+        internal static WindowsProxyValue ReadValue(RegistryKey key, string name)
         {
             var value = key == null ? null : key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
             return value == null ? new WindowsProxyValue() : WindowsProxyValue.From(value, key.GetValueKind(name));
@@ -419,7 +419,17 @@ namespace ProGo
             Action<RegistryKey, string, WindowsProxyValue> writer,
             Action<WindowsProxyFieldBackup, Exception> failed)
         {
+            PreserveTypedValues(notification, writer, failed, null);
+        }
+        internal static void PreserveTypedValues(Action notification,
+            Action<RegistryKey, string, WindowsProxyValue> writer,
+            Action<WindowsProxyFieldBackup, Exception> failed,
+            Action<Dictionary<string, WindowsProxyValue>> prepare)
+        {
             var before = ReadCurrent().Values;
+            // A failed guard write must abort before any setter/notification.
+            // Use the exact same live snapshot for preparation and correction.
+            if (prepare != null) prepare(before);
             try { notification(); }
             finally { CorrectTypedValues(before, writer, failed); }
         }
@@ -466,7 +476,7 @@ namespace ProGo
             }
         }
 
-        private static void RefreshSystemProxy()
+        internal static void RefreshSystemProxy()
         {
             InternetSetOption(IntPtr.Zero, INTERNET_OPTION_SETTINGS_CHANGED, IntPtr.Zero, 0);
             InternetSetOption(IntPtr.Zero, INTERNET_OPTION_REFRESH, IntPtr.Zero, 0);

@@ -25,6 +25,7 @@ namespace ProGo
         private readonly Label route;
         private readonly Label checkedAt;
         private readonly Label recovery;
+        private readonly Label backupState;
         private readonly Button speedButton;
         private readonly Button checkButton;
         private readonly Func<AppSettings, ProxyService, CancellationToken, string> routeProbe;
@@ -43,12 +44,14 @@ namespace ProGo
         private int speedInFlight;
         private int routeInFlight;
         private volatile bool closing;
+        private readonly Func<string> backupStatus;
 
         public StatusForm(SettingsService settingsService, ProxyService proxyService, bool checkRouteOnOpen = false,
             Func<AppSettings, ProxyService, CancellationToken, string> routeProbe = null, Func<DateTime> clock = null, ConnectionHealthMonitor health = null,
             Func<AppSettings, CancellationToken, int?> pingProbe = null,
-            Func<AppSettings, CancellationToken, Tuple<double?, string>> speedProbe = null)
+            Func<AppSettings, CancellationToken, Tuple<double?, string>> speedProbe = null, Func<string> backupStatus = null)
         {
+            this.backupStatus = backupStatus;
             settings = settingsService;
             proxy = proxyService;
             this.health = health;
@@ -66,10 +69,16 @@ namespace ProGo
             // not expand a spanning cell past the form's real minimum client width.
             var content = new Panel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding };
             Controls.Add(content);
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 9 };
+            var table = new TableLayoutPanel { Name = "StatusRows", Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 9 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            content.Controls.Add(table);
+            if (backupStatus != null) {
+                // The extra status row scrolls with the body instead of increasing the
+                // window's minimum height. Keep all absolute row heights and the footer.
+                var viewport = new Panel { Name = "StatusBodyViewport", Dock = DockStyle.Fill, AutoScroll = true };
+                table.Dock = DockStyle.Top; table.AutoSize = true; table.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                viewport.Controls.Add(table); content.Controls.Add(viewport);
+            } else content.Controls.Add(table);
 
             state = AddRow(table, 0, "Соединение");
             address = AddRow(table, 1, "Адрес");
@@ -83,11 +92,16 @@ namespace ProGo
             table.RowStyles[6].Height = 82;
             table.RowStyles[7].Height = 60;
             table.RowStyles[8].Height = 68;
+            if (backupStatus != null) {
+                table.RowCount = 10; backupState = AddRow(table, 9, "Резервная копия");
+                table.RowStyles[9].Height = 90;
+            }
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom,
                 Height = UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical,
                 FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
             var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
+            close.Click += delegate { Close(); };
             var restart = UiTheme.Button("Переподключиться", null, false);
             speedButton = UiTheme.Button("Измерить скорость", null, false);
             checkButton = UiTheme.Button("Проверить маршрут", null, false);
@@ -175,6 +189,7 @@ namespace ProGo
             env.Text = Environment.GetEnvironmentVariable("ALL_PROXY", EnvironmentVariableTarget.User) ?? "Не настроен";
             if (testRoute) QueueRouteMeasure();
             recovery.Text = proxy.RecoveryStatus;
+            if (backupState != null) backupState.Text = backupStatus();
         }
 
         private static void CancelMeasurement(CancellationTokenSource source)

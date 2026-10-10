@@ -288,14 +288,49 @@ namespace ProGo
         }
     }
 
+    internal sealed class SettingsRevisionSnapshot
+    {
+        internal readonly AppSettings Settings;
+        internal readonly long Revision;
+        internal SettingsRevisionSnapshot(AppSettings settings, long revision) { Settings = settings; Revision = revision; }
+    }
+
+    internal sealed class SettingsCommitReceipt
+    {
+        internal readonly SettingsRevisionSnapshot Before;
+        internal readonly long Revision;
+        internal SettingsCommitReceipt(SettingsRevisionSnapshot before, long revision) { Before = before; Revision = revision; }
+    }
+
     internal sealed class SettingsService : IDisposable
     {
-        private readonly JavaScriptSerializer serializer = new JavaScriptSerializer();
-        public AppSettings Current { get; private set; }
-
-        public SettingsService()
+        private sealed class PublishedSettings
         {
-            Current = Load();
+            internal readonly AppSettings Settings;
+            internal readonly long Revision;
+            internal PublishedSettings(AppSettings settings, long revision) { Settings = settings; Revision = revision; }
+        }
+        private readonly object commitGate = new object();
+        private readonly Action beforeReplace;
+        private volatile PublishedSettings published;
+        private Dictionary<string, object> unknownFields = new Dictionary<string, object>(StringComparer.Ordinal);
+        public AppSettings Current { get { var value = published; return value == null ? null : value.Settings; } }
+        internal long Revision { get { var value = published; return value == null ? 0 : value.Revision; } }
+
+        public SettingsService() : this(null) { }
+        internal SettingsService(Action beforeReplace)
+        {
+            this.beforeReplace = beforeReplace;
+            var loaded = Load();
+            var value = published;
+            published = new PublishedSettings(loaded, value == null ? 0 : value.Revision);
+        }
+
+        internal SettingsRevisionSnapshot Capture()
+        {
+            // Read one memory publication, without waiting behind a disk writer.
+            var value = published;
+            return new SettingsRevisionSnapshot(value.Settings.Clone(), value.Revision);
         }
 
         public AppSettings Load()
@@ -305,7 +340,7 @@ namespace ProGo
             {
                 var defaults = AppSettings.Defaults();
                 Save(defaults);
-                return defaults;
+                return Current;
             }
 
             try
@@ -313,6 +348,9 @@ namespace ProGo
                 var text = File.ReadAllText(AppPaths.SettingsPath);
                 var settings = DeserializeSettings(text);
                 Normalize(settings);
+                // Public Load remains a detached read. Only construction captures
+                // unknown top-level fields for future writes by this instance.
+                if (published == null) unknownFields = ReadUnknownFields(text);
                 return settings;
             }
             catch (Exception ex)
@@ -324,18 +362,101 @@ namespace ProGo
 
         public void Save(AppSettings settings)
         {
-            Normalize(settings);
+            if (settings == null) throw new ArgumentNullException("settings");
+            lock (commitGate) SaveCore(settings);
+            SafeLog.Info("Settings saved.");
+        }
+
+        internal bool TrySave(long expectedRevision, AppSettings candidate, out SettingsCommitReceipt receipt)
+        {
+            receipt = null;
+            lock (commitGate) {
+                if (published.Revision != expectedRevision) return false;
+                var before = new SettingsRevisionSnapshot(published.Settings.Clone(), published.Revision);
+                SaveCore(candidate);
+                receipt = new SettingsCommitReceipt(before, published.Revision);
+            }
+            SafeLog.Info("Settings saved."); return true;
+        }
+
+        internal bool TryRollback(SettingsCommitReceipt receipt)
+        {
+            if (receipt == null) return true;
+            lock (commitGate) {
+                if (published.Revision != receipt.Revision) return false;
+                SaveCore(receipt.Before.Settings);
+            }
+            SafeLog.Info("Own settings change rolled back."); return true;
+        }
+
+        // No proxy/UI callbacks run inside this gate. The only injected hook is
+        // the test seam immediately before the real atomic file replacement.
+        private void SaveCore(AppSettings settings)
+        {
+            var candidate = settings.Clone();
+            Normalize(candidate);
+            var json = new JavaScriptSerializer();
+            var values = json.Deserialize<Dictionary<string, object>>(json.Serialize(candidate));
+            foreach (var entry in unknownFields) values.Add(entry.Key, entry.Value);
+            var text = json.Serialize(values);
             AppPaths.EnsureDirectories();
             var pending = AppPaths.SettingsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
-                File.WriteAllText(pending, serializer.Serialize(settings));
+                File.WriteAllText(pending, text);
+                if (beforeReplace != null) beforeReplace();
                 if (File.Exists(AppPaths.SettingsPath)) File.Replace(pending, AppPaths.SettingsPath, null);
                 else File.Move(pending, AppPaths.SettingsPath);
+                var previous = published;
+                published = new PublishedSettings(candidate, previous == null ? 1 : previous.Revision + 1);
             }
             finally { if (File.Exists(pending)) File.Delete(pending); }
-            Current = settings;
+        }
+
+        internal bool TrySelectWorkingProfile(SettingsRevisionSnapshot expected, string target)
+        {
+            if (expected == null || String.IsNullOrWhiteSpace(target)) return false;
+            lock (commitGate)
+            {
+                var value = published;
+                var current = value.Settings;
+                if (value.Revision != expected.Revision || !current.AutoSwitchSshProfile ||
+                    current.SshProfile != expected.Settings.SshProfile ||
+                    current.SocksHost != expected.Settings.SocksHost || current.SocksPort != expected.Settings.SocksPort ||
+                    SshConnection.Signature(current) != SshConnection.Signature(expected.Settings) ||
+                    String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase)) return false;
+                var candidate = current.Clone(); candidate.SshProfile = target;
+                SaveCore(candidate);
+            }
+            SafeLog.Info("Settings saved."); return true;
+        }
+
+        internal void SetAutoRestart(bool enabled)
+        {
+            lock (commitGate)
+            {
+                var candidate = published.Settings.Clone(); candidate.AutoRestartSocks = enabled;
+                SaveCore(candidate);
+            }
             SafeLog.Info("Settings saved.");
+        }
+
+        private static Dictionary<string, object> ReadUnknownFields(string text)
+        {
+            var values = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(text);
+            var known = KnownFieldNames();
+            var unknown = new Dictionary<string, object>(StringComparer.Ordinal);
+            if (values != null) foreach (var entry in values)
+                if (!known.Contains(entry.Key)) unknown[entry.Key] = entry.Value;
+            return unknown;
+        }
+
+        private static HashSet<string> KnownFieldNames()
+        {
+            var known = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var property in typeof(AppSettings).GetProperties()) known.Add(property.Name);
+            known.Add("AutoApplyProxy"); known.Add("AutoCodexProxy");
+            return known;
         }
 
         internal static AppSettings DeserializeSettings(string text)
@@ -344,7 +465,10 @@ namespace ProGo
             var settings = json.Deserialize<AppSettings>(text) ?? AppSettings.Defaults();
             var values = json.Deserialize<Dictionary<string, object>>(text);
             if (values == null) return settings;
-            values = new Dictionary<string, object>(values, StringComparer.OrdinalIgnoreCase);
+            var recognized = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            var known = KnownFieldNames();
+            foreach (var entry in values) if (known.Contains(entry.Key)) recognized.Add(entry.Key, entry.Value);
+            values = recognized; // Unknown JSON keys retain their original case and values.
             // A new explicit false wins over stale legacy fields. Save writes
             // only AutoCliProxy, so turning it off cannot resurrect a legacy on.
             if (!values.ContainsKey("AutoCliProxy"))

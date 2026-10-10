@@ -21,9 +21,9 @@ namespace ProGo
             if (args.Length < 3 || (args[0] != "prepare-fixture" && args[0] != "prepare-child")) return false;
             string path = args[1], mode = args[2];
             if (args[0] == "prepare-child") {
-                File.WriteAllText(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
+                HomeVpnFixtureFiles.Publish(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
             }
-            File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            HomeVpnFixtureFiles.Publish(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
             File.WriteAllText(Path.Combine(path, "console"), GetConsoleCP().ToString());
             if (mode == "complete") return true;
             if (mode == "fail") { Environment.Exit(7); return true; }
@@ -295,5 +295,36 @@ namespace ProGo
             } finally { if (held != null) held.Dispose(); if (work != null) Directory.Delete(work, true); }
         }
         [DllImport("kernel32.dll")] private static extern uint GetConsoleCP();
+    }
+
+    // Fixture readers use File.Exists as a readiness signal. Publish a closed,
+    // complete file so that signal cannot expose File.WriteAllText's open writer.
+    internal static class HomeVpnFixtureFiles
+    {
+        internal static void Publish(string path, string value, Action beforeClose = null)
+        {
+            string pending = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                using (var stream = new FileStream(pending, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                using (var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false))) {
+                    writer.Write(value); writer.Flush();
+                    if (beforeClose != null) beforeClose();
+                }
+                // Recovery can issue status/result subprocesses without resetting
+                // the marker between them. Replace the previous complete PID.
+                var watch = Stopwatch.StartNew();
+                while (true) {
+                    try {
+                        if (File.Exists(path)) File.Replace(pending, path, null);
+                        else File.Move(pending, path);
+                        break;
+                    } catch (IOException) {
+                        // A short-lived fixture reader may hold a Windows share lock.
+                        if (watch.ElapsedMilliseconds >= 1000) throw;
+                        Thread.Sleep(10);
+                    }
+                }
+            } finally { if (File.Exists(pending)) File.Delete(pending); }
+        }
     }
 }

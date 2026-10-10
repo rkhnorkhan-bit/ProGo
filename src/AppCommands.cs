@@ -17,9 +17,9 @@ namespace ProGo
     internal sealed class AppCommandState
     {
         private readonly HashSet<AppCommand> pending;
-        internal readonly bool Connecting, Stopping;
-        internal AppCommandState(IEnumerable<AppCommand> pending, bool connecting, bool stopping)
-        { this.pending = new HashSet<AppCommand>(pending); Connecting = connecting; Stopping = stopping; }
+        internal readonly bool Connecting, Stopping, BackingUp, Integrating;
+        internal AppCommandState(IEnumerable<AppCommand> pending, bool connecting, bool stopping, bool backingUp = false, bool integrating = false)
+        { this.pending = new HashSet<AppCommand>(pending); Connecting = connecting; Stopping = stopping; BackingUp = backingUp; Integrating = integrating; }
         internal bool IsPending(AppCommand command) { return pending.Contains(command); }
         internal bool HasPending { get { return pending.Count != 0; } }
     }
@@ -70,7 +70,7 @@ namespace ProGo
             Add(AppCommand.Help, "help", "Открыть помощь…", "Открыть инструкции по подключению, терминалам, телефону и восстановлению.", "Помощь", null);
             Add(AppCommand.Update, "update", "Проверить обновления…", "Проверить наличие новой версии. Установка требует подтверждения.", "Обновить ProGo", null);
             Add(AppCommand.ShowMain, "show-main", "Открыть ProGo", "Открыть главное окно ProGo.");
-            Add(AppCommand.CreateBackup, "backup-create", "Создать копию сейчас", "Сразу создать ручную резервную копию программы и имеющихся пользовательских данных.");
+            Add(AppCommand.CreateBackup, "backup-create", "Создать копию сейчас", "Создать ручную копию в фоне с возможностью отмены. Текущие данные не заменяются.");
             Add(AppCommand.RestoreBackup, "backup-restore", "Восстановить из копии…", "Выбрать и проверить резервную копию. Восстановление начнётся только после подтверждения.");
             Add(AppCommand.OpenBackups, "backups-open", "Открыть папку с копиями", "Открыть папку резервных копий в Проводнике.");
             Add(AppCommand.CleanupBackups, "backups-cleanup", "Удалить старые автоматические копии…", "Показать старые автоматические копии. Удаление требует подтверждения; ручные копии сохраняются.");
@@ -92,6 +92,9 @@ namespace ProGo
         {
             var definition = Get(command);
             if (state.Stopping) return false;
+            if (state.Integrating && (definition.RequiresRoute || command == AppCommand.RemoveCodexShortcut)) return false;
+            if (state.BackingUp && (command == AppCommand.CreateBackup || command == AppCommand.RestoreBackup ||
+                command == AppCommand.CleanupBackups || command == AppCommand.Update)) return false;
             if (!definition.RequiresRoute) return true; // Off/Stop must remain usable to cancel waiting work.
             if (state.IsPending(command)) return false;
             // Plain Connect must not restart a route other modes are waiting for.
