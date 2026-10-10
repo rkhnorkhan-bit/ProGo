@@ -231,7 +231,8 @@ namespace ProGo
             if ((label ?? "").Length > 80 || (label ?? "").IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) throw new ArgumentException("Название слишком длинное.");
             if (setup && Array.Exists((label ?? "").ToCharArray(), Char.IsControl)) throw new ArgumentException("Проверьте название доступа: без управляющих знаков.");
             if (action == "share") identifier = new Uri(HomeProfileShare.Origin(identifier)).Host;
-            using (var lease = setup ? await HomeVpnSetupRecovery.AcquireAsync() : null)
+            using (var lease = setup ? await HomeVpnSetupRecovery.AcquireAsync()
+                : action == "invite" || action == "revoke" ? await GuardFriendMutationAsync(owner) : null)
             {
                 var request = setup ? HomeVpnSetupRecovery.Load(owner, label) : null;
                 bool checking = request != null;
@@ -306,6 +307,16 @@ namespace ProGo
                     }
                 }
             }
+        }
+
+        private static async Task<IDisposable> GuardFriendMutationAsync(HomeVpnOwner owner)
+        {
+            // A second friends window cannot bypass the pending-request gate.
+            var lease = await HomeVpnInvitationRecovery.AcquireAsync();
+            try {
+                if (HomeVpnInvitationRecovery.Load(owner) != null) throw new HomeVpnInvitationPendingException(HomeVpnInvitationRecovery.PendingMessage);
+                return lease;
+            } catch { lease.Dispose(); throw; }
         }
 
         private static string ReadSetupOutput(string path)

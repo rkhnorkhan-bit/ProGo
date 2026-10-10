@@ -73,6 +73,7 @@ namespace ProGo
             create.Click += async delegate { await RunAsync(CreateAsync); };
             revoke.Click += async delegate {
                 var selected = list.Selected;
+                ReadPending(false); UpdateActions();
                 if (selected == null || needsRefresh || working || recoveryOnly || recoveryBlocked) return;
                 if (!Confirm(Identity(selected) + "\r\nОтозвать этот доступ? Его соединения будут закрыты.")) return;
                 await RunAsync(async delegate {
@@ -84,6 +85,7 @@ namespace ProGo
             };
             reissue.Click += async delegate {
                 var selected = list.Selected;
+                ReadPending(false); UpdateActions();
                 if (selected == null || needsRefresh || working || recoveryOnly || recoveryBlocked) return;
                 // Snapshot identity before awaiting. The editable new-invitation name
                 // must never redirect a selected friend's reissue.

@@ -138,6 +138,11 @@ namespace ProGo
                 check(Failure(Admin("create-invite", command, copy, label: label)) is ArgumentException && copies == 0 && commands == 0, "invalid invitation names are rejected before copying or registration");
             var request = HomeVpnInvitationRecovery.Register(Owner, "Друг");
             var wrong = Owner; wrong.Port = 2222;
+            foreach (string action in new[] { "invite", "revoke" }) {
+                var pendingMutation = HomeVpnService.AdminAsync(Owner, action, "Друг", action == "revoke" ? new string('a', 24) : null, delegate { }, copy, command);
+                check(Failure(pendingMutation) is HomeVpnInvitationPendingException && copies == 0 && commands == 0 && Pending().RequestId == request.RequestId,
+                    "pending separate invitation blocks legacy friend mutation at the service boundary");
+            }
             check(Failure(Admin("create-invite", command, copy, wrong)) is HomeVpnInvitationPendingException && copies == 0 && commands == 0 && Pending().RequestId == request.RequestId,
                 "changed endpoint cannot abandon a pending invitation");
             check(Failure(Admin("create-invite", command, copy, label: "Другой")) is HomeVpnInvitationPendingException && copies == 0 && commands == 0,
@@ -154,6 +159,12 @@ namespace ProGo
             check(Failure(Admin("create-invite", command, copy)) is HomeVpnInvitationPendingException && copies == 0 && commands == 0,
                 "concurrent invitation dispatch is refused before a second preparation");
             gate.SetException(new HomeVpnPreparationCancelledException()); check(Failure(first) is HomeVpnPreparationCancelledException && Pending() == null, "cancelled first preparation releases its exclusive invitation lease");
+            gate = new TaskCompletionSource<object>();
+            var legacy = HomeVpnService.AdminAsync(Owner, "revoke", null, new string('a', 24), delegate { }, (exe, args) => gate.Task, command);
+            check(Failure(Admin("create-invite", command, copy)) is HomeVpnInvitationPendingException && copies == 0 && commands == 0 && Pending() == null,
+                "in-flight legacy friend mutation holds the same lease before new invitation registration");
+            gate.SetException(new HomeVpnPreparationCancelledException()); check(Failure(legacy) is HomeVpnPreparationCancelledException && Pending() == null,
+                "cancelled legacy preparation releases the friend-mutation lease without issuing access");
             request = HomeVpnInvitationRecovery.Register(Owner, "Друг");
             var error = Failure(Admin("recover-invite", command, (exe, args) => { throw new HomeVpnPreparationCancelledException(); }));
             check(error is HomeVpnPreparationCancelledException && error.Message.Contains("могла завершиться") && !error.Message.Contains("не запускались") && Pending().RequestId == request.RequestId,
@@ -168,12 +179,12 @@ namespace ProGo
             Directory.CreateDirectory(PendingPath);
             check(Failure(Admin("create-invite", command, copy)) is HomeVpnInvitationPendingException && copies == 0 && commands == 0, "directory at invitation record path is refused before work");
             Directory.Delete(PendingPath);
-            FileStream locked = null;
+            FileStream locked = null; string cleanupDirectory = null;
             try {
-                error = Failure(Admin("create-invite", (exe, args, output) => { locked = File.Open(output, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None); throw new IOException("secret cleanup detail"); }));
+                error = Failure(Admin("create-invite", (exe, args, output) => { cleanupDirectory = Path.GetDirectoryName(output); locked = File.Open(output, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None); throw new IOException("secret cleanup detail"); }));
                 check(error is HomeVpnInvitationPendingException && error.Message.Contains("не удалось удалить") && !error.Message.Contains("secret") && Pending() != null,
                     "failed private-output cleanup refuses completion and retains the original invitation request");
-            } finally { if (locked != null) locked.Dispose(); foreach (string dir in Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*")) Directory.Delete(dir, true); File.Delete(PendingPath); }
+            } finally { if (locked != null) locked.Dispose(); if (cleanupDirectory != null) Directory.Delete(cleanupDirectory, true); File.Delete(PendingPath); }
         }
         private static HomeInvitationsForm Form(Func<string, string, string, Task<string>> admin, ClipboardService clipboard) {
             return new HomeInvitationsForm(new HomeVpnInvitation[0], admin, clipboard, Owner);

@@ -1641,6 +1641,8 @@ Closing the token window leaves the request and validated token protected locall
 it does not confirm delivery to the friend, revoke access or acknowledge a remote
 receipt. Failed consumption keeps retry guidance and the request. A successful list
 refresh cannot unlock new creation, revocation or reissue while a request remains.
+The service enforces the same pending-request gate and mutual exclusion for legacy
+friend mutations; a second window cannot bypass it with stale button state.
 Recovered IDs do not duplicate existing list rows. A missing journal after recovery
 presentation, corrupt metadata, changed parameters, unknown status, wrong-server
 results and revoked/unavailable results refuse fresh issuance and retain guidance.

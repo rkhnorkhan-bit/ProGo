@@ -1196,7 +1196,10 @@ and own-VPS setup keep their existing paths. The invitation journal is separate
 from setup and the owner's access: `invitation-request.dat`, CurrentUser DPAPI,
 exact seven-field metadata, bounded reads, regular non-reparse storage, unique
 atomic replace/move and file flush before dispatch. A nonblocking lease covers
-preparation, registration, queries and consumption. Administrator passwords and
+preparation, registration, queries and consumption. Legacy friend mutations share
+that lease and refuse a pending invitation before SCP, so a second window cannot
+bypass the UI gate. Their command transport and interruption contracts are unchanged.
+Administrator passwords and
 local key contents are not saved. SSH endpoint/key arguments are frozen before
 awaiting the copy. Changed local key selection can authenticate the same queries.
 
