@@ -36,7 +36,7 @@ namespace ProGo
             RefreshItems(null);
             UiTheme.ConfigureKeyboardOrder(this);
         }
-        internal void Add(HomeVpnInvitation item) { items.Add(item); search.Text = ""; RefreshItems(item.Id); }
+        internal void Add(HomeVpnInvitation item) { items.RemoveAll(value => value.Id == item.Id); items.Add(item); search.Text = ""; RefreshItems(item.Id); }
         internal void Replace(IEnumerable<HomeVpnInvitation> values) { items.Clear(); items.AddRange(values.Where(i => i != null)); search.Text = ""; RefreshItems(null); }
         internal void RefreshSelection() { RefreshItems(Selected == null ? null : Selected.Id); }
         private void RefreshItems(string selectedId)

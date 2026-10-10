@@ -101,7 +101,7 @@ namespace ProGo
                             Check(context.IsBackupRunning && !pending.IsCompleted, "native settings dialog opens while the baseline scan is blocked");
                         });
                         int beforeStop = Volatile.Read(ref cleanupCalls);
-                        commands[AppCommand.StopDesktop].PerformClick(); PumpUntil(() => !proxy.IsStopping);
+                        commands[AppCommand.StopDesktop].PerformClick(); WaitIntegration(context); PumpUntil(() => !proxy.IsStopping);
                         Check(Volatile.Read(ref cleanupCalls) == beforeStop + 1 && context.IsBackupRunning && !pending.IsCompleted,
                             "real tray desktop stop executes independently while the startup baseline probe remains blocked");
                         var statusItem = (ToolStripMenuItem)Field(context, "backupStatusItem");

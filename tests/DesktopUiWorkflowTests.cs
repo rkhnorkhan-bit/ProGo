@@ -126,12 +126,14 @@ namespace ProGo
                     PumpUntil(() => context.PendingRouteCount == 0);
                     Check(SystemProxyService.IsApplied(settings.Current) && ((Button)Field(main, "windowsToggle")).Text == "Выключить", "Windows card enables its own mode");
                     ((Button)Field(main, "windowsToggle")).PerformClick();
+                    WaitIntegration(context);
                     Check(!SystemProxyService.IsOwned && ((Button)Field(main, "windowsToggle")).Text == "Включить", "Windows card restores with its symmetric off command");
                     ((Button)Field(main, "cliToggle")).PerformClick();
                     PumpUntil(() => context.PendingRouteCount == 0);
                     Check(CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort) && ((Button)Field(main, "cliToggle")).Text == "Выключить CLI", "Start CLI exposes matching off on main");
                     Shot(main, "main-cli-enabled");
                     ((Button)Field(main, "cliToggle")).PerformClick();
+                    WaitIntegration(context);
                     Check(((Button)Field(main, "cliToggle")).Text == "Запустить CLI" && !ApplyOnce(plan, ProxyFeature.Cli, true), "CLI off cancels automation and preserves Start CLI");
                     commandItems.Single(i => (AppCommand)i.Tag == AppCommand.StartCli).PerformClick();
                     PumpUntil(() => context.PendingRouteCount == 0); main.RefreshConnectionState();
@@ -142,6 +144,7 @@ namespace ProGo
                         form.Show(); Application.DoEvents();
                         var option = (CheckBox)Field(form, "autoCli");
                         Descendants(option.Parent).OfType<Button>().Single(b => b.Text == "Выключить").PerformClick();
+                        WaitIntegration(context);
                         form.Close();
                     }
                     main.RefreshConnectionState();
@@ -248,7 +251,7 @@ namespace ProGo
                 typeof(ProxyService).GetField("wanted", PrivateInstance).SetValue(phoneProxy, true);
                 StartFixtureRelay(relay);
                 plan.Update(null, configured);
-                Call(context, "Execute", "stop"); PumpUntil(() => !desktop.IsStopping); desktop.PollRecovery();
+                Call(context, "Execute", "stop"); WaitIntegration(context); PumpUntil(() => !desktop.IsStopping); desktop.PollRecovery();
                 Check(relay.IsRunning && ReferenceEquals(Field(home, "proxy"), phoneProxy) && (bool)Field(phoneProxy, "wanted"), "PC stop preserves independently running phone relay and recovery");
                 Check(!ApplyOnce(plan, ProxyFeature.Cli, true) && !ApplyOnce(plan, ProxyFeature.Windows, true) && !desktop.CurrentPid.HasValue,
                     "PC stop cancels both automatic proxy modes and recovery");
@@ -258,7 +261,7 @@ namespace ProGo
                 Check(ApplyOnce(plan, ProxyFeature.Cli, true) && ApplyOnce(plan, ProxyFeature.Windows, true), "phone stop does not cancel desktop automatic actions");
                 StartFixtureRelay(relay); plan.Update(null, configured);
                 var main = (MainWindow)Field(context, "mainWindow");
-                Descendants(main).OfType<Button>().Single(b => b.Text == "Остановить все\nподключения").PerformClick(); PumpUntil(() => !desktop.IsStopping); desktop.PollRecovery();
+                Descendants(main).OfType<Button>().Single(b => b.Text == "Остановить все\nподключения").PerformClick(); WaitIntegration(context); PumpUntil(() => !desktop.IsStopping); desktop.PollRecovery();
                 Check(!relay.IsRunning && !(bool)Field(desktop, "wanted") && !ApplyOnce(plan, ProxyFeature.Cli, true) && !ApplyOnce(plan, ProxyFeature.Windows, true),
                     "full stop stops both channels and no timer revives them");
             }

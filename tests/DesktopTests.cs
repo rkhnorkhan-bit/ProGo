@@ -86,6 +86,8 @@ namespace ProGo
                     BackupMetadataSnapshot();
                     ManualBackupWorkflow();
                     StartupBackupWorkflow();
+                    StartupBackupLayout(settings);
+                    SettingsPersistenceWorkflow();
                     BackupCleanupPreview();
                     RestoreScopeAndPreparationUi();
                     BackupAccessibility();
@@ -113,6 +115,7 @@ namespace ProGo
                     FriendsAccessibility(settings);
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
+                    IntegrationMutationWorkflow(settings);
                     StructuredSshProfiles(settings);
                     VisualPolish(settings);
                     SshDiagnostics();
@@ -529,6 +532,7 @@ namespace ProGo
                             "manual start and legacy alias apply one mode and cancel its automatic writer " + on[i]);
                         plan.Update(null, configured);
                         execute.Invoke(context, new object[] { off[i] });
+                        WaitIntegration(context);
                         Check(!ApplyOnce(plan, ProxyFeature.Cli, true) && CliProxyEnvironmentService.Names.All(n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User) == originalEnvironment[n]),
                             "manual off and legacy alias restore one environment and cancel pending setup " + off[i]);
                         PumpUntil(() => !bridge.IsRunning);
