@@ -229,7 +229,7 @@ namespace ProGo
                     return HomeVpnPreparationForm.WaitForListAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
                 if (action == "invite" || action == "recover-invite")
                     return HomeVpnPreparationForm.WaitForAdminAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
-                return ConsoleAsync(executable, arguments, output);
+                return HomeVpnPreparationForm.WaitForOwnerAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
             });
         }
 
@@ -328,7 +328,8 @@ namespace ProGo
                     progress(action == "list" ? "Получение списка друзей с VPS. Ожидание — до 5 минут; его можно отменить. Доступ друзей не изменяется."
                         : issuance ? "Выдача доступа другу. Запрос сохранён до SSH. Можно прервать ожидание; затем проверяйте прежнюю выдачу без нового приглашения."
                         : setup ? "Настройка VPS. ID запроса сохранён до запуска SSH. При потере ответа проверьте прежнюю настройку вместо повторной выдачи доступа."
-                        : "Настройка VPS. Окно SSH показывает ход установки; для пользователя без root нужен sudo без запроса пароля.");
+                        : (action == "revoke" ? "Отзыв выбранного доступа" : action == "repair" ? "Восстановление правил выхода VPN" : "Настройка HTTPS-выдачи профилей")
+                            + ". Ожидание — до 5 минут; его можно прервать. Команда VPS могла применить изменения или продолжать работу. ProGo не повторяет её автоматически; проверьте VPS перед повтором.");
                     // A real console remains available for OpenSSH password/host-key prompts.
                     // Only stdout goes to a private local file; the token is never a command argument.
                     remoteStarted = true;
@@ -339,7 +340,7 @@ namespace ProGo
                         HomeVpnAdminRecovery.RequireCompleted(framed.Substring(0, split).Trim(), adminRequest);
                         return HomeVpnAdminRecovery.RetainResult(owner, adminRequest, framed.Substring(split + 1).Trim());
                     }
-                    var result = setup ? ReadSetupOutput(output) : File.ReadAllText(output).Trim();
+                    var result = setup ? ReadSetupOutput(output) : ReadCommandOutput(output);
                     if (result.Length == 0 || result.Length > 32768) throw new InvalidOperationException("VPS не вернул результат.");
                     return setup ? HomeVpnSetupRecovery.RetainResult(owner, request, result) : result;
                 }
@@ -349,8 +350,10 @@ namespace ProGo
                 }
                 catch (HomeVpnSetupPendingException) { throw; }
                 catch (HomeVpnAdminPendingException) { throw; }
+                catch (HomeVpnOwnerUnconfirmedException) { throw; }
                 catch (Exception ex) {
                     if (!(ex is OutOfMemoryException) && issuance && adminRequest != null) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
+                    if (!(ex is OutOfMemoryException) && !setup && !issuance && action != "list" && remoteStarted) throw new HomeVpnOwnerUnconfirmedException();
                     if (ex is OutOfMemoryException || !setup || request == null) throw;
                     throw new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage);
                 }
@@ -375,25 +378,13 @@ namespace ProGo
             if (new FileInfo(path).Length > (framed ? 65536 : 32768)) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
             return File.ReadAllText(path, new UTF8Encoding(false, true)).Trim();
         }
+        private static string ReadCommandOutput(string path)
+        {
+            if (new FileInfo(path).Length > 32768) throw new InvalidOperationException("VPS вернул слишком большой результат.");
+            return File.ReadAllText(path, new UTF8Encoding(false, true)).Trim();
+        }
 
         private static string Shell(string value) { return "'" + value.Replace("'", "'\"'\"'") + "'"; }
-        private static string PowerShell(string value) { return "'" + value.Replace("'", "''") + "'"; }
-        private static Task ConsoleAsync(string executable, string arguments, string output)
-        {
-            return Task.Run(delegate
-            {
-                // Start-Process ArgumentList preserves the exact, already quoted command line.
-                var script = "$p=Start-Process -FilePath " + PowerShell(executable) + " -ArgumentList " + PowerShell(arguments)
-                    + " -NoNewWindow -PassThru -Wait" + (output == null ? "" : " -RedirectStandardOutput " + PowerShell(output))
-                    + "; if($p.ExitCode -ne 0){ Write-Host 'SSH operation failed. Check the message above.'; Start-Sleep -Seconds 5 }; exit $p.ExitCode";
-                using (var process = Process.Start(new ProcessStartInfo("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -EncodedCommand "
-                    + Convert.ToBase64String(Encoding.Unicode.GetBytes(script))) { UseShellExecute = true }))
-                {
-                    process.WaitForExit();
-                    if (process.ExitCode != 0) throw new InvalidOperationException("Операция SSH не завершена. Проверьте адрес, права пользователя и сообщение в окне SSH. Результат команды VPS не подтверждён.");
-                }
-            });
-        }
 
         public void Dispose() { disposed = true; Stop(); }
     }

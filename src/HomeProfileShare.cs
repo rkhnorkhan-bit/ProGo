@@ -134,6 +134,13 @@ namespace ProGo
         }
 
         internal static ProGoForm CreateConfigureForm(HomeVpnService service)
+        { return CreateConfigureForm(service, HomeVpnService.AdminAsync, VerifyAsync); }
+
+        // Tests substitute only external transports, retaining the real controls
+        // and the normal save boundary after SSH and HTTPS verification.
+        internal static ProGoForm CreateConfigureForm(HomeVpnService service,
+            Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> admin,
+            Func<string, HomeVpnAccess, Task> verifyOrigin)
         {
             var dialog = new ProGoForm { Text = "QR: адрес выдачи профиля", ClientSize = new Size(660, 480), StartPosition = FormStartPosition.CenterParent, AutoScaleMode = AutoScaleMode.Dpi };
             {
@@ -163,13 +170,15 @@ namespace ProGo
                     try
                     {
                         string origin = Origin(address.Text);
-                        if (setup) await HomeVpnService.AdminAsync(service.Owner, "share", null, origin, delegate(string text) { status.Text = text; });
+                        if (setup) await admin(service.Owner, "share", null, origin, delegate(string text) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = text; });
+                        if (dialog.IsDisposed || dialog.Disposing) return;
                         status.Text = "Проверяем HTTPS и принадлежность VPS…";
-                        await VerifyAsync(origin, service.Access);
+                        await verifyOrigin(origin, service.Access);
+                        if (dialog.IsDisposed || dialog.Disposing) return;
                         service.SetShareOrigin(origin); dialog.DialogResult = DialogResult.OK;
                     }
-                    catch (Exception ex) { status.Text = ex.Message; }
-                    finally { working = false; install.Enabled = verify.Enabled = address.Enabled = close.Enabled = true; }
+                    catch (Exception ex) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = ex.Message; }
+                    finally { working = false; if (!dialog.IsDisposed && !dialog.Disposing) install.Enabled = verify.Enabled = address.Enabled = close.Enabled = true; }
                 };
                 install.Click += async delegate { await run(true); };
                 verify.Click += async delegate { await run(false); };

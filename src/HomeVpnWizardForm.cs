@@ -195,7 +195,7 @@ namespace ProGo
                 {
                     await RunStep(async delegate
                     {
-                        await HomeVpnService.AdminAsync(service.Owner, "repair", null, null, SetProgress);
+                        await Admin(service.Owner, "repair", null, null, SetProgress);
                         SetProgress("Правила выхода VPN обновлены. Переподключите VPN на телефоне и откройте сайт для проверки.");
                     });
                 }, "Обновляет правила выхода VPN на VPS через SSH. После этого переподключите VPN на телефоне и проверьте интернет.");
