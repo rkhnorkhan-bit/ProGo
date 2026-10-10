@@ -32,6 +32,7 @@ internal static class SocksRecoveryTests
             Test("stop cancels startup and immediate retry starts one fresh attempt", AsyncCancellation);
             Test("startup timeout stops its owned child and gives guidance", AsyncTimeout);
             Test("SSH refusal explains key authorization without a hidden prompt", AsyncRefusal);
+            Test("permanent SSH refusal pauses recovery until explicit retry", PermanentRefusal);
             Test("asynchronous startup refuses a foreign non-SOCKS listener", AsyncForeignListener);
             Test("async launch failure schedules the first recovery delay once", AsyncLaunchFailure);
             Test("recovery respects configured profile fallback", Fallback);
@@ -282,6 +283,24 @@ internal static class SocksRecoveryTests
             Assert(task.Wait(5000) && !task.Result && f.Proxy.StartupError.Contains("ключ не принят") && f.Proxy.StartupError.Contains("Первый вход"), "SSH key refusal did not give actionable visible-login guidance");
         }
     }
+    private static void PermanentRefusal()
+    {
+        foreach (var mode in new[] { "denied", "bad-host" }) using (var f = new Fixture()) {
+            f.Settings.SshProfile = mode; f.Settings.AutoRestartSocks = true;
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(task.Wait(5000) && !task.Result, "Permanent refusal must fail noninteractive startup");
+            f.Tick(0);
+            Assert(!f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue && f.Proxy.RecoveryStatus.Contains("приостановлено"), "Permanent refusal must leave a visible pause and no scheduled restart");
+            int restarts = f.Proxy.AutomaticRestarts;
+            for (int i = 0; i < 20; i++) f.Tick(600);
+            Assert(f.Proxy.AutomaticRestarts == restarts && !f.Proxy.CurrentPid.HasValue, "Permanent refusal must not spawn repeated SSH children");
+            f.Proxy.SetAutoRestart(false); f.Proxy.SetAutoRestart(true); f.Tick(600);
+            Assert(f.Proxy.AutomaticRestarts == restarts, "Recovery preference toggle cannot silently bypass an authentication pause");
+            f.Settings.SshProfile = "ready";
+            var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(retry.Wait(5000) && retry.Result && !f.Proxy.RecoveryStatus.Contains("приостановлено"), "Explicit connection after fixing profile must clear the pause and authenticate through SOCKS readiness");
+        }
+    }
     private static void AsyncLaunchFailure()
     {
         var config = AppSettings.Defaults(); config.SshProfile = "ready";
@@ -369,6 +388,7 @@ internal static class SocksRecoveryTests
         var capture = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_ARGV");
         if (!String.IsNullOrEmpty(capture)) File.WriteAllText(capture, new JavaScriptSerializer().Serialize(args));
         var mode = args[args.Length - 1];
+        if (mode == "bad-host") { Console.Error.WriteLine("Host key verification failed."); return 1; }
         if (mode == "denied") { Console.Error.WriteLine("Permission denied (publickey)."); return 1; }
         if (mode == "die" || (mode == "batch-only" && Array.IndexOf(args, "BatchMode=yes") < 0)) return 1;
         if (mode == "quiet") { Thread.Sleep(Timeout.Infinite); return 0; }
