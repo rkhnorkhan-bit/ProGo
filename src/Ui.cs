@@ -25,6 +25,7 @@ namespace ProGo
         private readonly Label route;
         private readonly Label checkedAt;
         private readonly Label recovery;
+        private readonly Label backupState;
         private readonly Button speedButton;
         private readonly Button checkButton;
         private readonly Func<AppSettings, ProxyService, CancellationToken, string> routeProbe;
@@ -43,12 +44,14 @@ namespace ProGo
         private int speedInFlight;
         private int routeInFlight;
         private volatile bool closing;
+        private readonly Func<string> backupStatus;
 
         public StatusForm(SettingsService settingsService, ProxyService proxyService, bool checkRouteOnOpen = false,
             Func<AppSettings, ProxyService, CancellationToken, string> routeProbe = null, Func<DateTime> clock = null, ConnectionHealthMonitor health = null,
             Func<AppSettings, CancellationToken, int?> pingProbe = null,
-            Func<AppSettings, CancellationToken, Tuple<double?, string>> speedProbe = null)
+            Func<AppSettings, CancellationToken, Tuple<double?, string>> speedProbe = null, Func<string> backupStatus = null)
         {
+            this.backupStatus = backupStatus;
             settings = settingsService;
             proxy = proxyService;
             this.health = health;
@@ -83,6 +86,11 @@ namespace ProGo
             table.RowStyles[6].Height = 82;
             table.RowStyles[7].Height = 60;
             table.RowStyles[8].Height = 68;
+            if (backupStatus != null) {
+                table.RowCount = 10; backupState = AddRow(table, 9, "Резервная копия");
+                table.RowStyles[9].Height = 90;
+                Height += 90; MinimumSize = new Size(790, 700);
+            }
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom,
                 Height = UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical,
@@ -175,6 +183,7 @@ namespace ProGo
             env.Text = Environment.GetEnvironmentVariable("ALL_PROXY", EnvironmentVariableTarget.User) ?? "Не настроен";
             if (testRoute) QueueRouteMeasure();
             recovery.Text = proxy.RecoveryStatus;
+            if (backupState != null) backupState.Text = backupStatus();
         }
 
         private static void CancelMeasurement(CancellationTokenSource source)

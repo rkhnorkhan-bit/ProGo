@@ -15,6 +15,9 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('profile_share', REPO / 'server/profile_share.py')
 share = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(share)
+sync_spec = importlib.util.spec_from_file_location('profile_share_setup', REPO / 'server/profile_share_setup.py')
+sync = importlib.util.module_from_spec(sync_spec)
+sync_spec.loader.exec_module(sync)
 
 
 class ProfileShareTest(unittest.TestCase):
@@ -25,12 +28,17 @@ class ProfileShareTest(unittest.TestCase):
         self.settings = dict(server_id='c' * 32, identity='c' * 32 + '.vpn.progo.invalid',
                              ca_name='ProGo Home ' + 'c' * 32, ca=base64.b64encode(b'test DER bytes').decode(),
                              origin='https://vpn.example.org', users={self.user: hashlib.sha256(self.password.encode()).hexdigest()})
-        self.path.write_text(json.dumps(self.settings))
+        self.write_settings()
         self.now = [2000000000]
         self.shares = share.Shares(self.path, lambda: self.now[0])
         self.server = share.Server(('127.0.0.1', 0), self.shares)
         self.thread = threading.Thread(target=self.server.serve_forever, kwargs={'poll_interval': .02}, daemon=True)
         self.thread.start()
+
+    def write_settings(self):
+        # The production publisher replaces the file atomically. Truncating it
+        # in this fixture races the live cleaner and tests a different writer.
+        sync.write(self.path, json.dumps(self.settings), 0o600)
 
     def tearDown(self):
         self.server.shutdown(); self.server.server_close(); self.thread.join()
@@ -120,7 +128,7 @@ class ProfileShareTest(unittest.TestCase):
         self.assertEqual(self.request('/install', cookie=cookie)[0], 410)
         other_user, other_password = 'pgv' + 'd' * 24, 'e' * 48
         self.settings['users'][other_user] = hashlib.sha256(other_password.encode()).hexdigest()
-        self.path.write_text(json.dumps(self.settings))
+        self.write_settings()
         other = self.shares.create(other_user, other_password, 'other.example.org')
         cookie2 = self.claim(other)
         self.assertEqual(self.request('/api/share', 'DELETE', auth=True)[0], 204)
@@ -129,7 +137,7 @@ class ProfileShareTest(unittest.TestCase):
     def test_invitation_revocation_cuts_existing_download(self):
         cookie = self.claim(self.create())
         self.settings['users'].clear()
-        self.path.write_text(json.dumps(self.settings))
+        self.write_settings()
         self.assertEqual(self.request('/profile.mobileconfig', cookie=cookie)[0], 410)
         self.assertEqual(self.request('/api/share', 'POST', {'home': 'home.example.org'}, auth=True)[0], 401)
 

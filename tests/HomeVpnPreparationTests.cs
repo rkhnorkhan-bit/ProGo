@@ -305,10 +305,14 @@ namespace ProGo
                     && progressMessages[1].StartsWith("Получение списка друзей с VPS")
                     && progressMessages.All(message => !message.Contains("Настройка VPS") && !message.Contains("запрос сохранён")),
                     "production list progress describes both read-only phases without promising a retained setup request");
-                check(observed && ticks >= 3 && copies == 1 && ListCalls() == 1 && Gone(root) && Gone(child)
-                    && wizard.Visible && (int)Field(wizard, "step") == 4 && ListPrivateUnchanged(before)
-                    && !Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Any(),
-                    "initial Friends cancellation/deadline settles the real owned tree, preserves the wizard/access/journal, and never retries: " + route);
+                bool rootGone = Gone(root), childGone = Gone(child), unchanged = ListPrivateUnchanged(before);
+                int calls = ListCalls(), currentStep = (int)Field(wizard, "step"), remainingWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Length;
+                check(observed && ticks >= 3 && copies == 1 && calls == 1 && rootGone && childGone
+                    && wizard.Visible && currentStep == 4 && unchanged && remainingWork == 0,
+                    "initial Friends cancellation/deadline settles the real owned tree, preserves the wizard/access/journal, and never retries: " + route
+                    + "; observed=" + observed + "; ticks=" + ticks + "; copies=" + copies + "; calls=" + calls
+                    + "; rootGone=" + rootGone + "; childGone=" + childGone + "; visible=" + wizard.Visible
+                    + "; step=" + currentStep + "; privateUnchanged=" + unchanged + "; remainingWork=" + remainingWork);
                 check(result.Text.Contains(route == "deadline" ? "Время получения списка истекло" : "Получение списка отменено")
                     && !result.Text.Contains("запрос сохранён") && result.ForeColor == (route == "deadline" ? UiTheme.Error : UiTheme.Muted),
                     "initial list outcome distinguishes requested cancellation from its deadline without server-recovery claims");
