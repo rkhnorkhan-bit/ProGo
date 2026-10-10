@@ -236,7 +236,7 @@ namespace ProGo
                         using (var ui = new WindowsFormsSynchronizationContext()) {
                             var before = SynchronizationContext.Current;
                             SynchronizationContext.SetSynchronizationContext(ui);
-                            try { NativeRecoveryWindows(token, clipboard, work); }
+                            try { NativeRecoveryWindows(token, clipboard, work); HomeVpnSetupWaitTests.Run(check, token, clipboard, work); }
                             finally { SynchronizationContext.SetSynchronizationContext(before); }
                         }
                     }

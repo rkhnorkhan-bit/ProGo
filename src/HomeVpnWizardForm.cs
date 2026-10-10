@@ -264,6 +264,11 @@ namespace ProGo
                 closeAfterWait = false;
                 if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
             }
+            catch (HomeVpnSetupWaitCancelledException ex)
+            {
+                closeAfterWait = false;
+                if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
+            }
             catch (OperationCanceledException)
             {
                 if (!IsDisposed && !Disposing) {

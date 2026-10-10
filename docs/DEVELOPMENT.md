@@ -1148,3 +1148,40 @@ interactive SSH wait cancellation, remote receipt acknowledgment/pruning and man
 reconciliation of uncertain requests are deferred. Read-only status uncertainty
 can leave public helper copies remotely; no remote cleanup or rollback is claimed.
 VERSION remains unchanged, F23 open, **21/30 closed; 9 remaining**. No release/merge.
+
+
+### Audit stage F23j — owned own-VPS SSH response waiting
+
+The default AdminAsync transport uses HomeVpnSetupWaitForm/Process only for setup
+and recover-setup. SCP still finishes before DPAPI request registration; registration
+precedes SSH waiting. Each setup/status/result command has a 600000 ms deadline.
+HomeVpnConsoleProcess owns a suspended new-console PowerShell root, assigns it to
+a non-breakaway kill-on-close job before execution, and settles all its descendants
+on cancellation, failure, timeout and normal parent exit. Preparation delegates to
+the same primitive while retaining its own messages and five-minute limit. This
+owner must never be used for user terminals or long-lived desktop/phone tunnels.
+
+Wait cancellation is a distinct HomeVpnSetupWaitCancelledException. The dialog
+uses one local-only action, no implicit Enter command and no DialogResult escape;
+button/Escape/Close wait for settlement. Disposal cancels and suppresses later UI
+updates. Cancellation accepted before the completion continuation wins over that
+response. It does not assert the remote command continues, stops or rolls back.
+The service retains the original pending ID, stops the query chain and refuses
+successful cancellation if private local work cannot be deleted. Other actions
+stay on the legacy protected transport. No secret/result reaches a command argument
+or diagnostic error; the existing token/status validation and consumption gate stay.
+
+HomeVpnSetupWaitTests run within the recovery fixture's real UI loop and fresh
+WindowsFormsSynchronizationContext, with cross-thread checking enabled. They use
+the harness executable as an isolated SSH substitute, real DPAPI and bounded job
+process trees; no live server or credentials. Checks cover native cancellation,
+stdout/console preservation, unrelated-process survival, pre-cancel, deadline,
+parent/orphan completion, nonzero exit, modal/race/disposal settlement, request IDs,
+setup/status/result chain interruption, access/file preservation and locked cleanup,
+wizard cancellation/reopening, original-result queries, normal/minimum layout and
+accessible controls. Existing preparation, recovery, CLI, updater, relay and server
+tests remain in the full CI. Native images and exact-head green CI are acceptance.
+
+Only own-VPS waiting is integrated. F23 remains open for other server commands and
+uncertain-request/receipt lifecycle work. VERSION and audit count stay unchanged:
+**21/30 closed; 9 remaining**. No merge or release.
