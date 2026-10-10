@@ -13,7 +13,7 @@ namespace ProGo
         private static void StructuredSshProfiles(SettingsService settings)
         {
             var old = settings.Current.Clone();
-            var path = Path.Combine(work, "SSH key O'Brien $literal"); File.WriteAllText(path, "fixture only");
+            var path = Path.Combine(work, "SSH key O'Brien $literal ключ"); File.WriteAllText(path, "fixture only");
             var profile = new SshProfileSetting { Name = "Primary", Target = "progo-test-profile", Server = "vpn.example.org", User = "ubuntu", Port = 2222, IdentityFile = path };
             try {
                 var legacy = SettingsService.DeserializeSettings("{\"SshProfile\":\"my-vps\",\"SshProfiles\":[{\"Name\":\"Old server\",\"Target\":\"my-vps\"}]}");
@@ -67,9 +67,7 @@ namespace ProGo
                 var seen = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(loginCapture));
                 Check(seen[Array.IndexOf(seen, "-i") + 1] == path && seen[Array.IndexOf(seen, "-p") + 1] == "2222" && seen.Last() == profile.Server,
                     "actual PowerShell preserves key path/apostrophe/dollar sign and explicit port as separate SSH arguments");
-                var result = SshProfileDiagnostics.Check(profile);
-                Check(result.SshAvailable && result.SshResolved && result.ResolvedHostName == profile.Server && result.ResolvedUser == profile.User && result.ResolvedPort == "2222", "real Windows ssh.exe -G resolves structured server/user/port without network access: " + result.Error);
-                Check(result.ResolvedIdentityFile == path.Replace('\\', '/') || result.ResolvedIdentityFile == path, "real ssh.exe receives the unchanged key path with spaces and apostrophe");
+                NativeStructuredSshArguments(profile);
                 PortableSshEditorPaths(profile);
                 foreach (var invalid in new[] { "server-option", "user-option", "port-zero", "port-large", "alias-newline", "alias-parameters", "key-newline", "key-relative" }) {
                     var p = profile.Clone();
@@ -111,6 +109,43 @@ namespace ProGo
                     Check(!form.Profile.IsDirect && form.Profile.Target == "my-vps", "saving an old alias does not rewrite it into a direct profile"); form.Close();
                 }
             } finally { settings.Save(old); File.Delete(path); }
+        }
+        private static void NativeStructuredSshArguments(SshProfileSetting profile)
+        {
+            const int timeoutMs = 7000;
+            string config = Path.Combine(work, "structured-ssh-empty-config");
+            string executable = OpenSshClient.Executable, phase = "prepare empty config";
+            var watch = Stopwatch.StartNew();
+            try {
+                // -F excludes user/system config, including Match exec and hostname
+                // canonicalization. This smoke checks native arguments; the owned
+                // harness fixtures cover full diagnostic parsing, status and cleanup.
+                File.WriteAllText(config, "", new UTF8Encoding(false));
+                phase = "run native ssh -G with empty config";
+                DiagnosticProcessResult captured;
+                try {
+                    captured = DiagnosticProcess.Run(executable, "-G -F " + SshConnection.Quote(config) + " " + SshConnection.CommandArguments(profile), timeoutMs, System.Threading.CancellationToken.None);
+                } catch (Exception ex) {
+                    throw new Exception("Native structured SSH argument smoke failed: phase=" + phase + "; client=" + Path.GetFileName(executable)
+                        + "; elapsed=" + watch.ElapsedMilliseconds + "ms; deadline=" + timeoutMs + "ms; exception=" + ex.GetType().Name);
+                }
+                string details = "; phase=capture complete; client=" + Path.GetFileName(executable) + "; elapsed=" + watch.ElapsedMilliseconds
+                    + "ms; deadline=" + timeoutMs + "ms; exit=" + captured.ExitCode + "; truncated=" + captured.Truncated;
+                Check(captured.ExitCode == 0 && !captured.Truncated, "native Windows ssh.exe -G with isolated config completes within the unchanged diagnostic budget" + details);
+                Check(NativeSshField(captured.Output, "hostname") == profile.Server && NativeSshField(captured.Output, "user") == profile.User
+                    && NativeSshField(captured.Output, "port") == profile.Port.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    "real Windows ssh.exe -G resolves exact structured server/user/port without network access" + details);
+                string identity = NativeSshField(captured.Output, "identityfile");
+                Check(identity == profile.IdentityFile.Replace('\\', '/') || identity == profile.IdentityFile,
+                    "real ssh.exe receives the unchanged key path with spaces, apostrophe, dollar sign and Unicode" + details);
+            } finally { if (File.Exists(config)) File.Delete(config); }
+        }
+        private static string NativeSshField(string output, string field)
+        {
+            string prefix = field + " ";
+            foreach (string line in output.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+                if (line.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return line.Substring(prefix.Length);
+            return null;
         }
         private static void PortableSshEditorPaths(SshProfileSetting original)
         {
