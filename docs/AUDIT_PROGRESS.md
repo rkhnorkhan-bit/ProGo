@@ -2140,3 +2140,57 @@ Source/lifecycle/archive review found no blockers; native/visual proof is pendin
 commands, older clients, another machine and manual server changes cannot be
 retroactively fenced by this local request; existing installations require owner
 review before migration. No live VPS, release publication or installation occurs.
+
+
+## Stage F23p — bounded HTTPS waiting (Windows verification pending)
+
+HTTPS profile operations now use real asynchronous request-stream, response and
+body I/O. One 20-second deadline covers an entire verification, QR creation
+(including its health GET and authenticated POST together), or link revocation.
+Caller cancellation and deadline expiry abort only the owned request, including
+waiting for headers, body reads and gzip/deflate decompression. Response text is
+strict UTF-8 and capped at 64 KiB after decompression. There is no application
+retry, redirect, certificate-validation bypass or raw transport exception output.
+
+The QR creation waiting window supports its cancel button, Escape and title-bar
+Close, and settles the owned work before returning. The HTTPS configuration
+window supports Close/Escape during verification and read-only share recovery,
+retains its original fields/address/access and protected N request, and waits
+for local request settlement. Constructor-owned UI handles publish results
+independently of modal SynchronizationContext state; disposed owners discard late
+callbacks. A successful expected-server verification, frozen ownership checks,
+local save, matching N consumption and successful modal close have one UI
+acceptance boundary. An accepted cancellation before that boundary cannot save
+or consume the request. An already dispatched QR revocation remains independently
+owned after QR Close and is bounded by the same transport deadline.
+
+Russian errors distinguish a failed read-only check from an unconfirmed POST or
+DELETE. Aborting a local request cannot prove that VPS work stopped; a delayed
+POST or DELETE may have applied a change. ProGo neither retries it automatically
+nor adds a new QR receipt protocol, remote terminal fence, rollback or journal.
+The established short-lived link and owner reconciliation model is unchanged.
+The durable N request remains limited to tracked HTTPS installation admission.
+
+The existing Windows wizard harness explicitly compiles and runs
+`HomeProfileHttpTests`. Its real TcpListener/SslStream fixtures check delayed
+headers, continuous body trickle, shared health/POST budget, request Abort,
+independent concurrent requests, decoded gzip 64 KiB, exact wire GET/POST/DELETE
+attempts, refused redirects/authentication and strict rejection of an untrusted
+TLS certificate. Application.Run cases exercise successful waits, cancel button,
+Escape, Close, Dispose and null SynchronizationContext, protected-request retention
+in the actual configuration form, and successful HTTP followed by queued
+Cancel/Dispose before the production owner acceptance action. Waiting, minimum
+size and configuration screenshots use the existing vpn-fixture artifact.
+
+Available Linux checks: **PASS — 40 Python tests, 3 native relay skips**; public
+content scan and whitespace pass. Actual .NET Framework 4.8/C#5 build, loopback
+HTTP/TLS/UI cancellation tests and native screenshots remain **NOT_CHECKED** until
+exact-head Windows CI and visual review. This stage does not close F23 by itself.
+
+**F23 and F31 remain OPEN.** The ShareOrigin getter and protected local save still
+perform synchronous file/DPAPI work in an owner UI callback. A separate prepared
+worker + final frozen-binding acceptance boundary needs blocking-writer native
+regression tests; blindly moving SetShareOrigin to Task.Run would permit a late
+save after cancellation. Legacy SSH/UI operations and earlier/external/untracked
+server mutations retain the limitations recorded in the preceding stages.
+No live VPS, release publication or installation is part of this stage.

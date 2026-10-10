@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -33,70 +34,40 @@ namespace ProGo
             return "https://" + uri.Host;
         }
 
-        private static string Request(string origin, string path, string method, HomeVpnAccess access, string body)
-        {
-            var request = (HttpWebRequest)WebRequest.Create(Origin(origin) + path);
-            request.Method = method; request.AllowAutoRedirect = false;
-            request.Proxy = null; request.Timeout = request.ReadWriteTimeout = 20000;
-            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-            if (access != null)
-                request.Headers[HttpRequestHeader.Authorization] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(access.User + ":" + access.Password));
-            try
-            {
-                if (method == "POST")
-                {
-                    byte[] bytes = Encoding.UTF8.GetBytes(body);
-                    request.ContentType = "application/json"; request.ContentLength = bytes.Length;
-                    using (var stream = request.GetRequestStream()) stream.Write(bytes, 0, bytes.Length);
-                }
-                using (var response = (HttpWebResponse)request.GetResponse())
-                {
-                    if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300) throw new IOException();
-                    using (var stream = response.GetResponseStream())
-                    using (var output = new MemoryStream())
-                    {
-                        var buffer = new byte[4096]; int count;
-                        while ((count = stream.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            if (output.Length + count > 65536) throw new IOException();
-                            output.Write(buffer, 0, count);
-                        }
-                        return Encoding.UTF8.GetString(output.ToArray());
-                    }
-                }
-            }
-            catch (WebException ex)
-            {
-                var response = ex.Response as HttpWebResponse;
-                var code = response == null ? 0 : (int)response.StatusCode;
-                if (response != null) response.Dispose();
-                throw new InvalidOperationException(code == 401 ? "Доступ к выдаче профиля отозван. Попросите владельца проверить приглашение."
-                    : "HTTPS-выдача недоступна. Проверьте домен, сертификат и порты 80/443 на VPS. После первой настройки сертификат может выпускаться несколько минут.");
-            }
-        }
-
         internal static Task VerifyAsync(string origin, HomeVpnAccess access)
+        { return VerifyAsync(origin, access, CancellationToken.None, HomeProfileHttp.TimeoutMs, null); }
+        internal static async Task VerifyAsync(string origin, HomeVpnAccess access, CancellationToken token, int timeoutMs = HomeProfileHttp.TimeoutMs, Func<Uri, HttpWebRequest> factory = null)
         {
-            return Task.Run(delegate
-            {
-                var json = new JavaScriptSerializer().DeserializeObject(Request(origin, "/health", "GET", null, null)) as System.Collections.Generic.Dictionary<string, object>;
-                if (json == null || !json.ContainsKey("ServerId") || json["ServerId"] as string != access.ServerId)
-                    throw new InvalidOperationException("Этот адрес выдачи относится к другому VPS. Уточните домен у владельца.");
-            });
+            using (var http = new HomeProfileHttp(HomeProfileHttpPurpose.Verify, token, timeoutMs, factory)) {
+                await VerifyAsync(http, origin, access.ServerId).ConfigureAwait(false); http.Check();
+            }
+        }
+        private static async Task VerifyAsync(HomeProfileHttp http, string origin, string serverId)
+        {
+            string text = await http.RequestAsync(origin, "/health", "GET", null, null).ConfigureAwait(false);
+            System.Collections.Generic.Dictionary<string, object> json;
+            try { json = new JavaScriptSerializer { MaxJsonLength = 65536, RecursionLimit = 8 }.DeserializeObject(text) as System.Collections.Generic.Dictionary<string, object>; }
+            catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeProfileHttpFailureException("HTTPS-выдача вернула неподтверждённый ответ. Адрес не сохранён."); }
+            http.Check();
+            if (json == null || !json.ContainsKey("ServerId") || json["ServerId"] as string != serverId)
+                throw new HomeProfileHttpFailureException("Этот адрес выдачи относится к другому VPS. Уточните домен у владельца.");
         }
 
-        internal static async Task<PhoneProfileLink> CreateAsync(string origin, HomeVpnAccess access, string home)
+        internal static Task<PhoneProfileLink> CreateAsync(string origin, HomeVpnAccess access, string home)
+        { return CreateAsync(origin, access, home, CancellationToken.None, HomeProfileHttp.TimeoutMs, null); }
+        internal static async Task<PhoneProfileLink> CreateAsync(string origin, HomeVpnAccess access, string home, CancellationToken token, int timeoutMs = HomeProfileHttp.TimeoutMs, Func<Uri, HttpWebRequest> factory = null)
         {
             origin = Origin(origin);
             if (!HomeVpnAccess.ValidHost(home)) throw new ArgumentException("Сначала укажите внешний домашний адрес в мастере.");
-            await VerifyAsync(origin, access);
-            return await Task.Run(delegate
-            {
+            using (var http = new HomeProfileHttp(HomeProfileHttpPurpose.Create, token, timeoutMs, factory)) {
+                await VerifyAsync(http, origin, access.ServerId).ConfigureAwait(false);
                 var json = new JavaScriptSerializer { MaxJsonLength = 65536, RecursionLimit = 8 };
-                var link = json.Deserialize<PhoneProfileLink>(Request(origin, "/api/share", "POST", access, json.Serialize(new { home = home })));
-                Validate(link, origin);
-                return link;
-            });
+                string text = await http.RequestAsync(origin, "/api/share", "POST", access, json.Serialize(new { home = home })).ConfigureAwait(false);
+                PhoneProfileLink link;
+                try { link = json.Deserialize<PhoneProfileLink>(text); Validate(link, origin); }
+                catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeProfileHttpFailureException("Создание QR не подтверждено: сервис вернул неверный ответ. ProGo не повторяет запрос автоматически."); }
+                http.Check(); return link;
+            }
         }
 
         internal static void Validate(PhoneProfileLink link, string origin)
@@ -111,8 +82,12 @@ namespace ProGo
         }
 
         internal static Task RevokeAsync(string origin, HomeVpnAccess access)
+        { return RevokeAsync(origin, access, CancellationToken.None, HomeProfileHttp.TimeoutMs, null); }
+        internal static async Task RevokeAsync(string origin, HomeVpnAccess access, CancellationToken token, int timeoutMs = HomeProfileHttp.TimeoutMs, Func<Uri, HttpWebRequest> factory = null)
         {
-            return Task.Run(delegate { Request(origin, "/api/share", "DELETE", access, null); });
+            using (var http = new HomeProfileHttp(HomeProfileHttpPurpose.Revoke, token, timeoutMs, factory)) {
+                await http.RequestAsync(origin, "/api/share", "DELETE", access, null).ConfigureAwait(false); http.Check();
+            }
         }
 
         internal static Bitmap Render(PhoneProfileLink link, int available)
@@ -135,7 +110,7 @@ namespace ProGo
         }
 
         internal static ProGoForm CreateConfigureForm(HomeVpnService service)
-        { return CreateConfigureForm(service, HomeVpnService.AdminAsync, VerifyAsync); }
+        { return CreateConfigureForm(service, HomeVpnService.AdminAsync, (origin, access, token) => VerifyAsync(origin, access, token), service.SetShareOrigin); }
 
         // Tests substitute only external transports, retaining the real controls
         // and the normal save boundary after SSH and HTTPS verification.
@@ -147,6 +122,11 @@ namespace ProGo
         internal static ProGoForm CreateConfigureForm(HomeVpnService service,
             Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> admin,
             Func<string, HomeVpnAccess, Task> verifyOrigin, Action<string> saveOrigin)
+        { return CreateConfigureForm(service, admin, (origin, access, token) => verifyOrigin(origin, access), saveOrigin); }
+
+        internal static ProGoForm CreateConfigureForm(HomeVpnService service,
+            Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> admin,
+            Func<string, HomeVpnAccess, CancellationToken, Task> verifyOrigin, Action<string> saveOrigin)
         {
             var dialog = new ProGoForm { Text = "QR: адрес выдачи профиля", ClientSize = new Size(660, 480), StartPosition = FormStartPosition.CenterParent, AutoScaleMode = AutoScaleMode.Dpi };
             {
@@ -167,60 +147,113 @@ namespace ProGo
                 verify.AccessibleDescription = "Проверяет HTTPS и принадлежность вашему VPS. После успешной проверки сохраняет адрес; не запускает настройку сервера.";
                 DescribeStatus(status, "Результат настройки HTTPS-выдачи");
                 var close = new Button { Text = "Закрыть", AutoSize = true, MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel,
-                    AccessibleDescription = "Закрывает окно без сохранения введённого адреса. Пока настройка выполняется, закрытие недоступно." };
+                    AccessibleDescription = "Закрывает окно без сохранения введённого адреса. Во время HTTPS-запроса прерывает локальное ожидание и ждёт его завершения. Если запрос настройки VPS сохранён, он остаётся." };
                 close.Click += delegate { dialog.Close(); };
                 dialog.CancelButton = close;
                 panel.Controls.Add(install); panel.Controls.Add(verify); panel.Controls.Add(recover); panel.Controls.Add(close); panel.Controls.Add(status); dialog.Controls.Add(panel);
-                bool working = false;
+                var dispatcher = new HomeProfileUiDispatcher(dialog);
+                bool working = false, closeAfterHttp = false, httpStage = false, trackedHttp = false;
+                CancellationTokenSource activeHttp = null;
                 Action<bool> refreshGate = delegate(bool showMessage) {
                     bool pending = true;
                     try { pending = HomeVpnShareRecovery.HasPending(); if (pending && showMessage) status.Text = HomeVpnShareRecovery.PendingMessage; }
                     catch (HomeVpnSharePendingException ex) { status.Text = ex.Message; }
                     install.Enabled = !working && !pending; verify.Enabled = !working && !pending;
                     recover.Visible = pending && service.Owner != null; recover.Enabled = !working;
-                    address.Enabled = close.Enabled = !working;
+                    address.Enabled = !working; close.Enabled = !working || httpStage;
+                };
+                Action cancelHttp = delegate {
+                    if (!working || activeHttp == null) return;
+                    closeAfterHttp = true;
+                    if (!activeHttp.IsCancellationRequested) activeHttp.Cancel();
+                    close.Enabled = false;
+                    status.Text = httpStage ? trackedHttp ? "Прерываем локальную проверку HTTPS. Дождитесь завершения; адрес не сохраняется, запрос настройки VPS остаётся."
+                        : "Прерываем локальную проверку HTTPS. Дождитесь завершения; прежний адрес и доступ сохраняются."
+                        : "Дождитесь завершения локального ожидания SSH. Проверка HTTPS и сохранение адреса отменены. Если запрос настройки создан, он остаётся для проверки.";
                 };
                 Func<int, Task> run = async delegate(int mode)
                 {
                     if (working) return;
-                    working = true; install.Enabled = verify.Enabled = recover.Enabled = address.Enabled = close.Enabled = false;
+                    working = true; closeAfterHttp = httpStage = false; trackedHttp = mode != 0;
+                    install.Enabled = verify.Enabled = recover.Enabled = address.Enabled = close.Enabled = false;
+                    var source = new CancellationTokenSource(); activeHttp = source;
+                    Exception failure = null;
                     try
                     {
                         var access = service.Access;
                         var currentOwner = service.Owner;
                         var owner = currentOwner == null ? null : new HomeVpnOwner { Host = currentOwner.Host, Port = currentOwner.Port, Login = currentOwner.Login, KeyFile = currentOwner.KeyFile };
                         string origin;
-                        if (mode == 2) origin = await admin(owner, "recover-share", null, null, delegate(string text) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = text; });
+                        Action<string> progress = text => dispatcher.Post(delegate { status.Text = text; });
+                        if (mode == 2) origin = await admin(owner, "recover-share", null, null, progress).ConfigureAwait(false);
                         else {
                             if (HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
                             origin = Origin(address.Text);
-                            if (mode == 1) origin = await admin(owner, "share", null, origin, delegate(string text) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = text; });
+                            if (mode == 1) origin = await admin(owner, "share", null, origin, progress).ConfigureAwait(false);
                         }
-                        if (dialog.IsDisposed || dialog.Disposing) return;
-                        status.Text = "Проверяем HTTPS и принадлежность VPS: " + origin + "…";
+                        source.Token.ThrowIfCancellationRequested();
+                        bool shown = await dispatcher.DispatchAsync(delegate {
+                            source.Token.ThrowIfCancellationRequested(); httpStage = true; close.Enabled = true;
+                            status.Text = "Проверяем HTTPS и принадлежность VPS: " + origin + "… До 20 секунд; можно закрыть окно и отменить проверку.";
+                        }).ConfigureAwait(false);
+                        if (!shown) throw new HomeProfileHttpCancelledException(mode == 0 ? "Проверка HTTPS отменена. Прежний адрес и доступ сохранены."
+                            : "Проверка HTTPS отменена. Прежний адрес и запрос настройки сохранены.");
                         if (mode != 0) await HomeVpnShareRecovery.ConfirmAsync(owner, access, origin,
-                            () => verifyOrigin(origin, access), saveOrigin, () => !dialog.IsDisposed && !dialog.Disposing && Object.ReferenceEquals(service.Access, access)
-                                && service.Owner != null && service.Owner.Host == owner.Host && service.Owner.Port == owner.Port && service.Owner.Login == owner.Login);
+                            () => verifyOrigin(origin, access, source.Token), saveOrigin, () => !dialog.IsDisposed && !dialog.Disposing && Object.ReferenceEquals(service.Access, access)
+                                && service.Owner != null && service.Owner.Host == owner.Host && service.Owner.Port == owner.Port && service.Owner.Login == owner.Login,
+                            source.Token, action => dispatcher.DispatchAsync(delegate {
+                                action(); activeHttp = null; working = httpStage = false; dialog.DialogResult = DialogResult.OK;
+                            })).ConfigureAwait(false);
                         else {
-                            await verifyOrigin(origin, access);
-                            if (dialog.IsDisposed || dialog.Disposing) return;
-                            if (!Object.ReferenceEquals(service.Access, access)) throw new HomeVpnSharePendingException("Доступ к VPS изменился во время проверки. Адрес не сохранён; проверьте его для текущего VPS.");
-                            if (HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
-                            saveOrigin(origin);
+                            await verifyOrigin(origin, access, source.Token).ConfigureAwait(false);
+                            bool accepted = await dispatcher.DispatchAsync(delegate {
+                                source.Token.ThrowIfCancellationRequested();
+                                if (!Object.ReferenceEquals(service.Access, access)) throw new HomeVpnSharePendingException("Доступ к VPS изменился во время проверки. Адрес не сохранён; проверьте его для текущего VPS.");
+                                if (HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+                                try { saveOrigin(origin); }
+                                catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeProfileHttpFailureException("HTTPS-адрес подтверждён, но сохранить его не удалось. Проверьте локальные настройки перед повтором."); }
+                                activeHttp = null; working = httpStage = false; dialog.DialogResult = DialogResult.OK;
+                            }).ConfigureAwait(false);
+                            if (!accepted) throw new HomeProfileHttpCancelledException(mode == 0 ? "Проверка HTTPS отменена. Прежний адрес и доступ сохранены."
+                            : "Проверка HTTPS отменена. Прежний адрес и запрос настройки сохранены.");
                         }
-                        if (!dialog.IsDisposed && !dialog.Disposing) dialog.DialogResult = DialogResult.OK;
                     }
-                    catch (Exception ex) { if (!dialog.IsDisposed && !dialog.Disposing) status.Text = ex.Message; }
-                    finally { working = false; if (!dialog.IsDisposed && !dialog.Disposing) refreshGate(false); }
+                    catch (Exception ex) { failure = ex; }
+                    try { await dispatcher.DispatchAsync(delegate {
+                        activeHttp = null; working = httpStage = false;
+                        if (failure == null) return;
+                        if (closeAfterHttp) dialog.Close();
+                        else {
+                            status.Text = ConfigureFailure(failure, mode != 0);
+                            refreshGate(false);
+                        }
+                    }).ConfigureAwait(false); }
+                    finally { source.Dispose(); }
                 };
-                install.Click += async delegate { await run(1); };
-                verify.Click += async delegate { await run(0); };
-                recover.Click += async delegate { await run(2); };
-                dialog.FormClosing += delegate(object s, FormClosingEventArgs e) { if (working && dialog.DialogResult != DialogResult.OK) e.Cancel = true; };
+                install.Click += async delegate { await run(1).ConfigureAwait(false); };
+                verify.Click += async delegate { await run(0).ConfigureAwait(false); };
+                recover.Click += async delegate { await run(2).ConfigureAwait(false); };
+                dialog.FormClosing += delegate(object s, FormClosingEventArgs e) {
+                    if (working && dialog.DialogResult != DialogResult.OK) { e.Cancel = true; dialog.DialogResult = DialogResult.None; cancelHttp(); }
+                };
+                dialog.Disposed += delegate { var source = activeHttp; if (source != null && !source.IsCancellationRequested) source.Cancel(); };
                 refreshGate(true);
                 UiTheme.ConfigureKeyboardOrder(dialog);
                 return dialog;
             }
+        }
+
+        private static string ConfigureFailure(Exception failure, bool tracked)
+        {
+            if (failure is HomeProfileHttpFailureException || failure is HomeProfileHttpCancelledException
+                || failure is HomeVpnSharePendingException || failure is HomeVpnAdminPendingException
+                || failure is HomeVpnSetupPendingException || failure is HomeVpnOwnerUnconfirmedException
+                || failure is HomeVpnPreparationCancelledException) return failure.Message;
+            if (failure is OperationCanceledException) return tracked ? "Проверка HTTPS отменена. Прежний адрес и запрос настройки сохранены."
+                : "Проверка HTTPS отменена. Прежний адрес и доступ сохранены.";
+            if (failure is ArgumentException) return "Укажите HTTPS-домен выдачи без пути и порта, например vpn.example.org.";
+            return tracked ? "Не удалось подтвердить настройку HTTPS. Проверьте соединение и сохранённый запрос; ProGo не повторяет команду автоматически."
+                : "Не удалось подтвердить проверку HTTPS. Проверьте соединение и домен; ProGo не повторяет запрос автоматически.";
         }
 
         internal static void DescribeStatus(Label label, string name)
@@ -271,8 +304,10 @@ namespace ProGo
                 cancel.Enabled = false; error.Text = ""; error.Visible = false;
                 RevokeWork = RunRevoke(revoke, delegate {
                     clock.Stop(); status.Text = "Ссылка отозвана. Уже установленный VPN продолжает работать."; picture.Visible = false; copy.Enabled = false;
-                }, delegate {
-                    error.Text = "Отозвать не удалось: проверьте соединение. Ссылка автоматически истечёт через 15 минут после создания."; error.Visible = true; cancel.Enabled = true;
+                }, delegate(Exception failure) {
+                    error.Text = "Отозвать не удалось подтвердить. " + (failure is HomeProfileHttpFailureException || failure is HomeProfileHttpCancelledException ? failure.Message
+                        : "VPS мог выполнить отзыв. ProGo не повторяет запрос автоматически; установленный VPN не изменяется.");
+                    error.Visible = true; cancel.Enabled = true;
                 });
             };
             panel.Controls.Add(copy); panel.Controls.Add(copyNotice); panel.Controls.Add(cancel);
@@ -298,12 +333,12 @@ namespace ProGo
             };
             clock.Tick += update; update(this, EventArgs.Empty); clock.Start();
         }
-        private async Task RunRevoke(Func<Task> revoke, Action succeeded, Action failed)
+        private async Task RunRevoke(Func<Task> revoke, Action succeeded, Action<Exception> failed)
         {
-            bool failure = false;
+            Exception failure = null;
             try { await revoke().ConfigureAwait(false); }
-            catch (Exception) { failure = true; }
-            await DispatchRevokeCompletion(failure ? failed : succeeded).ConfigureAwait(false);
+            catch (Exception ex) { failure = ex; }
+            await DispatchRevokeCompletion(failure == null ? succeeded : new Action(delegate { failed(failure); })).ConfigureAwait(false);
         }
         private Task<bool> DispatchRevokeCompletion(Action action)
         {

@@ -16,6 +16,7 @@ namespace ProGo
     {
         private readonly HomeVpnService service;
         private readonly ClipboardService clipboard;
+        private readonly HomeProfileUiDispatcher httpDispatcher;
         private readonly FlowLayoutPanel body = new FlowLayoutPanel();
         private readonly WizardProgress progress = new WizardProgress();
         private readonly Label heading = new Label();
@@ -43,7 +44,7 @@ namespace ProGo
 
         internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard)
         {
-            this.service = service; this.clipboard = clipboard;
+            this.service = service; this.clipboard = clipboard; httpDispatcher = new HomeProfileUiDispatcher(this);
             Text = "VPN для телефона"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(750, 650); MinimumSize = new Size(700, 620);
@@ -258,33 +259,21 @@ namespace ProGo
             if (busy) return;
             cancelledWait = closeAfterWait = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
-            try { await action(); }
-            catch (HomeVpnListCancelledException ex)
-            {
-                closeAfterWait = false;
-                if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
-            }
-            catch (HomeVpnPreparationCancelledException ex)
-            {
-                closeAfterWait = false;
-                if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
-            }
-            catch (OperationCanceledException)
-            {
-                if (!IsDisposed && !Disposing) {
+            Exception failure = null;
+            try { await action().ConfigureAwait(false); }
+            catch (Exception ex) { failure = ex; }
+            await httpDispatcher.DispatchAsync(delegate {
+                if (failure is HomeVpnListCancelledException || failure is HomeVpnPreparationCancelledException || failure is HomeProfileHttpCancelledException) {
+                    closeAfterWait = false; status.ForeColor = UiTheme.Muted; status.Text = failure.Message;
+                } else if (failure is OperationCanceledException) {
                     status.ForeColor = cancelledWait ? UiTheme.Muted : UiTheme.Error;
                     status.Text = cancelledWait ? "Запуск канала отменён. Сохранённый доступ к VPS остаётся; можно повторить запуск." : "Операция прервана. Результат не подтверждён.";
+                } else if (failure != null) {
+                    closeAfterWait = false; status.ForeColor = UiTheme.Error; status.Text = failure.Message;
                 }
-            }
-            catch (Exception ex) { closeAfterWait = false; if (!IsDisposed && !Disposing) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; } }
-            finally {
-                busy = false;
-                if (!IsDisposed && !Disposing) {
-                    body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
-                    UpdateSetupRecoveryState();
-                    if (closeAfterWait) Close();
-                }
-            }
+                busy = false; body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
+                UpdateSetupRecoveryState(); if (closeAfterWait) Close();
+            }).ConfigureAwait(false);
         }
         private async Task StartChannel()
         {
@@ -383,11 +372,16 @@ namespace ProGo
                 SetProgress("Создаём QR на 15 минут. Предыдущая ссылка этого доступа перестанет работать…");
                 var origin = service.ShareOrigin;
                 var access = service.Access;
-                var link = await HomeProfileShare.CreateAsync(origin, access, service.HomeAddress);
-                RecordProfileIssue();
-                using (var dialog = new PhoneProfileQrForm(link, delegate { return HomeProfileShare.RevokeAsync(origin, access); }, clipboard))
-                    dialog.ShowDialog(this);
-                SetProgress("QR создан; установка не подтверждена. Если код истёк или ссылка отозвана, создайте новый QR. Закрытие окна не подтверждает сканирование и не отзывает ссылку.");
+                string homeAddress = service.HomeAddress;
+                var link = await HomeProfileHttpWaitForm.WaitAsync(this, "Создание QR: ожидание HTTPS",
+                    token => HomeProfileShare.CreateAsync(origin, access, homeAddress, token)).ConfigureAwait(false);
+                await httpDispatcher.DispatchAsync(delegate {
+                    if (!Object.ReferenceEquals(service.Access, access)) throw new InvalidOperationException("Доступ к VPS изменился во время создания QR. Результат не показан; ProGo не повторяет запрос автоматически.");
+                    RecordProfileIssue();
+                    using (var dialog = new PhoneProfileQrForm(link, delegate { return HomeProfileShare.RevokeAsync(origin, access); }, clipboard))
+                        dialog.ShowDialog(this);
+                    SetProgress("QR создан; установка не подтверждена. Если код истёк или ссылка отозвана, создайте новый QR. Закрытие окна не подтверждает сканирование и не отзывает ссылку.");
+                }).ConfigureAwait(false);
             });
         }
         private void SaveProfile(object sender, EventArgs args)
