@@ -1655,4 +1655,6 @@ The local F23j commit was created, but automatic approval review blocked pushing
 its feature branch, interpreting the owner's no-publication-without-consent
 constraint as also applying to source-branch publication. No push workaround,
 remote PR, release, installation, service change or VPS operation was attempted.
-Owner approval for the feature-branch push is required before Windows CI can run.
+The owner subsequently approved feature-branch publication and a draft PR on
+2026-10-10. GitHub connector upload is authorized; release and installation remain
+unapproved. Windows CI acceptance is still required.
