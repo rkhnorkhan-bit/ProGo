@@ -112,6 +112,116 @@ namespace ProGo
             Check(new JavaScriptSerializer().Serialize(data) == serialized, "vault accessibility work never mutates fixture records");
             Check(vaultBefore == null ? !File.Exists(AppPaths.VaultPath) : File.Exists(AppPaths.VaultPath) && File.ReadAllBytes(AppPaths.VaultPath).SequenceEqual(vaultBefore),
                 "vault accessibility fixtures never create, persist or open an encrypted vault");
+            VaultAtomicPersistence(settings);
+        }
+
+        private static void VaultAtomicPersistence(SettingsService settings)
+        {
+            byte[] previous = File.Exists(AppPaths.VaultPath) ? File.ReadAllBytes(AppPaths.VaultPath) : null;
+            var originalAttributes = previous == null ? FileAttributes.Normal : File.GetAttributes(AppPaths.VaultPath);
+            string pattern = Path.GetFileName(AppPaths.VaultPath) + ".*.tmp";
+            var priorStaging = Directory.GetFiles(AppPaths.Root, pattern);
+            try {
+                if (File.Exists(AppPaths.VaultPath)) { File.SetAttributes(AppPaths.VaultPath, FileAttributes.Normal); File.Delete(AppPaths.VaultPath); }
+                var session = VaultService.Create("1234");
+                Check(session.CanPersist && File.Exists(AppPaths.VaultPath) && VaultService.Open("1234").CanPersist,
+                    "atomic vault create commits a new file that the existing reader opens");
+                var entry = VaultEntry.New(); entry.name = "Исходная запись"; entry.secret = "synthetic-vault-value";
+                session.Data.entries.Add(entry); VaultService.Save(session);
+                byte[] baseline = File.ReadAllBytes(AppPaths.VaultPath);
+                var json = new JavaScriptSerializer(); var envelope = json.Deserialize<VaultEnvelope>(File.ReadAllText(AppPaths.VaultPath));
+                Check(envelope.version == 1 && envelope.kdf == "PBKDF2-HMAC-SHA256" && envelope.iterations == 120000 && envelope.cipher == "AES-256-CBC" &&
+                    envelope.mac == "HMAC-SHA256" && Convert.FromBase64String(envelope.salt).Length == 32 && Convert.FromBase64String(envelope.iv).Length == 16 &&
+                    Convert.FromBase64String(envelope.tag).Length == 32 && !File.ReadAllText(AppPaths.VaultPath).Contains(entry.secret),
+                    "atomic writes retain the existing encrypted envelope format without plaintext entry content");
+                var candidate = new VaultSession(VaultData.Empty(), "1234", true);
+                bool denied = false;
+                File.SetAttributes(AppPaths.VaultPath, FileAttributes.ReadOnly);
+                try { VaultService.Save(candidate); } catch (IOException) { denied = true; } catch (UnauthorizedAccessException) { denied = true; }
+                finally { File.SetAttributes(AppPaths.VaultPath, FileAttributes.Normal); }
+                Check(denied && File.ReadAllBytes(AppPaths.VaultPath).SequenceEqual(baseline), "a real denied vault replacement preserves the original ciphertext");
+                denied = false;
+                using (var locked = File.Open(AppPaths.VaultPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    try { VaultService.Save(candidate); } catch (IOException) { denied = true; } catch (UnauthorizedAccessException) { denied = true; }
+                    Check(denied, "an actual target lock refuses atomic vault replacement");
+                }
+                Check(File.ReadAllBytes(AppPaths.VaultPath).SequenceEqual(baseline) && Directory.GetFiles(AppPaths.Root, pattern).OrderBy(p => p).SequenceEqual(priorStaging.OrderBy(p => p)),
+                    "failed native replacements preserve the old file and remove their encrypted staging files");
+                using (var clipboard = new ClipboardService(settings))
+                using (var form = new VaultForm(session, clipboard, settings)) {
+                    form.Show(); Application.DoEvents();
+                    var grid = (DataGridView)Field(form, "grid");
+                    string dataBefore = json.Serialize(session.Data);
+                    using (var locked = File.Open(AppPaths.VaultPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                        foreach (string action in new[] { "AddEntry", "EditSelected", "DeleteSelected" }) {
+                            grid.CurrentCell = grid.Rows[0].Cells[0]; grid.Rows[0].Selected = true;
+                            string warning = VaultWriteAction(form, action, "Отклонённое изменение", true);
+                            Check(warning.Contains("Не удалось сохранить") && warning.Contains("окне не изменены") && !warning.Contains(entry.secret),
+                                "actual vault " + action + " shows a clear write-error warning without secret contents");
+                            Check(json.Serialize(session.Data) == dataBefore && grid.Rows.Count == 1 && ReferenceEquals(grid.Rows[0].Tag, entry) &&
+                                Convert.ToString(grid.Rows[0].Cells[0].Value) == entry.name,
+                                "failed actual " + action + " creates no phantom session or grid edit");
+                        }
+                    }
+                    Check(File.ReadAllBytes(AppPaths.VaultPath).SequenceEqual(baseline), "failed actual vault actions leave the original encrypted file unchanged");
+                    VaultWriteAction(form, "AddEntry", "Сохранённая запись", false);
+                    Check(session.Data.entries.Count == 2 && grid.Rows.Count == 2, "unlocked Add publishes its successful committed record");
+                    grid.CurrentCell = grid.Rows.Cast<DataGridViewRow>().First(r => ((VaultEntry)r.Tag).id == entry.id).Cells[0];
+                    grid.CurrentRow.Selected = true;
+                    VaultWriteAction(form, "EditSelected", "Сохранённое изменение", false);
+                    Check(session.Data.entries.Single(e => e.id == entry.id).name == "Сохранённое изменение", "unlocked Edit publishes only the committed replacement");
+                    grid.CurrentCell = grid.Rows.Cast<DataGridViewRow>().First(r => ((VaultEntry)r.Tag).id == entry.id).Cells[0];
+                    grid.CurrentRow.Selected = true;
+                    VaultWriteAction(form, "DeleteSelected", null, false);
+                    var reopened = VaultService.Open("1234");
+                    Check(session.Data.entries.Count == 1 && grid.Rows.Count == 1 && reopened.CanPersist && json.Serialize(reopened.Data) == json.Serialize(session.Data),
+                        "unlocked Delete and all committed UI edits reopen through the unchanged vault reader");
+                    form.Close();
+                }
+                baseline = File.ReadAllBytes(AppPaths.VaultPath);
+                var temporary = new VaultSession(VaultData.Empty(), "1234", false);
+                using (var clipboard = new ClipboardService(settings))
+                using (var form = new VaultForm(temporary, clipboard, settings)) {
+                    form.Show(); Application.DoEvents(); VaultWriteAction(form, "AddEntry", "Запись текущего сеанса", false);
+                    Check(temporary.Data.entries.Count == 1 && ((DataGridView)Field(form, "grid")).Rows.Count == 1 &&
+                        File.ReadAllBytes(AppPaths.VaultPath).SequenceEqual(baseline), "nonpersistent session keeps its existing in-memory UI behavior and leaves the real file untouched");
+                    form.Close();
+                }
+                Check(Directory.GetFiles(AppPaths.Root, pattern).OrderBy(p => p).SequenceEqual(priorStaging.OrderBy(p => p)), "successful vault commits leave no new encrypted staging files");
+            } finally {
+                if (File.Exists(AppPaths.VaultPath)) File.SetAttributes(AppPaths.VaultPath, FileAttributes.Normal);
+                if (previous == null) { if (File.Exists(AppPaths.VaultPath)) File.Delete(AppPaths.VaultPath); }
+                else { File.WriteAllBytes(AppPaths.VaultPath, previous); File.SetAttributes(AppPaths.VaultPath, originalAttributes); }
+            }
+        }
+        private static string VaultWriteAction(VaultForm form, string action, string name, bool expectWarning)
+        {
+            bool editorSaved = false, confirmed = false, warned = false; var text = new System.Text.StringBuilder();
+            using (var timer = new Timer { Interval = 30 }) {
+                timer.Tick += delegate {
+                    var warning = FindWindow("#32770", "Сохранение хранилища");
+                    if (warning != IntPtr.Zero) {
+                        warned = true;
+                        EnumChildWindows(warning, delegate(IntPtr child, IntPtr data) {
+                            var value = new System.Text.StringBuilder(2048); GetWindowText(child, value, value.Capacity); text.AppendLine(value.ToString()); return true;
+                        }, IntPtr.Zero);
+                        PostMessage(warning, 0x0010, IntPtr.Zero, IntPtr.Zero); return;
+                    }
+                    if (action == "DeleteSelected") {
+                        var dialog = FindWindow("#32770", "Удаление записи");
+                        if (dialog != IntPtr.Zero && !confirmed) { confirmed = true; PostMessage(dialog, 0x0111, (IntPtr)1, IntPtr.Zero); }
+                        return;
+                    }
+                    var editor = Application.OpenForms.OfType<EntryForm>().FirstOrDefault();
+                    if (editor == null || editorSaved) return;
+                    editorSaved = true; ((TextBox)Field(editor, "name")).Text = name;
+                    ((TextBox)Field(editor, "secret")).Text = "synthetic-vault-ui-value";
+                    ((Button)editor.AcceptButton).PerformClick();
+                };
+                timer.Start(); Call(form, action);
+            }
+            Check(warned == expectWarning && (action == "DeleteSelected" ? confirmed : editorSaved), "native vault action reaches its expected save outcome: " + action);
+            return text.ToString();
         }
     }
 }

@@ -128,7 +128,20 @@ namespace ProGo
             if (!session.CanPersist) return;
             var envelope = Encrypt(session.Data ?? VaultData.Empty(), session.Pin);
             AppPaths.EnsureDirectories();
-            File.WriteAllText(AppPaths.VaultPath, Serializer.Serialize(envelope));
+            string staging = AppPaths.VaultPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                var bytes = Encoding.UTF8.GetBytes(Serializer.Serialize(envelope));
+                using (var stream = new FileStream(staging, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
+                    stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
+                }
+                // The old ciphertext stays intact until the complete encrypted replacement exists.
+                if (File.Exists(AppPaths.VaultPath)) File.Replace(staging, AppPaths.VaultPath, null);
+                else File.Move(staging, AppPaths.VaultPath);
+            } finally {
+                // Cleanup cannot hide a failed commit or turn a completed commit into a reported failure.
+                try { if (File.Exists(staging)) File.Delete(staging); }
+                catch { SafeLog.Info("Vault temporary cleanup deferred."); }
+            }
             SafeLog.Info("Vault saved.");
         }
 
