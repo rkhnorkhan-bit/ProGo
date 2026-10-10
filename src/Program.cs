@@ -64,9 +64,6 @@ namespace ProGo
                             Environment.GetFolderPath(Environment.SpecialFolder.Startup));
                     } catch { SafeLog.Info("Start menu shortcut migration skipped; existing shortcuts preserved."); }
 
-                    // Backup creation must never block tray startup. It logs internally on failure.
-                    BackupService.EnsureVersionBackupExists("startup");
-
                     var showStatusOnStartup = HasArg(args, "--show") || HasArg(args, "/show") || HasArg(args, "show");
 
                     using (var settingsService = new SettingsService())
@@ -84,6 +81,7 @@ namespace ProGo
 
                         context.StartAutomation();
                         instance.Attach(context.RequestShowStatus, context.RequestShutdown, context.CompleteShutdown, context.CancelShutdown);
+                        context.StartStartupBackupAsync();
 
                         Application.Run(context);
                     }

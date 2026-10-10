@@ -47,10 +47,10 @@ SHA-256. Незавершённая новая папка удаляется в 
 
 ## Оставшиеся интеграции
 
-`Program.cs` всё ещё синхронно вызывает `EnsureVersionBackupExists("startup")`
-до создания tray context и message pump. Комментарий о быстром tray startup
-не отражает этот вызов; стартовая базовая копия должна получить отдельный
-согласованный lifecycle worker (следующий F31h).
+В исходном этапе F31g `Program.cs` синхронно вызывал
+`EnsureVersionBackupExists("startup")` до tray context и message pump. Эта
+отдельная интеграция продолжена в [F31h](F31_STARTUP_BACKUP_STAGE.md): стартовая
+проверка и копирование получают тот же управляемый фоновый lifecycle.
 
 `StartRestore` читает список и metadata копий синхронно перед chooser. Этот этап
 уменьшает metadata reads, но не переносит весь listing в worker. Предпросмотр
