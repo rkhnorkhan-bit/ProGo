@@ -18,14 +18,14 @@ try {
     try { [ProGo.BackupIntegrity]::Write($link) } catch { $rejected = $true }
     if (-not $rejected -or -not (Test-Path (Join-Path $target 'payload.ps1'))) { throw 'Root junction was not preserved/refused' }
     New-Item -ItemType Directory $source | Out-Null
-    $home = Join-Path $source 'home-vpn-private'
-    New-Item -ItemType Junction -Path $home -Target $target | Out-Null
+    $f22homeArchivePath = Join-Path $source 'home-vpn-private'
+    New-Item -ItemType Junction -Path $f22homeArchivePath -Target $target | Out-Null
     $rejected = $false
     try { [ProGo.BackupIntegrity]::CopyPersonalArchives($source, $backup) } catch { $rejected = $true }
     if (-not $rejected -or (Test-Path (Join-Path $backup 'home-vpn-private'))) { throw 'Personal archive followed source home junction' }
-    [IO.Directory]::Delete($home)
-    New-Item -ItemType Directory $home | Out-Null
-    New-Item -ItemType Junction -Path (Join-Path $home 'access.dat') -Target $target | Out-Null
+    [IO.Directory]::Delete($f22homeArchivePath)
+    New-Item -ItemType Directory $f22homeArchivePath | Out-Null
+    New-Item -ItemType Junction -Path (Join-Path $f22homeArchivePath 'access.dat') -Target $target | Out-Null
     $rejected = $false
     try { [ProGo.BackupIntegrity]::CopyPersonalArchives($source, $backup) } catch { $rejected = $true }
     if (-not $rejected -or -not (Test-Path (Join-Path $target 'payload.ps1'))) { throw 'Personal archive followed protected-file junction' }

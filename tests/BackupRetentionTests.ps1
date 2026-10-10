@@ -22,13 +22,13 @@ try {
     Set-Content (Join-Path $InstallDir 'ProGo.exe') 'fixture; never execute'
     Copy-Item $Scripts (Join-Path $InstallDir 'scripts') -Recurse
     Add-Type -AssemblyName System.Security
-    $home = Join-Path $InstallDir 'home-vpn-private'
-    New-Item -ItemType Directory (Join-Path $home 'session-fixture'),(Join-Path $home 'admin-fixture') -Force | Out-Null
+    $f22homeArchivePath = Join-Path $InstallDir 'home-vpn-private'
+    New-Item -ItemType Directory (Join-Path $f22homeArchivePath 'session-fixture'),(Join-Path $f22homeArchivePath 'admin-fixture') -Force | Out-Null
     $encrypted = [Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes('synthetic secret; never log'), $null, [Security.Cryptography.DataProtectionScope]::CurrentUser)
-    [IO.File]::WriteAllBytes((Join-Path $home 'ACCESS.DAT'), $encrypted)
-    Set-Content (Join-Path $home 'session-fixture\access') 'plaintext session key; must not archive'
-    Set-Content (Join-Path $home 'admin-fixture\result.txt') 'plaintext recovery output; must not archive'
-    Set-Content (Join-Path $home 'unknown.dat') 'unknown plaintext; must not archive'
+    [IO.File]::WriteAllBytes((Join-Path $f22homeArchivePath 'ACCESS.DAT'), $encrypted)
+    Set-Content (Join-Path $f22homeArchivePath 'session-fixture\access') 'plaintext session key; must not archive'
+    Set-Content (Join-Path $f22homeArchivePath 'admin-fixture\result.txt') 'plaintext recovery output; must not archive'
+    Set-Content (Join-Path $f22homeArchivePath 'unknown.dat') 'unknown plaintext; must not archive'
     Set-Content (Join-Path $InstallDir 'system-proxy-backup.json') 'synthetic windows ownership journal'
     Set-Content (Join-Path $InstallDir 'proxy-environment-backup.json') 'synthetic CLI ownership journal'
     foreach ($i in 0..29) {
