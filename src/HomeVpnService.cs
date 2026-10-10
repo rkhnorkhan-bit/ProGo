@@ -214,7 +214,8 @@ namespace ProGo
                 transport = (executable, arguments, output) => HomeVpnSetupWaitForm.WaitAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output);
             return await AdminAsync(owner, action, label, identifier, progress,
                 (executable, arguments) => HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments,
-                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), transport);
+                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())
+                    || action == "recover-invite" || (action == "create-invite" && HomeVpnInvitationRecovery.Load(owner) != null)), transport);
         }
 
         // Injected transports keep Windows fixtures isolated from live VPS credentials.
@@ -222,13 +223,16 @@ namespace ProGo
             Func<string, string, Task> copy, Func<string, string, string, Task> commandTransport)
         {
             owner.Validate();
+            if (action == "create-invite" || action == "recover-invite")
+                return await HomeVpnInvitationService.RunAsync(owner, action == "recover-invite", label, progress, copy, commandTransport);
             bool setup = action == "setup" || action == "recover-setup";
             if (!setup && action != "invite" && action != "list" && action != "revoke" && action != "share" && action != "repair") throw new ArgumentException("Unknown action");
             if (action == "revoke" && !System.Text.RegularExpressions.Regex.IsMatch(identifier ?? "", @"\A[0-9a-f]{24}\z")) throw new ArgumentException("Invalid invitation");
             if ((label ?? "").Length > 80 || (label ?? "").IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) throw new ArgumentException("Название слишком длинное.");
             if (setup && Array.Exists((label ?? "").ToCharArray(), Char.IsControl)) throw new ArgumentException("Проверьте название доступа: без управляющих знаков.");
             if (action == "share") identifier = new Uri(HomeProfileShare.Origin(identifier)).Host;
-            using (var lease = setup ? await HomeVpnSetupRecovery.AcquireAsync() : null)
+            using (var lease = setup ? await HomeVpnSetupRecovery.AcquireAsync()
+                : action == "invite" || action == "revoke" ? await GuardFriendMutationAsync(owner) : null)
             {
                 var request = setup ? HomeVpnSetupRecovery.Load(owner, label) : null;
                 bool checking = request != null;
@@ -303,6 +307,16 @@ namespace ProGo
                     }
                 }
             }
+        }
+
+        private static async Task<IDisposable> GuardFriendMutationAsync(HomeVpnOwner owner)
+        {
+            // A second friends window cannot bypass the pending-request gate.
+            var lease = await HomeVpnInvitationRecovery.AcquireAsync();
+            try {
+                if (HomeVpnInvitationRecovery.Load(owner) != null) throw new HomeVpnInvitationPendingException(HomeVpnInvitationRecovery.PendingMessage);
+                return lease;
+            } catch { lease.Dispose(); throw; }
         }
 
         private static string ReadSetupOutput(string path)

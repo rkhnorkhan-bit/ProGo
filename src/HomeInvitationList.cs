@@ -36,7 +36,12 @@ namespace ProGo
             RefreshItems(null);
             UiTheme.ConfigureKeyboardOrder(this);
         }
-        internal void Add(HomeVpnInvitation item) { items.Add(item); search.Text = ""; RefreshItems(item.Id); }
+        internal void Add(HomeVpnInvitation item) {
+            var existing = items.FirstOrDefault(i => i.Id == item.Id);
+            if (existing == null) items.Add(item);
+            else { existing.Name = item.Name; existing.Revoked = item.Revoked; if (item.Created != null) existing.Created = item.Created; }
+            search.Text = ""; RefreshItems(item.Id);
+        }
         internal void Replace(IEnumerable<HomeVpnInvitation> values) { items.Clear(); items.AddRange(values.Where(i => i != null)); search.Text = ""; RefreshItems(null); }
         internal void RefreshSelection() { RefreshItems(Selected == null ? null : Selected.Id); }
         private void RefreshItems(string selectedId)
@@ -63,14 +68,18 @@ namespace ProGo
             details.AccessibleDescription = details.Text;
             var handler = SelectionChanged; if (handler != null) handler(this, EventArgs.Empty);
         }
-        internal static Form TokenDialog(string value, ClipboardService clipboard)
+        internal static Form TokenDialog(string value, ClipboardService clipboard, Action confirmSaved = null)
         {
             var form = new ProGoForm { Text = "Личный токен для друга", ClientSize = new Size(650, 400), StartPosition = FormStartPosition.CenterParent };
             var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(18), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text =
-                "Токен показывается только сейчас. Передайте его другу лично до закрытия окна: повторно показать этот токен нельзя. Он выберет «Подключиться к готовому VPS». Токен действует до отзыва владельцем и даёт только VPN-доступ." });
+                confirmSaved == null
+                    ? "Токен показывается только сейчас. Передайте его другу лично до закрытия окна: повторно показать этот токен нельзя. Он выберет «Подключиться к готовому VPS». Токен действует до отзыва владельцем и даёт только VPN-доступ."
+                    : "Сохраните токен для передачи другу, затем нажмите «Токен сохранён — завершить». Простое закрытие оставит запрос в ProGo: позже можно проверить исходную выдачу и получить тот же токен, если доступ не отозван. Друг выберет «Подключиться к готовому VPS»." });
             panel.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(600, 0), Text =
-                "Это приглашение в ProGo, а не QR-ссылка установки профиля. QR создаётся отдельно и действует ограниченное время. При потере токена выберите друга в списке и нажмите «Перевыпустить потерянный токен». Не публикуйте токен." });
+                confirmSaved == null
+                    ? "Это приглашение в ProGo, а не QR-ссылка установки профиля. QR создаётся отдельно и действует ограниченное время. При потере токена выберите друга в списке и нажмите «Перевыпустить потерянный токен». Не публикуйте токен."
+                    : "Это личное приглашение в ProGo. QR установки профиля создаётся отдельно. Подтверждение завершает только локальное сохранение запроса; оно не проверяет получение токена другом. После подтверждения потерянный токен потребуется перевыпустить. Не публикуйте токен." });
             var token = new TextBox { Width = 600, UseSystemPasswordChar = true, ReadOnly = true, Text = value, AccessibleName = "Личный токен приглашения",
                 AccessibleDescription = "Только чтение. Токен скрыт; передайте его через кнопку копирования до закрытия этого окна." };
             token.Enter += delegate { panel.ScrollControlIntoView(token); }; panel.Controls.Add(token);
@@ -82,7 +91,8 @@ namespace ProGo
             notice.TextChanged += delegate { notice.AccessibleDescription = notice.Text; };
             clipboard.BindSecretCopy(copy, delegate { return value; }, notice);
             var close = new Button { AutoSize = true, Text = "Закрыть", MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel,
-                AccessibleDescription = "Закрывает окно без отзыва доступа. Повторно показать этот токен нельзя; потерянный токен придётся перевыпустить." };
+                AccessibleDescription = confirmSaved == null ? "Закрывает окно без отзыва доступа. Повторно показать этот токен нельзя; потерянный токен придётся перевыпустить."
+                    : "Закрывает окно без отзыва доступа и без завершения выдачи. Запрос сохранён: можно проверить исходный результат позже." };
             close.Click += delegate { form.Close(); }; form.CancelButton = close;
             panel.Controls.Add(copy);
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
@@ -90,7 +100,27 @@ namespace ProGo
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false, FlowDirection = FlowDirection.TopDown,
                 Padding = new Padding(18, 0, 18, 12), Margin = Padding.Empty };
-            footer.Controls.Add(notice); footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); form.Controls.Add(layout);
+            footer.Controls.Add(notice);
+            if (confirmSaved != null) {
+                var finish = new Button { AutoSize = true, Text = "Токен сохранён — завершить", MinimumSize = new Size(230, 38),
+                    AccessibleDescription = "Подтверждает, что вы сохранили токен, и удаляет локальный незавершённый запрос. Не проверяет передачу другу и не отзывает доступ." };
+                finish.Click += delegate {
+                    try { confirmSaved(); form.DialogResult = DialogResult.OK; form.Close(); }
+                    catch (HomeVpnInvitationPendingException ex) { notice.Text = ex.Message; }
+                    catch { notice.Text = "Не удалось подтвердить локальное завершение. Запрос сохранён; повторите подтверждение."; }
+                };
+                footer.Controls.Add(finish);
+            }
+            footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); form.Controls.Add(layout);
+            if (confirmSaved != null) {
+                form.MinimumSize = new Size(520, 420);
+                panel.SizeChanged += delegate {
+                    int width = Math.Max(1, panel.ClientSize.Width - panel.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
+                    token.MaximumSize = new Size(width, 0); token.Width = width;
+                    foreach (Label label in panel.Controls.OfType<Label>()) label.MaximumSize = new Size(width, 0);
+                };
+                footer.SizeChanged += delegate { notice.MaximumSize = new Size(Math.Max(1, footer.ClientSize.Width - footer.Padding.Horizontal - notice.Margin.Horizontal), 0); };
+            }
             UiTheme.ConfigureKeyboardOrder(form); return form;
         }
     }
