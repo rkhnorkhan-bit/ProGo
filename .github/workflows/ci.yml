@@ -17,7 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify private operation recovery
-        run: python3 -m unittest discover -s tests -p 'test_home_vpn_operations.py' -v
+        # The isolated fixture exercises the real root-only owner entry point.
+        # Its server effects are replaced; only temporary receipt files are written.
+        run: sudo python3 -m unittest discover -s tests -p 'test_home_vpn_operations.py' -v
       - name: Decode QR independently and verify share endpoints
         run: |
           python3 -m venv /tmp/progo-qr-test

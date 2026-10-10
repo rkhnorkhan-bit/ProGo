@@ -27,9 +27,9 @@ namespace ProGo
                 File.AppendAllText(Path.Combine(path, "list-calls"), "list\n");
             }
             if (args[0] == "prepare-child") {
-                File.WriteAllText(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
+                HomeVpnFixtureFiles.Publish(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
             }
-            File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            HomeVpnFixtureFiles.Publish(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
             File.WriteAllText(Path.Combine(path, "console"), GetConsoleCP().ToString());
             if (mode == "complete") {
                 if (list) { Console.OutputEncoding = new System.Text.UTF8Encoding(false); Console.WriteLine(File.ReadAllText(Path.Combine(path, "list-response"))); }
@@ -239,8 +239,16 @@ namespace ProGo
                 var copy = HomeVpnPreparationForm.CopyForListAsync(null, Application.ExecutablePath, Args("hold"));
                 Pump(() => copy.IsCompleted);
                 if (callbackFailure != null) throw new Exception("List copy UI controller failed", callbackFailure);
-                check(observed && copy.IsFaulted && copy.Exception.GetBaseException() is HomeVpnListCancelledException && Gone(root) && Gone(child),
-                    "production list-copy cancellation settles its owned tree and has its own retryable read-only result");
+                Exception outcome = null;
+                try { copy.GetAwaiter().GetResult(); } catch (Exception error) { outcome = error; }
+                bool rootGone = root != 0 && Gone(root), childGone = child != 0 && Gone(child);
+                // An async Task method preserves the OperationCanceledException when
+                // awaited, but marks its outer Task Canceled, rather than Faulted.
+                check(observed && copy.IsCanceled && outcome is HomeVpnListCancelledException && rootGone && childGone,
+                    "production list-copy cancellation settles its owned tree and has its own retryable read-only result"
+                    + "; observed=" + observed + "; task=" + copy.Status
+                    + "; outcome=" + (outcome == null ? "none" : outcome.GetType().Name)
+                    + "; root=" + root + "; child=" + child + "; rootGone=" + rootGone + "; childGone=" + childGone);
             }
         }
         private static Dictionary<string, byte[]> ListPrivateSnapshot()
@@ -474,5 +482,23 @@ namespace ProGo
             } finally { if (held != null) held.Dispose(); if (work != null) Directory.Delete(work, true); }
         }
         [DllImport("kernel32.dll")] private static extern uint GetConsoleCP();
+    }
+
+    // Fixture readers use File.Exists as a readiness signal. Publish a closed,
+    // complete file so that signal cannot expose File.WriteAllText's open writer.
+    internal static class HomeVpnFixtureFiles
+    {
+        internal static void Publish(string path, string value, Action beforeClose = null)
+        {
+            string pending = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                using (var stream = new FileStream(pending, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                using (var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false))) {
+                    writer.Write(value); writer.Flush();
+                    if (beforeClose != null) beforeClose();
+                }
+                File.Move(pending, path);
+            } finally { if (File.Exists(pending)) File.Delete(pending); }
+        }
     }
 }

@@ -25,7 +25,7 @@ namespace ProGo
             if (index < 0) return false;
             string folder = Environment.GetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE");
             if (String.IsNullOrEmpty(folder)) throw new Exception("Missing isolated fixture folder");
-            File.WriteAllText(Path.Combine(folder, "pid"), Process.GetCurrentProcess().Id.ToString());
+            HomeVpnFixtureFiles.Publish(Path.Combine(folder, "pid"), Process.GetCurrentProcess().Id.ToString());
             string mode = File.ReadAllText(Path.Combine(folder, "mode"));
             if (mode == "no-listener") { Thread.Sleep(60000); return true; }
             int port = Int32.Parse(args[index + 1].Split(':').Last());
@@ -67,6 +67,7 @@ namespace ProGo
             Environment.SetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE", marker);
             var unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "unrelated-wait") { UseShellExecute = false, CreateNoWindow = true });
             try {
+                PublicationReadiness();
                 foreach (string mode in new[] { "no-listener", "silent" }) {
                     foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(token, clipboard, work, mode, route);
                 }
@@ -87,6 +88,27 @@ namespace ProGo
             return new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878);
         }
         private static int UdpPort() { using (var socket = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0))) return ((IPEndPoint)socket.Client.LocalEndPoint).Port; }
+        private static void PublicationReadiness()
+        {
+            string path = Path.Combine(marker, "publication-probe"); File.Delete(path);
+            using (var staged = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim()) {
+                var writer = Task.Run(delegate {
+                    HomeVpnFixtureFiles.Publish(path, Process.GetCurrentProcess().Id.ToString(), delegate { staged.Set(); release.Wait(); });
+                });
+                bool unpublished = false;
+                try {
+                    Pump(() => staged.IsSet || writer.IsCompleted);
+                    unpublished = staged.IsSet && !writer.IsCompleted && !File.Exists(path);
+                } finally { release.Set(); Pump(() => writer.IsCompleted); }
+                writer.GetAwaiter().GetResult();
+                check(unpublished, "fixture PID readiness stays unpublished while the staged writer is held open");
+                check(Int32.Parse(File.ReadAllText(path)) == Process.GetCurrentProcess().Id
+                    && Directory.GetFiles(marker, "publication-probe.*.tmp").Length == 0,
+                    "fixture PID readiness publishes complete readable data only after its writer closes");
+            }
+            File.Delete(path);
+        }
         private static void Mode(string value)
         {
             KillFixture(); File.Delete(Path.Combine(marker, "pid")); File.Delete(Path.Combine(marker, "receiver"));
