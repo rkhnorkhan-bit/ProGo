@@ -1,0 +1,30 @@
+name: F23k native validation
+on:
+  push:
+    branches: [ qa/f23k-native-check ]
+permissions:
+  contents: read
+jobs:
+  native-vpn:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 07d9c26a7841ecf6a5b3f7acf759a5823dac851e
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source and run native VPN tests
+        shell: powershell
+        run: |
+          if ((git rev-parse HEAD).Trim() -ne '07d9c26a7841ecf6a5b3f7acf759a5823dac851e') { throw 'Wrong source head' }
+          .\scripts\Test-HomeVpnRelay.ps1
+      - name: Upload native screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: F23k-native-screenshots
+          path: build/vpn-fixture/*.png
+          retention-days: 3
