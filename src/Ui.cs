@@ -101,6 +101,7 @@ namespace ProGo
                 Height = UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical,
                 FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
             var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
+            close.Click += delegate { Close(); };
             var restart = UiTheme.Button("Переподключиться", null, false);
             speedButton = UiTheme.Button("Измерить скорость", null, false);
             checkButton = UiTheme.Button("Проверить маршрут", null, false);
