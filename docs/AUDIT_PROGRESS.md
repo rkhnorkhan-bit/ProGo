@@ -2066,3 +2066,24 @@ for review in the existing artifact; generation and visual review are pending.
 Exact-head Windows C#5 build, native process/UI regressions and screenshot review
 are required before this stage can PASS. **F23 remains OPEN.** No real VPS,
 release publication or installation is part of F23m.
+
+## F31m — survive failure to save a typed CLI correction
+
+CLI enable/off now prepare the existing typed-normalization recovery records on
+disk before their first setter or notification. They use the same fresh raw
+snapshot as correction, refuse to proceed if preparation cannot be saved, and
+narrow the guard only after the full correction pass. A later save failure retains
+the prepared expectations across process restart; retry compares exact live values
+and preserves different external edits. No full snapshot rollback or new UI/native
+mutation path is added.
+
+Native fixtures lock the actual target after guard preparation, deny multiple
+corrections, verify heartbeat/listener and byte preservation, then retry actual
+cleanup in a separate process. They also cover initial preparation refusal and
+later different external values. Compilation/native execution and real Rescue
+measurements are NOT_CHECKED at this local stage.
+
+Prepared normalization records describe anticipated effects, not proof of a prior
+notification. An identical later external normalization is indistinguishable;
+different values remain protected. Atomic replacement is process/restart recovery,
+without a power-loss durability claim. **F31 remains OPEN; accepted status 22/31.**
