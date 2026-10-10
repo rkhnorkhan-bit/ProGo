@@ -96,7 +96,7 @@ namespace ProGo
             BackupIntegrity.Write(root);
             using (var form = new RestoreOptionsForm(root))
             {
-                form.Show(); Application.DoEvents();
+                form.Show(); Application.DoEvents(); PumpUntil(() => form.PreviewReady);
                 var consent = Descendants(form).OfType<CheckBox>().Single();
                 var data = Descendants(form).OfType<RadioButton>().Single(r => r.Name == "RestoreData");
                 var all = Descendants(form).OfType<RadioButton>().Single(r => r.Name == "RestoreAll");
@@ -125,7 +125,7 @@ namespace ProGo
                 ((Button)form.CancelButton).PerformClick();
                 Check(form.DialogResult == DialogResult.Cancel && File.ReadAllText(Path.Combine(root, "settings.json")) == "{}", "scope cancellation leaves original copy untouched");
             }
-            using (var form = new RestoreOptionsForm(root))
+            using (var form = new RestoreOptionsForm(root, RestorePreview.Read(root, System.Threading.CancellationToken.None), null))
             using (var pulse = new System.Windows.Forms.Timer { Interval = 10 })
             {
                 int pulses = 0; pulse.Tick += delegate { pulses++; };
@@ -144,7 +144,7 @@ namespace ProGo
                     Check(rejected, "launcher refuses missing data consent before starting a helper");
                 }
             }
-            using (var form = new RestoreOptionsForm(root))
+            using (var form = new RestoreOptionsForm(root, RestorePreview.Read(root, System.Threading.CancellationToken.None), null))
             {
                 form.Shown += delegate {
                     Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию").PerformClick();
@@ -155,8 +155,11 @@ namespace ProGo
             using (var form = new RestoreOptionsForm(Path.Combine(root, "missing-copy")))
                 Check(!Descendants(form).OfType<Button>().Single(b => b.Text == "Проверить и подготовить копию").Enabled, "missing source disables preparation instead of throwing from the chooser");
             File.Delete(Path.Combine(root, "settings.json")); File.Delete(Path.Combine(root, "vault.enc.json"));
-            using (var form = new RestoreOptionsForm(root))
+            using (var form = new RestoreOptionsForm(root)) {
+                form.Show(); PumpUntil(() => form.PreviewReady);
                 Check(Descendants(form).OfType<RadioButton>().Where(r => r.Name != "RestoreProgram").All(r => !r.Enabled), "copy without user payloads offers program scope only");
+                form.Close();
+            }
         }
 
         private static void BackupCleanupPreview()
