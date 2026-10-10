@@ -1658,3 +1658,26 @@ remote PR, release, installation, service change or VPS operation was attempted.
 The owner subsequently approved feature-branch publication and a draft PR on
 2026-10-10. GitHub connector upload is authorized; release and installation remain
 unapproved. Windows CI acceptance is still required.
+
+## Finding F31 — portable Windows SSH/proxy configuration and responsiveness
+
+Owner added a separate finding on 2026-10-10. Current overall progress is
+**21/31 closed, 10 remaining**. Earlier 21/30 entries are historical.
+
+F31a fixes direct profiles rejecting ~/.ssh key paths and the dashboard waiting
+on the background proxy gate while rendering recovery status. Aliases remain
+passed intact to OpenSSH; portable keys resolve against the current Windows
+user without rewriting saved paths. Diagnostics read Windows ssh-agent service
+state (Running/Stopped/Disabled/transitional/missing/unknown), inspect key path
+readability without reading contents, and explain explicit owner-approved
+service startup and ssh-add. No service, server, passphrase or host-key changes.
+
+Regression coverage: two different home directories, both path separators,
+traversal rejection, saved portable paths, stale absolute paths, service-state
+mapping and actual background-gate contention. Windows CI acceptance pending.
+
+F31 remains OPEN. Remaining work includes agent key inventory/noninteractive
+authentication, bounded auth-failure retries, other synchronous UI paths,
+HDD/VHDX CPU/RAM/disk measurements, installed-version detection and the live
+SOCKS/HTTP route. Multiple VPS profiles and local ports remain independent
+settings; changing machines must not silently substitute a different key.

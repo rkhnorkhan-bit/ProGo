@@ -34,6 +34,21 @@ namespace ProGo
                 }
                 var args = SshConnection.Arguments(profile);
                 Check(args[Array.IndexOf(args, "-p") + 1] == "2222" && args[Array.IndexOf(args, "-l") + 1] == "ubuntu" && args[Array.IndexOf(args, "-i") + 1] == path && args.Last() == profile.Server && args.Contains("IdentitiesOnly=yes"), "shared SSH arguments contain explicit port/user/key and host");
+                var portable = profile.Clone(); portable.IdentityFile = "~/.ssh/portable_key";
+                var homeA = Path.Combine(work, "user-one"); var homeB = Path.Combine(work, "user-two");
+                Check(SshConnection.KeyPath(portable.IdentityFile, homeA) == Path.Combine(homeA, ".ssh", "portable_key")
+                    && SshConnection.KeyPath(portable.IdentityFile, homeB) == Path.Combine(homeB, ".ssh", "portable_key"), "portable key follows the current user's home rather than a saved machine path");
+                Check(SshConnection.KeyPath(@"~\.ssh\portable_key", homeA) == SshConnection.KeyPath(portable.IdentityFile, homeA), "both portable path separators resolve identically");
+                var portableArgs = SshConnection.Arguments(portable);
+                Check(portableArgs[Array.IndexOf(portableArgs, "-i") + 1] == SshConnection.KeyPath(portable.IdentityFile)
+                    && portable.IdentityFile == "~/.ssh/portable_key", "SSH receives resolved path while portable saved setting remains unchanged");
+                settings.Save(new AppSettings { SshProfiles = new System.Collections.Generic.List<SshProfileSetting> { portable }, SshProfile = portable.Target });
+                Check(settings.Load().SshProfiles[0].IdentityFile == "~/.ssh/portable_key", "portable SSH key setting survives actual save/reload");
+                bool escaped = false; try { SshConnection.KeyPath("~/../outside", homeA); } catch (ArgumentException) { escaped = true; }
+                Check(escaped, "portable path cannot escape the current user's profile");
+                Check(SshProfileDiagnostics.InspectKey(path).Contains("доступен") && SshProfileDiagnostics.InspectKey(path + "-old-machine").Contains("старый абсолютный"), "diagnostic distinguishes readable and stale machine-specific key paths");
+                Check(SshAgentDiagnostics.Describe(4, false).StartsWith("Running") && SshAgentDiagnostics.Describe(1, false).StartsWith("Stopped")
+                    && SshAgentDiagnostics.Describe(1, true).StartsWith("Disabled") && !SshAgentDiagnostics.Describe(2, false).StartsWith("Running"), "agent diagnostics distinguish running, stopped, disabled and transitional states");
                 var login = SshInteractiveLogin.CreateStartInfo(profile);
                 var script = Encoding.Unicode.GetString(Convert.FromBase64String(login.Arguments.Split(' ').Last()));
                 Check(script.Contains("'-p' '2222'") && script.Contains("'-l' 'ubuntu'") && script.Contains("'-i' '" + path.Replace("'", "''") + "'") && script.Contains("StrictHostKeyChecking=ask"), "first login uses the same fields and literal quoted paths without shell interpolation");
