@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ProGo
@@ -10,11 +11,12 @@ namespace ProGo
     internal sealed class AppProxyConsumerSnapshot
     {
         internal readonly bool Known, Windows, Cli, Codex;
-        internal AppProxyConsumerSnapshot(bool windows, bool cli, bool codex)
-        { Known = true; Windows = windows; Cli = cli; Codex = codex; }
+        internal readonly string RecoveryMessage;
+        internal AppProxyConsumerSnapshot(bool windows, bool cli, bool codex, string recoveryMessage = null)
+        { Known = true; Windows = windows; Cli = cli; Codex = codex; RecoveryMessage = recoveryMessage; }
         private AppProxyConsumerSnapshot() { }
         internal static readonly AppProxyConsumerSnapshot Unknown = new AppProxyConsumerSnapshot();
-        internal bool Empty { get { return Known && !Windows && !Cli && !Codex; } }
+        internal bool Empty { get { return Known && !Windows && !Cli && !Codex && RecoveryMessage == null; } }
     }
 
     // UI-thread owner of the shared listener. Only the single background observer
@@ -101,10 +103,12 @@ namespace ProGo
                 PruneWindows(); var names = new List<string>();
                 var current = snapshot;
                 if (MutationPending) names.Add("применяем настройки прокси…");
+                if (bridge.CleanupPending) names.Add("перенос портов: требуется завершить очистку");
                 if (WindowsCleanupPending || (current != null && current.Windows)) names.Add("Windows");
                 if (CliCleanupPending || (current != null && current.Cli)) names.Add("терминалы и Codex");
                 if (windows.Count != 0) names.Add("отдельные окна: " + windows.Count);
                 if (current != null && current.Codex) names.Add("ярлык Codex");
+                if (current != null && current.RecoveryMessage != null) names.Add(current.RecoveryMessage);
                 if (current == null || !current.Known)
                     names.Add(current == null ? "проверяем потребителей прокси…" : "потребители прокси: нужна проверка");
                 return String.Join(", ", names.ToArray());
@@ -112,7 +116,7 @@ namespace ProGo
         }
         internal void ReleaseIfUnused()
         {
-            if (disposed || MutationPending) return;
+            if (disposed || MutationPending || bridge.CleanupPending) return;
             PruneWindows();
             long revision = bridge.ConsumerRevision;
             if (observedBridgeRevision != revision) { observedBridgeRevision = revision; Invalidate(); }
@@ -209,7 +213,8 @@ namespace ProGo
             // This is an observation only. Enable/Disable/MoveOwned retain their
             // own fresh ownership checks and never use this cached decision.
             bool codexConsumer = ReadCodexOwnership(CodexProxyService.LauncherPath);
-            return new AppProxyConsumerSnapshot(windowsConsumer, cliConsumer, codexConsumer);
+            return new AppProxyConsumerSnapshot(windowsConsumer, cliConsumer, codexConsumer,
+                ProxyIntegrationState.ReadPortRecoveryMessage(current.HttpProxyPort, CancellationToken.None));
         }
         internal void ForgetWindows()
         {

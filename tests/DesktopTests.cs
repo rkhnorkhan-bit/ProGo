@@ -89,6 +89,7 @@ namespace ProGo
                     StartupBackupWorkflow();
                     StartupBackupLayout(settings);
                     SettingsPersistenceWorkflow();
+                    AsyncSettingsWorkflow(settings);
                     BackupCleanupPreview();
                     RestoreScopeAndPreparationUi();
                     BackupAccessibility();
