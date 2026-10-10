@@ -235,7 +235,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
@@ -260,7 +260,7 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
-foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
@@ -298,6 +298,15 @@ if ($LASTEXITCODE -ne 0) { Fail 'Bounded log tests failed' }
 $logSource = Join-Path $Root 'release\scripts\BoundedLog.cs'
 if (-not (Test-Path $logSource) -or (Get-FileHash $logSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\BoundedLog.cs')).Hash) { Fail 'app and helper log policies differ' }
 & (Join-Path $Root 'tests\BoundedLogTests.ps1') (Join-Path $Root 'release\scripts')
+
+$RescueHarness = Join-Path $Root 'build\RescueMeasurementTests.exe'
+& $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll "/out:$RescueHarness" (Join-Path $Root 'src\RescueMeasurement.cs') (Join-Path $Root 'tests\RescueMeasurementTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Rescue measurement harness build failed' }
+& $RescueHarness
+if ($LASTEXITCODE -ne 0) { Fail 'Rescue measurement tests failed' }
+$rescueSource = Join-Path $Root 'release\scripts\RescueMeasurement.cs'
+if (-not (Test-Path $rescueSource) -or (Get-FileHash $rescueSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\RescueMeasurement.cs')).Hash) { Fail 'shipped Rescue measurement source differs' }
+& (Join-Path $Root 'tests\RescueMeasurementTests.ps1') (Join-Path $Root 'release\scripts')
 
 $shortcutSource = Join-Path $Root 'release\scripts\ApplicationShortcuts.cs'
 if ((Get-FileHash $shortcutSource).Hash -ne (Get-FileHash (Join-Path $Root 'src\ApplicationShortcuts.cs')).Hash) { Fail 'app and installer shortcut implementations differ' }
@@ -358,7 +367,7 @@ $UpdateCheckHarness = Join-Path $Root 'build\UpdateCheckTests.exe'
 if ($LASTEXITCODE -ne 0) { Fail 'Update check harness build failed' }
 & $UpdateCheckHarness
 if ($LASTEXITCODE -ne 0) { Fail 'Update check tests failed' }
-& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopSettingsActionTests.cs') (Join-Path $Root 'tests\DesktopSettingsValidationTests.cs') (Join-Path $Root 'tests\DesktopDashboardLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsPagesLayoutTests.cs') (Join-Path $Root 'tests\DesktopContrastThemeTests.cs') (Join-Path $Root 'tests\DesktopSettingsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopBackupAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopVaultAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopWizardAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopProfileSharingAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopFriendsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopHelpAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopUpdateTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs') (Join-Path $Root 'tests\DesktopStartupTests.cs') (Join-Path $Root 'tests\DesktopSshEditorTests.cs') (Join-Path $Root 'tests\DesktopSshDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopRouteDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopWindowsRestoreTests.cs') (Join-Path $Root 'tests\DesktopBackupRetentionTests.cs') (Join-Path $Root 'tests\DesktopBridgeConsumerTests.cs') (Join-Path $Root 'tests\DesktopDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopStartupPreferenceTests.cs') (Join-Path $Root 'tests\DesktopVisualPolishTests.cs')
+& $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopSettingsActionTests.cs') (Join-Path $Root 'tests\DesktopSettingsValidationTests.cs') (Join-Path $Root 'tests\DesktopDashboardLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsPagesLayoutTests.cs') (Join-Path $Root 'tests\DesktopContrastThemeTests.cs') (Join-Path $Root 'tests\DesktopSettingsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopBackupAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopVaultAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopWizardAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopProfileSharingAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopFriendsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopHelpAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopUpdateTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs') (Join-Path $Root 'tests\DesktopStartupTests.cs') (Join-Path $Root 'tests\DesktopSshEditorTests.cs') (Join-Path $Root 'tests\DesktopSshDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopRouteDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopWindowsRestoreTests.cs') (Join-Path $Root 'tests\DesktopBackupRetentionTests.cs') (Join-Path $Root 'tests\DesktopBackupMetadataTests.cs') (Join-Path $Root 'tests\DesktopManualBackupTests.cs') (Join-Path $Root 'tests\DesktopBridgeConsumerTests.cs') (Join-Path $Root 'tests\DesktopDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopStartupPreferenceTests.cs') (Join-Path $Root 'tests\DesktopVisualPolishTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
 & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }

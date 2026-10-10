@@ -1166,3 +1166,32 @@ vault empty-state surface for empty collections versus search/type misses. It
 never saves vault records or changes cryptographic/decoy contracts. The tray uses
 `SystemInformation.SmallIconSize` at startup; actual display/DPI transitions remain
 separately tracked under F16, and actual Narrator acceptance under F17.
+
+
+## F31i — owner-run Rescue measurement
+
+`Measure-RescueProGo.ps1` is an optional read-only helper shipped with the same
+`RescueMeasurement.cs` as the app. It identifies the selected running image by PID
+and Win32 path/resource versions, without using repository VERSION. Resource
+ProductVersion on older releases may not identify a commit. The owner explicitly
+selects actual SOCKS/HTTP ports; zero keeps the check NOT_CHECKED.
+
+The collector uses one outstanding bounded probe, a total sampling deadline and
+cancellation. A blocked inventory/sample ends the session without another worker.
+Native tests read real current-process times, memory and I/O, read SCM status/start
+mode without changes, and observe a fixture TCP listener without connecting. They
+verify real owned child exit and SSH-named process ancestry without command-line
+access. Synthetic data verifies metrics, unknown values, counter reset, cancellation,
+blocking and sanitized failure text. The shipped PowerShell action is exercised for
+stdout, explicit report writing, file-only selection and PID/image mismatch.
+
+No SSH subprocess, network authentication, agent key listing, service configuration,
+proxy/settings mutation, log/private-file read or owner-machine action occurs.
+Resource/compiler loading happens before the timed collection. The optional report
+is the only write made by the helper and requires explicit ReportPath.
+
+See [RESCUE_MEASUREMENT.md](RESCUE_MEASUREMENT.md) for owner instructions and the
+PASS/FAIL/NOT_CHECKED contract. Process I/O includes cache/device operations; Windows
+Responding is not a click-latency measurement; port presence is not SOCKS/HTTP
+protocol or external reachability. Real Rescue/HDD/VHDX acceptance remains unchecked
+until the owner runs and reviews the relevant measurements.

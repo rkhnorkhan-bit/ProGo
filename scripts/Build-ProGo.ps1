@@ -121,7 +121,7 @@ $ReleaseScripts = Join-Path $Release "scripts"
 New-Item -ItemType Directory -Path $ReleaseScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is bootstrap-only. Do not include it in the runtime release:
 # some endpoint protection tools block downloaded bootstrap installers during self-update builds.
-foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
+foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $ReleaseScripts $scriptName) -Force
@@ -135,6 +135,7 @@ Copy-Item (Join-Path $Src "UpdateInstallSession.cs") -Destination (Join-Path $Re
 Copy-Item (Join-Path $Src "BackupRetention.cs") -Destination (Join-Path $ReleaseScripts "BackupRetention.cs") -Force
 Copy-Item (Join-Path $Src "BackupIntegrity.cs") -Destination (Join-Path $ReleaseScripts "BackupIntegrity.cs") -Force
 Copy-Item (Join-Path $Src "BoundedLog.cs") -Destination (Join-Path $ReleaseScripts "BoundedLog.cs") -Force
+Copy-Item (Join-Path $Src "RescueMeasurement.cs") -Destination (Join-Path $ReleaseScripts "RescueMeasurement.cs") -Force
 Copy-Item (Join-Path $Src "DiagnosticReport.cs") -Destination (Join-Path $ReleaseScripts "DiagnosticReport.cs") -Force
 Copy-Item (Join-Path $Src "DiagnosticPreview.cs") -Destination (Join-Path $ReleaseScripts "DiagnosticPreview.cs") -Force
 Copy-Item (Join-Path $Src "UiTheme.cs") -Destination (Join-Path $ReleaseScripts "UiTheme.cs") -Force
