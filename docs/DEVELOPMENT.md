@@ -1361,3 +1361,38 @@ List and health do not prove that old command is terminal. This transport stage
 adds no durable share admission guard and makes no restart-fence claim.
 HTTPS verification/QR retain per-I/O 20-second limits without total cancellation,
 an explicit later gap. F23 remains open pending those decisions and Windows proof.
+
+## F31m — prepare CLI typed-value recovery before notifications
+
+A denied typed-value correction followed by failure to replace its CLI journal
+could previously lose the expected registry kind. A later off would see only the
+normalized live value and could report cleanup complete without repairing it.
+CLI enable and off now atomically prepare recovery guards before their first
+environment setter or notification. Preparation uses the exact raw live snapshot
+that the subsequent correction pass uses; preparation failure starts no setter or
+notification. The existing journal field and strict normalization validator remain
+compatible: guards include only ExpandString to String with unchanged serialized
+content, and AutoDetect DWORD 0/1 to absence. No full Windows snapshot is restored.
+
+After the complete correction pass, the journal is narrowed to actual failed
+fields. A notification, correction infrastructure or final save failure leaves
+the prepared on-disk guard intact, including expectations for fields not yet
+checked. Retry reads that journal and conditionally repairs only an exact current
+normalized value, with a second live check before writing. Already corrected and
+different external values are left alone. The F31j worker/gate and listener failure
+lease remain unchanged. Successful off removes its journal only after this work.
+
+A prepared Applied value describes an anticipated notification normalization; it
+does not prove that notification ran. A later external edit identical to that
+normalization cannot be distinguished, including after interruption before the
+notification. Recovery follows the existing exact-value normalization policy and
+preserves different external values. Atomic replacement provides process/restart
+recovery; power-loss durability has not been established.
+
+`DesktopTypedCorrectionRecoveryTests.cs` exercises actual locked journal targets,
+denied registry corrections, unchanged guard bytes, owner UI heartbeat and retained
+listeners. A separate harness child reads the journal and runs real CLI cleanup,
+proving that retry needs no retained in-memory receipt. Cases cover enable/off,
+intervening external values, and initial guard refusal before setters/notifications.
+Native tests require the isolated Windows CI runner; local native execution and
+Rescue/HDD/VHDX acceptance remain NOT_CHECKED. F31 remains OPEN.

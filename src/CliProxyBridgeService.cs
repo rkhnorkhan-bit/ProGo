@@ -560,17 +560,10 @@ namespace ProGo
                 finally { SaveTypedCorrections(saved, corrections); }
             }
             saved[OwnedPortKey] = port.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            SaveTypedCorrections(saved, corrections); // Ownership precedes every setter/notification.
-            bool correctionFailed = false;
-            SystemProxyService.PreserveTypedValues(delegate {
+            bool correctionFailed = PreserveLiveWindowsTypes(saved, delegate {
                 foreach (var name in Names) SetUser(name, Expected(name, port));
                 notification();
-            }, writer, delegate(WindowsProxyFieldBackup correction, Exception failure) {
-                correctionFailed = true;
-                corrections.RemoveAll(f => f.Name == correction.Name); corrections.Add(correction);
-                SaveTypedCorrections(saved, corrections);
-                SafeLog.Info("CLI notification typed-value correction pending: " + correction.Name + ".");
-            });
+            }, writer);
             if (correctionFailed) throw new IOException("Не удалось сохранить типы настроек Windows после включения CLI. Копия сохранена; повторите выключение после проверки прав записи.");
             SafeLog.Info("Proxy environment applied for new terminals.");
         }
@@ -621,8 +614,7 @@ namespace ProGo
                 try { SystemProxyService.RetryTypedValues(corrections, writer); }
                 finally { SaveTypedCorrections(saved, corrections); }
             }
-            bool correctionFailed = false;
-            SystemProxyService.PreserveTypedValues(delegate {
+            bool correctionFailed = PreserveLiveWindowsTypes(saved, delegate {
                 // The .NET setter also broadcasts; protect the complete loop, not just the final notification.
                 // Windows names are case-insensitive. Restore only values still owned by ProGo.
                 foreach (var name in Names) {
@@ -630,17 +622,44 @@ namespace ProGo
                     if (IsUserValue(name, Expected(name, port))) SetUser(name, previous);
                 }
                 notification();
-            }, writer, delegate(WindowsProxyFieldBackup correction, Exception failure) {
-                correctionFailed = true;
-                corrections.RemoveAll(f => f.Name == correction.Name);
-                corrections.Add(correction);
-                SaveTypedCorrections(saved, corrections);
-                SafeLog.Info("CLI notification typed-value correction pending: " + correction.Name + ".");
-            });
+            }, writer);
             if (correctionFailed) throw new IOException("Не удалось сохранить типы настроек Windows после выключения CLI. Копия сохранена; повторите выключение после проверки прав записи.");
             // A failed notification or typed-value correction must retain the retry journal.
             if (File.Exists(BackupPath)) File.Delete(BackupPath);
             SafeLog.Info("Previous proxy environment restored where still owned by ProGo.");
+        }
+
+        private static bool PreserveLiveWindowsTypes(Dictionary<string, string> saved, Action notification,
+            Action<RegistryKey, string, WindowsProxyValue> writer)
+        {
+            var failures = new List<WindowsProxyFieldBackup>();
+            SystemProxyService.PreserveTypedValues(notification, writer,
+                delegate(WindowsProxyFieldBackup correction, Exception failure) {
+                    failures.Add(correction);
+                    SafeLog.Info("CLI notification typed-value correction pending: " + correction.Name + ".");
+                }, delegate(Dictionary<string, WindowsProxyValue> before) {
+                    // Persist intended known normalization before the first setter.
+                    // A later failed replacement cannot discard these expectations.
+                    SaveTypedCorrections(saved, PrepareTypedCorrections(before));
+                });
+            // Narrow the guard only after the complete correction pass. If this
+            // replacement fails, the prepared receipt remains valid across restart.
+            SaveTypedCorrections(saved, failures);
+            return failures.Count != 0;
+        }
+        private static List<WindowsProxyFieldBackup> PrepareTypedCorrections(Dictionary<string, WindowsProxyValue> before)
+        {
+            var guards = new List<WindowsProxyFieldBackup>();
+            foreach (var name in SystemProxyService.FieldNames) {
+                var expected = before[name]; WindowsProxyValue normalized = null;
+                if (expected.Exists && expected.Kind == RegistryValueKind.ExpandString)
+                    normalized = new WindowsProxyValue { Exists = true, Kind = RegistryValueKind.String, Data = expected.Data };
+                else if (name == "AutoDetect" && expected.Exists && expected.Kind == RegistryValueKind.DWord &&
+                    (expected.Data == "0" || expected.Data == "1")) normalized = new WindowsProxyValue();
+                if (normalized != null && SystemProxyService.IsTypedNormalization(name, expected, normalized))
+                    guards.Add(new WindowsProxyFieldBackup { Name = name, Original = expected, Applied = normalized, Pending = true });
+            }
+            return guards;
         }
 
         private static List<WindowsProxyFieldBackup> ReadTypedCorrections(Dictionary<string, string> saved)
