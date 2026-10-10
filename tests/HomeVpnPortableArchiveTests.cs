@@ -41,7 +41,7 @@ namespace ProGo
                 }
                 token = File.ReadAllText(args[0]); work = Path.GetFullPath(args[1]); Directory.CreateDirectory(work);
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
-                RoundTrip(); MalformedSource(); ResourceAndSnapshotGuards(); AuthenticatedInvalidPayload(); NativeWorkflow();
+                RoundTrip(); MalformedSource(); ResourceAndSnapshotGuards(); AuthenticatedInvalidPayload(); NativeWorkflow(); ContextWorkflow();
                 Console.WriteLine("NOT_CHECKED: portable import under another Windows account or on another PC");
                 Console.WriteLine("Portable Home VPN tests PASS: " + passed); return 0;
             } catch (Exception ex) { Console.WriteLine("FAIL: " + ex.GetType().Name + ": " + ex.Message); return 1; }
@@ -133,7 +133,10 @@ namespace ProGo
                 Check(HomeVpnSetupRecovery.HasPending() && HomeVpnSetupRecovery.Load(new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "root" }, "My iPhone").RequestId == new string('d', 32) &&
                     HomeVpnAdminRecovery.HasPending() && HomeVpnAdminRecovery.Pending().RequestId == new string('e', 32), "actual setup and invite recovery retain the imported IDs and pending gates");
                 bool blocked = false; try { HomeVpnAdminRecovery.Register(new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "root" }, "New", null); } catch (HomeVpnAdminPendingException) { blocked = true; }
-                Check(blocked && Unprotect(Path.Combine(root, "share-request.dat")) == expected["share-request.dat"], "import cannot admit a new issuance or silently consume the preserved share fence");
+                var share = HomeVpnShareRecovery.Load(new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "root" }); bool shareBlocked = false;
+                try { HomeVpnShareRecovery.Register(new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "root" }, "other.example.org"); } catch (HomeVpnSharePendingException) { shareBlocked = true; }
+                Check(blocked && shareBlocked && HomeVpnShareRecovery.HasPending() && share.RequestId == new string('f', 32) && share.Domain == "profiles.example.org" && share.ServerId == new string('a', 32) &&
+                    Unprotect(Path.Combine(root, "share-request.dat")) == expected["share-request.dat"], "actual invite and share recovery gates retain original IDs and frozen bindings instead of admitting new commands");
                 Check(unrelated.All(p => p.Value == null ? !File.Exists(p.Key) : p.Value.SequenceEqual(File.ReadAllBytes(p.Key))), "actual clean import leaves settings, vault and live proxy ownership journals unchanged");
             } finally { if (Directory.Exists(root)) Directory.Delete(root, true); if (moved) Directory.Move(previous, root); }
         }
@@ -268,10 +271,10 @@ namespace ProGo
                     release.Set(); Check(workTask.Wait(10000) && !workTask.IsFaulted && applied == 0 && !File.Exists(cancelled), "disposed owner settles cancellation without a UI message pump, late callbacks or a published export");
                 }
                 using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
-                using (var form = new HomeVpnPortableForm(true, source, null, exporting => cancelled, (path, ct) => { entered.Set(); release.Wait(); }, 100)) {
+                using (var form = new HomeVpnPortableForm(true, source, null, exporting => cancelled, (path, ct) => { entered.Set(); release.Wait(); }, 1000)) {
                     form.Show(); Application.DoEvents(); ((TextBox)Field(form, "password")).Text = ((TextBox)Field(form, "repeat")).Text = Utf8.GetString(Password);
                     ((Button)Field(form, "prepare")).PerformClick(); Pump(() => entered.IsSet); var elapsed = Stopwatch.StartNew();
-                    Pump(() => elapsed.ElapsedMilliseconds >= 250);
+                    Pump(() => elapsed.ElapsedMilliseconds >= 1250);
                     Check(form.IsBusy && !form.Work.IsCompleted && !File.Exists(cancelled), "finite deadline requests cancellation while a held filesystem call remains honestly owned");
                     release.Set(); Pump(() => form.Work.IsCompleted);
                     Check(!form.Work.IsFaulted && !File.Exists(cancelled) && ((Label)Field(form, "status")).Text.Contains("Время переноса VPN истекло"), "deadline cancellation settles before publication with a fixed Russian timeout result and no automatic retry");
@@ -322,5 +325,72 @@ namespace ProGo
             } finally { Directory.Delete(source, true); File.Delete(cancelled); if (archive != null) File.Delete(archive); }
         }
         private static string Quote(string value) { return "\"" + value.Replace("\"", "\\\"") + "\""; }
+        private static IEnumerable<ToolStripItem> MenuItems(ToolStripItemCollection items)
+        {
+            foreach (ToolStripItem item in items) {
+                yield return item; var dropdown = item as ToolStripDropDownItem;
+                if (dropdown != null) foreach (var child in MenuItems(dropdown.DropDownItems)) yield return child;
+            }
+        }
+        private static void ContextWorkflow()
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("NOT_CHECKED: tray owner fixture requires isolated CI"); return; }
+            string source = Source("tray-portable"), output = Path.Combine(work, "tray-portable-cancel.progo-vpn");
+            using (var settings = new SettingsService())
+            using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), "unused-portable-test-ssh", () => DateTime.UtcNow, false))
+            using (var bridge = new CliProxyBridgeService(settings))
+            using (var relay = new Ikev2RelayService())
+            using (var home = new HomeVpnService(relay))
+            using (var clipboard = new ClipboardService(settings))
+            using (var monitor = new ConnectionHealthMonitor(() => settings.Current))
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+            try {
+                int cleanups = 0, calls = 0;
+                Func<bool, HomeVpnPortableForm> factory = exporting => new HomeVpnPortableForm(exporting, source, null, selectingExport => output,
+                    (path, ct) => { Interlocked.Increment(ref calls); entered.Set(); release.Wait(); });
+                Func<Action<CancellationToken>, UpdateAwareTrayApplicationContext> contextFor = probe => new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false,
+                    health: monitor, windowsRestore: () => { Interlocked.Increment(ref cleanups); return new WindowsProxyRestoreResult(); },
+                    backupShutdownTimeoutMilliseconds: 100, beforeBaselineProbe: probe, cliRestore: () => { }, portableFormFactory: factory);
+                using (var context = contextFor(null)) using (var pulse = new System.Windows.Forms.Timer { Interval = 10 }) {
+                    var commands = MenuItems(((NotifyIcon)Field(context, "tray")).ContextMenuStrip.Items).Where(item => item.Tag is AppCommand).ToDictionary(item => (AppCommand)item.Tag);
+                    Check(commands[AppCommand.ExportHomeVpn].ToolTipText.Contains("парольная") && commands[AppCommand.ImportHomeVpn].ToolTipText.Contains("чистую"), "actual tray exposes protected export and explicitly described clean import commands");
+                    commands[AppCommand.ExportHomeVpn].PerformClick(); var form = (HomeVpnPortableForm)Field(context, "portableForm");
+                    ((TextBox)Field(form, "password")).Text = ((TextBox)Field(form, "repeat")).Text = Utf8.GetString(Password);
+                    int pulses = 0; pulse.Tick += delegate { pulses++; }; pulse.Start(); ((Button)Field(form, "prepare")).PerformClick(); Pump(() => entered.IsSet && pulses >= 3);
+                    Check(context.IsPortableRunning && Object.ReferenceEquals(context.PortableWork, form.Work) && calls == 1 &&
+                        new[] { AppCommand.CreateBackup, AppCommand.RestoreBackup, AppCommand.CleanupBackups, AppCommand.Update, AppCommand.ExportHomeVpn, AppCommand.ImportHomeVpn }.All(command => !commands[command].Enabled) &&
+                        commands[AppCommand.Settings].Enabled && commands[AppCommand.StopDesktop].Enabled, "real tray retains the actual portable task and disables competing backup or maintenance while independent controls remain usable");
+                    var manual = context.CreateManualBackupAsync(); var startup = context.StartStartupBackupAsync();
+                    Check(manual.IsCompleted && startup.IsCompleted && !context.IsBackupRunning && context.IsPortableRunning, "direct manual and startup backup entry points cannot bypass the portable worker gate");
+                    int before = pulses; var shutdown = context.RequestShutdownAsync(); Pump(() => shutdown.IsCompleted);
+                    Check(!shutdown.Result && context.IsPortableRunning && !context.PortableWork.IsCompleted && cleanups == 0 && pulses > before && !(bool)Field(context, "shutdownPrepared"), "bounded shutdown refuses a held portable disk worker without blocking UI or handing off maintenance");
+                    release.Set(); Pump(() => context.PortableWork.IsCompleted); Check(!context.PortableWork.IsFaulted && !File.Exists(output), "owner cancellation settles the actual export before publication");
+                    shutdown = context.RequestShutdownAsync(); Pump(() => shutdown.IsCompleted); Check(shutdown.Result && cleanups == 1, "shutdown cleanup runs only after the retained portable operation actually settles"); pulse.Stop();
+                }
+                entered.Reset(); release.Reset(); calls = 0;
+                using (var probeEntered = new ManualResetEventSlim()) using (var probeRelease = new ManualResetEventSlim())
+                using (var context = contextFor(ct => { probeEntered.Set(); probeRelease.Wait(); })) {
+                    var commands = MenuItems(((NotifyIcon)Field(context, "tray")).ContextMenuStrip.Items).Where(item => item.Tag is AppCommand).ToDictionary(item => (AppCommand)item.Tag);
+                    commands[AppCommand.ExportHomeVpn].PerformClick(); var form = (HomeVpnPortableForm)Field(context, "portableForm");
+                    ((TextBox)Field(form, "password")).Text = ((TextBox)Field(form, "repeat")).Text = Utf8.GetString(Password);
+                    var startup = context.StartStartupBackupAsync(); ((Button)Field(form, "prepare")).PerformClick();
+                    Check(context.IsBackupRunning && !context.IsPortableRunning && form.Work == null && calls == 0 && ((Label)Field(form, "status")).Text.Contains("резервного"), "an already open portable form cannot bypass a queued startup backup gate");
+                    Pump(() => probeEntered.IsSet || startup.IsCompleted); Check(probeEntered.IsSet && !startup.IsCompleted, "native startup probe is actually held before testing the active backup gate");
+                    ((Button)Field(form, "prepare")).PerformClick(); Check(!context.IsPortableRunning && form.Work == null && calls == 0, "an already open portable form also refuses to start during the real backup worker");
+                    var stop = context.RequestShutdownAsync(); probeRelease.Set(); Pump(() => stop.IsCompleted && startup.IsCompleted); Check(stop.Result && !startup.IsFaulted, "shared owner cancels and waits the actual backup before shutdown without starting portable I/O");
+                    form.Close();
+                }
+                entered.Reset(); release.Reset(); calls = 0;
+                var forced = contextFor(null);
+                try {
+                    var commands = MenuItems(((NotifyIcon)Field(forced, "tray")).ContextMenuStrip.Items).Where(item => item.Tag is AppCommand).ToDictionary(item => (AppCommand)item.Tag);
+                    commands[AppCommand.ExportHomeVpn].PerformClick(); var form = (HomeVpnPortableForm)Field(forced, "portableForm");
+                    ((TextBox)Field(form, "password")).Text = ((TextBox)Field(form, "repeat")).Text = Utf8.GetString(Password);
+                    ((Button)Field(form, "prepare")).PerformClick(); Pump(() => entered.IsSet); Task retained = forced.PortableWork;
+                    forced.Dispose(); Check(!retained.IsCompleted && forced.IsPortableRunning, "forced tray disposal cancels the portable owner without losing or completing its held task");
+                    release.Set(); Check(retained.Wait(10000) && !retained.IsFaulted && !File.Exists(output), "forced tray disposal settles the worker without a UI pump or late portable publication");
+                } finally { release.Set(); forced.Dispose(); }
+            } finally { release.Set(); Directory.Delete(source, true); File.Delete(output); }
+        }
     }
 }

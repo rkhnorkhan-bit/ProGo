@@ -34,7 +34,7 @@ namespace ProGo
             bool child = args.Length == 2 && args[0] == "admin-recovery-child";
             string path = child ? args[1] : Environment.GetEnvironmentVariable(FixtureVariable);
             if (!child && (args.Length == 0 || args[0] != "-o" || String.IsNullOrEmpty(path))) return false;
-            if (child) { File.WriteAllText(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true; }
+            if (child) { HomeVpnFixtureFiles.Publish(Path.Combine(path, "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true; }
             string command = args.Last();
             string kind = command.Contains("home_vpn_setup.py invite ") ? "invite"
                 : command.Contains("home_vpn_setup.py operation-status ") ? "status"
@@ -43,7 +43,7 @@ namespace ProGo
             if (kind == null || !args.Contains("-T") || !args.Contains("root@vpn.example.org")) throw new Exception("Unexpected production SSH dispatch in admin fixture");
             File.AppendAllText(Path.Combine(path, "calls"), kind + "\n");
             File.AppendAllText(Path.Combine(path, "argv"), Json.Serialize(args) + "\n");
-            File.WriteAllText(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            HomeVpnFixtureFiles.Publish(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
             var request = HomeVpnAdminRecovery.Pending();
             if (kind != "list") {
                 var ids = Regex.Matches(command, @"--request-id ([0-9a-f]{32})").Cast<Match>().Select(match => match.Groups[1].Value).ToArray();

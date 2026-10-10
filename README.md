@@ -88,6 +88,17 @@ archived, with no automatic import. Windows DPAPI is tied to the user account;
 this is not a portable VPN export for another PC. Each copy's `manifest.txt`
 lists its actual composition and restoration limits.
 
+For a separate portable Home VPN archive, use **Резервные копии → Экспорт VPN
+на другой ПК…** and set an independent password of at least 16 Unicode characters
+(at most 1024 UTF-8 bytes). **Импорт защищённого VPN…** first shows the verified
+composition and pending requests; a separate import action writes a clean installation
+without replacing existing VPN data or activating a connection. Restart ProGo to load
+the imported access, then choose the owner's SSH key locally. This preserves the original
+VPS; configure a different VPS through the wizard with new access. External `.ssh` keys,
+vault and Windows proxy journals are excluded. Export copies access and does not revoke
+the original. See [portable VPN details](docs/F22_PORTABLE_HOME_STAGE.md); cross-user/PC
+verification remains pending.
+
 The updater no longer downloads/evaluates PowerShell text in memory or compiles
 remote source as a fallback. It respects execution policy. Missing digests and failed
 validation cancel the update rather than weakening checks. No antivirus exclusions,
