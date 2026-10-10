@@ -54,9 +54,13 @@ namespace ProGo
                 MinimumSize = new Size(600, 620);
                 panel.SizeChanged += delegate {
                     int width = Math.Max(1, panel.ClientSize.Width - panel.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
-                    list.Width = name.Width = width; nameLabel.MaximumSize = new Size(width, 0);
+                    list.Width = width;
+                    // FlowLayout measures a TextBox's preferred width as well as
+                    // its current bounds. Constrain both when the window shrinks.
+                    name.MaximumSize = new Size(width, 0); name.Width = width;
+                    nameLabel.MaximumSize = new Size(width, 0);
                 };
-                footer.SizeChanged += delegate { status.MaximumSize = new Size(Math.Max(1, footer.ClientSize.Width - footer.Padding.Horizontal), 0); };
+                footer.SizeChanged += delegate { status.MaximumSize = new Size(Math.Max(1, footer.ClientSize.Width - footer.Padding.Horizontal - status.Margin.Horizontal), 0); };
             }
             Confirm = text => MessageBox.Show(this, text, "Изменение доступа", MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;

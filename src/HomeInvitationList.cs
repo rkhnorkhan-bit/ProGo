@@ -116,10 +116,10 @@ namespace ProGo
                 form.MinimumSize = new Size(520, 420);
                 panel.SizeChanged += delegate {
                     int width = Math.Max(1, panel.ClientSize.Width - panel.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
-                    token.Width = width;
+                    token.MaximumSize = new Size(width, 0); token.Width = width;
                     foreach (Label label in panel.Controls.OfType<Label>()) label.MaximumSize = new Size(width, 0);
                 };
-                footer.SizeChanged += delegate { notice.MaximumSize = new Size(Math.Max(1, footer.ClientSize.Width - footer.Padding.Horizontal), 0); };
+                footer.SizeChanged += delegate { notice.MaximumSize = new Size(Math.Max(1, footer.ClientSize.Width - footer.Padding.Horizontal - notice.Margin.Horizontal), 0); };
             }
             UiTheme.ConfigureKeyboardOrder(form); return form;
         }

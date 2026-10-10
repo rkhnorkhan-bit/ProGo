@@ -222,8 +222,10 @@ namespace ProGo
                     "pending friends view has no duplicate fresh-create button");
                 Shot(form, work, "invitation-recovery-friends"); form.Size = form.MinimumSize; Application.DoEvents();
                 var panel = name.Parent as FlowLayoutPanel; create.Focus(); Application.DoEvents();
-                check(!panel.HorizontalScroll.Visible && form.ClientRectangle.Contains(form.RectangleToClient(((Button)form.CancelButton).RectangleToScreen(((Button)form.CancelButton).ClientRectangle))),
-                    "minimum invitation recovery has wrapped content and a visible Close footer"); Shot(form, work, "invitation-recovery-friends-minimum");
+                Shot(form, work, "invitation-recovery-friends-minimum");
+                check(!panel.HorizontalScroll.Visible, "minimum invitation recovery wraps content without horizontal scroll");
+                check(form.ClientRectangle.Contains(form.RectangleToClient(((Button)form.CancelButton).RectangleToScreen(((Button)form.CancelButton).ClientRectangle))),
+                    "minimum invitation recovery keeps the Close footer visible");
                 create.PerformClick(); Pump(() => ticks >= 3);
                 check((bool)Field(form, "working") && !create.Enabled && !((Button)form.CancelButton).Enabled && statusQueries == 1 && resultQueries == 0,
                     "protected invitation query is responsive and cannot skip status while waiting");
@@ -279,8 +281,10 @@ namespace ProGo
                     "recoverable token is masked and confirmation metadata never includes credentials");
                 input.Focus(); Key(dialog, Keys.Enter); check(dialog.Visible && confirmed == 0 && Pending() != null, "Enter in token field cannot confirm local receipt");
                 Shot(dialog, work, "invitation-recovery-token"); dialog.Size = dialog.MinimumSize; Application.DoEvents();
-                var footer = confirm.Parent; check(footer.ClientRectangle.Contains(confirm.Bounds) && footer.ClientRectangle.Contains(((Button)dialog.CancelButton).Bounds)
-                    && !((FlowLayoutPanel)input.Parent).HorizontalScroll.Visible, "minimum token view keeps confirmation and Close visible with wrapped guidance"); Shot(dialog, work, "invitation-recovery-token-minimum");
+                Shot(dialog, work, "invitation-recovery-token-minimum");
+                var footer = confirm.Parent; check(footer.ClientRectangle.Contains(confirm.Bounds) && footer.ClientRectangle.Contains(((Button)dialog.CancelButton).Bounds),
+                    "minimum token view keeps confirmation and Close visible");
+                check(!((FlowLayoutPanel)input.Parent).HorizontalScroll.Visible, "minimum token view wraps guidance without horizontal scroll");
                 Key(dialog, Keys.Escape); check(!dialog.Visible && confirmed == 0 && Pending() != null, "token Escape closes without consuming the saved request");
             }
             using (var dialog = HomeInvitationList.TokenDialog(token, clipboard, finish)) {
