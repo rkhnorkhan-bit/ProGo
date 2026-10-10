@@ -52,7 +52,7 @@ namespace ProGo
                 }
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts)) {
                     form.Show(); Application.DoEvents(); ((CheckBox)Field(form, "autoLaunch")).Checked = true;
-                    ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
+                    ((Button)form.AcceptButton).PerformClick(); PumpUntil(() => !form.IsSavePending); Application.DoEvents();
                     Check(form.DialogResult == DialogResult.OK && shortcuts.ReadStartup().Registered && !settings.Current.AutoStartSocks,
                         "real Save enables Windows registration while retaining manual SSH");
                 }
@@ -64,13 +64,13 @@ namespace ProGo
                     Check(form.Visible && registration.SequenceEqual(File.ReadAllBytes(link)), "input validation precedes startup changes");
                     ((TextBox)Field(form, "endpoint")).Text = configured.TestEndpoint;
                     using (var locked = File.Open(AppPaths.SettingsPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                        ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
+                        ((Button)form.AcceptButton).PerformClick(); PumpUntil(() => !form.IsSavePending); Application.DoEvents();
                         Check(form.Visible && registration.SequenceEqual(File.ReadAllBytes(link)) && bytes.SequenceEqual(File.ReadAllBytes(AppPaths.SettingsPath)),
                             "failed settings-file write rolls startup off back to exact previous bytes");
                         Check(!((CheckBox)Field(form, "autoLaunch")).Checked, "failed Save retains pending checkbox for retry");
                     }
                     ((CheckBox)Field(form, "autoStart")).Checked = true;
-                    ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
+                    ((Button)form.AcceptButton).PerformClick(); PumpUntil(() => !form.IsSavePending); Application.DoEvents();
                     Check(form.DialogResult == DialogResult.OK && !File.Exists(link) && settings.Current.AutoStartSocks,
                         "retry saves manual app launch and automatic SSH independently");
                 }

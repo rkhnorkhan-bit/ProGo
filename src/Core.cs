@@ -295,6 +295,13 @@ namespace ProGo
         internal SettingsRevisionSnapshot(AppSettings settings, long revision) { Settings = settings; Revision = revision; }
     }
 
+    internal sealed class SettingsCommitReceipt
+    {
+        internal readonly SettingsRevisionSnapshot Before;
+        internal readonly long Revision;
+        internal SettingsCommitReceipt(SettingsRevisionSnapshot before, long revision) { Before = before; Revision = revision; }
+    }
+
     internal sealed class SettingsService : IDisposable
     {
         private sealed class PublishedSettings
@@ -358,6 +365,28 @@ namespace ProGo
             if (settings == null) throw new ArgumentNullException("settings");
             lock (commitGate) SaveCore(settings);
             SafeLog.Info("Settings saved.");
+        }
+
+        internal bool TrySave(long expectedRevision, AppSettings candidate, out SettingsCommitReceipt receipt)
+        {
+            receipt = null;
+            lock (commitGate) {
+                if (published.Revision != expectedRevision) return false;
+                var before = new SettingsRevisionSnapshot(published.Settings.Clone(), published.Revision);
+                SaveCore(candidate);
+                receipt = new SettingsCommitReceipt(before, published.Revision);
+            }
+            SafeLog.Info("Settings saved."); return true;
+        }
+
+        internal bool TryRollback(SettingsCommitReceipt receipt)
+        {
+            if (receipt == null) return true;
+            lock (commitGate) {
+                if (published.Revision != receipt.Revision) return false;
+                SaveCore(receipt.Before.Settings);
+            }
+            SafeLog.Info("Own settings change rolled back."); return true;
         }
 
         // No proxy/UI callbacks run inside this gate. The only injected hook is
