@@ -2037,3 +2037,55 @@ Python **36 PASS / 3 SKIP**, public-content and diff checks **PASS**; C# compila
 native Windows execution and Rescue/HDD/VHDX measurements **NOT_CHECKED**. Cold bridge
 start, settings/startup persistence, port migration and synchronous rollback still
 require the next bounded stage. **F31 remains OPEN; accepted status stays 22/31.**
+
+## Stage F23m — bounded ordinary owner SSH waits (Windows verification pending)
+
+Ordinary revoke, phase-one reissue revoke, network repair and HTTPS-service
+installation now use the existing owned SSH console runner with a five-minute
+deadline and button/Escape/title-close cancellation. Their separate OwnerCommand
+purpose reports fixed Russian uncertainty without claiming a saved recovery
+request, remote rollback or automatic retry. The real console still accepts
+OpenSSH password and host-key confirmation. The waiting dialog settles only its
+own local process tree. Ordinary output is checked against a 32768-byte limit
+before it is read; strict UTF-8 and the existing nonempty result check remain.
+
+Cancellation of helper preparation before SSH remains a preparation cancellation.
+It does not become an uncertain phase-one revoke and cannot issue a replacement.
+After a started revoke, phase two still requires the exact successful revoke
+acknowledgment. Repeating revoke uses the same frozen invitation ID; the old
+command cannot revoke a subsequently issued distinct ID. A List flag alone is
+not evidence that credential reload completed, so reissue repeats and acknowledges
+the selected revoke before issuance. No automatic revoke or repair repeat exists.
+
+Repair uses the existing wizard Admin seam. HTTPS configuration uses a narrow
+transport seam while retaining the real controls and its existing verification
+and save boundary. Disposed configuration windows ignore late UI/save callbacks.
+No owner/access format, server receipt or journal is added by this stage.
+
+**OPEN — HTTPS domain admission:** an old share command can be delayed before
+the server owner lock, then apply its old domain after a fresh List and a newer
+domain's successful setup. A read-only reproduction exercised the actual server
+main/preflight/legacy owner lock with only provisioning effects replaced by a
+temporary model: List, share(new.example.org), then delayed share(old.example.org).
+The final origin was old.example.org. Neither List nor HTTP health is a terminal
+fence for that old command. Existing manual operator review must not be described
+as a durable guard across restart. A narrowly scoped durable share guard requires
+separate review; it is not implemented here.
+
+**OPEN — HTTPS total wait:** VerifyAsync/QR HTTP operations retain 20-second
+per-I/O limits without a total deadline or cancellation. That remains separate
+work, including verification after a successful share SSH command. No new HTTP
+transport or retry protocol is hidden in this SSH-only stage.
+
+`HomeVpnOwnerWaitingTests` runs the real revoke/repair/share controls under an
+actual `Application.Run` loop and production dispatch with a native child
+executable. It checks heartbeat, deadline, button/Escape/close/dispose cancellation,
+owned descendants, one attempt, fixed nonzero/oversized errors and preserved
+private inputs. Phase-one tests distinguish zero-SSH copy cancellation from an
+unconfirmed revoke and require acknowledgment before one source-bound issuance.
+The Windows harness captures `vps-owner-{revoke,repair,share}-{waiting,minimum,cancelled}.png`
+for review in the existing artifact; generation and visual review are pending.
+
+Exact-head Windows C#5 build, native process/UI regressions and screenshot review
+are required before this stage can PASS. **F23 remains OPEN.** No real VPS,
+release publication or installation is part of F23m.

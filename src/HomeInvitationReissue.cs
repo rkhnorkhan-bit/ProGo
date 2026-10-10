@@ -36,6 +36,7 @@ namespace ProGo
             try {
                 if (await admin("revoke", null, id) != "Access revoked.") throw new InvalidOperationException();
             }
+            catch (HomeVpnPreparationCancelledException) { throw; }
             catch { return new InvitationReissueResult { State = InvitationReissueState.RevokeUnconfirmed }; }
             progress("Старый доступ отозван. Шаг 2 из 2: создание нового токена…");
             try {

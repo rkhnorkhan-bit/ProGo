@@ -73,6 +73,8 @@ namespace ProGo
                         if (await admin("revoke", null, selected.Id) != "Access revoked.") throw new InvalidOperationException();
                         if (IsDisposed || Disposing) return;
                         selected.Revoked = true; list.RefreshSelection(); status.Text = "Выбранный доступ отозван."; }
+                    catch (HomeVpnPreparationCancelledException ex) { if (!IsDisposed && !Disposing) status.Text = ex.Message; }
+                    catch (HomeVpnOwnerUnconfirmedException ex) { if (!IsDisposed && !Disposing) RequireRefresh(ex.Message + " Обновите список и выберите тот же ID для явного повторного отзыва; запись «Отозван» ещё не подтверждает завершение всех его действий."); }
                     catch { if (!IsDisposed && !Disposing) RequireRefresh("Завершение отзыва не подтверждено. Обновите список. Если статус уже «Отозван», выберите запись и нажмите «Повторить отзыв», чтобы завершить операцию без выдачи нового токена."); }
                 });
             };

@@ -1325,3 +1325,39 @@ prepared shutdown, active and queued forced closure, and a discarded final shutd
 callback. They use loopback resources and never contact a live VPS. Local Linux
 checks pass; compilation/native Windows execution and actual Rescue/HDD/VHDX
 profiling remain NOT_CHECKED. F31 remains OPEN.
+
+### Audit stage F23m — ordinary owner console waits
+
+`HomeVpnWaitPurpose.OwnerCommand` is distinct from setup and invite recovery.
+`HomeVpnOwnerUnconfirmedException` uses fixed Russian messages for nonzero SSH,
+accepted cancellation, deadline and unconfirmed local settlement. It promises no
+saved journal, rollback or repeat. The shared runner owns only the suspended root
+and its native descendants; it retains the console for OpenSSH authentication.
+The existing dispatcher executable/copy/timeout seam remains the testing boundary.
+
+Revoke, repair and share use that runner. Reissue phase one rethrows preparation
+cancellation, and ordinary Friends revoke handles it without creating a new
+reconciliation gate: no SSH or replacement was dispatched. A started revoke still
+must return the exact acknowledgment before phase-two invitation issuance. Repair
+uses the wizard's existing Admin delegate. CreateConfigureForm has a narrow Admin
+and Verify overload so real controls can use native SSH fixtures without a VPS or
+an external HTTPS resource. Late disposed configuration continuations cannot
+publish controls or save an address. Command output is limited to 32768 bytes
+before reading, including the existing ordinary read-only List path.
+
+`HomeVpnOwnerWaitingTests.cs` is explicitly compiled by `Test-HomeVpnRelay.ps1`
+and dispatched before the other native fixtures in `HomeVpnWizardTests.Main`.
+Its real Application.Run loop keeps UI continuations alive after a nested modal
+closes. Native fixture commands inspect actual arguments, own a blocking child,
+and record attempt counts; tests preserve private files and an unrelated process.
+Its nine waiting/minimum/cancelled PNGs use the existing Windows test artifact.
+Native execution and screenshot review require Windows and are pending.
+
+Repeating revoke converges on the same frozen ID/account; repair reapplies owned
+network configuration and may restart services. Neither is automatically retried.
+Share also restarts its service and invalidates short-lived QR sessions, even for
+the same domain. A delayed old-domain share can overwrite newer-domain setup;
+List and health do not prove that old command is terminal. This transport stage
+adds no durable share admission guard and makes no restart-fence claim.
+HTTPS verification/QR retain per-I/O 20-second limits without total cancellation,
+an explicit later gap. F23 remains open pending those decisions and Windows proof.
