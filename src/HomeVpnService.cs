@@ -72,7 +72,7 @@ namespace ProGo
         internal string RecoveryStatus { get { return proxy == null ? "Не запущен" : proxy.RecoveryStatus; } }
 
         internal HomeVpnService(Ikev2RelayService relay)
-            : this(relay, "ssh.exe", Ikev2RelayService.IkePort, Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort) { }
+            : this(relay, OpenSshClient.Executable, Ikev2RelayService.IkePort, Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort) { }
 
         // Isolated Windows fixtures use their own executable and unprivileged UDP ports.
         internal HomeVpnService(Ikev2RelayService relay, string sshExecutable, int ikePort, int natPort, int bridgePort)

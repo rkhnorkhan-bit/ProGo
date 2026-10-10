@@ -49,7 +49,7 @@ namespace ProGo
         }
         private static void Native(bool success)
         { if (!success) throw new Win32Exception(Marshal.GetLastWin32Error()); }
-        private static string Resolve(string executable)
+        internal static string Resolve(string executable)
         {
             if (Path.IsPathRooted(executable)) return executable;
             var buffer = new StringBuilder(32768);

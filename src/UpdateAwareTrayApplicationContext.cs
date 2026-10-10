@@ -31,7 +31,8 @@ namespace ProGo
         private event Action CommandStateChanged;
         private readonly CancellationTokenSource routeLifetime = new CancellationTokenSource();
         private volatile bool closing;
-        private bool shutdownPrepared, disposed;
+        private bool shutdownPrepared, shutdownPreparing, disposed;
+        private Task<bool> shutdownTask;
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
         public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null)
@@ -181,7 +182,7 @@ namespace ProGo
                     if (!cliProxy.ReconfigureDetailed(proposed, pickFree, out error)) return error;
                     if (changed) {
                         reconnectAfterSave = proxy.CurrentPid.HasValue || proxy.IsConnecting;
-                        pendingRoutes.Clear(); proxy.StopTunnel(); RefreshPendingRoutes(); health.Invalidate();
+                        pendingRoutes.Clear(); ObserveStop(proxy.StopTunnelAsync()); RefreshPendingRoutes(); health.Invalidate();
                     }
                     NotifyPortChange(oldPort);
                     return null;
@@ -275,7 +276,7 @@ namespace ProGo
         {
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
-            DisconnectApps(); proxy.StopTunnel();
+            DisconnectApps(); ObserveStop(proxy.StopTunnelAsync());
             health.Invalidate();
         }
         private void BeginRouteAction(AppCommand action)
@@ -284,7 +285,7 @@ namespace ProGo
             long request = ++nextRouteRequest; pendingRoutes[action] = request;
             // A reconnect invalidates all previous requests before a new connection is awaited.
             if (action == AppCommand.Reconnect || (action == AppCommand.Connect && proxy.CurrentPid.HasValue)) {
-                pendingRoutes.Clear(); pendingRoutes[action] = request; proxy.StopTunnel();
+                pendingRoutes.Clear(); pendingRoutes[action] = request; ObserveStop(proxy.StopTunnelAsync());
             }
             health.Invalidate(); RefreshPendingRoutes();
             CompleteRouteAction(action, request);
@@ -332,7 +333,7 @@ namespace ProGo
             catch (InvalidOperationException ex) { if (!closing) SafeLog.Error("Connection result could not reach the application UI.", ex); }
         }
         private AppCommandState GetCommandState()
-        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting, closing || shutdownPrepared); }
+        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing); }
         private void RefreshPendingRoutes()
         {
             var state = GetCommandState();
@@ -343,7 +344,7 @@ namespace ProGo
         private void CancelPendingRoute(AppCommand action)
         {
             pendingRoutes.Remove(action);
-            if (pendingRoutes.Count == 0 && proxy.IsConnecting) proxy.StopTunnel();
+            if (pendingRoutes.Count == 0 && (proxy.IsConnecting || proxy.IsStopping)) ObserveStop(proxy.StopTunnelAsync());
             RefreshPendingRoutes();
         }
         private void EnsureBridge()
@@ -426,31 +427,55 @@ namespace ProGo
             using (var form = new VaultForm(session, clipboard, settings)) form.ShowDialog();
         }
 
-        private bool PrepareShutdown(bool dialog)
+        private Task<bool> PrepareShutdownAsync(bool dialog)
         {
-            if (closing) return false;
-            if (shutdownPrepared) return true;
+            if (shutdownTask != null && !shutdownTask.IsCompleted) return shutdownTask;
+            if (closing) return Task.FromResult(false);
+            if (shutdownPrepared) return Task.FromResult(true);
+            shutdownTask = PrepareShutdownCore(dialog); return shutdownTask;
+        }
+        private async Task<bool> PrepareShutdownCore(bool dialog)
+        {
+            shutdownPreparing = true;
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
-            try { DisconnectApps(); }
+            try {
+                DisconnectApps();
+                if (!await proxy.StopTunnelAsync()) throw new InvalidOperationException("Не удалось остановить SSH-процесс. ProGo остаётся запущенным; повторите отключение.");
+                if (closing) return false;
+                shutdownPrepared = true;
+                if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
+                return true;
+            }
             catch (Exception ex) {
                 SafeLog.Error("Shutdown refused: owned proxy cleanup incomplete.", ex);
-                if (dialog) MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", ex.Message, ToolTipIcon.Warning);
+                if (!closing) {
+                    if (dialog) MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", ex.Message, ToolTipIcon.Warning);
+                }
                 return false;
             }
-            shutdownPrepared = true;
-            if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
-            proxy.StopTunnel(); RefreshPendingRoutes();
-            return true;
+            finally { shutdownPreparing = false; if (!closing) RefreshPendingRoutes(); }
         }
-        // Called by the same-user pipe receiver; registry/environment changes stay on the UI thread.
+        // Pipe worker may await the UI-owned cleanup; no synchronous wait runs on UI.
+        internal Task<bool> RequestShutdownAsync()
+        {
+            if (activationDispatcher.IsDisposed || closing) return Task.FromResult(false);
+            if (activationDispatcher.InvokeRequired)
+                return (Task<bool>)activationDispatcher.Invoke(new Func<Task<bool>>(() => PrepareShutdownAsync(false)));
+            return PrepareShutdownAsync(false);
+        }
         internal bool RequestShutdown()
         {
-            if (activationDispatcher.IsDisposed || closing) return false;
-            if (activationDispatcher.InvokeRequired)
-                return (bool)activationDispatcher.Invoke(new Func<bool>(() => PrepareShutdown(false)));
-            return PrepareShutdown(false);
+            var result = RequestShutdownAsync();
+            if (activationDispatcher.InvokeRequired) return result.GetAwaiter().GetResult();
+            return result.IsCompleted && result.GetAwaiter().GetResult();
+        }
+        private async void ObserveStop(Task<bool> work)
+        {
+            try { if (!await work && !closing) tray.ShowBalloonTip(7000, "Подключение ещё не остановлено", "Не удалось остановить SSH-процесс. Повторите отключение; ProGo сохраняет управление этим процессом.", ToolTipIcon.Warning); }
+            catch (Exception ex) { if (!closing) SafeLog.Error("SSH asynchronous stop failed.", ex); }
+            finally { if (!closing) RefreshPendingRoutes(); }
         }
         internal void CompleteShutdown()
         {
@@ -465,16 +490,16 @@ namespace ProGo
             if (!activationDispatcher.IsDisposed)
                 activationDispatcher.BeginInvoke(new Action(delegate { if (!closing) { shutdownPrepared = false; RefreshPendingRoutes(); } }));
         }
-        private bool BeginMaintenance(Func<bool> launch)
+        private async Task<bool> BeginMaintenance(Func<bool> launch)
         {
-            if (!PrepareShutdown(true)) return false;
+            if (!await PrepareShutdownAsync(true)) return false;
             bool handedOff = false;
             try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
             finally { if (!handedOff) { shutdownPrepared = false; RefreshPendingRoutes(); } }
         }
-        private void ExitProGo()
+        private async void ExitProGo()
         {
-            if (PrepareShutdown(true)) CompleteShutdown();
+            if (await PrepareShutdownAsync(true)) CompleteShutdown();
         }
 
         private void OpenLogFile(string path, string title)
@@ -559,7 +584,7 @@ namespace ProGo
             }
         }
 
-        private void StartRestore()
+        private async void StartRestore()
         {
             var backups = BackupService.ListBackups();
             if (backups.Count == 0)
@@ -587,7 +612,7 @@ namespace ProGo
                             "\n\nProGo закроется и запустится снова. Начать восстановление?",
                             "Подтвердите восстановление", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
                         if (result != DialogResult.Yes) return;
-                        if (!BeginMaintenance(() => BackupService.StartRestore(prepared.Path, options.Scope, options.DataConfirmed))) return;
+                        if (!await BeginMaintenance(() => BackupService.StartRestore(prepared.Path, options.Scope, options.DataConfirmed))) return;
                         SafeLog.Info("Restore requested by user. scope=" + options.Scope + ".");
                     }
                 }
@@ -599,7 +624,7 @@ namespace ProGo
             }
         }
 
-        private void StartUpdate()
+        private async void StartUpdate()
         {
             if (updateForm != null && !updateForm.IsDisposed) { updateForm.Activate(); return; }
             UpdateCheckResult check;
@@ -611,7 +636,7 @@ namespace ProGo
                 } finally { updateForm = null; }
             }
             if (check == null || check.Availability != UpdateAvailability.Available) return;
-            if (!BeginMaintenance(UpdateLauncher.StartUpdater)) return;
+            if (!await BeginMaintenance(UpdateLauncher.StartUpdater)) return;
             SafeLog.Info("Update requested by user. local=" + check.LocalVersion + "; remote=" + check.RemoteVersion + ".");
         }
 

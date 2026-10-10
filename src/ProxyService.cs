@@ -18,7 +18,10 @@ namespace ProGo
         private readonly object gate = new object();
         private readonly object startupGate = new object();
         private readonly int startupTimeoutMs;
-        private Task<bool> startupTask;
+        private Task<bool> startupTask, stopTask;
+        private long operationEpoch;
+        private volatile bool stopping;
+        internal bool IsStopping { get { return stopping; } }
         private CancellationTokenSource startupCancellation;
         private volatile bool connecting;
         private volatile string startupError, sshError;
@@ -43,7 +46,7 @@ namespace ProGo
         private string selectedConnectionAtStart;
 
         public ProxyService(SettingsService settings)
-            : this(delegate { return settings.Current; }, settings.Save, "ssh.exe", delegate { return DateTime.UtcNow; }, true)
+            : this(delegate { return settings.Current; }, settings.Save, OpenSshClient.Executable, delegate { return DateTime.UtcNow; }, true)
         {
         }
 
@@ -89,6 +92,7 @@ namespace ProGo
         {
             get
             {
+                if (stopping) return "Останавливаем подключение…";
                 if (connecting) return "Подключаемся к серверу…";
                 if (!System.Threading.Monitor.TryEnter(gate)) return "Проверяем состояние подключения…";
                 try
@@ -122,10 +126,16 @@ namespace ProGo
 
         internal Task<bool> StartTunnelAsync(CancellationToken token)
         {
+            lock (startupGate) return StartTunnelAsync(token, operationEpoch);
+        }
+        private Task<bool> StartTunnelAsync(CancellationToken token, long epoch)
+        {
             lock (startupGate) {
+                if (epoch != operationEpoch) return CancelledStartup();
+                if (stopTask != null && !stopTask.IsCompleted) return ResumeAfterStop(stopTask, token, epoch);
                 if (disposed) return Task.FromResult(false);
                 if (startupTask != null && !startupTask.IsCompleted) {
-                    if (startupCancellation != null && startupCancellation.IsCancellationRequested) return ResumeAfterCancellation(startupTask, token);
+                    if (startupCancellation != null && startupCancellation.IsCancellationRequested) return ResumeAfterCancellation(startupTask, token, epoch);
                     return startupTask;
                 }
                 var source = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -182,11 +192,21 @@ namespace ProGo
         {
             lock (startupGate) { if (startupCancellation != null) startupCancellation.Cancel(); }
         }
-        private async Task<bool> ResumeAfterCancellation(Task<bool> previous, CancellationToken token)
+        private async Task<bool> ResumeAfterCancellation(Task<bool> previous, CancellationToken token, long epoch)
         {
-            try { await previous; } catch (OperationCanceledException) { }
+            try { await previous.ConfigureAwait(false); } catch (OperationCanceledException) { }
             token.ThrowIfCancellationRequested();
-            return await StartTunnelAsync(token);
+            return await StartTunnelAsync(token, epoch).ConfigureAwait(false);
+        }
+        private static Task<bool> CancelledStartup()
+        {
+            var result = new TaskCompletionSource<bool>(); result.SetCanceled(); return result.Task;
+        }
+        private async Task<bool> ResumeAfterStop(Task<bool> previous, CancellationToken token, long epoch)
+        {
+            if (!await previous.ConfigureAwait(false)) { startupError = "Не удалось остановить прежний SSH-процесс. Повторите отключение; новый процесс не запущен."; return false; }
+            token.ThrowIfCancellationRequested();
+            return await StartTunnelAsync(token, epoch).ConfigureAwait(false);
         }
 
         private void StartTunnelCore(bool showErrors, CancellationToken token)
@@ -228,6 +248,7 @@ namespace ProGo
                             System.Threading.Thread.Sleep(500);
                             if (IsOwnedProcessAlive() && IsListening())
                             {
+                                token.ThrowIfCancellationRequested();
                                 SelectWorkingProfile(current, target);
                                 return;
                             }
@@ -244,17 +265,37 @@ namespace ProGo
             }
         }
 
-        public void StopTunnel()
+        // The UI cancels intent immediately, then awaits owned-process cleanup without
+        // waiting on a background probe's gate. A queued start keeps its epoch so a
+        // later Stop cannot accidentally be followed by that stale start.
+        internal Task<bool> StopTunnelAsync()
         {
-            // Cancel intent before waiting for a probe/start already inside the gate.
-            wanted = false;
-            CancelStartup();
-            lock (gate)
-            {
-                wanted = false; retryAt = null; failures = 0; portOccupied = false;
-                StopProcessOnly();
+            lock (startupGate) {
+                wanted = false; operationEpoch++;
+                if (startupCancellation != null) startupCancellation.Cancel();
+                if (stopTask != null && !stopTask.IsCompleted) return stopTask;
+                var previous = startupTask; stopping = true;
+                stopTask = Task.Run(async delegate {
+                    try {
+                        if (previous != null) try { await previous.ConfigureAwait(false); } catch (OperationCanceledException) { }
+                        lock (gate) {
+                            wanted = false; retryAt = null; failures = 0; portOccupied = false;
+                            return StopProcessOnly();
+                        }
+                    } finally { stopping = false; }
+                });
+                return stopTask;
             }
         }
+        internal Task<bool> RestartTunnelAsync(CancellationToken token)
+        {
+            lock (startupGate) {
+                StopTunnelAsync();
+                return StartTunnelAsync(token, operationEpoch);
+            }
+        }
+        // Synchronous compatibility is restricted to CLI/test teardown, never UI actions.
+        public void StopTunnel() { StopTunnelAsync().GetAwaiter().GetResult(); }
 
         public void RestartTunnel()
         {

@@ -1695,3 +1695,40 @@ toggles, no automatic child starts and successful explicit retry through the
 existing noninteractive SOCKS handshake. Windows acceptance pending. No service,
 VPS, key-protection or host-key-verification changes. F31 remains open and overall
 progress remains 21/31 pending live and remaining audit evidence.
+
+
+## F31c — async SSH stop, matched OpenSSH and portable profile editor
+
+Observed causes in the source: UI stop/reconnect/settings/shutdown actions waited
+for the background tunnel gate and process exit; the editor checked the saved
+`~/` string as a literal Windows filename; PATH could choose a different SSH
+installation from the Windows service agent described by diagnostics.
+
+Stop now cancels intent immediately and awaits owned cleanup outside the UI. New
+startup waits for cleanup; a later stop invalidates a queued startup. Maintenance
+handoff still requires successful cleanup. Native heartbeat and actual owned
+child fixtures exercise held gates, reconnect, repeated stop and shutdown.
+
+Background desktop/phone startup, first login and local diagnostics choose the
+installed Windows OpenSSH before absolute PATH fallback. Diagnostic ssh-add comes
+from that same installation; service state and key inventory remain distinct.
+Inventory retains only fixed guidance and a count, never fingerprints, comments
+or stderr. Multiple IdentityFile paths and IdentityAgent/IdentitiesOnly
+restrictions are reported without treating local state as successful VPS auth.
+The editor accepts both portable separators and preserves the saved path.
+
+The local SSH report shows the version of its running executable, separate from
+repository VERSION. This is not a measurement of the owner's still-installed app.
+Local checks: whitespace and public content PASS. Windows/server CI, native image
+review and owner review package evidence pending exact commit validation.
+
+The original PDF criteria for five remaining findings have been recovered in
+AUDIT_CRITERIA_REMAINING.md. F30 current capability boundaries and future product
+proposals are documented in FUTURE_FEATURES.md; missing owner decisions are
+explicit and no license change is made. F30 is not closed by documentation alone.
+
+Overall remains **21/31**, with F09, F16, F17, F19, F22, F23, F27, F29, F30, F31
+open. F31 remaining work includes user-machine HDD/VHDX measurements and live
+agent/auth/proxy acceptance, other synchronous environment/settings paths and
+repeated Codex ownership-file reads. This stage does not publish/install a release
+or change a service, protected key or VPS configuration.

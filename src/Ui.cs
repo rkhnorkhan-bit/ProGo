@@ -87,8 +87,7 @@ namespace ProGo
                 if (health != null) health.Invalidate();
                 restart.Enabled = false;
                 try {
-                    proxy.StopTunnel();
-                    if (!await proxy.StartTunnelAsync(System.Threading.CancellationToken.None) && !IsDisposed)
+                    if (!await proxy.RestartTunnelAsync(System.Threading.CancellationToken.None) && !IsDisposed)
                         MessageBox.Show(this, proxy.StartupError, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 } catch (OperationCanceledException) { }
                 finally { if (health != null) health.Invalidate(); if (!IsDisposed) restart.Enabled = true; }

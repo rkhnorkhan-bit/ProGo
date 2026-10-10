@@ -11,11 +11,13 @@ namespace ProGo
             return CreateStartInfo(new SshProfileSetting { Target = target });
         }
         internal static ProcessStartInfo CreateStartInfo(SshProfileSetting profile)
+        { return CreateStartInfo(profile, OpenSshClient.Executable); }
+        internal static ProcessStartInfo CreateStartInfo(SshProfileSetting profile, string executable)
         {
             var args = SshConnection.Arguments(profile);
             // Literal PowerShell strings + EncodedCommand keep file paths out of shell syntax.
             // Keep the console visible after refusals, verify the host, and disable configured forwardings.
-            var command = "& ssh.exe -o ClearAllForwardings=yes -o StrictHostKeyChecking=ask -o BatchMode=no -o NumberOfPasswordPrompts=3 ";
+            var command = "& '" + executable.Replace("'", "''") + "' -o ClearAllForwardings=yes -o StrictHostKeyChecking=ask -o BatchMode=no -o NumberOfPasswordPrompts=3 ";
             foreach (var arg in args) command += "'" + arg.Replace("'", "''") + "' ";
             return new ProcessStartInfo("powershell.exe", "-NoProfile -NoExit -EncodedCommand " +
                 Convert.ToBase64String(Encoding.Unicode.GetBytes(command))) {

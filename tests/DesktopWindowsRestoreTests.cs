@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -167,7 +168,9 @@ namespace ProGo
                     deny = false; Call(context, "Execute", "stop");
                     Check(!bridge.IsRunning && !File.Exists(SystemProxyService.BackupPath), "retrying actual desktop stop completes cleanup before stopping the service");
                     Check(!consumers.WindowsCleanupPending, "successful Windows cleanup settles its explicit retained consumer");
-                    Check(!(bool)context.GetType().GetMethod("BeginMaintenance", PrivateInstance).Invoke(context, new object[] { new Func<bool>(() => false) }) && ((NotifyIcon)Field(context, "tray")).Visible,
+                    var handoff = (Task<bool>)context.GetType().GetMethod("BeginMaintenance", PrivateInstance).Invoke(context, new object[] { new Func<bool>(() => false) });
+                    PumpUntil(() => handoff.IsCompleted);
+                    Check(!handoff.Result && ((NotifyIcon)Field(context, "tray")).Visible,
                         "a refused maintenance handoff leaves the cleaned application open for retry");
                     context.Dispose(); context.Dispose();
                     Check(true, "repeated native context disposal cannot resurrect cleanup or throw after a successful shutdown");
@@ -186,7 +189,9 @@ namespace ProGo
                     }, IntPtr.Zero);
                     PostMessage(window, 0x0010, IntPtr.Zero, IntPtr.Zero);
                 };
-                timer.Start(); Call(context, method, args);
+                timer.Start();
+                var outcome = context.GetType().GetMethod(method, PrivateInstance).Invoke(context, args) as Task;
+                if (outcome != null) { PumpUntil(() => outcome.IsCompleted); outcome.GetAwaiter().GetResult(); }
             }
             Check(seen, "native cleanup warning is visible for " + method);
             return contents.ToString();

@@ -248,7 +248,7 @@ namespace ProGo
                 typeof(ProxyService).GetField("wanted", PrivateInstance).SetValue(phoneProxy, true);
                 StartFixtureRelay(relay);
                 plan.Update(null, configured);
-                Call(context, "Execute", "stop"); desktop.PollRecovery();
+                Call(context, "Execute", "stop"); PumpUntil(() => !desktop.IsStopping); desktop.PollRecovery();
                 Check(relay.IsRunning && ReferenceEquals(Field(home, "proxy"), phoneProxy) && (bool)Field(phoneProxy, "wanted"), "PC stop preserves independently running phone relay and recovery");
                 Check(!ApplyOnce(plan, ProxyFeature.Cli, true) && !ApplyOnce(plan, ProxyFeature.Windows, true) && !desktop.CurrentPid.HasValue,
                     "PC stop cancels both automatic proxy modes and recovery");
@@ -258,7 +258,7 @@ namespace ProGo
                 Check(ApplyOnce(plan, ProxyFeature.Cli, true) && ApplyOnce(plan, ProxyFeature.Windows, true), "phone stop does not cancel desktop automatic actions");
                 StartFixtureRelay(relay); plan.Update(null, configured);
                 var main = (MainWindow)Field(context, "mainWindow");
-                Descendants(main).OfType<Button>().Single(b => b.Text == "Остановить все\nподключения").PerformClick(); desktop.PollRecovery();
+                Descendants(main).OfType<Button>().Single(b => b.Text == "Остановить все\nподключения").PerformClick(); PumpUntil(() => !desktop.IsStopping); desktop.PollRecovery();
                 Check(!relay.IsRunning && !(bool)Field(desktop, "wanted") && !ApplyOnce(plan, ProxyFeature.Cli, true) && !ApplyOnce(plan, ProxyFeature.Windows, true),
                     "full stop stops both channels and no timer revives them");
             }

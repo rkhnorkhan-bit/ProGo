@@ -65,6 +65,37 @@ namespace ProGo
     }
 
 
+    // Keep Windows' service agent and the SSH client in the same OpenSSH distribution.
+    internal static class OpenSshClient
+    {
+        internal static string Executable
+        {
+            get { return Select(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess,
+                Environment.GetEnvironmentVariable("PATH"), File.Exists); }
+        }
+        internal static string Select(string windows, bool redirected, string path, Func<string, bool> exists)
+        {
+            if (!String.IsNullOrWhiteSpace(windows)) {
+                var system = Path.Combine(windows, redirected ? "Sysnative" : "System32", "OpenSSH", "ssh.exe");
+                if (exists(system)) return system;
+            }
+            foreach (var raw in (path ?? "").Split(Path.PathSeparator)) {
+                var directory = raw.Trim().Trim('"');
+                if (String.IsNullOrWhiteSpace(directory) || !Path.IsPathRooted(directory)) continue;
+                try { var candidate = Path.Combine(directory, "ssh.exe"); if (exists(candidate)) return candidate; }
+                catch (ArgumentException) { }
+            }
+            return "ssh.exe"; // Preserve the normal missing-client error when OpenSSH is absent.
+        }
+        internal static string AgentExecutable(string ssh)
+        {
+            if (!Path.IsPathRooted(ssh ?? "")) return null;
+            var path = Path.Combine(Path.GetDirectoryName(ssh), "ssh-add.exe");
+            return File.Exists(path) ? path : null;
+        }
+    }
+
     // One source of SSH arguments for background tunnels, first login and diagnostics.
     internal static class SshConnection
     {
