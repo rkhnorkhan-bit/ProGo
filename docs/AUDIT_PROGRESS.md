@@ -1908,6 +1908,29 @@ alone does not close F31 or certify UI latency, physical disk load, SOCKS protoc
 external HTTP/HTTPS or authentication. Owner instructions and evidence limits are
 in [RESCUE_MEASUREMENT.md](RESCUE_MEASUREMENT.md).
 
+## Stage F09a — atomic real vault writes and failed-edit rollback
+
+Real vault saves now write the complete existing encrypted envelope to a unique
+file beside the vault, flush it and atomically replace the old file (or move it
+for initial creation). A denied/locked replacement leaves the previous ciphertext
+intact. Temporary cleanup is best effort and cannot change the commit result.
+Add/Edit/Delete prepare a candidate list and publish it to the session/grid only
+after Save returns; an actual write failure shows a fixed Russian warning without
+PIN, entry contents or raw exception details.
+
+Native regressions use the real encrypted writer and actual target locks/read-only
+attributes. They exercise Add/Edit/Delete through native dialogs, unchanged file,
+session and grid on refusal, successful retry/reopen, compatible envelope fields,
+initial creation and temporary-file cleanup. Windows validation remains pending.
+Linux verification: Python 36 PASS / 3 platform SKIP; public-content check PASS
+165 source files; shell syntax and diff whitespace checks PASS. The .NET Framework
+build and native Windows regressions were not available in this Linux environment.
+
+This is partial F09 only. The current Open fallback, nonpersistent session behavior,
+UI concealment, four-digit PIN, KDF, encryption and vault format are unchanged.
+Read/structure failures and the approved wrong-PIN/nonpersistent UX contract remain
+open pending the owner's separate model decision; F09 is not closed by this stage.
+
 ## Stage F23k — bounded own-VPS list waiting (Windows verification pending)
 
 The read-only `list` action now uses the existing owned console runner for both

@@ -40,6 +40,14 @@ only the child it explicitly created; production consumer tracking only disposes
 handles. Native dashboard screenshots distinguish CLI off/Windows retained from a
 stopped shared service. No real SSH endpoint or Codex installation is used.
 
+`DesktopVaultAccessibilityTests` also exercises the real vault writer in disposable
+Windows CI. It checks initial creation, unchanged encrypted-envelope compatibility,
+denied/read-only and locked target replacement, actual Add/Edit/Delete warning and
+rollback behavior, successful commit/reopen and encrypted staging cleanup. The
+fixture restores any prior opaque vault bytes and preserves the existing
+nonpersistent in-memory behavior. This only validates the independent F09a storage
+fix; the F09 opening/nonpersistent UX model still needs the separate owner decision.
+
 ## Local journal limits
 
 `BoundedLog.cs` is compiled into the app and shipped as reviewed local source for

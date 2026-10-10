@@ -444,9 +444,8 @@ namespace ProGo
             using (var form = new EntryForm(entry))
             {
                 if (form.ShowDialog() != DialogResult.OK) return;
-                session.Data.entries.Add(form.Entry);
-                VaultService.Save(session);
-                Reload();
+                var entries = new List<VaultEntry>(session.Data.entries); entries.Add(form.Entry);
+                SaveEntries(entries);
             }
         }
 
@@ -458,9 +457,9 @@ namespace ProGo
             {
                 if (form.ShowDialog() != DialogResult.OK) return;
                 var index = session.Data.entries.FindIndex(e => e.id == selected.id);
-                if (index >= 0) session.Data.entries[index] = form.Entry;
-                VaultService.Save(session);
-                Reload();
+                var entries = new List<VaultEntry>(session.Data.entries);
+                if (index >= 0) entries[index] = form.Entry;
+                SaveEntries(entries);
             }
         }
 
@@ -470,8 +469,22 @@ namespace ProGo
             if (selected == null) return;
             var answer = MessageBox.Show("Удалить запись «" + selected.name + "»?\nЭто действие нельзя отменить.", "Удаление записи", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
             if (answer != DialogResult.OK) return;
-            session.Data.entries.RemoveAll(e => e.id == selected.id);
-            VaultService.Save(session);
+            var entries = session.Data.entries.Where(e => e.id != selected.id).ToList();
+            SaveEntries(entries);
+        }
+
+        private void SaveEntries(List<VaultEntry> entries)
+        {
+            var candidate = new VaultSession(new VaultData { version = session.Data.version, entries = entries }, session.Pin, session.CanPersist);
+            try { VaultService.Save(candidate); }
+            catch {
+                // Entry contents, PIN and exception text stay out of the error/log.
+                SafeLog.Info("Vault save failed.");
+                MessageBox.Show(this, "Не удалось сохранить изменения хранилища. Записи в открытом окне не изменены. Проверьте права записи и доступность файла, затем повторите действие.",
+                    "Сохранение хранилища", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            session.Data.entries = entries;
             Reload();
         }
 
