@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -211,7 +211,10 @@ namespace ProGo
         {
             return await AdminAsync(owner, action, label, identifier, progress,
                 (executable, arguments) => HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments,
-                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), ConsoleAsync);
+                    action == "recover-setup" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), (executable, arguments, output) =>
+                    action == "setup" || action == "recover-setup"
+                        ? HomeVpnPreparationForm.WaitForCommandAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output)
+                        : ConsoleAsync(executable, arguments, output));
         }
 
         // Injected transports keep Windows fixtures isolated from live VPS credentials.
