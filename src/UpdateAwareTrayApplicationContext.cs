@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
@@ -67,9 +67,11 @@ namespace ProGo
         internal string BackupOperationKind { get { return backupOperationKind; } }
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000, Action<CancellationToken> beforeBaselineProbe = null, Action cliRestore = null, Action<ProxyFeature, AppSettings> integrationApply = null)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000, Action<CancellationToken> beforeBaselineProbe = null, Action cliRestore = null, Action<ProxyFeature, AppSettings> integrationApply = null, int settingsShutdownTimeoutMilliseconds = 3000)
         {
             settings = settingsService;
+            if (settingsShutdownTimeoutMilliseconds < 1 || settingsShutdownTimeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("settingsShutdownTimeoutMilliseconds");
+            this.settingsShutdownTimeoutMilliseconds = settingsShutdownTimeoutMilliseconds;
             this.beforeBackupCopy = beforeBackupCopy;
             this.beforeBaselineProbe = beforeBaselineProbe;
             if (backupShutdownTimeoutMilliseconds < 1 || backupShutdownTimeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("backupShutdownTimeoutMilliseconds");
@@ -217,48 +219,143 @@ namespace ProGo
         private void ShowSettings(SettingsSection section = SettingsSection.Automation)
         {
             var before = settings.Current;
-            bool reconnectAfterSave = false;
             using (var form = new SshProfilesSettingsForm(settings, section))
             {
                 form.ManualActionRequested += ExecuteCommand;
                 form.CommandState = GetCommandState;
                 form.ProxyEndpointText = cliProxy.ProxyUrl;
                 form.CurrentProxyEndpoint = delegate { return cliProxy.ProxyUrl; };
-                form.SaveRequested = delegate(AppSettings proposed, bool pickFree) {
-                    if (IntegrationPending || !integrationGate.Wait(0)) return new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси. Дождитесь завершения операции и повторите сохранение.");
-                    var mutation = appConsumers.BeginMutation();
-                    System.Threading.Interlocked.Increment(ref integrationPending);
-                    try {
-                    bool changed = proposed.SocksHost != settings.Current.SocksHost || proposed.SocksPort != settings.Current.SocksPort || SshConnection.Signature(proposed) != SshConnection.Signature(settings.Current);
-                    var oldPort = settings.Current.HttpProxyPort;
-                    bool reconnectRequested = changed && proxy.ConnectionRequested;
-                    SettingsSaveError error;
-                    bool configured;
-                    try { configured = cliProxy.ReconfigureDetailed(proposed, pickFree, out error); }
-                    finally { appConsumers.Invalidate(); appConsumers.ReleaseIfUnused(); }
-                    if (!configured) return error;
-                    if (changed) {
-                        reconnectAfterSave = reconnectRequested;
-                        pendingRoutes.Clear(); ObserveStop(proxy.StopTunnelAsync()); RefreshPendingRoutes(); health.Invalidate();
-                    }
-                    NotifyPortChange(oldPort);
-                    return null;
-                    } finally {
-                        mutation.Dispose(); System.Threading.Interlocked.Decrement(ref integrationPending);
-                        integrationGate.Release(); RefreshPendingRoutes();
-                    }
+                form.SaveRequestedAsync = delegate(SettingsApplyRequest request, CancellationToken token) {
+                    return ApplySettingsRequestAsync(request, token);
                 };
                 CommandStateChanged += form.RefreshCommandAvailability;
                 try {
                     if (form.ShowDialog(mainWindow) == DialogResult.OK)
                     {
-                        homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
-                        automation.Update(before, settings.Current);
-                        if (reconnectAfterSave || (!before.AutoStartSocks && settings.Current.AutoStartSocks)) proxy.StartTunnelAsync(System.Threading.CancellationToken.None);
+                        // The accepted owner publication already updates recovery
+                        // and automation once. Do not reset a pending auto-apply
+                        // that the message pump may have started before dialog close.
+                        if (!before.AutoStartSocks && settings.Current.AutoStartSocks) proxy.StartTunnelAsync(System.Threading.CancellationToken.None);
                     }
                 } finally { CommandStateChanged -= form.RefreshCommandAvailability; }
             }
             UpdateTooltip();
+        }
+        private volatile CancellationTokenSource settingsOperationCancellation;
+        private readonly int settingsShutdownTimeoutMilliseconds;
+        internal Task<SettingsSaveError> SettingsWork { get; private set; }
+        internal bool SettingsPending { get { return IntegrationPending; } }
+        internal Task<SettingsSaveError> ApplySettingsAsync(AppSettings proposed, bool pickFree, CancellationToken token)
+        {
+            return ApplySettingsRequestAsync(new SettingsApplyRequest { Proposed = proposed.Clone(), Expected = settings.Capture(), PickFree = pickFree }, token);
+        }
+        private Task<SettingsSaveError> ApplySettingsRequestAsync(SettingsApplyRequest request, CancellationToken token)
+        {
+            if (closing || shutdownPrepared || shutdownPreparing || IntegrationPending)
+                return Task.FromResult(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси или завершает работу. Дождитесь окончания операции и повторите сохранение."));
+            var consumers = appConsumers.BeginMutation();
+            System.Threading.Interlocked.Increment(ref integrationPending); RefreshPendingRoutes();
+            var work = RunSettingsApply(request, token, consumers);
+            SettingsWork = work; IntegrationWork = work; return work;
+        }
+        internal Task<SettingsSaveError> EnsureBridgeAsync(CancellationToken token)
+        {
+            if (closing || shutdownPreparing || shutdownPrepared || IntegrationPending)
+                return Task.FromResult(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси или завершает работу. Дождитесь окончания операции и повторите команду."));
+            var consumers = appConsumers.BeginMutation();
+            System.Threading.Interlocked.Increment(ref integrationPending); RefreshPendingRoutes();
+            var work = RunSettingsApply(null, token, consumers);
+            SettingsWork = work; IntegrationWork = work; return work;
+        }
+        private async Task<SettingsSaveError> RunSettingsApply(SettingsApplyRequest request, CancellationToken token, IDisposable consumers)
+        {
+            var result = await RunSettingsApplyCore(request, token, consumers).ConfigureAwait(false);
+            // Framework csc targets C# 5: await is not allowed in finally.
+            // Keep the tracked Work alive until owner pending publication settles.
+            await IntegrationUi(RefreshPendingRoutes).ConfigureAwait(false);
+            return result;
+        }
+        private async Task<SettingsSaveError> RunSettingsApplyCore(SettingsApplyRequest request, CancellationToken token, IDisposable consumers)
+        {
+            bool acquired = false; IDisposable retention = null;
+            var lifetime = integrationWaitCancellation.Token;
+            using (var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime)) {
+                settingsOperationCancellation = cancellation;
+                cancellation.CancelAfter(30000);
+                try {
+                    await integrationGate.WaitAsync(cancellation.Token).ConfigureAwait(false); acquired = true;
+                    SettingsRevisionSnapshot expected = null; int previousPort = 0; bool keepRunning = true, reconnect = false, changed = false;
+                    if (!await IntegrationUi(delegate {
+                        if (closing) return;
+                        expected = request == null ? settings.Capture() : request.Expected;
+                        previousPort = cliProxy.Port; keepRunning = request == null || cliProxy.IsRunning;
+                        if (request != null) {
+                            var current = settings.Current;
+                            changed = request.Proposed.SocksHost != current.SocksHost || request.Proposed.SocksPort != current.SocksPort || SshConnection.Signature(request.Proposed) != SshConnection.Signature(current);
+                            reconnect = changed && proxy.ConnectionRequested;
+                        }
+                        lock (integrationLifetimeGate) if (!closing) retention = cliProxy.RetainForNativeMutation();
+                    }).ConfigureAwait(false) || expected == null || retention == null)
+                        return new SettingsSaveError(SettingsField.General, "Применение настроек отменено: окно приложения закрыто.");
+                    var prepared = await PrepareBridgeWorker(request, expected, keepRunning, cancellation.Token).ConfigureAwait(false);
+                    if (prepared.Error != null) return prepared.Error;
+                    bool published = await IntegrationUi(delegate {
+                        cliProxy.PublishPrepared(prepared.Value);
+                        appConsumers.Observe(); NotifyPortChange(previousPort);
+                        if (request != null && changed) {
+                            pendingRoutes.Clear(); ObserveStop(proxy.StopTunnelAsync()); health.Invalidate();
+                            if (reconnect) proxy.StartTunnelAsync(CancellationToken.None);
+                        }
+                        if (request != null) {
+                            homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
+                            automation.Update(expected.Settings, settings.Current);
+                        }
+                    }).ConfigureAwait(false);
+                    // Only service memory/socket ownership is published after a lost
+                    // owner; never call tray, consumers, proxy or a disposed form.
+                    if (!published) cliProxy.PublishPrepared(prepared.Value);
+                    return null;
+                } catch (OperationCanceledException) {
+                    return new SettingsSaveError(SettingsField.General, "Применение настроек отменено.");
+                } catch (Exception ex) {
+                    SafeLog.Error("Async settings application failed.", ex);
+                    return new SettingsSaveError(SettingsField.General, "Не удалось завершить применение настроек. Проверьте текущее состояние и журнал ProGo.");
+                } finally {
+                    consumers.Dispose(); System.Threading.Interlocked.Decrement(ref integrationPending);
+                    if (retention != null) retention.Dispose();
+                    if (acquired) integrationGate.Release();
+                    if (ReferenceEquals(settingsOperationCancellation, cancellation)) settingsOperationCancellation = null;
+                }
+            }
+        }
+        private sealed class PreparedBridgeResult
+        {
+            internal CliProxyBridgeService.PreparedBridgeConfiguration Value;
+            internal SettingsSaveError Error;
+        }
+        private Task<PreparedBridgeResult> PrepareBridgeWorker(SettingsApplyRequest request, SettingsRevisionSnapshot expected, bool keepRunning, CancellationToken token)
+        {
+            return Task.Run(delegate {
+                ApplicationShortcuts.StartupChange startup = null;
+                var result = new PreparedBridgeResult();
+                try {
+                    token.ThrowIfCancellationRequested();
+                    if (!cliProxy.RetryPendingCleanup(out result.Error)) return result;
+                    if (request != null && request.Startup != null && request.StartupSnapshot != null && request.AutoLaunch != request.StartupSnapshot.Registered) {
+                        try { startup = request.Startup.ChangeStartup(request.StartupSnapshot, request.AutoLaunch); }
+                        catch { result.Error = new SettingsSaveError(SettingsField.Startup, "Не удалось изменить автозапуск. Ярлык недоступен или изменился вне ProGo. Проверьте его и снова откройте настройки; остальные параметры не применены."); return result; }
+                    }
+                    if (request == null && cliProxy.IsRunning) {
+                        result.Value = new CliProxyBridgeService.PreparedBridgeConfiguration(); return result;
+                    }
+                    result.Value = cliProxy.PrepareConfiguration(request == null ? expected.Settings : request.Proposed, request != null && request.PickFree,
+                        keepRunning, expected, request != null, token, out result.Error);
+                    return result;
+                } finally {
+                    if (result.Value == null && startup != null && !startup.TryRollback())
+                        result.Error = new SettingsSaveError(SettingsField.Startup, "Настройки не удалось полностью применить, а автозапуск — вернуть к прежнему состоянию. Позднейшие изменения сохранены; проверьте автозагрузку Windows.");
+                }
+            });
         }
         internal void StartAutomation()
         {
@@ -354,6 +451,7 @@ namespace ProGo
         private async void CompleteRouteAction(AppCommand action, long request)
         {
             bool ready = false, cancelled = false; Exception failure = null;
+            IDisposable routeConsumers = null;
             try { ready = await proxy.StartTunnelAsync(routeLifetime.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) { cancelled = true; }
             catch (Exception ex) { failure = ex; }
@@ -370,13 +468,26 @@ namespace ProGo
                     if (work != null) await work.ConfigureAwait(false);
                 } catch (Exception ex) { failure = ex; }
             }
+            if (ready && !cancelled && failure == null && (action == AppCommand.CreateCodexShortcut || action == AppCommand.OpenCodex || action == AppCommand.OpenTerminal)) {
+                try {
+                    var bridgeWork = await DispatchUi(delegate {
+                        long active;
+                        if (!pendingRoutes.TryGetValue(action, out active) || active != request) return (Task<SettingsSaveError>)null;
+                        // Keep the endpoint between asynchronous preparation and
+                        // the owner opening/tracking its actual scoped consumer.
+                        routeConsumers = appConsumers.BeginMutation();
+                        return EnsureBridgeAsync(routeLifetime.Token);
+                    }).ConfigureAwait(false);
+                    if (bridgeWork != null) { var bridgeError = await bridgeWork.ConfigureAwait(false); if (bridgeError != null) throw new InvalidOperationException(bridgeError.Message); }
+                } catch (Exception ex) { failure = ex; }
+            }
             try {
                 // Modal dialogs may replace a captured WinForms synchronization context.
                 // Always finish against this application's persistent UI dispatcher.
                 activationDispatcher.BeginInvoke(new Action(delegate {
                     long active;
-                    if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request) return;
                     try {
+                        if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request) return;
                         if (cancelled) return;
                         if (failure != null) throw failure;
                         if (!ready) throw new InvalidOperationException(proxy.StartupError ?? "Прокси не готов. Проверьте сервер и SSH-ключ в «Подключениях».");
@@ -386,12 +497,11 @@ namespace ProGo
                             case AppCommand.StartCli: CliReadyNotice(); break;
                             case AppCommand.EnableWindows: break;
                             case AppCommand.CreateCodexShortcut:
-                                EnsureBridge();
                                 try { CodexProxyService.Enable(cliProxy.Port); }
                                 finally { appConsumers.Invalidate(); }
                                 break;
-                            case AppCommand.OpenCodex: EnsureBridge(); appConsumers.TrackWindow(CodexProxyService.Open(cliProxy.Port)); break;
-                            case AppCommand.OpenTerminal: EnsureBridge(); string error; Process window; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error, out window)) throw new InvalidOperationException(error); appConsumers.TrackWindow(window); break;
+                            case AppCommand.OpenCodex: appConsumers.TrackWindow(CodexProxyService.Open(cliProxy.Port)); break;
+                            case AppCommand.OpenTerminal: string error; Process window; if (!CliProxyEnvironmentService.OpenPowerShellWithEnvironment(cliProxy.Port, out error, out window)) throw new InvalidOperationException(error); appConsumers.TrackWindow(window); break;
                             default: throw new InvalidOperationException("Команда подключения ProGo не поддерживается.");
                         }
                         health.Invalidate();
@@ -401,13 +511,17 @@ namespace ProGo
                         MessageBox.Show(mainWindow, ex.Message, "Подключение ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                     finally {
+                        if (routeConsumers != null) routeConsumers.Dispose();
                         if (pendingRoutes.TryGetValue(action, out active) && active == request) pendingRoutes.Remove(action);
                         appConsumers.ReleaseIfUnused();
                         if (!closing) RefreshPendingRoutes();
                     }
                 }));
             }
-            catch (InvalidOperationException ex) { if (!closing) SafeLog.Error("Connection result could not reach the application UI.", ex); }
+            catch (InvalidOperationException ex) {
+                if (routeConsumers != null) routeConsumers.Dispose();
+                if (!closing) SafeLog.Error("Connection result could not reach the application UI.", ex);
+            }
         }
         private AppCommandState GetCommandState()
         { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing, IsManualBackupRunning, IntegrationPending); }
@@ -430,14 +544,6 @@ namespace ProGo
             pendingRoutes.Remove(action);
             if (pendingRoutes.Count == 0 && (proxy.IsConnecting || proxy.IsStopping)) ObserveStop(proxy.StopTunnelAsync());
             RefreshPendingRoutes();
-        }
-        private void EnsureBridge(bool ownsIntegrationGate = false)
-        {
-            if (IntegrationPending && !ownsIntegrationGate) throw new InvalidOperationException("Сейчас ProGo изменяет настройки прокси. Дождитесь завершения операции и повторите команду.");
-            var oldPort = settings.Current.HttpProxyPort;
-            string message; if (!cliProxy.Start(out message)) throw new InvalidOperationException(message);
-            appConsumers.Observe();
-            NotifyPortChange(oldPort);
         }
         private void NotifyPortChange(int previous)
         {
@@ -557,7 +663,6 @@ namespace ProGo
                         cli = cli && System.Threading.Interlocked.Read(ref cliIntent) == expectedCli;
                         windows = windows && System.Threading.Interlocked.Read(ref windowsIntent) == expectedWindows;
                         if (!cli && !windows) return;
-                        EnsureBridge(true);
                     }
                     current = settings.Current.Clone(); current.HttpProxyPort = cliProxy.Port; revision = cliProxy.ConsumerRevision;
                 }).ConfigureAwait(false) || current == null) return result;
@@ -570,6 +675,29 @@ namespace ProGo
                     }
                     retention = cliProxy.RetainForNativeMutation();
                 }
+                SettingsSaveError cleanupError;
+                if (!await Task.Run(delegate { return cliProxy.RetryPendingCleanup(out cleanupError); }).ConfigureAwait(false))
+                    throw new InvalidOperationException("Очистка переноса прокси не завершена. Порты сохранены; проверьте права записи и повторите команду.");
+                if (enable) {
+                    var expected = settings.Capture(); int previousPort = cliProxy.Port;
+                    PreparedBridgeResult prepared;
+                    using (var preparationCancellation = CancellationTokenSource.CreateLinkedTokenSource(integrationWaitCancellation.Token)) {
+                        settingsOperationCancellation = preparationCancellation; preparationCancellation.CancelAfter(30000);
+                        try { prepared = await PrepareBridgeWorker(null, expected, true, preparationCancellation.Token).ConfigureAwait(false); }
+                        finally { if (ReferenceEquals(settingsOperationCancellation, preparationCancellation)) settingsOperationCancellation = null; }
+                    }
+                    if (prepared.Error != null) throw new InvalidOperationException(prepared.Error.Message);
+                    if (!await IntegrationUi(delegate { cliProxy.PublishPrepared(prepared.Value); appConsumers.Observe(); NotifyPortChange(previousPort); }).ConfigureAwait(false)) {
+                        cliProxy.PublishPrepared(prepared.Value); return result;
+                    }
+                }
+                if (!await IntegrationUi(delegate {
+                    if (enable) {
+                        cli = cli && System.Threading.Interlocked.Read(ref cliIntent) == expectedCli;
+                        windows = windows && System.Threading.Interlocked.Read(ref windowsIntent) == expectedWindows;
+                    }
+                    current = settings.Current.Clone(); current.HttpProxyPort = cliProxy.Port; revision = cliProxy.ConsumerRevision;
+                }).ConfigureAwait(false) || (enable && !cli && !windows)) return result;
                 // These delegates perform only fresh native/file ownership transactions.
                 // No consumer, listener, tray or form is touched by the worker.
                 result = await Task.Run(() => RestoreIntegrations(cli, windows, enable, current)).ConfigureAwait(false);
@@ -604,8 +732,8 @@ namespace ProGo
         {
             bool cliCurrent = System.Threading.Interlocked.Read(ref cliIntent) == expectedCli;
             bool windowsCurrent = System.Threading.Interlocked.Read(ref windowsIntent) == expectedWindows;
-            if (result.Cli) appConsumers.CliCleanupPending = result.CliFailure != null;
-            if (result.Windows) appConsumers.WindowsCleanupPending = result.WindowsFailure != null;
+            if (result.Cli) appConsumers.CliCleanupPending = result.CliFailure != null || cliProxy.CleanupPending;
+            if (result.Windows) appConsumers.WindowsCleanupPending = result.WindowsFailure != null || cliProxy.CleanupPending;
             appConsumers.Observe();
             if (!enable && windowsCurrent && result.WindowsRestore != null && result.WindowsRestore.Completed && result.WindowsRestore.PreservedExternal)
                 tray.ShowBalloonTip(5000, "Настройки Windows сохранены", result.WindowsRestore.Message, ToolTipIcon.Info);
@@ -666,6 +794,14 @@ namespace ProGo
                     catch (OperationCanceledException) { }
                     catch (Exception ex) { SafeLog.Error("Backup ended with an error before shutdown.", ex); }
                 }
+                var settingsCancellation = settingsOperationCancellation;
+                if (settingsCancellation != null) try { settingsCancellation.Cancel(); } catch (ObjectDisposedException) { }
+                var settingsWork = SettingsWork;
+                if (settingsWork != null && !settingsWork.IsCompleted && await Task.WhenAny(settingsWork, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != settingsWork)
+                    throw new InvalidOperationException("Настройки ещё применяются: Windows или накопитель не завершили текущую операцию. ProGo остаётся запущенным. Дождитесь окончания применения и повторите выход или обслуживание.");
+                var integrationWork = IntegrationWork;
+                if (integrationWork != null && !integrationWork.IsCompleted && await Task.WhenAny(integrationWork, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != integrationWork)
+                    throw new InvalidOperationException("Изменение прокси ещё не завершено. Порты и копии сохранены; ProGo остаётся запущенным. Дождитесь текущей операции Windows и повторите выход или обслуживание.");
                 var cleanup = await DispatchUi(() => QueueIntegration(true, true, false, true)).ConfigureAwait(false);
                 if (cleanup == null) return false;
                 var integrations = await cleanup.ConfigureAwait(false);

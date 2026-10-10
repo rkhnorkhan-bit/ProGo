@@ -298,7 +298,7 @@ namespace ProGo
                 { "AutoConfigURL", backup.HadAutoConfigUrl ? WindowsProxyValue.From(backup.AutoConfigUrl ?? "", RegistryValueKind.String) : new WindowsProxyValue() }
             };
         }
-        private static WindowsProxyValue ReadValue(RegistryKey key, string name)
+        internal static WindowsProxyValue ReadValue(RegistryKey key, string name)
         {
             var value = key == null ? null : key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
             return value == null ? new WindowsProxyValue() : WindowsProxyValue.From(value, key.GetValueKind(name));
@@ -476,7 +476,7 @@ namespace ProGo
             }
         }
 
-        private static void RefreshSystemProxy()
+        internal static void RefreshSystemProxy()
         {
             InternetSetOption(IntPtr.Zero, INTERNET_OPTION_SETTINGS_CHANGED, IntPtr.Zero, 0);
             InternetSetOption(IntPtr.Zero, INTERNET_OPTION_REFRESH, IntPtr.Zero, 0);

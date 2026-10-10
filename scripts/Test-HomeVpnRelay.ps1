@@ -17,6 +17,12 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Home VPN wizard harness build failed' }
     & $WizardHarness (Join-Path $Fixture 'token')
     if ($LASTEXITCODE -ne 0) { throw 'Home VPN wizard tests failed' }
+    $PortableHarness = Join-Path $Root 'build\HomeVpnPortableArchiveTests.exe'
+    $PortableSources = @(Get-ChildItem (Join-Path $Root 'src') -Filter '*.cs' | ForEach-Object FullName)
+    & $Csc /nologo /target:exe /main:ProGo.HomeVpnPortableArchiveTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$PortableHarness" $PortableSources .\tests\HomeVpnPortableArchiveTests.cs
+    if ($LASTEXITCODE -ne 0) { throw 'Portable Home VPN harness build failed' }
+    & $PortableHarness (Join-Path $Fixture 'token') (Join-Path $Root 'build\desktop-shots')
+    if ($LASTEXITCODE -ne 0) { throw 'Portable Home VPN tests failed' }
     $env:PROGO_RELAY_TEST_COMMAND = ConvertTo-Json -InputObject @($Harness) -Compress
     python -m unittest discover -s tests -p 'test_*.py' -v
     if ($LASTEXITCODE -ne 0) { throw 'Relay integration tests failed' }
