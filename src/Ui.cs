@@ -36,10 +36,13 @@ namespace ProGo
         internal Task SpeedWork { get; private set; }
         private readonly Func<DateTime> now;
         private readonly Timer pingTimer;
+        private readonly Control measurementDispatcher = new Control();
+        private readonly object measurementCompletionGate = new object();
+        private readonly HashSet<TaskCompletionSource<bool>> measurementCompletions = new HashSet<TaskCompletionSource<bool>>();
         private int pingInFlight;
         private int speedInFlight;
         private int routeInFlight;
-        private bool closing;
+        private volatile bool closing;
 
         public StatusForm(SettingsService settingsService, ProxyService proxyService, bool checkRouteOnOpen = false,
             Func<AppSettings, ProxyService, CancellationToken, string> routeProbe = null, Func<DateTime> clock = null, ConnectionHealthMonitor health = null,
@@ -59,10 +62,14 @@ namespace ProGo
             ClientSize = new Size(820, 570);
             MinimumSize = new Size(790, 610);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding, ColumnCount = 2, RowCount = 10 };
+            // Keep the footer outside the two-column table: its preferred width must
+            // not expand a spanning cell past the form's real minimum client width.
+            var content = new Panel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding };
+            Controls.Add(content);
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 9 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            Controls.Add(table);
+            content.Controls.Add(table);
 
             state = AddRow(table, 0, "Соединение");
             address = AddRow(table, 1, "Адрес");
@@ -76,9 +83,10 @@ namespace ProGo
             table.RowStyles[6].Height = 82;
             table.RowStyles[7].Height = 60;
             table.RowStyles[8].Height = 68;
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical));
 
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom,
+                Height = UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical,
+                FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
             var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
             var restart = UiTheme.Button("Переподключиться", null, false);
             speedButton = UiTheme.Button("Измерить скорость", null, false);
@@ -107,8 +115,7 @@ namespace ProGo
             buttons.Controls.Add(restart);
             buttons.Controls.Add(speedButton);
             buttons.Controls.Add(checkButton);
-            table.Controls.Add(buttons, 0, 9);
-            table.SetColumnSpan(buttons, 2);
+            content.Controls.Add(buttons);
             close.AccessibleDescription = "Закрывает диагностику и отменяет её измерения. Не отключает подключение ProGo.";
             restart.AccessibleDescription = "Останавливает текущий SSH-туннель ПК и повторно подключается по сохранённым настройкам.";
             DescribeMeasurementButton(checkButton, "Проверить маршрут",
@@ -124,10 +131,12 @@ namespace ProGo
             pingTimer.Tick += delegate { QueuePingMeasure(); };
             FormClosed += delegate
             {
-                closing = true;
-                CancelMeasurements(); pingTimer.Stop();
+                CloseMeasurements(); pingTimer.Stop();
             };
 
+            // A modal window can replace/remove SynchronizationContext. This handle always
+            // belongs to the constructor's UI thread, even before the form itself is shown.
+            measurementDispatcher.CreateControl();
             RefreshState(false);
             route.Text = "Маршрут ещё не проверен";
             checkedAt.Text = "Ещё не проверен";
@@ -173,20 +182,66 @@ namespace ProGo
         private void CancelMeasurements()
         { CancelMeasurement(routeCancellation); CancelMeasurement(pingCancellation); CancelMeasurement(speedCancellation); }
 
+        private void CloseMeasurements()
+        {
+            closing = true; CancelMeasurements();
+            lock (measurementCompletionGate) {
+                // A close may discard queued native callbacks. Settle their tasks without
+                // waiting for the message loop or publishing into the closed form.
+                foreach (var completion in measurementCompletions) completion.TrySetResult(false);
+                measurementCompletions.Clear();
+            }
+        }
+        private Task<bool> DispatchMeasurementCompletion(Action action)
+        {
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (measurementCompletionGate) {
+                if (closing) return Task.FromResult(false);
+                measurementCompletions.Add(completion);
+            }
+            try {
+                measurementDispatcher.BeginInvoke(new Action(delegate {
+                    try {
+                        if (closing || IsDisposed) { completion.TrySetResult(false); return; }
+                        action(); completion.TrySetResult(true);
+                    } catch (Exception ex) { completion.TrySetException(ex); }
+                    finally { lock (measurementCompletionGate) measurementCompletions.Remove(completion); }
+                }));
+            } catch (InvalidOperationException) {
+                lock (measurementCompletionGate) measurementCompletions.Remove(completion);
+                completion.TrySetResult(false);
+            }
+            return completion.Task;
+        }
+
         // The worker disposes its source even when the application message loop has ended.
         // Completion/cancellation cannot publish into a closed window or replace a newer run.
         private async Task RunMeasurement<T>(CancellationTokenSource source, Func<CancellationToken, T> measure,
-            Action<T> apply, Action cancelled, Action failed, Action finish)
+            Action<T> apply, Action cancelled, Action failed, Action release, Action finishUi = null)
         {
-            var token = source.Token;
+            var token = source.Token; T result = default(T); bool wasCancelled = false; Exception failure = null;
+            int released = 0;
+            Action releaseOnce = delegate { if (System.Threading.Interlocked.Exchange(ref released, 1) == 0) release(); };
             try {
-                var result = await Task.Run(() => { try { return measure(token); } finally { source.Dispose(); } });
-                if (closing || IsDisposed) return;
-                token.ThrowIfCancellationRequested(); apply(result);
+                result = await Task.Run(() => { try { return measure(token); } finally { source.Dispose(); } }).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) { if (!closing && !IsDisposed) cancelled(); }
-            catch (Exception ex) { SafeLog.Error("Diagnostic measurement failed.", ex); if (!closing && !IsDisposed) failed(); }
-            finally { finish(); }
+            catch (OperationCanceledException) { wasCancelled = true; }
+            catch (Exception ex) { failure = ex; SafeLog.Error("Diagnostic measurement failed.", ex); }
+            try {
+                await DispatchMeasurementCompletion(delegate {
+                    try {
+                        if (wasCancelled || token.IsCancellationRequested) cancelled();
+                        else if (failure != null) failed();
+                        else apply(result);
+                    } catch (Exception ex) {
+                        SafeLog.Error("Diagnostic result publication failed.", ex);
+                        if (!closing && !IsDisposed) failed();
+                    } finally {
+                        releaseOnce();
+                        if (!closing && !IsDisposed && finishUi != null) finishUi();
+                    }
+                }).ConfigureAwait(false);
+            } finally { releaseOnce(); }
         }
         private void QueueRouteMeasure()
         {
@@ -199,8 +254,7 @@ namespace ProGo
                 checkedAt.Text = now().ToString("yyyy-MM-dd HH:mm:ss") + "\nSOCKS → " + SafeLog.Redact(current.TestEndpoint);
             }, () => route.Text = "Проверка маршрута отменена.", () => route.Text = "Не удалось проверить маршрут через SOCKS.", () => {
                 routeCancellation = null; System.Threading.Interlocked.Exchange(ref routeInFlight, 0);
-                if (!closing && !IsDisposed) checkButton.Text = "Проверить маршрут";
-            });
+            }, () => checkButton.Text = "Проверить маршрут");
         }
         private void QueuePingMeasure()
         {
@@ -227,16 +281,15 @@ namespace ProGo
                 speed.Text += "\nCloudflare через SOCKS · " + now().ToString("HH:mm:ss");
             }, () => speed.Text = "Измерение скорости отменено.", () => speed.Text = "Не удалось измерить скорость.", () => {
                 speedCancellation = null; System.Threading.Interlocked.Exchange(ref speedInFlight, 0);
-                if (!closing && !IsDisposed) speedButton.Text = "Измерить скорость";
-            });
+            }, () => speedButton.Text = "Измерить скорость");
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                closing = true;
-                CancelMeasurements();
+                CloseMeasurements();
+                measurementDispatcher.Dispose();
                 if (pingTimer != null)
                 {
                     pingTimer.Stop();
