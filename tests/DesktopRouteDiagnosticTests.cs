@@ -59,7 +59,7 @@ namespace ProGo
             using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
                 try {
                     form.Show(); ((System.Windows.Forms.Timer)Field(form, "pingTimer")).Stop();
-                    PumpUntil(() => form.PingWork.IsCompleted); form.PingWork.GetAwaiter().GetResult();
+                    PumpUntil(() => form.PingWork != null && form.PingWork.IsCompleted); form.PingWork.GetAwaiter().GetResult();
                     foreach (var control in Descendants(form).Where(c => c is Label || c is Button))
                         control.TextChanged += delegate {
                             Interlocked.Increment(ref updates);
@@ -106,7 +106,7 @@ namespace ProGo
                 (s, token) => { Interlocked.Increment(ref entered); release.Wait(token); return Tuple.Create((double?)1, (string)null); })) {
                 try {
                     form.Show(); ((System.Windows.Forms.Timer)Field(form, "pingTimer")).Stop();
-                    PumpUntil(() => form.PingWork.IsCompleted); form.PingWork.GetAwaiter().GetResult();
+                    PumpUntil(() => form.PingWork != null && form.PingWork.IsCompleted); form.PingWork.GetAwaiter().GetResult();
                     foreach (var control in Descendants(form).Where(c => c is Label || c is Button)) control.TextChanged += delegate { updates++; };
                     Volatile.Write(ref phase, 1); SynchronizationContext.SetSynchronizationContext(null);
                     Call(form, "QueueRouteMeasure"); Call(form, "StartSpeedTest"); Call(form, "QueuePingMeasure");
