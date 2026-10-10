@@ -89,7 +89,8 @@ namespace ProGo
             get
             {
                 if (connecting) return "Подключаемся к серверу…";
-                lock (gate)
+                if (!System.Threading.Monitor.TryEnter(gate)) return "Проверяем состояние подключения…";
+                try
                 {
                     if (!readSettings().AutoRestartSocks) return "Выключено";
                     if (!wanted) return "Ожидает запуска SOCKS";
@@ -97,7 +98,7 @@ namespace ProGo
                     if (retryAt.HasValue)
                         return "Повтор через " + Math.Max(0, (int)Math.Ceiling((retryAt.Value - utcNow()).TotalSeconds)) + " с";
                     return "Включено; восстановлений: " + automaticRestarts;
-                }
+                } finally { System.Threading.Monitor.Exit(gate); }
             }
         }
 
@@ -353,7 +354,7 @@ namespace ProGo
                 sshProcess.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs e) {
                     if (!ReferenceEquals(sender, sshProcess)) return;
                     var line = (e.Data ?? "").ToLowerInvariant();
-                    if (line.Contains("permission denied")) sshError = "SSH-ключ не принят. Проверьте ключ; «Подключения → Первый вход» откроет видимое окно авторизации.";
+                    if (line.Contains("permission denied")) sshError = "SSH не получил подходящий ключ. Проверьте выбранный алиас и путь ключа. Для ключа с passphrase запустите ssh-agent и загрузите ключ через ssh-add; фоновое подключение не запрашивает пароль. «Первый вход» проверяет доступ в отдельном окне.";
                     else if (line.Contains("host key verification failed") || line.Contains("remote host identification has changed"))
                         sshError = "Не подтверждён или изменился ключ сервера. Сверьте отпечаток с сервером и используйте «Подключения → Первый вход».";
                 };

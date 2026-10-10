@@ -3,6 +3,8 @@ using System.Threading;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 namespace ProGo
 {
@@ -16,6 +18,8 @@ namespace ProGo
         public string ResolvedUser { get; set; }
         public string ResolvedPort { get; set; }
         public string ResolvedIdentityFile { get; set; }
+        public string AgentState { get; set; }
+        public string KeyStatus { get; set; }
         public bool SshAvailable { get; set; }
         public bool SshResolved { get; set; }
         public string Error { get; set; }
@@ -50,6 +54,12 @@ namespace ProGo
             if (!String.IsNullOrWhiteSpace(ResolvedUser)) sb.AppendLine("user: " + ResolvedUser);
             if (!String.IsNullOrWhiteSpace(ResolvedIdentityFile)) sb.AppendLine("identityfile: " + ResolvedIdentityFile);
 
+            sb.AppendLine("Файл ключа: " + (KeyStatus ?? "не проверен"));
+            sb.AppendLine("ssh-agent: " + (AgentState ?? "не проверен"));
+            sb.AppendLine("Для зашифрованного ключа: загрузите его через ssh-add в обычном терминале. Passphrase вводится только в OpenSSH.");
+            sb.AppendLine("Если агент остановлен: с согласия владельца запустите Start-Service ssh-agent в PowerShell администратора.");
+            sb.AppendLine("Если агент отключён: с согласия владельца выполните Set-Service ssh-agent -StartupType Manual, затем Start-Service ssh-agent. Без прав администратора обратитесь к владельцу ПК.");
+            sb.AppendLine("Наличие файла или работающего агента ещё не подтверждает аутентификацию на VPS.");
             if (!String.IsNullOrWhiteSpace(Error))
             {
                 sb.AppendLine();
@@ -91,9 +101,22 @@ namespace ProGo
             result.LooksDirectTarget = profile.IsDirect || LooksLikeDirectTarget(result.Target);
             result.FoundInConfig = IsTargetDeclaredInConfig(result.Target, result.ConfigPath);
             RunSshG(result, profile, token, executable, timeoutMs);
-            return result;
+            token.ThrowIfCancellationRequested();
+            result.AgentState = SshAgentDiagnostics.Read();
+            result.KeyStatus = InspectKey(result.ResolvedIdentityFile);
+            token.ThrowIfCancellationRequested(); return result;
         }
 
+        internal static string InspectKey(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value) || value == "none") return "Явный ключ не задан; SSH может использовать агент или стандартные ключи.";
+            try {
+                var path = SshConnection.KeyPath(value);
+                if (!File.Exists(path)) return "Файл не найден. При переносе на другой ПК проверьте старый абсолютный путь или используйте ~/.ssh/имя_ключа.";
+                using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) { }
+                return "Файл доступен для чтения. Содержимое ключа не считывалось.";
+            } catch { return "Доступность файла не подтверждена. Проверьте путь и права текущего пользователя."; }
+        }
         private static string GetConfigPath()
         {
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -186,4 +209,37 @@ namespace ProGo
         }
 
     }
+    // Read-only native service inspection. No elevation, service mutation or key access.
+    internal static class SshAgentDiagnostics
+    {
+        internal static string Describe(uint state, bool disabled)
+        {
+            if (state == 4) return "Running — запущен; загрузка нужного ключа ещё не проверена.";
+            if (disabled) return "Disabled — отключён; включение требует согласия владельца и прав администратора.";
+            if (state == 1) return "Stopped — остановлен; запуск требует согласия владельца и прав администратора.";
+            return "Служба меняет состояние; повторите проверку.";
+        }
+        internal static string Read()
+        {
+            IntPtr manager = IntPtr.Zero, service = IntPtr.Zero;
+            try {
+                manager = OpenSCManager(null, null, 1);
+                if (manager == IntPtr.Zero) return "Не удалось прочитать состояние; проверьте права пользователя.";
+                service = OpenService(manager, "ssh-agent", 4);
+                if (service == IntPtr.Zero) return Marshal.GetLastWin32Error() == 1060 ? "Служба отсутствует; проверьте установку Windows OpenSSH." : "Состояние не подтверждено; проверьте права пользователя.";
+                Status status; if (!QueryServiceStatus(service, out status)) return "Не удалось прочитать состояние службы.";
+                bool disabled = false;
+                using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\ssh-agent"))
+                    if (key != null) disabled = Object.Equals(key.GetValue("Start"), 4);
+                return Describe(status.State, disabled);
+            } catch { return "Состояние агента не подтверждено; проверьте службу Windows OpenSSH."; }
+            finally { if (service != IntPtr.Zero) CloseServiceHandle(service); if (manager != IntPtr.Zero) CloseServiceHandle(manager); }
+        }
+        [StructLayout(LayoutKind.Sequential)] private struct Status { internal uint Type, State, Controls, ExitCode, ServiceExitCode, Checkpoint, WaitHint; }
+        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern IntPtr OpenSCManager(string machine, string database, uint access);
+        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern IntPtr OpenService(IntPtr manager, string name, uint access);
+        [DllImport("advapi32.dll", SetLastError = true)] private static extern bool QueryServiceStatus(IntPtr service, out Status status);
+        [DllImport("advapi32.dll")] private static extern bool CloseServiceHandle(IntPtr handle);
+    }
+
 }

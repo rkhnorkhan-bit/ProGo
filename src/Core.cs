@@ -82,6 +82,24 @@ namespace ProGo
             return new JavaScriptSerializer().Serialize(new[] { p.Target, p.Server, p.User,
                 p.IsDirect ? p.Port.ToString(CultureInfo.InvariantCulture) : "", p.IdentityFile });
         }
+        internal static string KeyPath(string value)
+        {
+            return KeyPath(value, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        }
+        internal static string KeyPath(string value, string home)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return "";
+            if (value.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) throw new ArgumentException("Путь SSH-ключа содержит недопустимые символы.");
+            if (value.StartsWith("~/", StringComparison.Ordinal) || value.StartsWith(@"~\", StringComparison.Ordinal)) {
+                var relative = value.Substring(2).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+                var root = Path.GetFullPath(home).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                var path = Path.GetFullPath(Path.Combine(root, relative));
+                if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Путь ~/ должен оставаться внутри профиля текущего пользователя.");
+                return path;
+            }
+            if (!Path.IsPathRooted(value)) throw new ArgumentException("Укажите полный путь SSH-ключа или ~/.ssh/имя_ключа.");
+            return value;
+        }
         internal static void Validate(SshProfileSetting profile)
         {
             if (profile == null) throw new ArgumentException("Выберите SSH-подключение.");
@@ -100,8 +118,7 @@ namespace ProGo
                 throw new ArgumentException("Логин SSH: укажите пользователя сервера, например ubuntu или root.");
             if (profile.Port < 1 || profile.Port > 65535) throw new ArgumentException("Порт SSH должен быть от 1 до 65535.");
             var key = profile.IdentityFile ?? "";
-            if (key.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0 || (key.Length > 0 && !Path.IsPathRooted(key)))
-                throw new ArgumentException("Выберите файл закрытого SSH-ключа на этом компьютере или оставьте поле пустым.");
+            KeyPath(key);
         }
         internal static string[] Arguments(SshProfileSetting profile)
         {
@@ -109,7 +126,7 @@ namespace ProGo
             if (!profile.IsDirect) return new[] { profile.Target };
             var args = new List<string> { "-p", profile.Port.ToString(CultureInfo.InvariantCulture), "-l", profile.User };
             if (!String.IsNullOrWhiteSpace(profile.IdentityFile)) {
-                args.Add("-i"); args.Add(profile.IdentityFile); args.Add("-o"); args.Add("IdentitiesOnly=yes");
+                args.Add("-i"); args.Add(KeyPath(profile.IdentityFile)); args.Add("-o"); args.Add("IdentitiesOnly=yes");
             }
             args.Add(profile.Server);
             return args.ToArray();

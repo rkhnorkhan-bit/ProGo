@@ -46,6 +46,17 @@ namespace ProGo
         { return SshProfileDiagnostics.Check(profile, token, Application.ExecutablePath, 1500); }
         private static void SshDiagnostics()
         {
+            using (var proxy = new ProxyService(() => new AppSettings(), delegate { }, "unused.exe", () => DateTime.UtcNow, false))
+            using (var entered = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim()) {
+                var gate = typeof(ProxyService).GetField("gate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(proxy);
+                var worker = Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(3000); } });
+                entered.Wait();
+                try {
+                    var elapsed = Stopwatch.StartNew(); var state = proxy.RecoveryStatus;
+                    Check(elapsed.ElapsedMilliseconds < 200 && state.Contains("Проверяем"), "UI recovery status never waits behind a stalled background connection lock");
+                } finally { release.Set(); worker.GetAwaiter().GetResult(); }
+            }
             string marker = Path.Combine(work, "ssh-diagnostic"); Directory.CreateDirectory(marker);
             string previous = Environment.GetEnvironmentVariable("PROGO_DIAGNOSTIC_MARKER");
             Environment.SetEnvironmentVariable("PROGO_DIAGNOSTIC_MARKER", marker);
