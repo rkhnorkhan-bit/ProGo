@@ -14,6 +14,7 @@ namespace ProGo
 {
     internal sealed class HomeVpnWizardForm : ProGoForm
     {
+        private readonly OwnerUiDispatcher ownerUi = new OwnerUiDispatcher();
         private readonly HomeVpnService service;
         private readonly ClipboardService clipboard;
         private readonly HomeProfileUiDispatcher httpDispatcher;
@@ -24,11 +25,13 @@ namespace ProGo
         private readonly Button back = new Button();
         private readonly Button next = new Button();
         private readonly Button cancelWait = new Button();
+        private readonly object channelWaitGate = new object();
         private CancellationTokenSource channelWait;
         private bool closeAfterWait, cancelledWait;
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
-        private bool own, busy, routerDone, recoverSetup, setupBlocked, fittingSetup;
+        private bool own, routerDone, recoverSetup, setupBlocked, fittingSetup;
+        private volatile bool busy;
         private readonly PhoneVerification verification = new PhoneVerification();
         private CheckBox installedCheck;
         private ComboBox internetCheck;
@@ -175,7 +178,7 @@ namespace ProGo
             else
             {
                 Paragraph(service.Access == null ? "Сначала добавьте VPS или токен." : "VPS: " + service.Access.Host + "\nДомашний адрес: " + (service.HomeAddress ?? "ещё не указан"));
-                Action("Запустить канал", async delegate { await RunStep(async delegate { await StartChannel(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); }, "Запускает канал этого ПК к VPS. Подключение телефона и интернет проверяются отдельно.");
+                Action("Запустить канал", async delegate { await RunStep(async delegate { await ownerUi.Await(StartChannel()); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); }, "Запускает канал этого ПК к VPS. Подключение телефона и интернет проверяются отдельно.");
                 Action("Остановить VPN для телефона", delegate { service.Stop(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }, "Останавливает только VPN телефона и сбрасывает результат проверки интернета. Прокси на ПК не отключается.");
                 AddInstallationConfirmation();
                 Paragraph("Проверка на телефоне: 1. Выключите Wi-Fi и включите VPN ProGo. 2. Убедитесь, что телефон показывает «Подключено». 3. Откройте сайт проверки IP и сравните IPv4 с адресом выхода VPS. 4. Отметьте результат ниже. Это ваша проверка, ProGo не выполняет её на телефоне автоматически.");
@@ -196,7 +199,7 @@ namespace ProGo
                 {
                     await RunStep(async delegate
                     {
-                        await Admin(service.Owner, "repair", null, null, SetProgress);
+                        await ownerUi.Await(Admin(service.Owner, "repair", null, null, SetProgress));
                         SetProgress("Правила выхода VPN обновлены. Переподключите VPN на телефоне и откройте сайт для проверки.");
                     });
                 }, "Обновляет правила выхода VPN на VPS через SSH. После этого переподключите VPN на телефоне и проверьте интернет.");
@@ -235,14 +238,14 @@ namespace ProGo
                         var ownerId = new JavaScriptSerializer().Serialize(draftOwner);
                         if (checking || preparedToken == null || preparedOwner != ownerId)
                         {
-                            preparedToken = await Admin(draftOwner, checking ? "recover-setup" : "setup", "My iPhone", null, SetProgress);
+                            preparedToken = await ownerUi.Await(Admin(draftOwner, checking ? "recover-setup" : "setup", "My iPhone", null, SetProgress));
                             preparedOwner = ownerId;
                         }
                         value = preparedToken;
                     }
                     service.UseToken(value, own ? draftOwner : null); verification.Reset();
                     if (own) HomeVpnSetupRecovery.ConfirmConsumed(draftOwner, value);
-                    await StartChannel(); draftToken = "";
+                    await ownerUi.Await(StartChannel()); draftToken = "";
                 }
                 else if (step == 2)
                 {
@@ -256,48 +259,75 @@ namespace ProGo
         }
         private async Task RunStep(Func<Task> action)
         {
-            if (busy) return;
+            if (busy || ownerUi.Closed || IsDisposed || Disposing) return;
             cancelledWait = closeAfterWait = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
-            Exception failure = null;
-            try { await action().ConfigureAwait(false); }
-            catch (Exception ex) { failure = ex; }
-            await httpDispatcher.DispatchAsync(delegate {
-                if (failure is HomeVpnListCancelledException || failure is HomeVpnPreparationCancelledException || failure is HomeProfileHttpCancelledException) {
-                    closeAfterWait = false; status.ForeColor = UiTheme.Muted; status.Text = failure.Message;
-                } else if (failure is OperationCanceledException) {
+            try { await ownerUi.Await(action()); }
+            catch (HomeVpnListCancelledException ex)
+            {
+                closeAfterWait = false;
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
+            }
+            catch (HomeVpnPreparationCancelledException ex)
+            {
+                closeAfterWait = false;
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
+            }
+            catch (HomeProfileHttpCancelledException ex)
+            {
+                closeAfterWait = false;
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) { status.ForeColor = UiTheme.Muted; status.Text = ex.Message; }
+            }
+            catch (OperationCanceledException)
+            {
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     status.ForeColor = cancelledWait ? UiTheme.Muted : UiTheme.Error;
                     status.Text = cancelledWait ? "Запуск канала отменён. Сохранённый доступ к VPS остаётся; можно повторить запуск." : "Операция прервана. Результат не подтверждён.";
-                } else if (failure != null) {
-                    closeAfterWait = false; status.ForeColor = UiTheme.Error; status.Text = failure.Message;
                 }
-                busy = false; body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
-                UpdateSetupRecoveryState(); if (closeAfterWait) Close();
-            }).ConfigureAwait(false);
+            }
+            catch (Exception ex) { closeAfterWait = false; if (!ownerUi.Closed && !IsDisposed && !Disposing) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; } }
+            finally {
+                busy = false;
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                    body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
+                    UpdateSetupRecoveryState();
+                    if (closeAfterWait) Close();
+                }
+            }
         }
         private async Task StartChannel()
         {
             using (var source = new CancellationTokenSource()) {
-                channelWait = source; cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
+                lock (channelWaitGate) channelWait = source;
+                cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
                 UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus();
                 SetProgress("Ожидаем канал к VPS: до 10 секунд для SOCKS, затем до 10 секунд для приёмника. Можно отменить запуск; сохранённый доступ остаётся.");
-                try { await service.StartAsync(source.Token); SetProgress("Канал ПК → VPS запущен. Подключение VPN и интернет проверяются на телефоне отдельно."); }
+                try { await ownerUi.Await(service.StartAsync(source.Token)); SetProgress("Канал ПК → VPS запущен. Подключение VPN и интернет проверяются на телефоне отдельно."); }
                 catch (OperationCanceledException) { cancelledWait = source.IsCancellationRequested; throw; }
                 finally {
-                    channelWait = null;
-                    if (!IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                    // Closed-owner continuations can run off the UI thread.
+                    // A concurrent Dispose must finish cancellation before the
+                    // using scope disposes this source.
+                    lock (channelWaitGate) channelWait = null;
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
                 }
             }
         }
         private void CancelChannelWait()
         {
-            var source = channelWait;
-            if (source == null || source.IsCancellationRequested) return;
-            cancelWait.Enabled = false;
-            SetProgress("Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
-            source.Cancel();
+            lock (channelWaitGate) {
+                var source = channelWait;
+                if (source == null || source.IsCancellationRequested) return;
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) cancelWait.Enabled = false;
+                SetProgress("Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
+                source.Cancel();
+            }
         }
-        private void SetProgress(string text) { if (!IsDisposed && !Disposing) status.Text = text; }
+        private void SetProgress(string text)
+        {
+            if (ownerUi.OnOwner) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = text; }
+            else ownerUi.PostUpdate(delegate { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = text; });
+        }
         private void FitSetupWidth()
         {
             if (step != 1 || !own || fittingSetup || body.IsDisposed) return;
@@ -357,7 +387,7 @@ namespace ProGo
             using (var process = Process.Start(new ProcessStartInfo("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -File "
                 + HomeVpnService.Argument(script) + " -ProGoExe " + HomeVpnService.Argument(Application.ExecutablePath)) { UseShellExecute = true, Verb = "runas" }))
             {
-                await Task.Run(delegate { process.WaitForExit(); });
+                await ownerUi.Await(Task.Run(delegate { process.WaitForExit(); }));
                 if (process.ExitCode != 0) throw new InvalidOperationException("Windows не подтвердила добавление правил. Повторите и разрешите запрос администратора.");
             }
             SetProgress("Windows разрешает входящие UDP 15000 и 14500 для ProGo. Следующий шаг — роутер.");
@@ -373,8 +403,8 @@ namespace ProGo
                 var origin = service.ShareOrigin;
                 var access = service.Access;
                 string homeAddress = service.HomeAddress;
-                var link = await HomeProfileHttpWaitForm.WaitAsync(this, "Создание QR: ожидание HTTPS",
-                    token => HomeProfileShare.CreateAsync(origin, access, homeAddress, token)).ConfigureAwait(false);
+                var link = await ownerUi.Await(HomeProfileHttpWaitForm.WaitAsync(this, "Создание QR: ожидание HTTPS",
+                    token => HomeProfileShare.CreateAsync(origin, access, homeAddress, token)));
                 await httpDispatcher.DispatchAsync(delegate {
                     if (!Object.ReferenceEquals(service.Access, access)) throw new InvalidOperationException("Доступ к VPS изменился во время создания QR. Результат не показан; ProGo не повторяет запрос автоматически.");
                     RecordProfileIssue();
@@ -402,7 +432,7 @@ namespace ProGo
         {
             await RunStep(async delegate
             {
-                var response = await Admin(service.Owner, "list", null, null, SetProgress);
+                var response = await ownerUi.Await(Admin(service.Owner, "list", null, null, SetProgress));
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(response);
                 using (var dialog = new HomeInvitationsForm(items,
                     (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard))
@@ -444,13 +474,17 @@ namespace ProGo
             if (busy) {
                 e.Cancel = true;
                 if (channelWait != null) { closeAfterWait = true; CancelChannelWait(); }
-                else status.Text = "Дождитесь окончания операции. При запросе SSH ответьте в открывшемся окне. Изменения на VPS могли уже начаться; закрытие окна их не отменяет.";
+                else status.Text = "Дождитесь окончания операции. При запросе SSH ответьте в открывшемся окне. Закрытие окна не отменяет текущую операцию и не подтверждает её завершение.";
             }
             base.OnFormClosing(e);
         }
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            ownerUi.Close(); base.OnFormClosed(e);
+        }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { if (channelWait != null) CancelChannelWait(); refresh.Stop(); refresh.Dispose(); }
+            if (disposing) { ownerUi.Dispose(); if (channelWait != null) CancelChannelWait(); refresh.Stop(); refresh.Dispose(); }
             base.Dispose(disposing);
         }
     }

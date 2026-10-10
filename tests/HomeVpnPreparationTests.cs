@@ -59,6 +59,7 @@ namespace ProGo
             }
             var unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "unrelated-wait") { UseShellExecute = false, CreateNoWindow = true });
             try {
+                OwnerContinuationLifecycle(clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(route, work);
                 foreach (string route in new[] { "button", "escape", "close", "dispose" }) RemoteCancel(route, work);
                 RemoteBoundary(); RemoteDeadline(); ProcessChecks(); CompletionRace(); WizardBoundary(token, clipboard); CleanupFailure();
@@ -87,6 +88,100 @@ namespace ProGo
         }
         private static void Reset() { KillFixtures(); foreach (string name in new[] { "pid", "child", "console" }) File.Delete(Path.Combine(folder, name)); }
         private static void Shot(Form form, string work, string name) { using (var image = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(image, new Rectangle(Point.Empty, image.Size)); image.Save(Path.Combine(work, name + ".png")); } }
+        private static void OwnerContinuationLifecycle(ClipboardService clipboard)
+        {
+            foreach (bool wizard in new[] { true, false })
+                foreach (string mode in new[] { "live-success", "live-failure", "queued-dispose", "disposed-worker-failure" })
+                    OwnerContinuationCase(clipboard, wizard, mode);
+        }
+        private static int QueuedOwnerCallbacks(Form form)
+        {
+            object owner = Field(form, "ownerUi"), gate = Field(owner, "gate");
+            lock (gate) return ((System.Collections.ICollection)Field(owner, "pending")).Count;
+        }
+        private static void WaitWithoutUi(Func<bool> ready)
+        {
+            var watch = Stopwatch.StartNew();
+            while (!ready()) {
+                if (watch.ElapsedMilliseconds > 3000) throw new Exception("Owner continuation did not settle without UI pumping");
+                Thread.Sleep(10);
+            }
+        }
+        private static void CompleteOwnerWorker(TaskCompletionSource<string> completion, bool failure, string description)
+        {
+            var worker = Task.Run(delegate {
+                if (failure) completion.SetException(new IOException("Owner lifecycle fixture failure"));
+                else completion.SetResult("[]");
+            });
+            check(worker.Wait(3000), "actual owner operation input settles on a worker: " + description);
+        }
+        private static void OwnerContinuationCase(ClipboardService clipboard, bool wizard, string mode)
+        {
+            string description = (wizard ? "wizard" : "Friends") + " / " + mode;
+            var completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using (var relay = new Ikev2RelayService())
+            using (var service = new HomeVpnService(relay))
+            using (Form form = wizard ? (Form)new HomeVpnWizardForm(service, clipboard)
+                : new HomeInvitationsForm(new[] { new HomeVpnInvitation { Id = new string('e', 24), Name = "Saved friend" } },
+                    (action, label, id) => completion.Task, clipboard)) {
+                form.Show();
+                var status = (Label)Field(form, "status");
+                var enabled = (Control)Field(form, wizard ? "body" : "refresh");
+                int ownerThread = Thread.CurrentThread.ManagedThreadId, textUpdates = 0, enabledUpdates = 0, wrongThreadUpdates = 0;
+                status.TextChanged += delegate {
+                    Interlocked.Increment(ref textUpdates);
+                    if (Thread.CurrentThread.ManagedThreadId != ownerThread) Interlocked.Increment(ref wrongThreadUpdates);
+                };
+                enabled.EnabledChanged += delegate {
+                    Interlocked.Increment(ref enabledUpdates);
+                    if (Thread.CurrentThread.ManagedThreadId != ownerThread) Interlocked.Increment(ref wrongThreadUpdates);
+                };
+                var previousContext = SynchronizationContext.Current;
+                try {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    var task = (Task)form.GetType().GetMethod(wizard ? "RunStep" : "RunAsync", BindingFlags.NonPublic | BindingFlags.Instance)
+                        .Invoke(form, new object[] { (Func<Task>)(() => wizard ? (Task)completion.Task
+                            : (Task)form.GetType().GetMethod("RefreshAsync", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, null)) });
+                    check(SynchronizationContext.Current == null && !task.IsCompleted && (bool)Field(form, wizard ? "busy" : "working"),
+                        "actual native operation starts with deliberately null synchronization context and retained in-flight ownership: " + description);
+                    if (mode.StartsWith("live-", StringComparison.Ordinal)) {
+                        form.Close();
+                        check(form.Visible && !form.IsDisposed && !task.IsCompleted && (bool)Field(form, wizard ? "busy" : "working"),
+                            "normal close remains refused while the actual owner operation is pending: " + description);
+                        bool failure = mode == "live-failure";
+                        CompleteOwnerWorker(completion, failure, description); Pump(() => task.IsCompleted); task.GetAwaiter().GetResult();
+                        int expectedTextUpdates = wizard ? (failure ? 2 : 1) : (failure || !(bool)Field(form, "pendingAdmin") ? 3 : 4);
+                        check(!(bool)Field(form, wizard ? "busy" : "working") && enabled.Enabled && enabledUpdates == 2
+                            && textUpdates == expectedTextUpdates && wrongThreadUpdates == 0
+                            && (!failure || status.Text.Contains(wizard ? "Owner lifecycle fixture failure" : "Не удалось обновить список"))
+                            && (wizard || ((ListBox)Field(Field(form, "list"), "list")).Items.Count == (failure ? 1 : 0)),
+                            "live worker success/failure settles the actual task and restores native controls/status strictly on their owner: " + description);
+                        form.Close(); int closedUpdates = textUpdates;
+                        Application.DoEvents();
+                        check(form.IsDisposed && textUpdates == closedUpdates && wrongThreadUpdates == 0,
+                            "completed native operation permits normal close without a late status update: " + description);
+                    } else {
+                        if (mode == "queued-dispose") {
+                            CompleteOwnerWorker(completion, false, description);
+                            WaitWithoutUi(() => QueuedOwnerCallbacks(form) > 0);
+                            check(!task.IsCompleted && (bool)Field(form, wizard ? "busy" : "working"),
+                                "completed worker has a real queued owner continuation before disposal without pumping: " + description);
+                        }
+                        int beforeDispose = textUpdates;
+                        form.Dispose();
+                        if (mode == "disposed-worker-failure") {
+                            check(!task.IsCompleted && !completion.Task.IsCompleted,
+                                "disposing an owner does not invent completion of its pending actual work: " + description);
+                            CompleteOwnerWorker(completion, true, description);
+                        }
+                        WaitWithoutUi(() => task.IsCompleted); task.GetAwaiter().GetResult();
+                        check(form.IsDisposed && !(bool)Field(form, wizard ? "busy" : "working")
+                            && textUpdates == beforeDispose && wrongThreadUpdates == 0 && ((OwnerUiDispatcher)Field(form, "ownerUi")).Closed,
+                            "queued or later worker completion settles the disposed owner's actual task without UI pumping or late status mutation: " + description);
+                    }
+                } finally { SynchronizationContext.SetSynchronizationContext(previousContext); }
+            }
+        }
         private static void NativeCancel(string route, string work)
         {
             Reset();
@@ -211,6 +306,8 @@ namespace ProGo
                 new HomeVpnInvitation { Id = new string('b', 24), Name = "Друг" } }));
             try {
                 foreach (string route in new[] { "button", "escape", "close", "deadline" }) ListWizardWaiting(token, clipboard, work, route);
+                ListWizardCleanupWaiting(token, clipboard, true);
+                ListWizardCleanupWaiting(token, clipboard, false);
                 foreach (string route in new[] { "button", "escape", "close" }) ListRefreshWaiting(clipboard, work, route);
                 ListCopyWaiting();
                 var ready = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -336,6 +433,112 @@ namespace ProGo
                         "only an explicit retry of initial Friends opens the recovered list without reissuing access");
                 }
                 wizard.Close();
+            }
+        }
+        private static void ListWizardCleanupWaiting(string token, ClipboardService clipboard, bool transient)
+        {
+            ListMode("hold", true);
+            int copies = 0, root = 0, child = 0, ticks = 0, cleanupTicks = 0;
+            bool cancelled = false, pendingObserved = false, unlocked = false;
+            int ownerThread = Thread.CurrentThread.ManagedThreadId, statusUpdates = 0, wrongThreadUpdates = 0;
+            SynchronizationContext previousContext = null; bool contextChanged = false;
+            string ownedWork = null, helper = null; byte[] helperBytes = null; FileStream held = null;
+            Task<string> admin = null; Exception callbackFailure = null; Stopwatch cleanupWait = null;
+            var previousWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*");
+            using (var relay = new Ikev2RelayService())
+            using (var service = new HomeVpnService(relay))
+            using (var wizard = new HomeVpnWizardForm(service, clipboard))
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            using (var controller = new System.Windows.Forms.Timer { Interval = 20 }) {
+                try {
+                    service.UseToken(token, new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22 });
+                    Call(wizard, "ShowStep", 0); wizard.Show();
+                    ((Control)Field(wizard, "body")).Controls.OfType<Button>().Single(b => b.Text == "Подключиться к готовому VPS").PerformClick();
+                    const string draft = "Сохранённый черновик токена";
+                    ((TextBox)Field(wizard, "token")).Text = draft; Call(wizard, "Remember");
+                    Call(wizard, "ShowStep", 4);
+                    var before = ListPrivateSnapshot();
+                    var status = (Label)Field(wizard, "status");
+                    status.TextChanged += delegate {
+                        Interlocked.Increment(ref statusUpdates);
+                        if (Thread.CurrentThread.ManagedThreadId != ownerThread) Interlocked.Increment(ref wrongThreadUpdates);
+                    };
+                    wizard.Admin = (owner, action, label, id, progress) => {
+                        check(action == "list", "cleanup fault initial Friends dispatches only the read-only production list");
+                        admin = HomeVpnService.AdminAsync(owner, action, label, id, progress,
+                            (exe, args) => {
+                                copies++;
+                                ownedWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Except(previousWork).Single();
+                                helper = Directory.GetFiles(ownedWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single();
+                                return Task.FromResult(0);
+                            }, Application.ExecutablePath, 20000);
+                        return admin;
+                    };
+                    heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                    controller.Tick += delegate {
+                        var wait = Application.OpenForms.OfType<HomeVpnPreparationForm>().FirstOrDefault();
+                        try {
+                            if (!cancelled) {
+                                if (wait == null || !File.Exists(Path.Combine(folder, "child")) || ticks < 3) return;
+                                root = Id("pid"); child = Id("child");
+                                helperBytes = File.ReadAllBytes(helper);
+                                // A real Windows share lock denies deletion of this owned
+                                // uploaded helper while allowing exact-byte verification.
+                                held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                cancelled = true; CancelList(wait, "button"); return;
+                            }
+                            if (admin == null || !Gone(root) || !Gone(child)) return;
+                            if (cleanupWait == null) {
+                                cleanupWait = Stopwatch.StartNew(); cleanupTicks = ticks;
+                                check(!admin.IsCompleted && (bool)Field(wizard, "busy") && File.Exists(helper),
+                                    "initial Friends keeps its outer task and wizard pending after the owned SSH tree exits while local cleanup is locked");
+                            }
+                            if (cleanupWait.ElapsedMilliseconds < 150 || ticks < cleanupTicks + 3) return;
+                            check(!admin.IsCompleted && (bool)Field(wizard, "busy") && helperBytes.SequenceEqual(File.ReadAllBytes(helper)),
+                                "UI heartbeat advances during pending real local deletion without publishing cancellation or changing the locked helper: " + (transient ? "transient" : "permanent"));
+                            pendingObserved = true;
+                            if (transient) { held.Dispose(); held = null; unlocked = true; }
+                            controller.Stop();
+                        } catch (Exception error) {
+                            callbackFailure = error; controller.Stop();
+                            if (held != null) { held.Dispose(); held = null; }
+                            if (wait != null && !wait.IsDisposed) wait.Close();
+                        }
+                    }; controller.Start();
+                    previousContext = SynchronizationContext.Current; contextChanged = true;
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    ((Control)Field(wizard, "body")).Controls.OfType<Button>().Single(b => b.Text == "Доступ друзей…").PerformClick();
+                    Pump(() => admin != null && admin.IsCompleted && !(bool)Field(wizard, "busy"));
+                    if (callbackFailure != null) throw new Exception("Initial Friends cleanup UI controller failed", callbackFailure);
+                    Exception outcome = null;
+                    try { admin.GetAwaiter().GetResult(); } catch (Exception error) { outcome = error; }
+                    check(statusUpdates == 3 && wrongThreadUpdates == 0,
+                        "null-context real list cleanup publishes exactly its two progress phases and final result on the native wizard owner thread: " + (transient ? "transient" : "permanent"));
+                    check(cancelled && pendingObserved && cleanupWait.ElapsedMilliseconds < 2500 && copies == 1 && ListCalls() == 1 && Gone(root) && Gone(child)
+                        && wizard.Visible && (int)Field(wizard, "step") == 4 && (string)Field(wizard, "draftToken") == draft && ListPrivateUnchanged(before),
+                        "real list cleanup contention preserves private access/journal and entered wizard draft after exactly one copy/SSH dispatch and no retry: " + (transient ? "transient" : "permanent"));
+                    if (transient) {
+                        check(unlocked && !Directory.Exists(ownedWork) && admin.IsCanceled && outcome is HomeVpnListCancelledException
+                            && status.Text == outcome.Message && status.ForeColor == UiTheme.Muted,
+                            "transient helper lock releases through the live UI and complete owned-work cleanup precedes the original typed list-cancellation result");
+                    } else {
+                        check(!unlocked && held != null && admin.IsFaulted && outcome is HomeVpnLocalCleanupException
+                            && Directory.Exists(ownedWork) && File.Exists(helper) && helperBytes.SequenceEqual(File.ReadAllBytes(helper)),
+                            "permanent native helper lock keeps the exact owned file and turns cancellation into a typed unconfirmed-cleanup failure");
+                        check(status.ForeColor == UiTheme.Error && status.Text == outcome.Message
+                            && status.Text.StartsWith("Локальные файлы получения списка не удалось удалить", StringComparison.Ordinal)
+                            && status.Text.Contains("очистки пока не подтверждено") && !status.Text.StartsWith("Получение списка отменено", StringComparison.Ordinal)
+                            && !status.Text.Contains(ownedWork),
+                            "initial Friends reports unconfirmed local cleanup as an error without a successful-cancellation claim or private path");
+                    }
+                    wizard.Close();
+                } finally {
+                    if (contextChanged) SynchronizationContext.SetSynchronizationContext(previousContext);
+                    controller.Stop(); heartbeat.Stop();
+                    if (held != null) held.Dispose();
+                    // Only this invocation's captured work may be removed by the fixture.
+                    if (ownedWork != null && Directory.Exists(ownedWork)) Directory.Delete(ownedWork, true);
+                }
             }
         }
         private static void ListRefreshWaiting(ClipboardService clipboard, string work, string route)

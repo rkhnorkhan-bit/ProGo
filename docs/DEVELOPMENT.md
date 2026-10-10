@@ -1427,3 +1427,39 @@ requires the existing stable request/status/result commands without token materi
 The real UI loop exercises reopening/admission, verification/save faults, late
 disposal, storage/schema/status rejection and original-owner binding without a
 VPS. New waiting/pending/error PNGs stay in the existing Windows artifact.
+
+### Native console waits — confirmed owned local cleanup
+
+`AdminAsync` previously swallowed deletion errors after remote SSH dispatch,
+including cancelled read-only list queries. It could report cancellation while
+its protected local work directory remained. The operation now awaits a worker
+that deletes only its captured unique work directory. IO/access errors receive
+short retries for up to one second; an individual filesystem call itself is not
+forcibly interrupted. The existing recovery lease covers actual cleanup settlement.
+No copy, SSH command or remote mutation is replayed by cleanup.
+
+After confirmed deletion, the original result or exception is preserved. A
+persistent local failure produces a fixed Russian message without paths or raw
+exceptions. List queries explain preserved access/list/draft and unconfirmed local
+cleanup; remotely dispatched mutations retain their existing pending/uncertain
+exception families. The failed protected directory remains for local recovery;
+this stage introduces no delayed cleanup after the operation has settled.
+
+`HomeVpnPreparationTests` locks a real uploaded helper before cancelling the
+owned process tree. A UI timer releases one lock during pending cleanup, while
+another stays held through its failed settlement. The cases require responsive
+heartbeat, exact preserved private data, one read-only dispatch, and confirmed
+deletion or an explicit failed cleanup outcome. Native execution requires Windows
+CI. The separate fixture commit fixes atomic PID publication, awaited cancellation
+status checks, and isolates the native `ssh -G` argument smoke at its unchanged
+seven-second budget; it does not establish the cause of the earlier native timeout.
+The new pending cleanup also exposes UI callers that formerly relied on immediate
+post-modal completion. Wizard/Friends now resume inner operations and outer finish
+paths through a persistent owner control, using explicit awaiters rather than an
+ambient WinForms synchronization context. Closed owners cancel result consumption,
+observe faults and settle already queued continuations without a surviving message
+pump. Operations still await actual work settlement; closing an owner does not
+declare a running SSH command or filesystem cleanup complete. Progress updates
+are posted to the same owner and dropped after closure. Native tests deliberately
+clear the ambient context and check owner-thread updates and disposal races.
+Physical Rescue/HDD/VHDX acceptance remains NOT_CHECKED; F31 remains OPEN.
