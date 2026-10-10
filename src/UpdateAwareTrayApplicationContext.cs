@@ -47,7 +47,7 @@ namespace ProGo
             clipboard = clipboardService;
             ownsHealth = health == null;
             this.health = health ?? new ConnectionHealthMonitor(() => settings.Current);
-            icon = BrandIcon.Create();
+            icon = BrandIcon.Create(SystemInformation.SmallIconSize.Width);
             activationDispatcher.CreateControl();
 
             tray = new NotifyIcon

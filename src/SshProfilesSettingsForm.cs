@@ -57,12 +57,12 @@ namespace ProGo
                     Environment.GetFolderPath(Environment.SpecialFolder.Programs), Environment.GetFolderPath(Environment.SpecialFolder.Startup));
             Text = "Настройки · ProGo";
             ClientSize = new Size(900, 700); MinimumSize = new Size(850, 650);
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 1, RowCount = 5 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
+            root.Controls.Add(UiTheme.Label("Настройки", UiTheme.Title, UiTheme.Text), 0, 0);
             root.Controls.Add(UiTheme.Label("Поля и галочки — после «Сохранить».\nРучные команды — сразу; «Отменить изменения» их не откатывает.", UiTheme.Body, UiTheme.Muted), 0, 1);
             var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed, Multiline = true };
             root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
@@ -619,14 +619,14 @@ namespace ProGo
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(760, 610);
             MinimumSize = new Size(760, 610);
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 2, RowCount = 11 };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 2, RowCount = 11 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
             for (int i = 0; i < 7; i++) table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
             table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical));
             Controls.Add(table);
             var hint = UiTheme.Label("Введите данные SSH из панели вашего VPS. Пароль здесь не сохраняется: фоновое подключение использует SSH-ключ.", UiTheme.Body, UiTheme.Muted);
             hint.Dock = DockStyle.Fill; hint.Margin = new Padding(3);
@@ -651,8 +651,8 @@ namespace ProGo
                 }
             };
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var save = new Button { Name = "saveConnection", Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK, Tag = "primary" };
-            var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
+            var save = UiTheme.Button("Сохранить", null, true, DialogResult.OK); save.Name = "saveConnection";
+            var cancel = UiTheme.Button("Отмена", null, false, DialogResult.Cancel);
             save.Click += Save; buttons.Controls.Add(cancel); buttons.Controls.Add(save);
             table.Controls.Add(buttons, 0, 10); table.SetColumnSpan(buttons, 2);
             AcceptButton = save; CancelButton = cancel;

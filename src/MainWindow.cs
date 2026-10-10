@@ -70,7 +70,7 @@ namespace ProGo
                     button.Height = Math.Max(Math.Max(42, button.GetPreferredSize(new Size(button.Width, 0)).Height), textHeight + button.Padding.Vertical + 12);
                 }
             };
-            var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+            var content = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
             content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             content.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); content.RowStyles.Add(new RowStyle(SizeType.AutoSize)); shell.Controls.Add(content, 1, 0);
             viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = new Padding(0) }; content.Controls.Add(viewport, 0, 0);
@@ -80,7 +80,7 @@ namespace ProGo
             for (int i = 0; i < body.RowCount; i++) body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             body.Dock = DockStyle.None; body.AutoSize = false;
             body.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right; viewport.Controls.Add(body);
-            var heading = Stack(UiTheme.Label("Ваш интернет. Ваш маршрут.", UiTheme.Title, UiTheme.Text),
+            var heading = Stack(UiTheme.Label("Подключение", UiTheme.Heading, UiTheme.Text),
                 UiTheme.Label("Подключение к серверу и настройки приложений.", UiTheme.Body, UiTheme.Muted));
             heading.Margin = new Padding(0, 0, 0, 14); body.Controls.Add(heading, 0, 0);
             var eyebrow = UiTheme.Label("ПОДКЛЮЧЕНИЕ К СЕРВЕРУ", UiTheme.Strong, UiTheme.Accent);
@@ -219,7 +219,7 @@ namespace ProGo
                 configure.LinkClicked += delegate { action(AppCommand.WindowsSettings); }; heading.Controls.Add(configure);
             }
             if (column == 1) cliToggle = open;
-            open.MinimumSize = new Size(100, 32); open.Padding = new Padding(7, 0, 7, 0);
+            open.MinimumSize = new Size(100, UiTheme.CompactActionHeight); open.Padding = new Padding(7, 0, 7, 0);
             var card = Surface(heading, state, caption, open); card.Dock = DockStyle.Fill; card.Padding = new Padding(16);
             statusCards.Add(card); cards.Controls.Add(card, column, 0); return state;
         }

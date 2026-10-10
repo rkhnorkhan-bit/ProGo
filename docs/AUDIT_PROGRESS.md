@@ -1732,3 +1732,36 @@ open. F31 remaining work includes user-machine HDD/VHDX measurements and live
 agent/auth/proxy acceptance, other synchronous environment/settings paths and
 repeated Codex ownership-file reads. This stage does not publish/install a release
 or change a service, protected key or VPS configuration.
+
+## F29 — native icon sizes and consistent task presentation (verification pending)
+
+The tray now creates the brand icon at the current Windows small-icon size instead
+of supplying only a 64 px handle. The executable retains its existing seven-frame
+ICO, including 16 and 24 px. The native desktop harness inspects the actual build
+ICO and renders native HICONs at 16/24 px on light and dark backgrounds, with an
+unscaled copy and a nearest-neighbor enlarged copy for visual review. Pixel checks
+verify transparency, the colored mark and visible contrast; they do not replace
+visual inspection of the screenshot artifact.
+
+The vault uses a named native text surface for empty states. An empty collection
+and no search/type matches have different guidance. Clearing filters removes the
+stale message. Neither state promises persistence. Records, PIN, cryptography,
+file formats and decoy behavior are unchanged by this presentation stage.
+
+Legacy route/vault/entry/PIN/SSH-editor action buttons use the shared 38 px action
+factory and spacing. Dialog padding is 24 px; dense data views retain a deliberate
+12 px variant. Compact dashboard card and navigation actions and the docked key
+chooser keep their existing variants. Task headings replace the two prominent
+slogans; the brand and subdued rail wording remain recognizable.
+
+Native regressions exercise empty/search/type transitions, accessible text,
+unchanged records, standard action geometry at each dialog minimum and stable
+layout on a palette refresh. Screenshots include the icon matrix, empty/search
+vault views, task headings and standard-action dialogs. Existing tests cover
+textual tray states, high-contrast palettes and keyboard behavior; the native
+tray fixture now also checks unknown state and actual small-icon size.
+
+Local checks: `git diff --check` and public-content scan PASS. Windows build/full
+CI and screenshot review are pending. **F29 remains OPEN; overall 21/31.** Real
+monitor DPI transitions and Narrator/live system contrast acceptance remain F16
+and F17; no such acceptance is inferred from synthetic/native CI geometry.

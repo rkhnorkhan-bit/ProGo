@@ -59,7 +59,7 @@ namespace ProGo
             ClientSize = new Size(820, 570);
             MinimumSize = new Size(790, 610);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 10 };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding, ColumnCount = 2, RowCount = 10 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(table);
@@ -78,10 +78,10 @@ namespace ProGo
             table.RowStyles[8].Height = 68;
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
-            var restart = new Button { Text = "Переподключиться", Width = 150 };
-            speedButton = new Button { Text = "Измерить скорость", Width = 150 };
-            checkButton = new Button { Text = "Проверить маршрут", Width = 160 };
+            var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
+            var restart = UiTheme.Button("Переподключиться", null, false);
+            speedButton = UiTheme.Button("Измерить скорость", null, false);
+            checkButton = UiTheme.Button("Проверить маршрут", null, false);
             restart.Click += async delegate
             {
                 if (health != null) health.Invalidate();
@@ -254,6 +254,8 @@ namespace ProGo
         private readonly TextBox search = new TextBox();
         private readonly ComboBox typeFilter = new ComboBox();
         private readonly DataGridView grid = new DataGridView();
+        private readonly Label emptyState = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private const string GridDescription = "Список записей без содержимого секретов. Стрелки выбирают запись; Tab переходит к действиям. Для редактирования используйте «Изменить».";
 
         public VaultForm(VaultSession vaultSession, ClipboardService clipboardService, SettingsService settingsService)
         {
@@ -266,10 +268,10 @@ namespace ProGo
             ClientSize = new Size(1040, 600);
             MinimumSize = new Size(980, 560);
 
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), RowCount = 3, ColumnCount = 1 };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DensePadding, RowCount = 3, ColumnCount = 1 };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical));
             Controls.Add(root);
 
             var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
@@ -293,29 +295,29 @@ namespace ProGo
             grid.ReadOnly = true;
             grid.StandardTab = true;
             grid.AccessibleName = "Записи хранилища";
-            grid.AccessibleDescription = "Список записей без содержимого секретов. Стрелки выбирают запись; Tab переходит к действиям. Для редактирования используйте «Изменить».";
+            grid.AccessibleDescription = GridDescription;
             grid.AllowUserToAddRows = false;
             grid.AllowUserToDeleteRows = false;
             grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             grid.MultiSelect = false;
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.DoubleClick += delegate { EditSelected(); };
-            grid.Paint += delegate(object sender, PaintEventArgs e)
-            {
-                if (grid.Rows.Count != 0) return;
-                TextRenderer.DrawText(e.Graphics, "Здесь будут ваши записи\nНажмите «Добавить», чтобы сохранить первый секрет.", UiTheme.Body,
-                    new Rectangle(20, 70, Math.Max(1, grid.Width - 40), 80), UiTheme.TextColor(UiTheme.Muted),
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
-            };
-            root.Controls.Add(grid, 0, 1);
+            var contents = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+            contents.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            contents.RowStyles.Add(new RowStyle(SizeType.AutoSize)); contents.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            emptyState.Dock = DockStyle.Fill; emptyState.Name = "vaultEmptyState";
+            emptyState.AccessibleName = "Состояние списка хранилища";
+            contents.SizeChanged += delegate { emptyState.MaximumSize = new Size(Math.Max(1, contents.ClientSize.Width - emptyState.Margin.Horizontal), 0); };
+            contents.Controls.Add(emptyState, 0, 0); contents.Controls.Add(grid, 0, 1);
+            root.Controls.Add(contents, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var close = new Button { Text = "Закрыть", Width = 100, DialogResult = DialogResult.Cancel };
-            var lockButton = new Button { Text = "Заблокировать", Width = 120, DialogResult = DialogResult.Cancel };
-            var copy = new Button { Text = "Копировать секрет", Width = 150 };
-            var delete = new Button { Text = "Удалить", Width = 100 };
-            var edit = new Button { Text = "Изменить", Width = 100 };
-            var add = new Button { Text = "Добавить", Width = 100 };
+            var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
+            var lockButton = UiTheme.Button("Заблокировать", null, false, DialogResult.Cancel);
+            var copy = UiTheme.Button("Копировать секрет", null, false);
+            var delete = UiTheme.Button("Удалить", null, false);
+            var edit = UiTheme.Button("Изменить", null, false);
+            var add = UiTheme.Button("Добавить", null, false);
             close.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
             lockButton.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
             copy.AccessibleDescription = "Копирует секрет выбранной записи. " + clipboard.CopyNotice;
@@ -356,6 +358,11 @@ namespace ProGo
                 var row = grid.Rows.Add(entry.name, DisplayType(entry.type), entry.login, entry.url_or_host, entry.tags, entry.updated_at);
                 grid.Rows[row].Tag = entry;
             }
+            emptyState.Text = grid.Rows.Count != 0 ? "" : session.Data.entries.Count == 0
+                ? "Записей пока нет. Добавить запись можно кнопкой «Добавить»."
+                : "Совпадений нет. Измените поиск или выберите «Все» в фильтре.";
+            emptyState.AccessibleDescription = emptyState.Text; emptyState.Visible = grid.Rows.Count == 0;
+            grid.AccessibleDescription = GridDescription + (grid.Rows.Count == 0 ? " " + emptyState.Text : "");
         }
 
         private bool MatchesType(VaultEntry entry)
@@ -470,7 +477,7 @@ namespace ProGo
             ClientSize = new Size(680, 570);
             MinimumSize = new Size(620, 540);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 9 };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 2, RowCount = 9 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(table);
@@ -499,8 +506,8 @@ namespace ProGo
             table.Controls.Add(show, 1, 7);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
+            var save = UiTheme.Button("Сохранить", null, true, DialogResult.OK);
+            var cancel = UiTheme.Button("Отмена", null, false, DialogResult.Cancel);
             save.AccessibleDescription = "Проверяет поля и сохраняет запись в хранилище.";
             cancel.AccessibleDescription = "Закрывает редактор без сохранения изменений.";
             save.Click += Save;
@@ -579,7 +586,7 @@ namespace ProGo
             ClientSize = new Size(520, create ? 260 : 220);
             MinimumSize = Size;
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = create ? 4 : 3 };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 2, RowCount = create ? 4 : 3 };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Controls.Add(table);
@@ -594,8 +601,8 @@ namespace ProGo
             table.SetColumnSpan(hint, 2);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var ok = new Button { Text = create ? "Создать" : "Открыть", Width = 100, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Отмена", Width = 100, DialogResult = DialogResult.Cancel };
+            var ok = UiTheme.Button(create ? "Создать" : "Открыть", null, true, DialogResult.OK);
+            var cancel = UiTheme.Button("Отмена", null, false, DialogResult.Cancel);
             ok.AccessibleDescription = create ? "Проверяет PIN-код и его повтор. Создание хранилища выполняется после подтверждения." : "Передаёт PIN-код для открытия хранилища. Доступ зависит от проверки PIN-кода.";
             cancel.AccessibleDescription = "Закрывает окно без создания или открытия хранилища.";
             ok.Click += ValidatePin;

@@ -100,6 +100,7 @@ namespace ProGo
                     HealthChecks(settings);
                     WindowsOwnedRestoration(settings);
                     StructuredSshProfiles(settings);
+                    VisualPolish(settings);
                     SshDiagnostics();
                     RouteDiagnostics(settings);
                     AsyncCliStartup(settings);
