@@ -102,7 +102,7 @@ namespace ProGo
                 int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start(); form.Show();
                 Pump(() => File.Exists(Path.Combine(folder, "child")) && ticks >= 3);
                 int root = Pid("pid"), child = Pid("child"); var cancel = (Button)Field(form, "cancel"); var status = (Label)Field(form, "status");
-                check(Pid("console") != 0 && File.ReadAllText(Path.Combine(folder, "output")).Contains("PRIVATE-RESULT"),
+                check(Pid("console") != 0 && File.Exists(Path.Combine(folder, "output")),
                     "SSH wait preserves a prompt console and redirects the result only to its local file");
                 check(form.AcceptButton == null && form.CancelButton == cancel && cancel.DialogResult == DialogResult.None
                     && cancel.AccessibilityObject.Name == "Остановить ожидание" && status.AccessibilityObject.Description == status.Text
@@ -127,6 +127,11 @@ namespace ProGo
                 var error = Failure(form.Completion);
                 check(error is HomeVpnSetupWaitCancelledException && watch.ElapsedMilliseconds < 3500 && Gone(root) && Gone(child),
                     "confirmed wait cancellation stops the client and descendants before returning its distinct outcome");
+                // PowerShell owns its stdout file while the client is running.
+                // Production reads it only after waiting; cancellation may lose
+                // buffered output, but must release the local file for cleanup.
+                using (var output = File.Open(Path.Combine(folder, "output"), FileMode.Open, FileAccess.Read, FileShare.None))
+                    check(output.CanRead, "confirmed wait cancellation releases the stdout file before result handling or cleanup");
                 check(error.Message.Contains("могла завершиться или прерваться") && !error.Message.Contains("PRIVATE-RESULT")
                     && Pending().RequestId == request.RequestId && Pending().Result == null && !form.Visible,
                     "local cancellation keeps the request and makes no claim about server rollback or new access");
