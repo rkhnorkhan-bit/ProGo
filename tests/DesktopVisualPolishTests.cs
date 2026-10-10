@@ -111,8 +111,10 @@ namespace ProGo
                             "legacy dialog actions share standard height/padding/margins " + form.Text);
                         foreach (var button in actions) {
                             var rectangle = form.RectangleToClient(button.RectangleToScreen(button.ClientRectangle));
-                            Check(form.ClientRectangle.Contains(rectangle), "standard action remains visible at dialog minimum " + form.Text + "/" + button.Text);
-                            Check(button.Parent.ClientRectangle.Contains(button.Bounds), "standard action stays within its footer viewport " + form.Text + "/" + button.Text);
+                            Check(form.ClientRectangle.Contains(rectangle), "standard action remains visible at dialog minimum " + form.Text + "/" + button.Text +
+                                "; formClient=" + form.ClientRectangle + "; actionClient=" + rectangle + "; footer=" + button.Parent.Bounds);
+                            Check(button.Parent.ClientRectangle.Contains(button.Bounds), "standard action stays within its footer viewport " + form.Text + "/" + button.Text +
+                                "; action=" + button.Bounds + "; footerClient=" + button.Parent.ClientRectangle);
                             var textArea = new Size(Math.Max(1, button.ClientSize.Width - button.Padding.Horizontal), Int32.MaxValue);
                             Check(TextRenderer.MeasureText(button.Text, button.Font, textArea, TextFormatFlags.WordBreak).Height <= button.ClientSize.Height - button.Padding.Vertical,
                                 "standard action caption fits without clipping " + form.Text + "/" + button.Text);
@@ -121,6 +123,9 @@ namespace ProGo
                         Check(actions.Select(b => b.Bounds).SequenceEqual(bounds), "palette refresh preserves established action layout " + form.Text);
                         Shot(form, "polish-standard-actions-" + i); form.Close();
                     }
+                } catch (Exception ex) {
+                    // Retain the primary layout/handle failure if cleanup itself also fails.
+                    Console.WriteLine("Visual action metrics primary failure: " + ex); throw;
                 } finally { foreach (var form in forms) form.Dispose(); }
             }
             using (var proxy = new ProxyService(() => settings.Current, delegate { }, "unused-visual-fixture", () => DateTime.UtcNow, false))
