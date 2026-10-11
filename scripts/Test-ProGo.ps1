@@ -301,6 +301,22 @@ try {
     }
     if ($VaultReadProcess.ExitCode -ne 0) { Fail 'Vault read tests failed' }
 } finally { $VaultReadProcess.Dispose() }
+$VaultDailyHarness = Join-Path $Root 'build\VaultDailyPolicyTests.exe'
+# Compile only the policy/reader and independent guards: no real paths, logging or UI.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyPolicyTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'tests\VaultDailyPolicyTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily policy harness build failed' }
+$VaultDailyInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyInfo.FileName = $VaultDailyHarness
+$VaultDailyInfo.UseShellExecute = $false
+$VaultDailyProcess = [System.Diagnostics.Process]::Start($VaultDailyInfo)
+try {
+    if (-not $VaultDailyProcess.WaitForExit(90000)) {
+        $VaultDailyProcess.Kill()
+        [void]$VaultDailyProcess.WaitForExit(5000)
+        Fail 'Vault daily policy harness exceeded its process deadline'
+    }
+    if ($VaultDailyProcess.ExitCode -ne 0) { Fail 'Vault daily policy tests failed' }
+} finally { $VaultDailyProcess.Dispose() }
 & $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\BoundedLog.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "src\DiagnosticProcess.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
