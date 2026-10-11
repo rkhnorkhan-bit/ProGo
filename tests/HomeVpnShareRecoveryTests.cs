@@ -142,7 +142,7 @@ namespace ProGo
         private static void Shot(Form form, string name)
         { using (var bitmap = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size)); bitmap.Save(Path.Combine(Path.GetDirectoryName(folder), name + ".png")); } }
         private sealed class Observation { internal int Root, Child, Ticks; internal bool Waiting; }
-        private static Observation Loop(Form main, Action start, Func<bool> done, string route = null, Action settled = null, Action tick = null)
+        private static Observation Loop(Form main, Action start, Func<bool> done, string route = null, Action settled = null, Action tick = null, string scenario = null)
         {
             var result = new Observation(); bool started = false; Exception failure = null; var watch = Stopwatch.StartNew();
             using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) {
@@ -169,7 +169,7 @@ namespace ProGo
                 };
                 timer.Start(); Application.Run(main);
             }
-            if (failure != null) throw new Exception("HTTPS native fixture failed", failure); return result;
+            if (failure != null) throw new Exception("HTTPS native fixture failed [" + (scenario ?? route ?? "unlabelled") + "]: " + failure.GetType().Name + ": " + failure.Message, failure); return result;
         }
         private static Exception Dispatch(string action, HomeVpnOwner owner = null, string domain = null, string route = null, int timeout = 20000)
         {
@@ -221,7 +221,8 @@ namespace ProGo
         }
         private static void RecoverForm(string mode, bool verifyFailure, bool saveFailure)
         {
-            byte[] journal = Lost(); Mode(mode); var before = Snapshot(); int verified = 0, saved = 0; bool boundary = false; string message = null;
+            byte[] journal = Lost(); Mode(mode); var before = Snapshot(); int verified = 0, saved = 0, drain = 0; bool boundary = false, leaseSettled = false; string message = null;
+            Task<IDisposable> leaseProbe = null;
             using (var relay = new Ikev2RelayService())
             using (var service = new HomeVpnService(relay))
             using (var form = HomeProfileShare.CreateConfigureForm(service, (owner, action, name, id, progress) => {
@@ -231,12 +232,30 @@ namespace ProGo
                 if (saveFailure) throw new IOException("synthetic-private-save-error"); service.SetShareOrigin(origin);
             })) {
                 var address = Controls(form).OfType<TextBox>().Single(); address.Text = "another.example.org";
-                Loop(form, () => Button(form, "Проверить прежнюю настройку HTTPS").PerformClick(), () => address.Enabled, null, delegate {
+                Loop(form, () => Button(form, "Проверить прежнюю настройку HTTPS").PerformClick(), delegate {
+                    // Successful acceptance publishes OK without re-enabling the
+                    // modeless fixture's address. Failures restore editing instead.
+                    if (form.DialogResult != DialogResult.OK && !address.Enabled) return false;
+                    // OK is published before ConfirmAsync releases its lease.
+                    // Keep the existing UI pump alive until a nonblocking probe
+                    // acquires/releases it, then drain three timer ticks.
+                    if (!leaseSettled) {
+                        if (leaseProbe == null) leaseProbe = HomeVpnShareRecovery.AcquireAsync();
+                        if (!leaseProbe.IsCompleted) return false;
+                        try { leaseProbe.GetAwaiter().GetResult().Dispose(); leaseSettled = true; return false; }
+                        catch (HomeVpnSharePendingException) { leaseProbe = null; return false; }
+                    }
+                    return ++drain >= 3;
+                }, null, delegate {
                     message = StatusLabel(form).Text;
                     if (mode == "not-found" || saveFailure) Shot(form, saveFailure ? "vps-https-save-error" : "vps-https-recovery-error");
                     bool success = mode == "complete" && !verifyFailure && !saveFailure;
                     check(form.DialogResult == (success ? DialogResult.OK : DialogResult.None), "HTTPS UI acknowledges completion only after successful verification and local save: " + mode);
-                });
+                    var recover = Button(form, "Проверить прежнюю настройку HTTPS");
+                    check(leaseSettled && drain >= 3 && address.Text == "another.example.org"
+                        && (success ? !address.Enabled && !recover.Enabled : address.Enabled && recover.Enabled && recover.Visible),
+                        "HTTPS recovery preserves its terminal state and draft after lease settlement: " + mode + "/verify=" + verifyFailure + "/save=" + saveFailure);
+                }, null, "recover:" + mode + "/verify=" + verifyFailure + "/save=" + saveFailure);
                 bool completed = mode == "complete" && !verifyFailure && !saveFailure;
                 bool resultRead = mode == "complete" || mode == "wrong-result";
                 check(Calls().SequenceEqual(resultRead ? new[] { "share", "status", "result" } : new[] { "share", "status" }) && copies == (resultRead ? 3 : 2)
