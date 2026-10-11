@@ -61,18 +61,25 @@ namespace ProGo
             lock (gate) {
                 if (ending) throw new OperationCanceledException();
                 if (!current.IsCompleted) throw new InvalidOperationException("Предыдущая операция с копией ещё не завершена.");
-                var work = Task.Run(delegate {
-                    using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(lifetime)) {
-                        deadline.CancelAfter(120000);
-                        var token = deadline.Token; token.ThrowIfCancellationRequested();
-                        Probe(phase, token); token.ThrowIfCancellationRequested();
-                        // Each operation checks cancellation before its own steps.
-                        // Accepted helper acknowledgement is not revoked by a late Cancel.
-                        return operation(token);
-                    }
-                });
+                var work = RunCore(phase, operation);
                 current = work; return work;
             }
+        }
+        private async Task<T> RunCore<T>(string phase, Func<CancellationToken, T> operation)
+        {
+            // A synchronous Task.Run without its own matching token faults on an
+            // OperationCanceledException from the linked deadline token on .NET
+            // Framework. The async task preserves cancellation for either source
+            // and settles independently of the owner's synchronization context.
+            return await Task.Run(delegate {
+                using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(lifetime)) {
+                    deadline.CancelAfter(120000);
+                    var token = deadline.Token; token.ThrowIfCancellationRequested();
+                    Probe(phase, token); token.ThrowIfCancellationRequested();
+                    // Accepted helper acknowledgement is not revoked by a late Cancel.
+                    return operation(token);
+                }
+            }).ConfigureAwait(false);
         }
         internal void BeforeOwnerCompletion() { Probe("backup-owner-completion", lifetime); }
         private void Probe(string phase, CancellationToken token)

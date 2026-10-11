@@ -24,6 +24,7 @@ namespace ProGo
                 AsyncRestoreReadAndCancel(root);
                 AsyncRestoreRealReadFailures(root);
                 AsyncRestoreOwnedCopyDisposal(root);
+                AsyncRestoreCleanupFailure(root);
                 AsyncRestorePreparedEvidence(root);
                 AsyncRestoreCachedFormAndCancellation(root);
                 AsyncRestoreDisposedForm(root);
@@ -165,6 +166,8 @@ namespace ProGo
             Directory.CreateDirectory(unrelated); File.WriteAllText(Path.Combine(unrelated, "unrelated.txt"), "must survive exact ownership cleanup");
             using (var entered = new ManualResetEventSlim())
             using (var release = new ManualResetEventSlim())
+            using (var cleanupEntered = new ManualResetEventSlim())
+            using (var cleanupRelease = new ManualResetEventSlim())
             {
                 int ownerThread = Thread.CurrentThread.ManagedThreadId, workerThread = 0, cleanupThread = 0, cleanups = 0;
                 CancellationToken observed = default(CancellationToken);
@@ -174,7 +177,10 @@ namespace ProGo
                         // Model one individual disk operation which has not reached its next cancellation boundary.
                         release.Wait();
                     }
-                    if (phase == "restore-cleanup") { cleanupThread = Thread.CurrentThread.ManagedThreadId; Interlocked.Increment(ref cleanups); }
+                    if (phase == "restore-cleanup") {
+                        cleanupThread = Thread.CurrentThread.ManagedThreadId; Interlocked.Increment(ref cleanups);
+                        cleanupEntered.Set(); cleanupRelease.Wait();
+                    }
                 });
                 Task pending = null;
                 try {
@@ -187,15 +193,54 @@ namespace ProGo
                     var finish = session.FinishAsync();
                     Check(watch.ElapsedMilliseconds < 500 && observed.IsCancellationRequested && !pending.IsCompleted && !finish.IsCompleted && Directory.Exists(owned[0]),
                         "owner disposal requests cancellation promptly and retains the still-used disposable copy until actual worker settlement");
-                    release.Set(); WaitAsyncRestoreWithoutPump(finish);
-                    Check(pending.IsCanceled && !finish.IsFaulted && cleanups == 1 && cleanupThread != ownerThread && !Directory.Exists(owned[0]) &&
+                    Check(Object.ReferenceEquals(finish, session.FinishAsync()), "repeated restore finish shares one cleanup task");
+                    release.Set(); WaitAsyncRestoreWithoutPump(pending);
+                    var cleanupWatch = Stopwatch.StartNew();
+                    while (!cleanupEntered.IsSet) {
+                        if (cleanupWatch.ElapsedMilliseconds > 5000) throw new Exception("owned restore cleanup entry deadline");
+                        Thread.Sleep(10);
+                    }
+                    Check(pending.IsCanceled, "linked-token cancellation publishes a cancelled task instead of an unobserved worker fault");
+                    Check(!finish.IsCompleted && Directory.Exists(owned[0]) && cleanups == 1 && cleanupThread != ownerThread,
+                        "registered failed preparation remains owned until its single post-settlement worker cleanup without a UI pump");
+                    cleanupRelease.Set(); WaitAsyncRestoreWithoutPump(finish);
+                    Check(!finish.IsFaulted && session.CleanupError == null && cleanups == 1 && !Directory.Exists(owned[0]) &&
                         File.ReadAllText(Path.Combine(unrelated, "unrelated.txt")) == "must survive exact ownership cleanup" && AsyncRestoreTreeMatches(source, before),
                         "late cancelled preparation settles without a UI pump and removes only its exact owned path on a worker");
                 }
                 finally {
-                    release.Set(); session.Cancel(); WaitAsyncRestoreWithoutPump(session.FinishAsync());
+                    release.Set(); cleanupRelease.Set(); session.Cancel(); WaitAsyncRestoreWithoutPump(session.FinishAsync());
                     if (Directory.Exists(unrelated)) Directory.Delete(unrelated, true);
                 }
+            }
+        }
+
+        private static void AsyncRestoreCleanupFailure(string root)
+        {
+            var source = AsyncRestoreSource(root, "cleanup-locked-stage"); var before = AsyncRestoreHashes(source);
+            string owned = null;
+            using (var entered = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim())
+            using (var session = new BackupWorkSession(delegate(string phase, CancellationToken token) {
+                if (phase == "restore-copy:ProGo.exe") { entered.Set(); release.Wait(); }
+            }))
+            try {
+                var pending = session.Run("restore-prepare", token => session.Prepare(source, "All", true, token));
+                PumpAsyncRestore(() => entered.IsSet); owned = AsyncRestoreOwnedPaths(session).Single();
+                var lockedPath = Path.Combine(owned, "VERSION"); File.WriteAllText(lockedPath, "partial stage fixture");
+                using (var locked = new FileStream(lockedPath, FileMode.Open, FileAccess.Read, FileShare.None)) {
+                    session.Cancel(); release.Set();
+                    var finish = session.FinishAsync(); WaitAsyncRestoreWithoutPump(finish);
+                    Check(pending.IsCanceled && !finish.IsFaulted && session.CleanupError != null && Directory.Exists(owned),
+                        "actual locked stage cleanup reports retained evidence without replacing linked-token cancellation with an I/O fault");
+                    Check(AsyncRestoreTreeMatches(source, before), "failed stage cleanup leaves every selected source backup byte intact");
+                }
+                BackupIntegrity.DeletePrepared(owned);
+                Check(!Directory.Exists(owned), "retained cleanup fixture can be removed after its exact file lock is released");
+            }
+            finally {
+                release.Set(); session.Cancel(); WaitAsyncRestoreWithoutPump(session.FinishAsync());
+                if (owned != null && Directory.Exists(owned)) BackupIntegrity.DeletePrepared(owned);
             }
         }
 

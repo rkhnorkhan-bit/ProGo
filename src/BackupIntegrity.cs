@@ -141,10 +141,11 @@ namespace ProGo
             var manifest = File.ReadAllBytes(Path.Combine(root, "manifest.txt"));
             var files = Inventory(root, cancellation);
             var copy = new PreparedBackup(Path.Combine(Path.GetTempPath(), "ProGo-restore-" + Guid.NewGuid().ToString("N")));
-            Directory.CreateDirectory(copy.Path);
+            bool owned = false;
             try
             {
-                if (created != null) created(copy);
+                Directory.CreateDirectory(copy.Path);
+                if (created != null) { created(copy); owned = true; }
                 foreach (var relative in files)
                 {
                     cancellation.ThrowIfCancellationRequested();
@@ -173,7 +174,13 @@ namespace ProGo
                 cancellation.ThrowIfCancellationRequested();
                 return copy;
             }
-            catch { copy.Dispose(); throw; }
+            catch
+            {
+                // A registered owner waits for worker settlement and reports
+                // cleanup failures. Standalone preparation retains its own duty.
+                if (!owned) copy.Dispose();
+                throw;
+            }
         }
 
         public static string[] RestoreNames(string directory, string scope, bool confirmData)
