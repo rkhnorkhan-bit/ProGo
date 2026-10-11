@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -33,6 +34,20 @@ namespace ProGo
         internal static bool Fixture(string[] args)
         {
             if (args.Length == 1 && args[0] == "owner-wait-unrelated") { Thread.Sleep(300000); return true; }
+            if (args.Length == 2 && args[0] == "owner-wait-output") {
+                string root = args[1];
+                HomeVpnFixtureFiles.Publish(Path.Combine(root, "pid"), Process.GetCurrentProcess().Id.ToString());
+                uint inputMode, errorMode;
+                File.WriteAllText(Path.Combine(root, "console"), GetConsoleCP() + ":" + GetConsoleMode(GetStdHandle(-10), out inputMode) + ":" + GetConsoleMode(GetStdHandle(-12), out errorMode));
+                if (File.ReadAllText(Path.Combine(root, "mode")) == "raw-overflow") {
+                    Process.Start(new ProcessStartInfo(Application.ExecutablePath, "owner-wait-child " + HomeVpnService.Argument(root)) { UseShellExecute = false, CreateNoWindow = true }).Dispose();
+                    var watch = Stopwatch.StartNew();
+                    while (!File.Exists(Path.Combine(root, "child"))) { Thread.Sleep(10); if (watch.ElapsedMilliseconds > 5000) throw new Exception("Output fixture child did not start"); }
+                }
+                byte[] bytes = File.ReadAllBytes(Path.Combine(root, "raw-input"));
+                using (var stream = Console.OpenStandardOutput()) stream.Write(bytes, 0, bytes.Length);
+                return true;
+            }
             bool child = args.Length == 2 && args[0] == "owner-wait-child";
             bool copy = args.Length == 2 && args[0] == "owner-wait-copy";
             string path = child || copy ? args[1] : Environment.GetEnvironmentVariable(Variable);
@@ -117,7 +132,7 @@ namespace ProGo
                     Entry(token, clipboard, "reissue", "button", false, false);
                     Entry(token, clipboard, "reissue", "complete", false, true);
                     foreach (string action in new[] { "revoke", "reissue", "share" }) Entry(token, clipboard, action, "button", true, false);
-                    Outputs(saved); AcceptedCancellation();
+                    CommandOutputLimits(); Outputs(saved); AcceptedCancellation();
                     check(threadFailure == null, "ordinary owner waiting and UI completion cause no thread exception");
                     check(!unrelated.HasExited, "owner cancellation and deadlines preserve an unrelated process");
                     check(Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Length == 0, "owner waits settle their private dispatch work");
@@ -201,7 +216,7 @@ namespace ProGo
                 };
                 timer.Start(); Application.Run(main);
             }
-            if (failure != null) throw new Exception("Owner native UI controller failed", failure);
+            if (failure != null) throw new Exception("Owner native UI controller failed (" + route + "): " + failure.GetType().Name + ": " + failure.Message, failure);
             return result;
         }
         private static void Entry(string token, ClipboardService clipboard, string action, string route, bool realCopy, bool success)
@@ -279,19 +294,58 @@ namespace ProGo
             foreach (string action in new[] { "revoke", "repair", "share" }) {
                 Reset(mode); var before = Snapshot(paths.Keys.Where(path => action != "share" || path != SharePendingPath)); Task<string> task = null;
                 using (var host = new Form()) {
-                    Loop(host, () => task = Admin(Owner, action, null, action == "revoke" ? OldId : action == "share" ? "QR.EXAMPLE.ORG" : null, delegate { }, 20000, false), () => task != null && task.IsCompleted, "complete", null, null);
+                    // Leave the unchanged 20-second controller enough time for
+                    // the operation deadline, owned-tree settlement and private cleanup.
+                    var watch = Stopwatch.StartNew();
+                    var result = Loop(host, () => task = Admin(Owner, action, null, action == "revoke" ? OldId : action == "share" ? "QR.EXAMPLE.ORG" : null, delegate { }, 10000, false), () => task != null && task.IsCompleted, "output:" + action + "/" + mode, null, null);
                     Exception failure = null; string text = null; try { text = task.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
-                    check(copies == 1 && Calls().SequenceEqual(new[] { action }) && Unchanged(before) && Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Length == 0,
+                    check(copies == 1 && Calls().SequenceEqual(new[] { action }) && Gone(Id("pid")) && Unchanged(before) && Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Length == 0,
                         "production ordinary output makes one attempt and preserves private inputs/helpers: " + action + "/" + mode);
                     if (mode == "complete") check(failure == null && text == (action == "revoke" ? "Access revoked." : action == "share" ? "https://qr.example.org" : "VPN network rules refreshed. Reconnect the phone and test internet access."),
                         "ordinary production SSH returns its actual successful output: " + action);
                     else check((action == "share" ? failure is HomeVpnSharePendingException : failure is HomeVpnOwnerUnconfirmedException)
                         && failure.Message.Contains("подтвержд") && !failure.Message.Contains("synthetic-private")
                         && (action == "share" || !failure.Message.Contains("запрос сохранён")), "owner nonzero/oversized output preserves its correct uncertainty and recovery boundary: " + action + "/" + mode);
+                    if (mode == "oversized") check(result.Ticks >= 3 && watch.ElapsedMilliseconds < 10000 && !failure.Message.Contains("Время ожидания"),
+                        "oversized owner output settles before the SSH deadline with a responsive UI: " + action);
                     if (action == "share") check(HomeVpnShareRecovery.HasPending(), "share output alone never consumes its HTTPS request before verification and save");
                 }
             }
         }
+        private static void CommandOutputLimits()
+        {
+            foreach (bool sharing in new[] { false, true })
+            foreach (bool overflow in new[] { false, true }) {
+                Reset(overflow ? "raw-overflow" : "raw-complete");
+                int limit = sharing ? 65536 : 32768;
+                var payload = new byte[limit + (overflow ? 1 : 0)];
+                byte[] seed = Encoding.UTF8.GetBytes("Ж\U0001F512");
+                int offset = 0;
+                while (offset + seed.Length <= payload.Length) { Buffer.BlockCopy(seed, 0, payload, offset, seed.Length); offset += seed.Length; }
+                while (offset < payload.Length) payload[offset++] = (byte)'x';
+                File.WriteAllBytes(At("raw-input"), payload); Task task = null;
+                string output = At("raw-output"), route = "raw-output:share=" + sharing + "/overflow=" + overflow;
+                var watch = Stopwatch.StartNew();
+                using (var host = new Form()) {
+                    var observed = Loop(host, () => task = sharing
+                        ? HomeVpnPreparationProcess.ShareAsync(Application.ExecutablePath, "owner-wait-output " + HomeVpnService.Argument(folder), output, 10000, CancellationToken.None)
+                        : HomeVpnPreparationProcess.OwnerAsync(Application.ExecutablePath, "owner-wait-output " + HomeVpnService.Argument(folder), output, 10000, CancellationToken.None),
+                        () => task != null && task.IsCompleted, route, null, null);
+                    Exception failure = null; try { task.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                    byte[] captured = File.ReadAllBytes(output);
+                    check(Gone(Id("pid")) && observed.Ticks >= 3 && watch.ElapsedMilliseconds < 15000
+                        && File.ReadAllText(At("console")).Split(':')[0] != "0"
+                        && File.ReadAllText(At("console")).EndsWith(":True:True"), "raw owner output retains real console stdin/stderr and settles its root: " + route);
+                    if (!overflow) check(failure == null && payload.SequenceEqual(captured), "exact-limit UTF-8 owner output retains all original bytes: " + route);
+                    else check((sharing ? failure is HomeVpnSharePendingException : failure is HomeVpnOwnerUnconfirmedException)
+                        && !failure.Message.Contains("Время ожидания") && captured.Length <= limit && Gone(Id("child")),
+                        "one-byte output overflow is refused with bounded storage and settled descendant: " + route);
+                }
+            }
+        }
+        [DllImport("kernel32.dll")] private static extern uint GetConsoleCP();
+        [DllImport("kernel32.dll")] private static extern IntPtr GetStdHandle(int value);
+        [DllImport("kernel32.dll")] private static extern bool GetConsoleMode(IntPtr handle, out uint mode);
         private static void AcceptedCancellation()
         {
             var ready = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);

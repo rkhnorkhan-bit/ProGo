@@ -53,8 +53,20 @@ namespace ProGo
         private static Task CommandAsync(string executable, string arguments, string output, int timeoutMs, CancellationToken token, HomeVpnWaitPurpose purpose)
         {
             return Task.Run(delegate {
-                var script = "$p=Start-Process -FilePath " + Literal(executable) + " -ArgumentList " + Literal(arguments)
-                    + " -NoNewWindow -PassThru -Wait -RedirectStandardOutput " + Literal(output) + "; exit $p.ExitCode";
+                int limit = purpose == HomeVpnWaitPurpose.AdminCommand || purpose == HomeVpnWaitPurpose.ShareCommand ? 65536 : 32768;
+                // Keep the root's real console for inherited OpenSSH stdin/stderr,
+                // but read stdout as bytes and enforce the limit without waiting
+                // for a newline or EOF, preserving the original UTF-8 bytes.
+                // On overflow the root exits; Run settles its entire owned job.
+                var script = "$ErrorActionPreference='Stop'; $i=New-Object System.Diagnostics.ProcessStartInfo; $i.FileName=" + Literal(executable)
+                    + "; $i.Arguments=" + Literal(arguments) + "; $i.UseShellExecute=$false; $i.CreateNoWindow=$false;"
+                    + " $i.RedirectStandardInput=$false; $i.RedirectStandardError=$false; $i.RedirectStandardOutput=$true;"
+                    + " $p=New-Object System.Diagnostics.Process; $p.StartInfo=$i; $f=$null; try {"
+                    + " $f=[IO.File]::Open(" + Literal(output) + ",[IO.FileMode]::Create,[IO.FileAccess]::Write,[IO.FileShare]::Read);"
+                    + " if(!$p.Start()){exit 1}; $b=New-Object byte[] 4096; $total=0;"
+                    + " while(($n=$p.StandardOutput.BaseStream.Read($b,0,$b.Length)) -gt 0){"
+                    + " if($n -gt (" + limit + "-$total)){exit 1}; $f.Write($b,0,$n); $total+=$n };"
+                    + " $p.WaitForExit(); exit $p.ExitCode } finally { if($f -ne $null){$f.Dispose()}; $p.Dispose() }";
                 var shell = Path.Combine(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\powershell.exe");
                 int code = Run(shell, "-NoProfile -EncodedCommand " + Convert.ToBase64String(Encoding.Unicode.GetBytes(script)), timeoutMs, token, purpose);
                 if (code != 0) {
