@@ -285,6 +285,22 @@ foreach ($relativePath in @(
 
 $RecoveryHarness = Join-Path $Root "build\SocksRecoveryTests.exe"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+$VaultReadHarness = Join-Path $Root 'build\VaultReadTests.exe'
+# Test-only paths/log guards keep this reader harness out of actual user data.
+& $Csc /nologo /target:exe /main:ProGo.VaultReadTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultReadHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'tests\VaultReadTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault read harness build failed' }
+$VaultReadInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultReadInfo.FileName = $VaultReadHarness
+$VaultReadInfo.UseShellExecute = $false
+$VaultReadProcess = [System.Diagnostics.Process]::Start($VaultReadInfo)
+try {
+    if (-not $VaultReadProcess.WaitForExit(90000)) {
+        $VaultReadProcess.Kill()
+        [void]$VaultReadProcess.WaitForExit(5000)
+        Fail 'Vault read harness exceeded its process deadline'
+    }
+    if ($VaultReadProcess.ExitCode -ne 0) { Fail 'Vault read tests failed' }
+} finally { $VaultReadProcess.Dispose() }
 & $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\BoundedLog.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "src\DiagnosticProcess.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
