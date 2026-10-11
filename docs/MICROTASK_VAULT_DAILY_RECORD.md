@@ -103,3 +103,26 @@ application have not been tested.
 Atomic storage/restart ownership, expiry cleanup, session revocation, fake
 generation, UI integration and stale-save rejection are separate later steps.
 This record format by itself authorizes no vault opening or state publication.
+
+## Final native checkpoint — 11 October 2026
+
+Functional head `42c7ab60c9a3e035a712196765fa74a565f41f1a` was tested in
+[CI 38171560167](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38171560167),
+merge `cd12b11e921477c85f068eeb8580f259a8eed742` with main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+Windows job `114565055972` completed successfully. The explicit C#5 harness
+using System.Security and native CurrentUser DPAPI reported
+`PASS: VaultDailyRecordTests (325 checks)` at 20:18:03.035 UTC. These are
+assertions, not 325 independent scenarios. All 98 negative decode fixtures
+verified static errors and unchanged caller bytes. Independent native unprotect,
+empty-bound distinction, edited fields, metadata/schema/UTF8 limits and the
+zero application-path/log guard passed. Existing reader 165 and policy 134
+checks passed on this same candidate. No target compiler error, FAIL or deadline
+failure was observed; independent source and completed-log reviews approved.
+
+Full Windows and isolated server jobs are **PASS**. Public release scan checked
+218 sources and 44 release files, and CI folder/ZIP artifacts were uploaded.
+These results do not add cross-account/machine coverage, owner acceptance,
+atomic file storage, expiry/session revocation, revision CAS or UI integration.
+Micro12 has native **PASS**; F09 and historical **22/31** remain unchanged.

@@ -421,3 +421,58 @@ HTTP assertions и настоящий Linux sync/permission/locking набор; 
 
 Подробности: [MICROTASK_PORTABLE_CHILD_IMPORT.md](MICROTASK_PORTABLE_CHILD_IMPORT.md)
 и [MICROTASK_VAULT_DAILY_POLICY.md](MICROTASK_VAULT_DAILY_POLICY.md).
+
+## Контрольная точка 11–12 — portable HTTP и защищённая суточная запись
+
+Пакет из двух микрозадач: micro11
+`0e2a8c033b665c5e5cba5cb803a4a5d3fa1f833e`, итоговый functional head
+**`42c7ab60c9a3e035a712196765fa74a565f41f1a`**.
+[CI 38171560167](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38171560167)
+проверил merge **`cd12b11e921477c85f068eeb8580f259a8eed742`** с main
+**`4bb336575bb1216d3047bd2b294aeecad9fdd65a`**. Оба jobs и общий run
+завершены с **SUCCESS**; завершённые журналы независимо сверены.
+Прежние отказы контрольных точек выше сохраняются как история.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Source review / whitespace / local public-source scan | PASS | 218 sources, zero release files; отдельно HTTP7 с заблокированными fcntl/pwd без skips |
+| Native reader / daily policy / новый protected record | 165 / 134 / 325 PASS | Windows `114565055972`, 20:18:01–20:18:03 UTC; guarded C#5 и настоящий CurrentUser DPAPI |
+| Desktop / весь Test-ProGo | 3485 / PASS | 20:24:41 и 20:27:42 UTC; Instance26, Maintenance95, Shutdown47 и прежние suites выполнены |
+| Весь Home VPN / portable harness | 975 / 90 PASS | 20:30:56 и 20:32:41 UTC; отдельный child-import и сравнение DPAPI данных выполнены |
+| Micro11: Windows HTTP / вся Python discovery | 7/7 / PASS | 24 items: 22 passed, только 2 прежних Linux ownership/flock module skips; HTTP module не пропущен, 20:32:51 UTC |
+| Общий Windows / изолированный server / общий run | PASS / PASS / PASS | Jobs `114565055972` / `114565056126`, run #528; Ubuntu operations16, sharing9, provisioning46 |
+| Independent QR decode на Ubuntu | PASS | numpy2.2.6 и zxing-cpp2.3.0 установлены перед sharing suite; Windows availability отдельного decoder не заявляется |
+| Public release-content scan / CI ZIP | PASS / PACKED | 218 sources, 44 release files, 20:32:52 UTC; ZIP 488291 bytes, 20:32:55 UTC |
+| CI artifacts | Загружены | Screenshots `11714591746` (278 files), diagnostics `11714746417`, folder `11714268197`, ZIP `11714287987`; pruning для PR skipped |
+| Новый цельный installer / visual и owner acceptance / другой account или ПК | PENDING / NOT_CHECKED / NOT_CHECKED | CI artifacts не являются опубликованным выпуском или полной приёмкой всех31; среда владельца не проверялась |
+
+Micro11 использует unique staging в той же директории: закрывает stream,
+атомарно публикует настройки через os.replace, затем в finally удаляет только
+свой оставшийся staging. Сохранены все
+семь HTTP scenarios/assertions и прежние сроки; production server и настоящий
+Linux sync/permission/flock набор не изменены. Windows публикация прошла;
+отсутствие всех возможных reader-sharing races этим запуском не доказано.
+
+Micro12 защищает всю запись целиком: local calendar day, generation GUID,
+revision, binding flag, fake PIN и ten fields. Строгое framing/UTF8 и пределы
+проверяются до принятия; собственные byte buffers очищаются, input/dataset
+caller не изменяются. Пустой bound dataset сохраняет PIN и отличается от
+unbound tombstone. 325 checks — число assertions; 98 negative decode fixtures
+подтвердили статические ошибки и неизменность caller bytes. Формат memory-only:
+file persistence, атомарный commit, CAS, expiry/session revocation, генерация ложных наборов данных
+и UI ещё не добавлены.
+
+Строка ERROR с installed=broken-fixture в maintenance-журнале относится к
+намеренной отрицательной update fixture: после неё rollback завершён и весь
+Maintenance95 прошёл. Это не отказ общего кандидата.
+
+Следующий небольшой пакет — отдельное атомарное суточное хранилище и отказ
+устаревшего сохранения по generation/revision; adoption и active-session cleanup
+подключаются после него. Targeted micro11/micro12 и весь текущий Windows CI —
+**native PASS**. Исторические **22/31** неизменны; новых полных закрытых F-пунктов
+нет, **24/31 пока нет**. F09 остаётся открытым; полный installer всех31 и owner
+acceptance ещё впереди. Пользовательские ПК/VPS и установленное приложение
+не проверялись.
+
+Подробности: [MICROTASK_HTTP_FIXTURE_PORTABILITY.md](MICROTASK_HTTP_FIXTURE_PORTABILITY.md)
+и [MICROTASK_VAULT_DAILY_RECORD.md](MICROTASK_VAULT_DAILY_RECORD.md).
