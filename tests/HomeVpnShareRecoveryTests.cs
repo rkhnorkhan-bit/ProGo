@@ -351,11 +351,15 @@ namespace ProGo
         }
         private static void ConfirmedCleanupFailure()
         {
-            Reset("complete"); var before = Snapshot();
+            Reset("complete"); const string formerOrigin = "https://previous.example.org";
+            // The preceding successful recovery persisted Origin. Give this
+            // failure case its own distinct baseline before capturing bytes.
+            HomeVpnPrivateFiles.Save("share-" + HomeVpnAccess.Parse(token).ServerId, formerOrigin);
+            var before = Snapshot();
             var previousWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*");
             string ownedWork = null, helper = null; byte[] helperBytes = null, journal = null;
             FileStream held = null; Task<string> operation = null; int verified = 0, saved = 0, pendingTicks = 0;
-            bool proofRead = false; Stopwatch cleanupWait = null; string message = null; DialogResult dialogResult = DialogResult.None;
+            bool proofRead = false; Stopwatch cleanupWait = null; long settledElapsed = -1; string message = null; DialogResult dialogResult = DialogResult.None;
             using (var relay = new Ikev2RelayService())
             using (var service = new HomeVpnService(relay))
             using (var form = HomeProfileShare.CreateConfigureForm(service, (owner, action, name, id, progress) => {
@@ -374,12 +378,12 @@ namespace ProGo
                     var address = Controls(form).OfType<TextBox>().Single(); address.Text = "qr.example.org";
                     Loop(form, () => Button(form, "Настроить HTTPS на VPS").PerformClick(),
                         () => operation != null && operation.IsCompleted && address.Enabled, null,
-                        () => { message = StatusLabel(form).Text; dialogResult = form.DialogResult; }, delegate {
+                        () => { message = StatusLabel(form).Text; dialogResult = form.DialogResult; settledElapsed = cleanupWait == null ? -1 : cleanupWait.ElapsedMilliseconds; }, delegate {
                             if (!File.Exists(At("receipt")) || !File.Exists(At("pid")) || !Gone(Id("pid"))) return;
                             if (cleanupWait == null) cleanupWait = Stopwatch.StartNew();
                             if (journal == null) journal = File.ReadAllBytes(PendingPath);
                             if (operation != null && !operation.IsCompleted) pendingTicks++;
-                        });
+                        }, "confirmed-cleanup-failure");
                     Exception failure = null;
                     try { operation.GetAwaiter().GetResult(); } catch (Exception error) { failure = error; }
                     var request = HomeVpnShareRecovery.Pending();
@@ -391,15 +395,26 @@ namespace ProGo
                             () => { proofRead = true; throw new IOException("fixture-verification-stopped"); },
                             origin => { saved++; }, () => true).GetAwaiter().GetResult();
                     } catch (IOException) { }
+                    long checkedElapsed = cleanupWait == null ? -1 : cleanupWait.ElapsedMilliseconds;
+                    bool rootGone = File.Exists(At("pid")) && Gone(Id("pid"));
+                    bool journalSame = journal != null && File.Exists(PendingPath) && journal.SequenceEqual(File.ReadAllBytes(PendingPath));
+                    bool inputsSame = Same(before), originSame = service.ShareOrigin == formerOrigin;
+                    bool helperSame = Directory.Exists(ownedWork) && helperBytes != null && File.Exists(helper) && helperBytes.SequenceEqual(File.ReadAllBytes(helper));
+                    bool noReplay = copies == 1 && Calls().SequenceEqual(new[] { "share" });
+                    bool safeMessage = message != null && message.Contains("Локальные файлы команды VPS не удалось удалить")
+                        && message.Contains("Запрос сохранён") && !message.Contains("fixture-") && ownedWork != null && !message.Contains(ownedWork);
+                    string details = "; faulted=" + operation.IsFaulted + "/error=" + (failure == null ? "none" : failure.GetType().Name)
+                        + "/pendingTicks=" + pendingTicks + "/settledMs=" + settledElapsed + "/checkedMs=" + checkedElapsed + "/rootGone=" + rootGone
+                        + "/proof=" + proofRead + "/request=" + (request != null) + "/journalSame=" + journalSame + "/inputsSame=" + inputsSame
+                        + "/verified=" + verified + "/saved=" + saved + "/helperSame=" + helperSame + "/noReplay=" + noReplay
+                        + "/originSame=" + originSame + "/dialog=" + dialogResult + "/safeMessage=" + safeMessage;
                     check(operation.IsFaulted && failure is HomeVpnSharePendingException && pendingTicks >= 3 && cleanupWait != null
-                        && cleanupWait.ElapsedMilliseconds < 2500 && proofRead && request != null && journal != null
-                        && journal.SequenceEqual(File.ReadAllBytes(PendingPath)) && verified == 0 && saved == 0 && Same(before)
-                        && copies == 1 && Calls().SequenceEqual(new[] { "share" }) && Gone(Id("pid"))
-                        && dialogResult == DialogResult.None && service.ShareOrigin == "https://previous.example.org"
-                        && Directory.Exists(ownedWork) && helperBytes.SequenceEqual(File.ReadAllBytes(helper))
-                        && message.Contains("Локальные файлы команды VPS не удалось удалить")
-                        && message.Contains("Запрос сохранён") && !message.Contains("fixture-") && !message.Contains(ownedWork),
-                        "confirmed native HTTPS proof with locked owned cleanup keeps its exact request, former origin and retry-only semantics without replay or false completion");
+                        && checkedElapsed < 2500 && rootGone, "locked HTTPS cleanup settles its owning command before the original deadline" + details);
+                    check(proofRead && request != null && journalSame && verified == 0 && saved == 0 && inputsSame,
+                        "locked HTTPS cleanup retains completed proof, exact journal and private inputs without verification or save" + details);
+                    check(noReplay && dialogResult == DialogResult.None && originSame && safeMessage,
+                        "locked HTTPS cleanup preserves its distinct former origin and safe retry-only UI without replay or false completion" + details);
+                    check(helperSame, "locked HTTPS cleanup retains the exact owned helper until the lock is released" + details);
                 } finally {
                     if (held != null) held.Dispose();
                     if (ownedWork != null && Directory.Exists(ownedWork)) Directory.Delete(ownedWork, true);
