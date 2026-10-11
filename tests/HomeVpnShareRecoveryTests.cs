@@ -100,7 +100,7 @@ namespace ProGo
                     HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", Json.Serialize(Owner));
                     HomeVpnPrivateFiles.Save("share-" + HomeVpnAccess.Parse(token).ServerId, "https://previous.example.org");
                     Environment.SetEnvironmentVariable(Variable, folder);
-                    InvalidDomains();
+                    ControllerFinalization(true); ControllerFinalization(false); InvalidDomains();
                     foreach (string route in new[] { "escape", "close", "dispose", "deadline" }) Cancelled(route, false);
                     Cancelled("button", true); PendingGate();
                     foreach (string mode in new[] { "not-found", "busy", "running", "stale", "unavailable", "wrong-id", "wrong-action", "wrong-time", "wrong-result" }) RecoverForm(mode, false, false);
@@ -144,10 +144,27 @@ namespace ProGo
         private sealed class Observation { internal int Root, Child, Ticks; internal bool Waiting; }
         private static Observation Loop(Form main, Action start, Func<bool> done, string route = null, Action settled = null, Action tick = null, string scenario = null)
         {
-            var result = new Observation(); bool started = false; Exception failure = null; var watch = Stopwatch.StartNew();
+            var result = new Observation(); bool started = false, terminal = false, inTick = false; Exception failure = null; var watch = Stopwatch.StartNew();
             using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) {
-                main.Shown += delegate { main.BeginInvoke(new Action(delegate { started = true; try { start(); } catch (Exception ex) { failure = ex; } })); };
+                Action<Exception> remember = ex => {
+                    failure = failure == null ? ex : new AggregateException("HTTPS fixture inspection and cleanup failed", failure, ex);
+                };
+                Action<Action> cleanup = action => {
+                    try { action(); }
+                    catch (Exception ex) { remember(ex); }
+                };
+                Action abort = delegate {
+                    terminal = true; timer.Stop();
+                    cleanup(delegate { var wait = Application.OpenForms.OfType<HomeVpnPreparationForm>().FirstOrDefault(); if (wait != null && !wait.IsDisposed) wait.Dispose(); });
+                    cleanup(Kill); cleanup(delegate { main.Dispose(); }); cleanup(Application.ExitThread);
+                };
+                main.Shown += delegate { main.BeginInvoke(new Action(delegate {
+                    if (terminal) return;
+                    started = true; try { start(); } catch (Exception ex) { remember(ex); abort(); }
+                })); };
                 timer.Tick += delegate {
+                    if (terminal || inTick) return;
+                    inTick = true;
                     result.Ticks++;
                     try {
                         if (!started) return;
@@ -163,13 +180,42 @@ namespace ProGo
                         }
                         if (tick != null) tick();
                         if (failure == null && watch.ElapsedMilliseconds > 20000) failure = new TimeoutException("HTTPS UI fixture did not settle");
-                        if (failure != null) { timer.Stop(); if (wait != null && !wait.IsDisposed) wait.Dispose(); Kill(); main.Dispose(); Application.ExitThread(); return; }
-                        if (done()) { if (settled != null) settled(); timer.Stop(); main.Close(); }
-                    } catch (Exception ex) { failure = ex; }
+                        if (failure != null) { abort(); return; }
+                        if (done()) { terminal = true; timer.Stop(); if (settled != null) settled(); main.Close(); }
+                    } catch (Exception ex) { remember(ex); abort(); }
+                    finally { inTick = false; }
                 };
                 timer.Start(); Application.Run(main);
             }
             if (failure != null) throw new Exception("HTTPS native fixture failed [" + (scenario ?? route ?? "unlabelled") + "]: " + failure.GetType().Name + ": " + failure.Message, failure); return result;
+        }
+        private static void ControllerFinalization(bool fail)
+        {
+            Reset("complete"); int inspections = 0, pulses = 0; bool liveAfterPump = false; Exception failure = null;
+            var sentinel = new InvalidOperationException("fixture-finalization-sentinel"); var watch = Stopwatch.StartNew();
+            using (var form = new Form())
+            using (var panel = new FlowLayoutPanel())
+            using (var control = new Button())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                form.Controls.Add(panel); panel.Controls.Add(control); heartbeat.Tick += delegate { pulses++; };
+                try {
+                    Loop(form, delegate { }, () => true, null, delegate {
+                        inspections++; int before = pulses; var pump = Stopwatch.StartNew(); heartbeat.Start();
+                        while (pulses - before < 3) {
+                            Application.DoEvents();
+                            if (pump.ElapsedMilliseconds > 2000) throw new TimeoutException("Nested HTTPS fixture UI pump did not pulse");
+                            Thread.Sleep(1);
+                        }
+                        heartbeat.Stop();
+                        liveAfterPump = !form.IsDisposed && form.Visible && !control.IsDisposed && Object.ReferenceEquals(control.Parent, panel);
+                        if (fail) throw sentinel;
+                    }, null, "controller-nested-pump/fail=" + fail);
+                } catch (Exception ex) { failure = ex; }
+                finally { heartbeat.Stop(); }
+                check(inspections == 1 && pulses >= 3 && liveAfterPump && form.IsDisposed && watch.ElapsedMilliseconds < 5000
+                    && (fail ? failure != null && Object.ReferenceEquals(failure.InnerException, sentinel) : failure == null),
+                    "HTTPS fixture finalization runs once across a nested UI pump, preserves live controls and exits promptly with its original failure: " + fail);
+            }
         }
         private static Exception Dispatch(string action, HomeVpnOwner owner = null, string domain = null, string route = null, int timeout = 20000)
         {
@@ -200,18 +246,20 @@ namespace ProGo
         }
         private static void PendingGate()
         {
-            byte[] journal = Lost(); var before = Snapshot(); int verified = 0, saved = 0;
+            byte[] journal = Lost(); var before = Snapshot(); int verified = 0, saved = 0, inspections = 0;
             using (var relay = new Ikev2RelayService())
             using (var service = new HomeVpnService(relay))
             using (var form = HomeProfileShare.CreateConfigureForm(service, (owner, action, name, id, progress) => Admin(owner, action, name, id, progress),
                 (origin, access) => { verified++; return Task.FromResult(0); }, origin => { saved++; service.SetShareOrigin(origin); })) {
                 Loop(form, delegate { }, () => true, null, delegate {
+                    inspections++;
                     var install = Button(form, "Настроить HTTPS на VPS"); var verify = Button(form, "Адрес уже настроен — проверить"); var recover = Button(form, "Проверить прежнюю настройку HTTPS");
                     check(!install.Enabled && !verify.Enabled && recover.Enabled && recover.Visible && form.AcceptButton == null, "reopened HTTPS form gates installation and health-only verification while offering readonly recovery");
                     Controls(form).OfType<TextBox>().Single().Text = "another.example.org"; install.PerformClick(); verify.PerformClick();
                     Shot(form, "vps-https-pending-form"); form.ClientSize = new Size(440, 270); Application.DoEvents();
                     ((FlowLayoutPanel)recover.Parent).ScrollControlIntoView(recover); Shot(form, "vps-https-pending-form-minimum");
-                });
+                }, null, "pending-gate");
+                check(inspections == 1, "reopened HTTPS form is inspected exactly once despite its nested layout pump");
             }
             var blocked = Dispatch("share", null, "another.example.org");
             foreach (var owner in new[] { new HomeVpnOwner { Host = "other.example.org", Login = "root", Port = 22 }, new HomeVpnOwner { Host = Owner.Host, Login = "admin", Port = 22 }, new HomeVpnOwner { Host = Owner.Host, Login = "root", Port = 2022 } })
