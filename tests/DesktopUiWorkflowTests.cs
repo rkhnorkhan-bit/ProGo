@@ -266,7 +266,27 @@ namespace ProGo
                         Check(nav[selected].Tag as string == "primary" && nav["home"].Tag == null, "navigation highlights active dialog " + action);
                         inspect(form);
                     } catch (Exception ex) { failure = ex; }
-                    finally { if (form != null) form.Close(); }
+                    finally {
+                        if (form != null && !form.IsDisposed) {
+                            try {
+                                var settingsForm = form as SshProfilesSettingsForm;
+                                var save = settingsForm == null ? null : settingsForm.SaveWork;
+                                form.Close();
+                                if (settingsForm != null && settingsForm.IsSavePending) {
+                                    if (save == null) throw new Exception("Pending modal settings fixture has no tracked Save");
+                                    PumpUntil(() => save.IsCompleted && !settingsForm.IsSavePending);
+                                    save.GetAwaiter().GetResult();
+                                    form.Close();
+                                }
+                            } catch (Exception ex) {
+                                failure = failure == null ? ex : new AggregateException("Modal inspection and cleanup failed.", failure, ex);
+                                // A timed-out test-owned modal must release its message
+                                // loop so the caller can cancel and drain its own fixtures.
+                                try { form.Dispose(); }
+                                catch (Exception dispose) { failure = new AggregateException("Modal fixture disposal failed.", failure, dispose); }
+                            }
+                        }
+                    }
                 };
                 timer.Start();
                 var routes = (Dictionary<string, Button>)Field(main, "navigation");

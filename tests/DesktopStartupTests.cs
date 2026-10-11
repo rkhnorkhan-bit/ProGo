@@ -142,24 +142,42 @@ namespace ProGo
                 using (var bridge = new CliProxyBridgeService(settings)) using (var relay = new Ikev2RelayService())
                 using (var home = new HomeVpnService(relay)) using (var clipboard = new ClipboardService(settings))
                 using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false)) {
+                    context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow");
+                    SettingsModalInspectionFailure(context, main, settings);
                     var start = proxy.StartTunnelAsync(System.Threading.CancellationToken.None); PumpUntil(() => start.IsCompleted);
                     Check(start.Result && proxy.CurrentPid.HasValue, "settings reconnect regression starts an actual owned SOCKS child");
-                    int firstPid = proxy.CurrentPid.Value; context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow");
+                    int firstPid = proxy.CurrentPid.Value;
                     var gate = Field(proxy, "gate");
                     foreach (bool stopped in new[] { false, true }) {
                         if (stopped) { var stop = proxy.StopTunnelAsync(); PumpUntil(() => stop.IsCompleted); Check(stop.Result, "explicit stop settles the owned child before changing settings"); }
                         var next = Occupy(0); int nextPort = Number(next); next.Stop();
                         using (var entered = new System.Threading.ManualResetEventSlim()) using (var release = new System.Threading.ManualResetEventSlim()) {
-                            var held = System.Threading.Tasks.Task.Run(delegate { lock (gate) { entered.Set(); release.Wait(5000); } });
+                            int gateExpired = 0;
+                            var held = System.Threading.Tasks.Task.Run(delegate {
+                                lock (gate) {
+                                    entered.Set();
+                                    if (!release.Wait(5000)) System.Threading.Interlocked.Exchange(ref gateExpired, 1);
+                                }
+                            });
                             PumpUntil(() => entered.IsSet);
                             try {
                                 Check(!proxy.CurrentPid.HasValue && !proxy.IsConnecting && proxy.ConnectionRequested == !stopped,
                                     "busy process snapshot stays distinct from immediate user connection intent: " + stopped);
                                 CheckModal(context, main, "settings", "settings", delegate(Form dialog) {
+                                    var form = (SshProfilesSettingsForm)dialog;
                                     ((NumericUpDown)Field(dialog, "port")).Value = nextPort;
                                     var watch = Stopwatch.StartNew(); ((Button)dialog.AcceptButton).PerformClick();
-                                    Check(watch.ElapsedMilliseconds < 400 && dialog.DialogResult == DialogResult.OK && settings.Current.SocksPort == nextPort,
-                                        "actual settings save completes while background ownership is busy: " + stopped);
+                                    watch.Stop(); var save = form.SaveWork;
+                                    Check(watch.ElapsedMilliseconds < 400 && save != null && Object.ReferenceEquals(save, context.SettingsWork),
+                                        "actual settings Save dispatch stays responsive and tracks its owner operation: " + stopped);
+                                    PumpUntil(() => save.IsCompleted && !form.IsSavePending);
+                                    bool gateAvailable = System.Threading.Monitor.TryEnter(gate);
+                                    if (gateAvailable) System.Threading.Monitor.Exit(gate);
+                                    Check(save.GetAwaiter().GetResult() == null && !context.SettingsPending &&
+                                        dialog.DialogResult == DialogResult.OK && settings.Current.SocksPort == nextPort &&
+                                        proxy.ConnectionRequested == !stopped && !release.IsSet && !held.IsCompleted && !gateAvailable &&
+                                        System.Threading.Volatile.Read(ref gateExpired) == 0,
+                                        "actual asynchronous settings save completes while background ownership remains busy: " + stopped);
                                 });
                                 Check(proxy.ConnectionRequested == !stopped, "settings preserves the original user connection request without waiting for a PID: " + stopped);
                             } finally { release.Set(); PumpUntil(() => held.IsCompleted); }
@@ -181,6 +199,56 @@ namespace ProGo
                     main.Close();
                 }
             } finally { settings.Save(before); }
+        }
+        private static void SettingsModalInspectionFailure(UpdateAwareTrayApplicationContext context, MainWindow main, SettingsService settings)
+        {
+            foreach (bool stalled in new[] { false, true }) {
+                var failure = new Exception("Expected modal inspection failure: " + stalled);
+                Exception observed = null; SshProfilesSettingsForm form = null;
+                var completion = new System.Threading.Tasks.TaskCompletionSource<SettingsSaveError>();
+                var token = System.Threading.CancellationToken.None;
+                var snapshot = settings.Capture(); var bytes = File.ReadAllBytes(AppPaths.SettingsPath);
+                var handlers = Field(context, "CommandStateChanged"); int ticks = 0;
+                var watch = Stopwatch.StartNew();
+                using (var heartbeat = new System.Windows.Forms.Timer { Interval = 15 }) {
+                    heartbeat.Tick += delegate {
+                        if (!token.IsCancellationRequested) return;
+                        ticks++;
+                        if (!stalled && ticks >= 3) completion.TrySetResult(new SettingsSaveError(SettingsField.General, "Fixture save cancelled"));
+                    };
+                    heartbeat.Start();
+                    try {
+                        CheckModal(context, main, "settings", "settings", delegate(Form dialog) {
+                            form = (SshProfilesSettingsForm)dialog;
+                            form.SaveRequestedAsync = delegate(SettingsApplyRequest request, System.Threading.CancellationToken cancellation) {
+                                token = cancellation; return completion.Task;
+                            };
+                            ((Button)form.AcceptButton).PerformClick();
+                            Check(Object.ReferenceEquals(form.SaveWork, completion.Task) && form.IsSavePending && !completion.Task.IsCompleted,
+                                "inspection failure fixture starts a real modal pending Save: " + stalled);
+                            throw failure;
+                        });
+                    } catch (Exception ex) { observed = ex; }
+                    finally {
+                        heartbeat.Stop();
+                        // A deliberately stalled synthetic save has no worker; settle
+                        // its tracked task after the helper's bounded disposal path.
+                        completion.TrySetResult(new SettingsSaveError(SettingsField.General, "Fixture save cancelled"));
+                        if (form != null && !form.IsDisposed) form.Dispose();
+                        if (form != null) PumpUntil(() => !form.IsSavePending);
+                    }
+                }
+                var aggregate = observed as AggregateException;
+                var errors = aggregate == null ? null : aggregate.Flatten().InnerExceptions;
+                Check((stalled ? errors != null && errors.Count == 2 && errors.Any(e => Object.ReferenceEquals(e, failure)) &&
+                    errors.Any(e => e.Message == "UI fixture deadline") && watch.ElapsedMilliseconds >= 5000 :
+                    Object.ReferenceEquals(observed, failure)) && token.IsCancellationRequested && ticks >= 3 &&
+                    watch.ElapsedMilliseconds < 7000 && completion.Task.IsCompleted && form != null && form.IsDisposed && !form.IsSavePending,
+                    "modal inspection failure preserves its error and exits after cancellation or bounded stalled-save disposal: " + stalled);
+                Check(settings.Revision == snapshot.Revision && bytes.SequenceEqual(File.ReadAllBytes(AppPaths.SettingsPath)) &&
+                    Object.Equals(handlers, Field(context, "CommandStateChanged")),
+                    "failed modal inspection preserves saved settings and releases its route subscription: " + stalled);
+            }
         }
         private static void AsyncStopUiHeartbeat(SettingsService settings)
         {
