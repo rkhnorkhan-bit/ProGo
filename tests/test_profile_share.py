@@ -5,6 +5,7 @@ import hashlib
 import http.client
 import importlib.util
 import json
+import os
 import pathlib
 import plistlib
 import tempfile
@@ -15,9 +16,6 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('profile_share', REPO / 'server/profile_share.py')
 share = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(share)
-sync_spec = importlib.util.spec_from_file_location('profile_share_setup', REPO / 'server/profile_share_setup.py')
-sync = importlib.util.module_from_spec(sync_spec)
-sync_spec.loader.exec_module(sync)
 
 
 class ProfileShareTest(unittest.TestCase):
@@ -38,7 +36,16 @@ class ProfileShareTest(unittest.TestCase):
     def write_settings(self):
         # The production publisher replaces the file atomically. Truncating it
         # in this fixture races the live cleaner and tests a different writer.
-        sync.write(self.path, json.dumps(self.settings), 0o600)
+        # Linux ownership and flock remain covered by test_profile_share_sync.
+        descriptor, name = tempfile.mkstemp(prefix='.' + self.path.name + '.', dir=self.path.parent)
+        staging = pathlib.Path(name)
+        try:
+            with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
+                stream.write(json.dumps(self.settings))
+                stream.flush()
+            os.replace(staging, self.path)
+        finally:
+            staging.unlink(missing_ok=True)
 
     def tearDown(self):
         self.server.shutdown(); self.server.server_close(); self.thread.join()
