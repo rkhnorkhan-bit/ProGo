@@ -38,7 +38,7 @@ namespace ProGo
                 }
                 token = File.ReadAllText(args[0]); work = Path.GetFullPath(args[1]); Directory.CreateDirectory(work);
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
-                RoundTrip(); MalformedSource(); ResourceAndSnapshotGuards(); AuthenticatedInvalidPayload(); NativeWorkflow(); ContextWorkflow();
+                ChildInputVectors(); RoundTrip(); MalformedSource(); ResourceAndSnapshotGuards(); AuthenticatedInvalidPayload(); NativeWorkflow(); ContextWorkflow();
                 Console.WriteLine("NOT_CHECKED: portable import under another Windows account or on another PC");
                 Console.WriteLine("Portable Home VPN tests PASS: " + passed); return 0;
             } catch (Exception ex) { Console.WriteLine("FAIL: " + ex.GetType().Name + ": " + ex.Message); return 1; }
@@ -47,7 +47,7 @@ namespace ProGo
         {
             string phase = "stdin"; byte[] password = null;
             try {
-                string input = Console.ReadLine();
+                string input = ReadChildInput(Console.OpenStandardInput());
                 if (String.IsNullOrEmpty(input)) {
                     Console.Error.WriteLine("PORTABLE_CHILD_FAILURE phase=stdin/error=empty-input"); return 1;
                 }
@@ -63,6 +63,30 @@ namespace ProGo
                     : ex is UnauthorizedAccessException ? "access" : ex is CryptographicException ? "crypto" : "other";
                 Console.Error.WriteLine("PORTABLE_CHILD_FAILURE phase=" + phase + "/error=" + kind); return 1;
             } finally { if (password != null) Array.Clear(password, 0, password.Length); }
+        }
+        private static string ReadChildInput(Stream input)
+        {
+            // The console-less child cannot assume its Console.In encoding matches the parent's writer.
+            using (var reader = new StreamReader(input, Utf8, true)) return reader.ReadLine();
+        }
+        private static void ChildInputVectors()
+        {
+            string expected = Utf8.GetString(Password);
+            var utf8Bom = new UTF8Encoding(true, true).GetPreamble();
+            var utf16 = new UnicodeEncoding(false, true, true);
+            Check(ReadChildInput(new MemoryStream(Password)) == expected, "child input preserves the no-BOM UTF8 fixture");
+            Check(ReadChildInput(new MemoryStream(utf8Bom.Concat(Password).ToArray())) == expected,
+                "child input consumes a UTF8 transport preamble without changing the password");
+            Check(ReadChildInput(new MemoryStream(utf16.GetPreamble().Concat(utf16.GetBytes(expected)).ToArray())) == expected,
+                "child input detects UTF16 transport before decoding the fixture");
+            Check(ReadChildInput(new MemoryStream(utf8Bom)) == null, "UTF8 preamble alone is stdin EOF");
+            Check(ReadChildInput(new MemoryStream(utf16.GetPreamble())) == null, "UTF16 preamble alone is stdin EOF");
+            Check(ReadChildInput(new MemoryStream(new byte[0])) == null, "empty byte stream is stdin EOF");
+            string wrong = "fixture-password-secret-unrelated";
+            Check(ReadChildInput(new MemoryStream(utf8Bom.Concat(Utf8.GetBytes(wrong)).ToArray())) == wrong,
+                "transport decoding does not replace a wrong password with the valid fixture");
+            Check(ReadChildInput(new MemoryStream(utf8Bom.Concat(Utf8.GetBytes(expected + "\r\n")).ToArray())) == expected,
+                "child input removes the line terminator only after transport decoding");
         }
         private sealed class ChildCapture { internal string Text; internal bool Truncated; }
         private sealed class ChildResult

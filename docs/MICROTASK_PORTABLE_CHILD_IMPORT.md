@@ -31,10 +31,34 @@ absent; existing-target refusal preserves every original byte. The successful
 child still must agree with the independently imported DPAPI destination.
 
 Application archive code and the existing cryptographic/deadline conditions
-are unchanged in this diagnostic patch. Independent source review and local
-whitespace checks pass. Native compilation, the new regressions and the actual
-failed operand remain **NOT_CHECKED** until the fresh Windows run. This step
-does not yet claim an application defect or a completed import fix.
+are unchanged in this patch. Independent source review and local whitespace
+checks pass. This step does not claim a production archive defect.
+
+## First native diagnostic and correction
+
+[Run 38167482711](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38167482711)
+tested functional head `8453e9e97d50fce71c4553e63371577210b91a07` through merge
+`ed2bab8d395ec2a2ffcad8bb90f7e8e3bd50acb4`. Windows compilation, VaultRead
+(165), daily policy (134), desktop (3485), full Test-ProGo and Home VPN (975)
+passed. Windows job `114552949650` then failed the new EOF check at 19:30:34 UTC:
+exit=1, no success marker, zero stdout characters, 53 stderr characters,
+no truncation, fixed phase/type `prepare/portable`. Server job `114552949771`
+passed. Later portable and Windows Python discovery were not reached; release
+scan/packing/uploads were skipped.
+
+The parent writes no password line for this case, yet the child crossed its
+empty-input guard. This establishes a stdin/EOF fixture transport discrepancy.
+The exact runtime code pages and transported bytes were not observed; a
+specific byte sequence is not claimed as the native cause.
+
+The correction reads the child's private stdin stream with a BOM-aware
+StreamReader and UTF8 fallback, without changing Console.InputEncoding or
+requiring a console handle. Eight memory vectors cover no-BOM UTF8, UTF8/UTF16
+preambles, preamble-only EOF, empty EOF, a wrong literal and line termination.
+The actual console-less child, original success requirements and all negative
+destination-preservation checks remain mandatory. This is a test transport
+helper, not a new production password decoding policy. Fresh native validation
+of this correction is **PENDING**.
 
 ## Scope
 
