@@ -317,6 +317,22 @@ try {
     }
     if ($VaultDailyProcess.ExitCode -ne 0) { Fail 'Vault daily policy tests failed' }
 } finally { $VaultDailyProcess.Dispose() }
+$VaultDailyRecordHarness = Join-Path $Root 'build\VaultDailyRecordTests.exe'
+# This guarded record harness uses only memory and native CurrentUser DPAPI.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyRecordTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyRecordHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'tests\VaultDailyRecordTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily record harness build failed' }
+$VaultDailyRecordInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyRecordInfo.FileName = $VaultDailyRecordHarness
+$VaultDailyRecordInfo.UseShellExecute = $false
+$VaultDailyRecordProcess = [System.Diagnostics.Process]::Start($VaultDailyRecordInfo)
+try {
+    if (-not $VaultDailyRecordProcess.WaitForExit(90000)) {
+        $VaultDailyRecordProcess.Kill()
+        [void]$VaultDailyRecordProcess.WaitForExit(5000)
+        Fail 'Vault daily record harness exceeded its process deadline'
+    }
+    if ($VaultDailyRecordProcess.ExitCode -ne 0) { Fail 'Vault daily record tests failed' }
+} finally { $VaultDailyRecordProcess.Dispose() }
 & $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\BoundedLog.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "src\DiagnosticProcess.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
