@@ -190,3 +190,45 @@ native PASS этих fixtures и desktop suite не закрывает цели�
 запускает свои 20 секунд раньше операции, которой тоже предоставлены 20 секунд.
 Возможный дефект обработки большого stdout приложением пока не доказан.
 Общее ограничение CI-процессов остаётся отдельным follow-up.
+
+## Контрольная точка 04 — ограничение SSH stdout до завершения команды
+
+Код: **`f3ad1c4458d86b4a96f6807ed94be75fd7ae8b43`**,
+[черновик PR #88](https://github.com/rkhnorkhan-bit/ProGo/pull/88).
+[Запуск 38156158147](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38156158147)
+проверил synthetic PR merge `27fba56ac9c2d9b84326deda8ca84d12ff18acbd`,
+включающий этот head и baseline `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Windows C# compilation | PASS | Native job `114519455884` |
+| Точные 32/64 КиБ без newline, исходные UTF-8 bytes | PASS | Две native boundary cases, 16:47:00–16:47:01 UTC |
+| Превышение на один байт, ограниченный файл, завершение live descendant | PASS | Обе boundary cases, 16:47:00–16:47:02 UTC; прямой transport timeout не может пройти assertion типа ошибки |
+| Настоящие console stdin/stderr handles и UI heartbeat | PASS | `GetConsoleCP`, `GetConsoleMode`, native ticks; реальный интерактивный VPS-вход этим не проверяется |
+| Миллион символов: revoke/repair/share | PASS | 16:47:06–16:47:07 UTC; отказ раньше десятисекундного SSH deadline, без его расширения |
+| AcceptedCancellation и итоговые owner checks | PASS | 16:47:07 UTC; unrelated process сохранён, private dispatch work очищен |
+| Весь DesktopTests / весь Test-ProGo.ps1 | PASS / PASS | 3485 checks в 16:42:37 UTC; итоговый `ProGo tests PASS` в 16:45:03 UTC |
+| Общий Windows CI | FAIL | Поздний `HomeVpnShareRecoveryTests.RecoverForm("complete", false, false)`: `HTTPS native fixture failed`, 16:47:52 UTC; inner exception в логе скрыт |
+| Остаток HTTPS/wizard, portable harness, Windows Python relay integration | NOT_CHECKED | Не достигнуты после этого отказа |
+| Финальный public release-content scan, pack/upload | SKIPPED | Local public-source scan отдельно PASS; цельного принятого installer нет |
+| Изолированный VPN server CI | PASS | Job `114519456030` |
+| Native screenshots / diagnostics | UPLOADED | Artifacts `11709315308` / `11708374771`; новая визуальная приёмка не выполнялась |
+| Пользовательская установка, ПК/VPS | PENDING / NOT_CHECKED | Отложены до цельной сборки |
+
+Микрозадача устраняет доказанное отсутствие раннего output-cap. Точная причина
+прежних 20 секунд ожидания не заявляется установленной. Исторический **22/31**
+остаётся неизменным; весь F20/F31 и другие полные пункты этим не закрываются.
+Следующий отдельный блокер — завершение успешного HTTPS recovery-диалога и
+предикат его fixture. Два предыдущих сценария с ошибками проверки/сохранения
+прошли; `ConfirmedCleanupFailure`, `DisposedVerification` и `ProofAndStorage`
+после успешного recovery ещё не выполнялись.
+
+Ближайший путь к двум дополнительным завершённым Code/Dev-пунктам — **F09**
+(совместимость настоящего vault, честные ошибки, суточное ложное состояние,
+атомарное сохранение и expiry вне UI) и **F22** (полный runtime repair и
+защищённый перенос на dev-стенде между разными Windows-пользователями).
+Существующий portable child использует тот же пользовательский token и сам
+по себе не доказывает перенос между пользователями. Repair пока не восстанавливает
+`InstalledUpdateTransport.cs`, `UpdateInstallSession.cs` и `scripts/home-vpn/*`;
+пропущенные источники и проверка одного exe не подтверждают полный repair.
+Эти остатки требуют самостоятельных микрозадач и проверок; **24/31 пока нет**.
