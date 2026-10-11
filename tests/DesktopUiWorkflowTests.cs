@@ -188,23 +188,55 @@ namespace ProGo
             var root = System.IO.Path.Combine(BackupService.BackupsRoot, "command-cancel-" + Guid.NewGuid().ToString("N"));
             System.IO.Directory.CreateDirectory(root);
             var settingsBytes = System.IO.File.ReadAllBytes(AppPaths.SettingsPath);
+            var previousRestore = context.RestoreWork;
+            var previousChoose = context.RestoreChoose;
+            var previousLaunch = context.RestoreLaunchInfo;
+            int nextStages = 0;
+            context.RestoreChoose = delegate { nextStages++; return null; };
+            context.RestoreLaunchInfo = delegate { Interlocked.Increment(ref nextStages); throw new Exception("Cancelled chooser must not launch restore"); };
             try {
                 CloseServiceDialog(items.Single(i => (AppCommand)i.Tag == AppCommand.RestoreBackup), typeof(BackupPickerForm), delegate(Form form) {
-                    Check(form.CancelButton != null, "catalogued restore opens the cancellable backup chooser before maintenance");
+                    Check(form.CancelButton != null && context.IsBackupRunning && context.RestoreWork != null &&
+                        !Object.ReferenceEquals(previousRestore, context.RestoreWork) && !context.RestoreWork.IsCompleted,
+                        "catalogued restore opens its cancellable chooser while a new asynchronous operation is tracked");
                 });
+                var restore = context.RestoreWork;
+                PumpUntil(() => restore.IsCompleted && !context.IsBackupRunning);
+                restore.GetAwaiter().GetResult();
+                Check((bool)Field(context, "lastBackupCancelled") && !(bool)Field(context, "lastBackupFailed") &&
+                    Field(context, "backupDialog") == null && nextStages == 0,
+                    "cancelled tray chooser settles its actor without preparing or launching a restore");
                 Check(!((bool)Field(context, "shutdownPrepared")) && ((NotifyIcon)Field(context, "tray")).Visible &&
                     settingsBytes.SequenceEqual(System.IO.File.ReadAllBytes(AppPaths.SettingsPath)) && System.IO.Directory.Exists(root),
                     "cancelled catalogued restore leaves settings, backup and application intact");
+                var progress = (BackupWorkProgressForm)Field(context, "backupActivityForm");
+                Check(progress != null && !progress.IsBusy && progress.CancelButton != null,
+                    "cancelled tray restore exposes a completed progress window that can be closed");
+                ((Button)progress.CancelButton).PerformClick(); Application.DoEvents();
+                Check(progress.IsDisposed && Field(context, "backupActivityForm") == null,
+                    "closing completed restore progress releases its window before the next tray dialog");
                 CloseServiceDialog(items.Single(i => (AppCommand)i.Tag == AppCommand.ExportDiagnostics), typeof(DiagnosticPreviewForm), delegate(Form form) {
                     Check(form.AcceptButton == null && Descendants(form).OfType<TextBox>().Single().ReadOnly,
                         "catalogued diagnostic export opens review without implicit Enter export");
                 });
                 Check(settingsBytes.SequenceEqual(System.IO.File.ReadAllBytes(AppPaths.SettingsPath)), "closing catalogued report does not write preferences");
-            } finally { System.IO.Directory.Delete(root, true); }
+            } finally {
+                try {
+                    var restore = context.RestoreWork;
+                    if (restore != null && !Object.ReferenceEquals(previousRestore, restore)) {
+                        if (!restore.IsCompleted) Call(context, "CancelBackup");
+                        PumpUntil(() => restore.IsCompleted && !context.IsBackupRunning);
+                    }
+                    System.IO.Directory.Delete(root, true);
+                } finally {
+                    context.RestoreChoose = previousChoose; context.RestoreLaunchInfo = previousLaunch;
+                }
+            }
         }
         private static void CloseServiceDialog(ToolStripItem command, Type expected, Action<Form> inspect)
         {
             bool seen = false; Exception failure = null;
+            Check(command.Enabled, "tray dialog command is enabled before dispatch: " + command.Tag);
             using (var timer = new System.Windows.Forms.Timer { Interval = 150 }) {
                 timer.Tick += delegate {
                     var form = Application.OpenForms.Cast<Form>().FirstOrDefault(f => expected.IsInstanceOfType(f));
@@ -215,6 +247,9 @@ namespace ProGo
                     finally { form.DialogResult = DialogResult.Cancel; form.Close(); }
                 };
                 timer.Start(); command.PerformClick();
+                // Restore dispatch returns before the background list read and
+                // modal chooser. Keep the timer and UI pump alive until it appears.
+                PumpUntil(() => seen);
             }
             if (failure != null) throw failure;
             Check(seen, "real tray command dispatches its expected dialog: " + command.Tag);
