@@ -157,3 +157,36 @@ application code. Она прошла свои native checks, но не закр
 меняет исторические **22/31**. Следующий отдельный шаг — проверка сохранения
 настроек при занятом фоновом владельце и корректный выход modal fixture при
 отказе. Завершение CI после failure требует отдельного ограниченного исправления.
+
+## Контрольная точка 03 — асинхронное сохранение и выход modal fixture
+
+Код: **`be52b781938c14a6a5b748ea74a89ef7b3393ec1`**,
+[черновик PR #88](https://github.com/rkhnorkhan-bit/ProGo/pull/88).
+[Запуск 38153684615](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38153684615):
+CI проверял synthetic PR merge **`406a08b33c2a17730ad8ef374a127061d9382b74`**,
+объединяющий указанный head с baseline `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Windows C# compilation | PASS | Native job `114512152421` |
+| Ошибка inspection при pending Save: отмена, task/UI settlement, повторное закрытие, исходное исключение | PASS | Native regression, 16:07:29 UTC |
+| Намеренно незавершающийся synthetic Save: пятисекундный timeout, сохранность обеих ошибок, bounded Dispose modal, последующее settlement | PASS | Native regression, 16:07:30–16:07:35 UTC |
+| Неизменность settings bytes/revision и снятие route subscription после обоих отказов | PASS | Native failure-path checks |
+| Save dispatch <400 ms; async acceptance при удерживаемом исходном proxy gate | PASS | Оба случая `stopped=false/true`, 16:07:37–16:07:40 UTC; UI deadline и gate wait не увеличены |
+| Новый PID/порт после reconnect; explicit Stop не восстанавливается сохранением | PASS | Native checks, 16:07:39–16:07:41 UTC |
+| Весь DesktopTests | PASS | 3485 checks, 16:08:00 UTC |
+| Весь Test-ProGo.ps1, включая Instance/Maintenance/Shutdown/UpdatePackage | PASS | Итоговый `ProGo tests PASS`, 16:10:57 UTC; после desktop больше нет прежнего NOT_CHECKED |
+| Общий Windows CI | FAIL | Поздний `Test-HomeVpnRelay.ps1 -> HomeVpnOwnerWaitingTests`, сценарий `Outputs(): oversized/revoke`: `Owner native UI controller failed`, 16:13:59 UTC |
+| Оставшийся хвост wizard после owner fixture, portable harness, Windows Python relay integration | NOT_CHECKED | Не достигнуты после указанного отказа |
+| Финальный public release-content scan, pack/upload | SKIPPED | Не выполнялись после позднего отказа; local source scan отдельно PASS |
+| Изолированный VPN server CI | PASS | Job `114512152566` |
+| Новый installer / пользовательская установка | PENDING / NOT_CHECKED | Полный пакет всех 31 ещё не готов; пользовательская среда не проверялась |
+
+Микрозадача меняет только ожидание async Save и cleanup тестового modal, без
+изменения application code. Прежние исторические **22/31** не пересчитываются:
+native PASS этих fixtures и desktop suite не закрывает целиком F01–F31.
+Следующий отдельный шаг — установить причину отказа `oversized/revoke` и состояние
+его task/process cleanup. Уже подтверждено пересечение бюджетов: controller
+запускает свои 20 секунд раньше операции, которой тоже предоставлены 20 секунд.
+Возможный дефект обработки большого stdout приложением пока не доказан.
+Общее ограничение CI-процессов остаётся отдельным follow-up.

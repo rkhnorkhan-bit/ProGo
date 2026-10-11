@@ -17,8 +17,14 @@ Two native regressions inject an inspection failure into a real modal settings f
 ## Evidence
 
 - Source review, whitespace checks and public-content scan: PASS.
-- Windows C# compilation and targeted native fixtures: pending CI.
-- Full Windows and isolated VPN server CI: pending CI; the previous candidate did not pass.
+- Windows C# compilation and targeted native fixtures: PASS. Both inspection-error paths passed, including exactly preserved original error plus the expected five-second cleanup deadline for the stalled save. Real asynchronous saves passed while the original proxy gate was still held for both connection-intent cases. Reconnect to the new port and no revival after explicit Stop passed.
+- Full desktop suite: PASS, 3485 checks. The complete `Test-ProGo.ps1` step also passed, including the subsequent instance, maintenance, shutdown and update-package checks that lacked completion evidence in the previous run.
+- Full Windows job: FAIL later in `Test-HomeVpnRelay.ps1 -> HomeVpnOwnerWaitingTests`, at `Owner native UI controller failed`. The failing scenario is `Outputs(): oversized/revoke`, whose fixture writes 1,000,000 characters without a newline. The controller's 20-second deadline starts before the operation's own 20-second timeout, so it can interrupt timeout settlement. The log does not establish whether oversized-output handling also has an application defect; that requires a separate microtask.
+- Isolated VPN server CI: PASS.
+- Final public release-content scan, release packing and release upload: SKIPPED after the VPN wizard failure. Local source-content scan passed; no new installer is accepted by this checkpoint.
+- Remaining wizard scenarios after the failed owner fixture, portable harness and Windows Python relay integration: NOT_CHECKED in this run.
 - User PC/VPS and installed application: NOT_CHECKED, deferred until the complete test installer.
 
 No F01–F31 acceptance status is closed by this test correction. Historical 22/31 remains the evidence baseline. Other prepared microtasks, including general CI process bounding, remain outside this checkpoint.
+
+Verified code: `be52b781938c14a6a5b748ea74a89ef7b3393ec1` in [draft PR #88](https://github.com/rkhnorkhan-bit/ProGo/pull/88). CI checked synthetic PR merge `406a08b33c2a17730ad8ef374a127061d9382b74`, which combines that head with baseline `4bb336575bb1216d3047bd2b294aeecad9fdd65a`. Evidence: [CI run 38153684615](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38153684615), Windows job `114512152421`, server job `114512152566`. Target fixtures passed at 16:07:29–16:07:41 UTC; desktop completed at 16:08:00 UTC; `Test-ProGo` completed at 16:10:57 UTC. The later VPN wizard failure was reported at 16:13:59 UTC. Full-candidate success is not claimed. The next separate microtask should expose the owner operation's exact failure and settlement state before changing its deadline or application code.
