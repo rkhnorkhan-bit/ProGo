@@ -29,7 +29,20 @@ inferred from the old combined assertion.
 
 - Two independent source reviews: PASS; every former condition and deadline is retained.
 - Local `git diff --check`: PASS.
-- Fresh native locked-cleanup proof and remaining suites: pending CI.
+- Native proof: PASS in [CI 38164605392](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38164605392),
+  Windows job `114544444410`, functional head `00915014df63213524ee793daa2d0a0eec8c852c`.
+  Micro07 code is `3c24eaccf5020bfd3450a001710c3b5e2277a713`; the tested synthetic
+  merge is `e4098fdbc1d70cb823c5f4b2d79d61af020b3636` against main `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+  All four named checks passed at 18:49:01 UTC: pending ticks 32, settlement
+  1034 ms, original checked duration 1039 ms (<2500), proof/journal/inputs/helper/
+  origin retained, no replay, verify/save zero, safe UI and no false completion.
+- Subsequent disposed-verification, proof/storage, HTTP, wizard and setup-recovery
+  checks executed successfully; the full Home VPN harness passed 975 checks.
+- Full Windows candidate: FAIL later in portable RoundTrip, after 14 portable
+  checks passed. The combined child-import assertion does not expose which
+  operand failed; its cause is not inferred from this cleanup proof.
+- Later portable cases and Windows Python discovery: NOT_CHECKED. Final public
+  release-content scan, packaging and release uploads: SKIPPED.
 - User PC/VPS and installed application: NOT_CHECKED.
 
 Historical 22/31 is unchanged; no full F-point or installer is accepted here.

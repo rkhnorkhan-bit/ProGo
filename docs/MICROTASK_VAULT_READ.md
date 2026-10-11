@@ -82,3 +82,32 @@ Existing desktop fixtures remain a separate integration check.
   will collect fresh Windows CI evidence for the bundled microtasks.
 - Daily persistence, restart/midnight ownership, UI async and stale-save
   revisions remain outside this step. F09 and the 31-point plan remain open.
+
+## Fresh native validation
+
+[CI 38164605392](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38164605392)
+tested functional head `00915014df63213524ee793daa2d0a0eec8c852c` through synthetic
+merge `e4098fdbc1d70cb823c5f4b2d79d61af020b3636` with baseline main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+- .NET Framework C#5 application and harness compilation: PASS.
+- Guarded vault reader harness: **165 PASS**, Windows job `114544444410`,
+  18:38:14 UTC. The actual Windows read lock and denied atomic replacement both
+  executed. Fixed ASCII/Unicode vectors, canonical fields, malformed Unicode,
+  bounded KDF child, static failure messages, source preservation, exclusive
+  Create and legacy Create/Save/Open all passed.
+- Actual desktop integration: **3485 PASS**, including existing vault atomic/UI
+  fixtures. The entire `Test-ProGo.ps1` passed at 18:46:26 UTC.
+- Bundled micro07 and the entire Home VPN harness: PASS, 975 checks. Isolated
+  server job `114544444301`: PASS.
+- Full Windows CI: FAIL later at portable separate-process import. The child
+  assertion's failed operand is not logged; no cause is attributed to this
+  reader. Remaining portable scenarios and Windows Python tests: NOT_CHECKED;
+  final public release scan/packaging/uploads: SKIPPED.
+- Local public-source scan: PASS, 210 sources, zero release files. This does not
+  replace the skipped release-content scan.
+
+Two independent source reviews and an independent final CI evidence review
+passed. Screenshots were uploaded, without a new visual acceptance claim.
+Historical 22/31 remains unchanged. Full daily F09, complete installer and user
+PC/VPS acceptance remain pending; no user environment was inspected.

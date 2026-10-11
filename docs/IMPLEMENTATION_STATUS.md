@@ -320,6 +320,46 @@ RecoverForm сохранил `qr.example.org`. Reset не восстанавли
 отказом не подтверждён. Подробнее:
 [MICROTASK_HTTPS_FINALIZATION.md](MICROTASK_HTTPS_FINALIZATION.md).
 
+## Контрольная точка 07–08 — очистка HTTPS и безопасное чтение vault
+
+Пакет из двух микрозадач: код **`00915014df63213524ee793daa2d0a0eec8c852c`**,
+включает micro07 **`3c24eaccf5020bfd3450a001710c3b5e2277a713`**.
+[CI 38164605392](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38164605392)
+проверил merge **`e4098fdbc1d70cb823c5f4b2d79d61af020b3636`** с main
+**`4bb336575bb1216d3047bd2b294aeecad9fdd65a`**. Результаты независимо сверены
+по завершённым журналам и состоянию jobs.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Windows compilation и отдельный vault harness | PASS | 165 checks, job `114544444410`, 18:38:14 UTC; прежние ASCII/Unicode PIN и v1, повреждения/лимиты/ошибки, реальные read/replace locks, эксклюзивный Create и неизменность файлов |
+| Desktop и полный `Test-ProGo.ps1` | PASS | 3485 desktop checks в 18:43:48; полный script PASS в 18:46:26, включая Instance/Maintenance/Shutdown/UpdatePackage |
+| Controller, PendingGate и 12 RecoverForm | PASS | Обе вложенные UI-pump регрессии, exact-once и все 12 recovery scenarios на этом же кандидате |
+| Micro07: locked HTTPS cleanup | PASS | Все четыре строгие проверки в 18:49:01; `pendingTicks=32`, `settledMs=1034`, исходный `checkedMs=1039<2500`; proof/journal/inputs/helper/origin сохранены, verify/save=0, noReplay и safe UI |
+| Хвост HTTPS/HTTP/wizard/SetupRecovery | PASS | Disposed verification в двух вариантах, proof/storage и остальные сценарии; весь Home VPN harness — 975 checks, 18:49:17 |
+| Portable | FAIL после 14 PASS | 18:49:32: составная проверка импорта отдельным процессом с паролем через stdin; нарушенный операнд и причина по журналу не установлены |
+| Хвост portable и Windows Python relay discovery | NOT_CHECKED | Child-data comparison, installed reload, tamper/length/password checks и последующие portable suites не выполнены после отказа |
+| Общий Windows CI / изолированный server CI | FAIL / PASS | Jobs `114544444410` / `114544444301`; частичные успехи не означают PASS общего кандидата |
+| Public release scan, упаковка, release uploads | SKIPPED | Windows остановился до этих шагов; отдельный локальный source scan PASS: 210 sources, 0 release files |
+| Снимки и диагностика | Загружены | 277 screenshots, artifact `11711099065`; diagnostics `11711971245`. Новая визуальная приёмка не заявляется |
+| Полный installer / пользовательские ПК/VPS | PENDING / NOT_CHECKED | Пакет всех 31 ещё не готов; среда владельца не проверялась |
+
+Micro07 исправляет независимый baseline теста и его безопасную диагностику,
+сохраняя все исходные условия и сроки. Micro08 отделяет mismatch MAC от I/O,
+JSON, структуры и неподдерживаемых параметров, ограничивает чтение до KDF,
+исключает implicit Create при чтении и перезапись существующего файла при
+явном Create. Writer/KDF/Unicode PIN сохранены; casing aliases и ошибочные
+Unicode escapes проверены отдельными authenticated fixtures.
+
+Это первый участок F09: суточный ложный PIN, отдельные ложные данные,
+рестарт/полночь и асинхронный UI ещё предстоят. Перенос под другим Windows
+пользователем/на другой ПК тоже не подтверждён. Целевые micro07/micro08 имеют
+native PASS, но полные F09/F22 не закрыты; история **22/31** неизменна.
+Следующий небольшой пакет должен разобрать фактический отказ child-import
+без предположений по составной assertion и продолжить отдельные части F09.
+
+Подробности: [MICROTASK_HTTPS_CLEANUP_BASELINE.md](MICROTASK_HTTPS_CLEANUP_BASELINE.md)
+и [MICROTASK_VAULT_READ.md](MICROTASK_VAULT_READ.md).
+
 Targeted native micro05/06 теперь **PASS**, общий Windows-кандидат остаётся
 **FAIL**. Исторические **22/31** неизменны; **24/31 пока нет**. Полные F-пункты
 и цельный installer не закрыты. F09/F22 по-прежнему требуют собственной реализации.
