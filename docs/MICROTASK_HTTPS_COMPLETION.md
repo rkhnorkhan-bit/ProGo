@@ -32,7 +32,7 @@ claim direct observation of the configuration handler's private final task or
 cancellation-source disposal. Production dispatcher disposal settles queued
 callbacks when the fixture closes.
 
-## Evidence
+## Evidence at the original microtask 05 checkpoint
 
 - Two independent source reviews: PASS. Whitespace and public-content scan: PASS.
 - Windows compilation: PASS. Code head
@@ -61,7 +61,7 @@ Historical 22/31 is unchanged. No complete F01–F31 point or new installer is
 accepted by this test correction. Other changes and F09/F22 implementation
 remain separate microtasks.
 
-## Next isolated blocker
+## Next isolated blocker at that checkpoint
 
 `PendingGate` publishes the same reopened-form assertion three times in
 33 milliseconds. Its settled callback pumps `Application.DoEvents`, while
@@ -72,3 +72,20 @@ proven by a stack trace. The next microtask must make finalization single-entry,
 preserve failure cleanup if settled inspection throws, and prove those paths
 with a deliberate nested-pump regression. No application change is justified
 by this fixture failure alone.
+
+## Subsequent native evidence — microtask 06
+
+Code `a66a25ed079240f3d73ff34ca5c39466f451eb82` includes the single-entry
+controller/owned-context correction documented in
+[MICROTASK_HTTPS_FINALIZATION.md](MICROTASK_HTTPS_FINALIZATION.md).
+[CI run 38161800807](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38161800807)
+checked synthetic merge `acb2c84777346dcf99f6285ee0e305c259691ccf`.
+All 12 native `RecoverForm` scenarios passed acknowledgement, terminal-state
+and status/result-only assertions, 18:10:11–18:10:31 UTC. In particular,
+`complete/verify=False/save=False` passed and consumed only the matching request
+at 18:10:31 UTC. Microtask 05's corrected completion predicate is now
+native-validated, without changing its deadline or removing earlier assertions.
+
+The full Windows job still failed later in `ConfirmedCleanupFailure`; subsequent
+fixtures remain NOT_CHECKED. Server CI passed. This later targeted evidence does
+not revise the earlier failed run or close a complete F01–F31 point.

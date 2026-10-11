@@ -54,9 +54,50 @@ of a full application feature, a new installer or user-machine acceptance.
   form and all recovery scenarios were NOT_CHECKED. The timing is consistent
   with an additional ambient thread exit; that cause remains an inference
   until the owned-context correction has fresh native evidence.
-- Windows compilation and both nested-pump fixtures: pending CI.
-- Actual pending form, all recovery outcomes and remaining suites: pending CI.
+- Final code head `a66a25ed079240f3d73ff34ca5c39466f451eb82`,
+  [CI run 38161800807](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38161800807),
+  checked synthetic PR merge `acb2c84777346dcf99f6285ee0e305c259691ccf`
+  against baseline `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+- Windows compilation: PASS. Both nested-pump regressions: PASS at 18:09:59 UTC.
+  Sentinel case returned in 157 ms, following success in 156 ms. Both recorded
+  `inspections=1`, `pulses=3`, live controls and disposed form; the sentinel
+  object identity assertion passed. This validates the corrected owned-context
+  lifetime. The exact native quit-queue mechanism was not directly observed.
+- Actual pending form: PASS, exactly one inspection at 18:10:09 UTC, retained
+  journal/binding/draft checks and no new installation.
+- All 12 `RecoverForm` scenarios: PASS, 18:10:11–18:10:31 UTC. Each reached both
+  acknowledgement and terminal-state assertions plus status/result-only checks.
+  Successful verification/save consumed only the matching request. This supplies
+  the previously missing native evidence for microtask 05.
+- Entire DesktopTests: PASS, 3485 checks, 18:04:22 UTC. Entire Test-ProGo: PASS,
+  18:07:28 UTC. All prior output-cap/owner scenarios: PASS.
+- Full Windows job `114536093148`: FAIL later, in `ConfirmedCleanupFailure`
+  combined locked-cleanup assertion, 18:10:33 UTC. Isolated VPN server job
+  `114536093329`: PASS.
+- Later disposed-verification/proof-storage, HTTP/wizard/setup-recovery tail,
+  portable harness and Windows Python relay integration: NOT_CHECKED. Final
+  release-content scan, packing/upload: SKIPPED. Local public-source scan is
+  separate and PASS, 207 source files and zero release files.
+- Screenshots/diagnostics: UPLOADED, artifacts `11710928715` / `11710933727`;
+  no visual acceptance or accepted installer is claimed.
 - User PC/VPS and installed application: NOT_CHECKED.
 
-Historical 22/31 remains unchanged. Microtask 05's native recovery outcome is
-still NOT_CHECKED until a fresh run reaches and passes its assertions.
+Historical 22/31 remains unchanged. Microtasks 05/06 have passed their targeted
+native assertions; the complete Windows candidate remains FAIL. No full F-point
+or new installer is accepted.
+
+## Next isolated blocker
+
+`ConfirmedCleanupFailure` requires the original hardcoded
+`https://previous.example.org`, although the immediately preceding successful
+recovery has saved `https://qr.example.org`. `Reset` removes fixture files and
+the pending journal, without restoring the persisted origin. This stale fixture
+expectation is necessarily false after the successful recovery; it does not
+establish a production cleanup defect. Other terms of the combined assertion
+are still unknown. The next microtask must establish an isolated prior origin,
+different from the attempted target, before taking its snapshot; then freeze
+and compare that baseline. It must retain all cleanup/proof/journal/no-replay
+conditions and expose named diagnostic results without printing private values
+or widening deadlines. The existing cleanup clock includes wrapper/UI/proof
+work after the SSH fixture exits, so it is not a direct DeleteAdminWork duration;
+a timing defect is not established by this combined assertion.

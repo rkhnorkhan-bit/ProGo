@@ -270,3 +270,56 @@ cleanup и regression с намеренной вложенной обработ�
 
 Исторические **22/31** не меняются. Новые полные F-пункты не закрыты;
 **24/31 пока нет**. F09 и F22 остаются отдельной реализацией после этого блокера.
+
+## Контрольная точка 06 — однократное завершение HTTPS fixture
+
+Первая попытка: код `5c943c67d98fdba67efb36ed35e565a088d689a5`,
+[CI 38160835465](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38160835465),
+synthetic merge `faa4c6460c187c6d8b1c2c7ba7890e692f03f200`.
+Основной Windows-набор и server прошли. Первый sentinel case прошёл, но следующий
+success case упал через примерно 10 мс: регрессия обнаружила проблему нового
+message loop после abort. PendingGate и все RecoverForm не были достигнуты.
+Этот результат не скрывается успешным повторным targeted прогоном ниже.
+
+Исправленный код: **`a66a25ed079240f3d73ff34ca5c39466f451eb82`**,
+[черновик PR #88](https://github.com/rkhnorkhan-bit/ProGo/pull/88).
+[Повторный запуск 38161800807](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38161800807)
+проверил synthetic PR merge `acb2c84777346dcf99f6285ee0e305c259691ccf`,
+включающий этот head и baseline `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Два независимых source review, whitespace, local public-source scan | PASS | 207 исходников, zero release files; application code не изменён |
+| Windows C# compilation | PASS | Native job `114536093148` |
+| Вложенный UI pump, sentinel failure и следующий success loop | PASS | 18:09:59 UTC; в обоих cases 1 inspection, 3 heartbeat pulses, live controls, disposed form; 157/156 мс, исходный sentinel сохранён |
+| Actual PendingGate, однократная layout-inspection | PASS | 18:10:09 UTC; journal/binding/draft сохранены, новый share не запускался |
+| Все 12 RecoverForm scenarios микрозадачи 05 | PASS | 18:10:11–18:10:31 UTC; 12 acknowledgement + 12 terminal-state + 12 status/result-only assertions; число assertions не является числом scenarios |
+| Успешный complete/verify=False/save=False | PASS | 18:10:31 UTC; exact receipt/origin/HTTPS/save consume only matching request |
+| Весь DesktopTests / весь Test-ProGo.ps1 | PASS / PASS | 3485 checks, 18:04:22 UTC; итоговый `ProGo tests PASS`, 18:07:28 UTC |
+| Предыдущие SSH output-cap и итоговые owner checks | PASS | Включая oversized revoke/repair/share; завершение owner work 18:09:58 UTC |
+| Общий Windows CI | FAIL | Позже: combined assertion `ConfirmedCleanupFailure`, 18:10:33 UTC |
+| DisposedVerification/ProofAndStorage, HTTP/wizard/setup-recovery tail, portable и Windows Python integration | NOT_CHECKED | Не достигнуты после указанного отказа |
+| Финальный public release-content scan, pack/upload | SKIPPED | Local source PASS не подменяет release-проверку |
+| Изолированный VPN server CI | PASS | Job `114536093329` |
+| Native screenshots / diagnostics | UPLOADED | Artifacts `11710928715` / `11710933727`; визуальная приёмка не заявляется |
+| Новый installer / пользовательская установка и ПК/VPS | PENDING / NOT_CHECKED | Отложены до цельной сборки |
+
+Контроллер запрещает повторный вход, останавливает timer до settled inspection,
+немедленно очищает ресурсы при ошибке и сохраняет исходное исключение. Он завершает
+собственный ApplicationContext, если main-form disposal ещё не завершил его;
+дублирующий ambient ExitThread устранён. Deadline 20 секунд и строгие регрессии
+2/5 секунд сохранены. Точный механизм native quit queue напрямую не наблюдался.
+
+Следующий отдельный блокер содержит доказанное устаревшее ожидание fixture:
+ConfirmedCleanupFailure требует `previous.example.org` после того, как успешный
+RecoverForm сохранил `qr.example.org`. Reset не восстанавливает persisted origin.
+Остальные условия combined assertion пока не установлены. Нужны изолированная
+подготовка прежнего origin, отличного от целевого, до snapshot, его фиксация
+и именованные безопасные diagnostics с сохранением
+всех cleanup/proof/journal/no-replay проверок. Application cleanup defect этим
+отказом не подтверждён. Подробнее:
+[MICROTASK_HTTPS_FINALIZATION.md](MICROTASK_HTTPS_FINALIZATION.md).
+
+Targeted native micro05/06 теперь **PASS**, общий Windows-кандидат остаётся
+**FAIL**. Исторические **22/31** неизменны; **24/31 пока нет**. Полные F-пункты
+и цельный installer не закрыты. F09/F22 по-прежнему требуют собственной реализации.
