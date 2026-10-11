@@ -145,7 +145,9 @@ namespace ProGo
         private static Observation Loop(Form main, Action start, Func<bool> done, string route = null, Action settled = null, Action tick = null, string scenario = null)
         {
             var result = new Observation(); bool started = false, terminal = false, inTick = false; Exception failure = null; var watch = Stopwatch.StartNew();
+            using (var context = new ApplicationContext(main))
             using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) {
+                bool contextExited = false; context.ThreadExit += delegate { contextExited = true; };
                 Action<Exception> remember = ex => {
                     failure = failure == null ? ex : new AggregateException("HTTPS fixture inspection and cleanup failed", failure, ex);
                 };
@@ -156,7 +158,11 @@ namespace ProGo
                 Action abort = delegate {
                     terminal = true; timer.Stop();
                     cleanup(delegate { var wait = Application.OpenForms.OfType<HomeVpnPreparationForm>().FirstOrDefault(); if (wait != null && !wait.IsDisposed) wait.Dispose(); });
-                    cleanup(Kill); cleanup(delegate { main.Dispose(); }); cleanup(Application.ExitThread);
+                    cleanup(Kill); cleanup(delegate { main.Dispose(); });
+                    // Main-form disposal normally ends this owned context. Only
+                    // failed disposal needs an exit; never exit a fresh ambient
+                    // thread context after the original one already settled.
+                    if (!contextExited) cleanup(context.ExitThread);
                 };
                 main.Shown += delegate { main.BeginInvoke(new Action(delegate {
                     if (terminal) return;
@@ -185,7 +191,7 @@ namespace ProGo
                     } catch (Exception ex) { remember(ex); abort(); }
                     finally { inTick = false; }
                 };
-                timer.Start(); Application.Run(main);
+                timer.Start(); Application.Run(context);
             }
             if (failure != null) throw new Exception("HTTPS native fixture failed [" + (scenario ?? route ?? "unlabelled") + "]: " + failure.GetType().Name + ": " + failure.Message, failure); return result;
         }
@@ -214,7 +220,9 @@ namespace ProGo
                 finally { heartbeat.Stop(); }
                 check(inspections == 1 && pulses >= 3 && liveAfterPump && form.IsDisposed && watch.ElapsedMilliseconds < 5000
                     && (fail ? failure != null && Object.ReferenceEquals(failure.InnerException, sentinel) : failure == null),
-                    "HTTPS fixture finalization runs once across a nested UI pump, preserves live controls and exits promptly with its original failure: " + fail);
+                    "HTTPS fixture finalization runs once across a nested UI pump, preserves live controls and exits promptly with its original failure: " + fail
+                    + "; inspections=" + inspections + "/pulses=" + pulses + "/live=" + liveAfterPump + "/disposed=" + form.IsDisposed
+                    + "/elapsed=" + watch.ElapsedMilliseconds + "/error=" + (failure == null ? "none" : failure.GetType().Name + ": " + failure.Message));
             }
         }
         private static Exception Dispatch(string action, HomeVpnOwner owner = null, string domain = null, string route = null, int timeout = 20000)

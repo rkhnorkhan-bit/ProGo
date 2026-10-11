@@ -20,6 +20,14 @@ inspection exception immediately stops the controller and attempts every
 existing cleanup step, rather than requiring a later tick from a stopped timer.
 Cleanup exceptions retain the original error in an aggregate.
 
+The controller owns the same main-form `ApplicationContext` that `Run(Form)`
+would create. After disposing its main form, it exits that context only if its
+`ThreadExit` event has not already fired. This preserves a fallback for failed
+disposal without calling the ambient `Application.ExitThread` after normal
+context settlement. Microsoft documents main-form lifetime as the default
+[ApplicationContext](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.applicationcontext)
+exit trigger; native regression results remain the deciding evidence here.
+
 Two native fixtures deliberately pump an independent UI heartbeat through
 three ticks inside settled inspection. They require exactly one inspection,
 live form/control-parent ownership throughout that pump, a disposed form on
@@ -37,6 +45,15 @@ of a full application feature, a new installer or user-machine acceptance.
 ## Evidence
 
 - Two independent source reviews, whitespace and local public-source scan: PASS.
+- First code head `5c943c67d98fdba67efb36ed35e565a088d689a5`,
+  [CI run 38160835465](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38160835465),
+  checked synthetic PR merge `faa4c6460c187c6d8b1c2c7ba7890e692f03f200`.
+  Windows `114533212602` FAIL; server `114533212734` PASS. Desktop 3485 and
+  complete Test-ProGo passed. Sentinel fixture passed at 17:52:56 UTC, but the
+  immediately following successful fixture failed about 10 ms later. Pending
+  form and all recovery scenarios were NOT_CHECKED. The timing is consistent
+  with an additional ambient thread exit; that cause remains an inference
+  until the owned-context correction has fresh native evidence.
 - Windows compilation and both nested-pump fixtures: pending CI.
 - Actual pending form, all recovery outcomes and remaining suites: pending CI.
 - User PC/VPS and installed application: NOT_CHECKED.
