@@ -34,10 +34,7 @@ namespace ProGo
             using (var guard = new System.Threading.Timer(delegate { Console.WriteLine("FAIL: portable fixture deadline"); Environment.Exit(1); }, null, 600000, Timeout.Infinite))
             try {
                 if (args.Length == 3 && args[0] == "--portable-child") {
-                    byte[] password = Utf8.GetBytes(Console.ReadLine());
-                    try { using (var prepared = HomeVpnPortableArchive.Prepare(args[1], password, CancellationToken.None)) HomeVpnPortableArchive.Import(prepared, args[2], CancellationToken.None); }
-                    finally { Array.Clear(password, 0, password.Length); }
-                    Console.WriteLine("PASS: child imported protected data"); return 0;
+                    return PortableChild(args[1], args[2]);
                 }
                 token = File.ReadAllText(args[0]); work = Path.GetFullPath(args[1]); Directory.CreateDirectory(work);
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
@@ -45,6 +42,103 @@ namespace ProGo
                 Console.WriteLine("NOT_CHECKED: portable import under another Windows account or on another PC");
                 Console.WriteLine("Portable Home VPN tests PASS: " + passed); return 0;
             } catch (Exception ex) { Console.WriteLine("FAIL: " + ex.GetType().Name + ": " + ex.Message); return 1; }
+        }
+        private static int PortableChild(string archive, string destination)
+        {
+            string phase = "stdin"; byte[] password = null;
+            try {
+                string input = Console.ReadLine();
+                if (String.IsNullOrEmpty(input)) {
+                    Console.Error.WriteLine("PORTABLE_CHILD_FAILURE phase=stdin/error=empty-input"); return 1;
+                }
+                password = Utf8.GetBytes(input); phase = "prepare";
+                using (var prepared = HomeVpnPortableArchive.Prepare(archive, password, CancellationToken.None)) {
+                    phase = "import";
+                    HomeVpnPortableArchive.Import(prepared, destination, CancellationToken.None);
+                }
+                Console.WriteLine("PASS: child imported protected data"); return 0;
+            } catch (Exception ex) {
+                // Fixed phase/type codes only: no password, token, path or parser/IO message.
+                string kind = ex is HomeVpnPortableException ? "portable" : ex is IOException ? "io"
+                    : ex is UnauthorizedAccessException ? "access" : ex is CryptographicException ? "crypto" : "other";
+                Console.Error.WriteLine("PORTABLE_CHILD_FAILURE phase=" + phase + "/error=" + kind); return 1;
+            } finally { if (password != null) Array.Clear(password, 0, password.Length); }
+        }
+        private sealed class ChildCapture { internal string Text; internal bool Truncated; }
+        private sealed class ChildResult
+        {
+            internal int ExitCode;
+            internal ChildCapture Output, Error;
+        }
+        private static Task<ChildCapture> DrainChild(StreamReader reader)
+        {
+            var done = new TaskCompletionSource<ChildCapture>();
+            new Thread(delegate() {
+                try {
+                    var text = new StringBuilder(); var buffer = new char[256]; bool truncated = false; int count;
+                    while ((count = reader.Read(buffer, 0, buffer.Length)) != 0) {
+                        int keep = Math.Min(count, 4096 - text.Length);
+                        if (keep > 0) text.Append(buffer, 0, keep);
+                        if (keep < count) truncated = true;
+                    }
+                    done.SetResult(new ChildCapture { Text = text.ToString(), Truncated = truncated });
+                } catch (Exception ex) { done.SetException(ex); }
+            }) { IsBackground = true, Name = "Portable fixture capture" }.Start();
+            return done.Task;
+        }
+        private static ChildResult RunChild(string archive, string destination, string password)
+        {
+            var start = new ProcessStartInfo(Assembly.GetExecutingAssembly().Location,
+                "--portable-child " + Quote(archive) + " " + Quote(destination)) {
+                UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true,
+                RedirectStandardOutput = true, RedirectStandardError = true };
+            var watch = Stopwatch.StartNew();
+            using (var child = Process.Start(start)) {
+                var output = DrainChild(child.StandardOutput); var error = DrainChild(child.StandardError);
+                bool captured = false;
+                try {
+                    if (password != null) child.StandardInput.WriteLine(password);
+                    child.StandardInput.Close();
+                    int remaining = Math.Max(1, 60000 - (int)Math.Min(60000, watch.ElapsedMilliseconds));
+                    if (!child.WaitForExit(remaining)) throw new Exception("Portable child process deadline");
+                    remaining = Math.Max(1, 60000 - (int)Math.Min(60000, watch.ElapsedMilliseconds));
+                    if (!Task.WaitAll(new Task[] { output, error }, remaining)) throw new Exception("Portable child capture deadline");
+                    captured = true;
+                    return new ChildResult { ExitCode = child.ExitCode, Output = output.Result, Error = error.Result };
+                } finally {
+                    if (!captured) {
+                        try {
+                            if (!child.HasExited) {
+                                try { child.Kill(); } catch (InvalidOperationException) { }
+                                if (!child.WaitForExit(2000)) throw new Exception("Portable child cleanup deadline");
+                            }
+                        } finally {
+                            // Close the handles even if termination fails; do not leave blocked capture threads.
+                            child.StandardOutput.BaseStream.Close(); child.StandardError.BaseStream.Close();
+                            output.ContinueWith(task => { var observed = task.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+                            error.ContinueWith(task => { var observed = task.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+                        }
+                    }
+                }
+            }
+        }
+        private static string ChildDetails(ChildResult result)
+        {
+            string failure = "unclassified";
+            foreach (var phase in new[] { "stdin", "prepare", "import" })
+                foreach (var kind in new[] { "empty-input", "portable", "io", "access", "crypto", "other" }) {
+                    string marker = "PORTABLE_CHILD_FAILURE phase=" + phase + "/error=" + kind;
+                    if (result.Error.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Contains(marker)) failure = phase + "/" + kind;
+                }
+            return "; exit=" + result.ExitCode + "/successMarker=" + result.Output.Text.Contains("PASS: child imported")
+                + "/outChars=" + result.Output.Text.Length + "/errChars=" + result.Error.Text.Length
+                + "/truncated=" + (result.Output.Truncated || result.Error.Truncated) + "/failure=" + failure;
+        }
+        private static bool ChildSafe(ChildResult result)
+        {
+            return !result.Output.Truncated && !result.Error.Truncated
+                && new[] { result.Output.Text, result.Error.Text }.All(text => !text.Contains(token)
+                    && !text.Contains(Utf8.GetString(Password)) && !text.Contains("fixture-password-secret-unrelated"));
         }
         private static string Fresh(string name) { var root = Path.Combine(work, name + "-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root); return root; }
         private static void Protect(string root, string name, string value)
@@ -96,13 +190,23 @@ namespace ProGo
                 Check(before.All(p => p.Value.SequenceEqual(File.ReadAllBytes(Path.Combine(target, p.Key)))), "refused replacement preserves every current destination byte");
                 string childTarget = Path.Combine(work, "child-target-" + Guid.NewGuid().ToString("N"));
                 try {
-                    var start = new ProcessStartInfo(Assembly.GetExecutingAssembly().Location, "--portable-child " + Quote(archive) + " " + Quote(childTarget)) {
-                        UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
-                    using (var child = Process.Start(start)) {
-                        child.StandardInput.WriteLine(Utf8.GetString(Password)); child.StandardInput.Close();
-                        if (!child.WaitForExit(60000)) { child.Kill(); throw new Exception("Portable child deadline"); }
-                        string output = child.StandardOutput.ReadToEnd(); Check(child.ExitCode == 0 && output.Contains("PASS: child imported") && !output.Contains(token), "a separate process imports the portable file with a password passed only over stdin");
-                    }
+                    var missingInput = RunChild(archive, childTarget, null);
+                    Check(missingInput.ExitCode != 0 && !missingInput.Output.Text.Contains("PASS: child imported")
+                        && missingInput.Error.Text.Contains("PORTABLE_CHILD_FAILURE phase=stdin/error=empty-input") && ChildSafe(missingInput)
+                        && !Directory.Exists(childTarget), "child stdin EOF fails safely before preparing or writing" + ChildDetails(missingInput));
+                    var wrongPassword = RunChild(archive, childTarget, "fixture-password-secret-unrelated");
+                    Check(wrongPassword.ExitCode != 0 && !wrongPassword.Output.Text.Contains("PASS: child imported")
+                        && wrongPassword.Error.Text.Contains("PORTABLE_CHILD_FAILURE phase=prepare/error=portable") && ChildSafe(wrongPassword)
+                        && !Directory.Exists(childTarget), "child wrong password fails safely before destination writes" + ChildDetails(wrongPassword));
+                    var existingTarget = RunChild(archive, target, Utf8.GetString(Password));
+                    Check(existingTarget.ExitCode != 0 && !existingTarget.Output.Text.Contains("PASS: child imported")
+                        && existingTarget.Error.Text.Contains("PORTABLE_CHILD_FAILURE phase=import/error=portable") && ChildSafe(existingTarget)
+                        && before.All(p => p.Value.SequenceEqual(File.ReadAllBytes(Path.Combine(target, p.Key)))),
+                        "child import refusal preserves every existing destination byte" + ChildDetails(existingTarget));
+                    var imported = RunChild(archive, childTarget, Utf8.GetString(Password));
+                    Check(imported.ExitCode == 0 && imported.Output.Text.Contains("PASS: child imported")
+                        && imported.Error.Text.Length == 0 && ChildSafe(imported),
+                        "a separate process imports the portable file with a password passed only over stdin" + ChildDetails(imported));
                     Check(Plain(childTarget).All(p => p.Value == restored[p.Key]), "separate-process import agrees with the clean DPAPI destination");
                 } finally { if (Directory.Exists(childTarget)) Directory.Delete(childTarget, true); }
                 TestInstalledReload(archive, original);
