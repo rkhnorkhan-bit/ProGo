@@ -232,3 +232,41 @@ native PASS этих fixtures и desktop suite не закрывает цели�
 `InstalledUpdateTransport.cs`, `UpdateInstallSession.cs` и `scripts/home-vpn/*`;
 пропущенные источники и проверка одного exe не подтверждают полный repair.
 Эти остатки требуют самостоятельных микрозадач и проверок; **24/31 пока нет**.
+
+## Контрольная точка 05 — ожидание фактического результата HTTPS recovery
+
+Код: **`778fff7a2948ad75d0f13c0c86ab63fdef74671c`**,
+[черновик PR #88](https://github.com/rkhnorkhan-bit/ProGo/pull/88).
+[Запуск 38158069018](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38158069018)
+проверил synthetic PR merge `21d3efa17622e50c636f38fa3f7b58aefcd46f24`,
+включающий этот head и baseline `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Два независимых source review, whitespace, local public-source scan | PASS | Публичных исходников 206; release-файлы этим запуском scanner не проверялись |
+| Windows C# compilation | PASS | Native job `114525051269` |
+| Весь DesktopTests / весь Test-ProGo.ps1 | PASS / PASS | 3485 checks, 17:10:44 UTC; итоговый `ProGo tests PASS`, 17:13:41 UTC |
+| Предыдущие SSH output-cap и итоговые owner checks | PASS | Включая oversized revoke/repair/share, 17:15:58–17:16:00 UTC |
+| Исправленный RecoverForm, включая complete success | NOT_CHECKED | Не достигнут: все RecoverForm идут после PendingGate; в логе нет ни одной новой terminal-state assertion |
+| Общий Windows CI | FAIL | Более ранний PendingGate: `HTTPS native fixture failed [unlabelled]: NullReferenceException`, 17:16:12 UTC |
+| Остаток HTTPS/wizard, portable harness, Windows Python relay integration | NOT_CHECKED | Не достигнуты после указанного отказа |
+| Финальный public release-content scan, pack/upload | SKIPPED | Local source PASS не подменяет проверку release |
+| Изолированный VPN server CI | PASS | Job `114525051002` |
+| Native screenshots / diagnostics | UPLOADED | Artifacts `11709528169` / `11709453402`; визуальная приёмка не заявляется |
+| Новый installer / пользовательская установка и ПК/VPS | PENDING / NOT_CHECKED | Отложены до цельной сборки |
+
+В fixture успех теперь определяется по `DialogResult.OK`, ошибки — по возврату
+доступного поля. Ожидание lease и три последующих timer ticks сохраняют UI pump;
+все прежние постусловия и исходный 20-секундный deadline сохранены. Application
+code не изменялся. Native PASS этой правки пока **не подтверждён**.
+
+В PendingGate трижды повторилась одна assertion за 33 мс. Settled callback
+вызывает `Application.DoEvents`, а Loop останавливает timer только после него.
+Это указывает на повторный вход завершения и закрытие формы вложенным tick;
+точная строка NullReferenceException не подтверждена stack trace. Следующая
+отдельная микрозадача — однократное завершение fixture, сохранённый failure
+cleanup и regression с намеренной вложенной обработкой сообщений. Подробности:
+[MICROTASK_HTTPS_COMPLETION.md](MICROTASK_HTTPS_COMPLETION.md).
+
+Исторические **22/31** не меняются. Новые полные F-пункты не закрыты;
+**24/31 пока нет**. F09 и F22 остаются отдельной реализацией после этого блокера.
