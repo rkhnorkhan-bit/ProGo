@@ -133,3 +133,27 @@
 Следующий небольшой шаг — отдельно разобрать ожидание асинхронного
 `RestoreBackup` из меню и затем независимые результаты suites. Уже подготовленные
 правки других модулей и незавершённый F09 сохранены вне данного checkpoint.
+
+## Контрольная точка 02 — асинхронная команда восстановления из меню
+
+Код: **`a2746268ca1ec74b82839e9ab4268b68bc7eb05d`**,
+[черновик PR #88](https://github.com/rkhnorkhan-bit/ProGo/pull/88).
+[Запуск 38148211645](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38148211645):
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Windows C# compilation | PASS | Native desktop harness выполнялся на проверяемом commit |
+| Настоящий RestoreBackup из tray, появление асинхронного chooser | PASS | Job `114495929814`, 14:46:06 UTC |
+| Отмена, завершение tracked task, снятие ownership, отсутствие подготовки/запуска helper | PASS | Native checks `ServiceCommandDialogs`; прежний предел ожидания сохранён |
+| Сохранность settings и backup; закрытие completed progress; следующая ExportDiagnostics | PASS | Native checks, 14:46:06–14:46:07 UTC |
+| Общий desktop suite | FAIL | Watchdog: 90 секунд без успешной assertion; последний attempted check `actual settings save completes while background ownership is busy: False`, `AsyncCliStartup -> SettingsSaveConnectionIntent`, `DesktopStartupTests.cs` |
+| Общий Windows CI | CANCELLED / TIMEOUT | Desktop сообщил отказ в 14:49:32 UTC, enclosing step не завершился до job limit 40 минут; отмена в 15:21:52 UTC |
+| Последующие suites | NOT_CHECKED | Нет доказательства успешного завершения; cleanup зафиксировал orphan `SocksRecoveryTests`, причина удержания CI пока не установлена |
+| Изолированный VPN server CI | PASS | Job `114495929607` |
+| Новый installer / пользовательская установка | PENDING / NOT_CHECKED | Полный пакет всех 31 ещё не готов; пользовательская среда не проверялась |
+
+Микрозадача меняет только тест ожидания tray dialog и его cleanup, без изменения
+application code. Она прошла свои native checks, но не закрывает F01–F31 и не
+меняет исторические **22/31**. Следующий отдельный шаг — проверка сохранения
+настроек при занятом фоновом владельце и корректный выход modal fixture при
+отказе. Завершение CI после failure требует отдельного ограниченного исправления.
