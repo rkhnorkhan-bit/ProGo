@@ -57,8 +57,38 @@ requiring a console handle. Eight memory vectors cover no-BOM UTF8, UTF8/UTF16
 preambles, preamble-only EOF, empty EOF, a wrong literal and line termination.
 The actual console-less child, original success requirements and all negative
 destination-preservation checks remain mandatory. This is a test transport
-helper, not a new production password decoding policy. Fresh native validation
-of this correction is **PENDING**.
+helper, not a new production password decoding policy.
+
+## Verified correction
+
+Correction head `f7473015cecf10677e26596bc03c6e12207cf2de` was tested by
+[run 38168506823](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38168506823),
+merge `7da51d27216df625f9c8779a45d040e8539ff0b3` with unchanged main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`. Native Windows compilation and
+all eight transport vectors passed. The actual child cases passed:
+
+- EOF: exit 1, no success marker, stdout 0, stderr 54 characters,
+  `stdin/empty-input`, destination absent.
+- Wrong password: exit 1, no success marker, stdout 0, stderr 53 characters,
+  `prepare/portable`, destination absent.
+- Existing target: exit 1, no success marker, stdout 0, stderr 52 characters,
+  `import/portable`, every original destination byte preserved.
+- Successful import: exit 0, success marker present, stdout 37 characters,
+  empty stderr, no truncation or fixture secret on either channel.
+- Child data agrees with the independent clean DPAPI import.
+
+The complete portable harness passed **90 checks** at 19:48:34 UTC, including
+installed reload, malformed/resource/authenticated payload and native/context
+workflows previously not reached. Targeted micro09 now has native **PASS**.
+
+The whole Windows job `114555971100` still failed later: Python discovery
+ran 18 items, with 15 passing, two platform skips and one module-import error.
+`test_profile_share.py` loads `profile_share_setup.py`, which imports Linux-only
+`fcntl` on Windows. Its HTTP scenarios were not executed there. Server job
+`114555970949` passed. Final public release scan, packing and release uploads
+were skipped. Screenshots/diagnostics were uploaded, without visual acceptance.
+The next test-only correction must isolate this Linux fixture writer while
+retaining the portable HTTP tests and actual Linux permission/locking tests.
 
 ## Scope
 

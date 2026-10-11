@@ -363,3 +363,61 @@ native PASS, но полные F09/F22 не закрыты; история **22/
 Targeted native micro05/06 теперь **PASS**, общий Windows-кандидат остаётся
 **FAIL**. Исторические **22/31** неизменны; **24/31 пока нет**. Полные F-пункты
 и цельный installer не закрыты. F09/F22 по-прежнему требуют собственной реализации.
+
+## Контрольная точка 09–10 — stdin импорта и суточная политика PIN
+
+Пакет из двух ограниченных микрозадач. Micro09 diagnostic
+`1c5285b5793576d30fbdcf1a7890fd57335a2d41` и micro10
+`8453e9e97d50fce71c4553e63371577210b91a07` проверены в
+[первом CI 38167482711](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38167482711),
+merge `ed2bab8d395ec2a2ffcad8bb90f7e8e3bd50acb4`.
+165 reader, 134 daily policy, 3485 desktop, весь Test-ProGo и 975 Home VPN
+прошли. Новый EOF child case упал в 19:30:34 UTC: парольная строка не
+передавалась, но процесс перешёл к `prepare/portable` вместо `stdin/empty-input`.
+Exit=1, stdout=0, stderr=53 символа, PASS отсутствует, truncation=False.
+Это подтверждённая ошибка границы stdin в fixture; точные runtime кодировки
+и переданные байты не наблюдались. Windows `114552949650` — FAIL,
+server `114552949771` — PASS. Исходный отказ сохранён в отчёте.
+
+Исправление **`f7473015cecf10677e26596bc03c6e12207cf2de`** использует отдельный
+BOM-aware reader stdin в тестовом процессе и восемь memory vectors.
+[Повторный CI 38168506823](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38168506823)
+проверил merge **`7da51d27216df625f9c8779a45d040e8539ff0b3`** с прежним main
+**`4bb336575bb1216d3047bd2b294aeecad9fdd65a`**. Production archive code,
+критерии успешного импорта и исходные сроки сохранены.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Native compilation / reader / daily policy | PASS / 165 / 134 | Windows `114555971100`, 19:34:03 UTC; отдельные guards исключают реальные app paths и logging |
+| Desktop / весь Test-ProGo | 3485 / PASS | 19:40:33 и 19:43:36 UTC; Instance/Maintenance/Shutdown/UpdatePackage выполнены |
+| Controller, PendingGate, RecoverForm и locked cleanup | PASS | Все прежние строгие регрессии; pendingTicks=32, settledMs=1062, checkedMs=1068<2500; proof/journal/origin/helper/inputs/noReplay сохранены |
+| Весь Home VPN harness | PASS, 975 | 19:46:47 UTC, включая ранее достигнутый recovery/HTTP tail |
+| Micro09: 8 transport vectors и 4 child cases | PASS | EOF, wrong password, existing target и success; сохранность файлов и отсутствие secret output проверены |
+| Реальный отдельный child import + DPAPI comparison | PASS | 19:47:16 UTC; exit=0, stdout=37 символов, stderr=0, PASS присутствует, truncation=False |
+| Весь portable harness | PASS, 90 | 19:48:34 UTC; installed reload, malformed/resource/authenticated payload, NativeWorkflow и ContextWorkflow выполнены |
+| Windows Python discovery | FAIL | 18 items: 15 PASS, 2 platform skips, 1 loader error; `test_profile_share` импортирует Linux-only `fcntl` |
+| HTTP cases неимпортированного Python module на Windows | NOT_CHECKED | Эти 7 scenarios не выполнены; пропуск всего HTTP module не будет подходящим исправлением |
+| Общий Windows / изолированный server | FAIL / PASS | Jobs `114555971100` / `114555970949`; server operations16, sharing9, isolated provisioning46 |
+| Public release scan, pack и release uploads | SKIPPED | Локальный source scan отдельно PASS: 214 sources, 0 release files |
+| Screenshots / diagnostics | Загружены | Artifacts `11714010910` / `11713591795`; новая визуальная приёмка не заявляется |
+| Другой Windows account/ПК, полный installer и среда владельца | NOT_CHECKED / PENDING | Отложены до цельной сборки; установленное приложение и ПК/VPS владельца не проверялись |
+
+Micro10 реализует только детерминированные переходы: real success имеет
+приоритет, один exact ложный PIN сохраняет identity записей/правок за день,
+другой mismatch даёт «Неверный пин-код». Смена local date в любую сторону
+возвращает пустой expiry baseline даже при ошибке. Новый ложный binding
+остаётся provisional, `CanOpen=false`, до будущего атомарного commit.
+Пустой expiry baseline не удерживает прежние записи или историю; real PIN
+в суточном состоянии не сохраняется.
+Хранение, рестарт, очистка активной сессии в полночь, генерация данных,
+конфликты сохранения и асинхронный UI ещё требуют отдельных микрозадач.
+
+Следующий небольшой пакет: заменить зависимость portable HTTP fixture от
+Linux setup writer собственным атомарным тестовым publisher, сохранив все
+HTTP assertions и настоящий Linux sync/permission/locking набор; затем
+начать отдельный protected daily store F09. Targeted micro09/micro10 —
+**native PASS**, весь Windows CI — **FAIL**. Исторические **22/31** неизменны,
+полные F09/F22 и остальные открытые F-пункты не закрыты; **24/31 пока нет**.
+
+Подробности: [MICROTASK_PORTABLE_CHILD_IMPORT.md](MICROTASK_PORTABLE_CHILD_IMPORT.md)
+и [MICROTASK_VAULT_DAILY_POLICY.md](MICROTASK_VAULT_DAILY_POLICY.md).

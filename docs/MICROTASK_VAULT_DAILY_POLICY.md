@@ -94,10 +94,24 @@ owned process with a 90-second deadline before the recovery and desktop suites.
 On deadline it kills that harness PID and waits up to five seconds for exit.
 This is a single owned process boundary, not descendant-tree supervision.
 
-Local source/whitespace checks and independent source review are the available
-evidence. C#5 compilation and native Windows harness execution are
-**NOT_CHECKED** in this development environment because no local .NET runtime
-or PowerShell executable is available. Fresh native evidence remains pending.
+Local source/whitespace checks and independent source review pass. Native C#5
+compilation and the guarded Windows harness pass **134 checks** in both
+[run 38167482711](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38167482711)
+at 19:19:27 UTC and
+[run 38168506823](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38168506823)
+at 19:34:03 UTC. The first tested functional head is
+`8453e9e97d50fce71c4553e63371577210b91a07`; the correction head
+`f7473015cecf10677e26596bc03c6e12207cf2de` changes only the portable test and its
+documentation. Its tested merge is `7da51d27216df625f9c8779a45d040e8539ff0b3`,
+with main `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+Targeted micro10 has native **PASS**. The whole second Windows job still fails
+later at Python module discovery: a portable HTTP test fixture loads Linux-only
+`fcntl`. That failure does not invalidate or replace the policy harness result;
+it remains a separate blocker. The isolated server job passes. No local .NET
+runtime or PowerShell is available; native evidence comes from the isolated
+Windows CI runner, not the owner's installed application.
+
 Daily persistence/restart ownership, midnight session revocation, fake record
 generation, UI async integration and stale-save revision control are outside
 this intermediate step; no complete F09 or user-environment acceptance is claimed.
