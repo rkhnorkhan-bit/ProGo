@@ -131,12 +131,20 @@ namespace ProGo
                 Failed(root, VaultDailyFileReadStatus.FileUnavailable, "actual exclusive file handle maps unavailable");
             using (var holder = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 Check(VaultDailyFile.Read(root).Status == VaultDailyFileReadStatus.Success, "compatible read sharing preserves stable successful image");
-            var originalAcl = File.GetAccessControl(path, AccessControlSections.Access);
+            var originalSddl = File.GetAccessControl(path, AccessControlSections.Access)
+                .GetSecurityDescriptorSddlForm(AccessControlSections.Access);
             var denied = File.GetAccessControl(path, AccessControlSections.Access);
             using (var identity = WindowsIdentity.GetCurrent())
                 denied.AddAccessRule(new FileSystemAccessRule(identity.User, FileSystemRights.ReadData, AccessControlType.Deny));
             try { File.SetAccessControl(path, denied); Failed(root, VaultDailyFileReadStatus.FileUnavailable, "actual owner read-deny ACL maps unavailable"); }
-            finally { File.SetAccessControl(path, originalAcl); }
+            finally {
+                // An unmodified FileSecurity snapshot would persist no DACL changes.
+                var restored = new FileSecurity();
+                restored.SetSecurityDescriptorSddlForm(originalSddl, AccessControlSections.Access);
+                File.SetAccessControl(path, restored);
+            }
+            Check(File.GetAccessControl(path, AccessControlSections.Access).GetSecurityDescriptorSddlForm(AccessControlSections.Access) == originalSddl,
+                "owned file DACL is restored exactly after denied test");
             Check(VaultDailyFile.Read(root).Status == VaultDailyFileReadStatus.Success, "owned file ACL is restored and readable after denied test");
             File.Delete(path); Directory.CreateDirectory(path);
             Failed(root, VaultDailyFileReadStatus.FileUnavailable, "directory at data filename is unavailable");
