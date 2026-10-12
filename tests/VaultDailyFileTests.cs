@@ -24,8 +24,8 @@ namespace ProGo
         private static int passed;
         private enum TestPhase { Startup, Paths, ExactRead, Failures, AclOriginal, AclOriginalSddl, AclDeny,
             AclDenyPersist, AclDeniedRead, AclRestoreCreate, AclRestoreDescriptor, AclRestorePersist,
-            AclRestoredRead, AclRestoredAccess, AclRestoredSddl, AclRestoredMetadata, AclExactCheck,
-            DirectoryTarget, Recovery, Reparse, AppGuards }
+            AclRestoredRead, AclRestoredAccess, AclRestoredMetadata, AclExactCheck,
+            AclMatrix, DirectoryTarget, Recovery, Reparse, AppGuards }
         private static TestPhase phase;
         private static string work;
         private static readonly DateTime Day = new DateTime(2026, 10, 12);
@@ -33,6 +33,44 @@ namespace ProGo
         private static void Check(bool condition, string name)
         { if (!condition) { Console.Error.WriteLine("FAIL: " + name); throw new Exception("Static test assertion failed."); }
             passed++; Console.WriteLine("PASS: " + name); }
+        private static bool SameAccessPermissions(FileSecurity first, FileSecurity second)
+        {
+            if (first == null || second == null || first.AreAccessRulesProtected != second.AreAccessRulesProtected ||
+                first.AreAccessRulesCanonical != second.AreAccessRulesCanonical) return false;
+            var a = first.GetAccessRules(true, true, typeof(SecurityIdentifier));
+            var b = second.GetAccessRules(true, true, typeof(SecurityIdentifier));
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++) {
+                var left = (FileSystemAccessRule)a[i]; var right = (FileSystemAccessRule)b[i];
+                bool identitySame = left.IdentityReference.Equals(right.IdentityReference), rightsSame = left.FileSystemRights == right.FileSystemRights,
+                    typeSame = left.AccessControlType == right.AccessControlType,
+                    flagsSame = left.InheritanceFlags == right.InheritanceFlags && left.PropagationFlags == right.PropagationFlags,
+                    isInheritedSame = left.IsInherited == right.IsInherited;
+                if (!identitySame || !rightsSame || !typeSame || !flagsSame || !isInheritedSame) {
+                    Console.WriteLine("CHECK: access rule mismatch index=" + i + " identitySame=" + identitySame + " rightsSame=" + rightsSame +
+                        " typeSame=" + typeSame + " flagsSame=" + flagsSame + " isInheritedSame=" + isInheritedSame); return false;
+                }
+            }
+            return true;
+        }
+        private static FileSecurity MemoryAcl(SecurityIdentifier sid, FileSystemRights rights)
+        { var acl = new FileSecurity(); acl.AddAccessRule(new FileSystemAccessRule(sid, rights, AccessControlType.Allow)); return acl; }
+        private static void AccessComparison()
+        {
+            var sid = new SecurityIdentifier("S-1-5-21-1-2-3-1001");
+            var original = MemoryAcl(sid, FileSystemRights.ReadData); var clone = new FileSecurity();
+            clone.SetSecurityDescriptorSddlForm(original.GetSecurityDescriptorSddlForm(AccessControlSections.Access), AccessControlSections.Access);
+            Check(SameAccessPermissions(original, clone), "ordered permission comparer accepts an equivalent Access descriptor clone");
+            var rights = MemoryAcl(sid, FileSystemRights.WriteData);
+            Check(rights.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count == 1 && !SameAccessPermissions(original, rights),
+                "ordered permission comparer rejects changed rights with unchanged rule count");
+            var identity = MemoryAcl(new SecurityIdentifier("S-1-5-21-1-2-3-1002"), FileSystemRights.ReadData);
+            Check(identity.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count == 1 && !SameAccessPermissions(original, identity),
+                "ordered permission comparer rejects changed SID with unchanged rule count");
+            clone.SetAccessRuleProtection(true, true);
+            Check(clone.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count == 1 && !SameAccessPermissions(original, clone),
+                "ordered permission comparer rejects changed protection with unchanged rule count");
+        }
         private static string Root(string name)
         { var root = Path.Combine(work, name); Directory.CreateDirectory(root); return root; }
         private static string DataPath(string root) { return Path.Combine(root, VaultDailyFile.FileName); }
@@ -166,16 +204,14 @@ namespace ProGo
             Check(restoredRead.Status == VaultDailyFileReadStatus.Success, "owned file ACL is restored and readable after denied test");
             phase = TestPhase.AclRestoredAccess;
             var restoredAcl = File.GetAccessControl(path, AccessControlSections.Access);
-            phase = TestPhase.AclRestoredSddl;
-            var restoredSddl = restoredAcl.GetSecurityDescriptorSddlForm(AccessControlSections.Access);
             phase = TestPhase.AclRestoredMetadata;
             Console.WriteLine("CHECK: original DACL protected=" + originalAcl.AreAccessRulesProtected + " canonical=" + originalAcl.AreAccessRulesCanonical +
                 " rules=" + originalAcl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count);
             Console.WriteLine("CHECK: restored DACL protected=" + restoredAcl.AreAccessRulesProtected + " canonical=" + restoredAcl.AreAccessRulesCanonical +
                 " rules=" + restoredAcl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count);
             phase = TestPhase.AclExactCheck;
-            Check(restoredSddl == originalSddl,
-                "owned file DACL is restored exactly after denied test");
+            Check(SameAccessPermissions(originalAcl, restoredAcl),
+                "original ordered access rules and protection are restored after denied test");
             phase = TestPhase.DirectoryTarget;
             File.Delete(path); Directory.CreateDirectory(path);
             Failed(root, VaultDailyFileReadStatus.FileUnavailable, "directory at data filename is unavailable");
@@ -239,6 +275,7 @@ namespace ProGo
             try {
                 phase = TestPhase.Startup; work = Path.Combine(Path.GetTempPath(), "ProGo-daily-file-" + Guid.NewGuid().ToString("N"));
                 Directory.CreateDirectory(work);
+                phase = TestPhase.AclMatrix; AccessComparison();
                 phase = TestPhase.Paths; MissingAndPaths(); phase = TestPhase.ExactRead; ExactReadAndStamp();
                 phase = TestPhase.Failures; CorruptionAndAvailability(); phase = TestPhase.Recovery; RecoveryWitness();
                 phase = TestPhase.Reparse; ReparseGuards(); phase = TestPhase.AppGuards;
