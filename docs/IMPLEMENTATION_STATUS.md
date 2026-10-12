@@ -476,3 +476,71 @@ acceptance ещё впереди. Пользовательские ПК/VPS и �
 
 Подробности: [MICROTASK_HTTP_FIXTURE_PORTABILITY.md](MICROTASK_HTTP_FIXTURE_PORTABILITY.md)
 и [MICROTASK_VAULT_DAILY_RECORD.md](MICROTASK_VAULT_DAILY_RECORD.md).
+
+## Контрольная точка 13–14 — чтение файла и атомарный суточный CAS
+
+Пакет из двух ограниченных микрозадач. Reader micro13:
+`43c1b63d1648bf7ee3facd259c730c74a5ef2936`; production micro14:
+`387c5bcbab23f94dd2270e5c716f0b37ed73d513`. Итоговый test-correction head:
+**`3eaec3ab46a064fd3072c91cb96c80b416533a66`**.
+[CI #532](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38227655739)
+проверил merge **`6bd2ef1764cae9429c626261e17632ad353ea8ab`** с неизменным main
+**`4bb336575bb1216d3047bd2b294aeecad9fdd65a`**. Windows, isolated server и
+общий run завершены с **SUCCESS**; результаты сверены по completed logs и jobs.
+
+Три ранних запуска #529/#530/#531 завершены Windows FAIL / server PASS;
+File-reader assertions до отказа: 75/75/76. Первый fixture не помечал Access
+descriptor изменённым для native восстановления. Явный импорт Access SDDL
+восстановил читаемость; #531 подтвердил remaining failure именно raw SDDL
+equality. Финальная проверка строго сравнивает все упорядоченные access rules,
+точные права, SID, inheritance, protection/canonical flags и отдельно native
+readability; четыре memory vectors проверяют сам comparer. Все ранние head,
+merge, run и job IDs сохранены в
+[MICROTASK_VAULT_DAILY_FILE.md](MICROTASK_VAULT_DAILY_FILE.md).
+Application build в ранних runs компилировал production Store, но отдельный
+Store harness и позже расположенные наборы не достигались. Последующие
+исправления меняли только File tests, production reader/store сохранены.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Source review / whitespace / local public scan | PASS | 224 sources, zero release files; отдельный просмотр reader/store и final evidence |
+| Native прежний reader / policy / protected record | 165 / 134 / 325 PASS | Windows `114739023300`, 09:06:16–09:06:17 UTC; guards и CurrentUser DPAPI |
+| Micro13: bounded file reader / immutable stamp | **110 PASS assertions** | 09:06:18.1525531 UTC; actual ACL denial/restored read/ordered rules, read locks, NTFS junctions, limits, marker/orphan backup; не 110 отдельных scenarios |
+| Micro14: atomic compare-exchange | **149 PASS assertions** | 09:06:21.4596637 UTC; durable snapshots, PIN/day/generation/revision/digest, реальный locked Replace, witnesses и два настоящих child writers |
+| Gate Busy / abandoned owner / broad ACL | PASS | Один SID gate для разных каталогов; bounded wait, fresh read, небезопасный existing ACL не меняется и не допускает публикацию |
+| Desktop / весь Test-ProGo | 3485 / PASS | 09:11:57 и 09:14:59 UTC; Instance26, Maintenance95, Shutdown47 и UpdatePackage5 |
+| Весь Home VPN / portable | 975 / 90 PASS | 09:17:55 и 09:19:14 UTC; прежние строгие recovery/lifecycle и child-import regressions выполнены |
+| Windows HTTP / Python discovery | 7/7 / PASS | 24 reported items: 22 PASS +2 прежних Linux ownership/flock module skips; 09:19:17 UTC |
+| Windows / server / общий run | PASS / PASS / PASS | Jobs `114739023300` / `114739024077`; server operations16, sharing9, provisioning46, independent QR decode с numpy2.2.6/zxing-cpp2.3.0 |
+| Native public release scan / CI ZIP | PASS / PACKED | 224 sources, 44 release files, 09:19:18 UTC; ZIP 491904 bytes, 09:19:22 UTC |
+| CI artifacts | Загружены | Screenshots `11738340469` (278 files), diagnostics `11737232829`, folder `11737683356`, ZIP `11737678429`; pruning для PR skipped |
+| Open/UI, реальный crash/power loss, другой account/ПК и owner acceptance | NOT_CHECKED | Не подключены/не проверены; пользовательская среда не затрагивалась |
+| Целый installer всех31 / published release / merge | PENDING / NONE / NONE | CI artifacts не подменяют завершение плана и owner acceptance |
+
+Reader не создаёт отсутствующие файлы/каталоги, не чинит данные и не выдаёт
+Missing при ошибках доступа, повреждении или оставшемся recovery artifact.
+Stamp фиксирует scope/day/generation/revision и digest всей прочитанной image,
+независимо от правок возвращённого dataset.
+
+Store под проверенным SID mutex делает свежий read и CAS, подготавливает owned
+detached result до публикации, закрывает WriteThrough staging с Flush(true) и
+публикует через exclusive Move либо Replace. Стабильный `.recovery` отделён от
+native backup `.recovery.previous`. Ошибка после marker блокирует Read/Write до
+явного recovery; нет copy/delete/rollback fallback и ложного Success.
+Удаляется только own staging, а при успешной публикации — own backup и marker
+последним. Сохранность прежних bytes установлена в конкретных lock/prepublish
+scenarios; общий hardware/crash guarantee, malicious-user rollback prevention
+и handle-relative sandbox не заявляются.
+
+ERROR `installed=broken-fixture` в maintenance log — намеренный negative update
+case; rollback затем завершён и Maintenance95 прошёл. Общий кандидат PASS.
+
+Следующий небольшой пакет — явный recovery protocol и владение оставшимся
+staging **до подключения Open/UI**; затем durable adoption, CRUD, startup expiry
+и active-session cleanup. Текущие micro13/micro14 и весь CI — **native PASS**.
+F09 остаётся открытым, исторические **22/31** неизменны; новых закрытых полных
+F-пунктов нет, **24/31 пока нет**. Полный installer всех31 и пользовательские
+тесты впереди. ПК/VPS/телефон владельца и установленное приложение не проверялись.
+
+Подробности: [MICROTASK_VAULT_DAILY_FILE.md](MICROTASK_VAULT_DAILY_FILE.md)
+и [MICROTASK_VAULT_DAILY_STORE.md](MICROTASK_VAULT_DAILY_STORE.md).

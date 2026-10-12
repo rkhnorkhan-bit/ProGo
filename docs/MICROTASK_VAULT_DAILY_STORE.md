@@ -103,7 +103,8 @@ UI, `VaultSession`, генератор ложных данных, запуск �
   файловой публикации нет, существующий ACL остаётся неизменным.
 
 Source review и native Windows CI будут записаны ниже после фактического
-выполнения. До этого их результат не считается PASS.
+выполнения. Эта строка описывает исходную контрольную точку; до native evidence
+ни один native результат не считается PASS.
 
 ## Оставшиеся ограничения
 
@@ -128,3 +129,43 @@ lock/pre-publication тестами. После исключения нет ло
 policy/adoption после durable commit, сохранение CRUD из
 сессии, startup expiry, блокировка активной сессии в полночь, UI и owner acceptance.
 Окружение владельца не проверялось; release/merge/публикации приложения нет.
+
+## Завершённая native контрольная точка 13–14, 2026-10-12
+
+Production micro14 — `387c5bcbab23f94dd2270e5c716f0b37ed73d513`; итоговый
+test-correction head — **`3eaec3ab46a064fd3072c91cb96c80b416533a66`**.
+[CI #532](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38227655739)
+проверил merge **`6bd2ef1764cae9429c626261e17632ad353ea8ab`** с прежним main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`. Windows `114739023300`, server
+`114739024077` и весь run завершены **SUCCESS**. Source review и завершённый
+Store log сверены независимо.
+
+| Проверка | Фактическое доказательство |
+| --- | --- |
+| Отдельный C#5 Store harness с guards | **149 PASS assertions**, 09:06:21.4596637 UTC; zero owner-path/log accesses |
+| Создание/замена, detached snapshot, PIN/day/revision/CAS | Выполнены; устаревшие stamp не принимаются, удаление всех entries сохраняет привязку, reset в обе стороны меняет generation |
+| Реальный delete-lock во время `File.Replace` | 09:06:18.746: отказ, старый ciphertext сохранён, own staging удалён; стабильный witness и отдельный backup оставлены, обычные Read/Write блокируются |
+| Два настоящих child writers с одним stamp | 09:06:19.017: один Success и один Conflict, одна полная следующая ревизия и полный dataset победителя |
+| Global SID gate для разных каталогов | Bounded Busy без публикации, 09:06:20.065; abandoned owner разрешает свежий read/commit, 09:06:21.455 |
+| Чужой recovery marker/backup и broad existing mutex ACL | Не изменены; небезопасный ACL отклонён без публикации и без изменения прав, 09:06:21.459 |
+| Полные Windows/server наборы | PASS; File110, прежние reader165/policy134/record325, desktop3485, Test-ProGo, HomeVPN975, portable90, Windows Python22 PASS +2 platform skips; Ubuntu16/9/46 |
+
+История #529–531 сохранена в
+[MICROTASK_VAULT_DAILY_FILE.md](MICROTASK_VAULT_DAILY_FILE.md): каждый ранний
+Windows run упал в ACL fixture чтения до отдельной Store-harness компиляции и
+запуска. Application build уже компилировал production Store, но не доказывал
+его native поведение. Исправления после micro14 затрагивали только File tests;
+production reader/store не изменялись.
+
+Тестовое удаление witness после lock failure сделано только в owned synthetic
+fixture после проверки сохранности прежних bytes. Это не production recovery.
+Persisted initial-publication fixture не доказывает actual crash; родитель
+ограничивает собственные child PID, без обещания остановки дерева процессов.
+1000 мс ограничивают mutex wait, а не произвольный native I/O/DPAPI.
+
+Явный recovery protocol и ownership оставшегося staging — следующий небольшой
+пакет **до Open/UI integration**. Затем нужны durable adoption, CRUD,
+startup/day expiry и active-session cleanup. F09 открыт, **22/31** неизменны;
+целый installer всех31, другой account/ПК и owner acceptance не проверены.
+CI упаковка не является опубликованным release. Подробные результаты и
+artifacts: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).

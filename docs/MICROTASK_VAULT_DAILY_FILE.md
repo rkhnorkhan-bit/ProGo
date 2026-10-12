@@ -66,7 +66,8 @@ only unique owned temporary directories and synthetic data. Coverage includes:
 - zero/truncated/oversized files, malformed framing, unsupported format and a
   native DPAPI corruption;
 - actual exclusive and compatible read handles, an actual owner read-deny ACL
-  restored in `finally`, and NTFS junctions at the root, an ancestor and target.
+  restored in `finally`, native readability after restoration and strict ordered
+  access-rule comparison, and NTFS junctions at the root, an ancestor and target.
 - recovery witnesses with valid or absent data, directory witnesses, preserved
   ciphertext/witness bytes and no implicit creation or repair.
 - orphan native backups with valid or absent data, directory backups and
@@ -78,3 +79,74 @@ PowerShell harness insertion and native CI evidence. No local .NET compiler is
 available here, so source review is not presented as a native test pass.
 No network drive mapping is created by this harness; the mapped-drive guard has
 source review coverage, without a native network-drive acceptance claim.
+
+## Native ACL fixture corrections, 2026-10-12
+
+The original fixture tried to restore an unmodified `FileSecurity` snapshot.
+.NET Framework persists changed security sections, so this did not mark the
+Access section for restoration. The correction explicitly imports the saved
+Access SDDL into a new descriptor before `File.SetAccessControl` in `finally`.
+The diagnostic run then proved restored native readability, but failed an
+additional raw SDDL text-equality expectation. Text formatting is not the
+permission criterion used by the final fixture.
+
+The final comparer preserves rule order and count and checks every rule's SID,
+exact `FileSystemRights`, allow/deny type, inheritance and propagation flags,
+`IsInherited`, plus protection and canonical status. It does not sort rules,
+mask rights or omit identities. Four memory cases accept an equivalent access
+descriptor and reject changed rights, SID or protection with the same rule
+count. Native readability remains an independent assertion. Failure diagnostics
+emit only fixed phase/assertion names, exception type, counts and comparison
+booleans; they never emit raw SDDL, SID, paths, PIN or dataset values.
+
+| Run | Candidate / tested merge / Windows job | Observed result |
+| --- | --- | --- |
+| [#529](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38224406799) | `387c5bcbab23f94dd2270e5c716f0b37ed73d513` / `b67489602a4ab947814625a3495561b7bf39aa1a` / `114728258306` | Windows FAIL, server PASS; 75 file-reader assertions passed, then failure at the ACL-restoration boundary, 08:35:22 UTC |
+| [#530](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38225220557) | `cb6ccdd1217398bec6ad8c46ce5e6e3a514cf851` / `ecf0ac3c12a193fb138986a10ad611c6e9ddab82` / `114730954908` | Windows FAIL, server PASS; 75 assertions passed, then failure at the ACL restoration/check boundary, 08:43:09 UTC; the generic log did not identify the exact failed operation |
+| [#531](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38226318697) | `60f017d6ed64e65bf7e0daa6c7b795d031dbdecb` / `7a66a92c7961e66ec7e7f5addc7744910d026674` / `114734590349` | Windows FAIL, server PASS; restored native read SUCCESS, 76 assertions passed, then named `AclExactCheck` failed raw SDDL equality, 08:53:42 UTC |
+
+All three runs compiled the production application and passed the existing
+reader165, policy134 and record325 harnesses. They stopped before the separate
+Store test-harness compilation/execution and later desktop/network suites.
+Production `VaultDailyStore.cs` was already included in the application build;
+its native behavior was not established by those early runs. Later corrections
+changed only `tests/VaultDailyFileTests.cs`; production reader/store code stayed
+unchanged. The completed final candidate is recorded below; these failed
+checkpoints remain part of the evidence.
+
+## Completed native checkpoint 13–14, 2026-10-12
+
+Final test-correction head **`3eaec3ab46a064fd3072c91cb96c80b416533a66`** retains
+the production reader/store implementation from
+`387c5bcbab23f94dd2270e5c716f0b37ed73d513` (reader micro13:
+`43c1b63d1648bf7ee3facd259c730c74a5ef2936`).
+[CI #532](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38227655739)
+tested merge **`6bd2ef1764cae9429c626261e17632ad353ea8ab`** with unchanged main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`. Windows job `114739023300`, isolated
+server job `114739024077` and the overall run completed **SUCCESS**.
+
+The independently reviewed completed Windows log reports **110 file-reader
+assertions passed at 09:06:18.1525531 UTC**. These are checks, not 110 distinct
+scenarios. The four comparer vectors passed at 09:06:18.039; native restored
+readability passed at 09:06:18.1059478, and exact ordered access rules/protection
+passed at 09:06:18.1060625. Real read locks, owned read-deny ACL restoration,
+NTFS junctions, fixed-file limits, detached stamps, recovery witnesses and
+orphan backup guards all executed. Guarded application paths and logging were
+not accessed. The separate Store harness then passed **149 assertions**.
+
+Desktop3485, the full Test-ProGo script, HomeVPN975, portable90 and Windows
+Python discovery also passed. Discovery executed all seven HTTP cases: 24
+reported items, 22 passed and only two existing Linux ownership/flock module
+skips. Ubuntu ran operations16, sharing9 and isolated provisioning46; independent
+QR decoding executed there. Public scan passed for 224 sources/44 release files;
+CI artifacts and ZIP were uploaded. These are CI artifacts, not a published
+installer containing all 31 completed plan points.
+
+Source review and native CI now establish this bounded reader microtask. They
+do not establish mapped-drive acceptance, another Windows account/machine,
+hostile filesystem races, actual crash/power-loss durability, Open/UI behavior,
+expiry/session revocation or owner acceptance. Explicit recovery must precede
+store adoption/Open/UI; F09 stays open and historical **22/31** stays unchanged.
+Owner PC/VPS and the installed application were not inspected.
+
+Full checkpoint and artifact IDs: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
