@@ -28,6 +28,40 @@ namespace ProGo
                 digest = (byte[])hash.Clone();
             }
         }
+        private VaultDailyFileStamp(string path, DateTime day, Guid id, long version, byte[] hash)
+        {
+            if (String.IsNullOrEmpty(path) || day.Kind != DateTimeKind.Unspecified || day.TimeOfDay != TimeSpan.Zero ||
+                id == Guid.Empty || version < 0 || hash == null || hash.Length != 32)
+                throw new InvalidDataException("Invalid daily vault evidence.");
+            this.path = path; localDay = day; generation = id; revision = version; digest = (byte[])hash.Clone();
+        }
+        // Journal serialization never exposes a mutable reference to the private digest.
+        internal void WriteEvidence(BinaryWriter writer)
+        {
+            writer.Write((byte)(IsMissing ? 0 : 1));
+            if (IsMissing) return;
+            writer.Write(localDay.Ticks);
+            var id = generation.ToByteArray();
+            try { writer.Write(id); } finally { Array.Clear(id, 0, id.Length); }
+            writer.Write(revision); writer.Write(digest);
+        }
+        internal static VaultDailyFileStamp ReadEvidence(BinaryReader reader, string canonicalDataPath)
+        {
+            var flag = reader.ReadByte();
+            if (flag == 0) return new VaultDailyFileStamp(canonicalDataPath, null, null);
+            if (flag != 1) throw new InvalidDataException("Invalid daily vault evidence.");
+            var day = new DateTime(reader.ReadInt64(), DateTimeKind.Unspecified);
+            byte[] id = null, hash = null;
+            try {
+                id = reader.ReadBytes(16);
+                if (id.Length != 16) throw new InvalidDataException("Invalid daily vault evidence.");
+                var version = reader.ReadInt64(); hash = reader.ReadBytes(32);
+                return new VaultDailyFileStamp(canonicalDataPath, day, new Guid(id), version, hash);
+            } finally {
+                if (id != null) Array.Clear(id, 0, id.Length);
+                if (hash != null) Array.Clear(hash, 0, hash.Length);
+            }
+        }
         internal static VaultDailyFileStamp Create(string path, VaultDailyRecord record, byte[] envelope)
         {
             if (record == null) return new VaultDailyFileStamp(path, null, null);
@@ -122,11 +156,28 @@ namespace ProGo
         }
 
         internal static VaultDailyFileReadResult Read(string root)
+        { return ReadCore(root, FileName, true); }
+
+        // Only gated writer/recovery workers may bypass the stable recovery witness.
+        internal static VaultDailyFileReadResult ReadCandidate(string root, string fileName)
+        {
+            if (fileName != FileName && !IsTransactionFile(fileName, ".new-") && !IsTransactionFile(fileName, ".previous-"))
+                return VaultDailyFileReadResult.Failed(VaultDailyFileReadStatus.FileUnavailable);
+            return ReadCore(root, fileName, false);
+        }
+        private static bool IsTransactionFile(string fileName, string suffix)
+        {
+            var prefix = FileName + suffix; Guid id;
+            return fileName != null && fileName.StartsWith(prefix, StringComparison.Ordinal) &&
+                fileName.Length == prefix.Length + 32 && Guid.TryParseExact(fileName.Substring(prefix.Length), "N", out id) && id != Guid.Empty;
+        }
+        private static VaultDailyFileReadResult ReadCore(string root, string fileName, bool checkRecovery)
         {
             byte[] envelope = null;
             try {
-                var path = CheckedPath(root);
-                RequireNoRecovery(path);
+                var canonicalPath = CheckedPath(root);
+                var path = Path.Combine(Path.GetDirectoryName(canonicalPath), fileName);
+                if (checkRecovery) RequireNoRecovery(canonicalPath);
                 try {
                     var attributes = File.GetAttributes(path);
                     if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0) throw Unavailable();
@@ -144,16 +195,16 @@ namespace ProGo
                         if (stream.ReadByte() != -1) return VaultDailyFileReadResult.Failed(VaultDailyFileReadStatus.InvalidData);
                     }
                     var decoded = VaultDailyRecordCodec.Decode(envelope);
-                    RequireNoRecovery(path);
+                    if (checkRecovery) RequireNoRecovery(canonicalPath);
                     if (decoded.Status == VaultDailyDecodeStatus.Success)
-                        return VaultDailyFileReadResult.Loaded(path, decoded.Record, envelope);
+                        return VaultDailyFileReadResult.Loaded(canonicalPath, decoded.Record, envelope);
                     return VaultDailyFileReadResult.Failed(decoded.Status == VaultDailyDecodeStatus.UnsupportedFormat ?
                         VaultDailyFileReadStatus.UnsupportedFormat : VaultDailyFileReadStatus.InvalidData);
                 } catch (FileNotFoundException) {
                     // Missing means this exact child is absent in a still valid root.
-                    if (!String.Equals(path, CheckedPath(root), StringComparison.OrdinalIgnoreCase)) throw Unavailable();
-                    RequireNoRecovery(path);
-                    return VaultDailyFileReadResult.Absent(path);
+                    if (!String.Equals(canonicalPath, CheckedPath(root), StringComparison.OrdinalIgnoreCase)) throw Unavailable();
+                    if (checkRecovery) RequireNoRecovery(canonicalPath);
+                    return VaultDailyFileReadResult.Absent(canonicalPath);
                 }
             } catch (Exception ex) {
                 if (ex is OutOfMemoryException) throw;

@@ -27,7 +27,7 @@ namespace ProGo
         private static readonly DateTime Day = new DateTime(2026, 10, 12);
         private const string Pin = "1111";
         private static void Check(bool value, string name)
-        { if (!value) throw new Exception(name); passed++; Console.WriteLine("PASS: " + name); }
+        { if (!value) { Console.Error.WriteLine("CHECK-FAIL: " + name); throw new Exception("Store assertion failed"); } passed++; Console.WriteLine("PASS: " + name); }
         private sealed class Fixture : IDisposable
         {
             internal readonly string Root = Path.Combine(Path.GetTempPath(), "ProGo-DailyStore-" + Guid.NewGuid().ToString("N"));
@@ -52,7 +52,8 @@ namespace ProGo
             Check(result.Status == VaultDailyCommitStatus.Success && result.Record != null && result.Stamp != null && result.ErrorMessage == null, name);
             var read = Read(f);
             Check(read.Status == VaultDailyFileReadStatus.Success && read.Stamp.Matches(result.Stamp), name + " durable stamp");
-            Check(Directory.GetFiles(f.Root, "*.new-*").Length == 0 && !File.Exists(f.PathName + ".recovery") && !File.Exists(f.PathName + ".recovery.previous"), name + " leaves no staging or recovery artifacts");
+            Check(Directory.GetFiles(f.Root, "*.new-*").Length == 0 && Directory.GetFiles(f.Root, "*.previous-*").Length == 0 &&
+                !File.Exists(f.PathName + ".recovery") && !File.Exists(f.PathName + ".recovery.previous"), name + " leaves no staging or recovery artifacts");
         }
         private static void Put(Fixture f, VaultDailyRecord record)
         { var bytes = VaultDailyRecordCodec.Encode(record); try { File.WriteAllBytes(f.PathName, bytes); } finally { Array.Clear(bytes, 0, bytes.Length); } }
@@ -154,12 +155,28 @@ namespace ProGo
                         Check(Directory.GetFiles(f.Root, "*.new-*").Length == 1, "staging exists before publication");
                         locked = new FileStream(f.PathName, FileMode.Open, FileAccess.Read, FileShare.Read);
                     });
-                    Failed(result, VaultDailyCommitStatus.FileUnavailable, "native target delete-lock"); Unchanged(f, before, "failed native replace");
-                    Check(File.Exists(f.PathName + ".recovery") && File.Exists(f.PathName + ".recovery.previous") && Read(f).Status == VaultDailyFileReadStatus.FileUnavailable, "failed native replace retains stable witness and backup and blocks reads");
+                    Failed(result, VaultDailyCommitStatus.FileUnavailable, "native target delete-lock");
+                    Check(File.ReadAllBytes(f.PathName).SequenceEqual(before), "failed native replace preserves ciphertext");
+                    var journalBytes = File.ReadAllBytes(f.PathName + ".recovery");
+                    try {
+                        var decoded = VaultDailyJournalCodec.Decode(journalBytes, f.PathName);
+                        Check(decoded.Status == VaultDailyJournalDecodeStatus.Success, "failed native replace retains complete protected journal");
+                        var journal = decoded.Journal;
+                        var pending = VaultDailyFile.ReadCandidate(f.Root, journal.StageFileName);
+                        Check(pending.Status == VaultDailyFileReadStatus.Success && journal.Next.Matches(pending.Stamp), "failed native replace retains exact new staging for recovery");
+                        Check(File.Exists(Path.Combine(f.Root, journal.BackupFileName)) && Read(f).Status == VaultDailyFileReadStatus.FileUnavailable,
+                            "failed native replace retains unique reserved backup and blocks reads");
+                    } finally { Array.Clear(journalBytes, 0, journalBytes.Length); }
                 } finally { if (locked != null) locked.Dispose(); }
                 Failed(Save(f, saved.Stamp, Bound()), VaultDailyCommitStatus.FileUnavailable, "unresolved witness blocks another writer");
-                File.Delete(f.PathName + ".recovery.previous");
-                File.Delete(f.PathName + ".recovery"); // Explicit synthetic fixture recovery after proving old ciphertext is intact.
+                var bytes = File.ReadAllBytes(f.PathName + ".recovery");
+                try {
+                    var journal = VaultDailyJournalCodec.Decode(bytes, f.PathName).Journal;
+                    Check(journal.Previous.Matches(saved.Stamp), "fixture cleanup is scoped to the verified old snapshot");
+                    File.Delete(Path.Combine(f.Root, journal.StageFileName));
+                    File.Delete(Path.Combine(f.Root, journal.BackupFileName));
+                    File.Delete(f.PathName + ".recovery"); // Owned synthetic cleanup only; Recovery has a separate native harness.
+                } finally { Array.Clear(bytes, 0, bytes.Length); }
                 Success(f, Save(f, saved.Stamp, Bound()), "writer gate released after publication failure");
             }
             using (var f = new Fixture()) {
@@ -272,7 +289,7 @@ namespace ProGo
                 InitialAndEdits(); StaleAndScope(); DateResetAndExhaustion(); Failures(); NativePublishFailures(); CrossProcess(); ExistingGateSecurity();
                 Check(AppPaths.Accesses == 0 && SafeLog.Accesses == 0, "guarded owner paths and logs remain untouched");
                 Console.WriteLine("PASS: VaultDailyStoreTests (" + passed + " checks)"); return 0;
-            } catch (Exception) { Console.Error.WriteLine("FAIL: Vault daily store test failed."); return 1; }
+            } catch (Exception ex) { Console.Error.WriteLine("FAIL: Vault daily store test failed type=" + ex.GetType().Name); return 1; }
         }
     }
 }

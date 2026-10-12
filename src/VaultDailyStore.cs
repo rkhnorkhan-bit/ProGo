@@ -6,6 +6,7 @@ using System.Threading;
 
 namespace ProGo
 {
+    internal enum VaultDailyWritePhase { JournalPublished, TargetPublished, AuxiliariesRemoved }
     internal enum VaultDailyCommitStatus
     { Success, Conflict, Busy, FileUnavailable, InvalidData, UnsupportedFormat, RevisionExhausted }
 
@@ -53,9 +54,19 @@ namespace ProGo
         // Narrow deterministic test hook: after closing staging, before native publication.
         internal static VaultDailyCommitResult CompareExchange(string root, VaultDailyFileStamp expected,
             VaultDailyState nextState, Action beforePublish)
+        { return CompareExchangeCore(root, expected, nextState, beforePublish, null); }
+
+        internal static VaultDailyCommitResult CompareExchangeForTest(string root, VaultDailyFileStamp expected,
+            VaultDailyState nextState, Action<VaultDailyWritePhase> phaseHook)
+        { return CompareExchangeCore(root, expected, nextState, null, phaseHook); }
+
+        private static VaultDailyCommitResult CompareExchangeCore(string root, VaultDailyFileStamp expected,
+            VaultDailyState nextState, Action beforePublish, Action<VaultDailyWritePhase> phaseHook)
         {
             Mutex gate = null; bool owned = false, ownStaging = false, ownWitness = false, ownBackup = false;
-            string path = null, staging = null, witness = null, backup = null; byte[] envelope = null;
+            bool ownJournalTemp = false, retainProofs = false;
+            string path = null, staging = null, witness = null, backup = null, journalTemp = null;
+            byte[] envelope = null, journalBytes = null;
             try {
                 if (expected == null || nextState == null) return Failed(VaultDailyCommitStatus.InvalidData);
                 path = VaultDailyFile.CheckedPath(root);
@@ -95,7 +106,9 @@ namespace ProGo
                         VaultDailyCommitStatus.UnsupportedFormat : VaultDailyCommitStatus.InvalidData);
                 // Prepare the detached result and its immutable digest before changing the file.
                 var accepted = VaultDailyCommitResult.Committed(VaultDailyFileReadResult.Loaded(path, snapshot.Record, envelope));
-                staging = path + ".new-" + Guid.NewGuid().ToString("N");
+                var operation = Guid.NewGuid();
+                var journal = VaultDailyJournal.Create(path, operation, current.Stamp, accepted.Stamp);
+                staging = Path.Combine(Path.GetDirectoryName(path), journal.StageFileName);
                 using (var stream = new FileStream(staging, FileMode.CreateNew, FileAccess.Write,
                     FileShare.None, 4096, FileOptions.WriteThrough)) {
                     ownStaging = true;
@@ -110,27 +123,63 @@ namespace ProGo
                 if (finalRead.Status != VaultDailyFileReadStatus.Success && finalRead.Status != VaultDailyFileReadStatus.Missing)
                     return Failed(ReadFailure(finalRead.Status));
                 if (!expected.Matches(finalRead.Stamp)) return Failed(VaultDailyCommitStatus.Conflict);
-                // An ambiguous native publication failure must never look like a new Missing day.
                 witness = Path.Combine(Path.GetDirectoryName(path), VaultDailyFile.RecoveryFileName);
-                using (var marker = new FileStream(witness, FileMode.CreateNew, FileAccess.Write,
-                    FileShare.None, 4096, FileOptions.WriteThrough)) { ownWitness = true; marker.Flush(true); }
                 if (current.Status == VaultDailyFileReadStatus.Success) {
-                    backup = Path.Combine(Path.GetDirectoryName(path), VaultDailyFile.RecoveryBackupFileName);
+                    backup = Path.Combine(Path.GetDirectoryName(path), journal.BackupFileName);
                     using (var reserved = new FileStream(backup, FileMode.CreateNew, FileAccess.Write,
                         FileShare.None, 4096, FileOptions.WriteThrough)) { ownBackup = true; reserved.Flush(true); }
                 }
+                // Publish a complete protected ownership journal before touching the target.
+                // Unknown pre-journal orphans are retained; there is no glob-based cleanup.
+                journalBytes = VaultDailyJournalCodec.Encode(journal);
+                journalTemp = witness + ".new-" + operation.ToString("N");
+                using (var marker = new FileStream(journalTemp, FileMode.CreateNew, FileAccess.Write,
+                    FileShare.None, 4096, FileOptions.WriteThrough)) {
+                    ownJournalTemp = true; marker.Write(journalBytes, 0, journalBytes.Length); marker.Flush(true);
+                }
+                if (!String.Equals(path, VaultDailyFile.CheckedPath(root), StringComparison.OrdinalIgnoreCase) ||
+                    !TargetIsRegular(staging, false) || !TargetIsRegular(journalTemp, false) ||
+                    (ownBackup && !TargetIsRegular(backup, false)))
+                    return Failed(VaultDailyCommitStatus.FileUnavailable);
+                var beforeJournal = VaultDailyFile.Read(root);
+                if (beforeJournal.Status != VaultDailyFileReadStatus.Success && beforeJournal.Status != VaultDailyFileReadStatus.Missing)
+                    return Failed(ReadFailure(beforeJournal.Status));
+                if (!expected.Matches(beforeJournal.Stamp)) return Failed(VaultDailyCommitStatus.Conflict);
+                retainProofs = true; // A rename attempt can have an ambiguous native outcome.
+                File.Move(journalTemp, witness); ownJournalTemp = false; ownWitness = true;
+                if (phaseHook != null) phaseHook(VaultDailyWritePhase.JournalPublished);
                 if (!String.Equals(path, VaultDailyFile.CheckedPath(root), StringComparison.OrdinalIgnoreCase) ||
                     !TargetIsRegular(path, current.Status == VaultDailyFileReadStatus.Missing) || !TargetIsRegular(witness, false) ||
                     (ownBackup && !TargetIsRegular(backup, false)))
                     return Failed(VaultDailyCommitStatus.FileUnavailable);
+                RequireLegacyBackupAbsent(path);
+                if (!JournalMatches(root, path, witness, journalBytes)) return Failed(VaultDailyCommitStatus.FileUnavailable);
+                var prepared = VaultDailyFile.ReadCandidate(root, journal.StageFileName);
+                if (prepared.Status != VaultDailyFileReadStatus.Success || !accepted.Stamp.Matches(prepared.Stamp))
+                    return Failed(VaultDailyCommitStatus.FileUnavailable);
+                var beforeTarget = VaultDailyFile.ReadCandidate(root, VaultDailyFile.FileName);
+                if (beforeTarget.Status != VaultDailyFileReadStatus.Success && beforeTarget.Status != VaultDailyFileReadStatus.Missing)
+                    return Failed(ReadFailure(beforeTarget.Status));
+                if (!expected.Matches(beforeTarget.Stamp)) return Failed(VaultDailyCommitStatus.Conflict);
                 if (current.Status == VaultDailyFileReadStatus.Missing) File.Move(staging, path);
                 else File.Replace(staging, path, backup);
                 ownStaging = false;
+                if (phaseHook != null) phaseHook(VaultDailyWritePhase.TargetPublished);
+                var published = VaultDailyFile.ReadCandidate(root, VaultDailyFile.FileName);
+                if (published.Status != VaultDailyFileReadStatus.Success || !accepted.Stamp.Matches(published.Stamp))
+                    return Failed(VaultDailyCommitStatus.FileUnavailable);
                 if (ownBackup) {
-                    if (!TargetIsRegular(backup, false)) return Failed(VaultDailyCommitStatus.FileUnavailable);
+                    var previous = VaultDailyFile.ReadCandidate(root, journal.BackupFileName);
+                    if (previous.Status != VaultDailyFileReadStatus.Success || !current.Stamp.Matches(previous.Stamp))
+                        return Failed(VaultDailyCommitStatus.FileUnavailable);
                     File.Delete(backup); ownBackup = false;
                 }
-                if (!ownWitness || !TargetIsRegular(witness, false)) return Failed(VaultDailyCommitStatus.FileUnavailable);
+                if (phaseHook != null) phaseHook(VaultDailyWritePhase.AuxiliariesRemoved);
+                RequireLegacyBackupAbsent(path);
+                var settled = VaultDailyFile.ReadCandidate(root, VaultDailyFile.FileName);
+                if (settled.Status != VaultDailyFileReadStatus.Success || !accepted.Stamp.Matches(settled.Stamp) ||
+                    !ownWitness || !JournalMatches(root, path, witness, journalBytes))
+                    return Failed(VaultDailyCommitStatus.FileUnavailable);
                 File.Delete(witness); // Only the stable marker created by this call, after full publication.
                 ownWitness = false;
                 return accepted;
@@ -138,12 +187,19 @@ namespace ProGo
             catch (Exception) { return Failed(VaultDailyCommitStatus.FileUnavailable); }
             finally {
                 if (envelope != null) Array.Clear(envelope, 0, envelope.Length);
-                try { if (ownStaging) CleanupStaging(root, path, staging); }
+                if (journalBytes != null) Array.Clear(journalBytes, 0, journalBytes.Length);
+                try {
+                    if (ownJournalTemp) CleanupStaging(root, path, journalTemp);
+                    if (!retainProofs) {
+                        if (ownStaging) CleanupStaging(root, path, staging);
+                        if (ownBackup) CleanupStaging(root, path, backup);
+                    }
+                }
                 finally { try { if (owned) gate.ReleaseMutex(); } finally { if (gate != null) gate.Dispose(); } }
             }
         }
 
-        private static Mutex CreateGate()
+        internal static Mutex CreateGate()
         {
             SecurityIdentifier user;
             using (var identity = WindowsIdentity.GetCurrent()) user = identity.User;
@@ -175,6 +231,22 @@ namespace ProGo
         {
             try { return (File.GetAttributes(path) & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == 0; }
             catch (FileNotFoundException) { return mayBeMissing; }
+        }
+        private static void RequireLegacyBackupAbsent(string path)
+        {
+            try { File.GetAttributes(path + ".recovery.previous"); }
+            catch (FileNotFoundException) { return; }
+            throw new IOException("Daily recovery evidence is unavailable.");
+        }
+        private static bool JournalMatches(string root, string path, string witness, byte[] expected)
+        {
+            if (!String.Equals(path, VaultDailyFile.CheckedPath(root), StringComparison.OrdinalIgnoreCase) ||
+                !TargetIsRegular(witness, false)) return false;
+            using (var stream = new FileStream(witness, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                if (stream.Length != expected.Length) return false;
+                for (int i = 0; i < expected.Length; i++) if (stream.ReadByte() != expected[i]) return false;
+                return stream.ReadByte() == -1;
+            }
         }
         private static void CleanupStaging(string root, string path, string staging)
         {
