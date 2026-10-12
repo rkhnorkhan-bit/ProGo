@@ -85,3 +85,33 @@ stamp evidence seam, writer/recovery и PowerShell harness. Owner PC/VPS/тел�
 установленное приложение и другой Windows account/ПК не проверялись. Open/UI,
 durable adoption, CRUD, startup/day expiry, полный installer всех31 и owner
 acceptance остаются следующими задачами; merge/release не выполнялись.
+
+## Завершённый native checkpoint 15–16, 2026-10-12
+
+Functional head **`4e44f3124dcec0136a5461ecd79ff2193e4fc223`** проверен в
+[CI #533](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38303786820),
+merge **`5622ce1d028201ccab5affdf2d3cd69c76443ce9`**, main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`. Windows `114992783732`, isolated
+server `114992783483` и общий run завершены **SUCCESS**. Source/tests/doc review
+и completed Journal log сверены независимо.
+
+Native harness дал **211 PASS assertions** в **20:23:10.4506661 UTC**; это checks,
+а не 211 отдельных scenarios. В отдельном разделе журнала ровно 211 PASS,
+нет FAIL. Независимый native Unprotect подтвердил wire layout/exact EOF;
+independent authenticated binary fixture, привязка к настоящему record
+ciphertext, caller-buffer preservation, private digest, DPAPI purpose/tamper,
+foreign scope, версии, evidence/transition negatives и все size/UTF8 limits
+выполнены. Guards подтвердили zero AppPaths/SafeLog accesses.
+
+В том же кандидате File110 и изменённый Store151 прошли; explicit Recovery274,
+desktop3485, Test-ProGo, HomeVPN975, portable90 и Windows Python22 PASS +2
+существующих Linux module skips также прошли. Ubuntu выполнил operations16,
+sharing9 и provisioning46 с independent QR decode. Public scan — 230 sources,
+44 release files; CI artifacts упакованы и загружены.
+
+Это подтверждает bounded memory/native codec и соответствующий protocol.
+Другой account/ПК, hostile-user rollback, actual crash/power loss, Open/UI,
+expiry и owner acceptance не проверены. Статус **22/31**, F09 открыт; до принятия
+данных в UI ещё нужны отдельные integration/adoption задачи. Полный installer
+всех31, merge и опубликованный release отсутствуют. Artifact IDs и общая
+контрольная точка: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).

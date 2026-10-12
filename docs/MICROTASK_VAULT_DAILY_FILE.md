@@ -150,3 +150,17 @@ store adoption/Open/UI; F09 stays open and historical **22/31** stays unchanged.
 Owner PC/VPS and the installed application were not inspected.
 
 Full checkpoint and artifact IDs: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+
+## Protocol evolution after checkpoint 13–14
+
+Micro15–16 adds private stamp evidence serialization and a restricted
+`ReadCandidate(root, fileName)` seam for gated writer/recovery workers. Candidate
+names are limited to the fixed target and transaction-GUID-derived stage/backup
+basenames; their stamps retain the canonical target scope. Ordinary `Read`
+continues to block on any stable journal or legacy fixed backup. It still never
+creates, repairs or implicitly recovers data. Native results for this newer
+source are recorded separately in checkpoint 15–16; checkpoint 13–14 above
+remains the historical evidence for its exact tested head.
+
+See [MICROTASK_VAULT_DAILY_JOURNAL.md](MICROTASK_VAULT_DAILY_JOURNAL.md) and
+[MICROTASK_VAULT_DAILY_RECOVERY.md](MICROTASK_VAULT_DAILY_RECOVERY.md).

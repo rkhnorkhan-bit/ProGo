@@ -101,3 +101,38 @@ At this source checkpoint, no native PASS is claimed. Root owns harness wiring,
 Git publication and the full validation/evidence checkpoint. Recovery remains
 unconnected to Open/UI; durable adoption, CRUD persistence, startup/day expiry,
 active-session cleanup and owner acceptance are subsequent bounded tasks.
+
+## Completed native checkpoint 15–16, 2026-10-12
+
+[CI #533](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38303786820)
+tested functional head **`4e44f3124dcec0136a5461ecd79ff2193e4fc223`**, merge
+**`5622ce1d028201ccab5affdf2d3cd69c76443ce9`**, against unchanged main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`. Windows job `114992783732`, isolated
+server job `114992783483` and the complete run finished **SUCCESS**. The source
+and completed Recovery log were independently reviewed.
+
+Recovery passed **274 assertions at 20:23:16.5913534 UTC**, starting at
+20:23:14.2209408 UTC. These are checks, not 274 separate scenarios. Previous/Next
+selection, exact ciphertext, safe initial completion, undefined Missing,
+reserved-zero and legacy guards, unknown/invalid/unsupported/foreign images all
+executed. Six writer checkpoints and three changed ownership cases passed;
+22 assertions established idempotent subsequent recovery for their fixtures.
+Real stage/journal delete locks, exclusive journal read lock, backup Move lock,
+partial cleanup, retry and second-preflight guards executed. The runner-owned
+read-deny ACL was restored with exact ordered-rule/protection comparison at
+20:23:14.7251786 UTC. Three artifact junctions, a root junction, shared Busy,
+abandoned child gate and broad ACL rejection passed. Application paths/logging
+guards reported zero accesses at 20:23:16.5912431 UTC.
+
+The same candidate passed Journal211, modified Store151, File110 and all prior
+Windows/server suites. Public source/release scan passed; CI artifacts were
+uploaded. No target failure was suppressed or converted to a successful save:
+RecoveredPrevious remains distinct from accepting the failed pending update.
+
+This is verified cooperative recovery of the specified interrupted states.
+Actual crash inside native publication, hardware/power loss, hostile same-user
+sandbox, another Windows account/machine, clock expiry/Open/UI and owner
+acceptance remain unverified. Unknown pre-journal leftovers are preserved.
+F09 stays open, historical **22/31** is unchanged. CI artifacts are not a
+published complete all31 installer. Full evidence and artifact IDs:
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).

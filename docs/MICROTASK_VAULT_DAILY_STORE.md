@@ -169,3 +169,23 @@ startup/day expiry и active-session cleanup. F09 открыт, **22/31** неи
 целый installer всех31, другой account/ПК и owner acceptance не проверены.
 CI упаковка не является опубликованным release. Подробные результаты и
 artifacts: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+
+## Изменение протокола после контрольной точки 13–14
+
+Micro15–16 заменяет новый нулевой witness полным защищённым journal, а новый
+backup получает unique имя `vault.daily.dat.previous-<Operation:N>`. Старый fixed
+`.recovery.previous` остаётся неизвестным legacy evidence и блокирует доступ.
+После попытки атомарной публикации journal writer сохраняет stage/backup при
+ошибке; это может быть единственный проверяемый новый ciphertext. Общая очистка
+по маске не добавлена. У неизвестных остатков до journal ownership не доказан.
+
+Перед target publish проверяются exact stage stamp, прежний CAS, исходные bytes
+journal и отсутствие legacy backup. Перед удалением journal заново проверяются
+exact target, journal bytes и legacy отсутствие. Изменённые артефакты не
+удаляются и не приводят к Success. Recovery использует тот же gate, возвращает
+подтверждённый Previous/Next отдельно и не увеличивает revision.
+
+Это последующий протокол; исходная таблица 13–14 выше относится к своему
+историческому tested head. Новые native результаты сохраняются отдельно в
+checkpoint 15–16 и
+[MICROTASK_VAULT_DAILY_RECOVERY.md](MICROTASK_VAULT_DAILY_RECOVERY.md).

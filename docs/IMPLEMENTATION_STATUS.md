@@ -544,3 +544,65 @@ F-пунктов нет, **24/31 пока нет**. Полный installer вс�
 
 Подробности: [MICROTASK_VAULT_DAILY_FILE.md](MICROTASK_VAULT_DAILY_FILE.md)
 и [MICROTASK_VAULT_DAILY_STORE.md](MICROTASK_VAULT_DAILY_STORE.md).
+
+## Контрольная точка 15–16 — журнал записи и явное восстановление
+
+Пакет из двух микрозадач: защищённый ownership journal и explicit recovery с
+очисткой только подтверждённых transaction artifacts. Functional head
+**`4e44f3124dcec0136a5461ecd79ff2193e4fc223`** проверен в
+[CI #533](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38303786820),
+merge **`5622ce1d028201ccab5affdf2d3cd69c76443ce9`**, прежний main
+**`4bb336575bb1216d3047bd2b294aeecad9fdd65a`**. Оба jobs и общий run —
+**SUCCESS**; source review и завершённые Journal/Recovery/server logs сверены
+независимо. История прежних отказов и PASS checkpoints выше сохранена.
+
+| Проверка | Результат | Доказательство/граница |
+| --- | --- | --- |
+| Source review / whitespace / local public scan | PASS | Полные source/tests/doc и отдельные root File/Store/harness review; 230 sources, zero release files |
+| Native прежний reader / policy / protected record / daily file | 165 / 134 / 325 / 110 PASS | Windows `114992783732`, 20:23:08–20:23:10 UTC; guards и настоящий CurrentUser DPAPI |
+| Micro15: protected journal codec | **211 PASS assertions** | 20:23:10.4506661 UTC; independent Unprotect/layout/EOF/fixture, scope/digest/metadata/limits/purpose/tamper; не 211 отдельных scenarios |
+| Изменённый Store | **151 PASS assertions** | 20:23:13.9185339 UTC; CAS/PIN/day invariants, retained exact staging/journal/unique backup, два real writers, Busy/abandoned/ACL |
+| Micro16: recovery и подтверждённый cleanup | **274 PASS assertions** | 20:23:16.5913534 UTC; Previous/Next, exact bytes, undefined Missing failclosed, initial recovery, legacy/unknown preservation и guards |
+| Native interruption/ownership/lock fixtures | PASS | Шесть writer checkpoints, три changed-ownership edges, partial cleanup/retry и second preflight; реальные delete/read/Move locks, ordered ACL restore, три artifact junctions +root junction, shared/abandoned gate |
+| Desktop / весь Test-ProGo | 3485 / PASS | 20:29:54 и 20:33:00 UTC; Instance26, Maintenance95, Shutdown47, UpdatePackage5 |
+| Весь Home VPN / portable | 975 / 90 PASS | 20:36:19 и 20:38:06 UTC; прежние строгие lifecycle/recovery и child-import cases выполнены |
+| Windows HTTP / Python discovery | 7/7 / PASS | 24 reported items: 22 PASS +2 прежних Linux ownership/flock module skips; 20:38:08 UTC |
+| Windows / server / общий run | PASS / PASS / PASS | Jobs `114992783732` / `114992783483`; Ubuntu operations16, sharing9, provisioning46, independent QR decode с numpy2.2.6/zxing-cpp2.3.0 |
+| Native public scan / CI ZIP | PASS / PACKED | 230 sources, 44 release files, 20:38:09 UTC; ZIP 495490 bytes, 20:38:15 UTC |
+| CI artifacts | Загружены | Screenshots `11772920840` (278 files), diagnostics `11773225557`, folder `11773090703`, ZIP `11772810913`; pruning для PR skipped |
+| Actual crash/power loss, другой account/ПК, hostile filesystem и owner acceptance | NOT_CHECKED | Persisted/exception checkpoints не подменяют hardware durability; environment владельца не проверялся |
+| Open/UI/adoption/CRUD/expiry, целый installer всех31, merge/release | PENDING / PENDING / NONE | Новые seams ещё не подключены к приложению; CI artifacts не являются опубликованным полным выпуском |
+
+Writer теперь атомарно публикует полный DPAPI journal после закрытого flushed
+staging и exclusive reservation unique backup. Journal фиксирует canonical
+scope, transaction GUID и immutable evidence старой/новой images, без PIN и
+dataset. Новый backup — `vault.daily.dat.previous-<Operation:N>`; legacy fixed
+`.recovery.previous` остаётся blocked unknown evidence. После попытки journal
+rename ошибки сохраняют stage/backup: новый ciphertext может быть единственным
+проверяемым кандидатом. Before publish проверяются exact stage, old CAS, journal
+bytes и legacy отсутствие; before journal deletion — fresh exact target и
+journal bytes. Изменённые артефакты не удаляются и не дают ложный Success.
+
+Recovery под тем же verified SID gate сначала проверяет каждый present artifact.
+Current Next принимается; intact Previous сохраняется с отдельным результатом
+RecoveredPrevious. При отсутствующем target сначала восстанавливается exact
+Previous backup, иначе публикуется exact Next stage через exclusive Move.
+Если verified image нет, остаются Conflict и journal; Missing не создаётся.
+Перед cleanup выполняется повторный полный preflight, затем удаляются только
+проверенные auxiliaries и journal последним; returned data получены fresh read.
+Никакой новой revision/PIN/clock state recovery не генерирует. Untracked
+pre-journal stage/backup сохраняются; directory enumeration/glob delete отсутствует.
+
+ERROR `installed=broken-fixture` — намеренная отрицательная maintenance fixture;
+rollback затем завершён и Maintenance95 прошёл. Это не отказ кандидата #533.
+
+Следующий bounded пакет — подключить эти foundations к асинхронному Open и
+durable adoption, сохранив приоритет real authentication. Затем нужны CRUD,
+startup/day expiry и очистка активной сессии в полночь. Текущие micro15/micro16
+и полный CI — **native PASS**. F09 открыт; **22/31** остаётся историческим счётом,
+новых полных закрытых F-пунктов нет, **24/31 пока нет**. Полный installer всех31,
+visual/owner acceptance впереди. ПК/VPS/телефон владельца и установленное
+приложение не проверялись.
+
+Подробности: [MICROTASK_VAULT_DAILY_JOURNAL.md](MICROTASK_VAULT_DAILY_JOURNAL.md)
+и [MICROTASK_VAULT_DAILY_RECOVERY.md](MICROTASK_VAULT_DAILY_RECOVERY.md).
