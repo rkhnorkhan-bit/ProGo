@@ -22,11 +22,17 @@ namespace ProGo
     internal static class VaultDailyFileTests
     {
         private static int passed;
+        private enum TestPhase { Startup, Paths, ExactRead, Failures, AclOriginal, AclOriginalSddl, AclDeny,
+            AclDenyPersist, AclDeniedRead, AclRestoreCreate, AclRestoreDescriptor, AclRestorePersist,
+            AclRestoredRead, AclRestoredAccess, AclRestoredSddl, AclRestoredMetadata, AclExactCheck,
+            DirectoryTarget, Recovery, Reparse, AppGuards }
+        private static TestPhase phase;
         private static string work;
         private static readonly DateTime Day = new DateTime(2026, 10, 12);
         private static readonly Guid Generation = new Guid("0c419b44-470b-421e-a737-8c2be10fa0a8");
         private static void Check(bool condition, string name)
-        { if (!condition) throw new Exception(name); passed++; Console.WriteLine("PASS: " + name); }
+        { if (!condition) { Console.Error.WriteLine("FAIL: " + name); throw new Exception("Static test assertion failed."); }
+            passed++; Console.WriteLine("PASS: " + name); }
         private static string Root(string name)
         { var root = Path.Combine(work, name); Directory.CreateDirectory(root); return root; }
         private static string DataPath(string root) { return Path.Combine(root, VaultDailyFile.FileName); }
@@ -131,21 +137,46 @@ namespace ProGo
                 Failed(root, VaultDailyFileReadStatus.FileUnavailable, "actual exclusive file handle maps unavailable");
             using (var holder = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 Check(VaultDailyFile.Read(root).Status == VaultDailyFileReadStatus.Success, "compatible read sharing preserves stable successful image");
-            var originalSddl = File.GetAccessControl(path, AccessControlSections.Access)
-                .GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+            phase = TestPhase.AclOriginal;
+            var originalAcl = File.GetAccessControl(path, AccessControlSections.Access);
+            phase = TestPhase.AclOriginalSddl;
+            var originalSddl = originalAcl.GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+            phase = TestPhase.AclDeny;
             var denied = File.GetAccessControl(path, AccessControlSections.Access);
             using (var identity = WindowsIdentity.GetCurrent())
                 denied.AddAccessRule(new FileSystemAccessRule(identity.User, FileSystemRights.ReadData, AccessControlType.Deny));
-            try { File.SetAccessControl(path, denied); Failed(root, VaultDailyFileReadStatus.FileUnavailable, "actual owner read-deny ACL maps unavailable"); }
+            try {
+                phase = TestPhase.AclDenyPersist; File.SetAccessControl(path, denied);
+                phase = TestPhase.AclDeniedRead; Failed(root, VaultDailyFileReadStatus.FileUnavailable, "actual owner read-deny ACL maps unavailable");
+            }
             finally {
                 // An unmodified FileSecurity snapshot would persist no DACL changes.
+                var beforeRestore = phase;
+                phase = TestPhase.AclRestoreCreate;
                 var restored = new FileSecurity();
+                phase = TestPhase.AclRestoreDescriptor;
                 restored.SetSecurityDescriptorSddlForm(originalSddl, AccessControlSections.Access);
+                phase = TestPhase.AclRestorePersist;
                 File.SetAccessControl(path, restored);
+                phase = beforeRestore;
             }
-            Check(File.GetAccessControl(path, AccessControlSections.Access).GetSecurityDescriptorSddlForm(AccessControlSections.Access) == originalSddl,
+            phase = TestPhase.AclRestoredRead;
+            var restoredRead = VaultDailyFile.Read(root);
+            Console.WriteLine("CHECK: restored daily read status=" + restoredRead.Status);
+            Check(restoredRead.Status == VaultDailyFileReadStatus.Success, "owned file ACL is restored and readable after denied test");
+            phase = TestPhase.AclRestoredAccess;
+            var restoredAcl = File.GetAccessControl(path, AccessControlSections.Access);
+            phase = TestPhase.AclRestoredSddl;
+            var restoredSddl = restoredAcl.GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+            phase = TestPhase.AclRestoredMetadata;
+            Console.WriteLine("CHECK: original DACL protected=" + originalAcl.AreAccessRulesProtected + " canonical=" + originalAcl.AreAccessRulesCanonical +
+                " rules=" + originalAcl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count);
+            Console.WriteLine("CHECK: restored DACL protected=" + restoredAcl.AreAccessRulesProtected + " canonical=" + restoredAcl.AreAccessRulesCanonical +
+                " rules=" + restoredAcl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count);
+            phase = TestPhase.AclExactCheck;
+            Check(restoredSddl == originalSddl,
                 "owned file DACL is restored exactly after denied test");
-            Check(VaultDailyFile.Read(root).Status == VaultDailyFileReadStatus.Success, "owned file ACL is restored and readable after denied test");
+            phase = TestPhase.DirectoryTarget;
             File.Delete(path); Directory.CreateDirectory(path);
             Failed(root, VaultDailyFileReadStatus.FileUnavailable, "directory at data filename is unavailable");
             Directory.Delete(path);
@@ -205,12 +236,15 @@ namespace ProGo
         }
         public static int Main()
         {
-            work = Path.Combine(Path.GetTempPath(), "ProGo-daily-file-" + Guid.NewGuid().ToString("N"));
             try {
-                Directory.CreateDirectory(work); MissingAndPaths(); ExactReadAndStamp(); CorruptionAndAvailability(); RecoveryWitness(); ReparseGuards();
+                phase = TestPhase.Startup; work = Path.Combine(Path.GetTempPath(), "ProGo-daily-file-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(work);
+                phase = TestPhase.Paths; MissingAndPaths(); phase = TestPhase.ExactRead; ExactReadAndStamp();
+                phase = TestPhase.Failures; CorruptionAndAvailability(); phase = TestPhase.Recovery; RecoveryWitness();
+                phase = TestPhase.Reparse; ReparseGuards(); phase = TestPhase.AppGuards;
                 Check(AppPaths.Accesses == 0 && SafeLog.Accesses == 0, "reader never touches application paths or logging");
                 Console.WriteLine("PASS: VaultDailyFileTests (" + passed + " checks)"); return 0;
-            } catch (Exception) { Console.Error.WriteLine("FAIL: VaultDailyFileTests"); return 1; }
+            } catch (Exception ex) { Console.Error.WriteLine("FAIL: VaultDailyFileTests phase=" + phase + " type=" + ex.GetType().Name + " passed=" + passed); return 1; }
             finally { if (Directory.Exists(work)) Directory.Delete(work, true); }
         }
     }
