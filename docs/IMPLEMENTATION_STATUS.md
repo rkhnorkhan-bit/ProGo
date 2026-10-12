@@ -1,5 +1,61 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
+## Текущий checkpoint 17–18: вход и владение операцией — native PASS
+
+Проверки завершены **12.10.2026 UTC**. F09 остаётся **OPEN**; исторические
+**22/31** не увеличены. Следующие два пакета: фоновое сохранение Add/Edit/Delete
+с владением worker при закрытии, затем полный startup/day expiry и блокировка
+активного сеанса. Полный installer всех31, merge/release и owner acceptance
+остаются PENDING. Ниже сохранены прежние baseline/checkpoints.
+
+Проверенный functional head: `26b6731087b2de20d93d0de212eeb6740d29f4e9`;
+tree: `f9359bef65cb373045ab5b0d621f1f8105b7e0b6`.
+[CI #534](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38309091536)
+завершён **SUCCESS** после повторения только неуспешных jobs на том же коде.
+Проверенный merge: `24daf6981e4091362e00d5b4cf53d0ead048cd1b`,
+неизменный main: `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+Последующие изменения этого checkpoint затрагивают только три документа
+доказательств, не проверенные исходники или тесты.
+
+| Проверка | Результат | Доказательство и граница |
+| --- | --- | --- |
+| Source/tests/contracts review; whitespace; local scan | PASS | Независимые backend/UI/root reviews; 238 sources, zero local release files |
+| Micro17: OpenService | **112 PASS assertions** | Windows attempt2 `115013837172`, 21:23:28.4116349 UTC; explicit paths/zero AppPaths+SafeLog guards, real priority, durable PIN/CAS/recovery, native locks, cancellation и даты |
+| Micro18: production PIN form / context ownership | **51 / 8 PASS assertions** | 21:27:26.7101272–21:27:31.3753374 UTC; heartbeat/single-flight, pending commit, STA/null context, retry, clocks, reentry, Cancel/Escape/X/Dispose, raw shutdown deadline/retry |
+| Reader / policy / record / file / journal / store / recovery | **165 / 134 / 325 / 110 / 211 / 151 / 274 PASS** | Тот же Windows source; настоящие CurrentUser DPAPI и filesystem fixtures |
+| Desktop / весь Test-ProGo | **3544 / PASS** | 21:28:24.5632404 /21:30:38.1140442 UTC; Instance26, Maintenance95, Shutdown47, UpdatePackage5 |
+| HomeVPN / portable | **975 / 90 PASS** | 21:33:25.4763986 /21:34:27.9270748 UTC |
+| Windows Python / HTTP | **22 PASS +2 прежних Linux skips /7 из7 выполнены** | 24 reported items, 21:34:29.7500268 UTC; ownership/flock modules исполнены на Ubuntu |
+| Ubuntu operations / sharing / provisioning | **16 /9 /46 PASS** | Исходный successful job `115010170660`, 21:11–21:12 UTC; numpy2.2.6/zxing-cpp2.3.0, independent QR decode, без skips |
+| Итоговые Windows / server / run | **SUCCESS /SUCCESS /SUCCESS** | Attempt2 jobs `115013837172` /`115013839460`; успешный server result сохранён при повторе Windows |
+| Native public scan / CI ZIP | **238 sources /44 release files PASS; PACKED** | ZIP `503691` bytes, 21:34:32.9472853 UTC; это CI artifact, не цельный installer всех31 |
+| Artifacts | Загружены | Screenshots `11775171039` —282 files; diagnostics `11775141092`, folder `11775200900`, ZIP `11775365792` |
+
+Первый Windows job `115010171117` завершился **FAIL**: неизменённый
+`NativeStructuredSshArguments` с `ssh.exe -G -F` и пустым config превысил
+budget7000ms: 7001ms/TimeoutException, 21:19:39.5631781 UTC. До этого новые
+OpenService112 и UI51+Context8 прошли; это не превращает первый весь Desktop/run
+в PASS. Остальные поздние suites первого job не были подтверждены.
+Повтор не менял исходники, лимит или условия теста: тот же smoke прошёл за
+**53ms**, 21:27:52.7341533 UTC, затем выполнены все оставшиеся suites.
+Причина задержки первой попытки не установлена; история отказа сохранена.
+Maintenance ERROR `installed=broken-fixture` в 21:30:11.0818688 UTC —
+намеренный negative fixture с rollback и Maintenance95 PASS, не отказ кандидата.
+
+Production GUI теперь использует worker probe/create/open. Настоящий PIN
+не зависит от daily store/clock; ложный сеанс выдаётся только после durable
+CAS и повторных clock/token/owner checks. Session copy сохраняет explicit real
+path или daily lease; обычный редактор уже вызывает durable lease save,
+но выполняет запись синхронно. Полный фоновый CRUD и активное/startup
+истечение суток ещё не завершены. UI adoption midnight check и backend expiry
+не заменяют блокировку уже открытого окна и весь restart workflow.
+Postcreate cancellation не имеет отдельного deterministic native fixture.
+Признаки конкретной ложной сессии/PIN/dataset не добавлены в production logs.
+
+ПК/VPS/телефон владельца и установленная программа не проверялись.
+Actual crash/power loss, hostile same-user rollback/sandbox, другой account/ПК,
+managed-heap wiping и visual/owner acceptance не заявлены проверенными.
+
 ## Baseline до новых исправлений утверждённого плана
 
 Дата фиксации: **11.10.2026**, после утверждения

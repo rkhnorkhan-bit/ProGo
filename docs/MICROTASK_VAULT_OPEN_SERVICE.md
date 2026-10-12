@@ -52,8 +52,9 @@ Cancellation is checked at phase boundaries. Once observed it returns Cancelled
 with no session; it does not undo a completed filesystem transaction. In
 particular, cancellation after successful create or binding CAS may leave a
 durable file/binding already accepted. This is explicitly not a rollback or a
-claim that no writes occurred. The same accepted PIN reopens it, while another
-mismatch is rejected. The GUI must also discard late results after its owner
+claim that no writes occurred. After an accepted daily binding, the same fake PIN
+reopens it and other mismatches are rejected. After create, the correct real PIN
+opens the created file independently of daily state. The GUI must also discard late results after its owner
 closes or requests cancellation, irrespective of the returned status.
 
 The factory receives only local time, never PIN or real data. Every generation
@@ -89,8 +90,21 @@ actual busy gate, provisional and postcommit cancellation, forward/backward
 dates, postcommit expiry, bounded unstable dates and independent generation.
 Owned gate workers are released and joined; no owner environment is inspected.
 
-At this source checkpoint native compilation and execution are **PENDING**.
-Local source/whitespace review is not native PASS. Root records the completed
-exact-head CI evidence after running the independent C#5 Windows harness.
+At the original source freeze native compilation and execution were PENDING.
+Completed [CI #534](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38309091536)
+now confirms **112 native PASS assertions**, Windows attempt2 job
+`115013837172`, 21:23:28.4116349 UTC. Functional head
+`26b6731087b2de20d93d0de212eeb6740d29f4e9`, tree
+`f9359bef65cb373045ab5b0d621f1f8105b7e0b6`, tested merge
+`24daf6981e4091362e00d5b4cf53d0ead048cd1b`. The zero-global-path/log guard
+executed; no Open harness skips occurred. Independent completed-log review
+approved the reported coverage. Postcreate cancellation has no separate
+deterministic native fixture and is not counted as one.
+Attempt1 also passed this112-assertion harness before a later unchanged SSH
+smoke timed out at7001ms against its7000ms budget. Unchanged-source attempt2
+passed that smoke in53ms and the entire Windows/server run succeeded.
+Reader165/policy134/record325/file110/journal211/store151/recovery274,
+Desktop3544, Test-ProGo, HomeVPN975 and portable90 passed on this head.
+The complete failure/retry/artifact evidence is in `IMPLEMENTATION_STATUS.md`.
 Historical **22/31** and open F09 are unchanged; this is not a release, installer
 or acceptance of the owner's installed application/PC/VPS/phone.

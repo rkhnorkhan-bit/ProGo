@@ -62,10 +62,19 @@ Application context отдельно отменяет и ограниченно 
 Source implementation и независимый read-only review: **APPROVE / FROZEN**.
 Исправлены зависимости real adoption от clock, реентрантные owner callbacks,
 гонка Create с повторным probe и native CancelButton DialogResult.
-Native compile/WinForms/полный Windows/server CI: PENDING до завершённых logs;
-наличие fixtures не является результатом их выполнения.
+Native compile/WinForms/полный Windows/server CI: **PASS** по completed
+[CI #534](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38309091536),
+functional `26b6731087b2de20d93d0de212eeb6740d29f4e9`,
+merge `24daf6981e4091362e00d5b4cf53d0ead048cd1b`.
+Attempt2 Windows `115013837172`: UI **51**, context **8** assertions,
+21:27:26.7101272–21:27:31.3753374 UTC; без vault skips. Desktop3544,
+весь Test-ProGo, HomeVPN975, portable90 и общий run — PASS.
+Первый job `115010171117` также выполнил все59 новых assertions, но позднее
+завершился FAIL из-за неизменённого native SSH smoke: 7001ms при budget7000ms.
+На том же коде повтор прошёл за53ms; ни лимит, ни тест не ослаблены.
+Полная история и границы находятся в `IMPLEMENTATION_STATUS.md`.
 
-Это ещё не полный F09: CRUD суточного набора, startup/day expiry и очистка
+Это ещё не полный F09: фоновый CRUD суточного набора, общий startup/day expiry и очистка
 уже открытой fake session в полночь остаются следующими пакетами. UI adoption
 check не заменяет активный expiry timer. ПК/VPS/телефон владельца и его
 установленное приложение не проверялись; merge, release и полный installer
