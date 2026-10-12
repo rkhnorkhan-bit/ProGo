@@ -490,8 +490,7 @@ namespace ProGo
 
         private void SaveEntries(List<VaultEntry> entries)
         {
-            var candidate = new VaultSession(new VaultData { version = session.Data.version, entries = entries }, session.Pin, session.CanPersist);
-            try { VaultService.Save(candidate); }
+            try { VaultService.Save(session.CopyWithData(new VaultData { version = session.Data.version, entries = entries })); }
             catch {
                 // Entry contents, PIN and exception text stay out of the error/log.
                 SafeLog.Info("Vault save failed.");
@@ -724,21 +723,11 @@ namespace ProGo
         public static bool OpenSession(out VaultSession session)
         {
             session = null;
-            var create = !VaultService.Exists();
-            using (var form = new PinForm(create))
+            using (var form = new VaultUnlockForm())
             {
                 if (form.ShowDialog() != DialogResult.OK) return false;
-                try
-                {
-                    session = create ? VaultService.Create(form.Pin) : VaultService.Open(form.Pin);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    SafeLog.Error("Vault unlock/create failed.", ex);
-                    MessageBox.Show("Не удалось открыть хранилище.", AppConstants.ProductName);
-                    return false;
-                }
+                session = form.AcceptedSession;
+                return session != null;
             }
         }
     }

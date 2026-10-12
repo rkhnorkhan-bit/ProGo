@@ -116,6 +116,8 @@ namespace ProGo
                     SettingsAccessibility(settings);
                     HelpAccessibility();
                     VaultAccessibility(settings);
+                    VaultAsyncUnlock();
+                    VaultContextOwnership();
                     WizardAccessibility(settings);
                     ProfileSharingAccessibility(settings);
                     FriendsAccessibility(settings);

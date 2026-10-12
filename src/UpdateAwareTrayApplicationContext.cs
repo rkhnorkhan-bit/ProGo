@@ -66,6 +66,11 @@ namespace ProGo
         private HomeVpnPortableForm portableForm;
         internal Task PortableWork { get; private set; }
         internal bool IsPortableRunning { get { return PortableWork != null && !PortableWork.IsCompleted; } }
+        private VaultUnlockForm vaultUnlockForm;
+        private VaultForm vaultForm;
+        private VaultSession vaultSession;
+        internal Task VaultWork { get; private set; }
+        internal bool IsVaultRunning { get { return VaultWork != null && !VaultWork.IsCompleted; } }
         private readonly TaskCompletionSource<bool> backupOwnerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Action<CancellationToken> beforeBaselineProbe;
         private bool startupBackupScheduled, backupQueued;
@@ -546,7 +551,7 @@ namespace ProGo
             }
         }
         private AppCommandState GetCommandState()
-        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing, IsManualBackupRunning || IsPortableRunning, IntegrationPending); }
+        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending); }
         private void RefreshPendingRoutes()
         {
             var state = GetCommandState();
@@ -787,9 +792,44 @@ namespace ProGo
 
         private void ShowVault()
         {
-            VaultSession session;
-            if (!PinForm.OpenSession(out session)) return;
-            using (var form = new VaultForm(session, clipboard, settings)) form.ShowDialog();
+            if (vaultForm != null && !vaultForm.IsDisposed) { vaultForm.Activate(); return; }
+            if (vaultUnlockForm != null && !vaultUnlockForm.IsDisposed) { vaultUnlockForm.Activate(); return; }
+            if (!CanOpenVault()) return;
+            using (var unlock = new VaultUnlockForm(canStart: CanOpenVault, canPublish: CanPublishVault, workStarted: TrackVaultWork)) {
+                vaultUnlockForm = unlock;
+                try {
+                    if (unlock.ShowDialog() != DialogResult.OK) return;
+                    var session = unlock.AcceptedSession;
+                    if (session == null) return;
+                    if (!CanPublishVault() || !session.IsCurrent(DateTime.Now)) { session.DropSensitive(); return; }
+                    vaultSession = session;
+                    try {
+                        using (var form = new VaultForm(session, clipboard, settings)) {
+                            vaultForm = form; form.ShowDialog();
+                        }
+                    } finally { vaultForm = null; vaultSession = null; session.DropSensitive(); }
+                } finally { if (ReferenceEquals(vaultUnlockForm, unlock)) vaultUnlockForm = null; }
+            }
+        }
+
+        private bool CanPublishVault()
+        { return !closing && !disposed && !shutdownPrepared && !shutdownPreparing && !IsBackupRunning && !IsPortableRunning; }
+        private bool CanOpenVault()
+        { return CanPublishVault() && !IsBackupRunning && !IsPortableRunning && !IsVaultRunning; }
+        private void TrackVaultWork(Task work)
+        {
+            VaultWork = work; RefreshPendingRoutes(); ObserveVaultWork(work);
+        }
+        private async void ObserveVaultWork(Task work)
+        {
+            try { await work.ConfigureAwait(false); } catch (Exception) { }
+            await DispatchUi(delegate { RefreshPendingRoutes(); return true; }).ConfigureAwait(false);
+        }
+        private void CancelVault()
+        {
+            if (vaultUnlockForm != null && !vaultUnlockForm.IsDisposed) vaultUnlockForm.CancelCurrent();
+            if (vaultSession != null) vaultSession.DropSensitive();
+            if (vaultForm != null && !vaultForm.IsDisposed) vaultForm.Close();
         }
 
         private Task<bool> PrepareShutdownAsync(bool dialog, BackupWorkSession preservedBackup = null)
@@ -837,8 +877,14 @@ namespace ProGo
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             Exception failure = null;
             try {
+                CancelVault();
                 if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
-                CancelPortable(); var portable = PortableWork;
+                CancelPortable();
+                var vault = VaultWork;
+                if (vault != null && !vault.IsCompleted && await Task.WhenAny(vault, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != vault)
+                    throw new InvalidOperationException("Операция хранилища ещё не завершена. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
+                if (vault != null) try { await vault.ConfigureAwait(false); } catch (Exception) { }
+                var portable = PortableWork;
                 if (portable != null && !portable.IsCompleted && await Task.WhenAny(portable, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) != portable)
                     throw new InvalidOperationException("Перенос VPN ещё не остановлен: накопитель не завершил текущую операцию. ProGo остаётся запущенным. Дождитесь завершения переноса и повторите выход или обслуживание.");
                 if (portable != null) try { await portable.ConfigureAwait(false); } catch (Exception) { }
@@ -1047,11 +1093,11 @@ namespace ProGo
 
         private void ShowPortableHomeVpn(bool exporting)
         {
-            if (closing || shutdownPrepared || shutdownPreparing || IsBackupRunning) return;
+            if (closing || shutdownPrepared || shutdownPreparing || IsBackupRunning || IsVaultRunning) return;
             if (portableForm != null && !portableForm.IsDisposed) { portableForm.Activate(); return; }
             if (IsPortableRunning) return; // A forced form disposal still owns its worker.
             var form = createPortableForm(exporting); portableForm = form;
-            form.CanStart = () => !closing && !shutdownPrepared && !shutdownPreparing && !IsBackupRunning && !IsPortableRunning;
+            form.CanStart = () => !closing && !shutdownPrepared && !shutdownPreparing && !IsBackupRunning && !IsPortableRunning && !IsVaultRunning;
             form.WorkStarted += delegate { PortableWork = form.Work; if (!closing) RefreshPendingRoutes(); };
             form.ResultApplied += delegate { if (!closing) RefreshPendingRoutes(); };
             form.FormClosed += delegate { if (ReferenceEquals(portableForm, form)) portableForm = null; if (!closing) RefreshPendingRoutes(); };
@@ -1064,7 +1110,7 @@ namespace ProGo
         {
             if (startupBackupScheduled) return startupBackupCompletion;
             if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
-            if (IsPortableRunning) return Task.FromResult(false);
+            if (IsPortableRunning || IsVaultRunning) return Task.FromResult(false);
             if (activationDispatcher.InvokeRequired) throw new InvalidOperationException("Стартовая копия запускается владельцем интерфейса.");
             if (IsBackupRunning) return backupCompletion;
             if (backupForm != null && !backupForm.IsDisposed) backupForm.Close();
@@ -1099,7 +1145,7 @@ namespace ProGo
         internal Task CreateManualBackupAsync()
         {
             if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
-            if (IsPortableRunning) return Task.FromResult(false);
+            if (IsPortableRunning || IsVaultRunning) return Task.FromResult(false);
             if (IsBackupRunning) { ShowBackupProgress(); return backupCompletion; }
             return BeginBackup(false, new CancellationTokenSource(), null);
         }
@@ -1204,7 +1250,7 @@ namespace ProGo
             if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
                 throw new InvalidOperationException("Восстановление запускается владельцем интерфейса.");
             if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
-            if (IsPortableRunning) return Task.FromResult(false);
+            if (IsPortableRunning || IsVaultRunning) return Task.FromResult(false);
             if (IsBackupRunning) { ShowBackupProgress(); return backupCompletion; }
             BeginBackupActivity("restore", "Читаем список резервных копий в фоне.");
             var activity = backupActivity;
@@ -1373,6 +1419,8 @@ namespace ProGo
                     uiCompletions.Clear();
                 }
                 CancelBackup(); backupOwnerClosed.TrySetResult(true);
+                CancelVault();
+                if (vaultUnlockForm != null && !vaultUnlockForm.IsDisposed) vaultUnlockForm.Dispose();
                 CancelPortable(); if (portableForm != null && !portableForm.IsDisposed) portableForm.Dispose();
                 if (backupWorker == null) {
                     if (startupBackupCompletionSource != null) startupBackupCompletionSource.TrySetResult(false);

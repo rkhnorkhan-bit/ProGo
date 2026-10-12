@@ -69,17 +69,48 @@ namespace ProGo
         public string tag { get; set; }
     }
 
+    internal interface IVaultSessionPersistence
+    {
+        bool IsCurrent(DateTime localNow);
+        void Save(VaultData data, string pin);
+    }
+
     internal sealed class VaultSession
     {
         public VaultData Data { get; private set; }
         public string Pin { get; private set; }
         public bool CanPersist { get; private set; }
+        internal IVaultSessionPersistence Persistence { get; private set; }
+        internal string StoragePath { get; private set; }
+        internal bool IsDiscarded { get; private set; }
 
         public VaultSession(VaultData data, string pin, bool canPersist)
+            : this(data, pin, canPersist, null, null) { }
+
+        internal VaultSession(VaultData data, string pin, bool canPersist,
+            IVaultSessionPersistence persistence, string storagePath = null)
         {
             Data = data;
             Pin = pin;
             CanPersist = canPersist;
+            Persistence = persistence;
+            StoragePath = storagePath;
+        }
+
+        internal VaultSession CopyWithData(VaultData data)
+        {
+            if (IsDiscarded) throw new InvalidOperationException("Сеанс хранилища закрыт.");
+            return new VaultSession(data, Pin, CanPersist, Persistence, StoragePath);
+        }
+
+        internal bool IsCurrent(DateTime localNow)
+        { return !IsDiscarded && (Persistence == null || Persistence.IsCurrent(localNow)); }
+
+        internal void DropSensitive()
+        {
+            // Drop owned references without modifying a caller's shared entry list.
+            Data = VaultData.Empty(); Pin = null; Persistence = null; StoragePath = null;
+            CanPersist = false; IsDiscarded = true;
         }
     }
 
@@ -121,7 +152,6 @@ namespace ProGo
     {
         private const int Iterations = 120000;
         internal const int MaxReadBytes = 8 * 1024 * 1024;
-        private static readonly JavaScriptSerializer Serializer = new JavaScriptSerializer();
         private static readonly string[] EntryStringFields = { "id", "name", "type", "login", "secret", "url_or_host", "notes", "tags", "created_at", "updated_at" };
 
         public static bool Exists()
@@ -145,6 +175,20 @@ namespace ProGo
 
         private static IOException CreateFailure()
         { return new IOException("Не удалось создать хранилище. Возможно, оно уже существует или файл недоступен."); }
+
+        internal static VaultSession CreateAtPath(string path, string pin)
+        {
+            if (String.IsNullOrEmpty(path)) throw new ArgumentException("path");
+            ValidatePin(pin);
+            var session = new VaultSession(VaultData.Empty(), pin, true, null, path);
+            try { SaveCore(session, true); }
+            catch (IOException) { throw CreateFailure(); }
+            catch (UnauthorizedAccessException) { throw CreateFailure(); }
+            catch (System.Security.SecurityException) { throw CreateFailure(); }
+            catch (ArgumentException) { throw CreateFailure(); }
+            catch (NotSupportedException) { throw CreateFailure(); }
+            return session;
+        }
 
         public static VaultSession Open(string pin)
         {
@@ -241,31 +285,38 @@ namespace ProGo
         { object value; return fields.TryGetValue(name, out value) ? (string)value : null; }
 
         public static void Save(VaultSession session)
-        { SaveCore(session, false); }
+        {
+            if (session == null) throw new ArgumentNullException("session");
+            if (session.IsDiscarded) throw new InvalidOperationException("Сеанс хранилища закрыт.");
+            if (session.Persistence != null) { session.Persistence.Save(session.Data, session.Pin); return; }
+            SaveCore(session, false);
+        }
 
         private static void SaveCore(VaultSession session, bool createOnly)
         {
             if (session == null) throw new ArgumentNullException("session");
             if (!session.CanPersist) return;
             var envelope = Encrypt(session.Data ?? VaultData.Empty(), session.Pin);
-            AppPaths.EnsureDirectories();
-            string staging = AppPaths.VaultPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            bool legacyPath = session.StoragePath == null;
+            if (legacyPath) AppPaths.EnsureDirectories();
+            string target = session.StoragePath ?? AppPaths.VaultPath;
+            string staging = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try {
-                var bytes = Encoding.UTF8.GetBytes(Serializer.Serialize(envelope));
+                var bytes = Encoding.UTF8.GetBytes(new JavaScriptSerializer().Serialize(envelope));
                 using (var stream = new FileStream(staging, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
                     stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
                 }
                 // The old ciphertext stays intact until the complete encrypted replacement exists.
                 // Create uses an exclusive move even if another file appears after the PIN prompt.
-                if (createOnly) File.Move(staging, AppPaths.VaultPath);
-                else if (File.Exists(AppPaths.VaultPath)) File.Replace(staging, AppPaths.VaultPath, null);
-                else File.Move(staging, AppPaths.VaultPath);
+                if (createOnly) File.Move(staging, target);
+                else if (File.Exists(target)) File.Replace(staging, target, null);
+                else File.Move(staging, target);
             } finally {
                 // Cleanup cannot hide a failed commit or turn a completed commit into a reported failure.
                 try { if (File.Exists(staging)) File.Delete(staging); }
-                catch { SafeLog.Info("Vault temporary cleanup deferred."); }
+                catch { if (legacyPath) SafeLog.Info("Vault temporary cleanup deferred."); }
             }
-            SafeLog.Info("Vault saved.");
+            if (legacyPath) SafeLog.Info("Vault saved.");
         }
 
         private static VaultEnvelope Encrypt(VaultData data, string pin)
@@ -273,7 +324,7 @@ namespace ProGo
             var salt = RandomBytes(32);
             var iv = RandomBytes(16);
             var keys = DeriveKeys(pin, salt, Iterations);
-            var plain = Encoding.UTF8.GetBytes(Serializer.Serialize(data));
+            var plain = Encoding.UTF8.GetBytes(new JavaScriptSerializer().Serialize(data));
 
             byte[] cipher;
             using (var aes = Aes.Create())
