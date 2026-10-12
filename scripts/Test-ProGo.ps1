@@ -333,6 +333,38 @@ try {
     }
     if ($VaultDailyRecordProcess.ExitCode -ne 0) { Fail 'Vault daily record tests failed' }
 } finally { $VaultDailyRecordProcess.Dispose() }
+$VaultDailyFileHarness = Join-Path $Root 'build\VaultDailyFileTests.exe'
+# Daily-file fixtures use only owned temporary roots and independent path/log guards.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyFileTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyFileHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'src\VaultDailyFile.cs') (Join-Path $Root 'tests\VaultDailyFileTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily file harness build failed' }
+$VaultDailyFileInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyFileInfo.FileName = $VaultDailyFileHarness
+$VaultDailyFileInfo.UseShellExecute = $false
+$VaultDailyFileProcess = [System.Diagnostics.Process]::Start($VaultDailyFileInfo)
+try {
+    if (-not $VaultDailyFileProcess.WaitForExit(90000)) {
+        $VaultDailyFileProcess.Kill()
+        [void]$VaultDailyFileProcess.WaitForExit(5000)
+        Fail 'Vault daily file harness exceeded its process deadline'
+    }
+    if ($VaultDailyFileProcess.ExitCode -ne 0) { Fail 'Vault daily file tests failed' }
+} finally { $VaultDailyFileProcess.Dispose() }
+$VaultDailyStoreHarness = Join-Path $Root 'build\VaultDailyStoreTests.exe'
+# The synchronous store is exercised only on synthetic roots, including native contention.
+& $Csc /nologo /target:exe /main:ProGo.VaultDailyStoreTests /langversion:5 /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultDailyStoreHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'src\VaultDailyPolicy.cs') (Join-Path $Root 'src\VaultDailyRecord.cs') (Join-Path $Root 'src\VaultDailyFile.cs') (Join-Path $Root 'src\VaultDailyStore.cs') (Join-Path $Root 'tests\VaultDailyStoreTests.cs')
+if ($LASTEXITCODE -ne 0) { Fail 'Vault daily store harness build failed' }
+$VaultDailyStoreInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VaultDailyStoreInfo.FileName = $VaultDailyStoreHarness
+$VaultDailyStoreInfo.UseShellExecute = $false
+$VaultDailyStoreProcess = [System.Diagnostics.Process]::Start($VaultDailyStoreInfo)
+try {
+    if (-not $VaultDailyStoreProcess.WaitForExit(90000)) {
+        $VaultDailyStoreProcess.Kill()
+        [void]$VaultDailyStoreProcess.WaitForExit(5000)
+        Fail 'Vault daily store harness exceeded its process deadline'
+    }
+    if ($VaultDailyStoreProcess.ExitCode -ne 0) { Fail 'Vault daily store tests failed' }
+} finally { $VaultDailyStoreProcess.Dispose() }
 & $Csc /nologo /target:exe /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$RecoveryHarness" (Join-Path $Root "src\Core.cs") (Join-Path $Root "src\BoundedLog.cs") (Join-Path $Root "src\ProxyService.cs") (Join-Path $Root "src\ConnectionHealth.cs") (Join-Path $Root "src\DiagnosticProcess.cs") (Join-Path $Root "tests\SocksRecoveryTests.cs")
 if ($LASTEXITCODE -ne 0) { Fail "SOCKS recovery harness build failed" }
 & $RecoveryHarness
