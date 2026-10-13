@@ -3,7 +3,8 @@
 Source checkpoint 2026-10-13. Пакет добавляет owner STA boundary для отзыва
 принятого вспомогательного сеанса в уже открытом `VaultForm`. Startup cleanup,
 backend fencing и application timer проверяются отдельными пакетами/root
-fixtures. Исторический счёт **22/31** не меняется до полного F09 acceptance.
+fixtures. Полный F09 Code/Dev PASS подтверждён #539: текущий прогресс
+**23/31 = исторические 22 + F09**. Историческая baseline-матрица сохранена.
 
 ## Контракт окна
 
@@ -52,7 +53,30 @@ synthetic UI fixtures, ни простое сравнение DateTime не по
 atomic cleanup acceptance или тесты устройства владельца.
 
 Source implementation и независимый scoped read-only review: **APPROVE / FROZEN**.
-Native compile / WinForms / full CI: **PENDING / FOLLOW-UP REQUIRED**.
+Native compile / WinForms / full CI: **PASS**, completed #539.
+
+## Свежая native проверка #539
+
+[CI #539](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38453502193),
+Windows `115490149982`, source `43616a2082d231862862a9d1ed54d0e127bd38e3`,
+tested merge `a007e029c0ce8bbeb0fd61605d78c209d78a57e6`:
+**31 PASS assertions**, 2026-10-13 **19:22:26.9684089–19:22:28.6271700 UTC**.
+Windows/server/run и full Test-ProGo завершены SUCCESS/PASS; skips новых
+vault fixtures нет. Дополнительно runtime70 и standalone expiry130 проверяют
+production owner/backend seams этого же source, restart237 — fresh processes.
+
+Из screenshot artifact `11841933219` просмотрены шесть vault PNG:
+`desktop-shots/vault-unlock-pending.png`, `vault-unlock-wrong-pin.png`,
+`vault-unlock-unavailable.png`, `vault-unlock-create.png`,
+`vault-save-pending.png` и `vault.png` в том же каталоге. Поля/PIN mask,
+labels и busy/error состояния проверены; это ограниченная проверка vault,
+не full DPI/accessibility acceptance. Неблокирующие F17 follow-up по этим
+снимкам перечислены в [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+
+Package PENDING, Live NOT_CHECKED. Реальный Windows reboot, crash/power loss,
+устройства владельца, installer всех31, merge и release не проверены.
+
+## История #537: отказ первого idle assertion
 
 [CI #537](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38449783093),
 Windows `115477409112`, completed FAIL на первом idle expiry assertion
@@ -62,5 +86,9 @@ Windows `115477409112`, completed FAIL на первом idle expiry assertion
 true и становился доступным после detachment во время Dispose. Follow-up
 явно скрывает search/typeFilter и сохраняет строгие assertions; bounded
 Boolean diagnostics позволяют проверить причину без содержимого/PIN/путей.
-Этот вывод требует следующего completed native run; ошибочный run сохранён. Full F09 PASS, installer 31/31,
-owner acceptance, merge и release этим документом не заявлены.
+Для проверки follow-up требовался следующий completed native run; ошибочный
+run сохранён. Его исходная причина остаётся вероятной, несмотря на последующий
+PASS исправленного source. Full F09 PASS, installer 31/31, owner acceptance,
+merge и release этим историческим запуском не подтверждались. #538 прошёл
+active31, но завершился поздним cleanup fixture FAIL; история сохранена в
+[MICROTASK_VAULT_DAILY_RUNTIME.md](MICROTASK_VAULT_DAILY_RUNTIME.md).

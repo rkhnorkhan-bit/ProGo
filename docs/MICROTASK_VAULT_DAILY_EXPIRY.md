@@ -65,8 +65,24 @@ global writer gate. Held waits ограничены 15 секундами и о�
 ## Статус и границы
 
 Source implementation / independent review: **APPROVE / FROZEN**.
-Native compile / Windows standalone / integration CI: **PENDING**.
+Native compile / Windows standalone / integration CI: **PASS**, completed #539.
+
+[CI #539](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38453502193),
+Windows `115490149982`, source `43616a2082d231862862a9d1ed54d0e127bd38e3`,
+tree `3dad3147706bdab90de517fcaac0bb84d94db22b`, tested merge
+`a007e029c0ce8bbeb0fd61605d78c209d78a57e6`: **130 PASS assertions**,
+2026-10-13 **19:17:19.0796755–19:17:23.2058330 UTC**, без skips.
+Actual DPAPI, CAS/locks/recovery, forward/backward и retained first-B/ABA
+fixtures выполнены на owned temp roots. Windows/server/run завершены SUCCESS;
+full Test-ProGo также PASS. Это assertion count, не 130 отдельных scenarios.
+
+История полного FAIL #536/#537/#538 сохранена в
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). Прошедший expiry harness
+в этих runs не закрывал остановившиеся restart/desktop suites.
 
 UI/runtime coordinator, active-session invalidation, restart-process workflow
 и статус полного F09 фиксируются отдельными микрозадачами этого пакета.
-Этот файл не подтверждает owner acceptance, installer всех 31 задач или release.
+Полный F09 имеет Code/Dev PASS в текущем checkpoint; прогресс 23/31 означает
+исторические 22 плюс F09, без новой приёмки остальных пунктов. Package PENDING,
+Live NOT_CHECKED. Этот файл не подтверждает actual Windows reboot/crash,
+owner acceptance, installer всех 31 задач, merge или release.

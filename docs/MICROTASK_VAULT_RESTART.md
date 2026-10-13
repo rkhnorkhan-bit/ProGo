@@ -1,8 +1,18 @@
 # F09 — micro23: native daily-vault restart proof
 
-Status: source implemented; native Windows CI pending. F09 remains OPEN until the full expiry/lifecycle packet passes.
+Status: source implemented; native Windows CI **PASS**, completed #539. The full expiry/lifecycle packet has F09 Code/Dev PASS; current progress is **23/31 = historical 22 + F09**. Package PENDING, Live NOT_CHECKED.
 
-CI #536 (`38447079663`, tested source `4872593`, merge `ebaadcb`) stopped on the first `missing` child after confirmed process/pipe settlement. The original parent hid child stderr, so that run did not identify the child failure phase. No downstream restart/runtime/desktop PASS is claimed for that run. The follow-up source makes private stdin decoding explicit and adds strictly validated numeric failure diagnostics; a fresh native run is required. Argv quoting was checked and left unchanged.
+## Historical #536 failure
+
+CI #536 (`38447079663`, tested source `4872593`, merge `ebaadcb`) stopped on the first `missing` child after confirmed process/pipe settlement. The original parent hid child stderr, so that run did not identify the child failure phase. No downstream restart/runtime/desktop PASS is claimed for that run. The follow-up source makes private stdin decoding explicit and adds strictly validated numeric failure diagnostics; at that checkpoint a fresh native run was required. Argv quoting was checked and left unchanged. Later success does not establish the original failure phase or cause retrospectively.
+
+## Fresh native #539 proof
+
+[CI #539](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38453502193), Windows `115490149982`, source `43616a2082d231862862a9d1ed54d0e127bd38e3`, tree `3dad3147706bdab90de517fcaac0bb84d94db22b`, tested merge `a007e029c0ce8bbeb0fd61605d78c209d78a57e6`: **237 PASS assertions**, all **12 child stages**, 2026-10-13 **19:17:23.3774034–19:17:39.1822061 UTC**, no skips. Writer UTF-8 preamble length **3** and child leading-preamble flag **1** were reported without input or DTO output. Windows/server/run and full Test-ProGo completed SUCCESS/PASS.
+
+Restart237 also passed in #537/#538, but those full runs failed later in Desktop. Their failure history is retained in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md); those targeted results did not establish full F09 acceptance at the time.
+
+## Harness contract and boundaries
 
 `tests/VaultDailyRestartTests.cs` is an independent executable. It launches its own executable as fresh child processes under the current Windows SID and uses the production real-vault reader/writer, daily DPAPI codec, recovery/store, lease, fake-data factory and expiry worker with explicit owned temporary paths.
 
@@ -25,4 +35,4 @@ Child stdout contains one static success/count/BOM-metadata frame. On failure, t
 
 This is a native same-SID process-restart test with injected local dates. It does not claim an OS reboot, hardware memory erasure, trusted wall-clock protection, a hostile same-user filesystem sandbox or inspection of the owner's installed application/devices. UI Add/Edit/Delete and active expiry are covered by the corresponding desktop fixtures, rather than this process harness.
 
-Source implementation / independent contracts review: **APPROVE / FROZEN**. Native compile / full CI остаются **PENDING**.
+Source implementation / independent contracts review: **APPROVE / FROZEN**. Native compile / full CI: **PASS**, #539. Package PENDING / Live NOT_CHECKED; no complete installer of all31, owner acceptance, merge or release is claimed.

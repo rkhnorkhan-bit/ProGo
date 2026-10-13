@@ -1,6 +1,6 @@
 # F09: владелец фоновой суточной очистки
 
-Статус исходников: independent source/tests/contracts review **APPROVE / FROZEN**. Native runtime fixtures прошли в #538, но полный Windows CI завершился FAIL на последующем существующем cleanup fixture; full native acceptance остаётся **PENDING**. Общий исторический счётчик остаётся 22/31 до проверки всего пакета F09.
+Статус исходников: independent source/tests/contracts review **APPROVE / FROZEN**; completed #539 подтвердил полный native PASS. F09 Code/Dev PASS даёт текущий прогресс **23/31 = исторические 22 + F09**; исходная историческая матрица не переписывается. Package PENDING, Live NOT_CHECKED.
 
 `VaultDailyRuntime` владеет отдельной raw-задачей. Открытие и сохранение остаются в `VaultWork`; замена этой задачи не теряет незавершённую очистку. Runtime не ожидает `VaultWork`, поэтому открытие после неправильной аутентификации может ждать суточную очистку без цикла ожидания. Правильный PIN обходит этот барьер.
 
@@ -18,10 +18,16 @@ Runtime удерживает идентификатор поколения, ег
 
 Проверки не меняют системные часы и не обращаются к устройствам владельца. Наблюдение локальной даты не является защищённым внешним источником времени; изменения, которые приложение не могло наблюдать, не выдаются за проверенное событие. Архивная политика и механика переноса данных этим файлом не расширяются.
 
-## Native checkpoint #538: частичный PASS, полный CI FAIL
+## Свежий native checkpoint #539: runtime и полный CI PASS
+
+[CI #539](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38453502193), source `43616a2082d231862862a9d1ed54d0e127bd38e3`, tree `3dad3147706bdab90de517fcaac0bb84d94db22b`, tested merge `a007e029c0ce8bbeb0fd61605d78c209d78a57e6`, Windows `115490149982`: **70 PASS assertions**, 2026-10-13 **19:22:28.7222468–19:22:45.7840823 UTC**, без skips. Actual context, DPAPI/file lock, proper-PIN independence, late Save first-B, bounded retry, seal/drain и rollback владельца выполнены. Число assertions не является числом scenarios.
+
+Последующий Desktop дал **3776 PASS** в 19:23:50.4072802 UTC; full Test-ProGo — **PASS** в 19:26:24.8350519 UTC. Исправленный existing cleanup helper дождался настоящего shutdownTask; original dialog/retained bridge/retry checks выполнены. Windows/server/run завершены SUCCESS. Production source после проверенного checkpoint не меняется; evidence commit затрагивает только пять MD. Установщик всех31, actual Windows reboot/crash, среда владельца, merge и release этим результатом не подтверждены.
+
+## Исторический native checkpoint #538: частичный PASS, полный CI FAIL
 
 [CI #538](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38451781529), проверенный source `c08e0c066ba12fd25adae2ffcdeebe95927a4141`, Windows job `115484240335`, завершён **FAIL**. Standalone expiry дал **130 PASS** в 2026-10-13 19:04:36.6305590 UTC; restart harness — **237 PASS**, все 12 stages, в 19:04:53.3564280 UTC. Active expiry выполнил **31 PASS assertions** в 19:09:27.8555848–19:09:29.2336471 UTC; daily runtime — **70 PASS assertions** в 19:09:29.3432135–19:09:51.9892076 UTC. Это количества assertions, не отдельных scenarios.
 
 Позднее `WindowsCleanupFailureUi` остановил Desktop suite на `native cleanup warning is visible for ExecuteCommand` в 19:09:58.5053194 UTC. Предыдущая проверка предупреждения Stop прошла в 19:09:58.4225057 UTC; интервал около 83ms меньше первого 100ms tick наблюдающего timer. Source review установил неверное ожидание helper: `ExecuteCommand(Exit)` вызывает `async void ExitProGo`, поэтому возвращает null, а `CleanupDialog` затем ждёт уже завершённый `IntegrationWork` предыдущего Stop. Новые `DailyWork`/`SealAndDrain` await проходят раньше создания следующего integration task; helper прекращает наблюдение, пока текущий shutdown ещё не завершён. Этот assertion не доказывает отсутствие production warning.
 
-Узкий follow-up меняет только ожидание fixture: после `ExecuteCommand(AppCommand.Exit)` он захватывает настоящий `shutdownTask`, требует его наличия и ждёт именно его. Поведение `Execute`/`BeginMaintenance`, исходные проверки предупреждения, timer и deadlines сохраняются. Production source этим follow-up не меняется. Исправление требует свежего завершённого native CI; повтор неизменённого #538 не заменяет проверку. Отказ #538 и прежняя история #536/#537 сохраняются; непройденный хвост Desktop и следующих Windows suites не объявляется PASS. F09 Code/Dev, installer всех 31, owner acceptance, merge и release остаются неподтверждёнными.
+Узкий follow-up меняет только ожидание fixture: после `ExecuteCommand(AppCommand.Exit)` он захватывает настоящий `shutdownTask`, требует его наличия и ждёт именно его. Поведение `Execute`/`BeginMaintenance`, исходные проверки предупреждения, timer и deadlines сохраняются. Production source этим follow-up не меняется. На этой контрольной точке исправление требовало свежего завершённого native CI; повтор неизменённого #538 не заменял проверку. Отказ #538 и прежняя история #536/#537 сохраняются; непройденный хвост Desktop и следующих Windows suites того run не объявляется PASS задним числом. F09 Code/Dev, installer всех 31, owner acceptance, merge и release на checkpoint #538 оставались неподтверждёнными.

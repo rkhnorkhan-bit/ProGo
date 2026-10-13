@@ -1,6 +1,97 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint 19–20: фоновое сохранение и владение worker — native PASS
+## Текущий checkpoint 21–23: F09 Code/Dev PASS — 23/31
+
+Проверки завершены **13.10.2026 UTC**. Полный утверждённый F09 реализован
+и проверен в разработке: startup/day expiry, немедленная блокировка при
+наблюдённой смене локального дня и end-to-end restart/day-boundary acceptance
+добавлены к прежним PIN/open/atomic CRUD проверкам. Текущий прогресс —
+**23/31: исторические 22 + F09 Code/Dev PASS**. Это не свежая приёмка остальных
+22 пунктов; неизменённая историческая baseline-матрица сохранена ниже.
+Открыты восемь: **F16, F17, F19, F22, F23, F27, F30, F31**.
+
+| Текущий слой F09 | Статус |
+| --- | --- |
+| Code | Утверждённая реализация сохранена и интегрирована |
+| Dev | **PASS** на точном source и completed native CI #539 |
+| Package | **PENDING**: цельный setup/updater всех 31 ещё не готов и не принят |
+| Live | **NOT_CHECKED**: установка и среда владельца не проверялись |
+
+Проверенный functional head: `43616a2082d231862862a9d1ed54d0e127bd38e3`;
+tree: `3dad3147706bdab90de517fcaac0bb84d94db22b`.
+[CI #539](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38453502193)
+завершён **SUCCESS**: Windows `115490149982`, server `115490150679` и общий run.
+Проверенный merge: `a007e029c0ce8bbeb0fd61605d78c209d78a57e6`;
+неизменённый main: `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+PR остаётся draft/unmerged; merge в main и release не выполнялись.
+После этого source checkpoint изменяются только пять документов доказательств;
+исходники приложения и tests остаются замороженными.
+
+| Проверка | Результат | Доказательство и граница |
+| --- | --- | --- |
+| Source/tests/contracts review; whitespace | APPROVE /PASS | Независимые root/UI/worker/restart reviews; узкие follow-up сохраняют исходные assertions и deadlines |
+| Reader / policy / record / file / journal / store / recovery / open | **165 /134 /325 /110 /211 /151 /274 /112 PASS** | Тот же итоговый source на Windows; CurrentUser DPAPI и настоящие filesystem fixtures |
+| Micro21: standalone daily expiry | **130 PASS assertions** | 19:17:19.0796755–19:17:23.2058330 UTC; forward/backward, retained first-B/ABA, advanced revision, actual locks/CAS/recovery |
+| Micro23: restart processes | **237 PASS assertions; 12 stages** | 19:17:23.3774034–19:17:39.1822061 UTC; same-SID fresh processes, exact persisted DTO, bound-zero, day boundaries; transport BOM3/child1 |
+| Micro19: async save UI, перепроверка | **60 PASS assertions** | 19:22:04.2340395–19:22:07.6149677 UTC; snapshot, heartbeat, single-flight, owner loss, ошибки/retry и закрытие |
+| Micro20: durable CRUD / save owner, перепроверка | **71 PASS assertions** | 19:22:08.1273429–19:22:26.8789733 UTC; real/daily Add/Edit/Delete/reopen, locks/CAS, empty binding, raw shutdown/Dispose |
+| Active expiry UI | **31 PASS assertions** | 19:22:26.9684089–19:22:28.6271700 UTC; idle/activation/editor, invalid clock, pending save/adoption, A→B→A и hidden teardown |
+| Daily runtime / actual context | **70 PASS assertions** | 19:22:28.7222468–19:22:45.7840823 UTC; startup barrier, proper-PIN independence, backoff, late save token, seal/drain и shutdown rollback |
+| Desktop / весь Test-ProGo | **3776 /PASS** | 19:23:50.4072802 /19:26:24.8350519 UTC; Instance26, Maintenance95, Shutdown47, UpdatePackage5; прежний cleanup fixture выполнен после исправления ожидания |
+| HomeVPN / portable | **975 /90 PASS** | 19:29:07.4989172 /19:30:15.2881742 UTC |
+| Windows Python / HTTP | **22 PASS +2 прежних Linux skips /7 из7 выполнены** | 24 reported items; ownership/flock modules выполнены на Ubuntu, новые vault fixtures без skips |
+| Ubuntu operations / sharing / provisioning | **16 /9 /46 PASS** | 19:16:20.2767540 /19:16:26.6724506 /19:18:25.4815736 UTC; numpy2.2.6/zxing-cpp2.3.0, actual independent QR decode, без skips |
+| Итоговые Windows / server / run | **SUCCESS /SUCCESS /SUCCESS** | Completed CI #539; частичный результат прошлых runs не подменяет этот запуск |
+| Native public scan / CI ZIP | **252 sources /44 release files PASS; PACKED** | 19:30:18.2163346 UTC; inner ZIP `515704` bytes, 19:30:21.7771386 UTC; CI artifact, не цельный installer всех31 |
+| Artifacts | Загружены | Screenshots `11841933219` —283 files; diagnostics `11841324915`, folder `11842123103`, ZIP `11842620208` |
+
+Digest screenshot artifact:
+`170e46a52351cb9b13f860299bb6fe3b2b6db2703e683ac69b4cdd57a746ff32`;
+digest ZIP artifact:
+`566fc917918f8fdfd01924f99b0b845f73a81e91c6ab71ae35b73a85b82ce398`.
+Из свежего screenshot artifact просмотрены `desktop-shots/vault-unlock-pending.png`,
+`vault-unlock-wrong-pin.png`, `vault-unlock-unavailable.png`,
+`vault-unlock-create.png`, `vault-save-pending.png` и `vault.png` в том же каталоге:
+labels, busy/error состояния помещаются, PIN masked. Это ограниченная визуальная
+проверка vault, а не полная приёмка DPI, accessibility или всех 283 снимков.
+
+Свежий UI review оставляет небольшие F17 follow-up: подписи disabled save
+actions слишком тёмные на тёмных кнопках (`vault-save-pending.png`);
+primary action при pending unlock сохраняет яркий accent и выглядит enabled
+(`vault-unlock-pending.png`); create повторяет правило четырёх цифр в hint
+и status (`vault-unlock-create.png`). Все три снимка находятся в
+[artifact `11841933219`](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38453502193/artifacts/11841933219).
+Это наблюдаемые UI polish задачи открытого F17, без блокера F09; code fixes
+в evidence checkpoint не выполняются.
+
+Negative maintenance fixture `installed=broken-fixture` печатает ожидаемую
+ошибку в **19:25:59.0081769 UTC** и завершается Maintenance95 PASS; это не
+отказ кандидата. Неизменённый OpenSSH smoke прошёл за **2682ms** при прежнем
+budget7000ms в **19:23:16.2650091 UTC**; прежняя история timeout сохранена.
+
+Предыдущие отказы пакета не удаляются:
+
+| Run | Сохранённый результат и причина |
+| --- | --- |
+| [#536](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38447079663) | Full FAIL: первый restart child `missing`; исходная фаза скрыта и причина не установлена. Backend130 прошёл; downstream restart/runtime/desktop PASS не заявлен. Follow-up сделал строгий stdin UTF-8 и безопасные numeric diagnostics; argv был проверен и не менялся. |
+| [#537](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38449783093) | Full FAIL: первый active idle expiry assertion, 18:54:46.7920159 UTC; restart237/12 stages прошёл. Visibility/detachment остаётся вероятным объяснением исходного отказа; собственные search/typeFilter flags затем явно скрыты. |
+| [#538](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38451781529) | Full FAIL: expiry130/restart237/active31/runtime70 прошли, затем cleanup helper упал в 19:09:58.5053194 UTC. Source review установил ожидание старого completed IntegrationWork вместо текущего shutdownTask; исправлены только helper и документ. Незапущенный хвост того run не становится PASS задним числом. |
+
+Runtime хранит отдельную raw-задачу и immutable generation/day/first-B metadata,
+не dataset. Startup/fake barrier не блокирует правильный PIN. Смена дня
+необратимо отзывает lease; UI сразу скрывается, pending Save остаётся tracked
+до settlement. `IsCurrent` — ограниченное неблокирующее наблюдение даты без IO
+и save gate; A→B→A не возвращает наблюдённый истёкший lease. Cleanup учитывает
+late Save revision и завершается до maintenance handoff в общем bounded budget.
+
+Native restart подтверждён под тем же Windows SID с injected local dates.
+Фактический Windows reboot, аппаратный crash/power loss, hostile same-user
+rollback, защищённый внешний источник времени и managed-heap wiping не
+проверялись и не обещаются. ПК/VPS/телефон владельца, установленное приложение
+и внешние live зависимости не проверялись. CI ZIP не закрывает F22/F23,
+не заменяет цельный setup/updater и не означает итоговый 31/31.
+
+## Предыдущий checkpoint 19–20: фоновое сохранение и владение worker — native PASS
 
 Проверки завершены **13.10.2026 UTC**. F09 остаётся **OPEN**, исторические
 **22/31** не увеличены. До F09 Code/Dev PASS и **23/31** остался один пакет:
