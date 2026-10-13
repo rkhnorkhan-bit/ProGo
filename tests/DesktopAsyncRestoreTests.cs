@@ -378,7 +378,9 @@ namespace ProGo
             internal int CliCleanup, WindowsCleanup;
             private readonly Dictionary<string, byte[]> installed;
 
-            internal AsyncRestoreContextFixture(string root, int shutdownTimeout = 3000)
+            internal AsyncRestoreContextFixture(string root, int shutdownTimeout = 3000,
+                Func<string> dailyRootProvider = null, Func<DateTime> vaultClock = null,
+                Action<CancellationToken> beforeDailyCleanup = null)
             {
                 if (File.Exists(CliProxyEnvironmentService.BackupPath) || File.Exists(SystemProxyService.BackupPath))
                     throw new Exception("async restore fixture must not own unrelated native proxy journals");
@@ -391,7 +393,8 @@ namespace ProGo
                 Clipboard = new ClipboardService(Settings); Monitor = new ConnectionHealthMonitor(() => Settings.Current);
                 Context = new UpdateAwareTrayApplicationContext(Settings, Proxy, Bridge, Home, Clipboard, false, Monitor,
                     () => { Interlocked.Increment(ref WindowsCleanup); return new WindowsProxyRestoreResult(); }, null, null, shutdownTimeout,
-                    null, () => Interlocked.Increment(ref CliCleanup));
+                    null, () => Interlocked.Increment(ref CliCleanup),
+                    dailyRootProvider: dailyRootProvider, vaultClock: vaultClock, beforeDailyCleanup: beforeDailyCleanup);
                 var tray = (NotifyIcon)Field(Context, "tray");
                 Commands = MenuItems(tray.ContextMenuStrip.Items).Where(i => i.Tag is AppCommand).ToDictionary(i => (AppCommand)i.Tag, i => (ToolStripItem)i);
                 installed = new[] { AppPaths.SettingsPath, Path.Combine(AppPaths.Root, "vault.enc.json"), Path.Combine(AppPaths.Root, "VERSION") }

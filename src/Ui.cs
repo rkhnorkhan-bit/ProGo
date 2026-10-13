@@ -331,12 +331,13 @@ namespace ProGo
         private readonly Func<bool> canStart, canPublish;
         private readonly Action<Task> workStarted;
         private readonly Func<DateTime> clock;
+        private readonly Action<VaultSession, DateTime> expired;
         private readonly Button close, lockButton, copy, delete, edit, add;
         private CancellationTokenSource cancellation;
         private EntryForm activeEditor;
         private long generation;
         private volatile bool disposed;
-        private bool closeAfterWork, cancelRequested;
+        private bool closeAfterWork, cancelRequested, expiryObserved, reloading, clearAfterReload;
         internal Task Work { get; private set; }
         internal Task PresentationWork { get; private set; }
         internal bool IsBusy { get; private set; }
@@ -351,11 +352,12 @@ namespace ProGo
 
         public VaultForm(VaultSession vaultSession, ClipboardService clipboardService, SettingsService settingsService,
             Action<CancellationToken> beforeSave = null, Func<bool> canStart = null, Func<bool> canPublish = null,
-            Action<Task> workStarted = null, Func<DateTime> clock = null, Action afterSave = null)
+            Action<Task> workStarted = null, Func<DateTime> clock = null, Action afterSave = null,
+            Action<VaultSession, DateTime> expired = null)
         {
             this.beforeSave = beforeSave; this.afterSave = afterSave;
             this.canStart = canStart; this.canPublish = canPublish; this.workStarted = workStarted;
-            this.clock = clock ?? (() => DateTime.Now);
+            this.clock = clock ?? (() => DateTime.Now); this.expired = expired;
             session = vaultSession;
             clipboard = clipboardService;
             settings = settingsService;
@@ -438,33 +440,41 @@ namespace ProGo
             root.Controls.Add(buttons, 0, 2);
             CancelButton = close; close.DialogResult = lockButton.DialogResult = DialogResult.None;
             UiTheme.ConfigureKeyboardOrder(this);
-            Reload();
+            Reload(); Activated += delegate { CheckCurrent(); };
         }
 
+        private bool CanRender { get { return Live && !session.IsDiscarded && !expiryObserved && !closeAfterWork; } }
         private void Reload()
         {
-            if (!Live || session.IsDiscarded) return;
-            grid.Columns.Clear();
-            grid.Rows.Clear();
-            grid.Columns.Add("name", "Название");
-            grid.Columns.Add("type", "Тип");
-            grid.Columns.Add("login", "Логин");
-            grid.Columns.Add("host", "Сайт / сервер");
-            grid.Columns.Add("tags", "Метки");
-            grid.Columns.Add("updated", "Изменено");
-
-            var q = search.Text.Trim().ToLowerInvariant();
-            foreach (var entry in session.Data.entries.OrderByDescending(e => e.updated_at))
-            {
-                if (!MatchesSearch(entry, q) || !MatchesType(entry)) continue;
-                var row = grid.Rows.Add(entry.name, DisplayType(entry.type), entry.login, entry.url_or_host, entry.tags, entry.updated_at);
-                grid.Rows[row].Tag = entry;
+            if (!CanRender || reloading) return;
+            reloading = true;
+            try {
+                grid.Columns.Clear(); grid.Rows.Clear();
+                foreach (var column in new[] { new[] { "name", "Название" }, new[] { "type", "Тип" }, new[] { "login", "Логин" },
+                    new[] { "host", "Сайт / сервер" }, new[] { "tags", "Метки" }, new[] { "updated", "Изменено" } }) {
+                    if (!CanRender) return; grid.Columns.Add(column[0], column[1]);
+                }
+                var q = search.Text.Trim().ToLowerInvariant();
+                foreach (var entry in session.Data.entries.OrderByDescending(e => e.updated_at)) {
+                    if (!CanRender) return;
+                    if (!MatchesSearch(entry, q) || !MatchesType(entry)) continue;
+                    var row = grid.Rows.Add(entry.name, DisplayType(entry.type), entry.login, entry.url_or_host, entry.tags, entry.updated_at);
+                    if (!CanRender) return;
+                    grid.Rows[row].Tag = entry;
+                }
+                if (!CanRender) return;
+                emptyState.Text = grid.Rows.Count != 0 ? "" : session.Data.entries.Count == 0
+                    ? "Записей пока нет. Добавить запись можно кнопкой «Добавить»."
+                    : "Совпадений нет. Измените поиск или выберите «Все» в фильтре.";
+                if (!CanRender) return;
+                emptyState.AccessibleDescription = emptyState.Text; emptyState.Visible = grid.Rows.Count == 0;
+                if (CanRender) grid.AccessibleDescription = GridDescription + (grid.Rows.Count == 0 ? " " + emptyState.Text : "");
+            } catch (InvalidOperationException) { if (CanRender) throw; }
+            finally {
+                reloading = false;
+                if (clearAfterReload) { clearAfterReload = false; HideVaultContents(); }
+                if (Live && closeAfterWork && !IsBusy) CloseSettled();
             }
-            emptyState.Text = grid.Rows.Count != 0 ? "" : session.Data.entries.Count == 0
-                ? "Записей пока нет. Добавить запись можно кнопкой «Добавить»."
-                : "Совпадений нет. Измените поиск или выберите «Все» в фильтре.";
-            emptyState.AccessibleDescription = emptyState.Text; emptyState.Visible = grid.Rows.Count == 0;
-            grid.AccessibleDescription = GridDescription + (grid.Rows.Count == 0 ? " " + emptyState.Text : "");
         }
 
         private bool MatchesType(VaultEntry entry)
@@ -489,14 +499,39 @@ namespace ProGo
         private bool Live { get { return ownerUi.OnOwner && !ownerUi.Closed && !disposed && !IsDisposed && !Disposing; } }
         private bool Allowed(Func<bool> check)
         { if (!Live) return false; try { return check == null || check(); } catch (Exception) { return false; } }
+        internal bool CheckCurrent()
+        {
+            if (!Live || cancelRequested || closeAfterWork || session.IsDiscarded || expiryObserved) return false;
+            if (session.Persistence == null) return true;
+            DateTime localNow;
+            try { localNow = clock(); }
+            catch (Exception) { localNow = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc); }
+            if (!Live || cancelRequested || closeAfterWork || session.IsDiscarded || expiryObserved) return false;
+            return CheckExpiry(localNow);
+        }
+        internal bool CheckExpiry(DateTime localNow)
+        {
+            if (!Live || cancelRequested || closeAfterWork || session.IsDiscarded || expiryObserved) return false;
+            if (session.Persistence == null) return true;
+            bool current = false;
+            try { current = session.IsCurrent(localNow); } catch (Exception) { }
+            if (!Live || cancelRequested || closeAfterWork || session.IsDiscarded || expiryObserved) return false;
+            if (current) return true;
+            // Revoke the shared lease before callbacks or a clock reversal can
+            // revive another prepared wrapper. Revocation performs no file IO.
+            expiryObserved = true; session.Revoke();
+            // Capture cleanup ownership before control events can reentrantly
+            // close/dispose this wrapper and drop its persistence reference.
+            try { if (expired != null) expired(session, localNow); } catch (Exception) { }
+            if (!Live) return false;
+            HideVaultContents(); CloseEditor(); if (Live) CancelCurrent();
+            return false;
+        }
         private bool CanAct()
         {
-            if (!Live || IsBusy || closeAfterWork || session.IsDiscarded) return false;
-            bool current = false;
-            try { current = session.IsCurrent(session.Persistence == null ? default(DateTime) : clock()); } catch (Exception) { }
-            if (!Live || IsBusy || closeAfterWork || session.IsDiscarded) return false;
-            if (!current) { CloseSettled(); return false; }
-            return true;
+            if (!Live || IsBusy || reloading || closeAfterWork || session.IsDiscarded || expiryObserved) return false;
+            if (!CheckCurrent()) return false;
+            return Live && !IsBusy && !closeAfterWork && !session.IsDiscarded && !expiryObserved;
         }
         private bool CanStartAction()
         {
@@ -514,7 +549,7 @@ namespace ProGo
             if (!CanStartAction()) return;
             var entry = VaultEntry.New();
             using (var form = new EntryForm(entry)) {
-                activeEditor = form;
+                activeEditor = form; form.Activated += delegate { CheckCurrent(); };
                 try {
                     if (form.ShowDialog(this) != DialogResult.OK || !CanStartAction()) return;
                     var entries = new List<VaultEntry>(session.Data.entries); entries.Add(form.Entry);
@@ -527,7 +562,7 @@ namespace ProGo
             if (!CanStartAction()) return;
             var selected = SelectedEntry(); if (selected == null) return;
             using (var form = new EntryForm(selected.Clone())) {
-                activeEditor = form;
+                activeEditor = form; form.Activated += delegate { CheckCurrent(); };
                 try {
                     if (form.ShowDialog(this) != DialogResult.OK || !CanStartAction()) return;
                     var index = session.Data.entries.FindIndex(e => e.id == selected.id);
@@ -600,8 +635,7 @@ namespace ProGo
                 if (!Live || request != generation) return;
                 if (cancelRequested || closeAfterWork || token.IsCancellationRequested) { CloseSettled(); return; }
                 if (!allowed) { CloseSettled(); return; }
-                bool current = false;
-                try { current = session.IsCurrent(session.Persistence == null ? default(DateTime) : clock()); } catch (Exception) { }
+                bool current = CheckCurrent();
                 if (!Live || request != generation) return;
                 if (cancelRequested || closeAfterWork || token.IsCancellationRequested || !current) { CloseSettled(); return; }
                 bool failed = result == null || (!result.Committed && !result.Cancelled);
@@ -648,7 +682,7 @@ namespace ProGo
         internal void CancelCurrent()
         {
             if (!Live) return;
-            if (!IsBusy) { CloseSettled(); return; }
+            if (!IsBusy && !reloading) { CloseSettled(); return; }
             cancelRequested = closeAfterWork = true; HideVaultContents();
             if (!Live) return;
             var source = cancellation; if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
@@ -662,8 +696,9 @@ namespace ProGo
             if (search.Parent != null) search.Parent.Visible = false;
             if (ownerUi.Closed || IsDisposed) return;
             typeFilter.SelectedIndex = 0; if (ownerUi.Closed || IsDisposed) return;
-            grid.Rows.Clear(); if (ownerUi.Closed || IsDisposed) return;
             grid.Visible = false; if (ownerUi.Closed || IsDisposed) return; emptyState.Visible = false;
+            if (reloading) { clearAfterReload = true; return; }
+            grid.Rows.Clear();
         }
         private void CloseSettled()
         {
@@ -681,7 +716,7 @@ namespace ProGo
         {
             base.OnFormClosing(e);
             if (e.Cancel || disposed) return;
-            if (IsBusy) { e.Cancel = true; CancelCurrent(); return; }
+            if (IsBusy || reloading) { e.Cancel = true; CancelCurrent(); return; }
             closeAfterWork = true; CloseEditor();
         }
         protected override void OnFormClosed(FormClosedEventArgs e)

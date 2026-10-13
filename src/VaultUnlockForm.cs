@@ -18,6 +18,7 @@ namespace ProGo
         private readonly Func<bool> canStart, canPublish;
         private readonly Action<Task> workStarted;
         private readonly Func<DateTime> clock;
+        private readonly Action<VaultSession, DateTime> expired;
         private readonly TextBox pin = new TextBox { UseSystemPasswordChar = true, Dock = DockStyle.Fill };
         private readonly TextBox confirm = new TextBox { UseSystemPasswordChar = true, Dock = DockStyle.Fill };
         private readonly Label confirmLabel, status;
@@ -35,9 +36,10 @@ namespace ProGo
         internal VaultUnlockForm(Func<CancellationToken, VaultProbeResult> probe = null,
             Func<bool, string, CancellationToken, VaultOpenResult> open = null,
             Func<bool> canStart = null, Func<bool> canPublish = null, Action<Task> workStarted = null,
-            Func<DateTime> clock = null)
+            Func<DateTime> clock = null, Action<VaultSession, DateTime> expired = null)
         {
             this.clock = clock ?? (() => DateTime.Now);
+            this.expired = expired;
             this.probe = probe ?? (token => VaultOpenService.Probe(AppPaths.VaultPath, token));
             this.open = open ?? ((creating, value, token) => creating
                 ? VaultOpenService.Create(AppPaths.VaultPath, value, token)
@@ -145,11 +147,21 @@ namespace ProGo
                 if (!allowed) { FinishError(WaitToStart, false); return; }
                 if (result != null && result.Status == VaultOpenStatus.Success && result.Session != null) {
                     bool current = false;
+                    var observed = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
                     // Real authentication remains independent of a broken clock.
-                    try { current = result.Session.IsCurrent(result.Session.Persistence == null ? default(DateTime) : clock()); } catch (Exception) { }
+                    try {
+                        observed = result.Session.Persistence == null ? default(DateTime) : clock();
+                        current = result.Session.IsCurrent(observed);
+                    } catch (Exception) { }
                     if (!Live || request != generation) return;
                     if (cancelRequested || token.IsCancellationRequested) { FinishCancelled(); return; }
-                    if (!current) { FinishError(VaultOpenResult.Failed(VaultOpenStatus.DateChanged).ErrorMessage, false); return; }
+                    if (!current) {
+                        result.Session.Revoke();
+                        try { if (expired != null) expired(result.Session, observed); } catch (Exception) { }
+                        if (!Live || request != generation) return;
+                        if (cancelRequested || token.IsCancellationRequested) { FinishCancelled(); return; }
+                        FinishError(VaultOpenResult.Failed(VaultOpenStatus.DateChanged).ErrorMessage, false); return;
+                    }
                     IsBusy = false; cancellation = null;
                     AcceptedSession = result.Session; accepted = true; DialogResult = DialogResult.OK; Close(); return;
                 }

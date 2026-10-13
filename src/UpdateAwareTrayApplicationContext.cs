@@ -69,6 +69,10 @@ namespace ProGo
         private VaultUnlockForm vaultUnlockForm;
         private VaultForm vaultForm;
         private VaultSession vaultSession;
+        private readonly VaultDailyRuntime dailyRuntime;
+        private readonly Func<DateTime> vaultClock;
+        private bool dailyTimeEventRegistered, dailyPowerEventRegistered;
+        internal Task DailyWork { get { return dailyRuntime == null ? Task.FromResult(false) : dailyRuntime.Work ?? Task.FromResult(false); } }
         internal Task VaultWork { get; private set; }
         internal bool IsVaultRunning { get { return VaultWork != null && !VaultWork.IsCompleted; } }
         private readonly TaskCompletionSource<bool> backupOwnerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -88,7 +92,7 @@ namespace ProGo
         internal string BackupOperationKind { get { return backupOperationKind; } }
         internal int PendingRouteCount { get { return pendingRoutes.Count; } }
 
-        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000, Action<CancellationToken> beforeBaselineProbe = null, Action cliRestore = null, Action<ProxyFeature, AppSettings> integrationApply = null, int settingsShutdownTimeoutMilliseconds = 3000, Func<bool, HomeVpnPortableForm> portableFormFactory = null)
+        public UpdateAwareTrayApplicationContext(SettingsService settingsService, ProxyService proxyService, CliProxyBridgeService cliProxyService, HomeVpnService homeVpnService, ClipboardService clipboardService, bool showStatusOnStartup, ConnectionHealthMonitor health = null, Func<WindowsProxyRestoreResult> windowsRestore = null, Func<UpdateCheckForm> updateFormFactory = null, Action<string, CancellationToken> beforeBackupCopy = null, int backupShutdownTimeoutMilliseconds = 3000, Action<CancellationToken> beforeBaselineProbe = null, Action cliRestore = null, Action<ProxyFeature, AppSettings> integrationApply = null, int settingsShutdownTimeoutMilliseconds = 3000, Func<bool, HomeVpnPortableForm> portableFormFactory = null, Func<string> dailyRootProvider = null, Func<DateTime> vaultClock = null, Action<CancellationToken> beforeDailyCleanup = null)
         {
             settings = settingsService;
             if (settingsShutdownTimeoutMilliseconds < 1 || settingsShutdownTimeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("settingsShutdownTimeoutMilliseconds");
@@ -116,6 +120,8 @@ namespace ProGo
             this.health = health ?? new ConnectionHealthMonitor(() => settings.Current);
             icon = BrandIcon.Create(SystemInformation.SmallIconSize.Width);
             activationDispatcher.CreateControl();
+            this.vaultClock = vaultClock ?? (() => DateTime.Now);
+            dailyRuntime = new VaultDailyRuntime(dailyRootProvider ?? (() => AppPaths.Root), this.vaultClock, beforeDailyCleanup);
 
             tray = new NotifyIcon
             {
@@ -127,8 +133,12 @@ namespace ProGo
             tray.DoubleClick += delegate { ExecuteCommand(AppCommand.ShowMain); };
             UpdateTooltip();
             this.health.Changed += HealthChanged;
-            statusTimer.Tick += delegate { appConsumers.ReleaseIfUnused(); UpdateTooltip(); RefreshPendingRoutes(); };
+            statusTimer.Tick += delegate {
+                ObserveVaultDate(); if (closing || disposed) return;
+                appConsumers.ReleaseIfUnused(); UpdateTooltip(); RefreshPendingRoutes();
+            };
             statusTimer.Start();
+            RegisterVaultDateEvents(); dailyRuntime.Start();
             if (ownsHealth) this.health.Start();
 
             if (showStatusOnStartup)
@@ -795,17 +805,27 @@ namespace ProGo
             if (vaultForm != null && !vaultForm.IsDisposed) { vaultForm.Activate(); return; }
             if (vaultUnlockForm != null && !vaultUnlockForm.IsDisposed) { vaultUnlockForm.Activate(); return; }
             if (!CanOpenVault()) return;
-            using (var unlock = new VaultUnlockForm(canStart: CanOpenVault, canPublish: CanPublishVault, workStarted: TrackVaultWork)) {
+            using (var unlock = new VaultUnlockForm(
+                open: (creating, pin, token) => creating ? VaultOpenService.Create(AppPaths.VaultPath, pin, token) :
+                    OpenVaultForWorker(AppPaths.VaultPath, AppPaths.Root, pin, token),
+                canStart: CanOpenVault, canPublish: CanPublishVault, workStarted: TrackVaultWork,
+                clock: vaultClock, expired: OnVaultExpired)) {
                 vaultUnlockForm = unlock;
                 try {
                     if (unlock.ShowDialog() != DialogResult.OK) return;
                     var session = unlock.AcceptedSession;
                     if (session == null) return;
-                    if (!CanPublishVault() || !session.IsCurrent(DateTime.Now)) { session.DropSensitive(); return; }
+                    bool current = session.Persistence == null;
+                    if (!current) try { current = session.IsCurrent(VaultOpenService.LocalNow(vaultClock)); } catch (Exception) { }
+                    if (!CanPublishVault() || !current) {
+                        if (!current) OnVaultExpired(session, DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc));
+                        session.DropSensitive(); return;
+                    }
                     vaultSession = session;
                     try {
                         using (var form = new VaultForm(session, clipboard, settings,
-                            canStart: CanOpenVault, canPublish: CanPublishVault, workStarted: TrackVaultWork)) {
+                            canStart: CanOpenVault, canPublish: CanPublishVault, workStarted: TrackVaultWork,
+                            clock: vaultClock, expired: OnVaultExpired)) {
                             vaultForm = form; form.ShowDialog();
                         }
                     } finally { vaultForm = null; vaultSession = null; session.DropSensitive(); }
@@ -831,6 +851,72 @@ namespace ProGo
             if (vaultUnlockForm != null && !vaultUnlockForm.IsDisposed) vaultUnlockForm.CancelCurrent();
             if (vaultForm != null && !vaultForm.IsDisposed) vaultForm.CancelCurrent();
             else if (vaultSession != null) vaultSession.DropSensitive();
+        }
+
+        internal VaultOpenResult OpenVaultForWorker(string realPath, string root, string pin, CancellationToken token)
+        {
+            long epoch = 0;
+            return VaultOpenService.Open(realPath, root, pin, vaultClock,
+                () => VaultFakeDataFactory.Create(VaultOpenService.LocalNow(vaultClock)), token,
+                prepareDaily: cancellation => {
+                    var prepared = dailyRuntime.PrepareFake(cancellation).GetAwaiter().GetResult();
+                    cancellation.ThrowIfCancellationRequested();
+                    return DailyOpeningStatus(prepared);
+                }, acceptDaily: lease => dailyRuntime.RegisterOpenedLease(lease, epoch),
+                beginDaily: now => epoch = dailyRuntime.BeginOpening(now));
+        }
+        private static VaultOpenStatus? DailyOpeningStatus(VaultDailyExpiryResult result)
+        {
+            if (result == null) return VaultOpenStatus.FileUnavailable;
+            switch (result.Status) {
+                case VaultDailyExpiryStatus.Unchanged:
+                case VaultDailyExpiryStatus.Missing:
+                case VaultDailyExpiryStatus.Expired: return null;
+                case VaultDailyExpiryStatus.Busy: return VaultOpenStatus.Busy;
+                case VaultDailyExpiryStatus.Conflict: return VaultOpenStatus.Conflict;
+                case VaultDailyExpiryStatus.Cancelled: return VaultOpenStatus.Cancelled;
+                case VaultDailyExpiryStatus.DateChanged: return VaultOpenStatus.DateChanged;
+                case VaultDailyExpiryStatus.InvalidData: return VaultOpenStatus.InvalidData;
+                case VaultDailyExpiryStatus.UnsupportedFormat: return VaultOpenStatus.UnsupportedFormat;
+                default: return VaultOpenStatus.FileUnavailable;
+            }
+        }
+        private void OnVaultExpired(VaultSession session, DateTime observed)
+        {
+            if (closing || disposed || session == null) return;
+            var lease = session.Persistence as VaultDailySessionPersistence;
+            if (lease != null) dailyRuntime.Invalidate(lease, observed);
+        }
+        internal void ObserveVaultDate()
+        {
+            if (closing || disposed || shutdownPreparing || shutdownPrepared ||
+                System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId) return;
+            var observed = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+            try { observed = VaultOpenService.LocalNow(vaultClock); } catch (Exception) { }
+            if (closing || disposed) return;
+            var form = vaultForm;
+            if (form != null && !form.IsDisposed) form.CheckExpiry(observed);
+            if (closing || disposed) return;
+            if (observed.Kind != DateTimeKind.Utc) dailyRuntime.ObserveDate(observed);
+            dailyRuntime.CheckRetry();
+        }
+        private void RegisterVaultDateEvents()
+        {
+            try { Microsoft.Win32.SystemEvents.TimeChanged += VaultTimeChanged; dailyTimeEventRegistered = true; } catch (Exception) { }
+            try { Microsoft.Win32.SystemEvents.PowerModeChanged += VaultPowerChanged; dailyPowerEventRegistered = true; } catch (Exception) { }
+        }
+        private void VaultTimeChanged(object sender, EventArgs e) { QueueVaultDateObservation(); }
+        private void VaultPowerChanged(object sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+        { if (e.Mode == Microsoft.Win32.PowerModes.Resume) QueueVaultDateObservation(); }
+        private async void QueueVaultDateObservation()
+        {
+            try { await DispatchUi(delegate { ObserveVaultDate(); return true; }).ConfigureAwait(false); } catch (Exception) { }
+        }
+        private void UnregisterVaultDateEvents()
+        {
+            if (dailyTimeEventRegistered) try { Microsoft.Win32.SystemEvents.TimeChanged -= VaultTimeChanged; } catch (Exception) { }
+            if (dailyPowerEventRegistered) try { Microsoft.Win32.SystemEvents.PowerModeChanged -= VaultPowerChanged; } catch (Exception) { }
+            dailyTimeEventRegistered = dailyPowerEventRegistered = false;
         }
 
         private Task<bool> PrepareShutdownAsync(bool dialog, BackupWorkSession preservedBackup = null)
@@ -868,23 +954,39 @@ namespace ProGo
                 return PrepareShutdownAsync(dialog);
             }).ConfigureAwait(false);
             bool result = next != null && await next.ConfigureAwait(false);
-            await DispatchUi(delegate { shutdownPreparing = shutdownTask != null && !shutdownTask.IsCompleted; RefreshPendingRoutes(); return true; }).ConfigureAwait(false);
+            await DispatchUi(delegate {
+                shutdownPreparing = shutdownTask != null && !shutdownTask.IsCompleted;
+                ResumeVaultDaily(); RefreshPendingRoutes(); return true;
+            }).ConfigureAwait(false);
             return result;
         }
         private async Task<bool> PrepareShutdownCore(bool dialog, BackupWorkSession preservedBackup)
         {
+            ObserveVaultDate();
             shutdownPreparing = true;
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             Exception failure = null;
+            var vaultDeadline = Stopwatch.StartNew();
             try {
+                dailyRuntime.Pause();
                 CancelVault();
                 if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
                 CancelPortable();
-                var vault = VaultWork;
+                var vault = Task.WhenAll(VaultWork ?? Task.FromResult(false), DailyWork);
                 if (vault != null && !vault.IsCompleted && await Task.WhenAny(vault, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != vault)
                     throw new InvalidOperationException("Операция хранилища ещё не завершена. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
                 if (vault != null) try { await vault.ConfigureAwait(false); } catch (Exception) { }
+                // The raw open/save can publish a final expiry observation while
+                // settling. Drain those accepted identities before native hand-off.
+                var sealedWork = await DispatchUi(() => dailyRuntime.SealAndDrain()).ConfigureAwait(false);
+                if (sealedWork == null) return false;
+                int remaining = Math.Max(1, settingsShutdownTimeoutMilliseconds - (int)Math.Min(Int32.MaxValue, vaultDeadline.ElapsedMilliseconds));
+                if (!sealedWork.IsCompleted && await Task.WhenAny(sealedWork, Task.Delay(remaining)).ConfigureAwait(false) != sealedWork)
+                    throw new InvalidOperationException("Операция хранилища ещё не завершена. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
+                await sealedWork.ConfigureAwait(false);
+                if (dailyRuntime.HasPendingExpiry)
+                    throw new InvalidOperationException("Не удалось завершить операцию хранилища. ProGo остаётся запущенным; проверьте доступность файла и повторите выход или обслуживание.");
                 var portable = PortableWork;
                 if (portable != null && !portable.IsCompleted && await Task.WhenAny(portable, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) != portable)
                     throw new InvalidOperationException("Перенос VPN ещё не остановлен: накопитель не завершил текущую операцию. ProGo остаётся запущенным. Дождитесь завершения переноса и повторите выход или обслуживание.");
@@ -927,7 +1029,11 @@ namespace ProGo
                     shutdownPrepared = true;
                     if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
                     return true;
-                } finally { shutdownPreparing = reservedShutdownTask != null && !reservedShutdownTask.IsCompleted; RefreshPendingRoutes(); }
+                } finally {
+                    shutdownPreparing = reservedShutdownTask != null && !reservedShutdownTask.IsCompleted;
+                    ResumeVaultDaily();
+                    RefreshPendingRoutes();
+                }
             }).ConfigureAwait(false);
         }
         // A modal dialog may remove or replace SynchronizationContext. The persistent
@@ -1002,7 +1108,9 @@ namespace ProGo
         internal void CancelShutdown()
         {
             if (closing || activationDispatcher.IsDisposed || maintenanceHandedOff) return;
-            try { activationDispatcher.BeginInvoke(new Action(delegate { if (!closing && !maintenanceHandedOff) { shutdownPrepared = false; RefreshPendingRoutes(); } })); }
+            try { activationDispatcher.BeginInvoke(new Action(delegate {
+                if (!closing && !maintenanceHandedOff) { shutdownPrepared = false; ResumeVaultDaily(); RefreshPendingRoutes(); }
+            })); }
             catch (InvalidOperationException) { }
         }
         private async Task<bool> BeginMaintenance(Func<bool> launch)
@@ -1012,8 +1120,13 @@ namespace ProGo
             return await DispatchUi(delegate {
                 bool handedOff = false;
                 try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
-                finally { if (!handedOff) { shutdownPrepared = false; RefreshPendingRoutes(); } }
+                finally { if (!handedOff) { shutdownPrepared = false; ResumeVaultDaily(); RefreshPendingRoutes(); } }
             }).ConfigureAwait(false);
+        }
+        private void ResumeVaultDaily()
+        {
+            if (!closing && !disposed && !shutdownPrepared && !shutdownPreparing &&
+                maintenanceReservation == null && !maintenanceHandedOff && dailyRuntime.IsPaused) dailyRuntime.Resume();
         }
         private async void ExitProGo()
         {
@@ -1313,7 +1426,7 @@ namespace ProGo
                 lastBackupCancelled = result.Cancelled; lastBackupFailed = result.Failed;
                 if (backupActivityForm != null && !backupActivityForm.IsDisposed) backupActivityForm.Complete(backupStatus);
                 if (result.Accepted) { maintenanceHandedOff = true; CompleteShutdown(); }
-                else shutdownPrepared = false;
+                else { shutdownPrepared = false; ResumeVaultDaily(); }
                 RefreshPendingRoutes(); return true;
             }).ConfigureAwait(false);
         }
@@ -1412,6 +1525,7 @@ namespace ProGo
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
                 lock (integrationLifetimeGate) closing = true;
+                UnregisterVaultDateEvents(); dailyRuntime.Close();
                 integrationWaitCancellation.Cancel();
                 integrationWaitCancellation.Dispose();
                 integrationOwnerClosed.TrySetResult(true);

@@ -76,7 +76,10 @@ namespace ProGo
             catch (Exception) { if (created != null) created.DropSensitive(); return Fail(VaultOpenStatus.FileUnavailable); }
         }
         internal static VaultOpenResult Open(string realPath, string root, string pin, Func<DateTime> clock,
-            Func<VaultData> freshFactory, CancellationToken token)
+            Func<VaultData> freshFactory, CancellationToken token,
+            Func<CancellationToken, VaultOpenStatus?> prepareDaily = null,
+            Func<VaultDailySessionPersistence, bool> acceptDaily = null,
+            Action<DateTime> beginDaily = null)
         {
             try {
                 token.ThrowIfCancellationRequested();
@@ -92,7 +95,13 @@ namespace ProGo
                         catch { openedReal.DropSensitive(); throw; }
                     }
                     if (real.Status != VaultReadStatus.AuthenticationMismatch) return Fail(ReadStatus(real.Status));
-                    var now = LocalNow(clock); var recovered = VaultDailyRecovery.Recover(root);
+                    if (prepareDaily != null) {
+                        var unavailable = prepareDaily(token); token.ThrowIfCancellationRequested();
+                        if (unavailable.HasValue) return Fail(unavailable.Value);
+                    }
+                    var now = LocalNow(clock);
+                    if (beginDaily != null) beginDaily(now);
+                    token.ThrowIfCancellationRequested(); var recovered = VaultDailyRecovery.Recover(root);
                     token.ThrowIfCancellationRequested();
                     if (recovered.Status > VaultDailyRecoveryStatus.RecoveredNext) return Fail(RecoveryStatus(recovered.Status));
                     var stamp = recovered.Stamp;
@@ -117,11 +126,17 @@ namespace ProGo
                         if (committed.Status != VaultDailyCommitStatus.Success) return Fail(CommitStatus(committed.Status));
                         stamp = committed.Stamp; state = committed.Record.State;
                     }
-                    var opened = new VaultSession(state.FakeData, pin, false,
-                        new VaultDailySessionPersistence(root, stamp, clock));
+                    var persistence = new VaultDailySessionPersistence(root, stamp, clock);
+                    var opened = new VaultSession(state.FakeData, pin, false, persistence);
                     try {
+                        // Register durable metadata before a late cancellation can drop the UI result.
+                        if (acceptDaily != null && !acceptDaily(persistence)) {
+                            opened.Revoke(); opened.DropSensitive(); return Fail(VaultOpenStatus.DateChanged);
+                        }
                         var after = LocalNow(clock);
                         if (after.Date != now.Date) {
+                            persistence.ObserveExpiry(after);
+                            if (acceptDaily != null) acceptDaily(persistence);
                             opened.DropSensitive();
                             var expired = VaultDailyStore.CompareExchange(root, stamp, VaultDailyState.Empty(after));
                             token.ThrowIfCancellationRequested();
@@ -178,22 +193,52 @@ namespace ProGo
     }
 
     // Only a successfully accepted binding can construct this writer lease.
-    internal sealed class VaultDailySessionPersistence : IVaultSessionPersistence
+    internal sealed class VaultDailySessionPersistence : IVaultSessionPersistence, IVaultSessionRevocation
     {
         private readonly string root;
         private readonly DateTime day;
+        private readonly Guid generation;
         private readonly Func<DateTime> clock;
         private readonly object gate = new object();
         private VaultDailyFileStamp stamp;
         private volatile bool revoked;
+        private VaultDailyExpiryInvalidation invalidation;
+        private Action<VaultDailyExpiryInvalidation> expiryObserver;
+        internal Guid Generation { get { return generation; } }
+        internal DateTime LocalDay { get { return day; } }
+        internal VaultDailyExpiryInvalidation Invalidation
+        { get { return Interlocked.CompareExchange(ref invalidation, null, null); } }
+        private bool IsRevoked { get { return revoked || Invalidation != null; } }
         internal VaultDailySessionPersistence(string root, VaultDailyFileStamp accepted, Func<DateTime> clock)
         {
             if (accepted == null || accepted.IsMissing || !accepted.BelongsTo(VaultDailyFile.CheckedPath(root)) || clock == null)
                 throw new ArgumentException("Invalid persistence lease.");
-            this.root = root; stamp = accepted; day = accepted.LocalDay; this.clock = clock;
+            this.root = root; stamp = accepted; day = accepted.LocalDay; generation = accepted.Generation; this.clock = clock;
         }
         public bool IsCurrent(DateTime localNow)
-        { VaultDailyPolicy.RequireLocalTime(localNow); return !revoked && localNow.Date == day; }
+        { ObserveExpiry(localNow); return !IsRevoked; }
+        public void Revoke() { revoked = true; }
+        internal void SetExpiryObserver(Action<VaultDailyExpiryInvalidation> observer)
+        {
+            Interlocked.Exchange(ref expiryObserver, observer);
+            var observed = Invalidation;
+            if (observed != null) NotifyExpiry(observed);
+        }
+        private void NotifyExpiry(VaultDailyExpiryInvalidation observed)
+        {
+            var observer = Interlocked.CompareExchange(ref expiryObserver, null, null);
+            try { if (observer != null) observer(observed); }
+            catch (OutOfMemoryException) { throw; }
+            catch (Exception) { }
+        }
+        internal void ObserveExpiry(DateTime localNow)
+        {
+            VaultDailyPolicy.RequireLocalTime(localNow);
+            if (localNow.Date == day) return;
+            var observed = new VaultDailyExpiryInvalidation(generation, day, localNow.Date);
+            var previous = Interlocked.CompareExchange(ref invalidation, observed, null); revoked = true;
+            if (previous == null) NotifyExpiry(observed);
+        }
         public void Save(VaultData data, string pin)
         {
             try { SaveCore(data, pin); }
@@ -203,19 +248,21 @@ namespace ProGo
         private void SaveCore(VaultData data, string pin)
         {
             lock (gate) {
-                if (revoked) throw SaveFailure();
+                if (IsRevoked) throw SaveFailure();
                 var before = VaultOpenService.LocalNow(clock);
+                ObserveExpiry(before);
                 if (before.Date != day) {
-                    revoked = true; VaultDailyStore.CompareExchange(root, stamp, VaultDailyState.Empty(before));
+                    VaultDailyStore.CompareExchange(root, stamp, VaultDailyState.Empty(before));
                     throw SaveFailure();
                 }
+                if (IsRevoked) throw SaveFailure();
                 var committed = VaultDailyStore.CompareExchange(root, stamp, VaultDailyState.Bind(day, pin, data));
                 if (committed.Status != VaultDailyCommitStatus.Success) throw SaveFailure();
                 stamp = committed.Stamp;
                 var after = VaultOpenService.LocalNow(clock);
-                if (after.Date != day) {
-                    revoked = true;
-                    VaultDailyStore.CompareExchange(root, stamp, VaultDailyState.Empty(after));
+                ObserveExpiry(after);
+                if (IsRevoked) {
+                    if (after.Date != day) VaultDailyStore.CompareExchange(root, stamp, VaultDailyState.Empty(after));
                     throw SaveFailure();
                 }
             }

@@ -75,6 +75,11 @@ namespace ProGo
         void Save(VaultData data, string pin);
     }
 
+    internal interface IVaultSessionRevocation
+    {
+        void Revoke();
+    }
+
     internal sealed class VaultSession
     {
         public VaultData Data { get; private set; }
@@ -105,6 +110,12 @@ namespace ProGo
 
         internal bool IsCurrent(DateTime localNow)
         { return !IsDiscarded && (Persistence == null || Persistence.IsCurrent(localNow)); }
+
+        internal void Revoke()
+        {
+            var lifetime = Persistence as IVaultSessionRevocation;
+            if (lifetime != null) lifetime.Revoke();
+        }
 
         internal void DropSensitive()
         {
