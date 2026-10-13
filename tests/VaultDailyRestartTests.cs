@@ -31,6 +31,7 @@ namespace ProGo
     {
         private const string ProofName = "restart-fixture.proof";
         private const string ChildPrefix = "RESTART-STAGE-PASS:";
+        private const string ChildFailurePrefix = "RESTART-STAGE-FAIL:";
         private static readonly byte[] ProofPurpose = Encoding.ASCII.GetBytes("ProGo/Test/VaultDailyRestart/v1");
         private static readonly DateTime Day = new DateTime(2026, 10, 13, 12, 0, 0, DateTimeKind.Unspecified);
         private static readonly CancellationToken Token = CancellationToken.None;
@@ -38,6 +39,9 @@ namespace ProGo
         private static bool child;
         private static bool unsettledChild;
         private static string failedCheck;
+        private static int childPhase;
+        private static int childExpiryStatus = -1;
+        private static bool childInputHadBom;
 
         public sealed class Request
         {
@@ -83,6 +87,64 @@ namespace ProGo
                 text.Append((char)value);
             }
             return text.ToString();
+        }
+        private static Request ReadRequest()
+        {
+            childPhase = 4;
+            // Framework Console.In uses the child's console codepage and does not detect
+            // a transport BOM. A headless child must decode the private pipe explicitly.
+            byte[] bytes = null, buffer = new byte[256];
+            try {
+                using (var stream = Console.OpenStandardInput())
+                using (var input = new MemoryStream()) {
+                    int count;
+                    while ((count = stream.Read(buffer, 0, buffer.Length)) != 0) {
+                        if (input.Length + count > 4096) throw new InvalidDataException("Fixture input too large");
+                        input.Write(buffer, 0, count);
+                    }
+                    bytes = input.ToArray();
+                }
+                childInputHadBom = bytes.Length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf;
+                int offset = childInputHadBom ? 3 : 0;
+                string text;
+                using (var reader = new StreamReader(new MemoryStream(bytes, offset, bytes.Length - offset, false), new UTF8Encoding(false, true), false, 1024))
+                    text = ReadLimited(reader, 1024);
+                childPhase = 5;
+                return Json().Deserialize<Request>(text);
+            } finally {
+                Array.Clear(buffer, 0, buffer.Length);
+                if (bytes != null) Array.Clear(bytes, 0, bytes.Length);
+            }
+        }
+        private static int ExceptionCode(Exception error)
+        {
+            if (error is DecoderFallbackException) return 8;
+            if (error is ArgumentException) return 1;
+            if (error is InvalidOperationException) return 2;
+            if (error is InvalidDataException) return 3;
+            if (error is IOException) return 4;
+            if (error is System.Security.SecurityException) return 5;
+            if (error is UnauthorizedAccessException) return 6;
+            if (error is FormatException) return 7;
+            if (error is CryptographicException) return 9;
+            if (error is OutOfMemoryException) return 10;
+            return 0;
+        }
+        private static void PrintChildFailure(string action, string frame)
+        {
+            var parts = frame.StartsWith(ChildFailurePrefix, StringComparison.Ordinal)
+                ? frame.Substring(ChildFailurePrefix.Length).Split(':') : new string[0];
+            var numbers = new int[5]; bool valid = parts.Length == numbers.Length;
+            for (int i = 0; valid && i < numbers.Length; i++)
+                valid = Int32.TryParse(parts[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out numbers[i]);
+            valid = valid && numbers[0] >= 0 && numbers[0] <= 99 && numbers[1] >= 0 && numbers[1] <= 500 &&
+                numbers[2] >= 0 && numbers[2] <= 10 && (numbers[3] == -1 || Enum.IsDefined(typeof(VaultDailyExpiryStatus), numbers[3])) &&
+                (numbers[4] == 0 || numbers[4] == 1);
+            if (!valid) { Console.Error.WriteLine("RESTART-CHILD-FAIL: " + action + " no safe diagnostic frame"); return; }
+            var types = new[] { "Unknown", "Argument", "InvalidOperation", "InvalidData", "IO", "Security", "Access", "Format", "Decoder", "Cryptographic", "Memory" };
+            Console.Error.WriteLine("RESTART-CHILD-FAIL: " + action + " phase=" + numbers[0] + " checks=" + numbers[1] +
+                " type=" + types[numbers[2]] + " status=" + (numbers[3] == -1 ? "none" : Enum.GetName(typeof(VaultDailyExpiryStatus), numbers[3])) +
+                " leadingUtf8Bom=" + numbers[4]);
         }
         private static void WriteProof(string root, Proof proof)
         {
@@ -152,13 +214,17 @@ namespace ProGo
 
         private static void Missing(string root, Request input, DateTime now)
         {
+            childPhase = 20;
             var result = VaultDailyExpiry.Run(root, () => now, Token);
+            childExpiryStatus = (int)result.Status; childPhase = 21;
             Check(result.Status == VaultDailyExpiryStatus.Missing && result.Stamp != null && result.Stamp.IsMissing &&
                 !result.HasFakeBinding && result.ErrorMessage == null, "startup missing daily state is a safe unbound result");
             Check(Directory.GetFiles(root).Length == 0, "startup missing state creates no file or directory");
+            childPhase = 22;
             var created = Opened(VaultOpenService.Create(RealPath(root), input.Proper, Token), true, "owned missing fixture creates real storage");
             created.DropSensitive();
-            Check(VaultDailyExpiry.Run(root, () => now, Token).Status == VaultDailyExpiryStatus.Missing &&
+            childPhase = 23; result = VaultDailyExpiry.Run(root, () => now, Token); childExpiryStatus = (int)result.Status;
+            Check(result.Status == VaultDailyExpiryStatus.Missing &&
                 !File.Exists(DailyPath(root)), "a real vault alone does not create a daily tombstone");
         }
         private static void Seed(string root, Request input, DateTime now)
@@ -314,16 +380,18 @@ namespace ProGo
 
         private static int ChildMain(string[] args)
         {
-            child = true;
+            child = true; childPhase = 1;
             if (args.Length != 4 || args[0] != "--child") throw new ArgumentException("Child framing");
             string action = args[1], root = args[2]; DateTime now;
+            childPhase = 2;
             if (!DateTime.TryParseExact(args[3], "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out now))
                 throw new ArgumentException("Child clock framing");
-            VaultDailyFile.CheckedPath(root);
-            var input = Json().Deserialize<Request>(ReadLimited(Console.In, 1024));
+            childPhase = 3; VaultDailyFile.CheckedPath(root);
+            var input = ReadRequest(); childPhase = 6;
             Check(input != null && VaultDailyPolicy.IsValidPin(input.Proper) && VaultDailyPolicy.IsValidPin(input.First) &&
                 VaultDailyPolicy.IsValidPin(input.Second) && input.Proper != input.First && input.Proper != input.Second && input.First != input.Second,
                 "child stdin carries three valid distinct fixture PINs");
+            childPhase = 7;
             switch (action) {
                 case "missing": Missing(root, input, now); break;
                 case "seed": Seed(root, input, now); break;
@@ -337,8 +405,9 @@ namespace ProGo
                 case "corrupt": Corrupt(root, input, now); break;
                 default: throw new ArgumentException("Child action");
             }
+            childPhase = 8;
             Check(AppPaths.Accesses == 0 && SafeLog.Accesses == 0, "child operations use no application paths or logs");
-            Console.WriteLine(ChildPrefix + passed.ToString(CultureInfo.InvariantCulture)); return 0;
+            Console.WriteLine(ChildPrefix + passed.ToString(CultureInfo.InvariantCulture) + ":" + (childInputHadBom ? "1" : "0")); return 0;
         }
         private static void RunChild(string action, string root, DateTime now, Request input)
         {
@@ -367,21 +436,33 @@ namespace ProGo
                     started = process.Start(); Check(started, "native restart child " + action + " starts");
                     unsettledChild = true;
                     process.BeginOutputReadLine(); process.BeginErrorReadLine();
-                    process.StandardInput.Write(Json().Serialize(input)); process.StandardInput.Close();
+                    var payload = Json().Serialize(input);
+                    Check(payload.All(c => c <= 127) && process.StandardInput.Encoding.GetBytes(payload).SequenceEqual(new UTF8Encoding(false, true).GetBytes(payload)),
+                        "private fixture input has identical ASCII and UTF8 transport bytes");
+                    var preamble = process.StandardInput.Encoding.GetPreamble();
+                    Check(preamble.Length == 0 || preamble.SequenceEqual(new byte[] { 0xef, 0xbb, 0xbf }),
+                        "private fixture input permits only no preamble or the recognized UTF8 preamble");
+                    if (action == "missing") Console.WriteLine("RESTART-TRANSPORT: writerPreambleBytes=" + preamble.Length);
+                    process.StandardInput.Write(payload); process.StandardInput.Close();
                     var timer = Stopwatch.StartNew();
                     while (!process.WaitForExit(50) && timer.ElapsedMilliseconds < 45000) { }
                     Check(process.HasExited, "native restart child " + action + " settles within its deadline");
                     unsettledChild = false;
                     Check(stdoutEnd.Task.Wait(2000) && stderrEnd.Task.Wait(2000), "native restart child " + action + " closes its bounded pipes");
                     string text, errorText; lock (output) text = output.ToString().Trim(); lock (errors) errorText = errors.ToString().Trim();
-                    int count = 0; bool framed = text.StartsWith(ChildPrefix, StringComparison.Ordinal) &&
-                        Int32.TryParse(text.Substring(ChildPrefix.Length), NumberStyles.None, CultureInfo.InvariantCulture, out count);
+                    var parts = text.StartsWith(ChildPrefix, StringComparison.Ordinal)
+                        ? text.Substring(ChildPrefix.Length).Split(':') : new string[0];
+                    int count = 0, bom = -1; bool framed = parts.Length == 2 &&
+                        Int32.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out count) &&
+                        Int32.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out bom) && (bom == 0 || bom == 1);
                     if (process.ExitCode != 0 || errorText.Length != 0) {
-                        // Child failure messages contain only static check names; never forward raw process output.
-                        Console.Error.WriteLine("RESTART-CHILD-FAIL: " + action);
+                        // Reconstruct only validated numeric metadata and whitelisted labels.
+                        // Original child stderr, paths, input and DTOs are never forwarded.
+                        PrintChildFailure(action, errorText);
                     }
                     Check(process.ExitCode == 0 && !overflow && errorText.Length == 0 && framed && count > 0 && count <= 500,
                         "native restart child " + action + " returns only a successful static result");
+                    if (action == "missing") Console.WriteLine("RESTART-TRANSPORT: childLeadingUtf8Bom=" + bom);
                     passed += count;
                 } finally {
                     if (started && !process.HasExited) {
@@ -430,8 +511,11 @@ namespace ProGo
                 Check(AppPaths.Accesses == 0 && SafeLog.Accesses == 0, "parent fixture uses no application paths or logs");
                 Console.WriteLine("Vault daily restart tests PASS: " + passed.ToString(CultureInfo.InvariantCulture)); return 0;
             } catch (Exception ex) {
-                Console.Error.WriteLine((child ? "RESTART-STAGE-FAIL: " : "FAIL: vault daily restart ") +
-                    ex.GetType().Name + (failedCheck == null ? "" : " at " + failedCheck)); return 1;
+                if (child) Console.Error.WriteLine(ChildFailurePrefix + childPhase.ToString(CultureInfo.InvariantCulture) + ":" +
+                    passed.ToString(CultureInfo.InvariantCulture) + ":" + ExceptionCode(ex).ToString(CultureInfo.InvariantCulture) + ":" +
+                    childExpiryStatus.ToString(CultureInfo.InvariantCulture) + ":" + (childInputHadBom ? "1" : "0"));
+                else Console.Error.WriteLine("FAIL: vault daily restart " + ex.GetType().Name + (failedCheck == null ? "" : " at " + failedCheck));
+                return 1;
             }
         }
     }
