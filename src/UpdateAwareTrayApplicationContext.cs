@@ -804,7 +804,8 @@ namespace ProGo
                     if (!CanPublishVault() || !session.IsCurrent(DateTime.Now)) { session.DropSensitive(); return; }
                     vaultSession = session;
                     try {
-                        using (var form = new VaultForm(session, clipboard, settings)) {
+                        using (var form = new VaultForm(session, clipboard, settings,
+                            canStart: CanOpenVault, canPublish: CanPublishVault, workStarted: TrackVaultWork)) {
                             vaultForm = form; form.ShowDialog();
                         }
                     } finally { vaultForm = null; vaultSession = null; session.DropSensitive(); }
@@ -828,8 +829,8 @@ namespace ProGo
         private void CancelVault()
         {
             if (vaultUnlockForm != null && !vaultUnlockForm.IsDisposed) vaultUnlockForm.CancelCurrent();
-            if (vaultSession != null) vaultSession.DropSensitive();
-            if (vaultForm != null && !vaultForm.IsDisposed) vaultForm.Close();
+            if (vaultForm != null && !vaultForm.IsDisposed) vaultForm.CancelCurrent();
+            else if (vaultSession != null) vaultSession.DropSensitive();
         }
 
         private Task<bool> PrepareShutdownAsync(bool dialog, BackupWorkSession preservedBackup = null)
@@ -1421,6 +1422,8 @@ namespace ProGo
                 CancelBackup(); backupOwnerClosed.TrySetResult(true);
                 CancelVault();
                 if (vaultUnlockForm != null && !vaultUnlockForm.IsDisposed) vaultUnlockForm.Dispose();
+                if (vaultForm != null && !vaultForm.IsDisposed) vaultForm.Dispose();
+                if (vaultSession != null) vaultSession.DropSensitive();
                 CancelPortable(); if (portableForm != null && !portableForm.IsDisposed) portableForm.Dispose();
                 if (backupWorker == null) {
                     if (startupBackupCompletionSource != null) startupBackupCompletionSource.TrySetResult(false);

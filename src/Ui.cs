@@ -324,10 +324,38 @@ namespace ProGo
         private readonly ComboBox typeFilter = new ComboBox();
         private readonly DataGridView grid = new DataGridView();
         private readonly Label emptyState = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private readonly Label status = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private readonly OwnerUiDispatcher ownerUi = new OwnerUiDispatcher();
+        private readonly Action<CancellationToken> beforeSave;
+        private readonly Action afterSave;
+        private readonly Func<bool> canStart, canPublish;
+        private readonly Action<Task> workStarted;
+        private readonly Func<DateTime> clock;
+        private readonly Button close, lockButton, copy, delete, edit, add;
+        private CancellationTokenSource cancellation;
+        private EntryForm activeEditor;
+        private long generation;
+        private volatile bool disposed;
+        private bool closeAfterWork, cancelRequested;
+        internal Task Work { get; private set; }
+        internal Task PresentationWork { get; private set; }
+        internal bool IsBusy { get; private set; }
+        private const string SaveFailure = "Не удалось сохранить изменения хранилища. Записи в открытом окне не изменены. Проверьте права записи и доступность файла; при необходимости откройте хранилище заново и повторите действие.";
+        private sealed class SaveResult
+        {
+            internal VaultData Data;
+            internal bool Committed;
+            internal bool Cancelled;
+        }
         private const string GridDescription = "Список записей без содержимого секретов. Стрелки выбирают запись; Tab переходит к действиям. Для редактирования используйте «Изменить».";
 
-        public VaultForm(VaultSession vaultSession, ClipboardService clipboardService, SettingsService settingsService)
+        public VaultForm(VaultSession vaultSession, ClipboardService clipboardService, SettingsService settingsService,
+            Action<CancellationToken> beforeSave = null, Func<bool> canStart = null, Func<bool> canPublish = null,
+            Action<Task> workStarted = null, Func<DateTime> clock = null, Action afterSave = null)
         {
+            this.beforeSave = beforeSave; this.afterSave = afterSave;
+            this.canStart = canStart; this.canPublish = canPublish; this.workStarted = workStarted;
+            this.clock = clock ?? (() => DateTime.Now);
             session = vaultSession;
             clipboard = clipboardService;
             settings = settingsService;
@@ -348,7 +376,7 @@ namespace ProGo
             search.Width = 300;
             search.AccessibleName = "Поиск записей";
             search.AccessibleDescription = "Фильтрует записи по названию, логину, сайту, меткам и заметкам. Содержимое секретов не используется.";
-            search.TextChanged += delegate { Reload(); };
+            search.TextChanged += delegate { if (CanAct()) Reload(); };
             filters.Controls.Add(search);
             filters.Controls.Add(new Label { Text = "Фильтр по типу", AutoSize = true, Padding = new Padding(12, 7, 0, 0) });
             typeFilter.AccessibleName = "Фильтр по типу записи";
@@ -356,7 +384,7 @@ namespace ProGo
             typeFilter.DropDownStyle = ComboBoxStyle.DropDownList;
             typeFilter.Items.AddRange(new object[] { "Все", "API-ключ", "Пароль", "Токен", "SSH", "Заметка", "Другое" });
             typeFilter.SelectedIndex = 0;
-            typeFilter.SelectedIndexChanged += delegate { Reload(); };
+            typeFilter.SelectedIndexChanged += delegate { if (CanAct()) Reload(); };
             filters.Controls.Add(typeFilter);
             root.Controls.Add(filters, 0, 0);
 
@@ -371,22 +399,26 @@ namespace ProGo
             grid.MultiSelect = false;
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.DoubleClick += delegate { EditSelected(); };
-            var contents = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+            var contents = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty };
             contents.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            contents.RowStyles.Add(new RowStyle(SizeType.AutoSize)); contents.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            contents.RowStyles.Add(new RowStyle(SizeType.AutoSize)); contents.RowStyles.Add(new RowStyle(SizeType.AutoSize)); contents.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             emptyState.Dock = DockStyle.Fill; emptyState.Name = "vaultEmptyState";
             emptyState.AccessibleName = "Состояние списка хранилища";
             contents.SizeChanged += delegate { emptyState.MaximumSize = new Size(Math.Max(1, contents.ClientSize.Width - emptyState.Margin.Horizontal), 0); };
-            contents.Controls.Add(emptyState, 0, 0); contents.Controls.Add(grid, 0, 1);
+            status.Dock = DockStyle.Fill; status.Name = "vaultSaveStatus"; status.Visible = false;
+            status.AccessibleName = "Состояние сохранения хранилища";
+            status.TextChanged += delegate { status.AccessibleDescription = status.Text; };
+            contents.SizeChanged += delegate { status.MaximumSize = new Size(Math.Max(1, contents.ClientSize.Width - status.Margin.Horizontal), 0); };
+            contents.Controls.Add(status, 0, 0); contents.Controls.Add(emptyState, 0, 1); contents.Controls.Add(grid, 0, 2);
             root.Controls.Add(contents, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var close = UiTheme.Button("Закрыть", null, false, DialogResult.Cancel);
-            var lockButton = UiTheme.Button("Заблокировать", null, false, DialogResult.Cancel);
-            var copy = UiTheme.Button("Копировать секрет", null, false);
-            var delete = UiTheme.Button("Удалить", null, false);
-            var edit = UiTheme.Button("Изменить", null, false);
-            var add = UiTheme.Button("Добавить", null, false);
+            close = UiTheme.Button("Закрыть", delegate { CancelCurrent(); }, false);
+            lockButton = UiTheme.Button("Заблокировать", delegate { CancelCurrent(); }, false);
+            copy = UiTheme.Button("Копировать секрет", null, false);
+            delete = UiTheme.Button("Удалить", null, false);
+            edit = UiTheme.Button("Изменить", null, false);
+            add = UiTheme.Button("Добавить", null, false);
             close.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
             lockButton.AccessibleDescription = "Закрывает хранилище. Для следующего открытия потребуется PIN-код.";
             copy.AccessibleDescription = "Копирует секрет выбранной записи. " + clipboard.CopyNotice;
@@ -404,13 +436,14 @@ namespace ProGo
             buttons.Controls.Add(edit);
             buttons.Controls.Add(add);
             root.Controls.Add(buttons, 0, 2);
-            CancelButton = close;
+            CancelButton = close; close.DialogResult = lockButton.DialogResult = DialogResult.None;
             UiTheme.ConfigureKeyboardOrder(this);
             Reload();
         }
 
         private void Reload()
         {
+            if (!Live || session.IsDiscarded) return;
             grid.Columns.Clear();
             grid.Rows.Clear();
             grid.Columns.Add("name", "Название");
@@ -453,61 +486,214 @@ namespace ProGo
             return grid.SelectedRows[0].Tag as VaultEntry;
         }
 
+        private bool Live { get { return ownerUi.OnOwner && !ownerUi.Closed && !disposed && !IsDisposed && !Disposing; } }
+        private bool Allowed(Func<bool> check)
+        { if (!Live) return false; try { return check == null || check(); } catch (Exception) { return false; } }
+        private bool CanAct()
+        {
+            if (!Live || IsBusy || closeAfterWork || session.IsDiscarded) return false;
+            bool current = false;
+            try { current = session.IsCurrent(session.Persistence == null ? default(DateTime) : clock()); } catch (Exception) { }
+            if (!Live || IsBusy || closeAfterWork || session.IsDiscarded) return false;
+            if (!current) { CloseSettled(); return false; }
+            return true;
+        }
+        private bool CanStartAction()
+        {
+            if (!CanAct()) return false;
+            bool allowed = Allowed(canStart);
+            if (!CanAct()) return false;
+            if (!allowed) {
+                SetStatus("Дождитесь завершения текущей операции ProGo и повторите попытку.");
+                return false;
+            }
+            return true;
+        }
         private void AddEntry()
         {
+            if (!CanStartAction()) return;
             var entry = VaultEntry.New();
-            using (var form = new EntryForm(entry))
-            {
-                if (form.ShowDialog() != DialogResult.OK) return;
-                var entries = new List<VaultEntry>(session.Data.entries); entries.Add(form.Entry);
-                SaveEntries(entries);
+            using (var form = new EntryForm(entry)) {
+                activeEditor = form;
+                try {
+                    if (form.ShowDialog(this) != DialogResult.OK || !CanStartAction()) return;
+                    var entries = new List<VaultEntry>(session.Data.entries); entries.Add(form.Entry);
+                    SaveEntries(entries);
+                } finally { if (ReferenceEquals(activeEditor, form)) activeEditor = null; }
             }
         }
-
         private void EditSelected()
         {
-            var selected = SelectedEntry();
-            if (selected == null) return;
-            using (var form = new EntryForm(selected.Clone()))
-            {
-                if (form.ShowDialog() != DialogResult.OK) return;
-                var index = session.Data.entries.FindIndex(e => e.id == selected.id);
-                var entries = new List<VaultEntry>(session.Data.entries);
-                if (index >= 0) entries[index] = form.Entry;
-                SaveEntries(entries);
+            if (!CanStartAction()) return;
+            var selected = SelectedEntry(); if (selected == null) return;
+            using (var form = new EntryForm(selected.Clone())) {
+                activeEditor = form;
+                try {
+                    if (form.ShowDialog(this) != DialogResult.OK || !CanStartAction()) return;
+                    var index = session.Data.entries.FindIndex(e => e.id == selected.id);
+                    if (index < 0) return;
+                    var entries = new List<VaultEntry>(session.Data.entries); entries[index] = form.Entry;
+                    SaveEntries(entries);
+                } finally { if (ReferenceEquals(activeEditor, form)) activeEditor = null; }
             }
         }
-
         private void DeleteSelected()
         {
-            var selected = SelectedEntry();
-            if (selected == null) return;
-            var answer = MessageBox.Show("Удалить запись «" + selected.name + "»?\nЭто действие нельзя отменить.", "Удаление записи", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
-            if (answer != DialogResult.OK) return;
-            var entries = session.Data.entries.Where(e => e.id != selected.id).ToList();
-            SaveEntries(entries);
+            if (!CanStartAction()) return;
+            var selected = SelectedEntry(); if (selected == null) return;
+            var answer = MessageBox.Show(this, "Удалить запись «" + selected.name + "»?\nЭто действие нельзя отменить.", "Удаление записи", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+            if (answer != DialogResult.OK || !CanStartAction()) return;
+            var entries = session.Data.entries.Where(e => e.id != selected.id).ToList(); SaveEntries(entries);
         }
-
         private void SaveEntries(List<VaultEntry> entries)
         {
-            try { VaultService.Save(session.CopyWithData(new VaultData { version = session.Data.version, entries = entries })); }
-            catch {
-                // Entry contents, PIN and exception text stay out of the error/log.
-                SafeLog.Info("Vault save failed.");
-                MessageBox.Show(this, "Не удалось сохранить изменения хранилища. Записи в открытом окне не изменены. Проверьте права записи и доступность файла, затем повторите действие.",
-                    "Сохранение хранилища", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (!CanStartAction()) return;
+            if (!session.CanPersist && session.Persistence == null) {
+                // Compatibility for the input-only, explicitly nonpersistent session.
+                session.Data.entries = entries; Reload(); return;
+            }
+            VaultSession candidate;
+            try {
+                var data = new VaultData { version = session.Data.version, entries = entries.Select(entry => entry.Clone()).ToList() };
+                candidate = session.CopyWithData(data);
+            } catch (Exception) { ShowSaveFailure(); return; }
+            IsBusy = true; cancelRequested = closeAfterWork = false; generation++;
+            cancellation = new CancellationTokenSource(); var source = cancellation;
+            var token = source.Token; long request = generation;
+            SetBusyControls(true, request); SetStatus("Сохраняем изменения…");
+            if (!Live || request != generation || cancelRequested || closeAfterWork || token.IsCancellationRequested) {
+                candidate.DropSensitive(); source.Dispose();
+                if (Live && request == generation) CloseSettled();
                 return;
             }
-            session.Data.entries = entries;
-            Reload();
+            var worker = Task.Run(delegate { return SaveCandidate(candidate, token, source); });
+            Work = worker;
+            try { if (workStarted != null) workStarted(worker); } catch (Exception) { CancelCurrent(); }
+            var presentation = FinishSave(worker, request, token);
+            if (request == generation) PresentationWork = presentation;
         }
-
+        private SaveResult SaveCandidate(VaultSession candidate, CancellationToken token, CancellationTokenSource source)
+        {
+            var result = new SaveResult(); bool writeStarted = false;
+            try {
+                token.ThrowIfCancellationRequested();
+                if (beforeSave != null) beforeSave(token);
+                token.ThrowIfCancellationRequested();
+                // Cancellation cannot roll back a native call which has begun.
+                writeStarted = true; VaultService.Save(candidate);
+                result.Committed = true; result.Data = candidate.Data;
+                try { if (afterSave != null) afterSave(); } catch (Exception) { /* The commit is already durable. */ }
+            } catch (OperationCanceledException) { result.Cancelled = !writeStarted; }
+            catch (Exception) { SafeLog.Info("Vault save failed."); }
+            finally { candidate.DropSensitive(); source.Dispose(); }
+            return result;
+        }
+        private async Task FinishSave(Task<SaveResult> worker, long request, CancellationToken token)
+        {
+            SaveResult result = null;
+            try {
+                try { result = await worker.ConfigureAwait(false); } catch (Exception) { }
+                await ownerUi.Await(Task.FromResult(true));
+                if (!Live || request != generation) return;
+                if (cancelRequested || closeAfterWork || token.IsCancellationRequested) { CloseSettled(); return; }
+                bool allowed = Allowed(canPublish);
+                if (!Live || request != generation) return;
+                if (cancelRequested || closeAfterWork || token.IsCancellationRequested) { CloseSettled(); return; }
+                if (!allowed) { CloseSettled(); return; }
+                bool current = false;
+                try { current = session.IsCurrent(session.Persistence == null ? default(DateTime) : clock()); } catch (Exception) { }
+                if (!Live || request != generation) return;
+                if (cancelRequested || closeAfterWork || token.IsCancellationRequested || !current) { CloseSettled(); return; }
+                bool failed = result == null || (!result.Committed && !result.Cancelled);
+                if (result != null && result.Committed && result.Data != null) {
+                    session.Data.entries = result.Data.entries; Reload();
+                    if (!Live || request != generation) return;
+                    if (cancelRequested || closeAfterWork) { CloseSettled(); return; }
+                    SetStatus("Изменения сохранены.");
+                } else if (result != null && result.Cancelled) SetStatus("Сохранение отменено до начала записи.");
+                if (!Live || request != generation) return;
+                if (cancelRequested || closeAfterWork) { CloseSettled(); return; }
+                IsBusy = false; cancellation = null; SetBusyControls(false, request);
+                if (!Live || request != generation || IsBusy || closeAfterWork) return;
+                if (failed) ShowSaveFailure();
+            } catch (OperationCanceledException) { }
+            finally { if (result != null) result.Data = null; }
+        }
+        private void ShowSaveFailure()
+        {
+            if (!Live || closeAfterWork || session.IsDiscarded) return;
+            SetStatus("Не удалось сохранить изменения.");
+            if (!Live || closeAfterWork || session.IsDiscarded) return;
+            MessageBox.Show(this, SaveFailure, "Сохранение хранилища", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        private void SetStatus(string message)
+        {
+            if (!Live) return;
+            status.Text = message; if (Live) status.Visible = true;
+        }
+        private void SetBusyControls(bool busy, long request)
+        {
+            foreach (var control in new Control[] { search, typeFilter, grid, add, edit, delete, copy, close, lockButton }) {
+                if (!Live || request != generation || IsBusy != busy || closeAfterWork) return;
+                control.Enabled = control == close || control == lockButton || !busy;
+            }
+        }
         private void CopySelected()
         {
-            var selected = SelectedEntry();
-            if (selected == null) return;
+            if (!CanStartAction()) return;
+            var selected = SelectedEntry(); if (selected == null) return;
             clipboard.CopySecret(selected.secret);
-            MessageBox.Show("Секрет скопирован. " + clipboard.CopyNotice, "Хранилище секретов");
+            if (CanAct()) MessageBox.Show(this, "Секрет скопирован. " + clipboard.CopyNotice, "Хранилище секретов");
+        }
+        internal void CancelCurrent()
+        {
+            if (!Live) return;
+            if (!IsBusy) { CloseSettled(); return; }
+            cancelRequested = closeAfterWork = true; HideVaultContents();
+            if (!Live) return;
+            var source = cancellation; if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
+            close.Enabled = false; if (!Live) return; lockButton.Enabled = false;
+            SetStatus("Закрытие запрошено. Ждём завершения текущей записи без блокировки интерфейса…");
+        }
+        private void HideVaultContents()
+        {
+            if (!ownerUi.OnOwner || ownerUi.Closed || IsDisposed) return;
+            search.Clear(); if (ownerUi.Closed || IsDisposed) return;
+            if (search.Parent != null) search.Parent.Visible = false;
+            if (ownerUi.Closed || IsDisposed) return;
+            typeFilter.SelectedIndex = 0; if (ownerUi.Closed || IsDisposed) return;
+            grid.Rows.Clear(); if (ownerUi.Closed || IsDisposed) return;
+            grid.Visible = false; if (ownerUi.Closed || IsDisposed) return; emptyState.Visible = false;
+        }
+        private void CloseSettled()
+        {
+            if (!Live) return;
+            IsBusy = false; cancellation = null; closeAfterWork = true;
+            DialogResult = DialogResult.Cancel; Close();
+        }
+        private void CloseEditor()
+        {
+            var editor = activeEditor;
+            if (editor == null || editor.IsDisposed) return;
+            editor.DialogResult = DialogResult.Cancel; editor.Close();
+        }
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            if (e.Cancel || disposed) return;
+            if (IsBusy) { e.Cancel = true; CancelCurrent(); return; }
+            closeAfterWork = true; CloseEditor();
+        }
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        { HideVaultContents(); ownerUi.Close(); session.DropSensitive(); base.OnFormClosed(e); }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && !disposed) {
+                disposed = true; generation++; cancelRequested = closeAfterWork = true;
+                var source = cancellation; if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
+                CloseEditor(); HideVaultContents(); session.DropSensitive(); ownerUi.Dispose();
+            }
+            base.Dispose(disposing);
         }
 
         internal static string DisplayType(string type)

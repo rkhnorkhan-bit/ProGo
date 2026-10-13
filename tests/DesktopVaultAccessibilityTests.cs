@@ -219,6 +219,9 @@ namespace ProGo
                     ((Button)editor.AcceptButton).PerformClick();
                 };
                 timer.Start(); Call(form, action);
+                // The action can return while an owned background commit is still running.
+                // Keep the native dialog timer and message pump alive until presentation settles.
+                PumpAsyncRestore(() => form.PresentationWork == null || form.PresentationWork.IsCompleted, 30000);
             }
             Check(warned == expectWarning && (action == "DeleteSelected" ? confirmed : editorSaved), "native vault action reaches its expected save outcome: " + action);
             return text.ToString();

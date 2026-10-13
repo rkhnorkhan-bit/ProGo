@@ -185,7 +185,7 @@ namespace ProGo
         private readonly Func<DateTime> clock;
         private readonly object gate = new object();
         private VaultDailyFileStamp stamp;
-        private bool revoked;
+        private volatile bool revoked;
         internal VaultDailySessionPersistence(string root, VaultDailyFileStamp accepted, Func<DateTime> clock)
         {
             if (accepted == null || accepted.IsMissing || !accepted.BelongsTo(VaultDailyFile.CheckedPath(root)) || clock == null)
@@ -193,7 +193,7 @@ namespace ProGo
             this.root = root; stamp = accepted; day = accepted.LocalDay; this.clock = clock;
         }
         public bool IsCurrent(DateTime localNow)
-        { VaultDailyPolicy.RequireLocalTime(localNow); lock (gate) return !revoked && localNow.Date == day; }
+        { VaultDailyPolicy.RequireLocalTime(localNow); return !revoked && localNow.Date == day; }
         public void Save(VaultData data, string pin)
         {
             try { SaveCore(data, pin); }

@@ -118,6 +118,8 @@ namespace ProGo
                     VaultAccessibility(settings);
                     VaultAsyncUnlock();
                     VaultContextOwnership();
+                    VaultAsyncSave(settings);
+                    VaultDurableSaveWorkflow();
                     WizardAccessibility(settings);
                     ProfileSharingAccessibility(settings);
                     FriendsAccessibility(settings);
