@@ -55,6 +55,22 @@ midnight adoption rejection, ошибка after-commit hook, reentrant enable с
 проверяются отдельными `DesktopVaultDurableSaveTests.cs` root fixtures.
 
 Source implementation и независимый read-only review: **APPROVE / FROZEN**.
-Native compile / Windows CI / общий CI: **PENDING**. До completed native
-результата PASS не заявлен. Устройства владельца, merge, release и полный
-installer 31/31 в этом пакете не проверяются и не выполняются.
+Native compile / Windows CI / общий CI: **PASS**, 13.10.2026 UTC.
+Проверенный functional head `6e6df08b732021c628d3e768821bfe4b3569eb96`,
+tree `760074df57c691579c4759ff3991a5e4d317cdd3`;
+[CI #535](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38368815241)
+проверил merge `988cf657f0a37c5d7795e7536dde573cd657b6e3` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+Completed Windows job `115200392929`: **60 PASS assertions** из
+`VaultAsyncSave`, 08:29:47.9537817–08:29:52.1405244 UTC, без skipped cases.
+Соседняя durable/owner секция дала ещё **71 PASS**; общий Desktop —
+**3675 PASS**, 08:31:43.7469789 UTC. Весь `Test-ProGo` — PASS,
+08:34:29.6460625 UTC. Независимая сверка completed native log — **APPROVE**.
+Windows job, Ubuntu job `115200393266` и весь run — **SUCCESS**.
+Два прежних Linux-only Python module skips относятся к ownership/flock;
+эти suites выполнены на Ubuntu, а новые vault fixtures не пропускались.
+
+После этого source checkpoint меняются только документы доказательств.
+Устройства владельца, merge, release и полный installer 31/31 в этом
+пакете не проверяются и не выполняются. Полный F09 остаётся **OPEN**.

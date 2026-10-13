@@ -59,8 +59,29 @@ context и счётчиков очистки. Устройства владел�
 
 ## Статус и границы
 
-Source implementation / independent review: **PENDING**.
-Native compile / WinForms / full Windows and server CI: **PENDING**.
+Source implementation / independent review: **APPROVE / FROZEN**.
+Native compile / WinForms / full Windows and server CI: **PASS**, 13.10.2026 UTC.
+Functional head `6e6df08b732021c628d3e768821bfe4b3569eb96`,
+tree `760074df57c691579c4759ff3991a5e4d317cdd3`;
+[CI #535](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38368815241),
+tested merge `988cf657f0a37c5d7795e7536dde573cd657b6e3` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+
+Completed Windows job `115200392929`: **71 PASS assertions** из durable/owner
+workflow, 08:29:52.9668728–08:30:20.3261795 UTC, без skipped cases.
+Actual held-lease responsiveness — 08:30:01.7235496 UTC; bound empty dataset
+после последнего Delete — 08:30:05.2255980 UTC; другой PIN отвергнут —
+08:30:06.0208030 UTC. Actual save shutdown/refusal/retry —
+08:30:15.3485176–08:30:18.4857092 UTC; forced Dispose/ownerless settlement —
+08:30:20.3083549–08:30:20.3261795 UTC. Независимая сверка native log — **APPROVE**.
+
+Общий Desktop — **3675 PASS**, весь `Test-ProGo` — **PASS**,
+HomeVPN/portable — **975 /90 PASS**. Ubuntu job `115200393266`:
+**16 operations /9 sharing /46 provision PASS**, independent QR decode,
+без skips. Оба jobs и весь run завершились **SUCCESS**.
+Два прежних Windows Python skips — Linux-only ownership/flock modules;
+соответствующие suites исполнены в Ubuntu job.
+После проверенного source меняются только документы доказательств.
 
 Full active-session expiry, startup cleanup до входа, restart/day-boundary
 end-to-end acceptance и полный F09 PASS относятся к следующему отдельному

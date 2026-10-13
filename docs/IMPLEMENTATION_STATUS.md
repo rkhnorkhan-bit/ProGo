@@ -1,6 +1,57 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint 17–18: вход и владение операцией — native PASS
+## Текущий checkpoint 19–20: фоновое сохранение и владение worker — native PASS
+
+Проверки завершены **13.10.2026 UTC**. F09 остаётся **OPEN**, исторические
+**22/31** не увеличены. До F09 Code/Dev PASS и **23/31** остался один пакет:
+полный startup/day expiry, немедленная блокировка активного ложного сеанса
+и end-to-end restart/day-boundary acceptance. Полный installer всех31 и
+owner acceptance остаются PENDING; merge/release не выполнялись.
+
+Проверенный functional head: `6e6df08b732021c628d3e768821bfe4b3569eb96`;
+tree: `760074df57c691579c4759ff3991a5e4d317cdd3`.
+[CI #535](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38368815241)
+завершён **SUCCESS** с первой попытки. Проверенный merge:
+`988cf657f0a37c5d7795e7536dde573cd657b6e3`; неизменный main:
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+Последующие изменения checkpoint затрагивают только три документа доказательств.
+
+| Проверка | Результат | Доказательство и граница |
+| --- | --- | --- |
+| Source/tests/contracts review; whitespace; local scan | PASS | Независимые UI/durable/root reviews; 242 sources, zero local release files |
+| Micro19: async save UI | **60 PASS assertions** | Windows `115200392929`, 08:29:47.9537817–08:29:52.1405244 UTC; heartbeat, deep clone, single-flight, owner STA/null context, ошибки/retry, 10 pre/postcommit close cases, reentrant setup/reenable, nested editor |
+| Micro20: actual durable save / context ownership | **71 PASS assertions** | 08:29:52.9668728–08:30:20.3261795 UTC; real/daily CRUD и reopen, real lock/daily CAS, неблокирующий current check при held lease, bound empty dataset, raw shutdown deadline/retry, forced Dispose без UI pump |
+| Reader / policy / record / file / journal / store / recovery / open | **165 /134 /325 /110 /211 /151 /274 /112 PASS** | Тот же source на native Windows; настоящие CurrentUser DPAPI и filesystem fixtures |
+| Desktop / весь Test-ProGo | **3675 /PASS** | 08:31:43.7469789 /08:34:29.6460625 UTC; Instance26, Maintenance95, Shutdown47, UpdatePackage5 |
+| HomeVPN / portable | **975 /90 PASS** | 08:37:51.7110328 /08:39:37.1045922 UTC |
+| Windows Python / HTTP | **22 PASS +2 прежних Linux skips /7 из7 выполнены** | 24 reported items, 08:39:39.3567822 UTC; ownership/flock modules исполнены на Ubuntu; новые vault fixtures без skips |
+| Ubuntu operations / sharing / provisioning | **16 /9 /46 PASS** | Job `115200393266`, 08:22:34.0110714 /08:22:40.6041103 /08:23:59.2361113 UTC; numpy2.2.6/zxing-cpp2.3.0, independent QR decode, без skips |
+| Итоговые Windows / server / run | **SUCCESS /SUCCESS /SUCCESS** | Jobs `115200392929` /`115200393266`; исходный код после запуска не менялся |
+| Native public scan / CI ZIP | **242 sources /44 release files PASS; PACKED** | 08:39:40.2151749 UTC; ZIP `506496` bytes, 08:39:44.3144764 UTC; это CI artifact, не цельный installer всех31 |
+| Artifacts | Загружены | Screenshots `11798519532` —283 files; diagnostics `11798669038`, folder `11798763759`, ZIP `11798484731` |
+
+Реальные Add/Edit/Delete теперь выполняют KDF/сериализацию/запись в worker
+с независимым snapshot; UI принимает только подтверждённый commit. При
+закрытии содержимое немедленно скрывается, raw операция остаётся во владении
+контекста до settlement. Отмена начавшегося native Save не обещает rollback.
+`IsCurrent` суточного lease не берёт save gate и не ждёт файловую запись.
+Удаление последней ложной записи сохраняет единственный PIN и пустой набор
+до истечения дня; другие PIN не получают новый dataset.
+
+Negative maintenance fixtures намеренно печатают TRANSACTION/RESTORE FAILED.
+В частности, `installed=broken-fixture` в **08:33:58.5395220 UTC** вызывает
+проверенный rollback и завершается Maintenance95 PASS; это не отказ кандидата.
+Неизменённый OpenSSH smoke прошёл за **215ms**, 08:31:00.0005780 UTC,
+при прежнем budget7000ms; история предыдущего timeout сохранена ниже.
+Пропуск шага pruning старых CI artifacts не является пропуском проверки кода.
+
+Полный startup/active expiry ещё не реализован: adoption/save checks
+не заменяют автоматическое закрытие уже открытого окна при смене даты.
+ПК/VPS/телефон владельца и установленная программа не проверялись.
+Actual crash/power loss, hostile same-user rollback, managed-heap wiping и
+visual/owner acceptance этим checkpoint не подтверждены.
+
+## Предыдущий checkpoint 17–18: вход и владение операцией — native PASS
 
 Проверки завершены **12.10.2026 UTC**. F09 остаётся **OPEN**; исторические
 **22/31** не увеличены. Следующие два пакета: фоновое сохранение Add/Edit/Delete
