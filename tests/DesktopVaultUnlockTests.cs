@@ -48,7 +48,7 @@ namespace ProGo
             bool previousCrossThread = Control.CheckForIllegalCrossThreadCalls;
             try {
                 Control.CheckForIllegalCrossThreadCalls = true;
-                VaultUnlockHeartbeat(); VaultUnlockProbeAndCreate(); VaultUnlockRetry(); VaultUnlockOwnerGates();
+                VaultUnlockHeartbeat(); VaultUnlockProbeAndCreate(); VaultUnlockInputFeedback(); VaultUnlockRetry(); VaultUnlockOwnerGates();
                 VaultUnlockLeaseAndClock(); VaultUnlockReentrantOwners(); VaultUnlockCreateRace();
                 foreach (string action in new[] { "button", "escape", "title-close", "dispose" }) VaultUnlockCancelled(action, false);
                 VaultUnlockCancelled("escape", true);
@@ -91,6 +91,11 @@ namespace ProGo
                         ((Label)Field(form, "status")).AccessibilityObject.Name == "Состояние открытия хранилища",
                         "busy vault clears captured PIN from masked input and exposes accessible status");
                     Shot(form, "vault-unlock-pending");
+                    string pending = ((Label)Field(form, "status")).Text;
+                    ((TextBox)Field(form, "pin")).Text = "5678";
+                    ((TextBox)Field(form, "confirm")).Text = "5678";
+                    Check(((Label)Field(form, "status")).Text == pending && calls == 1 && form.IsBusy,
+                        "programmatic edits of frozen vault inputs cannot replace the pending status or start work");
                     release.Set(); VaultWaitPresentation(form);
                     Check(form.Work.IsCompleted && ReferenceEquals(form.AcceptedSession, candidate) && form.DialogResult == DialogResult.OK && !form.Visible,
                         "only settled current session closes vault unlock successfully");
@@ -109,7 +114,7 @@ namespace ProGo
                 (creating, pin, token) => { creatingSeen = creating; Interlocked.Increment(ref opens); return VaultOpenResult.Succeeded(VaultUiSession()); })) {
                 form.Show(); VaultWaitPresentation(form);
                 var pin = (TextBox)Field(form, "pin"); var confirm = (TextBox)Field(form, "confirm");
-                var primary = (Button)Field(form, "primary");
+                var primary = (Button)Field(form, "primary"); var status = (Label)Field(form, "status");
                 Check(opens == 0 && !pin.Enabled && primary.Enabled && primary.Text == "Повторить проверку" && form.AcceptedSession == null,
                     "failed vault probe never offers implicit creation or runs authentication");
                 Shot(form, "vault-unlock-unavailable"); primary.PerformClick(); VaultWaitPresentation(form);
@@ -119,15 +124,79 @@ namespace ProGo
                     primary.DialogResult == DialogResult.None && ((Button)Field(form, "cancel")).DialogResult == DialogResult.None,
                     "async vault controls retain masked accessible input and never auto-close a pending action");
                 pin.Text = "1234"; confirm.Text = "4321"; primary.PerformClick();
-                Check(opens == 0 && form.Visible && ((Label)Field(form, "status")).Text == "PIN-коды не совпадают.",
+                Check(opens == 0 && form.Visible && status.Text == "PIN-коды не совпадают.",
                     "creation confirmation mismatch stays inline and never starts a worker");
+                confirm.Text = "1234";
+                Check(opens == 0 && !form.IsBusy && status.Text.Contains("повторите его") &&
+                    status.AccessibleDescription == status.Text,
+                    "editing confirmation removes the stale local mismatch and restores accessible creation instructions without work");
+                var probeWork = form.Work; var probePresentation = form.PresentationWork;
                 pin.Text = "12x4"; confirm.Text = "12x4"; primary.PerformClick();
-                Check(opens == 0 && ((Label)Field(form, "status")).Text.Contains("ровно 4 цифры"),
-                    "invalid PIN syntax is rejected before off-thread authentication");
-                pin.Text = confirm.Text = "1234"; Shot(form, "vault-unlock-create"); primary.PerformClick(); VaultWaitPresentation(form);
+                Check(opens == 0 && ReferenceEquals(form.Work, probeWork) && ReferenceEquals(form.PresentationWork, probePresentation) &&
+                    status.Text == "PIN-код должен содержать ровно 4 цифры." && status.AccessibleDescription == status.Text && pin.Focused,
+                    "invalid PIN syntax keeps one accessible precise format error and starts no worker");
+                Check(Descendants(form).OfType<Label>().Count(label => label.Visible && label.Text.Contains("4 цифры")) == 1,
+                    "creation format error does not repeat the four-digit rule in a persistent hint");
+                Shot(form, "vault-unlock-create-invalid");
+                pin.Text = confirm.Text = "1234";
+                Check(opens == 0 && ReferenceEquals(form.Work, probeWork) && !form.IsBusy &&
+                    status.Text.Contains("повторите его") && !status.Text.Contains("должен содержать") &&
+                    status.AccessibleDescription == status.Text &&
+                    Descendants(form).OfType<Label>().Count(label => label.Visible && label.Text.Contains("4 цифр")) == 1,
+                    "corrected creation input restores one four-digit instruction before the native create screenshot without implicit submission");
+                Shot(form, "vault-unlock-create"); primary.PerformClick(); VaultWaitPresentation(form);
                 Check(opens == 1 && creatingSeen && form.AcceptedSession != null && form.DialogResult == DialogResult.OK,
                     "only confirmed create mode is passed to the worker and adopted after settlement");
                 form.AcceptedSession.DropSensitive();
+            }
+        }
+
+        private static void VaultUnlockInputFeedback()
+        {
+            int opens = 0; bool startAllowed = true;
+            using (var form = new VaultUnlockForm(token => VaultReady(), (creating, value, token) => {
+                Interlocked.Increment(ref opens); return VaultOpenResult.Failed(VaultOpenStatus.WrongPin);
+            }, () => startAllowed)) {
+                form.Show(); VaultWaitPresentation(form);
+                var pin = (TextBox)Field(form, "pin"); var primary = (Button)Field(form, "primary");
+                var status = (Label)Field(form, "status"); var probeWork = form.Work;
+                pin.Text = "12x4"; primary.PerformClick();
+                Check(opens == 0 && ReferenceEquals(form.Work, probeWork) &&
+                    status.Text == "PIN-код должен содержать ровно 4 цифры." && status.AccessibleDescription == status.Text,
+                    "unlock format errors are accessible and do not start authentication");
+                pin.Text = "1";
+                Check(opens == 0 && ReferenceEquals(form.Work, probeWork) && !form.IsBusy &&
+                    status.Text.Contains("для открытия") && status.Text.Contains("4 цифр") && status.AccessibleDescription == status.Text,
+                    "editing even an unfinished PIN restores instructions without inline validation or work");
+                primary.PerformClick(); startAllowed = false; primary.PerformClick();
+                string blocked = status.Text; pin.Text = "1234";
+                Check(opens == 0 && ReferenceEquals(form.Work, probeWork) && blocked.Contains("текущей операции ProGo") &&
+                    status.Text == blocked && status.AccessibleDescription == blocked,
+                    "input editing cannot erase an owner gate message that replaced an earlier local format error");
+                startAllowed = true; primary.PerformClick(); VaultWaitPresentation(form);
+                Check(opens == 1 && status.Text == "Неверный пин-код",
+                    "corrected input still requires explicit submission and preserves the authentication error");
+                pin.Text = "5678";
+                Check(opens == 1 && status.Text == "Неверный пин-код" && status.AccessibleDescription == status.Text,
+                    "editing a rejected PIN does not erase the settled authentication error");
+            }
+            foreach (string action in new[] { "edit", "dispose" }) {
+                int calls = 0;
+                using (var form = new VaultUnlockForm(token => VaultReady(), (creating, value, token) => {
+                    Interlocked.Increment(ref calls); return VaultOpenResult.Failed(VaultOpenStatus.WrongPin);
+                })) {
+                    form.Show(); VaultWaitPresentation(form);
+                    var pin = (TextBox)Field(form, "pin"); var status = (Label)Field(form, "status"); var probeWork = form.Work;
+                    status.TextChanged += delegate {
+                        if (status.Text != "PIN-код должен содержать ровно 4 цифры.") return;
+                        if (action == "edit") pin.Text = "1234";
+                        else form.Dispose();
+                    };
+                    pin.Text = "12x4"; ((Button)Field(form, "primary")).PerformClick();
+                    Check(calls == 0 && ReferenceEquals(form.Work, probeWork) && form.AcceptedSession == null &&
+                        (action == "edit" ? form.Visible && status.Text.Contains("для открытия") && status.AccessibleDescription == status.Text : form.IsDisposed),
+                        "reentrant local-error feedback cannot focus disposed input or start a worker: " + action);
+                }
             }
         }
 
@@ -149,6 +218,10 @@ namespace ProGo
                 Check(calls == 2 && form.Visible && form.AcceptedSession == null &&
                     !String.Join(" ", Descendants(form).Select(c => c.Text)).Contains("synthetic-private-exception-and-path"),
                     "worker exceptions expose a static vault error without private exception details");
+                string failed = ((Label)Field(form, "status")).Text; pin.Text = "1234";
+                Check(calls == 2 && ((Label)Field(form, "status")).Text == failed && failed.Contains("Не удалось открыть") &&
+                    ((Label)Field(form, "status")).AccessibleDescription == failed,
+                    "editing after a worker failure preserves its accessible retry error until explicit submission");
                 VaultTypeAndSubmit(form); VaultWaitPresentation(form);
                 Check(calls == 3 && form.AcceptedSession != null && form.DialogResult == DialogResult.OK,
                     "ordinary real-PIN retry can succeed after rejected and failed attempts");

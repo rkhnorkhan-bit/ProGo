@@ -48,7 +48,7 @@ namespace ProGo
                     contrast = false; ContrastNotify(form); ContrastNotify(dashboard);
                     Check(form.BackColor == UiTheme.Background && Descendants(form).OfType<SurfacePanel>().All(p => p.BackColor == UiTheme.Surface), "leaving contrast restores dark forms and surfaces");
                     Check(error.ForeColor == UiTheme.Error && Descendants(form).OfType<ComboBox>().All(c => c.DrawMode == DrawMode.OwnerDrawFixed), "leaving contrast restores error semantics and themed selectors");
-                    Check(Descendants(form).OfType<Button>().Where(b => Equals(b.Tag, "primary")).All(b => b.BackColor == UiTheme.Accent), "leaving contrast restores primary actions");
+                    Check(Descendants(form).OfType<Button>().Where(b => Equals(b.Tag, "primary")).All(b => b.BackColor == (b.Enabled ? UiTheme.Accent : UiTheme.Field)), "leaving contrast restores enabled primary accents and keeps disabled primary actions subdued");
                     Shot(form, "contrast-settings-restored");
                     var observer = ContrastObserver(form);
                     contrast = true; ContrastQueue(observer); form.Close(); Application.DoEvents();
@@ -93,8 +93,128 @@ namespace ProGo
                         "theme return preserves the latest status color and restores menu styling");
                     menu.Close(); fixture.Close();
                 }
+                contrast = false;
+                DisabledButtonRendering(value => contrast = value);
                 Check(File.ReadAllBytes(AppPaths.SettingsPath).SequenceEqual(bytes), "theme transitions never persist settings");
             } finally { source.SetValue(null, original); }
+        }
+        private static void DisabledButtonRendering(Action<bool> setContrast)
+        {
+            using (var form = new ProGoForm { Text = "Выключенные действия", ClientSize = new Size(680, 280) })
+            using (var image = new Bitmap(16, 16)) {
+                using (var graphics = Graphics.FromImage(image)) graphics.Clear(Color.Magenta);
+                var primary = UiTheme.Button("Открыть", null, true);
+                var secondary = UiTheme.Button("Сохранить", null, false);
+                var cancel = UiTheme.Button("Отмена", null, false, DialogResult.Cancel);
+                var imageButton = new Button { Text = "С изображением", Image = image, ImageAlign = ContentAlignment.MiddleLeft,
+                    TextImageRelation = TextImageRelation.ImageBeforeText, Bounds = new Rectangle(30, 170, 280, 60) };
+                primary.AutoSize = secondary.AutoSize = cancel.AutoSize = false;
+                primary.Bounds = new Rectangle(30, 30, 280, 50); secondary.Bounds = new Rectangle(350, 30, 280, 50);
+                cancel.Bounds = new Rectangle(350, 170, 280, 60);
+                form.Controls.Add(primary); form.Controls.Add(secondary); form.Controls.Add(cancel); form.Controls.Add(imageButton);
+                form.AcceptButton = primary; form.CancelButton = cancel;
+                primary.AccessibleName = "Проверка PIN"; primary.AccessibleDescription = "Открытие после проверки.";
+                int clicks = 0; primary.Click += delegate { clicks++; };
+                form.Show(); Application.DoEvents(); cancel.Focus();
+                Check(primary.GetType() == typeof(Button) && primary.BackColor == UiTheme.Accent, "the primary action remains a native Button with the enabled accent");
+                primary.Enabled = secondary.Enabled = imageButton.Enabled = false; Application.DoEvents();
+                Check(primary.BackColor == UiTheme.Field && primary.Cursor == Cursors.Default && primary.FlatAppearance.BorderSize == 1,
+                    "direct disabling removes the primary accent and interactive cursor");
+                Check(secondary.BackColor == UiTheme.Field && secondary.ForeColor == UiTheme.Muted, "secondary disabled actions select the subdued palette");
+                Check((primary.AccessibilityObject.State & AccessibleStates.Unavailable) != 0 && primary.AccessibilityObject.Name == "Проверка PIN" && primary.AccessibleDescription == "Открытие после проверки.",
+                    "disabled styling preserves the native unavailable state and explicit accessible purpose");
+                primary.PerformClick(); Check(clicks == 0, "a disabled primary action cannot execute through PerformClick");
+                Check(ReferenceEquals(form.AcceptButton, primary) && ReferenceEquals(form.CancelButton, cancel) && cancel.DialogResult == DialogResult.Cancel && primary.TabStop,
+                    "styling retains native accept/cancel roles and the declared tab stop");
+                using (var rendered = ButtonBitmap(primary)) CheckReadableDisabledGlyph(rendered, primary.BackColor, "primary");
+                using (var rendered = ButtonBitmap(secondary)) CheckReadableDisabledGlyph(rendered, secondary.BackColor, "secondary Save");
+                using (var reference = NativeButtonReference(imageButton))
+                using (var expected = ButtonBitmap(reference))
+                using (var actual = ButtonBitmap(imageButton)) Check(SameButtonPixels(actual, expected),
+                    "image buttons retain the complete native disabled image/text layout and rendering");
+                Shot(form, "contrast-disabled-dark-actions");
+                primary.Enabled = true; Application.DoEvents(); primary.PerformClick();
+                Check(primary.BackColor == UiTheme.Accent && primary.ForeColor == UiTheme.Background && primary.Cursor == Cursors.Hand && clicks == 1,
+                    "reenabling restores the enabled primary palette and action exactly once");
+                primary.Enabled = false;
+                for (int i = 0; i < 3; i++) UiTheme.Apply(form);
+                setContrast(true); ContrastNotify(form); ContrastCheck(form, "disabled actions");
+                Check(!primary.Enabled && primary.FlatStyle == FlatStyle.Standard && primary.UseVisualStyleBackColor, "disabled High Contrast actions use the native standard renderer");
+                using (var reference = NativeButtonReference(primary))
+                using (var expected = ButtonBitmap(reference))
+                using (var actual = ButtonBitmap(primary)) Check(SameButtonPixels(actual, expected), "the contrast branch leaves disabled native glyphs and border unchanged");
+                primary.Enabled = true;
+                Check(primary.FlatStyle == FlatStyle.Standard && primary.BackColor == SystemColors.Control, "enabled changes within the contrast branch keep the system palette");
+                primary.Enabled = false; Shot(form, "contrast-disabled-system-actions");
+                setContrast(false); ContrastNotify(form);
+                Check(!primary.Enabled && primary.BackColor == UiTheme.Field && primary.FlatStyle == FlatStyle.Flat, "theme return keeps a pending primary action subdued");
+                using (var rendered = ButtonBitmap(primary)) CheckReadableDisabledGlyph(rendered, primary.BackColor, "primary after theme return");
+                using (var rendered = ButtonBitmap(secondary)) CheckReadableDisabledGlyph(rendered, secondary.BackColor, "Save after theme return");
+                primary.Text = "Save"; primary.TextAlign = ContentAlignment.TopLeft; primary.Padding = new Padding(15, 2, 5, 7);
+                Rectangle left;
+                using (var rendered = ButtonBitmap(primary)) left = GlyphBounds(rendered, primary.BackColor);
+                primary.TextAlign = ContentAlignment.BottomRight;
+                using (var rendered = ButtonBitmap(primary)) {
+                    var right = GlyphBounds(rendered, primary.BackColor);
+                    Check(!left.IsEmpty && !right.IsEmpty && right.Left > left.Right && right.Top > left.Top,
+                        "disabled captions preserve padded horizontal and vertical text alignment");
+                }
+                primary.RightToLeft = RightToLeft.Yes;
+                using (var rendered = ButtonBitmap(primary)) Check(GlyphBounds(rendered, primary.BackColor).Left < primary.Width / 2, "disabled RTL captions mirror the declared text alignment");
+                primary.RightToLeft = RightToLeft.No; primary.TextAlign = ContentAlignment.MiddleCenter; primary.Padding = UiTheme.ActionPadding;
+                primary.Text = "&Save"; primary.UseMnemonic = true;
+                int mnemonicWidth;
+                using (var rendered = ButtonBitmap(primary)) mnemonicWidth = GlyphBounds(rendered, primary.BackColor).Width;
+                primary.UseMnemonic = false;
+                using (var rendered = ButtonBitmap(primary)) Check(GlyphBounds(rendered, primary.BackColor).Width > mnemonicWidth, "disabled captions honor UseMnemonic rather than always drawing a literal ampersand");
+                primary.UseCompatibleTextRendering = true;
+                using (var rendered = ButtonBitmap(primary)) CheckReadableDisabledGlyph(rendered, primary.BackColor, "compatible GDI+ caption");
+                primary.UseCompatibleTextRendering = false; primary.UseMnemonic = true; primary.Text = "Открыть";
+                Shot(form, "contrast-disabled-dark-restored");
+                primary.Enabled = true; primary.PerformClick();
+                Check(clicks == 2 && primary.BackColor == UiTheme.Accent && primary.AccessibilityObject.Name == "Проверка PIN",
+                    "repeated Apply and theme changes do not duplicate handlers or replace native purpose");
+                form.Close();
+            }
+        }
+        private static Bitmap ButtonBitmap(Button button)
+        {
+            var bitmap = new Bitmap(button.Width, button.Height);
+            button.DrawToBitmap(bitmap, button.ClientRectangle); return bitmap;
+        }
+        private static void CheckReadableDisabledGlyph(Bitmap bitmap, Color background, string name)
+        {
+            var glyphs = GlyphBounds(bitmap, background);
+            Check(!glyphs.IsEmpty && glyphs.Width > 8 && glyphs.Height > 5, "native rendered " + name + " has readable disabled glyph cores at contrast >= 4.5");
+        }
+        private static Rectangle GlyphBounds(Bitmap bitmap, Color background)
+        {
+            int left = bitmap.Width, top = bitmap.Height, right = -1, bottom = -1, cores = 0;
+            for (int y = 5; y < bitmap.Height - 5; y++) for (int x = 5; x < bitmap.Width - 5; x++) {
+                var color = bitmap.GetPixel(x, y);
+                if (VisualLuminance(color) <= VisualLuminance(background) || VisualContrast(color, background) < 4.5) continue;
+                cores++; left = Math.Min(left, x); right = Math.Max(right, x); top = Math.Min(top, y); bottom = Math.Max(bottom, y);
+            }
+            return cores < 12 ? Rectangle.Empty : Rectangle.FromLTRB(left, top, right + 1, bottom + 1);
+        }
+        private static Button NativeButtonReference(Button source)
+        {
+            var result = new Button { Text = source.Text, Font = source.Font, Size = source.Size, Padding = source.Padding,
+                FlatStyle = source.FlatStyle, BackColor = source.BackColor, ForeColor = source.ForeColor,
+                TextAlign = source.TextAlign, Image = source.Image, ImageAlign = source.ImageAlign, TextImageRelation = source.TextImageRelation,
+                RightToLeft = source.RightToLeft, UseMnemonic = source.UseMnemonic, UseCompatibleTextRendering = source.UseCompatibleTextRendering,
+                UseVisualStyleBackColor = source.UseVisualStyleBackColor, Enabled = source.Enabled };
+            result.FlatAppearance.BorderSize = source.FlatAppearance.BorderSize; result.FlatAppearance.BorderColor = source.FlatAppearance.BorderColor;
+            result.FlatAppearance.MouseOverBackColor = source.FlatAppearance.MouseOverBackColor;
+            result.FlatAppearance.MouseDownBackColor = source.FlatAppearance.MouseDownBackColor;
+            var isDefault = typeof(ButtonBase).GetProperty("IsDefault", BindingFlags.Instance | BindingFlags.NonPublic);
+            ((IButtonControl)result).NotifyDefault((bool)isDefault.GetValue(source, null)); result.CreateControl(); return result;
+        }
+        private static bool SameButtonPixels(Bitmap left, Bitmap right)
+        {
+            if (left.Size != right.Size) return false;
+            for (int y = 0; y < left.Height; y++) for (int x = 0; x < left.Width; x++) if (left.GetPixel(x, y).ToArgb() != right.GetPixel(x, y).ToArgb()) return false;
+            return true;
         }
         private static object ContrastObserver(ProGoForm form)
         {

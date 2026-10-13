@@ -12,6 +12,7 @@ namespace ProGo
     {
         private const string Unavailable = "Не удалось открыть хранилище. Проверьте доступность файла и повторите попытку.";
         private const string WaitToStart = "Дождитесь завершения текущей операции ProGo и повторите попытку.";
+        private const string PinFormatError = "PIN-код должен содержать ровно 4 цифры.";
         private readonly OwnerUiDispatcher ownerUi = new OwnerUiDispatcher();
         private readonly Func<CancellationToken, VaultProbeResult> probe;
         private readonly Func<bool, string, CancellationToken, VaultOpenResult> open;
@@ -27,7 +28,7 @@ namespace ProGo
         private CancellationTokenSource cancellation;
         private long generation;
         private volatile bool disposed;
-        private bool create, modeKnown, cancelRequested, closeAfterWork;
+        private bool create, modeKnown, cancelRequested, closeAfterWork, inputError;
         internal VaultSession AcceptedSession { get; private set; }
         internal Task Work { get; private set; }
         internal Task PresentationWork { get; private set; }
@@ -59,7 +60,7 @@ namespace ProGo
             layout.Controls.Add(pinLabel, 0, 0); layout.Controls.Add(pin, 1, 0);
             layout.Controls.Add(confirmLabel, 0, 1); layout.Controls.Add(confirm, 1, 1);
             confirmLabel.Visible = confirm.Visible = false;
-            var hint = UiTheme.Label("PIN-код должен содержать ровно 4 цифры.", UiTheme.Body, UiTheme.Muted);
+            var hint = UiTheme.Label("Ввод PIN-кода скрыт.", UiTheme.Body, UiTheme.Muted);
             hint.Dock = DockStyle.Fill; layout.Controls.Add(hint, 0, 2); layout.SetColumnSpan(hint, 2);
             status = UiTheme.Label("Проверяем доступность хранилища…", UiTheme.Body, UiTheme.Muted);
             status.Dock = DockStyle.Fill; status.AutoSize = false; status.AccessibleName = "Состояние открытия хранилища";
@@ -76,10 +77,23 @@ namespace ProGo
             // WinForms assigns Cancel automatically when CancelButton is set.
             // Busy Escape must request cancellation, not close before settlement.
             primary.DialogResult = cancel.DialogResult = DialogResult.None; UiTheme.ConfigureKeyboardOrder(this);
+            pin.TextChanged += delegate { InputEdited(); };
+            confirm.TextChanged += delegate { InputEdited(); };
             Shown += delegate { StartProbe(); };
         }
 
         private bool Live { get { return ownerUi.OnOwner && !ownerUi.Closed && !disposed && !IsDisposed && !Disposing; } }
+        private string InputPrompt { get { return create ? "Введите новый PIN-код из 4 цифр и повторите его." : "Введите PIN-код из 4 цифр для открытия хранилища."; } }
+        private void InputEdited()
+        {
+            if (!Live || IsBusy || !modeKnown || !pin.Enabled || cancelRequested || !inputError) return;
+            inputError = false; status.Text = InputPrompt;
+        }
+        private void ShowInputError(string message, Control input)
+        {
+            inputError = true; status.Text = message;
+            if (Live && !IsBusy && inputError && !input.IsDisposed && input.Enabled) input.Focus();
+        }
         private bool Allowed(Func<bool> check)
         { if (!Live) return false; try { return check == null || check(); } catch (Exception) { return false; } }
         private void StartProbe()
@@ -93,7 +107,7 @@ namespace ProGo
         }
         private void BeginWork(string message)
         {
-            IsBusy = true; cancelRequested = closeAfterWork = false; AcceptedSession = null;
+            IsBusy = true; cancelRequested = closeAfterWork = inputError = false; AcceptedSession = null;
             cancellation = new CancellationTokenSource(); generation++;
             pin.Enabled = confirm.Enabled = primary.Enabled = false; cancel.Enabled = true;
             status.Text = message; cancel.Focus();
@@ -115,7 +129,7 @@ namespace ProGo
                 modeKnown = true; create = result.Status == VaultProbeStatus.CreateRequired;
                 confirmLabel.Visible = confirm.Visible = create; layout.RowStyles[1].Height = create ? 38 : 0;
                 Text = create ? "Создание хранилища" : "Разблокировка"; primary.Text = create ? "Создать" : "Открыть";
-                status.Text = create ? "Введите новый PIN-код и повторите его." : "Введите PIN-код для открытия хранилища.";
+                status.Text = InputPrompt;
                 pin.Enabled = primary.Enabled = true; confirm.Enabled = create; pin.Focus();
             } catch (OperationCanceledException) { }
         }
@@ -124,10 +138,11 @@ namespace ProGo
             if (!Live || IsBusy) return;
             if (!modeKnown) { StartProbe(); return; }
             bool allowed = Allowed(canStart); if (!Live || IsBusy) return;
+            inputError = false;
             if (!allowed) { status.Text = WaitToStart; return; }
             string value = pin.Text;
-            if (!VaultDailyPolicy.IsValidPin(value)) { status.Text = "PIN-код должен содержать ровно 4 цифры."; pin.Focus(); return; }
-            if (create && value != confirm.Text) { status.Text = "PIN-коды не совпадают."; confirm.Focus(); return; }
+            if (!VaultDailyPolicy.IsValidPin(value)) { ShowInputError(PinFormatError, pin); return; }
+            if (create && value != confirm.Text) { ShowInputError("PIN-коды не совпадают.", confirm); return; }
             bool creating = create; BeginWork(create ? "Создаём хранилище…" : "Открываем хранилище…");
             pin.Clear(); confirm.Clear(); var source = cancellation; var token = source.Token; long request = generation;
             var worker = Task.Run(delegate { try { return open(creating, value, token); } finally { source.Dispose(); } });

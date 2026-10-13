@@ -310,20 +310,77 @@ namespace ProGo
         {
             // Styling must not replace an explicit accessible purpose. Without an
             // override, the native button automatically announces its current Text.
+            b.EnabledChanged -= ButtonEnabledChanged; b.EnabledChanged += ButtonEnabledChanged;
+            b.Paint -= PaintDisabledButton; b.Paint += PaintDisabledButton;
             if (HighContrast) {
                 b.FlatStyle = FlatStyle.Standard;
                 b.BackColor = SystemColors.Control; b.ForeColor = SystemColors.ControlText; b.UseVisualStyleBackColor = true;
+                b.Cursor = Cursors.Default;
                 return;
             }
-            bool primary = Equals(b.Tag, "primary");
+            bool primary = b.Enabled && Equals(b.Tag, "primary");
             b.FlatStyle = FlatStyle.Flat;
             b.FlatAppearance.BorderSize = primary ? 0 : 1;
             b.FlatAppearance.BorderColor = Border;
             b.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(128, 244, 208) : Color.FromArgb(39, 54, 73);
             b.FlatAppearance.MouseDownBackColor = primary ? Color.FromArgb(55, 200, 157) : Border;
-            b.BackColor = primary ? Accent : Field; b.ForeColor = primary ? Background : Text;
-            b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false;
+            b.BackColor = primary ? Accent : Field; b.ForeColor = b.Enabled ? (primary ? Background : Text) : Muted;
+            b.Cursor = b.Enabled ? Cursors.Hand : Cursors.Default; b.UseVisualStyleBackColor = false;
             if (b.Height < 30 && b.Dock == DockStyle.None) b.Height = 32;
+        }
+        private static void ButtonEnabledChanged(object sender, EventArgs e)
+        { var button = (Button)sender; StyleButton(button); button.Invalidate(); }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
+
+        private static void PaintDisabledButton(object sender, PaintEventArgs e)
+        {
+            var button = (Button)sender;
+            // Framework flat adapters darken BackColor for disabled glyphs, ignoring
+            // ForeColor. Correct only our text-only dark caption after native painting;
+            // the native Button still owns layout, input, accessibility and dialog roles.
+            // Images retain their native layout/rendering. High Contrast is wholly native.
+            if (HighContrast || button.Enabled || button.FlatStyle != FlatStyle.Flat ||
+                button.Image != null || button.ImageList != null) return;
+            var interior = button.ClientRectangle; interior.Inflate(-2, -2);
+            if (interior.Width <= 0 || interior.Height <= 0) return;
+            using (var brush = new SolidBrush(button.BackColor)) e.Graphics.FillRectangle(brush, interior);
+            var bounds = button.ClientRectangle;
+            bounds.X += button.Padding.Left + 5; bounds.Y += button.Padding.Top + 5;
+            bounds.Width -= button.Padding.Horizontal + 10; bounds.Height -= button.Padding.Vertical + 10;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            var align = button.TextAlign;
+            bool left = align == ContentAlignment.TopLeft || align == ContentAlignment.MiddleLeft || align == ContentAlignment.BottomLeft;
+            bool right = align == ContentAlignment.TopRight || align == ContentAlignment.MiddleRight || align == ContentAlignment.BottomRight;
+            bool rtl = button.RightToLeft == RightToLeft.Yes;
+            if (rtl) { bool swap = left; left = right; right = swap; }
+            bool top = ((int)align & 7) != 0, bottom = ((int)align & 1792) != 0;
+            bool hidePrefix = button.IsHandleCreated && (SendMessage(button.Handle, 0x0129, IntPtr.Zero, IntPtr.Zero).ToInt64() & 2) != 0;
+            if (button.UseCompatibleTextRendering) {
+                using (var format = new StringFormat()) {
+                    format.Alignment = (rtl ? right : left) ? StringAlignment.Near : (rtl ? left : right) ? StringAlignment.Far : StringAlignment.Center;
+                    format.LineAlignment = top ? StringAlignment.Near : bottom ? StringAlignment.Far : StringAlignment.Center;
+                    format.HotkeyPrefix = !button.UseMnemonic ? System.Drawing.Text.HotkeyPrefix.None : hidePrefix ? System.Drawing.Text.HotkeyPrefix.Hide : System.Drawing.Text.HotkeyPrefix.Show;
+                    if (rtl) format.FormatFlags |= StringFormatFlags.DirectionRightToLeft;
+                    if (button.AutoEllipsis) format.Trimming = StringTrimming.EllipsisCharacter;
+                    using (var brush = new SolidBrush(Muted)) e.Graphics.DrawString(button.Text, button.Font, brush, bounds, format);
+                }
+                return;
+            }
+            var flags = TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl |
+                TextFormatFlags.PreserveGraphicsClipping | TextFormatFlags.PreserveGraphicsTranslateTransform;
+            if (right) flags |= TextFormatFlags.Right; else if (!left) flags |= TextFormatFlags.HorizontalCenter;
+            if (bottom) flags |= TextFormatFlags.Bottom; else if (!top) flags |= TextFormatFlags.VerticalCenter;
+            if (rtl) flags |= TextFormatFlags.RightToLeft;
+            if (!button.UseMnemonic) flags |= TextFormatFlags.NoPrefix; else if (hidePrefix) flags |= TextFormatFlags.HidePrefix;
+            if (button.AutoEllipsis) flags |= TextFormatFlags.EndEllipsis;
+            // GDI's vertical flags do not align wrapped paragraphs. Measure within the
+            // same width first, then place the complete caption in its padded area.
+            int height = Math.Min(bounds.Height, TextRenderer.MeasureText(e.Graphics, button.Text, button.Font, bounds.Size, flags).Height);
+            if (bottom) bounds.Y += bounds.Height - height; else if (!top) bounds.Y += (bounds.Height - height) / 2;
+            bounds.Height = height;
+            TextRenderer.DrawText(e.Graphics, button.Text, button.Font, bounds, Muted, flags);
         }
         public static void Menu(ContextMenuStrip menu)
         {
