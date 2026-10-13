@@ -130,7 +130,7 @@ namespace ProGo
                 using (var rendered = ButtonBitmap(secondary)) CheckReadableDisabledGlyph(rendered, secondary.BackColor, "secondary Save");
                 using (var reference = NativeButtonReference(imageButton))
                 using (var expected = ButtonBitmap(reference))
-                using (var actual = ButtonBitmap(imageButton)) Check(SameButtonPixels(actual, expected),
+                using (var actual = ButtonBitmap(imageButton)) Check(SameButtonPixels(actual, expected, "disabled-image-reference"),
                     "image buttons retain the complete native disabled image/text layout and rendering");
                 Shot(form, "contrast-disabled-dark-actions");
                 primary.Enabled = true; Application.DoEvents(); primary.PerformClick();
@@ -142,7 +142,7 @@ namespace ProGo
                 Check(!primary.Enabled && primary.FlatStyle == FlatStyle.Standard && primary.UseVisualStyleBackColor, "disabled High Contrast actions use the native standard renderer");
                 using (var reference = NativeButtonReference(primary))
                 using (var expected = ButtonBitmap(reference))
-                using (var actual = ButtonBitmap(primary)) Check(SameButtonPixels(actual, expected), "the contrast branch leaves disabled native glyphs and border unchanged");
+                using (var actual = ButtonBitmap(primary)) Check(SameButtonPixels(actual, expected, "disabled-system-reference"), "the contrast branch leaves disabled native glyphs and border unchanged");
                 primary.Enabled = true;
                 Check(primary.FlatStyle == FlatStyle.Standard && primary.BackColor == SystemColors.Control, "enabled changes within the contrast branch keep the system palette");
                 primary.Enabled = false; Shot(form, "contrast-disabled-system-actions");
@@ -207,14 +207,32 @@ namespace ProGo
             result.FlatAppearance.BorderSize = source.FlatAppearance.BorderSize; result.FlatAppearance.BorderColor = source.FlatAppearance.BorderColor;
             result.FlatAppearance.MouseOverBackColor = source.FlatAppearance.MouseOverBackColor;
             result.FlatAppearance.MouseDownBackColor = source.FlatAppearance.MouseDownBackColor;
+            // Standard themed buttons paint transparent border/corner pixels from
+            // their parent. A parked standalone HWND has a different native background.
+            // Match the complete native context rather than cropping those pixels away.
+            if (source.Parent == null) throw new InvalidOperationException("The native button fixture must have a parent.");
+            result.Bounds = source.Bounds; source.Parent.Controls.Add(result);
             var isDefault = typeof(ButtonBase).GetProperty("IsDefault", BindingFlags.Instance | BindingFlags.NonPublic);
-            ((IButtonControl)result).NotifyDefault((bool)isDefault.GetValue(source, null)); result.CreateControl(); return result;
+            ((IButtonControl)result).NotifyDefault((bool)isDefault.GetValue(source, null)); result.CreateControl();
+            Console.WriteLine("Native button reference: sameParent=" + ReferenceEquals(result.Parent, source.Parent) +
+                "; bounds=" + result.Bounds + "; parentBackground=" + result.Parent.BackColor.ToArgb() + "; default=" + isDefault.GetValue(source, null));
+            return result;
         }
-        private static bool SameButtonPixels(Bitmap left, Bitmap right)
+        private static bool SameButtonPixels(Bitmap left, Bitmap right, string name)
         {
-            if (left.Size != right.Size) return false;
-            for (int y = 0; y < left.Height; y++) for (int x = 0; x < left.Width; x++) if (left.GetPixel(x, y).ToArgb() != right.GetPixel(x, y).ToArgb()) return false;
-            return true;
+            if (left.Size != right.Size) { Console.WriteLine("Native button pixels " + name + ": size mismatch " + left.Size + "/" + right.Size); return false; }
+            int mismatches = 0, edgeMismatches = 0; Point first = Point.Empty; Color actual = Color.Empty, expected = Color.Empty;
+            for (int y = 0; y < left.Height; y++) for (int x = 0; x < left.Width; x++) {
+                var a = left.GetPixel(x, y); var b = right.GetPixel(x, y);
+                if (a.ToArgb() == b.ToArgb()) continue;
+                if (mismatches == 0) { first = new Point(x, y); actual = a; expected = b; }
+                mismatches++;
+                if (x < 2 || y < 2 || x >= left.Width - 2 || y >= left.Height - 2) edgeMismatches++;
+            }
+            Console.WriteLine("Native button pixels " + name + ": mismatch=" + mismatches + "; edge=" + edgeMismatches +
+                "; first=" + first + "; actual=" + actual.ToArgb() + "; expected=" + expected.ToArgb());
+            if (mismatches != 0) { left.Save(Path.Combine(work, name + "-actual.png")); right.Save(Path.Combine(work, name + "-expected.png")); }
+            return mismatches == 0;
         }
         private static object ContrastObserver(ProGoForm form)
         {
