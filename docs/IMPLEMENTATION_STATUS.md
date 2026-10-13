@@ -1,6 +1,42 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint 21–23: F09 Code/Dev PASS — 23/31
+## Текущий checkpoint остатка 55: F17-R02 / F17-R03 — 2/55
+
+Приняты две небольшие Code/Dev задачи **13.10.2026 UTC**. Осталось **53/55**:
+41 до цельного установщика и12 зависимых приёмок. Общий прогресс остаётся
+**23/31**, весь F17 остаётся **OPEN**. [Список55](REMAINING_SUBTASKS_8.md)
+и [подробные доказательства](MICROTASK_F17_BUTTONS_PIN.md).
+
+- F17-R02 PASS: отключённые текстовые Save-действия читаемы, pending Unlock
+  лишён enabled accent; native состояние и клавиатурные роли сохранены.
+- F17-R03 PASS: правило четырёх цифр показано один раз; исправление локального
+  format/mismatch ввода возвращает инструкцию. WrongPIN, worker failure и
+  owner gate сообщения сохраняются; редактирование не запускает работу.
+
+Functional source `8327054cbba5db8eba6d6f0415f538a36d2a9eb5`, tree
+`89a4bba6a372ba88f393f8eebd57ea1c2ca08313`, tested merge
+`9aca1b055ab81678fc88ee72154a201b1568f866` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #541](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38472084629)
+completed SUCCESS: Windows `115553454771`, Ubuntu `115553455232` и весь run.
+Новые кнопки27 и Unlock63 (=51+12) PASS; Desktop3815 и полный Test-ProGo PASS;
+прежние save60/durable71/active31/runtime70, HomeVPN975/portable90 PASS.
+Ubuntu16/9/46 без skips; Windows22 PASS +2 прежних Linux module skips,
+все7 HTTP tests выполнены. Public254 sources/44 release files PASS.
+
+Source/tests/native/visual review APPROVE. Screenshot artifact `11852188348`
+содержит287 файлов, SHA256 проверен; просмотрены9 относящихся к пакету PNG.
+CI #540 Windows FAIL на standalone native HC reference сохранён в истории;
+test-only коррекция одинакового Parent/Bounds/default state не ослабила
+whole-bitmap equality: в #541 оба сравнения имеют0 расхождений.
+
+Реальные High Contrast/Narrator/DPI и итоговые поздние формы не приняты этим
+пакетом. Package PENDING, Live NOT_CHECKED; цельный setup всех31 ещё не готов.
+ПК/VPS/телефон владельца и установленное приложение не проверялись.
+PR draft/unmerged; release не выполнялся. После проверенного source здесь
+меняются только три Markdown-документа; app/tests/scripts остаются теми же.
+
+## Предыдущий checkpoint 21–23: F09 Code/Dev PASS — 23/31
 
 Проверки завершены **13.10.2026 UTC**. Полный утверждённый F09 реализован
 и проверен в разработке: startup/day expiry, немедленная блокировка при
