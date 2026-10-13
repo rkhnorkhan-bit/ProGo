@@ -271,7 +271,11 @@ namespace ProGo
                 timer.Start();
                 var outcome = context.GetType().GetMethod(method, PrivateInstance).Invoke(context, args) as Task;
                 var application = context as UpdateAwareTrayApplicationContext;
-                if (outcome == null && application != null) outcome = application.IntegrationWork;
+                if (application != null && method == "ExecuteCommand" && args.Length == 1 &&
+                    args[0] is AppCommand && (AppCommand)args[0] == AppCommand.Exit) {
+                    outcome = Field(application, "shutdownTask") as Task;
+                    if (outcome == null) throw new InvalidOperationException("Native exit fixture has no owned shutdown task.");
+                } else if (outcome == null && application != null) outcome = application.IntegrationWork;
                 if (outcome != null) { PumpUntil(() => outcome.IsCompleted); outcome.GetAwaiter().GetResult(); }
             }
             Check(seen, "native cleanup warning is visible for " + method);
