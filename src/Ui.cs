@@ -693,6 +693,8 @@ namespace ProGo
         {
             if (!ownerUi.OnOwner || ownerUi.Closed || IsDisposed) return;
             search.Clear(); if (ownerUi.Closed || IsDisposed) return;
+            search.Visible = false; if (ownerUi.Closed || IsDisposed) return;
+            typeFilter.Visible = false; if (ownerUi.Closed || IsDisposed) return;
             if (search.Parent != null) search.Parent.Visible = false;
             if (ownerUi.Closed || IsDisposed) return;
             typeFilter.SelectedIndex = 0; if (ownerUi.Closed || IsDisposed) return;

@@ -52,5 +52,15 @@ synthetic UI fixtures, ни простое сравнение DateTime не по
 atomic cleanup acceptance или тесты устройства владельца.
 
 Source implementation и независимый scoped read-only review: **APPROVE / FROZEN**.
-Native compile / WinForms / full CI: **PENDING**. Full F09 PASS, installer 31/31,
+Native compile / WinForms / full CI: **PENDING / FOLLOW-UP REQUIRED**.
+
+[CI #537](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38449783093),
+Windows `115477409112`, completed FAIL на первом idle expiry assertion
+2026-10-13 18:54:46.7920159 UTC. Предыдущие async save60/durable71 выполнены
+успешно; active expiry31 и runtime suite целиком не завершились. Вероятная
+причина: скрыт parent фильтров, но собственный Visible flag search оставался
+true и становился доступным после detachment во время Dispose. Follow-up
+явно скрывает search/typeFilter и сохраняет строгие assertions; bounded
+Boolean diagnostics позволяют проверить причину без содержимого/PIN/путей.
+Этот вывод требует следующего completed native run; ошибочный run сохранён. Full F09 PASS, installer 31/31,
 owner acceptance, merge и release этим документом не заявлены.

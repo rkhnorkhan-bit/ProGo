@@ -68,7 +68,10 @@ namespace ProGo
             })) {
                 form.Show(); Application.DoEvents(); bool current = form.CheckExpiry(lease.Day.AddDays(direction));
                 Check(!current && notified == 1 && capturedLease && observed == lease.Day.AddDays(direction) && VaultUiDropped(session) && VaultExpiryHidden(form),
-                    "idle fake vault expires forward or backwards with hidden rows and captured revoked owner lease direction=" + direction);
+                    "idle fake vault expires forward or backwards with hidden rows and captured revoked owner lease direction=" + direction +
+                    " current=" + current + " notified=" + notified + " captured=" + capturedLease + " dateMatches=" + (observed == lease.Day.AddDays(direction)) +
+                    " revoked=" + lease.Revoked + " dropped=" + VaultUiDropped(session) + " gridRows=" + ((DataGridView)Field(form, "grid")).Rows.Count +
+                    " gridVisible=" + ((DataGridView)Field(form, "grid")).Visible + " searchVisible=" + ((TextBox)Field(form, "search")).Visible + " disposed=" + form.IsDisposed);
                 Check(!form.CheckExpiry(lease.Day) && !prepared.IsCurrent(lease.Day) && lease.Revocations == 1 && notified == 1 && original.entries.Count == 1,
                     "observed A B A never revives the closed owner or a prepared shared lease direction=" + direction);
                 bool refused = false; try { VaultService.Save(prepared); } catch (InvalidOperationException) { refused = true; }
