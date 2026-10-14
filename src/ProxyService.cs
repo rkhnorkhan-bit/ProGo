@@ -375,8 +375,8 @@ namespace ProGo
                     {
                         var current = readSettings();
                         if (!wanted || disposed || !IsOwnedEndpointAlive(current) ||
-                            !BuildProfileTargets(current).Exists(delegate(string target) {
-                                return String.Equals(target, ownedTarget, StringComparison.OrdinalIgnoreCase);
+                            !BuildProfileTargets(current).Exists(delegate(string candidate) {
+                                return String.Equals(candidate, ownedTarget, StringComparison.OrdinalIgnoreCase);
                             })) return;
                         missingListener = 0;
                         if (!healthySince.HasValue)

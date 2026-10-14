@@ -260,6 +260,9 @@ def prepare():
     run('apt-get', 'update')
     run('apt-get', 'install', '-y', 'charon-systemd', 'strongswan-swanctl',
         'libcharon-extra-plugins', 'libstrongswan-extra-plugins', 'openssl', 'nftables', 'openssh-server')
+    # Package installation can leave SSH stopped after an upgrade.
+    # Its service recreates /run/sshd before validation and the later reload.
+    run('systemctl', 'start', 'ssh.service')
     if not re.search(r'^\s*include\s+conf\.d/\*\.conf\s*$', pathlib.Path('/etc/swanctl/swanctl.conf').read_text(), re.M):
         raise RuntimeError('swanctl.conf must include conf.d/*.conf before automatic setup')
     ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)

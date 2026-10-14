@@ -52,7 +52,8 @@ tests FROZEN после точечного review timer/Stop fixture. Ожида
 release files. Все новые десятисекундные fixture guards локальны для сценариев;
 прежние guards сохранены. Manual candidate теперь имеет linked deadline5s,
 общий startup20s и probe700ms сохранены; EOF observation≤200ms.
-Файлы текущей реализации: ProxyService, SocksRecoveryTests и этот документ.
+Файлы текущей реализации: ProxyService, SocksRecoveryTests и этот документ;
+после #545 добавлена узкая коррекция prerequisite в home_vpn_setup.
 Классификация config/arguments F31-R03, Include/tokens, агент/VPS и другие
 пункты в этот подпункт не входят. Package PENDING, Live NOT_CHECKED;
 владелец устанавливает и проверяет цельный продукт после завершения кода31.
@@ -61,3 +62,39 @@ PR draft/unmerged; merge, release, ПК/VPS/телефон владельца н
 Основание stderr boundary: [Microsoft Process.WaitForExit](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexit?view=netframework-4.8).
 Timed exit/HasExited не гарантирует завершение async output handlers;
 unbounded WaitForExit для ожидания handlers здесь не подходит.
+
+## История текущей проверки
+
+- CI #545 (`38582571487`), source
+  `d423f830dfbaa6512817aace5e688fb688ce22a8`, tree
+  `90f7c9c6465851dca1b16e5dce2070bd1376fb61`, tested merge
+  `a9be7b0a0d794b2acaf86a0dbb421b194447fb4c` в прежний main4bb3365:
+  общий FAILURE, Windows `115916018761` FAIL и Ubuntu `115916019489` FAIL.
+  Windows14:40:26.8450793 UTC: compiler CS0136, lambda parameter target
+  конфликтует с последующим local target в PollRecovery. Ни foundation,
+  ни37 SOCKS scenarios/312 assertions, Desktop или остальной Windows хвост
+  не запускались. Коррекция только переименовывает lambda parameter и ссылку
+  на него; source semantics/assertions/budgets сохраняются, review APPROVE.
+- Ubuntu16 operation tests и9 sharing/sync tests PASS, actual independent
+  QR decode выполнен. Provisioning14:40:49.9655319 UTC: `/run/sshd` отсутствует,
+  `sshd -t` возвращает255 до первого provision assertion. Fixture предварительно
+  запускал SSH service; далее prepare обновил openssh-server13.19→13.20.
+  Причина удаления runtime directory внутри package/service transition пока
+  проверяется; provisioning46 PASS и общий Ubuntu PASS не заявлены.
+- #545 содержит только diagnostics `11902729022`,645 bytes, metadata SHA256
+  `caa0b14979af66654439144679251784715c1d533340a2d2a3ccd8c0cc5008f9`.
+  Screenshots отсутствуют (upload step success с no-files warning), runtime
+  folder/ZIP не созданы. Счёт3/55 сохранён до свежего полного native PASS.
+- Узкая коррекция Ubuntu bootstrap: после успешного apt install подготовка
+  вызывает checked `systemctl start ssh.service` до создания managed state
+  и SSH_CONFIG, проверки `sshd -t` и существующего reload. Working service
+  получает start, а не restart; остановленная служба получает штатную
+  RuntimeDirectory. Ошибка запуска остаётся ошибкой подготовки.
+  Provision fixture и46 security assertions не менялись. Повторный APT
+  внутри fixture и обход проверки не добавлены. Source/syntax/whitespace
+  review APPROVE; фактический эффект требует свежего полного Ubuntu CI.
+  Exact package stop/socket transition не доказан логом и остаётся inference.
+  Это отдельный обнаруженный bootstrap-дефект, без дополнительного PASS ID55.
+
+Основание штатной RuntimeDirectory: [Ubuntu Noble OpenSSH changelog](https://lists.ubuntu.com/archives/foundations-bugs/2024-May/515145.html)
+и [upstream systemd.exec](https://github.com/systemd/systemd/blob/main/man/systemd.exec.xml).
