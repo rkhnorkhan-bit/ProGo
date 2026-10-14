@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using ProGo;
 
@@ -12,6 +15,7 @@ internal static class SocksRecoveryTests
 {
     private static readonly string Executable = Process.GetCurrentProcess().MainModule.FileName;
     private static int passed;
+    private static int assertions;
 
     private static int Main(string[] args)
     {
@@ -40,7 +44,14 @@ internal static class SocksRecoveryTests
             Test("manual profile fallback remains available", ManualFallback);
             Test("structured SSH fields reach native child and automatic recovery", StructuredArguments);
             Test("editing SSH fields cancels stale readiness under the same profile ID", StructuredEditCancellation);
+            Test("SOCKS endpoint forms preserve IPv4 and localhost without constructor resolution", EndpointFormsAndCompatibility);
+            Test("raw and bracketed IPv6 start a native child and complete SOCKS CONNECT", IPv6ReadinessAndMetrics);
+            Test("IPv6 crash recovery retains bracketed forwarding and stop releases the port", IPv6RecoveryAndStop);
+            Test("IPv6 pending startup cancellation and timeout clean up before retry", IPv6CancellationAndTimeout);
+            Test("IPv6 foreign listeners remain external and silent probes are bounded and cancellable", IPv6ForeignProbes);
+            Test("native OpenSSH parses isolated bracketed IPv6 dynamic forwarding locally", NativeIPv6DynamicForward);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
+            Console.WriteLine("SOCKS recovery assertions PASS: " + assertions);
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
@@ -48,12 +59,14 @@ internal static class SocksRecoveryTests
 
     private static void Test(string name, Action action)
     {
-        action(); passed++; Console.WriteLine("PASS: " + name);
+        int before = assertions;
+        action(); passed++; Console.WriteLine("PASS: " + name + " (" + (assertions - before) + " assertions)");
     }
 
     private static void Assert(bool condition, string message)
     {
         if (!condition) throw new Exception(message);
+        assertions++;
     }
 
     private static void WaitFor(Func<bool> condition)
@@ -71,9 +84,10 @@ internal static class SocksRecoveryTests
         public AppSettings Settings = AppSettings.Defaults();
         public DateTime Now = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public readonly ProxyService Proxy;
-        public Fixture(int startupTimeoutMs = 20000)
+        public Fixture(int startupTimeoutMs = 20000, string host = "127.0.0.1")
         {
-            var reserve = new TcpListener(IPAddress.Loopback, 0); reserve.Start();
+            Settings.SocksHost = host;
+            var reserve = new TcpListener(host == "::1" || host == "[::1]" ? IPAddress.IPv6Loopback : IPAddress.Loopback, 0); reserve.Start();
             Settings.SocksPort = ((IPEndPoint)reserve.LocalEndpoint).Port; reserve.Stop();
             Settings.SshProfile = "ready";
             Proxy = new ProxyService(delegate { return Settings; }, delegate(AppSettings s) { Settings = s; },
@@ -416,6 +430,232 @@ internal static class SocksRecoveryTests
         } finally { Environment.SetEnvironmentVariable("PROGO_TEST_SSH_RELEASE", previous); if (File.Exists(release)) File.Delete(release); }
     }
 
+    private sealed class SshCapture : IDisposable
+    {
+        internal readonly string Arguments = Path.Combine(Path.GetTempPath(), "progo-ipv6-argv-" + Guid.NewGuid().ToString("N"));
+        internal readonly string Connect = Path.Combine(Path.GetTempPath(), "progo-ipv6-connect-" + Guid.NewGuid().ToString("N"));
+        private readonly string previousArguments = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_ARGV");
+        private readonly string previousConnect = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_CONNECT");
+        internal SshCapture()
+        {
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_ARGV", Arguments);
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_CONNECT", Connect);
+        }
+        internal void ForwardIsIPv6(int port)
+        {
+            var args = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(Arguments));
+            int index = Array.IndexOf(args, "-D");
+            Assert(index >= 0 && index + 1 < args.Length, "Native child did not receive a dynamic-forward argument");
+            Assert(args[index + 1] == "[::1]:" + port.ToString(CultureInfo.InvariantCulture), "Native IPv6 dynamic forwarding was unbracketed or bracketed twice");
+            Assert(Array.IndexOf(args, "BatchMode=yes") >= 0, "IPv6 startup or recovery lost hidden BatchMode");
+        }
+        public void Dispose()
+        {
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_ARGV", previousArguments);
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_CONNECT", previousConnect);
+            if (File.Exists(Arguments)) File.Delete(Arguments);
+            if (File.Exists(Connect)) File.Delete(Connect);
+        }
+    }
+
+    private static void EndpointFormsAndCompatibility()
+    {
+        Assert(SocksEndpoint.Host("::1") == "::1" && SocksEndpoint.Host("[::1]") == "::1", "Valid IPv6 endpoint forms do not share the same socket host");
+        Assert(SocksEndpoint.Host("[2001:DB8::2]") == "2001:DB8::2" && SocksEndpoint.Host("[fe80::1%12]") == "fe80::1%12", "Valid IPv6 spelling or scope was changed");
+        foreach (var host in new[] { "[localhost]", "[127.0.0.1]", "[[::1]]", "[::1", "::1]", " [::1] " })
+            Assert(SocksEndpoint.Host(host) == host, "Malformed or non-IPv6 brackets were silently stripped: " + host);
+        var previous = Thread.CurrentThread.CurrentCulture;
+        try {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("ar-SA");
+            Assert(SocksEndpoint.Format("::1", 12345) == "[::1]:12345" && SocksEndpoint.Format("[::1]", 12345) == "[::1]:12345", "IPv6 endpoint formatting depends on spelling or current culture");
+            Assert(SocksEndpoint.Format("127.0.0.1", 12345) == "127.0.0.1:12345" && SocksEndpoint.Format("localhost", 12345) == "localhost:12345", "IPv4 or domain forwarding changed");
+        } finally { Thread.CurrentThread.CurrentCulture = previous; }
+        foreach (var host in new[] { "127.0.0.1", "::1", "[::1]", "::ffff:127.0.0.1", "[::ffff:127.0.0.1]" }) using (var client = SocksEndpoint.CreateClient(host))
+            Assert(client.Client.AddressFamily == (host == "127.0.0.1" ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6) && !client.Connected,
+                "Literal endpoint constructed the wrong client family or connected in its constructor: " + host);
+        using (var client = SocksEndpoint.CreateClient("localhost")) {
+            Assert(!client.Connected && !client.Client.IsBound, "Domain client constructor opened a connection");
+            Assert(client.Client.AddressFamily == (Socket.OSSupportsIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork) &&
+                (!Socket.OSSupportsIPv6 || client.Client.DualMode), "Domain client does not select the available dual-stack family");
+        }
+        foreach (var host in new[] { "127.0.0.1", "localhost" }) using (var f = new Fixture(20000, host)) {
+            // The child maps localhost to IPv4 without resolving any external name.
+            // This exercises domain BeginConnect against an IPv4-only listener.
+            f.Settings.TestEndpoint = "https://progo-metrics.invalid:8443/";
+            var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(start.Wait(5000) && start.Result && f.Proxy.IsListening(), "IPv4 or localhost asynchronous readiness regressed: " + host);
+            Assert(ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "IPv4 or localhost SOCKS greeting failed: " + host);
+            Assert(ConnectionMetrics.MeasureSocksLatencyMs(f.Settings, 2000).HasValue, "IPv4 or localhost SOCKS CONNECT failed: " + host);
+        }
+        using (var f = new Fixture()) {
+            f.Start();
+            foreach (var host in new[] { "::ffff:127.0.0.1", "[::ffff:127.0.0.1]" }) {
+                // Keep the child's real -D endpoint IPv4-only. These probes test
+                // mapped IPv6 clients, not an unsupported mapped SSH bind claim.
+                var mapped = f.Settings.Clone(); mapped.SocksHost = host; mapped.TestEndpoint = "https://progo-metrics.invalid:8443/";
+                Assert(ConnectionHealthMonitor.CheckSocks(mapped, CancellationToken.None), "Mapped IPv6 greeting did not reach the IPv4-only listener: " + host);
+                Assert(ConnectionMetrics.MeasureSocksLatencyMs(mapped, 2000).HasValue, "Mapped IPv6 metrics did not complete through the IPv4-only listener: " + host);
+            }
+        }
+    }
+
+    private static void IPv6ReadinessAndMetrics()
+    {
+        using (var capture = new SshCapture()) foreach (var host in new[] { "::1", "[::1]" }) using (var f = new Fixture(20000, host)) {
+            f.Settings.TestEndpoint = "https://progo-metrics.invalid:8443/";
+            var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(start.Wait(5000) && start.Result && f.Proxy.CurrentPid.HasValue && !f.Proxy.IsConnecting, "IPv6 asynchronous startup did not await its real listener: " + host);
+            capture.ForwardIsIPv6(f.Settings.SocksPort);
+            Assert(f.Proxy.IsListening() && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "IPv6 TCP or SOCKS greeting probe failed: " + host);
+            // An independent literal-address client proves the fixture really bound
+            // IPv6; a fixture that accidentally listens only on IPv4 cannot pass.
+            using (var client = new TcpClient(AddressFamily.InterNetworkV6)) {
+                var connect = client.BeginConnect(IPAddress.IPv6Loopback, f.Settings.SocksPort, null, null);
+                using (connect.AsyncWaitHandle) { Assert(connect.AsyncWaitHandle.WaitOne(2000), "Independent IPv6 connect exceeded its deadline"); client.EndConnect(connect); }
+                Assert(((IPEndPoint)client.Client.RemoteEndPoint).AddressFamily == AddressFamily.InterNetworkV6, "Native child did not accept an IPv6 socket");
+                var stream = client.GetStream(); stream.ReadTimeout = stream.WriteTimeout = 2000;
+                stream.Write(new byte[] { 5, 1, 0 }, 0, 3);
+                Assert(stream.ReadByte() == 5 && stream.ReadByte() == 0, "Native IPv6 child did not reply to a real SOCKS greeting");
+            }
+            int? latency = ConnectionMetrics.MeasureSocksLatencyMs(f.Settings, 2000);
+            Assert(latency.HasValue && latency.Value >= 1, "IPv6 latency probe did not complete the SOCKS CONNECT reply: " + host);
+            var request = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(capture.Connect));
+            Assert(request.Length == 3 && request[0] == "progo-metrics.invalid" && request[1] == "8443" && request[2] == "InterNetworkV6",
+                "Metrics did not send its exact target through the native IPv6 SOCKS child");
+            int? pid = f.Proxy.CurrentPid;
+            var repeat = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(repeat.Wait(5000) && repeat.Result && f.Proxy.CurrentPid == pid, "Repeated IPv6 readiness created a duplicate child");
+        }
+    }
+
+    private static void IPv6RecoveryAndStop()
+    {
+        using (var capture = new SshCapture()) foreach (var host in new[] { "::1", "[::1]" }) using (var f = new Fixture(20000, host)) {
+            f.Start(); int pid = f.Proxy.CurrentPid.Value;
+            File.Delete(capture.Arguments); f.Crash();
+            Assert(f.Proxy.NextRecoveryUtc == f.Now.AddSeconds(5), "IPv6 recovery lost the initial retry delay");
+            f.Tick(4); Assert(!f.Proxy.CurrentPid.HasValue, "IPv6 recovery restarted before its delay");
+            f.Tick(1); f.Ready(); capture.ForwardIsIPv6(f.Settings.SocksPort);
+            Assert(f.Proxy.CurrentPid != pid && f.Proxy.AutomaticRestarts == 1 && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "IPv6 recovery did not create exactly one healthy replacement");
+            var stop = f.Proxy.StopTunnelAsync();
+            Assert(stop.Wait(5000) && stop.Result && !f.Proxy.HasOwnedProcess && !f.Proxy.ConnectionRequested && !f.Proxy.IsListening(), "IPv6 stop did not settle ownership and release its listener");
+            var reserve = new TcpListener(IPAddress.IPv6Loopback, f.Settings.SocksPort);
+            try { reserve.Start(); Assert(((IPEndPoint)reserve.LocalEndpoint).Port == f.Settings.SocksPort, "Stopped IPv6 port was not reusable"); } finally { reserve.Stop(); }
+            f.Tick(600); Assert(!f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue, "Stopped IPv6 recovery resurrected a child");
+        }
+    }
+
+    private static void IPv6CancellationAndTimeout()
+    {
+        foreach (var host in new[] { "::1", "[::1]" }) {
+            using (var f = new Fixture(20000, host)) using (var cancellation = new CancellationTokenSource()) {
+                f.Settings.SshProfile = "quiet";
+                var start = f.Proxy.StartTunnelAsync(cancellation.Token);
+                WaitFor(() => f.Proxy.CurrentPid.HasValue);
+                cancellation.Cancel(); WaitFor(() => start.IsCompleted);
+                Assert(start.IsCanceled && !f.Proxy.HasOwnedProcess && !f.Proxy.IsConnecting && !f.Proxy.NextRecoveryUtc.HasValue, "IPv6 cancellation kept its child, readiness or retry");
+                f.Settings.SshProfile = "ready";
+                var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(retry.Wait(5000) && retry.Result && f.Proxy.CurrentPid.HasValue && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Fresh IPv6 startup after cancellation failed");
+            }
+            using (var f = new Fixture(500, host)) {
+                f.Settings.SshProfile = "quiet"; f.Settings.AutoRestartSocks = false;
+                var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(start.Wait(5000) && !start.Result && !f.Proxy.HasOwnedProcess && !f.Proxy.IsConnecting && f.Proxy.StartupError.Contains("отведённое время"), "IPv6 startup timeout kept its owned process or lacked guidance");
+            }
+        }
+    }
+
+    private static void IPv6ForeignProbes()
+    {
+        foreach (var host in new[] { "::1", "[::1]" }) using (var f = new Fixture(20000, host)) {
+            var listener = new TcpListener(IPAddress.IPv6Loopback, f.Settings.SocksPort); listener.Start();
+            try {
+                Assert(f.Proxy.IsListening(), "IPv6 foreign port was invisible to the TCP probe");
+                Assert(!ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Silent IPv6 TCP listener was accepted as SOCKS");
+                var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(start.Wait(5000) && !start.Result && !f.Proxy.HasOwnedProcess && f.Proxy.StartupError.Contains("Порт SOCKS занят"), "Foreign IPv6 listener was adopted or replaced");
+                f.Proxy.StopTunnel(); f.Tick(600);
+                Assert(f.Proxy.IsListening() && !f.Proxy.CurrentPid.HasValue && !f.Proxy.NextRecoveryUtc.HasValue, "Stopping IPv6 modified an external listener or scheduled recovery");
+                f.Settings.TestEndpoint = "https://progo-metrics.invalid:8443/";
+                var watch = Stopwatch.StartNew();
+                Assert(!ConnectionMetrics.MeasureSocksLatencyMs(f.Settings, 400).HasValue && watch.ElapsedMilliseconds < 2000, "Silent IPv6 metrics exceeded or ignored their deadline");
+                // Drain prior TCP-only probes, then observe this metrics request's
+                // actual greeting before cancellation: no timing-only cancellation.
+                while (listener.Pending()) using (var client = listener.AcceptTcpClient()) { }
+                using (var cancellation = new CancellationTokenSource()) {
+                    var metrics = Task.Run(() => ConnectionMetrics.MeasureSocksLatencyMs(f.Settings, 5000, cancellation.Token));
+                    try {
+                        WaitFor(listener.Pending);
+                        using (var peer = listener.AcceptTcpClient()) {
+                            var stream = peer.GetStream(); stream.ReadTimeout = 2000;
+                            Assert(stream.ReadByte() == 5 && stream.ReadByte() == 1 && stream.ReadByte() == 0, "Cancellable IPv6 metrics did not reach the real SOCKS greeting");
+                            cancellation.Cancel(); WaitFor(() => metrics.IsCompleted);
+                            bool cancelled = false;
+                            try { metrics.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; }
+                            Assert(cancelled, "In-flight IPv6 metrics swallowed cancellation or returned success");
+                        }
+                    } finally { cancellation.Cancel(); WaitFor(() => metrics.IsCompleted); }
+                }
+                Assert(f.Proxy.IsListening() && !f.Proxy.HasOwnedProcess, "Cancelled IPv6 metrics removed or adopted the foreign listener");
+            } finally { listener.Stop(); }
+        }
+    }
+
+    private static void NativeIPv6DynamicForward()
+    {
+        const int timeoutMs = 7000, port = 12345;
+        // Numeric target, disabled canonicalization and NUL config make -G a
+        // parser-only check: no user Match exec, DNS, authentication or connection.
+        string executable = OpenSshClient.Executable;
+        string arguments = "-G -F NUL -o CanonicalizeHostname=no -D " + SshConnection.Quote("[::1]:12345") + " 127.0.0.1";
+        var watch = Stopwatch.StartNew();
+        DiagnosticProcessResult result;
+        try { result = DiagnosticProcess.Run(executable, arguments, timeoutMs, CancellationToken.None); }
+        catch (Exception ex) { throw new Exception("Native IPv6 SSH parser smoke failed: client=" + Path.GetFileName(executable) + "; elapsed=" + watch.ElapsedMilliseconds + "ms; exception=" + ex.GetType().Name); }
+        string details = "; client=" + Path.GetFileName(executable) + "; elapsed=" + watch.ElapsedMilliseconds + "ms; exit=" + result.ExitCode + "; truncated=" + result.Truncated;
+        Assert(result.ExitCode == 0 && !result.Truncated, "Native OpenSSH rejected bracketed IPv6 dynamic forwarding" + details);
+        string forwarding = null;
+        foreach (var line in result.Output.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+            if (line.StartsWith("dynamicforward ", StringComparison.OrdinalIgnoreCase)) forwarding = line.Substring("dynamicforward ".Length);
+        Assert(forwarding != null && forwarding.Contains("::1") && forwarding.Contains(port.ToString(CultureInfo.InvariantCulture)), "Native OpenSSH did not retain the requested IPv6 dynamic forward" + details);
+    }
+
+    private static IPEndPoint FakeForwardEndpoint(string endpoint)
+    {
+        // Independent OpenSSH-style oracle. In particular, do not accept raw
+        // IPv6 by merely taking its last colon, or call production SocksEndpoint.
+        string host, portText;
+        IPAddress address;
+        if (endpoint.StartsWith("[", StringComparison.Ordinal)) {
+            int close = endpoint.IndexOf(']');
+            if (close < 2 || close != endpoint.LastIndexOf(']') || close + 1 >= endpoint.Length || endpoint[close + 1] != ':') throw new FormatException("Invalid bracketed forward");
+            host = endpoint.Substring(1, close - 1); portText = endpoint.Substring(close + 2);
+            if (!IPAddress.TryParse(host, out address) || address.AddressFamily != AddressFamily.InterNetworkV6) throw new FormatException("Forward brackets require IPv6");
+        } else {
+            int colon = endpoint.IndexOf(':');
+            if (colon < 1 || colon != endpoint.LastIndexOf(':')) throw new FormatException("IPv6 forward must be bracketed");
+            host = endpoint.Substring(0, colon); portText = endpoint.Substring(colon + 1);
+            if (host == "localhost") address = IPAddress.Loopback;
+            else if (!IPAddress.TryParse(host, out address) || address.AddressFamily != AddressFamily.InterNetwork) throw new FormatException("Fixture expects a literal address or localhost");
+        }
+        int port;
+        if (!Int32.TryParse(portText, NumberStyles.None, CultureInfo.InvariantCulture, out port) || port < 1 || port > 65535) throw new FormatException("Invalid forward port");
+        if (!IPAddress.IsLoopback(address)) throw new FormatException("Fixture must stay on loopback");
+        return new IPEndPoint(address, port);
+    }
+
+    private static byte[] FakeReadExact(Stream stream, int count)
+    {
+        var bytes = new byte[count]; int offset = 0;
+        while (offset < count) {
+            int read = stream.Read(bytes, offset, count - offset);
+            if (read == 0) throw new EndOfStreamException();
+            offset += read;
+        }
+        return bytes;
+    }
+
     private static int FakeSsh(string[] args)
     {
         var capture = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_ARGV");
@@ -431,8 +671,11 @@ internal static class SocksRecoveryTests
             else while (!File.Exists(release)) Thread.Sleep(20);
         }
         var endpoint = args[Array.IndexOf(args, "-D") + 1];
-        var port = Int32.Parse(endpoint.Substring(endpoint.LastIndexOf(':') + 1));
-        var listener = new TcpListener(IPAddress.Loopback, port);
+        IPEndPoint forward;
+        try { forward = FakeForwardEndpoint(endpoint); }
+        catch (FormatException ex) { Console.Error.WriteLine("Invalid test dynamic forward: " + ex.Message); return 1; }
+        var listener = new TcpListener(forward);
+        if (forward.AddressFamily == AddressFamily.InterNetworkV6) listener.Server.DualMode = false;
         listener.Start();
         while (true)
         {
@@ -443,10 +686,27 @@ internal static class SocksRecoveryTests
                 {
                     try
                     {
-                        var stream = client.GetStream(); stream.ReadTimeout = 1000;
+                        var stream = client.GetStream(); stream.ReadTimeout = stream.WriteTimeout = 1000;
                         if (stream.ReadByte() == 5 && stream.ReadByte() == 1 && stream.ReadByte() == 0)
                         {
                             stream.Write(new byte[] { mode == "wrong" ? (byte)4 : (byte)5, 0 }, 0, 2); stream.Flush();
+                            int version = stream.ReadByte();
+                            if (version == -1) return; // Readiness needs only a greeting.
+                            var header = FakeReadExact(stream, 3);
+                            if (version != 5 || header[0] != 1 || header[1] != 0 || header[2] != 3) return;
+                            int length = stream.ReadByte(); if (length < 1) return;
+                            var destination = FakeReadExact(stream, length + 2);
+                            string host = Encoding.ASCII.GetString(destination, 0, length);
+                            int port = (destination[length] << 8) | destination[length + 1];
+                            var connectCapture = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_CONNECT");
+                            if (!String.IsNullOrEmpty(connectCapture)) File.WriteAllText(connectCapture, new JavaScriptSerializer().Serialize(new[] {
+                                host, port.ToString(CultureInfo.InvariantCulture), forward.AddressFamily.ToString() }));
+                            byte[] bound = forward.Address.GetAddressBytes();
+                            var reply = new byte[4 + bound.Length + 2];
+                            reply[0] = 5; reply[3] = forward.AddressFamily == AddressFamily.InterNetworkV6 ? (byte)4 : (byte)1;
+                            Buffer.BlockCopy(bound, 0, reply, 4, bound.Length);
+                            reply[reply.Length - 2] = (byte)(forward.Port >> 8); reply[reply.Length - 1] = (byte)forward.Port;
+                            stream.Write(reply, 0, reply.Length); stream.Flush();
                         }
                     }
                     catch { }

@@ -158,9 +158,9 @@ namespace ProGo
         internal static bool CheckSocks(AppSettings s, CancellationToken token)
         {
             try {
-                using (var client = new TcpClient())
+                using (var client = SocksEndpoint.CreateClient(s.SocksHost))
                 using (token.Register(delegate { client.Close(); })) {
-                    var connect = client.BeginConnect(s.SocksHost, s.SocksPort, null, null);
+                    var connect = client.BeginConnect(SocksEndpoint.Host(s.SocksHost), s.SocksPort, null, null);
                     using (connect.AsyncWaitHandle) {
                         if (WaitHandle.WaitAny(new[] { connect.AsyncWaitHandle, token.WaitHandle }, 700) != 0) return false;
                         client.EndConnect(connect);

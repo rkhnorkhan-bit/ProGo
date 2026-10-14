@@ -356,13 +356,13 @@ namespace ProGo
         private TcpClient ConnectThroughSocks(string targetHost, int targetPort)
         {
             var current = settings.Current;
-            var socks = new TcpClient();
+            var socks = SocksEndpoint.CreateClient(current.SocksHost);
             socks.NoDelay = true;
             socks.ReceiveTimeout = ConnectTimeoutMs;
             socks.SendTimeout = SocketTimeoutMs;
             try
             {
-            ConnectWithTimeout(socks, current.SocksHost, current.SocksPort, ConnectTimeoutMs);
+            ConnectWithTimeout(socks, SocksEndpoint.Host(current.SocksHost), current.SocksPort, ConnectTimeoutMs);
 
             var stream = socks.GetStream();
             stream.Write(new byte[] { 0x05, 0x01, 0x00 }, 0, 3);

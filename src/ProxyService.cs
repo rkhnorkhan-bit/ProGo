@@ -412,7 +412,7 @@ namespace ProGo
             try
             {
                 var current = snapshot.Settings;
-                var endpoint = current.SocksHost + ":" + current.SocksPort;
+                var endpoint = SocksEndpoint.Format(current.SocksHost, current.SocksPort);
                 var args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=yes {1}",
                     SshConnection.Quote(endpoint), SshConnection.CommandArguments(SshConnection.Resolve(current, target)));
                 var psi = new ProcessStartInfo(sshExecutable, args)
@@ -511,9 +511,9 @@ namespace ProGo
         {
             try
             {
-                using (var client = new TcpClient())
+                using (var client = SocksEndpoint.CreateClient(host))
                 {
-                    var ar = client.BeginConnect(host, port, null, null);
+                    var ar = client.BeginConnect(SocksEndpoint.Host(host), port, null, null);
                     using (ar.AsyncWaitHandle)
                     {
                         if (!ar.AsyncWaitHandle.WaitOne(timeoutMs)) return false;
@@ -529,9 +529,9 @@ namespace ProGo
         {
             try
             {
-                using (var client = new TcpClient())
+                using (var client = SocksEndpoint.CreateClient(host))
                 {
-                    var ar = client.BeginConnect(host, port, null, null);
+                    var ar = client.BeginConnect(SocksEndpoint.Host(host), port, null, null);
                     using (ar.AsyncWaitHandle)
                     {
                         if (!ar.AsyncWaitHandle.WaitOne(700)) return false;

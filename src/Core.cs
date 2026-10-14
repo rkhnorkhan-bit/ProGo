@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Globalization;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -589,6 +590,37 @@ namespace ProGo
         }
     }
 
+    // Share SOCKS endpoint syntax and socket family without resolving a DNS name
+    // or connecting on the caller's thread. Existing async deadlines own DNS/connect.
+    internal static class SocksEndpoint
+    {
+        internal static string Host(string host)
+        {
+            if (String.IsNullOrEmpty(host) || host.Length < 3 || host[0] != '[' || host[host.Length - 1] != ']') return host;
+            var inner = host.Substring(1, host.Length - 2); IPAddress address;
+            if (inner.IndexOfAny(new[] { '[', ']' }) >= 0 || !IPAddress.TryParse(inner, out address) || address.AddressFamily != AddressFamily.InterNetworkV6) return host;
+            return inner;
+        }
+        internal static string Format(string host, int port)
+        {
+            var bare = Host(host); IPAddress address;
+            if (IPAddress.TryParse(bare, out address) && address.AddressFamily == AddressFamily.InterNetworkV6 &&
+                bare.IndexOfAny(new[] { '[', ']' }) < 0) bare = "[" + bare + "]";
+            return bare + ":" + port.ToString(CultureInfo.InvariantCulture);
+        }
+        internal static TcpClient CreateClient(string host)
+        {
+            IPAddress address;
+            bool literal = IPAddress.TryParse(Host(host), out address);
+            if ((literal && address.AddressFamily == AddressFamily.InterNetwork) || (!literal && !Socket.OSSupportsIPv6))
+                return new TcpClient(AddressFamily.InterNetwork);
+            // IPv6 literals keep their family; dual mode also permits a literal IPv4-mapped peer.
+            var client = new TcpClient(AddressFamily.InterNetworkV6);
+            try { client.Client.DualMode = true; return client; }
+            catch { client.Close(); throw; }
+        }
+    }
+
     internal static class ConnectionMetrics
     {
         private const string SpeedTestUrl = "https://speed.cloudflare.com/__down?bytes=10000000";
@@ -615,10 +647,10 @@ namespace ProGo
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                using (var client = new TcpClient())
+                using (var client = SocksEndpoint.CreateClient(settings.SocksHost))
                 using (deadline.Token.Register(delegate { client.Close(); }))
                 {
-                    var connect = client.BeginConnect(settings.SocksHost, settings.SocksPort, null, null);
+                    var connect = client.BeginConnect(SocksEndpoint.Host(settings.SocksHost), settings.SocksPort, null, null);
                     using (connect.AsyncWaitHandle) {
                         if (System.Threading.WaitHandle.WaitAny(new[] { connect.AsyncWaitHandle, deadline.Token.WaitHandle }, Math.Max(1, timeoutMs)) != 0) {
                             token.ThrowIfCancellationRequested(); return null;

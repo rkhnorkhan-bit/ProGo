@@ -2,7 +2,11 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ProGo
@@ -297,6 +301,94 @@ namespace ProGo
             }
         }
 
+        private static byte[] Ipv6BridgeBytes(NetworkStream stream, int count)
+        {
+            var bytes = new byte[count]; int offset = 0;
+            while (offset < count) {
+                int received = stream.Read(bytes, offset, count - offset);
+                if (received == 0) throw new IOException("IPv6 SOCKS fixture closed before its frame completed");
+                offset += received;
+            }
+            return bytes;
+        }
+        private static void BridgeIpv6SocksTransport(SettingsService settings)
+        {
+            var original = settings.Current.Clone();
+            try {
+                foreach (string host in new[] { "::1", "[::1]" })
+                foreach (bool connect in new[] { false, true }) {
+                    string scenario = host + (connect ? " CONNECT" : " HTTP");
+                    var socks = new TcpListener(IPAddress.IPv6Loopback, 0);
+                    socks.Server.DualMode = false; socks.Start();
+                    var proposed = original.Clone(); proposed.SocksHost = host;
+                    proposed.SocksPort = ((IPEndPoint)socks.LocalEndpoint).Port;
+                    Task server = null; Exception failure = null;
+                    try {
+                        settings.Save(proposed);
+                        server = Task.Run(delegate {
+                            using (var upstream = socks.AcceptTcpClient()) {
+                                upstream.ReceiveTimeout = 5000;
+                                var remote = ((IPEndPoint)upstream.Client.RemoteEndPoint).Address;
+                                if (remote.AddressFamily != AddressFamily.InterNetworkV6 || !IPAddress.IsLoopback(remote))
+                                    throw new IOException("Bridge did not use the actual IPv6 loopback SOCKS transport");
+                                var stream = upstream.GetStream();
+                                if (!Ipv6BridgeBytes(stream, 3).SequenceEqual(new byte[] { 5, 1, 0 }))
+                                    throw new IOException("Bridge changed the SOCKS no-auth greeting");
+                                stream.Write(new byte[] { 5, 0 }, 0, 2);
+                                if (!Ipv6BridgeBytes(stream, 4).SequenceEqual(new byte[] { 5, 1, 0, 3 }))
+                                    throw new IOException("IPv6 SOCKS transport changed remote domain resolution");
+                                int length = stream.ReadByte();
+                                if (length < 1) throw new IOException("Missing SOCKS target domain");
+                                string target = Encoding.ASCII.GetString(Ipv6BridgeBytes(stream, length));
+                                var port = Ipv6BridgeBytes(stream, 2);
+                                if (target != "example.org" || ((port[0] << 8) | port[1]) != (connect ? 443 : 80))
+                                    throw new IOException("Bridge changed its SOCKS target or port");
+                                var reply = new byte[22]; reply[0] = 5; reply[3] = 4;
+                                Buffer.BlockCopy(IPAddress.IPv6Loopback.GetAddressBytes(), 0, reply, 4, 16); reply[21] = 80;
+                                stream.Write(reply, 0, reply.Length);
+                                if (connect) {
+                                    if (Encoding.ASCII.GetString(Ipv6BridgeBytes(stream, 4)) != "ping")
+                                        throw new IOException("CONNECT did not relay the exact client payload");
+                                    Write(stream, "pong");
+                                } else {
+                                    string header = ReadHeader(stream);
+                                    if (!header.StartsWith("GET /demo HTTP/1.1\r\nHost: example.org\r\n") ||
+                                        header.Contains("Proxy-Authorization")) throw new IOException("HTTP rewrite or proxy-header stripping changed");
+                                    Write(stream, "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\nhello");
+                                }
+                            }
+                        });
+                        using (var bridge = new CliProxyBridgeService(settings)) {
+                            string error; Check(bridge.Start(out error), "IPv6 SOCKS bridge binds its ordinary HTTP endpoint: " + scenario);
+                            int bridgePort = bridge.Port;
+                            using (var client = new TcpClient()) {
+                                client.Connect(CliProxyBridgeService.Host, bridgePort); client.ReceiveTimeout = 7000;
+                                var stream = client.GetStream();
+                                Write(stream, connect ? "CONNECT example.org:443 HTTP/1.1\r\n\r\n" :
+                                    "GET http://example.org/demo HTTP/1.1\r\nHost: unused.example.invalid\r\nProxy-Authorization: fixture-only\r\n\r\n");
+                                if (connect) {
+                                    Check(ReadHeader(stream).StartsWith("HTTP/1.1 200 Connection Established\r\n"), "IPv6 SOCKS CONNECT handshake succeeds: " + scenario);
+                                    Write(stream, "ping");
+                                }
+                                string response = new StreamReader(stream).ReadToEnd();
+                                Check(connect ? response == "pong" : response == "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\nhello",
+                                    "actual IPv6-only SOCKS transport relays the exact response: " + scenario);
+                            }
+                            Check(server.Wait(10000), "IPv6 SOCKS wire checks settle within the existing bridge fixture bound: " + scenario);
+                            bridge.Stop(); AssertPortReleased(bridgePort, "IPv6 SOCKS bridge cleanup releases its ordinary HTTP port: " + scenario);
+                        }
+                    } catch (Exception ex) { failure = ex; }
+                    finally {
+                        socks.Stop();
+                        if (server != null && !server.IsCompleted) try {
+                            if (!server.Wait(5000) && failure == null) failure = new TimeoutException("IPv6 SOCKS fixture did not finish cleanup");
+                        } catch (Exception ex) { if (failure == null) failure = ex; }
+                    }
+                    if (failure != null) throw new Exception("IPv6 SOCKS bridge fixture failed: " + scenario, failure);
+                }
+            } finally { settings.Save(original); }
+        }
+
         private static void SharedBridgeConsumers(SettingsService settings)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
@@ -307,6 +399,7 @@ namespace ProGo
             try {
                 foreach (var name in CliProxyEnvironmentService.Names) Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
                 var prefs = original.Clone(); prefs.AutoCliProxy = prefs.AutoSystemProxy = false; settings.Save(prefs);
+                BridgeIpv6SocksTransport(settings);
                 ConsumerObserverRegressions(settings);
                 using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), "unused-test-ssh", () => DateTime.UtcNow, false))
                 using (var bridge = new CliProxyBridgeService(settings))
