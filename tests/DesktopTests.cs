@@ -108,6 +108,8 @@ namespace ProGo
                     SettingsActionBoundaries(settings);
                     SettingsValidationAndErrors(settings);
                     StartupSettingsWorkflow(settings);
+                    StartupSnapshotAsyncWorkflow(settings);
+                    TrayPreferenceAsyncWorkflow();
                     DashboardKeyboard(settings);
                     DashboardLayout(settings);
                     SettingsAutomationLayout(settings);

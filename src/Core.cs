@@ -391,9 +391,22 @@ namespace ProGo
             SafeLog.Info("Own settings change rolled back."); return true;
         }
 
+        internal void MarkTrayCloseExplained(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            lock (commitGate)
+            {
+                token.ThrowIfCancellationRequested();
+                if (published.Settings.TrayCloseExplained) return;
+                var candidate = published.Settings.Clone(); candidate.TrayCloseExplained = true;
+                SaveCore(candidate, token);
+            }
+            SafeLog.Info("Tray explanation preference saved.");
+        }
+
         // No proxy/UI callbacks run inside this gate. The only injected hook is
         // the test seam immediately before the real atomic file replacement.
-        private void SaveCore(AppSettings settings)
+        private void SaveCore(AppSettings settings, CancellationToken token = default(CancellationToken))
         {
             var candidate = settings.Clone();
             Normalize(candidate);
@@ -401,12 +414,14 @@ namespace ProGo
             var values = json.Deserialize<Dictionary<string, object>>(json.Serialize(candidate));
             foreach (var entry in unknownFields) values.Add(entry.Key, entry.Value);
             var text = json.Serialize(values);
+            token.ThrowIfCancellationRequested();
             AppPaths.EnsureDirectories();
             var pending = AppPaths.SettingsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
                 File.WriteAllText(pending, text);
                 if (beforeReplace != null) beforeReplace();
+                token.ThrowIfCancellationRequested();
                 if (File.Exists(AppPaths.SettingsPath)) File.Replace(pending, AppPaths.SettingsPath, null);
                 else File.Move(pending, AppPaths.SettingsPath);
                 var previous = published;

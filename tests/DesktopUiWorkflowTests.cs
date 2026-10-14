@@ -154,7 +154,7 @@ namespace ProGo
                         ((Button)Field(main, "cliToggle")).Text == "Запустить CLI", "typed settings Off reverses tray Start CLI without saving preferences");
                     ServiceCommandDialogs(context, main, commandItems);
                     CheckStopScopes(context, proxy, home, relay, plan, configured);
-                    main.Close(); Application.DoEvents();
+                    main.Close(); Application.DoEvents(); WaitAsyncSettings(context.TrayPreferenceWork);
                     Check(settings.Current.TrayCloseExplained && tray.Visible, "first dashboard close explains tray without exiting");
                     var saved = System.IO.File.ReadAllText(AppPaths.SettingsPath);
                     context.RequestShowStatus(); ((MainWindow)Field(context, "mainWindow")).Close(); Application.DoEvents();

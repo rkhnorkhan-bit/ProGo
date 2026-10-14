@@ -29,6 +29,14 @@ namespace ProGo
         private readonly Label startupNotice = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
         private readonly ApplicationShortcuts startupShortcuts;
         private ApplicationShortcuts.StartupSnapshot startupSnapshot;
+        private readonly Action<CancellationToken> beforeStartupRead;
+        private readonly CancellationTokenSource startupReadCancellation = new CancellationTokenSource();
+        private readonly TaskCompletionSource<bool> startupOwnerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private bool startupReadStarted, startupPending, startupResultDeferred;
+        private int startupGeneration;
+        private ApplicationShortcuts.StartupSnapshot deferredStartupSnapshot;
+        internal Task StartupWork { get; private set; }
+        internal bool IsStartupPending { get { return startupPending; } }
         private Button startupSettingsButton;
         private readonly CheckBox autoCli = new CheckBox();
         private readonly NumericUpDown clearSeconds = new NumericUpDown();
@@ -65,9 +73,11 @@ namespace ProGo
         public string ProxyEndpointText { set { proxyAddress.Text = value; } }
 
 
-        public SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section = SettingsSection.Automation, ApplicationShortcuts shortcuts = null, Action openStartupSettings = null)
+        public SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section = SettingsSection.Automation, ApplicationShortcuts shortcuts = null, Action openStartupSettings = null, Action<CancellationToken> beforeStartupRead = null)
         {
             service = settingsService;
+            this.beforeStartupRead = beforeStartupRead;
+            StartupWork = Task.FromResult(false);
             startupShortcuts = shortcuts;
             if (startupShortcuts == null && String.Equals(Application.ExecutablePath,
                 System.IO.Path.Combine(AppPaths.Root, "ProGo.exe"), StringComparison.OrdinalIgnoreCase))
@@ -207,8 +217,8 @@ namespace ProGo
             settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
             currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
             RefreshCurrentValues();
-            FormClosed += delegate { currentValuesTimer.Stop(); };
-            Shown += delegate { RefreshCurrentValues(); currentValuesTimer.Start(); };
+            FormClosed += delegate { currentValuesTimer.Stop(); CancelStartupRead(); };
+            Shown += delegate { RefreshCurrentValues(); currentValuesTimer.Start(); StartStartupRead(); };
             Shown += delegate {
                 if (section == SettingsSection.Windows) {
                     autoWindows.Focus();
@@ -370,6 +380,10 @@ namespace ProGo
         protected override void Dispose(bool disposing)
         {
             if (disposing) {
+                CancelStartupRead();
+                if (!startupReadStarted) startupReadCancellation.Dispose();
+                else StartupWork.ContinueWith(delegate { startupReadCancellation.Dispose(); },
+                    CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
                 var cancellation = saveCancellation;
                 if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
                 if (SaveWork != null && SaveWork.IsCompleted) savePending = false;
@@ -418,15 +432,9 @@ namespace ProGo
             autoLaunch.Enabled = false;
             if (startupShortcuts == null) startupNotice.Text = "Эта копия запущена вне папки установки ProGo. Настройка автозапуска доступна в установленной программе.";
             else {
-                try {
-                    startupSnapshot = startupShortcuts.ReadStartup();
-                    autoLaunch.Checked = startupSnapshot.Registered;
-                    autoLaunch.Enabled = true;
-                    startupNotice.Text = (startupSnapshot.Registered ? "ProGo добавлен в автозагрузку." : "ProGo не добавлен в автозагрузку.") +
-                        " Запуск — после входа пользователя в Windows. Галочка применяется после сохранения. Windows может отдельно запретить запуск: проверьте разрешение кнопкой ниже. Подключение к серверу задаётся следующей галочкой.";
-                } catch {
-                    startupNotice.Text = "Не удалось проверить автозапуск: ярлык недоступен или изменён вне ProGo. Он сохранён без изменений. Проверьте параметры Windows и снова откройте это окно.";
-                }
+                startupPending = true;
+                startupNotice.Text = "Проверяем автозапуск… Остальные настройки можно изменить и сохранить; автозапуск пока не изменится.";
+                autoLaunch.AccessibleDescription = startupNotice.Text;
             }
             autoCli.Checked = s.AutoCliProxy;
             autoRestart.Checked = s.AutoRestartSocks;
@@ -451,6 +459,57 @@ namespace ProGo
             }
 
             ReloadProfiles(s.SshProfile);
+        }
+
+        private void StartStartupRead()
+        {
+            if (startupShortcuts == null || startupReadStarted || startupOwnerClosed.Task.IsCompleted) return;
+            startupReadStarted = true;
+            StartupWork = ReadStartupAsync(++startupGeneration, startupReadCancellation.Token);
+        }
+        private async Task ReadStartupAsync(int generation, CancellationToken token)
+        {
+            ApplicationShortcuts.StartupSnapshot result = null;
+            try {
+                result = await Task.Run(delegate {
+                    token.ThrowIfCancellationRequested();
+                    if (beforeStartupRead != null) beforeStartupRead(token);
+                    token.ThrowIfCancellationRequested();
+                    var snapshot = startupShortcuts.ReadStartup();
+                    token.ThrowIfCancellationRequested(); return snapshot;
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) { if (token.IsCancellationRequested) return; }
+            catch { /* A failed read leaves only startup editing unavailable. */ }
+            if (token.IsCancellationRequested || startupOwnerClosed.Task.IsCompleted) return;
+            var delivered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            try {
+                BeginInvoke(new Action(delegate {
+                    try {
+                        if (IsDisposed || Disposing || startupOwnerClosed.Task.IsCompleted ||
+                            token.IsCancellationRequested || generation != startupGeneration) return;
+                        if (savePending) { deferredStartupSnapshot = result; startupResultDeferred = true; }
+                        else PublishStartupResult(result);
+                    } finally { delivered.TrySetResult(true); }
+                }));
+            } catch (InvalidOperationException) { delivered.TrySetResult(false); }
+            await Task.WhenAny(delivered.Task, startupOwnerClosed.Task).ConfigureAwait(false);
+        }
+        private void PublishStartupResult(ApplicationShortcuts.StartupSnapshot snapshot)
+        {
+            startupPending = false; startupSnapshot = snapshot;
+            autoLaunch.Enabled = snapshot != null && !savePending;
+            if (snapshot != null) {
+                autoLaunch.Checked = snapshot.Registered;
+                startupNotice.Text = (snapshot.Registered ? "ProGo добавлен в автозагрузку." : "ProGo не добавлен в автозагрузку.") +
+                    " Запуск — после входа пользователя в Windows. Галочка применяется после сохранения. Windows может отдельно запретить запуск: проверьте разрешение кнопкой ниже. Подключение к серверу задаётся следующей галочкой.";
+            } else startupNotice.Text = "Не удалось проверить автозапуск: ярлык недоступен или изменён вне ProGo. Он сохранён без изменений. Проверьте параметры Windows и снова откройте это окно.";
+            autoLaunch.AccessibleDescription = startupNotice.Text;
+        }
+        private void CancelStartupRead()
+        {
+            startupGeneration++; startupPending = false; startupResultDeferred = false;
+            try { startupReadCancellation.Cancel(); } catch (ObjectDisposedException) { }
+            startupOwnerClosed.TrySetResult(true);
         }
 
         private void ReloadProfiles(string selectedTarget)
@@ -599,7 +658,10 @@ namespace ProGo
                 savePending = false;
                 saveCancellation = null; saveButton.Enabled = true; settingsTabs.Enabled = true;
                 cancelButton.DialogResult = DialogResult.Cancel; cancelButton.Text = "Отменить изменения";
-                if (error != null) { ShowSaveError(error); return; }
+                if (error != null) {
+                    if (startupResultDeferred) { startupResultDeferred = false; PublishStartupResult(deferredStartupSnapshot); }
+                    ShowSaveError(error); return;
+                }
                 DialogResult = DialogResult.OK; Close();
             })); } catch (InvalidOperationException) { }
         }

@@ -25,7 +25,7 @@ namespace ProGo
                 byte[] bytes = File.ReadAllBytes(AppPaths.SettingsPath);
                 int opened = 0;
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts, () => opened++)) {
-                    form.Show(); Application.DoEvents();
+                    form.Show(); Application.DoEvents(); PumpUntil(() => !form.IsStartupPending);
                     var launch = (CheckBox)Field(form, "autoLaunch");
                     Check(launch.Enabled && !launch.Checked && launch.AccessibilityObject.Name == "Запускать ProGo при входе в Windows",
                         "startup checkbox reads real absent registration with an accessible name");
@@ -51,14 +51,14 @@ namespace ProGo
                     Check(!File.Exists(link) && bytes.SequenceEqual(File.ReadAllBytes(AppPaths.SettingsPath)), "Cancel leaves registration and settings bytes intact");
                 }
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts)) {
-                    form.Show(); Application.DoEvents(); ((CheckBox)Field(form, "autoLaunch")).Checked = true;
+                    form.Show(); Application.DoEvents(); PumpUntil(() => !form.IsStartupPending); ((CheckBox)Field(form, "autoLaunch")).Checked = true;
                     ((Button)form.AcceptButton).PerformClick(); PumpUntil(() => !form.IsSavePending); Application.DoEvents();
                     Check(form.DialogResult == DialogResult.OK && shortcuts.ReadStartup().Registered && !settings.Current.AutoStartSocks,
                         "real Save enables Windows registration while retaining manual SSH");
                 }
                 byte[] registration = File.ReadAllBytes(link); bytes = File.ReadAllBytes(AppPaths.SettingsPath);
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts)) {
-                    form.Show(); Application.DoEvents(); ((CheckBox)Field(form, "autoLaunch")).Checked = false;
+                    form.Show(); Application.DoEvents(); PumpUntil(() => !form.IsStartupPending); ((CheckBox)Field(form, "autoLaunch")).Checked = false;
                     ((TextBox)Field(form, "endpoint")).Text = "invalid-url";
                     ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
                     Check(form.Visible && registration.SequenceEqual(File.ReadAllBytes(link)), "input validation precedes startup changes");
@@ -76,7 +76,7 @@ namespace ProGo
                 }
                 configured.AutoStartSocks = false; settings.Save(configured);
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts)) {
-                    form.Show(); Application.DoEvents(); ((CheckBox)Field(form, "autoLaunch")).Checked = true;
+                    form.Show(); Application.DoEvents(); PumpUntil(() => !form.IsStartupPending); ((CheckBox)Field(form, "autoLaunch")).Checked = true;
                     form.SaveRequested = delegate { throw new IOException("synthetic downstream failure"); };
                     ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
                     Check(form.Visible && !File.Exists(link), "exception during settings application removes a newly created startup link");
@@ -84,7 +84,7 @@ namespace ProGo
                 }
                 shortcuts.ChangeStartup(shortcuts.ReadStartup(), true);
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts)) {
-                    form.Show(); Application.DoEvents(); ((CheckBox)Field(form, "autoLaunch")).Checked = false;
+                    form.Show(); Application.DoEvents(); PumpUntil(() => !form.IsStartupPending); ((CheckBox)Field(form, "autoLaunch")).Checked = false;
                     int applied = 0; form.SaveRequested = delegate { applied++; return null; };
                     using (var locked = File.Open(link, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                         ((Button)form.AcceptButton).PerformClick(); Application.DoEvents();
@@ -95,7 +95,7 @@ namespace ProGo
                 }
                 File.Delete(link);
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts)) {
-                    form.Show(); Application.DoEvents(); ((CheckBox)Field(form, "autoLaunch")).Checked = true;
+                    form.Show(); Application.DoEvents(); PumpUntil(() => !form.IsStartupPending); ((CheckBox)Field(form, "autoLaunch")).Checked = true;
                     form.SaveRequested = delegate {
                         File.WriteAllText(link, "external edit during failed save");
                         return new SettingsSaveError(SettingsField.SettingsFile, "Fixture failure");
@@ -107,7 +107,7 @@ namespace ProGo
                     Shot(form, "settings-startup-recovery-conflict"); form.Close();
                 }
                 using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts)) {
-                    form.Show(); Application.DoEvents();
+                    form.Show(); Application.DoEvents(); PumpUntil(() => !form.IsStartupPending);
                     Check(!((CheckBox)Field(form, "autoLaunch")).Enabled && ((Label)Field(form, "startupNotice")).Text.Contains("недоступен"),
                         "corrupt or foreign shortcut disables only startup editing");
                     form.SaveRequested = delegate { return null; }; ((Button)form.AcceptButton).PerformClick();

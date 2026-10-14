@@ -31,6 +31,8 @@ namespace ProGo
         private int integrationPending;
         internal bool IntegrationPending { get { return System.Threading.Volatile.Read(ref integrationPending) != 0; } }
         internal Task IntegrationWork { get; private set; }
+        internal Task TrayPreferenceWork { get; private set; }
+        private readonly CancellationTokenSource trayPreferenceCancellation = new CancellationTokenSource();
         private readonly Func<UpdateCheckForm> createUpdateForm;
         private UpdateCheckForm updateForm;
         private readonly bool ownsHealth;
@@ -111,6 +113,7 @@ namespace ProGo
                 else { string message; if (!SystemProxyService.Apply(current, out message)) throw new InvalidOperationException(message); }
             };
             IntegrationWork = Task.FromResult(false);
+            TrayPreferenceWork = Task.FromResult(false);
             proxy = proxyService;
             cliProxy = cliProxyService;
             appConsumers = new AppProxyConsumers(cliProxy, settings);
@@ -246,10 +249,15 @@ namespace ProGo
         }
         private void DashboardClosing(object sender, FormClosingEventArgs e)
         {
-            if (e.CloseReason != CloseReason.UserClosing || e.Cancel || settings.Current.TrayCloseExplained) return;
+            if (closing || disposed || shutdownPreparing || shutdownPrepared || e.CloseReason != CloseReason.UserClosing ||
+                e.Cancel || settings.Current.TrayCloseExplained || !TrayPreferenceWork.IsCompleted) return;
             tray.ShowBalloonTip(6000, "ProGo остаётся в трее", "Закрытие окна не отключает подключения. Откройте ProGo значком рядом с часами. Для отключения используйте команды остановки, для выхода — «Завершить работу ProGo».", ToolTipIcon.Info);
-            var updated = settings.Current.Clone(); updated.TrayCloseExplained = true;
-            try { settings.Save(updated); } catch (Exception ex) { SafeLog.Error("Tray explanation preference could not be saved.", ex); }
+            var token = trayPreferenceCancellation.Token;
+            TrayPreferenceWork = Task.Run(delegate {
+                try { settings.MarkTrayCloseExplained(token); }
+                catch (OperationCanceledException) { }
+                catch (Exception ex) { SafeLog.Error("Tray explanation preference could not be saved.", ex); }
+            });
         }
         private void ShowSettings(SettingsSection section = SettingsSection.Automation)
         {
@@ -1035,6 +1043,10 @@ namespace ProGo
                     catch (OperationCanceledException) { }
                     catch (Exception ex) { SafeLog.Error("Backup ended with an error before shutdown.", ex); }
                 }
+                var trayPreference = TrayPreferenceWork;
+                if (!trayPreference.IsCompleted && await Task.WhenAny(trayPreference, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != trayPreference)
+                    throw new InvalidOperationException("Сохранение настройки трея ещё не завершено. ProGo остаётся запущенным; дождитесь завершения записи и повторите выход или обслуживание.");
+                await trayPreference.ConfigureAwait(false);
                 var settingsCancellation = settingsOperationCancellation;
                 if (settingsCancellation != null) try { settingsCancellation.Cancel(); } catch (ObjectDisposedException) { }
                 var settingsWork = SettingsWork;
@@ -1558,6 +1570,7 @@ namespace ProGo
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
                 lock (integrationLifetimeGate) closing = true;
+                trayPreferenceCancellation.Cancel(); trayPreferenceCancellation.Dispose();
                 UnregisterVaultDateEvents(); dailyRuntime.Close();
                 integrationWaitCancellation.Cancel();
                 integrationWaitCancellation.Dispose();
