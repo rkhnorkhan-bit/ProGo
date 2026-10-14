@@ -1,10 +1,10 @@
 # Остаток55: F31-R04 — достоверная диагностика конфигурации OpenSSH
 
 Один Code/Dev результат, разделённый на три малые микрозадачи. Исходный
-checkpoint `ec9fa214d2a502fe3e4601ca31d5c00da234fa1d`; принятые5/55
-подтверждены полным CI #548. До новой полной приёмки счёт **5/55**,
-остаток50=38 до установщика +12 зависимых приёмок; общий **23/31**,
-весь F31 **OPEN**. [Список55](REMAINING_SUBTASKS_8.md).
+checkpoint `ec9fa214d2a502fe3e4601ca31d5c00da234fa1d`; прежние5/55
+подтверждены CI #548. F31-R04 принят **14.10.2026 UTC** в полном CI #549:
+счёт **6/55**, остаток49=37 до установщика +12 зависимых приёмок;
+общий **23/31**, весь F31 **OPEN**. [Список55](REMAINING_SUBTASKS_8.md).
 
 ## Исходные дефекты и выбранная граница
 
@@ -53,20 +53,97 @@ load_public_identity_files и раскрытия IdentityFile.
 Windows home/user могут отличаться от HOME/Environment.UserName; простая
 подстановка .NET переменных не считается доказательством клиентского пути.
 
-Статус **IN_PROGRESS**. Source FROZEN +86/−83, независимый source review APPROVE;
-tests FROZEN; независимый source/tests/script/PENDING review APPROVE.
-Добавлены59 Check. Ожидаются Desktop3910=3851+59 и
-неизменные SOCKS41/403. Raw и expanded path ограничены32768 символами ДО
-append: повтор токенов не создаёт неограниченный StringBuilder. Малый fixture
-проверяет rejection через production pipeline; allocation ceiling доказывает
-source review, измерения памяти в этом fixture не заявлены.
-Compiler явно включает новый partial, harness вызывает SshConfigAuthority;
-устаревшие static markers двух удалённых эвристик заменены authoritative
-SshResolved/CheckConfiguration/IdentityPaths/IdentityListLimited. Прежние
-assertions и deadlines не ослабляются. Предыдущий CI #548 подтверждает только
-прежний checkpoint; ожидаемые числа не являются новым PASS.
-Локальные whitespace/public PASS:259 sources/0 release files; native Windows
-не запускался в Linux контейнере, нужен свежий полный Windows/Ubuntu CI.
-Package PENDING, Live NOT_CHECKED; устройства/ПК/VPS/телефон владельца
-и установленное приложение не проверяются. PR draft/unmerged;
-merge/release/реальные платежи, письма и сертификаты не выполняются.
+## Приёмка Code/Dev
+
+Статус **Code/Dev PASS**. Source FROZEN +86/−83, tests FROZEN;
+независимые source/tests/compiler/static markers и полные native reviews
+APPROVE. Compiler явно включает новый partial; harness вызывает
+SshConfigAuthority. Устаревшие markers двух удалённых эвристик заменены
+SshResolved/CheckConfiguration/IdentityPaths/IdentityListLimited.
+
+Фактически **Desktop3910=3851+59 PASS**. Все59 новых checks выполнены
+18:43:49.0718207–18:43:49.5872661 UTC: восемь независимых oracle/production
+пар, first-value Include/glob/Match/negation, dotted и неизвестный target,
+relative Include не рядом с -F, сохранение raw/order/case-sensitive maps,
+пять подтверждённых путей, none и семь неподтверждённых записей,
+drive-relative, root-relative и client-relative paths,35 native identities против явного cap32,
+ограничение expanded path. Прежние3851 проверки, assertions и deadlines
+сохранены. Старые SSH cancel/deadline/process-tree/unrelated-child и agent
+inventory/guidance проверки повторно PASS; agent не проверяется новым helper.
+
+Raw и expanded path ограничены32768 символами ДО append: повтор токенов
+не создаёт неограниченный StringBuilder. Малый controlled fixture проходит
+production pipeline и подтверждает bounded rejection; allocation ceiling
+подтверждён source review. Измерение памяти этим fixture не заявлено.
+Неопределённые отдельные пути остаются NOT_CHECKED, а не «файл не найден».
+
+## Точная идентичность и полный CI
+
+Functional source `1025eb2f47ee41d1b0cb0e356bb0e90caabc43f0`, tree
+`ccd40b3f7852b69f2998ddb8c6b879eafd9e5d03`; tested merge
+`36c5e2d97117e7e675dde065021cb62568d0eba3` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #549](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38616061130)
+completed SUCCESS: Windows `116031324966`, Ubuntu `116031324494`, весь run.
+Локальный эквивалент до синхронизации `aa04b60628ae183398c4c43189b9ab8eef1607fb`
+имеет то же tree; удалённый functional source указан выше.
+
+- Desktop3910 PASS18:44:28.5867561 UTC; полный Test-ProGo PASS18:47:05.3754031.
+  SOCKS41 scenarios/403 assertions неизменны и повторно PASS18:37:50.
+- Foundation165/134/325/110/211/151/274/112, expiry130/restart237,
+  Instance26/Maintenance95/Shutdown47/update package5 PASS.
+  HomeVPN975/portable90 PASS; обычные backup/update negative fixtures
+  ожидаемо печатают injected failures, завершаются утверждённым PASS95.
+- Windows Python22 PASS +2 прежних Linux ownership/flock module skips,
+  покрытых Ubuntu; все7 HTTP tests выполнены. Public259 sources/44 release
+  files PASS18:52:08.5312688. Native Windows не запускался в Linux контейнере.
+- Ubuntu16/9/46 без skips, actual independent QR decode18:32:57.5081891 UTC.
+  Реальный OpenSSH package upgrade13.19→13.20, managed sshd-t, ограничения,
+  revoke/preserve/reissue, private receipts и real TLS PASS. Bootstrap server
+  blob `a76ab265e5afbbf022f823b400fe44946bab3753` и fixture46 неизменны.
+  Точный механизм прежней package/service остановки остаётся inference.
+
+Root и независимые reviewers сверили completed logs, run/jobs и metadata.
+Это новая полная приёмка точного source; прежний CI #548 остаётся историей5/55.
+Runtime fallback/classifier, server/workflow и продуктовая компоновка не менялись.
+
+## Артефакты и визуальная проверка
+
+| Artifact | ID | Bytes | Подтверждение |
+| --- | ---: | ---: | --- |
+| Screenshots | 11920744276 | 6391189 | Uploaded; скачано,287 файлов, hash сверён |
+| Diagnostics | 11919799744 | 82645 | Uploaded; metadata/runner digest совпали |
+| Runtime folder | 11920289570 | 525800 | Uploaded;44 файлов, metadata/runner digest совпали |
+| ZIP wrapper | 11920004751 | 518675 | Uploaded; metadata/runner digest совпали |
+
+Inner CI runtime ZIP **521994 bytes**, runner18:52:13.0473404 UTC.
+SHA-256 screenshots download/metadata/runner:
+`9de0a0c7358363eaf0e2b51ccace2365f7d8c34a6ab9a9a4479c5025b2a52407`.
+Diagnostics digest:
+`da1d10c6836c4f9b556cdb7c343376e803104a0610cb9373c19fb597a002b755`;
+folder digest:
+`58e9c65b2118d70216a59b836e7ed84bd25507be0905217e8b3ef61620befb01`;
+ZIP wrapper digest:
+`18152bff4a7d1b2ee64d71ae5a74c99a463e540f13fe094997dcc781ec056675`.
+
+Root визуально просмотрел свежие `ssh-diagnostic-success.png` и
+`ssh-agent-guidance.png`: raw IdentityFile и проверяемый путь различимы,
+текст, переносы, статус и действия читаемы; длинный отчёт прокручивается
+вертикально. Это2 просмотренных PNG из287, не визуальная приёмка всего
+интерфейса/DPI. Снимки используют controlled DesktopTests.exe fixture и его
+test assembly identity0.0.0.0, не являются идентичностью shipping ProGo.exe.
+Для остальных трёх artifacts отдельный download/hash не заявлен.
+
+## Сохранённые границы
+
+Принят только новый **F31-R04**: **6/55**, осталось49=37+12. Исходные55=43+12,
+общий23/31 и целые F17/F31 OPEN сохранены. Реальные agent/key/VPS проверки,
+прочие F31 результаты и цельный setup/updater всех31 не закрываются этим CI.
+Package PENDING, Live NOT_CHECKED. ПК/VPS/телефон владельца и установленное
+приложение не проверялись; PR draft/unmerged, merge/release/реальные платежи,
+письма и сертификаты не выполнялись.
+
+После functional source меняются ровно3 Markdown evidence-документа;
+application/tests/scripts/server/workflow идентичны проверенному source.
+Декомпозиция55 уникальных ID и6 PASS, whitespace/public проверены при
+фиксации evidence. Независимый review evidence выполняется перед публикацией.

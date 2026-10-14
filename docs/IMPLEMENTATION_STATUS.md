@@ -1,6 +1,54 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint остатка 55: F31-R03 — 5/55
+## Текущий checkpoint остатка 55: F31-R04 — 6/55
+
+Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC**, выполненный
+тремя малыми микрозадачами. Осталось **49/55**:37 до цельного установщика +12
+зависимых приёмок. Общий прогресс **23/31**, целые F17/F31 остаются **OPEN**.
+[Список55](REMAINING_SUBTASKS_8.md), [доказательства](MICROTASK_F31_SSH_CONFIG.md).
+
+F31-R04 PASS: effective конфигурация берётся из native ssh -G, ручной
+root-config/alias parser и dotted-target эвристика удалены. Raw IdentityFile
+сохраняется отдельно от подтверждённого абсолютного локального пути;
+one-pass case-sensitive tokens/maps, pre-append cap32768 и явный list cap32.
+Home/cwd/env/relative/UNC/device и прочий недоказанный контекст получают
+NOT_CHECKED без guessed filesystem probe. Это честная диагностика, не
+подтверждение alias/DNS/сервера/auth; реальные agent/key/VPS проверки впереди.
+
+Functional source `1025eb2f47ee41d1b0cb0e356bb0e90caabc43f0`, tree
+`ccd40b3f7852b69f2998ddb8c6b879eafd9e5d03`; tested merge
+`36c5e2d97117e7e675dde065021cb62568d0eba3` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #549](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38616061130)
+completed SUCCESS: Windows `116031324966`, Ubuntu `116031324494`, весь run.
+
+Desktop3910=3851+59 PASS; восемь actual Windows OpenSSH oracle/production
+пар, Include/glob/order/Match/negation/dotted/unknown, multiple identities,
+none/raw/tokens/неизвестные пути/limits PASS. Прежние SSH cancel/deadline/tree/
+agent checks, все3851 старые проверки и budgets сохранены; SOCKS41/403
+неизменны и повторно PASS. Source/tests/native reviews APPROVE.
+Foundation165/134/325/110/211/151/274/112, expiry130/restart237,
+Instance26/Maintenance95/Shutdown47/update package5, HomeVPN975/portable90 PASS.
+Windows22 PASS +2 прежних Linux module skips; все7 HTTP tests выполнены.
+Ubuntu16/9/46 без skips, actual independent QR decode. Public259 sources/44
+release files PASS; inner CI ZIP521994 bytes. Root и независимые reviewers
+сверили полные completed logs/run/jobs/artifact metadata.
+
+Screenshots `11920744276` скачан:6391189 bytes,287 файлов, SHA-256
+`9de0a0c7358363eaf0e2b51ccace2365f7d8c34a6ab9a9a4479c5025b2a52407`
+совпал с metadata/runner. Root просмотрел2 свежих SSH PNG: success и agent
+guidance; raw/path, текст, переносы, статус и действия читаемы. Остальные285
+PNG и итоговые DPI/Narrator/High Contrast этим review не приняты.
+Diagnostics `11919799744`, runtime folder `11920289570`, ZIP `11920004751`
+uploaded; metadata/runner digests сверены, их отдельный download/hash не заявлен.
+
+Package PENDING, Live NOT_CHECKED; цельный setup/updater всех31 и проверки
+устройств владельца впереди. PR draft/unmerged, merge/release не выполнялись.
+Только F31-R04 добавлен к прежним пяти ID:6/55, осталось49=37+12; исходные
+55=43+12 и требования сохранены. После tested source меняются ровно3 Markdown
+evidence-документа; application/tests/scripts/server/workflow идентичны source.
+
+## Предыдущий checkpoint остатка 55: F31-R03 — 5/55
 
 Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC**. Осталось
 **50/55**:38 до цельного установщика +12 зависимых приёмок. Общий прогресс
