@@ -50,3 +50,20 @@ checks. Их фактический результат и число assertions 
 [Microsoft Framework TcpClient](https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.tcpclient.-ctor?view=netframework-4.7),
 [Framework reference TcpClient](https://github.com/microsoft/referencesource/blob/main/System/net/System/Net/Sockets/TCPClient.cs)
 и [Socket](https://github.com/microsoft/referencesource/blob/main/System/net/System/Net/Sockets/Socket.cs).
+
+## История текущей проверки
+
+- CI #542 (`38560899731`), source
+  `6e46ad7f385169b680996a4bb3a3b9355575685d`, merge
+  `b02ff40356d5fcb9828b8351073422c4bcddb767`: Windows FAIL /Ubuntu PASS,
+  общий FAILURE (2026-10-14 12:05:57 UTC). В12:05:51.5239295 UTC новый
+  localhost compatibility fixture остановился на asynchronous readiness.
+  Прежние22 SOCKS scenarios прошли; новый scenario не завершён. Новые IPv6,
+  Desktop/bridge, HomeVPN/Python/public/package downstream ещё не достигнуты.
+- Конкретная причина пока не установлена: исходный assert объединял
+  Wait5000/result/IsListening. Узкая test-only диагностика различает эти
+  состояния и native APM/DNS localhost outcomes. Production, assertion и
+  budgets не изменяются; следующий полный CI должен дать фактическую причину.
+- #542 создал только diagnostics `11892595467`; screenshots отсутствуют
+  (no files warning), runtime folder/ZIP не созданы. Ubuntu16/9/46 PASS
+  без skips и independent QR decode не подменяют незавершённый Windows.

@@ -483,7 +483,9 @@ internal static class SocksRecoveryTests
             // This exercises domain BeginConnect against an IPv4-only listener.
             f.Settings.TestEndpoint = "https://progo-metrics.invalid:8443/";
             var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
-            Assert(start.Wait(5000) && start.Result && f.Proxy.IsListening(), "IPv4 or localhost asynchronous readiness regressed: " + host);
+            bool completed = start.Wait(5000), ready = completed && start.Result, listening = ready && f.Proxy.IsListening();
+            if (host == "localhost" && (!completed || !ready || !listening)) LocalhostFailureDiagnostics(f, start, completed, ready, listening);
+            Assert(completed && ready && listening, "IPv4 or localhost asynchronous readiness regressed: " + host);
             Assert(ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "IPv4 or localhost SOCKS greeting failed: " + host);
             Assert(ConnectionMetrics.MeasureSocksLatencyMs(f.Settings, 2000).HasValue, "IPv4 or localhost SOCKS CONNECT failed: " + host);
         }
@@ -496,6 +498,55 @@ internal static class SocksRecoveryTests
                 Assert(ConnectionHealthMonitor.CheckSocks(mapped, CancellationToken.None), "Mapped IPv6 greeting did not reach the IPv4-only listener: " + host);
                 Assert(ConnectionMetrics.MeasureSocksLatencyMs(mapped, 2000).HasValue, "Mapped IPv6 metrics did not complete through the IPv4-only listener: " + host);
             }
+        }
+    }
+
+    // Failure-only native diagnostics. Keep the original acceptance and timeout;
+    // observe localhost resolution/socket behavior without changing production policy.
+    private static void LocalhostFailureDiagnostics(Fixture fixture, Task<bool> start, bool completed, bool ready, bool listening)
+    {
+        var error = (fixture.Proxy.StartupError ?? "none").Replace("\r", " ").Replace("\n", " ");
+        if (error.Length > 180) error = error.Substring(0, 180);
+        Console.WriteLine("LOCALHOST_DIAGNOSTIC task=" + start.Status + "; wait5000=" + completed + "; result=" + ready +
+            "; listening=" + listening + "; owned=" + fixture.Proxy.HasOwnedProcess + "; pid=" + (fixture.Proxy.CurrentPid ?? 0) +
+            "; port=" + fixture.Settings.SocksPort + "; startup=" + error);
+        var watch = Stopwatch.StartNew();
+        var dns = Task.Run(() => Dns.GetHostAddresses("localhost"));
+        dns.ContinueWith(task => { var ignored = task.Exception; }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+        try {
+            if (!dns.Wait(2000)) Console.WriteLine("LOCALHOST_DNS status=timeout; elapsed=" + watch.ElapsedMilliseconds);
+            else {
+                var addresses = dns.GetAwaiter().GetResult();
+                Console.WriteLine("LOCALHOST_DNS status=complete; count=" + addresses.Length + "; elapsed=" + watch.ElapsedMilliseconds);
+                for (int i = 0; i < Math.Min(8, addresses.Length); i++) {
+                    var address = addresses[i]; bool loopback = IPAddress.IsLoopback(address) ||
+                        (address.IsIPv4MappedToIPv6 && IPAddress.IsLoopback(address.MapToIPv4()));
+                    Console.WriteLine("LOCALHOST_DNS index=" + i + "; family=" + address.AddressFamily + "; loopback=" + loopback +
+                        (loopback ? "; address=" + address : ""));
+                }
+            }
+        } catch (Exception ex) { Console.WriteLine("LOCALHOST_DNS status=error; type=" + ex.GetType().Name + "; elapsed=" + watch.ElapsedMilliseconds); }
+        foreach (var host in new[] { "localhost", "::ffff:127.0.0.1", "127.0.0.1" }) {
+            watch.Restart();
+            try {
+                using (var client = new TcpClient(AddressFamily.InterNetworkV6)) {
+                    client.Client.DualMode = true;
+                    var connect = client.BeginConnect(host, fixture.Settings.SocksPort, null, null);
+                    using (connect.AsyncWaitHandle) {
+                        if (!connect.AsyncWaitHandle.WaitOne(1000)) {
+                            Console.WriteLine("LOCALHOST_APM host=" + host + "; status=timeout; elapsed=" + watch.ElapsedMilliseconds); continue;
+                        }
+                        client.EndConnect(connect);
+                        var peer = (IPEndPoint)client.Client.RemoteEndPoint;
+                        bool loopback = IPAddress.IsLoopback(peer.Address) ||
+                            (peer.Address.IsIPv4MappedToIPv6 && IPAddress.IsLoopback(peer.Address.MapToIPv4()));
+                        Console.WriteLine("LOCALHOST_APM host=" + host + "; status=connected; family=" + client.Client.AddressFamily +
+                            "; peerFamily=" + peer.AddressFamily + "; peerLoopback=" + loopback + "; elapsed=" + watch.ElapsedMilliseconds);
+                    }
+                }
+            } catch (SocketException ex) {
+                Console.WriteLine("LOCALHOST_APM host=" + host + "; status=socket-error; error=" + ex.SocketErrorCode + "; native=" + ex.ErrorCode + "; elapsed=" + watch.ElapsedMilliseconds);
+            } catch (Exception ex) { Console.WriteLine("LOCALHOST_APM host=" + host + "; status=error; type=" + ex.GetType().Name + "; elapsed=" + watch.ElapsedMilliseconds); }
         }
     }
 
