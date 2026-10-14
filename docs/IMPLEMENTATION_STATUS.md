@@ -1,6 +1,49 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint остатка 55: F31-R02 — 4/55
+## Текущий checkpoint остатка 55: F31-R03 — 5/55
+
+Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC**. Осталось
+**50/55**:38 до цельного установщика +12 зависимых приёмок. Общий прогресс
+остаётся **23/31**, целые F17/F31 остаются **OPEN**.
+[Список55](REMAINING_SUBTASKS_8.md), [доказательства](MICROTASK_F31_SSH_ERRORS.md).
+
+F31-R03 PASS: известные постоянные ошибки SSH config/arguments получают
+фиксированную причину и исключают только свой candidate. Prelaunch validation
+не создаёт PID; разрешённый backup остаётся доступен. TCP EACCES/unknown
+stderr и nonfatal warnings не объявляются ошибкой ключа или постоянной config
+ошибкой. Auth method-list/host-key/security warning сохраняют отдельные
+подсказки; explicit Connect после исправления очищает pause. R04 manual
+Include/alias/token diagnostic parser, agent и VPS этим пакетом не закрываются.
+
+Functional source `f33104ca16e8afc9e6f10025b3988c3a3cb82efa`, tree
+`95f76be15751ece95fb2214d5b1d83f96fc1d991`; tested merge
+`14c55c2e9849037cc35da84e3e3d5341ce700d8b` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #548](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38608522959)
+completed SUCCESS: Windows `116005556356`, Ubuntu `116005556155` и весь run.
+
+SOCKS41/403 =прежние37/312 +новые4/91 (30/15/18/28) PASS. Пять actual
+Windows -G parser failures со stderr replay, prelaunch no-PID/correction,
+manual/timer fallback и transient/warning/refusal boundaries подтверждены.
+Desktop3851/полный ProGo PASS; прежние9 borrowed/preprobe checks снова PASS.
+Foundation165/134/325/110/211/151/274/112, expiry130/restart237,
+Instance26/Maintenance95/Shutdown47/update package5, HomeVPN975/portable90 PASS.
+Windows22 PASS +2 прежних Linux module skips; все7 HTTP tests выполнены.
+Ubuntu16/9/46 без skips, actual independent QR decode. Public257 sources/44
+release files PASS; inner CI ZIP521799 bytes. Source/tests/native reviews
+APPROVE; root и независимые reviewers сверили полные completed логи/metadata.
+
+Screenshots `11918505479` (287 files), diagnostics `11918775483`, runtime folder
+`11917556050`, ZIP artifact `11917590940` uploaded. Новая PNG visual приёмка
+и отдельное download/hash не заявлены; layout/palette не менялись.
+Package PENDING, Live NOT_CHECKED; цельный setup/updater всех31 и проверки
+устройств владельца впереди. PR draft/unmerged; merge/release не выполнялись.
+Только F31-R03 добавлен к ранее принятым четырём ID:5/55, осталось50=38+12;
+исходная декомпозиция55=43+12 и требования сохранены. После tested source
+меняются ровно3 Markdown evidence-документа; application/tests/scripts/
+server/workflow идентичны проверенному source.
+
+## Предыдущий checkpoint остатка 55: F31-R02 — 4/55
 
 Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC**. Осталось
 **51/55**:39 до цельного установщика +12 зависимых приёмок. Общий прогресс
