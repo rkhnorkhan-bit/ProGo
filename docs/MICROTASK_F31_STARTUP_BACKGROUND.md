@@ -35,7 +35,8 @@
 
 ## Проверка и границы
 
-Статус **IN_PROGRESS / native PENDING**. Production3 files FROZEN,
+Статус **IN_PROGRESS / native rerun PENDING**. Первая попытка CI #550 FAIL;
+точная достигнутая граница зафиксирована ниже. Production3 files FROZEN,
 независимый source review APPROVE: form +75/−13; Core+Context +32/−4.
 Добавлены29 Check: startup17 и tray12. Ожидаются Desktop3939=3910+29,
 неизменные SOCKS41/403 и289 screenshots=287+2. Compiler и main явно
@@ -53,3 +54,43 @@ F31-R05 **PARTIAL**: ранние Program.Main bootstrap/settings/shortcut migra
 сохранены. Package PENDING, Live NOT_CHECKED; ПК/VPS/телефон владельца и
 установленное приложение не проверяются. PR draft/unmerged;
 merge/release/боевые платежи/письма/сертификаты не выполняются.
+
+## Первая native попытка: CI #550 — FAIL
+
+[CI #550](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38622998398),
+source `3a3d5df78c5b4657a7654414e41f96167bc1995a`, tree
+`ead96c4a443e9c1e494c929875d6c968d16f592b`, tested merge
+`63311b7cac59e196d232308854ff4866e3b4b286` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+Windows `116054994324` completed FAILURE; Ubuntu `116054994273` SUCCESS.
+Полный Windows log369323 chars/3900 lines, первый FAIL **19:29:34.7605387 UTC**:
+`startup Close ignores late completion and preserves both saved files`.
+
+Достигнуты14 новых startup PASS: pending7, deferred4, read-failure2,
+первая Close/cancellation проверка1. Следующий combined Check FAIL;
+Dispose2 и все12 tray checks не достигнуты. Desktop3939/overall ProGo PASS,
+Instance/Maintenance/Shutdown/update package и relay/Python/public/ZIP этапы
+не достигнуты и не получают PASS этой попытки. SOCKS41/403 повторно PASS
+19:26:10.032 UTC. Ubuntu16/9/46 без skips, real QR19:21:50.7328971 UTC.
+Uploaded partial screenshots58 files `11924275466` (1133632 bytes) и diagnostics
+`11923930589` (35244 bytes); runtime folder/ZIP не созданы. Это не полный
+визуальный результат289. Отдельные download/hash/visual этого FAIL не заявлены.
+
+Старый combined Check не вывел, какое из четырёх условий было false;
+этому запуску нельзя приписать измеренное изменение файлов или поздний
+callback. Reader удерживался перед token check; уже прошедшая проверка
+подтвердила отмену до release. Source review не нашёл здесь пути записи файлов
+или публикации snapshot после отмены. Обнаружен неверный временной baseline
+теста: текст до Close сравнивался с getter уже disposed child control.
+Microsoft [Control.cs](https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/System/Windows/Forms/Control.cs)
+показывает native WindowText и иной teardown/cache path; это объяснение
+возможного расхождения, а не измеренный false operand CI #550.
+
+Узкая коррекция только нового startup fixture: snapshot UI после
+Close/Dispose при всё ещё удержанном worker gate; затем отсутствие изменений
+после release. Сохраняются !checked, cancellation/no-pending, оба exact-byte
+сравнения с файлами ДО Close, прежние budgets и29 Check. Добавлены null
+startupSnapshot и отсутствие новых TextChanged/CheckedChanged, безопасные
+Boolean diagnostics без private bytes/путей/текста. Production3 files и
+остальные tests/compiler не меняются. Нужен новый полный CI точного source;
+результат550 не переименовывается в PASS задним числом.

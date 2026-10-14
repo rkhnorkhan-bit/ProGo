@@ -122,14 +122,25 @@ namespace ProGo
             using (var form = new SshProfilesSettingsForm(settings, SettingsSection.Connections, shortcuts, null, token => {
                 observed = token; entered.Set(); AsyncSettingsWait(release);
             })) {
-                form.Show(); PumpUntil(() => entered.IsSet); var launch = (CheckBox)Field(form, "autoLaunch"); string notice = ((Label)Field(form, "startupNotice")).Text;
+                form.Show(); PumpUntil(() => entered.IsSet); var launch = (CheckBox)Field(form, "autoLaunch"); var noticeLabel = (Label)Field(form, "startupNotice");
+                string notice = noticeLabel.Text; int checkedChanges = 0, textChanges = 0;
+                launch.CheckedChanged += delegate { checkedChanges++; }; noticeLabel.TextChanged += delegate { textChanges++; };
                 try {
                     var watch = Stopwatch.StartNew(); if (dispose) form.Dispose(); else form.Close();
                     Check(watch.ElapsedMilliseconds < 1000 && observed.IsCancellationRequested && !form.IsStartupPending,
                         "startup " + (dispose ? "Dispose" : "Close") + " cancels publication immediately without waiting for the native reader");
+                    // Native handle teardown can change a disposed control's text
+                    // cache. The held reader cannot publish before this baseline.
+                    bool closedChecked = launch.Checked; string closedNotice = noticeLabel.Text;
+                    int closedCheckedChanges = checkedChanges, closedTextChanges = textChanges;
                     release.Set(); WaitAsyncSettings(form.StartupWork);
-                    Check(!launch.Checked && ((Label)Field(form, "startupNotice")).Text == notice && registration.SequenceEqual(File.ReadAllBytes(link)) &&
-                        settingsBytes.SequenceEqual(File.ReadAllBytes(AppPaths.SettingsPath)),
+                    bool checkedSame = launch.Checked == closedChecked, postNoticeSame = noticeLabel.Text == closedNotice;
+                    bool linkSame = registration.SequenceEqual(File.ReadAllBytes(link)), settingsSame = settingsBytes.SequenceEqual(File.ReadAllBytes(AppPaths.SettingsPath));
+                    bool snapshotNull = Field(form, "startupSnapshot") == null, eventsStable = checkedChanges == closedCheckedChanges && textChanges == closedTextChanges;
+                    Console.WriteLine("INFO: startup " + (dispose ? "Dispose" : "Close") + " no-late: preNoticeSame=" + (noticeLabel.Text == notice) +
+                        "; postNoticeSame=" + postNoticeSame + "; checked=" + launch.Checked + "; checkedSame=" + checkedSame + "; linkSame=" + linkSame +
+                        "; settingsSame=" + settingsSame + "; snapshotNull=" + snapshotNull + "; eventsStable=" + eventsStable);
+                    Check(!launch.Checked && checkedSame && postNoticeSame && snapshotNull && eventsStable && linkSame && settingsSame,
                         "startup " + (dispose ? "Dispose" : "Close") + " ignores late completion and preserves both saved files");
                 } finally { release.Set(); WaitAsyncSettings(form.StartupWork); }
             }
