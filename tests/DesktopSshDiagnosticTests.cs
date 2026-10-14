@@ -18,6 +18,9 @@ namespace ProGo
                 Thread.Sleep(Timeout.Infinite); return 0;
             }
             string mode = args[args.Length - 1];
+            if (mode == "fixture-expanded-identity") {
+                Console.WriteLine("hostname " + new string('h', 4096) + "\nuser fixture\nport 2222\nidentityfile C:/fixture/%h%h%h%h%h%h%h%h%h"); return 0;
+            }
             if (mode == "fixture-agent-keys") { Console.WriteLine("256 SHA256:fixture PRIVATE_COMMENT_ONE (ED25519)\n256 SHA256:fixture PRIVATE_COMMENT_TWO (ED25519)"); return 0; }
             if (mode == "fixture-agent-empty") { Console.Error.WriteLine("PRIVATE_EMPTY_ERROR"); return 1; }
             if (mode == "fixture-agent-unavailable") { Console.Error.WriteLine("PRIVATE_CONNECTION_ERROR"); return 2; }

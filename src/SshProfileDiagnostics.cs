@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
@@ -12,14 +11,15 @@ namespace ProGo
     internal sealed class SshProfileDiagnosticResult
     {
         public string Target { get; set; }
-        public bool LooksDirectTarget { get; set; }
-        public bool FoundInConfig { get; set; }
         public string ConfigPath { get; set; }
         public string ResolvedHostName { get; set; }
         public string ResolvedUser { get; set; }
         public string ResolvedPort { get; set; }
         public string ResolvedIdentityFile { get; set; }
         internal readonly List<string> IdentityFiles = new List<string>();
+        internal readonly Dictionary<string, string> IdentityPaths = new Dictionary<string, string>(StringComparer.Ordinal);
+        internal bool IdentityListLimited;
+        internal string OriginalHost;
         public string ExecutablePath { get; set; }
         public string AgentKeys { get; set; }
         public string IdentityAgent { get; set; }
@@ -38,35 +38,28 @@ namespace ProGo
             var buildIdentity = (System.Reflection.AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
             sb.AppendLine("Сборка запущенного ProGo: " + (buildIdentity == null ? assembly.GetName().Version.ToString() : buildIdentity.InformationalVersion));
             sb.AppendLine();
-            sb.AppendLine("Что это:");
-            if (LooksDirectTarget)
-            {
-                sb.AppendLine("- Похоже на прямой SSH target вида user@host.");
-            }
-            else
-            {
-                sb.AppendLine("- Похоже на алиас из ~/.ssh/config.");
-            }
-
-            sb.AppendLine();
-            sb.AppendLine("Файл SSH config:");
-            sb.AppendLine(ConfigPath);
-            sb.AppendLine("Найден в config: " + (FoundInConfig ? "да" : "нет"));
+            if (ConfigPath != null) {
+                sb.AppendLine("Явный файл SSH config:"); sb.AppendLine(ConfigPath);
+                sb.AppendLine("Include, Host и Match обрабатывает выбранный OpenSSH.");
+            } else sb.AppendLine("Конфигурацию обрабатывает выбранный OpenSSH: пользовательские и системные файлы, Include, Host и Match.");
 
             sb.AppendLine();
             sb.AppendLine("Проверка ssh.exe -G:");
             sb.AppendLine("ssh.exe доступен: " + (SshAvailable ? "да" : "не подтверждено"));
             sb.AppendLine("Исполняемый файл: " + (ExecutablePath ?? "не определён"));
-            sb.AppendLine("профиль резолвится: " + (SshResolved ? "да" : "нет"));
+            sb.AppendLine("Конфигурация обработана OpenSSH: " + (SshResolved ? "да" : "нет"));
 
             if (!String.IsNullOrWhiteSpace(ResolvedHostName)) sb.AppendLine("hostname: " + ResolvedHostName);
             if (!String.IsNullOrWhiteSpace(ResolvedPort)) sb.AppendLine("Порт SSH: " + ResolvedPort);
             if (!String.IsNullOrWhiteSpace(ResolvedUser)) sb.AppendLine("user: " + ResolvedUser);
             if (IdentityFiles.Count > 0) foreach (var identity in IdentityFiles) {
-                sb.AppendLine("Файл ключа: " + identity);
+                sb.AppendLine("IdentityFile (OpenSSH): " + identity);
+                string path;
+                if (IdentityPaths.TryGetValue(identity, out path)) sb.AppendLine("  Проверяемый путь: " + path);
                 sb.AppendLine("  " + InspectIdentity(identity));
             }
             else sb.AppendLine("Файл ключа: " + (KeyStatus ?? "не проверен"));
+            if (IdentityListLimited) sb.AppendLine("Список IdentityFile ограничен: показаны первые 32 значения; остальные пути не проверялись.");
             sb.AppendLine("ssh-agent: " + (AgentState ?? "не проверен"));
             sb.AppendLine("Ключи стандартного агента: " + (AgentKeys ?? "не проверены"));
             if (!String.IsNullOrWhiteSpace(IdentityAgent)) sb.AppendLine("IdentityAgent: " +
@@ -84,7 +77,7 @@ namespace ProGo
             }
 
             sb.AppendLine();
-            sb.AppendLine("Важно: эта проверка не подключается к серверу. Она проверяет, что ssh.exe понимает выбранный профиль.");
+            sb.AppendLine("Успешная обработка параметров не подтверждает наличие отдельного алиаса, DNS, доступность сервера или аутентификацию.");
             return sb.ToString();
         }
         private string InspectIdentity(string identity)
@@ -92,7 +85,7 @@ namespace ProGo
             string status;
             return IdentityStatuses.TryGetValue(identity, out status) ? status : "не проверен";
         }
-        internal readonly Dictionary<string, string> IdentityStatuses = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        internal readonly Dictionary<string, string> IdentityStatuses = new Dictionary<string, string>(StringComparer.Ordinal);
     }
 
     internal static class SshProfileDiagnostics
@@ -107,11 +100,26 @@ namespace ProGo
         }
         internal static SshProfileDiagnosticResult Check(SshProfileSetting profile, CancellationToken token, string executable = null, int timeoutMs = 7000)
         {
+            var result = CheckConfiguration(profile, token, executable, timeoutMs);
+            if (String.IsNullOrWhiteSpace(result.Target)) return result;
             token.ThrowIfCancellationRequested();
+            result.AgentState = SshAgentDiagnostics.Read();
+            result.AgentKeys = SshAgentDiagnostics.Keys(OpenSshClient.AgentExecutable(result.ExecutablePath), token);
+            token.ThrowIfCancellationRequested(); return result;
+        }
+
+        // The same owned configuration phase is available without agent inventory.
+        internal static SshProfileDiagnosticResult CheckConfiguration(SshProfileSetting profile, CancellationToken token,
+            string executable = null, int timeoutMs = 7000, string configurationFile = null)
+        {
+            token.ThrowIfCancellationRequested();
+            profile = profile == null ? null : profile.Clone();
             var result = new SshProfileDiagnosticResult
             {
                 Target = profile == null ? "" : profile.Address,
-                ConfigPath = GetConfigPath()
+                ConfigPath = configurationFile,
+                OriginalHost = profile == null ? null : profile.IsDirect ? profile.Server :
+                    (profile.Target ?? "").Substring((profile.Target ?? "").LastIndexOf('@') + 1)
             };
 
             if (String.IsNullOrWhiteSpace(result.Target))
@@ -120,86 +128,78 @@ namespace ProGo
                 return result;
             }
 
-            result.LooksDirectTarget = profile.IsDirect || LooksLikeDirectTarget(result.Target);
-            result.FoundInConfig = IsTargetDeclaredInConfig(result.Target, result.ConfigPath);
             RunSshG(result, profile, token, executable ?? OpenSshClient.Executable, timeoutMs);
             token.ThrowIfCancellationRequested();
-            result.AgentState = SshAgentDiagnostics.Read();
-            result.KeyStatus = InspectKey(result.ResolvedIdentityFile);
-            foreach (var identity in result.IdentityFiles) { token.ThrowIfCancellationRequested(); result.IdentityStatuses[identity] = InspectKey(identity); }
-            result.AgentKeys = SshAgentDiagnostics.Keys(OpenSshClient.AgentExecutable(result.ExecutablePath), token);
+            foreach (var identity in result.IdentityFiles) {
+                token.ThrowIfCancellationRequested(); result.IdentityStatuses[identity] = InspectIdentity(identity, result);
+            }
+            string firstStatus;
+            result.KeyStatus = result.ResolvedIdentityFile != null && result.IdentityStatuses.TryGetValue(result.ResolvedIdentityFile, out firstStatus)
+                ? firstStatus : InspectIdentity(null, result);
             token.ThrowIfCancellationRequested(); return result;
         }
 
-        internal static string InspectKey(string value)
+        internal static string InspectKey(string value) { return InspectIdentity(value, null); }
+        private static string InspectIdentity(string value, SshProfileDiagnosticResult context)
         {
-            if (String.IsNullOrWhiteSpace(value) || value == "none") return "Явный ключ не задан; SSH может использовать агент или стандартные ключи.";
+            if (String.IsNullOrWhiteSpace(value)) return "Явный ключ не задан; SSH может использовать агент или стандартные ключи.";
+            if (String.Equals(value, "none", StringComparison.OrdinalIgnoreCase)) return "Для этой записи файл ключа не используется (IdentityFile none).";
+            string path;
+            if (!TryResolveIdentityPath(value, context, out path))
+                return "Не проверено: итоговый путь зависит от контекста OpenSSH; локальный файл не проверялся.";
+            if (context != null) context.IdentityPaths[value] = path;
             try {
-                var path = SshConnection.KeyPath(value);
                 if (!File.Exists(path)) return "Файл не найден. При переносе на другой ПК проверьте старый абсолютный путь или используйте ~/.ssh/имя_ключа.";
                 using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) { }
                 return "Файл доступен для чтения. Содержимое ключа не считывалось.";
             } catch { return "Доступность файла не подтверждена. Проверьте путь и права текущего пользователя."; }
         }
-        private static string GetConfigPath()
+        private static bool TryResolveIdentityPath(string value, SshProfileDiagnosticResult context, out string path)
         {
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return Path.Combine(home, ".ssh", "config");
-        }
-
-        private static bool LooksLikeDirectTarget(string target)
-        {
-            if (String.IsNullOrWhiteSpace(target)) return false;
-            if (target.IndexOf("@", StringComparison.Ordinal) >= 0) return true;
-            if (Regex.IsMatch(target, @"^\d{1,3}(\.\d{1,3}){3}$")) return true;
-            if (target.IndexOf(".", StringComparison.Ordinal) >= 0 && target.IndexOf(" ", StringComparison.Ordinal) < 0) return true;
-            return false;
-        }
-
-        private static bool IsTargetDeclaredInConfig(string target, string configPath)
-        {
-            try
-            {
-                if (String.IsNullOrWhiteSpace(target)) return false;
-                if (String.IsNullOrWhiteSpace(configPath) || !File.Exists(configPath)) return false;
-
-                foreach (var rawLine in File.ReadAllLines(configPath))
-                {
-                    var line = rawLine.Trim();
-                    if (line.Length == 0 || line.StartsWith("#", StringComparison.Ordinal)) continue;
-                    if (!line.StartsWith("Host ", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    var hosts = line.Substring(5).Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var host in hosts)
-                    {
-                        if (String.Equals(host, target, StringComparison.OrdinalIgnoreCase)) return true;
-                        if (HostPatternMatches(host, target)) return true;
-                    }
+            path = null;
+            // -G dumps these templates before client-specific home/environment expansion.
+            const int maxPathLength = 32768;
+            if (value.Length > maxPathLength || value[0] == '~' || value.Contains("${") || value.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) return false;
+            var expanded = new StringBuilder();
+            for (int i = 0; i < value.Length; i++) {
+                if (value[i] != '%') {
+                    if (expanded.Length == maxPathLength) return false;
+                    expanded.Append(value[i]); continue;
                 }
+                if (++i == value.Length) return false;
+                string replacement;
+                switch (value[i]) {
+                    case '%': replacement = "%"; break;
+                    case 'h': replacement = context == null ? null : context.ResolvedHostName; break;
+                    case 'r': replacement = context == null ? null : context.ResolvedUser; break;
+                    case 'p': replacement = context == null ? null : context.ResolvedPort; break;
+                    case 'n': replacement = context == null ? null : context.OriginalHost; break;
+                    default: return false;
+                }
+                if (String.IsNullOrEmpty(replacement) || replacement.Length > maxPathLength - expanded.Length ||
+                    replacement.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) return false;
+                expanded.Append(replacement); // Replacement text is deliberately not expanded again.
             }
-            catch
-            {
-            }
-
-            return false;
-        }
-
-        private static bool HostPatternMatches(string pattern, string target)
-        {
-            if (String.IsNullOrWhiteSpace(pattern) || String.IsNullOrWhiteSpace(target)) return false;
-            if (pattern.IndexOf('*') < 0 && pattern.IndexOf('?') < 0) return false;
-
-            var regex = "^" + Regex.Escape(pattern).Replace("\\*", ".*").Replace("\\?", ".") + "$";
-            return Regex.IsMatch(target, regex, RegexOptions.IgnoreCase);
+            try {
+                var candidate = expanded.ToString();
+                if (!Path.IsPathRooted(candidate)) return false;
+                if (Path.DirectorySeparatorChar == '\\') {
+                    // Root-relative, drive-relative, UNC and device paths need other context or network I/O.
+                    if (candidate.Length < 3 || !((candidate[0] >= 'A' && candidate[0] <= 'Z') || (candidate[0] >= 'a' && candidate[0] <= 'z')) ||
+                        candidate[1] != ':' || (candidate[2] != '\\' && candidate[2] != '/')) return false;
+                }
+                path = Path.GetFullPath(candidate); return true;
+            } catch { return false; }
         }
 
         private static void RunSshG(SshProfileDiagnosticResult result, SshProfileSetting profile, CancellationToken token, string executable, int timeoutMs)
         {
             try
             {
-                // ssh.exe -G resolves configuration only; the shared runner owns this diagnostic tree.
+                // OpenSSH evaluates Host/Match/Include; the shared runner owns the diagnostic tree.
                 result.ExecutablePath = DiagnosticProcess.Resolve(executable);
-                var captured = DiagnosticProcess.Run(result.ExecutablePath, "-G " + SshConnection.CommandArguments(profile), timeoutMs, token);
+                var config = result.ConfigPath == null ? "" : "-F " + SshConnection.Quote(result.ConfigPath) + " ";
+                var captured = DiagnosticProcess.Run(result.ExecutablePath, "-G " + config + SshConnection.CommandArguments(profile), timeoutMs, token);
                 result.SshAvailable = true;
                 if (captured.ExitCode != 0) {
                     result.Error = "OpenSSH не смог прочитать профиль. Проверьте синтаксис SSH config и выбранные параметры. Код: " + captured.ExitCode + ".";
@@ -219,19 +219,22 @@ namespace ProGo
 
             foreach (var rawLine in text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var line = rawLine.Trim();
+                var line = rawLine.TrimStart();
                 var space = line.IndexOf(' ');
                 if (space <= 0) continue;
 
                 var key = line.Substring(0, space).Trim();
-                var value = line.Substring(space + 1).Trim();
+                var value = line.Substring(space + 1);
 
                 if (String.Equals(key, "hostname", StringComparison.OrdinalIgnoreCase)) result.ResolvedHostName = value;
                 else if (String.Equals(key, "port", StringComparison.OrdinalIgnoreCase)) result.ResolvedPort = value;
                 else if (String.Equals(key, "user", StringComparison.OrdinalIgnoreCase)) result.ResolvedUser = value;
                 else if (String.Equals(key, "identityfile", StringComparison.OrdinalIgnoreCase)) {
                     if (String.IsNullOrWhiteSpace(result.ResolvedIdentityFile)) result.ResolvedIdentityFile = value;
-                    if (result.IdentityFiles.Count < 32 && !result.IdentityFiles.Contains(value)) result.IdentityFiles.Add(value);
+                    if (!result.IdentityFiles.Contains(value)) {
+                        if (result.IdentityFiles.Count < 32) result.IdentityFiles.Add(value);
+                        else result.IdentityListLimited = true;
+                    }
                 }
                 else if (String.Equals(key, "identityagent", StringComparison.OrdinalIgnoreCase)) result.IdentityAgent = value;
                 else if (String.Equals(key, "identitiesonly", StringComparison.OrdinalIgnoreCase)) result.IdentitiesOnly = value;
