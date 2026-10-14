@@ -1,6 +1,48 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint остатка 55: F31-R01 — 3/55
+## Текущий checkpoint остатка 55: F31-R02 — 4/55
+
+Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC**. Осталось
+**51/55**:39 до цельного установщика +12 зависимых приёмок. Общий прогресс
+остаётся **23/31**, целые F17/F31 остаются **OPEN**.
+[Список55](REMAINING_SUBTASKS_8.md), [доказательства](MICROTASK_F31_FALLBACK.md).
+
+F31-R02 PASS: SSH stderr принадлежит своей попытке; постоянный отказ одного
+профиля не запрещает разрешённые backups. Выбор требует настоящего SOCKS05/00
+и owned child с intent/settings guards. Перебор отделён от прежнего backoff;
+Stop/cancel/изменение подключения запрещают поздний выбор. Connect/Reconnect/
+HomeVPN сохраняют owned startup. CLI/Windows/scoped consumers используют
+настроенный готовый SOCKS без присвоения чужого PID; fresh probe публикуется
+через UI request/connection guard. Bootstrap после APT checked-start SSH
+service восстанавливает prerequisite; это отдельный дефект без нового ID55.
+
+Functional source `7521e1b2d6770350a4aece78b595cd53aa00370e`, tree
+`6bbe3d953a8d888242d542e470fdfe4148a93f24`; tested merge
+`d06bf6acfb3d5314dbc72a20a0c9897d270f5161` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #547](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38587581940)
+completed SUCCESS: Windows `115933580160`, Ubuntu `115933579707` и весь run.
+
+SOCKS37/312 =прежние29/240 +новые8/72 PASS; Desktop3851 =3842+9 PASS,
+весь ProGo PASS. Foundation165/134/325/110/211/151/274/112, expiry130/restart237,
+Instance26/Maintenance95/Shutdown47/update package5, HomeVPN975/portable90 PASS.
+Windows22 PASS +2 прежних Linux module skips; все7 HTTP tests выполнены.
+Ubuntu16/9/46 без skips, actual independent QR decode. Public256 sources/44
+release files PASS; inner CI ZIP521084 bytes. Независимые source/tests/native
+reviews APPROVE; root прочитал полные completed логи и artifact metadata.
+
+Screenshots `11906449001` (287 files), diagnostics `11906419053`, runtime folder
+`11906488941`, ZIP artifact `11906429096` uploaded. Новая PNG visual приёмка
+здесь не заявлена: компоновка/палитра не менялись. Package PENDING и Live
+NOT_CHECKED; цельный setup/updater всех31 и проверки устройств владельца впереди.
+PR draft/unmerged; release не выполнялся. CI #545 compiler/bootstrap FAIL
+и #546 Desktop consumer FAIL сохранены в истории, с точными достигнутыми
+и недостигнутыми результатами. Только F31-R02 добавлен к ранее принятым трём
+ID; остальные52→51, текущая декомпозиция55 и требования сохранены.
+После tested source меняются ровно три Markdown-документа доказательств;
+app/tests/scripts/server/workflow остаются идентичными проверенному source.
+
+## Предыдущий checkpoint остатка 55: F31-R01 — 3/55
 
 Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC** после двух
 F17 задач. Осталось **52/55**:40 до цельного установщика +12 зависимых приёмок.

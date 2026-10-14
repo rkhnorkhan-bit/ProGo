@@ -1,8 +1,8 @@
 # Остаток55: F31-R02 — выбор запасного SSH-профиля
 
 Один ограниченный подпункт после принятых F17-R02/R03 и F31-R01.
-До свежей приёмки счёт остаётся **3/55**, остаток52 (40 до установщика +12
-зависимых приёмок), общий прогресс **23/31**, весь F31 **OPEN**.
+Принят в Code/Dev **14.10.2026 UTC**: счёт **4/55**, остаток51 (39 до
+установщика +12 зависимых приёмок), общий прогресс **23/31**, весь F31 **OPEN**.
 [Список55](REMAINING_SUBTASKS_8.md). Исходный checkpoint:
 `5f89598f19f2d42309e89dfe4316d1fc861e08c7`.
 
@@ -44,12 +44,12 @@
    свежий полный completed Windows/Ubuntu CI и evidence review. Только после
    всей приёмки — **4/55**, остаток51 (39 до установщика +12 зависимых).
 
-Статус: **IN_PROGRESS**. Сетевое ядро FROZEN и независимый review APPROVE;
-tests FROZEN после точечного review timer/Stop fixture. Ожидаются37 scenarios /
-312 assertions: прежние29/240 +новые8/72. Фактические числа и PASS устанавливает
-свежий полный CI. Полный новый native PASS не получен; CI #544 подтверждает только
-предыдущий IPv6 checkpoint. Локальные whitespace/public PASS:256 sources/0
-release files. Все новые десятисекундные fixture guards локальны для сценариев;
+Статус: **Code/Dev PASS**. Сетевое ядро/tests FROZEN; независимые source/tests
+и полные native Windows/Ubuntu reviews APPROVE. Свежий completed CI #547
+подтвердил37 scenarios/312 assertions: прежние29/240 +новые8/72.
+CI #544 остаётся доказательством предыдущего IPv6 checkpoint.
+Локальные whitespace/public PASS:256 sources/0 release files.
+Все новые десятисекундные fixture guards локальны для сценариев;
 прежние guards сохранены. Manual candidate теперь имеет linked deadline5s,
 общий startup20s и probe700ms сохранены; EOF observation≤200ms.
 Файлы текущей реализации: ProxyService, SocksRecoveryTests и этот документ;
@@ -61,9 +61,9 @@ source/tests review APPROVE. Fresh worker SOCKS probe используется �
 отбрасывают результат; собственный успешный profile CAS не отменяется.
 Добавлены9 Desktop checks:3 borrowed CLI aliases без PID/intent/recovery
 и6 native checks отмены/смены порта во время actual5/1/0 probe. Прежние
-assertions/budgets сохранены; ожидаются Desktop3851 и неизменные SOCKS37/312.
+assertions/budgets сохранены; Desktop3851 и SOCKS37/312 фактически PASS в #547.
 Bounded UI observation700ms дополняется source owner-turn proof и отдельно
-не выдаётся за доказательство всех scheduler interleavings. Полный CI PENDING.
+не выдаётся за доказательство всех scheduler interleavings. Полный CI SUCCESS.
 Классификация config/arguments F31-R03, Include/tokens, агент/VPS и другие
 пункты в этот подпункт не входят. Package PENDING, Live NOT_CHECKED;
 владелец устанавливает и проверяет цельный продукт после завершения кода31.
@@ -72,6 +72,71 @@ PR draft/unmerged; merge, release, ПК/VPS/телефон владельца н
 Основание stderr boundary: [Microsoft Process.WaitForExit](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexit?view=netframework-4.8).
 Timed exit/HasExited не гарантирует завершение async output handlers;
 unbounded WaitForExit для ожидания handlers здесь не подходит.
+
+## Свежая полная приёмка — CI #547
+
+Functional source `7521e1b2d6770350a4aece78b595cd53aa00370e`, tree
+`6bbe3d953a8d888242d542e470fdfe4148a93f24`; tested merge
+`d06bf6acfb3d5314dbc72a20a0c9897d270f5161` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #547](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38587581940)
+completed SUCCESS: Windows `115933580160`, Ubuntu `115933579707`, весь run.
+Root и независимые reviewers прочитали полные завершённые логи; частичные
+результаты #545/#546 не подменяют свежую приёмку.
+
+Новые8 SOCKS groups, фактические assertions:
+
+| Результат | Assertions |
+| --- | ---: |
+| Permanent refusal → разрешённый manual backup | 10 |
+| Automatic permanent → transient → готовый backup, launch journal/backoff | 14 |
+| Выбор публикуется только после правильного greeting | 4 |
+| Stop/external cancel во время gated fallback, без save/resurrection | 10 |
+| Timer Stop при greeting в полёте, без позднего выбора | 8 |
+| Fallback off/single/exhausted pause и explicit retry | 15 |
+| Чужой valid SOCKS остаётся чужим для owned startup | 3 |
+| Selected/backup edits отменяют устаревший перебор | 8 |
+| **Итого новых** | **72** |
+
+SOCKS37/312 PASS **15:18:45.8300340–8301005 UTC**; первые29 groups/240
+assertions сохранены. Новые9 consumer checks: три CLI aliases используют
+готовый saved SOCKS без SSH PID/intent/recovery; по три проверки для Off и
+изменения порта во время реального5/1/0 probe. Все PASS; исходные12 проверок
+UnifiedCliActions и2 tray labels также PASS. Desktop3851
+**15:25:43.4537311 UTC**, полный ProGo PASS **15:28:24.6509681 UTC**.
+
+| Остальной свежий proof | Результат |
+| --- | --- |
+| Vault read/policy/record/file/journal/store/recovery/open | 165/134/325/110/211/151/274/112 PASS |
+| Daily expiry/restart | 130/237 PASS |
+| Instance/Maintenance/Shutdown/update package | 26/95/47/5 PASS |
+| HomeVPN/portable | 975/90 PASS, 15:31:49.2445552 /15:33:36.9812128 UTC |
+| Windows Python/HTTP | 22 PASS +2 прежних Linux ownership/flock skips; все7 HTTP groups выполнены |
+| Ubuntu operations/sharing/provisioning | 16/9/46 PASS без skips; actual independent QR decode15:14:42.1987381 UTC |
+| Public scan/runtime ZIP | 256 sources/44 release files PASS; inner ZIP521084 bytes |
+
+Ubuntu снова реально обновил openssh-server13.19→13.20. Неизменённый checked
+service prerequisite предшествует managed config/sshd-t; все46 ограничений,
+отзыв/перевыдача, private receipts и real TLS PASS. Точный package stop/socket
+механизм по-прежнему inference: systemd-state snapshot отсутствует.
+Изолированная проверка SSH не является проверкой VPS владельца.
+
+Artifacts uploaded: screenshots `11906449001` (287 files/6380506 bytes),
+diagnostics `11906419053` (81543 bytes), runtime folder `11906488941`
+(44 files/524700 bytes), ZIP artifact `11906429096` (517738 bytes).
+Размер ZIP artifact wrapper отличается от inner ZIP521084 bytes.
+Metadata SHA256 ZIP artifact:
+`c1a930e4d8f8020c55192b72e2bb9842ab7d86a51b59824e69b8b5a3c642bab9`.
+Metadata/runner upload digests совпадают; отдельное download/hash или новая
+визуальная приёмка287 PNG здесь не заявлены. Это CI runtime artifact,
+цельный setup/updater всех31 остаётся Package PENDING; Live NOT_CHECKED.
+
+Только F31-R02 получает новый PASS ID: **4/55**, осталось51=39+12.
+Общий23/31 и целые F17/F31 OPEN сохраняются. После tested source обновляются
+ровно три Markdown-документа доказательств; app/tests/scripts/server/workflow
+совпадают с проверенным source. Независимый review ровно3 evidence-документов
+APPROVE;55 unique IDs и четыре PASS перепроверены отдельно. Whitespace/public
+PASS; functional source после native приёмки зафиксирован без изменений.
 
 ## История текущей проверки
 
