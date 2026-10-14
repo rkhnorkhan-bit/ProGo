@@ -51,6 +51,14 @@ internal static class SocksRecoveryTests
             Test("IPv6 foreign listeners remain external and silent probes are bounded and cancellable", IPv6ForeignProbes);
             Test("native OpenSSH parses isolated bracketed IPv6 dynamic forwarding locally", NativeIPv6DynamicForward);
             Test("asynchronous DNS stays inside the connection budget and cannot dial after cancellation", DelayedDnsCancellationAndDeadline);
+            Test("permanent refusals leave permitted manual profile fallback available", PermanentManualFallback);
+            Test("automatic fallback advances through permanent and transient failures without retrying refused candidates", PermanentRecoveryFallback);
+            Test("fallback publishes a profile only after its SOCKS greeting", FallbackHandshakePublication);
+            Test("stop and external cancellation cancel gated fallback without publication or resurrection", FallbackCancellation);
+            Test("stop cancels automatic fallback adoption while its SOCKS greeting is in flight", TimerFallbackStop);
+            Test("disabled single and exhausted permanent fallback retain explicit retry pause", FallbackPermanentPause);
+            Test("a foreign valid SOCKS listener is neither adopted nor returned as owned startup", ForeignReadySocks);
+            Test("selected and backup profile edits invalidate pending fallback", FallbackEditCancellation);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
             Console.WriteLine("SOCKS recovery assertions PASS: " + assertions);
             return 0;
@@ -85,6 +93,7 @@ internal static class SocksRecoveryTests
         public AppSettings Settings = AppSettings.Defaults();
         public DateTime Now = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public readonly ProxyService Proxy;
+        public int ProfileSaves;
         public Fixture(int startupTimeoutMs = 20000, string host = "127.0.0.1")
         {
             Settings.SocksHost = host;
@@ -92,7 +101,7 @@ internal static class SocksRecoveryTests
             var reserve = new TcpListener(ipv6 ? IPAddress.IPv6Loopback : IPAddress.Loopback, 0); reserve.Start();
             Settings.SocksPort = ((IPEndPoint)reserve.LocalEndpoint).Port; reserve.Stop();
             Settings.SshProfile = "ready";
-            Proxy = new ProxyService(delegate { return Settings; }, delegate(AppSettings s) { Settings = s; },
+            Proxy = new ProxyService(delegate { return Settings; }, delegate(AppSettings s) { Settings = s; ProfileSaves++; },
                 Executable, delegate { return Now; }, false, "", startupTimeoutMs);
         }
         public void Tick(int seconds) { Now = Now.AddSeconds(seconds); Proxy.PollRecovery(); }
@@ -392,6 +401,194 @@ internal static class SocksRecoveryTests
             f.Settings.SshProfile = "die"; f.Settings.AutoSwitchSshProfile = true;
             f.Settings.SshProfiles.Add(new SshProfileSetting { Name = "Backup", Target = "ready" });
             f.Start(); Assert(f.Settings.SshProfile == "ready", "Manual profile fallback regressed");
+        }
+    }
+
+    private sealed class FallbackCapture : IDisposable
+    {
+        internal readonly string Folder = Path.Combine(Path.GetTempPath(), "progo-fallback-" + Guid.NewGuid().ToString("N"));
+        internal readonly string Seen, Release;
+        private readonly string[] names = { "PROGO_TEST_SSH_LAUNCH_DIR", "PROGO_TEST_SSH_GREETING_SEEN", "PROGO_TEST_SSH_GREETING_RELEASE" };
+        private readonly string[] previous = new string[3];
+        internal FallbackCapture()
+        {
+            Directory.CreateDirectory(Folder); Seen = Path.Combine(Folder, "seen"); Release = Path.Combine(Folder, "release");
+            var values = new[] { Folder, Seen, Release };
+            for (int i = 0; i < names.Length; i++) { previous[i] = Environment.GetEnvironmentVariable(names[i]); Environment.SetEnvironmentVariable(names[i], values[i]); }
+        }
+        internal int Count(string mode = null)
+        {
+            int count = 0;
+            foreach (string path in Directory.GetFiles(Folder, "*.json")) {
+                var entry = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(path));
+                if (mode == null || entry[0] == mode) count++;
+            }
+            return count;
+        }
+        internal bool AllBatch()
+        {
+            foreach (string path in Directory.GetFiles(Folder, "*.json"))
+                if (new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(path))[2] != "batch") return false;
+            return true;
+        }
+        internal void Unblock() { File.WriteAllText(Release, "reply"); }
+        public void Dispose()
+        {
+            for (int i = 0; i < names.Length; i++) Environment.SetEnvironmentVariable(names[i], previous[i]);
+            Directory.Delete(Folder, true);
+        }
+    }
+
+    // New fallback scenarios may visit a 5 s unresponsive candidate before their backup.
+    // Existing fixtures retain their original 5 s guards and production deadlines.
+    private static void WaitForFallback(Func<bool> condition)
+    {
+        var watch = Stopwatch.StartNew();
+        while (!condition()) { if (watch.ElapsedMilliseconds > 10000) throw new Exception("Timed out waiting for fallback fixture"); Thread.Sleep(20); }
+    }
+    private static void AddFallback(Fixture f, string selected, params string[] backups)
+    {
+        f.Settings.SshProfile = selected; f.Settings.AutoSwitchSshProfile = true;
+        foreach (string target in backups) f.Settings.SshProfiles.Add(new SshProfileSetting { Name = target, Target = target });
+    }
+
+    private static void PermanentManualFallback()
+    {
+        foreach (string mode in new[] { "denied", "bad-host" }) using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            AddFallback(f, mode, "ready");
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(task.Wait(10000) && task.Result, "Permanent refusal prevented permitted manual fallback: " + mode);
+            Assert(f.Settings.SshProfile == "ready" && f.ProfileSaves == 1, "Successful manual fallback was not published exactly once");
+            Assert(ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Published manual backup did not answer SOCKS");
+            Assert(capture.Count(mode) == 1 && capture.Count("ready") == 1 && capture.Count() == 2 && capture.AllBatch(), "Manual fallback repeated a candidate or lost noninteractive SSH");
+            Assert(!f.Proxy.RecoveryStatus.Contains("приостановлено") && !f.Proxy.NextRecoveryUtc.HasValue, "Refused primary paused a working manual backup");
+        }
+    }
+
+    private static void PermanentRecoveryFallback()
+    {
+        foreach (string mode in new[] { "denied", "bad-host" }) using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            f.Settings.SshProfile = "batch-only"; f.Start();
+            AddFallback(f, mode, "die", "ready"); f.Crash();
+            Assert(f.Proxy.NextRecoveryUtc == f.Now.AddSeconds(5), "Fallback changed the initial recovery delay");
+            int before = f.Proxy.AutomaticRestarts; bool paused = false;
+            WaitForFallback(delegate {
+                f.Tick(f.Proxy.NextRecoveryUtc.HasValue ? 60 : 0); paused |= f.Proxy.RecoveryStatus.Contains("приостановлено");
+                return f.Proxy.CurrentPid.HasValue && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None);
+            }); f.Ready();
+            Assert(!paused && f.Settings.SshProfile == "ready" && f.ProfileSaves == 1, "A permanent refusal paused or mispublished automatic backup");
+            Assert(capture.Count(mode) == 1 && capture.Count("die") == 1 && capture.Count("ready") == 1, "Recovery skipped a permitted candidate or retried permanent refusal before the others");
+            Assert(f.Proxy.AutomaticRestarts == before + 3 && capture.AllBatch(), "Automatic attempts duplicated ownership or lost noninteractive mode");
+            f.Proxy.StopTunnel(); f.Tick(600);
+            Assert(!f.Proxy.HasOwnedProcess && !f.Proxy.NextRecoveryUtc.HasValue && capture.Count() == 4, "Stopped automatic fallback resurrected a candidate");
+        }
+    }
+
+    private static void FallbackHandshakePublication()
+    {
+        using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            AddFallback(f, "wrong", "greeting-gated");
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None); WaitForFallback(() => File.Exists(capture.Seen));
+            Assert(f.Proxy.IsListening() && !task.IsCompleted, "Backup fixture did not expose a pending TCP-only route");
+            Assert(f.Settings.SshProfile == "wrong" && f.ProfileSaves == 0, "Fallback published a TCP listener before its SOCKS response");
+            capture.Unblock();
+            Assert(task.Wait(10000) && task.Result && f.Settings.SshProfile == "greeting-gated" && f.ProfileSaves == 1, "Handshake did not publish the proven backup exactly once");
+            Assert(ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None) && capture.Count("wrong") == 1 && capture.Count("greeting-gated") == 1, "TCP-only primary was adopted or backup lacks SOCKS evidence");
+        }
+    }
+
+    private static void FallbackCancellation()
+    {
+        foreach (bool external in new[] { false, true }) using (var capture = new FallbackCapture()) using (var f = new Fixture()) using (var source = new CancellationTokenSource()) {
+            AddFallback(f, "denied", "greeting-gated");
+            var task = f.Proxy.StartTunnelAsync(source.Token); WaitForFallback(() => File.Exists(capture.Seen));
+            Assert(!task.IsCompleted && f.ProfileSaves == 0, "Fallback cancellation fixture was already published");
+            if (external) source.Cancel();
+            else {
+                var watch = Stopwatch.StartNew(); var stop = f.Proxy.StopTunnelAsync();
+                Assert(watch.ElapsedMilliseconds < 200 && !f.Proxy.ConnectionRequested, "Stopping fallback blocked the caller or retained connection intent");
+                Assert(stop.Wait(10000) && stop.Result, "Stopping gated fallback failed owned cleanup");
+            }
+            WaitForFallback(() => task.IsCompleted);
+            Assert(task.IsCanceled && !f.Proxy.HasOwnedProcess && !f.Proxy.NextRecoveryUtc.HasValue, "Cancelled fallback retained ownership or scheduled retry");
+            capture.Unblock(); f.Tick(600);
+            Assert(f.Settings.SshProfile == "denied" && f.ProfileSaves == 0 && capture.Count() == 2 && !f.Proxy.IsListening(), "Late SOCKS reply resurrected or published cancelled fallback");
+            var reserve = new TcpListener(IPAddress.Loopback, f.Settings.SocksPort); reserve.Start(); reserve.Stop();
+            f.Settings.SshProfile = "ready"; f.Settings.AutoSwitchSshProfile = false;
+            var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(retry.Wait(10000) && retry.Result, "Fresh explicit retry after fallback cancellation failed");
+        }
+    }
+
+    private static void TimerFallbackStop()
+    {
+        using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            f.Settings.SshProfile = "batch-only"; f.Start();
+            AddFallback(f, "die", "greeting-gated"); f.Crash(); f.Tick(5);
+            WaitForFallback(() => !f.Proxy.CurrentPid.HasValue); f.Tick(0); f.Tick(10);
+            WaitForFallback(() => f.Proxy.CurrentPid.HasValue && f.Proxy.IsListening());
+            Assert(capture.Count("greeting-gated") == 1 && !File.Exists(capture.Seen), "Automatic backup was missing or already probed before the timer gate");
+            var watch = Stopwatch.StartNew(); var poll = Task.Run(delegate { f.Proxy.PollRecovery(); });
+            WaitForFallback(() => File.Exists(capture.Seen));
+            var stopWatch = Stopwatch.StartNew(); var stop = f.Proxy.StopTunnelAsync();
+            capture.Unblock();
+            Assert(stopWatch.ElapsedMilliseconds < 200 && !f.Proxy.ConnectionRequested, "Stop waited for the automatic SOCKS probe or retained intent");
+            Assert(watch.ElapsedMilliseconds < 600, "Timer gate was not released inside the unchanged 700 ms SOCKS probe budget");
+            Assert(poll.Wait(10000) && stop.Wait(10000) && stop.Result, "Automatic probe and owned stop did not settle");
+            Assert(f.Settings.SshProfile == "die" && f.ProfileSaves == 0, "A late automatic SOCKS response published fallback after Stop");
+            f.Tick(600);
+            Assert(!f.Proxy.HasOwnedProcess && !f.Proxy.NextRecoveryUtc.HasValue && !f.Proxy.IsListening() && capture.Count() == 3, "Stopped timer fallback retained ownership or resurrected a candidate");
+        }
+    }
+
+    private static void FallbackPermanentPause()
+    {
+        foreach (string variant in new[] { "disabled", "single", "exhausted" }) using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            AddFallback(f, "denied", variant == "disabled" ? "ready" : "bad-host");
+            if (variant == "disabled") f.Settings.AutoSwitchSshProfile = false;
+            if (variant == "single") f.Settings.SshProfiles.Clear();
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(task.Wait(10000) && !task.Result, "Permanent refusal unexpectedly authenticated: " + variant); f.Tick(0);
+            Assert(!f.Proxy.HasOwnedProcess && !f.Proxy.NextRecoveryUtc.HasValue && f.Proxy.RecoveryStatus.Contains("приостановлено"), "Permanent candidate exhaustion lost visible pause: " + variant);
+            int expected = variant == "exhausted" ? 2 : 1;
+            Assert(capture.Count() == expected && capture.Count("denied") == 1, "Disabled/single/exhausted fallback launched an unexpected candidate");
+            for (int i = 0; i < 3; i++) f.Tick(600);
+            f.Proxy.SetAutoRestart(false); f.Proxy.SetAutoRestart(true); f.Tick(600);
+            Assert(capture.Count() == expected && !f.Proxy.HasOwnedProcess, "Timer or preference toggle bypassed permanent refusal pause");
+            f.Settings.SshProfile = "ready"; var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(retry.Wait(10000) && retry.Result && !f.Proxy.RecoveryStatus.Contains("приостановлено"), "Explicit corrected retry did not clear exhausted fallback pause");
+        }
+    }
+
+    private static void ForeignReadySocks()
+    {
+        using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            using (var foreign = Process.Start(new ProcessStartInfo(Executable, "-N -D 127.0.0.1:" + f.Settings.SocksPort.ToString(CultureInfo.InvariantCulture) + " ready") { UseShellExecute = false, CreateNoWindow = true })) {
+                try {
+                    WaitForFallback(() => ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None));
+                    var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                    Assert(task.Wait(10000) && !task.Result && !f.Proxy.HasOwnedProcess && f.Proxy.StartupError.Contains("другим процессом"), "Foreign valid SOCKS was adopted as owned startup or mislabeled as unresponsive");
+                    Assert(!foreign.HasExited && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None) && capture.Count() == 1, "Starting ProGo killed or duplicated the foreign SOCKS owner");
+                    f.Proxy.StopTunnel(); f.Tick(600);
+                    Assert(!foreign.HasExited && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None) && !f.Proxy.NextRecoveryUtc.HasValue, "Stopping ProGo altered a foreign valid SOCKS route");
+                } finally { if (!foreign.HasExited) foreign.Kill(); if (!foreign.WaitForExit(3000)) throw new Exception("Foreign fixture did not exit"); }
+            }
+        }
+    }
+
+    private static void FallbackEditCancellation()
+    {
+        foreach (bool backupEdit in new[] { false, true }) using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            f.Settings.SshProfile = "gated-wrong"; f.Settings.AutoSwitchSshProfile = true;
+            f.Settings.SshProfiles.Add(new SshProfileSetting { Target = "backup-id", Server = "ready", User = "ubuntu", Port = 22 });
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None); WaitForFallback(() => File.Exists(capture.Seen));
+            var changed = f.Settings.Clone();
+            if (backupEdit) changed.SshProfiles[0].Server = "batch-only"; else changed.SshProfile = "owner-choice";
+            f.Settings = changed; capture.Unblock(); WaitForFallback(() => task.IsCompleted);
+            Assert(task.IsCanceled && !f.Proxy.HasOwnedProcess && !f.Proxy.NextRecoveryUtc.HasValue, "Changed fallback plan did not cancel captured startup");
+            Assert(f.ProfileSaves == 0 && capture.Count() == 1 && capture.Count("ready") == 0 && capture.Count("batch-only") == 0, "Stale startup launched or published the old/edited backup");
+            Assert(f.Settings.SshProfile == (backupEdit ? "gated-wrong" : "owner-choice") && f.Settings.SshProfiles[0].Server == (backupEdit ? "batch-only" : "ready"), "Cancelled fallback overwrote newer owner settings");
+            f.Tick(600); Assert(capture.Count() == 1, "Settings invalidation left a stale automatic retry");
         }
     }
 
@@ -794,6 +991,13 @@ internal static class SocksRecoveryTests
         var capture = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_ARGV");
         if (!String.IsNullOrEmpty(capture)) File.WriteAllText(capture, new JavaScriptSerializer().Serialize(args));
         var mode = args[args.Length - 1];
+        var launches = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_LAUNCH_DIR");
+        if (!String.IsNullOrEmpty(launches)) {
+            string pid = Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture);
+            string path = Path.Combine(launches, pid + "-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(path + ".pending", new JavaScriptSerializer().Serialize(new[] { mode, pid, Array.IndexOf(args, "BatchMode=yes") >= 0 ? "batch" : "interactive" }));
+            File.Move(path + ".pending", path);
+        }
         if (mode == "bad-host") { Console.Error.WriteLine("Host key verification failed."); return 1; }
         if (mode == "denied") { Console.Error.WriteLine("Permission denied (publickey)."); return 1; }
         if (mode == "die" || (mode == "batch-only" && Array.IndexOf(args, "BatchMode=yes") < 0)) return 1;
@@ -822,7 +1026,13 @@ internal static class SocksRecoveryTests
                         var stream = client.GetStream(); stream.ReadTimeout = stream.WriteTimeout = 1000;
                         if (stream.ReadByte() == 5 && stream.ReadByte() == 1 && stream.ReadByte() == 0)
                         {
-                            stream.Write(new byte[] { mode == "wrong" ? (byte)4 : (byte)5, 0 }, 0, 2); stream.Flush();
+                            if (mode == "greeting-gated" || mode == "gated-wrong") {
+                                var seen = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_GREETING_SEEN");
+                                var release = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_GREETING_RELEASE");
+                                if (!File.Exists(seen)) File.WriteAllText(seen, "greeting");
+                                while (!File.Exists(release)) Thread.Sleep(20);
+                            }
+                            stream.Write(new byte[] { mode == "wrong" || mode == "gated-wrong" ? (byte)4 : (byte)5, 0 }, 0, 2); stream.Flush();
                             int version = stream.ReadByte();
                             if (version == -1) return; // Readiness needs only a greeting.
                             var header = FakeReadExact(stream, 3);
