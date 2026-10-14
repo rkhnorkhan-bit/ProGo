@@ -1,6 +1,44 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint остатка 55: F17-R02 / F17-R03 — 2/55
+## Текущий checkpoint остатка 55: F31-R01 — 3/55
+
+Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC** после двух
+F17 задач. Осталось **52/55**:40 до цельного установщика +12 зависимых приёмок.
+Общий прогресс остаётся **23/31**, целые F17/F31 остаются **OPEN**.
+[Список55](REMAINING_SUBTASKS_8.md), [доказательства](MICROTASK_F31_IPV6.md).
+
+F31-R01 PASS: bare/bracketed IPv6 корректно передаются в SSH -D; SOCKS
+readiness/recovery/latency и CLI HTTP/CONNECT работают с IPv6-only listener.
+Найденная localhost/APM регрессия исправлена bounded async DNS и независимыми
+fresh family clients в одном deadline; ownership winner/losers и cancel
+проверены без изменения profile fallback и прежних stream budgets.
+
+Functional source `9e1f2ac9a27dfab63083b2d287f1d53018e1a476`, tree
+`7906427e9f9ff7d732ff5aa8b6e791716488982a`; tested merge
+`ae7794627650f2742e5e666e036932853902fca6` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #544](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38567399942)
+completed SUCCESS: Windows `115863485883`, Ubuntu `115863486254` и весь run.
+
+SOCKS29 scenarios/240 assertions =прежние22/122 +новые7/118 PASS;
+новые27 CLI bridge checks в6 реальных IPv6-only HTTP/CONNECT cases PASS.
+Desktop3842/полный Test-ProGo PASS; foundation165/134/325/110/211/151/274/112,
+expiry130/restart237, Instance26/Maintenance95/Shutdown47/update package5,
+HomeVPN975/portable90 PASS. Windows22 PASS +2 прежних Linux module skips;
+все7 HTTP tests выполнены. Ubuntu16/9/46 без skips, actual independent QR decode.
+Public255 sources/44 release files PASS; CI inner ZIP519457 bytes PACKED.
+
+Source/tests/native review APPROVE; screenshots287 files uploaded, diagnostics,
+runtime folder и ZIP uploaded. Это CI artifact; цельный setup всех31 ещё
+Package PENDING. Live NOT_CHECKED: устройства/ПК/VPS/телефон владельца и
+установленное приложение не проверялись. PR draft/unmerged; release не выполнялся.
+CI #542/#543 Windows FAIL на localhost/APM сохранены в истории доказательств;
+их незапущенный downstream не получает PASS задним числом.
+После tested source изменяются только три Markdown-документа доказательств;
+app/tests/scripts совпадают с проверенным source. Предыдущие принятые F17/F09
+checkpoints и их визуальные/реальные границы сохранены ниже.
+
+## Предыдущий checkpoint остатка 55: F17-R02 / F17-R03 — 2/55
 
 Приняты две небольшие Code/Dev задачи **13.10.2026 UTC**. Осталось **53/55**:
 41 до цельного установщика и12 зависимых приёмок. Общий прогресс остаётся
