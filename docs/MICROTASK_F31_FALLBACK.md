@@ -44,16 +44,26 @@
    свежий полный completed Windows/Ubuntu CI и evidence review. Только после
    всей приёмки — **4/55**, остаток51 (39 до установщика +12 зависимых).
 
-Статус: **IN_PROGRESS**. Source FROZEN и независимый review APPROVE;
+Статус: **IN_PROGRESS**. Сетевое ядро FROZEN и независимый review APPROVE;
 tests FROZEN после точечного review timer/Stop fixture. Ожидаются37 scenarios /
 312 assertions: прежние29/240 +новые8/72. Фактические числа и PASS устанавливает
-свежий полный CI. Новый native PASS не получен; CI #544 подтверждает только
+свежий полный CI. Полный новый native PASS не получен; CI #544 подтверждает только
 предыдущий IPv6 checkpoint. Локальные whitespace/public PASS:256 sources/0
 release files. Все новые десятисекундные fixture guards локальны для сценариев;
 прежние guards сохранены. Manual candidate теперь имеет linked deadline5s,
 общий startup20s и probe700ms сохранены; EOF observation≤200ms.
 Файлы текущей реализации: ProxyService, SocksRecoveryTests и этот документ;
 после #545 добавлена узкая коррекция prerequisite в home_vpn_setup.
+После #546 consumer orchestration и её UI fixtures FROZEN, независимый
+source/tests review APPROVE. Fresh worker SOCKS probe используется только
+для5 consumer-команд; persistent UI owner проверяет request и сохранённое
+подключение перед reuse или owned fallback. Поздний Off/смена endpoint
+отбрасывают результат; собственный успешный profile CAS не отменяется.
+Добавлены9 Desktop checks:3 borrowed CLI aliases без PID/intent/recovery
+и6 native checks отмены/смены порта во время actual5/1/0 probe. Прежние
+assertions/budgets сохранены; ожидаются Desktop3851 и неизменные SOCKS37/312.
+Bounded UI observation700ms дополняется source owner-turn proof и отдельно
+не выдаётся за доказательство всех scheduler interleavings. Полный CI PENDING.
 Классификация config/arguments F31-R03, Include/tokens, агент/VPS и другие
 пункты в этот подпункт не входят. Package PENDING, Live NOT_CHECKED;
 владелец устанавливает и проверяет цельный продукт после завершения кода31.
@@ -98,3 +108,31 @@ unbounded WaitForExit для ожидания handlers здесь не подх�
 
 Основание штатной RuntimeDirectory: [Ubuntu Noble OpenSSH changelog](https://lists.ubuntu.com/archives/foundations-bugs/2024-May/515145.html)
 и [upstream systemd.exec](https://github.com/systemd/systemd/blob/main/man/systemd.exec.xml).
+
+- CI #546 (`38583881188`), source
+  `812f1351ed528c01e0da9f2edc2c281340496041`, tree
+  `0d4f9d988164247dedfce9a99325260ab547b83c`, tested merge
+  `5b0af579896aa7393d5547fc6c4ba591d72b901c`: Windows `115920580198` FAIL,
+  Ubuntu `115920580974` SUCCESS, общий FAILURE. Compiler исправлен;
+  все37 SOCKS scenarios/312 assertions PASS14:52:50.0262631–0263067 UTC:
+  прежние29/240 +новые8/72, группы10/14/4/10/8/15/3/8. Foundation/expiry/restart
+  прошли; Desktop остановился14:55:19.2353612 UTC на UnifiedCliActions cli-start
+  с неожиданным occupied-SOCKS dialog. Desktop/остальной Windows хвост не PASS.
+- Причина интеграционного отказа установлена source/contract review: manual
+  CLI/Windows/scoped consumers раньше употребляли saved reachable SOCKS,
+  не принимая его процесс во владение. Их orchestration безусловно вызывала
+  StartTunnelAsync, который теперь честно подтверждает только owned SSH.
+  Automation и bridge уже допускают готовый настроенный transport. Исправлять
+  этот поддерживаемый сценарий заменой прежних assertions было бы неверно.
+  Узкая коррекция: fresh async SOCKS probe только для5 consumer commands,
+  UI request/connection guards перед adoption результата и owned fallback;
+  Connect/Reconnect/HomeVPN сохраняют strict owned startup. Off во время
+  preprobe не должен создать поздний SSH child. Новые native guards pending.
+- Ubuntu16/9/46 PASS без skips; actual QR decode14:49:11.8621187 UTC.
+  APT снова обновил13.19→13.20, затем managed sshd-t/isolated listener и все
+  ограничения прошли; bootstrap correction подтверждена в dev. Точный
+  stop/socket механизм package transition остаётся inference.
+- #546 artifacts: screenshots `11904851394`,39 files/612992 bytes, metadata
+  SHA256`f1edde48e882831e0923360cf9ba8fe361856b46d3a39aec6be29c3dc8ce4341`;
+  diagnostics `11904781529`. Runtime folder/ZIP отсутствуют. Частичные
+  сетевые/Ubuntu PASS не закрывают F31-R02; счёт3/55 сохранён.

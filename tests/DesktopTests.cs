@@ -543,6 +543,8 @@ namespace ProGo
                         PumpUntil(() => context.PendingRouteCount == 0);
                         Check(bridge.IsRunning && CliProxyEnvironmentService.IsAppliedToUserEnvironment(bridge.Port) && !ApplyOnce(plan, ProxyFeature.Cli, true),
                             "manual start and legacy alias apply one mode and cancel its automatic writer " + on[i]);
+                        Check(!proxy.HasOwnedProcess && !proxy.ConnectionRequested && !proxy.NextRecoveryUtc.HasValue,
+                            "manual CLI reuses borrowed SOCKS without SSH ownership or recovery " + on[i]);
                         plan.Update(null, configured);
                         execute.Invoke(context, new object[] { off[i] });
                         WaitIntegration(context);

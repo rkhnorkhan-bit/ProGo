@@ -489,7 +489,31 @@ namespace ProGo
         {
             bool ready = false, cancelled = false; Exception failure = null;
             IDisposable routeConsumers = null;
-            try { ready = await proxy.StartTunnelAsync(routeLifetime.Token).ConfigureAwait(false); }
+            AppSettings borrowedRoute = null;
+            try {
+                var token = routeLifetime.Token;
+                bool consumer = action == AppCommand.StartCli || action == AppCommand.EnableWindows ||
+                    action == AppCommand.CreateCodexShortcut || action == AppCommand.OpenCodex || action == AppCommand.OpenTerminal;
+                if (consumer && !proxy.IsConnecting && !proxy.IsStopping) {
+                    var saved = settings.Capture().Settings;
+                    bool responding = await Task.Run(delegate {
+                        bool value = ConnectionHealthMonitor.CheckSocks(saved, token);
+                        token.ThrowIfCancellationRequested(); return value;
+                    }).ConfigureAwait(false);
+                    var startup = await DispatchUi(delegate {
+                        long active;
+                        if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request || !MatchesConsumerRoute(saved))
+                            return (Task<bool>)null;
+                        token.ThrowIfCancellationRequested();
+                        // A configured transport may be consumed without owning its process.
+                        if (responding) { borrowedRoute = saved; return Task.FromResult(true); }
+                        // Off cannot remove the request between this check and startup.
+                        return proxy.StartTunnelAsync(token);
+                    }).ConfigureAwait(false);
+                    if (startup == null) cancelled = true;
+                    else ready = await startup.ConfigureAwait(false);
+                } else ready = await proxy.StartTunnelAsync(token).ConfigureAwait(false);
+            }
             catch (OperationCanceledException) { cancelled = true; }
             catch (Exception ex) { failure = ex; }
             if (closing) return;
@@ -498,6 +522,7 @@ namespace ProGo
                     var work = await DispatchUi(delegate {
                         long active;
                         if (!pendingRoutes.TryGetValue(action, out active) || active != request) return (Task)null;
+                        if (!MatchesConsumerRoute(borrowedRoute)) { cancelled = true; return (Task)null; }
                         var feature = action == AppCommand.StartCli ? ProxyFeature.Cli : ProxyFeature.Windows;
                         automation.Cancel(feature);
                         return EnableFeatureAsync(feature);
@@ -510,6 +535,7 @@ namespace ProGo
                     var bridgeWork = await DispatchUi(delegate {
                         long active;
                         if (!pendingRoutes.TryGetValue(action, out active) || active != request) return (Task<SettingsSaveError>)null;
+                        if (!MatchesConsumerRoute(borrowedRoute)) { cancelled = true; return (Task<SettingsSaveError>)null; }
                         // Keep the endpoint between asynchronous preparation and
                         // the owner opening/tracking its actual scoped consumer.
                         routeConsumers = appConsumers.BeginMutation();
@@ -525,7 +551,7 @@ namespace ProGo
                     long active;
                     try {
                         if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request) return;
-                        if (cancelled) return;
+                        if (cancelled || !MatchesConsumerRoute(borrowedRoute)) return;
                         if (failure != null) throw failure;
                         if (!ready) throw new InvalidOperationException(proxy.StartupError ?? "Прокси не готов. Проверьте сервер и SSH-ключ в «Подключениях».");
                         switch (action) {
@@ -559,6 +585,13 @@ namespace ProGo
                 if (routeConsumers != null) routeConsumers.Dispose();
                 if (!closing) SafeLog.Error("Connection result could not reach the application UI.", ex);
             }
+        }
+        private bool MatchesConsumerRoute(AppSettings expected)
+        {
+            if (expected == null) return true;
+            var current = settings.Current;
+            return current.SocksHost == expected.SocksHost && current.SocksPort == expected.SocksPort &&
+                SshConnection.Signature(current) == SshConnection.Signature(expected);
         }
         private AppCommandState GetCommandState()
         { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending); }

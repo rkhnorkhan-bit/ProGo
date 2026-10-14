@@ -304,8 +304,72 @@ namespace ProGo
                 }
             } finally { settings.Save(before); }
         }
+        private static void BorrowedProbeCancellation(SettingsService settings)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
+            var original = settings.Current.Clone();
+            var environment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
+            var launches = Path.Combine(Path.GetTempPath(), "progo-borrowed-probe-" + Guid.NewGuid().ToString("N"));
+            var oldLaunches = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_LAUNCH_DIR");
+            Directory.CreateDirectory(launches); Environment.SetEnvironmentVariable("PROGO_TEST_SSH_LAUNCH_DIR", launches);
+            try {
+                foreach (bool changed in new[] { false, true }) {
+                    var listener = Occupy(0); int port = Number(listener), expectedPort = port;
+                    using (var entered = new System.Threading.ManualResetEventSlim()) using (var release = new System.Threading.ManualResetEventSlim()) {
+                        System.Threading.Tasks.Task<int> probe = null;
+                        try {
+                            var config = original.Clone(); config.SocksHost = "127.0.0.1"; config.SocksPort = port; config.SshProfile = "ready";
+                            config.AutoStartSocks = false; config.AutoRestartSocks = false; config.AutoSwitchSshProfile = false;
+                            config.AutoCliProxy = false; config.AutoSystemProxy = false; config.TestEndpoint = "http://127.0.0.1:1/"; settings.Save(config);
+                            foreach (var name in CliProxyEnvironmentService.Names) Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
+                            var executable = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "SocksRecoveryTests.exe");
+                            using (var proxy = new ProxyService(() => settings.Current, s => settings.Save(s), executable, () => DateTime.UtcNow, false))
+                            using (var bridge = new CliProxyBridgeService(settings))
+                            using (var relay = new Ikev2RelayService()) using (var home = new HomeVpnService(relay))
+                            using (var clipboard = new ClipboardService(settings))
+                            using (var health = new ConnectionHealthMonitor(() => settings.Current, (s, token) => false))
+                            using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false, health)) {
+                                probe = System.Threading.Tasks.Task.Run(delegate {
+                                    using (var client = listener.AcceptTcpClient()) using (var stream = client.GetStream()) {
+                                        stream.ReadTimeout = stream.WriteTimeout = 3000;
+                                        if (stream.ReadByte() != 5 || stream.ReadByte() != 1 || stream.ReadByte() != 0) throw new IOException("Borrowed probe did not send SOCKS greeting");
+                                        entered.Set(); if (!release.Wait(5000)) throw new IOException("Borrowed greeting gate did not release");
+                                        stream.Write(new byte[] { 5, 255 }, 0, 2); stream.Flush(); return stream.ReadByte();
+                                    }
+                                });
+                                Call(context, "Execute", "cli-start"); PumpUntil(() => entered.IsSet);
+                                Check(context.PendingRouteCount == 1 && !proxy.ConnectionRequested && !proxy.HasOwnedProcess,
+                                    "consumer preprobe waits on real borrowed SOCKS without creating SSH intent: " + changed);
+                                if (changed) {
+                                    var reserve = Occupy(0); expectedPort = Number(reserve); reserve.Stop();
+                                    var edited = settings.Current.Clone(); edited.SocksPort = expectedPort; settings.Save(edited);
+                                } else Call(context, "Execute", "cli-off");
+                                listener.Stop(); release.Set(); PumpUntil(() => probe.IsCompleted);
+                                Check(probe.GetAwaiter().GetResult() == -1, "negative borrowed greeting is consumed and the preprobe closes its socket: " + changed);
+                                WaitIntegration(context); PumpUntil(() => context.PendingRouteCount == 0);
+                                // Observe a bounded native UI window after the real probe closes.
+                                // The persistent owner-turn request/identity guard supplies the scheduler-independent contract.
+                                var drain = Stopwatch.StartNew(); while (drain.ElapsedMilliseconds < 700) { Application.DoEvents(); System.Threading.Thread.Sleep(10); }
+                                Check(!proxy.ConnectionRequested && !proxy.HasOwnedProcess && !proxy.NextRecoveryUtc.HasValue && !bridge.IsRunning &&
+                                    Directory.GetFiles(launches, "*.json").Length == 0 && settings.Current.SocksPort == expectedPort &&
+                                    !CliProxyEnvironmentService.IsAppliedToUserEnvironment(settings.Current.HttpProxyPort),
+                                    "cancelled or edited borrowed route cannot start late SSH or apply CLI after bounded UI settlement: " + changed);
+                            }
+                        } finally {
+                            listener.Stop(); release.Set();
+                            if (probe != null) try { if (!probe.Wait(3500)) throw new IOException("Borrowed probe fixture did not settle during cleanup"); } catch (AggregateException) { }
+                        }
+                    }
+                }
+            } finally {
+                Environment.SetEnvironmentVariable("PROGO_TEST_SSH_LAUNCH_DIR", oldLaunches); Directory.Delete(launches, true);
+                settings.Save(original); foreach (var item in environment) Environment.SetEnvironmentVariable(item.Key, item.Value, EnvironmentVariableTarget.User);
+            }
+        }
+
         private static void AsyncCliStartup(SettingsService settings)
         {
+            BorrowedProbeCancellation(settings);
             SettingsSaveConnectionIntent(settings);
             AsyncStopUiHeartbeat(settings);
             var login = SshInteractiveLogin.CreateStartInfo("my-vps");
