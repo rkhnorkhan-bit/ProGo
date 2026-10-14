@@ -5,6 +5,7 @@ using System.IO;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
@@ -590,8 +591,8 @@ namespace ProGo
         }
     }
 
-    // Share SOCKS endpoint syntax and socket family without resolving a DNS name
-    // or connecting on the caller's thread. Existing async deadlines own DNS/connect.
+    // Host/Format/CreateClient never resolve DNS or connect. Bounded Connect waits
+    // asynchronous DNS/address attempts within the caller's existing total budget.
     internal static class SocksEndpoint
     {
         internal static string Host(string host)
@@ -619,6 +620,78 @@ namespace ProGo
             try { client.Client.DualMode = true; return client; }
             catch { client.Close(); throw; }
         }
+        internal static TcpClient Connect(string host, int port, int timeoutMs, CancellationToken token)
+        { return Connect(host, port, timeoutMs, token, Dns.GetHostAddressesAsync); }
+
+        // The explicit resolver overload lets isolated fixtures release a late DNS
+        // result; production always uses the asynchronous Windows resolver above.
+        internal static TcpClient Connect(string host, int port, int timeoutMs, CancellationToken token,
+            Func<string, Task<IPAddress[]>> resolve)
+        {
+            token.ThrowIfCancellationRequested();
+            if (port < 1 || port > 65535) throw new ArgumentOutOfRangeException("port");
+            int budget = Math.Max(1, timeoutMs); var clock = Stopwatch.StartNew();
+            var gate = new object(); bool abandoned = false;
+            var owned = new List<TcpClient>(); var pending = new List<Task>();
+            var clients = new Dictionary<Task, TcpClient>();
+            using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+                deadline.CancelAfter(budget);
+                Action guard = delegate {
+                    token.ThrowIfCancellationRequested();
+                    if (abandoned || deadline.IsCancellationRequested || clock.ElapsedMilliseconds >= budget)
+                        throw new TimeoutException("SOCKS connection exceeded its deadline.");
+                };
+                using (deadline.Token.Register(delegate {
+                    lock (gate) { abandoned = true; foreach (var client in owned) client.Close(); }
+                })) {
+                    try {
+                        IPAddress literal; IPAddress[] addresses;
+                        if (IPAddress.TryParse(Host(host), out literal)) addresses = new[] { literal };
+                        else {
+                            guard(); var dns = resolve(Host(host)); ObserveConnectFault(dns);
+                            var resolved = Task.WhenAny(dns);
+                            try {
+                                if (!resolved.Wait((int)Math.Max(0, (long)budget - clock.ElapsedMilliseconds), deadline.Token))
+                                    throw new TimeoutException("SOCKS DNS exceeded its deadline.");
+                                addresses = dns.GetAwaiter().GetResult();
+                            } catch (OperationCanceledException) { guard(); throw; }
+                        }
+                        // Launch IPv4 first to retain the legacy preference, but do not
+                        // let a refused/silent address block the other family's attempt.
+                        var ordered = new List<IPAddress>();
+                        foreach (var address in addresses) if (address.AddressFamily == AddressFamily.InterNetwork) ordered.Add(address);
+                        foreach (var address in addresses) if (address.AddressFamily == AddressFamily.InterNetworkV6) ordered.Add(address);
+                        Exception failure = null;
+                        foreach (var address in ordered) {
+                            lock (gate) {
+                                guard(); TcpClient client = null;
+                                try {
+                                    client = CreateClient(address.ToString()); owned.Add(client); guard();
+                                    var connect = Task.Factory.FromAsync((callback, state) => client.BeginConnect(address, port, callback, state), client.EndConnect, null);
+                                    ObserveConnectFault(connect); pending.Add(connect); clients.Add(connect, client);
+                                } catch (Exception ex) { if (client != null) { client.Close(); owned.Remove(client); } failure = ex; }
+                            }
+                        }
+                        while (pending.Count != 0) {
+                            guard(); var first = Task.WhenAny(pending);
+                            try {
+                                if (!first.Wait((int)Math.Max(0, (long)budget - clock.ElapsedMilliseconds), deadline.Token))
+                                    throw new TimeoutException("SOCKS connection exceeded its deadline.");
+                            } catch (OperationCanceledException) { guard(); throw; }
+                            var completed = first.GetAwaiter().GetResult(); pending.Remove(completed);
+                            try { completed.GetAwaiter().GetResult(); }
+                            catch (Exception ex) { failure = ex; continue; }
+                            lock (gate) { guard(); var winner = clients[completed]; owned.Remove(winner); return winner; }
+                        }
+                        guard(); throw failure ?? new SocketException((int)SocketError.HostNotFound);
+                    } finally {
+                        lock (gate) { abandoned = true; foreach (var client in owned) client.Close(); owned.Clear(); }
+                    }
+                }
+            }
+        }
+        private static void ObserveConnectFault(Task task)
+        { task.ContinueWith(failed => { var ignored = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously); }
     }
 
     internal static class ConnectionMetrics
@@ -647,16 +720,9 @@ namespace ProGo
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                using (var client = SocksEndpoint.CreateClient(settings.SocksHost))
+                using (var client = SocksEndpoint.Connect(settings.SocksHost, settings.SocksPort, Math.Max(1, timeoutMs), deadline.Token))
                 using (deadline.Token.Register(delegate { client.Close(); }))
                 {
-                    var connect = client.BeginConnect(SocksEndpoint.Host(settings.SocksHost), settings.SocksPort, null, null);
-                    using (connect.AsyncWaitHandle) {
-                        if (System.Threading.WaitHandle.WaitAny(new[] { connect.AsyncWaitHandle, deadline.Token.WaitHandle }, Math.Max(1, timeoutMs)) != 0) {
-                            token.ThrowIfCancellationRequested(); return null;
-                        }
-                        client.EndConnect(connect);
-                    }
                     using (var stream = client.GetStream())
                     {
                         stream.ReadTimeout = Math.Max(1, timeoutMs);

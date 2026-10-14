@@ -511,16 +511,7 @@ namespace ProGo
         {
             try
             {
-                using (var client = SocksEndpoint.CreateClient(host))
-                {
-                    var ar = client.BeginConnect(SocksEndpoint.Host(host), port, null, null);
-                    using (ar.AsyncWaitHandle)
-                    {
-                        if (!ar.AsyncWaitHandle.WaitOne(timeoutMs)) return false;
-                        client.EndConnect(ar);
-                        return true;
-                    }
-                }
+                using (var client = SocksEndpoint.Connect(host, port, timeoutMs, CancellationToken.None)) return true;
             }
             catch { return false; }
         }
@@ -529,14 +520,8 @@ namespace ProGo
         {
             try
             {
-                using (var client = SocksEndpoint.CreateClient(host))
+                using (var client = SocksEndpoint.Connect(host, port, 700, CancellationToken.None))
                 {
-                    var ar = client.BeginConnect(SocksEndpoint.Host(host), port, null, null);
-                    using (ar.AsyncWaitHandle)
-                    {
-                        if (!ar.AsyncWaitHandle.WaitOne(700)) return false;
-                        client.EndConnect(ar);
-                    }
                     using (var stream = client.GetStream())
                     {
                         stream.ReadTimeout = 700; stream.WriteTimeout = 700;

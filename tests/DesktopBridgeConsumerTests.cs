@@ -315,7 +315,7 @@ namespace ProGo
         {
             var original = settings.Current.Clone();
             try {
-                foreach (string host in new[] { "::1", "[::1]" })
+                foreach (string host in new[] { "::1", "[::1]", "localhost" })
                 foreach (bool connect in new[] { false, true }) {
                     string scenario = host + (connect ? " CONNECT" : " HTTP");
                     var socks = new TcpListener(IPAddress.IPv6Loopback, 0);

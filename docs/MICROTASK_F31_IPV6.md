@@ -14,9 +14,11 @@ SOCKS probes, latency и CLI bridge создавали IPv4-only TcpClient на 
 
 Общий небольшой SocksEndpoint helper в Core сохраняет IPv4, выбирает family
 IPv6 dual-mode для literal адреса (включая mapped), снимает ровно одну допустимую пару IPv6 brackets и
-составляет `[IPv6]:port` один раз. DNS использует dual-mode socket при доступном
-IPv6, иначе IPv4; существующий BeginConnect и deadlines сохраняются. Создание
-клиента не выполняет DNS или connect. Некорректные brackets не исправляются
+составляет `[IPv6]:port` один раз. Создание клиента не выполняет DNS или connect.
+Общий connector выполняет async DNS и независимые APM подключения по найденным
+адресам с fresh family clients в одном общем deadline. Переданный caller winner
+отделяется от losers; timeout/cancel запрещают позднее создание подключения и
+закрывают неусыновлённые sockets. Некорректные brackets не исправляются
 в допустимый адрес; политика SettingsValidation сохранена.
 
 Изменяемые маршруты: SSH -D, TCP ownership probe, SOCKS handshake/recovery,
@@ -38,10 +40,13 @@ ConnectionHealth, SOCKS latency и CLI HTTP/CONNECT bridge. Profile fallback,
 5. Только после native PASS и evidence review — **3/55**.
 
 Статус: **IN_PROGRESS**. Новый native PASS ещё не получен.
-Frozen source/tests и этот PENDING документ: независимый review APPROVE;
+Первоначальный source/tests diff и PENDING документ: независимый review APPROVE;
 локальные whitespace/public checks PASS (255 sources/0 local release files).
-Ожидаются28 recovery scenarios (22 прежних +6 новых) и18 новых Desktop bridge
-checks. Их фактический результат и число assertions устанавливает свежий CI.
+Коррекция после #543: FROZEN, финальный независимый review APPROVE;
+native CI PENDING. Повторный whitespace/public PASS: 255/0.
+Ожидаются29 recovery scenarios (22 прежних +7 новых), 118 новых recovery
+assertions и27 новых Desktop bridge checks. Их фактический результат и число
+assertions устанавливает свежий CI.
 Реальный encrypted-key agent/VPS, IPv6 UDP/телефонный маршрут и устройства
 владельца не проверяются этим пакетом. Package PENDING, Live NOT_CHECKED;
 цельный installer всех31, merge и release остаются следующими результатами.
@@ -67,3 +72,22 @@ checks. Их фактический результат и число assertions 
 - #542 создал только diagnostics `11892595467`; screenshots отсутствуют
   (no files warning), runtime folder/ZIP не созданы. Ubuntu16/9/46 PASS
   без skips и independent QR decode не подменяют незавершённый Windows.
+- CI #543 (`38562946918`), diagnostic source
+  `89e61f5a78aa61b26fd19307b9a3372a58b0ae16`, merge
+  `85ee7ba87279dc44c44471cb143dc2d2d1844abc`: Windows FAIL /Ubuntu PASS,
+  общий FAILURE (2026-10-14 12:22:50 UTC). Production не менялся.
+  В12:22:43.9530985 UTC исходный Wait5000 вернулfalse при pending task,
+  owned PID3568 и startup=none. DNSlocalhost завершился за6ms: сначала::1,
+  затем127.0.0.1. Fresh AF6 dual-mode APM по hostname не завершился за1002ms;
+  explicit mapped IPv4 и IPv4 literal подключились за0ms к тому же порту.
+  В12:22:45.1102453 UTC исходный assert снова FAIL. Printed listening=false
+  был gated ready&&IsListening, а не отдельной отрицательной TCP-пробой.
+- Это устанавливает регрессию hostname/APM в текущем бюджете при быстром DNS
+  и доступном literal listener; конкретный механизм внутри Framework остаётся
+  выводом из source review. План коррекции: bounded async DNS и independent
+  fresh family clients в одном total deadline, безопасная передача winner,
+  закрытие losers и запрет позднего connect после timeout/cancel. IPv4-only
+  и IPv6-only localhost fixtures должны подтвердить обе стороны; profile
+  fallback не меняется. Новый native PASS пока не получен, счёт2/55 сохранён.
+- #543 downstream Windows опять не достигнут; есть только diagnostics
+  `11892868304`. Ubuntu16/9/46 и independent QR decode PASS без skips.

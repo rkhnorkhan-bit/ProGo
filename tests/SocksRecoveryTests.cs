@@ -50,6 +50,7 @@ internal static class SocksRecoveryTests
             Test("IPv6 pending startup cancellation and timeout clean up before retry", IPv6CancellationAndTimeout);
             Test("IPv6 foreign listeners remain external and silent probes are bounded and cancellable", IPv6ForeignProbes);
             Test("native OpenSSH parses isolated bracketed IPv6 dynamic forwarding locally", NativeIPv6DynamicForward);
+            Test("asynchronous DNS stays inside the connection budget and cannot dial after cancellation", DelayedDnsCancellationAndDeadline);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
             Console.WriteLine("SOCKS recovery assertions PASS: " + assertions);
             return 0;
@@ -87,7 +88,8 @@ internal static class SocksRecoveryTests
         public Fixture(int startupTimeoutMs = 20000, string host = "127.0.0.1")
         {
             Settings.SocksHost = host;
-            var reserve = new TcpListener(host == "::1" || host == "[::1]" ? IPAddress.IPv6Loopback : IPAddress.Loopback, 0); reserve.Start();
+            bool ipv6 = host == "::1" || host == "[::1]" || (host == "localhost" && Environment.GetEnvironmentVariable("PROGO_TEST_SSH_LOCALHOST_FAMILY") == "v6");
+            var reserve = new TcpListener(ipv6 ? IPAddress.IPv6Loopback : IPAddress.Loopback, 0); reserve.Start();
             Settings.SocksPort = ((IPEndPoint)reserve.LocalEndpoint).Port; reserve.Stop();
             Settings.SshProfile = "ready";
             Proxy = new ProxyService(delegate { return Settings; }, delegate(AppSettings s) { Settings = s; },
@@ -499,6 +501,86 @@ internal static class SocksRecoveryTests
                 Assert(ConnectionMetrics.MeasureSocksLatencyMs(mapped, 2000).HasValue, "Mapped IPv6 metrics did not complete through the IPv4-only listener: " + host);
             }
         }
+        LocalhostIPv6Only();
+    }
+
+    private static void LocalhostIPv6Only()
+    {
+        string previous = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_LOCALHOST_FAMILY");
+        try {
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_LOCALHOST_FAMILY", "v6");
+            using (var capture = new SshCapture()) using (var f = new Fixture(20000, "localhost")) {
+                // The child's independent parser selects ::1 and disables dual
+                // mode. Production resolves localhost through the real DNS API.
+                f.Settings.TestEndpoint = "https://progo-metrics.invalid:8443/";
+                var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(start.Wait(5000) && start.Result && f.Proxy.IsListening(), "Localhost startup could not reach an IPv6-only child");
+                Assert(ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Localhost SOCKS greeting could not reach its IPv6-only listener");
+                Assert(ConnectionMetrics.MeasureSocksLatencyMs(f.Settings, 2000).HasValue, "Localhost SOCKS CONNECT could not reach its IPv6-only listener");
+                var request = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(capture.Connect));
+                Assert(request.Length == 3 && request[0] == "progo-metrics.invalid" && request[1] == "8443" && request[2] == "InterNetworkV6", "Localhost metrics did not complete CONNECT in the actual IPv6 child");
+                using (var client = SocksEndpoint.Connect("localhost", f.Settings.SocksPort, 2000, CancellationToken.None)) {
+                    Assert(client.Connected && ((IPEndPoint)client.Client.RemoteEndPoint).AddressFamily == AddressFamily.InterNetworkV6, "Localhost connector did not return the real connected IPv6 winner");
+                    var stream = client.GetStream(); stream.ReadTimeout = stream.WriteTimeout = 2000;
+                    stream.Write(new byte[] { 5, 1, 0 }, 0, 3);
+                    Assert(stream.ReadByte() == 5 && stream.ReadByte() == 0, "Returned localhost winner could not complete the SOCKS greeting");
+                }
+                var stop = f.Proxy.StopTunnelAsync();
+                Assert(stop.Wait(5000) && stop.Result && !f.Proxy.HasOwnedProcess && !f.Proxy.IsListening(), "Localhost IPv6 stop did not settle and release its child");
+                var reserve = new TcpListener(IPAddress.IPv6Loopback, f.Settings.SocksPort);
+                try { reserve.Start(); Assert(((IPEndPoint)reserve.LocalEndpoint).Port == f.Settings.SocksPort, "Stopped localhost IPv6 port was not reusable"); } finally { reserve.Stop(); }
+            }
+        } finally { Environment.SetEnvironmentVariable("PROGO_TEST_SSH_LOCALHOST_FAMILY", previous); }
+    }
+
+    private static void DelayedDnsCancellationAndDeadline()
+    {
+        var ipv4 = new TcpListener(IPAddress.Loopback, 0); ipv4.Start();
+        int port = ((IPEndPoint)ipv4.LocalEndpoint).Port;
+        TcpListener ipv6 = null;
+        try {
+            ipv6 = new TcpListener(IPAddress.IPv6Loopback, port); ipv6.Server.DualMode = false; ipv6.Start();
+            Assert(!ipv4.Pending() && !ipv6.Pending(), "Delayed-DNS listeners were not initially idle");
+            foreach (bool cancel in new[] { false, true }) using (var entered = new ManualResetEventSlim()) using (var cancellation = new CancellationTokenSource()) {
+                var resolved = new TaskCompletionSource<IPAddress[]>(); int calls = 0;
+                Func<string, Task<IPAddress[]>> resolver = delegate(string host) { Interlocked.Increment(ref calls); entered.Set(); return resolved.Task; };
+                var watch = Stopwatch.StartNew();
+                var connect = Task.Run(() => SocksEndpoint.Connect("localhost", port, 700, cancellation.Token, resolver));
+                try {
+                    Assert(entered.Wait(2000), "Delayed DNS resolver was never entered");
+                    if (cancel) { watch.Restart(); cancellation.Cancel(); }
+                    bool completed;
+                    using (var handle = ((IAsyncResult)connect).AsyncWaitHandle) completed = handle.WaitOne(2000);
+                    Assert(completed && watch.ElapsedMilliseconds < 2000 && !resolved.Task.IsCompleted, "DNS extended the connection budget or had to complete before cancellation/deadline");
+                    bool cancelled = false, timedOut = false;
+                    try { using (var unexpected = connect.GetAwaiter().GetResult()) { } }
+                    catch (OperationCanceledException) { cancelled = true; }
+                    catch (TimeoutException) { timedOut = true; }
+                    Assert(cancel ? cancelled : timedOut, "Stalled DNS produced the wrong cancellation/deadline result");
+                    Assert(calls == 1, "A single stalled connection resolved the same host more than once");
+                    resolved.SetResult(new[] { IPAddress.IPv6Loopback, IPAddress.Loopback });
+                    Assert(!ipv4.Pending() && !ipv6.Pending(), "A late DNS result immediately dialed after connection completion");
+                    // Bounded native regression observation, in addition to the
+                    // synchronous connector's completed ownership boundary.
+                    bool lateConnection = false; watch.Restart();
+                    while (watch.ElapsedMilliseconds < 250) { lateConnection |= ipv4.Pending() || ipv6.Pending(); Thread.Sleep(10); }
+                    Assert(!lateConnection, "A late DNS continuation connected to an actual listener after cancellation/deadline");
+                } finally {
+                    cancellation.Cancel(); resolved.TrySetResult(new[] { IPAddress.IPv6Loopback, IPAddress.Loopback });
+                    WaitFor(() => connect.IsCompleted);
+                    if (connect.Status == TaskStatus.RanToCompletion) connect.Result.Dispose();
+                    else { var observed = connect.Exception; }
+                }
+            }
+            using (var cancellation = new CancellationTokenSource()) {
+                cancellation.Cancel(); int calls = 0; bool cancelled = false;
+                Func<string, Task<IPAddress[]>> resolver = delegate(string host) { Interlocked.Increment(ref calls); return Task.FromResult(new[] { IPAddress.Loopback }); };
+                try { using (var unexpected = SocksEndpoint.Connect("localhost", port, 700, cancellation.Token, resolver)) { } }
+                catch (OperationCanceledException) { cancelled = true; }
+                Assert(cancelled && calls == 0, "A pre-cancelled connection invoked DNS or failed to preserve cancellation");
+                Assert(!ipv4.Pending() && !ipv6.Pending(), "A pre-cancelled connection dialed an actual listener");
+            }
+        } finally { if (ipv6 != null) ipv6.Stop(); ipv4.Stop(); }
     }
 
     // Failure-only native diagnostics. Keep the original acceptance and timeout;
@@ -687,7 +769,7 @@ internal static class SocksRecoveryTests
             int colon = endpoint.IndexOf(':');
             if (colon < 1 || colon != endpoint.LastIndexOf(':')) throw new FormatException("IPv6 forward must be bracketed");
             host = endpoint.Substring(0, colon); portText = endpoint.Substring(colon + 1);
-            if (host == "localhost") address = IPAddress.Loopback;
+            if (host == "localhost") address = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_LOCALHOST_FAMILY") == "v6" ? IPAddress.IPv6Loopback : IPAddress.Loopback;
             else if (!IPAddress.TryParse(host, out address) || address.AddressFamily != AddressFamily.InterNetwork) throw new FormatException("Fixture expects a literal address or localhost");
         }
         int port;

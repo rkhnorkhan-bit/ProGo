@@ -356,13 +356,12 @@ namespace ProGo
         private TcpClient ConnectThroughSocks(string targetHost, int targetPort)
         {
             var current = settings.Current;
-            var socks = SocksEndpoint.CreateClient(current.SocksHost);
+            var socks = SocksEndpoint.Connect(current.SocksHost, current.SocksPort, ConnectTimeoutMs, CancellationToken.None);
+            try
+            {
             socks.NoDelay = true;
             socks.ReceiveTimeout = ConnectTimeoutMs;
             socks.SendTimeout = SocketTimeoutMs;
-            try
-            {
-            ConnectWithTimeout(socks, SocksEndpoint.Host(current.SocksHost), current.SocksPort, ConnectTimeoutMs);
 
             var stream = socks.GetStream();
             stream.Write(new byte[] { 0x05, 0x01, 0x00 }, 0, 3);
@@ -448,17 +447,6 @@ namespace ProGo
             request[offset++] = (byte)((targetPort >> 8) & 0xff);
             request[offset] = (byte)(targetPort & 0xff);
             return request;
-        }
-
-        private static void ConnectWithTimeout(TcpClient client, string host, int port, int timeoutMs)
-        {
-            var ar = client.BeginConnect(host, port, null, null);
-            if (!ar.AsyncWaitHandle.WaitOne(timeoutMs))
-            {
-                try { client.Close(); } catch { }
-                throw new TimeoutException("Timed out connecting to SOCKS endpoint.");
-            }
-            client.EndConnect(ar);
         }
 
         private static void Relay(TcpClient left, TcpClient right)
