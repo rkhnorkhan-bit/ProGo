@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CancellationToken = System.Threading.CancellationToken;
 using CancellationTokenSource = System.Threading.CancellationTokenSource;
@@ -465,12 +466,20 @@ namespace ProGo
         private bool StartSingleTunnel(string target, bool automatic, SettingsRevisionSnapshot snapshot)
         {
             if (!wanted || disposed || IsOwnedProcessAlive()) return false;
+            var current = snapshot.Settings;
+            string args;
+            try {
+                var endpoint = SocksEndpoint.Format(current.SocksHost, current.SocksPort);
+                args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=yes {1}",
+                    SshConnection.Quote(endpoint), SshConnection.CommandArguments(SshConnection.Resolve(current, target)));
+            } catch (ArgumentException) {
+                var invalid = new SshAttempt(null, TargetIdentity(current, target)); invalid.Error = ArgumentError;
+                invalid.ErrorFinished.TrySetResult(true);
+                failedAttempts[invalid.Identity] = invalid; lastFailedAttempt = invalid;
+                SafeLog.Info("SSH startup rejected invalid connection arguments."); return false;
+            }
             try
             {
-                var current = snapshot.Settings;
-                var endpoint = SocksEndpoint.Format(current.SocksHost, current.SocksPort);
-                var args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=yes {1}",
-                    SshConnection.Quote(endpoint), SshConnection.CommandArguments(SshConnection.Resolve(current, target)));
                 var psi = new ProcessStartInfo(sshExecutable, args)
                 {
                     UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden, RedirectStandardError = true
@@ -482,10 +491,8 @@ namespace ProGo
                 ownedAttempt = attempt;
                 attempt.Process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs e) {
                     if (e.Data == null) { attempt.ErrorFinished.TrySetResult(true); return; }
-                    var line = e.Data.ToLowerInvariant();
-                    if (line.Contains("permission denied")) attempt.Error = "SSH-ключ не принят или недоступен фоновому процессу. Проверьте выбранный алиас и путь ключа. Для ключа с passphrase запустите ssh-agent и загрузите ключ через ssh-add; фоновое подключение не запрашивает пароль. «Первый вход» проверяет доступ в отдельном окне.";
-                    else if (line.Contains("host key verification failed") || line.Contains("remote host identification has changed"))
-                        attempt.Error = "Не подтверждён или изменился ключ сервера. Сверьте отпечаток с сервером и используйте «Подключения → Первый вход».";
+                    var error = ClassifySshErrorLine(e.Data);
+                    if (error != null) attempt.Error = error;
                 };
                 sshProcess.BeginErrorReadLine();
                 startedAt = utcNow(); healthySince = null; missingListener = 0;
@@ -565,6 +572,29 @@ namespace ProGo
             foreach (var existing in targets)
                 if (String.Equals(existing, target, StringComparison.OrdinalIgnoreCase)) return;
             targets.Add(target);
+        }
+
+        private const string ConfigurationError = "Ошибка SSH config. Проверьте синтаксис и значения параметров, наличие файла конфигурации и права доступа к нему; откройте «Подключения → Проверить», затем нажмите «Подключить».";
+        private const string ArgumentError = "Параметры SSH-подключения некорректны. Проверьте адрес, логин, SSH/SOCKS-порт и путь ключа в «Подключениях», затем нажмите «Подключить».";
+        private static string ClassifySshErrorLine(string value)
+        {
+            // Match OpenSSH's fatal forms, never arbitrary marker text in paths/banners.
+            if (String.IsNullOrWhiteSpace(value) || value.Length > 4096) return null;
+            var line = value.Trim();
+            var flags = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+            if (String.Equals(line, "Host key verification failed.", StringComparison.OrdinalIgnoreCase) ||
+                Regex.IsMatch(line, @"\A@*\s*warning:\s*remote host identification has changed!\s*@*\z", flags))
+                return "Не подтверждён или изменился ключ сервера. Сверьте отпечаток с сервером и используйте «Подключения → Первый вход».";
+            if (Regex.IsMatch(line, @"\A(?:warning:|debug[123]?:|banner:)", flags)) return null;
+            if (Regex.IsMatch(line, @"\A(?:[^\s]+@[^\s]+:\s*)?permission denied \([a-z0-9@._,+-]*\)\.\z", flags))
+                return "SSH-ключ не принят или недоступен фоновому процессу. Проверьте выбранный алиас и путь ключа. Для ключа с passphrase запустите ssh-agent и загрузите ключ через ssh-add; фоновое подключение не запрашивает пароль. «Первый вход» проверяет доступ в отдельном окне.";
+            if (Regex.IsMatch(line, @"\A.+: terminating, [0-9]+ bad configuration options\z", flags) ||
+                Regex.IsMatch(line, @"\A.+(?:\sline|:\s*line) [0-9]+:\s*(?:bad configuration option:|bad port\b|no argument after keyword\b|missing argument\b|missing yes/no argument\b|bad yes/no argument\b|garbage at end of line\b)", flags) ||
+                Regex.IsMatch(line, @"\A(?:bad owner or permissions on |can't open user config file )", flags))
+                return ConfigurationError;
+            if (Regex.IsMatch(line, @"\A(?:bad port '|bad (?:dynamic|local|remote|stdio) forwarding specification '|unknown (?:cipher|mac) type ')", flags))
+                return ArgumentError;
+            return null;
         }
 
         private static string TargetIdentity(AppSettings settings, string target)

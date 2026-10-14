@@ -16,6 +16,7 @@ internal static class SocksRecoveryTests
     private static readonly string Executable = Process.GetCurrentProcess().MainModule.FileName;
     private static int passed;
     private static int assertions;
+    private static string nativeConfigError;
 
     private static int Main(string[] args)
     {
@@ -59,6 +60,10 @@ internal static class SocksRecoveryTests
             Test("disabled single and exhausted permanent fallback retain explicit retry pause", FallbackPermanentPause);
             Test("a foreign valid SOCKS listener is neither adopted nor returned as owned startup", ForeignReadySocks);
             Test("selected and backup profile edits invalidate pending fallback", FallbackEditCancellation);
+            Test("native isolated SSH parser failures pause safely and an explicit corrected retry clears the same alias", NativeSshFailureClassification);
+            Test("invalid structured SSH arguments pause before any child and the same profile can be corrected", PermanentConstructionFailures);
+            Test("config and prelaunch failures leave permitted manual and automatic backups available", PermanentErrorFallback);
+            Test("transport refusals and nonfatal diagnostics remain distinct from key and host-key refusal", SshDiagnosticDistinctions);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
             Console.WriteLine("SOCKS recovery assertions PASS: " + assertions);
             return 0;
@@ -592,6 +597,118 @@ internal static class SocksRecoveryTests
         }
     }
 
+    private sealed class SshDiagnosticReplay : IDisposable
+    {
+        internal readonly string Folder = Path.Combine(Path.GetTempPath(), "progo-ssh-diagnostic-" + Guid.NewGuid().ToString("N"));
+        private readonly string previous = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_DIAGNOSTIC_REPLAY");
+        private readonly string file;
+        internal SshDiagnosticReplay()
+        {
+            Directory.CreateDirectory(Folder); file = Path.Combine(Folder, "replay.json");
+            Environment.SetEnvironmentVariable("PROGO_TEST_SSH_DIAGNOSTIC_REPLAY", file);
+        }
+        internal void Write(string text, bool ready = false)
+        { File.WriteAllText(file, new JavaScriptSerializer().Serialize(new[] { text, ready ? "ready" : "fail" })); }
+        public void Dispose()
+        { Environment.SetEnvironmentVariable("PROGO_TEST_SSH_DIAGNOSTIC_REPLAY", previous); Directory.Delete(Folder, true); }
+    }
+
+    private static void NativeSshFailureClassification()
+    {
+        var configs = new[] { "Host *\n ProGoNotARealOption yes\n", "Host *\n Port banana\n", "Host *\n Hostname\n", "Host *\n", "Host *\n" };
+        var markers = new[] { "bad configuration option", "bad port", "argument", "bad dynamic forwarding specification", "bad configuration option" };
+        for (int i = 0; i < configs.Length; i++) using (var capture = new FallbackCapture()) using (var replay = new SshDiagnosticReplay()) using (var f = new Fixture()) {
+            string config = Path.Combine(replay.Folder, "isolated_config"); File.WriteAllText(config, configs[i], Encoding.ASCII);
+            // -G plus a numeric host and explicit isolated -F never authenticates,
+            // reads the owner's config, resolves a hostname or contacts a server.
+            string args = "-G -F " + SshConnection.Quote(config) + " -o CanonicalizeHostname=no" +
+                (i == 3 ? " -D not-a-forward" : i == 4 ? " -o ProGoNotARealOption=yes" : "") + " 127.0.0.1";
+            var result = DiagnosticProcess.Run(OpenSshClient.Executable, args, 7000, CancellationToken.None);
+            Assert(result.ExitCode != 0 && !result.Truncated && (result.Error ?? "").ToLowerInvariant().Contains(markers[i]), "Native isolated SSH parser did not produce its expected fatal diagnostic: " + i);
+            if (i == 0) nativeConfigError = result.Error;
+            replay.Write(result.Error); f.Settings.SshProfile = "diagnostic";
+            var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            string guidance = i == 3 ? "Параметры SSH-подключения некорректны" : "Ошибка SSH config";
+            Assert(start.Wait(10000) && !start.Result && !f.Proxy.HasOwnedProcess && f.Proxy.StartupError.Contains(guidance), "Native SSH failure was not mapped to fixed actionable guidance: " + i); f.Tick(0);
+            Assert(!f.Proxy.NextRecoveryUtc.HasValue && f.Proxy.RecoveryStatus.Contains("приостановлено") && f.Proxy.RecoveryStatus.Contains(guidance) &&
+                !f.Proxy.StartupError.Contains(replay.Folder) && !f.Proxy.RecoveryStatus.Contains(replay.Folder) && !f.Proxy.StartupError.Contains("progonotarealoption"), "Fatal SSH parser error did not pause safely or exposed raw config diagnostics");
+            f.Tick(600); f.Proxy.SetAutoRestart(false); f.Proxy.SetAutoRestart(true); f.Tick(600);
+            Assert(capture.Count("diagnostic") == 1 && !f.Proxy.HasOwnedProcess, "Timer or preference toggle silently repeated permanent config failure");
+            replay.Write("", true); var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(retry.Wait(10000) && retry.Result && f.Settings.SshProfile == "diagnostic" && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Explicit corrected config retry could not reuse the same SSH alias");
+            Assert(!f.Proxy.RecoveryStatus.Contains("приостановлено") && capture.Count("diagnostic") == 2 && capture.AllBatch(), "Corrected config retained refusal pause or lost noninteractive ownership");
+        }
+    }
+
+    private static SshProfileSetting InvalidStructuredProfile(string field)
+    {
+        var profile = new SshProfileSetting { Target = "argument-id", Server = "ready", User = "ubuntu", Port = 22 };
+        if (field == "port") profile.Port = 70000;
+        else if (field == "user") profile.User = "invalid user";
+        else profile.IdentityFile = "relative-key";
+        return profile;
+    }
+    private static void PermanentConstructionFailures()
+    {
+        foreach (string field in new[] { "port", "user", "key" }) using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+            f.Settings.SshProfile = "argument-id"; f.Settings.SshProfiles.Add(InvalidStructuredProfile(field));
+            var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(start.Wait(10000) && !start.Result && !f.Proxy.HasOwnedProcess && f.Proxy.StartupError.Contains("Параметры SSH-подключения некорректны"), "Invalid structured field did not fail before process launch: " + field); f.Tick(0);
+            Assert(capture.Count() == 0 && !f.Proxy.NextRecoveryUtc.HasValue && f.Proxy.RecoveryStatus.Contains("приостановлено"), "Invalid structured field was launched or repeatedly scheduled: " + field);
+            f.Tick(600); Assert(capture.Count() == 0 && !f.Proxy.HasOwnedProcess, "Timer launched invalid SSH arguments");
+            var fixedSettings = f.Settings.Clone(); fixedSettings.SshProfiles[0].Port = 22; fixedSettings.SshProfiles[0].User = "ubuntu"; fixedSettings.SshProfiles[0].IdentityFile = ""; f.Settings = fixedSettings;
+            var retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(retry.Wait(10000) && retry.Result && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Corrected structured field could not authenticate SOCKS readiness under its same profile ID");
+            Assert(f.Settings.SshProfile == "argument-id" && capture.Count("ready") == 1 && !f.Proxy.RecoveryStatus.Contains("приостановлено"), "Corrected structured profile changed identity or retained a permanent pause");
+        }
+    }
+
+    private static void PermanentErrorFallback()
+    {
+        foreach (bool automatic in new[] { false, true }) foreach (bool construction in new[] { false, true })
+            using (var capture = new FallbackCapture()) using (var replay = new SshDiagnosticReplay()) using (var f = new Fixture()) {
+                if (automatic) { f.Settings.SshProfile = "batch-only"; f.Start(); }
+                replay.Write(nativeConfigError); AddFallback(f, construction ? "argument-id" : "diagnostic", "ready");
+                if (construction) f.Settings.SshProfiles.Add(InvalidStructuredProfile("port"));
+                int before = f.Proxy.AutomaticRestarts;
+                if (automatic) {
+                    f.Crash();
+                    WaitForFallback(delegate { f.Tick(f.Proxy.NextRecoveryUtc.HasValue ? 60 : 0); return f.Proxy.CurrentPid.HasValue && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None); }); f.Ready();
+                } else { var start = f.Proxy.StartTunnelAsync(CancellationToken.None); Assert(start.Wait(10000) && start.Result, "Permanent config/argument failure blocked permitted manual backup"); }
+                Assert(f.Settings.SshProfile == "ready" && f.ProfileSaves == 1 && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Config/argument fallback was published without a proven working backup");
+                Assert(capture.Count("diagnostic") == (construction ? 0 : 1) && capture.Count("ready") == 1 && capture.Count() == (automatic ? 1 : 0) + (construction ? 1 : 2) &&
+                    f.Proxy.AutomaticRestarts == before + (automatic ? (construction ? 1 : 2) : 0), "Config/argument fallback retried an excluded candidate or launched invalid arguments");
+                Assert(!f.Proxy.RecoveryStatus.Contains("приостановлено") && !f.Proxy.NextRecoveryUtc.HasValue && capture.AllBatch(), "Permanent failed primary paused a permitted healthy backup");
+            }
+    }
+
+    private static void SshDiagnosticDistinctions()
+    {
+        var diagnostics = new[] {
+            "ssh: connect to host 127.0.0.1 port 22: Permission denied\n", "Connection closed by UNKNOWN port 65535\n",
+            "C:\\fixture\\isolated_config line 2: Unsupported option UsePrivilegedPort\n",
+            "Warning: Identity file C:\\fixture\\Bad configuration option: progo not accessible: No such file or directory.\n",
+            "fixture-user@127.0.0.1: Permission denied (publickey).\n", "Host key verification failed.\n",
+            "fixture-user@2001:db8::1: Permission denied (publickey).\n", "@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!    @\n" };
+        for (int i = 0; i < diagnostics.Length; i++) using (var capture = new FallbackCapture()) using (var replay = new SshDiagnosticReplay()) using (var f = new Fixture()) {
+            bool warning = i == 2 || i == 3; replay.Write(diagnostics[i], warning); f.Settings.SshProfile = "diagnostic";
+            var start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            Assert(start.Wait(10000) && start.Result == warning, "Diagnostic warning/refusal changed the actual SOCKS startup outcome: " + i);
+            if (warning) {
+                f.Crash(); Assert(f.Proxy.NextRecoveryUtc == f.Now.AddSeconds(5) && !f.Proxy.RecoveryStatus.Contains("приостановлено"), "Nonfatal SSH warning became permanent after its healthy child crashed");
+                f.Tick(5); f.Ready(); Assert(capture.Count("diagnostic") == 2 && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None), "Nonfatal warning prevented automatic SOCKS recovery");
+            } else if (i < 2) {
+                f.Tick(0); Assert(f.Proxy.NextRecoveryUtc == f.Now.AddSeconds(5) && !f.Proxy.RecoveryStatus.Contains("приостановлено") && !f.Proxy.StartupError.Contains("ключ не принят"), "Transport or unknown failure was misclassified as permanent authentication refusal");
+                f.Tick(5); WaitForFallback(() => !f.Proxy.CurrentPid.HasValue); f.Tick(0);
+                Assert(capture.Count("diagnostic") == 2 && f.Proxy.AutomaticRestarts == 1 && f.Proxy.NextRecoveryUtc == f.Now.AddSeconds(10), "Transient diagnostic did not retry the same permitted candidate with unchanged backoff");
+            } else {
+                f.Tick(0); string marker = i == 4 || i == 6 ? "ssh-agent" : "отпечаток";
+                Assert(!f.Proxy.NextRecoveryUtc.HasValue && f.Proxy.RecoveryStatus.Contains("приостановлено") && f.Proxy.StartupError.Contains(marker), "Key and host-key refusal lost their separate actionable guidance");
+                f.Tick(600); Assert(capture.Count("diagnostic") == 1 && !f.Proxy.HasOwnedProcess, "Permanent key/host-key refusal was silently repeated");
+            }
+        }
+    }
+
     private static void StructuredArguments()
     {
         var capture = Path.Combine(Path.GetTempPath(), "progo-argv-" + Guid.NewGuid().ToString("N"));
@@ -997,6 +1114,11 @@ internal static class SocksRecoveryTests
             string path = Path.Combine(launches, pid + "-" + Guid.NewGuid().ToString("N") + ".json");
             File.WriteAllText(path + ".pending", new JavaScriptSerializer().Serialize(new[] { mode, pid, Array.IndexOf(args, "BatchMode=yes") >= 0 ? "batch" : "interactive" }));
             File.Move(path + ".pending", path);
+        }
+        if (mode == "diagnostic") {
+            var replay = new JavaScriptSerializer().Deserialize<string[]>(File.ReadAllText(Environment.GetEnvironmentVariable("PROGO_TEST_SSH_DIAGNOSTIC_REPLAY")));
+            Console.Error.Write(replay[0]);
+            if (replay[1] != "ready") return 255;
         }
         if (mode == "bad-host") { Console.Error.WriteLine("Host key verification failed."); return 1; }
         if (mode == "denied") { Console.Error.WriteLine("Permission denied (publickey)."); return 1; }
