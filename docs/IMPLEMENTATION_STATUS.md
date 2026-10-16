@@ -11,6 +11,9 @@ PGA-01 завершает аудит и mapping; PGA-02A добавляет read
 затем Windows FAIL в Instance fixture на sharing backup; Ubuntu SUCCESS.
 Сохраняется вся история отказа; общая native приёмка **PENDING** до узкой
 коррекции readiness fixture и свежего полного CI. Точный lock owner не измерен.
+Повторный556:37 SCM PASS, затем FAIL старого native ssh-G oracle; его
+exit/stderr не залогированы. Instance-коррекция не достигнута, причинаUNKNOWN.
+Перед свежим прогоном добавляется только безопасная failure диагностика oracle.
 
 Обязательный агентский код и dev-проверки закреплены ДО установщика в F31-R11;
 optional installer opt-in — в F23. PGA-02B deadline/single-flight, запуск службы,

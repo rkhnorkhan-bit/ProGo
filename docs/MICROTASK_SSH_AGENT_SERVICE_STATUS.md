@@ -144,3 +144,55 @@ settled receipt принимается. Старые26 Check/их смысл и 
 ожидается Instance28=26+2. Hard-coded sleeps и blanket retries не добавлены.
 Точный lock owner555 остаётся неизвестен; это исправляет установленный source
 недостаток fixture, не выдаёт предполагаемую причину за измеренный stack.
+
+## Повторный полный CI #556 — FAIL сохраняется
+
+Candidate `8d2618a072e45cb6dcae6f5a66a0f2b6916af7c5`, tree
+`e97d40471b97113c1230ffb718270d7d165bbfdc`, parent
+`c1a716b7cf3183d5bcfe955ab519c6759b8ceb27`. Локальный эквивалент
+`754438856b337cb8c3dd6a4fb7726777557ea089` имеет идентичное tree.
+PR-triggered merge `f576eca52d86bb43eb4de71ee1a546668cfbba04` в main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #556](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38887906839):
+Windows `116930056522` completed FAILURE; Ubuntu `116930056270` completed SUCCESS.
+Ubuntu16/9/46 PASS без skips; actual independent QR/recovery/revoke/reissue/TLS
+достигнуты. Полный UTF-8/LF log52935 bytes, SHA-256
+`2886fbdbd2c3fed5a4ecc2f27309607e9b3a3a361cb7777be14a839657c4c717`.
+Correction source/docs независимый freeze review APPROVE; runtime source
+не менялся после555. Новый run не меняет сохранённый статус FAIL #555.
+
+### Точная граница556
+
+Все37 SCM checks вновь PASS10:43:40.249–10:43:40.267 UTC, independent oracle
+runtime1/startup4/statusError0/configError0; SOCKS41/403 PASS. Затем первый
+старый config oracle `fixture.dotted` FAIL10:43:40.3003191 UTC на условии
+ExitCode==0 && !Truncated. Код выхода, false operand и stderr OpenSSH прежний
+fixture не выводил, поэтому причина **UNKNOWN**. C# frames: ConfigMatchesNative →
+SshConfigAuthority → Main. Desktop summary4028, Instance28 и обе новые file
+regressions, Maintenance/Shutdown/updater/HomeVPN/portable/Python/public/ZIP
+в556 **НЕ ДОСТИГНУТЫ**. PASS из555 им не переносится.
+
+Windows runner image в555/556 одинаковый: windows-2025-vs2026/20261007.264.1;
+разница образа не является объяснением. Между SCM INFO и FAIL около33ms, это
+не подтверждение7000ms timeout. Full Windows UTF-8/LF log710331 bytes/6542 lines,
+SHA-256 `d5c7a176fd42ce34c61f655848126dfbe25242458ece8ac2d32c5d8d7da874c6`.
+Partial screenshots12040489236:4671410 bytes/207 files, SHA-256
+`2658cf9b212cb36244e4241c4dcceb583b980558170051b507897916ebb41f7e`;
+diagnostics12041310173:75207 bytes, SHA-256
+`1cb5dd97faac8be662a80790c81c747d814d60ce1ebcdf22cfcb7ac70dc6966e`.
+Metadata/upload-log согласованы, downloads не выполнялись; полного package нет.
+
+Перед новым прогоном добавляется только diagnostic INFO при failure старого
+изолированного native ssh-G oracle: exit/truncated/lengths и ограниченный,
+очищенный от control chars и fixture/CI profile paths stderr. Условия,
+7000ms budget, argv, количество checks, отсутствие retries и production код
+сохраняются. Это не выдуманная коррекция неизвестной причины556; новый прогон
+должен либо дать полный результат, либо раскрыть фактический отказ.
+
+Diagnostic-only frozen blob `tests/DesktopSshConfigTests.cs`:
+`666721dc04cc47c838b618f444fe4278cebc8b06` (+21 lines). INFO появляется только
+при прежнем failure condition, stdout не выводится, stderr до1024 chars после
+редактирования fixture/CI profile paths и удаления control/line-separator chars.
+Runtime source, argv, Check и7s budget не менялись. Source/root review подтверждает
+эту границу; свежая полная native приёмка остаётся обязательной. Одинаковый image
+не доказывает отдельно hash/version выбранного ssh.exe: они в555/556 не измерены.

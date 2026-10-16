@@ -20,11 +20,32 @@ namespace ProGo
         }
         private static string[] OracleIdentities(string text)
         { return text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries).Where(s => s.StartsWith("identityfile ", StringComparison.Ordinal)).Select(s => s.Substring(13)).ToArray(); }
+        private static string SafeConfigOracleError(string value, string fixtureDirectory)
+        {
+            value = (value ?? "").Replace('\\', '/');
+            var paths = new[] { fixtureDirectory, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) };
+            for (int i = 0; i < paths.Length; i++) {
+                string path = (paths[i] ?? "").Replace('\\', '/').TrimEnd('/');
+                if (path.Length == 0) continue;
+                value = System.Text.RegularExpressions.Regex.Replace(value, System.Text.RegularExpressions.Regex.Escape(path),
+                    i == 0 ? "[fixture]" : "[user-profile]", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+            }
+            var safe = new StringBuilder();
+            foreach (char character in value) {
+                if (safe.Length == 1024) break;
+                safe.Append(Char.IsControl(character) || character == '\u2028' || character == '\u2029' ? ' ' : character);
+            }
+            return safe.ToString();
+        }
         private static SshProfileDiagnosticResult ConfigMatchesNative(string file, string target, string host, string user, string port, out string[] identities)
         {
             // Independent argv and output extraction: no production configuration
             // parser, profile argument builder, owner config or agent is involved.
             var oracle = DiagnosticProcess.Run(OpenSshClient.Executable, "-G -F " + ConfigQuoted(file) + " -o CanonicalizeHostname=no " + target, 7000, CancellationToken.None);
+            if (oracle.ExitCode != 0 || oracle.Truncated)
+                Console.WriteLine("INFO: isolated ssh-G oracle exit=" + oracle.ExitCode + "; truncated=" + oracle.Truncated +
+                    "; stdoutLength=" + (oracle.Output ?? "").Length + "; stderrLength=" + (oracle.Error ?? "").Length +
+                    "; stderr=" + SafeConfigOracleError(oracle.Error, Path.GetDirectoryName(file)));
             Check(oracle.ExitCode == 0 && !oracle.Truncated, "isolated native OpenSSH resolves its configuration oracle: " + target);
             var actual = SshProfileDiagnostics.CheckConfiguration(new SshProfileSetting { Target = target }, CancellationToken.None, OpenSshClient.Executable, 7000, file);
             Check(actual.SshAvailable && actual.SshResolved && String.IsNullOrEmpty(actual.Error), "production SSH configuration check accepts the same isolated native profile: " + target);
