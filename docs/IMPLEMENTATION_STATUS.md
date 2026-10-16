@@ -1,6 +1,54 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: F31-R05, пакет A — счёт остаётся 6/55
+## Текущий checkpoint: F31-R05, пакет B — счёт остаётся 6/55
+
+**16.10.2026 UTC** принята одна Code/Dev микрозадача: startup menu migration
+перенесена в tracked worker после instance.Attach. Весь F31-R05 **PARTIAL**,
+счёт **6/55**, остаток **49=37+12**, общий **23/31**, целые F17/F31 **OPEN**.
+[Доказательства пакета B](MICROTASK_F31_MENU_MIGRATION.md).
+
+Program планирует task у instance owner; worker проверяет installed-путь до
+discovery, portable owner получает no-op. Filesystem/специальные каталоги/COM
+этого пути выполняются в worker. Один task включает dispatch, фактическую
+работу и cleanup. Shutdown отменяет последующие шаги и bounded-await task
+до handoff; timeout сохраняет owner и допускает retry после settlement.
+Dispose отменяет queued/active работу без обещания прервать начатый OS I/O.
+Customized/foreign links и replacement-before-legacy-delete сохранены;
+старые public API и отдельный vault drain budget не меняются.
+
+Functional source `3d37630b562e42afa0fdb3ba8c73c5a3c34044f4`, tree
+`df8e41e36432c0a38b4c2c1cc35628a88fa3b425`; tested merge
+`8a3ebf1c8fa3c2275b29bc0d60cd5d1aa8f4cd96`, неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #552](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38874943052)
+completed **SUCCESS**: Windows `116887612160`, Ubuntu `116887612440`, весь run.
+Desktop **3961=3939+22 PASS**. Новые22 Check: actual MTA ShellLink,
+independent reader, IPC activation, heartbeat, single-flight/100 повторов,
+raw pending shutdown/retry, queued shutdown/Dispose, active Dispose и
+custom/foreign/portable/invalid-path byte guards. Прежние условия и budgets
+сохранены; только новые main/compiler записи добавлены.
+
+SOCKS41/403, foundation165/134/325/110/211/151/274/112, expiry130/restart237,
+Instance26/Maintenance95/Shutdown47/updater package5, весь Test-ProGo,
+HomeVPN975/portable90 PASS. Windows Python22 PASS +2 прежних Linux skips,
+все7 HTTP cases; Ubuntu16/9/46 без skips, independent QR. Public264/44 PASS.
+Source/tests/wiring и полные native результаты сверены независимыми reviewers.
+
+Artifacts: screenshots `12035851808`, diagnostics `12035811904`, runtime
+folder `12035831921`, ZIP `12036315419`. Metadata/runner size/digest/head
+совпали; runner289 screenshots/44 runtime files. Inner ZIP524992 bytes,
+wrapper521730. Отдельный download/hash/visual этих артефактов не заявлен.
+F17-R01 disabled startup caption gap сохраняется; нового visual/contrast/
+DPI/Narrator PASS нет.
+
+Ранний bootstrap/settings, constructor folder discovery и scoped shortcuts/
+launch ещё впереди. Package PENDING, Live NOT_CHECKED; цельный installer и
+устройства владельца не проверяются. PR draft/unmerged; merge/release не
+выполнялись. После tested source — ровно3 Markdown evidence-документа;
+application/tests/scripts/server/workflow идентичны source. Исходные55=43+12,
+6 принятых ID и утверждённые требования сохранены.
+
+## Предыдущий checkpoint: F31-R05, пакет A — счёт остаётся 6/55
 
 **14.10.2026 UTC** приняты две малые Code/Dev микрозадачи внутри всё ещё
 **PARTIAL F31-R05**. Новый ID55 не закрыт: **6/55**, осталось **49=37+12**;
