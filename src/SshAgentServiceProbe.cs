@@ -11,11 +11,12 @@ namespace ProGo
     {
         internal readonly SshAgentProbeState State;
         internal readonly SshAgentServiceSnapshot Snapshot;
-        internal SshAgentProbeResult(SshAgentProbeState state, SshAgentServiceSnapshot snapshot = null)
-        { State = state; Snapshot = snapshot; }
+        internal readonly SshAgentServiceStartResult StartAttempt;
+        internal SshAgentProbeResult(SshAgentProbeState state, SshAgentServiceSnapshot snapshot = null, SshAgentServiceStartResult startAttempt = null)
+        { State = state; Snapshot = snapshot; StartAttempt = startAttempt; }
         internal string ToDisplay()
         {
-            if (State == SshAgentProbeState.Completed) return Snapshot.ToDisplay();
+            if (State == SshAgentProbeState.Completed) return StartAttempt == null ? Snapshot.ToDisplay() : StartAttempt.ToDisplay();
             if (State == SshAgentProbeState.Busy)
                 return "Предыдущая проверка службы ssh-agent ещё выполняется. Дождитесь её завершения и повторите проверку.";
             if (State == SshAgentProbeState.TimedOut)
@@ -24,30 +25,40 @@ namespace ProGo
         }
     }
 
-    // One process-wide read, including native cleanup. Cancelling or timing out a
+    // One process-wide read OR start, including native cleanup. Cancelling or timing out a
     // waiter never releases this slot while an OS call is still running.
     internal sealed class SshAgentServiceProbe
     {
         internal const int DefaultTimeoutMilliseconds = 3000;
-        internal static readonly SshAgentServiceProbe Shared = new SshAgentServiceProbe(token => SshAgentServiceStatus.Read(token));
+        internal static readonly SshAgentServiceProbe Shared = new SshAgentServiceProbe(
+            token => SshAgentServiceStatus.Read(token), token => SshAgentServiceStart.TryStart(token));
         private readonly object gate = new object();
         private readonly Func<CancellationToken, SshAgentServiceSnapshot> inspect;
+        private readonly Func<CancellationToken, SshAgentServiceStartResult> start;
         private Attempt active;
         private readonly Task idle = Task.FromResult(false);
 
         private sealed class Attempt : IDisposable
         {
             private readonly object lifetime = new object();
-            private readonly CancellationTokenSource source = new CancellationTokenSource();
+            private readonly CancellationTokenSource source;
             private bool disposed;
             internal readonly CancellationToken Token;
             internal Task<SshAgentProbeResult> Work;
-            internal Attempt() { Token = source.Token; }
+            internal Attempt(CancellationToken ownerToken)
+            {
+                // Link before scheduling: cancellation cannot be missed in the
+                // gap between worker launch and the waiter's registration.
+                source = CancellationTokenSource.CreateLinkedTokenSource(ownerToken);
+                Token = source.Token;
+            }
+            internal void ArmStartDeadline(int milliseconds)
+            { lock (lifetime) { if (!disposed) source.CancelAfter(milliseconds); } }
             internal void Cancel()
             {
                 lock (lifetime) {
                     if (disposed) return;
-                    // Production SCM reads only poll this token between calls.
+                    // Production SCM operations only poll this token between calls.
                     // A failed callback must not replace a caller's timeout/cancel.
                     try { source.Cancel(); } catch (AggregateException) { }
                 }
@@ -56,18 +67,20 @@ namespace ProGo
             { lock (lifetime) { if (!disposed) { disposed = true; source.Dispose(); } } }
         }
 
-        internal SshAgentServiceProbe(Func<CancellationToken, SshAgentServiceSnapshot> inspect)
-        { if (inspect == null) throw new ArgumentNullException("inspect"); this.inspect = inspect; }
+        internal SshAgentServiceProbe(Func<CancellationToken, SshAgentServiceSnapshot> inspect,
+            Func<CancellationToken, SshAgentServiceStartResult> start = null)
+        { if (inspect == null) throw new ArgumentNullException("inspect"); this.inspect = inspect; this.start = start; }
         internal Task PendingWork
         { get { lock (gate) return active == null ? idle : active.Work; } }
 
-        private SshAgentProbeResult Inspect(Attempt attempt)
+        private SshAgentProbeResult Inspect(Attempt attempt, bool starting)
         {
             try {
                 attempt.Token.ThrowIfCancellationRequested();
-                var snapshot = inspect(attempt.Token);
+                var startResult = starting && start != null ? start(attempt.Token) : null;
+                var snapshot = starting ? startResult == null ? null : startResult.Snapshot : inspect(attempt.Token);
                 attempt.Token.ThrowIfCancellationRequested();
-                return new SshAgentProbeResult(snapshot == null ? SshAgentProbeState.Unavailable : SshAgentProbeState.Completed, snapshot);
+                return new SshAgentProbeResult(snapshot == null ? SshAgentProbeState.Unavailable : SshAgentProbeState.Completed, snapshot, startResult);
             } catch (Exception) {
                 // The abandoned worker always settles to data; raw exceptions,
                 // native paths and late cancellation cannot become unobserved faults.
@@ -75,7 +88,12 @@ namespace ProGo
             } finally { attempt.Dispose(); }
         }
 
-        internal async Task<SshAgentProbeResult> ReadAsync(int timeoutMilliseconds, CancellationToken token)
+        internal Task<SshAgentProbeResult> ReadAsync(int timeoutMilliseconds, CancellationToken token)
+        { return RunAsync(false, timeoutMilliseconds, token); }
+        internal Task<SshAgentProbeResult> StartAsync(int timeoutMilliseconds, CancellationToken token)
+        { return RunAsync(true, timeoutMilliseconds, token); }
+
+        private async Task<SshAgentProbeResult> RunAsync(bool starting, int timeoutMilliseconds, CancellationToken token)
         {
             if (timeoutMilliseconds < 1 || timeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("timeoutMilliseconds");
             token.ThrowIfCancellationRequested();
@@ -84,11 +102,12 @@ namespace ProGo
             lock (gate) {
                 token.ThrowIfCancellationRequested();
                 if (active != null && !active.Work.IsCompleted) return new SshAgentProbeResult(SshAgentProbeState.Busy);
-                attempt = new Attempt();
+                attempt = new Attempt(token);
                 try {
+                    if (starting) attempt.ArmStartDeadline((int)Math.Max(1, timeoutMilliseconds - watch.ElapsedMilliseconds));
                     // A slow local SCM call occupies at most one dedicated worker,
                     // never the caller/UI thread or a growing set of pool workers.
-                    attempt.Work = Task.Factory.StartNew(() => Inspect(attempt), CancellationToken.None,
+                    attempt.Work = Task.Factory.StartNew(() => Inspect(attempt, starting), CancellationToken.None,
                         TaskCreationOptions.LongRunning, TaskScheduler.Default);
                     active = attempt;
                 } catch (Exception) { attempt.Dispose(); return new SshAgentProbeResult(SshAgentProbeState.Unavailable); }

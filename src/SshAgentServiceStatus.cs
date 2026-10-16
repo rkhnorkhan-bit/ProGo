@@ -10,7 +10,8 @@ namespace ProGo
         ContinuePending = 5, PausePending = 6, Paused = 7, Missing = 8
     }
     internal enum SshAgentStartMode { Unknown = -1, Boot = 0, System = 1, Automatic = 2, Manual = 3, Disabled = 4 }
-    internal enum SshAgentServiceStage { OpenManager, OpenStatusService, QueryStatus, OpenConfigService, QueryConfigSize, AllocateConfiguration, QueryConfig }
+    internal enum SshAgentServiceStage { OpenManager, OpenStatusService, QueryStatus, OpenConfigService, QueryConfigSize, AllocateConfiguration, QueryConfig,
+        OpenStartManager, OpenStartService, QueryBeforeStart, StartService, QueryAfterStart }
     internal enum SshAgentServiceErrorKind { NativeFailure, InvalidData, Unavailable }
 
     internal sealed class SshAgentServiceError
@@ -179,7 +180,7 @@ namespace ProGo
             internal uint Tag;
             internal IntPtr Dependencies, ServiceStartName, DisplayName;
         }
-        private sealed class WindowsNative : ISshAgentServiceNative
+        internal sealed class WindowsNative : ISshAgentServiceNative
         {
             public IntPtr OpenManager(uint access, out int error)
             {

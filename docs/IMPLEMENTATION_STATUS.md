@@ -1,6 +1,18 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-02B — счёт остаётся6/55
+## Текущий candidate: SSH-agent PGA-03A — счёт остаётся6/55
+
+**16.10.2026 UTC** подготовлена узкая первая часть PGA-03: typed запуск службы
+с текущими правами, повторная проверка на том же handle, отдельные факты
+StartInvoked/StartAccepted/наблюдаемое состояние. Общий probe координирует read
+и start до полного cleanup; cancellation связывается до scheduling, у start
+есть собственный deadline token. Режим запуска, ACL и elevation не меняются.
+[Протокол](MICROTASK_SSH_AGENT_SERVICE_START.md). Native CI PENDING; PASS пока нет.
+PGA-03B подключит операцию к жизненному циклу старта приложения; Program/context
+в этой микропорции не меняются. Весь PGA-03/PGA-02/F31-R11 остаётся открыт.
+Счёт6/55, остаток49=37+12, общий23/31; Package PENDING, Live NOT_CHECKED.
+
+## Предыдущий checkpoint: SSH-agent PGA-02B — счёт остаётся6/55
 
 **16.10.2026 UTC** узкий PGA-02B **Code/Dev PASS**:3s wait/cancel и общий probe
 удерживают одну SCM операцию вместе с cleanup до raw settlement. Timeout/Busy/
