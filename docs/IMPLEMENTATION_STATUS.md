@@ -1,6 +1,60 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint остатка 55: F31-R04 — 6/55
+## Текущий checkpoint: F31-R05, пакет A — счёт остаётся 6/55
+
+**14.10.2026 UTC** приняты две малые Code/Dev микрозадачи внутри всё ещё
+**PARTIAL F31-R05**. Новый ID55 не закрыт: **6/55**, осталось **49=37+12**;
+общий **23/31**, целые F17/F31 **OPEN**.
+[Список55](REMAINING_SUBTASKS_8.md), [доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md).
+
+Startup snapshot окна настроек читается одним owned worker после Shown.
+Pending/failed не меняет регистрацию и позволяет сохранять другие настройки;
+Save/deferred/error/Close/Dispose защищены от поздней публикации и потери draft.
+TrayCloseExplained сохраняется отдельно, field-only latest merge под commitGate;
+не перезаписывает SettingsWork/IntegrationWork и unknown JSON. Duplicate/failure/
+retry/Dispose учтены, bounded shutdown запрещает handoff до settlement raw writer.
+Ранние Program bootstrap/settings и scoped shortcut/launch ещё впереди.
+
+Functional source `9959ce782743b766255336b315aec9a4f2d2a77b`, tree
+`0b748966bc29e31b6c20e96f64a540a3bc2db85b`; tested merge
+`84aa0a99e324af0738f0b60b688e2220d782c4c2` в неизменённый main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #551](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38624788536)
+completed SUCCESS: Windows `116061076420`, Ubuntu `116061075819`, весь run.
+Desktop3939=3910+29, новые17 startup+12 tray PASS; прежние3910 условия и budgets
+сохранены, только7+1 semantic waits. SOCKS41/403 неизменны и PASS.
+Foundation165/134/325/110/211/151/274/112, expiry130/restart237,
+Instance26/Maintenance95/Shutdown47/update package5, HomeVPN975/portable90 PASS.
+Windows22 PASS +2 прежних Linux module skips; все7 HTTP tests выполнены.
+Ubuntu16/9/46 без skips, real QR; public262 sources/44 release files PASS.
+Source/tests/native reviews APPROVE; root и reviewers сверили completed logs,
+run/jobs и artifact metadata. Inner runtime ZIP523627 bytes, wrapper520266.
+
+Первый [CI #550](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38622998398)
+остаётся FAIL: combined Close no-late assertion после14 новых startup PASS,
+точный false operand не залогирован; Dispose/tray/Desktopsummary/tail не достигнуты.
+Source не менялся: исправлен baseline нового fixture с preClose на post-teardown,
+сохранены exact preClose bytes, добавлены null snapshot/no new events/BooleanINFO.
+Свежий551 фактически показывает preNoticeSame=False/postNoticeSame=True и
+целые файлы/нулевой snapshot/отсутствие поздних событий в обоих Close/Dispose.
+Это новое измерение551, не присвоение точного false operand истории550.
+
+Screenshots `11923384928` скачан:6438755 bytes,289 файлов, SHA-256
+`3d84625badf4e9b551c6883c19a3b30923071fe2056e0c963535532d3c665b53`
+совпал с metadata/runner. Root просмотрел3 startup PNG: pending/read-failed/
+minimum; инструкции и действия доступны, вертикальная прокрутка сохранена.
+**Открытое visual замечание F17-R01:** тусклая подпись disabled startup CheckBox
+на тёмном фоне. Full contrast/DPI/Narrator и остальные286 PNG не приняты.
+Diagnostics `11923454997`, runtime folder `11925050128`, ZIP `11923484945`
+uploaded; metadata/runner digests совпали, их отдельный download/hash не заявлен.
+
+Package PENDING, Live NOT_CHECKED; цельный setup/updater всех31 и устройства
+владельца не проверяются. PR draft/unmerged, merge/release не выполнялись.
+После tested source меняются ровно3 Markdown evidence-документа;
+application/tests/scripts/server/workflow идентичны source. Исходные55=43+12,
+6 принятых ID и требования сохранены; новый UI gap учтён внутри открытого F17.
+
+## Предыдущий checkpoint остатка 55: F31-R04 — 6/55
 
 Принят один ограниченный Code/Dev подпункт **14.10.2026 UTC**, выполненный
 тремя малыми микрозадачами. Осталось **49/55**:37 до цельного установщика +12
