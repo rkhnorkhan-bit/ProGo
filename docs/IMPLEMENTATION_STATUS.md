@@ -1,6 +1,43 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: F31-R05, пакет B — счёт остаётся 6/55
+## Текущая микрозадача: F31-R05, пакет C — проверка PENDING
+
+**16.10.2026 UTC** реализовано получение Programs/Startup/UserProfile после
+Shown формы настроек в двух независимых owned workers. Native приёмка ещё
+PENDING. Счёт **6/55**, остаток **49=37+12**, общий **23/31**; весь R05
+**PARTIAL**, целые F17/F31 **OPEN**.
+[Доказательства C](MICROTASK_F31_SETTINGS_FOLDERS.md).
+
+Constructor сохраняет captured inputs и portable guard, не вызывает folder
+provider. Startup manager/snapshot публикуются или откладываются вместе на UI;
+неизвестный startup не изменяется при Save. Diagnostic SSH config path имеет
+отдельные pending/error состояния и не блокирует startup или Save. Invalid
+empty/relative/root-relative/drive-relative пути не получают guessed cwd path.
+Close/Dispose запрещают позднюю публикацию; оба raw tasks сохраняются до
+реального settlement без живого UI pump, CTS освобождается после обоих.
+
+Functional source `3b2bf894434ae47796f949b36385e5c10f2a4f6e`, tree
+`8038162b56d056ce69f7a13c60c468c99d09f561`; merge
+`a8cc554c7c573ee98ca1a5ff6232ae9938dad562`, main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #553](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38879266336)
+Первый run FAILURE: Windows `116901741841` FAILURE, Ubuntu `116901742090`
+SUCCESS. FAIL на12-м новом Check после11 PASS; точный false operand не
+залогирован. Исправлен oracle только нового fixture: captured endpoint ДО
+Save/Close вместо disposed TextBox.Text, добавлены безопасные booleans;
+все30 Check/budgets и production сохранены. Новый полный CI пока PENDING.
+Планируется Desktop3991=3961+30 и291 screenshot files, пока не PASS.
+Source/tests/wiring/PENDING evidence independent APPROVE; старые tests/budgets
+сохранены, whitespace/public266/0 PASS. После первой попытки меняются только
+новый fixture и3 Markdown; production/compiler/main сохранены.
+
+Ранние bootstrap/settings, scoped shortcuts/launch и полный R05 ещё впереди.
+Package PENDING, Live NOT_CHECKED; цельный installer и устройства владельца
+не проверяются. F17-R01 disabled startup caption gap сохраняется; новые
+pending/error PNG ещё не просмотрены и visual PASS не заявлен. PR draft/unmerged;
+merge/release не выполняются. Требования и исходные55=43+12 сохранены.
+
+## Предыдущий checkpoint: F31-R05, пакет B — счёт остаётся 6/55
 
 **16.10.2026 UTC** принята одна Code/Dev микрозадача: startup menu migration
 перенесена в tracked worker после instance.Attach. Весь F31-R05 **PARTIAL**,

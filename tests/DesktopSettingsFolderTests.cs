@@ -99,9 +99,10 @@ namespace ProGo
                     form.Hide(); form.Show(); Application.DoEvents();
                     Check(programs == 1 && profile == 1 && Object.ReferenceEquals(startupWork, form.StartupWork) && Object.ReferenceEquals(profileWork, form.ProfilePathWork),
                         "showing the same settings form does not duplicate either folder worker");
-                    endpoint.Text = "https://pending-folders.example.org/check"; ((Button)form.AcceptButton).PerformClick();
+                    endpoint.Text = "https://pending-folders.example.org/check"; string expectedEndpoint = endpoint.Text;
+                    ((Button)form.AcceptButton).PerformClick();
                     WaitAsyncSettings(form.SaveWork); PumpUntil(() => !form.Visible);
-                    Check(form.DialogResult == DialogResult.OK && settings.Current.TestEndpoint == endpoint.Text && registration.SequenceEqual(File.ReadAllBytes(fixture.Link)) &&
+                    Check(form.DialogResult == DialogResult.OK && settings.Current.TestEndpoint == expectedEndpoint && registration.SequenceEqual(File.ReadAllBytes(fixture.Link)) &&
                         !startupWork.IsCompleted && !form.IsStartupPending && Field(form, "startupSnapshot") == null,
                         "real Save before default folder discovery preserves the registered shortcut and retains the raw held worker");
                     byte[] saved = File.ReadAllBytes(AppPaths.SettingsPath); string closedNotice = notice.Text; bool closedChecked = launch.Checked;
@@ -141,9 +142,10 @@ namespace ProGo
                         !form.IsStartupPending && endpoint.Text == "https://deferred-folders.example.org/check" &&
                         ((Label)Field(form, "saveError")).Text.Contains("Fixture folder Save failed") && registration.SequenceEqual(File.ReadAllBytes(fixture.Link)),
                         "failed Save publishes the matching real discovery owner and snapshot without losing the unsaved draft");
+                    string expectedEndpoint = endpoint.Text;
                     launch.Checked = false; form.SaveRequestedAsync = null; ((Button)form.AcceptButton).PerformClick();
                     WaitAsyncSettings(form.SaveWork); PumpUntil(() => !form.Visible);
-                    Check(form.DialogResult == DialogResult.OK && !File.Exists(fixture.Link) && settings.Current.TestEndpoint == endpoint.Text,
+                    Check(form.DialogResult == DialogResult.OK && !File.Exists(fixture.Link) && settings.Current.TestEndpoint == expectedEndpoint,
                         "real Save retry after deferred discovery applies the registration change using its matching snapshot owner");
                     fixture.Register();
                 } finally {
@@ -174,8 +176,13 @@ namespace ProGo
                     Check(!form.IsProfilePathPending && path.Text == fixture.Config && path.ReadOnly && endpoint.Text == "https://loaded-folders.example.org/check" &&
                         launch.Enabled && launch.Checked && profileCalls == 1,
                         "released UserProfile publishes its absolute SSH path without replacing the unsaved settings draft");
+                    string expectedEndpoint = endpoint.Text;
                     launch.Checked = false; ((Button)form.AcceptButton).PerformClick(); WaitAsyncSettings(form.SaveWork); PumpUntil(() => !form.Visible);
-                    Check(form.DialogResult == DialogResult.OK && !File.Exists(fixture.Link) && settings.Current.TestEndpoint == endpoint.Text,
+                    bool dialogOk = form.DialogResult == DialogResult.OK, linkMissing = !File.Exists(fixture.Link);
+                    bool savedEndpointSame = settings.Current.TestEndpoint == expectedEndpoint, disposedEndpointSame = endpoint.Text == expectedEndpoint;
+                    Console.WriteLine("INFO: default folder Save: dialogOk=" + dialogOk + "; linkMissing=" + linkMissing +
+                        "; savedEndpointSame=" + savedEndpointSame + "; disposedEndpointSame=" + disposedEndpointSame + "; pathReadOnly=" + path.ReadOnly);
+                    Check(dialogOk && linkMissing && savedEndpointSame,
                         "real Save uses the atomically discovered shortcut manager and snapshot to remove only the chosen login registration");
                 } finally { release.Set(); WaitAsyncSettings(form.StartupWork); WaitAsyncSettings(form.ProfilePathWork); }
             }
@@ -202,8 +209,9 @@ namespace ProGo
                 }
                 if (save) {
                     var endpoint = (TextBox)Field(form, "endpoint"); endpoint.Text = "https://failed-folders.example.org/check";
+                    string expectedEndpoint = endpoint.Text;
                     ((Button)form.AcceptButton).PerformClick(); WaitAsyncSettings(form.SaveWork); PumpUntil(() => !form.Visible);
-                    Check(form.DialogResult == DialogResult.OK && settings.Current.TestEndpoint == endpoint.Text && registration.SequenceEqual(File.ReadAllBytes(fixture.Link)),
+                    Check(form.DialogResult == DialogResult.OK && settings.Current.TestEndpoint == expectedEndpoint && registration.SequenceEqual(File.ReadAllBytes(fixture.Link)),
                         "failed default startup folder discovery permits a real unrelated Save and preserves exact login shortcut bytes");
                 } else form.Close();
             }
