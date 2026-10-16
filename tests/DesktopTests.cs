@@ -110,6 +110,7 @@ namespace ProGo
                     StartupSettingsWorkflow(settings);
                     StartupSnapshotAsyncWorkflow(settings);
                     TrayPreferenceAsyncWorkflow();
+                    StartupMigrationWorkflow(settings);
                     DashboardKeyboard(settings);
                     DashboardLayout(settings);
                     SettingsAutomationLayout(settings);

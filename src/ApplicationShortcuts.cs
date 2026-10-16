@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using System.Threading;
 
 namespace ProGo
 {
@@ -119,32 +120,47 @@ namespace ProGo
         }
 
         public bool MigrateMenu()
+        { return MigrateMenu(CancellationToken.None); }
+
+        internal bool MigrateMenu(CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
             string legacy = Path.Combine(menu, "ProGo Status.lnk");
             if (!Matches(legacy, "--show")) return false;
+            token.ThrowIfCancellationRequested();
             string primary = Path.Combine(menu, "ProGo.lnk");
             // An unrelated/customized primary must not make us delete the only
             // usable old launcher. Create/verify the replacement first.
-            EnsureLink(primary, "--show");
+            EnsureLink(primary, "--show", token);
             if (!Matches(primary, "--show")) throw new IOException("Main shortcut could not be verified.");
             if (!Matches(legacy, "--show")) return false;
+            token.ThrowIfCancellationRequested();
             File.Delete(legacy);
             return true;
         }
 
         public static bool MigrateForExecutable(string currentExecutable, string installDirectory, string programsDirectory, string startupDirectory)
+        { return MigrateForExecutable(currentExecutable, installDirectory, programsDirectory, startupDirectory, CancellationToken.None); }
+
+        internal static bool MigrateForExecutable(string currentExecutable, string installDirectory, string programsDirectory, string startupDirectory, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
             if (!String.Equals(Path.GetFullPath(currentExecutable), Path.Combine(Path.GetFullPath(installDirectory), "ProGo.exe"), StringComparison.OrdinalIgnoreCase)) return false;
-            return new ApplicationShortcuts(installDirectory, programsDirectory, startupDirectory).MigrateMenu();
+            return new ApplicationShortcuts(installDirectory, programsDirectory, startupDirectory).MigrateMenu(token);
         }
 
         private byte[] EnsureLink(string path, string arguments)
+        { return EnsureLink(path, arguments, CancellationToken.None); }
+
+        private byte[] EnsureLink(string path, string arguments, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
             CheckLocation(path);
             if (File.Exists(path)) {
                 if (!Matches(path, arguments)) throw new IOException("An unrelated or customized shortcut already exists. It was preserved.");
                 return null; // An existing link was not created by this operation.
             }
+            token.ThrowIfCancellationRequested();
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             string temporary = Path.Combine(Path.GetDirectoryName(path), "progo-" + Guid.NewGuid().ToString("N") + ".lnk");
             object native = null;
@@ -156,9 +172,11 @@ namespace ProGo
                 link.SetDescription("ProGo");
                 string icon = Path.Combine(root, "ProGo.ico");
                 if (File.Exists(icon)) link.SetIconLocation(icon, 0);
+                token.ThrowIfCancellationRequested();
                 ((IPersistFile)native).Save(temporary, true);
                 byte[] bytes = File.ReadAllBytes(temporary);
                 // Do not overwrite a shortcut created concurrently.
+                token.ThrowIfCancellationRequested();
                 File.Move(temporary, path);
                 return bytes;
             } finally {

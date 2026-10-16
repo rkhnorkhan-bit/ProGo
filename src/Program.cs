@@ -58,12 +58,6 @@ namespace ProGo
                     }
 
                     SafeLog.Info("ProGo started.");
-                    try {
-                        ApplicationShortcuts.MigrateForExecutable(Application.ExecutablePath, AppPaths.Root,
-                            Environment.GetFolderPath(Environment.SpecialFolder.Programs),
-                            Environment.GetFolderPath(Environment.SpecialFolder.Startup));
-                    } catch { SafeLog.Info("Start menu shortcut migration skipped; existing shortcuts preserved."); }
-
                     var showStatusOnStartup = HasArg(args, "--show") || HasArg(args, "/show") || HasArg(args, "show");
 
                     using (var settingsService = new SettingsService())
@@ -81,6 +75,7 @@ namespace ProGo
 
                         context.StartAutomation();
                         instance.Attach(context.RequestShowStatus, context.RequestShutdown, context.CompleteShutdown, context.CancelShutdown);
+                        context.StartShortcutMigrationAsync(Application.ExecutablePath, AppPaths.Root);
                         context.StartStartupBackupAsync();
 
                         Application.Run(context);

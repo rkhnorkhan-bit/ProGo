@@ -33,6 +33,11 @@ namespace ProGo
         internal Task IntegrationWork { get; private set; }
         internal Task TrayPreferenceWork { get; private set; }
         private readonly CancellationTokenSource trayPreferenceCancellation = new CancellationTokenSource();
+        private readonly object shortcutMigrationGate = new object();
+        private CancellationTokenSource shortcutMigrationCancellation;
+        private TaskCompletionSource<Task> shortcutMigrationSource;
+        private bool shortcutMigrationScheduled, shortcutMigrationStarted;
+        internal Task ShortcutMigrationWork { get; private set; }
         private readonly Func<UpdateCheckForm> createUpdateForm;
         private UpdateCheckForm updateForm;
         private readonly bool ownsHealth;
@@ -114,6 +119,7 @@ namespace ProGo
             };
             IntegrationWork = Task.FromResult(false);
             TrayPreferenceWork = Task.FromResult(false);
+            ShortcutMigrationWork = Task.FromResult(false);
             proxy = proxyService;
             cliProxy = cliProxyService;
             appConsumers = new AppProxyConsumers(cliProxy, settings);
@@ -246,6 +252,61 @@ namespace ProGo
                 catch (InvalidOperationException) { }
             }
             else ShowStatus();
+        }
+        // Program calls this only after instance.Attach. The shared task includes
+        // both its owner-dispatch reservation and the actual worker/COM cleanup.
+        internal Task StartShortcutMigrationAsync(string currentExecutable, string installDirectory, string programsDirectory = null, string startupDirectory = null, Action<CancellationToken> beforeMigration = null)
+        {
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
+                throw new InvalidOperationException("Миграция ярлыков запускается владельцем интерфейса.");
+            lock (shortcutMigrationGate) {
+                if (shortcutMigrationScheduled) return ShortcutMigrationWork;
+                if (closing || disposed || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
+                shortcutMigrationScheduled = true;
+                var cancellation = new CancellationTokenSource(); shortcutMigrationCancellation = cancellation;
+                var token = cancellation.Token;
+                var source = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+                shortcutMigrationSource = source; ShortcutMigrationWork = source.Task.Unwrap();
+                try { activationDispatcher.BeginInvoke(new Action(delegate {
+                    lock (shortcutMigrationGate) {
+                        if (source.Task.IsCompleted) return;
+                        if (closing || disposed || shutdownPrepared || shutdownPreparing || token.IsCancellationRequested) {
+                            CancelShortcutMigration(); return;
+                        }
+                        shortcutMigrationStarted = true;
+                        source.TrySetResult(Task.Run(delegate {
+                            try {
+                                token.ThrowIfCancellationRequested();
+                                // Only the installed executable may inspect or
+                                // mutate the installed application's shortcuts.
+                                if (!String.Equals(Path.GetFullPath(currentExecutable), Path.Combine(Path.GetFullPath(installDirectory), "ProGo.exe"), StringComparison.OrdinalIgnoreCase)) return;
+                                if (beforeMigration != null) beforeMigration(token);
+                                token.ThrowIfCancellationRequested();
+                                string programs = programsDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+                                string startup = startupDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+                                ApplicationShortcuts.MigrateForExecutable(currentExecutable, installDirectory, programs, startup, token);
+                            } catch (OperationCanceledException) { }
+                            catch (Exception) { SafeLog.Info("Start menu shortcut migration skipped; existing shortcuts preserved."); }
+                            finally { cancellation.Dispose(); }
+                        }));
+                    }
+                })); }
+                catch (InvalidOperationException) { CancelShortcutMigration(); }
+                return ShortcutMigrationWork;
+            }
+        }
+        private void CancelShortcutMigration()
+        {
+            CancellationTokenSource cancellation; bool queued;
+            lock (shortcutMigrationGate) {
+                cancellation = shortcutMigrationCancellation;
+                queued = !shortcutMigrationStarted;
+                if (queued && shortcutMigrationSource != null) shortcutMigrationSource.TrySetResult(Task.FromResult(false));
+            }
+            if (cancellation != null) {
+                try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+                if (queued) cancellation.Dispose();
+            }
         }
         private void DashboardClosing(object sender, FormClosingEventArgs e)
         {
@@ -1014,6 +1075,7 @@ namespace ProGo
                 CancelVault();
                 if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
                 CancelPortable();
+                CancelShortcutMigration();
                 var vault = Task.WhenAll(VaultWork ?? Task.FromResult(false), DailyWork);
                 if (vault != null && !vault.IsCompleted && await Task.WhenAny(vault, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != vault)
                     throw new InvalidOperationException("Операция хранилища ещё не завершена. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
@@ -1028,6 +1090,10 @@ namespace ProGo
                 await sealedWork.ConfigureAwait(false);
                 if (dailyRuntime.HasPendingExpiry)
                     throw new InvalidOperationException("Не удалось завершить операцию хранилища. ProGo остаётся запущенным; проверьте доступность файла и повторите выход или обслуживание.");
+                var shortcuts = ShortcutMigrationWork;
+                if (!shortcuts.IsCompleted && await Task.WhenAny(shortcuts, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != shortcuts)
+                    throw new InvalidOperationException("Миграция ярлыков ещё не завершена: Windows или накопитель не завершили текущую операцию. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
+                await shortcuts.ConfigureAwait(false);
                 var portable = PortableWork;
                 if (portable != null && !portable.IsCompleted && await Task.WhenAny(portable, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) != portable)
                     throw new InvalidOperationException("Перенос VPN ещё не остановлен: накопитель не завершил текущую операцию. ProGo остаётся запущенным. Дождитесь завершения переноса и повторите выход или обслуживание.");
@@ -1570,6 +1636,7 @@ namespace ProGo
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
                 lock (integrationLifetimeGate) closing = true;
+                CancelShortcutMigration();
                 trayPreferenceCancellation.Cancel(); trayPreferenceCancellation.Dispose();
                 UnregisterVaultDateEvents(); dailyRuntime.Close();
                 integrationWaitCancellation.Cancel();
