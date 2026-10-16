@@ -27,7 +27,10 @@ namespace ProGo
         private readonly CheckBox autoStart = new CheckBox();
         private readonly CheckBox autoLaunch = new CheckBox();
         private readonly Label startupNotice = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
-        private readonly ApplicationShortcuts startupShortcuts;
+        private ApplicationShortcuts startupShortcuts;
+        private readonly bool startupAvailable;
+        private readonly string startupInstallDirectory;
+        private readonly Func<Environment.SpecialFolder, string> folderPathProvider;
         private ApplicationShortcuts.StartupSnapshot startupSnapshot;
         private readonly Action<CancellationToken> beforeStartupRead;
         private readonly CancellationTokenSource startupReadCancellation = new CancellationTokenSource();
@@ -35,6 +38,12 @@ namespace ProGo
         private bool startupReadStarted, startupPending, startupResultDeferred;
         private int startupGeneration;
         private ApplicationShortcuts.StartupSnapshot deferredStartupSnapshot;
+        private ApplicationShortcuts deferredStartupShortcuts;
+        private readonly TextBox sshConfigPath = new TextBox { ReadOnly = true, Text = "Определяем путь…" };
+        private bool profilePathStarted, profilePathPending = true;
+        private int profilePathGeneration;
+        internal Task ProfilePathWork { get; private set; }
+        internal bool IsProfilePathPending { get { return profilePathPending; } }
         internal Task StartupWork { get; private set; }
         internal bool IsStartupPending { get { return startupPending; } }
         private Button startupSettingsButton;
@@ -74,15 +83,18 @@ namespace ProGo
 
 
         public SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section = SettingsSection.Automation, ApplicationShortcuts shortcuts = null, Action openStartupSettings = null, Action<CancellationToken> beforeStartupRead = null)
+            : this(settingsService, section, shortcuts, openStartupSettings, beforeStartupRead, null, null, null) { }
+
+        internal SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section, ApplicationShortcuts shortcuts, Action openStartupSettings, Action<CancellationToken> beforeStartupRead, Func<Environment.SpecialFolder, string> folderPathProvider, string currentExecutable, string installDirectory)
         {
             service = settingsService;
             this.beforeStartupRead = beforeStartupRead;
-            StartupWork = Task.FromResult(false);
+            this.folderPathProvider = folderPathProvider ?? new Func<Environment.SpecialFolder, string>(Environment.GetFolderPath);
+            StartupWork = ProfilePathWork = Task.FromResult(false);
             startupShortcuts = shortcuts;
-            if (startupShortcuts == null && String.Equals(Application.ExecutablePath,
-                System.IO.Path.Combine(AppPaths.Root, "ProGo.exe"), StringComparison.OrdinalIgnoreCase))
-                startupShortcuts = new ApplicationShortcuts(AppPaths.Root,
-                    Environment.GetFolderPath(Environment.SpecialFolder.Programs), Environment.GetFolderPath(Environment.SpecialFolder.Startup));
+            startupInstallDirectory = installDirectory ?? AppPaths.Root;
+            startupAvailable = shortcuts != null || String.Equals(currentExecutable ?? Application.ExecutablePath,
+                System.IO.Path.Combine(startupInstallDirectory, "ProGo.exe"), StringComparison.OrdinalIgnoreCase);
             Text = "Настройки · ProGo";
             ClientSize = new Size(900, 700); MinimumSize = new Size(850, 650);
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 1, RowCount = 5 };
@@ -173,7 +185,8 @@ namespace ProGo
             var diagnostic = FormTable(Page(tabs, "Диагностика"));
             AddLabeled(diagnostic, 0, "Сайт проверки", endpoint);
             AddLabeled(diagnostic, 1, "Журнал приложения", new TextBox { ReadOnly = true, Text = AppPaths.LogPath });
-            AddLabeled(diagnostic, 2, "Файл подключений SSH", new TextBox { ReadOnly = true, Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "config") });
+            AddLabeled(diagnostic, 2, "Файл подключений SSH", sshConfigPath);
+            sshConfigPath.AccessibleDescription = "Определяем путь к файлу SSH config. Остальные настройки доступны.";
             var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
             AddSettingsRow(diagnostic, 4, av);
             currentDiagnostic.Name = "currentDiagnosticSettings";
@@ -218,7 +231,7 @@ namespace ProGo
             currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
             RefreshCurrentValues();
             FormClosed += delegate { currentValuesTimer.Stop(); CancelStartupRead(); };
-            Shown += delegate { RefreshCurrentValues(); currentValuesTimer.Start(); StartStartupRead(); };
+            Shown += delegate { RefreshCurrentValues(); currentValuesTimer.Start(); StartStartupRead(); StartProfilePathRead(); };
             Shown += delegate {
                 if (section == SettingsSection.Windows) {
                     autoWindows.Focus();
@@ -381,8 +394,8 @@ namespace ProGo
         {
             if (disposing) {
                 CancelStartupRead();
-                if (!startupReadStarted) startupReadCancellation.Dispose();
-                else StartupWork.ContinueWith(delegate { startupReadCancellation.Dispose(); },
+                if (!startupReadStarted && !profilePathStarted) startupReadCancellation.Dispose();
+                else Task.WhenAll(StartupWork, ProfilePathWork).ContinueWith(delegate { startupReadCancellation.Dispose(); },
                     CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
                 var cancellation = saveCancellation;
                 if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
@@ -430,7 +443,7 @@ namespace ProGo
             autoSwitchProfile.Checked = s.AutoSwitchSshProfile;
             autoStart.Checked = s.AutoStartSocks;
             autoLaunch.Enabled = false;
-            if (startupShortcuts == null) startupNotice.Text = "Эта копия запущена вне папки установки ProGo. Настройка автозапуска доступна в установленной программе.";
+            if (!startupAvailable) startupNotice.Text = "Эта копия запущена вне папки установки ProGo. Настройка автозапуска доступна в установленной программе.";
             else {
                 startupPending = true;
                 startupNotice.Text = "Проверяем автозапуск… Остальные настройки можно изменить и сохранить; автозапуск пока не изменится.";
@@ -463,19 +476,23 @@ namespace ProGo
 
         private void StartStartupRead()
         {
-            if (startupShortcuts == null || startupReadStarted || startupOwnerClosed.Task.IsCompleted) return;
+            if (!startupAvailable || startupReadStarted || startupOwnerClosed.Task.IsCompleted) return;
             startupReadStarted = true;
             StartupWork = ReadStartupAsync(++startupGeneration, startupReadCancellation.Token);
         }
         private async Task ReadStartupAsync(int generation, CancellationToken token)
         {
             ApplicationShortcuts.StartupSnapshot result = null;
+            ApplicationShortcuts discoveredShortcuts = startupShortcuts;
             try {
                 result = await Task.Run(delegate {
                     token.ThrowIfCancellationRequested();
                     if (beforeStartupRead != null) beforeStartupRead(token);
                     token.ThrowIfCancellationRequested();
-                    var snapshot = startupShortcuts.ReadStartup();
+                    if (discoveredShortcuts == null) discoveredShortcuts = new ApplicationShortcuts(startupInstallDirectory,
+                        GetAbsoluteFolderPath(Environment.SpecialFolder.Programs, token), GetAbsoluteFolderPath(Environment.SpecialFolder.Startup, token));
+                    token.ThrowIfCancellationRequested();
+                    var snapshot = discoveredShortcuts.ReadStartup();
                     token.ThrowIfCancellationRequested(); return snapshot;
                 }).ConfigureAwait(false);
             } catch (OperationCanceledException) { if (token.IsCancellationRequested) return; }
@@ -487,16 +504,16 @@ namespace ProGo
                     try {
                         if (IsDisposed || Disposing || startupOwnerClosed.Task.IsCompleted ||
                             token.IsCancellationRequested || generation != startupGeneration) return;
-                        if (savePending) { deferredStartupSnapshot = result; startupResultDeferred = true; }
-                        else PublishStartupResult(result);
+                        if (savePending) { deferredStartupShortcuts = discoveredShortcuts; deferredStartupSnapshot = result; startupResultDeferred = true; }
+                        else PublishStartupResult(discoveredShortcuts, result);
                     } finally { delivered.TrySetResult(true); }
                 }));
             } catch (InvalidOperationException) { delivered.TrySetResult(false); }
             await Task.WhenAny(delivered.Task, startupOwnerClosed.Task).ConfigureAwait(false);
         }
-        private void PublishStartupResult(ApplicationShortcuts.StartupSnapshot snapshot)
+        private void PublishStartupResult(ApplicationShortcuts discoveredShortcuts, ApplicationShortcuts.StartupSnapshot snapshot)
         {
-            startupPending = false; startupSnapshot = snapshot;
+            startupPending = false; startupShortcuts = discoveredShortcuts; startupSnapshot = snapshot;
             autoLaunch.Enabled = snapshot != null && !savePending;
             if (snapshot != null) {
                 autoLaunch.Checked = snapshot.Registered;
@@ -505,9 +522,59 @@ namespace ProGo
             } else startupNotice.Text = "Не удалось проверить автозапуск: ярлык недоступен или изменён вне ProGo. Он сохранён без изменений. Проверьте параметры Windows и снова откройте это окно.";
             autoLaunch.AccessibleDescription = startupNotice.Text;
         }
+        private string GetAbsoluteFolderPath(Environment.SpecialFolder folder, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            string path = folderPathProvider(folder);
+            token.ThrowIfCancellationRequested();
+            if (String.IsNullOrWhiteSpace(path)) throw new System.IO.IOException("Windows folder path is unavailable.");
+            string root = System.IO.Path.GetPathRoot(path);
+            if (String.IsNullOrEmpty(root)) throw new System.IO.IOException("Windows folder path is relative.");
+            string absolute = System.IO.Path.GetFullPath(path);
+            // Reject drive/root-relative paths instead of guessing a current
+            // directory. Redirected UNC folders retain their own root.
+            if (!String.Equals(root, System.IO.Path.GetPathRoot(absolute), StringComparison.OrdinalIgnoreCase))
+                throw new System.IO.IOException("Windows folder path is not fully qualified.");
+            return absolute;
+        }
+        private void StartProfilePathRead()
+        {
+            if (profilePathStarted || startupOwnerClosed.Task.IsCompleted) return;
+            profilePathStarted = true;
+            ProfilePathWork = ReadProfilePathAsync(++profilePathGeneration, startupReadCancellation.Token);
+        }
+        private async Task ReadProfilePathAsync(int generation, CancellationToken token)
+        {
+            string result = null;
+            try {
+                result = await Task.Run(delegate {
+                    string profile = GetAbsoluteFolderPath(Environment.SpecialFolder.UserProfile, token);
+                    token.ThrowIfCancellationRequested();
+                    return System.IO.Path.Combine(profile, ".ssh", "config");
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) { if (token.IsCancellationRequested) return; }
+            catch { /* A diagnostic path failure must not affect startup or Save. */ }
+            if (token.IsCancellationRequested || startupOwnerClosed.Task.IsCompleted) return;
+            var delivered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            try {
+                BeginInvoke(new Action(delegate {
+                    try {
+                        if (IsDisposed || Disposing || startupOwnerClosed.Task.IsCompleted ||
+                            token.IsCancellationRequested || generation != profilePathGeneration) return;
+                        profilePathPending = false;
+                        sshConfigPath.Text = result ?? "Не удалось определить путь к SSH config.";
+                        sshConfigPath.AccessibleDescription = result == null ? sshConfigPath.Text :
+                            "Только чтение. Путь к файлу SSH config можно выделить и скопировать.";
+                    } finally { delivered.TrySetResult(true); }
+                }));
+            } catch (InvalidOperationException) { delivered.TrySetResult(false); }
+            await Task.WhenAny(delivered.Task, startupOwnerClosed.Task).ConfigureAwait(false);
+        }
         private void CancelStartupRead()
         {
             startupGeneration++; startupPending = false; startupResultDeferred = false;
+            deferredStartupShortcuts = null; deferredStartupSnapshot = null;
+            profilePathGeneration++; profilePathPending = false;
             try { startupReadCancellation.Cancel(); } catch (ObjectDisposedException) { }
             startupOwnerClosed.TrySetResult(true);
         }
@@ -659,7 +726,7 @@ namespace ProGo
                 saveCancellation = null; saveButton.Enabled = true; settingsTabs.Enabled = true;
                 cancelButton.DialogResult = DialogResult.Cancel; cancelButton.Text = "Отменить изменения";
                 if (error != null) {
-                    if (startupResultDeferred) { startupResultDeferred = false; PublishStartupResult(deferredStartupSnapshot); }
+                    if (startupResultDeferred) { startupResultDeferred = false; PublishStartupResult(deferredStartupShortcuts, deferredStartupSnapshot); }
                     ShowSaveError(error); return;
                 }
                 DialogResult = DialogResult.OK; Close();
