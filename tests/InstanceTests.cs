@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
+using System.Web.Script.Serialization;
 
 namespace ProGo
 {
@@ -76,6 +78,88 @@ namespace ProGo
             }
             catch (IOException) { return 0; }
         }
+        private static string ReadProxySnapshot(string path)
+        {
+            // Keep the opened version immutable while allowing the application to
+            // atomically replace its receipt without this fixture blocking it.
+            using (var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete))
+            using (var reader = new StreamReader(input, Encoding.UTF8, true)) return reader.ReadToEnd();
+        }
+        private static bool TryCaptureProxyBaseline(string settingsPath, string backupPath, int expectedPort,
+            out string settingsText, out string backupText, out int sharingCode)
+        {
+            settingsText = backupText = null; sharingCode = 0;
+            string stage = "settings";
+            try {
+                string settings = ReadProxySnapshot(settingsPath);
+                if (SettingsService.DeserializeSettings(settings).HttpProxyPort != expectedPort) return false;
+                stage = "receipt";
+                string backup = ReadProxySnapshot(backupPath);
+                var saved = new JavaScriptSerializer().Deserialize<Dictionary<string, string>>(backup);
+                string owned; int port;
+                if (saved == null || CliProxyEnvironmentService.Names.Any(name => !saved.ContainsKey(name)) ||
+                    !saved.TryGetValue("ProGoAppliedPort", out owned) || !Int32.TryParse(owned, out port) || port < 1 || port > 65535)
+                    throw new IOException("Instance fixture received an invalid proxy ownership receipt.");
+                if (port != expectedPort || CliProxyEnvironmentService.ReadTypedCorrections(saved).Count != 0) return false;
+                stage = "settings verification";
+                if (ReadProxySnapshot(settingsPath) != settings) return false;
+                stage = "receipt verification";
+                if (ReadProxySnapshot(backupPath) != backup) return false;
+                settingsText = settings; backupText = backup; return true;
+            } catch (IOException ex) {
+                int code = ex.HResult & 0xffff;
+                if (code != 32 && code != 33) throw;
+                sharingCode = code;
+                Console.WriteLine("INFO: instance baseline " + stage + " waits for native sharing/lock code " + code + ".");
+                return false;
+            }
+        }
+        private static void ProxyBaselineNativeReadiness()
+        {
+            string root = Path.Combine(Path.GetTempPath(), "ProGo-instance-baseline-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try {
+                string settingsPath = Path.Combine(root, "settings.json"), backupPath = Path.Combine(root, "receipt.json");
+                var settings = AppSettings.Defaults(); settings.HttpProxyPort = 1887;
+                var json = new JavaScriptSerializer(); string settingsBytes = json.Serialize(settings);
+                File.WriteAllText(settingsPath, settingsBytes);
+                var receipt = CliProxyEnvironmentService.Names.ToDictionary(name => name, name => (string)null);
+                receipt["ProGoAppliedPort"] = "1887"; receipt["FixtureVersion"] = "old";
+                string oldReceipt = json.Serialize(receipt); File.WriteAllText(backupPath, oldReceipt);
+                receipt["FixtureVersion"] = "new"; string newReceipt = json.Serialize(receipt);
+                string capturedSettings, capturedBackup; int sharing;
+                using (var held = new FileStream(backupPath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete)) {
+                    string staged = backupPath + ".staging"; File.WriteAllText(staged, newReceipt);
+                    File.Replace(staged, backupPath, null);
+                    string heldBytes;
+                    using (var reader = new StreamReader(held, Encoding.UTF8, true, 1024, true)) heldBytes = reader.ReadToEnd();
+                    bool ready = TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing);
+                    Check(ready && sharing == 0 && capturedSettings == settingsBytes && capturedBackup == newReceipt && heldBytes == oldReceipt,
+                        "instance baseline reader permits real atomic receipt replacement while its old snapshot remains immutable");
+                }
+                receipt["ProGoAppliedPort"] = "1888"; File.WriteAllText(backupPath, json.Serialize(receipt));
+                bool wrongPortRejected = !TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing) &&
+                    capturedSettings == null && capturedBackup == null && sharing == 0;
+                receipt["ProGoAppliedPort"] = "1887";
+                receipt["ProGoPendingWindowsCorrections"] = json.Serialize(new[] { new WindowsProxyFieldBackup {
+                    Name = "ProxyServer", Pending = true,
+                    Original = WindowsProxyValue.From("fixture", Microsoft.Win32.RegistryValueKind.ExpandString),
+                    Applied = WindowsProxyValue.From("fixture", Microsoft.Win32.RegistryValueKind.String)
+                } });
+                File.WriteAllText(backupPath, json.Serialize(receipt));
+                bool pendingRejected = !TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing) &&
+                    capturedSettings == null && capturedBackup == null && sharing == 0;
+                File.WriteAllText(backupPath, newReceipt);
+                bool locked;
+                using (var writer = new FileStream(backupPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                    locked = !TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing) &&
+                        (sharing == 32 || sharing == 33) && capturedSettings == null && capturedBackup == null;
+                Wait(() => TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing),
+                    "released settled proxy receipt");
+                Check(wrongPortRejected && pendingRejected && locked && sharing == 0 && capturedSettings == settingsBytes && capturedBackup == newReceipt,
+                    "instance readiness rejects wrong port pending corrections and a native writer lock before accepting its released complete receipt");
+            } finally { Directory.Delete(root, true); }
+        }
         private static void Stop(Process process)
         {
             if (process == null) return;
@@ -96,6 +180,7 @@ namespace ProGo
                 throw new Exception("Instance fixture is not isolated");
             try
             {
+                ProxyBaselineNativeReadiness();
                 AppPaths.EnsureDirectories(); File.Copy(args[0], installed);
                 string scriptRoot = args[1];
                 string powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
@@ -163,10 +248,15 @@ namespace ProGo
                 configured.TestEndpoint = "http://127.0.0.1:1/";
                 using (var settings = new SettingsService()) settings.Save(configured);
                 primary = Start(installed, "");
-                Wait(() => !primary.HasExited && AppliedPort() > 0, "actual primary proxy startup");
-                int port = AppliedPort();
-                string settingsBefore = File.ReadAllText(AppPaths.SettingsPath);
-                string backupBefore = File.ReadAllText(CliProxyEnvironmentService.BackupPath);
+                int port = 0, sharingCode;
+                string settingsBefore = null, backupBefore = null;
+                Wait(delegate {
+                    if (primary.HasExited) return false;
+                    int applied = AppliedPort(); string observedSettings, observedBackup;
+                    if (applied == 0 || !TryCaptureProxyBaseline(AppPaths.SettingsPath, CliProxyEnvironmentService.BackupPath,
+                        applied, out observedSettings, out observedBackup, out sharingCode) || AppliedPort() != applied) return false;
+                    port = applied; settingsBefore = observedSettings; backupBefore = observedBackup; return true;
+                }, "actual primary proxy startup with a settled ownership baseline");
                 Check(Exit(Start(installed, "--show")) == 0, "actual repeated launch activates the existing application");
                 Wait(() => Windows(primary.Id).Length == 1, "primary dashboard activation");
                 var window = Windows(primary.Id).Single(); ShowWindow(window, 6);
@@ -174,8 +264,8 @@ namespace ProGo
                 Check(Exit(Start(installed, "--show")) == 0, "repeat show exits without another UI owner");
                 Wait(() => !IsIconic(window), "dashboard restored from minimized state");
                 Check(Windows(primary.Id).Length == 1 && Process.GetProcessesByName("ProGo").Count(p => !p.HasExited) == 1, "one persistent process and one dashboard remain");
-                Check(!primary.HasExited && AppliedPort() == port && File.ReadAllText(AppPaths.SettingsPath) == settingsBefore &&
-                    File.ReadAllText(CliProxyEnvironmentService.BackupPath) == backupBefore,
+                Check(!primary.HasExited && AppliedPort() == port && ReadProxySnapshot(AppPaths.SettingsPath) == settingsBefore &&
+                    ReadProxySnapshot(CliProxyEnvironmentService.BackupPath) == backupBefore,
                     "exiting secondary launch preserves the primary proxy and its original settings backup");
                 Stop(primary); primary = null;
                 replacement = Start(installed, "--show");

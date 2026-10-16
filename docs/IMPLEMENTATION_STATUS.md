@@ -7,7 +7,10 @@
 [протокол микрозадачи](MICROTASK_SSH_AGENT_SERVICE_STATUS.md).
 PGA-01 завершает аудит и mapping; PGA-02A добавляет read-only typed snapshot
 службы с раздельными runtime/startup и status/config errors. Код и новые37
-проверок прошли независимый source review; native CI ещё **PENDING**.
+проверок прошли независимый source review. CI #555:37 новых и Desktop4028 PASS,
+затем Windows FAIL в Instance fixture на sharing backup; Ubuntu SUCCESS.
+Сохраняется вся история отказа; общая native приёмка **PENDING** до узкой
+коррекции readiness fixture и свежего полного CI. Точный lock owner не измерен.
 
 Обязательный агентский код и dev-проверки закреплены ДО установщика в F31-R11;
 optional installer opt-in — в F23. PGA-02B deadline/single-flight, запуск службы,
