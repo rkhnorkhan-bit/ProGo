@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.IO;
 using System.Text;
-using System.Runtime.InteropServices;
-using Microsoft.Win32;
 
 namespace ProGo
 {
@@ -25,6 +23,7 @@ namespace ProGo
         public string IdentityAgent { get; set; }
         public string IdentitiesOnly { get; set; }
         public string AgentState { get; set; }
+        internal SshAgentServiceSnapshot AgentService;
         public string KeyStatus { get; set; }
         public bool SshAvailable { get; set; }
         public bool SshResolved { get; set; }
@@ -66,7 +65,7 @@ namespace ProGo
                 (IdentityAgent == "none" ? "Использование агента отключено этим SSH-профилем." : "Указан отдельный агент; его доступность проверяется при подключении."));
             if (!String.IsNullOrWhiteSpace(IdentitiesOnly)) sb.AppendLine("IdentitiesOnly: " + IdentitiesOnly);
             sb.AppendLine("Для зашифрованного ключа: загрузите его через ssh-add в обычном терминале. Passphrase вводится только в OpenSSH.");
-            sb.AppendLine("Если агент остановлен: с согласия владельца запустите Start-Service ssh-agent в PowerShell администратора.");
+            sb.AppendLine("Если агент остановлен: с согласия владельца попробуйте Start-Service ssh-agent в обычном PowerShell. При отказе в доступе обратитесь к владельцу ПК; запуск зависит от имеющихся прав.");
             sb.AppendLine("Если агент отключён: с согласия владельца выполните Set-Service ssh-agent -StartupType Manual, затем Start-Service ssh-agent. Без прав администратора обратитесь к владельцу ПК.");
             sb.AppendLine("Наличие файла или работающего агента ещё не подтверждает аутентификацию на VPS.");
             if (!String.IsNullOrWhiteSpace(Error))
@@ -103,7 +102,8 @@ namespace ProGo
             var result = CheckConfiguration(profile, token, executable, timeoutMs);
             if (String.IsNullOrWhiteSpace(result.Target)) return result;
             token.ThrowIfCancellationRequested();
-            result.AgentState = SshAgentDiagnostics.Read();
+            result.AgentService = SshAgentServiceStatus.Read(token);
+            result.AgentState = result.AgentService.ToDisplay();
             result.AgentKeys = SshAgentDiagnostics.Keys(OpenSshClient.AgentExecutable(result.ExecutablePath), token);
             token.ThrowIfCancellationRequested(); return result;
         }
@@ -269,32 +269,13 @@ namespace ProGo
         }
         internal static string Describe(uint state, bool disabled)
         {
-            if (state == 4) return "Running — запущен; загрузка нужного ключа ещё не проверена.";
-            if (disabled) return "Disabled — отключён; включение требует согласия владельца и прав администратора.";
-            if (state == 1) return "Stopped — остановлен; запуск требует согласия владельца и прав администратора.";
-            return "Служба меняет состояние; повторите проверку.";
+            return new SshAgentServiceSnapshot {
+                RuntimeState = SshAgentServiceStatus.RuntimeState(state), RawRuntimeState = state,
+                StartMode = disabled ? SshAgentStartMode.Disabled : SshAgentStartMode.Unknown
+            }.ToDisplay();
         }
         internal static string Read()
-        {
-            IntPtr manager = IntPtr.Zero, service = IntPtr.Zero;
-            try {
-                manager = OpenSCManager(null, null, 1);
-                if (manager == IntPtr.Zero) return "Не удалось прочитать состояние; проверьте права пользователя.";
-                service = OpenService(manager, "ssh-agent", 4);
-                if (service == IntPtr.Zero) return Marshal.GetLastWin32Error() == 1060 ? "Служба отсутствует; проверьте установку Windows OpenSSH." : "Состояние не подтверждено; проверьте права пользователя.";
-                Status status; if (!QueryServiceStatus(service, out status)) return "Не удалось прочитать состояние службы.";
-                bool disabled = false;
-                using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\ssh-agent"))
-                    if (key != null) disabled = Object.Equals(key.GetValue("Start"), 4);
-                return Describe(status.State, disabled);
-            } catch { return "Состояние агента не подтверждено; проверьте службу Windows OpenSSH."; }
-            finally { if (service != IntPtr.Zero) CloseServiceHandle(service); if (manager != IntPtr.Zero) CloseServiceHandle(manager); }
-        }
-        [StructLayout(LayoutKind.Sequential)] private struct Status { internal uint Type, State, Controls, ExitCode, ServiceExitCode, Checkpoint, WaitHint; }
-        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern IntPtr OpenSCManager(string machine, string database, uint access);
-        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern IntPtr OpenService(IntPtr manager, string name, uint access);
-        [DllImport("advapi32.dll", SetLastError = true)] private static extern bool QueryServiceStatus(IntPtr service, out Status status);
-        [DllImport("advapi32.dll")] private static extern bool CloseServiceHandle(IntPtr handle);
+        { return SshAgentServiceStatus.Read(CancellationToken.None).ToDisplay(); }
     }
 
 }

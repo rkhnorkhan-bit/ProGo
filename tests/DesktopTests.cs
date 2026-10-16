@@ -136,6 +136,7 @@ namespace ProGo
                     StructuredSshProfiles(settings);
                     VisualPolish(settings);
                     SshDiagnostics();
+                    SshAgentServiceWorkflow();
                     SshConfigAuthority();
                     RouteDiagnostics(settings);
                     AsyncCliStartup(settings);

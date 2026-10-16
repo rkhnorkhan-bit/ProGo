@@ -1,6 +1,25 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: F31-R05, пакет C — счёт остаётся 6/55
+## Текущий checkpoint: SSH-agent PGA-01/02A — native PENDING
+
+**16.10.2026 UTC** спецификация владельца включена в существующие F31/F23:
+[канонические требования](SSH_AGENT_AUTOSTART_SPEC.md),
+[протокол микрозадачи](MICROTASK_SSH_AGENT_SERVICE_STATUS.md).
+PGA-01 завершает аудит и mapping; PGA-02A добавляет read-only typed snapshot
+службы с раздельными runtime/startup и status/config errors. Код и новые37
+проверок прошли независимый source review; native CI ещё **PENDING**.
+
+Обязательный агентский код и dev-проверки закреплены ДО установщика в F31-R11;
+optional installer opt-in — в F23. PGA-02B deadline/single-flight, запуск службы,
+matching нужного ключа, interactive ssh-add и отдельные UI действия впереди.
+Весь PGA-02 не PASS. Настройки службы/ключи/ACL не меняются этой микрозадачей.
+
+Счёт **6/55**, осталось **49=37+12**, общий **23/31**; F31/F17 **OPEN**,
+R05 **PARTIAL**, Codex shortcut ownership gap открыт. Package **PENDING**,
+Live **NOT_CHECKED**. Устройства владельца не проверяются. Новые PGA номера —
+микродекомпозиция внутри прежних55=43+12; прежние принятые критерии сохранены.
+
+## Предыдущий checkpoint: F31-R05, пакет C — счёт остаётся 6/55
 
 **16.10.2026 UTC** принята одна Code/Dev микрозадача: Programs/Startup и
 UserProfile формы настроек получаются в двух независимых workers после Shown.
