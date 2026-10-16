@@ -10,9 +10,7 @@
 
 PGA-02B: общий bounded SCM probe и lifecycle окна приняты в Code/Dev на source `c045b6f199fc6360a99c29f79954e76ed013cf8d`, completed [CI #558](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38897865756):32 новых checks, Desktop4060, Windows/Ubuntu SUCCESS ([протокол](MICROTASK_SSH_AGENT_BOUNDED_WAIT.md)). Весь PGA-02/R11 ещё открыт до startup интеграции/следующих работ; счёт6/55 и все55 исходных ID сохраняются.
 
-PGA-03A candidate: typed StartService с текущими правами и общий read/start slot;
-нативная dev-проверка PENDING ([протокол](MICROTASK_SSH_AGENT_SERVICE_START.md)).
-Startup hook будет отдельным PGA-03B. F31-R11/PGA-03 не закрыты, новых PASS55 нет.
+PGA-03A — узкий **Code/Dev PASS** на source `4a7a6a9fec80a17321f6ffc0ac4fa5fdf6fedd6a`, completed [CI #559](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38971701412):66 новых start/rights/race/cancel/ownership checks, Desktop4126, обе native jobs SUCCESS ([протокол](MICROTASK_SSH_AGENT_SERVICE_START.md)). Это internal start API и общий read/start slot; startup hook/lifetime — отдельный PGA-03B. Реальный StartService только с invalid handle, рабочие start-сценарии на native boundary fixtures; не live приёмка. F31-R11/PGA-03/PGA-02 не закрыты, новых PASS55 нет.
 
 
 Один подпункт здесь — отдельный проверяемый результат с приёмкой. Тестовые случаи, каждая форма, каждый DPI, поля настройки и исторические буквенные stage IDs отдельными единицами не считаются. Крупный подпункт исполняется несколькими небольшими микрозадачами по прежнему ограничению объёма;55 не означает 55 обращений к ассистенту. Дополнительные обнаруженные дефекты фиксируются отдельно, поэтому это версия декомпозиции текущего остатка, а не обещание неизменного объёма будущей работы.
