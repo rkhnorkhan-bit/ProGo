@@ -1,18 +1,41 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-02B — native PENDING
+## Текущий checkpoint: SSH-agent PGA-02B — счёт остаётся6/55
 
-**16.10.2026 UTC** реализуется общий bounded service probe:3s wait/cancel,
-одна незавершённая SCM операция до фактического cleanup, честные Busy/TimedOut/
-Unavailable без выдуманного состояния службы. Окно не зависит от UI pump при
-Close/Dispose и не публикует результат после queued Cancel. Ожидаются33 новых
-checks, Desktop4061; native результат пока **PENDING**, PASS не присвоен.
+**16.10.2026 UTC** узкий PGA-02B **Code/Dev PASS**:3s wait/cancel и общий probe
+удерживают одну SCM операцию вместе с cleanup до raw settlement. Timeout/Busy/
+Unavailable не подменяют runtime snapshot; повторный read допускается после
+settlement старого owner, до этого возвращается Busy.
+Окно Close/Dispose не зависит от UI pump после CheckWork, queued Cancel подавляет
+готовый результат, старый Run не очищает CTS нового Retry.
 [Протокол](MICROTASK_SSH_AGENT_BOUNDED_WAIT.md).
 
-Это read-only PGA-02B внутри F31-R11; startup hook/Start — следующий PGA-03,
-ключи/UI/installer впереди. Счёт **6/55**,49=37+12,23/31; F31/F17 OPEN,
-R05 PARTIAL, Package PENDING, Live NOT_CHECKED. Прежние findings и FAIL history
-сохранены. Устройства владельца, служба и ключи не меняются.
+Tested source `c045b6f199fc6360a99c29f79954e76ed013cf8d`, tree
+`ff79158a863fd2d761d82f9751e8500852a26f75`, merge
+`f9cd955abf97511a08ebc3972b7389d1ca180cac` в main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #558](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38897865756)
+completed SUCCESS: Windows116962589654/Ubuntu116962590018, весь run.
+Новые32 PASS, Desktop4060=4028+32, прежние37 SCM и native oracle, SOCKS41/403,
+Instance28/Maintenance95/Shutdown47/updater5 и весь Test-ProGo PASS. HomeVPN975/
+portable90, public273/44, Windows Python22+2 прежних skips/7 HTTP cases;
+Ubuntu16/9/46 без skips с independent QR. Первоначальные33 были статической
+ошибкой подсчёта subject Check, native счёт32 подтверждён, тестовый код не менялся.
+
+Самостоятельный source/native review, без нового независимого agent review.
+Screenshot ZIP скачан и hash проверен:6536706 bytes/293 entries. Просмотрены3
+fresh timeout/busy/pending PNG, текст/действия доступны в показанном размере;
+другие290 и полный DPI/contrast/Narrator не приняты. Для остальных3 artifacts
+проверены только metadata/runner. Все4 heads/digests совпали; inner ZIP531557.
+
+Следующий PGA-03 — startup hook/попытка запуска в имеющихся правах без UAC;
+readiness выбранного ключа/interactive/UI/installer ещё впереди. Весь PGA-02
+PARTIAL до startup интеграции, F31-R11/F31/F17 OPEN, R05 PARTIAL. Счёт **6/55**,
+49=37+12,23/31;55unique=43+12 и прежние accepted IDs сохранены. Codex ownership,
+disabled caption и UNKNOWN native ssh-G556 остаются findings. Package PENDING,
+Live NOT_CHECKED. После source — только4 MD; runtime/tests/scripts/server/workflow
+идентичны tested source. Устройства владельца и service/key/ACL не менялись;
+PR draft/unmerged, merge/release не выполнялись.
 
 ## Предыдущий checkpoint: SSH-agent PGA-01/02A — счёт остаётся6/55
 

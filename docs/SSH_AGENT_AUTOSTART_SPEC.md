@@ -133,21 +133,21 @@ VPS; конкретные адреса, пользователи и пути н�
 PGA-01 audit/mapping и узкий PGA-02A приняты в Code/Dev на source13b98cce,
 completed [CI #557](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38889610234),
 37 SCM checks/полный Windows и Ubuntu SUCCESS ([доказательства](MICROTASK_SSH_AGENT_SERVICE_STATUS.md)).
-PGA-02B реализуется отдельной микропорцией: bounded waiting, общий slot до полного cleanup и lifecycle диагностического окна; native CI пока PENDING ([протокол](MICROTASK_SSH_AGENT_BOUNDED_WAIT.md)). Весь PGA-02 ещё не PASS; startup hook и Start остаются в следующем PGA-03. Истории
+PGA-02B — Code/Dev PASS на source c045b6f1, completed CI558:32 новых checks, Desktop4060, обе native jobs SUCCESS ([протокол](MICROTASK_SSH_AGENT_BOUNDED_WAIT.md)). Приняты bounded waiting, общий slot до полного cleanup и lifecycle диагностического окна. Весь PGA-02 ещё PARTIAL до startup интеграции; startup hook и Start остаются в следующем PGA-03. Истории
 FAIL555/556 сохранены, причина556 UNKNOWN. Прежние принятые F31-R01–R04
 сохраняют собственные границы приёмки.
 
 | PGA | Проверяемый результат | Состояние | Связь с текущими 55 ID |
 | --- | --- | --- | --- |
 | PGA-01 | Аудит SSH startup, установщика, диагностики и службы; точки интеграции. | **Аудит выполнен** по текущему исходному коду; исторические сведения ПК/VPS не перепроверены. | F31-R11; требования installer — F23-R01/R02/R06. |
-| PGA-02 | Безопасная проверка службы, структурированная диагностика, deadlines и отмена. | **Частично, работа продолжается:** PGA-02A типизированный read-only status — Code/Dev PASS в CI557; PGA-02B — bounded ожидание и single-flight. Весь PGA-02 ещё не принят. | F31-R11 до установщика; фактический агент — F31-R12. |
+| PGA-02 | Безопасная проверка службы, структурированная диагностика, deadlines и отмена. | **Частично, работа продолжается:** PGA-02A типизированный read-only status — Code/Dev PASS в CI557; PGA-02B bounded ожидание/single-flight и lifecycle окна — Code/Dev PASS в CI558. Startup интеграция остаётся в следующем PGA-03; весь PGA-02 ещё не принят. | F31-R11 до установщика; фактический агент — F31-R12. |
 | PGA-03 | Неблокирующая попытка запуска с имеющимися правами, без elevation, с обработкой запретов. | **Не реализовано.** | F31-R11 до установщика; F31-R12. |
 | PGA-04 | Опциональная настройка Automatic и запуск в установщике по явному opt-in. | **Не реализовано.** Политика OFF по умолчанию закреплена выше. | F23-R01/R02/R06; UI — F16-R02/F17-R01; установленное обновление — F23-R07. |
 | PGA-05 | Effective alias/config/IdentityFile и готовность выбранного метода аутентификации. | **Частично.** Shared arguments и native config уже приняты в F31-R04; связь конкретного ключа с readiness ещё впереди. Весь PGA-05 не PASS. | Существующий F31-R04; оставшаяся реализация — F31-R11; переносимость — F31-R13. |
 | PGA-06 | Обнаружение нужного ключа в агенте и безопасная интерактивная разблокировка `ssh-add`. | **Не реализовано.** Есть только bounded read-only inventory; «Первый вход» не добавляет ключ в агент. | F31-R11 до установщика; F31-R12/R13. |
 | PGA-07 | stderr/exit code, отдельные постоянные/временные ошибки и остановка бесполезных retries. | **Частично.** R02/R03 уже покрывают fallback и config/arguments/refusal; отдельные key ACL причины и structured exit code ещё впереди. Весь PGA-07 не PASS. | Существующие F31-R02/R03; оставшиеся gaps — F31-R11. |
 | PGA-08 | Раздельные agent/key/profile/SSH/SOCKS статусы и действия без задержек UI. | **Не реализовано целиком.** Существующее фоновое окно проверки сохраняется. | F31-R11; F16-R01/F17-R01, итоговые DPI/assistive gates отдельно. |
-| PGA-09 | Unit/integration матрица разных служб, ПК, ключей, ACL и методов аутентификации. | **Частично.** PGA-02A37 SCM и2 file regression checks приняты в CI557. Проверки будущих start/key/ACL/UI сценариев ещё впереди; существующие tests их не заменяют. | F31-R11 до установщика; фактический перенос — F31-R13. |
+| PGA-09 | Unit/integration матрица разных служб, ПК, ключей, ACL и методов аутентификации. | **Частично.** PGA-02A37 SCM и2 file regression checks приняты в CI557. PGA-02B32 deadline/cancel/ownership/UI checks приняты в CI558. Проверки будущих start/key/ACL/UI действий ещё впереди; существующие tests их не заменяют. | F31-R11 до установщика; фактический перенос — F31-R13. |
 | PGA-10 | Windows E2E, настоящий SOCKS/HTTP/HTTPS, пакет и честный итоговый отчёт. | **Package/Live не проверены.** Итоговые dev проверки выполняются до передачи, реальные устройства — после установки. | F31-R11; F23-R06/R07; F31-R12/R13/R14. |
 
 Безопасная последовательность: PGA-01 → PGA-02A → PGA-02B → PGA-03 → оставшаяся
