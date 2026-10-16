@@ -1,6 +1,20 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-01/02A — счёт остаётся6/55
+## Текущий checkpoint: SSH-agent PGA-02B — native PENDING
+
+**16.10.2026 UTC** реализуется общий bounded service probe:3s wait/cancel,
+одна незавершённая SCM операция до фактического cleanup, честные Busy/TimedOut/
+Unavailable без выдуманного состояния службы. Окно не зависит от UI pump при
+Close/Dispose и не публикует результат после queued Cancel. Ожидаются33 новых
+checks, Desktop4061; native результат пока **PENDING**, PASS не присвоен.
+[Протокол](MICROTASK_SSH_AGENT_BOUNDED_WAIT.md).
+
+Это read-only PGA-02B внутри F31-R11; startup hook/Start — следующий PGA-03,
+ключи/UI/installer впереди. Счёт **6/55**,49=37+12,23/31; F31/F17 OPEN,
+R05 PARTIAL, Package PENDING, Live NOT_CHECKED. Прежние findings и FAIL history
+сохранены. Устройства владельца, служба и ключи не меняются.
+
+## Предыдущий checkpoint: SSH-agent PGA-01/02A — счёт остаётся6/55
 
 **16.10.2026 UTC** спецификация владельца включена в существующие F31/F23:
 [канонические требования](SSH_AGENT_AUTOSTART_SPEC.md),

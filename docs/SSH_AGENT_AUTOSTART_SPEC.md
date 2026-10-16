@@ -133,7 +133,7 @@ VPS; конкретные адреса, пользователи и пути н�
 PGA-01 audit/mapping и узкий PGA-02A приняты в Code/Dev на source13b98cce,
 completed [CI #557](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38889610234),
 37 SCM checks/полный Windows и Ubuntu SUCCESS ([доказательства](MICROTASK_SSH_AGENT_SERVICE_STATUS.md)).
-PGA-02B — отдельная последующая микрозадача; весь PGA-02 ещё не PASS. Истории
+PGA-02B реализуется отдельной микропорцией: bounded waiting, общий slot до полного cleanup и lifecycle диагностического окна; native CI пока PENDING ([протокол](MICROTASK_SSH_AGENT_BOUNDED_WAIT.md)). Весь PGA-02 ещё не PASS; startup hook и Start остаются в следующем PGA-03. Истории
 FAIL555/556 сохранены, причина556 UNKNOWN. Прежние принятые F31-R01–R04
 сохраняют собственные границы приёмки.
 

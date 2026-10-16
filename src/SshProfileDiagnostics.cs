@@ -24,6 +24,7 @@ namespace ProGo
         public string IdentitiesOnly { get; set; }
         public string AgentState { get; set; }
         internal SshAgentServiceSnapshot AgentService;
+        internal SshAgentProbeResult AgentProbe;
         public string KeyStatus { get; set; }
         public bool SshAvailable { get; set; }
         public bool SshResolved { get; set; }
@@ -97,14 +98,18 @@ namespace ProGo
         {
             return Check(profile, CancellationToken.None);
         }
-        internal static SshProfileDiagnosticResult Check(SshProfileSetting profile, CancellationToken token, string executable = null, int timeoutMs = 7000)
+        internal static SshProfileDiagnosticResult Check(SshProfileSetting profile, CancellationToken token, string executable = null, int timeoutMs = 7000,
+            SshAgentServiceProbe agentProbe = null, int agentTimeoutMs = SshAgentServiceProbe.DefaultTimeoutMilliseconds)
         {
             var result = CheckConfiguration(profile, token, executable, timeoutMs);
             if (String.IsNullOrWhiteSpace(result.Target)) return result;
             token.ThrowIfCancellationRequested();
-            result.AgentService = SshAgentServiceStatus.Read(token);
-            result.AgentState = result.AgentService.ToDisplay();
-            result.AgentKeys = SshAgentDiagnostics.Keys(OpenSshClient.AgentExecutable(result.ExecutablePath), token);
+            result.AgentProbe = (agentProbe ?? SshAgentServiceProbe.Shared).ReadAsync(agentTimeoutMs, token).GetAwaiter().GetResult();
+            result.AgentService = result.AgentProbe.Snapshot;
+            result.AgentState = result.AgentProbe.ToDisplay();
+            result.AgentKeys = result.AgentProbe.State == SshAgentProbeState.Completed
+                ? SshAgentDiagnostics.Keys(OpenSshClient.AgentExecutable(result.ExecutablePath), token)
+                : "Проверка ключей отложена: состояние службы ещё не подтверждено. Другие методы SSH-аутентификации могут работать без агента.";
             token.ThrowIfCancellationRequested(); return result;
         }
 
@@ -275,7 +280,7 @@ namespace ProGo
             }.ToDisplay();
         }
         internal static string Read()
-        { return SshAgentServiceStatus.Read(CancellationToken.None).ToDisplay(); }
+        { return SshAgentServiceProbe.Shared.ReadAsync(SshAgentServiceProbe.DefaultTimeoutMilliseconds, CancellationToken.None).GetAwaiter().GetResult().ToDisplay(); }
     }
 
 }

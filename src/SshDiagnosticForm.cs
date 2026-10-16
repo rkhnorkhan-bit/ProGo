@@ -14,11 +14,14 @@ namespace ProGo
         private readonly TextBox report = new TextBox { Name = "SshDiagnosticReport", ReadOnly = true, Multiline = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Vertical, WordWrap = true };
         private readonly Button retry, cancel;
         private CancellationTokenSource cancellation;
+        private readonly TaskCompletionSource<bool> ownerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         private bool busy, closing;
         internal Task Work { get; private set; }
+        internal Task CheckWork { get; private set; }
         internal SshDiagnosticForm(SshProfileSetting selected, Func<SshProfileSetting, CancellationToken, SshProfileDiagnosticResult> check = null)
         {
             profile = selected.Clone(); this.check = check ?? ((p, token) => SshProfileDiagnostics.Check(p, token));
+            CheckWork = Task.FromResult(false);
             Text = "Проверка настроек SSH · ProGo"; ClientSize = new Size(790, 550); MinimumSize = new Size(650, 420);
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 1, RowCount = 4 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -40,14 +43,14 @@ namespace ProGo
             UiTheme.ConfigureKeyboardOrder(this);
             CancelButton = cancel;
             Shown += delegate { Work = Run(); cancel.Focus(); };
-            FormClosing += delegate { closing = true; CancelWork(); };
+            FormClosing += delegate { closing = true; ownerClosed.TrySetResult(true); CancelWork(); };
         }
         private void DescribeCancel()
         {
             cancel.AccessibleName = cancel.Text;
             cancel.AccessibleDescription = cancel.Text == "Закрыть"
                 ? "Закрывает результаты проверки. Повторная проверка не запускается."
-                : "Отменяет текущую проверку и останавливает только её процессы. Окно остаётся открытым для повтора.";
+                : "Прекращает ожидание и останавливает только процессы этой проверки. Системный запрос может завершиться позже. Окно остаётся открытым для повтора.";
         }
         private void CancelWork()
         {
@@ -60,25 +63,46 @@ namespace ProGo
         {
             if (busy || closing) return;
             busy = true; retry.Enabled = false; cancel.Enabled = true; cancel.Text = "Отменить проверку";
-            report.Clear(); status.Text = "Проверяем настройки SSH и ключи агента без подключения к серверу. Лимит SSH — 7 секунд, агента — 3 секунды; остановка процессов — до 2 секунд. Можно отменить.";
+            report.Clear(); status.Text = "Проверяем SSH и ключи без подключения к серверу. Лимиты: SSH — 7 с; ожидание службы — 3 с; ключи — 3 с. Остановка своих процессов — до 2 с. Можно отменить.";
             var source = new CancellationTokenSource(); cancellation = source; var token = source.Token;
             try {
-                var result = await Task.Run(() => { try { return check(profile.Clone(), token); } finally { source.Dispose(); } });
-                if (closing || IsDisposed) return;
-                if (token.IsCancellationRequested) { status.Text = "Проверка отменена. Можно повторить."; return; }
-                report.Text = result.ToReport();
-                status.Text = result.SshResolved ? "Настройки SSH прочитаны. Доступность сервера проверяется подключением." : "Настройки SSH не проверены. Причина указана выше.";
+                string text = "", notice;
+                try {
+                    var checking = Task.Run(() => check(profile.Clone(), token)); CheckWork = checking;
+                    var result = await checking.ConfigureAwait(false);
+                    token.ThrowIfCancellationRequested();
+                    text = result.ToReport();
+                    notice = result.SshResolved ? "Настройки SSH прочитаны. Доступность сервера проверяется подключением." : "Настройки SSH не проверены. Причина указана выше.";
+                }
+                catch (OperationCanceledException) { notice = "Проверка отменена. Можно повторить."; }
+                catch { text = "Проверка не завершена. Проверьте OpenSSH и права доступа к настройкам."; notice = "Не удалось завершить проверку. Можно повторить."; }
+                await Publish(delegate {
+                    if (token.IsCancellationRequested) { report.Clear(); status.Text = "Проверка отменена. Можно повторить."; }
+                    else { report.Text = text; status.Text = notice; }
+                    cancellation = null; busy = false;
+                    retry.Enabled = cancel.Enabled = true; cancel.Text = "Закрыть";
+                }).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) { if (!closing && !IsDisposed) status.Text = "Проверка отменена. Можно повторить."; }
-            catch { if (!closing && !IsDisposed) { report.Text = "Проверка не завершена. Проверьте OpenSSH и права доступа к настройкам."; status.Text = "Не удалось завершить проверку. Можно повторить."; } }
             finally {
-                cancellation = null; busy = false;
-                if (!closing && !IsDisposed) { retry.Enabled = cancel.Enabled = true; cancel.Text = "Закрыть"; }
+                Interlocked.CompareExchange(ref cancellation, null, source); source.Dispose();
             }
+        }
+        private async Task<bool> Publish(Action action)
+        {
+            if (ownerClosed.Task.IsCompleted) return false;
+            var delivered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            try {
+                BeginInvoke(new Action(delegate {
+                    try { if (!closing && !IsDisposed) { action(); delivered.TrySetResult(true); } else delivered.TrySetResult(false); }
+                    catch (Exception ex) { delivered.TrySetException(ex); var ignored = delivered.Task.Exception; }
+                }));
+            } catch (InvalidOperationException) { return false; }
+            if (await Task.WhenAny(delivered.Task, ownerClosed.Task).ConfigureAwait(false) != delivered.Task) return false;
+            return await delivered.Task.ConfigureAwait(false);
         }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { closing = true; CancelWork(); }
+            if (disposing) { closing = true; ownerClosed.TrySetResult(true); CancelWork(); }
             base.Dispose(disposing);
         }
     }
