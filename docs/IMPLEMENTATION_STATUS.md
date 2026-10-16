@@ -1,41 +1,64 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущая микрозадача: F31-R05, пакет C — проверка PENDING
+## Текущий checkpoint: F31-R05, пакет C — счёт остаётся 6/55
 
-**16.10.2026 UTC** реализовано получение Programs/Startup/UserProfile после
-Shown формы настроек в двух независимых owned workers. Native приёмка ещё
-PENDING. Счёт **6/55**, остаток **49=37+12**, общий **23/31**; весь R05
-**PARTIAL**, целые F17/F31 **OPEN**.
+**16.10.2026 UTC** принята одна Code/Dev микрозадача: Programs/Startup и
+UserProfile формы настроек получаются в двух независимых workers после Shown.
+Счёт **6/55**, остаток **49=37+12**, общий **23/31**; весь R05 **PARTIAL**,
+целые F17/F31 **OPEN**.
 [Доказательства C](MICROTASK_F31_SETTINGS_FOLDERS.md).
 
-Constructor сохраняет captured inputs и portable guard, не вызывает folder
-provider. Startup manager/snapshot публикуются или откладываются вместе на UI;
-неизвестный startup не изменяется при Save. Diagnostic SSH config path имеет
-отдельные pending/error состояния и не блокирует startup или Save. Invalid
-empty/relative/root-relative/drive-relative пути не получают guessed cwd path.
-Close/Dispose запрещают позднюю публикацию; оба raw tasks сохраняются до
-реального settlement без живого UI pump, CTS освобождается после обоих.
+Constructor сохраняет captured inputs и portable guard. Startup manager и
+snapshot публикуются либо откладываются одной парой на UI; Save при неизвестном
+startup оставляет регистрацию без изменений. Diagnostic SSH config path имеет
+отдельные pending/error состояния и не блокирует startup или Save. Пустые и
+relative/root-relative/drive-relative пути не получают guessed cwd path.
+Close/Dispose запрещают позднюю публикацию; оба task остаются pending до
+фактического settlement без живого UI pump, CTS освобождается после обоих.
+Старый public constructor сохранён; ранний Root/LocalAppData bootstrap отдельно.
 
-Functional source `3b2bf894434ae47796f949b36385e5c10f2a4f6e`, tree
-`8038162b56d056ce69f7a13c60c468c99d09f561`; merge
-`a8cc554c7c573ee98ca1a5ff6232ae9938dad562`, main
+Tested source `de58a08847bbc2c3228b70d436fef175994d2776`, tree
+`1007441dc92f8df9fccc62b71f45ac38e26d9180`; tested merge
+`23cbd018a9d5869d1b5296e06505829f11d56df0`, main
 `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
-[CI #553](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38879266336)
-Первый run FAILURE: Windows `116901741841` FAILURE, Ubuntu `116901742090`
-SUCCESS. FAIL на12-м новом Check после11 PASS; точный false operand не
-залогирован. Исправлен oracle только нового fixture: captured endpoint ДО
-Save/Close вместо disposed TextBox.Text, добавлены безопасные booleans;
-все30 Check/budgets и production сохранены. Новый полный CI пока PENDING.
-Планируется Desktop3991=3961+30 и291 screenshot files, пока не PASS.
-Source/tests/wiring/PENDING evidence independent APPROVE; старые tests/budgets
-сохранены, whitespace/public266/0 PASS. После первой попытки меняются только
-новый fixture и3 Markdown; production/compiler/main сохранены.
+[CI #554](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38881063456)
+completed **SUCCESS**: Windows `116907636680`, Ubuntu `116907636293`, весь run.
+Desktop **3991=3961+30 PASS**. Реальные temporary .lnk и production Save/retry,
+deferred same-owner pair, UI heartbeat, два независимых held providers,
+Close/Dispose без UI pump, injected/portable и invalid paths проверены.
+Прежние условия и budgets сохранены, main/compiler явно подключают partial.
 
-Ранние bootstrap/settings, scoped shortcuts/launch и полный R05 ещё впереди.
-Package PENDING, Live NOT_CHECKED; цельный installer и устройства владельца
-не проверяются. F17-R01 disabled startup caption gap сохраняется; новые
-pending/error PNG ещё не просмотрены и visual PASS не заявлен. PR draft/unmerged;
-merge/release не выполняются. Требования и исходные55=43+12 сохранены.
+SOCKS41/403, foundation165/134/325/110/211/151/274/112, expiry130/restart237,
+Instance26/Maintenance95/Shutdown47/updater5, весь Test-ProGo, HomeVPN975/
+portable90 PASS. Windows Python22 PASS +2 прежних Linux module skips, все7
+HTTP cases; Ubuntu16/9/46 без skips с real QR; public266/44 PASS.
+Source/tests/wiring/correction и полные native результаты сверены reviewers.
+
+Первый [CI #553](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38879266336)
+остаётся FAIL после11 новых PASS на compound12; точный false operand неизвестен.
+Oracle нового fixture сравнивал endpoint с disposed TextBox после Diagnostics.
+Исправлены только4 новых Save-сравнения на captured draft ДО Close, добавлены
+Boolean INFO;30 checks/budgets/production сохранены. Свежий554 показывает
+dialogOk/linkMissing/savedEndpointSame/pathReadOnly=True и
+disposedEndpointSame=False. Это новое измерение554, не ретроактивный operand553.
+Недостигнутый553 хвост и partial59 screenshots не получили PASS задним числом.
+
+Screenshot artifact `12037899271` скачан:6486463 bytes/291 entries, SHA-256
+`73b0cf2dc5109a10003a2e7763097cd3eaa9217d7f1a0fe826780fbdf22a0859`
+совпал с metadata/runner. Root просмотрел2 свежих diagnostic pending/error PNG:
+новый текст и действия читаемы в показанном размере. Остальные289 PNG и
+полный contrast/DPI/Narrator не приняты; F17-R01 disabled startup gap сохраняется.
+Diagnostics `12038546214`, runtime folder `12038506411`, wrapper ZIP
+`12038009113` uploaded; metadata/runner size/digest/head совпали, отдельный
+download/hash этих трёх не заявлен. Inner ZIP526649 bytes, wrapper523380.
+
+Ранний bootstrap/settings и scoped shortcuts/launch ещё впереди. При read-only
+разборе Codex .lnk найден остаточный ownership риск перед overwrite/delete;
+он записан в открытый R05 и пока не исправлен. Package PENDING, Live NOT_CHECKED;
+итоговый installer и устройства владельца не проверяются. PR draft/unmerged,
+merge/release не выполнялись. После tested source — только3 Markdown evidence;
+application/tests/scripts/server/workflow идентичны source. Требования,
+исходные55=43+12 и прежние6 принятых ID сохранены.
 
 ## Предыдущий checkpoint: F31-R05, пакет B — счёт остаётся 6/55
 
