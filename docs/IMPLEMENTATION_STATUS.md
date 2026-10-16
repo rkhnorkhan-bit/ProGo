@@ -1,29 +1,42 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-01/02A — native PENDING
+## Текущий checkpoint: SSH-agent PGA-01/02A — счёт остаётся6/55
 
 **16.10.2026 UTC** спецификация владельца включена в существующие F31/F23:
 [канонические требования](SSH_AGENT_AUTOSTART_SPEC.md),
-[протокол микрозадачи](MICROTASK_SSH_AGENT_SERVICE_STATUS.md).
-PGA-01 завершает аудит и mapping; PGA-02A добавляет read-only typed snapshot
-службы с раздельными runtime/startup и status/config errors. Код и новые37
-проверок прошли независимый source review. CI #555:37 новых и Desktop4028 PASS,
-затем Windows FAIL в Instance fixture на sharing backup; Ubuntu SUCCESS.
-Сохраняется вся история отказа; общая native приёмка **PENDING** до узкой
-коррекции readiness fixture и свежего полного CI. Точный lock owner не измерен.
-Повторный556:37 SCM PASS, затем FAIL старого native ssh-G oracle; его
-exit/stderr не залогированы. Instance-коррекция не достигнута, причинаUNKNOWN.
-Перед свежим прогоном добавляется только безопасная failure диагностика oracle.
+[полный протокол и история](MICROTASK_SSH_AGENT_SERVICE_STATUS.md).
+PGA-01 audit/mapping выполнен; узкий PGA-02A **Code/Dev PASS**: read-only typed
+snapshot службы разделяет runtime/startup и status/config errors с Win32Code.
 
-Обязательный агентский код и dev-проверки закреплены ДО установщика в F31-R11;
-optional installer opt-in — в F23. PGA-02B deadline/single-flight, запуск службы,
-matching нужного ключа, interactive ssh-add и отдельные UI действия впереди.
-Весь PGA-02 не PASS. Настройки службы/ключи/ACL не меняются этой микрозадачей.
+Tested source `13b98cceec08cd48ff70155edcb5515a1ccf7a21`, tree
+`8a9ef3c9f42b88f4e890b7f650dc4865801845d9`, merge
+`f2ae6db0b1d753337f525d12d6648f3f28df10d8` в main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #557](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38889610234)
+completed SUCCESS, Windows116935638378/Ubuntu116935638585.
+SCM37/37, Desktop4028, Instance28=26+2, SOCKS41/403, Maintenance95/Shutdown47/
+updater5, полный Test-ProGo, HomeVPN975/portable90, public270/44 PASS.
+Windows Python22 PASS+2 прежних Linux-only skips,7 HTTP cases; Ubuntu16/9/46
+без skips с independent QR. Source/tests/native и2 limited visual PNG reviews
+APPROVE; screenshot ZIP скачан и hash проверен. Полные DPI/contrast/Narrator
+не приняты, остальные artifacts сверены только metadata/runner.
 
-Счёт **6/55**, осталось **49=37+12**, общий **23/31**; F31/F17 **OPEN**,
-R05 **PARTIAL**, Codex shortcut ownership gap открыт. Package **PENDING**,
-Live **NOT_CHECKED**. Устройства владельца не проверяются. Новые PGA номера —
-микродекомпозиция внутри прежних55=43+12; прежние принятые критерии сохранены.
+FAIL555 сохранился после Desktop4028/21Instance на sharing backup: exact lock
+owner неизвестен. Исправлен недостаточный readiness fixture, добавлены2 реальные
+file regressions, все26 старых Check/budgets сохранены. INFO32 в557 принадлежит
+контролируемому temp fixture ДО первого owner, не actual startup. FAIL556
+сохранился после37SCM в старом native ssh-G oracle без exit/stderr. Добавлена
+только безопасная failure INFO без retries/изменения argv/7s/Check;557 прошёл,
+но причина556 **UNKNOWN** и остаётся finding открытого F31-R11.
+
+Агентский код и dev-проверки обязательны ДО установщика. PGA-02B deadline/
+single-flight, запуск службы, readiness нужного ключа, interactive ssh-add,
+новые UI действия и installer opt-in впереди; весь PGA-02/F31-R11 не закрыт.
+Счёт **6/55**,49=37+12,23/31; F31/F17 OPEN, R05 PARTIAL, Codex ownership gap
+и disabled startup caption gap открыты. Package PENDING, Live NOT_CHECKED.
+Устройства владельца не проверялись, служба/ключи/ACL не менялись.
+После tested source — только4 Markdown, runtime/tests/scripts/server/workflow
+идентичны source. PR draft/unmerged; merge/release не выполнялись.
 
 ## Предыдущий checkpoint: F31-R05, пакет C — счёт остаётся 6/55
 

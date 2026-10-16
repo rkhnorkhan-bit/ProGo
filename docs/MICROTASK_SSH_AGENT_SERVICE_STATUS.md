@@ -5,9 +5,9 @@ F31/F23: [canonical contract](SSH_AGENT_AUTOSTART_SPEC.md). Исходный ф�
 меняется; его адреса/профиль/личные пути не переносятся в Git и не становятся
 defaults. Baseline `25d34000f5adb9c481021f47f8ef05ad2af073e5`, VERSION0.2.2.
 
-PGA-01: аудит существующего кода и mapping; проверяются планом и независимым
-review. Реализация узкого PGA-02A прошла source review и37 native checks; общая
-Code/Dev приёмка пока **PENDING** из-за последующего FAIL #555 в Instance fixture. Весь PGA-02
+PGA-01: аудит существующего кода и mapping завершены. Узкий PGA-02A —
+**Code/Dev PASS** на source13b98cce, completed CI #557, независимых source/tests/
+native/ограниченном visual reviews. Истории FAIL555/556 сохранены ниже. Весь PGA-02
 не завершён: отдельный asynchronous deadline/single-flight lifecycle —02B.
 Запуск службы, installer opt-in, matching нужного ключа, secure interactive
 ssh-add и отдельные UI действия остаются впереди. Код должен быть готов ДО
@@ -75,8 +75,8 @@ completed **FAILURE**. Windows job `116923046711` FAILURE, Ubuntu
 PR-triggered merge `30649d3d023bf02f35419f4570b29985abe00c82` в неизменный main
 `4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
 Локально whitespace и public content **270 source/0 release PASS**;
-55 уникальных IDs=43+12, прежние6 accepted IDs сохранены. Desktop4028 PASS
-относится к555; результат исправленного полного run пока **PENDING**.
+55 уникальных IDs=43+12, прежние6 accepted IDs сохранены. На момент подготовки первой коррекции Desktop4028 PASS
+относился к555; итог исправленной версии — отдельный completed557 ниже.
 
 ## Ubuntu native результат
 
@@ -141,7 +141,7 @@ assert сохранности строгий и без retry. Readiness дока
 files: замена при held old reader оставляет old bytes неизменными и возвращает
 новый receipt; wrongport/pending/exclusive writer не дают baseline, released
 settled receipt принимается. Старые26 Check/их смысл и прежние budgets сохранены;
-ожидается Instance28=26+2. Hard-coded sleeps и blanket retries не добавлены.
+до свежего CI ожидалось Instance28=26+2, затем подтверждено557. Hard-coded sleeps и blanket retries не добавлены.
 Точный lock owner555 остаётся неизвестен; это исправляет установленный source
 недостаток fixture, не выдаёт предполагаемую причину за измеренный stack.
 
@@ -194,5 +194,71 @@ Diagnostic-only frozen blob `tests/DesktopSshConfigTests.cs`:
 при прежнем failure condition, stdout не выводится, stderr до1024 chars после
 редактирования fixture/CI profile paths и удаления control/line-separator chars.
 Runtime source, argv, Check и7s budget не менялись. Source/root review подтверждает
-эту границу; свежая полная native приёмка остаётся обязательной. Одинаковый image
+эту границу; обязательная свежая полная native приёмка выполнена в557. Одинаковый image
 не доказывает отдельно hash/version выбранного ssh.exe: они в555/556 не измерены.
+
+## Полный CI #557 — Code/Dev PASS для PGA-02A
+
+Source `13b98cceec08cd48ff70155edcb5515a1ccf7a21`, tree
+`8a9ef3c9f42b88f4e890b7f650dc4865801845d9`, parent
+`8d2618a072e45cb6dcae6f5a66a0f2b6916af7c5`. Локальный эквивалент
+`06cfca7765fd4e735d709068cfcba69fbe4104b4` имеет идентичное tree.
+Merge `f2ae6db0b1d753337f525d12d6648f3f28df10d8` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #557](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38889610234):
+Весь run и оба jobs completed **SUCCESS**: Windows `116935638378`,
+Ubuntu `116935638585`.
+Ubuntu16/9/46 PASS без skips, actual independent QR/recovery/TLS выполнены.
+Полный UTF-8/LF log52822 bytes, SHA-256
+`10004ab24dfeb9343e84ced3dc95c36a19c4477e4a110d22017f380643ba0d6d`.
+Истории FAIL555/556 сохраняются. Результат557 не устанавливает неизвестный
+lock owner555 или неизвестную причину ssh-G отказа556 задним числом.
+
+### Фактический Windows результат557
+
+Все37 SCM checks PASS11:00:04.1112444–11:00:04.1279798 UTC; independent native
+oracle runtime1=`Stopped`, startup4=`Disabled`, обе ошибки0. Desktop
+**4028=3991+37 PASS**11:00:46.6699990. Instance **28=26+2 PASS**11:00:54.0358190.
+Новые реальные file regression PASS11:00:47.4413733/.4462671. INFO native32
+11:00:47.4453674 находится между этими двумя fixture checks ДО first-owner;
+он относится к специально заблокированному temp receipt, а не к actual startup.
+Прежние26, strict settings/backup compare и crash replacement прошли.
+
+SOCKS **41/403**, прежние foundation/expiry/restart suites, Maintenance95,
+Shutdown47, updater package5 и весь Test-ProGo PASS11:03:29.2067144.
+HomeVPN975/portable90 PASS, Windows Python24=22 PASS+2 прежних Linux-only skips,
+все7 HTTP profile-share cases ok; public **270 source/44 release PASS**.
+Все последующие suite gates, пропущенные в555/556, достигнуты на557.
+Старый native config oracle `fixture.dotted` PASS11:00:04.168 UTC. Failure-only
+SSH INFO не выполнялась: причина556 остаётся UNKNOWN, её исправление не заявлено.
+Она сохраняется как незавершённый диагностический finding в открытом F31-R11;
+новый failure INFO позволит уточнить его при воспроизведении.
+
+Полный Windows UTF-8/LF log921347 bytes/8506 lines, SHA-256
+`98c3efaf53f5500d52c56f03c87c64dffda9617c3e5d6ecb0158f64f5716c84e`.
+Source/tests/wiring/docs, correction, обе native jobs,2 limited visual PNG
+проверены независимо — **APPROVE**. Старые assertions и budgets сохранены.
+
+| Артефакт557 | ID | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| Screenshots | 12041748472 | 6488268 | `0437d9736683e6eeeb014e26915e385407cf970ff8e49d8c17894854c82510f3` |
+| Diagnostics | 12041309870 | 86220 | `257ac6db415e5a5733f1b33b7bc676c78d06d6c24746b929ae1129da8d01a26c` |
+| CI runtime folder | 12041783422 | 533493 | `1b5dfd7d06a66adaa46135f617451c92328aa3f45ed6ce72e93dd3bcb4eeb798` |
+| CI ZIP wrapper | 12042352402 | 525341 | `602ad1e1f68e1283171a7c55fbd4010f1668270fa71f2853b47877588c76f1c2` |
+
+Metadata всех4 совпала с runner ID/size/digest/head13b98cce. Screenshot ZIP
+скачан, его6488268 bytes/291 entries и SHA-256 пересчитаны root и reviewer.
+Просмотрены только2 свежих `ssh-agent-guidance.png`/`ssh-diagnostic-success.png`:
+новая подсказка stopped читаема в показанном размере, нижний текст в scrollable
+report, Retry/Close доступны. Другие289 PNG и полные contrast/DPI/Narrator
+не приняты. Остальные3 artifacts не скачивались; для них подтверждены только
+metadata/runner. Inner CI ZIP528621 bytes; это не цельный installer всех31.
+
+PGA-01/02A завершены в узкой Code/Dev границе. Следующий02B — bounded asynchronous
+waiting и single-flight с учётом полного settlement, затем PGA-03/start и
+selected-key/interactive/UI/installer части. Весь PGA-02 и F31-R11 **PARTIAL/OPEN**,
+счёт **6/55**,49=37+12,23/31 не меняется. Необъяснённый отказ556 не потерян.
+Package PENDING, Live NOT_CHECKED; owner PC/VPS/телефон не проверялись,
+служба/ключи/ACL не менялись, merge/release не выполнялись.
+После tested source13b98cce публикуются только4 Markdown evidence/status файла;
+application/tests/scripts/server/workflow идентичны tested source.
