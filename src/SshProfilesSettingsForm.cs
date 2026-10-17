@@ -1,10 +1,22 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Threading.Tasks;
+using CancellationToken = System.Threading.CancellationToken;
+using CancellationTokenSource = System.Threading.CancellationTokenSource;
 
 namespace ProGo
 {
+    internal enum SettingsSection { Automation, Connections, Windows }
+    internal sealed class SettingsApplyRequest
+    {
+        internal AppSettings Proposed;
+        internal SettingsRevisionSnapshot Expected;
+        internal bool PickFree, AutoLaunch;
+        internal ApplicationShortcuts Startup;
+        internal ApplicationShortcuts.StartupSnapshot StartupSnapshot;
+    }
     internal sealed class SshProfilesSettingsForm : ProGoForm
     {
         private readonly SettingsService service;
@@ -13,16 +25,46 @@ namespace ProGo
         private readonly ComboBox sshProfiles = new ComboBox();
         private readonly CheckBox autoSwitchProfile = new CheckBox();
         private readonly CheckBox autoStart = new CheckBox();
-        private readonly CheckBox autoProxy = new CheckBox();
+        private readonly CheckBox autoLaunch = new CheckBox();
+        private readonly Label startupNotice = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private ApplicationShortcuts startupShortcuts;
+        private readonly bool startupAvailable;
+        private readonly string startupInstallDirectory;
+        private readonly Func<Environment.SpecialFolder, string> folderPathProvider;
+        private ApplicationShortcuts.StartupSnapshot startupSnapshot;
+        private readonly Action<CancellationToken> beforeStartupRead;
+        private readonly CancellationTokenSource startupReadCancellation = new CancellationTokenSource();
+        private readonly TaskCompletionSource<bool> startupOwnerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private bool startupReadStarted, startupPending, startupResultDeferred;
+        private int startupGeneration;
+        private ApplicationShortcuts.StartupSnapshot deferredStartupSnapshot;
+        private ApplicationShortcuts deferredStartupShortcuts;
+        private readonly TextBox sshConfigPath = new TextBox { ReadOnly = true, Text = "Определяем путь…" };
+        private bool profilePathStarted, profilePathPending = true;
+        private int profilePathGeneration;
+        internal Task ProfilePathWork { get; private set; }
+        internal bool IsProfilePathPending { get { return profilePathPending; } }
+        internal Task StartupWork { get; private set; }
+        internal bool IsStartupPending { get { return startupPending; } }
+        private Button startupSettingsButton;
+        private readonly CheckBox autoCli = new CheckBox();
         private readonly NumericUpDown clearSeconds = new NumericUpDown();
         private readonly TextBox endpoint = new TextBox();
         private readonly List<SshProfileSetting> profiles = new List<SshProfileSetting>();
 
         private readonly CheckBox autoRestart = new CheckBox();
         private readonly CheckBox autoWindows = new CheckBox();
-        private readonly CheckBox autoCodex = new CheckBox();
-        public event Action<string> ManualActionRequested;
-        public Func<AppSettings, bool, string> SaveRequested;
+        public event Action<AppCommand> ManualActionRequested;
+        internal Func<AppCommandState> CommandState;
+        private readonly Dictionary<AppCommand, Button> manualCommands = new Dictionary<AppCommand, Button>();
+        // Synchronous injection retained for isolated legacy harnesses only.
+        public Func<AppSettings, bool, SettingsSaveError> SaveRequested;
+        internal Func<SettingsApplyRequest, CancellationToken, Task<SettingsSaveError>> SaveRequestedAsync;
+        internal Task<SettingsSaveError> SaveWork { get; private set; }
+        private volatile bool savePending;
+        internal bool IsSavePending { get { return savePending; } }
+        private CancellationTokenSource saveCancellation;
+        private Button saveButton, cancelButton;
         private readonly CheckBox autoHttpPort = new CheckBox();
         private readonly NumericUpDown httpPort = new NumericUpDown();
         private readonly TextBox proxyAddress = new TextBox { ReadOnly = true };
@@ -30,122 +72,362 @@ namespace ProGo
         private TabControl settingsTabs;
         private bool pickFreePort;
         private int initialHttpPort;
+        private readonly Timer currentValuesTimer = new Timer { Interval = 500 };
+        private readonly Label currentAutomation = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private readonly Label currentConnection = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private readonly Label currentDiagnostic = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
+        private Button pickPortButton;
+        private readonly Label saveError = UiTheme.Label("", UiTheme.Body, UiTheme.Error);
+        public Func<string> CurrentProxyEndpoint;
         public string ProxyEndpointText { set { proxyAddress.Text = value; } }
 
 
-        public SshProfilesSettingsForm(SettingsService settingsService)
+        public SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section = SettingsSection.Automation, ApplicationShortcuts shortcuts = null, Action openStartupSettings = null, Action<CancellationToken> beforeStartupRead = null)
+            : this(settingsService, section, shortcuts, openStartupSettings, beforeStartupRead, null, null, null) { }
+
+        internal SshProfilesSettingsForm(SettingsService settingsService, SettingsSection section, ApplicationShortcuts shortcuts, Action openStartupSettings, Action<CancellationToken> beforeStartupRead, Func<Environment.SpecialFolder, string> folderPathProvider, string currentExecutable, string installDirectory)
         {
             service = settingsService;
+            this.beforeStartupRead = beforeStartupRead;
+            this.folderPathProvider = folderPathProvider ?? new Func<Environment.SpecialFolder, string>(Environment.GetFolderPath);
+            StartupWork = ProfilePathWork = Task.FromResult(false);
+            startupShortcuts = shortcuts;
+            startupInstallDirectory = installDirectory ?? AppPaths.Root;
+            startupAvailable = shortcuts != null || String.Equals(currentExecutable ?? Application.ExecutablePath,
+                System.IO.Path.Combine(startupInstallDirectory, "ProGo.exe"), StringComparison.OrdinalIgnoreCase);
             Text = "Настройки · ProGo";
             ClientSize = new Size(900, 700); MinimumSize = new Size(850, 650);
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 4 };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 1, RowCount = 5 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-            root.Controls.Add(UiTheme.Label("Под ваш ритм", UiTheme.Title, UiTheme.Text), 0, 0);
-            root.Controls.Add(UiTheme.Label("Автоматика, подключения и личные настройки — в одном месте.", UiTheme.Body, UiTheme.Muted), 0, 1);
-            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed };
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.Controls.Add(UiTheme.Label("Настройки", UiTheme.Title, UiTheme.Text), 0, 0);
+            root.Controls.Add(UiTheme.Label("Поля и галочки — после «Сохранить».\nРучные команды — сразу; «Отменить изменения» их не откатывает.", UiTheme.Body, UiTheme.Muted), 0, 1);
+            var tabs = new ProGoTabs { Dock = DockStyle.Fill, ItemSize = new Size(153, 38), SizeMode = TabSizeMode.Fixed, Multiline = true };
             root.Controls.Add(tabs, 0, 2); settingsTabs = tabs;
             var automation = Page(tabs, "Автоматика");
-            var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
+            var autoFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, AutoScrollMargin = new Size(0, 18), FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(14) };
             automation.Controls.Add(autoFlow);
-            autoFlow.SizeChanged += delegate {
-                foreach (Control child in autoFlow.Controls) {
-                    var card = child as SurfacePanel; if (card == null) continue;
-                    card.Width = Math.Max(600, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4);
-                    foreach (Control item in card.Controls) {
-                        var hint = item as Label; if (hint != null) hint.MaximumSize = new Size(card.Width - 38, 0);
+            bool fittingAutomation = false;
+            Action fitAutomation = delegate {
+                if (fittingAutomation || autoFlow.ClientSize.Width < 1) return;
+                fittingAutomation = true;
+                try {
+                    // Reserve a vertical scrollbar gutter; changing text must not oscillate widths.
+                    int width = Math.Max(1, autoFlow.ClientSize.Width - autoFlow.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
+                    foreach (Control child in autoFlow.Controls) {
+                        int available = Math.Max(1, width - child.Margin.Horizontal);
+                        var label = child as Label;
+                        if (label != null) label.MaximumSize = new Size(available, 0);
+                        var card = child as SurfacePanel;
+                        if (card == null) continue;
+                        card.MaximumSize = new Size(available, 0);
+                        card.MinimumSize = new Size(available, 0);
                     }
-                }
+                } finally { fittingAutomation = false; }
             };
-            autoFlow.Controls.Add(UiTheme.Label("Галочка — автоматически. Кнопки — вручную в любой момент.", UiTheme.Body, UiTheme.Muted));
-            AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды «Остановить» он сам не включится.", "Перезапустить", "restart", "Остановить", "stop");
-            AutomationCard(autoFlow, autoProxy, "Включать прокси для командной строки", "При запуске ProGo настраивать новые терминалы через HTTP_PROXY и HTTPS_PROXY. Уже открытые окна нужно перезапустить.", "Включить", "terminal-on", "Выключить", "terminal-off");
-            AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", "Включить", "windows-on", "Выключить", "windows-off");
-            AutomationCard(autoFlow, autoCodex, "Включать прокси для обычного запуска Codex", "Настраивать HTTP_PROXY и HTTPS_PROXY для Codex и новых терминалов. Отдельный ярлык не нужен. Уже открытый Codex или терминал нужно перезапустить. Кнопка выключения общая с CLI.", "Включить", "codex-on", "Выключить", "codex-off");
+            autoFlow.ClientSizeChanged += delegate { fitAutomation(); };
+            autoFlow.Layout += delegate { fitAutomation(); };
+            autoFlow.Controls.Add(UiTheme.Label("Предпочтения: галочки начинают действовать после сохранения.", UiTheme.Body, UiTheme.Muted));
+            currentAutomation.Name = "currentAutomationSettings";
+            currentAutomation.MaximumSize = new Size(740, 0);
+            autoFlow.Controls.Add(currentAutomation);
+            AutomationCard(autoFlow, autoRestart, "Восстанавливать подключение при обрыве", "Повторять соединение, если туннель перестал работать. После вашей команды отключения он сам не включится.", AppCommand.Reconnect, AppCommand.StopDesktop);
+            AutomationCard(autoFlow, autoCli, "Включать прокси для терминалов и Codex", "Включать общий прокси после подключения ProGo. Затем откройте новый терминал или перезапустите уже открытый Codex. Отдельный ярлык не нужен.", AppCommand.StartCli, AppCommand.StopCli);
+            AutomationCard(autoFlow, autoWindows, "Включать прокси для приложений Windows", "Применять системный прокси при запуске ProGo. Работает для приложений, которые используют настройки прокси Windows.", AppCommand.EnableWindows, AppCommand.DisableWindows);
             var connection = FormTable(Page(tabs, "Подключение"));
             sshProfiles.DropDownStyle = ComboBoxStyle.DropDownList;
             AddLabeled(connection, 0, "Сервер", sshProfiles);
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+            var actions = SettingsActions();
             actions.Controls.Add(UiTheme.Button("Добавить", delegate { AddProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Изменить", delegate { EditProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Удалить", delegate { RemoveProfile(); }, false));
             actions.Controls.Add(UiTheme.Button("Проверить", delegate { CheckSelectedProfile(); }, false));
-            connection.Controls.Add(actions, 0, 1); connection.SetColumnSpan(actions, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            actions.Controls.Add(UiTheme.Button("Первый вход", delegate {
+                var selected = SelectedProfile();
+                if (selected == null) { MessageBox.Show(this, "Сначала добавьте и выберите сервер.", "Первый вход SSH"); return; }
+                try { SshInteractiveLogin.Open(selected); }
+                catch (Exception ex) { MessageBox.Show(this, ex.Message, "Первый вход SSH", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            }, false));
+            AddSettingsRow(connection, 1, actions);
             AddLabeled(connection, 2, "Адрес SOCKS-туннеля", host);
             port.Minimum = 1; port.Maximum = 65535; AddLabeled(connection, 3, "Порт SOCKS-туннеля", port);
             autoStart.Text = "Подключаться к серверу при запуске ProGo"; autoStart.AutoSize = true;
             autoSwitchProfile.Text = "Пробовать другой сервер при недоступности"; autoSwitchProfile.AutoSize = true;
-            connection.Controls.Add(autoStart, 0, 4); connection.SetColumnSpan(autoStart, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-            connection.Controls.Add(autoSwitchProfile, 0, 5); connection.SetColumnSpan(autoSwitchProfile, 2); connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-            var help = UiTheme.Label("Сервер — это имя подключения SSH или адрес вида user@vpn.example.org. Автоматические прокси включатся, когда соединение будет готово. Для подключения iPhone используйте отдельный мастер.", UiTheme.Body, UiTheme.Muted);
-            help.MaximumSize = new Size(740, 0); connection.Controls.Add(help, 0, 6); connection.SetColumnSpan(help, 2);
+            autoLaunch.Text = "Запускать ProGo при входе в Windows";
+            autoLaunch.AccessibleDescription = "Запускать ProGo после входа пользователя в Windows. Применяется после сохранения. Подключение к серверу настраивается отдельно.";
+            AddSettingsRow(connection, 4, autoLaunch);
+            AddSettingsRow(connection, 5, startupNotice);
+            var startupActions = SettingsActions();
+            startupSettingsButton = UiTheme.Button("Автозагрузка в Windows…", delegate {
+                try {
+                    if (openStartupSettings != null) openStartupSettings();
+                    else System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ms-settings:startupapps") { UseShellExecute = true });
+                } catch {
+                    ShowSaveError(new SettingsSaveError(SettingsField.Startup, "Не удалось открыть параметры Windows. Откройте «Параметры» → «Приложения» → «Автозагрузка»."));
+                }
+            }, false);
+            startupSettingsButton.AccessibleDescription = "Открывает параметры Windows. Изменения в этом окне ProGo не сохраняются.";
+            startupActions.Controls.Add(startupSettingsButton);
+            AddSettingsRow(connection, 6, startupActions);
+            AddSettingsRow(connection, 7, autoStart);
+            AddSettingsRow(connection, 8, autoSwitchProfile);
+            var help = UiTheme.Label("Фоновое подключение использует SSH-ключ и не запрашивает пароль. «Первый вход» открывает видимое окно SSH: сверьте отпечаток ключа сервера, войдите и завершите сеанс командой exit. Вход по паролю сам по себе не настраивает SSH-ключ для ProGo. Затем нажмите «Запустить CLI» один раз — ProGo дождётся готовности. Для iPhone и Android используйте «VPN для телефона».", UiTheme.Body, UiTheme.Muted);
+            AddSettingsRow(connection, 10, help);
+            currentConnection.Name = "currentConnectionSettings";
+            AddSettingsRow(connection, 9, currentConnection);
             var privacy = FormTable(Page(tabs, "Хранилище"));
             clearSeconds.Minimum = 5; clearSeconds.Maximum = 3600;
             AddLabeled(privacy, 0, "Очищать буфер через, сек.", clearSeconds);
-            var privacyHint = UiTheme.Label("Скопированный секрет исчезнет из буфера через указанное время. Хранилище открывается вашим PIN-кодом.", UiTheme.Body, UiTheme.Muted);
-            privacyHint.MaximumSize = new Size(710, 0); privacy.Controls.Add(privacyHint, 0, 1); privacy.SetColumnSpan(privacyHint, 2);
+            var privacyHint = UiTheme.Label("Секреты хранилища, токены друзей и ссылки QR очищаются из текущего буфера через указанное время и при выходе из ProGo, если после них ничего не скопировано. История буфера и синхронизированные копии не очищаются. При аварийном завершении очистка не гарантируется.", UiTheme.Body, UiTheme.Muted);
+            AddSettingsRow(privacy, 1, privacyHint);
             var diagnostic = FormTable(Page(tabs, "Диагностика"));
             AddLabeled(diagnostic, 0, "Сайт проверки", endpoint);
             AddLabeled(diagnostic, 1, "Журнал приложения", new TextBox { ReadOnly = true, Text = AppPaths.LogPath });
-            AddLabeled(diagnostic, 2, "Файл подключений SSH", new TextBox { ReadOnly = true, Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "config") });
-            var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус и обновления». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
-            av.MaximumSize = new Size(710, 0); diagnostic.Controls.Add(av, 0, 3); diagnostic.SetColumnSpan(av, 2);
+            AddLabeled(diagnostic, 2, "Файл подключений SSH", sshConfigPath);
+            sshConfigPath.AccessibleDescription = "Определяем путь к файлу SSH config. Остальные настройки доступны.";
+            var av = UiTheme.Label("Если обновление блокирует антивирус: откройте «Помощь» → «Антивирус». Там есть журнал и ссылка на официальный выпуск.", UiTheme.Body, UiTheme.Muted);
+            AddSettingsRow(diagnostic, 4, av);
+            currentDiagnostic.Name = "currentDiagnosticSettings";
+            AddSettingsRow(diagnostic, 3, currentDiagnostic);
             var appPorts = FormTable(Page(tabs, "Порт приложений"));
             autoHttpPort.Text = "Выбирать свободный порт автоматически";
             autoHttpPort.AutoSize = true;
-            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-            appPorts.Controls.Add(autoHttpPort, 0, 0); appPorts.SetColumnSpan(autoHttpPort, 2);
+            AddSettingsRow(appPorts, 0, autoHttpPort);
             httpPort.Minimum = 1; httpPort.Maximum = 65535;
             AddLabeled(appPorts, 1, "Порт на этом компьютере", httpPort);
             autoHttpPort.CheckedChanged += delegate { httpPort.Enabled = !autoHttpPort.Checked && !pickFreePort; };
             AddLabeled(appPorts, 2, "Текущий адрес", proxyAddress);
-            var portActions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
-            portActions.Controls.Add(UiTheme.Button("Подобрать свободный", delegate {
-                pickFreePort = true; httpPort.Enabled = false;
-                portNotice.ForeColor = UiTheme.Accent;
-                portNotice.Text = "Новый свободный порт будет выбран при сохранении. Режим выбора порта останется прежним.";
-            }, false));
+            var portActions = SettingsActions();
+            pickPortButton = UiTheme.Button("Подобрать свободный", delegate { TogglePortSelection(); }, false);
+            pickPortButton.Name = "togglePortSelection";
+            portActions.Controls.Add(pickPortButton);
             portActions.Controls.Add(UiTheme.Button("Скопировать адрес", delegate { Clipboard.SetText(proxyAddress.Text); }, false));
-            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
-            appPorts.Controls.Add(portActions, 0, 3); appPorts.SetColumnSpan(portActions, 2);
+            AddSettingsRow(appPorts, 3, portActions);
             var portHelp = UiTheme.Label("Автоматически: ProGo сначала использует последний порт. Если он занят — выбирает другой. Без галочки используется только указанный порт.\n\nПри смене порта настройки Windows, терминала и ярлыка Codex, включённые через ProGo, обновятся вместе. Открытые терминалы и Codex нужно перезапустить.", UiTheme.Body, UiTheme.Muted);
-            portHelp.MaximumSize = new Size(740, 0);
-            appPorts.RowStyles.Add(new RowStyle(SizeType.Absolute, 155));
-            appPorts.Controls.Add(portHelp, 0, 4); appPorts.SetColumnSpan(portHelp, 2);
-            portNotice.MaximumSize = new Size(740, 0);
-            appPorts.Controls.Add(portNotice, 0, 5); appPorts.SetColumnSpan(portNotice, 2);
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 12, 0, 0) };
-            var save = UiTheme.Button("Сохранить", Save, true);
-            var cancel = UiTheme.Button("Отмена", null, false); cancel.DialogResult = DialogResult.Cancel;
-            buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 3);
+            AddSettingsRow(appPorts, 4, portHelp);
+            AddSettingsRow(appPorts, 5, portNotice);
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.RightToLeft, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 12, 0, 0) };
+            var save = UiTheme.Button("Сохранить", Save, true); saveButton = save;
+            var cancel = UiTheme.Button("Отменить изменения", delegate { if (savePending) CancelSave(); }, false); cancel.DialogResult = DialogResult.Cancel; cancelButton = cancel;
+            buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 4);
+            saveError.Name = "settingsSaveError"; saveError.Visible = false;
+            saveError.MaximumSize = new Size(830, 0);
+            root.Layout += delegate {
+                foreach (Control child in root.Controls) {
+                    var label = child as Label;
+                    if (label != null) label.MaximumSize = new Size(Math.Max(1, root.ClientSize.Width - root.Padding.Horizontal - label.Margin.Horizontal), 0);
+                }
+            };
+            root.Controls.Add(saveError, 0, 3);
+            UiTheme.ConfigureKeyboardOrder(root);
             Controls.Add(root); AcceptButton = save; CancelButton = cancel; LoadValues();
+            FormClosing += delegate(object sender, FormClosingEventArgs e) {
+                if (savePending && e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; DialogResult = DialogResult.None; CancelSave(); }
+            };
+            settingsTabs.SelectedIndex = section == SettingsSection.Connections ? 1 : 0;
+            currentValuesTimer.Tick += delegate { RefreshCurrentValues(); };
+            RefreshCurrentValues();
+            FormClosed += delegate { currentValuesTimer.Stop(); CancelStartupRead(); };
+            Shown += delegate { RefreshCurrentValues(); currentValuesTimer.Start(); StartStartupRead(); StartProfilePathRead(); };
+            Shown += delegate {
+                if (section == SettingsSection.Windows) {
+                    autoWindows.Focus();
+                    BeginInvoke((Action)delegate {
+                        if (IsDisposed) return;
+                        var card = autoWindows.Parent.Parent;
+                        autoFlow.ScrollControlIntoView(card);
+                        int overflow = card.Bottom + autoFlow.Padding.Bottom - autoFlow.ClientSize.Height;
+                        if (overflow > 0) autoFlow.AutoScrollPosition = new Point(0, -autoFlow.AutoScrollPosition.Y + overflow);
+                    });
+                }
+                else if (section == SettingsSection.Connections) sshProfiles.Focus();
+            };
         }
         private static TabPage Page(TabControl tabs, string title)
         {
-            var page = new TabPage(title) { BackColor = UiTheme.Background, Padding = new Padding(6) }; tabs.TabPages.Add(page); return page;
+            var page = new TabPage(title) { AccessibleName = title, BackColor = UiTheme.WindowBackground, Padding = new Padding(6) }; tabs.TabPages.Add(page); return page;
         }
         private static TableLayoutPanel FormTable(TabPage page)
         {
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(18), ColumnCount = 2, AutoScroll = true };
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 230)); table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            page.Controls.Add(table); return table;
+            var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Name = "settingsViewport" };
+            var table = new TableLayoutPanel { Dock = DockStyle.None, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                Padding = new Padding(18), ColumnCount = 1, RowCount = 0, AutoSize = false, Name = "settingsPageBody" };
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            viewport.Controls.Add(table); page.Controls.Add(viewport);
+            bool sizing = false;
+            Action fit = delegate {
+                if (sizing || viewport.ClientSize.Width < 1) return;
+                sizing = true;
+                try {
+                    int width = Math.Max(1, viewport.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+                    if (table.Width != width) table.Width = width;
+                    foreach (Control child in table.Controls) {
+                        int available = Math.Max(1, width - table.Padding.Horizontal - child.Margin.Horizontal);
+                        var label = child as Label;
+                        if (label != null) label.MaximumSize = new Size(available, 0);
+                        var option = child as CheckBox;
+                        if (option != null) FitPreferenceCaption(option, available);
+                    }
+                    int height = table.GetPreferredSize(new Size(width, 0)).Height;
+                    if (table.Height != height) table.Height = height;
+                } finally { sizing = false; }
+            };
+            viewport.ClientSizeChanged += delegate { fit(); };
+            table.Layout += delegate { fit(); };
+            return table;
         }
-        private void AutomationCard(FlowLayoutPanel flow, CheckBox toggle, string title, string description, string onLabel, string on, string offLabel, string off)
+        private static FlowLayoutPanel SettingsActions()
         {
-            var card = new SurfacePanel { Width = 740, Height = 148, Margin = new Padding(0, 6, 0, 8), Padding = new Padding(16) };
-            toggle.Text = title; toggle.AutoSize = true; toggle.Font = UiTheme.Strong; toggle.Location = new Point(16, 12);
-            var hint = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted); hint.MaximumSize = new Size(694, 0); hint.Location = new Point(16, 42);
-            var actions = new FlowLayoutPanel { Location = new Point(16, 100), Width = 698, Height = 42 };
-            actions.Controls.Add(UiTheme.Button(onLabel, delegate { if (ManualActionRequested != null) ManualActionRequested(on); }, false));
-            actions.Controls.Add(UiTheme.Button(offLabel, delegate { if (ManualActionRequested != null) ManualActionRequested(off); }, false));
-            card.Controls.Add(toggle); card.Controls.Add(hint); card.Controls.Add(actions); flow.Controls.Add(card);
+            return new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = true, Margin = new Padding(0) };
+        }
+        private static void AddSettingsRow(TableLayoutPanel table, int row, Control control)
+        {
+            table.RowCount = Math.Max(table.RowCount, row + 1);
+            while (table.RowStyles.Count < table.RowCount) table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            control.Dock = DockStyle.Top;
+            var option = control as CheckBox;
+            if (option != null) {
+                option.AutoSize = false; option.TextAlign = ContentAlignment.TopLeft; option.CheckAlign = ContentAlignment.TopLeft;
+                option.Margin = new Padding(0, 4, 0, 8);
+                option.TextChanged += delegate { table.PerformLayout(); };
+                option.FontChanged += delegate { table.PerformLayout(); };
+            }
+            table.Controls.Add(control, 0, row);
+        }
+        private static void FitPreferenceCaption(CheckBox option, int width)
+        {
+            // AutoSize can report a single-line height for a width-constrained caption.
+            int textWidth = Math.Max(1, width - SystemInformation.MenuCheckSize.Width - 8);
+            int height = TextRenderer.MeasureText(option.Text, option.Font,
+                new Size(textWidth, int.MaxValue), TextFormatFlags.WordBreak).Height;
+            option.Height = Math.Max(SystemInformation.MenuCheckSize.Height, height) + 4;
+        }
+        private void AutomationCard(FlowLayoutPanel flow, CheckBox toggle, string title, string description, AppCommand on, AppCommand off)
+        {
+            var card = new SurfacePanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Margin = new Padding(0, 6, 0, 8), Padding = new Padding(16) };
+            var stack = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 1, RowCount = 4, Margin = new Padding(0) };
+            stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            for (int row = 0; row < 4; row++) stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            toggle.AccessibleDescription = "Автоматическое действие после сохранения настроек. " + description;
+            toggle.Text = title; toggle.AutoSize = false; toggle.Font = UiTheme.Strong;
+            toggle.Dock = DockStyle.Top; toggle.TextAlign = ContentAlignment.TopLeft; toggle.CheckAlign = ContentAlignment.TopLeft;
+            toggle.Margin = new Padding(0, 0, 0, 8);
+            var hint = UiTheme.Label(description, UiTheme.Body, UiTheme.Muted);
+            var immediate = UiTheme.Label("Ручное управление · применяется сразу", UiTheme.Body, UiTheme.Accent);
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = true, Margin = new Padding(0) };
+            var onButton = AppCommandUi.Button(on, delegate { RequestManualAction(on); }, false, true);
+            var offButton = AppCommandUi.Button(off, delegate { RequestManualAction(off); }, false, true);
+            onButton.AccessibleDescription += " Ручное действие применяется сразу.";
+            offButton.AccessibleDescription += " Ручное действие применяется сразу.";
+            manualCommands.Add(on, onButton); manualCommands.Add(off, offButton);
+            actions.Controls.Add(onButton); actions.Controls.Add(offButton);
+            stack.Controls.Add(toggle, 0, 0); stack.Controls.Add(hint, 0, 1);
+            stack.Controls.Add(immediate, 0, 2); stack.Controls.Add(actions, 0, 3);
+            bool sizing = false;
+            stack.Layout += delegate {
+                if (sizing) return; sizing = true;
+                try {
+                    foreach (Control child in stack.Controls) {
+                        int width = Math.Max(1, stack.ClientSize.Width - child.Margin.Horizontal);
+                        if (child is Label) child.MaximumSize = new Size(width, 0);
+                        var option = child as CheckBox;
+                        if (option != null) {
+                            FitPreferenceCaption(option, width);
+                        }
+                    }
+                } finally { sizing = false; }
+            };
+            toggle.TextChanged += delegate { stack.PerformLayout(); };
+            toggle.FontChanged += delegate { stack.PerformLayout(); };
+            card.Controls.Add(stack); flow.Controls.Add(card);
+        }
+        private void RequestManualAction(AppCommand action)
+        {
+            // Manual commands deliberately use the application's saved settings,
+            // never the uncommitted controls in this dialog.
+            if (CommandState != null && !AppCommands.CanExecute(action, CommandState())) { RefreshCommandAvailability(); return; }
+            if (ManualActionRequested != null) ManualActionRequested(action);
+            RefreshCurrentValues();
+        }
+        internal void RefreshCommandAvailability()
+        {
+            if (IsDisposed) return;
+            var state = CommandState == null ? new AppCommandState(new AppCommand[0], false, false) : CommandState();
+            foreach (var item in manualCommands) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
+            if (AcceptButton != null) {
+                var save = (Button)AcceptButton;
+                save.Enabled = !savePending && !state.Integrating && !state.Stopping;
+                save.AccessibleDescription = state.Integrating ? "Сейчас ProGo изменяет настройки прокси. Сохранение станет доступным после завершения операции." :
+                    "Проверяет и сохраняет изменённые настройки программы.";
+            }
+        }
+        internal void RefreshCurrentValues()
+        {
+            RefreshCommandAvailability();
+            var current = service.Current;
+            var appEndpoint = CurrentProxyEndpoint == null ? CliProxyBridgeService.UrlFor(current.HttpProxyPort) : CurrentProxyEndpoint();
+            proxyAddress.Text = appEndpoint;
+            currentAutomation.Text = "Сохранено для ручных команд: SSH " + (String.IsNullOrWhiteSpace(current.SshProfile) ? "не выбран" : current.SshProfile) + "\nSOCKS " + current.SocksHost + ":" + current.SocksPort + " · приложения " + appEndpoint;
+            currentConnection.Text = "Сохранено: SSH " + (String.IsNullOrWhiteSpace(current.SshProfile) ? "не выбран" : current.SshProfile) +
+                "\nSOCKS " + current.SocksHost + ":" + current.SocksPort + ". Поля выше — изменения до сохранения.";
+            currentDiagnostic.Text = "Сохранённый сайт проверки: " + current.TestEndpoint;
+        }
+        private void TogglePortSelection()
+        {
+            pickFreePort = !pickFreePort;
+            httpPort.Enabled = !autoHttpPort.Checked && !pickFreePort;
+            pickPortButton.Text = pickFreePort ? "Отменить подбор" : "Подобрать свободный";
+            pickPortButton.AccessibleName = pickPortButton.Text;
+            portNotice.ForeColor = UiTheme.Accent;
+            portNotice.Text = pickFreePort
+                ? "Свободный порт будет выбран только при сохранении. Нажмите «Отменить подбор», чтобы оставить введённый порт."
+                : "Разовый подбор отменён. При сохранении используется выбранный вами режим и порт.";
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) {
+                CancelStartupRead();
+                if (!startupReadStarted && !profilePathStarted) startupReadCancellation.Dispose();
+                else Task.WhenAll(StartupWork, ProfilePathWork).ContinueWith(delegate { startupReadCancellation.Dispose(); },
+                    CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+                var cancellation = saveCancellation;
+                if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+                if (SaveWork != null && SaveWork.IsCompleted) savePending = false;
+                currentValuesTimer.Dispose();
+            }
+            base.Dispose(disposing);
         }
         private static void AddLabeled(TableLayoutPanel panel, int row, string label, Control control)
         {
-            panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-            panel.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-            control.Dock = DockStyle.Fill; control.Margin = new Padding(0, 8, 0, 8); panel.Controls.Add(control, 1, row);
+            var field = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 1, RowCount = 2, Margin = new Padding(0, 0, 0, 12) };
+            field.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            field.RowStyles.Add(new RowStyle(SizeType.AutoSize)); field.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var caption = UiTheme.Label(label, UiTheme.Body, UiTheme.Text);
+            caption.Dock = DockStyle.Top; caption.Margin = new Padding(0, 0, 0, 6);
+            control.AccessibleName = label;
+            var readOnly = control as TextBox;
+            control.AccessibleDescription = readOnly != null && readOnly.ReadOnly
+                ? "Только чтение. Значение можно выделить и скопировать."
+                : "Изменения применяются после сохранения настроек.";
+            control.Dock = DockStyle.Top; control.Margin = new Padding(0);
+            field.Controls.Add(caption, 0, 0); field.Controls.Add(control, 0, 1);
+            if (control is ComboBox) {
+                // Owner-drawn ComboBox height follows ItemHeight; preferred size may
+                // still report the smaller font-based height. Reserve the native height.
+                field.RowStyles[1].SizeType = SizeType.Absolute;
+                field.RowStyles[1].Height = control.Height;
+                control.SizeChanged += delegate { field.RowStyles[1].Height = control.Height; };
+            }
+            field.Layout += delegate { caption.MaximumSize = new Size(Math.Max(1, field.ClientSize.Width), 0); };
+            AddSettingsRow(panel, row, field);
         }
 
         private void LoadValues()
@@ -160,10 +442,16 @@ namespace ProGo
             proxyAddress.Text = CliProxyBridgeService.UrlFor(s.HttpProxyPort);
             autoSwitchProfile.Checked = s.AutoSwitchSshProfile;
             autoStart.Checked = s.AutoStartSocks;
-            autoProxy.Checked = s.AutoApplyProxy;
+            autoLaunch.Enabled = false;
+            if (!startupAvailable) startupNotice.Text = "Эта копия запущена вне папки установки ProGo. Настройка автозапуска доступна в установленной программе.";
+            else {
+                startupPending = true;
+                startupNotice.Text = "Проверяем автозапуск… Остальные настройки можно изменить и сохранить; автозапуск пока не изменится.";
+                autoLaunch.AccessibleDescription = startupNotice.Text;
+            }
+            autoCli.Checked = s.AutoCliProxy;
             autoRestart.Checked = s.AutoRestartSocks;
             autoWindows.Checked = s.AutoSystemProxy;
-            autoCodex.Checked = s.AutoCodexProxy;
             clearSeconds.Value = s.ClipboardClearSeconds;
             endpoint.Text = s.TestEndpoint;
 
@@ -184,6 +472,111 @@ namespace ProGo
             }
 
             ReloadProfiles(s.SshProfile);
+        }
+
+        private void StartStartupRead()
+        {
+            if (!startupAvailable || startupReadStarted || startupOwnerClosed.Task.IsCompleted) return;
+            startupReadStarted = true;
+            StartupWork = ReadStartupAsync(++startupGeneration, startupReadCancellation.Token);
+        }
+        private async Task ReadStartupAsync(int generation, CancellationToken token)
+        {
+            ApplicationShortcuts.StartupSnapshot result = null;
+            ApplicationShortcuts discoveredShortcuts = startupShortcuts;
+            try {
+                result = await Task.Run(delegate {
+                    token.ThrowIfCancellationRequested();
+                    if (beforeStartupRead != null) beforeStartupRead(token);
+                    token.ThrowIfCancellationRequested();
+                    if (discoveredShortcuts == null) discoveredShortcuts = new ApplicationShortcuts(startupInstallDirectory,
+                        GetAbsoluteFolderPath(Environment.SpecialFolder.Programs, token), GetAbsoluteFolderPath(Environment.SpecialFolder.Startup, token));
+                    token.ThrowIfCancellationRequested();
+                    var snapshot = discoveredShortcuts.ReadStartup();
+                    token.ThrowIfCancellationRequested(); return snapshot;
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) { if (token.IsCancellationRequested) return; }
+            catch { /* A failed read leaves only startup editing unavailable. */ }
+            if (token.IsCancellationRequested || startupOwnerClosed.Task.IsCompleted) return;
+            var delivered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            try {
+                BeginInvoke(new Action(delegate {
+                    try {
+                        if (IsDisposed || Disposing || startupOwnerClosed.Task.IsCompleted ||
+                            token.IsCancellationRequested || generation != startupGeneration) return;
+                        if (savePending) { deferredStartupShortcuts = discoveredShortcuts; deferredStartupSnapshot = result; startupResultDeferred = true; }
+                        else PublishStartupResult(discoveredShortcuts, result);
+                    } finally { delivered.TrySetResult(true); }
+                }));
+            } catch (InvalidOperationException) { delivered.TrySetResult(false); }
+            await Task.WhenAny(delivered.Task, startupOwnerClosed.Task).ConfigureAwait(false);
+        }
+        private void PublishStartupResult(ApplicationShortcuts discoveredShortcuts, ApplicationShortcuts.StartupSnapshot snapshot)
+        {
+            startupPending = false; startupShortcuts = discoveredShortcuts; startupSnapshot = snapshot;
+            autoLaunch.Enabled = snapshot != null && !savePending;
+            if (snapshot != null) {
+                autoLaunch.Checked = snapshot.Registered;
+                startupNotice.Text = (snapshot.Registered ? "ProGo добавлен в автозагрузку." : "ProGo не добавлен в автозагрузку.") +
+                    " Запуск — после входа пользователя в Windows. Галочка применяется после сохранения. Windows может отдельно запретить запуск: проверьте разрешение кнопкой ниже. Подключение к серверу задаётся следующей галочкой.";
+            } else startupNotice.Text = "Не удалось проверить автозапуск: ярлык недоступен или изменён вне ProGo. Он сохранён без изменений. Проверьте параметры Windows и снова откройте это окно.";
+            autoLaunch.AccessibleDescription = startupNotice.Text;
+        }
+        private string GetAbsoluteFolderPath(Environment.SpecialFolder folder, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            string path = folderPathProvider(folder);
+            token.ThrowIfCancellationRequested();
+            if (String.IsNullOrWhiteSpace(path)) throw new System.IO.IOException("Windows folder path is unavailable.");
+            string root = System.IO.Path.GetPathRoot(path);
+            if (String.IsNullOrEmpty(root)) throw new System.IO.IOException("Windows folder path is relative.");
+            string absolute = System.IO.Path.GetFullPath(path);
+            // Reject drive/root-relative paths instead of guessing a current
+            // directory. Redirected UNC folders retain their own root.
+            if (!String.Equals(root, System.IO.Path.GetPathRoot(absolute), StringComparison.OrdinalIgnoreCase))
+                throw new System.IO.IOException("Windows folder path is not fully qualified.");
+            return absolute;
+        }
+        private void StartProfilePathRead()
+        {
+            if (profilePathStarted || startupOwnerClosed.Task.IsCompleted) return;
+            profilePathStarted = true;
+            ProfilePathWork = ReadProfilePathAsync(++profilePathGeneration, startupReadCancellation.Token);
+        }
+        private async Task ReadProfilePathAsync(int generation, CancellationToken token)
+        {
+            string result = null;
+            try {
+                result = await Task.Run(delegate {
+                    string profile = GetAbsoluteFolderPath(Environment.SpecialFolder.UserProfile, token);
+                    token.ThrowIfCancellationRequested();
+                    return System.IO.Path.Combine(profile, ".ssh", "config");
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) { if (token.IsCancellationRequested) return; }
+            catch { /* A diagnostic path failure must not affect startup or Save. */ }
+            if (token.IsCancellationRequested || startupOwnerClosed.Task.IsCompleted) return;
+            var delivered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            try {
+                BeginInvoke(new Action(delegate {
+                    try {
+                        if (IsDisposed || Disposing || startupOwnerClosed.Task.IsCompleted ||
+                            token.IsCancellationRequested || generation != profilePathGeneration) return;
+                        profilePathPending = false;
+                        sshConfigPath.Text = result ?? "Не удалось определить путь к SSH config.";
+                        sshConfigPath.AccessibleDescription = result == null ? sshConfigPath.Text :
+                            "Только чтение. Путь к файлу SSH config можно выделить и скопировать.";
+                    } finally { delivered.TrySetResult(true); }
+                }));
+            } catch (InvalidOperationException) { delivered.TrySetResult(false); }
+            await Task.WhenAny(delivered.Task, startupOwnerClosed.Task).ConfigureAwait(false);
+        }
+        private void CancelStartupRead()
+        {
+            startupGeneration++; startupPending = false; startupResultDeferred = false;
+            deferredStartupShortcuts = null; deferredStartupSnapshot = null;
+            profilePathGeneration++; profilePathPending = false;
+            try { startupReadCancellation.Cancel(); } catch (ObjectDisposedException) { }
+            startupOwnerClosed.TrySetResult(true);
         }
 
         private void ReloadProfiles(string selectedTarget)
@@ -244,7 +637,7 @@ namespace ProGo
             var selected = SelectedProfile();
             if (selected == null)
             {
-                MessageBox.Show("SSH-профиль — это имя подключения для ssh.exe. Пример: my-vps.\n\nСначала добавьте профиль кнопкой «Добавить».", "Что такое SSH-профиль", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Сначала добавьте сервер кнопкой «Добавить»: укажите адрес, логин SSH, порт и ключ.", "Подключение к серверу", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -271,8 +664,7 @@ namespace ProGo
                 return;
             }
 
-            var result = SshProfileDiagnostics.Check(selected.Target);
-            MessageBox.Show(result.ToReport(), "Проверить SSH-профиль", MessageBoxButtons.OK, result.SshResolved ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+            using (var diagnostic = new SshDiagnosticForm(selected)) diagnostic.ShowDialog(this);
         }
 
         private bool ContainsTarget(string target)
@@ -284,36 +676,132 @@ namespace ProGo
             return false;
         }
 
+        private AppSettings ReadProposed(AppSettings current)
+        {
+            var proposed = current.Clone(); var selected = SelectedProfile();
+            proposed.SocksHost = host.Text.Trim(); proposed.SocksPort = (int)port.Value;
+            proposed.HttpProxyPort = (int)httpPort.Value == initialHttpPort && !pickFreePort ? current.HttpProxyPort : (int)httpPort.Value;
+            proposed.AutoHttpProxyPort = autoHttpPort.Checked;
+            proposed.SshProfile = selected == null ? String.Empty : selected.Target; proposed.SshProfiles = CloneProfiles();
+            proposed.AutoSwitchSshProfile = autoSwitchProfile.Checked; proposed.AutoStartSocks = autoStart.Checked;
+            proposed.AutoRestartSocks = autoRestart.Checked; proposed.AutoSystemProxy = autoWindows.Checked;
+            proposed.AutoCliProxy = autoCli.Checked; proposed.ClipboardClearSeconds = (int)clearSeconds.Value;
+            proposed.TestEndpoint = endpoint.Text.Trim(); return proposed;
+        }
         private void Save(object sender, EventArgs e)
         {
-            var selected = SelectedProfile();
-            var selectedTarget = selected == null ? String.Empty : selected.Target;
-            var proposed = new AppSettings
-            {
-                SocksHost = host.Text.Trim(),
-                SocksPort = (int)port.Value,
-                HttpProxyPort = (int)httpPort.Value == initialHttpPort && !pickFreePort ? service.Current.HttpProxyPort : (int)httpPort.Value,
-                AutoHttpProxyPort = autoHttpPort.Checked,
-                SshProfile = selectedTarget,
-                SshProfiles = CloneProfiles(),
-                AutoSwitchSshProfile = autoSwitchProfile.Checked,
-                AutoStartSocks = autoStart.Checked,
-                AutoRestartSocks = autoRestart.Checked,
-                AutoSystemProxy = autoWindows.Checked,
-                AutoCodexProxy = autoCodex.Checked,
-                AutoApplyProxy = autoProxy.Checked,
-                ClipboardClearSeconds = (int)clearSeconds.Value,
-                TestEndpoint = endpoint.Text.Trim()
-            };
-            string error = null;
-            if (SaveRequested != null) error = SaveRequested(proposed, pickFreePort);
-            else using (var bridge = new CliProxyBridgeService(service)) bridge.Reconfigure(proposed, pickFreePort, out error);
-            if (error != null)
-            {
-                DialogResult = DialogResult.None; settingsTabs.SelectedIndex = 4;
-                portNotice.ForeColor = Color.FromArgb(255, 152, 128); portNotice.Text = error; return;
+            if (savePending) return;
+            if (SaveRequestedAsync == null && SaveRequested != null) { SaveLegacy(sender, e); return; }
+            if (CommandState != null && (CommandState().Integrating || CommandState().Stopping)) {
+                ShowSaveError(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси. Дождитесь завершения операции и повторите сохранение.")); return;
+            }
+            var expected = service.Capture(); var proposed = ReadProposed(expected.Settings);
+            var error = SettingsValidation.Check(proposed); if (error != null) { ShowSaveError(error); return; }
+            var request = new SettingsApplyRequest { Proposed = proposed, Expected = expected, PickFree = pickFreePort,
+                Startup = startupShortcuts, StartupSnapshot = startupSnapshot, AutoLaunch = autoLaunch.Checked };
+            var cancellation = new CancellationTokenSource(); saveCancellation = cancellation; savePending = true;
+            saveButton.Enabled = false; settingsTabs.Enabled = false;
+            cancelButton.DialogResult = DialogResult.None; cancelButton.Text = "Отменить применение";
+            saveError.Text = "Применение настроек… Можно запросить отмену; ProGo дождётся текущей операции Windows."; saveError.Visible = true;
+            try { SaveWork = SaveRequestedAsync == null ? DefaultSaveAsync(request, cancellation.Token) : SaveRequestedAsync(request, cancellation.Token); }
+            catch (Exception ex) { SafeLog.Error("Settings application could not start.", ex); SaveWork = Task.FromResult(new SettingsSaveError(SettingsField.General, "Не удалось начать применение настроек. Проверьте журнал ProGo.")); }
+            FinishSaveAsync(SaveWork, cancellation);
+        }
+        private void CancelSave()
+        {
+            var cancellation = saveCancellation;
+            if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+            if (!IsDisposed) { saveError.Text = "Отмена запрошена. Ожидаем завершения операции Windows; уже сохранённые настройки будут применены."; saveError.Visible = true; }
+        }
+        private async void FinishSaveAsync(Task<SettingsSaveError> work, CancellationTokenSource cancellation)
+        {
+            SettingsSaveError error;
+            try { error = await work.ConfigureAwait(false); }
+            catch (Exception ex) { SafeLog.Error("Settings application failed.", ex); error = new SettingsSaveError(SettingsField.General, "Не удалось завершить применение настроек. Проверьте текущее состояние и журнал ProGo."); }
+            cancellation.Dispose();
+            if (IsDisposed || !IsHandleCreated) { savePending = false; return; }
+            try { BeginInvoke(new Action(delegate {
+                if (IsDisposed) return;
+                savePending = false;
+                saveCancellation = null; saveButton.Enabled = true; settingsTabs.Enabled = true;
+                cancelButton.DialogResult = DialogResult.Cancel; cancelButton.Text = "Отменить изменения";
+                if (error != null) {
+                    if (startupResultDeferred) { startupResultDeferred = false; PublishStartupResult(deferredStartupShortcuts, deferredStartupSnapshot); }
+                    ShowSaveError(error); return;
+                }
+                DialogResult = DialogResult.OK; Close();
+            })); } catch (InvalidOperationException) { }
+        }
+        private Task<SettingsSaveError> DefaultSaveAsync(SettingsApplyRequest request, CancellationToken token)
+        {
+            return Task.Run(delegate {
+                ApplicationShortcuts.StartupChange startup = null; SettingsSaveError error = null; bool accepted = false;
+                try {
+                    token.ThrowIfCancellationRequested();
+                    if (request.Startup != null && request.StartupSnapshot != null && request.AutoLaunch != request.StartupSnapshot.Registered)
+                        startup = request.Startup.ChangeStartup(request.StartupSnapshot, request.AutoLaunch);
+                    using (var bridge = new CliProxyBridgeService(service)) {
+                        var prepared = bridge.PrepareConfiguration(request.Proposed, request.PickFree, false, request.Expected, true, token, out error);
+                        if (prepared != null) { bridge.PublishPrepared(prepared); accepted = true; }
+                    }
+                } catch (OperationCanceledException) { error = new SettingsSaveError(SettingsField.General, "Применение настроек отменено."); }
+                catch (Exception ex) { SafeLog.Error("Standalone settings application failed.", ex); error = new SettingsSaveError(SettingsField.Startup, "Не удалось применить настройки автозапуска. Проверьте доступ и снова откройте настройки."); }
+                finally { if (!accepted && startup != null && !startup.TryRollback()) error = new SettingsSaveError(SettingsField.Startup, "Не удалось полностью вернуть автозапуск. Позднейшие изменения сохранены; проверьте настройки Windows."); }
+                return error;
+            });
+        }
+        private void SaveLegacy(object sender, EventArgs e)
+        {
+            if (CommandState != null && (CommandState().Integrating || CommandState().Stopping)) {
+                ShowSaveError(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси. Дождитесь завершения операции и повторите сохранение.")); return;
+            }
+            var proposed = ReadProposed(service.Capture().Settings);
+            var error = SettingsValidation.Check(proposed);
+            ApplicationShortcuts.StartupChange startupChange = null;
+            if (error == null && startupSnapshot != null && autoLaunch.Checked != startupSnapshot.Registered) {
+                try { startupChange = startupShortcuts.ChangeStartup(startupSnapshot, autoLaunch.Checked); }
+                catch { error = new SettingsSaveError(SettingsField.Startup, "Не удалось изменить автозапуск. Ярлык недоступен или изменился вне ProGo. Проверьте его и снова откройте настройки; остальные параметры не применены."); }
+            }
+            if (error == null) {
+                try {
+                    if (SaveRequested != null) error = SaveRequested(proposed, pickFreePort);
+                    else using (var bridge = new CliProxyBridgeService(service)) bridge.ReconfigureDetailed(proposed, pickFreePort, out error);
+                } catch (Exception ex) {
+                    SafeLog.Error("Settings application failed.", ex);
+                    error = new SettingsSaveError(SettingsField.General, "Не удалось завершить применение настроек. Проверьте текущее состояние и журнал ProGo.");
+                }
+            }
+            if (error != null) {
+                if (startupChange != null && !startupChange.TryRollback())
+                    error = new SettingsSaveError(SettingsField.Startup, "Настройки не удалось полностью применить, а автозапуск — вернуть к прежнему состоянию. Проверьте автозагрузку Windows и снова откройте настройки.");
+                ShowSaveError(error); return;
             }
             DialogResult = DialogResult.OK; Close();
+        }
+
+        private void ShowSaveError(SettingsSaveError error)
+        {
+            DialogResult = DialogResult.None;
+            Control field = null;
+            switch (error.Field) {
+                case SettingsField.Startup: settingsTabs.SelectedIndex = 1; field = autoLaunch.Enabled ? (Control)autoLaunch : startupSettingsButton; break;
+                case SettingsField.SocksHost: settingsTabs.SelectedIndex = 1; field = host; break;
+                case SettingsField.SocksPort: settingsTabs.SelectedIndex = 1; field = port; break;
+                case SettingsField.SshProfile: settingsTabs.SelectedIndex = 1; field = sshProfiles; break;
+                case SettingsField.TestEndpoint: settingsTabs.SelectedIndex = 3; field = endpoint; break;
+                case SettingsField.HttpProxyPort: settingsTabs.SelectedIndex = 4; field = httpPort; break;
+                case SettingsField.ClipboardClearSeconds: settingsTabs.SelectedIndex = 2; field = clearSeconds; break;
+                case SettingsField.Applications: settingsTabs.SelectedIndex = 0; break;
+                // A file-write or unclassified failure belongs to the whole Save,
+                // so keep the user's current page and all uncommitted controls.
+            }
+            saveError.Text = error.Message;
+            saveError.Visible = true;
+            if (field != null) {
+                var panel = field.Parent as ScrollableControl;
+                if (panel != null) panel.ScrollControlIntoView(field);
+                field.Focus();
+            }
         }
 
         private List<SshProfileSetting> CloneProfiles()
@@ -329,83 +817,111 @@ namespace ProGo
 
     internal sealed class SshProfileEditorForm : ProGoForm
     {
-        private readonly TextBox name = new TextBox();
-        private readonly TextBox target = new TextBox();
+        private readonly TextBox name = new TextBox { Name = "connectionName" };
+        private readonly ComboBox mode = new ComboBox { Name = "connectionMode", DropDownStyle = ComboBoxStyle.DropDownList };
+        private readonly TextBox server = new TextBox { Name = "sshServer" };
+        private readonly TextBox user = new TextBox { Name = "sshUser" };
+        private readonly NumericUpDown port = new NumericUpDown { Name = "sshPort", Minimum = 1, Maximum = 65535, Value = 22 };
+        private readonly TextBox key = new TextBox { Name = "sshKey" };
+        private readonly TextBox target = new TextBox { Name = "sshAlias" };
+        private readonly Button browse = new Button { Text = "Выбрать…", Width = 105, Dock = DockStyle.Right };
+        private readonly Label guidance = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
         public SshProfileSetting Profile { get; private set; }
 
         public SshProfileEditorForm(SshProfileSetting profile)
         {
+            guidance.Dock = DockStyle.Fill; guidance.Margin = new Padding(3);
             Profile = profile == null ? new SshProfileSetting() : profile.Clone();
-            Text = String.IsNullOrWhiteSpace(Profile.Target) ? "Добавить подключение" : "Изменить подключение";
+            Text = profile == null ? "Добавить подключение" : "Изменить подключение";
             AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterParent;
-            ClientSize = new Size(690, 340);
-            MinimumSize = new Size(690, 340);
-
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 2, RowCount = 6 };
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+            ClientSize = new Size(760, 610);
+            MinimumSize = new Size(760, 610);
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 2, RowCount = 11 };
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
+            for (int i = 0; i < 7; i++) table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
             table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ActionHeight + UiTheme.ActionMargin.Vertical));
             Controls.Add(table);
-
-            var hint = new Label
-            {
-                Text = "Укажите адрес сервера с именем пользователя или готовое имя подключения из файла SSH. ProGo подключается встроенным клиентом Windows.",
-                AutoSize = true,
-                MaximumSize = new Size(620, 0), ForeColor = UiTheme.Muted, Tag = "styled"
-            };
-            table.Controls.Add(hint, 0, 0);
-            table.SetColumnSpan(hint, 2);
-
+            var hint = UiTheme.Label("Введите данные SSH из панели вашего VPS. Пароль здесь не сохраняется: фоновое подключение использует SSH-ключ.", UiTheme.Body, UiTheme.Muted);
+            hint.Dock = DockStyle.Fill; hint.Margin = new Padding(3);
+            table.Controls.Add(hint, 0, 0); table.SetColumnSpan(hint, 2);
+            mode.Items.AddRange(new object[] { "По адресу сервера", "Из SSH config (для опытных)" });
             Add(table, 1, "Название", name);
-            Add(table, 2, "Адрес подключения", target);
-
-            var examples = new Label
-            {
-                Text = "Примеры: my-vps или user@vpn.example.org",
-                AutoSize = true
+            Add(table, 2, "Способ подключения", mode);
+            Add(table, 3, "Сервер (IP или домен)", server);
+            Add(table, 4, "Логин SSH", user);
+            Add(table, 5, "Порт SSH", port);
+            var keyPanel = new Panel { Dock = DockStyle.Fill };
+            key.AccessibleName = "Закрытый SSH-ключ";
+            key.AccessibleDescription = "Путь к закрытому файлу ключа. Пустое поле использует стандартные ключи и SSH-агент Windows.";
+            browse.AccessibleDescription = "Выбрать закрытый SSH-ключ на этом компьютере.";
+            key.Dock = DockStyle.Fill; keyPanel.Controls.Add(key); keyPanel.Controls.Add(browse);
+            Add(table, 6, "Закрытый SSH-ключ", keyPanel);
+            Add(table, 7, "Имя из SSH config", target);
+            table.Controls.Add(guidance, 0, 8); table.SetColumnSpan(guidance, 2);
+            browse.Click += delegate {
+                using (var picker = new OpenFileDialog { Title = "Выберите закрытый SSH-ключ (не .pub)", Filter = "Все файлы (*.*)|*.*", CheckFileExists = true }) {
+                    if (picker.ShowDialog(this) == DialogResult.OK) key.Text = picker.FileName;
+                }
             };
-            table.Controls.Add(examples, 1, 3);
-
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var save = new Button { Text = "Сохранить", Width = 110, DialogResult = DialogResult.OK, Tag = "primary" };
-            var cancel = new Button { Text = "Отмена", Width = 110, DialogResult = DialogResult.Cancel };
-            save.Click += Save;
-            buttons.Controls.Add(cancel);
-            buttons.Controls.Add(save);
-            table.Controls.Add(buttons, 0, 5);
-            table.SetColumnSpan(buttons, 2);
-            AcceptButton = save;
-            CancelButton = cancel;
-
-            name.Text = Profile.Name ?? String.Empty;
-            target.Text = Profile.Target ?? String.Empty;
+            var save = UiTheme.Button("Сохранить", null, true, DialogResult.OK); save.Name = "saveConnection";
+            var cancel = UiTheme.Button("Отмена", null, false, DialogResult.Cancel);
+            save.Click += Save; buttons.Controls.Add(cancel); buttons.Controls.Add(save);
+            table.Controls.Add(buttons, 0, 10); table.SetColumnSpan(buttons, 2);
+            AcceptButton = save; CancelButton = cancel;
+            name.Text = Profile.Name ?? ""; server.Text = Profile.Server ?? ""; user.Text = Profile.User ?? "";
+            port.Value = Math.Max(1, Math.Min(65535, Profile.Port)); key.Text = Profile.IdentityFile ?? "";
+            target.Text = Profile.IsDirect ? "" : Profile.Target ?? "";
+            mode.SelectedIndexChanged += delegate { UpdateMode(); };
+            // Existing aliases remain aliases until the user explicitly switches modes.
+            mode.SelectedIndex = profile == null || Profile.IsDirect ? 0 : 1;
+            UpdateMode();
+            UiTheme.ConfigureKeyboardOrder(table);
         }
-
+        private void UpdateMode()
+        {
+            bool direct = mode.SelectedIndex == 0;
+            server.Enabled = user.Enabled = port.Enabled = key.Enabled = browse.Enabled = direct;
+            target.Enabled = !direct;
+            guidance.Text = direct ? "Сервер: например vpn.example.org. Порт SSH обычно 22 — это не порт SOCKS.\r\nКлюч: выберите закрытый файл. Пустое поле использует стандартные ключи и SSH-агент Windows. Ключ должен быть разрешён на VPS; для проверки используйте «Первый вход»." :
+                "Введите имя из %USERPROFILE%\\.ssh\\config, например my-vps, или прежний адрес user@host. Сервер, порт и ключ берутся из настроек OpenSSH. Файл config не изменяется.";
+        }
         private static void Add(TableLayoutPanel table, int row, string label, Control control)
         {
             table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-            control.Dock = DockStyle.Fill;
-            table.Controls.Add(control, 1, row);
+            control.AccessibleName = label;
+            control.Dock = DockStyle.Fill; table.Controls.Add(control, 1, row);
         }
-
         private void Save(object sender, EventArgs e)
         {
-            var targetText = target.Text.Trim();
-            if (String.IsNullOrWhiteSpace(targetText))
-            {
-                MessageBox.Show("Укажите Адрес подключения: например my-vps или user@vpn.example.org.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                DialogResult = DialogResult.None;
-                return;
+            var candidate = Profile.Clone();
+            if (mode.SelectedIndex == 0) {
+                candidate.Server = server.Text.Trim(); candidate.User = user.Text.Trim(); candidate.Port = (int)port.Value;
+                candidate.IdentityFile = key.Text.Trim();
+                if (String.IsNullOrWhiteSpace(candidate.Server)) { Refuse("Укажите IP-адрес или домен в поле «Сервер»."); return; }
+                if (String.IsNullOrWhiteSpace(candidate.Target)) candidate.Target = "progo-" + Guid.NewGuid().ToString("N");
+            } else {
+                candidate.Target = target.Text.Trim(); candidate.Server = ""; candidate.User = ""; candidate.Port = 22; candidate.IdentityFile = "";
             }
-
-            Profile.Target = targetText;
-            Profile.Name = String.IsNullOrWhiteSpace(name.Text) ? targetText : name.Text.Trim();
+            try {
+                SshConnection.Validate(candidate);
+                if (candidate.IsDirect && !String.IsNullOrWhiteSpace(candidate.IdentityFile)) {
+                    if (!System.IO.File.Exists(SshConnection.KeyPath(candidate.IdentityFile))) throw new ArgumentException("Файл ключа не найден. Выберите существующий файл на этом компьютере.");
+                    if (candidate.IdentityFile.EndsWith(".pub", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Это открытый ключ (.pub). Выберите закрытый ключ — обычно файл без расширения .pub.");
+                }
+            } catch (ArgumentException ex) { Refuse(ex.Message); return; }
+            candidate.Name = String.IsNullOrWhiteSpace(name.Text) ? candidate.Address : name.Text.Trim();
+            Profile = candidate;
+        }
+        private void Refuse(string message)
+        {
+            DialogResult = DialogResult.None;
+            MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

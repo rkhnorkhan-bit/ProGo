@@ -47,9 +47,18 @@ ProGo is a small Windows tray application.
 
 `MainWindow` hosts the native dashboard; `UiTheme` and `BrandIcon` are shared by all
 application forms. `AutomationPlan` keeps one pending startup action per enabled
-option. Explicit off cancels that action. `CodexProxyService` creates a scoped
-launcher rather than modifying global variables or the Codex configuration.
+option: one for the shared terminal/Codex environment and one for Windows proxy.
+Explicit off cancels that action. `CliProxyEnvironmentService` applies and restores
+the shared current-user environment for ordinary launches. `CodexProxyService`
+only creates or opens an optional scoped launcher; it does not change Codex config.
 Windows and terminal traffic use the local HTTP/CONNECT bridge.
+
+`ApplicationInstance` holds a global, SID-scoped mutex for the normal application
+lifetime. It is acquired before shared data and services. Repeat launches use a
+same-user named pipe with one activation command; no file paths, credentials or
+arbitrary actions are accepted. Startup activation is queued until the tray
+context attaches and dispatches it to the UI thread. Update/restore handoff
+serialization is a separate pending part of audit F03.
 
 `UpdateLauncher` executes the installed updater file. The updater resolves a pinned
 release asset and SHA-256 from GitHub metadata and validates paths before unpacking.

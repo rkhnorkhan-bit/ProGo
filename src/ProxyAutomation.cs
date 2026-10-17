@@ -9,26 +9,106 @@ using System.Windows.Forms;
 
 namespace ProGo
 {
-    internal enum ProxyFeature { Terminal, Windows, Codex }
+    internal enum ProxyFeature { Cli, Windows }
+    internal enum AutomationResult { None, Applied, RetryScheduled, Paused }
 
-    // One pending application per enabled option. Manual off cancels that application
-    // until the next app launch or until the user explicitly enables automation again.
+    // Keep an enabled option pending until it is applied successfully. The timer
+    // never retries a cancelled option or spins forever on a persistent failure.
     internal sealed class AutomationPlan
     {
-        private readonly HashSet<ProxyFeature> pending = new HashSet<ProxyFeature>();
+        private sealed class PendingAction
+        {
+            internal int Failures;
+            internal DateTime RetryAt;
+            internal bool Paused, Applying;
+        }
+        private static readonly int[] RetrySeconds = { 5, 15, 45 };
+        private readonly Dictionary<ProxyFeature, PendingAction> pending = new Dictionary<ProxyFeature, PendingAction>();
+        private readonly Func<DateTime> now;
+        internal AutomationPlan() : this(delegate { return DateTime.UtcNow; }) { }
+        internal AutomationPlan(Func<DateTime> clock) { now = clock; }
         internal void Update(AppSettings before, AppSettings after)
         {
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
             {
                 if (!Enabled(after, feature)) pending.Remove(feature);
-                else if (before == null || !Enabled(before, feature)) pending.Add(feature);
+                else if (before == null || !Enabled(before, feature)) pending[feature] = new PendingAction();
             }
         }
-        internal bool Take(ProxyFeature feature, bool ready) { return ready && pending.Remove(feature); }
+        internal AutomationResult TryApply(ProxyFeature feature, bool ready, Action<ProxyFeature> apply, out Exception error)
+        {
+            var attempt = BeginApply(feature, ready);
+            if (attempt == null) { error = null; return AutomationResult.None; }
+            Exception failure = null;
+            try { apply(feature); } catch (Exception ex) { failure = ex; }
+            return CompleteApply(feature, attempt, failure, out error);
+        }
+        // Both halves run on the UI owner; the native mutation between them may
+        // await a worker without retaining a modal SynchronizationContext.
+        internal object BeginApply(ProxyFeature feature, bool ready)
+        {
+            PendingAction state;
+            if (!ready || !pending.TryGetValue(feature, out state) || state.Paused || state.Applying || now() < state.RetryAt)
+                return null;
+            state.Applying = true;
+            return state;
+        }
+        internal AutomationResult CompleteApply(ProxyFeature feature, object attempt, Exception failure, out Exception error)
+        {
+            error = null;
+            var state = (PendingAction)attempt;
+            try
+            {
+                if (!IsCurrent(feature, state)) return AutomationResult.None;
+                if (failure == null) { pending.Remove(feature); return AutomationResult.Applied; }
+                error = failure;
+                state.Failures++;
+                if (PermanentFailure(failure) || state.Failures > RetrySeconds.Length)
+                {
+                    state.Paused = true;
+                    return AutomationResult.Paused;
+                }
+                state.RetryAt = now().AddSeconds(RetrySeconds[state.Failures - 1]);
+                return AutomationResult.RetryScheduled;
+            }
+            finally { state.Applying = false; }
+        }
+        private bool IsCurrent(ProxyFeature feature, PendingAction state)
+        {
+            PendingAction current;
+            return pending.TryGetValue(feature, out current) && Object.ReferenceEquals(current, state);
+        }
+        private static bool PermanentFailure(Exception error)
+        {
+            for (var ex = error; ex != null; ex = ex.InnerException)
+                if (ex is UnauthorizedAccessException || ex is System.Security.SecurityException || ex is ArgumentException) return true;
+            return false;
+        }
+        internal int FailureCount(ProxyFeature feature)
+        {
+            PendingAction state;
+            return pending.TryGetValue(feature, out state) ? state.Failures : 0;
+        }
+        internal string GetStatusText(bool ready)
+        {
+            foreach (var pair in pending)
+                if (pair.Value.Paused) return "Автонастройка " + FeatureName(pair.Key) + ": ошибка. Проверьте настройки.";
+            if (pending.Count == 0) return "";
+            if (!ready) return "Автонастройка: ожидает подключения к серверу.";
+            DateTime retryAt = DateTime.MaxValue;
+            foreach (var state in pending.Values)
+                if (state.Failures > 0 && state.RetryAt < retryAt) retryAt = state.RetryAt;
+            if (retryAt == DateTime.MaxValue) return "Автонастройка: настройки ожидают применения.";
+            return "Автонастройка: повтор через " + Math.Max(0, (int)Math.Ceiling((retryAt - now()).TotalSeconds)) + " с.";
+        }
+        internal static string FeatureName(ProxyFeature feature)
+        {
+            return feature == ProxyFeature.Cli ? "терминалов и Codex" : "Windows";
+        }
         internal void Cancel(ProxyFeature feature) { pending.Remove(feature); }
         internal static bool Enabled(AppSettings s, ProxyFeature feature)
         {
-            return feature == ProxyFeature.Terminal ? s.AutoApplyProxy : feature == ProxyFeature.Windows ? s.AutoSystemProxy : s.AutoCodexProxy;
+            return feature == ProxyFeature.Cli ? s.AutoCliProxy : s.AutoSystemProxy;
         }
     }
 
@@ -49,16 +129,6 @@ namespace ProGo
             text.AppendLine("call codex %*");
             text.AppendLine("endlocal");
             return text.ToString();
-        }
-        // Normal Codex launch uses the same Windows-user proxy environment as
-        // other command-line tools. The scoped shortcut below is optional.
-        internal static void EnableOrdinaryLaunch(int port)
-        {
-            CliProxyEnvironmentService.ApplyUserEnvironment(port);
-        }
-        internal static void DisableOrdinaryLaunch()
-        {
-            CliProxyEnvironmentService.ClearUserEnvironmentIfOwned();
         }
         public static void Enable(int port)
         {
@@ -120,7 +190,7 @@ namespace ProGo
             if (File.Exists(ShortcutPath)) File.Delete(ShortcutPath);
             File.Delete(LauncherPath);
         }
-        public static void Open(int port)
+        public static Process Open(int port)
         {
             // Launch in a scoped child process. Never modify Codex config, PATH or API keys.
             var start = new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"), "/D /K codex")
@@ -129,7 +199,7 @@ namespace ProGo
                 WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             };
             CliProxyEnvironmentService.ApplyProcessEnvironment(start, port);
-            Process.Start(start);
+            return Process.Start(start);
         }
     }
 }

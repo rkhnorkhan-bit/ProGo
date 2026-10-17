@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace ProGo
@@ -18,6 +19,8 @@ namespace ProGo
         public string Result { get; set; }
         public string Kind { get; set; }
         public string Created { get; set; }
+        public string Contents { get; set; }
+        public string ArchiveContents { get; set; }
         public DateTime LastWriteTime { get; set; }
 
         public bool IsManual
@@ -51,8 +54,7 @@ namespace ProGo
 
     internal static class BackupService
     {
-        private const int MaxAutomaticBackups = 10;
-
+        private static readonly SemaphoreSlim creationGate = new SemaphoreSlim(1, 1);
         public static string BackupsRoot
         {
             get { return System.IO.Path.Combine(AppPaths.Root, "backups"); }
@@ -79,30 +81,63 @@ namespace ProGo
         {
             try
             {
-                var version = CurrentVersion;
-                if (HasBackupForVersion(version)) return;
+                var dir = EnsureVersionBackupExists(reason, CancellationToken.None, null, null);
+                if (dir != null) SafeLog.Info("Version baseline backup created: " + dir + ".");
+            }
+            catch (Exception ex) { SafeLog.Error("Version baseline backup failed.", ex); }
+        }
 
-                var dir = CreateBackup(reason);
-                SafeLog.Info("Version baseline backup created: " + dir + ".");
-            }
-            catch (Exception ex)
+        // Scan and creation share the same gate: concurrent callers cannot both
+        // decide that the baseline is missing. A null result means a valid copy exists.
+        internal static string EnsureVersionBackupExists(string reason, CancellationToken cancellation,
+            Action<string, CancellationToken> beforeCopy, Action<CancellationToken> beforeProbe)
+        {
+            creationGate.Wait(cancellation);
+            try
             {
-                SafeLog.Error("Version baseline backup failed.", ex);
+                cancellation.ThrowIfCancellationRequested();
+                if (beforeProbe != null) beforeProbe(cancellation);
+                cancellation.ThrowIfCancellationRequested();
+                var file = System.IO.Path.Combine(AppPaths.Root, "VERSION");
+                var version = File.Exists(file) ? File.ReadAllText(file).Trim() : "0.0.0";
+                cancellation.ThrowIfCancellationRequested();
+                if (HasBackupForVersion(version, cancellation)) return null;
+                return CreateBackupCore(reason, cancellation, beforeCopy);
             }
+            finally { creationGate.Release(); }
         }
 
         public static bool HasBackupForVersion(string version)
-        {
-            foreach (var backup in ListBackups())
-            {
-                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline) return true;
-            }
+        { return HasBackupForVersion(version, CancellationToken.None); }
 
+        internal static bool HasBackupForVersion(string version, CancellationToken cancellation)
+        {
+            foreach (var backup in ListBackups(cancellation))
+            {
+                cancellation.ThrowIfCancellationRequested();
+                if (String.Equals(backup.Version, version, StringComparison.OrdinalIgnoreCase) && backup.IsBaseline)
+                {
+                    string error;
+                    if (TryValidateRestore(backup.Path, cancellation, out error)) return true;
+                }
+            }
+            cancellation.ThrowIfCancellationRequested();
             return false;
         }
 
         public static string CreateBackup(string reason)
+        { return CreateBackup(reason, CancellationToken.None, null); }
+
+        internal static string CreateBackup(string reason, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
         {
+            creationGate.Wait(cancellation);
+            try { return CreateBackupCore(reason, cancellation, beforeCopy); }
+            finally { creationGate.Release(); }
+        }
+
+        private static string CreateBackupCore(string reason, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
+        {
+            cancellation.ThrowIfCancellationRequested();
             AppPaths.EnsureDirectories();
             Directory.CreateDirectory(BackupsRoot);
 
@@ -123,36 +158,54 @@ namespace ProGo
             }
 
             Directory.CreateDirectory(backupDir);
-
-            CopyFileIfExists("ProGo.exe", backupDir);
-            CopyFileIfExists("ProGo.ico", backupDir);
-            CopyFileIfExists("VERSION", backupDir);
-            CopyFileIfExists("vault.enc.json", backupDir);
-            CopyFileIfExists("settings.json", backupDir);
-            CopyFileIfExists("progo.log", backupDir);
-            CopyFileIfExists("update.log", backupDir);
-            CopyFileIfExists("progo-update.log", backupDir);
-            CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"));
-
-            WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
-
-            CleanupOldBackups(false);
-            SafeLog.Info("Backup created: " + backupDir + ".");
-            return backupDir;
+            var committed = false;
+            try
+            {
+                foreach (var name in new[] { "ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log" })
+                    CopyFileIfExists(name, backupDir, cancellation, beforeCopy);
+                CopyDirectoryIfExists(System.IO.Path.Combine(AppPaths.Root, "scripts"), System.IO.Path.Combine(backupDir, "scripts"), cancellation, beforeCopy);
+                BackupIntegrity.CopyPersonalArchives(AppPaths.Root, backupDir, cancellation);
+                cancellation.ThrowIfCancellationRequested();
+                WriteManifest(backupDir, version, String.Empty, reason, createdBy, result, kind);
+                BackupIntegrity.Write(backupDir, cancellation);
+                BackupIntegrity.Validate(backupDir, cancellation);
+                var cleanup = BackupRetention.Plan(BackupsRoot, backupDir);
+                cancellation.ThrowIfCancellationRequested();
+                // Once a complete copy is accepted, finish retention. Cancellation
+                // before this boundary never prunes any previous copy.
+                committed = true;
+                ApplyCleanupPlan(cleanup, false);
+                SafeLog.Info("Backup created: " + backupDir + ".");
+                return backupDir;
+            }
+            catch
+            {
+                if (!committed)
+                    try { RejectCopyLinks(backupDir); Directory.Delete(backupDir, true); }
+                    catch (Exception ex) { SafeLog.Error("Incomplete new backup could not be removed; previous copies are unchanged.", ex); }
+                throw;
+            }
         }
 
         public static List<BackupInfo> ListBackups()
+        { return ListBackups(CancellationToken.None); }
+
+        internal static List<BackupInfo> ListBackups(CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var result = new List<BackupInfo>();
             if (!Directory.Exists(BackupsRoot)) return result;
 
             var dirs = Directory.GetDirectories(BackupsRoot);
+            cancellation.ThrowIfCancellationRequested();
             Array.Sort(dirs);
             Array.Reverse(dirs);
 
             foreach (var dir in dirs)
             {
+                cancellation.ThrowIfCancellationRequested();
                 result.Add(ReadBackupInfo(dir));
+                cancellation.ThrowIfCancellationRequested();
             }
 
             return result;
@@ -160,63 +213,60 @@ namespace ProGo
 
         public static BackupCleanupResult CleanupOldBackups(bool includeSummary)
         {
-            Directory.CreateDirectory(BackupsRoot);
-            var backups = ListBackups();
-            var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            return ApplyCleanupPlan(BackupRetention.Plan(BackupsRoot), includeSummary);
+        }
 
-            foreach (var backup in backups)
-            {
-                if (backup.IsManual) keep.Add(backup.Path);
-            }
-
-            var latestBaseline = FirstOrNull(backups, delegate(BackupInfo b) { return b.IsBaseline; });
-            if (latestBaseline != null) keep.Add(latestBaseline.Path);
-
-            var latestPreUpdate = FirstOrNull(backups, delegate(BackupInfo b) { return b.IsPreUpdate; });
-            if (latestPreUpdate != null) keep.Add(latestPreUpdate.Path);
-
-            var automaticKept = 0;
-            foreach (var backup in backups)
-            {
-                if (backup.IsManual) continue;
-                if (automaticKept < MaxAutomaticBackups)
-                {
-                    keep.Add(backup.Path);
-                    automaticKept++;
-                }
-            }
-
-            var deleted = 0;
-            var failed = 0;
-            foreach (var backup in backups)
-            {
-                if (keep.Contains(backup.Path)) continue;
-
-                try
-                {
-                    Directory.Delete(backup.Path, true);
-                    deleted++;
-                }
-                catch (Exception ex)
-                {
-                    failed++;
-                    SafeLog.Error("Backup cleanup failed: " + backup.Path + ".", ex);
-                }
-            }
-
+        internal static BackupCleanupResult ApplyCleanupPlan(BackupRetentionPlan plan, bool includeSummary)
+        {
+            var result = BackupRetention.Apply(plan);
             var output = new BackupCleanupResult
             {
-                Deleted = deleted,
-                Kept = keep.Count,
-                Failed = failed,
-                Message = "Удалено: " + deleted + "; сохранено: " + keep.Count + "; ошибок: " + failed + "."
+                Deleted = result.Deleted, Kept = result.Kept, Failed = result.Failed,
+                Message = "Удалено: " + result.Deleted + "; сохранено: " + result.Kept +
+                    "; пропущено после повторной проверки: " + result.Skipped + "; ошибок: " + result.Failed + "."
             };
-
             if (includeSummary) SafeLog.Info("Backup cleanup finished. " + output.Message);
             return output;
         }
 
-        public static bool StartRestore(string backupDir)
+        internal static bool TryValidateRestore(string backupDir, out string error)
+        { return TryValidateRestore(backupDir, CancellationToken.None, out error); }
+
+        private static bool TryValidateRestore(string backupDir, CancellationToken cancellation, out string error)
+        {
+            try { BackupIntegrity.Validate(backupDir, cancellation); error = String.Empty; return true; }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { error = ex.Message; return false; }
+        }
+
+        internal static string RestoreArguments(string script, string backupDir, string scope, bool confirmData, int currentPid)
+        {
+            BackupIntegrity.RestoreNames(backupDir, scope, confirmData);
+            return "-NoProfile -ExecutionPolicy Bypass -File \"" + script + "\" -BackupDir \"" + backupDir + "\" -Scope " + scope +
+                (scope != "Program" && confirmData ? " -ConfirmData" : "") + " -WaitPid " + currentPid;
+        }
+
+        internal static MaintenanceHandoffResult LaunchRestore(RestorePreparedInfo prepared, CancellationToken token,
+            Func<RestorePreparedInfo, ProcessStartInfo> launchInfo = null)
+        {
+            token.ThrowIfCancellationRequested();
+            BackupIntegrity.Validate(prepared.Copy.Path, token);
+            token.ThrowIfCancellationRequested();
+            var script = Path.Combine(AppPaths.Root, "scripts", "Restore-ProGoBackup.ps1");
+            if (!File.Exists(script)) return new MaintenanceHandoffResult { Error = "Скрипт восстановления не найден. Приложение остаётся запущенным; проверьте установку ProGo." };
+            var powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            if (!File.Exists(powershell)) powershell = "powershell.exe";
+            var info = launchInfo == null ? new ProcessStartInfo(powershell,
+                RestoreArguments(script, prepared.Copy.Path, prepared.Scope, prepared.ConfirmData, Process.GetCurrentProcess().Id)) {
+                    UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = AppPaths.Root
+                } : launchInfo(prepared);
+            token.ThrowIfCancellationRequested();
+            return MaintenanceOperation.StartOwnedHandoff(info, token);
+        }
+
+        public static bool StartRestore(string backupDir) { return StartRestore(backupDir, "Program", false); }
+
+        internal static bool StartRestore(string backupDir, string scope, bool confirmData)
         {
             try
             {
@@ -237,20 +287,31 @@ namespace ProGo
                     return false;
                 }
 
+                string validationError;
+                if (!TryValidateRestore(backupDir, out validationError))
+                {
+                    MessageBox.Show(validationError, "Копия не прошла проверку", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+
                 var powershell = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
                 if (!File.Exists(powershell)) powershell = "powershell.exe";
 
                 var currentPid = Process.GetCurrentProcess().Id;
-                var args = "-NoProfile -ExecutionPolicy Bypass -File \"" + script + "\" -BackupDir \"" + backupDir + "\" -WaitPid " + currentPid;
+                var args = RestoreArguments(script, backupDir, scope, confirmData, currentPid);
 
                 var psi = new ProcessStartInfo(powershell, args)
                 {
-                    UseShellExecute = true,
-                    WindowStyle = ProcessWindowStyle.Minimized,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
                     WorkingDirectory = AppPaths.Root
                 };
 
-                Process.Start(psi);
+                if (!MaintenanceOperation.StartHandoff(psi))
+                {
+                    MessageBox.Show("Восстановление не получило управление. Возможно, уже выполняется обновление или восстановление. ProGo останется запущенным.", "Восстановление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
                 return true;
             }
             catch (Exception ex)
@@ -263,17 +324,26 @@ namespace ProGo
 
         private static BackupInfo ReadBackupInfo(string dir)
         {
+            return ReadBackupInfo(dir, File.ReadAllLines);
+        }
+
+        internal static BackupInfo ReadBackupInfo(string dir, Func<string, string[]> readManifestLines)
+        {
+            var lastWriteTime = Directory.GetLastWriteTime(dir);
+            var manifest = ReadManifestLines(dir, readManifestLines);
             var info = new BackupInfo
             {
                 Path = dir,
-                LastWriteTime = Directory.GetLastWriteTime(dir),
-                Version = ReadManifestValue(dir, "version"),
-                TargetVersion = ReadManifestValue(dir, "target_version"),
-                Reason = ReadManifestValue(dir, "reason"),
-                CreatedBy = ReadManifestValue(dir, "created_by"),
-                Result = ReadManifestValue(dir, "update_result"),
-                Kind = ReadManifestValue(dir, "backup_kind"),
-                Created = ReadManifestValue(dir, "created")
+                LastWriteTime = lastWriteTime,
+                Version = ReadManifestValue(manifest, "version"),
+                TargetVersion = ReadManifestValue(manifest, "target_version"),
+                Reason = ReadManifestValue(manifest, "reason"),
+                CreatedBy = ReadManifestValue(manifest, "created_by"),
+                Result = ReadManifestValue(manifest, "update_result"),
+                Kind = ReadManifestValue(manifest, "backup_kind"),
+                Created = ReadManifestValue(manifest, "created"),
+                Contents = ReadManifestValue(manifest, "contains"),
+                ArchiveContents = ReadManifestValue(manifest, "archived_only")
             };
 
             if (String.IsNullOrEmpty(info.Version)) info.Version = InferVersionFromName(dir);
@@ -297,15 +367,6 @@ namespace ProGo
             return name + " | " + kind + " | v" + info.Version + target + " | " + status + " | " + info.Created;
         }
 
-        private static BackupInfo FirstOrNull(List<BackupInfo> backups, Predicate<BackupInfo> predicate)
-        {
-            foreach (var backup in backups)
-            {
-                if (predicate(backup)) return backup;
-            }
-            return null;
-        }
-
         private static void WriteManifest(string backupDir, string version, string targetVersion, string reason, string createdBy, string updateResult, string backupKind)
         {
             var manifest = new StringBuilder();
@@ -317,7 +378,8 @@ namespace ProGo
             manifest.AppendLine("created_by=" + SafeManifest(createdBy));
             manifest.AppendLine("update_result=" + SafeManifest(updateResult));
             manifest.AppendLine("backup_kind=" + SafeManifest(backupKind));
-            manifest.AppendLine("contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log,progo-update.log");
+            manifest.AppendLine("contains=" + BackupIntegrity.Contents(backupDir));
+            foreach (var line in BackupIntegrity.CompositionLines(backupDir)) manifest.AppendLine(line);
             File.WriteAllText(System.IO.Path.Combine(backupDir, "manifest.txt"), manifest.ToString(), Encoding.UTF8);
         }
 
@@ -369,55 +431,94 @@ namespace ProGo
             return String.IsNullOrEmpty(value) ? String.Empty : value;
         }
 
-        private static void CopyFileIfExists(string fileName, string backupDir)
+        private static void CopyFileIfExists(string fileName, string backupDir, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
         {
+            cancellation.ThrowIfCancellationRequested();
             var source = System.IO.Path.Combine(AppPaths.Root, fileName);
             if (File.Exists(source))
             {
-                File.Copy(source, System.IO.Path.Combine(backupDir, fileName), true);
+                CopyFile(source, System.IO.Path.Combine(backupDir, fileName), fileName, cancellation, beforeCopy);
             }
         }
 
-        private static void CopyDirectoryIfExists(string source, string destination)
+        private static void CopyDirectoryIfExists(string source, string destination, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
         {
+            cancellation.ThrowIfCancellationRequested();
             if (!Directory.Exists(source)) return;
 
             Directory.CreateDirectory(destination);
             foreach (var dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
             {
+                cancellation.ThrowIfCancellationRequested();
                 var rel = dir.Substring(source.Length).TrimStart(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
                 Directory.CreateDirectory(System.IO.Path.Combine(destination, rel));
             }
 
             foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
             {
+                cancellation.ThrowIfCancellationRequested();
                 var rel = file.Substring(source.Length).TrimStart(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
                 var target = System.IO.Path.Combine(destination, rel);
                 var targetDir = System.IO.Path.GetDirectoryName(target);
                 if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
-                File.Copy(file, target, true);
+                CopyFile(file, target, "scripts/" + rel.Replace(System.IO.Path.DirectorySeparatorChar, '/'), cancellation, beforeCopy);
             }
         }
 
-        private static string ReadManifestValue(string backupDir, string key)
+        private static void CopyFile(string source, string target, string relative, CancellationToken cancellation, Action<string, CancellationToken> beforeCopy)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            if (beforeCopy != null) beforeCopy(relative, cancellation);
+            cancellation.ThrowIfCancellationRequested();
+            var sharing = FileShare.Read | FileShare.Delete;
+            if (relative.EndsWith(".log", StringComparison.OrdinalIgnoreCase)) sharing |= FileShare.Write;
+            using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, sharing))
+            using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                // A live log can grow. Copy the observed size rather than chase it.
+                var remaining = input.Length; var buffer = new byte[65536];
+                while (remaining > 0)
+                {
+                    cancellation.ThrowIfCancellationRequested();
+                    var read = input.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
+                    if (read == 0) throw new IOException("Файл изменился во время создания копии: " + relative + ".");
+                    output.Write(buffer, 0, read); remaining -= read;
+                }
+                cancellation.ThrowIfCancellationRequested();
+            }
+        }
+
+        private static void RejectCopyLinks(string directory)
+        {
+            if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+                throw new IOException("Незавершённая копия содержит ссылку; папка сохранена.");
+            foreach (var entry in Directory.GetFileSystemEntries(directory))
+            {
+                if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
+                    throw new IOException("Незавершённая копия содержит ссылку; папка сохранена.");
+                if (Directory.Exists(entry)) RejectCopyLinks(entry);
+            }
+        }
+
+        private static string[] ReadManifestLines(string backupDir, Func<string, string[]> reader)
         {
             try
             {
                 var manifest = System.IO.Path.Combine(backupDir, "manifest.txt");
-                if (!File.Exists(manifest)) return String.Empty;
-
-                foreach (var line in File.ReadAllLines(manifest))
-                {
-                    if (line.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return line.Substring(key.Length + 1).Trim();
-                    }
-                }
+                if (File.Exists(manifest)) return reader(manifest) ?? new string[0];
             }
             catch
             {
             }
 
+            return new string[0];
+        }
+
+        private static string ReadManifestValue(string[] manifest, string key)
+        {
+            foreach (var line in manifest)
+                if (line.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
+                    return line.Substring(key.Length + 1).Trim();
             return String.Empty;
         }
 
@@ -465,25 +566,33 @@ namespace ProGo
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
             root.Controls.Add(UiTheme.Label("Вернуться к сохранённой версии", UiTheme.Heading, UiTheme.Text), 0, 0);
-            root.Controls.Add(UiTheme.Label(items.Count == 0 ? "Сохранённых копий пока нет." : "Выберите копию. Перед восстановлением ProGo запросит подтверждение.", UiTheme.Body, UiTheme.Muted), 0, 1);
-            list = new ListBox { Dock = DockStyle.Fill };
+            var guidance = UiTheme.Label(items.Count == 0 ? "Сохранённых копий пока нет." : "Выберите копию. Перед восстановлением ProGo запросит подтверждение.", UiTheme.Body, UiTheme.Muted);
+            guidance.AccessibleName = "Выбор копии перед восстановлением"; guidance.AccessibleDescription = guidance.Text;
+            root.Controls.Add(guidance, 0, 1);
+            list = new ListBox { Dock = DockStyle.Fill, AccessibleName = "Сохранённые копии",
+                AccessibleDescription = "Стрелки меняют выбранную копию и сведения о ней. Выбор в списке не запускает восстановление." };
             list.SelectedIndexChanged += delegate { UpdateDetails(); };
             foreach (var backup in backups) list.Items.Add(backup.DisplayName);
-            details = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical };
+            details = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
+                AccessibleName = "Сведения о выбранной копии",
+                AccessibleDescription = "Только чтение: папка, версия, тип, статус, причина, время и заявленный состав выбранной копии. Сведения меняются при выборе другой копии; проверка выполняется перед восстановлением." };
             root.Controls.Add(list, 0, 2); root.Controls.Add(details, 0, 3);
             var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
             var cancel = UiTheme.Button("Отмена", delegate { DialogResult = DialogResult.Cancel; }, false);
+            cancel.AccessibleDescription = "Закрыть выбор копии без восстановления и без изменения сохранённых копий.";
             var ok = UiTheme.Button("Восстановить", delegate { Accept(); }, true); ok.Enabled = items.Count > 0;
+            ok.AccessibleDescription = "Перейти к выбору состава и проверке выбранной копии. Само восстановление потребует отдельного подтверждения.";
             actions.Controls.Add(cancel); actions.Controls.Add(ok); root.Controls.Add(actions, 0, 4);
             Controls.Add(root); AcceptButton = ok; CancelButton = cancel;
-            if (list.Items.Count > 0) list.SelectedIndex = 0;
+            UiTheme.ConfigureKeyboardOrder(this);
+            if (list.Items.Count > 0) list.SelectedIndex = 0; else UpdateDetails();
         }
 
         private void UpdateDetails()
         {
             if (list.SelectedIndex < 0 || list.SelectedIndex >= backups.Count)
             {
-                details.Text = "Выберите сохранённую копию в списке выше.";
+                details.Text = backups.Count == 0 ? "Нет сохранённых копий для восстановления." : "Выберите сохранённую копию в списке выше.";
                 return;
             }
 
@@ -495,7 +604,10 @@ namespace ProGo
                 "Тип: " + backup.Kind + Environment.NewLine +
                 "Статус: " + backup.Result + Environment.NewLine +
                 "Причина: " + backup.Reason + Environment.NewLine +
-                "Создано: " + backup.Created;
+                "Создано: " + backup.Created + Environment.NewLine +
+                "Состав по manifest.txt: " + (String.IsNullOrEmpty(backup.Contents) ? "не указан" : backup.Contents) + Environment.NewLine +
+                "Архив без автоматического импорта по manifest.txt: " + (String.IsNullOrEmpty(backup.ArchiveContents) ? "нет перечисленных архивных файлов" : backup.ArchiveContents) + Environment.NewLine +
+                "VPN-файлы DPAPI не являются переносом доступа на другой ПК/пользователя. Перед восстановлением проверим фактический состав.";
         }
 
         private void Accept()

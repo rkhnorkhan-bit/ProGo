@@ -69,24 +69,101 @@ namespace ProGo
         public string tag { get; set; }
     }
 
+    internal interface IVaultSessionPersistence
+    {
+        bool IsCurrent(DateTime localNow);
+        void Save(VaultData data, string pin);
+    }
+
+    internal interface IVaultSessionRevocation
+    {
+        void Revoke();
+    }
+
     internal sealed class VaultSession
     {
         public VaultData Data { get; private set; }
         public string Pin { get; private set; }
         public bool CanPersist { get; private set; }
+        internal IVaultSessionPersistence Persistence { get; private set; }
+        internal string StoragePath { get; private set; }
+        internal bool IsDiscarded { get; private set; }
 
         public VaultSession(VaultData data, string pin, bool canPersist)
+            : this(data, pin, canPersist, null, null) { }
+
+        internal VaultSession(VaultData data, string pin, bool canPersist,
+            IVaultSessionPersistence persistence, string storagePath = null)
         {
             Data = data;
             Pin = pin;
             CanPersist = canPersist;
+            Persistence = persistence;
+            StoragePath = storagePath;
+        }
+
+        internal VaultSession CopyWithData(VaultData data)
+        {
+            if (IsDiscarded) throw new InvalidOperationException("Сеанс хранилища закрыт.");
+            return new VaultSession(data, Pin, CanPersist, Persistence, StoragePath);
+        }
+
+        internal bool IsCurrent(DateTime localNow)
+        { return !IsDiscarded && (Persistence == null || Persistence.IsCurrent(localNow)); }
+
+        internal void Revoke()
+        {
+            var lifetime = Persistence as IVaultSessionRevocation;
+            if (lifetime != null) lifetime.Revoke();
+        }
+
+        internal void DropSensitive()
+        {
+            // Drop owned references without modifying a caller's shared entry list.
+            Data = VaultData.Empty(); Pin = null; Persistence = null; StoragePath = null;
+            CanPersist = false; IsDiscarded = true;
+        }
+    }
+
+    internal enum VaultReadStatus
+    {
+        Success, AuthenticationMismatch, FileUnavailable, InvalidData, UnsupportedFormat
+    }
+
+    internal sealed class VaultReadResult
+    {
+        internal VaultReadStatus Status { get; private set; }
+        internal VaultData Data { get; private set; }
+        private VaultReadResult(VaultReadStatus status, VaultData data)
+        { Status = status; Data = status == VaultReadStatus.Success ? data : null; }
+        internal static VaultReadResult Succeeded(VaultData data)
+        { if (data == null) throw new ArgumentNullException("data"); return new VaultReadResult(VaultReadStatus.Success, data); }
+        internal static VaultReadResult Failed(VaultReadStatus status)
+        { if (status == VaultReadStatus.Success) throw new ArgumentException("status"); return new VaultReadResult(status, null); }
+        internal string ErrorMessage
+        {
+            get {
+                switch (Status) {
+                    case VaultReadStatus.FileUnavailable: return "Не удалось прочитать хранилище. Проверьте доступность файла и права доступа.";
+                    case VaultReadStatus.UnsupportedFormat: return "Формат или параметры хранилища не поддерживаются.";
+                    case VaultReadStatus.AuthenticationMismatch: return "Не удалось подтвердить доступ к хранилищу.";
+                    default: return "Формат или данные хранилища повреждены.";
+                }
+            }
+        }
+        internal Exception ToException()
+        {
+            // Never carry parser text, a private path or an original inner exception to the UI/log.
+            return Status == VaultReadStatus.FileUnavailable
+                ? (Exception)new IOException(ErrorMessage) : new InvalidDataException(ErrorMessage);
         }
     }
 
     internal static class VaultService
     {
         private const int Iterations = 120000;
-        private static readonly JavaScriptSerializer Serializer = new JavaScriptSerializer();
+        internal const int MaxReadBytes = 8 * 1024 * 1024;
+        private static readonly string[] EntryStringFields = { "id", "name", "type", "login", "secret", "url_or_host", "notes", "tags", "created_at", "updated_at" };
 
         public static bool Exists()
         {
@@ -97,39 +174,160 @@ namespace ProGo
         {
             ValidatePin(pin);
             var session = new VaultSession(VaultData.Empty(), pin, true);
-            Save(session);
+            try { SaveCore(session, true); }
+            catch (IOException) { throw CreateFailure(); }
+            catch (UnauthorizedAccessException) { throw CreateFailure(); }
+            catch (System.Security.SecurityException) { throw CreateFailure(); }
+            catch (ArgumentException) { throw CreateFailure(); }
+            catch (NotSupportedException) { throw CreateFailure(); }
             SafeLog.Info("Vault created.");
+            return session;
+        }
+
+        private static IOException CreateFailure()
+        { return new IOException("Не удалось создать хранилище. Возможно, оно уже существует или файл недоступен."); }
+
+        internal static VaultSession CreateAtPath(string path, string pin)
+        {
+            if (String.IsNullOrEmpty(path)) throw new ArgumentException("path");
+            ValidatePin(pin);
+            var session = new VaultSession(VaultData.Empty(), pin, true, null, path);
+            try { SaveCore(session, true); }
+            catch (IOException) { throw CreateFailure(); }
+            catch (UnauthorizedAccessException) { throw CreateFailure(); }
+            catch (System.Security.SecurityException) { throw CreateFailure(); }
+            catch (ArgumentException) { throw CreateFailure(); }
+            catch (NotSupportedException) { throw CreateFailure(); }
             return session;
         }
 
         public static VaultSession Open(string pin)
         {
-            ValidatePin(pin);
-            if (!Exists()) return Create(pin);
-
-            try
-            {
-                var json = File.ReadAllText(AppPaths.VaultPath);
-                var envelope = Serializer.Deserialize<VaultEnvelope>(json);
-                var data = Decrypt(envelope, pin);
+            var result = Read(AppPaths.VaultPath, pin);
+            if (result.Status == VaultReadStatus.Success) {
                 SafeLog.Info("Vault opened.");
-                return new VaultSession(data, pin, true);
+                return new VaultSession(result.Data, pin, true);
             }
-            catch
-            {
+            if (result.Status == VaultReadStatus.AuthenticationMismatch) {
                 SafeLog.Info("Vault opened.");
                 return new VaultSession(CreateLocalSampleData(pin), pin, false);
             }
+            throw result.ToException();
         }
+
+        internal static VaultReadResult Read(string path, string pin)
+        {
+            ValidatePin(pin);
+            byte[] bytes;
+            try { bytes = ReadBounded(path); }
+            catch (InvalidDataException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+            catch (IOException) { return VaultReadResult.Failed(VaultReadStatus.FileUnavailable); }
+            catch (UnauthorizedAccessException) { return VaultReadResult.Failed(VaultReadStatus.FileUnavailable); }
+            catch (System.Security.SecurityException) { return VaultReadResult.Failed(VaultReadStatus.FileUnavailable); }
+            catch (ArgumentException) { return VaultReadResult.Failed(VaultReadStatus.FileUnavailable); }
+            catch (NotSupportedException) { return VaultReadResult.Failed(VaultReadStatus.FileUnavailable); }
+
+            var reader = new JavaScriptSerializer { MaxJsonLength = MaxReadBytes };
+            Dictionary<string, object> fields;
+            try {
+                int offset = bytes.Length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf ? 3 : 0;
+                fields = reader.DeserializeObject(new UTF8Encoding(false, true).GetString(bytes, offset, bytes.Length - offset)) as Dictionary<string, object>;
+            } catch (ArgumentException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+              catch (InvalidOperationException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+              catch (FormatException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+              catch (OverflowException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+            VaultEnvelope envelope;
+            if (!TryEnvelope(fields, out envelope)) return VaultReadResult.Failed(VaultReadStatus.InvalidData);
+            if (envelope.version != 1 || envelope.kdf != "PBKDF2-HMAC-SHA256" || envelope.iterations != Iterations ||
+                envelope.cipher != "AES-256-CBC" || envelope.mac != "HMAC-SHA256")
+                return VaultReadResult.Failed(VaultReadStatus.UnsupportedFormat);
+
+            byte[] salt, iv, cipher, tag;
+            try {
+                salt = Convert.FromBase64String(envelope.salt); iv = Convert.FromBase64String(envelope.iv);
+                cipher = Convert.FromBase64String(envelope.ciphertext); tag = Convert.FromBase64String(envelope.tag);
+            } catch (FormatException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+            if (salt.Length != 32 || iv.Length != 16 || tag.Length != 32 || cipher.Length == 0 || cipher.Length % 16 != 0)
+                return VaultReadResult.Failed(VaultReadStatus.InvalidData);
+
+            // Only a supported, structurally valid envelope may reach the fixed-cost KDF.
+            return Decrypt(envelope, pin, salt, iv, cipher, tag, reader);
+        }
+
+        private static byte[] ReadBounded(string path)
+        {
+            using (var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                if (input.Length > MaxReadBytes) throw new InvalidDataException();
+                using (var output = new MemoryStream()) {
+                    var buffer = new byte[8192]; int count;
+                    while ((count = input.Read(buffer, 0, buffer.Length)) != 0) {
+                        if (output.Length + count > MaxReadBytes) throw new InvalidDataException();
+                        output.Write(buffer, 0, count);
+                    }
+                    return output.ToArray();
+                }
+            }
+        }
+
+        private static bool TryEnvelope(Dictionary<string, object> fields, out VaultEnvelope envelope)
+        {
+            envelope = null;
+            object version, iterations;
+            if (fields == null || !fields.TryGetValue("version", out version) || !(version is int) ||
+                !fields.TryGetValue("iterations", out iterations) || !(iterations is int)) return false;
+            string kdf, cipher, mac, salt, iv, ciphertext, tag;
+            if (!TryString(fields, "kdf", out kdf) || !TryString(fields, "cipher", out cipher) ||
+                !TryString(fields, "mac", out mac) || !TryString(fields, "salt", out salt) ||
+                !TryString(fields, "iv", out iv) || !TryString(fields, "ciphertext", out ciphertext) ||
+                !TryString(fields, "tag", out tag)) return false;
+            envelope = new VaultEnvelope { version = (int)version, iterations = (int)iterations,
+                kdf = kdf, cipher = cipher, mac = mac, salt = salt, iv = iv, ciphertext = ciphertext, tag = tag };
+            return true;
+        }
+
+        private static bool TryString(Dictionary<string, object> fields, string name, out string value)
+        {
+            object raw; value = null;
+            if (!fields.TryGetValue(name, out raw) || !(raw is string)) return false;
+            value = (string)raw; return true;
+        }
+
+        private static string OptionalString(Dictionary<string, object> fields, string name)
+        { object value; return fields.TryGetValue(name, out value) ? (string)value : null; }
 
         public static void Save(VaultSession session)
         {
             if (session == null) throw new ArgumentNullException("session");
+            if (session.IsDiscarded) throw new InvalidOperationException("Сеанс хранилища закрыт.");
+            if (session.Persistence != null) { session.Persistence.Save(session.Data, session.Pin); return; }
+            SaveCore(session, false);
+        }
+
+        private static void SaveCore(VaultSession session, bool createOnly)
+        {
+            if (session == null) throw new ArgumentNullException("session");
             if (!session.CanPersist) return;
             var envelope = Encrypt(session.Data ?? VaultData.Empty(), session.Pin);
-            AppPaths.EnsureDirectories();
-            File.WriteAllText(AppPaths.VaultPath, Serializer.Serialize(envelope));
-            SafeLog.Info("Vault saved.");
+            bool legacyPath = session.StoragePath == null;
+            if (legacyPath) AppPaths.EnsureDirectories();
+            string target = session.StoragePath ?? AppPaths.VaultPath;
+            string staging = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                var bytes = Encoding.UTF8.GetBytes(new JavaScriptSerializer().Serialize(envelope));
+                using (var stream = new FileStream(staging, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
+                    stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
+                }
+                // The old ciphertext stays intact until the complete encrypted replacement exists.
+                // Create uses an exclusive move even if another file appears after the PIN prompt.
+                if (createOnly) File.Move(staging, target);
+                else if (File.Exists(target)) File.Replace(staging, target, null);
+                else File.Move(staging, target);
+            } finally {
+                // Cleanup cannot hide a failed commit or turn a completed commit into a reported failure.
+                try { if (File.Exists(staging)) File.Delete(staging); }
+                catch { if (legacyPath) SafeLog.Info("Vault temporary cleanup deferred."); }
+            }
+            if (legacyPath) SafeLog.Info("Vault saved.");
         }
 
         private static VaultEnvelope Encrypt(VaultData data, string pin)
@@ -137,7 +335,7 @@ namespace ProGo
             var salt = RandomBytes(32);
             var iv = RandomBytes(16);
             var keys = DeriveKeys(pin, salt, Iterations);
-            var plain = Encoding.UTF8.GetBytes(Serializer.Serialize(data));
+            var plain = Encoding.UTF8.GetBytes(new JavaScriptSerializer().Serialize(data));
 
             byte[] cipher;
             using (var aes = Aes.Create())
@@ -169,37 +367,59 @@ namespace ProGo
             return env;
         }
 
-        private static VaultData Decrypt(VaultEnvelope env, string pin)
+        private static VaultReadResult Decrypt(VaultEnvelope env, string pin, byte[] salt, byte[] iv, byte[] cipher, byte[] tag, JavaScriptSerializer reader)
         {
-            if (env == null) throw new InvalidDataException("Envelope is empty.");
-            var salt = Convert.FromBase64String(env.salt);
-            var iv = Convert.FromBase64String(env.iv);
-            var cipher = Convert.FromBase64String(env.ciphertext);
-            var keys = DeriveKeys(pin, salt, env.iterations);
-            var expected = ComputeTag(env, keys.MacKey);
-            if (!ConstantTimeEquals(Convert.FromBase64String(expected), Convert.FromBase64String(env.tag)))
-            {
-                throw new CryptographicException("Integrity check failed.");
-            }
+            KeyPair keys; string expected;
+            try { keys = DeriveKeys(pin, salt, env.iterations); expected = ComputeTag(env, keys.MacKey); }
+            catch (CryptographicException) { return VaultReadResult.Failed(VaultReadStatus.UnsupportedFormat); }
+            catch (NotSupportedException) { return VaultReadResult.Failed(VaultReadStatus.UnsupportedFormat); }
+            if (!ConstantTimeEquals(Convert.FromBase64String(expected), tag))
+                return VaultReadResult.Failed(VaultReadStatus.AuthenticationMismatch);
 
-            byte[] plain;
-            using (var aes = Aes.Create())
-            {
-                aes.KeySize = 256;
-                aes.BlockSize = 128;
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-                aes.Key = keys.EncryptionKey;
-                aes.IV = iv;
-                using (var decryptor = aes.CreateDecryptor())
-                {
-                    plain = decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+            try {
+                byte[] plain;
+                using (var aes = Aes.Create()) {
+                    aes.KeySize = 256;
+                    aes.BlockSize = 128;
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Key = keys.EncryptionKey;
+                    aes.IV = iv;
+                    using (var decryptor = aes.CreateDecryptor()) {
+                        plain = decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+                    }
                 }
-            }
-
-            var data = Serializer.Deserialize<VaultData>(Encoding.UTF8.GetString(plain));
-            if (data.entries == null) data.entries = new List<VaultEntry>();
-            return data;
+                var fields = reader.DeserializeObject(new UTF8Encoding(false, true).GetString(plain)) as Dictionary<string, object>;
+                object version, entries;
+                if (fields == null || !fields.TryGetValue("version", out version) || !(version is int) ||
+                    !fields.TryGetValue("entries", out entries) || !(entries is System.Collections.IList))
+                    return VaultReadResult.Failed(VaultReadStatus.InvalidData);
+                if ((int)version != 1) return VaultReadResult.Failed(VaultReadStatus.UnsupportedFormat);
+                var ids = new HashSet<string>();
+                var records = new List<VaultEntry>();
+                foreach (var entry in (System.Collections.IList)entries) {
+                    var record = entry as Dictionary<string, object>; string id;
+                    if (record == null || !TryString(record, "id", out id) || String.IsNullOrEmpty(id) || !ids.Add(id))
+                        return VaultReadResult.Failed(VaultReadStatus.InvalidData);
+                    foreach (var name in EntryStringFields) {
+                        object value;
+                        if (record.TryGetValue(name, out value) && value != null && !(value is string))
+                            return VaultReadResult.Failed(VaultReadStatus.InvalidData);
+                    }
+                    // Bind only the canonical fields we checked. Case-insensitive reflection
+                    // binding would let an unvalidated Entries/Version alias replace valid data.
+                    records.Add(new VaultEntry { id = id, name = OptionalString(record, "name"),
+                        type = OptionalString(record, "type"), login = OptionalString(record, "login"),
+                        secret = OptionalString(record, "secret"), url_or_host = OptionalString(record, "url_or_host"),
+                        notes = OptionalString(record, "notes"), tags = OptionalString(record, "tags"),
+                        created_at = OptionalString(record, "created_at"), updated_at = OptionalString(record, "updated_at") });
+                }
+                return VaultReadResult.Succeeded(new VaultData { version = 1, entries = records });
+            } catch (CryptographicException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+              catch (ArgumentException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+              catch (InvalidOperationException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+              catch (FormatException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
+              catch (OverflowException) { return VaultReadResult.Failed(VaultReadStatus.InvalidData); }
         }
 
         private static string ComputeTag(VaultEnvelope env, byte[] macKey)
@@ -301,54 +521,4 @@ namespace ProGo
         }
     }
 
-    internal sealed class ClipboardService : IDisposable
-    {
-        private readonly SettingsService settings;
-        private readonly System.Windows.Forms.Timer timer;
-        private string lastValue;
-
-        public ClipboardService(SettingsService settingsService)
-        {
-            settings = settingsService;
-            timer = new System.Windows.Forms.Timer();
-            timer.Tick += ClearIfStillOwned;
-        }
-
-        public void CopySecret(string value)
-        {
-            if (String.IsNullOrEmpty(value)) return;
-            lastValue = value;
-            Clipboard.SetText(value);
-            timer.Stop();
-            timer.Interval = Math.Max(5, settings.Current.ClipboardClearSeconds) * 1000;
-            timer.Start();
-            SafeLog.Info("Secret copied to clipboard; auto-clear scheduled.");
-        }
-
-        private void ClearIfStillOwned(object sender, EventArgs e)
-        {
-            timer.Stop();
-            try
-            {
-                if (!String.IsNullOrEmpty(lastValue) && Clipboard.ContainsText() && Clipboard.GetText() == lastValue)
-                {
-                    Clipboard.Clear();
-                    SafeLog.Info("Clipboard cleared.");
-                }
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Clipboard clear failed.", ex);
-            }
-            finally
-            {
-                lastValue = null;
-            }
-        }
-
-        public void Dispose()
-        {
-            timer.Dispose();
-        }
-    }
 }

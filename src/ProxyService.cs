@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using CancellationToken = System.Threading.CancellationToken;
+using CancellationTokenSource = System.Threading.CancellationTokenSource;
 
 namespace ProGo
 {
@@ -9,10 +13,50 @@ namespace ProGo
     {
         private readonly Func<AppSettings> readSettings;
         private readonly Action<AppSettings> saveSettings;
+        private readonly Func<SettingsRevisionSnapshot> captureSettings;
+        private readonly Func<SettingsRevisionSnapshot, string, bool> trySelectProfile;
+        private readonly Action<bool> setAutoRestart;
+        private SettingsRevisionSnapshot ownedSettingsSnapshot;
         private readonly string sshExecutable;
         private readonly Func<DateTime> utcNow;
         private readonly string sshOptions;
         private readonly object gate = new object();
+        private readonly object startupGate = new object();
+        private readonly int startupTimeoutMs;
+        private Task<bool> startupTask, stopTask;
+        private long operationEpoch;
+        private volatile bool stopping;
+        // User intent is independent of the opportunistic PID/readiness snapshots.
+        // Settings can read it while a worker owns the process gate.
+        private volatile bool connectionRequested;
+        internal bool ConnectionRequested { get { return connectionRequested; } }
+        internal bool IsStopping { get { return stopping; } }
+        private CancellationTokenSource startupCancellation;
+        private volatile bool connecting;
+        private volatile string startupError;
+        // Redirected output belongs to the process that produced it, even after cleanup.
+        private sealed class SshAttempt
+        {
+            internal readonly Process Process;
+            internal readonly string Identity;
+            internal readonly TaskCompletionSource<bool> ErrorFinished = new TaskCompletionSource<bool>();
+            internal volatile string Error;
+            internal SshAttempt(Process process, string identity) { Process = process; Identity = identity; }
+        }
+        private sealed class StartupSettingsContext
+        {
+            internal SettingsRevisionSnapshot Expected;
+            internal readonly CancellationTokenSource Source;
+            internal StartupSettingsContext(SettingsRevisionSnapshot expected, CancellationTokenSource source = null)
+            { Expected = expected; Source = source; }
+        }
+        private volatile SshAttempt ownedAttempt, lastFailedAttempt;
+        private readonly Dictionary<string, SshAttempt> failedAttempts = new Dictionary<string, SshAttempt>(StringComparer.Ordinal);
+        private int nextCandidate;
+        private string sshError { get { var attempt = ownedAttempt ?? lastFailedAttempt; return attempt == null ? null : attempt.Error; } }
+        private string recoveryPause;
+        internal bool IsConnecting { get { return connecting; } }
+        internal string StartupError { get { return startupError; } }
         private readonly System.Threading.Timer recoveryTimer;
         private Process sshProcess;
         private volatile bool wanted;
@@ -28,18 +72,24 @@ namespace ProGo
         private int ownedPort;
         private string ownedTarget;
         private string selectedAtStart;
+        private string selectedConnectionAtStart;
 
         public ProxyService(SettingsService settings)
-            : this(delegate { return settings.Current; }, settings.Save, "ssh.exe", delegate { return DateTime.UtcNow; }, true)
+            : this(delegate { return settings.Current; }, settings.Save, OpenSshClient.Executable, delegate { return DateTime.UtcNow; }, true,
+                "", 20000, settings.Capture, settings.TrySelectWorkingProfile, settings.SetAutoRestart)
         {
         }
 
         // The test harness uses a local child process and a clock, never real SSH credentials.
         internal ProxyService(Func<AppSettings> read, Action<AppSettings> save, string executable,
-            Func<DateTime> clock, bool startTimer, string extraOptions = "")
+            Func<DateTime> clock, bool startTimer, string extraOptions = "", int startupTimeoutMs = 20000,
+            Func<SettingsRevisionSnapshot> captureSettings = null, Func<SettingsRevisionSnapshot, string, bool> trySelectProfile = null,
+            Action<bool> setAutoRestart = null)
         {
+            this.captureSettings = captureSettings; this.trySelectProfile = trySelectProfile; this.setAutoRestart = setAutoRestart;
             readSettings = read; saveSettings = save; sshExecutable = executable; utcNow = clock;
             sshOptions = extraOptions;
+            this.startupTimeoutMs = startupTimeoutMs;
             if (startTimer)
                 recoveryTimer = new System.Threading.Timer(delegate { PollRecovery(); }, null, 5000, 5000);
         }
@@ -58,8 +108,15 @@ namespace ProGo
 
         public int? CurrentPid
         {
-            get { lock (gate) { return IsOwnedProcessAlive() ? (int?)sshProcess.Id : null; } }
+            get {
+                if (!System.Threading.Monitor.TryEnter(gate)) return null;
+                try { return IsOwnedProcessAlive() ? (int?)sshProcess.Id : null; }
+                finally { System.Threading.Monitor.Exit(gate); }
+            }
         }
+
+        // Cleanup confirmation must wait for ownership rather than use the nonblocking UI PID snapshot.
+        internal bool HasOwnedProcess { get { lock (gate) return sshProcess != null; } }
 
         internal DateTime? NextRecoveryUtc { get { lock (gate) { return retryAt; } } }
         internal int AutomaticRestarts { get { lock (gate) { return automaticRestarts; } } }
@@ -68,15 +125,19 @@ namespace ProGo
         {
             get
             {
-                lock (gate)
+                if (stopping) return "Останавливаем подключение…";
+                if (connecting) return "Подключаемся к серверу…";
+                if (!System.Threading.Monitor.TryEnter(gate)) return "Проверяем состояние подключения…";
+                try
                 {
                     if (!readSettings().AutoRestartSocks) return "Выключено";
+                    if (recoveryPause != null) return "Автовосстановление приостановлено: " + recoveryPause + " После исправления нажмите «Подключить».";
                     if (!wanted) return "Ожидает запуска SOCKS";
                     if (portOccupied) return "Ожидание: порт занят другим процессом";
                     if (retryAt.HasValue)
                         return "Повтор через " + Math.Max(0, (int)Math.Ceiling((retryAt.Value - utcNow()).TotalSeconds)) + " с";
                     return "Включено; восстановлений: " + automaticRestarts;
-                }
+                } finally { System.Threading.Monitor.Exit(gate); }
             }
         }
 
@@ -84,19 +145,121 @@ namespace ProGo
         {
             lock (gate)
             {
-                var current = readSettings();
-                current.AutoRestartSocks = enabled;
-                saveSettings(current);
+                if (setAutoRestart != null) setAutoRestart(enabled);
+                else { var current = readSettings().Clone(); current.AutoRestartSocks = enabled; saveSettings(current); }
                 SafeLog.Info("SOCKS automatic recovery " + (enabled ? "enabled." : "disabled."));
             }
         }
 
         public void StartTunnel(bool showErrors)
         {
+            lock (startupGate) { if (disposed) return; connectionRequested = true; }
+            StartTunnelCore(showErrors, CancellationToken.None);
+        }
+
+        internal Task<bool> StartTunnelAsync(CancellationToken token)
+        {
+            lock (startupGate) return StartTunnelAsync(token, operationEpoch);
+        }
+        private Task<bool> StartTunnelAsync(CancellationToken token, long epoch)
+        {
+            lock (startupGate) {
+                if (epoch != operationEpoch || token.IsCancellationRequested) return CancelledStartup();
+                if (disposed) return Task.FromResult(false);
+                connectionRequested = true;
+                if (stopTask != null && !stopTask.IsCompleted) return ResumeAfterStop(stopTask, token, epoch);
+                if (startupTask != null && !startupTask.IsCompleted) {
+                    if (startupCancellation != null && startupCancellation.IsCancellationRequested) return ResumeAfterCancellation(startupTask, token, epoch);
+                    return startupTask;
+                }
+                var source = CancellationTokenSource.CreateLinkedTokenSource(token);
+                startupCancellation = source; connecting = true; startupError = null;
+                startupTask = Task.Run(async delegate {
+                    bool ready = false;
+                    using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(source.Token)) {
+                        deadline.CancelAfter(startupTimeoutMs);
+                        try {
+                            var snapshot = CaptureConnectionSettings();
+                            var current = snapshot.Settings;
+                            var operation = new StartupSettingsContext(snapshot, source);
+                            if (BuildProfileTargets(current).Count == 0) {
+                                startupError = "Сервер не выбран. Откройте «Подключения» и добавьте сервер."; return false;
+                            }
+                            StartTunnelCore(false, deadline.Token, snapshot, operation);
+                            while (true) {
+                                ThrowIfStartupSettingsChanged(operation, deadline.Token);
+                                bool alive; lock (gate) { alive = IsOwnedEndpointAlive(current); }
+                                if (alive && ConnectionHealthMonitor.CheckSocks(current, deadline.Token)) {
+                                    ThrowIfStartupSettingsChanged(operation, deadline.Token);
+                                    lock (gate) { alive = IsOwnedEndpointAlive(current); }
+                                    if (alive && wanted) { ready = true; return true; }
+                                }
+                                if (!alive) {
+                                    ObserveAttemptError(ownedAttempt ?? lastFailedAttempt, deadline.Token);
+                                    startupError = IsListening() ? "Порт SOCKS занят другим процессом. Выберите другой порт в «Подключениях»." :
+                                        sshError ?? "SSH не подключился. Проверьте доступность сервера и SSH-ключ; для первого входа откройте «Подключения → Первый вход».";
+                                    return false;
+                                }
+                                await Task.Delay(150, deadline.Token);
+                            }
+                        }
+                        catch (OperationCanceledException) {
+                            if (source.IsCancellationRequested) throw;
+                            startupError = "Сервер не подготовил SOCKS за отведённое время. Проверьте сервер и SSH-ключ в «Подключениях»."; return false;
+                        }
+                        catch (Exception ex) {
+                            startupError = "Не удалось запустить SSH. Проверьте наличие OpenSSH и настройки подключения.";
+                            SafeLog.Error("SSH asynchronous startup failed.", ex); return false;
+                        }
+                        finally {
+                            if (!ready) lock (gate) {
+                                StopProcessOnly();
+                                if (source.IsCancellationRequested) { wanted = false; retryAt = null; }
+                                else if (wanted && !retryAt.HasValue) ScheduleRecovery();
+                            }
+                            lock (startupGate) { connecting = false; startupCancellation = null; source.Dispose(); }
+                        }
+                    }
+                });
+                return startupTask;
+            }
+        }
+        private void CancelStartup()
+        {
+            lock (startupGate) { if (startupCancellation != null) startupCancellation.Cancel(); }
+        }
+        private async Task<bool> ResumeAfterCancellation(Task<bool> previous, CancellationToken token, long epoch)
+        {
+            try { await previous.ConfigureAwait(false); } catch (OperationCanceledException) { }
+            token.ThrowIfCancellationRequested();
+            return await StartTunnelAsync(token, epoch).ConfigureAwait(false);
+        }
+        private static Task<bool> CancelledStartup()
+        {
+            var result = new TaskCompletionSource<bool>(); result.SetCanceled(); return result.Task;
+        }
+        private async Task<bool> ResumeAfterStop(Task<bool> previous, CancellationToken token, long epoch)
+        {
+            if (!await previous.ConfigureAwait(false)) { startupError = "Не удалось остановить прежний SSH-процесс. Повторите отключение; новый процесс не запущен."; return false; }
+            token.ThrowIfCancellationRequested();
+            return await StartTunnelAsync(token, epoch).ConfigureAwait(false);
+        }
+
+        private SettingsRevisionSnapshot CaptureConnectionSettings()
+        { return captureSettings == null ? new SettingsRevisionSnapshot(readSettings().Clone(), -1) : captureSettings(); }
+
+        private void StartTunnelCore(bool showErrors, CancellationToken token, SettingsRevisionSnapshot snapshot = null,
+            StartupSettingsContext operation = null)
+        {
             lock (gate)
             {
+                token.ThrowIfCancellationRequested();
                 if (disposed) return;
-                var current = readSettings();
+                snapshot = snapshot ?? CaptureConnectionSettings();
+                var current = snapshot.Settings;
+                operation = operation ?? new StartupSettingsContext(snapshot);
+                ThrowIfStartupSettingsChanged(operation, token);
+                recoveryPause = null; lastFailedAttempt = null; failedAttempts.Clear(); nextCandidate = 0;
                 var targets = BuildProfileTargets(current);
                 if (targets.Count == 0)
                 {
@@ -117,23 +280,36 @@ namespace ProGo
                 wanted = true; retryAt = null; failures = 0; portOccupied = false;
                 foreach (var target in targets)
                 {
+                    ThrowIfStartupSettingsChanged(operation, token);
                     if (!wanted || disposed) return;
-                    if (StartSingleTunnel(target, false))
+                    if (StartSingleTunnel(target, false, snapshot))
                     {
                         if (!current.AutoSwitchSshProfile) return;
-                        for (var i = 0; i < 10 && wanted && !disposed; i++)
-                        {
-                            System.Threading.Thread.Sleep(500);
-                            if (IsOwnedProcessAlive() && IsListening())
-                            {
-                                SelectWorkingProfile(current, target);
-                                return;
+                        using (var candidateDeadline = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+                            candidateDeadline.CancelAfter(5000);
+                            try {
+                                while (wanted && !disposed) {
+                                    ThrowIfStartupSettingsChanged(operation, candidateDeadline.Token);
+                                    if (!IsOwnedProcessAlive()) { ObserveAttemptError(ownedAttempt, candidateDeadline.Token); break; }
+                                    if (ConnectionHealthMonitor.CheckSocks(current, candidateDeadline.Token) && IsOwnedProcessAlive()) {
+                                        ThrowIfStartupSettingsChanged(operation, candidateDeadline.Token);
+                                        if (!wanted || disposed) return;
+                                        if (SelectWorkingProfile(target)) {
+                                            var selected = operation.Expected.Settings.Clone(); selected.SshProfile = target;
+                                            operation.Expected = new SettingsRevisionSnapshot(selected,
+                                                operation.Expected.Revision < 0 ? -1 : operation.Expected.Revision + 1);
+                                        }
+                                        return;
+                                    }
+                                    candidateDeadline.Token.WaitHandle.WaitOne(500);
+                                }
+                            } catch (OperationCanceledException) {
+                                token.ThrowIfCancellationRequested();
+                                if (!candidateDeadline.IsCancellationRequested) throw;
                             }
-                            if (!IsOwnedProcessAlive()) break;
                         }
                         if (!StopProcessOnly()) return;
                     }
-                    if (!current.AutoSwitchSshProfile) break;
                 }
                 if (!wanted || disposed) return;
                 ScheduleRecovery();
@@ -142,16 +318,37 @@ namespace ProGo
             }
         }
 
-        public void StopTunnel()
+        // The UI cancels intent immediately, then awaits owned-process cleanup without
+        // waiting on a background probe's gate. A queued start keeps its epoch so a
+        // later Stop cannot accidentally be followed by that stale start.
+        internal Task<bool> StopTunnelAsync()
         {
-            // Cancel intent before waiting for a probe/start already inside the gate.
-            wanted = false;
-            lock (gate)
-            {
-                wanted = false; retryAt = null; failures = 0; portOccupied = false;
-                StopProcessOnly();
+            lock (startupGate) {
+                connectionRequested = false; wanted = false; operationEpoch++;
+                if (startupCancellation != null) startupCancellation.Cancel();
+                if (stopTask != null && !stopTask.IsCompleted) return stopTask;
+                var previous = startupTask; stopping = true;
+                stopTask = Task.Run(async delegate {
+                    try {
+                        if (previous != null) try { await previous.ConfigureAwait(false); } catch (OperationCanceledException) { }
+                        lock (gate) {
+                            wanted = false; retryAt = null; failures = 0; portOccupied = false;
+                            return StopProcessOnly();
+                        }
+                    } finally { stopping = false; }
+                });
+                return stopTask;
             }
         }
+        internal Task<bool> RestartTunnelAsync(CancellationToken token)
+        {
+            lock (startupGate) {
+                StopTunnelAsync();
+                return StartTunnelAsync(token, operationEpoch);
+            }
+        }
+        // Synchronous compatibility is restricted to CLI/test teardown, never UI actions.
+        public void StopTunnel() { StopTunnelAsync().GetAwaiter().GetResult(); }
 
         public void RestartTunnel()
         {
@@ -165,25 +362,30 @@ namespace ProGo
             if (!System.Threading.Monitor.TryEnter(gate)) return;
             try
             {
-                if (disposed || !wanted || !readSettings().AutoRestartSocks) return;
+                if (disposed || connecting || !wanted || recoveryPause != null || !readSettings().AutoRestartSocks) return;
                 var now = utcNow();
                 if (sshProcess != null)
                 {
                     if (!IsOwnedProcessAlive())
                     {
+                        ObserveAttemptError(ownedAttempt, CancellationToken.None);
                         if (StopProcessOnly()) ScheduleRecovery();
                         return;
                     }
                     if (IsSocksResponsive(ownedHost, ownedPort))
                     {
+                        var current = readSettings();
+                        if (!wanted || disposed || !IsOwnedEndpointAlive(current) ||
+                            !BuildProfileTargets(current).Exists(delegate(string candidate) {
+                                return String.Equals(candidate, ownedTarget, StringComparison.OrdinalIgnoreCase);
+                            })) return;
                         missingListener = 0;
                         if (!healthySince.HasValue)
                         {
-                            healthySince = now;
-                            var current = readSettings();
-                            if (current.AutoSwitchSshProfile && current.SshProfile == selectedAtStart &&
+                            healthySince = now; nextCandidate = 0;
+                            if (current.AutoSwitchSshProfile && current.SshProfile == selectedAtStart && SshConnection.Signature(current) == selectedConnectionAtStart &&
                                 current.SocksHost == ownedHost && current.SocksPort == ownedPort)
-                                SelectWorkingProfile(current, ownedTarget);
+                                SelectWorkingProfile(ownedTarget);
                             SafeLog.Info("SOCKS listener is ready.");
                         }
                         // A brief successful connection must not reset a crash loop's backoff.
@@ -209,12 +411,19 @@ namespace ProGo
                 }
                 portOccupied = false;
                 if (!wanted || disposed || !readSettings().AutoRestartSocks) return;
-                var settings = readSettings();
+                var snapshot = CaptureConnectionSettings();
+                var settings = snapshot.Settings;
                 var targets = BuildProfileTargets(settings);
                 if (targets.Count == 0) { wanted = false; retryAt = null; return; }
-                var index = settings.AutoSwitchSshProfile ? Math.Max(0, failures - 1) % targets.Count : 0;
+                string target = null;
+                for (int i = 0; i < targets.Count; i++) {
+                    int index = (nextCandidate + i) % targets.Count;
+                    if (PermanentRefusal(settings, targets[index]) != null) continue;
+                    target = targets[index]; nextCandidate = (index + 1) % targets.Count; break;
+                }
                 retryAt = null;
-                if (StartSingleTunnel(targets[index], true)) automaticRestarts++;
+                if (target == null) { ScheduleRecovery(); return; }
+                if (StartSingleTunnel(target, true, snapshot)) automaticRestarts++;
                 else ScheduleRecovery();
             }
             catch (Exception ex)
@@ -225,9 +434,28 @@ namespace ProGo
             finally { System.Threading.Monitor.Exit(gate); }
         }
 
+        private void PauseRecovery(string error)
+        {
+            // Only fixed, classified guidance is retained; raw stderr is never exported.
+            recoveryPause = error; retryAt = null;
+            SafeLog.Info("SOCKS recovery paused after permanent SSH refusal.");
+        }
         private void ScheduleRecovery()
         {
             if (!wanted || disposed) { retryAt = null; return; }
+            var settings = readSettings();
+            var targets = BuildProfileTargets(settings);
+            string error = null; bool available = false;
+            foreach (var target in targets) {
+                var refusal = PermanentRefusal(settings, target);
+                if (refusal == null) { available = true; break; }
+                error = refusal;
+            }
+            if (!available) {
+                if (error != null) PauseRecovery(error);
+                else { wanted = false; retryAt = null; }
+                return;
+            }
             failures = Math.Min(failures + 1, 1000);
             var seconds = Math.Min(60, 5 * (1 << Math.Min(failures - 1, 4)));
             retryAt = utcNow().AddSeconds(seconds);
@@ -235,24 +463,42 @@ namespace ProGo
                 SafeLog.Info("SOCKS interrupted; next recovery attempt in " + seconds + " seconds.");
         }
 
-        private bool StartSingleTunnel(string target, bool automatic)
+        private bool StartSingleTunnel(string target, bool automatic, SettingsRevisionSnapshot snapshot)
         {
             if (!wanted || disposed || IsOwnedProcessAlive()) return false;
+            var current = snapshot.Settings;
+            string args;
+            try {
+                var endpoint = SocksEndpoint.Format(current.SocksHost, current.SocksPort);
+                args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=yes {1}",
+                    SshConnection.Quote(endpoint), SshConnection.CommandArguments(SshConnection.Resolve(current, target)));
+            } catch (ArgumentException) {
+                var invalid = new SshAttempt(null, TargetIdentity(current, target)); invalid.Error = ArgumentError;
+                invalid.ErrorFinished.TrySetResult(true);
+                failedAttempts[invalid.Identity] = invalid; lastFailedAttempt = invalid;
+                SafeLog.Info("SSH startup rejected invalid connection arguments."); return false;
+            }
             try
             {
-                var current = readSettings();
-                var endpoint = current.SocksHost + ":" + current.SocksPort;
-                var args = sshOptions + String.Format("-N -D {0} -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 {1}{2}",
-                    QuoteArg(endpoint), automatic ? "-o BatchMode=yes " : "", QuoteArg(target));
                 var psi = new ProcessStartInfo(sshExecutable, args)
                 {
-                    UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden
+                    UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden, RedirectStandardError = true
                 };
+                lastFailedAttempt = null;
                 sshProcess = Process.Start(psi);
                 if (sshProcess == null) return false;
+                var attempt = new SshAttempt(sshProcess, TargetIdentity(current, target));
+                ownedAttempt = attempt;
+                attempt.Process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs e) {
+                    if (e.Data == null) { attempt.ErrorFinished.TrySetResult(true); return; }
+                    var error = ClassifySshErrorLine(e.Data);
+                    if (error != null) attempt.Error = error;
+                };
+                sshProcess.BeginErrorReadLine();
                 startedAt = utcNow(); healthySince = null; missingListener = 0;
                 ownedHost = current.SocksHost; ownedPort = current.SocksPort; ownedTarget = target;
-                selectedAtStart = current.SshProfile;
+                selectedAtStart = current.SshProfile; selectedConnectionAtStart = SshConnection.Signature(current);
+                ownedSettingsSnapshot = snapshot;
                 SafeLog.Info(automatic ? "SOCKS automatic restart requested." : "SOCKS start requested.");
                 return true;
             }
@@ -273,7 +519,9 @@ namespace ProGo
                     sshProcess.Kill();
                     if (!sshProcess.WaitForExit(1000)) return false;
                 }
-                sshProcess.Dispose(); sshProcess = null;
+                var attempt = ownedAttempt;
+                if (attempt != null) { failedAttempts[attempt.Identity] = attempt; lastFailedAttempt = attempt; }
+                sshProcess.Dispose(); sshProcess = null; ownedAttempt = null;
                 healthySince = null; missingListener = 0;
                 return true;
             }
@@ -285,21 +533,33 @@ namespace ProGo
             }
         }
 
-        private void SelectWorkingProfile(AppSettings current, string target)
+        private bool SelectWorkingProfile(string target)
         {
-            if (!String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase))
+            var expected = ownedSettingsSnapshot;
+            if (expected == null) return false;
+            bool changed;
+            if (trySelectProfile != null) changed = trySelectProfile(expected, target);
+            else
             {
-                current.SshProfile = target;
-                saveSettings(current);
-                SafeLog.Info("SSH profile auto-switched after successful listener startup.");
+                // Compatibility for independent options/test delegates. Production
+                // uses the atomic revision check supplied by SettingsService.
+                var current = readSettings();
+                if (!current.AutoSwitchSshProfile || current.SshProfile != expected.Settings.SshProfile ||
+                    current.SocksHost != expected.Settings.SocksHost || current.SocksPort != expected.Settings.SocksPort ||
+                    SshConnection.Signature(current) != SshConnection.Signature(expected.Settings) ||
+                    String.Equals(current.SshProfile, target, StringComparison.OrdinalIgnoreCase)) return false;
+                var candidate = current.Clone(); candidate.SshProfile = target;
+                saveSettings(candidate); changed = true;
             }
+            if (changed) SafeLog.Info("SSH profile auto-switched after successful listener startup.");
+            return changed;
         }
 
         private static List<string> BuildProfileTargets(AppSettings settings)
         {
             var targets = new List<string>();
             AddTarget(targets, settings.SshProfile);
-            if (settings.SshProfiles != null)
+            if (settings.AutoSwitchSshProfile && settings.SshProfiles != null)
                 foreach (var profile in settings.SshProfiles)
                     if (profile != null) AddTarget(targets, profile.Target);
             return targets;
@@ -314,27 +574,71 @@ namespace ProGo
             targets.Add(target);
         }
 
-        private static string QuoteArg(string value)
+        private const string ConfigurationError = "Ошибка SSH config. Проверьте синтаксис и значения параметров, наличие файла конфигурации и права доступа к нему; откройте «Подключения → Проверить», затем нажмите «Подключить».";
+        private const string ArgumentError = "Параметры SSH-подключения некорректны. Проверьте адрес, логин, SSH/SOCKS-порт и путь ключа в «Подключениях», затем нажмите «Подключить».";
+        private static string ClassifySshErrorLine(string value)
         {
-            if (value == null) return "\"\"";
-            if (value.IndexOfAny(new[] { ' ', '\t', '\"' }) < 0) return value;
-            return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+            // Match OpenSSH's fatal forms, never arbitrary marker text in paths/banners.
+            if (String.IsNullOrWhiteSpace(value) || value.Length > 4096) return null;
+            var line = value.Trim();
+            var flags = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+            if (String.Equals(line, "Host key verification failed.", StringComparison.OrdinalIgnoreCase) ||
+                Regex.IsMatch(line, @"\A@*\s*warning:\s*remote host identification has changed!\s*@*\z", flags))
+                return "Не подтверждён или изменился ключ сервера. Сверьте отпечаток с сервером и используйте «Подключения → Первый вход».";
+            if (Regex.IsMatch(line, @"\A(?:warning:|debug[123]?:|banner:)", flags)) return null;
+            if (Regex.IsMatch(line, @"\A(?:[^\s]+@[^\s]+:\s*)?permission denied \([a-z0-9@._,+-]*\)\.\z", flags))
+                return "SSH-ключ не принят или недоступен фоновому процессу. Проверьте выбранный алиас и путь ключа. Для ключа с passphrase запустите ssh-agent и загрузите ключ через ssh-add; фоновое подключение не запрашивает пароль. «Первый вход» проверяет доступ в отдельном окне.";
+            if (Regex.IsMatch(line, @"\A.+: terminating, [0-9]+ bad configuration options\z", flags) ||
+                Regex.IsMatch(line, @"\A.+(?:\sline|:\s*line) [0-9]+:\s*(?:bad configuration option:|bad port\b|no argument after keyword\b|missing argument\b|missing yes/no argument\b|bad yes/no argument\b|garbage at end of line\b)", flags) ||
+                Regex.IsMatch(line, @"\A(?:bad owner or permissions on |can't open user config file )", flags))
+                return ConfigurationError;
+            if (Regex.IsMatch(line, @"\A(?:bad port '|bad (?:dynamic|local|remote|stdio) forwarding specification '|unknown (?:cipher|mac) type ')", flags))
+                return ArgumentError;
+            return null;
+        }
+
+        private static string TargetIdentity(AppSettings settings, string target)
+        {
+            var candidate = settings.Clone(); candidate.SshProfile = target;
+            return settings.SocksHost + "\n" + settings.SocksPort + "\n" + SshConnection.Signature(candidate);
+        }
+        private string PermanentRefusal(AppSettings settings, string target)
+        {
+            SshAttempt attempt;
+            return failedAttempts.TryGetValue(TargetIdentity(settings, target), out attempt) ? attempt.Error : null;
+        }
+        private static void ObserveAttemptError(SshAttempt attempt, CancellationToken token)
+        {
+            if (attempt != null) attempt.ErrorFinished.Task.Wait(200, token);
+        }
+        private bool IsOwnedEndpointAlive(AppSettings settings)
+        {
+            var attempt = ownedAttempt;
+            return IsOwnedProcessAlive() && attempt != null && ownedHost == settings.SocksHost && ownedPort == settings.SocksPort &&
+                attempt.Identity == TargetIdentity(settings, ownedTarget);
+        }
+        private void ThrowIfStartupSettingsChanged(StartupSettingsContext operation, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            var expected = operation.Expected;
+            var actual = CaptureConnectionSettings();
+            var old = expected.Settings; var current = actual.Settings;
+            bool changed = old.SshProfile != current.SshProfile || old.AutoSwitchSshProfile != current.AutoSwitchSshProfile ||
+                old.SocksHost != current.SocksHost || old.SocksPort != current.SocksPort;
+            var before = BuildProfileTargets(old); var after = BuildProfileTargets(current);
+            changed |= before.Count != after.Count;
+            for (int i = 0; !changed && i < before.Count; i++)
+                changed = TargetIdentity(old, before[i]) != TargetIdentity(current, after[i]);
+            if (!changed) return;
+            if (operation.Source != null) { operation.Source.Cancel(); operation.Source.Token.ThrowIfCancellationRequested(); }
+            throw new OperationCanceledException(token);
         }
 
         private static bool IsTcpOpen(string host, int port, int timeoutMs)
         {
             try
             {
-                using (var client = new TcpClient())
-                {
-                    var ar = client.BeginConnect(host, port, null, null);
-                    using (ar.AsyncWaitHandle)
-                    {
-                        if (!ar.AsyncWaitHandle.WaitOne(timeoutMs)) return false;
-                        client.EndConnect(ar);
-                        return true;
-                    }
-                }
+                using (var client = SocksEndpoint.Connect(host, port, timeoutMs, CancellationToken.None)) return true;
             }
             catch { return false; }
         }
@@ -343,14 +647,8 @@ namespace ProGo
         {
             try
             {
-                using (var client = new TcpClient())
+                using (var client = SocksEndpoint.Connect(host, port, 700, CancellationToken.None))
                 {
-                    var ar = client.BeginConnect(host, port, null, null);
-                    using (ar.AsyncWaitHandle)
-                    {
-                        if (!ar.AsyncWaitHandle.WaitOne(700)) return false;
-                        client.EndConnect(ar);
-                    }
                     using (var stream = client.GetStream())
                     {
                         stream.ReadTimeout = 700; stream.WriteTimeout = 700;
@@ -364,7 +662,7 @@ namespace ProGo
 
         public void Dispose()
         {
-            disposed = true; wanted = false;
+            lock (startupGate) { disposed = true; connectionRequested = false; wanted = false; CancelStartup(); }
             if (recoveryTimer != null) recoveryTimer.Dispose();
             lock (gate) { retryAt = null; StopProcessOnly(); }
         }

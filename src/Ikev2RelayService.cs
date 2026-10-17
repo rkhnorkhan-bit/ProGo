@@ -40,11 +40,17 @@ namespace ProGo
         // Port injection also allows real socket integration tests without privileged ports.
         internal async Task StartAsync(string socksHost, int socksPort, int ikePort, int natPort, int bridgePort)
         {
+            await StartAsync(socksHost, socksPort, ikePort, natPort, bridgePort, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        internal async Task StartAsync(string socksHost, int socksPort, int ikePort, int natPort, int bridgePort, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
             IPAddress address;
             if (String.Equals(socksHost, "localhost", StringComparison.OrdinalIgnoreCase)) address = IPAddress.Loopback;
             else if (!IPAddress.TryParse(socksHost, out address) || !IPAddress.IsLoopback(address))
                 throw new InvalidOperationException("Для этого режима нужен локальный SSH/SOCKS-туннель ProGo.");
-            var source = new CancellationTokenSource();
+            var source = CancellationTokenSource.CreateLinkedTokenSource(token);
             lock (sync)
             {
                 if (current != null || starting) { source.Dispose(); return; }
@@ -69,8 +75,9 @@ namespace ProGo
                 lock (sync)
                 {
                     if (current == run) current = null;
-                    lastError = "Не удалось запустить пересылку. Проверьте SOCKS, приёмник на VPS и свободные UDP-порты ПК.";
+                    lastError = source.IsCancellationRequested ? null : "Не удалось запустить пересылку. Проверьте SOCKS, приёмник на VPS и свободные UDP-порты ПК.";
                 }
+                source.Token.ThrowIfCancellationRequested();
                 throw;
             }
             finally

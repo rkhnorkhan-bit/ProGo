@@ -12,6 +12,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
 $UpdateLog = Join-Path $InstallDir "update.log"
 $LegacyUpdateLog = Join-Path $InstallDir "progo-update.log"
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -28,47 +29,85 @@ $State = @{
     UpdateMode = "unknown"
 }
 $BackupDir = $null
+$UpdateWindow = $null
 
 function Write-UpdateLog($Message) {
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz") + " " + $Message
-    Add-Content -Path $UpdateLog -Value $line -Encoding UTF8
-    Add-Content -Path $LegacyUpdateLog -Value $line -Encoding UTF8
+    try { Write-ProGoLog -Path $UpdateLog -Message $line } catch { }
     Write-Host $Message
+}
+
+function Show-UpdatePhase {
+    param([ValidateSet('metadata','waiting','download','package','backup','staging','stage-check','install','installed-check','restart','rollback')][string]$Phase)
+    # Phase numbers describe work, never invented byte percentages or time estimates.
+    $phases = @{
+        metadata = @(1, 'Проверяю выпуск обновления', 'Получаю версию и сведения о пакете с GitHub.')
+        waiting = @(2, 'Ожидаю завершения ProGo', 'Приложение сохраняет состояние и освобождает файлы. Ожидание может занять до 30 секунд; затем проверяется доступ к файлам.')
+        download = @(3, 'Скачиваю обновление', 'Скорость зависит от подключения. Установленные файлы ещё не заменяются.')
+        package = @(4, 'Проверяю скачанный пакет', 'Проверяю контрольную сумму, содержимое архива и версию. Установка начнётся только после проверки.')
+        backup = @(5, 'Сохраняю резервную копию', 'Сохраняю текущую программу и настройки перед заменой файлов.')
+        staging = @(6, 'Подготавливаю новую версию', 'Собираю отдельную копию для проверки. Установленные файлы ещё не заменяются.')
+        'stage-check' = @(7, 'Проверяю новую версию', 'Запускаю встроенную проверку подготовленной копии.')
+        install = @(8, 'Устанавливаю обновление', 'Идёт замена файлов. Дождитесь результата; не закрывайте окно.')
+        'installed-check' = @(9, 'Проверяю установленную версию', 'Проверяю версию и запускаю встроенную проверку после установки.')
+        restart = @(10, 'Запускаю ProGo', 'Проверяю, что приложение запустилось. Дождитесь результата.')
+        rollback = @(0, 'Восстанавливаю предыдущую версию', 'Обновление не завершилось. Пытаюсь вернуть файлы из резервной копии; дождитесь результата.')
+    }
+    $item = $phases[$Phase]
+    $title = if ($Phase -eq 'rollback') { $item[1] } else { 'Этап {0} из 10: {1}' -f $item[0], $item[1] }
+    if ($Phase -eq 'restart' -and $NoLaunch) {
+        $title = 'Этап 10 из 10: Завершаю обновление'
+        $item[2] = 'Автоматический запуск отключён. После завершения можно открыть ProGo вручную.'
+    }
+    if ($null -ne $UpdateWindow) { $UpdateWindow.ShowPhase($title, $item[2]) }
+    # Progress is presentation only. Hosts may suppress it or refuse rendering;
+    # that must never abort installation, rollback or ownership cleanup.
+    try { Write-Host $title; Write-Host $item[2] } catch { }
+    try { Write-Progress -Id 23 -Activity 'Обновление ProGo' -Status $title -CurrentOperation $item[2] -PercentComplete -1 } catch { }
+}
+
+function Clear-UpdateProgress {
+    try { Write-Progress -Id 23 -Activity 'Обновление ProGo' -Completed } catch { }
+}
+
+function Initialize-UpdateWindow {
+    if (-not ('ProGo.UpdateInstallSession' -as [type])) {
+        $sources = @('UpdateInstallSession.cs','DiagnosticReport.cs','DiagnosticPreview.cs','UiTheme.cs','BrandIcon.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
+        Add-Type -Path $sources -ReferencedAssemblies System.dll,System.Core.dll,System.Drawing.dll,System.Windows.Forms.dll -ErrorAction Stop
+    }
+    $script:UpdateWindow = [ProGo.UpdateInstallSession]::Open()
+}
+
+function Close-UpdateWindow {
+    $window = $UpdateWindow
+    $script:UpdateWindow = $null
+    if ($null -ne $window) { $window.Dispose() }
+}
+
+function Test-UpdateCancelled($ErrorObject) {
+    $exception = $ErrorObject.Exception
+    while ($null -ne $exception) {
+        if ($exception -is [OperationCanceledException]) { return $true }
+        $exception = $exception.InnerException
+    }
+    return $false
 }
 
 function Copy-LogToClipboard {
     try {
-        Add-Type -AssemblyName System.Windows.Forms
-        $text = ""
-        if (Test-Path $UpdateLog) {
-            $text = Get-Content -Raw -Path $UpdateLog
-        } elseif (Test-Path $LegacyUpdateLog) {
-            $text = Get-Content -Raw -Path $LegacyUpdateLog
-        }
-
-        if ([string]::IsNullOrWhiteSpace($text)) {
-            $text = "update.log is empty or not found: $UpdateLog"
-        }
-
-        try {
-            [System.Windows.Forms.Clipboard]::SetText($text)
-        } catch {
-            Set-Clipboard -Value $text
-        }
-
-        [void][System.Windows.Forms.MessageBox]::Show(('Журнал обновления скопирован в буфер обмена.'), "ProGo", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        . (Join-Path $PSScriptRoot 'Diagnostics-ProGo.ps1')
+        Show-ProGoDiagnostics -Root $InstallDir
     } catch {
-        Write-Host (('Не удалось скопировать журнал: ') + $_.Exception.Message)
+        Write-Host 'Не удалось открыть предпросмотр диагностики. Личный журнал доступен на этом компьютере.'
     }
 }
 
 function Open-UpdateLog {
     try {
-        if (-not (Test-Path $UpdateLog)) {
-            New-Item -ItemType File -Path $UpdateLog -Force | Out-Null
-        }
-        Start-Process -FilePath "notepad.exe" -ArgumentList $UpdateLog | Out-Null
+        $path = $UpdateLog
+        if (-not (Test-Path $path) -and (Test-Path $LegacyUpdateLog)) { $path = $LegacyUpdateLog }
+        if (-not (Test-Path $path)) { New-Item -ItemType File -Path $path -Force | Out-Null }
+        Start-Process -FilePath "notepad.exe" -ArgumentList $path | Out-Null
     } catch {
         Write-Host (('Не удалось открыть файл: ') + $_.Exception.Message)
     }
@@ -139,7 +178,7 @@ function Show-UpdateDialog($Text, $Title, $IconName) {
         $form.Controls.Add($openLog)
 
         $copyLog = New-Object System.Windows.Forms.Button
-        $copyLog.Text = 'Копировать журнал'
+        $copyLog.Text = 'Диагностика…'
         $copyLog.Left = 232
         $copyLog.Top = 200
         $copyLog.Width = 150
@@ -198,10 +237,26 @@ function Get-LocalVersion {
     return "0.0.0"
 }
 
+function Initialize-UpdateTransport {
+    if (-not ('ProGo.InstalledUpdateTransport' -as [type])) {
+        # Local installed source only; no network-loaded code or policy bypass.
+        Add-Type -Path (Join-Path $PSScriptRoot 'InstalledUpdateTransport.cs')
+    }
+}
+
+function Read-UpdateMetadata($Url) {
+    Initialize-UpdateTransport
+    return [ProGo.InstalledUpdateTransport]::ReadMetadata($Url, [Threading.CancellationToken]::None)
+}
+
+function Save-UpdatePackage($Url, $Path) {
+    Initialize-UpdateTransport
+    $token = if ($null -ne $UpdateWindow) { $UpdateWindow.Token } else { [Threading.CancellationToken]::None }
+    [ProGo.InstalledUpdateTransport]::DownloadPackage($Url, $Path, $token)
+}
+
 function Get-RemoteVersion {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $response = Invoke-WebRequest -Uri $RemoteVersionUrl -Headers @{ "User-Agent" = "ProGo-Updater" } -UseBasicParsing -ErrorAction Stop
-    $payload = $response.Content | ConvertFrom-Json
+    $payload = (Read-UpdateMetadata $RemoteVersionUrl) | ConvertFrom-Json
     if ($payload.draft -or $payload.prerelease) { throw "Only stable published releases are accepted." }
     $version = ([string]$payload.tag_name).TrimStart('v')
     if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid release version." }
@@ -224,6 +279,8 @@ function Test-UpdateRequired {
 
     if ([version]$State.LocalVersion -ge [version]$State.RemoteVersion) {
         Write-UpdateLog "ProGo is already up to date."
+        Clear-UpdateProgress
+        Close-UpdateWindow
         Show-UserMessage (('У вас актуальная версия ProGo: ') + $State.LocalVersion) ('Обновление ProGo')
         return $false
     }
@@ -242,31 +299,6 @@ function Wait-ProGoExit($TargetProcessId, $TimeoutMs) {
         }
     } catch {
         Write-UpdateLog "Wait process warning: $($_.Exception.Message)"
-    }
-}
-
-function Stop-ExistingProGoProcesses($ExceptProcessId) {
-    $processes = @(Get-Process -Name "ProGo" -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $ExceptProcessId })
-    if ($processes.Count -eq 0) {
-        Write-UpdateLog "No running ProGo processes found."
-        return
-    }
-
-    foreach ($process in $processes) {
-        Write-UpdateLog "Requesting old ProGo process close: PID $($process.Id)"
-        try {
-            if ($process.MainWindowHandle -ne 0) {
-                [void]$process.CloseMainWindow()
-                [void]$process.WaitForExit(10000)
-            }
-        } catch {
-            Write-UpdateLog "Graceful close warning for PID $($process.Id): $($_.Exception.Message)"
-        }
-
-        $stillRunning = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-        if ($null -ne $stillRunning) {
-            Fail "ProGo is still running. Close it manually and run update again. PID $($process.Id)"
-        }
     }
 }
 
@@ -327,10 +359,11 @@ function Backup-InstalledState {
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
     foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
-        try { Copy-FileIfExists $InstallDir $name $backupDir $false } catch { Write-UpdateLog "Backup warning for ${name}: $($_.Exception.Message)" }
+        Copy-FileIfExists $InstallDir $name $backupDir $false
     }
 
-    try { Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false } catch { Write-UpdateLog "Backup warning for scripts: $($_.Exception.Message)" }
+    Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false
+    [ProGo.BackupIntegrity]::CopyPersonalArchives($InstallDir, $backupDir)
 
     $manifest = @(
         "product=ProGo",
@@ -341,17 +374,20 @@ function Backup-InstalledState {
         "backup_kind=pre-update",
         "update_result=pending",
         "reason=before-transactional-update",
-        "contains=ProGo.exe,ProGo.ico,VERSION,scripts,vault.enc.json,settings.json,progo.log,update.log",
+        "contains=$([ProGo.BackupIntegrity]::Contents($backupDir))",
         "update_mode=$($State.UpdateMode)"
     )
+    $manifest += [ProGo.BackupIntegrity]::CompositionLines($backupDir)
     Set-Content -Path (Join-Path $backupDir "manifest.txt") -Value $manifest -Encoding UTF8
 
+    [ProGo.BackupIntegrity]::Write($backupDir)
+    [ProGo.BackupIntegrity]::Validate($backupDir)
     Write-UpdateLog "Installed-state backup created: $backupDir"
 
-    $oldBackups = @(Get-ChildItem -Path $BackupsDir -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -Skip 20)
-    foreach ($old in $oldBackups) {
-        Remove-Item $old.FullName -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    # Manifest-aware policy is shared with BackupService. Unknown/manual folders
+    # and the latest baseline/pre-update are never pruned by a directory count.
+    $cleanup = [ProGo.BackupRetention]::Apply([ProGo.BackupRetention]::Plan($BackupsDir, $backupDir))
+    Write-UpdateLog "Backup retention: deleted=$($cleanup.Deleted); kept=$($cleanup.Kept); failed=$($cleanup.Failed); skipped=$($cleanup.Skipped)"
 
     return $backupDir
 }
@@ -440,7 +476,9 @@ function Restore-BackupToMain($SourceBackupDir) {
 
     Write-UpdateLog "Rolling back main application from backup: $SourceBackupDir"
 
-    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log")) {
+    # Updating only replaces program files. A failure must not rewind current
+    # settings, vault, VPN access, ownership journals or logs to a historical copy.
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
         try { Copy-FileIfExists $SourceBackupDir $name $InstallDir $false } catch { Write-UpdateLog "Rollback warning for ${name}: $($_.Exception.Message)" }
     }
 
@@ -487,7 +525,11 @@ function Try-GetReleasePackage($DestinationRoot) {
     $packageZip = Join-Path $DestinationRoot "ProGo-release.zip"
     Write-UpdateLog "update_mode=release-package"
     Write-UpdateLog "Downloading published package: $($State.ReleaseUrl)"
-    Invoke-WebRequest -Uri $State.ReleaseUrl -OutFile $packageZip -UseBasicParsing -ErrorAction Stop
+    Show-UpdatePhase download
+    if ($null -ne $UpdateWindow) { $UpdateWindow.BeginDownload() }
+    Save-UpdatePackage $State.ReleaseUrl $packageZip
+    if ($null -ne $UpdateWindow) { $UpdateWindow.EndDownload() }
+    Show-UpdatePhase package
     $actual = (Get-FileHash -LiteralPath $packageZip -Algorithm SHA256).Hash
     if ($actual -ine $State.ReleaseSha256) { throw "Package SHA-256 mismatch. No installed files were changed." }
     Write-UpdateLog "Package SHA-256 verified: $actual"
@@ -559,16 +601,27 @@ function Cleanup-TemporaryFiles {
     }
 }
 
+# Acquire before logs, network, backups or waits. A rejected contender has no
+# installed-state side effects and cannot enter rollback/cleanup for the owner.
+. (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
+$Maintenance = [ProGo.MaintenanceOperation]::Enter()
 try {
+    . (Join-Path $PSScriptRoot 'BackupRetention-ProGo.ps1')
+    . (Join-Path $PSScriptRoot 'BackupIntegrity-ProGo.ps1')
     Write-UpdateLog "ProGo transactional update started."
 
+    Initialize-UpdateWindow
+    Show-UpdatePhase metadata
     if (-not (Test-UpdateRequired)) {
+        Clear-UpdateProgress
         return
     }
 
-    $UpdaterProcessId = $PID
+    [ProGo.MaintenanceOperation]::ConfirmHandoff()
+    Show-UpdatePhase waiting
     Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
-    Stop-ExistingProGoProcesses -ExceptProcessId $UpdaterProcessId
+    [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
+    [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
 
     $Exe = Join-Path $InstallDir "ProGo.exe"
     Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30
@@ -577,15 +630,20 @@ try {
 
     $ReleaseDir = Get-ReleaseDirForUpdate
 
+    Show-UpdatePhase backup
     $BackupDir = Backup-InstalledState
     Write-UpdateLog "Backup before update: $BackupDir"
 
+    Show-UpdatePhase staging
     New-StagingCopy -TargetDir $StageDir
     Apply-ReleaseToStaging -ReleaseDir $ReleaseDir -TargetDir $StageDir
+    Show-UpdatePhase stage-check
     Test-StagingCopy -TargetDir $StageDir
 
+    Show-UpdatePhase install
     Install-StagingToMain -TargetDir $StageDir
 
+    Show-UpdatePhase installed-check
     $installedVersion = ((Get-Content -Raw -Path (Join-Path $InstallDir "VERSION")).Trim())
     if ($installedVersion -ne $State.RemoteVersion) {
         Fail "Installed version mismatch after commit: installed=$installedVersion remote=$($State.RemoteVersion)"
@@ -596,28 +654,43 @@ try {
         Fail "Main self-check failed after commit with exit code $($mainCheck.ExitCode)"
     }
 
+    Show-UpdatePhase restart
     Start-UpdatedProGo -ExePath (Join-Path $InstallDir "ProGo.exe")
 
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "success"
     Write-UpdateLog "ProGo transactional update completed."
+    Clear-UpdateProgress
+    Close-UpdateWindow
+    try { Write-Host 'Обновление завершено. Резервная копия сохранена.' } catch { }
     Show-UpdateDialog (('ProGo обновлён. Резервная копия сохранена:
 ') + $BackupDir) ('Обновление ProGo') "Information"
 } catch {
+    if (-not $State.MainWasChanged -and $null -ne $UpdateWindow -and $UpdateWindow.CancellationRequested -and (Test-UpdateCancelled $_)) {
+        Write-UpdateLog 'Download cancelled before validation or installation. Installed files were not changed.'
+        Clear-UpdateProgress
+        Close-UpdateWindow
+        throw (New-Object ProGo.UpdateDownloadCancelledException)
+    }
     $message = $_.Exception.Message
     Write-UpdateLog "TRANSACTION FAILED: $message"
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "failed"
 
     if ($State.MainWasChanged) {
+        [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
+        Show-UpdatePhase rollback
         Restore-BackupToMain -SourceBackupDir $BackupDir
         Write-UpdateLog "Rollback completed after failed main commit."
     } else {
         Write-UpdateLog "Main application was not changed; rollback is not required."
     }
 
+    Clear-UpdateProgress
+    Close-UpdateWindow
+    try { Write-Host 'Обновление не выполнено. Подробности доступны в журнале обновления.' } catch { }
     Show-UpdateDialog (('Обновление ProGo не выполнено. Основное приложение сохранено или восстановлено из резервной копии. Подробности в update.log.
 
 ') + $message) ('Обновление ProGo') "Error"
     throw
 } finally {
-    Cleanup-TemporaryFiles
+    try { Cleanup-TemporaryFiles } finally { try { Clear-UpdateProgress } finally { try { Close-UpdateWindow } finally { $Maintenance.Dispose() } } }
 }

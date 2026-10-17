@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,11 @@ using System.Web.Script.Serialization;
 
 namespace ProGo
 {
+    internal sealed class HomeVpnLocalCleanupException : IOException
+    {
+        internal HomeVpnLocalCleanupException(string message) : base(message) { }
+    }
+
     internal sealed class HomeVpnOwner
     {
         public string Host { get; set; }
@@ -30,7 +36,21 @@ namespace ProGo
         public string Id { get; set; }
         public string Name { get; set; }
         public bool Revoked { get; set; }
-        public override string ToString() { return Name + " — " + (Revoked ? "отозван" : "активен") + " (" + Id.Substring(0, 8) + ")"; }
+        public string Created { get; set; }
+        internal string Status { get { return Revoked ? "Отозван" : "Активен до отзыва"; } }
+        internal string CreatedText {
+            get {
+                DateTimeOffset value;
+                return DateTimeOffset.TryParse(Created, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal, out value)
+                    ? value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
+                    : "Дата не передана сервером";
+            }
+        }
+        public override string ToString() {
+            var id = Id ?? "";
+            return (Name ?? "Без имени") + " — " + Status + " (" + id.Substring(0, Math.Min(8, id.Length)) + ")";
+        }
     }
 
     internal sealed class HomeVpnService : IDisposable
@@ -52,12 +72,19 @@ namespace ProGo
         private string sessionDirectory;
         private CancellationTokenSource starting;
         private bool disposed;
+        private readonly string sshExecutable;
+        private readonly int ikePort, natPort, bridgePort;
         internal bool AutoRestart = true;
         internal string RecoveryStatus { get { return proxy == null ? "Не запущен" : proxy.RecoveryStatus; } }
 
         internal HomeVpnService(Ikev2RelayService relay)
+            : this(relay, OpenSshClient.Executable, Ikev2RelayService.IkePort, Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort) { }
+
+        // Isolated Windows fixtures use their own executable and unprivileged UDP ports.
+        internal HomeVpnService(Ikev2RelayService relay, string sshExecutable, int ikePort, int natPort, int bridgePort)
         {
-            Relay = relay;
+            Relay = relay; this.sshExecutable = sshExecutable;
+            this.ikePort = ikePort; this.natPort = natPort; this.bridgePort = bridgePort;
             try
             {
                 var token = HomeVpnPrivateFiles.Load("access");
@@ -87,11 +114,19 @@ namespace ProGo
 
         internal async Task StartAsync()
         {
+            await StartAsync(CancellationToken.None);
+        }
+
+        internal async Task StartAsync(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
             if (disposed) throw new ObjectDisposedException("HomeVpnService");
             if (Access == null) throw new InvalidOperationException("Сначала добавьте VPS или вставьте токен.");
             if (Relay.IsRunning || starting != null) return;
             Stop();
-            var cancellation = new CancellationTokenSource(); starting = cancellation;
+            if (proxy != null || sessionDirectory != null)
+                throw new InvalidOperationException("Предыдущий запуск канала ещё не очищен. Закройте программы, использующие временные файлы, и повторите остановку VPN для телефона.");
+            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token); starting = cancellation;
             try
             {
                 HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
@@ -110,36 +145,53 @@ namespace ProGo
                 var reservation = new TcpListener(IPAddress.Loopback, 0); reservation.Start();
                 try { port = ((IPEndPoint)reservation.LocalEndpoint).Port; } finally { reservation.Stop(); }
                 var options = AppSettings.Defaults(); options.SocksPort = port; options.SshProfile = "progo-home";
-                proxy = new ProxyService(delegate { options.AutoRestartSocks = AutoRestart; return options; }, delegate { }, "ssh.exe", delegate { return DateTime.UtcNow; }, true,
-                    "-F " + Argument(config) + " ");
-                proxy.StartTunnel(false);
-                for (int i = 0; i < 40; i++)
-                {
-                    cancellation.Token.ThrowIfCancellationRequested();
-                    if (proxy.IsListening()) break;
-                    await Task.Delay(250, cancellation.Token);
-                }
+                proxy = new ProxyService(delegate { options.AutoRestartSocks = AutoRestart; return options; }, delegate { }, sshExecutable, delegate { return DateTime.UtcNow; }, true,
+                    "-F " + Argument(config) + " ", 10000);
+                // Reuse the owned asynchronous SOCKS handshake, deadline and cancellation.
+                if (!await proxy.StartTunnelAsync(cancellation.Token)) throw new InvalidOperationException("SOCKS не готов.");
                 cancellation.Token.ThrowIfCancellationRequested();
-                await Relay.StartAsync("127.0.0.1", port);
+                await Relay.StartAsync("127.0.0.1", port, ikePort, natPort, bridgePort, cancellation.Token);
                 cancellation.Token.ThrowIfCancellationRequested();
             }
             catch
             {
-                Stop();
+                CleanupFailedStart();
+                cancellation.Token.ThrowIfCancellationRequested();
                 throw new InvalidOperationException("Канал к VPS не готов. Проверьте интернет и токен: владелец мог отозвать доступ или изменить SSH-ключ сервера. Можно повторить запуск.");
             }
             finally { if (starting == cancellation) starting = null; cancellation.Dispose(); }
+        }
+
+        private void CleanupFailedStart()
+        {
+            Relay.Stop();
+            if (proxy != null)
+            {
+                proxy.Dispose();
+                if (proxy.HasOwnedProcess) throw new InvalidOperationException("Не удалось подтвердить остановку процесса канала. Повторите остановку VPN для телефона; отмена пока не подтверждена.");
+                proxy = null;
+            }
+            if (sessionDirectory != null)
+            {
+                try { if (Directory.Exists(sessionDirectory)) Directory.Delete(sessionDirectory, true); }
+                catch { throw new InvalidOperationException("Канал остановлен, но временные файлы доступа не удалось удалить. Закройте программы, использующие эти файлы; отмена пока не подтверждена."); }
+                sessionDirectory = null;
+            }
         }
 
         internal void Stop()
         {
             if (starting != null) starting.Cancel();
             Relay.Stop();
-            if (proxy != null) { proxy.Dispose(); proxy = null; }
+            if (proxy != null) {
+                proxy.Dispose();
+                if (proxy.HasOwnedProcess) return; // Retain ownership; never overwrite an unsettled child.
+                proxy = null;
+            }
             if (sessionDirectory != null)
             {
-                try { Directory.Delete(sessionDirectory, true); } catch { }
-                sessionDirectory = null;
+                try { if (Directory.Exists(sessionDirectory)) Directory.Delete(sessionDirectory, true); sessionDirectory = null; }
+                catch { /* Keep ownership so cancellation/retry cannot claim cleanup succeeded. */ }
             }
         }
 
@@ -163,60 +215,256 @@ namespace ProGo
 
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
+            return await AdminAsync(owner, action, label, identifier, progress,
+                (executable, arguments) => action == "list"
+                    ? HomeVpnPreparationForm.CopyForListAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments)
+                    : HomeVpnPreparationForm.CopyAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments,
+                        action == "recover-setup" || action == "recover-invite" || action == "recover-share" || (action == "setup" && HomeVpnSetupRecovery.HasPending())), null, HomeVpnPreparationProcess.TimeoutMs);
+        }
+
+        // Tests replace only the executable/copy, retaining the production dispatch
+        // to its real owned waiting window instead of injecting a command transport.
+        internal static Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress,
+            Func<string, string, Task> copy, string commandExecutable, int timeoutMs)
+        {
+            return AdminAsync(owner, action, label, identifier, progress, copy, (executable, arguments, output) => {
+                executable = commandExecutable ?? executable;
+                if (action == "setup" || action == "recover-setup")
+                    return HomeVpnPreparationForm.WaitForCommandAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output);
+                if (action == "list")
+                    return HomeVpnPreparationForm.WaitForListAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
+                if (action == "invite" || action == "recover-invite")
+                    return HomeVpnPreparationForm.WaitForAdminAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
+                if (action == "share" || action == "recover-share")
+                    return HomeVpnPreparationForm.WaitForShareAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
+                return HomeVpnPreparationForm.WaitForOwnerAsync(System.Windows.Forms.Form.ActiveForm, executable, arguments, output, timeoutMs);
+            });
+        }
+
+        // Injected transports keep Windows fixtures isolated from live VPS credentials.
+        internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress,
+            Func<string, string, Task> copy, Func<string, string, string, Task> commandTransport)
+        {
+            // Freeze the endpoint and authentication path before the first await;
+            // a caller's mutable settings object cannot redirect this operation.
+            if (owner == null) throw new ArgumentException("Проверьте исходные SSH-данные владельца VPS.");
+            owner = new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
             owner.Validate();
-            if (action != "setup" && action != "invite" && action != "list" && action != "revoke" && action != "share" && action != "repair") throw new ArgumentException("Unknown action");
+            bool setup = action == "setup" || action == "recover-setup";
+            bool issuance = action == "invite" || action == "recover-invite";
+            bool sharing = action == "share" || action == "recover-share";
+            if (!setup && !issuance && !sharing && action != "list" && action != "revoke" && action != "repair") throw new ArgumentException("Unknown action");
+            if (action == "recover-invite" && (label != null || identifier != null)) throw new ArgumentException("Проверка использует только параметры сохранённой выдачи.");
+            if (sharing && (label != null || (action == "recover-share" && identifier != null))) throw new ArgumentException("Проверка HTTPS использует только параметры сохранённого запроса.");
             if (action == "revoke" && !System.Text.RegularExpressions.Regex.IsMatch(identifier ?? "", @"\A[0-9a-f]{24}\z")) throw new ArgumentException("Invalid invitation");
             if ((label ?? "").Length > 80 || (label ?? "").IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0) throw new ArgumentException("Название слишком длинное.");
+            if (setup && Array.Exists((label ?? "").ToCharArray(), Char.IsControl)) throw new ArgumentException("Проверьте название доступа: без управляющих знаков.");
             if (action == "share") identifier = new Uri(HomeProfileShare.Origin(identifier)).Host;
-            HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
-            var work = Path.Combine(HomeVpnPrivateFiles.Root, "admin-" + Guid.NewGuid().ToString("N"));
-            HomeVpnPrivateFiles.SecureDirectory(work);
-            var name = "progo-" + Guid.NewGuid().ToString("N");
-            var upload = Path.Combine(work, name); Directory.CreateDirectory(upload);
-            var output = Path.Combine(work, "result.txt");
-            try
+            using (var lease = setup ? await HomeVpnSetupRecovery.AcquireAsync() : issuance ? await HomeVpnAdminRecovery.AcquireAsync() : sharing ? await HomeVpnShareRecovery.AcquireAsync() : null)
             {
-                foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" })
-                    File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts", "home-vpn", "server", file), Path.Combine(upload, file));
-                var keyArgs = String.IsNullOrWhiteSpace(owner.KeyFile) ? "" : " -i " + Argument(owner.KeyFile);
-                var target = owner.Login + "@" + owner.Host;
-                progress("Копирование помощника на VPS. Если SSH спросит пароль или подтверждение ключа, ответьте в открывшемся окне.");
-                await ConsoleAsync("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"), null);
-                var remote = "/tmp/" + name;
-                var command = "trap 'rm -rf -- " + remote + "' EXIT; "
-                    + (owner.Login == "root" ? "" : "sudo -n ") + "python3 -I " + remote + "/home_vpn_setup.py " + action
-                    + " --host " + Shell(owner.Host) + " --port " + owner.Port + " --name " + Shell(label ?? "My iPhone")
-                    + (action == "revoke" ? " --id " + identifier : action == "share" ? " --domain " + Shell(identifier) : "") + " --output " + remote + "/result 1>&2"
-                    + " && cat " + remote + "/result";
-                progress("Настройка VPS. Окно SSH показывает ход установки; для пользователя без root нужен sudo без запроса пароля.");
-                // A real console remains available for OpenSSH password/host-key prompts.
-                // Only stdout goes to a private local file; the token is never a command argument.
-                await ConsoleAsync("ssh.exe", "-o ConnectTimeout=15 -T -p " + owner.Port + keyArgs + " " + Argument(target) + " " + Argument(command), output);
-                var result = File.ReadAllText(output).Trim();
-                if (result.Length == 0 || result.Length > 32768) throw new InvalidOperationException("VPS не вернул результат.");
-                return result;
+                var request = setup ? HomeVpnSetupRecovery.Load(owner, label) : null;
+                var adminRequest = action == "recover-invite" ? HomeVpnAdminRecovery.Load(owner) : null;
+                var shareRequest = action == "recover-share" ? HomeVpnShareRecovery.Load(owner) : null;
+                bool checking = request != null || adminRequest != null || shareRequest != null;
+                if (action == "recover-setup" && !checking) throw new HomeVpnSetupPendingException("Сохранённый запрос настройки отсутствует. Новая команда не запускалась.");
+                if (action == "recover-invite" && adminRequest == null) throw new HomeVpnAdminPendingException("Сохранённый запрос выдачи отсутствует. Новая выдача не запускалась.");
+                if (action == "invite" && HomeVpnAdminRecovery.HasPending()) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
+                if (action == "recover-share" && shareRequest == null) throw new HomeVpnSharePendingException("Сохранённый HTTPS-запрос отсутствует. Новая настройка не запускалась.");
+                if (action == "share" && HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+                HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
+                var work = Path.Combine(HomeVpnPrivateFiles.Root, "admin-" + Guid.NewGuid().ToString("N"));
+                HomeVpnPrivateFiles.SecureDirectory(work);
+                var name = "progo-" + Guid.NewGuid().ToString("N");
+                var upload = Path.Combine(work, name); Directory.CreateDirectory(upload);
+                var output = Path.Combine(work, "result.txt");
+                bool remoteStarted = false;
+                return await CompleteAdminWorkAsync(work, action, checking, () => remoteStarted, async delegate {
+                try
+                {
+                    foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" })
+                        File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts", "home-vpn", "server", file), Path.Combine(upload, file));
+                    var keyArgs = String.IsNullOrWhiteSpace(owner.KeyFile) ? "" : " -i " + Argument(owner.KeyFile);
+                    var target = owner.Login + "@" + owner.Host;
+                    progress(action == "list" ? "Подготовка получения списка друзей. Существующий доступ и текущий список сохраняются; новые токены не создаются."
+                        : sharing && checking ? "Подготовка проверки прежней настройки HTTPS. Запрос сохранён; новая настройка не запускается."
+                        : issuance && checking ? "Подготовка проверки прежней выдачи доступа. Запрос сохранён; новое приглашение и повторный отзыв не запускаются."
+                        : checking ? "Подготовка проверки прежней настройки VPS. Предыдущая команда могла завершиться; повторной выдачи доступа не будет."
+                        : "Копирование помощника на VPS. Если SSH спросит пароль или подтверждение ключа, ответьте в открывшемся окне.");
+                    await copy("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"));
+                    var remote = "/tmp/" + name;
+                    if (setup && !checking) request = HomeVpnSetupRecovery.Register(owner, label);
+                    if (issuance && !checking) adminRequest = HomeVpnAdminRecovery.Register(owner, label, identifier);
+                    if (sharing && !checking) shareRequest = HomeVpnShareRecovery.Register(owner, identifier);
+                    var prefix = (owner.Login == "root" ? "" : "sudo -n ") + "python3 -I " + remote + "/home_vpn_setup.py ";
+                    var options = " --host " + Shell(owner.Host) + " --port " + owner.Port + " --name " + Shell(label ?? "My iPhone")
+                        + (action == "revoke" ? " --id " + identifier : action == "share" ? " --domain " + Shell(identifier) : "")
+                        + (setup ? " --request-id " + request.RequestId : "");
+                    var ssh = "-o ConnectTimeout=15 -T -p " + owner.Port + keyArgs + " " + Argument(target) + " ";
+                    if (sharing && checking) {
+                        progress("Проверяем сохранённый HTTPS-запрос. Новая настройка домена не запускается."); remoteStarted = true;
+                        await commandTransport("ssh.exe", ssh + Argument("trap 'rm -rf -- " + remote + "' EXIT; " + prefix + "operation-status --request-id " + shareRequest.RequestId
+                            + " --output " + remote + "/status 1>&2 && cat " + remote + "/status"), output);
+                        HomeVpnShareRecovery.RequireCompleted(ReadShareOutput(output, false), shareRequest);
+                        progress("Прежняя настройка HTTPS завершена. Получаем её исходный адрес без новой настройки.");
+                        await copy("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"));
+                        var recovered = Path.Combine(work, "recovered.txt");
+                        await commandTransport("ssh.exe", ssh + Argument("trap 'rm -rf -- " + remote + "' EXIT; " + prefix
+                            + "operation-result --request-id " + shareRequest.RequestId + " --output " + remote + "/result 1>&2 && cat " + remote + "/result"), recovered);
+                        return HomeVpnShareRecovery.RequireResult(owner, shareRequest, ReadShareOutput(recovered, false));
+                    }
+                    if (issuance && checking) {
+                        progress("Проверяем прежнюю выдачу. Новое приглашение и повторный отзыв не запрашиваются."); remoteStarted = true;
+                        await commandTransport("ssh.exe", ssh + Argument("trap 'rm -rf -- " + remote + "' EXIT; " + prefix + "operation-status --request-id " + adminRequest.RequestId
+                            + " --output " + remote + "/status 1>&2 && cat " + remote + "/status"), output);
+                        HomeVpnAdminRecovery.RequireCompleted(ReadAdminOutput(output, false), adminRequest);
+                        progress("Прежняя выдача завершена; получаем тот же токен. Отозванный доступ не восстанавливается.");
+                        // Each read-only SSH owns cleanup even when status is
+                        // uncertain. Recopy only the public helper for the result.
+                        await copy("scp.exe", "-o ConnectTimeout=15 -P " + owner.Port + keyArgs + " -r " + Argument(upload) + " " + Argument(target + ":/tmp/"));
+                        var recovered = Path.Combine(work, "recovered.txt");
+                        await commandTransport("ssh.exe", ssh + Argument("trap 'rm -rf -- " + remote + "' EXIT; " + prefix
+                            + "operation-result --request-id " + adminRequest.RequestId + " --output " + remote + "/result 1>&2 && cat " + remote + "/result"), recovered);
+                        return HomeVpnAdminRecovery.RetainResult(owner, adminRequest, ReadAdminOutput(recovered, false));
+                    }
+                    if (setup && checking) {
+                        progress("Проверяем прежнюю команду VPS. Новая настройка и новый доступ не запрашиваются.");
+                        remoteStarted = true;
+                        // Keep the freshly copied public helper for both read-only queries.
+                        // The result query owns remote cleanup; status uncertainty preserves
+                        // only public helpers in /tmp, without claiming remote rollback.
+                        await commandTransport("ssh.exe", ssh + Argument(prefix + "operation-status --request-id " + request.RequestId
+                            + " --output " + remote + "/status 1>&2 && cat " + remote + "/status"), output);
+                        HomeVpnSetupRecovery.RequireCompleted(ReadSetupOutput(output), request);
+                        progress("Прежняя настройка завершена. Получаем исходный доступ, без выдачи нового.");
+                        var recovered = Path.Combine(work, "recovered.txt");
+                        await commandTransport("ssh.exe", ssh + Argument("trap 'rm -rf -- " + remote + "' EXIT; " + prefix
+                            + "operation-result --request-id " + request.RequestId + " --output " + remote + "/result 1>&2 && cat " + remote + "/result"), recovered);
+                        return HomeVpnSetupRecovery.RetainResult(owner, request, ReadSetupOutput(recovered));
+                    }
+                    var command = "trap 'rm -rf -- " + remote + "' EXIT; " + prefix + action + options
+                        + " --output " + remote + "/result 1>&2 && cat " + remote + "/result";
+                    if (issuance) {
+                        // The existing receipt protocol rechecks availability before
+                        // private stdout handoff. The shell always cleans its result.
+                        var id = adminRequest.RequestId;
+                        command = "trap 'rm -rf -- " + remote + "' EXIT; " + prefix + "invite" + options
+                            + " --request-id " + id + (adminRequest.SourceInviteId == null ? "" : " --id " + adminRequest.SourceInviteId)
+                            + " --output " + remote + "/result 1>&2 && " + prefix + "operation-status --request-id " + id
+                            + " --output " + remote + "/status 1>&2 && " + prefix + "operation-result --request-id " + id
+                            + " --output " + remote + "/verified 1>&2 && cat " + remote + "/status && printf '\\n' && cat " + remote + "/verified";
+                    }
+                    if (sharing) {
+                        var id = shareRequest.RequestId;
+                        command = "trap 'rm -rf -- " + remote + "' EXIT; " + prefix + "share" + options
+                            + " --request-id " + id + " --output " + remote + "/result 1>&2 && " + prefix + "operation-status --request-id " + id
+                            + " --output " + remote + "/status 1>&2 && " + prefix + "operation-result --request-id " + id
+                            + " --output " + remote + "/verified 1>&2 && cat " + remote + "/status && printf '\\n' && cat " + remote + "/verified";
+                    }
+                    progress(action == "list" ? "Получение списка друзей с VPS. Ожидание — до 5 минут; его можно отменить. Доступ друзей не изменяется."
+                        : sharing ? "Настройка HTTPS. Запрос сохранён до SSH. Можно прервать ожидание; затем проверяйте прежнюю настройку без новой команды."
+                        : issuance ? "Выдача доступа другу. Запрос сохранён до SSH. Можно прервать ожидание; затем проверяйте прежнюю выдачу без нового приглашения."
+                        : setup ? "Настройка VPS. ID запроса сохранён до запуска SSH. При потере ответа проверьте прежнюю настройку вместо повторной выдачи доступа."
+                        : (action == "revoke" ? "Отзыв выбранного доступа" : action == "repair" ? "Восстановление правил выхода VPN" : "Настройка HTTPS-выдачи профилей")
+                            + ". Ожидание — до 5 минут; его можно прервать. Команда VPS могла применить изменения или продолжать работу. ProGo не повторяет её автоматически; проверьте VPS перед повтором.");
+                    // A real console remains available for OpenSSH password/host-key prompts.
+                    // Only stdout goes to a private local file; the token is never a command argument.
+                    remoteStarted = true;
+                    await commandTransport("ssh.exe", ssh + Argument(command), output);
+                    if (sharing) {
+                        string framed = ReadShareOutput(output, true); int split = framed.IndexOf('\n');
+                        if (split < 1) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+                        HomeVpnShareRecovery.RequireCompleted(framed.Substring(0, split).Trim(), shareRequest);
+                        return HomeVpnShareRecovery.RequireResult(owner, shareRequest, framed.Substring(split + 1).Trim());
+                    }
+                    if (issuance) {
+                        string framed = ReadAdminOutput(output, true); int split = framed.IndexOf('\n');
+                        if (split < 1) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
+                        HomeVpnAdminRecovery.RequireCompleted(framed.Substring(0, split).Trim(), adminRequest);
+                        return HomeVpnAdminRecovery.RetainResult(owner, adminRequest, framed.Substring(split + 1).Trim());
+                    }
+                    var result = setup ? ReadSetupOutput(output) : ReadCommandOutput(output);
+                    if (result.Length == 0 || result.Length > 32768) throw new InvalidOperationException("VPS не вернул результат.");
+                    return setup ? HomeVpnSetupRecovery.RetainResult(owner, request, result) : result;
+                }
+                catch (HomeVpnPreparationCancelledException) {
+                    if (checking) throw new HomeVpnPreparationCancelledException(true);
+                    throw;
+                }
+                catch (HomeVpnSetupPendingException) { throw; }
+                catch (HomeVpnAdminPendingException) { throw; }
+                catch (HomeVpnSharePendingException) { throw; }
+                catch (HomeVpnOwnerUnconfirmedException) { throw; }
+                catch (Exception ex) {
+                    if (!(ex is OutOfMemoryException) && sharing && shareRequest != null) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+                    if (!(ex is OutOfMemoryException) && issuance && adminRequest != null) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
+                    if (!(ex is OutOfMemoryException) && !setup && !issuance && action != "list" && remoteStarted) throw new HomeVpnOwnerUnconfirmedException();
+                    if (ex is OutOfMemoryException || !setup || request == null) throw;
+                    throw new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage);
+                }
+                });
             }
-            finally { try { Directory.Delete(work, true); } catch { } }
+        }
+
+        private static async Task<string> CompleteAdminWorkAsync(string work, string action, bool checking, Func<bool> remoteStarted, Func<Task<string>> operation)
+        {
+            string result = null; ExceptionDispatchInfo failure = null;
+            try { result = await operation(); }
+            catch (Exception error) { failure = ExceptionDispatchInfo.Capture(error); }
+            // C# 5 cannot await inside finally. Keep the recovery lease above
+            // until this worker settles, then preserve the original outcome.
+            bool started = remoteStarted();
+            await Task.Run(() => DeleteAdminWork(work, action, checking, started));
+            if (failure != null) failure.Throw();
+            return result;
+        }
+
+        private static void DeleteAdminWork(string work, string action, bool checking, bool remoteStarted)
+        {
+            var watch = Stopwatch.StartNew();
+            while (true) {
+                try { Directory.Delete(work, true); return; }
+                catch (DirectoryNotFoundException) { if (!Directory.Exists(work)) return; }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+                long remaining = 1000 - watch.ElapsedMilliseconds;
+                if (remaining <= 0) break;
+                Thread.Sleep((int)Math.Min(50, remaining));
+            }
+            const string cleanup = "Локальные файлы команды VPS не удалось удалить. Завершение локальной очистки пока не подтверждено. Закройте программы, использующие эти файлы. ";
+            if (action == "list") throw new HomeVpnLocalCleanupException("Локальные файлы получения списка не удалось удалить. Существующий доступ, текущий список и введённые данные сохранены; завершение очистки пока не подтверждено. Закройте программы, использующие эти файлы, и повторите получение списка.");
+            if (remoteStarted) {
+                if (action == "setup" || action == "recover-setup") throw new HomeVpnSetupPendingException(cleanup + HomeVpnSetupRecovery.PendingMessage);
+                if (action == "invite" || action == "recover-invite") throw new HomeVpnAdminPendingException(cleanup + HomeVpnAdminRecovery.PendingMessage);
+                if (action == "share" || action == "recover-share") throw new HomeVpnSharePendingException(cleanup + HomeVpnShareRecovery.PendingMessage);
+                throw new HomeVpnOwnerUnconfirmedException(cleanup + HomeVpnOwnerUnconfirmedException.UnconfirmedMessage);
+            }
+            throw new HomeVpnLocalCleanupException(checking
+                ? "Подготовка проверки прервана, но локальные файлы не удалось удалить. Прежний запрос сохранён; его результат не подтверждён. Закройте программы, использующие эти файлы."
+                : "Команда VPS не запускалась, но локальные файлы подготовки не удалось удалить. Закройте программы, использующие эти файлы; завершение подготовки пока не подтверждено.");
+        }
+
+        private static string ReadSetupOutput(string path)
+        {
+            if (new FileInfo(path).Length > 32768) throw new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage);
+            return File.ReadAllText(path, new UTF8Encoding(false, true)).Trim();
+        }
+        private static string ReadAdminOutput(string path, bool framed)
+        {
+            if (new FileInfo(path).Length > (framed ? 65536 : 32768)) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
+            return File.ReadAllText(path, new UTF8Encoding(false, true)).Trim();
+        }
+        private static string ReadCommandOutput(string path)
+        {
+            if (new FileInfo(path).Length > 32768) throw new InvalidOperationException("VPS вернул слишком большой результат.");
+            return File.ReadAllText(path, new UTF8Encoding(false, true)).Trim();
+        }
+        private static string ReadShareOutput(string path, bool framed)
+        {
+            if (new FileInfo(path).Length > (framed ? 65536 : 32768)) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+            return File.ReadAllText(path, new UTF8Encoding(false, true)).Trim();
         }
 
         private static string Shell(string value) { return "'" + value.Replace("'", "'\"'\"'") + "'"; }
-        private static string PowerShell(string value) { return "'" + value.Replace("'", "''") + "'"; }
-        private static Task ConsoleAsync(string executable, string arguments, string output)
-        {
-            return Task.Run(delegate
-            {
-                // Start-Process ArgumentList preserves the exact, already quoted command line.
-                var script = "$p=Start-Process -FilePath " + PowerShell(executable) + " -ArgumentList " + PowerShell(arguments)
-                    + " -NoNewWindow -PassThru -Wait" + (output == null ? "" : " -RedirectStandardOutput " + PowerShell(output))
-                    + "; if($p.ExitCode -ne 0){ Write-Host 'SSH operation failed. Check the message above.'; Start-Sleep -Seconds 5 }; exit $p.ExitCode";
-                using (var process = Process.Start(new ProcessStartInfo("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -EncodedCommand "
-                    + Convert.ToBase64String(Encoding.Unicode.GetBytes(script))) { UseShellExecute = true }))
-                {
-                    process.WaitForExit();
-                    if (process.ExitCode != 0) throw new InvalidOperationException("Операция SSH не завершена. Проверьте адрес, права пользователя и сообщение в окне SSH. Настройку можно повторить.");
-                }
-            });
-        }
 
         public void Dispose() { disposed = true; Stop(); }
     }
