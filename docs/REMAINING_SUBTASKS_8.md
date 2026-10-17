@@ -12,10 +12,7 @@ PGA-02B: общий bounded SCM probe и lifecycle окна приняты в Co
 
 PGA-03A — узкий **Code/Dev PASS** на source `4a7a6a9fec80a17321f6ffc0ac4fa5fdf6fedd6a`, completed [CI #559](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38971701412):66 новых start/rights/race/cancel/ownership checks, Desktop4126, обе native jobs SUCCESS ([протокол](MICROTASK_SSH_AGENT_SERVICE_START.md)). Это internal start API и общий read/start slot; startup hook/lifetime — отдельный PGA-03B. Реальный StartService только с invalid handle, рабочие start-сценарии на native boundary fixtures; не live приёмка. F31-R11/PGA-03/PGA-02 не закрыты, новых PASS55 нет.
 
-PGA-03B candidate: startup hook после instance.Attach и one-shot lifetime с
-close/shutdown cancellation; native CI PENDING ([протокол](MICROTASK_SSH_AGENT_STARTUP_LIFETIME.md)).
-Координация AutoStartSocks с readiness выбранного auth метода и новые agent UI
-действия остаются PGA-05/06/08 в F31-R11; счёт6/55 не меняется.
+PGA-03B — узкий **Code/Dev PASS** на source `270765520d567b25f7b358946ed6b5b27f1684d6`, completed [CI #560](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38985306318):40 новых startup/lifetime checks, Desktop4166, Windows/Ubuntu SUCCESS ([протокол](MICROTASK_SSH_AGENT_STARTUP_LIFETIME.md)). Кодовая часть службы/startup PGA-02/03 принята; координация AutoStartSocks с выбранным auth/key и новые agent UI действия остаются PGA-05/06/08 в F31-R11. Это не end-to-end/live приёмка; F31-R11/F31/F17 OPEN,6/55 и все55 IDs сохранены.
 
 
 

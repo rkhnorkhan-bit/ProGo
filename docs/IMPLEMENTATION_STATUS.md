@@ -1,18 +1,42 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий candidate: SSH-agent PGA-03B — счёт остаётся6/55
+## Текущий checkpoint: SSH-agent PGA-03B — счёт остаётся6/55
 
-**16.10.2026 UTC** подготовлен startup/lifetime: один queued запуск основного
-экземпляра после instance.Attach, SCM и журнал в фоне, отмена при подготовке
-выхода и Dispose. Self-check/secondary возвращаются раньше; construction context
-сам по себе службу не трогает. Результат сохраняется отдельно от готовности
-ключа. Waiter/log/CTS принадлежат startup Work; непрерываемый native call —
-общему probe до физического settlement. UI не ждёт native/log.
-[Протокол](MICROTASK_SSH_AGENT_STARTUP_LIFETIME.md). Native CI PENDING, PASS пока нет.
-Program AutoStartSocks сохраняется; связь выбранного auth readiness с началом/
-повтором подключения остаётся PGA-05/06 и F31-R11. Новых ID55 и PASS55 нет:
-6/55,49=37+12,23/31; F31/F17/F31-R11 OPEN, R05 PARTIAL, Package PENDING,
-Live NOT_CHECKED. Устройства владельца не проверяются.
+**17.10.2026 UTC** узкий PGA-03B **Code/Dev PASS**. Normal owner после
+instance.Attach планирует один фоновый startup Task; construction/self-check/
+secondary не запускают службу. Shutdown/maintenance/Dispose отменяют очередь
+или waiter; поздняя публикация после Close запрещена. Raw native call остаётся
+owned общим probe до физического return/cleanup; общая служба не получает Stop.
+Журнал — в фоне вне gate; его задержка/ошибка не блокирует UI и не стирает
+наблюдённый startup result. [Протокол](MICROTASK_SSH_AGENT_STARTUP_LIFETIME.md).
+
+Tested source `270765520d567b25f7b358946ed6b5b27f1684d6`, tree
+`d5905e5cc10bc77234b00b5dd27a22ea991ccccf`, merge
+`aee662cffa8bf449663b94a519f6e19089381988` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #560](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38985306318)
+completed SUCCESS: Windows117255275406/Ubuntu117255275372, весь run.
+Новые40 PASS, Desktop4166=4126+40; прежние37 SCM/32 probe/66 start и actual
+read-only oracle Stopped1/Disabled4/errors0/0 сохранены. Instance28/Maintenance95/
+Shutdown47/updater5, SOCKS41/403 и весь Test-ProGo PASS. HomeVPN975/portable90,
+public279/44 PASS; Windows Python22+2 прежних Linux-only skips/7 HTTP cases,
+Ubuntu16/9/46 без skips и с actual independent QR. Без повторного запуска CI.
+
+PGA-02/03: кодовая часть проверки/службы/startup принята в Code/Dev. Это не
+selected-key/auth/UI/live приёмка: AutoStartSocks пока вызывается до agent startup;
+связь готовности выбранного метода с началом/повтором подключения — PGA-05/06,
+полный agent UI/actions — PGA-08, Automatic installer opt-in — PGA-04.
+Далее — PGA-05/06 по небольшим микрозадачам. F31-R11/F31/F17 OPEN, R05 PARTIAL;
+счёт **6/55**,49=37+12,23/31,55unique=43+12/exact6accepted сохранены.
+Codex ownership/disabled caption/UNKNOWN ssh-G556 остаются findings.
+
+Самостоятельный source/native review; независимого agent review нет. Все4
+artifact ID/size/digest/head сверены с runner/metadata, архивы не скачивались,
+новых visual/DPI/contrast/Narrator acceptance нет. Runner293 screenshot files;
+inner CI ZIP535116 bytes — не итоговый установщик31/31. Package PENDING,
+Live NOT_CHECKED. После source — только4 Markdown; runtime/tests/scripts/
+server/workflow идентичны tested source. Устройства/службы/ключи/ACL владельца
+не менялись; PR draft/unmerged, без merge/release; VERSION0.2.2.
 
 ## Предыдущий checkpoint: SSH-agent PGA-03A — счёт остаётся6/55
 
