@@ -1,14 +1,26 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-06A — native CI PENDING, счёт6/55
+## Текущий checkpoint: SSH-agent PGA-06A — узкий Code/Dev PASS, счёт6/55
 
-17.10.2026 UTC подготовлены console owner, immutable selected-key ssh-add backend
-и native fixtures с временным encrypted key. Секрет вводится в отдельной консоли
-OpenSSH; приложение его не получает. Shared key lease удерживается до cleanup.
+17.10.2026 UTC console owner/immutable selected-key ssh-add backend приняты
+на source9db506714bb26320246e4519aaf2927934dde14f, tree41b27204cf540000a82f8fcb74b60a6c3ce1f81c,
+merge9baa66717b46aaf9b55dd51c6c9cd911b6c22cf7 в прежний main4bb3365.
+[CI569](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39043799101) completed
+SUCCESS: Windows117428400034/Ubuntu117428400264,45 новых PASS/Desktop4387.
+Реальный ssh-keygen→temporary encrypted Ed25519→1 console entry ssh-add→только
+isolated ADD_IDENTITY pipe; cancellation/timeout/owned descendants и separate
+process safety прошли. Приложение не получает парольную фразу; shared lease
+удерживается до cleanup. Helper first5→detach→startup6→retry наблюдался в569;
+Win32 причина прежнего FAIL568 остаётся UNKNOWN. FAIL565/568 и CANCELLED566/567
+сохранены, rerun не делался ([полный протокол/логи](MICROTASK_SSH_INTERACTIVE_KEY_ADD.md)).
+Прежние agent blocks, SOCKS41/403, Instance28/Maintenance95/Shutdown47/updater5,
+весь Test-ProGo/HomeVPN975/portable90/public293/44 PASS. Windows Python22+2 прежних
+Linux-only skips/7HTTP; Ubuntu16/9/46 без skips, independent QR/TLS tail.
+Все4 artifacts metadata проверены; архивы не скачивались, fresh visual PASS нет.
+Source/native review самостоятельный; независимого agent review не было.
 UI/startup/SCM coordination и private-key/signing/server-auth proof не закрыты.
-[Границы и проверки](MICROTASK_SSH_INTERACTIVE_KEY_ADD.md). Новый Code/Dev PASS
-до completed native CI не заявлен. 6/55,49=37+12,23/31; Package PENDING,
-Live NOT_CHECKED. Устройства и реальные ключи владельца не затрагиваются.
+6/55,49=37+12,23/31; PGA-05/06/F31-R11/F31/F17 OPEN, R05 PARTIAL,
+Package PENDING/Live NOT_CHECKED. Устройства и реальные ключи владельца не затронуты.
 
 ## Предыдущий checkpoint: SSH-agent PGA-05C
 

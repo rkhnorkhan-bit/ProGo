@@ -1,6 +1,6 @@
 # PGA-06A — отдельная управляемая консоль для добавления выбранного ключа
 
-**17.10.2026 UTC. Реализация и fixtures подготовлены; native CI PENDING.**
+**17.10.2026 UTC. Узкий PGA-06A Code/Dev PASS по completed CI569.**
 Родитель `5fb3874f24b3b6cf778a8b9318db287449e89bcb` (PGA-05C/CI564).
 Три небольших шага внутри F31-R11: console owner; immutable selected-key request
 и backend ssh-add; native input/lifetime/encrypted-key fixtures. Счёт **6/55**,
@@ -145,12 +145,78 @@ SHA256 `25a3308179d8c493a130d54c26f16f52e2fa10c2464536b34925599f748bcfe3`;
 Ubuntu573lines/53081bytes,
 SHA256 `e25ef37bb0ccae00f4f4fd98605a8fa955f9ca6e79bae270cf5f1780f49b51fc`.
 
-Локально нет Windows/.NET runtime; нового native результата пока нет. Source review
-самостоятельный; независимого agent review не было. CI результаты, точный source,
-логи и artifact metadata будут внесены после completed run.
+Локально нет Windows/.NET runtime; приёмка основана на completed native CI569
+ниже. Source/native review самостоятельный; независимого agent review не было.
 
 PGA-05/06/F31-R11/F31/F17 OPEN, F31-R05 PARTIAL; Package PENDING, Live NOT_CHECKED.
 Все55 IDs/10 PGA rows/11 acceptance scenarios сохранены. Старые FAIL555/556/562
 и UNKNOWN причины556 не переобъявлены. Codex shortcut ownership/disabled caption
 findings открыты. ПК/VPS/телефон/установленная программа/ключи/ACL/платежи владельца
 не проверялись и не менялись. PR88 draft/unmerged, VERSION0.2.2, без release.
+
+## Native Code/Dev приёмка: CI569 SUCCESS
+
+Tested source `9db506714bb26320246e4519aaf2927934dde14f`, tree
+`41b27204cf540000a82f8fcb74b60a6c3ce1f81c`, merge
+`9baa66717b46aaf9b55dd51c6c9cd911b6c22cf7` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI569](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39043799101)
+completed SUCCESS: Windows117428400034, Ubuntu117428400264, весь run SUCCESS.
+Оба checkout log подтверждают merge/source/base, main — ancestor source.
+Build identity0.2.2+merge9baa667. Это новый run на исправленном source, без rerun.
+В Windows только прежний Prune old CI artifacts SKIPPED; тестовые steps SUCCESS.
+
+Новый block BEGIN15:21:29.1694201UTC;45 фактических PASS до marker
+`SSH interactive key addition checks PASS: 45`15:21:34.2793584UTC.
+Desktop4387=baseline4342+45. Native console+3 handles/no askpass —15:21:29.4650437;
+dummy echo-off input15:21:29.7531062; callback/cancel/owned descendants/foreign
+process/normal-exit cleanup прошли, timeout case15:21:33.0647062. Настоящий
+selected sibling ssh-keygen создал disposable encrypted Ed25519 key с2 console
+entries15:21:33.8259551; настоящий ssh-add разблокировал один selected key с1
+entry и послал ADD_IDENTITY только в isolated pipe15:21:34.2740904. Private
+packet не логировался и очищен; temporary keys удалены. Системный агент не
+получал ключ, служба/существующие ACL не менялись. Signing/server-auth не выполнялись.
+
+Все3 helper attachments в этом run дали
+`ATTACHED=True;FIRST_ERROR=5;LAST_ERROR=6;DETACHED=True`:
+helper отделён от своей консоли после5, startup6 пережит bounded retry. Это
+наблюдение **CI569**, не восстановленный задним числом Win32 error CI568.
+Native creation/IO/owned cleanup подтверждены на runner; ручная UX/клавиатура/
+Narrator/DPI и установленная программа этим не проверены.
+
+Прежние service/probe/start/startup/inventory/matching/policy blocks прошли;
+неизменные37 SCM/32 probe/66 start/40 startup/67 inventory/52 matching/57 policy
+checks сохранены. Actual SCM oracle runtime1/Stopped, startup4/Disabled,
+statusError0/configError0. SOCKS41/403, Instance28, Maintenance95, Shutdown47,
+updater5 и полный Test-ProGo SUCCESS. HomeVPN975, portable90, public293source/
+44release; Windows Python24=22PASS+2 прежних Linux-only skips, все7 HTTP cases.
+Ubuntu16/9/46 без skips, actual independent QR и recovery/TLS/session tail PASS.
+Новый source не менял Core/Program/ProxyService/DiagnosticProcess/SCM/probe/
+startup/прежние SSH partials/server/workflows/installer; у старого DesktopTests
+только новые test roles/workflow call и описанная изоляция ScopedCodex fixture.
+
+Полные нормализованные UTF-8 логи:
+
+| Job | Lines | Bytes | SHA-256 |
+| --- | ---: | ---: | --- |
+| Windows117428400034 | 8884 | 964491 | `3231d2bbeb298ce3462e86bf0ad752cc5526cd4e907409d0a11b3b52f7d751e0` |
+| Ubuntu117428400264 | 573 | 52777 | `84a587344e1448e7ad9e683cd8ec7d2252a7956df72b2ce0c0c978967ed9d22e` |
+
+Все4 artifact workflow_run/source/ID/size/digest сверены с API и upload log:
+
+| Artifact | ID | Bytes | SHA-256 внешнего artifact ZIP |
+| --- | ---: | ---: | --- |
+| ProGo-wizard-screenshots | 12105461865 | 6541136 | `0402afd4e2cdb5a68ec291900c52ced3c3ab14e670fa76088e585166876c8db5` |
+| ProGo-release-zip | 12104938945 | 539395 | `dc390875833eda35a92b6e45740748bc0b6246cd773daf610c6fc0d819450aab` |
+| ProGo-ci-diagnostics | 12104604663 | 94357 | `824004044c6be4c6383a16cf3cf09c0806d9389116bb0c68f1dcf26048c42fec` |
+| ProGo-release | 12104569812 | 546727 | `dba29cf3b5e9b8ee4dad6da9cc2df7528c474e4f83c71aa9569ed33ee0dcd4e8` |
+
+Архивы не скачивались, нового visual/DPI/contrast PASS нет.293 screenshot files —
+число runner upload, не проверенное содержимое ZIP. Внутренний ProGo-release.zip
+542846bytes отличается от внешнего artifact ZIP; это не итоговый installer31/31.
+
+Принят только console owner/explicit selected-key backend в указанной матрице.
+UI «Добавить ключ», общая SCM/startup координация, private-key/signing/constraints/
+cert/FIDO/custom endpoint/auth readiness остаются OPEN. Весь PGA-05/06/F31-R11
+не PASS. Следующий пакет — общий lifecycle/coordination и явное UI действие.
+Счёт6/55,49=37+12 и23/31 сохранён, Package PENDING/Live NOT_CHECKED.
