@@ -29,6 +29,7 @@ namespace ProGo
         [STAThread]
         private static int Main(string[] args)
         {
+            if (KeyFingerprintAskpassFixture()) return 1;
             if (args.Length > 0 && args[0] == "--typed-correction-retry-child") return TypedCorrectionRetryChild(args);
             if (args.Length > 0 && (args[0] == "-G" || args[0] == "--diagnostic-child")) return DiagnosticFixture(args);
             // The guard must not depend on the worker pool it is supervising.
@@ -141,6 +142,7 @@ namespace ProGo
                     SshAgentStartWorkflow();
                     SshAgentStartupWorkflow(settings);
                     SshAgentInventoryWorkflow();
+                    SshKeyMatchingWorkflow();
                     SshConfigAuthority();
                     RouteDiagnostics(settings);
                     AsyncCliStartup(settings);

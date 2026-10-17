@@ -72,7 +72,6 @@ namespace ProGo
     {
         internal const int TimeoutMilliseconds = 3000;
         internal const int IdentityLimit = 256;
-        private static readonly SemaphoreSlim slot = new SemaphoreSlim(1, 1);
         private static readonly Regex identity = new Regex(
             @"\A([0-9]{1,7})[ \t]+(SHA256:[A-Za-z0-9+/]{43})[ \t]+[^\r\n\0]*\([A-Za-z0-9@._+-]{1,64}\)\z",
             RegexOptions.CultureInvariant);
@@ -136,19 +135,20 @@ namespace ProGo
         {
             token.ThrowIfCancellationRequested();
             if (String.IsNullOrWhiteSpace(executable)) return new SshAgentInventoryResult(SshAgentInventoryState.MissingExecutable);
-            if (!slot.Wait(0, token)) return new SshAgentInventoryResult(SshAgentInventoryState.Busy);
-            try {
-                token.ThrowIfCancellationRequested();
-                var captured = (run ?? DiagnosticProcess.Run)(executable, "-l -E sha256", TimeoutMilliseconds, token);
-                token.ThrowIfCancellationRequested();
-                var result = Parse(captured);
-                token.ThrowIfCancellationRequested();
-                return result;
+            using (var lease = SshReadOnlyLease.TryAcquire(token)) {
+                if (lease == null) return new SshAgentInventoryResult(SshAgentInventoryState.Busy);
+                try {
+                    token.ThrowIfCancellationRequested();
+                    var captured = (run ?? DiagnosticProcess.Run)(executable, "-l -E sha256", TimeoutMilliseconds, token);
+                    token.ThrowIfCancellationRequested();
+                    var result = Parse(captured);
+                    token.ThrowIfCancellationRequested();
+                    return result;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (TimeoutException) { token.ThrowIfCancellationRequested(); return new SshAgentInventoryResult(SshAgentInventoryState.TimedOut); }
+                catch { token.ThrowIfCancellationRequested(); return new SshAgentInventoryResult(SshAgentInventoryState.Failed); }
             }
-            catch (OperationCanceledException) { throw; }
-            catch (TimeoutException) { token.ThrowIfCancellationRequested(); return new SshAgentInventoryResult(SshAgentInventoryState.TimedOut); }
-            catch { token.ThrowIfCancellationRequested(); return new SshAgentInventoryResult(SshAgentInventoryState.Failed); }
-            finally { slot.Release(); }
         }
     }
 }

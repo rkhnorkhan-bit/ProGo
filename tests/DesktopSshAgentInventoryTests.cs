@@ -165,9 +165,9 @@ namespace ProGo
             internal readonly Task Work;
             internal int Requests;
             private readonly NamedPipeServerStream pipe;
-            internal AgentInventoryPipe(int mode)
+            internal AgentInventoryPipe(int mode, byte[] publicBlob = null)
             {
-                PublicBlob = AgentWire(Encoding.ASCII.GetBytes("ssh-ed25519")).Concat(AgentWire(Enumerable.Range(1, 32).Select(i => (byte)i).ToArray())).ToArray();
+                PublicBlob = publicBlob == null ? AgentWire(Encoding.ASCII.GetBytes("ssh-ed25519")).Concat(AgentWire(Enumerable.Range(1, 32).Select(i => (byte)i).ToArray())).ToArray() : (byte[])publicBlob.Clone();
                 pipe = new NamedPipeServerStream(Name, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
                 Work = Task.Run(delegate {
                     pipe.WaitForConnection(); byte[] length = AgentRead(pipe, 4);

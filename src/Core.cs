@@ -91,9 +91,13 @@ namespace ProGo
             return "ssh.exe"; // Preserve the normal missing-client error when OpenSSH is absent.
         }
         internal static string AgentExecutable(string ssh)
+        { return SiblingExecutable(ssh, "ssh-add.exe"); }
+        internal static string KeygenExecutable(string ssh)
+        { return SiblingExecutable(ssh, "ssh-keygen.exe"); }
+        private static string SiblingExecutable(string ssh, string name)
         {
             if (!Path.IsPathRooted(ssh ?? "")) return null;
-            var path = Path.Combine(Path.GetDirectoryName(ssh), "ssh-add.exe");
+            var path = Path.Combine(Path.GetDirectoryName(ssh), name);
             return File.Exists(path) ? path : null;
         }
     }

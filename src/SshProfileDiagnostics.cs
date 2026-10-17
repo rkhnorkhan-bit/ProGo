@@ -26,6 +26,7 @@ namespace ProGo
         internal SshAgentServiceSnapshot AgentService;
         internal SshAgentProbeResult AgentProbe;
         internal SshAgentInventoryResult AgentInventory;
+        internal SshProfileKeyMatchResult KeyMatches;
         public string KeyStatus { get; set; }
         public bool SshAvailable { get; set; }
         public bool SshResolved { get; set; }
@@ -58,11 +59,13 @@ namespace ProGo
                 string path;
                 if (IdentityPaths.TryGetValue(identity, out path)) sb.AppendLine("  Проверяемый путь: " + path);
                 sb.AppendLine("  " + InspectIdentity(identity));
+                if (KeyMatches != null) sb.AppendLine("  " + KeyMatches.Describe(identity));
             }
             else sb.AppendLine("Файл ключа: " + (KeyStatus ?? "не проверен"));
             if (IdentityListLimited) sb.AppendLine("Список IdentityFile ограничен: показаны первые 32 значения; остальные пути не проверялись.");
             sb.AppendLine("ssh-agent: " + (AgentState ?? "не проверен"));
             sb.AppendLine("Проверка ключей агента: " + (AgentKeys ?? "не проверены"));
+            if (KeyMatches != null) sb.AppendLine("Сопоставление использует публичную identity OpenSSH, в том числе соседний .pub; закрытый ключ, подпись и вход на сервер не проверены.");
             if (!String.IsNullOrWhiteSpace(IdentityAgent)) sb.AppendLine("IdentityAgent: " +
                 (IdentityAgent == "none" ? "Использование агента отключено этим SSH-профилем." : "Указан отдельный агент; его доступность проверяется при подключении."));
             if (!String.IsNullOrWhiteSpace(IdentitiesOnly)) sb.AppendLine("IdentitiesOnly: " + IdentitiesOnly);
@@ -100,9 +103,9 @@ namespace ProGo
             return Check(profile, CancellationToken.None);
         }
         internal static SshProfileDiagnosticResult Check(SshProfileSetting profile, CancellationToken token, string executable = null, int timeoutMs = 7000,
-            SshAgentServiceProbe agentProbe = null, int agentTimeoutMs = SshAgentServiceProbe.DefaultTimeoutMilliseconds)
+            SshAgentServiceProbe agentProbe = null, int agentTimeoutMs = SshAgentServiceProbe.DefaultTimeoutMilliseconds, string configurationFile = null)
         {
-            var result = CheckConfiguration(profile, token, executable, timeoutMs);
+            var result = CheckConfiguration(profile, token, executable, timeoutMs, configurationFile);
             if (String.IsNullOrWhiteSpace(result.Target)) return result;
             token.ThrowIfCancellationRequested();
             result.AgentProbe = (agentProbe ?? SshAgentServiceProbe.Shared).ReadAsync(agentTimeoutMs, token).GetAwaiter().GetResult();
@@ -110,6 +113,7 @@ namespace ProGo
             result.AgentState = result.AgentProbe.ToDisplay();
             result.AgentInventory = SshAgentInventory.ForProfile(result, token);
             result.AgentKeys = result.AgentInventory.ToDisplay();
+            result.KeyMatches = SshProfileKeyMatching.Check(result, token);
             token.ThrowIfCancellationRequested(); return result;
         }
 
@@ -156,7 +160,7 @@ namespace ProGo
             try {
                 if (!File.Exists(path)) return "Файл не найден. При переносе на другой ПК проверьте старый абсолютный путь или используйте ~/.ssh/имя_ключа.";
                 using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) { }
-                return "Файл доступен для чтения. Содержимое ключа не считывалось.";
+                return "Файл доступен для чтения. Эта проверка доступности не считывала содержимое ключа.";
             } catch { return "Доступность файла не подтверждена. Проверьте путь и права текущего пользователя."; }
         }
         private static bool TryResolveIdentityPath(string value, SshProfileDiagnosticResult context, out string path)

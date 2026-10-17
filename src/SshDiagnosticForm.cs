@@ -63,7 +63,7 @@ namespace ProGo
         {
             if (busy || closing) return;
             busy = true; retry.Enabled = false; cancel.Enabled = true; cancel.Text = "Отменить проверку";
-            report.Clear(); status.Text = "Проверяем SSH и ключи без подключения к серверу. Лимиты: SSH — 7 с; ожидание службы — 3 с; ключи — 3 с. Остановка своих процессов — до 2 с. Можно отменить.";
+            report.Clear(); status.Text = "Проверяем SSH и ключи без подключения к серверу. Лимиты фаз: SSH — 7 с; служба — 3 с; агент — 3 с; отпечатки — 3 с. Очистка своих процессов — до 2 с. Можно отменить.";
             var source = new CancellationTokenSource(); cancellation = source; var token = source.Token;
             try {
                 string text = "", notice;

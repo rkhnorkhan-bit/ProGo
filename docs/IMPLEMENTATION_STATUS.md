@@ -1,6 +1,19 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-05A — счёт остаётся6/55
+## Текущий кандидат: SSH-agent PGA-05B — счёт остаётся6/55
+
+**17.10.2026 UTC. Код и dev fixtures готовы; native CI PENDING.**
+Effective IdentityFile получает public-reference fingerprint через sibling
+ssh-keygen выбранного OpenSSH и отдельное наблюдение Present/Absent/Unknown.
+Соседний .pub может иметь приоритет; private-key binding, подпись и вход не
+подтверждаются. Явный fallback после primary nonzero всегда Unknown. Общие3s
+на фазу, shared inventory/fingerprint lease, cancellation/Busy, immutable snapshots
+и safe report. [Границы и матрица](MICROTASK_SSH_PROFILE_KEY_MATCHING.md).
+Родитель52ec8043; Program/startup/ProxyService/auth gate не меняются.
+Весь PGA-05/06/F31-R11/F31/F17 OPEN;6/55,49=37+12,23/31 без изменений.
+Package PENDING, Live NOT_CHECKED. Устройства/ключи/службы/ACL владельца не затронуты.
+
+## Предыдущий checkpoint: SSH-agent PGA-05A — счёт остаётся6/55
 
 **17.10.2026 UTC** узкий PGA-05A **Code/Dev PASS**: typed read-only inventory
 SHA256 fingerprints вместо подсчёта строк. Exit1 failure не подменяется empty,
