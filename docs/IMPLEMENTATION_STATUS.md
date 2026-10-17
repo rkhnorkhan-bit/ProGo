@@ -1,6 +1,16 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-05C — счёт остаётся6/55
+## Текущий checkpoint: SSH-agent PGA-06A — native CI PENDING, счёт6/55
+
+17.10.2026 UTC подготовлены console owner, immutable selected-key ssh-add backend
+и native fixtures с временным encrypted key. Секрет вводится в отдельной консоли
+OpenSSH; приложение его не получает. Shared key lease удерживается до cleanup.
+UI/startup/SCM coordination и private-key/signing/server-auth proof не закрыты.
+[Границы и проверки](MICROTASK_SSH_INTERACTIVE_KEY_ADD.md). Новый Code/Dev PASS
+до completed native CI не заявлен. 6/55,49=37+12,23/31; Package PENDING,
+Live NOT_CHECKED. Устройства и реальные ключи владельца не затрагиваются.
+
+## Предыдущий checkpoint: SSH-agent PGA-05C
 
 **17.10.2026 UTC. Узкий PGA-05C Code/Dev PASS.**
 Effective PubkeyAuthentication/PreferredAuthentications теперь определяют scope

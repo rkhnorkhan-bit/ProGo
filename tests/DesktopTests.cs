@@ -29,6 +29,8 @@ namespace ProGo
         [STAThread]
         private static int Main(string[] args)
         {
+            if (args.Length > 0 && args[0] == "--ssh-console-fixture") return SshConsoleFixture(args);
+            if (args.Length > 0 && args[0] == "--ssh-console-feed") return SshConsoleFeed(args);
             if (KeyFingerprintAskpassFixture()) return 1;
             if (args.Length > 0 && args[0] == "--typed-correction-retry-child") return TypedCorrectionRetryChild(args);
             if (args.Length > 0 && (args[0] == "-G" || args[0] == "--diagnostic-child")) return DiagnosticFixture(args);
@@ -144,6 +146,7 @@ namespace ProGo
                     SshAgentInventoryWorkflow();
                     SshKeyMatchingWorkflow();
                     SshAuthPolicyWorkflow();
+                    SshInteractiveKeyAddWorkflow();
                     SshConfigAuthority();
                     RouteDiagnostics(settings);
                     AsyncCliStartup(settings);

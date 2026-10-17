@@ -3,8 +3,10 @@ using System.Threading;
 
 namespace ProGo
 {
-    // One inventory OR fingerprint phase, through the owned runner's cleanup.
-    // SCM and future mutating ssh-add coordination remain separate work.
+    // One inventory, fingerprint phase OR explicit key addition through cleanup.
+    // Coordination with SCM/startup remains separate work before UI integration.
+    // Historical name retained for the accepted read-only callers. The same lease
+    // also serializes explicit key addition through its full console/job cleanup.
     internal sealed class SshReadOnlyLease : IDisposable
     {
         private static readonly SemaphoreSlim slot = new SemaphoreSlim(1, 1);
