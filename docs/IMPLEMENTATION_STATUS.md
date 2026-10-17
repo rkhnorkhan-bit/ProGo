@@ -1,17 +1,41 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий кандидат: SSH-agent PGA-05C — счёт остаётся6/55
+## Текущий checkpoint: SSH-agent PGA-05C — счёт остаётся6/55
 
-**17.10.2026 UTC. Код/dev fixtures готовы; native CI PENDING.**
+**17.10.2026 UTC. Узкий PGA-05C Code/Dev PASS.**
 Effective PubkeyAuthentication/PreferredAuthentications теперь определяют scope
 key diagnostics: Disabled/Excluded пропускают IdentityFile availability/inventory/
 fingerprint phases и не предлагают unlock/service commands. AllowedByClient —
 только client policy, не Ready; Unknown не дополняется guessed defaults и сохраняет
 read-only observations. Исправлен противоречивый общий inventory текст.
 [Протокол/границы](MICROTASK_SSH_AUTH_POLICY.md). Родитель6ca7cd4/CI563.
+Tested source `eccbe3cbf0ef55fc5528b66d1587e9c3772f1847`, tree
+`039bca5ffccb33e5697685149d16f2f05b3afdd9`, merge
+`e446bc916472139f9f4e082037320e7206ecc83c` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI564](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39036222485)
+completed SUCCESS: Windows117406415468/Ubuntu117406415677 и весь run.
+57 новых policy checks +1 inventory state, Desktop4342=4284+57+1. Inventory67=66+1;
+прежние37/32/66/40/52 agent checks, actual SCM oracle Stopped1/Disabled4/errors0/0,
+SOCKS41/403, Instance28/Maintenance95/Shutdown47/updater5 и весь Test-ProGo PASS.
+Реальный native ssh-G/Include: Disabled/Excluded identities1/confirmedPaths0,
+AllowedByClient1/1 с обычной locked-file availability error; content unchanged и
+actual diagnostic WinForms report PASS. SCM Running — injected boundary fixture;
+новых private keys/signing/agent mutation/server connect/ACL repair нет.
+HomeVPN975/portable90/public289/44; Windows Python22+2 прежних Linux-only skips/
+7 HTTP cases; Ubuntu16/9/46 без skips, independent QR и полный recovery/TLS tail.
+Без rerun. Source/native review самостоятельный, независимого agent review не было.
+Все4 artifact source/ID/size/digest сверены с API/upload log, архивы не скачивались;
+нового visual/DPI/contrast/Narrator PASS нет. Runner293files/inner ZIP539938bytes
+не установщик31/31. После tested source только4 Markdown; runtime/tests/scripts/
+server/workflows идентичны. CI562 FAIL и UNKNOWN ssh-G556 не переобъявлены.
+
 PGA-05/06/F31-R11/F31/F17 OPEN; private binding/signing/unlock не реализованы этим
 шагом.6/55,49=37+12,23/31; все55 IDs/11 scenarios сохраняются. Package PENDING,
 Live NOT_CHECKED. Устройства/ключи/службы/ACL владельца не затронуты.
+Program/startup/ProxyService/auth/installer не менялись; PR draft/unmerged,
+без merge/release, VERSION0.2.2. Далее — private-key/signing/interactive unlock
+отдельными микрошагами; Codex ownership/disabled caption findings открыты.
 
 ## Предыдущий checkpoint: SSH-agent PGA-05B — счёт остаётся6/55
 
