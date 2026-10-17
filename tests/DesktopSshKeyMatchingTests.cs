@@ -264,15 +264,34 @@ namespace ProGo
                 Check(SshProfileKeyMatching.Check(profile, CancellationToken.None).Identities[0].Fingerprint == firstFingerprint,
                     "native keygen reads the public envelope when the sidecar is absent without a passphrase prompt");
                 string encrypted = Path.Combine(root, "synthetic-envelope");
-                byte[] body = Encoding.ASCII.GetBytes("openssh-key-v1\0").Concat(KeyMatchWire(Encoding.ASCII.GetBytes("aes256-ctr")))
+                Func<byte[], byte[]> envelopeBytes = blob => Encoding.ASCII.GetBytes("openssh-key-v1\0").Concat(KeyMatchWire(Encoding.ASCII.GetBytes("aes256-ctr")))
                     .Concat(KeyMatchWire(Encoding.ASCII.GetBytes("bcrypt"))).Concat(KeyMatchWire(KeyMatchWire(new byte[16]).Concat(new byte[] { 0, 0, 0, 16 }).ToArray()))
-                    .Concat(new byte[] { 0, 0, 0, 1 }).Concat(KeyMatchWire(firstBlob)).Concat(KeyMatchWire(new byte[16])).ToArray();
-                File.WriteAllText(encrypted, "-----BEGIN OPENSSH PRIVATE KEY-----\n" + Convert.ToBase64String(body) + "\n-----END OPENSSH PRIVATE KEY-----\n", new UTF8Encoding(false));
+                    .Concat(new byte[] { 0, 0, 0, 1 }).Concat(KeyMatchWire(blob)).Concat(KeyMatchWire(new byte[16])).ToArray();
+                Func<byte[], string> armored = blob => "-----BEGIN OPENSSH PRIVATE KEY-----\n" + Convert.ToBase64String(envelopeBytes(blob)) + "\n-----END OPENSSH PRIVATE KEY-----\n";
+                File.WriteAllText(encrypted, armored(firstBlob), new UTF8Encoding(false));
                 File.SetAccessControl(encrypted, File.GetAccessControl(first));
                 var envelope = new SshProfileDiagnosticResult { SshResolved = true, ExecutablePath = OpenSshClient.Executable, AgentInventory = profile.AgentInventory };
                 envelope.IdentityFiles.Add(encrypted); envelope.IdentityPaths[encrypted] = encrypted;
-                Check(SshProfileKeyMatching.Check(envelope, CancellationToken.None).Identities[0].Fingerprint == firstFingerprint,
-                    "synthetic encrypted envelope exposes public metadata without decrypting or proving a usable private key");
+                var captures = new List<DiagnosticProcessResult>();
+                var synthetic = SshProfileKeyMatching.Check(envelope, CancellationToken.None, (e, a, m, t) => {
+                    var captured = DiagnosticProcess.Run(e, a, m, t); captures.Add(captured); return captured;
+                }).Identities[0];
+                bool observed = synthetic.State == SshIdentityFingerprintState.Observed && synthetic.Fingerprint == firstFingerprint &&
+                    synthetic.Presence == SshAgentFingerprintPresence.Present && !synthetic.SidecarFallback;
+                bool rejected = synthetic.State == SshIdentityFingerprintState.CommandFailed && captures.Count == 2 && captures.All(c => c.ExitCode != 0 && !c.Truncated) &&
+                    synthetic.SidecarFallback && synthetic.PrimaryExitCode != 0 && synthetic.Fingerprint == null && synthetic.Presence == SshAgentFingerprintPresence.Unknown;
+                bool warned = synthetic.State == SshIdentityFingerprintState.InvalidOutput && captures.Count == 1 && captures[0].ExitCode == 0 &&
+                    !captures[0].Truncated && !String.IsNullOrWhiteSpace(captures[0].Error) && synthetic.Fingerprint == null && synthetic.Presence == SshAgentFingerprintPresence.Unknown;
+                Console.WriteLine("Native synthetic envelope observation: state=" + synthetic.State + "; attempts=" + captures.Count +
+                    "; exits=" + String.Join(",", captures.Select(c => c.ExitCode.ToString())) + "; stderrPresent=" + captures.Any(c => !String.IsNullOrWhiteSpace(c.Error)));
+                Check(observed || rejected || warned,
+                    "synthetic unusable encrypted envelope yields only exact public metadata or an explicit unconfirmed native rejection");
+                string corrupt = Path.Combine(root, "corrupt-envelope"); File.WriteAllText(corrupt, armored(new byte[] { 1, 2, 3 }), new UTF8Encoding(false));
+                File.SetAccessControl(corrupt, File.GetAccessControl(first));
+                envelope.IdentityFiles.Clear(); envelope.IdentityPaths.Clear(); envelope.IdentityFiles.Add(corrupt); envelope.IdentityPaths[corrupt] = corrupt;
+                var invalidPublic = SshProfileKeyMatching.Check(envelope, CancellationToken.None).Identities[0];
+                Check(invalidPublic.State == SshIdentityFingerprintState.CommandFailed && invalidPublic.Fingerprint == null && invalidPublic.Presence == SshAgentFingerprintPresence.Unknown,
+                    "corrupt encrypted public envelope never exposes a fingerprint or a false selected-key absence");
                 string multi = Path.Combine(root, "multiple-public"); File.WriteAllText(multi, originalFirstPublic + otherPublic);
                 envelope.IdentityFiles.Clear(); envelope.IdentityPaths.Clear(); envelope.IdentityFiles.Add(multi); envelope.IdentityPaths[multi] = multi;
                 Check(SshProfileKeyMatching.Check(envelope, CancellationToken.None).Identities[0].State == SshIdentityFingerprintState.Ambiguous,

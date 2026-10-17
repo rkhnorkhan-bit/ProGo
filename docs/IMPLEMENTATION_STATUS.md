@@ -12,6 +12,12 @@ ssh-keygen выбранного OpenSSH и отдельное наблюдени
 Родитель52ec8043; Program/startup/ProxyService/auth gate не меняются.
 Весь PGA-05/06/F31-R11/F31/F17 OPEN;6/55,49=37+12,23/31 без изменений.
 Package PENDING, Live NOT_CHECKED. Устройства/ключи/службы/ACL владельца не затронуты.
+Первый CI562: Windows FAILURE на новом synthetic encrypted-envelope assertion,
+Ubuntu SUCCESS;47 новых checks до отказа, весь Desktop не завершился. Исправлен
+только некорректный positive fixture contract, production guards прежние; добавлен
+corrupt-public rejection. Конкретная native причина первого отказа UNKNOWN
+(captured state/stderr не выводились). Повторная native приёмка PENDING;
+история FAIL и hashes логов сохранены в протоколе.
 
 ## Предыдущий checkpoint: SSH-agent PGA-05A — счёт остаётся6/55
 

@@ -78,8 +78,10 @@ Expected SHA256 вычисляется отдельно из public wire bytes, 
 основной файл с отдельно помеченным unbound fallback.
 
 Synthetic OpenSSH encrypted envelope содержит public blob и фиктивное encrypted
-body, **без пригодного private key**. Он проверяет только public metadata без
-decrypt/prompt; encrypted-key unlock и usable signing этим не проверены.
+body, **без пригодного private key**. Разрешён только точный публичный fingerprint
+либо явный native отказ/неподтверждённый ответ со stderr и Unknown без fingerprint.
+Timeout/exception/wrong fingerprint не принимаются. Отдельный corrupt public blob
+обязан дать CommandFailed/Unknown. Encrypted-key unlock и usable signing не проверены.
 ACL только этого test-owned envelope копируется с keygen-created test fixture.
 Forced SSH_ASKPASS spy обязан остаться невызванным. Env восстанавливается,
 fixtures удаляются. Production не принимает passphrase через argv или env.
@@ -99,6 +101,34 @@ Package PENDING, Live NOT_CHECKED, VERSION0.2.2; draft PR88 без merge/release
 ПК/VPS/телефон/службы/реальные ключи/ACL/платежи владельца не проверялись и не менялись.
 Codex shortcut ownership, disabled caption и причина исторического ssh-G556
 остаются открытыми findings. PASS возможен только после completed CI.
+
+## История нового fixture: CI562 FAIL
+
+Source `6f8bf867d3f853300a8c8ac2a3421e569a9c9d4d`, tree
+`3736a518a1217c1aef2cc6b8ed2ad1762d108a51`, merge
+`f4df1dc897b7ceffd5a96a125b35e29b599277d9` в прежний main.
+[CI562](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39022774570):
+Windows117367726682 FAILURE, Ubuntu117367726812 SUCCESS.
+Новый block дошёл до47 PASS;10:04:41.1343098UTC failed assertion требовал
+успешную metadata extraction из synthetic unusable encrypted body. Нативные
+matching/stale sidecar/private hash/absent sidecar перед ним PASS; весь Desktop,
+Test-ProGo и поздние Windows suites не завершились. Ни микрошаг, ни31/55 не PASS.
+
+Ошибка нового positive fixture: обязательное принятие неполноценного private
+container не является корректным межверсионным контрактом. Исправлен только
+test/protocol: exact public metadata либо явный safe Unknown; добавлен отдельный
+обязательный отказ для повреждённого public blob. Production parser/state/deadline/
+guards не ослаблены. Изначальный captured state/stderr не логировался, поэтому
+конкретная native причина исходного отказа UNKNOWN; не объявляем её ACL/version
+или расшифровкой. Следующий CI печатает только state/exit-count/stderr-present,
+без raw error/path/fingerprint. Старый FAIL сохранён, повторная приёмка PENDING.
+
+Decoded UTF-8/LF logs с одной final newline: Windows6800lines/739700bytes,
+SHA256 `a66c3084758c424964161e9a6e7510d3dcf79a1a0133acbfe410a523022a963b`;
+Ubuntu573lines/56182bytes,
+SHA256 `2ba271a134f8677bfc8a8d22654e9b7544e88dd0b11f5d4897292e39c824462f`.
+Ubuntu16 recovery/9 sharing/46 provisioning, без skips, independent QR и полный
+TLS/recovery/session tail PASS. Эти результаты не подменяют Windows acceptance.
 
 ## Первичные источники границы metadata
 
