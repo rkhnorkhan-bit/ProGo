@@ -1,23 +1,47 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий кандидат: SSH-agent PGA-05B — счёт остаётся6/55
+## Текущий checkpoint: SSH-agent PGA-05B — счёт остаётся6/55
 
-**17.10.2026 UTC. Код и dev fixtures готовы; native CI PENDING.**
+**17.10.2026 UTC. Узкий PGA-05B Code/Dev PASS.**
 Effective IdentityFile получает public-reference fingerprint через sibling
 ssh-keygen выбранного OpenSSH и отдельное наблюдение Present/Absent/Unknown.
 Соседний .pub может иметь приоритет; private-key binding, подпись и вход не
 подтверждаются. Явный fallback после primary nonzero всегда Unknown. Общие3s
 на фазу, shared inventory/fingerprint lease, cancellation/Busy, immutable snapshots
 и safe report. [Границы и матрица](MICROTASK_SSH_PROFILE_KEY_MATCHING.md).
-Родитель52ec8043; Program/startup/ProxyService/auth gate не меняются.
+Tested source `6278300b98f61f4ff0688ed7dda110cfafca2d78`, tree
+`f4508bbaa443fc4c17c49159c53c7a446c2e9931`, merge
+`097800882928b089f0b5a062dc4f8537aedaccf9` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI563](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39023758270)
+completed SUCCESS: Windows117370576458/Ubuntu117370576602 и весь run.
+52 новых checks, Desktop4284=4232+52; настоящие ssh-G/keygen/ssh-add/IPC с
+fixture-only config/test-owned keys/agent pipe и independent SHA256.
+Stale/absent sidecar, multi-public, unbound fallback и forced askpass untouched PASS.
+Synthetic unusable encrypted envelope: InvalidOutput,exit0,stderrPresent=True;
+сохранён Unknown без fingerprint. Это не encrypted unlock/private usability.
+SCM Running в новом pipeline — injected boundary; actual read-only SCM oracle
+отдельно Stopped1/Disabled4/errors0/0. Прежние37/32/66/40/66 agent checks,
+SOCKS41/403, Instance28/Maintenance95/Shutdown47/updater5 и весь Test-ProGo PASS.
+HomeVPN975/portable90/public286/44; Windows Python22+2 прежних Linux-only skips/
+все7 HTTP cases; Ubuntu16/9/46 без skips с actual independent QR и полным tail.
+
+CI562 Windows FAIL после47 новых checks на synthetic positive fixture сохранён.
+Исправлен только новый fixture contract, production guards не ослаблены; новый
+corrupt-public rejection обязателен. Конкретная причина первого native отказа
+UNKNOWN: raw state/stderr не выводились; последующий успех её не объясняет.
+Все4 artifact source/ID/size/digest сверены с API/upload log, архивы не скачивались,
+нового visual/DPI/contrast/Narrator PASS нет. Runner293 files/inner ZIP539089bytes
+не являются установщиком31/31. Самостоятельный source/native review,
+независимого agent review не было. После source только4 Markdown;
+runtime/tests/scripts/server/workflow идентичны tested source.
+
 Весь PGA-05/06/F31-R11/F31/F17 OPEN;6/55,49=37+12,23/31 без изменений.
-Package PENDING, Live NOT_CHECKED. Устройства/ключи/службы/ACL владельца не затронуты.
-Первый CI562: Windows FAILURE на новом synthetic encrypted-envelope assertion,
-Ubuntu SUCCESS;47 новых checks до отказа, весь Desktop не завершился. Исправлен
-только некорректный positive fixture contract, production guards прежние; добавлен
-corrupt-public rejection. Конкретная native причина первого отказа UNKNOWN
-(captured state/stderr не выводились). Повторная native приёмка PENDING;
-история FAIL и hashes логов сохранены в протоколе.
+Package PENDING, Live NOT_CHECKED; Program/startup/ProxyService/auth gate не менялись.
+Устройства/ключи/службы/ACL владельца не затронуты; PR draft/unmerged,
+без merge/release, VERSION0.2.2. Далее — private-key binding/signing и безопасная
+интерактивная разблокировка отдельными микрошагами. Codex ownership/disabled caption/
+UNKNOWN ssh-G556 остаются findings.
 
 ## Предыдущий checkpoint: SSH-agent PGA-05A — счёт остаётся6/55
 
