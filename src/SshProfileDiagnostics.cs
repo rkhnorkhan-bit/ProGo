@@ -25,6 +25,7 @@ namespace ProGo
         public string AgentState { get; set; }
         internal SshAgentServiceSnapshot AgentService;
         internal SshAgentProbeResult AgentProbe;
+        internal SshAgentInventoryResult AgentInventory;
         public string KeyStatus { get; set; }
         public bool SshAvailable { get; set; }
         public bool SshResolved { get; set; }
@@ -61,7 +62,7 @@ namespace ProGo
             else sb.AppendLine("Файл ключа: " + (KeyStatus ?? "не проверен"));
             if (IdentityListLimited) sb.AppendLine("Список IdentityFile ограничен: показаны первые 32 значения; остальные пути не проверялись.");
             sb.AppendLine("ssh-agent: " + (AgentState ?? "не проверен"));
-            sb.AppendLine("Ключи стандартного агента: " + (AgentKeys ?? "не проверены"));
+            sb.AppendLine("Проверка ключей агента: " + (AgentKeys ?? "не проверены"));
             if (!String.IsNullOrWhiteSpace(IdentityAgent)) sb.AppendLine("IdentityAgent: " +
                 (IdentityAgent == "none" ? "Использование агента отключено этим SSH-профилем." : "Указан отдельный агент; его доступность проверяется при подключении."));
             if (!String.IsNullOrWhiteSpace(IdentitiesOnly)) sb.AppendLine("IdentitiesOnly: " + IdentitiesOnly);
@@ -107,9 +108,8 @@ namespace ProGo
             result.AgentProbe = (agentProbe ?? SshAgentServiceProbe.Shared).ReadAsync(agentTimeoutMs, token).GetAwaiter().GetResult();
             result.AgentService = result.AgentProbe.Snapshot;
             result.AgentState = result.AgentProbe.ToDisplay();
-            result.AgentKeys = result.AgentProbe.State == SshAgentProbeState.Completed
-                ? SshAgentDiagnostics.Keys(OpenSshClient.AgentExecutable(result.ExecutablePath), token)
-                : "Проверка ключей отложена: состояние службы ещё не подтверждено. Другие методы SSH-аутентификации могут работать без агента.";
+            result.AgentInventory = SshAgentInventory.ForProfile(result, token);
+            result.AgentKeys = result.AgentInventory.ToDisplay();
             token.ThrowIfCancellationRequested(); return result;
         }
 
@@ -247,30 +247,13 @@ namespace ProGo
         }
 
     }
-    // Read-only native service inspection. No elevation, service mutation or key access.
+    // Service display and safe read-only agent inventory; no elevation or key mutation.
     internal static class SshAgentDiagnostics
     {
         internal static string Keys(string executable, CancellationToken token,
             Func<string, string, int, CancellationToken, DiagnosticProcessResult> run = null)
         {
-            token.ThrowIfCancellationRequested();
-            if (String.IsNullOrWhiteSpace(executable)) return "ssh-add.exe из этой установки OpenSSH не найден. Наличие ключей не проверено.";
-            try {
-                if (run == null) run = DiagnosticProcess.Run;
-                var result = run(executable, "-l", 3000, token);
-                token.ThrowIfCancellationRequested();
-                if (result.Truncated) return "Ответ агента превышает допустимый размер. Наличие ключей не подтверждено.";
-                if (result.ExitCode == 0) {
-                    int count = (result.Output ?? "").Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries).Length;
-                    return count > 0 ? "Агент отвечает; ключей: " + count + ". Это ещё не подтверждает доступ к выбранному VPS."
-                        : "Агент не вернул ключей. Загрузите нужный ключ командой ssh-add в терминале.";
-                }
-                return result.ExitCode == 1 ? "Агент не вернул доступных ключей. Загрузите нужный ключ через ssh-add."
-                    : "ssh-add не получил ответ агента. Проверьте службу и SSH_AUTH_SOCK; фоновый SSH не запрашивает passphrase.";
-            }
-            catch (OperationCanceledException) { throw; }
-            catch (TimeoutException) { return "Агент не ответил за 3 секунды. Проверка остановлена; можно повторить."; }
-            catch { return "Не удалось проверить ключи агента. Проверьте ssh-add.exe и права доступа."; }
+            return SshAgentInventory.Read(executable, token, run).ToDisplay();
         }
         internal static string Describe(uint state, bool disabled)
         {

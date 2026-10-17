@@ -21,7 +21,7 @@ namespace ProGo
             if (mode == "fixture-expanded-identity") {
                 Console.WriteLine("hostname " + new string('h', 4096) + "\nuser fixture\nport 2222\nidentityfile C:/fixture/%h%h%h%h%h%h%h%h%h"); return 0;
             }
-            if (mode == "fixture-agent-keys") { Console.WriteLine("256 SHA256:fixture PRIVATE_COMMENT_ONE (ED25519)\n256 SHA256:fixture PRIVATE_COMMENT_TWO (ED25519)"); return 0; }
+            if (mode == "fixture-agent-keys") { Console.WriteLine("256 " + AgentFingerprintA + " PRIVATE_COMMENT_ONE (ED25519)\n256 " + AgentFingerprintB + " PRIVATE_COMMENT_TWO (ED25519)"); return 0; }
             if (mode == "fixture-agent-empty") { Console.Error.WriteLine("PRIVATE_EMPTY_ERROR"); return 1; }
             if (mode == "fixture-agent-unavailable") { Console.Error.WriteLine("PRIVATE_CONNECTION_ERROR"); return 2; }
             if (mode == "fixture-identities") {
@@ -84,16 +84,17 @@ namespace ProGo
             try {
                 foreach (var mode in new[] { "fixture-agent-keys", "fixture-agent-empty", "fixture-agent-unavailable" }) {
                     var keys = SshAgentDiagnostics.Keys(Application.ExecutablePath, CancellationToken.None, (exe, args, ms, token) => {
-                        Check(args == "-l" && ms == 3000, "agent inventory is a bounded read-only list operation: " + mode);
+                        Check(args == "-l -E sha256" && ms == 3000, "agent inventory is a bounded read-only list operation: " + mode);
                         return DiagnosticProcess.Run(exe, "-G " + mode, ms, token);
                     });
                     Check(!keys.Contains("PRIVATE_") && !keys.Contains("SHA256"), "agent inventory omits fingerprints, comments and raw error content: " + mode);
                     Check(mode == "fixture-agent-keys" ? keys.Contains("ключей: 2") && keys.Contains("ещё не подтверждает") :
-                        mode == "fixture-agent-empty" ? keys.Contains("Загрузите") : keys.Contains("не получил ответ"), "agent inventory distinguishes reply, no usable keys and unavailable agent: " + mode);
+                        mode == "fixture-agent-empty" ? keys.Contains("Команда проверки агента завершилась ошибкой") && keys.Contains("не подтверждён") : keys.Contains("не получил ответ"), "agent inventory distinguishes reply, command failure and unavailable agent: " + mode);
                 }
                 var multi = FixtureCheck(new SshProfileSetting { Target = "fixture-identities" }, CancellationToken.None);
                 Check(multi.IdentityFiles.Count == 2 && multi.ToReport().Contains("second-key") && multi.ToReport().Contains("Использование агента отключено")
-                    && multi.ToReport().Contains("IdentitiesOnly: yes") && multi.ExecutablePath == Application.ExecutablePath,
+                    && multi.ToReport().Contains("IdentitiesOnly: yes") && multi.ExecutablePath == Application.ExecutablePath
+                    && multi.AgentInventory.State == SshAgentInventoryState.DisabledByProfile,
                     "diagnostics retain all resolved identity paths, chosen client and profile agent restrictions");
                 Check(SshAgentDiagnostics.Keys(null, CancellationToken.None).Contains("не найден"), "missing sibling ssh-add is not substituted with another installation");
                 using (var cancelled = new CancellationTokenSource()) {

@@ -1,6 +1,22 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-03B — счёт остаётся6/55
+## Текущий checkpoint: SSH-agent PGA-05A — candidate, счёт остаётся6/55
+
+**17.10.2026 UTC** написан первый узкий шаг PGA-05: typed read-only inventory
+SHA256 fingerprints вместо подсчёта строк. Exit1 failure не подменяется empty,
+неполный ответ не доказывает отсутствие ключа, concurrent inventory получает Busy
+до settlement владельца. Unresolved/IdentityAgent none/custom endpoint не запускает
+default inventory. Report не выводит fingerprints/comments/raw errors.
+[Протокол и границы](MICROTASK_SSH_AGENT_INVENTORY.md). Native CI **PENDING**;
+source review не объявляет Windows tests PASS. Независимого agent review нет.
+
+Связь effective IdentityFile с fingerprint, пригодность ключа, custom endpoint
+propagation, interactive ssh-add и connection readiness остаются PGA-05/06.
+AutoStartSocks/order/UI/installer не меняются. F31-R11/F31/F17 OPEN;
+счёт **6/55**,49=37+12,23/31, Package PENDING, Live NOT_CHECKED.
+Устройства/службы/ключи/ACL владельца не трогаются; PR draft, без merge/release.
+
+## Предыдущий checkpoint: SSH-agent PGA-03B — счёт остаётся6/55
 
 **17.10.2026 UTC** узкий PGA-03B **Code/Dev PASS**. Normal owner после
 instance.Attach планирует один фоновый startup Task; construction/self-check/
