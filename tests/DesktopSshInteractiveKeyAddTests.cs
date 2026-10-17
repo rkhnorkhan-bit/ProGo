@@ -63,7 +63,22 @@ namespace ProGo
         {
             try {
                 int pid = Int32.Parse(args[1]);
-                if (!ConsoleNative.AttachConsole((uint)pid)) return 21;
+                int initialError = 0, lastError = 0; bool detached = false, attached = false; var attachWatch = Stopwatch.StartNew();
+                while (!(attached = ConsoleNative.AttachConsole((uint)pid))) {
+                    lastError = Marshal.GetLastWin32Error(); if (initialError == 0) initialError = lastError;
+                    if (lastError == 5 && !detached) {
+                        // NO_WINDOW does not justify assuming this console-subsystem
+                        // helper is unattached. Detach this helper only, then attach
+                        // to the explicitly owned test PID (Microsoft AttachConsole).
+                        if (!ConsoleNative.FreeConsole()) break; detached = true;
+                    } else if (lastError != 6 && lastError != 87) break;
+                    if (attachWatch.ElapsedMilliseconds >= 3000) break;
+                    Thread.Sleep(20);
+                }
+                File.WriteAllText(args[3] + ".attach", "ATTACHED=" + attached + ";FIRST_ERROR=" + initialError + ";LAST_ERROR=" + lastError + ";DETACHED=" + detached);
+                if (!attached) return 21;
+                // GetConsoleMode below also verifies that attachment actually gave
+                // the helper console handles; no production process is detached.
                 try {
                     using (var input = ConsoleNative.Open("CONIN$")) using (var output = ConsoleNative.Open("CONOUT$")) {
                         string[] prompts = args[2] == "keygen" ? new[] { "Enter passphrase", "Enter same passphrase again" } : new[] { "Enter passphrase" };
@@ -91,20 +106,24 @@ namespace ProGo
         }
         private static int ConsoleRunFed(string executable, string arguments, string endpoint, string mode, string marker)
         {
-            Task<DiagnosticProcessResult> feeder = null;
+            Task<DiagnosticProcessResult> feeder = null; Process fixtureOwner = null;
             int code;
             try {
                 code = SshInteractiveProcess.Run(executable, arguments, endpoint, 15000, CancellationToken.None, pid => {
+                    fixtureOwner = Process.GetProcessById(pid); var heldHandle = fixtureOwner.Handle; // Prevent PID reuse until the feeder settles.
                     feeder = Task.Factory.StartNew(() => DiagnosticProcess.Run(Application.ExecutablePath,
                         "--ssh-console-feed " + pid + " " + mode + " " + SshConnection.Quote(marker), 12000, CancellationToken.None),
                         CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
                 });
             } finally {
-                if (feeder != null) {
-                    var result = feeder.GetAwaiter().GetResult();
-                    if (result.ExitCode != 0 || result.Truncated || result.Output.Length != 0 || result.Error.Length != 0)
-                        throw new Exception("Console input fixture failed; exit=" + result.ExitCode);
-                }
+                try {
+                    if (feeder != null) {
+                        var result = feeder.GetAwaiter().GetResult();
+                        if (File.Exists(marker + ".attach")) Console.WriteLine("Native console fixture attachment: " + File.ReadAllText(marker + ".attach"));
+                        if (result.ExitCode != 0 || result.Truncated || result.Output.Length != 0 || result.Error.Length != 0)
+                            throw new Exception("Console input fixture failed; exit=" + result.ExitCode);
+                    }
+                } finally { if (fixtureOwner != null) fixtureOwner.Dispose(); }
             }
             return code;
         }

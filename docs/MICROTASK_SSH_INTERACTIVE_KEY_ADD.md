@@ -113,6 +113,38 @@ backend: поздний Win32Exception/IOException мог публиковать
 всего45 новых. CI566/source c68b8ec superseded новым source до приёмки; его
 Ubuntu SUCCESS не доказывает новый Windows механизм, неполный run не принят.
 
+## CI568: FAIL тестового подключения к консоли после36 новых PASS
+
+Source `c456bb2d58902407e14f5eb3dd08ba8980e8e567`, tree
+`0999a13c419f22bfd52f7fff1a32878764318655`, merge572c581 в прежний main4bb3365.
+[CI568](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39042744160):
+Windows117425394004 FAILURE, Ubuntu117425394189 SUCCESS. ScopedCodex и все
+предшествующие agent blocks прошли; это не объясняет UNKNOWN причину CI565.
+Новый block BEGIN15:05:12.1296934UTC,36 PASS до15:05:12.3639701UTC:
+guards/lease/late cancellation и настоящая separate console с3 handles/askpass
+sanitation. Затем `Console input fixture failed; exit=21`15:05:27.3826095UTC.
+Exit21 однозначно относится к AttachConsole helper; native Win32 error в первом
+варианте helper не был сохранён, поэтому конкретная причина отказа UNKNOWN.
+Ввод, keygen encryption и ssh-add unlock не подтверждены, не объявлены PASS.
+
+По [Microsoft AttachConsole](https://learn.microsoft.com/en-us/windows/console/attachconsole)
+уже прикреплённый процесс получает ERROR_ACCESS_DENIED5; требуется FreeConsole
+этого процесса. Helper теперь обрабатывает5 через собственный FreeConsole,
+6/87 через bounded3s startup retry и пишет только числовую attach диагностику.
+При неуспехе остаётся exit21, guards не ослаблены. Parent держит handle test PID
+до завершения helper, исключая PID reuse. Production console owner/backend,
+45 assertions, прежние timeouts/watchdog не меняются. Это коррекция setup
+тестового драйвера, а не переопределение FAIL568 или доказательство его неизвестного
+native кода. Новый source должен пройти всю матрицу.
+
+CI566/39042398179/source c68b8ec и CI567/39042670316/source feb4358 completed
+CANCELLED при supersession исправлениями source; ни один не принят как PASS.
+CI565/568 не перезапускались. Полные нормализованные CI568 логи:
+Windows6907lines/751940bytes,
+SHA256 `25a3308179d8c493a130d54c26f16f52e2fa10c2464536b34925599f748bcfe3`;
+Ubuntu573lines/53081bytes,
+SHA256 `e25ef37bb0ccae00f4f4fd98605a8fa955f9ca6e79bae270cf5f1780f49b51fc`.
+
 Локально нет Windows/.NET runtime; нового native результата пока нет. Source review
 самостоятельный; независимого agent review не было. CI результаты, точный source,
 логи и artifact metadata будут внесены после completed run.
