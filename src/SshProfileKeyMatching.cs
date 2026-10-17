@@ -8,7 +8,7 @@ namespace ProGo
 {
     internal enum SshIdentityFingerprintState
     { Observed, NotUsed, PathNotResolved, MissingExecutable, CommandFailed, InvalidOutput, Ambiguous, TimedOut, Failed }
-    internal enum SshProfileKeyMatchState { Completed, NotChecked, Busy }
+    internal enum SshProfileKeyMatchState { Completed, NotChecked, Busy, NotUsedByAuthentication }
 
     internal sealed class SshIdentityFingerprint
     {
@@ -59,6 +59,7 @@ namespace ProGo
         internal string Describe(string identity)
         {
             foreach (var item in Identities) if (String.Equals(item.Identity, identity, StringComparison.Ordinal)) return item.ToDisplay();
+            if (State == SshProfileKeyMatchState.NotUsedByAuthentication) return "Политика профиля не использует вход по публичному ключу; отпечаток не проверялся.";
             return State == SshProfileKeyMatchState.Busy ? "Другая read-only проверка SSH ещё выполняется; отпечаток не проверен."
                 : "Отпечаток этой identity не проверен.";
         }
@@ -77,6 +78,7 @@ namespace ProGo
             if (timeoutMs < 1 || timeoutMs > 30000) throw new ArgumentOutOfRangeException("timeoutMs");
             token.ThrowIfCancellationRequested();
             if (profile == null || !profile.SshResolved) return new SshProfileKeyMatchResult(SshProfileKeyMatchState.NotChecked);
+            if (SshPublicKeyPolicy.NotUsed(profile.PublicKeyPolicy)) return new SshProfileKeyMatchResult(SshProfileKeyMatchState.NotUsedByAuthentication);
             var watch = Stopwatch.StartNew();
             Func<long> elapsed = elapsedMilliseconds ?? (() => watch.ElapsedMilliseconds);
             // Freeze the entire input before any child can run or publish a result.

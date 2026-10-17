@@ -9,7 +9,7 @@ namespace ProGo
     internal enum SshAgentInventoryState
     {
         NotChecked, DisabledByProfile, EndpointNotChecked, Deferred, MissingExecutable,
-        Available, NoIdentities, Unavailable, CommandFailed, InvalidOutput, TimedOut, Failed, Busy
+        Available, NoIdentities, Unavailable, CommandFailed, InvalidOutput, TimedOut, Failed, Busy, NotUsedByAuthentication
     }
     internal enum SshAgentFingerprintPresence { Unknown, Present, Absent }
 
@@ -39,7 +39,9 @@ namespace ProGo
             switch (State) {
                 case SshAgentInventoryState.Available:
                     return "Агент отвечает; ключей: " + ListedIdentityCount.ToString(CultureInfo.InvariantCulture) +
-                        ". Это ещё не подтверждает доступ к выбранному VPS; совпадение с ключом профиля не проверено.";
+                        ". Это ещё не подтверждает доступ к выбранному VPS; выбранные identities проверяются отдельно.";
+                case SshAgentInventoryState.NotUsedByAuthentication:
+                    return "Политика профиля не использует вход по публичному ключу; ключи агента не проверялись.";
                 case SshAgentInventoryState.NoIdentities:
                     return "Агент ответил: ключей нет. Загрузите нужный ключ через ssh-add.";
                 case SshAgentInventoryState.DisabledByProfile:
@@ -119,6 +121,7 @@ namespace ProGo
         {
             token.ThrowIfCancellationRequested();
             if (profile == null || !profile.SshResolved) return new SshAgentInventoryResult(SshAgentInventoryState.NotChecked);
+            if (SshPublicKeyPolicy.NotUsed(profile.PublicKeyPolicy)) return new SshAgentInventoryResult(SshAgentInventoryState.NotUsedByAuthentication);
             if (profile.IdentityAgent == "none") return new SshAgentInventoryResult(SshAgentInventoryState.DisabledByProfile);
             // Explicit sockets/environment references need verified endpoint propagation first.
             // Never inspect the default agent and label it as this profile's custom agent.

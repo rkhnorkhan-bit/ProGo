@@ -84,7 +84,7 @@ namespace ProGo
                     result.ToDisplay().Length > 0, "inventory display is safe and nonempty for state " + state);
             }
             var report = new SshProfileDiagnosticResult { AgentInventory = good, AgentKeys = good.ToDisplay() }.ToReport();
-            Check(report.Contains("ключей: 2") && report.Contains("совпадение с ключом профиля не проверено") &&
+            Check(report.Contains("ключей: 2") && report.Contains("выбранные identities проверяются отдельно") &&
                 !report.Contains(AgentFingerprintA) && !report.Contains("PRIVATE_AGENT_COMMENT"), "SSH report does not leak inventory fingerprints or turn availability into selected-key readiness");
         }
         private static void AgentInventoryOwnership()

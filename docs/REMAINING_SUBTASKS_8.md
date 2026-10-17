@@ -24,6 +24,8 @@ PGA-05A — узкий **Code/Dev PASS** на source `7366f33ee58678122e6c2ccfbd
 
 PGA-05B — узкий **Code/Dev PASS** на source `6278300b98f61f4ff0688ed7dda110cfafca2d78`, completed [CI563](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39023758270):52 новых checks, Desktop4284, Windows/Ubuntu SUCCESS ([протокол](MICROTASK_SSH_PROFILE_KEY_MATCHING.md)). Public-reference fingerprints effective IdentityFile сопоставлены с inventory; общий3s бюджет и shared lease. Настоящие keygen/ssh-add/ssh-G, fixture-only config/keys/agent pipe; stale/absent .pub/multi-public/unbound fallback/forced askpass проверки PASS. Synthetic encrypted envelope со stderr остаётся Unknown, не private-key/signing/auth readiness. CI562 FAIL нового positive fixture сохранён; исправлен только его contract, production guards прежние. Весь PGA-05/06/F31-R11 OPEN;6/55, все55 IDs и11 scenarios сохранены.
 
+PGA-05C candidate: effective PubkeyAuthentication/PreferredAuthentications уточняют diagnostic scope и убирают key/agent проверки/советы для отключённого метода; Unknown сохраняется без guessed defaults ([протокол](MICROTASK_SSH_AUTH_POLICY.md)). Native CI PENDING. Private-key binding/signing/unlock и весь PGA-05/06/F31-R11 OPEN;6/55 и все55 IDs сохраняются.
+
 | Пункт | До установщика | Реальная среда / внешние зависимости | Всего |
 | --- | ---: | ---: | ---: |
 | F16 — Адаптивность и DPI | 4 | 0 | **4** |

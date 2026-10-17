@@ -1,6 +1,19 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-05B — счёт остаётся6/55
+## Текущий кандидат: SSH-agent PGA-05C — счёт остаётся6/55
+
+**17.10.2026 UTC. Код/dev fixtures готовы; native CI PENDING.**
+Effective PubkeyAuthentication/PreferredAuthentications теперь определяют scope
+key diagnostics: Disabled/Excluded пропускают IdentityFile availability/inventory/
+fingerprint phases и не предлагают unlock/service commands. AllowedByClient —
+только client policy, не Ready; Unknown не дополняется guessed defaults и сохраняет
+read-only observations. Исправлен противоречивый общий inventory текст.
+[Протокол/границы](MICROTASK_SSH_AUTH_POLICY.md). Родитель6ca7cd4/CI563.
+PGA-05/06/F31-R11/F31/F17 OPEN; private binding/signing/unlock не реализованы этим
+шагом.6/55,49=37+12,23/31; все55 IDs/11 scenarios сохраняются. Package PENDING,
+Live NOT_CHECKED. Устройства/ключи/службы/ACL владельца не затронуты.
+
+## Предыдущий checkpoint: SSH-agent PGA-05B — счёт остаётся6/55
 
 **17.10.2026 UTC. Узкий PGA-05B Code/Dev PASS.**
 Effective IdentityFile получает public-reference fingerprint через sibling

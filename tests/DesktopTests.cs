@@ -143,6 +143,7 @@ namespace ProGo
                     SshAgentStartupWorkflow(settings);
                     SshAgentInventoryWorkflow();
                     SshKeyMatchingWorkflow();
+                    SshAuthPolicyWorkflow();
                     SshConfigAuthority();
                     RouteDiagnostics(settings);
                     AsyncCliStartup(settings);

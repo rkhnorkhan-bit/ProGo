@@ -22,6 +22,9 @@ namespace ProGo
         public string AgentKeys { get; set; }
         public string IdentityAgent { get; set; }
         public string IdentitiesOnly { get; set; }
+        internal string PubkeyAuthentication, PreferredAuthentications;
+        internal SshPublicKeyPolicyState PublicKeyPolicy
+        { get { return SshPublicKeyPolicy.Read(SshResolved, PubkeyAuthentication, PreferredAuthentications); } }
         public string AgentState { get; set; }
         internal SshAgentServiceSnapshot AgentService;
         internal SshAgentProbeResult AgentProbe;
@@ -54,6 +57,7 @@ namespace ProGo
             if (!String.IsNullOrWhiteSpace(ResolvedHostName)) sb.AppendLine("hostname: " + ResolvedHostName);
             if (!String.IsNullOrWhiteSpace(ResolvedPort)) sb.AppendLine("Порт SSH: " + ResolvedPort);
             if (!String.IsNullOrWhiteSpace(ResolvedUser)) sb.AppendLine("user: " + ResolvedUser);
+            sb.AppendLine("Метод входа по ключу: " + SshPublicKeyPolicy.ToDisplay(PublicKeyPolicy));
             if (IdentityFiles.Count > 0) foreach (var identity in IdentityFiles) {
                 sb.AppendLine("IdentityFile (OpenSSH): " + identity);
                 string path;
@@ -65,13 +69,15 @@ namespace ProGo
             if (IdentityListLimited) sb.AppendLine("Список IdentityFile ограничен: показаны первые 32 значения; остальные пути не проверялись.");
             sb.AppendLine("ssh-agent: " + (AgentState ?? "не проверен"));
             sb.AppendLine("Проверка ключей агента: " + (AgentKeys ?? "не проверены"));
-            if (KeyMatches != null) sb.AppendLine("Сопоставление использует публичную identity OpenSSH, в том числе соседний .pub; закрытый ключ, подпись и вход на сервер не проверены.");
+            if (KeyMatches != null && KeyMatches.State == SshProfileKeyMatchState.Completed) sb.AppendLine("Сопоставление использует публичную identity OpenSSH, в том числе соседний .pub; закрытый ключ, подпись и вход на сервер не проверены.");
             if (!String.IsNullOrWhiteSpace(IdentityAgent)) sb.AppendLine("IdentityAgent: " +
                 (IdentityAgent == "none" ? "Использование агента отключено этим SSH-профилем." : "Указан отдельный агент; его доступность проверяется при подключении."));
             if (!String.IsNullOrWhiteSpace(IdentitiesOnly)) sb.AppendLine("IdentitiesOnly: " + IdentitiesOnly);
-            sb.AppendLine("Для зашифрованного ключа: загрузите его через ssh-add в обычном терминале. Passphrase вводится только в OpenSSH.");
-            sb.AppendLine("Если агент остановлен: с согласия владельца попробуйте Start-Service ssh-agent в обычном PowerShell. При отказе в доступе обратитесь к владельцу ПК; запуск зависит от имеющихся прав.");
-            sb.AppendLine("Если агент отключён: с согласия владельца выполните Set-Service ssh-agent -StartupType Manual, затем Start-Service ssh-agent. Без прав администратора обратитесь к владельцу ПК.");
+            if (!SshPublicKeyPolicy.NotUsed(PublicKeyPolicy)) {
+                sb.AppendLine("Для зашифрованного ключа: загрузите его через ssh-add в обычном терминале. Passphrase вводится только в OpenSSH.");
+                sb.AppendLine("Если агент остановлен: с согласия владельца попробуйте Start-Service ssh-agent в обычном PowerShell. При отказе в доступе обратитесь к владельцу ПК; запуск зависит от имеющихся прав.");
+                sb.AppendLine("Если агент отключён: с согласия владельца выполните Set-Service ssh-agent -StartupType Manual, затем Start-Service ssh-agent. Без прав администратора обратитесь к владельцу ПК.");
+            }
             sb.AppendLine("Наличие файла или работающего агента ещё не подтверждает аутентификацию на VPS.");
             if (!String.IsNullOrWhiteSpace(Error))
             {
@@ -139,12 +145,13 @@ namespace ProGo
 
             RunSshG(result, profile, token, executable ?? OpenSshClient.Executable, timeoutMs);
             token.ThrowIfCancellationRequested();
+            bool skipKeys = SshPublicKeyPolicy.NotUsed(result.PublicKeyPolicy);
             foreach (var identity in result.IdentityFiles) {
-                token.ThrowIfCancellationRequested(); result.IdentityStatuses[identity] = InspectIdentity(identity, result);
+                token.ThrowIfCancellationRequested(); result.IdentityStatuses[identity] = skipKeys ? SshPublicKeyPolicy.SkippedFile : InspectIdentity(identity, result);
             }
             string firstStatus;
             result.KeyStatus = result.ResolvedIdentityFile != null && result.IdentityStatuses.TryGetValue(result.ResolvedIdentityFile, out firstStatus)
-                ? firstStatus : InspectIdentity(null, result);
+                ? firstStatus : skipKeys ? SshPublicKeyPolicy.SkippedFile : InspectIdentity(null, result);
             token.ThrowIfCancellationRequested(); return result;
         }
 
@@ -247,6 +254,8 @@ namespace ProGo
                 }
                 else if (String.Equals(key, "identityagent", StringComparison.OrdinalIgnoreCase)) result.IdentityAgent = value;
                 else if (String.Equals(key, "identitiesonly", StringComparison.OrdinalIgnoreCase)) result.IdentitiesOnly = value;
+                else if (String.Equals(key, "pubkeyauthentication", StringComparison.OrdinalIgnoreCase)) result.PubkeyAuthentication = value;
+                else if (String.Equals(key, "preferredauthentications", StringComparison.OrdinalIgnoreCase)) result.PreferredAuthentications = value;
             }
         }
 
