@@ -171,6 +171,13 @@ namespace ProGo
                     var result = SshAgentKeyAdd.Run(request, cancelled.Token, (e, a, ep, ms, t) => { calls++; return 0; });
                     Check(result.State == SshAgentKeyAddState.Cancelled && calls == 0, "cancelled key addition cannot launch a child");
                 }
+                foreach (bool nativeFailure in new[] { true, false }) using (var cancelled = new CancellationTokenSource()) {
+                    var result = SshAgentKeyAdd.Run(request, cancelled.Token, (e, a, ep, ms, t) => {
+                        cancelled.Cancel(); if (nativeFailure) throw new Win32Exception(5); throw new IOException("fixture cleanup failure");
+                    });
+                    Check(result.State == SshAgentKeyAddState.Cancelled && (!nativeFailure || result.NativeError == 5),
+                        "cancellation wins over a late failure after runner cleanup: " + nativeFailure);
+                }
                 foreach (int budget in new[] { 0, 300001 }) {
                     bool rejected = false; try { SshAgentKeyAdd.RunAsync(request, CancellationToken.None, budget); } catch (ArgumentOutOfRangeException) { rejected = true; }
                     Check(rejected, "invalid interactive lifetime is rejected before scheduling: " + budget);

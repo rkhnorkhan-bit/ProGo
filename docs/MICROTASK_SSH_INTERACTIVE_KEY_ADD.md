@@ -106,6 +106,13 @@ SHA256 `b463ef609b0929bda92e59ab1ab9dd5277080b9f0f9a9745a96c130df308a0bd`.
 Windows failure log и Ubuntu checkout подтверждают тот же merge/source/base.
 CI565 не перезапускался и не замаскирован. Исправление требует нового source/run.
 
+Source review следующего source c68b8ec обнаружил cancellation race в новом
+backend: поздний Win32Exception/IOException мог публиковать Failed после уже
+запрошенной отмены. Приоритет Cancelled распространён на эти catch boundaries;
+безопасный numeric native error при этом сохраняется. Добавлены2 boundary checks,
+всего45 новых. CI566/source c68b8ec superseded новым source до приёмки; его
+Ubuntu SUCCESS не доказывает новый Windows механизм, неполный run не принят.
+
 Локально нет Windows/.NET runtime; нового native результата пока нет. Source review
 самостоятельный; независимого agent review не было. CI результаты, точный source,
 логи и artifact metadata будут внесены после completed run.

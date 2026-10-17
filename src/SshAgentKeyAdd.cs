@@ -110,8 +110,8 @@ namespace ProGo
                 }
             } catch (OperationCanceledException) { return new SshAgentKeyAddResult(SshAgentKeyAddState.Cancelled); }
             catch (TimeoutException) { return new SshAgentKeyAddResult(token.IsCancellationRequested ? SshAgentKeyAddState.Cancelled : SshAgentKeyAddState.TimedOut); }
-            catch (Win32Exception ex) { return new SshAgentKeyAddResult(SshAgentKeyAddState.Failed, null, ex.NativeErrorCode); }
-            catch { return new SshAgentKeyAddResult(SshAgentKeyAddState.Failed); }
+            catch (Win32Exception ex) { return new SshAgentKeyAddResult(token.IsCancellationRequested ? SshAgentKeyAddState.Cancelled : SshAgentKeyAddState.Failed, null, ex.NativeErrorCode); }
+            catch { return new SshAgentKeyAddResult(token.IsCancellationRequested ? SshAgentKeyAddState.Cancelled : SshAgentKeyAddState.Failed); }
         }
     }
 }
