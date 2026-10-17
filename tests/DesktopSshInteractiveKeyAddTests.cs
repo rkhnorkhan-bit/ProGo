@@ -175,7 +175,7 @@ namespace ProGo
                     var result = SshAgentKeyAdd.Run(request, cancelled.Token, (e, a, ep, ms, t) => {
                         cancelled.Cancel(); if (nativeFailure) throw new Win32Exception(5); throw new IOException("fixture cleanup failure");
                     });
-                    Check(result.State == SshAgentKeyAddState.Cancelled && (!nativeFailure || result.NativeError == 5),
+                    Check(result.State == SshAgentKeyAddState.Cancelled && (!nativeFailure || result.NativeError == 5) && !result.ToDisplay().Contains("окно OpenSSH закрыто"),
                         "cancellation wins over a late failure after runner cleanup: " + nativeFailure);
                 }
                 foreach (int budget in new[] { 0, 300001 }) {
