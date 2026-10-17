@@ -75,6 +75,7 @@ namespace ProGo
 
                         context.StartAutomation();
                         instance.Attach(context.RequestShowStatus, context.RequestShutdown, context.CompleteShutdown, context.CancelShutdown);
+                        context.StartSshAgentAsync();
                         context.StartShortcutMigrationAsync(Application.ExecutablePath, AppPaths.Root);
                         context.StartStartupBackupAsync();
 

@@ -38,6 +38,11 @@ namespace ProGo
         private TaskCompletionSource<Task> shortcutMigrationSource;
         private bool shortcutMigrationScheduled, shortcutMigrationStarted;
         internal Task ShortcutMigrationWork { get; private set; }
+        private volatile SshAgentStartupSession sshAgentStartup;
+        private readonly Task sshAgentIdle = Task.FromResult(false);
+        internal Task SshAgentStartupWork { get { return sshAgentStartup == null ? sshAgentIdle : sshAgentStartup.Work; } }
+        internal SshAgentStartupState SshAgentStartupState { get { return sshAgentStartup == null ? ProGo.SshAgentStartupState.NotStarted : sshAgentStartup.State; } }
+        internal SshAgentProbeResult SshAgentStartupResult { get { return sshAgentStartup == null ? null : sshAgentStartup.Result; } }
         private readonly Func<UpdateCheckForm> createUpdateForm;
         private UpdateCheckForm updateForm;
         private readonly bool ownsHealth;
@@ -252,6 +257,18 @@ namespace ProGo
                 catch (InvalidOperationException) { }
             }
             else ShowStatus();
+        }
+        // Program calls this only for the normal owner, after instance.Attach.
+        // Queue first; construction/Attach/self-check never runs SCM on the UI.
+        internal Task StartSshAgentAsync(SshAgentServiceProbe probe = null,
+            int timeoutMilliseconds = SshAgentServiceProbe.DefaultTimeoutMilliseconds, Action<string> report = null)
+        {
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
+                throw new InvalidOperationException("Проверку агента при старте планирует владелец интерфейса.");
+            if (sshAgentStartup != null) return sshAgentStartup.Work;
+            if (closing || disposed || shutdownPrepared || shutdownPreparing) return sshAgentIdle;
+            sshAgentStartup = new SshAgentStartupSession(probe ?? SshAgentServiceProbe.Shared, timeoutMilliseconds, report ?? (message => SafeLog.Info(message)));
+            return sshAgentStartup.Schedule(action => activationDispatcher.BeginInvoke(action));
         }
         // Program calls this only after instance.Attach. The shared task includes
         // both its owner-dispatch reservation and the actual worker/COM cleanup.
@@ -1076,6 +1093,7 @@ namespace ProGo
                 if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
                 CancelPortable();
                 CancelShortcutMigration();
+                if (sshAgentStartup != null) sshAgentStartup.Close();
                 var vault = Task.WhenAll(VaultWork ?? Task.FromResult(false), DailyWork);
                 if (vault != null && !vault.IsCompleted && await Task.WhenAny(vault, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != vault)
                     throw new InvalidOperationException("Операция хранилища ещё не завершена. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
@@ -1636,6 +1654,7 @@ namespace ProGo
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
                 lock (integrationLifetimeGate) closing = true;
+                if (sshAgentStartup != null) sshAgentStartup.Close();
                 CancelShortcutMigration();
                 trayPreferenceCancellation.Cancel(); trayPreferenceCancellation.Dispose();
                 UnregisterVaultDateEvents(); dailyRuntime.Close();

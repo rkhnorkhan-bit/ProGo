@@ -1,6 +1,20 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-03A — счёт остаётся6/55
+## Текущий candidate: SSH-agent PGA-03B — счёт остаётся6/55
+
+**16.10.2026 UTC** подготовлен startup/lifetime: один queued запуск основного
+экземпляра после instance.Attach, SCM и журнал в фоне, отмена при подготовке
+выхода и Dispose. Self-check/secondary возвращаются раньше; construction context
+сам по себе службу не трогает. Результат сохраняется отдельно от готовности
+ключа. Waiter/log/CTS принадлежат startup Work; непрерываемый native call —
+общему probe до физического settlement. UI не ждёт native/log.
+[Протокол](MICROTASK_SSH_AGENT_STARTUP_LIFETIME.md). Native CI PENDING, PASS пока нет.
+Program AutoStartSocks сохраняется; связь выбранного auth readiness с началом/
+повтором подключения остаётся PGA-05/06 и F31-R11. Новых ID55 и PASS55 нет:
+6/55,49=37+12,23/31; F31/F17/F31-R11 OPEN, R05 PARTIAL, Package PENDING,
+Live NOT_CHECKED. Устройства владельца не проверяются.
+
+## Предыдущий checkpoint: SSH-agent PGA-03A — счёт остаётся6/55
 
 **16.10.2026 UTC** узкий PGA-03A **Code/Dev PASS**. Internal start-capability
 запрашивает только CONNECT/START/QUERY_STATUS, повторно проверяет состояние на
