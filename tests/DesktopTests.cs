@@ -463,11 +463,15 @@ namespace ProGo
             var capture = Path.Combine(dir, "result.txt");
             File.WriteAllText(Path.Combine(dir, "codex.cmd"), "@echo off\r\necho %HTTP_PROXY%>\"%PROGO_TEST_RESULT%\"\r\necho %NO_PROXY%>>\"%PROGO_TEST_RESULT%\"\r\n", Encoding.ASCII);
             var launcher = Path.Combine(dir, "launch.cmd"); File.WriteAllText(launcher, CodexProxyService.LauncherContent(31881), Encoding.ASCII);
-            var start = new ProcessStartInfo("cmd.exe", "/D /C \"\"" + launcher + "\"\"") { UseShellExecute = false, CreateNoWindow = true };
-            start.EnvironmentVariables["PATH"] = dir + ";" + Environment.GetEnvironmentVariable("PATH");
+            // Exercise the local fake CLI, independent of installed Codex shims,
+            // ambient PATHEXT and all unrelated runner PATH search locations.
+            var start = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/D /C \"\"" + launcher + "\"\"") {
+                UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = dir };
+            start.EnvironmentVariables["PATH"] = dir + ";" + Environment.SystemDirectory;
+            start.EnvironmentVariables["PATHEXT"] = ".COM;.EXE;.BAT;.CMD";
             start.EnvironmentVariables["PROGO_TEST_RESULT"] = capture;
             string existing = Environment.GetEnvironmentVariable("HTTP_PROXY");
-            using (var process = Process.Start(start)) { if (!process.WaitForExit(10000)) { process.Kill(); throw new Exception("Codex launcher stalled"); } Check(process.ExitCode == 0, "scoped Codex launcher executes local CLI"); }
+            using (var process = Process.Start(start)) { if (!process.WaitForExit(10000)) { process.Kill(); throw new Exception("Codex launcher stalled; local fixture reached=" + File.Exists(capture)); } Check(process.ExitCode == 0, "scoped Codex launcher executes local CLI"); }
             Check(File.ReadAllText(capture).Contains(CliProxyBridgeService.UrlFor(31881)) && Environment.GetEnvironmentVariable("HTTP_PROXY") == existing, "Codex gets proxy without changing parent environment");
         }
         private static void RestorePreferences()

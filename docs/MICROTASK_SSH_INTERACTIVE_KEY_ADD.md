@@ -78,7 +78,35 @@ auth proof. Тестовая строка публичная и постоянн
 packet очищается в памяти; приватный материал не печатается и не сохраняется
 в диагностике. Временные файлы удаляются.
 
-Локально нет Windows/.NET runtime; native результата пока нет. Source review
+## Первый native run: CI565 FAIL до новых SSH checks
+
+Source `7a0ba6efbad50c09f2628545f89d9c5f1c8a95ce`, tree
+`eefb507c2489227e22e4ae064c2d80106c36dfb6`, merge
+`249b1253641b285edcdfcbc1fc078b26860fa19f` в прежний main4bb3365.
+[CI565](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39041721074)
+completed FAILURE: Windows117422397614 упал в старом ScopedCodex до новых
+PGA-06A checks; Ubuntu117422397962 SUCCESS. Сборка, прежние ранние тесты и
+UpdateCheck72 прошли; Desktop старт14:47:15.8862709UTC, отказ14:47:25.9127847UTC:
+`Codex launcher stalled`, десятисекундный WaitForExit. Новых SSH checks не было,
+поэтому их результат NOT_RUN, не PASS/FAIL. Relay/public/package steps SKIPPED.
+
+В старом ScopedCodex фактически унаследованы общий PATH/PATHEXT и cwd runner.
+Исправлена изоляция fixture: явный SystemDirectory/cmd.exe, cwd своего fixture,
+PATH только fixture+SystemDirectory, фиксированный PATHEXT. Fake codex.cmd,
+production LauncherContent, оба assertions, timeout10000ms и watchdog прежние.
+При timeout добавлен безопасный факт достижения локального fixture без raw
+output/environment. Это устранение видимой зависимости fixture от окружения;
+**точная причина отказа565 UNKNOWN**, прежний лог не содержит subprocess trace.
+Последующий SUCCESS не будет объявлен доказательством этой причины.
+
+Полные нормализованные CI565 логи сохранены: Windows2759lines/241747bytes,
+SHA256 `41079e91c8a0283c2a851b1e4f50df6cdf63409c4d74cb60339d7aba57a84a4e`;
+Ubuntu573lines/56209bytes,
+SHA256 `b463ef609b0929bda92e59ab1ab9dd5277080b9f0f9a9745a96c130df308a0bd`.
+Windows failure log и Ubuntu checkout подтверждают тот же merge/source/base.
+CI565 не перезапускался и не замаскирован. Исправление требует нового source/run.
+
+Локально нет Windows/.NET runtime; нового native результата пока нет. Source review
 самостоятельный; независимого agent review не было. CI результаты, точный source,
 логи и artifact metadata будут внесены после completed run.
 
