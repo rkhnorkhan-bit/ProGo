@@ -16,7 +16,7 @@ PGA-03B — узкий **Code/Dev PASS** на source `270765520d567b25f7b358946e
 
 
 
-PGA-05A — candidate, native CI PENDING: typed read-only SHA256 inventory, command failure отдельно от empty, complete-response guards и explicit IdentityAgent scope ([протокол](MICROTASK_SSH_AGENT_INVENTORY.md)). Это основа следующего selected-key matching, не готовность auth/interactive unlock; весь PGA-05/06/F31-R11 OPEN. Счёт6/55, все55 IDs и11 acceptance scenarios сохранены.
+PGA-05A — узкий **Code/Dev PASS** на source `7366f33ee58678122e6c2ccfbd19963db5dcd744`, completed [CI #561](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39015169806):66 новых inventory/parser/concurrency/profile-scope checks, Desktop4232, Windows/Ubuntu SUCCESS; настоящий ssh-add проверен через test-owned public-only named pipe ([протокол](MICROTASK_SSH_AGENT_INVENTORY.md)). Command failure не подменяется empty, неполный ответ/explicit custom endpoint не дают ложной уверенности. Inventory — не possession/signing/auth proof; effective IdentityFile binding/custom endpoint/interactive unlock и весь PGA-05/06/F31-R11 OPEN. Счёт6/55, все55 IDs и11 acceptance scenarios сохранены.
 
 Один подпункт здесь — отдельный проверяемый результат с приёмкой. Тестовые случаи, каждая форма, каждый DPI, поля настройки и исторические буквенные stage IDs отдельными единицами не считаются. Крупный подпункт исполняется несколькими небольшими микрозадачами по прежнему ограничению объёма;55 не означает 55 обращений к ассистенту. Дополнительные обнаруженные дефекты фиксируются отдельно, поэтому это версия декомпозиции текущего остатка, а не обещание неизменного объёма будущей работы.
 

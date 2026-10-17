@@ -1,20 +1,43 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-05A — candidate, счёт остаётся6/55
+## Текущий checkpoint: SSH-agent PGA-05A — счёт остаётся6/55
 
-**17.10.2026 UTC** написан первый узкий шаг PGA-05: typed read-only inventory
+**17.10.2026 UTC** узкий PGA-05A **Code/Dev PASS**: typed read-only inventory
 SHA256 fingerprints вместо подсчёта строк. Exit1 failure не подменяется empty,
 неполный ответ не доказывает отсутствие ключа, concurrent inventory получает Busy
 до settlement владельца. Unresolved/IdentityAgent none/custom endpoint не запускает
 default inventory. Report не выводит fingerprints/comments/raw errors.
-[Протокол и границы](MICROTASK_SSH_AGENT_INVENTORY.md). Native CI **PENDING**;
-source review не объявляет Windows tests PASS. Независимого agent review нет.
+[Протокол и границы](MICROTASK_SSH_AGENT_INVENTORY.md). Tested source
+`7366f33ee58678122e6c2ccfbd19963db5dcd744`, tree
+`bf06485ad4fc63f39ce68b960293a553a2374697`, merge
+`e4f4fe315f7f11118eeac782ea6a3e5a54cd9e6d` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI #561](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39015169806)
+completed SUCCESS: Windows117345682756/Ubuntu117345682578 и весь run.
+Новые66 фактических PASS, Desktop4232=4166+66; настоящий ssh-add через test-owned
+read-only named pipe проверил available/empty/protocol failure/exit2 и independent
+SHA256 public-only blob. Прежние37/32/66/40 agent checks, actual SCM oracle
+Stopped1/Disabled4/errors0/0, SOCKS41/403, Instance28/Maintenance95/Shutdown47/
+updater5 и весь Test-ProGo PASS. HomeVPN975/portable90/public282/44 PASS;
+Windows Python22+2 прежних Linux-only skips/7 HTTP cases, Ubuntu16/9/46 без skips
+с actual independent QR и полным recovery/TLS/session tail. Без rerun CI.
+
+Самостоятельный source/native review, без независимого agent review. Inventory
+Present не выставляет Ready и не доказывает possession/signing/authentication.
+Дополнительный локальный Linux socket-oracle NOT_CHECKED: EPERM до первого запроса,
+без обхода. Все4 artifact metadata/upload сверены; архивы не скачивались,
+новой visual/DPI/contrast/Narrator приёмки нет. Runner293 screenshots/inner ZIP536608
+bytes — не установщик31/31. После source только4 Markdown; код/tests/scripts/
+server/workflow идентичны tested source.
 
 Связь effective IdentityFile с fingerprint, пригодность ключа, custom endpoint
 propagation, interactive ssh-add и connection readiness остаются PGA-05/06.
 AutoStartSocks/order/UI/installer не меняются. F31-R11/F31/F17 OPEN;
 счёт **6/55**,49=37+12,23/31, Package PENDING, Live NOT_CHECKED.
-Устройства/службы/ключи/ACL владельца не трогаются; PR draft, без merge/release.
+Устройства/службы/ключи/ACL владельца не проверялись и не менялись;
+PR draft/unmerged, без merge/release; VERSION0.2.2. Далее — PGA-05B по небольшому
+пакету effective IdentityFile→fingerprint с отдельной проверкой пригодности.
+Codex ownership/disabled caption/UNKNOWN ssh-G556 остаются findings.
 
 ## Предыдущий checkpoint: SSH-agent PGA-03B — счёт остаётся6/55
 
