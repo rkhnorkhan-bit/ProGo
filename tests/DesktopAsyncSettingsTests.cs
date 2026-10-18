@@ -524,10 +524,16 @@ namespace ProGo
                     Check(observedToken.IsCancellationRequested && form.Visible && form.IsSavePending && !operation.IsCompleted && calls == 1,
                         "Cancel and X request one cancellation while the real native settings operation remains pending and its form stays open");
                     release.Set(); WaitAsyncSettings(operation); PumpUntil(() => !form.IsSavePending && ((Label)Field(form, "saveError")).Text.Contains("отмен"));
+                    bool bridgeRunning = fixture.Bridge.IsRunning, cliRestored = CliProxyEnvironmentService.HasProxyEndpoint(oldPort),
+                        windowsRestored = SystemProxyService.IsApplied(fixture.Settings.Current),
+                        launcherRestored = File.Exists(CodexProxyService.LauncherPath) && String.Equals(File.ReadAllText(CodexProxyService.LauncherPath),
+                            CodexProxyService.LauncherContent(oldPort), StringComparison.Ordinal);
+                    Console.WriteLine("Cancel rollback fixture: running=" + bridgeRunning + "; cli=" + cliRestored +
+                        "; windows=" + windowsRestored + "; launcher=" + launcherRestored);
                     Check(operation.Result != null && form.Visible && form.DialogResult == DialogResult.None &&
                         endpoint.Text == "https://cancelled-form.example.org/check" && fixture.Settings.Revision == before.Revision &&
-                        File.ReadAllBytes(AppPaths.SettingsPath).SequenceEqual(bytes) && fixture.Bridge.Port == oldPort && fixture.Bridge.IsRunning &&
-                        CliProxyEnvironmentService.HasProxyEndpoint(oldPort) && SystemProxyService.IsApplied(fixture.Settings.Current) && CodexProxyService.IsConfigured,
+                        File.ReadAllBytes(AppPaths.SettingsPath).SequenceEqual(bytes) && fixture.Bridge.Port == oldPort && bridgeRunning &&
+                        cliRestored && windowsRestored && launcherRestored,
                         "settled precommit form cancellation preserves exact saved settings and staged edits for an explicit retry");
                     AssertBridge(oldPort); form.Close();
                 } finally { release.Set(); WaitAsyncSettings(operation); }

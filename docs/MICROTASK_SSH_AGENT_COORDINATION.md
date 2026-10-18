@@ -142,7 +142,35 @@ SHA256 `b1a7a509452e8a20b25bfcc8804f1d90886a1b79c45313634fc7fb7520053977`;
 Ubuntu573lines/53993bytes,
 SHA256 `7b0438e19dde66328d4dd0cf976f1390148b00688b24a24e6f11c9e8a5a8270a`.
 
-## Оставшиеся работы
+## CI573: FAIL добавленного Codex fixture assertion до SSH checks
+
+Source `7d28498f6020d908ac5c9bdfa9d12cde0831e272`, tree
+`651e71d4d905f4efc1937c253a82678a02991ccf`, merge
+`11a97dbe449699279ceb9c00e0124681eb1e2a44` в прежний main4bb3365.
+[CI573](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39164488312)
+completed FAILURE: Windows117784468010 FAILURE, Ubuntu117784467763 SUCCESS.
+20:48:09.7800734UTC AsyncSettingsFormCancel отказал на усиленном combined
+rollback assertion, после успешного OwnIntegrations и pending-cancellation check.
+Measurement24/helper8 PASS, новые SSH checks NOT_RUN.
+
+В добавленном тесте ошибочно использован CodexProxyService.IsConfigured: это
+наличие launcher **и Start Menu shortcut**, тогда как OwnIntegrations создаёт
+только launcher. Fixture не устанавливает shortcut и не должен требовать его.
+Это выявленная ошибка нового assertion; отдельные флаги combined assertion
+в573 не записаны, другие ложные условия не исключены по тому логу. Проверка
+заменена точным сравнением launcher content с прежним портом — именно файла,
+который fixture создаёт и transaction должна вернуть. Дополнительно выводятся
+только четыре booleans running/cli/windows/launcher. Прежний actual HTTP400,
+remaining rollback assertions, production и все budgets остаются прежними.
+Это исправление фикстуры, не доказательство причины UNKNOWN572.
+CI573 не перезапускался; весь PGA-06B остаётся PENDING до нового completed CI.
+
+Полный нормализованный Windows log573:3137lines/282997bytes,
+SHA256 `bcfd9f55d69619fe763a77582ca32c3ac04e87cbe05a15db981351f246a02e92`.
+Ubuntu573lines/53115bytes,
+SHA256 `986d6de32243647e364ca612763db8e1529d1649bffef92df2aefa71d53f3801`.
+
+## Открытые границы
 
 Это взаимное исключение отдельных SCM/key операций, а не атомарный snapshot
 целого диагностического pipeline и не готовность SSH-аутентификации. Кнопка
