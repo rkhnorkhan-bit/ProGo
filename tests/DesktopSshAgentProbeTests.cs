@@ -310,7 +310,7 @@ namespace ProGo
                         "separate probe instances cannot bypass the process-wide native owner: " + starting + "/" + cancel);
                     if (cancel) source.Cancel();
                     AgentProbeSettled(waiter); bool expected;
-                    try { expected = !cancel && waiter.GetAwaiter().GetResult().State == SshAgentProbeState.TimedOut; }
+                    try { var result = waiter.GetAwaiter().GetResult(); expected = !cancel && result.State == SshAgentProbeState.TimedOut; }
                     catch (OperationCanceledException) { expected = cancel && waiter.IsCanceled; }
                     var nativeToken = starting ? startup.NativeToken : reading.NativeToken;
                     Check(expected && nativeToken.IsCancellationRequested && !raw.IsCompleted && AgentCoordinationKeysBusy(root) &&

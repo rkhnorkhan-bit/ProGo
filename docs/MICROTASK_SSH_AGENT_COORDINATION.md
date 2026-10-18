@@ -80,7 +80,34 @@ SHA256 `eb8989fbd4da50ecd7424c85a9196be2ae525d081040baef71a1715ece6a65f9`;
 Ubuntu573lines/56265bytes,
 SHA256 `dcbd7e18e5c6af55f2caa6ef0532a8275fe2a36907703b883df9fd56da05f84c`.
 
-## Оставшиеся работы
+## CI571: FAIL нового cancellation assertion после25 новых PASS
+
+Source `eb25c66259be933b9015bffaa5655c8be7368247`, tree
+`6240ff5b071413a118ea7bf64fd961b1bdffb376`, merge
+`4bb9777b3545e46869aef225623c4fed6f1fffe7` в прежний main4bb3365.
+[CI571](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39162695886)
+completed FAILURE: Windows117779138466 FAILURE, Ubuntu117779138583 SUCCESS.
+Прежний measurement24/helper8 и agent blocks66/40/67/52/57/45 PASS.
+Успех measurement не устанавливает UNKNOWN причину FAIL570. Native fixture
+интерактивного добавления и encrypted-key flow сохранены без изменения.
+
+Новый coordination block BEGIN20:30:38.2259008UTC,25 PASS до отказа
+20:30:39.3149884UTC: scenario starting=False/cancel=True. В тесте было
+`!cancel && waiter.GetAwaiter().GetResult().State == TimedOut`. При cancel=True
+short circuit не вызывал GetResult, поэтому catch отмены не выполнялся и expected
+всегда оставался false. Причина именно этого тестового отказа установлена по
+исходнику; это не доказательство отказа production lease. Исправлен порядок:
+GetResult вызывается безусловно, затем оценивается timeout или ловится cancel.
+Production code,43 checks, assertions, native boundaries и budgets не меняются.
+Остальные18 новых checks не приняты; весь PGA-06B остаётся PENDING до нового CI.
+CI571 не перезапускается и не объявляется PASS.
+
+Полные нормализованные логи571: Windows6946lines/756415bytes,
+SHA256 `1074b74d33c9cbbc5e3b0d5de7c48b925142895b2282d20132f3e4771d3ab3d7`;
+Ubuntu573lines/53270bytes,
+SHA256 `b8e9a21a2871d11578b7ce4ea9b0396215ddea56e993948bb309939a2db80eb7`.
+
+## Открытые границы
 
 Это взаимное исключение отдельных SCM/key операций, а не атомарный snapshot
 целого диагностического pipeline и не готовность SSH-аутентификации. Кнопка
