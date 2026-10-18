@@ -1,16 +1,21 @@
 # Остаток ProGo: 8 открытых пунктов, 55 рабочих подпунктов
 
-18.10.2026 PGA-06B: общая SCM/startup/key coordination и43 новых dev checks
-подготовлены, **Code/Dev PENDING до completed CI** ([протокол](MICROTASK_SSH_AGENT_COORDINATION.md)).
+18.10.2026 PGA-06B: общая SCM/startup/key coordination — узкий **Code/Dev PASS**
+source1000e1c057ce529909ab1ee791b838eb0395c2ff,
+completed [CI574](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39165129385),
+Windows/Ubuntu SUCCESS,43 новых checks/Desktop4431=4387+43+1 fixture setup
+([протокол и FAIL570–573 history](MICROTASK_SSH_AGENT_COORDINATION.md)).
 Это микрошаг F31-R11, без нового PASS55. Add Key UI, auth readiness и startup
-SOCKS ordering впереди. Счёт6/55,49=37+12,23/31 сохранён.
+SOCKS ordering впереди. Счёт6/55,49=37+12,23/31 сохранён; причины старых
+measurement570 и конкретного Stop caller572 UNKNOWN, guards не ослаблены.
 
 PGA-06A — узкий **Code/Dev PASS** на source9db506714bb26320246e4519aaf2927934dde14f,
 completed [CI569](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39043799101):
 45 новых checks/Desktop4387, Windows/Ubuntu SUCCESS. Управляемая отдельная консоль,
 backend одного selected key, actual ssh-keygen/encrypted key/1 entry ssh-add/
 isolated agent pipe подтверждены ([границы и FAIL565/568 history](MICROTASK_SSH_INTERACTIVE_KEY_ADD.md)).
-UI/startup/SCM coordination и private-key/signing/auth proof ещё впереди. Общий
+Общая SCM/startup/key coordination принята следующим PGA-06B; UI/freshness,
+startup auth ordering и private-key/signing/auth proof ещё впереди. Общий
 счёт **6/55**,49=37+12 и23/31 сохранён; полный PGA-06/F31-R11 открыт.
 
 Рабочая декомпозиция составлена по утверждённым требованиям и сохранённой реализации на source checkpoint `464f41052db96d7508f336c11137661015831142`. Это результат анализа остатка: она не меняет согласованные функции, не закрывает критерии и не является оценкой количества часов или будущих микрокоммитов.

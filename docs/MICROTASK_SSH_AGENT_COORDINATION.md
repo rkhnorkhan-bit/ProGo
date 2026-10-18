@@ -1,10 +1,10 @@
 # PGA-06B — общая координация службы и операций с ключами
 
-**18.10.2026 UTC. Реализация подготовлена; Code/Dev PENDING до итогового CI.**
+**18.10.2026 UTC. Узкий PGA-06B Code/Dev PASS по completed CI574.**
 Родитель `c7f335e58c13a9bc9401f7e7cb4411add130b28a`, предыдущий принятый
 runtime source `9db506714bb26320246e4519aaf2927934dde14f` / completed CI569.
 Два микрошага внутри F31-R11: общий владелец операции и проверки его lifetime.
-Счёт **6/55**, остаток49=37+12, верхний уровень23/31. Новых ID/PASS нет.
+Счёт **6/55**, остаток49=37+12, верхний уровень23/31. Новых ID/PASS55 нет.
 
 ## Изменение
 
@@ -28,11 +28,11 @@ StartService не меняются. Busy тексты больше не назы
 удаления ключей или ACL repair. Добавление по-прежнему только backend будущего
 явного действия; оно не вызывается startup. Парольную фразу получает OpenSSH.
 
-## Проверки и ожидаемая матрица
+## Проверки
 
 В существующий Desktop partial включён отдельный coordination workflow после
-45 проверок интерактивного backend. Новые **43 coordination checks**, ожидаемый
-Desktop4431=4387+43+1 native fixture setup ниже; существующие assertions/watchdog
+45 проверок интерактивного backend. Новые **43 coordination checks** и
+Desktop4431=4387+43+1 native fixture setup подтверждены CI574; assertions/watchdog
 budgets и workflows не ослаблены.
 
 - Три реальных production entry points на injected child boundary — inventory,
@@ -170,7 +170,70 @@ SHA256 `bcfd9f55d69619fe763a77582ca32c3ac04e87cbe05a15db981351f246a02e92`.
 Ubuntu573lines/53115bytes,
 SHA256 `986d6de32243647e364ca612763db8e1529d1649bffef92df2aefa71d53f3801`.
 
-## Открытые границы
+## Native Code/Dev приёмка: CI574 SUCCESS
+
+Tested source `1000e1c057ce529909ab1ee791b838eb0395c2ff`, tree
+`eaf22f636fad5e16106b6420c023fbe42254edf6`, merge
+`4ac7900fa1ba171a9ec6609caad18d8b770f233d` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI574](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39165129385)
+completed SUCCESS: Windows117786357423/Ubuntu117786357149, весь run SUCCESS.
+Оба checkout log подтверждают source/merge/base; build identity0.2.2+merge4ac7900.
+Production SCM/key code идентичен первому source c862920; между source менялись
+только отмеченные test fixtures/failure diagnostics и Markdown. Rerun не делался.
+В Windows только прежний Prune old CI artifacts SKIPPED, все тестовые steps SUCCESS.
+
+Coordination BEGIN21:02:27.9599865UTC →43 отдельных PASS →marker43
+21:02:30.0775469UTC. Все три key owner, четыре SCM read/start×timeout/cancel,
+separate probe/startup competitors, failure release и mixed12 contention прошли.
+Mixed race: один native owner,11 Busy, освобождение слота после settlement.
+Прежние66 start/40 startup/67 inventory/52 matching/57 policy/45 console checks
+PASS; старые37 SCM/32 probe checks сохранены в полном Desktop workflow.
+Actual read-only SCM oracle21:02:14.3743013UTC: runtime1/Stopped, startup4/Disabled,
+statusError0/configError0. Нормальный StartService проверяется на прежних native
+boundary fixtures; служба runner и реальный пользовательский агент не меняются.
+Native selected ssh-keygen создаёт temporary encrypted Ed25519, настоящий ssh-add
+получает1 echo-off console entry и отправляет ADD_IDENTITY только isolated pipe;
+signing/server-auth не выполнялись. Все3 console attachment metadata first5→
+detach→startup6→retry PASS; production console owner не изменён этим пакетом.
+
+Старый settings cancellation fixture20:57:44.5716833UTC:
+running/cli/windows/launcher=True. Exact settings/revision,
+old port, launcher content и actual HTTP400 PASS. Setup добавляет1 check, поэтому
+Desktop4431=4387+43+1 в21:03:12.3719298UTC. Measurement24/helper8 PASS, native
+stop=completed/samples6/working/private/io=True. Это не доказывает UNKNOWN причины
+старых570/572. Ошибки тестовых assertions571/573 исправлены; все FAIL сохранены.
+
+Весь Test-ProGo PASS21:05:53.3268397UTC: прежние SOCKS41/403, Instance28,
+Maintenance95/Shutdown47/updater5 сохранены. HomeVPN975 — 21:09:22.8145791UTC,
+portable90 — 21:11:10.5612247UTC, public294source/44release — 21:11:13.5579148UTC PASS.
+Windows Python24 =22PASS+2 прежних Linux-only skips; Ubuntu16/9 и полный46-check
+provision smoke без skips, independent QR и TLS/recovery/revocation/session tail.
+Source/native review самостоятельный; независимого agent review не было.
+Нового visual/DPI/contrast/Narrator review не выполнялось и PASS не заявлен.
+
+Полные нормализованные логи574: Windows8931lines/969897bytes,
+SHA256 `9f4a24c1d2aa7798132b2d5216ee81f5ec6168348778e22a31ac95a5b3b1ab61`;
+Ubuntu573lines/53129bytes,
+SHA256 `447c82d5fc498b3dbcf5c12fce9407b7a32951f7ddfa4d7e636bd49680d26b2f`.
+
+Все4 artifact metadata сверены с API и upload log: run39165129385/source1000e1c,
+name/ID/outer ZIP bytes/SHA256. Архивы не скачивались; содержимое ZIP и скриншотов
+не проверено. Runner сообщает293 screenshot files; это не проверенный count ZIP.
+
+| Artifact | ID | Outer ZIP bytes | SHA256 |
+| --- | ---: | ---: | --- |
+| ProGo-release | 12151251112 | 546723 | a243446bee8248e19d096bd3323021a9ed7ef582fa00070cb147cb34a786f11b |
+| ProGo-wizard-screenshots | 12150967085 | 6540742 | f20289d827a30bf6afdf88da61fa9e7ca19b2636a3c184550019e2d99462fd15 |
+| ProGo-release-zip | 12150748029 | 539478 | 35ce20e36d65b382d53482887be0dead8391a49358aa7c7a95ff1d5c744779b0 |
+| ProGo-ci-diagnostics | 12150733039 | 95132 | 037ba73b3e350e623a3e64ba52a327d8b54373e00197f5d98b8f520d15f01fd5 |
+
+Inner ProGo-release.zip542967bytes отличается от outer artifact ZIP.
+Это CI artifact, не итоговый31/31 установщик. Evidence после tested source
+содержит только4 Markdown; runtime/tests/scripts/server/workflows/VERSION
+не меняются и повторный native PASS на другой runtime не приписывается.
+
+## Следующий микрошаг и ограничения
 
 Это взаимное исключение отдельных SCM/key операций, а не атомарный snapshot
 целого диагностического pipeline и не готовность SSH-аутентификации. Кнопка

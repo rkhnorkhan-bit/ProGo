@@ -1,16 +1,30 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-06B — Code/Dev PENDING, счёт6/55
+## Текущий checkpoint: SSH-agent PGA-06B — узкий Code/Dev PASS, счёт6/55
 
-18.10.2026 UTC подготовлены общий process-wide lease SCM read/start/startup и
-inventory/fingerprint/add, резервирование до scheduling worker и удержание до
-фактического cleanup после timeout/cancel. Конкуренты получают Busy без native
-work/скрытых retries. Новые43 coordination checks+1 прежний native fixture setup,
-ожидаемый Desktop4431;
-native CI ещё не принят ([протокол/границы](MICROTASK_SSH_AGENT_COORDINATION.md)).
+18.10.2026 UTC общий process-wide lease SCM read/start/startup и
+inventory/fingerprint/add принят на source1000e1c057ce529909ab1ee791b838eb0395c2ff,
+treeeaf22f636fad5e16106b6420c023fbe42254edf6,
+merge4ac7900fa1ba171a9ec6609caad18d8b770f233d в прежний main4bb3365.
+[CI574](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39165129385) completed
+SUCCESS: Windows117786357423/Ubuntu117786357149,43 новых coordination PASS,
+Desktop4431=4387+43+1 native fixture setup. Busy без native work/скрытых retries;
+timeout/cancel не освобождают слот до фактического cleanup. Прежние agent
+66/40/67/52/57/45, SCM oracle1/4/errors0/0 и весь Test-ProGo PASS.
+HomeVPN975/portable90/public294/44; Windows Python22PASS+2 прежних Linux-only skips,
+Ubuntu16/9/46 без skips, independent QR/TLS/recovery/session tail PASS.
+Все4 artifacts source/run/ID/size/digest сверены с API/upload log; архивы не
+скачивались, свежего visual/DPI/Narrator PASS нет. Source/native review
+самостоятельный; независимого agent review не было.
+
+История FAIL570–573 сохранена, rerun не делался. Исправлены test short circuit и
+launcher-vs-shortcut assertion; старые measurement570/Stop caller572 причины
+UNKNOWN. В старом cancellation fixture теперь реальные test-owned consumers,
+exact launcher/CLI/Windows rollback и actual HTTP400 PASS; production measurement/
+bridge/consumer policy не менялись ([полный протокол](MICROTASK_SSH_AGENT_COORDINATION.md)).
 Кнопка добавления, UI freshness, signing/auth readiness и AutoStartSocks ordering
-остаются открытыми.6/55,49=37+12,23/31; F31-R11 OPEN, Package PENDING,
-Live NOT_CHECKED. Устройства и реальные ключи владельца не затронуты.
+открыты.6/55,49=37+12,23/31; F31-R11/PGA-06/F31/F17 OPEN, R05 PARTIAL,
+Package PENDING/Live NOT_CHECKED. Устройства и реальные ключи владельца не затронуты.
 
 ## Предыдущий checkpoint: SSH-agent PGA-06A — узкий Code/Dev PASS, счёт6/55
 
