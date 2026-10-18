@@ -31,8 +31,9 @@ StartService не меняются. Busy тексты больше не назы
 ## Проверки и ожидаемая матрица
 
 В существующий Desktop partial включён отдельный coordination workflow после
-45 проверок интерактивного backend. Новые **43 checks**, ожидаемый Desktop4430
-=4387+43; существующие assertions/watchdog budgets и workflows не ослаблены.
+45 проверок интерактивного backend. Новые **43 coordination checks**, ожидаемый
+Desktop4431=4387+43+1 native fixture setup ниже; существующие assertions/watchdog
+budgets и workflows не ослаблены.
 
 - Три реальных production entry points на injected child boundary — inventory,
   fingerprint phase и add — каждый удерживает слот. SCM read/start другого probe
@@ -107,7 +108,41 @@ SHA256 `1074b74d33c9cbbc5e3b0d5de7c48b925142895b2282d20132f3e4771d3ab3d7`;
 Ubuntu573lines/53270bytes,
 SHA256 `b8e9a21a2871d11578b7ce4ea9b0396215ddea56e993948bb309939a2db80eb7`.
 
-## Открытые границы
+## CI572: FAIL старого async-settings fixture до SSH checks
+
+Source `40143a572352f04b8a8d402fa090d4b79e9366e0`, tree
+`4ceeba78d3a4081d42833f8c82021dc0d4ece78d`, merge
+`18f5d8e3af91407ebaa4b32dee4f5a8070f9fb11` в прежний main4bb3365.
+[CI572](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39163721326)
+completed FAILURE: Windows117782201589 FAILURE, Ubuntu117782201414 SUCCESS.
+Прежние measurement24/helper8 PASS; native facts completed/samples7/working,
+private,io=True. Причина570 этим не устанавливается. Новые SSH checks NOT_RUN.
+
+20:39:19.4876511UTC AssertBridge в AsyncSettingsFormCancel получил ConnectionRefused
+на test-owned loopback port61208. До него exact settings/revision/old-port
+assertion прошёл, но он не проверял наличие активного listener. Fixture запускал
+реальный application owner и bridge, не создавая потребителя этого bridge.
+Штатный AppProxyConsumers.ReleaseIfUnused вправе остановить такой listener
+после фонового наблюдения Empty; его timer работает во время UI pump теста.
+В первом failure log нет trace конкретного Stop caller, поэтому **точная причина
+остановки572 UNKNOWN**; выявлено несоответствие setup ожидаемому живому endpoint.
+
+Fixture теперь вызывает уже существующий OwnIntegrations для своих временных
+Windows/CLI/Codex consumers перед переходом порта. Это даёт1 прежний setup check
+и делает rollback условие осмысленным: дополнительно проверяются IsRunning,
+старый CLI endpoint, Windows proxy и Codex ownership; прежний actual HTTP400
+assertion сохранён. Тест не отключает observer, не удерживает искусственный lock,
+не добавляет retry, задержку или больший budget. Raw snapshot cleanup прежний;
+все HKCU/files/listeners принадлежат изолированному CI fixture. Production bridge,
+transactions/consumer policy и SSH code не меняются. Новый source требует
+completed CI; итог ожидается Desktop4431=4387+43+1. CI572 не перезапускается.
+
+Полные нормализованные логи572: Windows3141lines/283464bytes,
+SHA256 `b1a7a509452e8a20b25bfcc8804f1d90886a1b79c45313634fc7fb7520053977`;
+Ubuntu573lines/53993bytes,
+SHA256 `7b0438e19dde66328d4dd0cf976f1390148b00688b24a24e6f11c9e8a5a8270a`.
+
+## Оставшиеся работы
 
 Это взаимное исключение отдельных SCM/key операций, а не атомарный snapshot
 целого диагностического pipeline и не готовность SSH-аутентификации. Кнопка

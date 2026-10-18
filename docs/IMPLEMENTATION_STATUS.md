@@ -5,7 +5,8 @@
 18.10.2026 UTC подготовлены общий process-wide lease SCM read/start/startup и
 inventory/fingerprint/add, резервирование до scheduling worker и удержание до
 фактического cleanup после timeout/cancel. Конкуренты получают Busy без native
-work/скрытых retries. Новые43 coordination checks, ожидаемый Desktop4430;
+work/скрытых retries. Новые43 coordination checks+1 прежний native fixture setup,
+ожидаемый Desktop4431;
 native CI ещё не принят ([протокол/границы](MICROTASK_SSH_AGENT_COORDINATION.md)).
 Кнопка добавления, UI freshness, signing/auth readiness и AutoStartSocks ordering
 остаются открытыми.6/55,49=37+12,23/31; F31-R11 OPEN, Package PENDING,

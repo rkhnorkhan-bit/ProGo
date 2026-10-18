@@ -508,7 +508,10 @@ namespace ProGo
                 entered.Set(); AsyncSettingsWait(release);
             }, true))
             using (var form = new SshProfilesSettingsForm(fixture.Settings)) {
-                fixture.Start(); int oldPort = fixture.Bridge.Port; var before = fixture.Settings.Capture(); var bytes = File.ReadAllBytes(AppPaths.SettingsPath);
+                // A live application owner may release an unused bridge. Give
+                // this rollback fixture real owned consumers of the old port.
+                fixture.Start(); fixture.OwnIntegrations();
+                int oldPort = fixture.Bridge.Port; var before = fixture.Settings.Capture(); var bytes = File.ReadAllBytes(AppPaths.SettingsPath);
                 CancellationToken observedToken = CancellationToken.None;
                 form.SaveRequestedAsync = delegate(SettingsApplyRequest request, CancellationToken token) {
                     calls++; observedToken = token; return fixture.Context.ApplySettingsAsync(request.Proposed, request.PickFree, token);
@@ -523,7 +526,8 @@ namespace ProGo
                     release.Set(); WaitAsyncSettings(operation); PumpUntil(() => !form.IsSavePending && ((Label)Field(form, "saveError")).Text.Contains("отмен"));
                     Check(operation.Result != null && form.Visible && form.DialogResult == DialogResult.None &&
                         endpoint.Text == "https://cancelled-form.example.org/check" && fixture.Settings.Revision == before.Revision &&
-                        File.ReadAllBytes(AppPaths.SettingsPath).SequenceEqual(bytes) && fixture.Bridge.Port == oldPort,
+                        File.ReadAllBytes(AppPaths.SettingsPath).SequenceEqual(bytes) && fixture.Bridge.Port == oldPort && fixture.Bridge.IsRunning &&
+                        CliProxyEnvironmentService.HasProxyEndpoint(oldPort) && SystemProxyService.IsApplied(fixture.Settings.Current) && CodexProxyService.IsConfigured,
                         "settled precommit form cancellation preserves exact saved settings and staged edits for an explicit retry");
                     AssertBridge(oldPort); form.Close();
                 } finally { release.Set(); WaitAsyncSettings(operation); }
