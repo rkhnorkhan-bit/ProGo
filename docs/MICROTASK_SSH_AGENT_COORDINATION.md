@@ -3,7 +3,7 @@
 **18.10.2026 UTC. Реализация подготовлена; Code/Dev PENDING до итогового CI.**
 Родитель `c7f335e58c13a9bc9401f7e7cb4411add130b28a`, предыдущий принятый
 runtime source `9db506714bb26320246e4519aaf2927934dde14f` / completed CI569.
-Два микрошагa внутри F31-R11: общий владелец операции и проверки его lifetime.
+Два микрошага внутри F31-R11: общий владелец операции и проверки его lifetime.
 Счёт **6/55**, остаток49=37+12, верхний уровень23/31. Новых ID/PASS нет.
 
 ## Изменение
@@ -55,7 +55,32 @@ fixtures. Нового системного StartService или работы с 
 Локально Windows/.NET runtime отсутствует; source review не объявляется native PASS.
 Самостоятельный source review; независимого agent review не было.
 
-## Открытые границы
+## Первый run: CI570 FAIL до новых SSH checks
+
+Source `c862920236b4467d10878a4f7afa3954bdce16ae`, tree
+`c61c43a55ec877338e476dba96dd3da5a86877a0`, merge
+`b2cb7b39e3d8e1de73301deabfba291172c111e4` в прежний main4bb3365.
+[CI570](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39162194563)
+completed FAILURE: Windows117777645086 FAILURE, Ubuntu117777645179 SUCCESS.
+Windows20:16:45.1288754UTC: прежний RescueMeasurement native assertion
+`real current-process sampling reads Win32 CPU/RAM/I/O`. До него15 прежних
+measurement checks PASS. Новые Desktop/SSH coordination checks **NOT_RUN**;
+их native PASS/FAIL не установлен. Последующие relay/public/package steps SKIPPED.
+
+Assertion объединяет completed stop, минимум2 samples и positive working/private
+memory/I/O availability. В CI570 не выведено, какое условие нарушено; **точная
+причина UNKNOWN**. Production measurement, assertions, duration1500/interval250,
+прочие budgets и workflow не меняются. Добавлена только безопасная диагностика
+typed stop, sample count и трёх availability booleans в прежнее сообщение теста.
+Это позволяет разобрать следующий отказ; последующий SUCCESS не будет считаться
+доказательством причины570. Нет автоматического rerun или ослабления проверки.
+
+Полные нормализованные логи CI570: Windows2018lines/174599bytes,
+SHA256 `eb8989fbd4da50ecd7424c85a9196be2ae525d081040baef71a1715ece6a65f9`;
+Ubuntu573lines/56265bytes,
+SHA256 `dcbd7e18e5c6af55f2caa6ef0532a8275fe2a36907703b883df9fd56da05f84c`.
+
+## Оставшиеся работы
 
 Это взаимное исключение отдельных SCM/key операций, а не атомарный snapshot
 целого диагностического pipeline и не готовность SSH-аутентификации. Кнопка

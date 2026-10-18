@@ -106,8 +106,14 @@ namespace ProGo
                 {
                     var before = probe.Inventory(); var result = RescueMeasurement.Collect(probe, 1500, 250, port, 0, CancellationToken.None);
                     var after = probe.Inventory(); string report = RescueMeasurement.Report(result);
+                    // Keep the existing assertion and budgets; expose only typed
+                    // stop/count/availability facts if the native oracle fails.
+                    string nativeFacts = "; stop=" + result.StopReason + "; samples=" + result.Samples.Count +
+                        "; working=" + (result.Samples.Count > 0 && result.Samples[0].WorkingSetBytes > 0) +
+                        "; private=" + (result.Samples.Count > 0 && result.Samples[0].PrivateBytes > 0) +
+                        "; io=" + (result.Samples.Count > 0 && result.Samples[0].IoAvailable);
                     Check(result.StopReason == "completed" && result.Samples.Count >= 2 && result.Samples[0].WorkingSetBytes > 0
-                        && result.Samples[0].PrivateBytes > 0 && result.Samples[0].IoAvailable, "real current-process sampling reads Win32 CPU/RAM/I/O");
+                        && result.Samples[0].PrivateBytes > 0 && result.Samples[0].IoAvailable, "real current-process sampling reads Win32 CPU/RAM/I/O" + nativeFacts);
                     Check(before.ProcessAvailable && before.ExpectedPathMatches && Path.GetFullPath(before.ExecutablePath) == Path.GetFullPath(executable)
                         && before.FileVersion == "0.2.2.0" && before.BuildIdentity == "0.2.2+measurement-fixture", "running image identity comes from actual executable resources");
                     Check(before.SocksListening == true && !listener.Pending() && after.SocksListening == true,
