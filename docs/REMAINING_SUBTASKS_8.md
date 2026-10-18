@@ -1,5 +1,10 @@
 # Остаток ProGo: 8 открытых пунктов, 55 рабочих подпунктов
 
+18.10.2026 PGA-06B: общая SCM/startup/key coordination и43 новых dev checks
+подготовлены, **Code/Dev PENDING до completed CI** ([протокол](MICROTASK_SSH_AGENT_COORDINATION.md)).
+Это микрошаг F31-R11, без нового PASS55. Add Key UI, auth readiness и startup
+SOCKS ordering впереди. Счёт6/55,49=37+12,23/31 сохранён.
+
 PGA-06A — узкий **Code/Dev PASS** на source9db506714bb26320246e4519aaf2927934dde14f,
 completed [CI569](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39043799101):
 45 новых checks/Desktop4387, Windows/Ubuntu SUCCESS. Управляемая отдельная консоль,

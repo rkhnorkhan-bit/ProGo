@@ -63,7 +63,7 @@ namespace ProGo
                 case SshAgentKeyAddState.CommandCompleted:
                     return "ssh-add сообщил об успешном добавлении. Подпись ключом и вход на сервер ещё не проверены.";
                 case SshAgentKeyAddState.Busy:
-                    return "Другая операция с ключами ещё выполняется. Дождитесь её завершения.";
+                    return "Другая операция с SSH-agent ещё выполняется. Дождитесь её завершения.";
                 case SshAgentKeyAddState.AgentUnavailable:
                     return "ssh-add не смог связаться с агентом. Проверьте его доступность и повторите.";
                 case SshAgentKeyAddState.CommandFailed:

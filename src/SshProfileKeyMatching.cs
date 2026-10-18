@@ -60,7 +60,7 @@ namespace ProGo
         {
             foreach (var item in Identities) if (String.Equals(item.Identity, identity, StringComparison.Ordinal)) return item.ToDisplay();
             if (State == SshProfileKeyMatchState.NotUsedByAuthentication) return "Политика профиля не использует вход по публичному ключу; отпечаток не проверялся.";
-            return State == SshProfileKeyMatchState.Busy ? "Другая read-only проверка SSH ещё выполняется; отпечаток не проверен."
+            return State == SshProfileKeyMatchState.Busy ? "Другая операция с SSH-agent ещё выполняется; отпечаток не проверен."
                 : "Отпечаток этой identity не проверен.";
         }
     }

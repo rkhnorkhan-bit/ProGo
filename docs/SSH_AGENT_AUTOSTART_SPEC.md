@@ -130,6 +130,12 @@ VPS; конкретные адреса, пользователи и пути н�
 
 ## PGA: микрозадачи, состояние и существующие ID
 
+18.10.2026 PGA-06B: общий process-wide lease SCM read/start/startup и
+inventory/fingerprint/add до фактического cleanup, включая timeout/cancel,
+подготовлен с43 новыми dev checks. **Code/Dev PENDING до итогового CI**
+([протокол](MICROTASK_SSH_AGENT_COORDINATION.md)). Это уточнение PGA-02/03/06
+внутри F31-R11; UI/selected-key/auth gates остаются открытыми. Новых ID/PASS нет.
+
 PGA-01 audit/mapping и узкий PGA-02A приняты в Code/Dev на source13b98cce,
 completed [CI #557](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/38889610234),
 37 SCM checks/полный Windows и Ubuntu SUCCESS ([доказательства](MICROTASK_SSH_AGENT_SERVICE_STATUS.md)).

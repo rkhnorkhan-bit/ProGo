@@ -1,6 +1,17 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-06A — узкий Code/Dev PASS, счёт6/55
+## Текущий checkpoint: SSH-agent PGA-06B — Code/Dev PENDING, счёт6/55
+
+18.10.2026 UTC подготовлены общий process-wide lease SCM read/start/startup и
+inventory/fingerprint/add, резервирование до scheduling worker и удержание до
+фактического cleanup после timeout/cancel. Конкуренты получают Busy без native
+work/скрытых retries. Новые43 coordination checks, ожидаемый Desktop4430;
+native CI ещё не принят ([протокол/границы](MICROTASK_SSH_AGENT_COORDINATION.md)).
+Кнопка добавления, UI freshness, signing/auth readiness и AutoStartSocks ordering
+остаются открытыми.6/55,49=37+12,23/31; F31-R11 OPEN, Package PENDING,
+Live NOT_CHECKED. Устройства и реальные ключи владельца не затронуты.
+
+## Предыдущий checkpoint: SSH-agent PGA-06A — узкий Code/Dev PASS, счёт6/55
 
 17.10.2026 UTC console owner/immutable selected-key ssh-add backend приняты
 на source9db506714bb26320246e4519aaf2927934dde14f, tree41b27204cf540000a82f8fcb74b60a6c3ce1f81c,

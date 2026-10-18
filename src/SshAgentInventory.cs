@@ -61,7 +61,7 @@ namespace ProGo
                 case SshAgentInventoryState.TimedOut:
                     return "Агент не ответил за 3 секунды. Проверка остановлена; можно повторить.";
                 case SshAgentInventoryState.Busy:
-                    return "Другая проверка ключей ещё выполняется. Повторите после её завершения.";
+                    return "Другая операция с SSH-agent ещё выполняется. Повторите после её завершения.";
                 case SshAgentInventoryState.NotChecked:
                     return "Конфигурация выбранного SSH-профиля не подтверждена; ключи агента не проверялись.";
                 default:

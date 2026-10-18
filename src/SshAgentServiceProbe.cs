@@ -18,15 +18,15 @@ namespace ProGo
         {
             if (State == SshAgentProbeState.Completed) return StartAttempt == null ? Snapshot.ToDisplay() : StartAttempt.ToDisplay();
             if (State == SshAgentProbeState.Busy)
-                return "Предыдущая проверка службы ssh-agent ещё выполняется. Дождитесь её завершения и повторите проверку.";
+                return "Предыдущая проверка службы или другая операция с SSH-agent ещё выполняется. Дождитесь её завершения и повторите проверку.";
             if (State == SshAgentProbeState.TimedOut)
                 return "Время ожидания службы ssh-agent истекло. Запрос Windows ещё может выполняться; повторите проверку позже.";
             return "Состояние службы ssh-agent не подтверждено: проверка завершилась с ошибкой. Проверьте OpenSSH и права на чтение службы.";
         }
     }
 
-    // One process-wide read OR start, including native cleanup. Cancelling or timing out a
-    // waiter never releases this slot while an OS call is still running.
+    // SCM reads/starts, including startup, share the key-operation lease. Cancelling
+    // or timing out a waiter cannot release it while native work/cleanup is running.
     internal sealed class SshAgentServiceProbe
     {
         internal const int DefaultTimeoutMilliseconds = 3000;
@@ -73,7 +73,7 @@ namespace ProGo
         internal Task PendingWork
         { get { lock (gate) return active == null ? idle : active.Work; } }
 
-        private SshAgentProbeResult Inspect(Attempt attempt, bool starting)
+        private SshAgentProbeResult Inspect(Attempt attempt, bool starting, SshReadOnlyLease lease)
         {
             try {
                 attempt.Token.ThrowIfCancellationRequested();
@@ -85,7 +85,10 @@ namespace ProGo
                 // The abandoned worker always settles to data; raw exceptions,
                 // native paths and late cancellation cannot become unobserved faults.
                 return new SshAgentProbeResult(SshAgentProbeState.Unavailable);
-            } finally { attempt.Dispose(); }
+            } finally {
+                try { attempt.Dispose(); }
+                finally { lease.Dispose(); }
+            }
         }
 
         internal Task<SshAgentProbeResult> ReadAsync(int timeoutMilliseconds, CancellationToken token)
@@ -102,15 +105,24 @@ namespace ProGo
             lock (gate) {
                 token.ThrowIfCancellationRequested();
                 if (active != null && !active.Work.IsCompleted) return new SshAgentProbeResult(SshAgentProbeState.Busy);
-                attempt = new Attempt(token);
+                // Reserve before scheduling so a key operation cannot enter the
+                // gap before the dedicated worker starts. Transfer only to it.
+                var lease = SshReadOnlyLease.TryAcquire(token);
+                if (lease == null) return new SshAgentProbeResult(SshAgentProbeState.Busy);
+                attempt = null;
                 try {
+                    attempt = new Attempt(token);
                     if (starting) attempt.ArmStartDeadline((int)Math.Max(1, timeoutMilliseconds - watch.ElapsedMilliseconds));
                     // A slow local SCM call occupies at most one dedicated worker,
                     // never the caller/UI thread or a growing set of pool workers.
-                    attempt.Work = Task.Factory.StartNew(() => Inspect(attempt, starting), CancellationToken.None,
+                    attempt.Work = Task.Factory.StartNew(() => Inspect(attempt, starting, lease), CancellationToken.None,
                         TaskCreationOptions.LongRunning, TaskScheduler.Default);
                     active = attempt;
-                } catch (Exception) { attempt.Dispose(); return new SshAgentProbeResult(SshAgentProbeState.Unavailable); }
+                } catch (Exception) {
+                    try { if (attempt != null) attempt.Dispose(); }
+                    finally { lease.Dispose(); }
+                    return new SshAgentProbeResult(SshAgentProbeState.Unavailable);
+                }
             }
             using (var deadline = new CancellationTokenSource()) {
                 var cancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
