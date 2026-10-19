@@ -272,7 +272,9 @@ namespace ProGo
                         "selected key action explains native secret entry and has no implicit Enter action");
                     KeyboardWalk(form, new Control[] { report, choices, add, retry, cancel }, "SSH key addition ready");
                     form.ClientSize = new Size(650, 560); form.PerformLayout();
-                    Check(report.Height > 60 && add.Right <= add.Parent.ClientSize.Width && choices.Right <= choices.Parent.ClientSize.Width &&
+                    Check(report.Height > 60 && add.Right <= add.Parent.ClientSize.Width && add.Bottom <= add.Parent.ClientSize.Height &&
+                        add.ClientSize.Height >= TextRenderer.MeasureText(add.Text, add.Font).Height + add.Padding.Vertical &&
+                        choices.Right <= choices.Parent.ClientSize.Width &&
                         ((Label)Field(form, "keyHint")).Height >= TextRenderer.MeasureText(((Label)Field(form, "keyHint")).Text, form.Font,
                             new Size(((Label)Field(form, "keyHint")).Width, Int32.MaxValue), TextFormatFlags.WordBreak).Height,
                         "minimum-size key selection keeps its controls and explanation inside the form");

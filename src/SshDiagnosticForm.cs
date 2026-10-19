@@ -54,9 +54,11 @@ namespace ProGo
             var keys = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
             keys.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 65)); keys.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             keys.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
+            keys.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             keys.Controls.Add(UiTheme.Label("Ключ:", UiTheme.Body, UiTheme.Text), 0, 0); keys.Controls.Add(identities, 1, 0);
             addKey = UiTheme.Button("Добавить ключ", delegate { if (!busy && SelectedRequest != null) Work = RunAdd(); }, true);
-            addKey.Name = "SshDiagnosticAddKey"; addKey.Dock = DockStyle.Fill; keys.Controls.Add(addKey, 2, 0);
+            addKey.Name = "SshDiagnosticAddKey"; addKey.AutoSize = false; addKey.Dock = DockStyle.Fill;
+            addKey.TextAlign = ContentAlignment.MiddleCenter; keys.Controls.Add(addKey, 2, 0);
             root.Controls.Add(keys, 0, 2);
             keyHint.Name = "SshDiagnosticKeyHint"; keyHint.AutoSize = false; keyHint.Dock = DockStyle.Fill; root.Controls.Add(keyHint, 0, 3);
             status.AutoSize = false; status.Dock = DockStyle.Fill; root.Controls.Add(status, 0, 4);

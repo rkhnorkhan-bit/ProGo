@@ -161,7 +161,24 @@ SHA256 `1a0ebe4c9d3be1cf5439b5d0a4f87a6afe0146d3f21091f9a9345c6c573a829d`;
 Ubuntu573lines/55329bytes,
 SHA256 `ef91b696fc7163aa11b22f3c0c639f713e3be3e73adf7c46f3fb355086b0071d`.
 
-## Оставшиеся границы
+## Предварительный visual review577: clipping кнопки, source correction
+
+Скачан screenshot artifact12171613194 source6c8309e/run39220716129:
+4868838bytes, SHA256 `edf4f62e22b60f21c145b8d3c33b4c3a5ea1ad69a2ad61fa2c260676e51141fb`,
+digest совпал с API/upload log. Просмотрены все6 новых PNG. Ready-minimum/pending/
+unavailable показывают обрезанную снизу надпись Add Key: вложенная строка table
+была auto-sized при Dock Fill/AutoSize кнопки и выходила за parent height.
+Изначальная layout проверка учитывала правую, но не нижнюю границу; это был пробел.
+
+В key table явно задана единственная percent100 row, у заполняющей её кнопки
+AutoSize=false и MiddleCenter. Layout assertion усилен нижней границей кнопки и
+вместимостью caption+padding, число40 сохранено. Header/report/hints/status и
+остальные3 result PNG читаемы; visual PASS для нового layout пока не заявлен.
+Source dcf47d1/CI578 superseded этим исправлением до приёмки; его частичный
+результат не будет выдан за проверку финального source. Нужны новые native CI
+и свежие6 PNG. Самостоятельный visual review; независимого agent review не было.
+
+## Открытые границы
 
 Selected-key binding/signing/constraints/cert/FIDO/custom endpoint, service Start
 action в UI, auth readiness/AutoStartSocks ordering, ACL diagnostics/repair и
