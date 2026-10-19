@@ -50,6 +50,14 @@ namespace ProGo
         public static RescueMeasurementResult Collect(IRescueMeasurementProbe probe, int durationMs,
             int intervalMs, int socksPort, int httpPort, CancellationToken cancellation)
         {
+            var clock = Stopwatch.StartNew();
+            return CollectCore(probe, durationMs, intervalMs, socksPort, httpPort, cancellation,
+                () => clock.ElapsedMilliseconds, (milliseconds, token) => token.WaitHandle.WaitOne(milliseconds));
+        }
+        internal static RescueMeasurementResult CollectCore(IRescueMeasurementProbe probe, int durationMs,
+            int intervalMs, int socksPort, int httpPort, CancellationToken cancellation,
+            Func<long> elapsed, Func<int, CancellationToken, bool> waitForCancellation)
+        {
             if (probe == null) throw new ArgumentNullException("probe");
             if (durationMs < 250 || durationMs > 300000 || intervalMs < 100 || intervalMs > 5000)
                 throw new ArgumentOutOfRangeException("durationMs");
@@ -57,40 +65,48 @@ namespace ProGo
                 throw new ArgumentOutOfRangeException("socksPort");
             var result = new RescueMeasurementResult { ProcessorCount = Math.Max(1, Environment.ProcessorCount),
                 SocksPort = socksPort, HttpPort = httpPort };
-            var clock = Stopwatch.StartNew();
             try
             {
                 RescueInventory inventory;
-                if (!ReadBounded(probe.Inventory, clock, durationMs, cancellation, out inventory))
+                if (!ReadBounded(probe.Inventory, elapsed, durationMs, cancellation, out inventory))
                 { result.StopReason = cancellation.IsCancellationRequested ? "cancelled" : "inventory-timeout"; return result; }
                 result.Inventory = inventory;
                 if (inventory == null || !inventory.ProcessSelected || !inventory.ProcessAvailable)
                 { result.StopReason = "no-process"; return result; }
-                while (clock.ElapsedMilliseconds < durationMs)
+                while (elapsed() < durationMs)
                 {
+                    cancellation.ThrowIfCancellationRequested();
+                    int remaining = Math.Max(0, durationMs - (int)elapsed());
+                    // Do not launch another native sample into a partial final
+                    // interval. A tiny remainder is window completion, not proof
+                    // that an already running native probe has timed out.
+                    if (remaining < intervalMs) {
+                        if (remaining > 0 && waitForCancellation(remaining, cancellation)) result.StopReason = "cancelled";
+                        break;
+                    }
                     RescueSample sample;
-                    if (!ReadBounded(probe.Sample, clock, durationMs, cancellation, out sample))
+                    if (!ReadBounded(probe.Sample, elapsed, durationMs, cancellation, out sample))
                     { result.StopReason = cancellation.IsCancellationRequested ? "cancelled" : "sample-timeout"; break; }
                     if (sample == null) { result.StopReason = "probe-failed"; break; }
-                    sample.ElapsedSeconds = clock.Elapsed.TotalSeconds;
+                    sample.ElapsedSeconds = elapsed() / 1000.0;
                     if (sample.Exited) { result.StopReason = "exited"; break; }
                     result.Samples.Add(sample);
-                    int wait = Math.Min(intervalMs, Math.Max(0, durationMs - (int)clock.ElapsedMilliseconds));
-                    if (wait > 0 && cancellation.WaitHandle.WaitOne(wait)) { result.StopReason = "cancelled"; break; }
+                    int wait = Math.Min(intervalMs, Math.Max(0, durationMs - (int)elapsed()));
+                    if (wait > 0 && waitForCancellation(wait, cancellation)) { result.StopReason = "cancelled"; break; }
                 }
                 if (result.StopReason == null) result.StopReason = "completed";
             }
             catch (OperationCanceledException) { result.StopReason = "cancelled"; }
             catch { result.StopReason = "probe-failed"; }
-            finally { result.DurationSeconds = clock.Elapsed.TotalSeconds; }
+            finally { result.DurationSeconds = elapsed() / 1000.0; }
             return result;
         }
-        private static bool ReadBounded<T>(Func<T> read, Stopwatch clock, int durationMs,
+        private static bool ReadBounded<T>(Func<T> read, Func<long> elapsed, int durationMs,
             CancellationToken cancellation, out T value)
         {
             value = default(T);
             cancellation.ThrowIfCancellationRequested();
-            int remaining = Math.Min(5000, Math.Max(0, durationMs - (int)clock.ElapsedMilliseconds));
+            int remaining = Math.Min(5000, Math.Max(0, durationMs - (int)elapsed()));
             if (remaining == 0) return false;
             // Exactly one outstanding probe. A blocked read ends this session, never
             // creates a new polling worker or holds up process exit (pool threads).

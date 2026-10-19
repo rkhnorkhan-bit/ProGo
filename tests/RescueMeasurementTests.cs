@@ -20,11 +20,12 @@ namespace ProGo
             internal readonly ManualResetEvent Release = new ManualResetEvent(false), Finished = new ManualResetEvent(false);
             internal bool BlockInventory, BlockSample, Throw;
             internal int Inventories, Samples;
+            internal Action<int> OnSample;
             public RescueInventory Inventory()
             { Interlocked.Increment(ref Inventories); if (BlockInventory) { Release.WaitOne(); Finished.Set(); }
                 return new RescueInventory { ProcessSelected = true, ProcessAvailable = true }; }
             public RescueSample Sample()
-            { int count = Interlocked.Increment(ref Samples); if (BlockSample) { Release.WaitOne(); Finished.Set(); }
+            { int count = Interlocked.Increment(ref Samples); if (OnSample != null) OnSample(count); if (BlockSample) { Release.WaitOne(); Finished.Set(); }
                 if (Throw) throw new InvalidOperationException("private-error-fixture");
                 return new RescueSample { CpuMilliseconds = count * 10, WorkingSetBytes = 1048576, PrivateBytes = 2097152,
                     ReadBytes = (ulong)count * 1024, WriteBytes = (ulong)count * 2048, IoAvailable = true, Responding = true, SshChildren = 2 }; }
@@ -154,10 +155,29 @@ namespace ProGo
             }
             finally { listener.Stop(); }
         }
+        private static void FinalInterval()
+        {
+            foreach (bool cancelTail in new[] { false, true }) {
+                long elapsed = 0; int tailWaits = 0;
+                var fake = new FakeProbe { OnSample = count => { if (count > 3) throw new InvalidOperationException("Unexpected partial-interval native sample"); } };
+                using (var cancellation = new CancellationTokenSource()) try {
+                    var result = RescueMeasurement.CollectCore(fake, 350, 100, 0, 0, cancellation.Token, () => elapsed, (milliseconds, token) => {
+                        if (milliseconds < 100) {
+                            tailWaits++;
+                            if (cancelTail) { cancellation.Cancel(); return true; }
+                            elapsed += milliseconds - 1; // deterministic 1ms remainder; no real sleep
+                        } else elapsed += milliseconds;
+                        return false;
+                    });
+                    Check(result.StopReason == (cancelTail ? "cancelled" : "completed") && fake.Samples == 3 && result.Samples.Count == 3 && tailWaits == 1 &&
+                        (cancelTail || elapsed == 349), "partial final interval starts no late native sample and preserves cancellation: " + cancelTail);
+                } finally { fake.Close(); }
+            }
+        }
         private static int Main(string[] args)
         {
             if (args.Length > 0 && args[0] == "--child") { Thread.Sleep(900); return 0; }
-            try { Synthetic(); Bounds(); Native(); Console.WriteLine("Rescue measurement tests PASS: " + passed); return 0; }
+            try { Synthetic(); Bounds(); FinalInterval(); Native(); Console.WriteLine("Rescue measurement tests PASS: " + passed); return 0; }
             catch (Exception error) { Console.Error.WriteLine(error); return 1; }
         }
     }

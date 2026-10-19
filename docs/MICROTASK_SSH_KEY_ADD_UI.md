@@ -72,7 +72,42 @@ cancelled, completed, agent-error. Native/visual PASS до CI/просмотра
 Локального Windows/.NET runtime нет. Source review самостоятельный;
 независимого agent review не было.
 
-## Открытые границы
+## CI575: FAIL старого measurement до новых UI checks
+
+Source `6d915c8a59e4f58a51c36f439a4bf0e1de040922`, tree
+`b1fabe11eb9cebf0dd46367c033ecbb70877d4e9`, merge
+`547edf14a8bc59fd95055b375b058b237ebaa1b8` в прежний main4bb3365.
+[CI575](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39218163456)
+completed FAILURE: Windows117946847857 FAILURE, Ubuntu117946848235 SUCCESS.
+07:51:43.1875043UTC прежний native measurement assertion: sample-timeout,
+samples6, working/private/io=True. Новые40 UI checks NOT_RUN, не PASS/FAIL.
+Безопасная диагностика, добавленная после570, теперь установила failing condition:
+stop не completed. Конкретный native вызов и оставшийся budget в575 не записаны;
+они UNKNOWN, предыдущие570/572 причины не переопределяются.
+
+В Collect выявлен отдельный дефект планирования: цикл допускал очередной sample
+в частичном последнем interval, даже с остатком1ms. Исправлено admission правило:
+если общего времени осталось меньше interval, завершаем окно с отменяемым
+ожиданием остатка без нового native probe. Уже начатый заблокированный sample
+по-прежнему даёт sample-timeout; inventory timeout/cancel/failure не маскируются.
+Нет retry, увеличения budgets или ослабления native assertion. Ноль/недостаток
+образцов по-прежнему NOT_CHECKED в отчёте, не подтверждённые метрики.
+
+Public Collect сохраняет прежний контракт и настоящий Stopwatch/WaitHandle.
+Internal core принимает часы/ожидание для2 детерминированных regression cases:
+350ms/100ms,3 samples, последний wait оставляет1ms либо запрашивает отмену;
+четвёртый native sample запрещён fixture. Проверяются completed/cancelled без
+таймингов host. Measurement ожидается26=24+2; Desktop по-прежнему4471=4431+40.
+Это воспроизведение исправленного алгоритмического дефекта, **не доказательство**,
+что именно он вызвал575. UI/SSH source не меняется этим исправлением; нужен новый CI.
+CI575 не перезапускается, его FAIL сохранён.
+
+Полные нормализованные логи575: Windows2020lines/174796bytes,
+SHA256 `235ba89fa865cf4d5a5b7ef9a27b5e2d1f19575814c52ab5bc6b0b944fa5bf96`;
+Ubuntu573lines/53276bytes,
+SHA256 `5e6d5b75d775178cbd38801316581aa965c2484a03b12ba92f380d48b274b453`.
+
+## Оставшиеся границы
 
 Selected-key binding/signing/constraints/cert/FIDO/custom endpoint, service Start
 action в UI, auth readiness/AutoStartSocks ordering, ACL diagnostics/repair и
