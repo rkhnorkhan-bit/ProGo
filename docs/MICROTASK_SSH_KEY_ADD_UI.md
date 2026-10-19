@@ -134,7 +134,34 @@ SHA256 `45f2cf9db5cd82bb51a658e6fd3a41981efeb8493c1cf269edc656a9401fd7b2`;
 Ubuntu573lines/57897bytes,
 SHA256 `5e9e85091c4aba6778bbb3160d2d68148c219f21a24e730d7a8bb54def47a3b5`.
 
-## Открытые границы
+## CI577: FAIL последней UI fixture после39 новых PASS
+
+Source `6c8309e5c32317d9a5acb83c5b9d7f690bdb0dba`, tree
+`93d7cf5fa4291f1be0b25e212d8726abc9f5972e`, merge
+`62ec14114003bc104723b7a34eb04469f73a65b8` в прежний main4bb3365.
+[CI577](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39220716129)
+completed FAILURE: Windows117955102982 FAILURE, Ubuntu117955102698 SUCCESS.
+Measurement26, matching52, policy57, native console45, coordination43 PASS.
+Все3 policy native oracle exit0/nontruncated; это не доказывает UNKNOWN причину576.
+
+Add Key UI block BEGIN08:21:17.6020964UTC,39 новых checks PASS:9 eligibility,
+selection/immutable snapshot/keyboard/minimum/pending/cancel/fresh check,6 typed
+outcomes, Close/Dispose и queued Add cancellation.08:21:20.4958729UTC последняя
+fixture KeyUiQueuedCancellation получила NullReference до40-го assertion:
+form.Show ещё не гарантирует Shown/созданный Work, а CheckWork пока idle-completed.
+Тест читал form.Work.IsCompleted раньше начала проверки. Исправлен setup:
+управляемый check worker сигнализирует Entered и ожидает Release; тест pumps до
+Entered, затем выпускает worker и ждёт CheckWork без UI pump перед cancel.
+Это гарантирует именно queued publication, а не случайную гонку Show/Shown.
+Production UI/SSH/measurement,40 assertions и budgets не меняются; rerun нет.
+PGA-06C целиком PENDING до completed CI/visual review.
+
+Полные нормализованные логи577: Windows7008lines/764453bytes,
+SHA256 `1a0ebe4c9d3be1cf5439b5d0a4f87a6afe0146d3f21091f9a9345c6c573a829d`;
+Ubuntu573lines/55329bytes,
+SHA256 `ef91b696fc7163aa11b22f3c0c639f713e3be3e73adf7c46f3fb355086b0071d`.
+
+## Оставшиеся границы
 
 Selected-key binding/signing/constraints/cert/FIDO/custom endpoint, service Start
 action в UI, auth readiness/AutoStartSocks ordering, ACL diagnostics/repair и

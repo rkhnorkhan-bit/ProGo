@@ -357,11 +357,18 @@ namespace ProGo
                 Check(queued && ((Label)Field(form, "status")).Text.Contains("Операция отменена") && !((Button)Field(form, "addKey")).Enabled,
                     "cancel before queued key publication suppresses an already completed successful result"); form.Close();
             }
-            using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "selected.fixture" }, (p, t) => KeyUiProfile(root, "selected key"))) {
-                form.Show(); AgentProbeSettled(form.CheckWork); bool queued = !form.Work.IsCompleted;
-                ((Button)Field(form, "cancel")).PerformClick(); PumpUntil(() => form.Work.IsCompleted);
-                Check(queued && ((ComboBox)Field(form, "identities")).Items.Count == 0 && !((Button)Field(form, "addKey")).Enabled &&
-                    ((Label)Field(form, "keyHint")).Text.Contains("отменена"), "cancel before queued diagnostics cannot publish eligible key choices"); form.Close();
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+            using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "selected.fixture" }, (p, t) => {
+                entered.Set(); if (!release.Wait(10000)) throw new TimeoutException("Queued key UI diagnostic release deadline");
+                return KeyUiProfile(root, "selected key");
+            })) {
+                try {
+                    form.Show(); PumpUntil(() => entered.IsSet);
+                    release.Set(); AgentProbeSettled(form.CheckWork); bool queued = !form.Work.IsCompleted;
+                    ((Button)Field(form, "cancel")).PerformClick(); PumpUntil(() => form.Work.IsCompleted);
+                    Check(queued && ((ComboBox)Field(form, "identities")).Items.Count == 0 && !((Button)Field(form, "addKey")).Enabled &&
+                        ((Label)Field(form, "keyHint")).Text.Contains("отменена"), "cancel before queued diagnostics cannot publish eligible key choices"); form.Close();
+                } finally { release.Set(); AgentProbeSettled(form.CheckWork); }
             }
         }
     }
