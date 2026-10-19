@@ -107,7 +107,34 @@ SHA256 `235ba89fa865cf4d5a5b7ef9a27b5e2d1f19575814c52ab5bc6b0b944fa5bf96`;
 Ubuntu573lines/53276bytes,
 SHA256 `5e6d5b75d775178cbd38801316581aa965c2484a03b12ba92f380d48b274b453`.
 
-## Оставшиеся границы
+## CI576: FAIL прежнего native ssh-G policy oracle до новых UI checks
+
+Source `87bb3c026077644f9e6bf9e42c952976e2448cb0`, tree
+`b8d51c828600026394c576e06feb2cea1e9c5c96`, merge
+`65f4f58138222ef9a5a882e5f1db6acbae619a03` в прежний main4bb3365.
+[CI576](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39219144901)
+completed FAILURE: Windows117950060728 FAILURE, Ubuntu117950060568 SUCCESS.
+Measurement26/helper8 PASS: оба deterministic tail cases и настоящий native
+sampling completed/samples5/working/private/io=True. Это не устанавливает
+неизвестный native call/budget575 и не переопределяет570.
+
+08:06:41.9793499UTC старый AuthPolicyNative oracle для policy.disabled отказал
+на exit0/nontruncated assertion. До него matching52 и прежние policy pure cases
+PASS, но actual auth policy native block не принят. Новые40 Add Key UI checks
+**NOT_RUN**. Исходный лог не различает exit/truncation, поэтому причина576 UNKNOWN.
+Добавлены только безопасные факты в прежнее assertion message: signed/hex exit,
+truncated, stdout/stderr char counts и whitelisted permissions/config hint booleans.
+Raw stderr/output, пути или exception text не выводятся. Assertion, native args,
+timeout7000, production DiagnosticProcess/SSH/UI source и watchdog не меняются.
+CI576 не перезапускается, нужен новый source/run. Прежний UNKNOWN556 не объясняется
+этим аналогичным отказом.
+
+Полные нормализованные логи576: Windows6857lines/746661bytes,
+SHA256 `45f2cf9db5cd82bb51a658e6fd3a41981efeb8493c1cf269edc656a9401fd7b2`;
+Ubuntu573lines/57897bytes,
+SHA256 `5e9e85091c4aba6778bbb3160d2d68148c219f21a24e730d7a8bb54def47a3b5`.
+
+## Открытые границы
 
 Selected-key binding/signing/constraints/cert/FIDO/custom endpoint, service Start
 action в UI, auth readiness/AutoStartSocks ordering, ACL diagnostics/repair и

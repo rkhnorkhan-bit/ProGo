@@ -124,7 +124,11 @@ namespace ProGo
                     var selected = new SshProfileSetting { Target = target };
                     var oracle = DiagnosticProcess.Run(OpenSshClient.Executable,
                         "-G -F " + SshConnection.Quote(config) + " " + SshConnection.CommandArguments(selected), 7000, CancellationToken.None);
-                    Check(oracle.ExitCode == 0 && !oracle.Truncated, "native fixture-only policy oracle resolves Include and first-value precedence: " + target);
+                    string facts = "; exit=" + oracle.ExitCode + "; hex=0x" + unchecked((uint)oracle.ExitCode).ToString("X8") +
+                        "; truncated=" + oracle.Truncated + "; stdoutChars=" + (oracle.Output ?? "").Length + "; stderrChars=" + (oracle.Error ?? "").Length +
+                        "; permissionsHint=" + (oracle.Error ?? "").Contains("Bad owner or permissions") +
+                        "; configHint=" + (oracle.Error ?? "").Contains("Bad configuration");
+                    Check(oracle.ExitCode == 0 && !oracle.Truncated, "native fixture-only policy oracle resolves Include and first-value precedence: " + target + facts);
                     var result = SshProfileDiagnostics.CheckConfiguration(selected, CancellationToken.None, OpenSshClient.Executable, 7000, config);
                     var expected = target == "policy.disabled" ? SshPublicKeyPolicyState.Disabled : target == "policy.excluded" ? SshPublicKeyPolicyState.Excluded : SshPublicKeyPolicyState.AllowedByClient;
                     Console.WriteLine("Native auth policy observation: fixture=" + target + "; resolved=" + result.SshResolved + "; policy=" + result.PublicKeyPolicy +
