@@ -79,7 +79,7 @@ namespace ProGo
     }
     internal static class SshAgentKeyAdd
     {
-        // Backend for a future explicit Add Key UI action; never called at startup.
+        // Backend for the explicit Add Key UI action; never called at startup.
         // Cancellation cannot roll back an agent mutation. Do not delete shared keys.
         internal static Task<SshAgentKeyAddResult> RunAsync(SshAgentKeyAddRequest request, CancellationToken token,
             int timeoutMs = 120000)

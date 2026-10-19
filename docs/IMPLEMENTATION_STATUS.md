@@ -1,6 +1,14 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-06B — узкий Code/Dev PASS, счёт6/55
+## Текущий checkpoint: SSH-agent PGA-06C — Code/Dev PENDING, счёт6/55
+
+19.10.2026 UTC подготовлен Add Key UI: выбор effective identity, фоновый immutable
+request/backend, guards, cancellation/close и invalidation старой key evidence.
+Ожидаются40 новых UI checks/Desktop4471=4431+40 и6 screenshots. Native/visual CI
+ещё не принят ([протокол/границы](MICROTASK_SSH_KEY_ADD_UI.md)).
+Счёт6/55,49=37+12,23/31; F31-R11/PGA-06 OPEN, Package PENDING/Live NOT_CHECKED.
+
+## Предыдущий checkpoint: SSH-agent PGA-06B — узкий Code/Dev PASS, счёт6/55
 
 18.10.2026 UTC общий process-wide lease SCM read/start/startup и
 inventory/fingerprint/add принят на source1000e1c057ce529909ab1ee791b838eb0395c2ff,

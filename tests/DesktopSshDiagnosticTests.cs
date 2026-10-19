@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -197,6 +198,170 @@ namespace ProGo
             finally {
                 if (unrelated != null) { if (!unrelated.HasExited) { unrelated.Kill(); unrelated.WaitForExit(2000); } unrelated.Dispose(); }
                 Environment.SetEnvironmentVariable("PROGO_DIAGNOSTIC_MARKER", previous);
+            }
+        }
+        private static SshProfileDiagnosticResult KeyUiProfile(string root, params string[] identities)
+        {
+            var result = KeyMatchProfile(root, identities);
+            result.PubkeyAuthentication = "yes"; result.PreferredAuthentications = "publickey,password";
+            return result;
+        }
+        private static void KeyUiReady(SshDiagnosticForm form)
+        { form.Show(); PumpUntil(() => form.Work != null && form.Work.IsCompleted); form.Work.GetAwaiter().GetResult(); }
+        private static void SshKeyAddUiWorkflow()
+        {
+            int before = passed; Console.WriteLine("SSH key addition UI checks BEGIN");
+            string root = Path.Combine(work, "key-add-ui-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
+            bool previous = Control.CheckForIllegalCrossThreadCalls; Control.CheckForIllegalCrossThreadCalls = true;
+            try {
+                File.WriteAllText(Path.Combine(root, "ssh-add.exe"), "");
+                KeyUiPolicies(root); KeyUiPending(root); KeyUiOutcomes(root);
+                KeyUiClosed(root, false); KeyUiClosed(root, true); KeyUiQueuedCancellation(root);
+            } finally { Control.CheckForIllegalCrossThreadCalls = previous; Directory.Delete(root, true); }
+            Console.WriteLine("SSH key addition UI checks PASS: " + (passed - before));
+        }
+        private static void KeyUiPolicies(string root)
+        {
+            string[] reasons = { "подтверждённого ключа", "Политика входа", "не использует", "не использует", "IdentityAgent none", "Отдельный агент", "не найден", "путь", "подтверждённого ключа" };
+            for (int variant = 0; variant < reasons.Length; variant++) {
+                var profile = KeyUiProfile(root, "selected key");
+                if (variant == 0) profile.SshResolved = false;
+                if (variant == 1) profile.PubkeyAuthentication = null;
+                if (variant == 2) profile.PubkeyAuthentication = "no";
+                if (variant == 3) profile.PreferredAuthentications = "password";
+                if (variant == 4) profile.IdentityAgent = "none";
+                if (variant == 5) profile.IdentityAgent = "fixture-custom-endpoint";
+                if (variant == 6) profile.ExecutablePath = Path.Combine(root, "missing", "ssh.exe");
+                if (variant == 7) profile.IdentityPaths["selected key"] = "relative";
+                if (variant == 8) profile.IdentityFiles.Clear();
+                int calls = 0;
+                using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "selected.fixture" }, (p, t) => profile,
+                    (request, token) => { calls++; return new SshAgentKeyAddResult(SshAgentKeyAddState.CommandCompleted); })) {
+                    KeyUiReady(form); var add = (Button)Field(form, "addKey"); add.PerformClick();
+                    Check(!add.Enabled && !((ComboBox)Field(form, "identities")).Enabled && calls == 0 &&
+                        ((Label)Field(form, "keyHint")).Text.IndexOf(reasons[variant], StringComparison.OrdinalIgnoreCase) >= 0,
+                        "key addition UI refuses an ineligible profile with its specific reason: " + variant);
+                    if (variant == 5) Shot(form, "ssh-key-add-unavailable");
+                    form.Close();
+                }
+            }
+        }
+        private static void KeyUiPending(string root)
+        {
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+            using (var timer = new System.Windows.Forms.Timer { Interval = 15 }) {
+                int ui = Thread.CurrentThread.ManagedThreadId, worker = 0, checks = 0, adds = 0, ticks = 0;
+                SshProfileDiagnosticResult diagnostic = null; SshAgentKeyAddRequest selected = null; CancellationToken ownerToken = CancellationToken.None;
+                var profile = new SshProfileSetting { Target = "selected.fixture" };
+                using (var form = new SshDiagnosticForm(profile, (p, t) => {
+                    Interlocked.Increment(ref checks); worker = Thread.CurrentThread.ManagedThreadId;
+                    if (p.Target != "selected.fixture") throw new Exception("Profile snapshot changed");
+                    return diagnostic = KeyUiProfile(root, "first key", "second key");
+                }, (request, token) => SshAgentKeyAdd.Run(request, token, (e, a, ep, ms, t) => {
+                    selected = request; ownerToken = t; Interlocked.Increment(ref adds); worker = Thread.CurrentThread.ManagedThreadId;
+                    entered.Set(); if (!release.Wait(15000)) throw new TimeoutException("Key UI release deadline"); return 0;
+                }))) {
+                    profile.Target = "changed.outside"; timer.Tick += delegate { ticks++; }; timer.Start(); KeyUiReady(form);
+                    var choices = (ComboBox)Field(form, "identities"); var add = (Button)Field(form, "addKey");
+                    var retry = (Button)Field(form, "retry"); var cancel = (Button)Field(form, "cancel"); var report = (TextBox)Field(form, "report");
+                    Check(worker != ui && checks == 1 && choices.Items.Count == 2 && choices.SelectedIndex == -1 && choices.Enabled && !add.Enabled,
+                        "profile snapshot and key preparation run off UI; multiple identities require an explicit selection");
+                    choices.SelectedIndex = 1;
+                    Check(add.Enabled && choices.AccessibilityObject.Name.Contains("SSH-профиля") && add.AccessibilityObject.Description.Contains("OpenSSH") &&
+                        form.AcceptButton == null && ((Label)Field(form, "keyHint")).AccessibilityObject.Description.Contains("Парольная фраза"),
+                        "selected key action explains native secret entry and has no implicit Enter action");
+                    KeyboardWalk(form, new Control[] { report, choices, add, retry, cancel }, "SSH key addition ready");
+                    form.ClientSize = new Size(650, 560); form.PerformLayout();
+                    Check(report.Height > 60 && add.Right <= add.Parent.ClientSize.Width && choices.Right <= choices.Parent.ClientSize.Width &&
+                        ((Label)Field(form, "keyHint")).Height >= TextRenderer.MeasureText(((Label)Field(form, "keyHint")).Text, form.Font,
+                            new Size(((Label)Field(form, "keyHint")).Width, Int32.MaxValue), TextFormatFlags.WordBreak).Height,
+                        "minimum-size key selection keeps its controls and explanation inside the form");
+                    Shot(form, "ssh-key-add-ready-minimum"); form.ClientSize = new Size(790, 660);
+                    diagnostic.IdentityPaths["second key"] = Path.Combine(root, "changed key"); diagnostic.ExecutablePath = "changed.exe";
+                    var watch = Stopwatch.StartNew(); add.PerformClick(); var work = form.Work;
+                    try {
+                        PumpUntil(() => entered.IsSet && ticks >= 3);
+                        Check(watch.ElapsedMilliseconds < 1500 && worker != ui && !work.IsCompleted && !retry.Enabled && !choices.Enabled && !add.Enabled && cancel.Enabled &&
+                            cancel.AccessibilityObject.Name == "Отменить добавление" && cancel.AccessibilityObject.Description.Contains("не удаляется"),
+                            "key addition starts on an owned background worker while UI heartbeat and cancel stay active");
+                        Check(selected.IdentityPath == Path.Combine(root, "second key") && selected.Executable == Path.Combine(root, "ssh-add.exe"),
+                            "the chosen key request remains immutable after the diagnostic object changes");
+                        Shot(form, "ssh-key-add-pending"); add.PerformClick(); retry.PerformClick(); cancel.PerformClick();
+                        Check(ownerToken.IsCancellationRequested && !cancel.Enabled && !work.IsCompleted && adds == 1 && checks == 1 &&
+                            SshAgentServiceProbe.Shared.ReadAsync(1000, CancellationToken.None).GetAwaiter().GetResult().State == SshAgentProbeState.Busy,
+                            "cancelled UI addition retains the shared native owner and rejects duplicate add or retry until cleanup");
+                        release.Set(); PumpUntil(() => work.IsCompleted); work.GetAwaiter().GetResult();
+                        Check(form.Visible && ((Label)Field(form, "status")).Text.Contains("Операция отменена") && report.TextLength == 0 &&
+                            choices.Items.Count == 0 && !add.Enabled && retry.Enabled && cancel.Text == "Закрыть" && checks == 1,
+                            "late addition success cannot replace cancellation or leave stale key inventory available");
+                        Shot(form, "ssh-key-add-cancelled"); retry.PerformClick(); PumpUntil(() => form.Work.IsCompleted);
+                        Check(checks == 2 && choices.Items.Count == 2 && choices.SelectedIndex == -1 && !add.Enabled,
+                            "a fresh explicit check is required to choose a key again after an attempted mutation");
+                    } finally { release.Set(); AgentProbeSettled(work); form.Close(); }
+                }
+            }
+        }
+        private static void KeyUiOutcomes(string root)
+        {
+            foreach (var state in new[] { SshAgentKeyAddState.CommandCompleted, SshAgentKeyAddState.CommandFailed, SshAgentKeyAddState.AgentUnavailable,
+                SshAgentKeyAddState.TimedOut, SshAgentKeyAddState.Busy, SshAgentKeyAddState.Failed }) {
+                using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "selected.fixture" }, (p, t) => KeyUiProfile(root, "selected key"),
+                    (request, token) => new SshAgentKeyAddResult(state, state == SshAgentKeyAddState.CommandFailed ? (int?)1 : null,
+                        state == SshAgentKeyAddState.Failed ? (int?)5 : null))) {
+                    KeyUiReady(form); var add = (Button)Field(form, "addKey");
+                    bool ready = add.Enabled; add.PerformClick(); PumpUntil(() => form.Work.IsCompleted); form.Work.GetAwaiter().GetResult();
+                    string status = ((Label)Field(form, "status")).Text;
+                    Check(ready && status.Contains(new SshAgentKeyAddResult(state).ToDisplay()) &&
+                        (state != SshAgentKeyAddState.CommandFailed || status.Contains("Код ssh-add: 1")) &&
+                        (state != SshAgentKeyAddState.Failed || status.Contains("Код Windows: 5")) &&
+                        ((ComboBox)Field(form, "identities")).Items.Count == 0 && !add.Enabled && ((Button)Field(form, "retry")).Enabled,
+                        "typed key addition UI outcome invalidates old key evidence without claiming authentication: " + state);
+                    if (state == SshAgentKeyAddState.CommandCompleted) Shot(form, "ssh-key-add-completed");
+                    if (state == SshAgentKeyAddState.AgentUnavailable) Shot(form, "ssh-key-add-agent-error");
+                    form.Close();
+                }
+            }
+        }
+        private static void KeyUiClosed(string root, bool dispose)
+        {
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+                CancellationToken token = CancellationToken.None; int late = 0;
+                using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "selected.fixture" }, (p, t) => KeyUiProfile(root, "selected key"),
+                    (request, owner) => SshAgentKeyAdd.Run(request, owner, (e, a, ep, ms, t) => {
+                        token = t; entered.Set(); if (!release.Wait(15000)) throw new TimeoutException("Closed key UI release deadline"); return 0;
+                    }))) {
+                    KeyUiReady(form); ((Button)Field(form, "addKey")).PerformClick();
+                    var work = form.Work;
+                    try {
+                        Check(entered.Wait(3000), "closable key UI reaches its native owner: " + dispose);
+                        ((Label)Field(form, "status")).TextChanged += delegate { late++; };
+                        var watch = Stopwatch.StartNew(); if (dispose) form.Dispose(); else form.Close();
+                        Check(watch.ElapsedMilliseconds < 1000 && token.IsCancellationRequested && !work.IsCompleted &&
+                            SshAgentServiceProbe.Shared.ReadAsync(1000, CancellationToken.None).GetAwaiter().GetResult().State == SshAgentProbeState.Busy,
+                            "Close or Dispose cancels immediately without freeing held key cleanup or waiting on UI: " + dispose);
+                        release.Set(); AgentProbeSettled(work); work.GetAwaiter().GetResult(); Application.DoEvents();
+                        using (var lease = SshReadOnlyLease.TryAcquire(CancellationToken.None)) {
+                            Check(form.IsDisposed && form.KeyWork.IsCompleted && late == 0 && lease != null,
+                                "late key completion settles without a live UI pump, stale publication or leaked lease: " + dispose);
+                        }
+                    } finally { release.Set(); AgentProbeSettled(work); }
+                }
+            }
+        }
+        private static void KeyUiQueuedCancellation(string root)
+        {
+            using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "selected.fixture" }, (p, t) => KeyUiProfile(root, "selected key"),
+                (request, token) => new SshAgentKeyAddResult(SshAgentKeyAddState.CommandCompleted))) {
+                KeyUiReady(form); ((Button)Field(form, "addKey")).PerformClick(); AgentProbeSettled(form.KeyWork);
+                bool queued = !form.Work.IsCompleted; ((Button)Field(form, "cancel")).PerformClick(); PumpUntil(() => form.Work.IsCompleted);
+                Check(queued && ((Label)Field(form, "status")).Text.Contains("Операция отменена") && !((Button)Field(form, "addKey")).Enabled,
+                    "cancel before queued key publication suppresses an already completed successful result"); form.Close();
+            }
+            using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "selected.fixture" }, (p, t) => KeyUiProfile(root, "selected key"))) {
+                form.Show(); AgentProbeSettled(form.CheckWork); bool queued = !form.Work.IsCompleted;
+                ((Button)Field(form, "cancel")).PerformClick(); PumpUntil(() => form.Work.IsCompleted);
+                Check(queued && ((ComboBox)Field(form, "identities")).Items.Count == 0 && !((Button)Field(form, "addKey")).Enabled &&
+                    ((Label)Field(form, "keyHint")).Text.Contains("отменена"), "cancel before queued diagnostics cannot publish eligible key choices"); form.Close();
             }
         }
     }

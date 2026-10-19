@@ -1,5 +1,10 @@
 # Остаток ProGo: 8 открытых пунктов, 55 рабочих подпунктов
 
+19.10.2026 PGA-06C: Add Key UI/selection/lifetime и40 новых dev checks
+подготовлены; **Code/Dev PENDING до completed CI**, visual пока NOT_CHECKED
+([протокол](MICROTASK_SSH_KEY_ADD_UI.md)). Это микрошаг F31-R11;6/55,49=37+12,
+23/31 и все55 исходных ID сохранены.
+
 18.10.2026 PGA-06B: общая SCM/startup/key coordination — узкий **Code/Dev PASS**
 source1000e1c057ce529909ab1ee791b838eb0395c2ff,
 completed [CI574](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39165129385),

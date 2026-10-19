@@ -130,6 +130,12 @@ VPS; конкретные адреса, пользователи и пути н�
 
 ## PGA: микрозадачи, состояние и существующие ID
 
+19.10.2026 PGA-06C: explicit Add Key в SshDiagnosticForm, выбор identity,
+фоновый immutable request/backend и cancel/close/freshness подготовлены.
+40 новых UI checks/6 screenshots ожидают completed CI/просмотра — **PENDING**
+([протокол](MICROTASK_SSH_KEY_ADD_UI.md)). PGA-06/08 целиком не закрыты;
+service Start UI/signing/auth ordering/live gates остаются отдельно.
+
 18.10.2026 PGA-06B: общий process-wide lease SCM read/start/startup и
 inventory/fingerprint/add до фактического cleanup, включая timeout/cancel,
 принят узким **Code/Dev PASS** source1000e1c057ce529909ab1ee791b838eb0395c2ff,
