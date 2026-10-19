@@ -1,12 +1,31 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
-## Текущий checkpoint: SSH-agent PGA-06C — Code/Dev PENDING, счёт6/55
+## Текущий checkpoint: SSH-agent PGA-06C — узкий Code/Dev PASS, счёт6/55
 
-19.10.2026 UTC подготовлен Add Key UI: выбор effective identity, фоновый immutable
-request/backend, guards, cancellation/close и invalidation старой key evidence.
-Ожидаются40 новых UI checks/Desktop4471=4431+40 и6 screenshots. Native/visual CI
-ещё не принят ([протокол/границы](MICROTASK_SSH_KEY_ADD_UI.md)).
-Счёт6/55,49=37+12,23/31; F31-R11/PGA-06 OPEN, Package PENDING/Live NOT_CHECKED.
+19.10.2026 UTC explicit Add Key UI/selection/guards/lifetime принят на source
+62b0a7e1ac29ec41981104e8b7e8992fc7b755e4, treeb46b4af592245bcf16d6892354ec3088f6368707,
+merge82e00b34cd9491856f6614f3bd11659b63b7696b в прежний main4bb3365.
+[CI579](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39222677873) completed
+SUCCESS: Windows117961573015/Ubuntu117961572586,40 новых UI checks/Desktop4471.
+Immutable request готовится в фоне, общий lease до cleanup, queued cancel/close
+подавляют stale publication; любая попытка требует свежей проверки перед Add.
+Парольная фраза только в OpenSSH; success не является signing/server-auth proof.
+Просмотрены6 свежих PNG, включая minimum size: clipping caption исправлен.
+High DPI/high contrast/Narrator/количественный contrast отдельно NOT_CHECKED.
+Source/native/visual review самостоятельный; независимого agent review не было.
+
+Дополнительно исправлен допуск measurement sample в частичный последний interval:
+2 deterministic regressions/measurement26 PASS, budgets и native assertion прежние.
+Это не доказывает неизвестный native call/budget575. История FAIL575–577 и
+CANCELLED578 сохранена;576 oracle cause UNKNOWN, rerun нет
+([протокол](MICROTASK_SSH_KEY_ADD_UI.md)). Прежние43 coordination/45 console и
+agent blocks, весь Test-ProGo, HomeVPN975/portable90/public295/44 PASS.
+Windows Python22PASS+2 прежних Linux-only skips, Ubuntu16/9/46 без skips и весь
+QR/TLS tail PASS. Все4 artifact metadata проверены; только screenshots ZIP скачан,
+actual digest/299entries проверены,6 PNG просмотрены. Остальные3 ZIP не скачивались.
+Service Start UI, selected-key/signing/auth ordering и полный F31-R11 остаются
+открытыми.6/55,49=37+12,23/31; PGA-06/F31/F17 OPEN, R05 PARTIAL,
+Package PENDING/Live NOT_CHECKED. Устройства и ключи владельца не затронуты.
 
 ## Предыдущий checkpoint: SSH-agent PGA-06B — узкий Code/Dev PASS, счёт6/55
 

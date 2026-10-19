@@ -1,6 +1,6 @@
 # PGA-06C — явное добавление выбранного ключа в диагностике SSH
 
-**19.10.2026 UTC. Реализация подготовлена, Code/Dev PENDING до completed CI.**
+**19.10.2026 UTC. Узкий PGA-06C Code/Dev PASS по completed CI579 и6 свежим PNG.**
 Родитель `6dcb41b0d09924ac36711a1b83bbd18347b4bb2f`, предыдущий принятый
 runtime source `1000e1c057ce529909ab1ee791b838eb0395c2ff` / completed CI574.
 Небольшой пакет внутри F31-R11: выбор identity и действие Add Key; lifetime/
@@ -50,8 +50,8 @@ ownerClosed guards сохранены. Неканцелируемый OS file pr
 
 ## Проверки
 
-Новый workflow в уже подключённом Desktop partial, ожидается **40 checks**,
-Desktop4471=4431+40. Старые assertions/watchdog/workflows не ослаблены.
+Новый workflow в уже подключённом Desktop partial: **40 checks PASS**,
+Desktop4471=4431+40 по CI579. Старые assertions/watchdog/workflows не ослаблены.
 
 - 9 policy/path/helper/no-key вариантов с specific reason/no mutation.
 - Multi-key explicit selection, immutable request, background work и heartbeat.
@@ -67,8 +67,8 @@ UI fixtures используют fake sibling files и production SshAgentKeyAdd
 управляемым runner boundary; реальные ключи и системный агент не используются.
 Реальный OpenSSH encrypted-key/console oracle остаётся в прежних45 backend checks
 полной CI матрицы. Одно составное UI→настоящий системный агент→server login
-не заявляется. Подготовлены6 UI screenshots: unavailable, ready-minimum, pending,
-cancelled, completed, agent-error. Native/visual PASS до CI/просмотра не заявлен.
+не заявляется. Все6 UI screenshots из completed CI579 просмотрены: unavailable,
+ready-minimum, pending, cancelled, completed, agent-error. Точные границы ниже.
 Локального Windows/.NET runtime нет. Source review самостоятельный;
 независимого agent review не было.
 
@@ -172,13 +172,88 @@ unavailable показывают обрезанную снизу надпись 
 
 В key table явно задана единственная percent100 row, у заполняющей её кнопки
 AutoSize=false и MiddleCenter. Layout assertion усилен нижней границей кнопки и
-вместимостью caption+padding, число40 сохранено. Header/report/hints/status и
-остальные3 result PNG читаемы; visual PASS для нового layout пока не заявлен.
+вместимостью caption+padding, число40 сохранено. Caption был обрезан во всех6 PNG;
+остальные header/report/hints/status читаемы. Новый layout на том шаге ещё не принят.
 Source dcf47d1/CI578 superseded этим исправлением до приёмки; его частичный
 результат не будет выдан за проверку финального source. Нужны новые native CI
 и свежие6 PNG. Самостоятельный visual review; независимого agent review не было.
 
-## Открытые границы
+## Native/visual приёмка: CI579 SUCCESS
+
+Tested source `62b0a7e1ac29ec41981104e8b7e8992fc7b755e4`, tree
+`b46b4af592245bcf16d6892354ec3088f6368707`, merge
+`82e00b34cd9491856f6614f3bd11659b63b7696b` в неизменный main
+`4bb336575bb1216d3047bd2b294aeecad9fdd65a`.
+[CI579](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39222677873)
+completed SUCCESS: Windows117961573015/Ubuntu117961572586, весь run SUCCESS.
+Оба checkout log подтверждают source/merge/base, build identity0.2.2+merge82e00b3.
+CI578/run39222454187/source dcf47d16af0ea73c2e7c41c0bff75a095ef44790
+completed CANCELLED при supersession layout correction; не принят. FAIL575–577
+сохранены. Rerun не выполнялся, прежние UNKNOWN причины не переопределены.
+
+UI block BEGIN08:38:15.2724283UTC →40 отдельных PASS →marker40
+08:38:18.0737053UTC; Desktop4471=4431+40 в08:39:00.0972369UTC.
+Все eligibility, immutable selected path, keyboard, minimum layout с Bottom/
+caption guard, pending shared lease, cancellation/close/dispose/queued publication
+и6 typed outcomes PASS. Это native WinForms + production key lease с injected
+runner boundary. Не combined UI→системный агент→server login и не live приёмка.
+Прежний actual OpenSSH console/encrypted-key/isolated ADD_IDENTITY flow45 PASS,
+coordination43/start66/startup40/inventory67/matching52/policy57 и прежние37 SCM/
+32 probe сохранены. Actual SCM oracle08:37:59.1656134UTC: runtime1/Stopped,
+startup4/Disabled, statusError0/configError0; системный StartService не выполнялся.
+
+Measurement26 PASS08:31:14.8975801UTC:2 deterministic tail regressions и24 прежних
+checks, actual sampling completed/samples5/working/private/io=True. Native assertion,
+duration1500/interval250 и blocked-probe timeout/cancellation checks прежние;
+настоящий in-flight timeout не становится completed. Native policy57 PASS не
+доказывает причину576; неизвестный native call/budget575 и старые570/572 не объяснены.
+
+Весь Test-ProGo PASS08:41:46.0545180UTC: SOCKS41/403, Instance28,
+Maintenance95/Shutdown47/updater5. HomeVPN975 — 08:45:10.3245760UTC,
+portable90 — 08:46:58.6440475UTC, public295source/44release — 08:47:01.8276578UTC.
+Windows Python24=22PASS+2 прежних Linux-only skips. Ubuntu16/9/46 без skips,
+independent QR и весь TLS/recovery/revocation/session tail PASS. Только прежний
+Prune old CI artifacts SKIPPED; все тестовые steps SUCCESS.
+
+Полные нормализованные логи579: Windows8975lines/975810bytes,
+SHA256 `9bace3f66b9ced4dffe1e9d67d79d45423fcac26afbc0fdd5e15699c98428908`;
+Ubuntu573lines/55154bytes,
+SHA256 `544e0725aa037173fed81196cdb6c998882ec61a4b8b40d531fe9d053f992e93`.
+
+Все4 artifact source/run/name/ID/size/digest сверены с API/upload log.
+
+| Artifact | ID | Outer ZIP bytes | SHA256 |
+| --- | ---: | ---: | --- |
+| ProGo-release-zip | 12173536572 | 543103 | 2470a36d68959148571af48e7ab7895338503a8b5dafb95d887ff324cdc19a65 |
+| ProGo-release | 12173441987 | 549784 | 6dce5362c7407967c6518b6b6521c3c61353c6bd54ecc25a90223d97fab38960 |
+| ProGo-ci-diagnostics | 12173053857 | 96105 | d7c01011ed16fc2c70e67553ba56b88f5b8b1b8b78c5f50b1122a8ac3ab20af3 |
+| ProGo-wizard-screenshots | 12172789225 | 6688298 | 9c4f56631cf176544ba8aafeb403bf16f6a19c6158abc98d33f56b303199b5ba |
+
+Только screenshots ZIP скачан; actual ZIP SHA256 совпал с API,299 entries.
+Извлечены и просмотрены6 новых PNG: кнопка полностью видна в ready-minimum,
+disabled/pending/error/result; hints/status/Cancel читаемы, видимых пересечений
+нет. Размеры ready-minimum666×599, остальных806×699 — размеры окна harness.
+Build0.0.0.0 в fake desktop harness не является версией release ProGo0.2.2+merge.
+Отдельные high DPI/high contrast/Narrator сценарии и количественный contrast
+этой новой формы не проверялись и PASS не заявлен. Visual/source/native review
+самостоятельный; независимого agent review не было.
+
+| PNG | SHA256 |
+| --- | --- |
+| ssh-key-add-ready-minimum.png | ac7a5cb1b7df92711bf0587e0571366a535a0481be52d39234c56c0f692bbae2 |
+| ssh-key-add-pending.png | 42cedd90b5bb2598ef75705ae5210105b1c54981235de944e54e245ef0d3bfac |
+| ssh-key-add-unavailable.png | 0d4caf9f6254791d1471ba62cf262c19fa28977f410e81637d49f2ce5b4c0ad3 |
+| ssh-key-add-cancelled.png | 4f8ec901e64f7b2c24ea43e94f3b1f6466af7a3ed683d6d22881f2da597c05d4 |
+| ssh-key-add-completed.png | 7daf708602bda3f54e844e1f7ec7dd348231271b516f7244dd40377d2a927f0c |
+| ssh-key-add-agent-error.png | 4de783554acdb7d203fdd88afe37358a5de1f0d75707d4aef94d1bc8a8b24723 |
+
+Остальные3 ZIP не скачивались; inner ProGo-release.zip546480bytes отличается от
+outer artifact ZIP. Это не итоговый31/31 установщик. Evidence после tested
+source — только4 Markdown, runtime/tests/scripts/server/workflows/VERSION
+идентичны. Следующий микрошаг — explicit service Start в этом окне; readiness/
+signing и остальные gates ниже не закрыты. Счёт6/55,49=37+12,23/31 сохранён.
+
+## Следующие шаги и ограничения
 
 Selected-key binding/signing/constraints/cert/FIDO/custom endpoint, service Start
 action в UI, auth readiness/AutoStartSocks ordering, ACL diagnostics/repair и

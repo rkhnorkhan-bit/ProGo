@@ -1,17 +1,20 @@
 # Остаток ProGo: 8 открытых пунктов, 55 рабочих подпунктов
 
-19.10.2026 PGA-06C: Add Key UI/selection/lifetime и40 новых dev checks
-подготовлены; **Code/Dev PENDING до completed CI**, visual пока NOT_CHECKED
-([протокол](MICROTASK_SSH_KEY_ADD_UI.md)). Это микрошаг F31-R11;6/55,49=37+12,
-23/31 и все55 исходных ID сохранены.
+19.10.2026 PGA-06C: Add Key UI/selection/lifetime — узкий **Code/Dev PASS**
+source62b0a7e1ac29ec41981104e8b7e8992fc7b755e4,
+completed [CI579](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39222677873),
+Windows/Ubuntu SUCCESS,40 новых UI checks/Desktop4471. Все6 свежих PNG просмотрены,
+clipping устранён; отдельные DPI/Narrator gates не закрыты
+([протокол, FAIL575–577/CANCELLED578](MICROTASK_SSH_KEY_ADD_UI.md)). Это микрошаг
+F31-R11;6/55,49=37+12,23/31 и все55 исходных ID сохранены.
 
 18.10.2026 PGA-06B: общая SCM/startup/key coordination — узкий **Code/Dev PASS**
 source1000e1c057ce529909ab1ee791b838eb0395c2ff,
 completed [CI574](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39165129385),
 Windows/Ubuntu SUCCESS,43 новых checks/Desktop4431=4387+43+1 fixture setup
 ([протокол и FAIL570–573 history](MICROTASK_SSH_AGENT_COORDINATION.md)).
-Это микрошаг F31-R11, без нового PASS55. Add Key UI, auth readiness и startup
-SOCKS ordering впереди. Счёт6/55,49=37+12,23/31 сохранён; причины старых
+Это микрошаг F31-R11, без нового PASS55. Add Key UI принят следующим PGA-06C;
+auth readiness и startup SOCKS ordering впереди.6/55,49=37+12,23/31; причины старых
 measurement570 и конкретного Stop caller572 UNKNOWN, guards не ослаблены.
 
 PGA-06A — узкий **Code/Dev PASS** на source9db506714bb26320246e4519aaf2927934dde14f,
@@ -19,7 +22,7 @@ completed [CI569](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/390437991
 45 новых checks/Desktop4387, Windows/Ubuntu SUCCESS. Управляемая отдельная консоль,
 backend одного selected key, actual ssh-keygen/encrypted key/1 entry ssh-add/
 isolated agent pipe подтверждены ([границы и FAIL565/568 history](MICROTASK_SSH_INTERACTIVE_KEY_ADD.md)).
-Общая SCM/startup/key coordination принята следующим PGA-06B; UI/freshness,
+Общая SCM/startup/key coordination принята PGA-06B, Add Key UI/freshness — PGA-06C;
 startup auth ordering и private-key/signing/auth proof ещё впереди. Общий
 счёт **6/55**,49=37+12 и23/31 сохранён; полный PGA-06/F31-R11 открыт.
 
