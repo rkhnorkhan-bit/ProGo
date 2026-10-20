@@ -373,5 +373,171 @@ namespace ProGo
                 } finally { release.Set(); AgentProbeSettled(form.CheckWork); }
             }
         }
+        private static SshProfileDiagnosticResult AgentStartUiProfile(SshAgentRuntimeState runtime, SshAgentStartMode mode,
+            SshAgentProbeState probeState = SshAgentProbeState.Completed)
+        {
+            var result = new SshProfileDiagnosticResult { Target = "agent.fixture", SshResolved = true };
+            result.AgentProbe = new SshAgentProbeResult(probeState,
+                new SshAgentServiceSnapshot { RuntimeState = runtime, StartMode = mode });
+            result.AgentService = result.AgentProbe.Snapshot;
+            result.AgentState = result.AgentProbe.ToDisplay();
+            return result;
+        }
+        private static SshAgentServiceStartResult AgentStartUiSuccess()
+        {
+            return new SshAgentServiceStartResult { State = SshAgentStartState.Running,
+                Snapshot = new SshAgentServiceSnapshot { RuntimeState = SshAgentRuntimeState.Running, StartMode = SshAgentStartMode.Manual } };
+        }
+        private static void SshAgentStartUiWorkflow()
+        {
+            int before = passed; Console.WriteLine("SSH-agent explicit start UI checks BEGIN");
+            bool previous = Control.CheckForIllegalCrossThreadCalls; Control.CheckForIllegalCrossThreadCalls = true;
+            try {
+                AgentStartUiEligibility(); AgentStartUiCompleted(); AgentStartUiCancellation(false);
+                AgentStartUiCancellation(true); AgentStartUiClosed(false); AgentStartUiClosed(true);
+                AgentStartUiQueuedCancellation();
+            } finally { Control.CheckForIllegalCrossThreadCalls = previous; }
+            Console.WriteLine("SSH-agent explicit start UI checks PASS: " + (passed - before));
+        }
+        private static void AgentStartUiEligibility()
+        {
+            var cases = new[] {
+                new { Runtime = SshAgentRuntimeState.Stopped, Mode = SshAgentStartMode.Manual, State = SshAgentProbeState.Completed, Ready = true, Reason = "текущими правами" },
+                new { Runtime = SshAgentRuntimeState.Stopped, Mode = SshAgentStartMode.Unknown, State = SshAgentProbeState.Completed, Ready = true, Reason = "текущими правами" },
+                new { Runtime = SshAgentRuntimeState.Stopped, Mode = SshAgentStartMode.Disabled, State = SshAgentProbeState.Completed, Ready = false, Reason = "Disabled" },
+                new { Runtime = SshAgentRuntimeState.Running, Mode = SshAgentStartMode.Manual, State = SshAgentProbeState.Completed, Ready = false, Reason = "уже запущена" },
+                new { Runtime = SshAgentRuntimeState.Missing, Mode = SshAgentStartMode.Unknown, State = SshAgentProbeState.Completed, Ready = false, Reason = "не найдена" },
+                new { Runtime = SshAgentRuntimeState.StartPending, Mode = SshAgentStartMode.Manual, State = SshAgentProbeState.Completed, Ready = false, Reason = "Stopped" },
+                new { Runtime = SshAgentRuntimeState.Stopped, Mode = SshAgentStartMode.Manual, State = SshAgentProbeState.Busy, Ready = false, Reason = "не подтверждено" }
+            };
+            foreach (var item in cases) {
+                int starts = 0;
+                using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "agent.fixture" },
+                    (p, t) => AgentStartUiProfile(item.Runtime, item.Mode, item.State), null,
+                    new SshAgentServiceProbe(t => { throw new Exception("Unexpected read"); }, t => { Interlocked.Increment(ref starts); return AgentStartUiSuccess(); }))) {
+                    var start = (Button)Field(form, "startAgent");
+                    Check(!start.Enabled, "service start is disabled until diagnostics finish: " + item.Runtime + "/" + item.Mode);
+                    KeyUiReady(form);
+                    Check(start.Enabled == item.Ready && start.AccessibilityObject.Description.Contains(item.Reason),
+                        "service start is offered only for confirmed stopped, non-disabled service: " + item.Runtime + "/" + item.Mode + "/" + item.State);
+                    if (!item.Ready) { start.PerformClick(); Check(starts == 0, "ineligible start cannot mutate service: " + item.Runtime + "/" + item.Mode); }
+                    if (item.Ready && item.Mode == SshAgentStartMode.Manual) {
+                        form.ClientSize = new Size(650, 560); form.PerformLayout();
+                        var report = (TextBox)Field(form, "report"); var retry = (Button)Field(form, "retry"); var cancel = (Button)Field(form, "cancel");
+                        KeyboardWalk(form, new Control[] { report, start, retry, cancel }, "SSH service start ready");
+                        Check(start.Right <= start.Parent.ClientSize.Width && start.Bottom <= start.Parent.ClientSize.Height &&
+                            start.ClientSize.Height >= TextRenderer.MeasureText(start.Text, start.Font).Height + start.Padding.Vertical &&
+                            form.AcceptButton == null, "minimum-size service start action stays visible without implicit Enter start");
+                        Shot(form, "ssh-agent-start-ready-minimum");
+                    }
+                    if (item.Mode == SshAgentStartMode.Disabled) Shot(form, "ssh-agent-start-disabled");
+                    form.Close();
+                }
+            }
+        }
+        private static void AgentStartUiCompleted()
+        {
+            foreach (var kind in new[] { "running", "denied", "unavailable" }) {
+                int starts = 0, reads = 0;
+                var probe = new SshAgentServiceProbe(t => { Interlocked.Increment(ref reads); throw new Exception("Unexpected read"); }, t => {
+                    Interlocked.Increment(ref starts);
+                    if (kind == "unavailable") throw new Exception("PRIVATE_NATIVE_ERROR");
+                    if (kind == "denied") return new SshAgentServiceStartResult {
+                        State = SshAgentStartState.AccessDenied,
+                        Snapshot = new SshAgentServiceSnapshot { RuntimeState = SshAgentRuntimeState.Stopped, StartMode = SshAgentStartMode.Manual },
+                        Error = new SshAgentServiceError { Stage = SshAgentServiceStage.OpenStartService, Kind = SshAgentServiceErrorKind.NativeFailure, Win32Code = 5 }
+                    };
+                    return AgentStartUiSuccess();
+                });
+                using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "agent.fixture" },
+                    (p, t) => AgentStartUiProfile(SshAgentRuntimeState.Stopped, SshAgentStartMode.Manual), null, probe)) {
+                    KeyUiReady(form); var start = (Button)Field(form, "startAgent"); start.PerformClick();
+                    PumpUntil(() => form.Work.IsCompleted); form.Work.GetAwaiter().GetResult();
+                    var status = ((Label)Field(form, "status")).Text;
+                    Check(starts == 1 && reads == 0 && !status.Contains("PRIVATE_") &&
+                        status.Contains(kind == "running" ? "работает" : kind == "denied" ? "Недостаточно прав" : "не подтверждено") &&
+                        (kind != "denied" || status.Contains("Win32 5")) &&
+                        ((TextBox)Field(form, "report")).TextLength == 0 && !start.Enabled &&
+                        ((Button)Field(form, "retry")).Enabled && ((ComboBox)Field(form, "identities")).Items.Count == 0,
+                        "typed service start result clears stale diagnostic evidence without claiming server login: " + kind);
+                    start.PerformClick(); Check(starts == 1, "a second start requires an explicit fresh service check: " + kind);
+                    if (kind == "running") Shot(form, "ssh-agent-start-completed");
+                    if (kind == "denied") Shot(form, "ssh-agent-start-denied");
+                    form.Close();
+                }
+            }
+        }
+        private static void AgentStartUiCancellation(bool timeout)
+        {
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+            using (var timer = new System.Windows.Forms.Timer { Interval = 15 }) {
+                int starts = 0, ticks = 0; CancellationToken workerToken = CancellationToken.None;
+                var probe = new SshAgentServiceProbe(t => { throw new Exception("Unexpected read"); }, t => {
+                    workerToken = t; Interlocked.Increment(ref starts); entered.Set();
+                    if (!release.Wait(15000)) throw new TimeoutException("UI start fixture release deadline");
+                    return AgentStartUiSuccess();
+                });
+                using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "agent.fixture" },
+                    (p, t) => AgentStartUiProfile(SshAgentRuntimeState.Stopped, SshAgentStartMode.Manual), null, probe)) {
+                    try {
+                        timer.Tick += delegate { ticks++; }; timer.Start(); KeyUiReady(form);
+                        var start = (Button)Field(form, "startAgent"); var cancel = (Button)Field(form, "cancel");
+                        start.PerformClick(); var work = form.Work;
+                        PumpUntil(() => entered.IsSet && ticks >= 3);
+                        Check(!work.IsCompleted && !start.Enabled && !((Button)Field(form, "retry")).Enabled &&
+                            cancel.Enabled && cancel.AccessibilityObject.Description.Contains("не остановит службу"),
+                            "service start keeps UI responsive and action guarded while native call is held: " + timeout);
+                        if (!timeout) Shot(form, "ssh-agent-start-pending");
+                        if (!timeout) cancel.PerformClick();
+                        PumpUntil(() => work.IsCompleted);
+                        Check(workerToken.IsCancellationRequested && !probe.PendingWork.IsCompleted &&
+                            SshAgentServiceProbe.Shared.ReadAsync(1000, CancellationToken.None).GetAwaiter().GetResult().State == SshAgentProbeState.Busy &&
+                            ((Label)Field(form, "status")).Text.Contains(timeout ? "истекло" : "отменено") &&
+                            !start.Enabled && starts == 1 && cancel.Text == "Закрыть",
+                            "timeout/cancel never releases an unfinished native owner or reports agent ready: " + timeout);
+                        if (!timeout) Shot(form, "ssh-agent-start-cancelled");
+                        release.Set(); AgentProbeSettled(probe.PendingWork);
+                        Check(!start.Enabled, "late native completion cannot republish stale start availability: " + timeout);
+                    } finally { release.Set(); AgentProbeSettled(probe.PendingWork); form.Close(); }
+                }
+            }
+        }
+        private static void AgentStartUiClosed(bool dispose)
+        {
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+                CancellationToken token = CancellationToken.None; int late = 0;
+                var probe = new SshAgentServiceProbe(t => { throw new Exception("Unexpected read"); }, t => {
+                    token = t; entered.Set(); if (!release.Wait(15000)) throw new TimeoutException("Closed start UI release deadline");
+                    return AgentStartUiSuccess();
+                });
+                using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "agent.fixture" },
+                    (p, t) => AgentStartUiProfile(SshAgentRuntimeState.Stopped, SshAgentStartMode.Manual), null, probe)) {
+                    KeyUiReady(form); ((Button)Field(form, "startAgent")).PerformClick(); var work = form.Work;
+                    try {
+                        Check(entered.Wait(3000), "service start reaches its owned worker: " + dispose);
+                        ((Label)Field(form, "status")).TextChanged += delegate { late++; };
+                        var watch = Stopwatch.StartNew(); if (dispose) form.Dispose(); else form.Close();
+                        AgentProbeSettled(work);
+                        Check(watch.ElapsedMilliseconds < 1000 && token.IsCancellationRequested && !probe.PendingWork.IsCompleted &&
+                            late == 0, "Close/Dispose cancels start waiter without blocking UI or publishing a late result: " + dispose);
+                        release.Set(); AgentProbeSettled(probe.PendingWork);
+                        using (var lease = SshReadOnlyLease.TryAcquire(CancellationToken.None))
+                            Check(lease != null && form.IsDisposed && late == 0, "native start cleanup releases shared lease after closed owner: " + dispose);
+                    } finally { release.Set(); AgentProbeSettled(probe.PendingWork); }
+                }
+            }
+        }
+        private static void AgentStartUiQueuedCancellation()
+        {
+            var probe = new SshAgentServiceProbe(t => { throw new Exception("Unexpected read"); }, t => AgentStartUiSuccess());
+            using (var form = new SshDiagnosticForm(new SshProfileSetting { Target = "agent.fixture" },
+                (p, t) => AgentStartUiProfile(SshAgentRuntimeState.Stopped, SshAgentStartMode.Manual), null, probe)) {
+                KeyUiReady(form); ((Button)Field(form, "startAgent")).PerformClick(); AgentProbeSettled(form.StartWork);
+                bool queued = !form.Work.IsCompleted; ((Button)Field(form, "cancel")).PerformClick(); PumpUntil(() => form.Work.IsCompleted);
+                Check(queued && ((Label)Field(form, "status")).Text.Contains("отменено") &&
+                    !((Button)Field(form, "startAgent")).Enabled, "cancel before queued service result publication suppresses accepted start as UI success");
+                form.Close();
+            }
+        }
     }
 }
