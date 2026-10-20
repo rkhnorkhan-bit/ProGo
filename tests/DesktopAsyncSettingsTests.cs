@@ -231,7 +231,23 @@ namespace ProGo
                     WaitIntegration(fixture.Context);
                     Check(!fixture.Context.SettingsPending && !fixture.Bridge.IsRunning,
                         "queued desktop Stop completes only after cold publication has safely settled");
-                    AssertPortReleased(fixture.Settings.Current.HttpProxyPort, "queued desktop Stop releases the actual fallback endpoint");
+                    // Windows can still report the just-closed listener briefly after
+                    // the owner task settles. Keep a real exclusive rebind assertion;
+                    // allow only bounded kernel release, never retry Stop or adopt it.
+                    var releasedPort = fixture.Settings.Current.HttpProxyPort;
+                    var releaseWatch = Stopwatch.StartNew(); bool rebound = false;
+                    while (releaseWatch.ElapsedMilliseconds < 1000) {
+                        try {
+                            var listener = Occupy(releasedPort);
+                            try { rebound = true; } finally { listener.Stop(); }
+                            break;
+                        } catch (System.Net.Sockets.SocketException ex) {
+                            if (ex.SocketErrorCode != System.Net.Sockets.SocketError.AddressAlreadyInUse) throw;
+                            Thread.Sleep(20);
+                        }
+                    }
+                    if (!rebound) AssertPortReleased(releasedPort, "queued desktop Stop releases the actual fallback endpoint within 1 s");
+                    else Check(true, "queued desktop Stop releases the actual fallback endpoint within 1 s");
                 } finally { release.Set(); WaitAsyncSettings(operation); }
             }
         }
