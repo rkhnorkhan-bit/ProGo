@@ -1,5 +1,26 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
+## Текущий checkpoint: SSH-agent PGA-06D — явный Start UI, узкий Code/Dev PASS
+
+20.10.2026 UTC source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, tree
+`7647304da881577f96a32dc1046aa6dbc95b0082`, merge
+`cf2e19691057c143b4f66d93c0041e2e1c5681a8`: [CI582](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39481464526)
+completed SUCCESS, Windows/Ubuntu. Кнопка запуска доступна только для
+подтверждённой остановленной и не Disabled службы. 46 новых UI checks,
+Desktop4517=4471+46, старый Add Key40 и SOCKS41/403 PASS. Все6 свежих PNG
+просмотрены, actual screenshot ZIP digest и305 записей сверены; metadata всех4
+artifacts проверены, остальные3 ZIP не скачивались. Устранена пустая область
+отчёта после попытки запуска: объясняется сброс наблюдений. Старый test-only
+immediate rebind после desktop Stop уточнён до реального exclusive bind за1s;
+CI580 attempt1/2 и CI581 FAIL сохранены, причины listener/SOCKS timeout UNKNOWN.
+([протокол и ограничения](MICROTASK_SSH_AGENT_START_UI.md)).
+
+Source/native/visual review самостоятельный, независимого agent review не было.
+PGA-06/F31-R11/F31/F17 OPEN, R05 PARTIAL; selected-key/signing/auth ordering,
+полные DPI/Narrator/live и итоговый installer остаются впереди. Счёт **6/55**,
+49=37+12, **23/31**; Package PENDING/Live NOT_CHECKED. Устройства владельца
+не затронуты.
+
 ## Текущий checkpoint: SSH-agent PGA-06C — узкий Code/Dev PASS, счёт6/55
 
 19.10.2026 UTC explicit Add Key UI/selection/guards/lifetime принят на source

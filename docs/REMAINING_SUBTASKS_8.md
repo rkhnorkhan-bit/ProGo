@@ -1,5 +1,13 @@
 # Остаток ProGo: 8 открытых пунктов, 55 рабочих подпунктов
 
+20.10.2026 PGA-06D: explicit Start ssh-agent UI — узкий **Code/Dev PASS**
+source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`,
+completed [CI582](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39481464526),
+Windows/Ubuntu SUCCESS,46 новых UI checks/Desktop4517,6 свежих PNG просмотрены
+([протокол, CI580/581 FAIL history](MICROTASK_SSH_AGENT_START_UI.md)).
+Это микрошаг внутри F31-R11, не новый исходный ID: **6/55**,49=37+12,
+**23/31**. Selected-key/signing/auth ordering, пакет и live остаются открытыми.
+
 19.10.2026 PGA-06C: Add Key UI/selection/lifetime — узкий **Code/Dev PASS**
 source62b0a7e1ac29ec41981104e8b7e8992fc7b755e4,
 completed [CI579](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39222677873),
