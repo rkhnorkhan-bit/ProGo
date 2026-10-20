@@ -428,7 +428,7 @@ namespace ProGo
                         Check(start.Right <= start.Parent.ClientSize.Width && start.Bottom <= start.Parent.ClientSize.Height &&
                             start.ClientSize.Height >= TextRenderer.MeasureText(start.Text, start.Font).Height + start.Padding.Vertical &&
                             form.AcceptButton == null, "minimum-size service start action stays visible without implicit Enter start");
-                        Shot(form, "ssh-agent-start-ready-minimum");
+                        report.Select(0, 0); start.Focus(); Shot(form, "ssh-agent-start-ready-minimum");
                     }
                     if (item.Mode == SshAgentStartMode.Disabled) Shot(form, "ssh-agent-start-disabled");
                     form.Close();
@@ -457,7 +457,8 @@ namespace ProGo
                     Check(starts == 1 && reads == 0 && !status.Contains("PRIVATE_") &&
                         status.Contains(kind == "running" ? "работает" : kind == "denied" ? "Недостаточно прав" : "не подтверждено") &&
                         (kind != "denied" || status.Contains("Win32 5")) &&
-                        ((TextBox)Field(form, "report")).TextLength == 0 && !start.Enabled &&
+                        ((TextBox)Field(form, "report")).Text.Contains("Результаты предыдущей проверки сброшены") &&
+                        !((TextBox)Field(form, "report")).Text.Contains("ssh-agent: Stopped") && !start.Enabled &&
                         ((Button)Field(form, "retry")).Enabled && ((ComboBox)Field(form, "identities")).Items.Count == 0,
                         "typed service start result clears stale diagnostic evidence without claiming server login: " + kind);
                     start.PerformClick(); Check(starts == 1, "a second start requires an explicit fresh service check: " + kind);

@@ -262,7 +262,8 @@ namespace ProGo
                 await Publish(delegate {
                     // A start request or concurrent operation invalidates the old
                     // service and key observations until a fresh local check.
-                    report.Clear(); ClearKeys("Сведения о ключах сброшены. Нажмите «Проверить ещё раз».");
+                    report.Text = "Результаты предыдущей проверки сброшены после попытки запуска службы. Нажмите «Проверить ещё раз», чтобы увидеть актуальное состояние агента, ключей и SSH-профиля.";
+                    ClearKeys("Сведения о ключах сброшены. Нажмите «Проверить ещё раз».");
                     SetStartAvailability(false, "Повторите проверку службы перед следующим запуском.");
                     status.Text = token.IsCancellationRequested
                         ? "Ожидание запуска отменено. Запрос Windows мог быть принят; повторите проверку службы."
