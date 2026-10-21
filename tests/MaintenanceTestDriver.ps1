@@ -46,7 +46,7 @@ foreach ($statement in $ast.EndBlock.Statements) {
     }
 }
 function Show-UserMessage($Text, $Title) {}
-function Show-UpdateDialog($Text, $Title, $Kind) { Set-Content -LiteralPath (Join-Path $Fixture 'update-dialog.txt') -Value ($Kind + "`n" + $Text) }
+function Show-UpdateDialog($Text, $Title, $Kind) { Set-Content -LiteralPath (Join-Path $Fixture 'update-dialog.txt') -Value ($Kind + "`n" + $Text) -Encoding UTF8 }
 function Test-UpdateRequired { $State.RemoteVersion = (Get-Content (Join-Path $Release 'VERSION')).Trim(); return $true }
 function Get-ReleaseDirForUpdate { return $Release }
 if ($Mode -eq 'restore-source-changed') {

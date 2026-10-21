@@ -252,7 +252,8 @@ try {
         Check ((Run (DriverInfo $mode)) -ne 0) "updater reports an incomplete rollback: $mode"
         $log = Get-Content -LiteralPath $updateLog -Raw
         Check ($log.Contains('Rollback incomplete. Backup retained:') -and -not $log.Contains('Rollback completed after failed main commit.') -and -not $log.Contains('Rollback program hashes, version and self-check PASS.')) "failed rollback cannot publish the verified-success markers: $mode"
-        $dialog = Get-Content -LiteralPath (Join-Path $fixture 'update-dialog.txt') -Raw
+        $dialog = Get-Content -LiteralPath (Join-Path $fixture 'update-dialog.txt') -Raw -Encoding UTF8
+        Write-Host ("Rollback dialog fixture: default code page=" + [Text.Encoding]::Default.CodePage + "; captured failure text=" + $dialog.Contains('откат не подтверждён'))
         Check ($dialog.Contains('откат не подтверждён') -and -not $dialog.Contains('проверено после восстановления')) "failed rollback UI does not promise a restored application: $mode"
         $failedCopies = @(Get-ChildItem -LiteralPath (Join-Path $install 'backups') -Directory | Where-Object {
             $manifest = Join-Path $_.FullName 'manifest.txt'

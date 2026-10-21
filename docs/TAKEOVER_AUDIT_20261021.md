@@ -290,3 +290,24 @@ empty, changedmanifest/latefolder, shutdown timeout/retry, delayed owner complet
 и forcedDispose без message pump. Fixture ждёт CleanupWork до возврата root.
 `BackupRetentionTests` дополнен real pre-cancel/no-delete. Runtime NOT_RUN;
 independent backend + root UI/test source review PASS. A05/F31-R06 PARTIAL.
+
+## CI584 FAIL и проверяемый fixture fix
+
+Windows job119442934997 log: signing55, signing UI50, settings preservation93,
+Desktop4739/Instance28 PASS. Maintenance выполнил реальную успешную проверку
+rollback hashes/version/compiled self-check. Затем injected rollback-copy-fail
+корректно дал rollback incomplete и не вывел verified-success markers; падение
+на semantic UI dialog assertion. `MaintenanceTestDriver.Show-UpdateDialog`
+сохранял русский Text через Set-Content default ANSI. PS5.1 Set-Content использует active ANSI для нового файла; потеря Cyrillic
+при записи — реконструкция причины по source и failure, точная ACP/bytes старого
+run недоступны при выключенных artifacts; runtime dialog в этом fixture подменён только capture.
+Исправление: явный EncodingUTF8 writer + reader в MaintenanceTests; literal
+«откат не подтверждён» и запрет ложного verified-success не меняются.
+CI584 сохраняется FAIL; оставшиеся maintenance vectors/shutdown/HomeVPN/package
+NOT_RUN. Native signing/settings scoped PASS не распространяется на новые commits.
+
+Основание encoding fix: [Microsoft about_Character_Encoding](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_Character_Encoding)
+описывает active ANSI для нового Set-Content файла Windows PowerShell5.1 и UTF8
+с BOM. В следующем fixture логируется только default CodePage и boolean
+ожидаемого текста; полный dialog/path/bytes не печатаются. Старый CI failure и
+реконструкция encoding причины различаются до fresh runtime результата.

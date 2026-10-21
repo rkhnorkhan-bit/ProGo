@@ -6,7 +6,7 @@
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "NOT_RUN: CI584 in_progress; CI583 failure retained in history",
+  "fresh_candidate_verification": "FAIL: CI584 fixture ANSI dialog serialization; signing55/UI50/settings93/Desktop4739 scoped PASS at source6b3122f0, later/new blocks NOT_RUN",
   "status_values": [
     "PASS",
     "FAIL",
@@ -329,7 +329,7 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "criterion": "Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения.",
-        "settings_initial_load_preservation": "PARTIAL: guarded writes and native suite prepared; NOT_RUN Windows; A11"
+        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -477,7 +477,7 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "criterion": "Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные.",
-        "settings_initial_load_preservation": "PARTIAL: guarded writes and native suite prepared; NOT_RUN Windows; A11"
+        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -1785,7 +1785,7 @@
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
         "criterion": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт.",
-        "settings_initial_load_preservation": "PARTIAL: guarded writes and native suite prepared; NOT_RUN Windows; A11"
+        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -1924,7 +1924,8 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN: previous source e9fcfc3 CI583 running; signing backend/UI not in that source",
         "historical_scoped_pass": false,
-        "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий."
+        "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
+        "selected_identity_signing": "PASS55 backend +50 UI at6b3122f0/2f6b901a CI584; visual/automatic auth preparation/live NOT_RUN; F31-R11 stays PARTIAL"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -2045,7 +2046,7 @@
     "observed": "public",
     "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
     "push": "PASS: API fast-forward with expected7861ea9, no force; source trees identical",
-    "ci": "NOT_RUN: CI584 in_progress",
+    "ci": "FAIL: CI584 completed; Ubuntu SUCCESS, Windows FAILURE",
     "pr88": "OPEN/DRAFT, head6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
     "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
   },
@@ -2120,15 +2121,31 @@
     "tested_merge": "2f6b901a6fd537e0e0eeb81c0431b200e29260b2",
     "run_id": 39663669399,
     "run_number": 584,
-    "status": "in_progress",
-    "acceptance": "NOT_RUN until completed exact-source evidence",
-    "artifact_upload": "public default disabled; private delivery not agreed"
+    "status": "completed",
+    "acceptance": "FAIL: rollback-copy-fail dialog text assertion; source-confirmed ANSI capture portability defect consistent with failure; old run ACP/bytes unavailable",
+    "artifact_upload": "public default disabled; private delivery not agreed",
+    "conclusion": "failure",
+    "scoped_pass": {
+      "ssh_selected_key_signing": 55,
+      "ssh_selected_key_signing_ui": 50,
+      "settings_initial_load_preservation": 93,
+      "desktop": 4739,
+      "ssh_agent_startup": 62,
+      "instance": 28
+    },
+    "not_run": [
+      "remaining Maintenance rollback vectors after copy-fail dialog assertion",
+      "ShutdownTests",
+      "HomeVPNTests",
+      "package"
+    ],
+    "next": "explicit UTF8 in fixture dialog writer and reader; preserve assertions; exact new-source CI"
   },
   "signing_microtask": {
     "status": "PARTIAL",
     "scope": "one selected effective public reference sign+verify + explicit UI",
     "source_review": "PASS independent; post-read freshness/UTF8 issues corrected",
-    "native": "NOT_RUN",
+    "native": "PASS scoped backend55/UI50 at source6b3122f0/merge2f6b901a CI584; visual NOT_RUN, overall CI failed later in maintenance",
     "visual": "NOT_RUN",
     "server_auth": "NOT_RUN",
     "source_protocol": "docs/MICROTASK_SSH_SELECTED_KEY_SIGNING.md"
@@ -2138,7 +2155,7 @@
     "status": "PARTIAL",
     "implementation": "Core.SettingsService initialLoadFailed sticky SaveCore guard, exclusive missing creation; fixed CLI save error",
     "source_review": "PASS independent source review",
-    "native": "NOT_RUN",
+    "native": "PASS93 at source6b3122f0/merge2f6b901a CI584; overall CI failed later in maintenance",
     "next": "exact Windows CI DesktopSettingsLoadFailureTests then package/target regression"
   },
   "ci_history": [

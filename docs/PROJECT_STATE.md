@@ -232,3 +232,22 @@ manual/unknown и junction guards сохранены. In-flight Directory.Delete
 Низкоуровневый pre-cancel/no-delete и10 native actor/preview/revalidation/lifecycle
 сценариев подготовлены. Отмена внутри OS delete не исполнена/не заявлена.
 Runtime всех новых retention изменений NOT_RUN до следующего CI; F31-R06 PARTIAL.
+
+## CI584 completed FAIL: scoped key/settings PASS, fixture encoding
+
+Source `6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8`,
+merge `2f6b901a6fd537e0e0eeb81c0431b200e29260b2`, run39663669399.
+Ubuntu SUCCESS, Windows FAILURE. Подтверждены backend signing55, signing UI50,
+settings initial-load preservation93, Desktop4739, agent startup62, Instance28.
+BOM/ранний parser fix CI583 прошёл; Maintenance дошёл до реального rollback.
+Первый новый rollback-copy-fail прошёл критерии failure и отсутствие false-success
+markers, затем упал assertion русского текста диалога. Driver записывал текст
+через Set-Content без encoding. PS5.1 default ANSI делает capture зависимым
+от active code page; потеря кириллицы — вывод по source/failure. Точная ACP и bytes
+CI584 не сохранены, поэтому это не отдельное наблюдение байтов старого run.
+Это отдельный дефект транспорта тестового evidence, не признание rollback PASS.
+Исправлены writer/read encoding на UTF8, исходные semantic assertions сохранены.
+Остальные rollback vectors/shutdown/HomeVPN/package NOT_RUN в этом CI.
+
+Source signing/settings criteria имеют scoped PASS на6b3122f0; visual review новых
+PNG и целевой ПК NOT_RUN. Новые retention/updater изменения требуют отдельного CI.
