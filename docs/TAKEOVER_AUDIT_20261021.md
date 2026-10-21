@@ -311,3 +311,22 @@ NOT_RUN. Native signing/settings scoped PASS не распространяетс
 с BOM. В следующем fixture логируется только default CodePage и boolean
 ожидаемого текста; полный dialog/path/bytes не печатаются. Старый CI failure и
 реконструкция encoding причины различаются до fresh runtime результата.
+
+## A06/F31-R07: async updater + проверенные source race fixes
+
+Файлы: UpdateLauncher.LaunchUpdater/CreateUpdaterStartInfo/UpdaterHandoffError;
+Context.StartUpdaterAsync/UpdaterCore/SettleReservedShutdown/CompleteBackupActivity;
+BackupWorkProgressForm optional title. Actual Update больше не вызывает sync
+StartUpdater/StartHandoff на UI. Worker возвращает accepted/error, контекст владеет
+reservation до native settlement и owner completion. Unknown cleanup не объявляется
+успешным; only fixed confirmed timeout result допускает «остановлен».
+
+Независимый reviewer нашёл и подтвердил исправление: stale timeout после Accepted,
+CancelShutdown до owner publication, stale settle против нового ordinary task,
+reentrant rejected callback и stuck preparing от старого reserved task.
+Guards сохраняют owned disable/cleanup; ранее admitted native-фаза завершает
+settlement до успешного preflight, новый reconnect после reservation не начинается.
+Final source review PASS: CTX SHA25691b70e5de03e39f3e2bf00b827260ecf3b299d5909a6a64bd13010d2cd7dee9e;
+AsyncUpdaterTests SHA256b032803879ed8ccca9c947790b3ed272f28ad74d7647253e06bdb9e8268f8db1.
+Backend native helper modes и10 Context сценариев подготовлены; Windows runtime
+NOT_RUN. Shared restore требует общей регрессии; A06/F31-R07 PARTIAL.

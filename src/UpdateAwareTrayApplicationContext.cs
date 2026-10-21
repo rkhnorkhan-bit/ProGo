@@ -60,6 +60,7 @@ namespace ProGo
         private Task<bool> shutdownTask, reservedShutdownTask;
         private BackupWorkSession maintenanceReservation;
         private bool maintenanceHandedOff;
+        private bool MaintenancePending { get { return maintenanceReservation != null || maintenanceHandedOff; } }
         private readonly Action<string, CancellationToken> beforeBackupCopy;
         private readonly int backupShutdownTimeoutMilliseconds;
         private CancellationTokenSource backupCancellation;
@@ -76,6 +77,8 @@ namespace ProGo
         internal Task RestoreWork { get; private set; }
         internal Func<BackupRetentionPlan, bool> CleanupConfirm;
         internal Task CleanupWork { get; private set; }
+        internal Func<ProcessStartInfo> UpdaterLaunchInfo;
+        internal Task UpdateWork { get; private set; }
         private Task backupCompletion = Task.FromResult(false);
         private BackupCreationForm backupForm;
         private readonly Func<bool, HomeVpnPortableForm> createPortableForm;
@@ -271,7 +274,7 @@ namespace ProGo
             if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
                 throw new InvalidOperationException("Проверку агента при старте планирует владелец интерфейса.");
             if (sshAgentStartup != null) return sshAgentStartup.Work;
-            if (closing || disposed || shutdownPrepared || shutdownPreparing) return sshAgentIdle;
+            if (closing || disposed || shutdownPrepared || shutdownPreparing || MaintenancePending) return sshAgentIdle;
             sshAgentStartup = new SshAgentStartupSession(probe ?? SshAgentServiceProbe.Shared, timeoutMilliseconds, report ?? (message => SafeLog.Info(message)));
             var work = sshAgentStartup.Schedule(action => activationDispatcher.BeginInvoke(action));
             ScheduleAutomaticTunnelStartup();
@@ -279,7 +282,7 @@ namespace ProGo
         }
         private void ScheduleAutomaticTunnelStartup()
         {
-            if (!settings.Current.AutoStartSocks || closing || disposed || shutdownPrepared || shutdownPreparing) return;
+            if (!settings.Current.AutoStartSocks || closing || disposed || shutdownPrepared || shutdownPreparing || MaintenancePending) return;
             var expected = settings.Capture(); long intent = ++automaticTunnelIntent;
             AutomaticTunnelStartupWork = StartAutomaticTunnelAfterAgent(expected, intent,
                 sshAgentStartup == null ? sshAgentIdle : sshAgentStartup.CheckCompletion);
@@ -292,7 +295,7 @@ namespace ProGo
                     // Manual control, a saved settings change, or shutdown wins
                     // before the first SSH request. A failed/disabled agent does
                     // not prohibit direct keys or other supported SSH methods.
-                    if (closing || disposed || shutdownPrepared || shutdownPreparing || intent != automaticTunnelIntent ||
+                    if (closing || disposed || shutdownPrepared || shutdownPreparing || MaintenancePending || intent != automaticTunnelIntent ||
                         settings.Revision != expected.Revision || !settings.Current.AutoStartSocks) return (Task<bool>)null;
                     return proxy.StartTunnelAsync(routeLifetime.Token);
                 }).ConfigureAwait(false);
@@ -308,7 +311,7 @@ namespace ProGo
                 throw new InvalidOperationException("Миграция ярлыков запускается владельцем интерфейса.");
             lock (shortcutMigrationGate) {
                 if (shortcutMigrationScheduled) return ShortcutMigrationWork;
-                if (closing || disposed || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
+                if (closing || disposed || shutdownPrepared || shutdownPreparing || MaintenancePending) return Task.FromResult(false);
                 shortcutMigrationScheduled = true;
                 var cancellation = new CancellationTokenSource(); shortcutMigrationCancellation = cancellation;
                 var token = cancellation.Token;
@@ -317,7 +320,7 @@ namespace ProGo
                 try { activationDispatcher.BeginInvoke(new Action(delegate {
                     lock (shortcutMigrationGate) {
                         if (source.Task.IsCompleted) return;
-                        if (closing || disposed || shutdownPrepared || shutdownPreparing || token.IsCancellationRequested) {
+                        if (closing || disposed || shutdownPrepared || shutdownPreparing || MaintenancePending || token.IsCancellationRequested) {
                             CancelShortcutMigration(); return;
                         }
                         shortcutMigrationStarted = true;
@@ -357,7 +360,7 @@ namespace ProGo
         }
         private void DashboardClosing(object sender, FormClosingEventArgs e)
         {
-            if (closing || disposed || shutdownPreparing || shutdownPrepared || e.CloseReason != CloseReason.UserClosing ||
+            if (closing || disposed || shutdownPreparing || shutdownPrepared || MaintenancePending || e.CloseReason != CloseReason.UserClosing ||
                 e.Cancel || settings.Current.TrayCloseExplained || !TrayPreferenceWork.IsCompleted) return;
             tray.ShowBalloonTip(6000, "ProGo остаётся в трее", "Закрытие окна не отключает подключения. Откройте ProGo значком рядом с часами. Для отключения используйте команды остановки, для выхода — «Завершить работу ProGo».", ToolTipIcon.Info);
             var token = trayPreferenceCancellation.Token;
@@ -402,7 +405,7 @@ namespace ProGo
         }
         private Task<SettingsSaveError> ApplySettingsRequestAsync(SettingsApplyRequest request, CancellationToken token)
         {
-            if (closing || shutdownPrepared || shutdownPreparing || IntegrationPending)
+            if (closing || shutdownPrepared || shutdownPreparing || MaintenancePending || IntegrationPending)
                 return Task.FromResult(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси или завершает работу. Дождитесь окончания операции и повторите сохранение."));
             var consumers = appConsumers.BeginMutation();
             System.Threading.Interlocked.Increment(ref integrationPending); RefreshPendingRoutes();
@@ -411,7 +414,7 @@ namespace ProGo
         }
         internal Task<SettingsSaveError> EnsureBridgeAsync(CancellationToken token)
         {
-            if (closing || shutdownPreparing || shutdownPrepared || IntegrationPending)
+            if (closing || shutdownPreparing || shutdownPrepared || MaintenancePending || IntegrationPending)
                 return Task.FromResult(new SettingsSaveError(SettingsField.General, "Сейчас ProGo изменяет настройки прокси или завершает работу. Дождитесь окончания операции и повторите команду."));
             var consumers = appConsumers.BeginMutation();
             System.Threading.Interlocked.Increment(ref integrationPending); RefreshPendingRoutes();
@@ -453,13 +456,18 @@ namespace ProGo
                     bool published = await IntegrationUi(delegate {
                         cliProxy.PublishPrepared(prepared.Value);
                         appConsumers.Observe(); NotifyPortChange(previousPort);
-                        if (request != null && changed) {
-                            pendingRoutes.Clear(); ObserveStop(proxy.StopTunnelAsync()); health.Invalidate();
-                            if (reconnect) proxy.StartTunnelAsync(CancellationToken.None);
-                        }
-                        if (request != null) {
-                            homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
-                            automation.Update(expected.Settings, settings.Current);
+                        // A committed settings transaction must publish its real
+                        // configuration, but maintenance owns any later reconnect
+                        // or automatic route intent until its handoff settles.
+                        if (!MaintenancePending) {
+                            if (request != null && changed) {
+                                pendingRoutes.Clear(); ObserveStop(proxy.StopTunnelAsync()); health.Invalidate();
+                                if (reconnect) proxy.StartTunnelAsync(CancellationToken.None);
+                            }
+                            if (request != null) {
+                                homeVpn.AutoRestart = settings.Current.AutoRestartSocks;
+                                automation.Update(expected.Settings, settings.Current);
+                            }
                         }
                     }).ConfigureAwait(false);
                     // Only service memory/socket ownership is published after a lost
@@ -514,7 +522,7 @@ namespace ProGo
             automation.Update(null, settings.Current);
             automationTimer.Tick += delegate
             {
-                if (closing || shutdownPreparing || shutdownPrepared || IntegrationPending) return;
+                if (closing || shutdownPreparing || shutdownPrepared || MaintenancePending || IntegrationPending) return;
                 bool ready = health.Current.SocksReady;
                 foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature)))
                 {
@@ -614,7 +622,7 @@ namespace ProGo
                 if (agentStartup != null) await agentStartup.CheckCompletion.ConfigureAwait(false);
                 bool currentRequest = await DispatchUi(delegate {
                     long active;
-                    return !closing && !shutdownPrepared && !shutdownPreparing && settings.Revision == expectedRevision &&
+                    return !closing && !shutdownPrepared && !shutdownPreparing && !MaintenancePending && settings.Revision == expectedRevision &&
                         pendingRoutes.TryGetValue(action, out active) && active == request;
                 }).ConfigureAwait(false);
                 if (!currentRequest) throw new OperationCanceledException(token);
@@ -628,7 +636,7 @@ namespace ProGo
                     }).ConfigureAwait(false);
                     var startup = await DispatchUi(delegate {
                         long active;
-                        if (closing || shutdownPrepared || shutdownPreparing || !pendingRoutes.TryGetValue(action, out active) || active != request || !MatchesConsumerRoute(saved))
+                        if (closing || shutdownPrepared || shutdownPreparing || MaintenancePending || !pendingRoutes.TryGetValue(action, out active) || active != request || !MatchesConsumerRoute(saved))
                             return (Task<bool>)null;
                         token.ThrowIfCancellationRequested();
                         // A configured transport may be consumed without owning its process.
@@ -641,7 +649,7 @@ namespace ProGo
                 } else {
                     var startup = await DispatchUi(delegate {
                         long active;
-                        if (closing || shutdownPrepared || shutdownPreparing || settings.Revision != expectedRevision ||
+                        if (closing || shutdownPrepared || shutdownPreparing || MaintenancePending || settings.Revision != expectedRevision ||
                             !pendingRoutes.TryGetValue(action, out active) || active != request) return (Task<bool>)null;
                         return proxy.StartTunnelAsync(token);
                     }).ConfigureAwait(false);
@@ -729,7 +737,7 @@ namespace ProGo
                 SshConnection.Signature(current) == SshConnection.Signature(expected);
         }
         private AppCommandState GetCommandState()
-        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending); }
+        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing || MaintenancePending, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending); }
         private void RefreshPendingRoutes()
         {
             var state = GetCommandState();
@@ -840,7 +848,7 @@ namespace ProGo
         }
         private Task<IntegrationResult> QueueIntegration(bool cli, bool windows, bool enable, bool stopBridge)
         {
-            if (closing) return Task.FromResult(new IntegrationResult { Skipped = true });
+            if (closing || (enable && MaintenancePending)) return Task.FromResult(new IntegrationResult { Skipped = true });
             long expectedCli = cli ? System.Threading.Interlocked.Increment(ref cliIntent) : System.Threading.Interlocked.Read(ref cliIntent);
             long expectedWindows = windows ? System.Threading.Interlocked.Increment(ref windowsIntent) : System.Threading.Interlocked.Read(ref windowsIntent);
             var consumers = appConsumers.BeginMutation();
@@ -865,6 +873,7 @@ namespace ProGo
                 AppSettings current = null; long revision = 0;
                 if (!await IntegrationUi(delegate {
                     if (enable) {
+                        if (MaintenancePending) return;
                         cli = cli && System.Threading.Interlocked.Read(ref cliIntent) == expectedCli;
                         windows = windows && System.Threading.Interlocked.Read(ref windowsIntent) == expectedWindows;
                         if (!cli && !windows) return;
@@ -1090,7 +1099,7 @@ namespace ProGo
         private Task<bool> PrepareShutdownAsync(bool dialog, BackupWorkSession preservedBackup = null)
         {
             if (closing) return Task.FromResult(false);
-            // Preparing native shutdown for our restore is only a reservation,
+            // Preparing native shutdown for our maintenance is only a reservation,
             // never an external IPC permission to exit before helper/tree settlement.
             if (preservedBackup == null && maintenanceReservation != null) {
                 if (reservedShutdownTask != null && !reservedShutdownTask.IsCompleted) return reservedShutdownTask;
@@ -1106,24 +1115,41 @@ namespace ProGo
         }
         private async Task<bool> SettleReservedShutdown(bool dialog, BackupWorkSession reserved, Task preparation)
         {
+            Task ownedPreparation = preparation;
             var settlement = Task.WhenAll(reserved.CurrentWork, preparation ?? Task.FromResult(false), backupActivityWorkflow ?? Task.FromResult(false));
             bool settled = await Task.WhenAny(settlement, Task.Delay(backupShutdownTimeoutMilliseconds)).ConfigureAwait(false) == settlement;
             if (settled) try { await settlement.ConfigureAwait(false); } catch (Exception) { }
             var next = await DispatchUi(delegate {
+                // A timeout publication may already be queued behind the accepted
+                // owner completion. ACK wins even when this deadline elapsed first.
+                if (maintenanceHandedOff) { shutdownPrepared = true; return Task.FromResult(true); }
+                // An old reservation never resets flags belonging to a new actor
+                // or a newer ordinary shutdown with no remaining backup actor.
+                if (!ReferenceEquals(shutdownTask, ownedPreparation)) return Task.FromResult(false);
+                if ((maintenanceReservation != null && !ReferenceEquals(maintenanceReservation, reserved)) ||
+                    (backupActivity != null && !ReferenceEquals(backupActivity, reserved))) return Task.FromResult(false);
                 if (!settled) {
+                    if (!ReferenceEquals(maintenanceReservation, reserved)) return Task.FromResult(false);
                     shutdownPrepared = false; shutdownPreparing = false;
-                    const string message = "Восстановление ещё не остановлено: помощник или накопитель не завершили работу и очистку. ProGo остаётся запущенным; дождитесь окончания и повторите выход.";
+                    const string message = "Обслуживание ещё не остановлено: помощник или накопитель не завершили работу и очистку. ProGo остаётся запущенным; дождитесь окончания и повторите выход.";
                     if (dialog) MessageBox.Show(message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", message, ToolTipIcon.Warning);
                     RefreshPendingRoutes(); return Task.FromResult(false);
                 }
-                if (maintenanceHandedOff && shutdownPrepared) return Task.FromResult(true);
                 shutdownPrepared = false; shutdownPreparing = false;
-                return PrepareShutdownAsync(dialog);
+                var continuation = PrepareShutdownAsync(dialog);
+                ownedPreparation = shutdownTask; // This settle owns its own fresh continuation.
+                return continuation;
             }).ConfigureAwait(false);
             bool result = next != null && await next.ConfigureAwait(false);
             await DispatchUi(delegate {
-                shutdownPreparing = shutdownTask != null && !shutdownTask.IsCompleted;
+                if (maintenanceHandedOff) return true;
+                if (!ReferenceEquals(shutdownTask, ownedPreparation) ||
+                    (maintenanceReservation != null && !ReferenceEquals(maintenanceReservation, reserved)) ||
+                    (backupActivity != null && !ReferenceEquals(backupActivity, reserved))) return false;
+                // Do not keep our own completed reservedShutdownTask as a reason
+                // to stay preparing after its owned continuation has settled.
+                shutdownPreparing = ownedPreparation != null && !ownedPreparation.IsCompleted;
                 ResumeVaultDaily(); RefreshPendingRoutes(); return true;
             }).ConfigureAwait(false);
             return result;
@@ -1208,7 +1234,7 @@ namespace ProGo
                     if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
                     return true;
                 } finally {
-                    shutdownPreparing = reservedShutdownTask != null && !reservedShutdownTask.IsCompleted;
+                    shutdownPreparing = maintenanceReservation != null && reservedShutdownTask != null && !reservedShutdownTask.IsCompleted;
                     ResumeVaultDaily();
                     RefreshPendingRoutes();
                 }
@@ -1285,21 +1311,11 @@ namespace ProGo
         }
         internal void CancelShutdown()
         {
-            if (closing || activationDispatcher.IsDisposed || maintenanceHandedOff) return;
+            if (closing || activationDispatcher.IsDisposed || maintenanceHandedOff || maintenanceReservation != null) return;
             try { activationDispatcher.BeginInvoke(new Action(delegate {
-                if (!closing && !maintenanceHandedOff) { shutdownPrepared = false; ResumeVaultDaily(); RefreshPendingRoutes(); }
+                if (!closing && !maintenanceHandedOff && maintenanceReservation == null) { shutdownPrepared = false; ResumeVaultDaily(); RefreshPendingRoutes(); }
             })); }
             catch (InvalidOperationException) { }
-        }
-        private async Task<bool> BeginMaintenance(Func<bool> launch)
-        {
-            var preparation = await DispatchUi(() => PrepareShutdownAsync(true)).ConfigureAwait(false);
-            if (preparation == null || !await preparation.ConfigureAwait(false)) return false;
-            return await DispatchUi(delegate {
-                bool handedOff = false;
-                try { handedOff = launch(); if (handedOff) CompleteShutdown(); return handedOff; }
-                finally { if (!handedOff) { shutdownPrepared = false; ResumeVaultDaily(); RefreshPendingRoutes(); } }
-            }).ConfigureAwait(false);
         }
         private void ResumeVaultDaily()
         {
@@ -1518,9 +1534,9 @@ namespace ProGo
         internal void ShowBackupProgress()
         {
             if (closing || String.IsNullOrEmpty(backupOperationKind)) return;
-            if (backupActivity != null || backupOperationKind == "restore" || backupOperationKind == "cleanup") {
+            if (backupActivity != null || backupOperationKind == "restore" || backupOperationKind == "cleanup" || backupOperationKind == "update") {
                 if (backupActivityForm != null && !backupActivityForm.IsDisposed) { backupActivityForm.Activate(); return; }
-                var progress = new BackupWorkProgressForm(CancelBackup); backupActivityForm = progress;
+                var progress = new BackupWorkProgressForm(CancelBackup, backupOperationKind == "update" ? "Обновление ProGo" : null); backupActivityForm = progress;
                 progress.SetStatus(backupStatus); if (backupActivity == null) progress.Complete(backupStatus);
                 progress.FormClosed += delegate { if (ReferenceEquals(backupActivityForm, progress)) backupActivityForm = null; };
                 progress.Show(mainWindow); return;
@@ -1627,12 +1643,16 @@ namespace ProGo
             }
             await DispatchUi(delegate {
                 if (!ReferenceEquals(backupActivity, work)) return false;
+                // Publish the accepted commit before releasing its reservation or
+                // invoking a form callback which could reenter owner commands.
+                if (result.Accepted) { maintenanceHandedOff = true; shutdownPrepared = true; }
+                else shutdownPrepared = false;
                 backupActivity = null; backupActivityWorkflow = null; backupStatus = result.Message;
                 if (ReferenceEquals(maintenanceReservation, work)) maintenanceReservation = null;
                 lastBackupCancelled = result.Cancelled; lastBackupFailed = result.Failed;
                 if (backupActivityForm != null && !backupActivityForm.IsDisposed) backupActivityForm.Complete(backupStatus);
-                if (result.Accepted) { maintenanceHandedOff = true; CompleteShutdown(); }
-                else { shutdownPrepared = false; ResumeVaultDaily(); }
+                if (result.Accepted) CompleteShutdown();
+                else ResumeVaultDaily();
                 RefreshPendingRoutes(); return true;
             }).ConfigureAwait(false);
         }
@@ -1694,8 +1714,62 @@ namespace ProGo
             return new BackupActivityResult { Cancelled = work.Token.IsCancellationRequested, Failed = !work.Token.IsCancellationRequested, Message = handoff.Error };
         }
 
+        internal Task StartUpdaterAsync(UpdateCheckResult check)
+        {
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
+                throw new InvalidOperationException("Обновление запускается владельцем интерфейса.");
+            if (closing || check == null || check.Availability != UpdateAvailability.Available) return Task.FromResult(false);
+            // A prepared shutdown is still only our pending helper reservation.
+            // Repeated requests share that actor until its ACK/settlement completes.
+            if (IsBackupRunning) { ShowBackupProgress(); return backupCompletion; }
+            if (shutdownPrepared || shutdownPreparing || IsPortableRunning || IsVaultRunning) return Task.FromResult(false);
+            BeginBackupActivity("update", "Завершаем текущие операции ProGo перед обновлением.");
+            var activity = backupActivity; var factory = UpdaterLaunchInfo;
+            string localVersion = check.LocalVersion, remoteVersion = check.RemoteVersion;
+            UpdateWork = backupActivityWorkflow = backupCompletion = Task.Run(() => RunUpdaterWorkflow(activity, factory, localVersion, remoteVersion));
+            ShowBackupProgress(); return UpdateWork;
+        }
+
+        private async Task RunUpdaterWorkflow(BackupWorkSession work, Func<ProcessStartInfo> factory, string localVersion, string remoteVersion)
+        {
+            BackupActivityResult result;
+            try { result = await UpdaterCore(work, factory, localVersion, remoteVersion).ConfigureAwait(false); }
+            catch (OperationCanceledException) {
+                result = new BackupActivityResult { Cancelled = true, Message = "Запуск обновления отменён до передачи управления помощнику. ProGo остаётся запущенным." };
+            }
+            catch (Exception ex) {
+                try { SafeLog.Error("Updater preparation or owned helper failed.", ex); } catch (Exception) { }
+                result = new BackupActivityResult { Failed = true, Message = "Не удалось подготовить или подтвердить запуск помощника обновления. ProGo остаётся запущенным; проверьте журнал перед повтором." };
+            }
+            await CompleteBackupActivity(work, result).ConfigureAwait(false);
+        }
+
+        private async Task<BackupActivityResult> UpdaterCore(BackupWorkSession work, Func<ProcessStartInfo> factory, string localVersion, string remoteVersion)
+        {
+            work.Token.ThrowIfCancellationRequested();
+            var shutdown = await DispatchUi(() => work.Token.IsCancellationRequested || !ReferenceEquals(backupActivity, work) ?
+                Task.FromResult(false) : PrepareShutdownAsync(true, work)).ConfigureAwait(false);
+            if (shutdown == null || !await shutdown.ConfigureAwait(false)) {
+                work.Token.ThrowIfCancellationRequested();
+                return new BackupActivityResult { Failed = true, Message = "Обновление не запущено: текущие операции ProGo ещё не завершены. Повторите обновление после их окончания." };
+            }
+            work.Token.ThrowIfCancellationRequested();
+            await ActivityStatus(work, "Помощник обновления запускается в фоне. Ждём подтверждения до 15 секунд; отмена доступна до передачи управления.").ConfigureAwait(false);
+            var handoff = await work.Run("update-launch", token => UpdateLauncher.LaunchUpdater(token, factory)).ConfigureAwait(false);
+            // Once ACK has transferred ownership, late cancellation or logging
+            // cannot turn the accepted independent helper into a refused launch.
+            if (handoff.Accepted) {
+                try { SafeLog.Info("Update requested by user. local=" + localVersion + "; remote=" + remoteVersion + "."); } catch (Exception) { }
+                return new BackupActivityResult { Accepted = true, Message = "Помощник принял обновление. ProGo завершает работу; обновление продолжит помощник." };
+            }
+            return new BackupActivityResult { Cancelled = work.Token.IsCancellationRequested, Failed = !work.Token.IsCancellationRequested, Message = handoff.Error };
+        }
+
         private async void StartUpdate()
         {
+            if (closing) return;
+            if (IsBackupRunning) { ShowBackupProgress(); return; }
+            if (shutdownPrepared || shutdownPreparing || IsPortableRunning || IsVaultRunning) return;
             if (updateForm != null && !updateForm.IsDisposed) { updateForm.Activate(); return; }
             UpdateCheckResult check;
             using (var form = createUpdateForm()) {
@@ -1706,8 +1780,7 @@ namespace ProGo
                 } finally { updateForm = null; }
             }
             if (check == null || check.Availability != UpdateAvailability.Available) return;
-            if (!await BeginMaintenance(UpdateLauncher.StartUpdater).ConfigureAwait(false)) return;
-            SafeLog.Info("Update requested by user. local=" + check.LocalVersion + "; remote=" + check.RemoteVersion + ".");
+            await StartUpdaterAsync(check).ConfigureAwait(false);
         }
 
         private void UpdateTooltip()

@@ -193,62 +193,74 @@ namespace ProGo
             return value;
         }
 
+        private const string UpdaterLaunchFailure = "Не удалось подготовить или подтвердить запуск помощника обновления. Приложение остаётся запущенным; проверьте журнал перед повтором.";
+
+        // Call from a tracked worker: resolving installed files, starting a child
+        // and awaiting acknowledgement must never run on the UI thread.
+        internal static MaintenanceHandoffResult LaunchUpdater(CancellationToken token, Func<ProcessStartInfo> createInfo = null)
+        {
+            try {
+                token.ThrowIfCancellationRequested();
+                var info = createInfo == null ? CreateUpdaterStartInfo() : createInfo();
+                token.ThrowIfCancellationRequested();
+                if (info == null) return new MaintenanceHandoffResult { Error = UpdaterLaunchFailure };
+                var result = MaintenanceOperation.StartOwnedHandoff(info, token);
+                // ACK is the accepted ownership boundary. Do not turn accepted
+                // work into cancellation/failure because of a later token or log.
+                if (result.Accepted) return result;
+                return new MaintenanceHandoffResult { Error = UpdaterHandoffError(result.Error) };
+            }
+            catch (OperationCanceledException) {
+                return new MaintenanceHandoffResult { Error = "Запуск помощника обновления отменён до передачи управления. Приложение остаётся запущенным." };
+            }
+            catch (FileNotFoundException ex) {
+                LogUpdaterFailure(ex);
+                return new MaintenanceHandoffResult { Error = "Файл обновления отсутствует. Откройте «Помощь → Антивирус» для восстановления установки. Приложение остаётся запущенным." };
+            }
+            catch (Exception ex) {
+                LogUpdaterFailure(ex);
+                // Cleanup errors must not claim that a helper was stopped.
+                return new MaintenanceHandoffResult { Error = UpdaterLaunchFailure };
+            }
+        }
+
+        private static void LogUpdaterFailure(Exception exception)
+        {
+            try { SafeLog.Error("Updater ownership handoff failed.", exception); }
+            catch (Exception) { } // Logging cannot replace the protocol result.
+        }
+
+        internal static string UpdaterHandoffError(string error)
+        {
+            // These are fixed outputs of StartOwnedHandoff, never child stderr.
+            // Preserve its actual cleanup claims; unrecognized errors stay unknown.
+            if (error == "Помощник восстановления завершился без подтверждения. Приложение остаётся запущенным.")
+                return "Помощник обновления завершился без подтверждения. Приложение остаётся запущенным.";
+            if (error == "Подготовка восстановления отменена до подтверждения помощника. Приложение остаётся запущенным.")
+                return "Подготовка обновления отменена до подтверждения помощника. Приложение остаётся запущенным.";
+            if (error == "Помощник восстановления не подтвердил готовность за 15 секунд и остановлен. Приложение остаётся запущенным; повторите после проверки журнала.")
+                return "Помощник обновления не подтвердил готовность за 15 секунд и остановлен. Приложение остаётся запущенным; повторите после проверки журнала.";
+            return UpdaterLaunchFailure;
+        }
+
+        private static ProcessStartInfo CreateUpdaterStartInfo()
+        {
+            var scriptPath = ResolveUpdateScriptPath();
+            var powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            if (!File.Exists(powershell)) powershell = "powershell.exe";
+            return new ProcessStartInfo(powershell, "-NoProfile -File \"" + scriptPath + "\" -WaitPid " + Process.GetCurrentProcess().Id) {
+                UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = AppPaths.Root
+            };
+        }
+
+        // Compatibility entry point. The application context should use LaunchUpdater
+        // from a worker and owns its progress, cancellation and UI publication.
         public static bool StartUpdater()
         {
-            try
-            {
-                var scriptPath = ResolveUpdateScriptPath();
-                if (String.IsNullOrEmpty(scriptPath) || !File.Exists(scriptPath))
-                {
-                    MessageBox.Show(
-                        "Файл обновления отсутствует. Откройте «Помощь → Антивирус» для восстановления установки.",
-                        "Обновление ProGo",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                    return false;
-                }
-
-                var powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
-                if (!File.Exists(powershell)) powershell = "powershell.exe";
-
-                var currentPid = Process.GetCurrentProcess().Id;
-                var args = "-NoProfile -File \"" + scriptPath + "\" -WaitPid " + currentPid;
-                var psi = new ProcessStartInfo(powershell, args)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WorkingDirectory = AppPaths.Root
-                };
-
-                SafeLog.Info("Launching updater. PowerShell=" + powershell + "; script=" + scriptPath + "; workingDirectory=" + AppPaths.Root + ".");
-                if (!MaintenanceOperation.StartHandoff(psi))
-                {
-                    MessageBox.Show("Обновление не получило управление. Возможно, уже выполняется обновление или восстановление. ProGo останется запущенным.", "Обновление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return false;
-                }
-                SafeLog.Info("Updater ownership handoff confirmed.");
-                return true;
-            }
-            catch (Win32Exception ex)
-            {
-                SafeLog.Error("Updater launch failed. NativeErrorCode=" + ex.NativeErrorCode + ".", ex);
-                MessageBox.Show(
-                    "Не удалось запустить обновление. Подробности записаны в журнал.",
-                    "Обновление ProGo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Updater launch failed.", ex);
-                MessageBox.Show(
-                    "Не удалось запустить обновление. Подробности записаны в журнал.",
-                    "Обновление ProGo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                return false;
-            }
+            var result = LaunchUpdater(CancellationToken.None);
+            if (result.Accepted) return true;
+            MessageBox.Show(result.Error ?? UpdaterLaunchFailure, "Обновление ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
         }
 
         private static string BuildEarlyExitMessage(int exitCode, bool likelyAntivirusBlock)

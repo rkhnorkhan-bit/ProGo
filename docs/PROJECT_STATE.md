@@ -109,7 +109,7 @@ opt-in, который в этом прогоне не используется.
 | F31-R04 → F31 | Include/aliases/IdentityFile tokens в диагностике | PARTIAL | **Code/Dev PASS** | нет внешней блокировки | Подтвердить сохранение исторического Code/Dev критерия на новом SHA. |
 | F31-R05 → F31 | Остаточные startup/settings/shortcut операции вне UI | PARTIAL | Частично | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R06 → F31 | Фоновый retention preview/cleanup | PARTIAL | Исправлен source-confirmed UI I/O; native NOT_RUN | новый CI, итоговый пакет | Выполнить AsyncCleanupWorkflow и retention regression на точном SHA; visual/target отдельно. |
-| F31-R07 → F31 | Фоновое ожидание updater handoff | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
+| F31-R07 → F31 | Фоновое ожидание updater handoff | PARTIAL | Source fix и независимое review; native NOT_RUN | новый CI, пакет | Выполнить owned backend и actual Update route suites; ACK/cancel/timeout/queued lifecycle regression. |
 | F31-R08 → F31 | Фоновая работа logs/diagnostic export | PARTIAL | Частично | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R09 → F31 | HomeVPN private I/O, DPAPI и session preparation в worker | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R10 → F31 | Асинхронные phone Stop/cleanup | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
@@ -251,3 +251,27 @@ CI584 не сохранены, поэтому это не отдельное н�
 
 Source signing/settings criteria имеют scoped PASS на6b3122f0; visual review новых
 PNG и целевой ПК NOT_RUN. Новые retention/updater изменения требуют отдельного CI.
+
+## F31-R07: worker handoff и граница подтверждения помощника
+
+Actual Update route теперь StartUpdate → StartUpdaterAsync → UpdaterCore →
+LaunchUpdater в tracked BackupWorkSession. Installed-path I/O и ожидание ACK идут
+в worker, UI получает progress/Cancel и fixed nonsecret ошибки. Backend использует
+StartOwnedHandoff: до ACK владеет suspended/job-contained tree; после ACK поздняя
+отмена не отзывает независимого помощника. Legacy StartUpdater wrapper сохранён,
+actual route его не вызывает. Guard в Test-ProGo проверяет новый owned API.
+
+Shared restore/update reservation не допускает выход/новые mutations до settlement.
+Исправлены найденные независимым review queued races: accepted flags до снятия
+reservation и reentrant UI callbacks; старый timeout не сбрасывает Accepted;
+старый settle не сбрасывает новый ordinary shutdown; rejected flags очищаются до
+callback. Own ordinary completion не зависит от чужого pending reserved task.
+Ранее admitted native enable может завершить свою принятую фазу; preflight ждёт
+её и затем отключает. Новый reconnect/automation после reservation подавляется,
+публикация committed config сохраняется. Это не принудительная отмена OS вызова.
+
+Backend independent review и финальный независимый lifecycle/tests review PASS.
+Actual helper/descendant accept/reject/cancel/timeout и10 native Context сценариев
+подготовлены, зарегистрированы; реальные установки не выполняются. Старые
+WindowsRestore gate assertions перенесены на actual updater route и усилены.
+Новый native run NOT_RUN; F31-R07 и общий F31-R11 остаются PARTIAL.

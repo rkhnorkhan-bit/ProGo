@@ -1824,22 +1824,23 @@
       "phase": "До",
       "requirement": "Фоновое ожидание updater handoff",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R07)",
-      "implementation": "Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService",
+      "implementation": "Context.StartUpdaterAsync/UpdaterCore tracked BackupWorkSession; UpdateLauncher.LaunchUpdater worker-safe StartOwnedHandoff; accepted/task-identity guards preserve shared restore/update reservation",
       "history": "Открытый дефект",
-      "status": "FAIL",
+      "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
-        "criterion": "ACK/ownership сохраняются, незавершённый helper запрещает handoff; ожидание StartHandoff не блокирует UI. Сам installer создаётся в F23."
+        "criterion": "ACK/ownership сохраняются, незавершённый helper запрещает handoff; ожидание StartHandoff не блокирует UI. Сам installer создаётся в F23.",
+        "new_native": "NOT_RUN: UpdaterHandoffWorkflow native helper modes + AsyncUpdaterWorkflow10 context scenarios; independent backend/lifecycle/tests source review PASS"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
-      "remaining": "ACK/ownership сохраняются, незавершённый helper запрещает handoff; ожидание StartHandoff не блокирует UI. Сам installer создаётся в F23.",
+      "remaining": "Exact Windows CI full shared restore/update regression; package/target acceptance",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Run exact new source CI; check delayed/rejected/cancel/timeout helper, owned descendant, ACK queued timeout, rejected reentrant ordinary shutdown, forced disposal and legacy restore gates"
     },
     {
       "id": "F31-R08",
@@ -2192,5 +2193,13 @@
     "source_review": "PASS independent backend and root UI/tests",
     "runtime": "NOT_RUN",
     "cancellation_boundary": "before/between deletion; in-flight OS call retained, no forced cancellation; committed final actual result preserved"
+  },
+  "updater_handoff_microtask": {
+    "requirement": "F31-R07",
+    "finding": "A06",
+    "status": "PARTIAL",
+    "source_review": "PASS independent backend + final context/test review; identified queued lifecycle races fixed",
+    "runtime": "NOT_RUN",
+    "scope": "actual Update UI route, owned helper ACK/cancel/settlement; no installer/fallback claim"
   }
 }

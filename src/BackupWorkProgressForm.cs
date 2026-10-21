@@ -9,10 +9,10 @@ namespace ProGo
         private readonly Button cancel;
         private readonly Action requestCancel;
         internal bool IsBusy { get; private set; }
-        internal BackupWorkProgressForm(Action requestCancel)
+        internal BackupWorkProgressForm(Action requestCancel, string title = null)
         {
             this.requestCancel = requestCancel; IsBusy = true;
-            Text = "Операция с копиями ProGo"; Width = 760; Height = 290;
+            Text = title ?? "Операция с копиями ProGo"; Width = 760; Height = 290;
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), RowCount = 2, ColumnCount = 1 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
@@ -25,7 +25,7 @@ namespace ProGo
             FormClosing += delegate(object sender, FormClosingEventArgs e) { if (IsBusy) { e.Cancel = true; Cancel(); } };
         }
         private void Cancel()
-        { requestCancel(); status.Text = "Отмена запрошена. Ждём завершения текущей операции и очистки временной копии; интерфейс продолжает работать."; }
+        { requestCancel(); status.Text = "Отмена запрошена. Ждём завершения текущей операции; интерфейс продолжает работать."; }
         internal void SetStatus(string text) { status.Text = text; status.AccessibleDescription = text; }
         internal void Complete(string text) { IsBusy = false; cancel.Text = "Закрыть"; SetStatus(text); }
     }
