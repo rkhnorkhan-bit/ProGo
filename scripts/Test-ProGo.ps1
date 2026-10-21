@@ -540,23 +540,65 @@ $FixtureRequirements = Join-Path $Root 'tests\ssh-fixture-requirements.txt'
 function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureOut = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stdout.txt')
     $FixtureError = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stderr.txt')
-    $FixtureTool = Start-Process -FilePath $FixturePython -ArgumentList $ToolArguments -NoNewWindow -PassThru -RedirectStandardOutput $FixtureOut -RedirectStandardError $FixtureError
+    # Own the native handle directly: Start-Process -PassThru with redirected
+    # streams can expose a null ExitCode after WaitForExit on Windows PowerShell.
+    $FixtureTool = New-Object System.Diagnostics.Process
+    $FixtureTool.StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $FixtureTool.StartInfo.FileName = $FixturePython
+    $FixtureTool.StartInfo.Arguments = ($ToolArguments -join ' ')
+    $FixtureTool.StartInfo.UseShellExecute = $false
+    $FixtureTool.StartInfo.CreateNoWindow = $true
+    $FixtureTool.StartInfo.RedirectStandardOutput = $true
+    $FixtureTool.StartInfo.RedirectStandardError = $true
+    $FixtureStarted = $false
+    $FixtureOutRead = $null
+    $FixtureErrorRead = $null
     try {
+        if (-not $FixtureTool.Start()) { Fail ('Owned SSH fixture ' + $Label + ' did not start') }
+        $FixtureStarted = $true
+        $FixtureOutRead = $FixtureTool.StandardOutput.ReadToEndAsync()
+        $FixtureErrorRead = $FixtureTool.StandardError.ReadToEndAsync()
         if (-not $FixtureTool.WaitForExit($BudgetMs)) {
             $FixtureTool.Kill()
             if (-not $FixtureTool.WaitForExit(5000)) { Fail ('Owned SSH fixture ' + $Label + ' did not terminate after its deadline') }
             Fail ('Owned SSH fixture ' + $Label + ' exceeded ' + $BudgetMs + ' ms; native validation NOT_RUN')
         }
-        if ($FixtureTool.ExitCode -ne 0) { Fail ('Owned SSH fixture ' + $Label + ' failed with exit code ' + $FixtureTool.ExitCode) }
+        $FixtureExitCode = $FixtureTool.ExitCode
+        if ($null -eq $FixtureExitCode) { Fail ('Owned SSH fixture ' + $Label + ' did not expose an exit code') }
+        if ($FixtureExitCode -ne 0) { Fail ('Owned SSH fixture ' + $Label + ' failed with exit code ' + $FixtureExitCode) }
     } finally {
-        $FixtureTool.Dispose()
-        # unittest writes normal progress and expected negative-case traces to
-        # stderr. Preserve both as log text; only the checked exit code is status.
-        foreach ($FixtureLog in @($FixtureOut, $FixtureError)) {
-            if (Test-Path -LiteralPath $FixtureLog) { Get-Content -LiteralPath $FixtureLog | ForEach-Object { Write-Host $_ } }
-        }
+        try {
+            if ($FixtureStarted -and -not $FixtureTool.HasExited) {
+                $FixtureTool.Kill()
+                if (-not $FixtureTool.WaitForExit(5000)) { Fail ('Owned SSH fixture ' + $Label + ' cleanup did not settle') }
+            }
+            # unittest stderr is log text, never the success criterion. Read both
+            # streams concurrently and retain actual nonzero/timeout failures.
+            if ($null -ne $FixtureOutRead) {
+                if (-not $FixtureOutRead.Wait(3000)) { Fail ('Owned SSH fixture ' + $Label + ' stdout did not settle') }
+                [System.IO.File]::WriteAllText($FixtureOut, $FixtureOutRead.Result)
+                Write-Host $FixtureOutRead.Result
+            }
+            if ($null -ne $FixtureErrorRead) {
+                if (-not $FixtureErrorRead.Wait(3000)) { Fail ('Owned SSH fixture ' + $Label + ' stderr did not settle') }
+                [System.IO.File]::WriteAllText($FixtureError, $FixtureErrorRead.Result)
+                Write-Host $FixtureErrorRead.Result
+            }
+        } finally { $FixtureTool.Dispose() }
     }
 }
+# Regression vectors use only this test's own Python processes. Expected
+# negative cases must throw the precise reason; no timeout becomes success.
+Invoke-IsolatedSshFixtureTool @('-c', '"import sys; sys.exit(0)"') 'exit0-regression' 5000
+$FixtureNonzeroObserved = $false
+try { Invoke-IsolatedSshFixtureTool @('-c', '"import sys; sys.exit(17)"') 'exit17-regression' 5000 }
+catch { if ($_.Exception.Message -notlike '*exit17-regression failed with exit code 17') { throw }; $FixtureNonzeroObserved = $true }
+if (-not $FixtureNonzeroObserved) { Fail 'Fixture launcher accepted a nonzero native exit code' }
+$FixtureTimeoutObserved = $false
+try { Invoke-IsolatedSshFixtureTool @('-c', '"import time; time.sleep(5)"') 'timeout-regression' 200 }
+catch { if ($_.Exception.Message -notlike '*timeout-regression exceeded 200 ms; native validation NOT_RUN') { throw }; $FixtureTimeoutObserved = $true }
+if (-not $FixtureTimeoutObserved) { Fail 'Fixture launcher accepted a timed-out native process' }
+Write-Host 'SSH fixture launcher exit0/exit17/owned-timeout regression PASS'
 Invoke-IsolatedSshFixtureTool @('-m', 'pip', 'install', '--quiet', '--target', ('"' + $FixtureDeps + '"'), '--only-binary=:all:', '--disable-pip-version-check', '--retries', '0', '--timeout', '10', '-r', ('"' + $FixtureRequirements + '"')) 'install' 60000
 $OldFixturePythonPath = $env:PYTHONPATH
 $OldFixturePython = $env:PROGO_TEST_SSH_PYTHON

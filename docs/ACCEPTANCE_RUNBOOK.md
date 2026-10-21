@@ -1,3 +1,16 @@
+Текущий CI590 completed FAILURE на source8487594e6d7d4e4eb16df86aae27f2e980329aaa /
+merge20df578c1c2d162f5f373e94aed8107bbfee7d19. Native51/456/guidance10 PASS,
+Desktop compilation PASS, но launcher вернул пустой ExitCode: pip outcome неизвестен;
+Desktop/server/combined/metrics/ZIP NOT_RUN. Evidence v1.0 raw6.15→6 только
+трассированные веса41×D0.5×30%; P/A0. Исторические CI58922 и CI588 ниже не
+подтверждают эти недостигнутые сценарии. Следующий шаг — отдельный launcher fix.
+
+Текущая добавочная проверенная база: CI589 SUCCESS, source7964a99ac4f6adf0d1d9034c855e989f60211c0a,
+mergef8eb30fddc7f0ecdf0f795de76b8f4be56490705; native lifecycle50/446 PASS.
+Runner ZIP0.2.2 SHA256 c66a56fda89845e0e4e68c5fb2d1f87c70e74d01f101113ad8d5e1b21f194805;
+uploads SKIPPED, не передан/не установлен. Следующий direct+agent combined/
+guidance51 source8487594e Windows NOT_RUN. Нижние CI588/587/586 — история.
+
 # Приёмка следующего ProGo кандидата
 
 Текущий подтверждённый published snapshot: **CI588 SUCCESS**,
