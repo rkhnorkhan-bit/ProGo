@@ -19,7 +19,8 @@ CI582 независимо проверен через jobs и Windows log: Wind
 build/test/content-check/pack; автоматическая загрузка любых CI файлов в
 public repo выключена. Загрузка требует отдельного явного workflow_dispatch
 opt-in, который в этом прогоне не используется. Способ передачи проверочного
-пакета подлежит отдельному согласованию. Новый Windows/Ubuntu CI пока NOT_RUN.
+пакета подлежит отдельному согласованию. CI583 завершён: Ubuntu PASS, Windows FAIL из-за кодировки PowerShell теста;
+новый signing/settings блок ещё NOT_RUN. Подробности и точные SHA ниже.
 
 ## Основные 31 пункта
 
@@ -143,10 +144,10 @@ review startup/rollback завершены. Исторический непри�
 итоговую регрессию. Инструкция дальнейшей приёмки/возврата:
 [ACCEPTANCE_RUNBOOK.md](ACCEPTANCE_RUNBOOK.md).
 
-Следующий шаг после privacy decision — push без переписывания истории в
-существующую интеграционную ветку после fresh head check, новый Windows/Ubuntu CI,
-разбор конкретного первого FAIL либо запись completed evidence. Затем selected-key
-readiness и остальные открытые ID; полный F31-R11 не закрыт этим startup fix.
+Текущий следующий шаг — исправление подтверждённого FAIL CI583, публикация
+связанных signing/settings изменений после проверки секретов, новый Windows/Ubuntu CI
+на точном SHA. Прежняя privacy decision уже получена; способ передачи пакета
+ещё не согласован. Полный F31-R11 остаётся открытым.
 
 ## Следующий связанный блок: выбранный ключ
 
@@ -157,3 +158,21 @@ Source review пройден для SshKeyReadiness, frozen Unicode child enviro
 Протокол: [MICROTASK_SSH_SELECTED_KEY_SIGNING.md](MICROTASK_SSH_SELECTED_KEY_SIGNING.md).
 Подпись публичной reference не доказывает private bytes либо вход на VPS;
 автоматическая подготовка выбранного auth перед SSH остаётся в F31-R11.
+
+## CI583: подтверждённый результат и исправление
+
+Run [39660551553](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39660551553),
+source `e9fcfc3279269075eddd6def306c1ca2500cd28c`,
+tested merge `d379acd6a0dc5dc55d5d01417cc5c674237d1f27`.
+Ubuntu SUCCESS. Windows FAIL: Windows PowerShell5.1 прочитал новый русский
+текст в `tests/MaintenanceTests.ps1` как ANSI: UTF-8 файл не имел BOM.
+ParserError на строке256 возник до выполнения MaintenanceTests.
+До ошибки успешно выполнены SOCKS recovery41/403assertions,
+SSH-agent startup62, Desktop4539, Instance28. Maintenance/shutdown/HomeVPN,
+package и полный F23-R04 — NOT_RUN на этом source. CI583 остаётся FAIL.
+
+Исправление сохраняет все assertions и таймауты: MaintenanceTests получает
+UTF-8 BOM; `scripts/Test-ProGo.ps1` до build/native suites вызывает ParseFile
+для каждого `tests/*.ps1` с тем же декодированием, что Windows PowerShell.
+Следующий CI проверит и этот fix, и новый выбранный ключ; старые scoped PASS
+не подтверждают более поздний код.

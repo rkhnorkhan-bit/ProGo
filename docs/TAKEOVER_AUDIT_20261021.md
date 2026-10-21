@@ -227,3 +227,20 @@ post-read freshness gap, emptyendpoint ambiguity, Unicode console encoding;
 и расширил существующий строгий Tab route новой кнопкой. Public scan304/0,
 Python41PASS/3SKIP и diff checks не подменяют Windows/visual приёмку нового кода.
 CI583 наe9fcfc3 ещё не содержит signing изменений.
+
+## CI583 completed FAIL: точная причина, исправление без ослабления
+
+Run39660551553, source `e9fcfc3279269075eddd6def306c1ca2500cd28c`,
+merge `d379acd6a0dc5dc55d5d01417cc5c674237d1f27`.
+Ubuntu job119432094300 SUCCESS; Windows job119432093800 FAILURE.
+Windows log подтверждает scoped PASS: SOCKS41/403 assertions, SSH startup62,
+Desktop4539, Instance28. Затем ParserError `tests/MaintenanceTests.ps1:256`:
+новые русские literals в UTF8 без BOM декодируются Windows PowerShell5.1
+как ANSI. Это подтверждённый дефект тестового файла, а не intermittent timeout.
+Maintenance assertions не выполнены; дальнейшие shutdown/HomeVPN/package
+NOT_RUN; CI583 не переобозначается успехом.
+
+Исправление: BOM у MaintenanceTests без изменения тела; ранний ParseFile
+всех tests/*.ps1 перед build/долгими native suites. Нативное подтверждение
+исправления требует нового CI; локально PowerShell/Windows нет.
+Никакие таймауты/проверки не отключены и не ослаблены.

@@ -254,6 +254,16 @@ foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.
 
 }
 
+# Parse every PowerShell test using the same file decoding as Windows PowerShell.
+# This must run before compilation and the long native suites.
+foreach ($testScript in @(Get-ChildItem -LiteralPath (Join-Path $Root 'tests') -Filter '*.ps1' -File)) {
+    $fileTokens = $null; $fileErrors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($testScript.FullName, [ref]$fileTokens, [ref]$fileErrors)
+    if (@($fileErrors).Count -gt 0) {
+        Fail ("PowerShell file parser errors in tests/" + $testScript.Name + ": " + (($fileErrors | ForEach-Object { $_.Message }) -join '; '))
+    }
+}
+
 & $Build
 $Exe = Join-Path $Root "release\ProGo.exe"
 if (-not (Test-Path $Exe)) { Fail "release ProGo.exe missing" }

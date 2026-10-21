@@ -6,7 +6,7 @@
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "NOT_RUN: exact remote Windows/Ubuntu CI pending after approved push",
+  "fresh_candidate_verification": "FAIL: CI583 Windows parser/encoding failure; new signing/settings and encoding fix NOT_RUN pending new exact-source CI",
   "status_values": [
     "PASS",
     "FAIL",
@@ -2041,7 +2041,7 @@
     "observed": "public",
     "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
     "push": "PASS: API fast-forward with expected7861ea9, no force; source trees identical",
-    "ci": "NOT_RUN: CI583 in_progress, no final result yet",
+    "ci": "FAIL: CI583 completed; Ubuntu SUCCESS, Windows FAILURE",
     "pr88": "OPEN/DRAFT, head e9fcfc3279269075eddd6def306c1ca2500cd28c",
     "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
   },
@@ -2100,9 +2100,26 @@
     "source": "e9fcfc3279269075eddd6def306c1ca2500cd28c",
     "run_id": 39660551553,
     "run_number": 583,
-    "status": "in_progress",
-    "acceptance": "NOT_RUN until completed evidence",
-    "artifact_upload": "public default disabled; delivery not approved"
+    "status": "completed",
+    "acceptance": "FAIL: PS5.1 ANSI decoding of UTF8 without BOM in MaintenanceTests.ps1:256",
+    "artifact_upload": "public default disabled; delivery not approved",
+    "conclusion": "failure",
+    "tested_merge": "d379acd6a0dc5dc55d5d01417cc5c674237d1f27",
+    "scoped_pass": {
+      "socks_recovery_tests": 41,
+      "socks_recovery_assertions": 403,
+      "ssh_agent_startup": 62,
+      "desktop": 4539,
+      "instance": 28
+    },
+    "not_run": [
+      "MaintenanceTests",
+      "ShutdownTests",
+      "HomeVPNTests",
+      "package",
+      "complete F23-R04"
+    ],
+    "next": "UTF8 BOM + early ParseFile all PowerShell tests; fresh CI on new source, no blind retry"
   },
   "signing_microtask": {
     "status": "PARTIAL",
