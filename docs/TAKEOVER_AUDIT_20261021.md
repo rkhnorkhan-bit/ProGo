@@ -349,3 +349,25 @@ ancestor missing, pinning и repeat enable/disable на disposable CI paths.
 Все изменения ACL только fixture files с finally restore; owner PC не затронут.
 Root source review PASS после ancestor fix, diff/public scan PASS; native NOT_RUN.
 A12 PARTIAL, F31-R05/F06 не объявляются целиком PASS.
+
+## CI585 native FAIL: corrected design for ShellLink pinned read
+
+Windows job119457254213, source d0f9a690, merge4b952b8b. Native exception:
+FileLoadException0x80070020 в IPersistFile.Load → OpenOwnedShortcut → Enable →
+CodexShortcutRepeat. До mutation owned DELETE/read handle совместим с обычным
+чтением только если второй opener допускает share-delete; ShellLink Load этого
+не делает. Исправление переводит COM parsing в IPersistStream по snapshot bytes
+из уже удерживаемого FileStream. Pinned/delete semantics сохраняются; повторного
+path-open нет. Existing tests не отключаются; oversize/empty дополнены отдельно.
+Полная новая Windows регрессия и package NOT_RUN; CI585 остаётся FAILURE.
+
+## CI585 fix source-reviewed: COM stream, защита не ослаблена
+
+Pinned byte snapshot1..1MiB передаётся ShellLink IPersistStream.Load через
+SHCreateMemStream. Повторного IPersistFile pathname-open нет. GUID/vtable/IStream
+marshal и nested cleanup проверены независимо; byte binding и DELETE pin
+сохранены. New empty/oversize и path-open-refusal tests дополняют прежнюю native
+matrix. Source review PASS, runtime новой версии NOT_RUN; нужен новый CI.
+Review SHA256 ProxyAutomation85c6ac16847be1cb6dfb0d727e51eeb473847920f5f4a32d2c506dda67b2b4eb,
+tests76851611172640609fdb8dbd7722d484458d7d9707736256ac953e1510a477c1.
+Standalone retention29 checks в CI585 PASS; Context/R07/key full run там не выполнен.

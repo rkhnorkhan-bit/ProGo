@@ -6,7 +6,7 @@
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "FAIL: CI584 fixture ANSI dialog serialization; signing55/UI50/settings93/Desktop4739 scoped PASS at source6b3122f0, later/new blocks NOT_RUN",
+  "fresh_candidate_verification": "FAIL: CI585 ShellLink path-open sharing incompatibility; earlier source6b scoped signing/settings evidence retained, new full candidate not accepted",
   "status_values": [
     "PASS",
     "FAIL",
@@ -1062,14 +1062,15 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
-        "criterion": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку."
+        "criterion": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку.",
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку.",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Shared runtime inventory/payload validation then owned transactional repair; do not merely add current minimal self-check"
     },
     {
       "id": "F22-R04",
@@ -1852,20 +1853,21 @@
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R08)",
       "implementation": "Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService",
       "history": "Частично",
-      "status": "PARTIAL",
+      "status": "FAIL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
-        "criterion": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction."
+        "criterion": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Tracked Build/save with installed shared API; then bounded logger/open workers, heartbeat/native snapshot/cancel tests"
     },
     {
       "id": "F31-R09",
@@ -1881,14 +1883,15 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
-        "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение."
+        "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "After StopAsync: immutable service/private snapshot, worker session preparation; then private persistence/admin/recovery phases preserving request IDs"
     },
     {
       "id": "F31-R10",
@@ -1904,14 +1907,15 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
-        "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются."
+        "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Owned StopAsync result and UI/shutdown integration; actual child/locked session/cancel/explicit retry tests"
     },
     {
       "id": "F31-R11",
@@ -2049,8 +2053,8 @@
     "observed": "public",
     "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
     "push": "PASS: API fast-forward with expected7861ea9, no force; source trees identical",
-    "ci": "FAIL: CI584 completed; Ubuntu SUCCESS, Windows FAILURE",
-    "pr88": "OPEN/DRAFT, head6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
+    "ci": "FAIL: CI585 Windows FAILURE, Ubuntu SUCCESS",
+    "pr88": "OPEN/DRAFT, headd0f9a6902345eab288b25e8f902df1514db3f2ca",
     "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
   },
   "local_regression": {
@@ -2062,7 +2066,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
+  "candidate_source": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -2071,11 +2075,11 @@
     "fresh_candidate_code_package_target": "NOT_RUN/BLOCKED; no total product PASS"
   },
   "publication_scan": {
-    "source_range": "e9fcfc3..6b3122f0",
-    "added_lines": 1499,
-    "changed_files": 17,
+    "source_range": "6b3122f0..d0f9a690",
+    "added_lines": 1905,
+    "changed_files": 20,
     "findings": 0,
-    "independent_review": "PASS source review signing/UI/settings/encoding; native acceptance separate"
+    "independent_review": "PASS source reviews; native tests run separately"
   },
   "publication_mapping": [
     {
@@ -2117,32 +2121,45 @@
       "local": "e26308f164c73337038f88c28073f9fc7846271c",
       "published": "6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
       "tree": "ac697a695e83c7d2f55fe260cae05d122cdf21d6"
+    },
+    {
+      "local": "d9a7f76e7443125710e411a11e4ad9b1ae7a01ac",
+      "published": "309c437bf5406c426e0638ae12b9cdfbc57d1fe2",
+      "tree": "8895bf006afcb432ef389b0ce65159db7143ecb9"
+    },
+    {
+      "local": "243165cee48596498610a438e2a8d6d1f12851ae",
+      "published": "d4b9d3a4dfa7c68c7afd44984748318e4b877c4a",
+      "tree": "f236006fcc40415eb1ec8cfc1d582ca42c6e1f83"
+    },
+    {
+      "local": "5eae4f22663bbaa988107a99d0a4e8d6e7d1bf3e",
+      "published": "5537b2fa468365454c268280a8e20aacaba4d7a2",
+      "tree": "9206ee53923e2c8caf4b32eccf0512adc1e1150f"
+    },
+    {
+      "local": "5ae128e31df6e04902aaa48c474f10b72d70d251",
+      "published": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
+      "tree": "510667a814a404204a26f16faaa59fed7fe5bb43"
     }
   ],
   "ci_candidate": {
-    "source": "6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
-    "tested_merge": "2f6b901a6fd537e0e0eeb81c0431b200e29260b2",
-    "run_id": 39663669399,
-    "run_number": 584,
+    "source": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
+    "tested_merge": "4b952b8b4e3a6473ceac230732384046801ce7fd",
+    "run_id": 39667773240,
+    "run_number": 585,
     "status": "completed",
-    "acceptance": "FAIL: rollback-copy-fail dialog text assertion; source-confirmed ANSI capture portability defect consistent with failure; old run ACP/bytes unavailable",
-    "artifact_upload": "public default disabled; private delivery not agreed",
+    "acceptance": "FAIL: CodexShortcutRepeat FileLoadException0x80070020 from IPersistFile.Load incompatible with pinned DELETE handle",
+    "artifact_upload": "public default disabled; private delivery requires agreement",
     "conclusion": "failure",
-    "scoped_pass": {
-      "ssh_selected_key_signing": 55,
-      "ssh_selected_key_signing_ui": 50,
-      "settings_initial_load_preservation": 93,
-      "desktop": 4739,
-      "ssh_agent_startup": 62,
-      "instance": 28
-    },
     "not_run": [
-      "remaining Maintenance rollback vectors after copy-fail dialog assertion",
+      "new full Desktop/AsyncCleanup/Updater/selected-key regression",
+      "Maintenance rollback encoding fix",
       "ShutdownTests",
       "HomeVPNTests",
       "package"
     ],
-    "next": "explicit UTF8 in fixture dialog writer and reader; preserve assertions; exact new-source CI"
+    "next": "load ShellLink via IPersistStream from same pinned byte snapshot, retain native delete protection; new exact-source CI"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -2186,6 +2203,31 @@
         "complete F23-R04"
       ],
       "next": "UTF8 BOM + early ParseFile all PowerShell tests; fresh CI on new source, no blind retry"
+    },
+    {
+      "source": "6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
+      "tested_merge": "2f6b901a6fd537e0e0eeb81c0431b200e29260b2",
+      "run_id": 39663669399,
+      "run_number": 584,
+      "status": "completed",
+      "acceptance": "FAIL: rollback-copy-fail dialog text assertion; source-confirmed ANSI capture portability defect consistent with failure; old run ACP/bytes unavailable",
+      "artifact_upload": "public default disabled; private delivery not agreed",
+      "conclusion": "failure",
+      "scoped_pass": {
+        "ssh_selected_key_signing": 55,
+        "ssh_selected_key_signing_ui": 50,
+        "settings_initial_load_preservation": 93,
+        "desktop": 4739,
+        "ssh_agent_startup": 62,
+        "instance": 28
+      },
+      "not_run": [
+        "remaining Maintenance rollback vectors after copy-fail dialog assertion",
+        "ShutdownTests",
+        "HomeVPNTests",
+        "package"
+      ],
+      "next": "explicit UTF8 in fixture dialog writer and reader; preserve assertions; exact new-source CI"
     }
   ],
   "retention_microtask": {
@@ -2194,7 +2236,8 @@
     "status": "PARTIAL",
     "source_review": "PASS independent backend and root UI/tests",
     "runtime": "NOT_RUN",
-    "cancellation_boundary": "before/between deletion; in-flight OS call retained, no forced cancellation; committed final actual result preserved"
+    "cancellation_boundary": "before/between deletion; in-flight OS call retained, no forced cancellation; committed final actual result preserved",
+    "native_low_level": "PASS29 atd0f9a690/4b952b8b CI585, includes real pre-cancel/no-delete; new native Context suite NOT_RUN"
   },
   "updater_handoff_microtask": {
     "requirement": "F31-R07",
@@ -2209,8 +2252,21 @@
     "status": "PARTIAL",
     "implementation": "fresh raw ShellLink target/exact args, checked object pinned until handle delete; ancestor reparse checks and no-overwrite new publication",
     "source_review": "PASS root after ancestor missing-parent bypass fix",
-    "native": "NOT_RUN",
+    "native": "FAIL: CI585 CodexShortcutRepeat IPersistFile.Load0x80070020; fix in progress, no guard weakening",
     "boundary": "existing owned cmd write remains in-place; no whole two-file transaction claim",
-    "next": "exact Windows COM/ACL/sharing/junction/replacement/pinning regression, then target/package acceptance"
+    "next": "exact Windows COM/ACL/sharing/junction/replacement/pinning regression, then target/package acceptance",
+    "stream_loader_fix": {
+      "source_commit": "3866770abe4213a81566b36375f0d8303f49ff70",
+      "implementation": "bounded snapshot of same pinned file -> SHCreateMemStream -> IPersistStream.Load, no pathname reopen",
+      "source_review": "PASS independent IID/vtable/marshaling/cleanup/byte binding/guards",
+      "native": "NOT_RUN pending new exact-source CI",
+      "scope": "old CI585 failure retained; DELETE/share-read pinning and handle deletion not weakened"
+    }
+  },
+  "residual_recheck": {
+    "source": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
+    "evidence": "docs/RESIDUAL_RECHECK_20261021.md",
+    "scope": "A04/F22-R03,F31-R08/R09/R10",
+    "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   }
 }

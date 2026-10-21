@@ -110,7 +110,7 @@ opt-in, который в этом прогоне не используется.
 | F31-R05 → F31 | Остаточные startup/settings/shortcut операции вне UI | PARTIAL | Частично | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R06 → F31 | Фоновый retention preview/cleanup | PARTIAL | Исправлен source-confirmed UI I/O; native NOT_RUN | новый CI, итоговый пакет | Выполнить AsyncCleanupWorkflow и retention regression на точном SHA; visual/target отдельно. |
 | F31-R07 → F31 | Фоновое ожидание updater handoff | PARTIAL | Source fix и независимое review; native NOT_RUN | новый CI, пакет | Выполнить owned backend и actual Update route suites; ACK/cancel/timeout/queued lifecycle regression. |
-| F31-R08 → F31 | Фоновая работа logs/diagnostic export | PARTIAL | Частично | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
+| F31-R08 → F31 | Фоновая работа logs/diagnostic export | FAIL | Source recheck d0f9a690: UI disk I/O | нет внешней блокировки | Tracked Build/save, затем logger/open; native heartbeat и snapshot/cancel. |
 | F31-R09 → F31 | HomeVPN private I/O, DPAPI и session preparation в worker | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R10 → F31 | Асинхронные phone Stop/cleanup | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R11 → F31 | Подготовка SSH-agent и итоговая dev приёмка F31 | PARTIAL | Dev PENDING | selected-key readiness, startup ordering, F31-R05, F31-R06, F31-R07, F31-R08, F31-R09, F31-R10 | Выполнить критерий; зафиксировать тесты и точный SHA. |
@@ -292,3 +292,40 @@ Root source review обнаружил и затем подтвердил исп�
 Запись existing owned cmd остаётся in-place как прежде; общей атомарной транзакции
 двух файлов и сохранности собственных bytes при любой I/O-ошибке не заявляется.
 F31-R05 и F06 полностью не закрываются этим узким guard.
+
+## Текущий CI585 и свежая сверка остатка
+
+Source `d0f9a6902345eab288b25e8f902df1514db3f2ca`, merge
+`4b952b8b4e3a6473ceac230732384046801ce7fd`,
+[run39667773240](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39667773240).
+Ubuntu SUCCESS, Windows in_progress; полного PASS нет.
+20files/1905addedlines перед push:0 secrets/PII findings, public-content310/0,
+diff PASS; Python41PASS/3SKIP. Новые published commits/tree mapping в JSON.
+
+[RESIDUAL_RECHECK_20261021.md](RESIDUAL_RECHECK_20261021.md) фиксирует повторную
+независимую проверку на этом source. A04/F22-R03 и F31-R08/R09/R10 подтверждены
+как source FAIL; native latency/воспроизведение/ПК NOT_RUN. Исправленные R06/R07
+их не закрывают. Никакие owner PC/VPS/repair действия для проверки не выполнялись.
+
+## CI585 completed FAIL: native ShellLink sharing
+
+Source d0f9a690 / merge4b952b8b / run39667773240: Ubuntu SUCCESS,
+Windows FAILURE. В CodexShortcutRepeat настоящий IPersistFile.Load упал с
+FileLoadException0x80070020: COM повторно открывает pathname без share-delete,
+несовместимо с удерживаемым DELETE handle guard. Это новый production guard bug,
+не flaky timeout. Guard/ownership не ослабляются: вместо path-open ShellLink
+загружается через IPersistStream из bounded bytes того же pinned file object.
+Новый полный Desktop/R06/R07/key run, Maintenance encoding fix, shutdown/HomeVPN
+и package остаются NOT_RUN в CI585. Предыдущие55/50/93/4739 — scoped CI584,
+их нельзя перенести на source d0f9a690. Новый runtime fix получит отдельный CI.
+
+## A12 stream-loader: исправление конкретного native FAIL
+
+После CI585 ShellLink parsing использует снимок1..1МиБ из того же pinned
+FileStream → SHCreateMemStream → IPersistStream.Load. Повторного pathname-open
+нет; DELETE/share-read и handle deletion сохранены. Native object и memory stream
+освобождаются nested finally, pinned file живёт до mutation caller.
+Добавлены empty/oversize и отказ обычного File.OpenRead под DELETE pin.
+Independent source review PASS; новый native run NOT_RUN. CI585 не исправляется
+задним числом. В нём отдельно PASS29 standalone retention checks, включая новый
+real pre-cancel/no-delete; десять cleanup Context сценариев ещё NOT_RUN.
