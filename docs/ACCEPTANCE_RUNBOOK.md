@@ -1,6 +1,16 @@
 # Приёмка следующего ProGo кандидата
 
-Текущий итог опубликованного16-file кандидата: CI587 completed FAILURE
+Текущий подтверждённый published snapshot: **CI588 SUCCESS**,
+source `b32ac4ece5cd62b98eab22b7e65aaa079544e5bf`, tested merge
+`e1039ddd046528fc75b9d46897e6924f597768d5`. Native report/helper,4 modal
+Cancel→Retry,3 chooser, Context и SSH preparation43 реально выполнены;
+Desktop5103 и остальные Windows jobs прошли. Runner ZIP SHA256
+`7c6febfc2ebda1834ffa1d04ebc0cc13001bb0629de8f505facb78898d223c5c`, uploads
+SKIPPED, архив не передан/не установлен. V1.0 проверенная база22/100 только
+этого снимка; common lifecycle c0f5610/50 новых+старых recovery cases отдельно
+compilation/native NOT_RUN. Сначала их новый exact-SHA run, не старый SUCCESS.
+
+История CI587 опубликованного16-file кандидата: CI587 completed FAILURE
 на source `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, merge
 `decfa11496c12c5e65987043fb58fc7388cb5d6c`. C# compilation/report32/helper2 и4
 real modal Cancel→Retry scoped PASS; normal native chooser FAIL по caption

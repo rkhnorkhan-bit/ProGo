@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -64,6 +65,15 @@ internal static class SocksRecoveryTests
             Test("invalid structured SSH arguments pause before any child and the same profile can be corrected", PermanentConstructionFailures);
             Test("config and prelaunch failures leave permitted manual and automatic backups available", PermanentErrorFallback);
             Test("transport refusals and nonfatal diagnostics remain distinct from key and host-key refusal", SshDiagnosticDistinctions);
+            Test("owned preparation shares one async launch and Stop retains settlement before retry", LaunchPreparationCancelRetry);
+            Test("synchronous manual preparation remains owned until cancellation settles", LaunchPreparationSynchronousStop);
+            Test("recovery preparation cannot spawn or reschedule after Stop", LaunchPreparationRecoveryStop);
+            Test("profile and endpoint edits invalidate held preparation before native spawn", LaunchPreparationInvalidation);
+            Test("busy revision admission releases the process gate and rechecks changed settings", LaunchPreparationBusyAdmission);
+            Test("unconfirmed advisory preparation does not prohibit ordinary native SSH attempts", LaunchPreparationAdvisoryFailure);
+            Test("every permitted fallback candidate receives fresh preparation", LaunchPreparationFallback);
+            Test("forced disposal cancels held preparation without a late native spawn", LaunchPreparationDispose);
+            Test("cancellation at final admission releases its lease before any native spawn", LaunchPreparationFinalAdmissionCancel);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
             Console.WriteLine("SOCKS recovery assertions PASS: " + assertions);
             return 0;
@@ -99,7 +109,9 @@ internal static class SocksRecoveryTests
         public DateTime Now = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public readonly ProxyService Proxy;
         public int ProfileSaves;
-        public Fixture(int startupTimeoutMs = 20000, string host = "127.0.0.1")
+        public Fixture(int startupTimeoutMs = 20000, string host = "127.0.0.1",
+            Func<SshProfileSetting, string, CancellationToken, ISshLaunchPreparationObservation> prepare = null,
+            ProxyService.AcquireLaunchRevision admission = null)
         {
             Settings.SocksHost = host;
             bool ipv6 = host == "::1" || host == "[::1]" || (host == "localhost" && Environment.GetEnvironmentVariable("PROGO_TEST_SSH_LOCALHOST_FAMILY") == "v6");
@@ -107,7 +119,8 @@ internal static class SocksRecoveryTests
             Settings.SocksPort = ((IPEndPoint)reserve.LocalEndpoint).Port; reserve.Stop();
             Settings.SshProfile = "ready";
             Proxy = new ProxyService(delegate { return Settings; }, delegate(AppSettings s) { Settings = s; ProfileSaves++; },
-                Executable, delegate { return Now; }, false, "", startupTimeoutMs);
+                Executable, delegate { return Now; }, false, "", startupTimeoutMs,
+                prepareAuthentication: prepare, acquireLaunchRevision: admission);
         }
         public void Tick(int seconds) { Now = Now.AddSeconds(seconds); Proxy.PollRecovery(); }
         public void Ready()
@@ -126,6 +139,237 @@ internal static class SocksRecoveryTests
             Tick(0);
         }
         public void Dispose() { Proxy.Dispose(); }
+    }
+
+    // These fixtures exercise real native child/SOCKS lifecycle and controlled
+    // preparation barriers. Real ssh-G/agent protocol remains a separate suite;
+    // no live VPS/server authorization is inferred from this injected boundary.
+    private sealed class LaunchObservation : ISshLaunchPreparationObservation
+    {
+        private readonly SshProfileSetting candidate;
+        private readonly string executable;
+        public string AgentEndpoint { get; private set; }
+        internal LaunchObservation(SshProfileSetting candidate, string executable)
+        { this.candidate = candidate.Clone(); this.executable = executable; AgentEndpoint = Environment.GetEnvironmentVariable("SSH_AUTH_SOCK"); }
+        public bool MatchesLaunchRequest(SshProfileSetting current, string file, string endpoint)
+        {
+            return candidate.Target == current.Target && candidate.Server == current.Server && candidate.User == current.User &&
+                candidate.Port == current.Port && candidate.IdentityFile == current.IdentityFile && executable == file && AgentEndpoint == endpoint;
+        }
+        public string ToDisplay() { return "Fixture advisory only; no private-key/server authorization."; }
+    }
+    private static void SettleLaunchFixture(params Task[] tasks)
+    {
+        var watch = Stopwatch.StartNew();
+        while (Array.Exists(tasks, t => t != null && !t.IsCompleted)) {
+            if (watch.ElapsedMilliseconds >= 5000) throw new TimeoutException("owned launch fixture cleanup deadline");
+            Thread.Sleep(10);
+        }
+        foreach (var task in tasks) if (task != null && task.IsFaulted) { var observed = task.Exception; }
+    }
+    private static void AssertPreparationGateFree(ProxyService proxy)
+    {
+        var gate = typeof(ProxyService).GetField("gate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(proxy);
+        bool free = Monitor.TryEnter(gate, 500);
+        try { Assert(free, "Preparation/admission retained the process gate while its worker was held"); }
+        finally { if (free) Monitor.Exit(gate); }
+    }
+    private static void LaunchPreparationCancelRetry()
+    {
+        int calls = 0; CancellationToken seen = default(CancellationToken); Task<bool> start = null, retry = null, stop = null;
+        using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+        using (var f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+            var observed = new LaunchObservation(candidate, executable);
+            if (Interlocked.Increment(ref calls) == 1) {
+                seen = token; entered.Set(); if (!release.Wait(3000)) throw new TimeoutException("async preparation fixture deadline");
+            }
+            return observed;
+        })) {
+            try {
+                start = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(entered.Wait(3000), "Async launch did not reach its owned preparation"); AssertPreparationGateFree(f.Proxy);
+                Assert(Object.ReferenceEquals(start, f.Proxy.StartTunnelAsync(CancellationToken.None)) && calls == 1 && !f.Proxy.CurrentPid.HasValue,
+                    "Duplicate async start launched a second preparation or native process");
+                stop = f.Proxy.StopTunnelAsync();
+                Assert(!f.Proxy.ConnectionRequested, "Stop did not invalidate user intent before returning its pending task");
+                retry = f.Proxy.StartTunnelAsync(CancellationToken.None);
+                Assert(seen.IsCancellationRequested && !stop.IsCompleted && !retry.IsCompleted && f.Proxy.ConnectionRequested,
+                    "Stop/retry released a still-held preparation before its actual settlement");
+                release.Set(); SettleLaunchFixture(start, stop, retry);
+                Assert(start.IsCanceled && stop.Result && retry.Result && calls == 2 && f.Proxy.CurrentPid.HasValue,
+                    "Cancel/settle/explicit retry did not create exactly one fresh native attempt");
+                Assert(f.Proxy.AuthenticationPreparation != null, "Fresh retry lost its own preparation observation");
+            }
+            finally { release.Set(); var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(start, stop, retry, cleanup); }
+        }
+    }
+    private static void LaunchPreparationSynchronousStop()
+    {
+        Task manual = null; Task<bool> stop = null;
+        using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+        using (var f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+            var observed = new LaunchObservation(candidate, executable); entered.Set();
+            if (!release.Wait(3000)) throw new TimeoutException("sync preparation fixture deadline"); return observed;
+        })) {
+            try {
+                manual = Task.Run(() => f.Proxy.StartTunnel(false));
+                Assert(entered.Wait(3000), "Synchronous launch did not reach preparation"); AssertPreparationGateFree(f.Proxy);
+                stop = f.Proxy.StopTunnelAsync(); Assert(!stop.IsCompleted, "Stop forgot the synchronous preparation owner");
+                release.Set(); SettleLaunchFixture(manual, stop);
+                Assert(stop.Result && !f.Proxy.HasOwnedProcess && !f.Proxy.ConnectionRequested && f.Proxy.AuthenticationPreparation == null,
+                    "Cancelled synchronous preparation spawned or published after Stop");
+                Assert(manual.IsCanceled || manual.IsFaulted && Array.TrueForAll(manual.Exception.Flatten().InnerExceptions.ToArray(), e => e is OperationCanceledException),
+                    "Synchronous preparation did not report cancellation");
+            }
+            finally { release.Set(); var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(manual, stop, cleanup); }
+        }
+    }
+    private static void LaunchPreparationRecoveryStop()
+    {
+        int calls = 0; Task poll = null; Task<bool> stop = null;
+        using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+        using (var f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+            var observed = new LaunchObservation(candidate, executable);
+            if (Interlocked.Increment(ref calls) == 2) { entered.Set(); if (!release.Wait(3000)) throw new TimeoutException("recovery preparation fixture deadline"); }
+            return observed;
+        })) {
+            try {
+                f.Start(); f.Crash(); poll = Task.Run(() => f.Tick(5));
+                Assert(entered.Wait(3000), "Recovery bypassed fresh preparation"); AssertPreparationGateFree(f.Proxy);
+                f.Proxy.PollRecovery(); Assert(calls == 2 && !f.Proxy.HasOwnedProcess, "Timer duplicated an owned recovery preparation");
+                stop = f.Proxy.StopTunnelAsync(); Assert(!stop.IsCompleted, "Stop forgot the recovery preparation owner");
+                release.Set(); SettleLaunchFixture(poll, stop); f.Tick(600);
+                Assert(!poll.IsFaulted && stop.Result && calls == 2 && f.Proxy.AutomaticRestarts == 0 &&
+                    !f.Proxy.HasOwnedProcess && !f.Proxy.NextRecoveryUtc.HasValue && f.Proxy.AuthenticationPreparation == null,
+                    "Cancelled recovery created a late child/retry or counted an SSH attempt that never occurred");
+            }
+            finally { release.Set(); var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(poll, stop, cleanup); }
+        }
+    }
+    private static void LaunchPreparationInvalidation()
+    {
+        foreach (bool endpoint in new[] { false, true }) {
+            var previous = Environment.GetEnvironmentVariable("SSH_AUTH_SOCK"); int calls = 0; Task<bool> start = null;
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+            using (var f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+                var observed = new LaunchObservation(candidate, executable);
+                if (Interlocked.Increment(ref calls) == 1) { entered.Set(); if (!release.Wait(3000)) throw new TimeoutException("changed preparation fixture deadline"); }
+                return observed;
+            })) {
+                try {
+                    start = f.Proxy.StartTunnelAsync(CancellationToken.None); Assert(entered.Wait(3000), "Changed-scope fixture missed preparation");
+                    if (endpoint) Environment.SetEnvironmentVariable("SSH_AUTH_SOCK", "changed-owned-launch-fixture");
+                    else f.Settings.SshProfile = "changed-profile-fixture";
+                    release.Set(); SettleLaunchFixture(start);
+                    Assert(start.IsCanceled && !f.Proxy.HasOwnedProcess && f.Proxy.AuthenticationPreparation == null,
+                        "A changed profile/endpoint admitted or published the old prepared launch");
+                    Environment.SetEnvironmentVariable("SSH_AUTH_SOCK", previous); f.Settings.SshProfile = "ready";
+                    start = f.Proxy.StartTunnelAsync(CancellationToken.None); SettleLaunchFixture(start);
+                    Assert(start.Result && calls == 2, "Explicit retry did not prepare the corrected current scope");
+                }
+                finally { release.Set(); var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(start, cleanup); Environment.SetEnvironmentVariable("SSH_AUTH_SOCK", previous); }
+            }
+        }
+    }
+    private static void LaunchPreparationBusyAdmission()
+    {
+        foreach (bool changed in new[] { false, true }) {
+            int calls = 0; Task<bool> start = null;
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+                ProxyService.AcquireLaunchRevision admission = delegate(SettingsRevisionSnapshot snapshot, out IDisposable lease) {
+                    lease = null; entered.Set(); return release.IsSet ? SettingsLaunchRevisionState.Acquired : SettingsLaunchRevisionState.Busy;
+                };
+                using (var f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+                    Interlocked.Increment(ref calls); return new LaunchObservation(candidate, executable);
+                }, admission: admission)) {
+                    try {
+                        start = f.Proxy.StartTunnelAsync(CancellationToken.None); Assert(entered.Wait(3000), "Launch did not reach revision admission");
+                        AssertPreparationGateFree(f.Proxy);
+                        Assert(!start.IsCompleted && !f.Proxy.HasOwnedProcess && calls == 1, "Busy settings writer admitted or duplicated a native launch");
+                        if (changed) f.Settings.SshProfile = "changed-admission-fixture";
+                        release.Set(); SettleLaunchFixture(start);
+                        Assert(changed ? start.IsCanceled && !f.Proxy.HasOwnedProcess : start.Result && f.Proxy.HasOwnedProcess,
+                            "Busy admission did not recheck current intent/settings before actual native spawn");
+                    }
+                    finally { release.Set(); var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(start, cleanup); }
+                }
+            }
+        }
+    }
+    private static void LaunchPreparationAdvisoryFailure()
+    {
+        foreach (bool throws in new[] { false, true }) using (var f = new Fixture(prepare:
+            delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+                if (throws) throw new IOException("fixture advisory unavailable"); return null;
+            })) {
+            var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
+            try { SettleLaunchFixture(task); Assert(task.Result && f.Proxy.HasOwnedProcess, "Unconfirmed advisory check became a new authentication hard gate"); }
+            finally { var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(task, cleanup); }
+        }
+    }
+    private static void LaunchPreparationFallback()
+    {
+        var prepared = new System.Collections.Concurrent.ConcurrentQueue<string>(); Task<bool> start = null;
+        using (var f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+            prepared.Enqueue(candidate.Address); return new LaunchObservation(candidate, executable);
+        })) {
+            try {
+                AddFallback(f, "denied", "ready"); start = f.Proxy.StartTunnelAsync(CancellationToken.None); SettleLaunchFixture(start);
+                Assert(start.Result && prepared.ToArray().SequenceEqual(new[] { "denied", "ready" }),
+                    "Manual fallback bypassed fresh per-candidate preparation or retried a refused candidate");
+            }
+            finally { var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(start, cleanup); }
+        }
+    }
+
+    private static void LaunchPreparationDispose()
+    {
+        Task<bool> start = null; CancellationToken seen = default(CancellationToken);
+        using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim())
+        using (var f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+            var observed = new LaunchObservation(candidate, executable); seen = token; entered.Set();
+            if (!release.Wait(3000)) throw new TimeoutException("disposed preparation fixture deadline"); return observed;
+        })) {
+            try {
+                start = f.Proxy.StartTunnelAsync(CancellationToken.None); Assert(entered.Wait(3000), "Dispose fixture missed preparation");
+                var watch = Stopwatch.StartNew(); f.Proxy.Dispose(); watch.Stop();
+                Assert(watch.ElapsedMilliseconds < 500 && seen.IsCancellationRequested && !start.IsCompleted,
+                    "Forced disposal blocked on held preparation or forgot cancellation/ownership");
+                release.Set(); SettleLaunchFixture(start);
+                Assert(start.IsCanceled && !f.Proxy.HasOwnedProcess && f.Proxy.AuthenticationPreparation == null,
+                    "Disposed preparation published or created a late SSH process");
+            }
+            finally { release.Set(); f.Proxy.Dispose(); SettleLaunchFixture(start); }
+        }
+    }
+    private sealed class LaunchFixtureLease : IDisposable
+    {
+        private readonly Action release; private int released;
+        internal LaunchFixtureLease(Action release) { this.release = release; }
+        public void Dispose() { if (Interlocked.Exchange(ref released, 1) == 0) release(); }
+    }
+    private static void LaunchPreparationFinalAdmissionCancel()
+    {
+        Task<bool> start = null, stop = null; int released = 0;
+        using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+            ProxyService.AcquireLaunchRevision admission = delegate(SettingsRevisionSnapshot snapshot, out IDisposable lease) {
+                lease = null; entered.Set();
+                if (!release.Wait(3000)) throw new TimeoutException("final admission fixture deadline");
+                lease = new LaunchFixtureLease(() => Interlocked.Increment(ref released)); return SettingsLaunchRevisionState.Acquired;
+            };
+            using (var f = new Fixture(prepare: (candidate, executable, token) => new LaunchObservation(candidate, executable), admission: admission)) {
+                try {
+                    start = f.Proxy.StartTunnelAsync(CancellationToken.None); Assert(entered.Wait(3000), "Final admission fixture was not entered");
+                    var watch = Stopwatch.StartNew(); stop = f.Proxy.StopTunnelAsync(); watch.Stop();
+                    Assert(watch.ElapsedMilliseconds < 200 && !stop.IsCompleted && !f.Proxy.ConnectionRequested,
+                        "Stop waited on final admission or claimed an unsettled launch was already stopped");
+                    release.Set(); SettleLaunchFixture(start, stop);
+                    Assert(start.IsCanceled && stop.Result && released == 1 && !f.Proxy.HasOwnedProcess && f.Proxy.AuthenticationPreparation == null,
+                        "Cancelled final admission leaked its lease or allowed a late native process/observation");
+                }
+                finally { release.Set(); var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(start, stop, cleanup); }
+            }
+        }
     }
 
     private static void SettingsMigration()
@@ -567,13 +811,18 @@ internal static class SocksRecoveryTests
 
     private static void ForeignReadySocks()
     {
-        using (var capture = new FallbackCapture()) using (var f = new Fixture()) {
+        int preparations = 0;
+        using (var capture = new FallbackCapture()) using (var f = new Fixture(prepare:
+            delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+                Interlocked.Increment(ref preparations); return new LaunchObservation(candidate, executable);
+            })) {
             using (var foreign = Process.Start(new ProcessStartInfo(Executable, "-N -D 127.0.0.1:" + f.Settings.SocksPort.ToString(CultureInfo.InvariantCulture) + " ready") { UseShellExecute = false, CreateNoWindow = true })) {
                 try {
                     WaitForFallback(() => ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None));
                     var task = f.Proxy.StartTunnelAsync(CancellationToken.None);
                     Assert(task.Wait(10000) && !task.Result && !f.Proxy.HasOwnedProcess && f.Proxy.StartupError.Contains("другим процессом"), "Foreign valid SOCKS was adopted as owned startup or mislabeled as unresponsive");
                     Assert(!foreign.HasExited && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None) && capture.Count() == 1, "Starting ProGo killed or duplicated the foreign SOCKS owner");
+                    Assert(preparations == 0, "A valid borrowed SOCKS route unnecessarily prepared an own SSH launch");
                     f.Proxy.StopTunnel(); f.Tick(600);
                     Assert(!foreign.HasExited && ConnectionHealthMonitor.CheckSocks(f.Settings, CancellationToken.None) && !f.Proxy.NextRecoveryUtc.HasValue, "Stopping ProGo altered a foreign valid SOCKS route");
                 } finally { if (!foreign.HasExited) foreign.Kill(); if (!foreign.WaitForExit(3000)) throw new Exception("Foreign fixture did not exit"); }

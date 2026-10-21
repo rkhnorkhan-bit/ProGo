@@ -299,6 +299,9 @@ foreach ($relativePath in @(
 
 $RecoveryHarness = Join-Path $Root "build\SocksRecoveryTests.exe"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+# Capability only: no server/service is started or configured by this probe.
+$SshFixtureServer = Join-Path $env:WINDIR 'System32\OpenSSH\sshd.exe'
+Write-Host ('Native SSH fixture server available: ' + (Test-Path -LiteralPath $SshFixtureServer -PathType Leaf))
 $VaultReadHarness = Join-Path $Root 'build\VaultReadTests.exe'
 # Test-only paths/log guards keep this reader harness out of actual user data.
 & $Csc /nologo /target:exe /main:ProGo.VaultReadTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$VaultReadHarness" (Join-Path $Root 'src\Vault.cs') (Join-Path $Root 'tests\VaultReadTests.cs')

@@ -115,3 +115,18 @@ preparation/own child; direct/none/custom/other-auth/multiple/unknown/sign-fail
 с сохранением обычной попытки. Сохранить существующие AsyncStopSerialization,
 FallbackCancellation, TimerFallbackStop, FallbackEditCancellation, ForeignReadySocks
 и PermanentRecoveryFallback. Реализация и выполнение этого блока пока TODO/NOT_RUN.
+
+## Local lifecycle этап3 — source PARTIAL, отдельный от CI588
+
+Main Program явно передаёт preparer; общий StartSingleTunnel теперь резервирует
+один epoch/Work до worker preparation вне process gate и применяет final
+SettingsService revision lease непосредственно перед native spawn. Captured
+endpoint закреплён в ProcessStartInfo; Stop/Dispose invalidation и settlement,
+manual/recovery/fallback freshness описаны в текущем PROJECT_STATE.
+9 новых bounded native lifecycle scenarios добавлены к41 существующему recovery
+suite; compilation/native NOT_RUN. Полный F31-R11 не закрыт. Это source main
+pipeline, bootstrap/HomeVPN optional constructor остаётся отдельной областью.
+Нужны новый exact-SHA CI, combined real-preparer/native tunnel integration и
+раздельная typed UI presentation; owner encrypted-agent/VPS/другой ПК отдельно.
+Прежний раздел TODO выше сохраняет критерии, а не отменяет этот local source
+checkpoint. CI588 b32ac4ec не проверяет эти новые lifecycle изменения.

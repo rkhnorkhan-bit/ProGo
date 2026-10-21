@@ -1,6 +1,6 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, tree `b1bbec0ca9876edafc8cd0cf8b16a605bef2ed45`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `b32ac4ece5cd62b98eab22b7e65aaa079544e5bf`, tree `c987657710561336d54abd77d123babe592769c7`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
@@ -8,7 +8,135 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий результат CI587 и исправление native chooser
+## Следующий checking candidate — общий lifecycle F31-R11
+
+Local source lifecycle `c0f5610a2931b0230a9839291ff1843b4bb0c787` и capability
+probe `494cbf138647fe60affa0ade3ce7882953647050` завершены отдельными commits.
+Следующая публикация включает их,9 новых bounded recovery сценариев (всего50)
+и checkpoint документы. Она не меняет workflows и не разрешает binary uploads.
+Windows compilation/native этого lifecycle NOT_RUN до нового точного CI;
+успех CI588 остаётся только у source b32ac4ec / merge e1039ddd.
+Прежние пункты ниже с11/100 и in_progress — датированная история CI587/588.
+Актуальная доказанная база22/100 относится к завершённому CI588; новых баллов0.
+Следующий шаг: scan committed range, tree equality, expected-head fast-forward,
+сохранить новый source/merge/run ID. Не делать повторный dispatch того же SHA.
+
+## Dev capability probe следующего Windows run
+
+Test-ProGo теперь выводит только boolean наличия встроенного sshd.exe на
+изолированном Windows runner. Это read-only capability probe для планирования
+combined native SSH стенда: никакая служба/server/порт/account/ACL не меняются
+и не запускаются. Наличие executable не считается интеграционным PASS.
+Сам probe локально Windows NOT_RUN, его результат читать на новом exact-SHA CI.
+Новых Python/server dependencies и публичных binary uploads не добавлено.
+
+## CI588 — точный SUCCESS; следующий lifecycle отдельно NOT_RUN
+
+[CI588/39688353510](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39688353510)
+completed SUCCESS: Windows119528038063 и Ubuntu119528038420. Source
+`b32ac4ece5cd62b98eab22b7e65aaa079544e5bf`, build/tested merge
+`e1039ddd046528fc75b9d46897e6924f597768d5`, identity0.2.2+того же полного merge.
+Raw Windows log повторно проверен, не только зелёная иконка:
+SOCKS41/403; DiagnosticReport32; installed helper2;4 real modal Cancel→Retry;
+normal/missing/error native chooser3;3 actual Context ownership scenarios;
+settings revision lease8; SSH advisory preparation43; signing55/UI50;
+Desktop5103; Instance28; Maintenance126; Shutdown47; Portable90.
+REVIEW-01/02 narrowly native PASS этого SHA, весь F31-R08/R11 не закрыт.
+Старый CI587 FAIL и его исходные SHA остаются в истории.
+
+Pack release zip SUCCESS на runner, SHA256
+`7c6febfc2ebda1834ffa1d04ebc0cc13001bb0629de8f505facb78898d223c5c`.
+Все uploads SKIPPED; архив не скачан и не передан; version0.2.2. Это не private
+пакет у владельца и не установленное приложение. Binary upload/release всё ещё
+не разрешены, delivery BLOCKED до согласованного приватного способа.
+
+Новый local lifecycle source `c0f5610a2931b0230a9839291ff1843b4bb0c787`,
+план50 recovery cases и последующие изменения НЕ входят в CI588. Их compilation/
+native NOT_RUN. Кодверификация отдельных lease/aggregate компонентов не является
+доказательством нового общего invocation/Stop/recovery пути.
+
+Оценка v1.0 обновлена только по этому подтверждённому результату:28 требований
+(все кроме F19/F27/F30) имеют прежний partial D0.5; новый exact-SHA runner ZIP
+возвращает P0.5, A0. Σ87×(0.30×0.5+0.20×0.5)=21.75 →22. От CI587 raw10.50
+изменение+11.25; веса и весь implementation interval58–80 не менялись.
+Это подтверждение native/пакета нового проверенного снимка, не рост от commits.
+До owner install/real SSH/VPS/переноса и критических blockers product PASS нет.
+
+Дополнительная dev-capability проверка: Linux sshd существует, но isolated
+sshd -t с временным host key вернул255 из-за отсутствующей /run/sshd; Python
+server libraries отсутствуют. Каталоги/account/services не менялись, listener
+не запускался. Combined real-server test в этой среде BLOCKED; нужен отдельный
+изолированный test-server путь, не реальные VPS владельца. Другие задачи
+продолжаются. Следующий шаг — checking commit общего lifecycle и exact-SHA CI.
+
+## F31-R11 этап3: общий owned preparation/admission — local source PARTIAL
+
+Main Program использует настоящий preparer через общий StartSingleTunnel:
+manual/auto/fallback/recovery проходят один preparation owner. Snapshot, endpoint,
+epoch и settlement публикуются до выхода из process gate; readonly config/signing
+и occupied-port probe идут вне gate. Оба private caller владеют ровно одним
+Monitor entry; три released scopes всегда возвращают его в finally. Новый manual
+ждёт старую recovery preparation вне gate; timer не создаёт второй owner.
+
+Stop/Dispose сразу меняют intent/epoch и cancel, StopTask ждёт preparation и
+startup settlement вне process gate. Final revision lease nonblocking; Busy
+повторяет admission в существующем budget без shared gates. Changed/cancelled
+scope не допускается; Busy/timeout/unconfirmed advisory auth не становятся
+hard gates. Перед spawn повторно проверяются token/epoch; child получает ровно
+captured SSH_AUTH_SOCK (null удаляет позднее наследование). Вызов Process.Start
+остаётся owned до возврата; после поздней отмены завершается только свой child.
+Lease освобождается до logging/other callbacks. Stale finally не очищает новый
+slot. Observation getter фильтрует epoch/cancellation/intent; новая recovery
+подготовка очищает прежнее наблюдение.
+
+Добавлены9 bounded native lifecycle сценариев в существующий SocksRecoveryTests:
+async single-flight Cancel→Retry, synchronous owner Stop, recovery Stop,
+profile/endpoint mutation, Busy admission (success/change), advisory failure
+without new gate, per-fallback preparation, forced Dispose, final admission
+cancellation/lease release. Существующий foreign SOCKS fixture дополнительно
+требует zero preparation. Каждый барьер3с, cleanup своих tasks5с с cancel/release;
+fixtures создают настоящие child/SOCKS процессы, preparer boundary инъецирован
+для гонок. Это НЕ live SSH/agent auth: настоящий aggregate/native signer suite
+отдельный, combined real preparation/tunnel и presentation ещё требуются.
+
+Local source commit `c0f5610a2931b0230a9839291ff1843b4bb0c787`.
+Файлы ProxyService.cs/SocksRecoveryTests.cs; production Main ранее явно wired
+в59cec1ae. Независимые/bootstrap/HomeVPN constructor по умолчанию не делают
+лишний I/O; их real agent integration этим этапом не заявляется. Полный F31-R11
+остаётся PARTIAL. Self source/dependency/diff review и public315/0 PASS;
+compilation/native этих новых изменений NOT_RUN, CI588 их не содержит.
+Старый WIP checkpoint9826e742 сохранён как история, текущие исходники не удалялись.
+Оценка реализации58–80, доказанная база CI58711 без прироста за невыполненные
+тесты. Следующий шаг — exact-SHA Windows50 recovery scenarios и затем combined
+real-preparer/native tunnel и typed UI statuses. Реальный VPS/ПК не проверены.
+
+## История ожидания CI588 — завершено SUCCESS, см. актуальный результат выше
+
+Head PR88 `b32ac4ece5cd62b98eab22b7e65aaa079544e5bf`, tree
+`c987657710561336d54abd77d123babe592769c7`, local commit
+`5a170b4c061aeb2b8fd5f6b7b58ff095b75d6303` с тем же деревом. Ref update уже
+подтверждён, PR description обновлено. Точный merge
+`e1039ddd046528fc75b9d46897e6924f597768d5`, единственный автоматический
+[CI588/39688353510](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39688353510)
+in_progress. Не дублировать push/dispatch; читать тот же run. Новый selector,
+revision lease/composition compilation/native NOT_RUN до logs этого SHA.
+Незавершённый root lifecycle не входит; source review/fixtures продолжаются
+отдельно, checkpoint9826e742 сохраняет прежнюю WIP версию. CI587 PARTIAL/FAIL
+и11/100 conservative evidence остаются со своим точным source. Оценка реализации
+58–80; новых баллов за этот push/commit нет. Нижние ref-pending блоки — история.
+
+## История перед публикацией CI588 — ref update впоследствии подтверждён
+
+Local `5a170b4c061aeb2b8fd5f6b7b58ff095b75d6303`, GitHub commit object `b32ac4ece5cd62b98eab22b7e65aaa079544e5bf`,
+полное идентичное дерево `c987657710561336d54abd77d123babe592769c7`. Опубликованным head пока
+не объявлять: следующий шаг expected-head update от `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`.
+Diff10files/492addedlines secrets/PII0, public315/0, diff checks PASS; workflow
+не менялся, public uploads/release не включены. Unfinished lifecycle исключён.
+Если прервано, сначала проверить head PR88 и runs именно нового SHA,
+не повторять update/CI вслепую. Native нового source NOT_RUN; прежняя
+консервативная доказанная база CI58711/100 сохраняется со своим SHA.
+
+## Исторический результат CI587 и последующее исправление native chooser
 
 Source `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, tested merge
 `decfa11496c12c5e65987043fb58fc7388cb5d6c`,

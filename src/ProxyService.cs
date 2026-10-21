@@ -60,8 +60,33 @@ namespace ProGo
         {
             internal SettingsRevisionSnapshot Expected;
             internal readonly CancellationTokenSource Source;
-            internal StartupSettingsContext(SettingsRevisionSnapshot expected, CancellationTokenSource source = null)
-            { Expected = expected; Source = source; }
+            internal readonly long Epoch;
+            internal StartupSettingsContext(SettingsRevisionSnapshot expected, CancellationTokenSource source = null, long epoch = -1)
+            { Expected = expected; Source = source; Epoch = epoch; }
+        }
+        private sealed class LaunchPreparation
+        {
+            internal readonly CancellationTokenSource Source;
+            internal readonly CancellationToken Token;
+            internal readonly long Epoch;
+            internal ISshLaunchPreparationObservation Observation;
+            internal readonly string AgentEndpoint;
+            internal readonly TaskCompletionSource<bool> Settled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            internal LaunchPreparation(CancellationToken token, long epoch, int timeoutMs)
+            {
+                Source = CancellationTokenSource.CreateLinkedTokenSource(token); Token = Source.Token;
+                Epoch = epoch; AgentEndpoint = Environment.GetEnvironmentVariable("SSH_AUTH_SOCK"); Source.CancelAfter(timeoutMs);
+            }
+            internal void Cancel() { try { Source.Cancel(); } catch (ObjectDisposedException) { } }
+        }
+        private volatile LaunchPreparation launchPreparation;
+        private volatile LaunchPreparation acceptedAuthenticationPreparation;
+        internal ISshLaunchPreparationObservation AuthenticationPreparation {
+            get {
+                var accepted = acceptedAuthenticationPreparation;
+                return accepted != null && !disposed && !stopping && connectionRequested && !accepted.Token.IsCancellationRequested &&
+                    accepted.Epoch == System.Threading.Interlocked.Read(ref operationEpoch) ? accepted.Observation : null;
+            }
         }
         private volatile SshAttempt ownedAttempt, lastFailedAttempt;
         private readonly Dictionary<string, SshAttempt> failedAttempts = new Dictionary<string, SshAttempt>(StringComparer.Ordinal);
@@ -171,8 +196,10 @@ namespace ProGo
 
         public void StartTunnel(bool showErrors)
         {
-            lock (startupGate) { if (disposed) return; connectionRequested = true; }
-            StartTunnelCore(showErrors, CancellationToken.None);
+            long epoch;
+            lock (startupGate) { if (disposed) return; connectionRequested = true; epoch = operationEpoch; }
+            var snapshot = CaptureConnectionSettings();
+            StartTunnelCore(showErrors, CancellationToken.None, snapshot, new StartupSettingsContext(snapshot, null, epoch));
         }
 
         internal Task<bool> StartTunnelAsync(CancellationToken token)
@@ -190,6 +217,8 @@ namespace ProGo
                     if (startupCancellation != null && startupCancellation.IsCancellationRequested) return ResumeAfterCancellation(startupTask, token, epoch);
                     return startupTask;
                 }
+                var previousPreparation = launchPreparation;
+                if (previousPreparation != null) return ResumeAfterPreparation(previousPreparation.Settled.Task, token, epoch);
                 var source = CancellationTokenSource.CreateLinkedTokenSource(token);
                 startupCancellation = source; connecting = true; startupError = null;
                 startupTask = Task.Run(async delegate {
@@ -199,7 +228,7 @@ namespace ProGo
                         try {
                             var snapshot = CaptureConnectionSettings();
                             var current = snapshot.Settings;
-                            var operation = new StartupSettingsContext(snapshot, source);
+                            var operation = new StartupSettingsContext(snapshot, source, epoch);
                             if (BuildProfileTargets(current).Count == 0) {
                                 startupError = "Сервер не выбран. Откройте «Подключения» и добавьте сервер."; return false;
                             }
@@ -252,6 +281,17 @@ namespace ProGo
             token.ThrowIfCancellationRequested();
             return await StartTunnelAsync(token, epoch).ConfigureAwait(false);
         }
+        private async Task<bool> ResumeAfterPreparation(Task previous, CancellationToken token, long epoch)
+        {
+            await previous.ConfigureAwait(false); token.ThrowIfCancellationRequested();
+            return await StartTunnelAsync(token, epoch).ConfigureAwait(false);
+        }
+        private Task CancelLaunchPreparation()
+        {
+            var pending = launchPreparation;
+            if (pending == null) return Task.FromResult(false);
+            pending.Cancel(); return pending.Settled.Task;
+        }
         private static Task<bool> CancelledStartup()
         {
             var result = new TaskCompletionSource<bool>(); result.SetCanceled(); return result.Task;
@@ -275,8 +315,19 @@ namespace ProGo
                 if (disposed) return;
                 snapshot = snapshot ?? CaptureConnectionSettings();
                 var current = snapshot.Settings;
-                operation = operation ?? new StartupSettingsContext(snapshot);
+                operation = operation ?? new StartupSettingsContext(snapshot, null, System.Threading.Interlocked.Read(ref operationEpoch));
+                // Both private callers own exactly one process-gate entry. A manual
+                // request waits for an older recovery preparation outside that gate.
+                while (launchPreparation != null) {
+                    var pending = launchPreparation.Settled.Task;
+                    System.Threading.Monitor.Exit(gate);
+                    try { pending.Wait(token); }
+                    finally { System.Threading.Monitor.Enter(gate); }
+                    token.ThrowIfCancellationRequested();
+                }
                 ThrowIfStartupSettingsChanged(operation, token);
+                if (stopping) return;
+                acceptedAuthenticationPreparation = null;
                 recoveryPause = null; lastFailedAttempt = null; failedAttempts.Clear(); nextCandidate = 0;
                 var targets = BuildProfileTargets(current);
                 if (targets.Count == 0)
@@ -300,7 +351,7 @@ namespace ProGo
                 {
                     ThrowIfStartupSettingsChanged(operation, token);
                     if (!wanted || disposed) return;
-                    if (StartSingleTunnel(target, false, snapshot))
+                    if (StartSingleTunnel(target, false, snapshot, token, operation))
                     {
                         if (!current.AutoSwitchSshProfile) return;
                         using (var candidateDeadline = CancellationTokenSource.CreateLinkedTokenSource(token)) {
@@ -342,13 +393,14 @@ namespace ProGo
         internal Task<bool> StopTunnelAsync()
         {
             lock (startupGate) {
-                connectionRequested = false; wanted = false; operationEpoch++;
+                connectionRequested = false; wanted = false; System.Threading.Interlocked.Increment(ref operationEpoch);
                 if (startupCancellation != null) startupCancellation.Cancel();
                 if (stopTask != null && !stopTask.IsCompleted) return stopTask;
-                var previous = startupTask; stopping = true;
+                var previous = startupTask; var preparation = CancelLaunchPreparation(); stopping = true;
                 stopTask = Task.Run(async delegate {
                     try {
                         if (previous != null) try { await previous.ConfigureAwait(false); } catch (OperationCanceledException) { }
+                        await preparation.ConfigureAwait(false);
                         lock (gate) {
                             wanted = false; retryAt = null; failures = 0; portOccupied = false;
                             return StopProcessOnly();
@@ -380,7 +432,7 @@ namespace ProGo
             if (!System.Threading.Monitor.TryEnter(gate)) return;
             try
             {
-                if (disposed || connecting || !wanted || recoveryPause != null || !readSettings().AutoRestartSocks) return;
+                if (disposed || connecting || launchPreparation != null || !wanted || recoveryPause != null || !readSettings().AutoRestartSocks) return;
                 var now = utcNow();
                 if (sshProcess != null)
                 {
@@ -441,8 +493,14 @@ namespace ProGo
                 }
                 retryAt = null;
                 if (target == null) { ScheduleRecovery(); return; }
-                if (StartSingleTunnel(target, true, snapshot)) automaticRestarts++;
-                else ScheduleRecovery();
+                if (StartSingleTunnel(target, true, snapshot, CancellationToken.None, null)) automaticRestarts++;
+                else if (!retryAt.HasValue) ScheduleRecovery();
+            }
+            catch (OperationCanceledException)
+            {
+                // No SSH attempt was made after invalidation/admission timeout;
+                // do not count that as a permanent refusal or a crashed child.
+                if (wanted && !disposed && sshProcess == null) retryAt = utcNow().AddSeconds(5);
             }
             catch (Exception ex)
             {
@@ -481,7 +539,7 @@ namespace ProGo
                 SafeLog.Info("SOCKS interrupted; next recovery attempt in " + seconds + " seconds.");
         }
 
-        private bool StartSingleTunnel(string target, bool automatic, SettingsRevisionSnapshot snapshot)
+        private bool StartSingleTunnel(string target, bool automatic, SettingsRevisionSnapshot snapshot, CancellationToken token, StartupSettingsContext operation)
         {
             if (!wanted || disposed || IsOwnedProcessAlive()) return false;
             var current = snapshot.Settings;
@@ -496,14 +554,29 @@ namespace ProGo
                 failedAttempts[invalid.Identity] = invalid; lastFailedAttempt = invalid;
                 SafeLog.Info("SSH startup rejected invalid connection arguments."); return false;
             }
+            var preparation = new LaunchPreparation(token, System.Threading.Interlocked.Read(ref operationEpoch), startupTimeoutMs);
+            acceptedAuthenticationPreparation = null;
+            launchPreparation = preparation;
             try
             {
                 var psi = new ProcessStartInfo(sshExecutable, args)
                 {
                     UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden, RedirectStandardError = true
                 };
-                lastFailedAttempt = null;
-                sshProcess = Process.Start(psi);
+                // Capture the actual child endpoint before any probe can race an
+                // environment edit. Null removes a later inherited override.
+                if (preparation.AgentEndpoint == null) psi.EnvironmentVariables.Remove("SSH_AUTH_SOCK");
+                else psi.EnvironmentVariables["SSH_AUTH_SOCK"] = preparation.AgentEndpoint;
+                IDisposable revisionLease;
+                if (!PrepareLaunchAdmission(preparation, snapshot, target, automatic, operation, out revisionLease)) return false;
+                try {
+                    preparation.Token.ThrowIfCancellationRequested();
+                    if (!wanted || disposed || stopping || preparation.Epoch != System.Threading.Interlocked.Read(ref operationEpoch))
+                        throw new OperationCanceledException(preparation.Token);
+                    lastFailedAttempt = null;
+                    sshProcess = Process.Start(psi);
+                }
+                finally { if (revisionLease != null) revisionLease.Dispose(); }
                 if (sshProcess == null) return false;
                 var attempt = new SshAttempt(sshProcess, TargetIdentity(current, target));
                 ownedAttempt = attempt;
@@ -517,13 +590,81 @@ namespace ProGo
                 ownedHost = current.SocksHost; ownedPort = current.SocksPort; ownedTarget = target;
                 selectedAtStart = current.SshProfile; selectedConnectionAtStart = SshConnection.Signature(current);
                 ownedSettingsSnapshot = snapshot;
+                if (preparation.Token.IsCancellationRequested || !wanted || disposed || stopping ||
+                    preparation.Epoch != System.Threading.Interlocked.Read(ref operationEpoch) ||
+                    preparation.AgentEndpoint != Environment.GetEnvironmentVariable("SSH_AUTH_SOCK")) {
+                    StopProcessOnly(); preparation.Token.ThrowIfCancellationRequested(); return false;
+                }
                 SafeLog.Info(automatic ? "SOCKS automatic restart requested." : "SOCKS start requested.");
                 return true;
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 SafeLog.Error("Failed to start SSH tunnel.", ex);
                 return false;
+            }
+            finally {
+                if (Object.ReferenceEquals(launchPreparation, preparation)) launchPreparation = null;
+                preparation.Source.Dispose(); preparation.Settled.TrySetResult(true);
+            }
+        }
+
+        // Called only by StartSingleTunnel while one StartTunnelCore/PollRecovery
+        // process-gate entry is held. Every released entry is reacquired in finally;
+        // the outer caller retains its existing ownership and cleanup contract.
+        private bool PrepareLaunchAdmission(LaunchPreparation preparation, SettingsRevisionSnapshot snapshot, string target,
+            bool automatic, StartupSettingsContext operation, out IDisposable lease)
+        {
+            lease = null; ISshLaunchPreparationObservation observation = null; bool occupied;
+            preparation.Token.ThrowIfCancellationRequested();
+            if (!wanted || disposed || stopping || preparation.Epoch != System.Threading.Interlocked.Read(ref operationEpoch))
+                throw new OperationCanceledException(preparation.Token);
+            ThrowIfStartupSettingsChanged(operation ?? new StartupSettingsContext(snapshot, null, preparation.Epoch), preparation.Token);
+            System.Threading.Monitor.Exit(gate);
+            try {
+                preparation.Token.ThrowIfCancellationRequested();
+                if (prepareAuthentication != null) {
+                    try { observation = prepareAuthentication(SshConnection.Resolve(snapshot.Settings, target).Clone(), sshExecutable, preparation.Token); }
+                    catch (OperationCanceledException) { throw; }
+                    catch { /* An unconfirmed advisory probe never forbids ordinary OpenSSH authentication. */ }
+                }
+                preparation.Token.ThrowIfCancellationRequested();
+                occupied = IsTcpOpen(snapshot.Settings.SocksHost, snapshot.Settings.SocksPort, 700);
+            }
+            finally { System.Threading.Monitor.Enter(gate); }
+            while (true) {
+                preparation.Token.ThrowIfCancellationRequested();
+                if (!wanted || disposed || stopping || preparation.Epoch != System.Threading.Interlocked.Read(ref operationEpoch))
+                    throw new OperationCanceledException(preparation.Token);
+                ThrowIfStartupSettingsChanged(operation ?? new StartupSettingsContext(snapshot, null, preparation.Epoch), preparation.Token);
+                string endpoint = Environment.GetEnvironmentVariable("SSH_AUTH_SOCK");
+                if (endpoint != preparation.AgentEndpoint || observation != null &&
+                    !observation.MatchesLaunchRequest(SshConnection.Resolve(snapshot.Settings, target), sshExecutable, endpoint)) {
+                    if (operation != null && operation.Source != null) operation.Source.Cancel();
+                    throw new OperationCanceledException(preparation.Token);
+                }
+                if (occupied) {
+                    portOccupied = true;
+                    if (automatic) retryAt = utcNow().AddSeconds(5); else wanted = false;
+                    return false;
+                }
+                var state = acquireLaunchRevision == null ? SettingsLaunchRevisionState.Acquired : acquireLaunchRevision(snapshot, out lease);
+                if (state == SettingsLaunchRevisionState.Acquired) {
+                    preparation.Observation = observation; acceptedAuthenticationPreparation = preparation; return true;
+                }
+                if (state == SettingsLaunchRevisionState.Changed) {
+                    if (operation != null && operation.Source != null) operation.Source.Cancel();
+                    throw new OperationCanceledException(preparation.Token);
+                }
+                // Busy is not an authentication gate. Retry admission within the
+                // existing launch budget without holding either shared gate.
+                System.Threading.Monitor.Exit(gate);
+                try {
+                    preparation.Token.WaitHandle.WaitOne(20); preparation.Token.ThrowIfCancellationRequested();
+                    occupied = IsTcpOpen(snapshot.Settings.SocksHost, snapshot.Settings.SocksPort, 700);
+                }
+                finally { System.Threading.Monitor.Enter(gate); }
             }
         }
 
@@ -638,6 +779,10 @@ namespace ProGo
         private void ThrowIfStartupSettingsChanged(StartupSettingsContext operation, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
+            if (operation.Epoch >= 0 && operation.Epoch != System.Threading.Interlocked.Read(ref operationEpoch)) {
+                if (operation.Source != null) operation.Source.Cancel();
+                throw new OperationCanceledException(token);
+            }
             var expected = operation.Expected;
             var actual = CaptureConnectionSettings();
             var old = expected.Settings; var current = actual.Settings;
@@ -680,7 +825,7 @@ namespace ProGo
 
         public void Dispose()
         {
-            lock (startupGate) { disposed = true; connectionRequested = false; wanted = false; CancelStartup(); }
+            lock (startupGate) { disposed = true; connectionRequested = false; wanted = false; System.Threading.Interlocked.Increment(ref operationEpoch); CancelStartup(); CancelLaunchPreparation(); }
             if (recoveryTimer != null) recoveryTimer.Dispose();
             lock (gate) { retryAt = null; StopProcessOnly(); }
         }
