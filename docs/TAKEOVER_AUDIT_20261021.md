@@ -330,3 +330,22 @@ Final source review PASS: CTX SHA25691b70e5de03e39f3e2bf00b827260ecf3b299d5909a6
 AsyncUpdaterTests SHA256b032803879ed8ccca9c947790b3ed272f28ad74d7647253e06bdb9e8268f8db1.
 Backend native helper modes и10 Context сценариев подготовлены; Windows runtime
 NOT_RUN. Shared restore требует общей регрессии; A06/F31-R07 PARTIAL.
+
+## A12: чужой ShellLink защищён fresh handle-bound check
+
+`ProxyAutomation.CodexProxyService.Enable/Disable`, `OpenOwnedShortcut`,
+`CodexFile.Open/Delete`: IPersistFile.Load read/share-deny-none, GetPath raw без
+Resolve и exact arguments подтверждают target system cmd.exe+current launcher.
+Read/delete handle удерживает проверенный file object до mutation; deletion идёт
+по нему, не позднему pathname. Перед изменением проверяются оба файла.
+Existing owned lnk сохраняется побайтно; новые Move не заменяют появившийся файл.
+Root review нашёл junction ancestor выше missing parent; добавлен проход до root
+и regression с отсутствующими nested directories. Общая двухфайловая transaction
+не добавлена: existing owned cmd Write остаётся прежней in-place границей.
+
+`DesktopCodexShortcutOwnershipTests` покрывает реальные COM target/args/foreign
+replacement/malformed, actual denied read ACL и sharing, readonly, junction,
+ancestor missing, pinning и repeat enable/disable на disposable CI paths.
+Все изменения ACL только fixture files с finally restore; owner PC не затронут.
+Root source review PASS после ancestor fix, diff/public scan PASS; native NOT_RUN.
+A12 PARTIAL, F31-R05/F06 не объявляются целиком PASS.

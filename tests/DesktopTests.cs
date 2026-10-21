@@ -80,6 +80,7 @@ namespace ProGo
                 var manualPort = json.Deserialize<AppSettings>("{\"AutoHttpProxyPort\":false,\"HttpProxyPort\":31881}");
                 Check(!manualPort.AutoHttpProxyPort && manualPort.HttpProxyPort == 31881, "explicit manual port survives settings load");
                 ScopedCodex();
+                CodexShortcutOwnershipWorkflow();
                 RestorePreferences();
                 using (var settings = new SettingsService())
                 {

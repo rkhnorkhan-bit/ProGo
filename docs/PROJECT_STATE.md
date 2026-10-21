@@ -275,3 +275,20 @@ Actual helper/descendant accept/reject/cancel/timeout и10 native Context сце
 подготовлены, зарегистрированы; реальные установки не выполняются. Старые
 WindowsRestore gate assertions перенесены на actual updater route и усилены.
 Новый native run NOT_RUN; F31-R07 и общий F31-R11 остаются PARTIAL.
+
+## A12: fresh ownership ярлыка Codex
+
+`CodexProxyService.Enable/Disable` проверяет реальную ShellLink target и точные
+arguments текущего launcher до изменения cmd/lnk. Copied description/один Marker
+не доказывают ownership ярлыка. Проверенный объект удерживается read/delete handle;
+Disable задаёт delete disposition именно ему. Existing owned link не переписывается,
+новый link/cmd публикуется Move без overwrite. Missing parent не скрывает junction
+выше: проверяются все ancestors до root. Foreign/malformed/denied/read-only/reparse
+link даёт отказ с сохранением чужих файлов. Legacy MoveOwned/IsOwned не меняются.
+
+Root source review обнаружил и затем подтвердил исправление ancestor bypass.
+Реальные isolated COM/ACL/sharing/NTFS junction/replacement/pinned-handle/repeat
+сценарии зарегистрированы. Native Windows NOT_RUN; A12 PARTIAL до точного CI.
+Запись existing owned cmd остаётся in-place как прежде; общей атомарной транзакции
+двух файлов и сохранности собственных bytes при любой I/O-ошибке не заявляется.
+F31-R05 и F06 полностью не закрываются этим узким guard.

@@ -139,7 +139,8 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
-        "criterion": "Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer."
+        "criterion": "Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer.",
+        "codex_shortcut_ownership": "PARTIAL A12 source-reviewed; native suite NOT_RUN; does not close full ID"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -1785,7 +1786,8 @@
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
         "criterion": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт.",
-        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL"
+        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL",
+        "codex_shortcut_ownership": "PARTIAL A12 source-reviewed; native suite NOT_RUN; does not close full ID"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -2201,5 +2203,14 @@
     "source_review": "PASS independent backend + final context/test review; identified queued lifecycle races fixed",
     "runtime": "NOT_RUN",
     "scope": "actual Update UI route, owned helper ACK/cancel/settlement; no installer/fallback claim"
+  },
+  "codex_shortcut_ownership_microtask": {
+    "finding": "A12",
+    "status": "PARTIAL",
+    "implementation": "fresh raw ShellLink target/exact args, checked object pinned until handle delete; ancestor reparse checks and no-overwrite new publication",
+    "source_review": "PASS root after ancestor missing-parent bypass fix",
+    "native": "NOT_RUN",
+    "boundary": "existing owned cmd write remains in-place; no whole two-file transaction claim",
+    "next": "exact Windows COM/ACL/sharing/junction/replacement/pinning regression, then target/package acceptance"
   }
 }

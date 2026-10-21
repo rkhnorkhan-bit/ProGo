@@ -131,27 +131,156 @@ namespace ProGo
             return text.ToString();
         }
         public static void Enable(int port)
+        { Enable(port, LauncherPath, ShortcutPath); }
+        internal static void Enable(int port, string launcherPath, string shortcutPath, Action beforeMutation = null)
         {
-            if (File.Exists(LauncherPath) && !File.ReadAllText(LauncherPath).Contains(Marker)) throw new IOException("Файл запуска Codex уже существует и создан не ProGo. Он сохранён без изменений.");
-            Directory.CreateDirectory(Path.GetDirectoryName(LauncherPath));
-            File.WriteAllText(LauncherPath, LauncherContent(port), Encoding.ASCII);
-            Directory.CreateDirectory(Path.GetDirectoryName(ShortcutPath));
+            launcherPath = Path.GetFullPath(launcherPath); shortcutPath = Path.GetFullPath(shortcutPath);
+            // Acquire both owners before changing either file. The shortcut is
+            // kept read/share-read locked while the launcher is updated.
+            using (var launcher = OpenOwnedLauncher(launcherPath, true))
+            using (var existing = OpenOwnedShortcut(shortcutPath, launcherPath)) {
+                if (beforeMutation != null) beforeMutation();
+                Directory.CreateDirectory(Path.GetDirectoryName(launcherPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath));
+                string temporary = Path.Combine(Path.GetDirectoryName(shortcutPath), "progo-codex-" + Guid.NewGuid().ToString("N") + ".lnk");
+                string temporaryLauncher = Path.Combine(Path.GetDirectoryName(launcherPath), "progo-codex-" + Guid.NewGuid().ToString("N") + ".tmp");
+                CodexFile created = null;
+                try {
+                    if (existing == null) {
+                        WriteShortcut(temporary, launcherPath);
+                        // Move never replaces a concurrently created shortcut.
+                        File.Move(temporary, shortcutPath);
+                        created = OpenOwnedShortcut(shortcutPath, launcherPath);
+                        if (created == null) throw new IOException("Новый ярлык Codex исчез до подтверждения владения. Файл запуска не изменён.");
+                    }
+                    byte[] content = Encoding.ASCII.GetBytes(LauncherContent(port));
+                    if (launcher == null) {
+                        // A launcher which appeared after the read is preserved.
+                        using (var output = new FileStream(temporaryLauncher, FileMode.CreateNew, FileAccess.Write, FileShare.Read)) {
+                            output.Write(content, 0, content.Length); output.Flush(true);
+                        }
+                        File.Move(temporaryLauncher, launcherPath);
+                    } else launcher.Write(content);
+                } catch {
+                    // Only the exact link created and still held by this call
+                    // may be removed. A concurrent replacement is never deleted.
+                    if (created != null) created.Delete();
+                    throw;
+                } finally {
+                    if (created != null) created.Dispose();
+                    if (File.Exists(temporary)) File.Delete(temporary);
+                    if (File.Exists(temporaryLauncher)) File.Delete(temporaryLauncher);
+                }
+            }
+        }
+        private static string ShortcutArguments(string launcherPath)
+        { return "/D /K \"\"" + launcherPath + "\"\""; }
+        private static void WriteShortcut(string path, string launcherPath)
+        {
             object shortcut = null;
             try
             {
                 shortcut = new ShellLink();
                 var link = (IShellLinkW)shortcut;
                 link.SetPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"));
-                link.SetArguments("/D /K \"\"" + LauncherPath + "\"\"");
+                link.SetArguments(ShortcutArguments(launcherPath));
                 link.SetWorkingDirectory(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
                 link.SetIconLocation(Application.ExecutablePath, 0);
                 link.SetDescription("Codex CLI с прокси ProGo только для этого окна");
-                ((IPersistFile)shortcut).Save(ShortcutPath, true);
+                ((IPersistFile)shortcut).Save(path, true);
             }
             finally
             {
                 if (shortcut != null) Marshal.FinalReleaseComObject(shortcut);
             }
+        }
+        private static CodexFile OpenOwnedLauncher(string path, bool writable)
+        {
+            var file = CodexFile.Open(path, writable);
+            if (file == null) return null;
+            try {
+                if (!file.ReadText().Contains(Marker)) {
+                    if (!writable) { file.Dispose(); return null; }
+                    throw new IOException("Файл запуска Codex уже существует и создан не ProGo. Файлы сохранены без изменений.");
+                }
+                return file;
+            } catch { file.Dispose(); throw; }
+        }
+        private static CodexFile OpenOwnedShortcut(string path, string launcherPath)
+        {
+            var file = CodexFile.Open(path, false);
+            if (file == null) return null;
+            object native = null;
+            try {
+                native = new ShellLink();
+                ((IPersistFile)native).Load(path, 0x40); // read, share-deny-none; never Resolve
+                var link = (IShellLinkW)native;
+                var target = new StringBuilder(32768); var arguments = new StringBuilder(32768);
+                link.GetPath(target, target.Capacity, IntPtr.Zero, 4); // raw path, no external lookup
+                link.GetArguments(arguments, arguments.Capacity);
+                string expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
+                if (target.Length == 0 || !String.Equals(Path.GetFullPath(target.ToString()), expected, StringComparison.OrdinalIgnoreCase) ||
+                    !String.Equals(arguments.ToString(), ShortcutArguments(launcherPath), StringComparison.Ordinal))
+                    throw new IOException("Ярлык Codex изменён или создан не ProGo. Файлы сохранены без изменений.");
+                return file;
+            } catch { file.Dispose(); throw; }
+            finally { if (native != null) Marshal.FinalReleaseComObject(native); }
+        }
+        // Keep the exact checked object pinned against writes/replacement. The
+        // delete disposition uses that same handle rather than a later path read.
+        private sealed class CodexFile : IDisposable
+        {
+            private readonly FileStream stream;
+            private CodexFile(Microsoft.Win32.SafeHandles.SafeFileHandle handle, bool writable)
+            { stream = new FileStream(handle, writable ? FileAccess.ReadWrite : FileAccess.Read); }
+            internal static CodexFile Open(string path, bool writable)
+            {
+                // Missing leaf directories do not hide a linked ancestor which
+                // CreateDirectory would otherwise follow on first enable.
+                for (string parent = Path.GetDirectoryName(path); !String.IsNullOrEmpty(parent); parent = Path.GetDirectoryName(parent)) {
+                    try {
+                        var parentAttributes = File.GetAttributes(parent);
+                        if ((parentAttributes & FileAttributes.ReparsePoint) != 0 || (parentAttributes & FileAttributes.Directory) == 0)
+                            throw new IOException("Связанные или заменённые каталоги Codex не изменяются.");
+                    } catch (DirectoryNotFoundException) { } catch (FileNotFoundException) { }
+                }
+                FileAttributes attributes;
+                try { attributes = File.GetAttributes(path); }
+                catch (FileNotFoundException) { return null; } catch (DirectoryNotFoundException) { return null; }
+                if ((attributes & (FileAttributes.ReparsePoint | FileAttributes.Directory | FileAttributes.ReadOnly)) != 0)
+                    throw new IOException("Связанные, недоступные или заменённые файлы Codex не изменяются.");
+                var handle = CreateFile(path, 0x80010000u | (writable ? 0x40000000u : 0), 1, IntPtr.Zero, 3, 0x00200000, IntPtr.Zero);
+                if (handle.IsInvalid) {
+                    int error = Marshal.GetLastWin32Error(); handle.Dispose();
+                    throw new IOException("Не удалось подтвердить владение файлами Codex. Файлы сохранены без изменений.", new System.ComponentModel.Win32Exception(error));
+                }
+                try {
+                    if ((File.GetAttributes(path) & (FileAttributes.ReparsePoint | FileAttributes.Directory | FileAttributes.ReadOnly)) != 0)
+                        throw new IOException("Связанные, недоступные или заменённые файлы Codex не изменяются.");
+                    return new CodexFile(handle, writable);
+                } catch { handle.Dispose(); throw; }
+            }
+            internal void Write(byte[] content)
+            { stream.Position = 0; stream.Write(content, 0, content.Length); stream.SetLength(content.Length); stream.Flush(true); }
+            internal string ReadText()
+            {
+                stream.Position = 0;
+                using (var reader = new StreamReader(stream, Encoding.UTF8, true, 4096, true)) return reader.ReadToEnd();
+            }
+            internal void Delete() { SetDelete(true); }
+            internal void Keep() { SetDelete(false); }
+            private void SetDelete(bool delete)
+            {
+                var info = new FileDisposition { DeleteFile = delete };
+                if (!SetFileInformationByHandle(stream.SafeFileHandle, 4, ref info, 1))
+                    throw new IOException("Не удалось завершить изменение файлов Codex.", new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()));
+            }
+            public void Dispose() { stream.Dispose(); }
+            [StructLayout(LayoutKind.Sequential)] private struct FileDisposition { [MarshalAs(UnmanagedType.U1)] internal bool DeleteFile; }
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            private static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFile(string path, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
+            [DllImport("kernel32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool SetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle file, int type, ref FileDisposition information, uint size);
         }
         [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
         private class ShellLink { }
@@ -160,14 +289,14 @@ namespace ProGo
         [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         private interface IShellLinkW
         {
-            void GetPath(IntPtr path, int length, IntPtr findData, uint flags);
+            void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int length, IntPtr findData, uint flags);
             void GetIDList(out IntPtr list);
             void SetIDList(IntPtr list);
             void GetDescription(IntPtr description, int length);
             void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string description);
             void GetWorkingDirectory(IntPtr directory, int length);
             void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string directory);
-            void GetArguments(IntPtr arguments, int length);
+            void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder arguments, int length);
             void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string arguments);
             void GetHotkey(out short hotkey);
             void SetHotkey(short hotkey);
@@ -185,10 +314,19 @@ namespace ProGo
             if (IsOwned) File.WriteAllText(LauncherPath, LauncherContent(port), Encoding.ASCII);
         }
         public static void Disable()
+        { Disable(LauncherPath, ShortcutPath); }
+        internal static void Disable(string launcherPath, string shortcutPath, Action beforeMutation = null)
         {
-            if (!File.Exists(LauncherPath) || !File.ReadAllText(LauncherPath).Contains(Marker)) return;
-            if (File.Exists(ShortcutPath)) File.Delete(ShortcutPath);
-            File.Delete(LauncherPath);
+            launcherPath = Path.GetFullPath(launcherPath); shortcutPath = Path.GetFullPath(shortcutPath);
+            using (var launcher = OpenOwnedLauncher(launcherPath, false)) {
+                if (launcher == null) return;
+                using (var shortcut = OpenOwnedShortcut(shortcutPath, launcherPath)) {
+                    if (beforeMutation != null) beforeMutation();
+                    if (shortcut != null) shortcut.Delete();
+                    try { launcher.Delete(); }
+                    catch { if (shortcut != null) shortcut.Keep(); throw; }
+                }
+            }
         }
         public static Process Open(int port)
         {
