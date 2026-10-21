@@ -115,6 +115,8 @@ namespace ProGo
     internal static class CodexProxyService
     {
         private const string Marker = "rem ProGo scoped Codex launcher v1";
+        private const int MaxShortcutBytes = 1024 * 1024;
+        private const string ShortcutReadFailure = "Не удалось прочитать ярлык Codex для проверки владения. Файлы сохранены без изменений.";
         internal static string LauncherPath { get { return Path.Combine(AppPaths.Root, "scripts", "Codex-ProGo.cmd"); } }
         private static string ShortcutPath { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "ProGo", "Codex через ProGo.lnk"); } }
         public static bool IsConfigured { get { return File.Exists(LauncherPath) && File.Exists(ShortcutPath); } }
@@ -211,20 +213,44 @@ namespace ProGo
             var file = CodexFile.Open(path, false);
             if (file == null) return null;
             object native = null;
+            IStream memory = null;
             try {
-                native = new ShellLink();
-                ((IPersistFile)native).Load(path, 0x40); // read, share-deny-none; never Resolve
-                var link = (IShellLinkW)native;
-                var target = new StringBuilder(32768); var arguments = new StringBuilder(32768);
-                link.GetPath(target, target.Capacity, IntPtr.Zero, 4); // raw path, no external lookup
-                link.GetArguments(arguments, arguments.Capacity);
-                string expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
-                if (target.Length == 0 || !String.Equals(Path.GetFullPath(target.ToString()), expected, StringComparison.OrdinalIgnoreCase) ||
-                    !String.Equals(arguments.ToString(), ShortcutArguments(launcherPath), StringComparison.Ordinal))
-                    throw new IOException("Ярлык Codex изменён или создан не ProGo. Файлы сохранены без изменений.");
+                try {
+                    // ShellLink's file opener does not share DELETE with our
+                    // pinned owner. Parse bytes from that same held stream;
+                    // never reopen the pathname or release its protection.
+                    byte[] snapshot = file.ReadSnapshot(MaxShortcutBytes);
+                    memory = SHCreateMemStream(snapshot, (uint)snapshot.Length);
+                    if (memory == null) throw new IOException(ShortcutReadFailure);
+                    memory.Seek(0, 0, IntPtr.Zero);
+                    native = new ShellLink();
+                    ((IPersistStream)native).Load(memory); // stream load; never Resolve
+                    var link = (IShellLinkW)native;
+                    var target = new StringBuilder(32768); var arguments = new StringBuilder(32768);
+                    link.GetPath(target, target.Capacity, IntPtr.Zero, 4); // raw path, no external lookup
+                    link.GetArguments(arguments, arguments.Capacity);
+                    string expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
+                    if (target.Length == 0 || !String.Equals(Path.GetFullPath(target.ToString()), expected, StringComparison.OrdinalIgnoreCase) ||
+                        !String.Equals(arguments.ToString(), ShortcutArguments(launcherPath), StringComparison.Ordinal))
+                        throw new IOException("Ярлык Codex изменён или создан не ProGo. Файлы сохранены без изменений.");
+                } finally {
+                    try { if (native != null) Marshal.FinalReleaseComObject(native); }
+                    finally { if (memory != null) Marshal.FinalReleaseComObject(memory); }
+                }
                 return file;
             } catch { file.Dispose(); throw; }
-            finally { if (native != null) Marshal.FinalReleaseComObject(native); }
+        }
+        [DllImport("shlwapi.dll", ExactSpelling = true)]
+        [return: MarshalAs(UnmanagedType.Interface)]
+        private static extern IStream SHCreateMemStream([In] byte[] initial, uint size);
+        [ComImport, Guid("00000109-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface IPersistStream
+        {
+            void GetClassID(out Guid classId);
+            [PreserveSig] int IsDirty();
+            void Load(IStream stream);
+            void Save(IStream stream, [MarshalAs(UnmanagedType.Bool)] bool clearDirty);
+            void GetSizeMax(out long size);
         }
         // Keep the exact checked object pinned against writes/replacement. The
         // delete disposition uses that same handle rather than a later path read.
@@ -266,6 +292,19 @@ namespace ProGo
             {
                 stream.Position = 0;
                 using (var reader = new StreamReader(stream, Encoding.UTF8, true, 4096, true)) return reader.ReadToEnd();
+            }
+            internal byte[] ReadSnapshot(int limit)
+            {
+                long length = stream.Length;
+                if (length < 1 || length > limit) throw new IOException(ShortcutReadFailure);
+                var bytes = new byte[(int)length]; stream.Position = 0;
+                for (int offset = 0; offset < bytes.Length; ) {
+                    int count = stream.Read(bytes, offset, bytes.Length - offset);
+                    if (count == 0) throw new IOException(ShortcutReadFailure);
+                    offset += count;
+                }
+                if (stream.Length != length) throw new IOException(ShortcutReadFailure);
+                return bytes;
             }
             internal void Delete() { SetDelete(true); }
             internal void Keep() { SetDelete(false); }

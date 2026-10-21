@@ -21,6 +21,7 @@ namespace ProGo
             try {
                 CodexShortcutRepeat(root);
                 CodexShortcutForeign(root);
+                CodexShortcutBoundedSnapshot(root);
                 CodexShortcutUnavailable(root);
                 CodexShortcutReparse(root);
                 CodexShortcutAncestorReparse(root);
@@ -91,6 +92,30 @@ namespace ProGo
                 CodexShortcutRejected(() => CodexProxyService.Enable(31881, paths[0], paths[1]), "foreign link without launcher " + variant);
                 Check(!File.Exists(paths[0]) && link.SequenceEqual(File.ReadAllBytes(paths[1])),
                     "a foreign shortcut prevents even the initial launcher publication " + variant);
+            }
+        }
+        private static void CodexShortcutBoundedSnapshot(string root)
+        {
+            for (int variant = 0; variant < 2; variant++) {
+                var paths = CodexShortcutPaths(root, "bounded-snapshot-" + variant);
+                CodexProxyService.Enable(31881, paths[0], paths[1]);
+                byte[] valid = File.ReadAllBytes(paths[1]);
+                using (var stream = new FileStream(paths[1], FileMode.Open, FileAccess.Write, FileShare.None)) {
+                    // The oversized case retains a real valid ShellLink prefix;
+                    // rejection must come from the bound before COM parsing.
+                    if (variant == 1) stream.Write(valid, 0, valid.Length);
+                    stream.SetLength(variant == 0 ? 0 : 1024 * 1024 + 1);
+                }
+                byte[] launcher = File.ReadAllBytes(paths[0]), link = File.ReadAllBytes(paths[1]);
+                foreach (Action action in new Action[] {
+                    () => CodexProxyService.Enable(31882, paths[0], paths[1]),
+                    () => CodexProxyService.Disable(paths[0], paths[1])
+                }) {
+                    string error = null; try { action(); } catch (IOException ex) { error = ex.Message; }
+                    Check(error == "Не удалось прочитать ярлык Codex для проверки владения. Файлы сохранены без изменений." &&
+                        launcher.SequenceEqual(File.ReadAllBytes(paths[0])) && link.SequenceEqual(File.ReadAllBytes(paths[1])),
+                        "empty or oversized native shortcut fails with a fixed nonsecret error before either file changes " + variant);
+                }
             }
         }
         private static void CodexShortcutUnavailable(string root)
@@ -179,6 +204,8 @@ namespace ProGo
                 called++;
                 CodexShortcutRejected(() => File.Delete(paths[1]), "replacement delete while native owner is held");
                 CodexShortcutRejected(() => File.WriteAllText(paths[1], "foreign"), "replacement write while native owner is held");
+                CodexShortcutRejected(() => { using (var second = File.OpenRead(paths[1])) { } },
+                    "pathname read without DELETE sharing while the parsed native owner is held");
             };
             CodexProxyService.Enable(31882, paths[0], paths[1], attemptReplacement);
             Check(called == 1 && link.SequenceEqual(File.ReadAllBytes(paths[1])) && File.ReadAllText(paths[0]).Contains(CliProxyBridgeService.UrlFor(31882)),
