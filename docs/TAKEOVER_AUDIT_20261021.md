@@ -166,3 +166,15 @@ NOT_RUN. Поэтому новый бинарный пакет/его SHA256 п�
 Нужен один шаг владельца: разрешить push этих проверяемых изменений в публичный
 ProGo либо сделать назначение приватным. Это блокирует публикацию и CI, а не
 подменяет оставшийся объём разработки завершением проекта.
+
+## Точный локальный результат перед передачей
+
+- Реестр/QR: `bd9c0fb17b4ca4e84bdcec2cf5e1c6d90820f69d`.
+- Startup ordering: `e2fccacb8c7a859217cc854cb91bc7ee7ac57bd8`.
+- Rollback: `5c803be5534601233e0041202890cbd7c04cd575`.
+- Полная Python discovery повторена на code/test source5c803be:44 reported,
+  41 PASS/3 SKIP; public-content299/0 PASS; clean code diff.
+- Windows новых commits NOT_RUN; push/PR update/CI/package BLOCKED privacy decision.
+- Архив исходных коммитов для ревью не является бинарным проверочным пакетом.
+- Приёмка и возврат описаны в [ACCEPTANCE_RUNBOOK.md](ACCEPTANCE_RUNBOOK.md);
+  инструкция не выполняет установку и не разрешает live/system actions.

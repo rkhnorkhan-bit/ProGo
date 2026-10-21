@@ -124,3 +124,22 @@ GitHub get_repo по имени и URL независимо возвращает
 ## Протокол передачи и аудит
 
 См. [TAKEOVER_AUDIT_20261021.md](TAKEOVER_AUDIT_20261021.md): источники/пробелы, Git/исполнители, находки, воспроизведение и проверки. Точка продолжения и новые SHA/CI фиксируются там.
+
+## Зафиксированная точка продолжения
+
+Code/test source `5c803be5534601233e0041202890cbd7c04cd575`:
+QR `bd9c0fb17b4ca4e84bdcec2cf5e1c6d90820f69d`,
+startup `e2fccacb8c7a859217cc854cb91bc7ee7ac57bd8`,
+rollback `5c803be5534601233e0041202890cbd7c04cd575`.
+Общая Python discovery на этом source:44 reported,41 PASS,3 SKIP (C# harness).
+Public-content и diff checks PASS; runtime Windows NOT_RUN. Независимые source
+review startup/rollback завершены. Исторический непринятый остаток49=37 до
+установщика+12 зависимых; новых закрытых подпунктов55 в этом сеансе нет.
+Шесть прежних scoped PASS сохраняют свои свидетельства, но не заменяют новую
+итоговую регрессию. Инструкция дальнейшей приёмки/возврата:
+[ACCEPTANCE_RUNBOOK.md](ACCEPTANCE_RUNBOOK.md).
+
+Следующий шаг после privacy decision — push без переписывания истории в
+существующую интеграционную ветку после fresh head check, новый Windows/Ubuntu CI,
+разбор конкретного первого FAIL либо запись completed evidence. Затем selected-key
+readiness и остальные открытые ID; полный F31-R11 не закрыт этим startup fix.

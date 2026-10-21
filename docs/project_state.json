@@ -2028,6 +2028,13 @@
       "source_review": "PASS independent read-only; not runtime proof",
       "windows": "NOT_RUN",
       "assertions_added": 22
+    },
+    {
+      "name": "verified rollback and bounded self-check",
+      "commit": "5c803be5534601233e0041202890cbd7c04cd575",
+      "source_review": "PASS independent repeat read-only review; initial unbounded wait fixed",
+      "native_tests": "NOT_RUN",
+      "gate": "F23-R04 PARTIAL until exact Windows CI"
     }
   ],
   "remote_visibility": {
@@ -2043,6 +2050,15 @@
     "passed": 41,
     "skipped": 3,
     "skip_reason": "compiled C# relay harness unavailable",
-    "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone"
+    "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
+    "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
+  },
+  "candidate_source": "5c803be5534601233e0041202890cbd7c04cd575",
+  "remaining_acceptance": {
+    "historical_unaccepted_subtasks": 49,
+    "before_installer": 37,
+    "dependent": 12,
+    "new_subtasks_accepted_this_session": 0,
+    "fresh_candidate_code_package_target": "NOT_RUN/BLOCKED; no total product PASS"
   }
 }
