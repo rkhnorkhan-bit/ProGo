@@ -308,6 +308,11 @@ namespace ProGo
         internal SettingsCommitReceipt(SettingsRevisionSnapshot before, long revision) { Before = before; Revision = revision; }
     }
 
+    internal sealed class SettingsInitialLoadException : IOException
+    {
+        internal SettingsInitialLoadException() : base("Настройки не были прочитаны при запуске. Исходные данные не изменены; запись отключена. Проверьте доступ и формат файла, затем перезапустите ProGo.") { }
+    }
+
     internal sealed class SettingsService : IDisposable
     {
         private sealed class PublishedSettings
@@ -319,6 +324,7 @@ namespace ProGo
         private readonly object commitGate = new object();
         private readonly Action beforeReplace;
         private volatile PublishedSettings published;
+        private volatile bool initialLoadFailed;
         private Dictionary<string, object> unknownFields = new Dictionary<string, object>(StringComparer.Ordinal);
         public AppSettings Current { get { var value = published; return value == null ? null : value.Settings; } }
         internal long Revision { get { var value = published; return value == null ? 0 : value.Revision; } }
@@ -341,29 +347,38 @@ namespace ProGo
 
         public AppSettings Load()
         {
-            AppPaths.EnsureDirectories();
-            if (!File.Exists(AppPaths.SettingsPath))
-            {
-                var defaults = AppSettings.Defaults();
-                Save(defaults);
-                return Current;
-            }
-
+            bool initial = published == null;
             try
             {
-                var text = File.ReadAllText(AppPaths.SettingsPath);
+                AppPaths.EnsureDirectories();
+                string text;
+                try { text = File.ReadAllText(AppPaths.SettingsPath); }
+                catch (FileNotFoundException) { return LoadMissing(initial); }
+                catch (DirectoryNotFoundException) { return LoadMissing(initial); }
+                var unknown = ReadUnknownFields(text);
                 var settings = DeserializeSettings(text);
                 Normalize(settings);
-                // Public Load remains a detached read. Only construction captures
-                // unknown top-level fields for future writes by this instance.
-                if (published == null) unknownFields = ReadUnknownFields(text);
+                // A later detached read cannot clear a failed initial load or
+                // replace the trusted fields captured by this instance.
+                if (initial) unknownFields = unknown;
                 return settings;
             }
             catch (Exception ex)
             {
-                SafeLog.Error("Settings load failed; using defaults.", ex);
+                if (initial) initialLoadFailed = true;
+                SafeLog.Error("Settings load failed; using unsaved defaults.", ex);
                 return AppSettings.Defaults();
             }
+        }
+        private AppSettings LoadMissing(bool initial)
+        {
+            var defaults = AppSettings.Defaults();
+            if (!initial) return defaults; // Public Load stays a detached read.
+            // A file created after the missing read belongs to another writer.
+            // Exclusive Move must fail instead of replacing its unread settings.
+            lock (commitGate) SaveCore(defaults, CancellationToken.None, true);
+            SafeLog.Info("Initial default settings saved.");
+            return Current;
         }
 
         public void Save(AppSettings settings)
@@ -410,8 +425,12 @@ namespace ProGo
 
         // No proxy/UI callbacks run inside this gate. The only injected hook is
         // the test seam immediately before the real atomic file replacement.
-        private void SaveCore(AppSettings settings, CancellationToken token = default(CancellationToken))
+        private void SaveCore(AppSettings settings, CancellationToken token = default(CancellationToken), bool requireMissing = false)
         {
+            // Every persistence entry point converges here, including asynchronous
+            // UI commits, automatic profile selection, tray updates and rollback.
+            // Unsaved fallback defaults must never replace an unread original.
+            if (initialLoadFailed) throw new SettingsInitialLoadException();
             var candidate = settings.Clone();
             Normalize(candidate);
             var json = new JavaScriptSerializer();
@@ -426,7 +445,7 @@ namespace ProGo
                 File.WriteAllText(pending, text);
                 if (beforeReplace != null) beforeReplace();
                 token.ThrowIfCancellationRequested();
-                if (File.Exists(AppPaths.SettingsPath)) File.Replace(pending, AppPaths.SettingsPath, null);
+                if (!requireMissing && File.Exists(AppPaths.SettingsPath)) File.Replace(pending, AppPaths.SettingsPath, null);
                 else File.Move(pending, AppPaths.SettingsPath);
                 var previous = published;
                 published = new PublishedSettings(candidate, previous == null ? 1 : previous.Revision + 1);
@@ -465,6 +484,7 @@ namespace ProGo
         private static Dictionary<string, object> ReadUnknownFields(string text)
         {
             var values = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(text);
+            if (values == null) throw new InvalidDataException("Settings must be a JSON object.");
             var known = KnownFieldNames();
             var unknown = new Dictionary<string, object>(StringComparer.Ordinal);
             if (values != null) foreach (var entry in values)

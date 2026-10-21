@@ -328,7 +328,8 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
-        "criterion": "Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения."
+        "criterion": "Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения.",
+        "settings_initial_load_preservation": "PARTIAL: guarded writes and native suite prepared; NOT_RUN Windows; A11"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -475,7 +476,8 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
-        "criterion": "Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные."
+        "criterion": "Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные.",
+        "settings_initial_load_preservation": "PARTIAL: guarded writes and native suite prepared; NOT_RUN Windows; A11"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -1782,7 +1784,8 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
-        "criterion": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт."
+        "criterion": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт.",
+        "settings_initial_load_preservation": "PARTIAL: guarded writes and native suite prepared; NOT_RUN Windows; A11"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
@@ -2129,5 +2132,13 @@
     "visual": "NOT_RUN",
     "server_auth": "NOT_RUN",
     "source_protocol": "docs/MICROTASK_SSH_SELECTED_KEY_SIGNING.md"
+  },
+  "settings_preservation_microtask": {
+    "finding": "A11",
+    "status": "PARTIAL",
+    "implementation": "Core.SettingsService initialLoadFailed sticky SaveCore guard, exclusive missing creation; fixed CLI save error",
+    "source_review": "PASS independent source review",
+    "native": "NOT_RUN",
+    "next": "exact Windows CI DesktopSettingsLoadFailureTests then package/target regression"
   }
 }

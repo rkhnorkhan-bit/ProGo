@@ -176,3 +176,19 @@ UTF-8 BOM; `scripts/Test-ProGo.ps1` до build/native suites вызывает Pa
 для каждого `tests/*.ps1` с тем же декодированием, что Windows PowerShell.
 Следующий CI проверит и этот fix, и новый выбранный ключ; старые scoped PASS
 не подтверждают более поздний код.
+
+## A11: сохранность настроек при ошибке первоначального чтения
+
+`SettingsService.Load/SaveCore` теперь держит sticky read-failure guard:
+файл, который не удалось прочитать/разобрать при создании сервиса, нельзя
+заменить fallback defaults через Save/TrySave/tray/rollback/async Save.
+Новая ошибка имеет фиксированный текст без пути/профиля; обычное сохранение
+через настройки показывает инструкцию проверить доступ/формат и перезапустить.
+Genuine missing создаёт defaults через exclusive Move: появившийся параллельно
+чужой файл сохраняется. Поздний detached Load не публикует и не снимает guard.
+После устранения причины новый запуск читает исходные profiles/unknown fields.
+
+Независимое source review PASS; новый native suite зарегистрирован один раз.
+Реальные isolated lock→unlock, malformed/null JSON, missing/creation race,
+все write APIs и fresh trusted recovery — подготовлены, Windows NOT_RUN.
+A11 становится PARTIAL до точного CI; F15/F22/F31-R05 полностью не закрыты.

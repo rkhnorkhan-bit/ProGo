@@ -244,3 +244,20 @@ NOT_RUN; CI583 не переобозначается успехом.
 всех tests/*.ps1 перед build/долгими native suites. Нативное подтверждение
 исправления требует нового CI; локально PowerShell/Windows нет.
 Никакие таймауты/проверки не отключены и не ослаблены.
+
+## A11: исправление без перезаписи unread settings
+
+Файлы/символы: `Core.cs`, `SettingsService.Load`, `LoadMissing`, `SaveCore`,
+`SettingsInitialLoadException`; `CliProxyBridgeService.PrepareConfiguration`.
+Initial read/JSON failure включает instance-only sticky guard до любых staging,
+unknown fields, revision или receipt. File.Exists больше не доказывает missing.
+Initial missing использует exclusive Move; файл, появившийся в гонке, не заменяется.
+Detached Load trusted instance не ломает; failed instance нельзя молча rearm
+поздним чтением. Нужен новый запуск после устранения read/format причины.
+UI получает fixed nonsecret recovery message вместо общей ошибки прав.
+
+`DesktopSettingsLoadFailureTests` зарегистрирован один раз: реальный exclusive
+lock и unlock, Save/TrySave/tray/rollback/recovery/async, byte/memory/revision/temp
+сохранность, malformed/null, missing и creation race, fresh profiles/unknown fields.
+Независимое read-only review PASS, C# source/registration checks PASS;
+Windows runtime NOT_RUN. A11 PARTIAL, пока fresh CI не выполнит критерий.

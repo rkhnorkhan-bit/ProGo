@@ -167,6 +167,7 @@ namespace ProGo
                         String.Join(", ", Array.ConvertAll(RetainedPorts, value => value.ToString(System.Globalization.CultureInfo.InvariantCulture))) +
                         ". Проверьте права записи и повторите команду; ProGo сначала завершит очистку.";
                 } else if (ex is OperationCanceledException) message = "Применение настроек отменено. Позднейшие изменения вне ProGo сохранены.";
+                else if (ex is SettingsInitialLoadException) { failedField = SettingsField.SettingsFile; message = ex.Message; }
                 else if (ex is SettingsRevisionConflictException) message = "Настройки изменились во время сохранения. Более свежие значения сохранены; проверьте текущие параметры и повторите сохранение.";
                 else if (failedField == SettingsField.HttpProxyPort && socket != null && (socket.SocketErrorCode == SocketError.AddressAlreadyInUse || socket.SocketErrorCode == SocketError.AccessDenied))
                     message = "Порт " + proposed.HttpProxyPort + " занят или зарезервирован Windows. Нажмите «Подобрать свободный» или включите автоматический выбор.";
