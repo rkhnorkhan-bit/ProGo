@@ -1,5 +1,8 @@
 # Остаток ProGo: 8 открытых пунктов, 55 рабочих подпунктов
 
+> Исторические checkpoint и исходная декомпозиция. Текущие статусы и новые SHA/CI: [PROJECT_STATE.md](PROJECT_STATE.md), [project_state.json](project_state.json). Утверждённые требования этого документа сохранены.
+
+
 20.10.2026 PGA-06D: explicit Start ssh-agent UI — узкий **Code/Dev PASS**
 source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`,
 completed [CI582](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39481464526),

@@ -1,5 +1,8 @@
 # Матрица реализации и доказательств ProGo F01–F31
 
+> Исторические checkpoint и исходная декомпозиция. Текущие статусы и новые SHA/CI: [PROJECT_STATE.md](PROJECT_STATE.md), [project_state.json](project_state.json). Утверждённые требования этого документа сохранены.
+
+
 ## Текущий checkpoint: SSH-agent PGA-06D — явный Start UI, узкий Code/Dev PASS
 
 20.10.2026 UTC source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, tree

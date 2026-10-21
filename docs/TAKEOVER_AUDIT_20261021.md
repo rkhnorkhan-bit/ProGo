@@ -1,0 +1,101 @@
+# ProGo: передача, аудит и продолжение 21.10.2026
+
+## Проверенная база и источники
+
+- Linux, отдельный worktree `/workspace/scratch/4d867f513347/ProGo`, ветка
+  `work/progo-takeover-20261021`. Старые worktree чистые, не переключались.
+- Применимые AGENTS.md при обходе `/workspace` и проверке родительских каталогов
+  не найдены. Не обнаружены Git locks/rebase/merge и отдельные работающие
+  ProGo/build/test процессы. Это наблюдение доступной среды, не доказательство
+  отсутствия исполнителя на чужом ПК. Текущее поручение владельца — передача работ.
+- Выбрана `integration/approved-plan-31-20261011`, PR88, head
+  `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Main остаётся
+  `4bb336575bb1216d3047bd2b294aeecad9fdd65a`. PR79/80/81 и поздние PR82–87
+  входят в интеграционную историю; проверено ancestor для head79/80/81/87.
+  Открытые PR не закрывались и не сливались. Более поздний PR, чем 88, в
+  доступной выборке всех 88 PR не найден.
+- `qa/f23k-native-check` не ancestor: это отдельная прежняя QA-линия,
+  последнее изменение добавляет workflow. Автоматический merge/cherry-pick не
+  выполнялся; её существование не основание брать более старую продуктовую базу.
+- CI582, run39481464526: обе jobs completed/success независимо прочитаны;
+  Windows job118830819541 log прочитан. Tested source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`,
+  merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`.
+  Diff source→7861ea9 содержит только четыре Markdown-файла, 79 добавлений/4 удаления.
+  Успех не распространяется на новые изменения этого аудита.
+- Исходная `PROGO_SSH_AGENT_AUTOSTART_SPEC(1).md` найдена и прочитана локально.
+  Каноническая очищенная спецификация — `SSH_AGENT_AUTOSTART_SPEC.md`.
+  Личные адреса, пути и ключи из исходного вложения в код/отчёт не копируются.
+- Обе ссылки на chatgpt.com/c из поручения возвращают DisabledError при прямом
+  чтении. Получены отдельные поисковые извлечения Personal Context, а не полные
+  чаты. Полное чтение обеих историй НЕ подтверждено. Для исчерпывающей сверки
+  сообщений нужен экспорт этих двух чатов; независимая реализация продолжается
+  по согласованным документам репозитория.
+
+Текущий реестр: [PROJECT_STATE.md](PROJECT_STATE.md), точные 86 строк/слои —
+[project_state.json](project_state.json). Утверждённый объём: F01–F31;
+55 — разложение остатка восьми F-пунктов, а не новая версия всех 31.
+Исторические 23/31 и 6/55 не суммируются и не задают процент готовности.
+
+## Архитектура, зависимости и границы проверки
+
+Приложение — native WinForms/C#, .NET Framework4.8, Windows OpenSSH и
+PowerShell5.1; компиляция штатным Windows csc. Профили/настройки — локальный
+JSON, секреты HomeVPN — CurrentUser DPAPI, vault — существующий PIN/KDF/envelope.
+SSH/SOCKS владеет ProxyService, HTTP/CONNECT — локальный bridge, серверные
+компоненты — Python/strongSwan. CI отдельно выполняет Windows и изолированный
+Ubuntu provisioning. В dependency manifests не обнаружен отдельный NuGet/npm
+runtime-контур; это не скан CVE всех компонентов ОС.
+
+Независимый source review выполнен для SSH/agent/startup/process lifecycle,
+QR/link/session issuance, PIN-контракта, backup/update/repair и UI worker gaps.
+Существующие тесты и документы проверены как свидетельства с границами.
+Полная итоговая Windows/system/network/package приёмка пока NOT_RUN:
+локальная Linux-среда не исполняет native WinForms/DPAPI/SCM.
+Настоящие ключи/VPS, WinHTTP, службы/ACL/защита и устройство владельца не менялись.
+Rescue/HDD/VHDX — исторический контекст, текущая неисправность не утверждается.
+
+## Подтверждённые находки
+
+Номера строк ниже относятся к исходной базе 7861ea9; после правок используйте
+символы и diff. Статическое доказательство отдельно от фактического воспроизведения.
+
+| ID / состояние | Файл и символ, доказательство | Влияние и воспроизведение | Исправление и проверка |
+| --- | --- | --- | --- |
+| A01 / FAIL → исправляется | `src/Program.cs:71–78`, Main: AutoStartSocks запускает ProxyService раньше Attach/StartSshAgentAsync; `ProxyService.StartTunnelCore` сразу BatchMode=yes | Гонка на старте: stopped agent + encrypted key может дать Permission denied и permanent pause раньше подготовки. Подтверждено порядком вызовов; live ключ владельца не проверялся | Упорядочить tracked startup; bounded waiter без обязательного Running; проверять Stop/Close/settings перед late start. Native harness на задержку, denied, cancel, отсутствие позднего SSH |
+| A02 / FAIL → локальный PASS | `server/profile_share.py`, Shares.create:128–132, capacity до revoke(user) | При полном лимите нельзя перевыпустить собственную QR выдачу; локальные RED HTTP-тесты на исходном коде получили400 вместо200 | Projected count без заменяемых собственных links/sessions; отказ ДО revoke. Четыре новые HTTP проверки; 13 профильных тестов PASS, чужие данные/прежняя выдача при отказе сохранены |
+| A03 / FAIL → исправляется | `scripts/Update-ProGo.Core.ps1`, Restore-BackupToMain:471–485, optional copy + warning; catch:682 пишет Rollback completed | Неполный откат может выглядеть успешным. Подтверждено source; исходный отказ копирования в этой Linux-среде не воспроизводился | Проверенный program snapshot, обязательное копирование, hashes/version/self-check; rollback-failed отдельный результат. Windows tests: partial copy/corruption/self-check failure и personal-state preservation |
+| A04 / FAIL | `scripts/Repair-ProGo.ps1`, Copy-IfExists:18–22 и success:49–54; состав:33–47 | Missing updater transport/session/home-vpn пропускается; оставшегося exe достаточно для OK. Статическое доказательство; native reproduction NOT_RUN | Общий проверенный payload/runtime manifest и транзакционный repair; missing/tamper/offline/write failure/self-check тесты. F22-R03 |
+| A05 / FAIL | `src/UpdateAwareTrayApplicationContext.cs`, CleanupBackups:1310–1324: Plan/ApplyCleanupPlan синхронно на UI | Медленное чтение manifest/каталога/удаление блокирует сообщения окна. Статически подтверждён blocking call; latency замер NOT_RUN | Owned preview/apply workers, cancellation, fresh plan validation, heartbeat и changed-manifest/Close тесты. F31-R06 |
+| A06 / FAIL | `UpdateAwareTrayApplicationContext.BeginMaintenance:1249–1252`; `UpdateLauncher.StartUpdater:224`; `MaintenanceOperation.StartHandoff:154–170` | В UI dispatch вызывается launch, который ждёт ACK до15s. Статическое доказательство; новый timing fixture NOT_RUN | Tracked handoff worker с сохранением ownership/ACK, delayed/no/late ACK и Close тесты. F31-R07 |
+| A07 / PARTIAL | `SshProfileKeyMatching.Check/Read`: metadata-only; `ssh-keygen -l` может использовать .pub; diagnostics явно не обещает signing/auth | Наличие отпечатка не доказывает доступность конкретного private key/подписи. Это известный незавершённый критерий, не повод повторно делать Add Key/Start Agent | Проверяемая готовность выбранного способа auth, binding/freshness и безопасная подпись; не запретить direct unencrypted/other auth. F31-R11 остаётся открытым |
+| A08 / FAIL | `ProxyService.ClassifySshErrorLine`: общая Permission denied; Load key bad permissions/invalid format отдельно не отражаются | Пользователь получает общий совет вместо конкретной причины ключевого файла. Само предупреждение не всегда fatal: другой ключ может сработать | Сохранять точную безопасную причину до финального refusal, не превращать warning в запрет других identities. Native stderr и warning/banner spoof tests; ACL не менять |
+| A09 / TODO | `Install-ProGo.ps1:11–12` вызывает Build-ProGo; updater загружает release ZIP, standalone installer отсутствует | Согласованный готовый setup/fallback с сохранёнными путями ещё не реализован | F23-R01/R02/R03/R06: общий manifest/maintenance/backup/self-check/rollback, hash failure/offline/cancel/fixed paths; не объявлять текущий CI ZIP итоговым setup |
+| A10 / PARTIAL | `SECURITY_MODEL.md` описывал старый sample dataset для любого неверного PIN и два future credentials | Конкурирующая документация может вернуть устаревшее поведение | Заменить текущим утверждённым F09, старую семантику явно обозначить исторической. Полная PIN-модель уже реализовывалась, заново не переписывается |
+
+## PIN и обновление: восстановленные решения
+
+PIN «Б/комфорт»: один постоянный настоящий четырёхзначный PIN; первый
+допустимый неверный PIN локального дня становится единственным ложным.
+Повтор открывает сохранённые ложные данные, остальные неверные дают точно
+«Неверный пин-код». Настоящий не сбрасывает ложный. Состояние переживает restart;
+смена дня блокирует сессию/удаляет ложные данные. Реальные/ложные записи отдельные,
+атомарные; I/O/KDF в фоне. При допустимом envelope неверный MAC нельзя надёжно
+отличить от неверного PIN. Источник: APPROVED_PLAN_31.md, F09.
+
+Fallback: одна кнопка автоматически получает проверенный пакет либо готовый
+setup, запускает setup в новом окне с зафиксированными существующими program/data
+paths. Сохраняются личные данные, профили, ключи, backup, startup/shortcuts.
+Оба пути используют общий maintenance/backup/self-check и проверенный rollback.
+Источник: APPROVED_PLAN_31.md, F23. Это требование, а не принятая реализация.
+
+## Точка продолжения и блокеры
+
+Блоки этого продолжения: A02 QR; A01 startup sequencing; A03 честный rollback.
+После каждого — отдельный diff/review/commit и обновление доказательств.
+В этой точке новые Windows tests NOT_RUN до нового CI; старый CI582 не засчитывается.
+
+Независимые следующие работы: A07 selected-key readiness, A04/A05/A06,
+весь остаток реестра. Отсутствие сертификата/SMTP/payment accounts блокирует
+только соответствующие live/provider-specific критерии, не общую разработку.
+Боевые платежи/письма/изменение VPS и установка владельцу требуют отдельного шага.
+Полноту двух чатов можно подтвердить только после получения их экспорта.

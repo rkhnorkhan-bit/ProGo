@@ -34,7 +34,11 @@ ProGo is a small Windows tray application.
 %LOCALAPPDATA%\ProGo\progo.log
 ```
 
-## Non-goals for 0.1.x
+## Historical non-goals for 0.1.x
+
+This section describes the original release only. The approved current scope and
+remaining work are in [PROJECT_STATE.md](PROJECT_STATE.md) and
+[APPROVED_PLAN_31.md](APPROVED_PLAN_31.md); the list below is not a current restriction.
 
 - no backend;
 - no cloud sync;
@@ -58,7 +62,8 @@ lifetime. It is acquired before shared data and services. Repeat launches use a
 same-user named pipe with one activation command; no file paths, credentials or
 arbitrary actions are accepted. Startup activation is queued until the tray
 context attaches and dispatches it to the UI thread. Update/restore handoff
-serialization is a separate pending part of audit F03.
+serialization is implemented by MaintenanceOperation. Standalone installer
+integration and remaining F03/F23 acceptance are tracked in PROJECT_STATE.md.
 
 `UpdateLauncher` executes the installed updater file. The updater resolves a pinned
 release asset and SHA-256 from GitHub metadata and validates paths before unpacking.

@@ -141,6 +141,79 @@ class ProfileShareTest(unittest.TestCase):
         self.assertEqual(self.request('/api/share', 'DELETE', auth=True)[0], 204)
         self.assertEqual(self.request('/install', cookie=cookie2)[0], 200)
 
+    def fill_share_capacity(self, extra=0):
+        with self.shares.lock:
+            count = share.MAX_SHARES + extra - len(self.shares.links) - len(self.shares.sessions)
+        credential = hashlib.sha256(('e' * 48).encode()).hexdigest()
+        entries = []
+        for index in range(count):
+            user = 'pgv' + format(index + 1, '024x')
+            self.settings['users'][user] = credential
+            entries.append(dict(user=user, credential=credential, expires=self.now[0] + 900, files={}))
+        # Publish the users before inserting their entries: the running HTTP
+        # server's real cleaner must not treat the fixtures as revoked access.
+        self.write_settings()
+        with self.shares.lock:
+            for index, entry in enumerate(entries):
+                table = self.shares.links if index % 2 == 0 else self.shares.sessions
+                table['capacity-fixture-' + str(index)] = entry
+
+    def assert_reissue_at_capacity(self, claimed):
+        previous = self.create()
+        previous_cookie = self.claim(previous) if claimed else None
+        other_user, other_password = 'pgv' + 'd' * 24, 'e' * 48
+        self.settings['users'][other_user] = hashlib.sha256(other_password.encode()).hexdigest()
+        self.write_settings()
+        other = self.shares.create(other_user, other_password, 'other.example.org')
+        other_cookie = self.claim(other)
+        self.fill_share_capacity()
+        with self.shares.lock:
+            foreign_links = {key: value for key, value in self.shares.links.items() if value['user'] != self.user}
+            foreign_sessions = {key: value for key, value in self.shares.sessions.items() if value['user'] != self.user}
+            self.assertEqual(len(self.shares.links) + len(self.shares.sessions), share.MAX_SHARES)
+        replacement = self.create()
+        if claimed:
+            self.assertEqual(self.request('/install', cookie=previous_cookie)[0], 410)
+        else:
+            self.assertEqual(self.request('/claim', 'POST', {'token': previous['Url'].split('#')[1]})[0], 410)
+        with self.shares.lock:
+            replacement_token = replacement['Url'].split('#')[1]
+            self.assertEqual(set(self.shares.links), set(foreign_links) | {replacement_token})
+            self.assertEqual({key: self.shares.links[key] for key in foreign_links}, foreign_links)
+            self.assertEqual(self.shares.links[replacement_token]['user'], self.user)
+            self.assertEqual(self.shares.sessions, foreign_sessions)
+            self.assertEqual(len(self.shares.links) + len(self.shares.sessions), share.MAX_SHARES)
+        self.assertEqual(self.request('/install', cookie=other_cookie)[0], 200)
+        self.assertEqual(self.request('/profile.mobileconfig', cookie=self.claim(replacement))[0], 200)
+
+    def test_full_capacity_reissues_unclaimed_link(self):
+        self.assert_reissue_at_capacity(False)
+
+    def test_full_capacity_reissues_claimed_session(self):
+        self.assert_reissue_at_capacity(True)
+
+    def test_full_capacity_rejects_new_user_without_revoking_others(self):
+        self.fill_share_capacity()
+        with self.shares.lock:
+            links, sessions = dict(self.shares.links), dict(self.shares.sessions)
+        self.assertEqual(self.request('/api/share', 'POST', {'home': 'home.example.org'}, auth=True)[0], 400)
+        with self.shares.lock:
+            self.assertEqual(self.shares.links, links)
+            self.assertEqual(self.shares.sessions, sessions)
+
+    def test_capacity_failure_preserves_previous_delivery(self):
+        cookie = self.claim(self.create())
+        # Even an already overfull service must reject before revoking the
+        # caller's working delivery; removing it would not make enough room.
+        self.fill_share_capacity(extra=1)
+        with self.shares.lock:
+            links, sessions = dict(self.shares.links), dict(self.shares.sessions)
+        self.assertEqual(self.request('/api/share', 'POST', {'home': 'home.example.org'}, auth=True)[0], 400)
+        with self.shares.lock:
+            self.assertEqual(self.shares.links, links)
+            self.assertEqual(self.shares.sessions, sessions)
+        self.assertEqual(self.request('/profile.mobileconfig', cookie=cookie)[0], 200)
+
     def test_invitation_revocation_cuts_existing_download(self):
         cookie = self.claim(self.create())
         self.settings['users'].clear()

@@ -1,5 +1,8 @@
 # Audit correction stages
 
+> Исторические checkpoint и исходная декомпозиция. Текущие статусы и новые SHA/CI: [PROJECT_STATE.md](PROJECT_STATE.md), [project_state.json](project_state.json). Утверждённые требования этого документа сохранены.
+
+
 Baseline: ProGo 0.2.2 (`4bb3365`). The approved audit compares 0.1.27,
 0.1.29 and 0.2.2. Each stage is scoped to an audit finding and has its own
 verification and review boundary.
