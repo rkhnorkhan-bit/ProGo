@@ -60,6 +60,20 @@ namespace ProGo
             Check(result.State == SshAuthenticationPreparationState.LocalSigningObserved && reads == 2 && signs == 1 &&
                 result.Configuration.Target == "preparation.fixture" && result.Signing.State == SshKeyReadinessState.AgentSigningVerified,
                 "fresh native-configuration phases surround one local signing observation without redirecting an immutable candidate");
+            var launchObservation = (ISshLaunchPreparationObservation)result;
+            Check(launchObservation.AgentEndpoint == request.AgentEndpoint &&
+                launchObservation.MatchesLaunchRequest(request.Candidate, executable, request.AgentEndpoint) &&
+                !launchObservation.MatchesLaunchRequest(candidate, executable, request.AgentEndpoint) &&
+                !launchObservation.MatchesLaunchRequest(request.Candidate, executable, "changed-fixture-endpoint") &&
+                launchObservation.ToDisplay() == result.ToDisplay(),
+                "bootstrap observation retains request freshness and safe guidance without claiming private-key or server authorization");
+            var cancelledObservation = new SshAuthenticationPreparationResult(SshAuthenticationPreparationState.Cancelled,
+                SshAuthenticationPreparationReason.Cancelled, request, result.Configuration, result.Signing);
+            var changedObservation = new SshAuthenticationPreparationResult(SshAuthenticationPreparationState.Changed,
+                SshAuthenticationPreparationReason.Changed, request, result.Configuration, result.Signing);
+            Check(!((ISshLaunchPreparationObservation)cancelledObservation).MatchesLaunchRequest(request.Candidate, executable, request.AgentEndpoint) &&
+                !((ISshLaunchPreparationObservation)changedObservation).MatchesLaunchRequest(request.Candidate, executable, request.AgentEndpoint),
+                "cancelled or changed preparation observations cannot admit a later SSH launch with otherwise identical request fields");
             Check(!request.Matches(candidate, executable, null, request.AgentEndpoint) &&
                 request.Matches(new SshProfileSetting { Target = "preparation.fixture", Name = "renamed display" }, executable, null, request.AgentEndpoint) &&
                 !request.Matches(request.Candidate, Path.Combine(root, "different-client", "ssh.exe"), null, request.AgentEndpoint) &&

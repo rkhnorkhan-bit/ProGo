@@ -111,7 +111,7 @@ namespace ProGo
         CustomAgent, InvalidAgentEndpoint, NoIdentity, MultipleIdentities, IdentityListLimited, SigningUnconfirmed,
         LocalSigningObserved, Busy, Changed, SigningTimedOut, TimedOut, Cancelled, Failed
     }
-    internal sealed class SshAuthenticationPreparationResult
+    internal sealed class SshAuthenticationPreparationResult : ISshLaunchPreparationObservation
     {
         internal SshAuthenticationPreparationState State { get; private set; }
         internal SshAuthenticationPreparationReason Reason { get; private set; }
@@ -121,6 +121,13 @@ namespace ProGo
         internal SshAuthenticationPreparationResult(SshAuthenticationPreparationState state, SshAuthenticationPreparationReason reason,
             SshAuthenticationPreparationRequest request, SshAuthenticationConfiguration configuration, SshKeyReadinessResult signing)
         { State = state; Reason = reason; Request = request; Configuration = configuration; Signing = signing; }
+        string ISshLaunchPreparationObservation.AgentEndpoint { get { return Request == null ? null : Request.AgentEndpoint; } }
+        bool ISshLaunchPreparationObservation.MatchesLaunchRequest(SshProfileSetting candidate, string executable, string agentEndpoint)
+        {
+            return Request != null && State != SshAuthenticationPreparationState.Changed && State != SshAuthenticationPreparationState.Cancelled &&
+                Request.Matches(candidate, executable, Request.ConfigurationFile, agentEndpoint);
+        }
+        string ISshLaunchPreparationObservation.ToDisplay() { return ToDisplay(); }
         internal string ToDisplay()
         {
             switch (Reason) {

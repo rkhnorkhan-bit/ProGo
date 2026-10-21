@@ -313,6 +313,8 @@ namespace ProGo
         internal SettingsInitialLoadException() : base("Настройки не были прочитаны при запуске. Исходные данные не изменены; запись отключена. Проверьте доступ и формат файла, затем перезапустите ProGo.") { }
     }
 
+    internal enum SettingsLaunchRevisionState { Acquired, Busy, Changed }
+
     internal sealed class SettingsService : IDisposable
     {
         private sealed class PublishedSettings
@@ -343,6 +345,39 @@ namespace ProGo
             // Read one memory publication, without waiting behind a disk writer.
             var value = published;
             return new SettingsRevisionSnapshot(value.Settings.Clone(), value.Revision);
+        }
+
+        // Only the final synchronous spawn admission may retain this lease.
+        // Never await, perform preparation/file IO, log, call Save or invoke UI
+        // while holding it. Busy writers are retried by the launch owner outside
+        // its process gate; a changed revision invalidates the old preparation.
+        internal SettingsLaunchRevisionState TryAcquireLaunchRevision(SettingsRevisionSnapshot expected, out IDisposable lease)
+        {
+            lease = null;
+            if (expected == null) return SettingsLaunchRevisionState.Changed;
+            if (!System.Threading.Monitor.TryEnter(commitGate)) return SettingsLaunchRevisionState.Busy;
+            try {
+                var value = published;
+                if (value == null || value.Revision != expected.Revision) return SettingsLaunchRevisionState.Changed;
+                lease = new LaunchRevisionLease(commitGate);
+                return SettingsLaunchRevisionState.Acquired;
+            }
+            finally { if (lease == null) System.Threading.Monitor.Exit(commitGate); }
+        }
+        private sealed class LaunchRevisionLease : IDisposable
+        {
+            private readonly object gate;
+            private readonly int owner = System.Threading.Thread.CurrentThread.ManagedThreadId;
+            private bool released;
+            internal LaunchRevisionLease(object gate) { this.gate = gate; }
+            public void Dispose()
+            {
+                if (released) return;
+                // A wrong-thread dispose must not forget the actual owner's lock.
+                if (System.Threading.Thread.CurrentThread.ManagedThreadId != owner)
+                    throw new InvalidOperationException("Settings launch lease must be released on its acquiring thread.");
+                released = true; System.Threading.Monitor.Exit(gate);
+            }
         }
 
         public AppSettings Load()

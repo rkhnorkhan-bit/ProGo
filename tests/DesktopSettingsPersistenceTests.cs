@@ -180,6 +180,7 @@ namespace ProGo
                         }
                         pulse.Stop();
                     }
+                    SettingsLaunchRevisionLeaseWorkflow();
                 }
                 finally
                 {
@@ -190,6 +191,59 @@ namespace ProGo
                     } finally {
                         if (original == null) { if (File.Exists(AppPaths.SettingsPath)) File.Delete(AppPaths.SettingsPath); }
                         else File.WriteAllBytes(AppPaths.SettingsPath, original);
+                    }
+                }
+            }
+        }
+        private static void SettingsLaunchRevisionLeaseWorkflow()
+        {
+            Task writer = null, wrongOwner = null; IDisposable lease = null;
+            using (var writerStarted = new ManualResetEventSlim())
+            using (var entered = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim())
+            using (var settings = new SettingsService(delegate {
+                entered.Set();
+                if (!release.Wait(3000)) throw new TimeoutException("revision lease writer fixture deadline");
+            })) {
+                try {
+                    var before = settings.Capture(); var bytes = File.ReadAllBytes(AppPaths.SettingsPath);
+                    var state = settings.TryAcquireLaunchRevision(before, out lease);
+                    Check(state == SettingsLaunchRevisionState.Acquired && lease != null &&
+                        settings.Revision == before.Revision && File.ReadAllBytes(AppPaths.SettingsPath).SequenceEqual(bytes),
+                        "fresh launch revision lease reads only committed memory and leaves durable settings unchanged");
+                    var held = lease; bool rejected = false;
+                    wrongOwner = Task.Run(delegate {
+                        try { held.Dispose(); } catch (InvalidOperationException) { rejected = true; }
+                    });
+                    WaitAsyncRestoreWithoutPump(wrongOwner, 3000); wrongOwner.GetAwaiter().GetResult();
+                    Check(rejected, "wrong-thread launch lease disposal refuses without losing the owner's release capability");
+                    var proposed = before.Settings.Clone(); proposed.TestEndpoint = "https://revision-lease.example.org/check";
+                    writer = Task.Run(delegate { writerStarted.Set(); settings.Save(proposed); });
+                    Check(writerStarted.Wait(3000) && !entered.Wait(150) && !writer.IsCompleted && settings.Revision == before.Revision,
+                        "a concurrent real settings commit cannot enter replacement while final spawn admission owns its revision");
+                    lease.Dispose(); lease.Dispose(); lease = null;
+                    Check(entered.Wait(3000), "idempotent owner disposal releases the waiting actual settings writer");
+                    var watch = Stopwatch.StartNew(); state = settings.TryAcquireLaunchRevision(before, out lease); watch.Stop();
+                    Check(state == SettingsLaunchRevisionState.Busy && lease == null && watch.ElapsedMilliseconds < 500,
+                        "launch admission returns Busy without waiting behind the held real file writer");
+                    release.Set(); WaitAsyncRestoreWithoutPump(writer, 5000); writer.GetAwaiter().GetResult();
+                    state = settings.TryAcquireLaunchRevision(before, out lease);
+                    Check(state == SettingsLaunchRevisionState.Changed && lease == null && settings.Revision == before.Revision + 1,
+                        "completed settings replacement invalidates a previously prepared launch revision");
+                    state = settings.TryAcquireLaunchRevision(null, out lease);
+                    Check(state == SettingsLaunchRevisionState.Changed && lease == null,
+                        "missing launch snapshot never obtains a revision lease");
+                    var current = settings.Capture(); state = settings.TryAcquireLaunchRevision(current, out lease);
+                    Check(state == SettingsLaunchRevisionState.Acquired && lease != null &&
+                        SettingsService.DeserializeSettings(File.ReadAllText(AppPaths.SettingsPath)).TestEndpoint == proposed.TestEndpoint,
+                        "fresh explicit retry can acquire the new revision only after its actual durable commit");
+                }
+                finally {
+                    release.Set();
+                    try { if (lease != null) lease.Dispose(); }
+                    finally {
+                        var pending = Task.WhenAll(writer ?? Task.FromResult(false), wrongOwner ?? Task.FromResult(false));
+                        WaitAsyncRestoreWithoutPump(pending, 5000); pending.GetAwaiter().GetResult();
                     }
                 }
             }

@@ -1,6 +1,25 @@
 # Приёмка следующего ProGo кандидата
 
-Текущий опубликованный source B: версия0.2.2,
+Текущий итог опубликованного16-file кандидата: CI587 completed FAILURE
+на source `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, merge
+`decfa11496c12c5e65987043fb58fc7388cb5d6c`. C# compilation/report32/helper2 и4
+real modal Cancel→Retry scoped PASS; normal native chooser FAIL по caption
+selector при успешной очистке. Context/SSH preparation и последующий хвост
+NOT_RUN, ZIP отсутствует. Исправленный selector и последующие local lease/
+composition этапы compilation/native NOT_RUN до нового exact-SHA CI.
+По неизменной v1.0 консервативно11/100 проверенной готовности (raw10.50);
+CI58622 — история. Новый checking tree исключает unfinished lifecycle.
+
+История ожидания опубликованного16-file кандидата: source
+`e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, tested merge-кандидат
+`decfa11496c12c5e65987043fb58fc7388cb5d6c`,
+[CI587/39685125066](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39685125066).
+Ubuntu119517113715 SUCCESS; Windows119517114158 in_progress. Compilation/native
+нового блока пока NOT_RUN; последующий local diff не относится к CI587.
+Source push/PR update выполнены без public uploads/release. Прежний CI586 ниже
+— отдельный завершённый snapshot, не проверка текущего кандидата.
+
+История предыдущего опубликованного source B: версия0.2.2,
 `656b3d65e03d540be859ee69635c492631093446`, PR88 OPEN/DRAFT, unmerged.
 [CI586 /39670153699](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39670153699)
 **completed SUCCESS только для tested merge M**

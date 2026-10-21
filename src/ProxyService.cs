@@ -9,8 +9,21 @@ using CancellationTokenSource = System.Threading.CancellationTokenSource;
 
 namespace ProGo
 {
+    // Bootstrap/native process fixtures depend only on this observation contract,
+    // not the diagnostic UI, agent protocol or configuration-probe implementation.
+    // A matching observation is freshness evidence, never server authorization.
+    internal interface ISshLaunchPreparationObservation
+    {
+        string AgentEndpoint { get; }
+        bool MatchesLaunchRequest(SshProfileSetting candidate, string executable, string agentEndpoint);
+        string ToDisplay();
+    }
+
     internal sealed class ProxyService : IDisposable
     {
+        internal delegate SettingsLaunchRevisionState AcquireLaunchRevision(SettingsRevisionSnapshot expected, out IDisposable lease);
+        private readonly Func<SshProfileSetting, string, CancellationToken, ISshLaunchPreparationObservation> prepareAuthentication;
+        private readonly AcquireLaunchRevision acquireLaunchRevision;
         private readonly Func<AppSettings> readSettings;
         private readonly Action<AppSettings> saveSettings;
         private readonly Func<SettingsRevisionSnapshot> captureSettings;
@@ -74,9 +87,11 @@ namespace ProGo
         private string selectedAtStart;
         private string selectedConnectionAtStart;
 
-        public ProxyService(SettingsService settings)
+        public ProxyService(SettingsService settings,
+            Func<SshProfileSetting, string, CancellationToken, ISshLaunchPreparationObservation> prepareAuthentication = null)
             : this(delegate { return settings.Current; }, settings.Save, OpenSshClient.Executable, delegate { return DateTime.UtcNow; }, true,
-                "", 20000, settings.Capture, settings.TrySelectWorkingProfile, settings.SetAutoRestart)
+                "", 20000, settings.Capture, settings.TrySelectWorkingProfile, settings.SetAutoRestart,
+                prepareAuthentication, settings.TryAcquireLaunchRevision)
         {
         }
 
@@ -84,8 +99,11 @@ namespace ProGo
         internal ProxyService(Func<AppSettings> read, Action<AppSettings> save, string executable,
             Func<DateTime> clock, bool startTimer, string extraOptions = "", int startupTimeoutMs = 20000,
             Func<SettingsRevisionSnapshot> captureSettings = null, Func<SettingsRevisionSnapshot, string, bool> trySelectProfile = null,
-            Action<bool> setAutoRestart = null)
+            Action<bool> setAutoRestart = null,
+            Func<SshProfileSetting, string, CancellationToken, ISshLaunchPreparationObservation> prepareAuthentication = null,
+            AcquireLaunchRevision acquireLaunchRevision = null)
         {
+            this.prepareAuthentication = prepareAuthentication; this.acquireLaunchRevision = acquireLaunchRevision;
             this.captureSettings = captureSettings; this.trySelectProfile = trySelectProfile; this.setAutoRestart = setAutoRestart;
             readSettings = read; saveSettings = save; sshExecutable = executable; utcNow = clock;
             sshOptions = extraOptions;

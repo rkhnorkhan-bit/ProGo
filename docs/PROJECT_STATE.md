@@ -1,12 +1,74 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `656b3d65e03d540be859ee69635c492631093446`, tree `5f9e6589ee195b8a584a131e0ed66a9dbedbd545`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, tree `b1bbec0ca9876edafc8cd0cf8b16a605bef2ed45`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## Текущий результат CI587 и исправление native chooser
+
+Source `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, tested merge
+`decfa11496c12c5e65987043fb58fc7388cb5d6c`,
+[CI587/39685125066](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39685125066)
+completed FAILURE: Windows119517114158 FAILURE, Ubuntu119517113715 SUCCESS.
+Точный log identity `0.2.2+decfa11496c12c5e65987043fb58fc7388cb5d6c`.
+C# compilation PASS; SOCKS41/403, DiagnosticReport32, fresh installed helper2,
+Codex67, settings93 и4 actual modal ShowDialog Cancel→Retry scoped PASS.
+Полный Desktop не прошёл; Context ownership и SSH aggregate suites после
+chooser не достигнуты, как и Instance/Maintenance/Shutdown/HomeVPN/ZIP хвост.
+Они NOT_RUN, не FAIL и не PASS. Public uploads SKIPPED, owner PC/VPS NOT_RUN.
+
+Подтверждённый FAIL — normal native chooser child exit1:
+`native SaveFileDialog not found within 5000 ms for the fixture owner`, при
+этом child сообщил DIAGNOSTIC_CHOOSER_CLEANUP_COMPLETE до внешнего20с лимита.
+Совпадение caption в normal selector оказалось лишним условием поверх
+PID/thread/root-owner/#32770. Вывод об этом согласуется с тем, что тот же
+ownership-only cleanup смог вернуть modal вызов; фактическое значение caption
+старый log не сохранил, язык/точный текст не выдумываются.
+
+Точечное исправление в отдельном worktree: normal/error режимы выбирают
+native dialog по прежним строгим ownership guards без caption; missing режим
+по-прежнему намеренно не находит его и должен вернуть20 + точный FAIL + cleanup.
+Ничего не выключено: real production ShowDialog, choices1/observedNative,
+нулевые записи, неизменность logs,5с deadline,20с external job budget и
+ошибки cleanup сохранены. Добавлены только безопасные observed/choices/cleaned
+flags в log, без window texts/личных путей. Новый selector пока Windows NOT_RUN.
+
+Проверочный worktree базируется на completed local commit
+`59cec1ae32485d65d5f578329aea768d59a04347`: включает завершённые source этапы
+revision lease `9f6c3615405158a9d69ea81089d3a4beb47bb272` и observation/composition,
+которые ещё compilation/native NOT_RUN. Незавершённый actual lifecycle diff
+основного worktree НЕ входит: ProxyService SHA256
+`b04bfe80e9426f75c6bc9094ef3e01ae9384ab2a7c1debc91c362e9f81a8c137`, backup
+/tmp/progo-f31-owned-launch-wip.patch. Дополнительно сохранён local checkpoint
+`checkpoint/f31-owned-launch-wip-20261022`, полный SHA `9826e742eb987d18cadc63a6aa3f396b91e32447`; stash create/branch
+не очищали working tree и не меняли активный HEAD/index. Не откатывать его и не публиковать без
+review/lifecycle tests. После исправления CI продолжить этот отдельный этап.
+
+### Оценка v1.0 после смены проверяемого кандидата
+
+Веса/формулы прежние. Историческая CI586 база22 не присваивается CI587.
+На CI587 есть конкретные partial native доказательства D=0.5 для19 родителей:
+F01,F02,F04,F05,F06,F07,F08,F09,F10,F11,F12,F14,F15,F16,F17,F23,F25,F26,F31.
+Их веса по исходной матрице суммарно70. Источники — те же указанные критерии
+и найденные в точном CI587 log native строки (report/modal/keyboard источники
+F14/F17 уточнены новым реальным diagnostic workflow). Остальным строкам D=0:
+их прежние конкретные примеры не достигнуты/не трассированы в новом log;
+не подтверждённые критерии не начисляются. P=0 у всех: ZIP/hash на CI587 нет;
+A=0 у всех: приёмки владельцем нет. Σ70×0.30×0.5=10.50, показ11 (half-up).
+Это консервативный индекс заработанных доказательств, не оценка доли функций.
+Неполно разобранным native свидетельствам баллы не приписываются. Прежняя
+матрица21.75 и все SHA ниже сохранены как историческая первая база, веса не
+изменены. Реализация58–80/100; текущая подтверждённая готовность11/100;
+изменение raw −11.25 (display22→11) из-за нового candidate/package/native scope,
+а не исчезновения реализованного кода. Новый selector/lease/composition NOT_RUN.
+
+Следующий шаг: secrets/diff scan checking tree, source publish в ту же ветку
+expected-head без force и один новый CI; основание нового запуска — source
+исправление подтверждённого chooser FAIL, не слепой retry старого SHA.
 
 ## Постоянный порядок работы — действует с22.10.2026
 
@@ -54,6 +116,77 @@ CI582 независимо проверен через jobs и Windows log: Wind
    NOT_RUN не PASS. Открытые критические блокеры не компенсируются суммой.
    Формат после этапа: «Сделано: … · Проверки: … · Реализация: X/100 ·
    Проверенная готовность: Y/100 · Изменение баллов и основание: … · Далее: …».
+
+### F31-R11 этап2: production composition и bootstrap boundary — source PARTIAL
+
+Этап1 сохранён local commit `9f6c3615405158a9d69ea81089d3a4beb47bb272`.
+Program теперь явно передаёт настоящий SshAuthenticationPreparation preparer
+в ProxyService. В самом ProxyService только ISshLaunchPreparationObservation
+и revision-admission delegate: minimal SocksRecovery/HomeVPN bootstrap assemblies
+не получают зависимость от всей диагностики/agent/UI и скрытые реальные ssh-G.
+Независимый test constructor по умолчанию остаётся без дополнительного I/O.
+
+Observation проверяет immutable candidate/executable/endpoint и отбрасывает
+Cancelled/Changed; не является private-key/server authorization. Два assertions
+добавлены в существующую aggregate suite. Сам preparer пока ещё не вызывается:
+common owned lifecycle — следующий этап. F31-R11 не закрыт. Source/dependency
+и diff checks PASS, public315/0; compilation/native NOT_RUN и не часть CI587.
+При первой diff-проверке исправлена случайная двойная CR-нормализация Program.cs;
+итоговый diff содержит только4 нужные строки Program, полная перезапись не входит.
+Оценка58–80/22, прирост0. CI587 e943ca34 остаётся единственным проверяемым run.
+
+### F31-R11 этап1: nonblocking launch revision lease — source PARTIAL
+
+`SettingsService.TryAcquireLaunchRevision` добавляет Acquired/Busy/Changed без
+ожидания занятого commitGate, проверяет именно опубликованную ревизию и удерживает
+её против другого writer до Dispose. Удаление lease идемпотентно на owner thread;
+неправильный thread не теряет возможность owner освободить lock. Никаких native
+проб/await/логирования/Save/диска внутри admission нет. API пока не используется
+ProxyService и само по себе F31-R11 не закрывает.
+
+В существующем isolated SettingsPersistenceWorkflow добавлены8 native assertions:
+неизменность bytes, wrong-thread dispose, blocked real writer, освобождение,
+Busy без ожидания, stale revision, null snapshot, fresh retry. BeforeReplace
+barrier ограничен3с, finally освобождает barrier/lease и объединённо ждёт обе
+свои tasks до5с до исходного file restore. Новых entrypoints/fixtures/main hooks
+не требуется; harness уже компилирует этот файл. Файлы Core.cs и
+DesktopSettingsPersistenceTests.cs; local compile/native NOT_RUN в Linux.
+
+PASS self source/diff check, public-content315/0 и targeted secrets patterns0.
+Эти изменения не входят в source e943ca34/CI587. Следующий этап — actual owned
+launch reservation/preparation вне process gate, final revision lease перед
+spawn, общий manual/recovery путь и Stop settlement. Оценка58–80/22 без прироста.
+
+### Опубликовано: CI587, единственный запуск нового кандидата
+
+Source `e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, local logical commit
+`cd8c468b48f293fe809aea1d1ed75662a8e5a97f`, общее дерево
+`b1bbec0ca9876edafc8cd0cf8b16a605bef2ed45`; PR88 head подтверждён после
+expected-head fast-forward без force. PR88 OPEN/DRAFT, description обновлено.
+Точный PR merge `decfa11496c12c5e65987043fb58fc7388cb5d6c`.
+[CI587/39685125066](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39685125066)
+запущен автоматически, дубли не создавать. Ubuntu job119517113715 SUCCESS;
+Windows job119517114158 in_progress, compilation/native накопленного блока
+ещё NOT_RUN до проверки logs. CI586 не даёт этому source успеха. Upload OFF.
+
+Во время ожидания независимая следующая микрозадача F31-R11: узкий nonblocking
+SettingsService revision lease и bounded regression под существующим settings
+fixture. ProxyService пока не меняется; новый local diff не входит в CI587.
+Сохранять этот source/run при следующих локальных изменениях, не подменять SHA.
+Реализация58–80/100, проверенная готовность22/100, прирост0 до новых критериев.
+Предыдущие блоки ниже — история предыдущих фаз, ref update уже выполнен.
+
+### Подготовленный source: remote ref update pending
+
+Local commit `cd8c468b48f293fe809aea1d1ed75662a8e5a97f`, GitHub commit object
+`e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03`, общее дерево
+`b1bbec0ca9876edafc8cd0cf8b16a605bef2ed45`. Metadata commit SHA различается
+между local git и GitHub API;16 файлов/полное дерево идентичны. Локальный commit
+сохранён, историю не переписывать. Scan2881added lines findings0; public315/0
+и diff checks PASS. Native Windows NOT_RUN. Объект ещё не подтверждён как head:
+следующее действие — expected-head fast-forward remote integration branch
+от656b3d65. При прерывании сначала прочитать PR/head и runs для e943ca34,
+а не повторять update/push/CI вслепую. Generated binaries не публиковались.
 
 ### Активная точка: проверочный16-file блок и новый Windows CI
 

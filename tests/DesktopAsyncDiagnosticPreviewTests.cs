@@ -420,7 +420,10 @@ namespace ProGo
                             if (DiagnosticChooserWindows.Find(owner, threadId, processId, null) != IntPtr.Zero) observedNative = true;
                             if (watch.ElapsedMilliseconds >= 5000)
                                 throw new TimeoutException(choices == 0 ? DiagnosticChooserMissing : "native SaveFileDialog did not close within 5000 ms");
-                            string title = mode == "missing" ? "deliberately unmatched fixture caption" : "Сохранить диагностический отчёт";
+                            // The actual chooser is identified by this isolated child's
+                            // PID/thread/root owner. Native shell captions are not
+                            // a stable identity; the negative case still forces a miss.
+                            string title = mode == "missing" ? "deliberately unmatched fixture caption" : null;
                             var dialog = DiagnosticChooserWindows.Find(owner, threadId, processId, title);
                             if (dialog == IntPtr.Zero || choices != 0) return;
                             choices++;
@@ -460,6 +463,7 @@ namespace ProGo
                         } catch (Exception ex) { failure = failure == null ? ex : new AggregateException(failure, ex); }
                     }
                 }
+                Console.WriteLine("NATIVE_CHOOSER_OBSERVED=" + observedNative + "; choices=" + choices + "; cleaned=" + cleaned);
                 if (cleaned) Console.WriteLine(DiagnosticChooserCleanup);
                 if (failure == null) return 0;
                 Console.WriteLine("FAIL: " + failure.Message);

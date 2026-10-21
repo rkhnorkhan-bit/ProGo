@@ -6,7 +6,7 @@
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "Published CI586 completed SUCCESS only for merge 7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2 / source 656b3d65e03d540be859ee69635c492631093446; uncommitted candidate Windows compilation/native NOT_RUN; no whole-product acceptance",
+  "fresh_candidate_verification": "CI587 completed FAILURE only at sourcee943ca348d17cbed3f4b5b4b9bca4e206ffb3d03 / mergedecfa11496c12c5e65987043fb58fc7388cb5d6c; scoped compilation/report/helper/modal PASS; native chooser FAIL; later local foundations and selector fix Windows compilation/native NOT_RUN",
   "status_values": [
     "PASS",
     "FAIL",
@@ -2053,8 +2053,8 @@
     "observed": "public",
     "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
     "push": "PASS: API fast-forward with expected7861ea9, no force; source trees identical",
-    "ci": "CI586 completed SUCCESS: Windows119465588823 and Ubuntu119465589235; source 656b3d65e03d540be859ee69635c492631093446; tested merge 7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2; local candidate NOT_RUN",
-    "pr88": "OPEN/DRAFT, head656b3d65e03d540be859ee69635c492631093446",
+    "ci": "CI587 completed Windows FAILURE, Ubuntu SUCCESS; sourcee943ca348d17cbed3f4b5b4b9bca4e206ffb3d03 / mergedecfa11496c12c5e65987043fb58fc7388cb5d6c; next candidate not published yet",
+    "pr88": "OPEN/DRAFT, heade943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
     "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
   },
   "local_regression": {
@@ -2066,7 +2066,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "656b3d65e03d540be859ee69635c492631093446",
+  "candidate_source": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -2151,57 +2151,57 @@
       "local": "d27521652c2a1be1ce453e4931fa239856de7dc8",
       "published": "656b3d65e03d540be859ee69635c492631093446",
       "tree": "5f9e6589ee195b8a584a131e0ed66a9dbedbd545"
+    },
+    {
+      "local": "cd8c468b48f293fe809aea1d1ed75662a8e5a97f",
+      "published": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
+      "tree": "b1bbec0ca9876edafc8cd0cf8b16a605bef2ed45"
     }
   ],
   "ci_candidate": {
-    "source": "656b3d65e03d540be859ee69635c492631093446",
-    "tested_merge": "7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
-    "run_id": 39670153699,
-    "run_number": 586,
+    "source": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
+    "tested_merge": "decfa11496c12c5e65987043fb58fc7388cb5d6c",
+    "run_id": 39685125066,
+    "run_number": 587,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39685125066",
     "status": "completed",
-    "acceptance": "PARTIAL: Windows/Ubuntu jobs and runner ZIP SUCCESS only at exact tested_merge/source; uncommitted candidate Windows compilation/native NOT_RUN; integration, retrieved package and target acceptance not complete",
-    "artifact_upload": "public uploads disabled; private transfer requires agreement",
-    "next": "Separate reviewable commit of uncommitted candidate, then authorized Windows verification on that exact new SHA; no CI586 inheritance",
-    "conclusion": "success",
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39670153699",
+    "conclusion": "failure",
+    "acceptance": "FAIL: native chooser exact-caption lookup timed out5000ms; child exit1 with cleanup complete; no timeout/skip converted to PASS",
     "jobs": [
       {
-        "id": 119465588823,
+        "id": 119517114158,
         "name": "windows-build",
         "status": "completed",
-        "conclusion": "success"
+        "conclusion": "failure"
       },
       {
-        "id": 119465589235,
+        "id": 119517113715,
         "name": "vpn-server-test",
         "status": "completed",
         "conclusion": "success"
       }
     ],
-    "build_identity": "0.2.2+7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
+    "build_identity": "0.2.2+decfa11496c12c5e65987043fb58fc7388cb5d6c",
     "scoped_pass": {
-      "desktop": 4930,
+      "windows_compilation": "PASS",
+      "socks_recovery_tests": 41,
+      "socks_recovery_assertions": 403,
+      "diagnostic_report": 32,
+      "installed_diagnostic_helper": 2,
       "codex_shortcut_ownership": 67,
       "settings_initial_load_preservation": 93,
-      "ssh_selected_key_signing": 55,
-      "ssh_selected_key_signing_ui": 50,
-      "ssh_agent_startup": 62,
-      "instance": 28,
-      "maintenance": 126,
-      "shutdown": 47,
-      "home_vpn": 975,
-      "portable_home_vpn": 90,
-      "backup_retention": 29
+      "modal_cancel_retry_actual_showdialog": 4
     },
-    "runner_package": {
-      "version": "0.2.2",
-      "step_conclusion": "success",
-      "sha256": "d7a6176ec2da62a5b53e2faea2a86893919a853353a5166f669baa0042896191",
-      "uploads": "skipped",
-      "retrieved_bytes_sha256": "NOT_RUN",
-      "private_delivery": "BLOCKED: delivery method not agreed",
-      "installed_target": "NOT_RUN"
-    }
+    "not_run": [
+      "remaining chooser negative cases",
+      "DiagnosticContextWorkflow",
+      "SshAuthenticationPreparationWorkflow",
+      "remaining Desktop suites after chooser",
+      "Instance/Maintenance/Shutdown/HomeVPN/Portable tail",
+      "package and target acceptance"
+    ],
+    "artifact_upload": "SKIPPED; public uploads OFF",
+    "next": "New source with ownership-based positive chooser lookup; keep deadline/negative failures/cleanup; validate that exact source"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -2351,6 +2351,51 @@
         "next": "inspect completed jobs/logs and exact SHA, preserve all failures"
       },
       "scope": "Immutable completed CI586 evidence for published B/M; prior in_progress observation retained as history, not current status"
+    },
+    {
+      "source": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
+      "tested_merge": "decfa11496c12c5e65987043fb58fc7388cb5d6c",
+      "run_id": 39685125066,
+      "run_number": 587,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39685125066",
+      "status": "completed",
+      "conclusion": "failure",
+      "acceptance": "FAIL: native chooser exact-caption lookup timed out5000ms; child exit1 with cleanup complete; no timeout/skip converted to PASS",
+      "jobs": [
+        {
+          "id": 119517114158,
+          "name": "windows-build",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 119517113715,
+          "name": "vpn-server-test",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "build_identity": "0.2.2+decfa11496c12c5e65987043fb58fc7388cb5d6c",
+      "scoped_pass": {
+        "windows_compilation": "PASS",
+        "socks_recovery_tests": 41,
+        "socks_recovery_assertions": 403,
+        "diagnostic_report": 32,
+        "installed_diagnostic_helper": 2,
+        "codex_shortcut_ownership": 67,
+        "settings_initial_load_preservation": 93,
+        "modal_cancel_retry_actual_showdialog": 4
+      },
+      "not_run": [
+        "remaining chooser negative cases",
+        "DiagnosticContextWorkflow",
+        "SshAuthenticationPreparationWorkflow",
+        "remaining Desktop suites after chooser",
+        "Instance/Maintenance/Shutdown/HomeVPN/Portable tail",
+        "package and target acceptance"
+      ],
+      "artifact_upload": "SKIPPED; public uploads OFF",
+      "next": "New source with ownership-based positive chooser lookup; keep deadline/negative failures/cleanup; validate that exact source"
     }
   ],
   "retention_microtask": {
@@ -2397,14 +2442,14 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "Last published source B, not a commit for the uncommitted candidate",
+  "candidate_source_scope": "Published16-file candidate; current CI587 in progress, CI586 is separate completed historical evidence",
   "uncommitted_candidate": {
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "source_sha": null,
-    "state": "uncommitted",
-    "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN",
-    "ci": "NOT_RUN",
+    "source_sha": "cd8c468b48f293fe809aea1d1ed75662a8e5a97f",
+    "state": "committed/published as exact tree mapping; no longer uncommitted; later local changes are separate",
+    "windows_compilation": "PASS only sourcee943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
+    "windows_native": "FAIL native chooser, other reached scenarios scoped PASS; tail NOT_RUN",
+    "ci": "CI587 completed FAILURE; not a full native PASS",
     "scope": [
       "async diagnostic report/preview and Context ownership",
       "advisory SSH authentication preparation, not launch/recovery integration",
@@ -2446,7 +2491,8 @@
         "existing Desktop and shutdown/maintenance/instance ownership regressions"
       ],
       "acceptance": "All required native cases actually execute on exact new SHA; SKIP/NOT_RUN is not PASS; capture identity/logs and preserve failure; for long run save ID and inspect same run in next task"
-    }
+    },
+    "published_sha": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03"
   },
   "review03_sync": {
     "status": "PASS",
@@ -2485,15 +2531,116 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "prepare16-file candidate",
+    "phase": "CI587 failure fixed locally in isolated worktree; next publication pending",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": null,
-    "published_sha": null,
-    "ci_run_id": null,
+    "local_sha": "cd8c468b48f293fe809aea1d1ed75662a8e5a97f",
+    "published_sha": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
+    "ci_run_id": 39685125066,
+    "windows_compilation": "PASS only published CI587 source",
+    "windows_native": "PARTIAL/FAIL: chooser; Context/SSH aggregate tail NOT_RUN",
+    "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
+    "next": "Publish new checking tree excluding root unfinished ProxyService lifecycle; exact new CI once",
+    "readiness_change": 0,
+    "tree": "b1bbec0ca9876edafc8cd0cf8b16a605bef2ed45",
+    "publication_scan": {
+      "added_lines": 2881,
+      "findings": 0,
+      "files": 16,
+      "public_content": "PASS315/0",
+      "diff_check": "PASS"
+    },
+    "tested_merge": "decfa11496c12c5e65987043fb58fc7388cb5d6c",
+    "ci_run_number": 587,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39685125066",
+    "jobs": {
+      "windows": 119517114158,
+      "ubuntu": 119517113715
+    },
+    "ci_status": "completed failure",
+    "ubuntu": "SUCCESS"
+  },
+  "f31_launch_revision_microtask": {
+    "status": "PARTIAL",
+    "implementation": "SettingsService.TryAcquireLaunchRevision: Acquired/Busy/Changed via nonblocking commitGate; same-worker release and no state/disk mutation",
+    "source_review": "PASS self-review; not independent runtime evidence",
+    "files": [
+      "src/Core.cs",
+      "tests/DesktopSettingsPersistenceTests.cs"
+    ],
+    "tests": "8 bounded native assertions under existing isolated SettingsPersistenceWorkflow; original file restore/instance scope retained",
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
-    "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
-    "next": "Final diff/secrets scan, logical local commit, tree-verified remote fast-forward, record exact new CI; then F31-R11 launch/recovery lifecycle stages",
-    "readiness_change": 0
+    "in_ci587": false,
+    "local_sha": "9f6c3615405158a9d69ea81089d3a4beb47bb272",
+    "next": "Wire lease only around final synchronous process admission after owned reservation/preparation; do not await/log/save/probe under lease"
+  },
+  "f31_launch_observation_microtask": {
+    "status": "PARTIAL",
+    "source_review": "PASS self source/dependency review",
+    "implementation": "Program explicitly injects actual preparer; ProxyService depends on bootstrap-safe observation/admission delegates; result rejects stale/cancelled scope only, not advisory auth failures",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "in_ci587": false,
+    "next": "Invoke preparer from common reserved manual/recovery launch outside process gate; bind captured endpoint, use revision lease for final admission; add bounded lifecycle regressions",
+    "local_sha": "59cec1ae32485d65d5f578329aea768d59a04347"
+  },
+  "diagnostic_review_followup": {
+    "REVIEW-01": "PASS scoped4 real modal Cancel/Retry at CI587 sourcee943ca348d17cbed3f4b5b4b9bca4e206ffb3d03 / mergedecfa11496c12c5e65987043fb58fc7388cb5d6c",
+    "REVIEW-02": "FAIL exact-caption selector at CI587; corrected positive selector uses unchanged PID/thread/root-owner guards; new source Windows NOT_RUN",
+    "REVIEW-03": "PASS metadata only; history retained"
+  },
+  "unfinished_local_lifecycle": {
+    "status": "PARTIAL",
+    "published": false,
+    "location": "original ProGo worktree src/ProxyService.cs; not in this checking tree",
+    "sha256": "b04bfe80e9426f75c6bc9094ef3e01ae9384ab2a7c1debc91c362e9f81a8c137",
+    "backup": "/tmp/progo-f31-owned-launch-wip.patch",
+    "next": "Source review and bounded manual/recovery/Stop/admission tests before inclusion; never infer native success from CI587/next selector run",
+    "checkpoint_branch": "checkpoint/f31-owned-launch-wip-20261022",
+    "checkpoint_sha": "9826e742eb987d18cadc63a6aa3f396b91e32447"
+  },
+  "current_readiness": {
+    "method": "v1.0 unchanged scenario weights; D/P/A=30/20/50; half-up integer display",
+    "evidence_source": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
+    "tested_merge": "decfa11496c12c5e65987043fb58fc7388cb5d6c",
+    "implementation_range": [
+      58,
+      80
+    ],
+    "verified_raw": 10.5,
+    "verified_display": 11,
+    "previous_baseline_raw": 21.75,
+    "previous_baseline_display": 22,
+    "change_raw": -11.25,
+    "credited_D_half_ids": [
+      "F01",
+      "F02",
+      "F04",
+      "F05",
+      "F06",
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F14",
+      "F15",
+      "F16",
+      "F17",
+      "F23",
+      "F25",
+      "F26",
+      "F31"
+    ],
+    "credited_weight": 70,
+    "P": 0,
+    "A": 0,
+    "reason": "Only specifically traced partial native criteria on CI587 credited D0.5; all other untraced/NOT_RUN criteria receive0; no ZIP/hash on this candidate so P0; owner acceptance A0. CI58622 remains historical baseline, not success of new candidate",
+    "new_selector_and_local_foundations": "NOT_RUN; no new verification credit",
+    "evidence_overrides": {
+      "F14": "real diagnostic modal content starts empty while its held file-build worker keeps native heartbeat and cancellation active",
+      "F17": "asynchronous diagnostic completion preserves existing minimum-size keyboard actions"
+    }
   }
 }

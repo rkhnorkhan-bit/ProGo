@@ -61,7 +61,9 @@ namespace ProGo
                     var showStatusOnStartup = HasArg(args, "--show") || HasArg(args, "/show") || HasArg(args, "show");
 
                     using (var settingsService = new SettingsService())
-                    using (var proxyService = new ProxyService(settingsService))
+                    using (var proxyService = new ProxyService(settingsService,
+                        (candidate, executable, token) => SshAuthenticationPreparation.Prepare(
+                            new SshAuthenticationPreparationRequest(candidate, executable), token)))
                     using (var cliProxyService = new CliProxyBridgeService(settingsService))
                     using (var ikev2Relay = new Ikev2RelayService())
                     using (var homeVpn = new HomeVpnService(ikev2Relay))
