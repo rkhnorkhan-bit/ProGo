@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "updated_moscow_date": "2026-10-21",
+  "updated_moscow_date": "2026-10-22",
   "authority": "PROJECT_STATE.md + project_state.json; prior checkpoints are history",
   "audit_baseline": "7861ea919eed24c5fe9964fc35a23d3958ba5a9d",
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "FAIL: CI585 ShellLink path-open sharing incompatibility; earlier source6b scoped signing/settings evidence retained, new full candidate not accepted",
+  "fresh_candidate_verification": "Published CI586 completed SUCCESS only for merge 7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2 / source 656b3d65e03d540be859ee69635c492631093446; uncommitted candidate Windows compilation/native NOT_RUN; no whole-product acceptance",
   "status_values": [
     "PASS",
     "FAIL",
@@ -33,10 +33,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Миграции, один запрос CLI, on/off и итоговые переменные окружения."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Миграции, один запрос CLI, on/off и итоговые переменные окружения.",
@@ -54,10 +54,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Временный/постоянный отказ, ручная отмена, успешный повтор без перезапуска."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Временный/постоянный отказ, ручная отмена, успешный повтор без перезапуска.",
@@ -75,10 +75,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Одновременный запуск, авария owner, handoff, update/restore/install без параллельной записи."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Одновременный запуск, авария owner, handoff, update/restore/install без параллельной записи.",
@@ -96,10 +96,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Чужой listener, silent SOCKS, egress, NO_PROXY, устаревшие данные и частичный CLI."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Чужой listener, silent SOCKS, egress, NO_PROXY, устаревшие данные и частичный CLI.",
@@ -117,10 +117,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Задержка старта, отказ ключа, один клик CLI, отмена, host trust; настоящий VPS позже."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Задержка старта, отказ ключа, один клик CLI, отмена, host trust; настоящий VPS позже.",
@@ -138,11 +138,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer.",
-        "codex_shortcut_ownership": "PARTIAL A12 source-reviewed; native suite NOT_RUN; does not close full ID"
+        "codex_shortcut_ownership": "PASS scoped67 in CI586 at source656b3d65 / merge7e204c76; whole ID PARTIAL; local diff NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer.",
@@ -160,10 +160,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Preview/Cancel, изменившийся manifest, baseline/pre-update, новая копия и junction."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Preview/Cancel, изменившийся manifest, baseline/pre-update, новая копия и junction.",
@@ -181,10 +181,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Отмена без UI pump, точная owned cleanup, locked files, tamper, rollback и сохранение личных данных."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Поздняя отмена/очистка уже исправлялась. Сохранить результат CI582; новая итоговая регрессия restore/path/reparse/tamper/rollback и приёмка пакета. Старый FAIL без нового воспроизведения не считается текущим.",
@@ -202,10 +202,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Все типы PIN, повтор/другой код, restart, полночь, смена часов, I/O и атомарные Add/Edit/Delete."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "PIN и фоновые vault операции уже реализованы. Нужны регрессия на итоговом SHA/пакете и приёмка установленного кандидата; повторная реализация не требуется.",
@@ -223,10 +223,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "CLI/Windows/scoped отдельно, последний consumer, Shutdown(Send), нагрузка, Stop и ошибки cleanup."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: CLI/Windows/scoped отдельно, последний consumer, Shutdown(Send), нагрузка, Stop и ошибки cleanup.",
@@ -244,10 +244,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Главное окно, трей, настройки, закрытие диалогов, симметричные on/off."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Главное окно, трей, настройки, закрытие диалогов, симметричные on/off.",
@@ -265,10 +265,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Stop во время Connect, независимость каналов, Quit и подтверждённое завершение."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Stop во время Connect, независимость каналов, Quit и подтверждённое завершение.",
@@ -286,10 +286,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Первый/повторный запуск, закрытие окна, timeout и старый ответ."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Первый/повторный запуск, закрытие окна, timeout и старый ответ.",
@@ -307,10 +307,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Heartbeat UI, медленная сеть, отмена/timeout, отсутствие поздних изменений."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Heartbeat UI, медленная сеть, отмена/timeout, отсутствие поздних изменений.",
@@ -328,11 +328,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения.",
-        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL"
+        "settings_initial_load_preservation": "PASS scoped93 in CI586 at source656b3d65 / merge7e204c76; historical CI584 retained in ci_history; whole ID PARTIAL; local diff NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения.",
@@ -350,10 +350,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Настоящие Windows DPI 100/125/150/200%, 1366×768, длинный текст, доступные главные действия."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Настоящие Windows DPI 100/125/150/200%, 1366×768, длинный текст, доступные главные действия.",
@@ -371,10 +371,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Tab/Shift+Tab/Enter/Esc, Narrator и High Contrast в среде разработки; недоступную среду отметить."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Tab/Shift+Tab/Enter/Esc, Narrator и High Contrast в среде разработки; недоступную среду отметить.",
@@ -392,10 +392,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Выдача/отзыв/повтор не дают ложный installed; реальная установка проверяется позже."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Выдача/отзыв/повтор не дают ложный installed; реальная установка проверяется позже.",
@@ -413,10 +413,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Стендовые ошибки сети; после установки - DNS, смена сети, idle, большие передачи и телефон."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Стендовые ошибки сети; после установки - DNS, смена сети, idle, большие передачи и телефон.",
@@ -434,10 +434,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Отзыв только выбранного доступа, исходный ID запроса, отмена списка, повтор/ошибка API."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Отзыв только выбранного доступа, исходный ID запроса, отмена списка, повтор/ошибка API.",
@@ -455,10 +455,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Busy clipboard, таймер, закрытие/выход, чужая замена и пустой secret без ложного «скопировано»."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Busy clipboard, таймер, закрытие/выход, чужая замена и пустой secret без ложного «скопировано».",
@@ -476,11 +476,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные.",
-        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL"
+        "settings_initial_load_preservation": "PASS scoped93 in CI586 at source656b3d65 / merge7e204c76; historical CI584 retained in ci_history; whole ID PARTIAL; local diff NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные.",
@@ -498,10 +498,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag.",
@@ -519,10 +519,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "UI/документы/пакеты совпадают; понятные Windows/CLI/Android/iPhone сценарии без личных примеров."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: UI/документы/пакеты совпадают; понятные Windows/CLI/Android/iPhone сценарии без личных примеров.",
@@ -540,10 +540,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Пределы журнала, отчёт до отправки, ошибки чтения, отсутствие секретов и блокировки запуска."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Пределы журнала, отчёт до отправки, ошибки чтения, отсутствие секретов и блокировки запуска.",
@@ -561,10 +561,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Комбинации настроек в dev Windows; фактический вход владельца - после установки."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Комбинации настроек в dev Windows; фактический вход владельца - после установки.",
@@ -582,10 +582,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Совпадение payload, проверяемая подпись, timestamp и отдельные Defender/Kaspersky результаты."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Совпадение payload, проверяемая подпись, timestamp и отдельные Defender/Kaspersky результаты.",
@@ -603,10 +603,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Нет неописанных handlers; отдельно scenarios/assertions, FAIL/SKIP/NOT_CHECKED и общий результат."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Нет неописанных handlers; отдельно scenarios/assertions, FAIL/SKIP/NOT_CHECKED и общий результат.",
@@ -624,10 +624,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Native screenshots общей сборки, 16/24 px на разных фонах, читаемость и геометрия."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Native screenshots общей сборки, 16/24 px на разных фонах, читаемость и геометрия.",
@@ -645,10 +645,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Sandbox/интеграционные сценарии, проверенный webhook, дубликаты, возврат, paid→activation retry, отзыв активных сеансов."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Sandbox/интеграционные сценарии, проверенный webhook, дубликаты, возврат, paid→activation retry, отзыв активных сеансов.",
@@ -666,10 +666,10 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Dev service/key/ACL/cancel/ownership и slow disk/network fixtures, latency/CPU/I/O; фактический encrypted agent, другой ПК/VPS и Rescue замеры — после установки."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Dev service/key/ACL/cancel/ownership и slow disk/network fixtures, latency/CPU/I/O; фактический encrypted agent, другой ПК/VPS и Rescue замеры — после установки.",
@@ -688,11 +688,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Проверить оставшиеся и поздние формы на переполнение, длинный текст, минимальный размер и доступность главных действий; исправить обнаруженные дефекты."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить оставшиеся и поздние формы на переполнение, длинный текст, минимальный размер и доступность главных действий; исправить обнаруженные дефекты.",
@@ -711,11 +711,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Будущие формы удовлетворяют тем же требованиям геометрии. Их функциональное создание считается в F23/F30; здесь принимается компоновка."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Будущие формы удовлетворяют тем же требованиям геометрии. Их функциональное создание считается в F23/F30; здесь принимается компоновка.",
@@ -734,11 +734,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Настроить режим для используемого runtime и подтвердить перестроение при смене DPI/монитора без потери управления."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Настроить режим для используемого runtime и подтвердить перестроение при смене DPI/монитора без потери управления.",
@@ -757,11 +757,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Один протокол всех итоговых форм: реальные Windows 100/125/150/200%, 1366×768, минимальные размеры, длинные тексты и доступные действия. Synthetic Scale сам по себе критерия не закрывает."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Один протокол всех итоговых форм: реальные Windows 100/125/150/200%, 1366×768, минимальные размеры, длинные тексты и доступные действия. Synthetic Scale сам по себе критерия не закрывает.",
@@ -780,11 +780,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Проверить итоговые поздние и новые формы: Tab/Shift+Tab/Enter/Esc, focus order, доступные имена, статусы и ошибки; устранить только найденные gaps. Для будущих agent UI отдельно проверить состояния службы/ключа/SSH/SOCKS, Start Agent/Add Key/Check Profile/Retry и объяснения недоступных действий по [спецификации](SSH_AGENT_AUTOSTART_SPEC.md). Новое замечание по 3 PNG CI #551: тусклая подпись disabled startup CheckBox на тёмном фоне; исправление ещё впереди ([фиксация](MICROTASK_F31_STARTUP_BACKGROUND.md))."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить итоговые поздние и новые формы: Tab/Shift+Tab/Enter/Esc, focus order, доступные имена, статусы и ошибки; устранить только найденные gaps. Для будущих agent UI отдельно проверить состояния службы/ключа/SSH/SOCKS, Start Agent/Add Key/Check Profile/Retry и объяснения недоступных действий по [спецификации](SSH_AGENT_AUTOSTART_SPEC.md). Новое замечание по 3 PNG CI #551: тусклая подпись disabled startup CheckBox на тёмном фоне; исправление ещё впереди ([фиксация](MICROTASK_F31_STARTUP_BACKGROUND.md)).",
@@ -803,11 +803,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": true,
         "criterion": "Исправлены тёмные подписи выключенных текстовых Save-действий и яркая pending primary-кнопка Unlock; native bitmap/state проверки и свежие снимки приняты в CI #541. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md)."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Исправлены тёмные подписи выключенных текстовых Save-действий и яркая pending primary-кнопка Unlock; native bitmap/state проверки и свежие снимки приняты в CI #541. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md).",
@@ -826,11 +826,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": true,
         "criterion": "Повтор правила четырёх цифр убран; форматная ошибка доступна, исправление локального ввода возвращает инструкцию без неявной отправки. Ошибки аутентификации/worker/owner gate сохраняются; CI #541 и свежие снимки приняты. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md)."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Повтор правила четырёх цифр убран; форматная ошибка доступна, исправление локального ввода возвращает инструкцию без неявной отправки. Ошибки аутентификации/worker/owner gate сохраняются; CI #541 и свежие снимки приняты. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md).",
@@ -849,11 +849,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Проверить конечные маршруты и чтение названий, порядка, состояний и ошибок; недоступную dev среду явно оставить NOT_CHECKED с причиной."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить конечные маршруты и чтение названий, порядка, состояний и ошибок; недоступную dev среду явно оставить NOT_CHECKED с причиной.",
@@ -872,11 +872,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Проверить системную тему, её переключение, контраст разных состояний и видимый фокус на итоговых формах. Synthetic palette не заменяет этот результат."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить системную тему, её переключение, контраст разных состояний и видимый фокус на итоговых формах. Synthetic palette не заменяет этот результат.",
@@ -895,11 +895,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Различать обнаруженное ограничение, предположение и отсутствие достаточных сведений; dev fixtures подтверждают корректные verdicts."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Различать обнаруженное ограничение, предположение и отсутствие достаточных сведений; dev fixtures подтверждают корректные verdicts.",
@@ -918,11 +918,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Отдельное доказательство пути 500→15000 и 4500→14500 либо честная ошибка/NOT_CHECKED. Галочка и relay handshake внешнего проброса не доказывают."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Отдельное доказательство пути 500→15000 и 4500→14500 либо честная ошибка/NOT_CHECKED. Галочка и relay handshake внешнего проброса не доказывают.",
@@ -941,11 +941,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Связать preflight, SSH/SOCKS, VPS, relay и телефонные этапы с конкретной причиной и следующим действием; dev отказ/timeout/cancel/устаревший результат проверены."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Связать preflight, SSH/SOCKS, VPS, relay и телефонные этапы с конкретной причиной и следующим действием; dev отказ/timeout/cancel/устаревший результат проверены.",
@@ -964,11 +964,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "После установки владельцем подтвердить подключение, рабочий DNS/интернет и ожидаемый внешний маршрут для точного установленного кандидата."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки владельцем подтвердить подключение, рабочий DNS/интернет и ожидаемый внешний маршрут для точного установленного кандидата.",
@@ -989,11 +989,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "После установки проверить смену сети, простой и крупные передачи с честным состоянием работы/восстановления; новые численные гарантии не вводятся."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки проверить смену сети, простой и крупные передачи с честным состоянием работы/восстановления; новые численные гарантии не вводятся.",
@@ -1014,11 +1014,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Подтвердить заявленные settings/vault/private/access/request/proxy snapshots, manifest/hashes и исключение временных секретов; обычный rollback сохраняет текущие личные данные."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подтвердить заявленные settings/vault/private/access/request/proxy snapshots, manifest/hashes и исключение временных секретов; обычный rollback сохраняет текущие личные данные.",
@@ -1037,11 +1037,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Portable90 уже PASS; дополнительно подтвердить другую Windows identity, новую DPAPI-защиту, исходные VPS/trust/request bindings, отказ tamper/path/reparse/cancel и показ границ состава."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Portable90 уже PASS; дополнительно подтвердить другую Windows identity, новую DPAPI-защиту, исходные VPS/trust/request bindings, отказ tamper/path/reparse/cancel и показ границ состава.",
@@ -1060,12 +1060,12 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку.",
@@ -1084,11 +1084,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить импорт VPN, сохранение доверия и pending requests на реальном окружении владельца."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить импорт VPN, сохранение доверия и pending requests на реальном окружении владельца.",
@@ -1109,11 +1109,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Пользователь устанавливает готовый проверенный продукт без Build-ProGo или самостоятельной сборки исходников. [SSH-agent](SSH_AGENT_AUTOSTART_SPEC.md): отдельная необязательная настройка Automatic+Start, OFF по умолчанию, только по явному выбору пользователя; отсутствие службы/прав/policy объясняется, uninstall сохраняет общую службу и её настройки."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Пользователь устанавливает готовый проверенный продукт без Build-ProGo или самостоятельной сборки исходников. [SSH-agent](SSH_AGENT_AUTOSTART_SPEC.md): отдельная необязательная настройка Automatic+Start, OFF по умолчанию, только по явному выбору пользователя; отсутствие службы/прав/policy объясняется, uninstall сохраняет общую службу и её настройки.",
@@ -1132,11 +1132,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Одно владение app/update/restore/install, проверенная копия/retention, staging, установленный self-check и rollback; параллельная запись исключена."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Одно владение app/update/restore/install, проверенная копия/retention, staging, установленный self-check и rollback; параллельная запись исключена.",
@@ -1157,11 +1157,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Проверенная автоматическая загрузка пакета либо setup; полный installer запускается в новом окне с заранее зафиксированными существующими program/data paths, сохраняя данные и выборы."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверенная автоматическая загрузка пакета либо setup; полный installer запускается в новом окне с заранее зафиксированными существующими program/data paths, сохраняя данные и выборы.",
@@ -1185,11 +1185,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN: remote CI blocked by visibility mismatch",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Отказ копирования/самотеста остаётся ошибкой; успех только после проверки восстановленного runtime. Подавление copy errors не превращает откат в завершённый."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Выполнить prepared Maintenance/BackupRetention native cases на точном новом SHA; source review не закрывает criterion.",
@@ -1208,11 +1208,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Привязать version/commit/tag/hash и устранить release UID gap; старый asset нельзя заменить другим payload той же версии. Новый формат UID заранее не предписывается."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Привязать version/commit/tag/hash и устранить release UID gap; старый asset нельзя заменить другим payload той же версии. Новый формат UID заранее не предписывается.",
@@ -1231,11 +1231,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Одна версия/commit, release notes, чистая установка и оба пути обновления, fixed paths, cancel/offline/hash failures, self-check, rollback/handoff. Это общий пакетный результат F23."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Одна версия/commit, release notes, чистая установка и оба пути обновления, fixed paths, cancel/offline/hash failures, self-check, rollback/handoff. Это общий пакетный результат F23.",
@@ -1261,11 +1261,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить сохранение реальных данных/путей/выборов; отменённое SSH-ожидание сохраняет исходный запрос, проверка результата не повторяет выдачу."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить сохранение реальных данных/путей/выборов; отменённое SSH-ожидание сохраняет исходный запрос, проверка результата не повторяет выдачу.",
@@ -1286,11 +1286,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Подготовить exe/scripts/installer/payload, защищённое подключение signer, проверку подписи/timestamp. Тестовая сборка явно unsigned; реальный сертификат после тестов."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подготовить exe/scripts/installer/payload, защищённое подключение signer, проверку подписи/timestamp. Тестовая сборка явно unsigned; реальный сертификат после тестов.",
@@ -1309,11 +1309,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Добавить и проверить механизм подписи/издателя/состава к существующим hash/archive/version checks; dev режим не выдаёт unsigned артефакт за подписанный."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Добавить и проверить механизм подписи/издателя/состава к существующим hash/archive/version checks; dev режим не выдаёт unsigned артефакт за подписанный.",
@@ -1332,11 +1332,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "После тестов подключить сертификат и проверить реальные подписи, timestamp и соответствие payload конечных артефактов."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После тестов подключить сертификат и проверить реальные подписи, timestamp и соответствие payload конечных артефактов.",
@@ -1359,11 +1359,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Отдельные результаты Defender и Kaspersky, исправление обнаруженных проблем и относящаяся к ним повторная проверка. Это один пакет приёмки с двумя результатами."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Отдельные результаты Defender и Kaspersky, исправление обнаруженных проблем и относящаяся к ним повторная проверка. Это один пакет приёмки с двумя результатами.",
@@ -1384,7 +1384,7 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Явный адресат, временная отзываемая HTTPS-ссылка без секретного профиля/ключей во вложении, честные ошибки/retry, защищённые секреты; перевыдача при полном лимите работает.",
         "qr": {
@@ -1395,7 +1395,7 @@
           "scope": "real loopback HTTP; no live server/mail; 4 new cases, 2 RED on baseline"
         }
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "QR capacity исправлен; реализовать mail и общий критерий, перепроверить на итоговом пакете.",
@@ -1414,11 +1414,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Сохранённые тарифы/периоды/лимиты, free/trial/paid, владелец/операторы, серверная авторизация и история действий."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Сохранённые тарифы/периоды/лимиты, free/trial/paid, владелец/операторы, серверная авторизация и история действий.",
@@ -1437,11 +1437,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Выдача/продление/приостановка/отзыв, тариф/цена/период, история платежей/действий; pending/success/error/unknown различаются."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Выдача/продление/приостановка/отзыв, тариф/цена/период, история платежей/действий; pending/success/error/unknown различаются.",
@@ -1462,11 +1462,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Первый успешный авторизованный connect либо 7×24 ч после оплаты, что раньше; серверное время, сроки free/trial/paid, только ручное продление, без двойного продления от дублей."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Первый успешный авторизованный connect либо 7×24 ч после оплаты, что раньше; серверное время, сроки free/trial/paid, только ручное продление, без двойного продления от дублей.",
@@ -1487,11 +1487,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Новые соединения проверяют срок/приостановку/отзыв; список и принудительное прекращение выбранных активных сеансов сохраняют чужой доступ."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Новые соединения проверяют срок/приостановку/отзыв; список и принудительное прекращение выбранных активных сеансов сохраняют чужой доступ.",
@@ -1510,11 +1510,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Собственная/агентская услуга, СБП/карты, единая цена с включёнными 5%; сервер фиксирует цену/поставщика/доступ, секреты остаются на сервере."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Собственная/агентская услуга, СБП/карты, единая цена с включёнными 5%; сервер фиксирует цену/поставщика/доступ, секреты остаются на сервере.",
@@ -1536,11 +1536,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Webhook/API, идемпотентность/дубли/отказ/возврат; оплаченный заказ не теряется, активация повторяется контролируемо с видимым состоянием."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Webhook/API, идемпотентность/дубли/отказ/возврат; оплаченный заказ не теряется, активация повторяется контролируемо с видимым состоянием.",
@@ -1561,11 +1561,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Поставщик виден клиенту; данные/проверенные статусы ИП/НПД, роли и чековые сведения соответствуют утверждённым собственной/агентской моделям."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Поставщик виден клиенту; данные/проверенные статусы ИП/НПД, роли и чековые сведения соответствуют утверждённым собственной/агентской моделям.",
@@ -1587,11 +1587,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Платежи, возвраты, фактические комиссии, корректировки и выплаты; база и доли 25/75 по утверждённому контракту, без повторного вычета условных 5%."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Платежи, возвраты, фактические комиссии, корректировки и выплаты; база и доли 25/75 по утверждённому контракту, без повторного вычета условных 5%.",
@@ -1613,11 +1613,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Подключённый аккаунт/SMTP/провайдер и подтверждённая доставка временных ссылок, ошибки и повтор."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подключённый аккаунт/SMTP/провайдер и подтверждённая доставка временных ссылок, ошибки и повтор.",
@@ -1638,11 +1638,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Пригодные аккаунты/реквизиты/договоры, проверенные поставщики; подтверждённые СБП/карты, чеки, возвраты, комиссии, выплаты и сверка после отдельного разрешения реальных операций."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Пригодные аккаунты/реквизиты/договоры, проверенные поставщики; подтверждённые СБП/карты, чеки, возвраты, комиссии, выплаты и сверка после отдельного разрешения реальных операций.",
@@ -1667,11 +1667,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Подтвердить связь оплаты с авторизованным connect, сроком/ручным продлением и прекращением выбранных действующих сеансов. DNS/смена сети/idle/передачи остаются F19."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подтвердить связь оплаты с авторизованным connect, сроком/ручным продлением и прекращением выбранных действующих сеансов. DNS/смена сети/idle/передачи остаются F19.",
@@ -1692,11 +1692,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": true,
         "criterion": "Корректные native аргументы -D, реальный IPv6-only SOCKS/CLI HTTP/CONNECT и bounded DNS/cancel подтверждены в CI #544. [Доказательства](MICROTASK_F31_IPV6.md)."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Корректные native аргументы -D, реальный IPv6-only SOCKS/CLI HTTP/CONNECT и bounded DNS/cancel подтверждены в CI #544. [Доказательства](MICROTASK_F31_IPV6.md).",
@@ -1715,11 +1715,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": true,
         "criterion": "Отказ одного профиля не исключает разрешённые остальные кандидаты; выбор требует настоящего SOCKS handshake и owned child. Stop/cancel/settings guards и отдельный consumer reuse готового SOCKS подтверждены CI #547. [Доказательства](MICROTASK_F31_FALLBACK.md)."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Отказ одного профиля не исключает разрешённые остальные кандидаты; выбор требует настоящего SOCKS handshake и owned child. Stop/cancel/settings guards и отдельный consumer reuse готового SOCKS подтверждены CI #547. [Доказательства](MICROTASK_F31_FALLBACK.md).",
@@ -1738,11 +1738,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": true,
         "criterion": "Известные fatal config/arguments и prelaunch validation приостанавливают только отказавший candidate; разрешённый backup остаётся доступен. Transient/warnings и key/host-key refusal разделены; actual native parser/replay/no-PID/retry подтверждены CI #548. [Доказательства](MICROTASK_F31_SSH_ERRORS.md)."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Известные fatal config/arguments и prelaunch validation приостанавливают только отказавший candidate; разрешённый backup остаётся доступен. Transient/warnings и key/host-key refusal разделены; actual native parser/replay/no-PID/retry подтверждены CI #548. [Доказательства](MICROTASK_F31_SSH_ERRORS.md).",
@@ -1761,11 +1761,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": true,
         "criterion": "Native OpenSSH — источник effective конфигурации; raw IdentityFile отделён от подтверждённого пути, неизвестный контекст явно NOT_CHECKED без догадок. CI #549 Desktop3910/+59 и свежий SSH report visual приняты. [Доказательства](MICROTASK_F31_SSH_CONFIG.md)."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Native OpenSSH — источник effective конфигурации; raw IdentityFile отделён от подтверждённого пути, неизвестный контекст явно NOT_CHECKED без догадок. CI #549 Desktop3910/+59 и свежий SSH report visual приняты. [Доказательства](MICROTASK_F31_SSH_CONFIG.md).",
@@ -1784,13 +1784,13 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт.",
-        "settings_initial_load_preservation": "PASS93 scoped at6b3122f0/2f6b901a CI584, later runtime changes NOT_RUN; whole ID remains PARTIAL",
-        "codex_shortcut_ownership": "PARTIAL A12 source-reviewed; native suite NOT_RUN; does not close full ID"
+        "settings_initial_load_preservation": "PASS scoped93 in CI586 at source656b3d65 / merge7e204c76; historical CI584 retained in ci_history; whole ID PARTIAL; local diff NOT_RUN",
+        "codex_shortcut_ownership": "PASS scoped67 in CI586 at source656b3d65 / merge7e204c76; whole ID PARTIAL; local diff NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт.",
@@ -1809,12 +1809,12 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Owned worker, отмена, повторная проверка плана перед удалением; UI не выполняет Plan/ApplyCleanupPlan синхронно.",
-        "new_native": "NOT_RUN: DesktopAsyncCleanupTests10 scenarios + BackupRetentionTests pre-cancel/no-delete; independent backend/root UI source review PASS"
+        "new_native": "PASS scoped existing AsyncCleanupWorkflow and retention vectors in CI586 Desktop4930/BackupRetention29 at source656b3d65 / merge7e204c76; local diff NOT_RUN; full ID remains PARTIAL"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Exact Windows CI + package/target checks; in-flight OS Directory.Delete is nonpreemptive, actor stays owned; no runtime PASS yet",
@@ -1833,12 +1833,12 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "ACK/ownership сохраняются, незавершённый helper запрещает handoff; ожидание StartHandoff не блокирует UI. Сам installer создаётся в F23.",
-        "new_native": "NOT_RUN: UpdaterHandoffWorkflow native helper modes + AsyncUpdaterWorkflow10 context scenarios; independent backend/lifecycle/tests source review PASS"
+        "new_native": "PASS scoped existing UpdaterHandoffWorkflow/AsyncUpdaterWorkflow in CI586 Desktop4930 at source656b3d65 / merge7e204c76; local Context diff NOT_RUN; installer/fallback and full ID not accepted"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Exact Windows CI full shared restore/update regression; package/target acceptance",
@@ -1857,12 +1857,12 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
@@ -1881,12 +1881,12 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
@@ -1905,12 +1905,12 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
@@ -1923,18 +1923,18 @@
       "phase": "До",
       "requirement": "Подготовка SSH-agent и итоговая dev приёмка F31",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R11)",
-      "implementation": "Service/AddKey/Start UI inherited; source review passed for one selected public-reference sign+verify backend and explicit Verify Key UI; native Windows of signing change NOT_RUN; authentication startup integration still TODO",
+      "implementation": "Service/AddKey/Start UI and selected public-reference signing backend/UI published; advisory auth aggregate and common launch/recovery integration pending",
       "history": "Dev PENDING",
       "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN: previous source e9fcfc3 CI583 running; signing backend/UI not in that source",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
-        "selected_identity_signing": "PASS55 backend +50 UI at6b3122f0/2f6b901a CI584; visual/automatic auth preparation/live NOT_RUN; F31-R11 stays PARTIAL"
+        "selected_identity_signing": "PASS scoped backend55/UI50 in CI586 at source656b3d65 / merge7e204c76; advisory aggregate/local UI diff, visual, automatic auth preparation and live auth NOT_RUN; F31-R11 remains PARTIAL"
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
@@ -1962,11 +1962,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить unattended auth, отказ/восстановление и реальный SOCKS→HTTP/HTTPS маршрут. Проверить реальные encrypted-key сценарии [PGA-10](SSH_AGENT_AUTOSTART_SPEC.md); разработка и dev-проверки этого функционала обязательны раньше в F31-R11."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить unattended auth, отказ/восстановление и реальный SOCKS→HTTP/HTTPS маршрут. Проверить реальные encrypted-key сценарии [PGA-10](SSH_AGENT_AUTOSTART_SPEC.md); разработка и dev-проверки этого функционала обязательны раньше в F31-R11.",
@@ -1987,11 +1987,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Переносимые пути, независимые порты/профили и выбор локального ключа; SSH-поведение отдельно от VPN-архива F22."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Переносимые пути, независимые порты/профили и выбор локального ключа; SSH-поведение отдельно от VPN-архива F22.",
@@ -2012,11 +2012,11 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить identity exe и startup/UI latency, CPU/RAM/process I/O/физический диск, idle и unavailable VPS/agent."
       },
-      "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
+      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить identity exe и startup/UI latency, CPU/RAM/process I/O/физический диск, idle и unavailable VPS/agent.",
@@ -2053,8 +2053,8 @@
     "observed": "public",
     "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
     "push": "PASS: API fast-forward with expected7861ea9, no force; source trees identical",
-    "ci": "FAIL: CI585 Windows FAILURE, Ubuntu SUCCESS",
-    "pr88": "OPEN/DRAFT, headd0f9a6902345eab288b25e8f902df1514db3f2ca",
+    "ci": "CI586 completed SUCCESS: Windows119465588823 and Ubuntu119465589235; source 656b3d65e03d540be859ee69635c492631093446; tested merge 7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2; local candidate NOT_RUN",
+    "pr88": "OPEN/DRAFT, head656b3d65e03d540be859ee69635c492631093446",
     "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
   },
   "local_regression": {
@@ -2066,20 +2066,20 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
+  "candidate_source": "656b3d65e03d540be859ee69635c492631093446",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
     "dependent": 12,
     "new_subtasks_accepted_this_session": 0,
-    "fresh_candidate_code_package_target": "NOT_RUN/BLOCKED; no total product PASS"
+    "fresh_candidate_code_package_target": "Published CI586 B/M scoped Windows SUCCESS and runner ZIP only; local candidate Windows compilation/native NOT_RUN; retrieved private package BLOCKED, integration/target acceptance NOT_RUN; no total product PASS"
   },
   "publication_scan": {
-    "source_range": "6b3122f0..d0f9a690",
-    "added_lines": 1905,
-    "changed_files": 20,
+    "source_range": "d0f9a690..656b3d65",
+    "added_lines": 336,
+    "changed_files": 6,
     "findings": 0,
-    "independent_review": "PASS source reviews; native tests run separately"
+    "independent_review": "PASS pre-publication stream-loader source review; later scoped runtime PASS67 recorded in CI586 B/M; no local diff runtime claim"
   },
   "publication_mapping": [
     {
@@ -2141,42 +2141,86 @@
       "local": "5ae128e31df6e04902aaa48c474f10b72d70d251",
       "published": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
       "tree": "510667a814a404204a26f16faaa59fed7fe5bb43"
+    },
+    {
+      "local": "3866770abe4213a81566b36375f0d8303f49ff70",
+      "published": "d7e349d63b4d53eba5b7d98277996a89269a5ce8",
+      "tree": "cb05de568cbacd700881a4c31b2bed3101b83420"
+    },
+    {
+      "local": "d27521652c2a1be1ce453e4931fa239856de7dc8",
+      "published": "656b3d65e03d540be859ee69635c492631093446",
+      "tree": "5f9e6589ee195b8a584a131e0ed66a9dbedbd545"
     }
   ],
   "ci_candidate": {
-    "source": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
-    "tested_merge": "4b952b8b4e3a6473ceac230732384046801ce7fd",
-    "run_id": 39667773240,
-    "run_number": 585,
+    "source": "656b3d65e03d540be859ee69635c492631093446",
+    "tested_merge": "7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
+    "run_id": 39670153699,
+    "run_number": 586,
     "status": "completed",
-    "acceptance": "FAIL: CodexShortcutRepeat FileLoadException0x80070020 from IPersistFile.Load incompatible with pinned DELETE handle",
-    "artifact_upload": "public default disabled; private delivery requires agreement",
-    "conclusion": "failure",
-    "not_run": [
-      "new full Desktop/AsyncCleanup/Updater/selected-key regression",
-      "Maintenance rollback encoding fix",
-      "ShutdownTests",
-      "HomeVPNTests",
-      "package"
+    "acceptance": "PARTIAL: Windows/Ubuntu jobs and runner ZIP SUCCESS only at exact tested_merge/source; uncommitted candidate Windows compilation/native NOT_RUN; integration, retrieved package and target acceptance not complete",
+    "artifact_upload": "public uploads disabled; private transfer requires agreement",
+    "next": "Separate reviewable commit of uncommitted candidate, then authorized Windows verification on that exact new SHA; no CI586 inheritance",
+    "conclusion": "success",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39670153699",
+    "jobs": [
+      {
+        "id": 119465588823,
+        "name": "windows-build",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 119465589235,
+        "name": "vpn-server-test",
+        "status": "completed",
+        "conclusion": "success"
+      }
     ],
-    "next": "load ShellLink via IPersistStream from same pinned byte snapshot, retain native delete protection; new exact-source CI"
+    "build_identity": "0.2.2+7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
+    "scoped_pass": {
+      "desktop": 4930,
+      "codex_shortcut_ownership": 67,
+      "settings_initial_load_preservation": 93,
+      "ssh_selected_key_signing": 55,
+      "ssh_selected_key_signing_ui": 50,
+      "ssh_agent_startup": 62,
+      "instance": 28,
+      "maintenance": 126,
+      "shutdown": 47,
+      "home_vpn": 975,
+      "portable_home_vpn": 90,
+      "backup_retention": 29
+    },
+    "runner_package": {
+      "version": "0.2.2",
+      "step_conclusion": "success",
+      "sha256": "d7a6176ec2da62a5b53e2faea2a86893919a853353a5166f669baa0042896191",
+      "uploads": "skipped",
+      "retrieved_bytes_sha256": "NOT_RUN",
+      "private_delivery": "BLOCKED: delivery method not agreed",
+      "installed_target": "NOT_RUN"
+    }
   },
   "signing_microtask": {
     "status": "PARTIAL",
     "scope": "one selected effective public reference sign+verify + explicit UI",
     "source_review": "PASS independent; post-read freshness/UTF8 issues corrected",
-    "native": "PASS scoped backend55/UI50 at source6b3122f0/merge2f6b901a CI584; visual NOT_RUN, overall CI failed later in maintenance",
+    "native": "PASS scoped backend55/UI50 in CI586 source656b3d65 / merge7e204c76; local advisory aggregate/diagnostic diff and visual/live NOT_RUN",
     "visual": "NOT_RUN",
     "server_auth": "NOT_RUN",
-    "source_protocol": "docs/MICROTASK_SSH_SELECTED_KEY_SIGNING.md"
+    "source_protocol": "docs/MICROTASK_SSH_SELECTED_KEY_SIGNING.md",
+    "historical_native": "PASS scoped backend55/UI50 at source6b3122f0/merge2f6b901a CI584; visual NOT_RUN, overall CI failed later in maintenance"
   },
   "settings_preservation_microtask": {
     "finding": "A11",
     "status": "PARTIAL",
     "implementation": "Core.SettingsService initialLoadFailed sticky SaveCore guard, exclusive missing creation; fixed CLI save error",
     "source_review": "PASS independent source review",
-    "native": "PASS93 at source6b3122f0/merge2f6b901a CI584; overall CI failed later in maintenance",
-    "next": "exact Windows CI DesktopSettingsLoadFailureTests then package/target regression"
+    "native": "PASS93 in CI586 source656b3d65 / merge7e204c76; local candidate not compiled/tested; whole ID/package/target remain open",
+    "next": "Keep current scoped result tied to CI586 B/M; verify new candidate Windows compilation/native and later package/target separately",
+    "historical_native": "PASS93 at source6b3122f0/merge2f6b901a CI584; overall CI failed later in maintenance"
   },
   "ci_history": [
     {
@@ -2228,6 +2272,85 @@
         "package"
       ],
       "next": "explicit UTF8 in fixture dialog writer and reader; preserve assertions; exact new-source CI"
+    },
+    {
+      "source": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
+      "tested_merge": "4b952b8b4e3a6473ceac230732384046801ce7fd",
+      "run_id": 39667773240,
+      "run_number": 585,
+      "status": "completed",
+      "acceptance": "FAIL: CodexShortcutRepeat FileLoadException0x80070020 from IPersistFile.Load incompatible with pinned DELETE handle",
+      "artifact_upload": "public default disabled; private delivery requires agreement",
+      "conclusion": "failure",
+      "not_run": [
+        "new full Desktop/AsyncCleanup/Updater/selected-key regression",
+        "Maintenance rollback encoding fix",
+        "ShutdownTests",
+        "HomeVPNTests",
+        "package"
+      ],
+      "next": "load ShellLink via IPersistStream from same pinned byte snapshot, retain native delete protection; new exact-source CI"
+    },
+    {
+      "source": "656b3d65e03d540be859ee69635c492631093446",
+      "tested_merge": "7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
+      "run_id": 39670153699,
+      "run_number": 586,
+      "status": "completed",
+      "acceptance": "PARTIAL: Windows/Ubuntu jobs and runner ZIP SUCCESS only at exact tested_merge/source; uncommitted candidate Windows compilation/native NOT_RUN; integration, retrieved package and target acceptance not complete",
+      "artifact_upload": "public uploads disabled; private transfer requires agreement",
+      "next": "Separate reviewable commit of uncommitted candidate, then authorized Windows verification on that exact new SHA; no CI586 inheritance",
+      "conclusion": "success",
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39670153699",
+      "jobs": [
+        {
+          "id": 119465588823,
+          "name": "windows-build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 119465589235,
+          "name": "vpn-server-test",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "build_identity": "0.2.2+7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
+      "scoped_pass": {
+        "desktop": 4930,
+        "codex_shortcut_ownership": 67,
+        "settings_initial_load_preservation": 93,
+        "ssh_selected_key_signing": 55,
+        "ssh_selected_key_signing_ui": 50,
+        "ssh_agent_startup": 62,
+        "instance": 28,
+        "maintenance": 126,
+        "shutdown": 47,
+        "home_vpn": 975,
+        "portable_home_vpn": 90,
+        "backup_retention": 29
+      },
+      "runner_package": {
+        "version": "0.2.2",
+        "step_conclusion": "success",
+        "sha256": "d7a6176ec2da62a5b53e2faea2a86893919a853353a5166f669baa0042896191",
+        "uploads": "skipped",
+        "retrieved_bytes_sha256": "NOT_RUN",
+        "private_delivery": "BLOCKED: delivery method not agreed",
+        "installed_target": "NOT_RUN"
+      },
+      "prior_observation": {
+        "source": "656b3d65e03d540be859ee69635c492631093446",
+        "tested_merge": "7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
+        "run_id": 39670153699,
+        "run_number": 586,
+        "status": "in_progress",
+        "acceptance": "NOT_RUN",
+        "artifact_upload": "public uploads disabled; private transfer requires agreement",
+        "next": "inspect completed jobs/logs and exact SHA, preserve all failures"
+      },
+      "scope": "Immutable completed CI586 evidence for published B/M; prior in_progress observation retained as history, not current status"
     }
   ],
   "retention_microtask": {
@@ -2235,38 +2358,142 @@
     "finding": "A05",
     "status": "PARTIAL",
     "source_review": "PASS independent backend and root UI/tests",
-    "runtime": "NOT_RUN",
+    "runtime": "PASS scoped existing AsyncCleanupWorkflow in CI586 Desktop4930 at source656b3d65 / merge7e204c76; local Context diff NOT_RUN; whole ID remains PARTIAL",
     "cancellation_boundary": "before/between deletion; in-flight OS call retained, no forced cancellation; committed final actual result preserved",
-    "native_low_level": "PASS29 atd0f9a690/4b952b8b CI585, includes real pre-cancel/no-delete; new native Context suite NOT_RUN"
+    "native_low_level": "PASS29 in CI586 source656b3d65 / merge7e204c76; historical CI585 PASS29 atd0f9a690/4b952b8b retained; local diff NOT_RUN",
+    "historical_runtime": "NOT_RUN"
   },
   "updater_handoff_microtask": {
     "requirement": "F31-R07",
     "finding": "A06",
     "status": "PARTIAL",
     "source_review": "PASS independent backend + final context/test review; identified queued lifecycle races fixed",
-    "runtime": "NOT_RUN",
-    "scope": "actual Update UI route, owned helper ACK/cancel/settlement; no installer/fallback claim"
+    "runtime": "PASS scoped existing UpdaterHandoffWorkflow/AsyncUpdaterWorkflow in CI586 Desktop4930 at source656b3d65 / merge7e204c76; local Context diff NOT_RUN; no installer/fallback claim",
+    "scope": "actual Update UI route, owned helper ACK/cancel/settlement; no installer/fallback claim",
+    "historical_runtime": "NOT_RUN"
   },
   "codex_shortcut_ownership_microtask": {
     "finding": "A12",
     "status": "PARTIAL",
     "implementation": "fresh raw ShellLink target/exact args, checked object pinned until handle delete; ancestor reparse checks and no-overwrite new publication",
     "source_review": "PASS root after ancestor missing-parent bypass fix",
-    "native": "FAIL: CI585 CodexShortcutRepeat IPersistFile.Load0x80070020; fix in progress, no guard weakening",
+    "native": "PASS67 in CI586 source656b3d65 / merge7e204c76, including stream-loader fix; CI585 failure retained in ci_history; local diff NOT_RUN",
     "boundary": "existing owned cmd write remains in-place; no whole two-file transaction claim",
     "next": "exact Windows COM/ACL/sharing/junction/replacement/pinning regression, then target/package acceptance",
     "stream_loader_fix": {
       "source_commit": "3866770abe4213a81566b36375f0d8303f49ff70",
       "implementation": "bounded snapshot of same pinned file -> SHCreateMemStream -> IPersistStream.Load, no pathname reopen",
       "source_review": "PASS independent IID/vtable/marshaling/cleanup/byte binding/guards",
-      "native": "NOT_RUN pending new exact-source CI",
-      "scope": "old CI585 failure retained; DELETE/share-read pinning and handle deletion not weakened"
-    }
+      "native": "PASS scoped67 in CI586 source656b3d65 / merge7e204c76; no claim for uncommitted local candidate",
+      "scope": "old CI585 failure retained; DELETE/share-read pinning and handle deletion not weakened",
+      "published_commit": "d7e349d63b4d53eba5b7d98277996a89269a5ce8"
+    },
+    "historical_native": "FAIL: CI585 CodexShortcutRepeat IPersistFile.Load0x80070020; fix in progress, no guard weakening"
   },
   "residual_recheck": {
     "source": "d0f9a6902345eab288b25e8f902df1514db3f2ca",
     "evidence": "docs/RESIDUAL_RECHECK_20261021.md",
     "scope": "A04/F22-R03,F31-R08/R09/R10",
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
+  },
+  "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
+  "candidate_source_scope": "Last published source B, not a commit for the uncommitted candidate",
+  "uncommitted_candidate": {
+    "base_source": "656b3d65e03d540be859ee69635c492631093446",
+    "source_sha": null,
+    "state": "uncommitted",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "ci": "NOT_RUN",
+    "scope": [
+      "async diagnostic report/preview and Context ownership",
+      "advisory SSH authentication preparation, not launch/recovery integration",
+      "REVIEW-01 modal Cancel -> Retry",
+      "REVIEW-02 bounded native SaveFileDialog fixture"
+    ],
+    "files": [
+      "src/DiagnosticPreview.cs",
+      "src/DiagnosticReport.cs",
+      "src/UpdateAwareTrayApplicationContext.cs",
+      "src/SshAuthenticationPreparation.cs",
+      "tests/DesktopDiagnosticTests.cs",
+      "tests/DesktopTests.cs",
+      "tests/DiagnosticPreviewTests.ps1",
+      "tests/DiagnosticReportTests.cs",
+      "tests/DesktopAsyncDiagnosticPreviewTests.cs",
+      "tests/DesktopDiagnosticContextTests.cs",
+      "tests/SshAuthenticationPreparationTests.cs",
+      "scripts/Test-ProGo.ps1",
+      "docs/ACCEPTANCE_RUNBOOK.md",
+      "docs/MICROTASK_SSH_AUTH_PREPARATION_SCOPE.md",
+      "docs/PROJECT_STATE.md",
+      "docs/project_state.json"
+    ],
+    "ci586_covers_this_diff": false,
+    "next_verification": {
+      "status": "NOT_RUN",
+      "source_sha": null,
+      "environment": "isolated Windows CI/dev runner; no owner PC/VPS actions",
+      "command": "powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\\scripts\\Test-ProGo.ps1",
+      "entrypoint_scope": "existing Windows script builds runtime and tests; Desktop harness has no narrow suite selector; no Ubuntu/full-workflow/package upload required for this block",
+      "required_suites": [
+        "DiagnosticReportTests",
+        "DiagnosticPreviewTests.ps1 fresh PowerShell/installed helper parity",
+        "DiagnosticPreviewWorkflow",
+        "AsyncDiagnosticPreviewWorkflow including four real ShowDialog Cancel/Retry and three native chooser modes",
+        "DiagnosticContextWorkflow",
+        "SshAuthenticationPreparationWorkflow and existing selected-key/agent/policy regressions",
+        "existing Desktop and shutdown/maintenance/instance ownership regressions"
+      ],
+      "acceptance": "All required native cases actually execute on exact new SHA; SKIP/NOT_RUN is not PASS; capture identity/logs and preserve failure; for long run save ID and inspect same run in next task"
+    }
+  },
+  "review03_sync": {
+    "status": "PASS",
+    "scope": "metadata consistency only; no code/test changes or new runtime evidence",
+    "completed_moscow": "2026-10-22T01:01+03:00",
+    "ci586_source": "656b3d65e03d540be859ee69635c492631093446",
+    "ci586_tested_merge": "7e204c7659cefd8142bb33a3cbfc7cc0ec974bc2",
+    "ci586_run_id": 39670153699,
+    "local_windows_compilation": "NOT_RUN",
+    "local_windows_native": "NOT_RUN",
+    "readiness_change": 0
+  },
+  "change_blocks_scope": "Historical evidence at each original local commit; latest integrated published-source Windows result is CI586 B/M, not these original local SHAs or the uncommitted candidate",
+  "working_protocol": {
+    "effective_moscow": "2026-10-22T01:12+03:00",
+    "authority": "Owner permanent instructions,22.10.2026; overrides per-task mandatory stops/night mode",
+    "mode": "autonomous approved scope, one reviewable result per microtask",
+    "stop_conditions": [
+      "owner stop/pause/priority change",
+      "agreed scope completed",
+      "environment cannot execute further",
+      "no authorized unblocked work"
+    ],
+    "publication": {
+      "source_branch": "integration/approved-plan-31-20261011",
+      "pr": 88,
+      "subsequent_source_fixes_and_ci": "authorized after each secrets/PII and workflow check",
+      "main_merge": false,
+      "public_release": false,
+      "binary_or_installer_upload": false,
+      "owner_pc_vps_network_acl_credentials": "separate applicable permission required"
+    },
+    "checkpoint": "After each logical local commit and before long operation; full local/published/tested SHA and CI IDs; recover actual result before retry",
+    "ci": "No duplicate per SHA without cause; preserve failures; independent work while waiting; no old CI success inherited",
+    "scoring": "Existing v1.0 weights unchanged; no points for documentation/commit/unexecuted tests",
+    "continuity": "No schedule/restart/continuous guarantee created"
+  },
+  "active_work": {
+    "phase": "prepare16-file candidate",
+    "base_source": "656b3d65e03d540be859ee69635c492631093446",
+    "local_sha": null,
+    "published_sha": null,
+    "ci_run_id": null,
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
+    "next": "Final diff/secrets scan, logical local commit, tree-verified remote fast-forward, record exact new CI; then F31-R11 launch/recovery lifecycle stages",
+    "readiness_change": 0
   }
 }

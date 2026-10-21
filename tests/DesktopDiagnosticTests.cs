@@ -46,7 +46,7 @@ namespace ProGo
                 buttons.Single(b => b.Text == "Копировать отчёт").PerformClick();
                 Check(copies == 1 && copied == preview.Text && saves == 0, "copy exports exactly the reviewed snapshot without rereading logs");
                 DiagnosticAccessibleStatus(form, "copy completed");
-                buttons.Single(b => b.Text == "Сохранить как…").PerformClick();
+                buttons.Single(b => b.Text == "Сохранить как…").PerformClick(); DiagnosticSaveSettled(form);
                 Check(saves == 1 && saved == copied, "save exports the same reviewed text");
                 DiagnosticAccessibleStatus(form, "save completed");
                 form.Scale(new SizeF(1.5f, 1.5f)); Application.DoEvents(); Shot(form, "diagnostic-preview-150");
@@ -65,7 +65,7 @@ namespace ProGo
                 var copy = Descendants(form).OfType<Button>().Single(b => b.Text == "Копировать отчёт");
                 var save = Descendants(form).OfType<Button>().Single(b => b.Text == "Сохранить как…");
                 foreach (var button in new[] { copy, save }) {
-                    button.PerformClick(); DiagnosticAccessibleStatus(form, "failed " + button.Text);
+                    button.PerformClick(); if (button == save) DiagnosticSaveSettled(form); DiagnosticAccessibleStatus(form, "failed " + button.Text);
                     Check(!String.Join(" ", Descendants(form).Select(c => c.Text)).Contains("private-"), "export errors never echo private exception text: " + button.Text);
                     KeyboardWalk(form, new Control[] { preview, copy, save, close }, "diagnostic failed " + button.Text);
                     var status = (Label)Field(form, "status");
@@ -77,7 +77,7 @@ namespace ProGo
                 failCopy = failSave = false;
                 copy.PerformClick(); DiagnosticAccessibleStatus(form, "copy retry completed");
                 Check(((Label)Field(form, "status")).Text.StartsWith("Отчёт скопирован"), "diagnostic copy retry replaces stale failure with current success");
-                save.PerformClick(); DiagnosticAccessibleStatus(form, "save retry completed");
+                save.PerformClick(); DiagnosticSaveSettled(form); DiagnosticAccessibleStatus(form, "save retry completed");
                 Check(((Label)Field(form, "status")).Text.StartsWith("Отчёт сохранён") && errorCopies == 2 && errorSaves == 2 && preview.Text == report.Text,
                     "diagnostic save retry preserves reviewed snapshot and replaces stale failure");
                 preview.Focus(); key.Invoke(form, new object[] { Keys.Escape }); Application.DoEvents();
@@ -91,7 +91,7 @@ namespace ProGo
                 var preview = Descendants(form).OfType<TextBox>().Single(); var close = (Button)form.CancelButton;
                 var copy = Descendants(form).OfType<Button>().Single(b => b.Text == "Копировать отчёт");
                 var save = Descendants(form).OfType<Button>().Single(b => b.Text == "Сохранить как…");
-                save.PerformClick();
+                save.PerformClick(); DiagnosticSaveSettled(form);
                 Check(Descendants(form).OfType<Label>().Any(l => l.Text == "Сохранение отменено."), "cancelled file chooser is not reported as saved");
                 DiagnosticAccessibleStatus(form, "save cancelled");
                 KeyboardWalk(form, new Control[] { preview, copy, save, close }, "diagnostic cancelled save");
@@ -102,6 +102,11 @@ namespace ProGo
             var privateAfter = WizardPrivateSnapshot();
             Check(privateRootExisted == Directory.Exists(HomeVpnPrivateFiles.Root) && privateBefore.Keys.OrderBy(p => p).SequenceEqual(privateAfter.Keys.OrderBy(p => p)) &&
                 privateBefore.All(pair => privateAfter[pair.Key].SequenceEqual(pair.Value)), "diagnostic preview keyboard fixtures preserve private access files");
+        }
+        private static void DiagnosticSaveSettled(DiagnosticPreviewForm form)
+        {
+            PumpUntil(() => form.SaveWork.IsCompleted && !form.IsBusy);
+            form.SaveWork.GetAwaiter().GetResult();
         }
         private static void DiagnosticAccessibleStatus(Form form, string state)
         {

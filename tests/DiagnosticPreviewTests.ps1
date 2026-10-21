@@ -39,9 +39,11 @@ try {
         try {
             $form = @([Windows.Forms.Application]::OpenForms | Where-Object { $_.GetType().Name -eq 'DiagnosticPreviewForm' }) | Select-Object -First 1
             if ($null -eq $form) { return }
-            $script:seen = $true
             $layout = $form.Controls[0]
             $preview = @($layout.Controls | Where-Object { $_ -is [Windows.Forms.TextBox] })[0]
+            # The shared window appears before its real worker reads the logs.
+            if ($preview.Text.Length -eq 0) { return }
+            $script:seen = $true
             $script:previewText = $preview.Text
             if (-not $preview.ReadOnly -or $preview.Text.Contains('private-helper-fixture') -or -not $preview.Text.Contains('UPDATE_FAILED')) { throw 'Unsafe or empty updater preview' }
             if ($script:copyReport) {

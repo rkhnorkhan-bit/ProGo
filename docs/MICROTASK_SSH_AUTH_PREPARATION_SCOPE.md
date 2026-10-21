@@ -1,8 +1,8 @@
 # F31-R11: оставшаяся подготовка метода входа перед SSH
 
 Сверено на source `6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8`.
-Это восстановленный контракт и точка продолжения; реализация агрегатора/launch
-интеграции ниже TODO. Проверка подписи уже реализована отдельным микрошагом,
+Это восстановленный контракт и точка продолжения; launch integration ниже TODO.
+Агрегатор описан отдельно в текущем блоке ниже. Проверка подписи реализована микрошагом,
 но не считается готовностью всех способов аутентификации.
 
 Источник: [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md), разделы
@@ -45,8 +45,73 @@ SSH argv: это выбранная reference текущей проверки, �
 Alias сохраняет effective список IdentityFile; direct explicit key задаёт -i
 и IdentitiesOnly=yes. Изменение этой семантики не подразумевается новым UI.
 
+## Текущий блок: advisory aggregate
+
+`SshAuthenticationPreparation` получает immutable clone выбранного candidate,
+точный локальный executable/config и captured endpoint. В worker объединяет
+fresh `CheckConfiguration` и `SshKeyReadiness.Check` в общий бюджет7000мс;
+сама подпись сохраняет прежний cap3000мс. После signer повторно проверяет
+effective configuration в оставшемся бюджете, без автоматического выбора первого
+из нескольких ключей. Результат содержит immutable effective список и отдельные
+typed причины; raw stderr/secret в отображение не попадают.
+
+`LocalSigningObserved` означает локальное наблюдение в фазе подписи. Второй -G
+сверяет effective scope, но не создаёт вечной гарантии private/public bytes перед
+spawn. Caller обязан вновь проверить revision/intent/endpoint и владение запуском;
+текущий результат не является разрешением на SSH и не вводит hard gate.
+Никаких запусков службы, mutating ssh-add, сохранения passphrase или live SSH нет.
+
+Native suite `SshAuthenticationPreparationWorkflow` зарегистрирован в общем
+Desktop harness: настоящий ssh-G с отдельным config, sibling ssh-add и test-owned
+RSA agent pipe; signing/refusal/corruption, config changes, cancellation/deadline,
+multiple/none и deterministic total-budget/snapshot vectors. Его выполнение на
+новом точном SHA пока NOT_RUN. `ProxyService` этот агрегатор ещё не вызывает;
+F31-R11 остаётся PARTIAL. Этот блок не заменяет launch integration ниже.
+
 Когда можно подавить первую штатную SSH-попытку, требует проверяемого определения
 «единственный разрешённый метод — именно этот зашифрованный ключ». Такого
 состояния backend пока не устанавливает. До его реализации сохраняется advisory
 наблюдение и классификация настоящего SSH; это не новый внешний блокер выбора
 владельца и не основание закрыть F31-R11.
+
+## Launch integration: проверенный технический остаток
+
+Read-only сверка `656b3d65e03d540be859ee69635c492631093446` подтвердила:
+`StartTunnelCore` и `PollRecovery` удерживают `ProxyService.gate` на всём вызове
+`StartSingleTunnel`. Поэтому агрегатор нельзя вставить внутрь текущего lock.
+Следующий блок охватывает `ProxyService`, узкий revision lease в `SettingsService`
+и реальные lifecycle fixtures; Context-only hook оставил бы recovery обход.
+
+1. Под gate резервировать ровно один launch: immutable epoch/settings/candidate/
+   executable/endpoint, linked cancellation и Work, опубликованный до queue.
+   Освободить gate обычным разделением фаз, выполнить preparation на worker.
+   Timer видит reservation и не создаёт второй worker; ручной запуск ждёт старого
+   владельца вне gate. Каждый fallback candidate получает свою fresh preparation.
+2. Перед spawn повторить intent/epoch/token/settings/target/endpoint/occupied-port
+   guards. Короткий nonblocking `SettingsService` lease должен исключать commit
+   между final revision check и `Process.Start`. Не держать lease во время
+   ssh-G/-T, await, UI, логирования или Save; при busy writer повторять admission
+   вне process gate в существующем caller budget. Закрепить фактически проверенные
+   executable и SSH_AUTH_SOCK в `ProcessStartInfo` (null endpoint удалять из env).
+   Медленный native spawn остаётся owned до возврата; его нельзя объявить отменённым
+   заранее. Snapshot check без lease не является доказательством атомарности с Save.
+3. Stop/Dispose сразу инвалидируют intent/epoch и cancel reservation; tracked stop
+   ждёт startup/recovery/preparation settlement вне gates, затем завершает только
+   собственный child. Старый finally очищает лишь свою reservation/attempt и не
+   может затронуть новый PID. Backoff/permanent refusal считаются по реальным
+   SSH attempts, а advisory Busy/TimedOut/CommandFailed не становятся hard gates.
+
+Production constructor передаёт реальный preparer явно. Независимый test constructor
+принимает injected preparer и по умолчанию не выполняет дополнительный I/O:
+`SocksRecoveryTests` использует собственный EXE как fake ssh с поддержкой только -N;
+безусловный ssh-G запустил бы весь harness рекурсивно. Новый native aggregate test
+должен отдельно использовать настоящий OpenSSH и test-owned agent pipe.
+
+Обязательные проверки блока: held before/after preparation и final admission;
+manual/auto/timer single flight; primary/fallback/recovery freshness; Stop, Close,
+caller cancel, changed profile/key/SOCKS/endpoint и занятой revision lease без late
+spawn/publication; старый finally против нового PID; borrowed valid SOCKS без
+preparation/own child; direct/none/custom/other-auth/multiple/unknown/sign-fail
+с сохранением обычной попытки. Сохранить существующие AsyncStopSerialization,
+FallbackCancellation, TimerFallbackStop, FallbackEditCancellation, ForeignReadySocks
+и PermanentRecoveryFallback. Реализация и выполнение этого блока пока TODO/NOT_RUN.

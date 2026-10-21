@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace ProGo
 {
@@ -61,7 +62,11 @@ namespace ProGo
         };
 
         public static DiagnosticReport Build(string root, string version)
+        { return Build(root, version, CancellationToken.None); }
+
+        public static DiagnosticReport Build(string root, string version, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var output = new StringBuilder();
             output.AppendLine("ProGo — диагностический отчёт / формат 1");
             output.AppendLine("Версия: " + (Regex.IsMatch(version ?? "", @"\A\d{1,3}\.\d{1,3}\.\d{1,3}\z") ? version : "неизвестна"));
@@ -70,34 +75,50 @@ namespace ProGo
             output.AppendLine("APP — приложение; SOCKS/SSH — туннель; HTTP/CLI — прокси терминалов; UPDATE — обновление; RESTORE — восстановление.");
             output.AppendLine("FAILED/ERROR/FATAL — ошибка; WARNING — предупреждение; START/STOP — запуск/остановка; OK/COMPLETE — завершение этапа.");
             string update = "update.log";
-            try { if (!File.Exists(Path.Combine(root, update)) && File.Exists(Path.Combine(root, "progo-update.log"))) update = "progo-update.log"; }
+            try {
+                bool current = File.Exists(Path.Combine(root, update)); cancellation.ThrowIfCancellationRequested();
+                if (!current && File.Exists(Path.Combine(root, "progo-update.log"))) update = "progo-update.log";
+                cancellation.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException) { throw; }
             catch { }
             string[] names = { "progo.log", update, "progo-restore.log" };
             string[] labels = { "Приложение", "Обновление", "Восстановление" };
             for (int i = 0; i < names.Length; i++)
                 for (int generation = 2; generation >= 0; generation--)
                     AddSource(output, root, names[i] + (generation == 0 ? "" : "." + generation),
-                        labels[i] + (generation == 0 ? " / текущий" : " / архив " + generation));
+                        labels[i] + (generation == 0 ? " / текущий" : " / архив " + generation), cancellation);
+            cancellation.ThrowIfCancellationRequested();
             return new DiagnosticReport(output.ToString());
         }
 
-        private static void AddSource(StringBuilder output, string root, string name, string label)
+        private static void AddSource(StringBuilder output, string root, string name, string label, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             output.AppendLine(); output.AppendLine("[" + label + "]");
             try
             {
                 string path = Path.Combine(root, name);
-                if (!File.Exists(path)) { output.AppendLine("Нет доступного файла."); return; }
+                bool exists = File.Exists(path); cancellation.ThrowIfCancellationRequested();
+                if (!exists) { output.AppendLine("Нет доступного файла."); return; }
                 if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
                     throw new IOException();
+                cancellation.ThrowIfCancellationRequested();
                 string text;
                 using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                 {
-                    long length = file.Length;
+                    cancellation.ThrowIfCancellationRequested();
+                    long length = file.Length; cancellation.ThrowIfCancellationRequested();
                     int count = (int)Math.Min(length, SourceBytes);
                     byte[] data = new byte[count]; file.Position = length - count;
+                    cancellation.ThrowIfCancellationRequested();
                     int read = 0, part;
-                    while (read < count && (part = file.Read(data, read, count - read)) > 0) read += part;
+                    while (read < count) {
+                        cancellation.ThrowIfCancellationRequested();
+                        part = file.Read(data, read, count - read); cancellation.ThrowIfCancellationRequested();
+                        if (part == 0) break;
+                        read += part;
+                    }
                     text = Encoding.UTF8.GetString(data, 0, read);
                     if (length > count)
                     {
@@ -109,6 +130,7 @@ namespace ProGo
                 var events = new Queue<string>(); int omitted = 0, older = 0;
                 foreach (string raw in text.Split('\n'))
                 {
+                    cancellation.ThrowIfCancellationRequested();
                     string line = raw.Trim('\r', '\uFEFF');
                     if (String.IsNullOrWhiteSpace(line)) continue;
                     string stamp = "время неизвестно";
@@ -130,6 +152,7 @@ namespace ProGo
                 foreach (string entry in events) output.AppendLine(entry);
                 output.AppendLine("Событий: " + events.Count + "; неизвестных строк исключено: " + omitted + "; более ранних событий пропущено: " + older + ".");
             }
+            catch (OperationCanceledException) { throw; }
             catch { output.AppendLine("Файл недоступен. Его содержимое не включено."); }
         }
     }

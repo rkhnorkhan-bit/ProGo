@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Linq;
+using System.Threading;
 
 namespace ProGo
 {
@@ -16,6 +17,12 @@ namespace ProGo
             {
                 var empty = DiagnosticReport.Build(root, "0.2.2");
                 Check(!Directory.Exists(root), "report creation never creates missing application state");
+                using (var cancellation = new CancellationTokenSource()) {
+                    cancellation.Cancel(); bool cancelled = false;
+                    try { DiagnosticReport.Build(root, "0.2.2", cancellation.Token); }
+                    catch (OperationCanceledException ex) { cancelled = ex.CancellationToken == cancellation.Token; }
+                    Check(cancelled && !Directory.Exists(root), "pre-cancelled report preserves the caller token and creates no application state");
+                }
                 Check(empty.Text.Contains("Нет доступного файла.") && empty.Text.Contains("0.2.2"), "missing logs have an honest fixed status");
                 Directory.CreateDirectory(root);
                 string path = Path.Combine(root, "progo.log");
@@ -63,6 +70,16 @@ namespace ProGo
                 using (var file = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                     Check(DiagnosticReport.Build(root, "0.2.2").Text.Contains("Файл недоступен."), "locked log becomes sanitized unavailable status");
                 Check(!DiagnosticReport.Build(root, "0.2.2").Text.Contains(root), "root and exception paths never enter the final report");
+                Check(DiagnosticReport.Build(root, "0.2.2", CancellationToken.None).Text == DiagnosticReport.Build(root, "0.2.2").Text,
+                    "token overload retains the exact existing bounded sanitized report format");
+                byte[] sourceBeforeCancellation = File.ReadAllBytes(path);
+                using (var cancellation = new CancellationTokenSource()) {
+                    cancellation.Cancel(); bool cancelled = false;
+                    try { DiagnosticReport.Build(root, "0.2.2", cancellation.Token); }
+                    catch (OperationCanceledException) { cancelled = true; }
+                    Check(cancelled && sourceBeforeCancellation.SequenceEqual(File.ReadAllBytes(path)),
+                        "cancelled real-log projection is not converted to a successful unavailable report and preserves every source byte");
+                }
                 Console.WriteLine("Diagnostic report tests PASS: " + passed); return 0;
             }
             catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

@@ -47,6 +47,10 @@ namespace ProGo
         internal SshAgentProbeResult SshAgentStartupResult { get { return sshAgentStartup == null ? null : sshAgentStartup.Result; } }
         private readonly Func<UpdateCheckForm> createUpdateForm;
         private UpdateCheckForm updateForm;
+        private DiagnosticPreviewForm diagnosticForm;
+        private Task diagnosticSettling = Task.FromResult(false);
+        internal Func<string, string, DiagnosticPreviewForm> DiagnosticFormFactory;
+        internal Task DiagnosticWork { get { return diagnosticForm == null ? diagnosticSettling : diagnosticForm.Work; } }
         private readonly bool ownsHealth;
         private readonly Timer statusTimer = new Timer { Interval = 1000 };
         private Timer startupShowTimer;
@@ -973,8 +977,42 @@ namespace ProGo
 
         private void ShowDiagnosticPreview()
         {
-            try { DiagnosticPreview.Show(AppPaths.Root, typeof(DiagnosticPreview).Assembly.GetName().Version.ToString(3)); }
-            catch { MessageBox.Show("Не удалось подготовить отчёт. Личный журнал можно открыть на этом компьютере.", AppConstants.ProductName); }
+            if (closing || shutdownPreparing || shutdownPrepared || MaintenancePending) return;
+            if (diagnosticForm != null) {
+                diagnosticSettling = diagnosticForm.Work;
+                if (!diagnosticForm.IsDisposed) diagnosticForm.Activate();
+                return;
+            }
+            // A forced owner close may leave an OS read/write in flight. Retain
+            // that exact workflow and do not admit a second export before it settles.
+            if (!diagnosticSettling.IsCompleted) return;
+            DiagnosticPreviewForm form = null;
+            try {
+                string version = typeof(DiagnosticPreview).Assembly.GetName().Version.ToString(3);
+                form = DiagnosticFormFactory == null ? new DiagnosticPreviewForm(AppPaths.Root, version) : DiagnosticFormFactory(AppPaths.Root, version);
+                if (form == null) throw new InvalidOperationException();
+                diagnosticForm = form;
+                if (mainWindow != null && !mainWindow.IsDisposed) form.ShowDialog(mainWindow);
+                else form.ShowDialog();
+            }
+            catch { if (!closing) MessageBox.Show("Не удалось подготовить отчёт. Личный журнал можно открыть на этом компьютере.", AppConstants.ProductName); }
+            finally {
+                if (form != null) {
+                    diagnosticSettling = form.Work;
+                    if (ReferenceEquals(diagnosticForm, form)) diagnosticForm = null;
+                    form.Dispose();
+                }
+            }
+        }
+        private Task CancelDiagnosticPreview()
+        {
+            var form = diagnosticForm;
+            if (form != null) {
+                // Disposed/FormClosed can reenter shutdown before the modal
+                // finally has copied Work. A disposed form can still own I/O.
+                diagnosticSettling = form.IsDisposed ? form.Work : form.CancelAndClose();
+            }
+            return diagnosticSettling;
         }
 
         private void ShowVault()
@@ -1168,7 +1206,13 @@ namespace ProGo
                 if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
                 CancelPortable();
                 CancelShortcutMigration();
+                var diagnostic = CancelDiagnosticPreview();
                 if (sshAgentStartup != null) sshAgentStartup.Close();
+                if (!diagnostic.IsCompleted && await Task.WhenAny(diagnostic, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != diagnostic)
+                    throw new InvalidOperationException("Диагностика ещё не завершена: накопитель не завершил чтение или запись. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
+                // Cancellation/fixed export failures are already shown by the
+                // form. Only actual settlement is a prerequisite for handoff.
+                try { await diagnostic.ConfigureAwait(false); } catch (Exception) { }
                 var vault = Task.WhenAll(VaultWork ?? Task.FromResult(false), DailyWork);
                 if (vault != null && !vault.IsCompleted && await Task.WhenAny(vault, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != vault)
                     throw new InvalidOperationException("Операция хранилища ещё не завершена. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
@@ -1806,6 +1850,8 @@ namespace ProGo
                 lock (integrationLifetimeGate) closing = true;
                 if (sshAgentStartup != null) sshAgentStartup.Close();
                 CancelShortcutMigration();
+                CancelDiagnosticPreview();
+                if (diagnosticForm != null && !diagnosticForm.IsDisposed) diagnosticForm.Dispose();
                 trayPreferenceCancellation.Cancel(); trayPreferenceCancellation.Dispose();
                 UnregisterVaultDateEvents(); dailyRuntime.Close();
                 integrationWaitCancellation.Cancel();
