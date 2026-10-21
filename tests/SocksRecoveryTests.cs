@@ -74,6 +74,7 @@ internal static class SocksRecoveryTests
             Test("every permitted fallback candidate receives fresh preparation", LaunchPreparationFallback);
             Test("forced disposal cancels held preparation without a late native spawn", LaunchPreparationDispose);
             Test("cancellation at final admission releases its lease before any native spawn", LaunchPreparationFinalAdmissionCancel);
+            Test("local preparation guidance remains distinct from actual SSH refusal and is snapshotted off gates", LaunchPreparationGuidance);
             Console.WriteLine("SOCKS recovery tests PASS: " + passed);
             Console.WriteLine("SOCKS recovery assertions PASS: " + assertions);
             return 0;
@@ -156,7 +157,8 @@ internal static class SocksRecoveryTests
             return candidate.Target == current.Target && candidate.Server == current.Server && candidate.User == current.User &&
                 candidate.Port == current.Port && candidate.IdentityFile == current.IdentityFile && executable == file && AgentEndpoint == endpoint;
         }
-        public string ToDisplay() { return "Fixture advisory only; no private-key/server authorization."; }
+        internal Func<string> Display;
+        public string ToDisplay() { return Display == null ? "Fixture advisory only; no private-key/server authorization." : Display(); }
     }
     private static void SettleLaunchFixture(params Task[] tasks)
     {
@@ -296,6 +298,43 @@ internal static class SocksRecoveryTests
             }
         }
     }
+    private static void LaunchPreparationGuidance()
+    {
+        foreach (bool brokenDisplay in new[] { false, true }) {
+            Fixture f = null; int displays = 0; bool displayGateFree = true;
+            using (f = new Fixture(prepare: delegate(SshProfileSetting candidate, string executable, CancellationToken token) {
+                return new LaunchObservation(candidate, executable) { Display = delegate {
+                    displays++;
+                    var gate = typeof(ProxyService).GetField("gate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(f.Proxy);
+                    displayGateFree &= !Monitor.IsEntered(gate);
+                    if (brokenDisplay) throw new IOException("fixture display unavailable");
+                    return "Локальная подпись наблюдалась; вход на сервер не подтверждён.";
+                } };
+            })) {
+                Task<bool> start = null, retry = null;
+                try {
+                    f.Settings.SshProfile = "denied";
+                    start = f.Proxy.StartTunnelAsync(CancellationToken.None); SettleLaunchFixture(start); f.Tick(0);
+                    Assert(!start.Result && !f.Proxy.HasOwnedProcess && displays == 1 && displayGateFree,
+                        "Advisory display blocked, duplicated, or replaced the actual refused SSH attempt");
+                    string startup = f.Proxy.StartupError, recovery = f.Proxy.RecoveryStatus;
+                    Assert(startup.Contains("ключ не принят") && recovery.Contains("приостановлено"),
+                        "Local preparation erased actual SSH refusal or its recovery pause");
+                    Assert(brokenDisplay ? !startup.Contains("Локальная подготовка входа:") :
+                        startup.Contains("Локальная подготовка входа:") && startup.Contains("вход на сервер не подтверждён") &&
+                        startup.Contains("Подключения → Проверить") && recovery.Contains("Локальная подготовка входа:"),
+                        "Preparation guidance lost its separate local scope, next action, or safe display fallback");
+                    for (int i = 0; i < 10; i++) { var text = f.Proxy.StartupError + f.Proxy.RecoveryStatus; }
+                    Assert(displays == 1, "UI polling called preparation formatting again");
+                    f.Settings.SshProfile = "ready"; retry = f.Proxy.StartTunnelAsync(CancellationToken.None); SettleLaunchFixture(retry);
+                    Assert(retry.Result && f.Proxy.StartupError == null && !f.Proxy.RecoveryStatus.Contains("приостановлено") && displays == 2,
+                        "Explicit retry retained old failure/preparation guidance or became an authentication gate");
+                }
+                finally { var cleanup = f.Proxy.StopTunnelAsync(); SettleLaunchFixture(start, retry, cleanup); }
+            }
+        }
+    }
+
     private static void LaunchPreparationAdvisoryFailure()
     {
         foreach (bool throws in new[] { false, true }) using (var f = new Fixture(prepare:

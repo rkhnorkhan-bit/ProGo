@@ -27,6 +27,7 @@ namespace ProGo
                 AuthenticationPreparationAdvisories(client);
                 AuthenticationPreparationBudgetAndFreshness(client);
                 AuthenticationPreparationNative(root);
+                AuthenticationPreparationRealTunnel(root);
             } finally { Environment.SetEnvironmentVariable("SSH_AUTH_SOCK", previous); Directory.Delete(root, true); }
             Console.WriteLine("SSH advisory authentication preparation checks PASS: " + (passed - before));
         }
@@ -246,6 +247,246 @@ namespace ProGo
                         "actual direct-key arguments preserve the selected unencrypted key and IdentitiesOnly without making the unavailable agent mandatory; server authentication remains untested");
                 }
             } finally { Environment.SetEnvironmentVariable("SSH_AUTH_SOCK", previous); }
+        }
+        private static void AuthenticationPreparationRealTunnel(string parent)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") {
+                Console.WriteLine("NOT_RUN: combined native SSH fixture requires isolated Windows CI"); return;
+            }
+            AuthenticationPreparationRealTunnelCase(parent, null);
+            string previous = Environment.GetEnvironmentVariable("SSH_AUTH_SOCK");
+            using (var rsa = new RSACryptoServiceProvider(2048)) {
+                rsa.PersistKeyInCsp = false;
+                using (var agent = new TunnelFixtureAgent(rsa)) try {
+                    Environment.SetEnvironmentVariable("SSH_AUTH_SOCK", @"\\.\pipe\" + agent.Name);
+                    AuthenticationPreparationRealTunnelCase(parent, agent);
+                } finally { Environment.SetEnvironmentVariable("SSH_AUTH_SOCK", previous); }
+            }
+        }
+
+        private static void AuthenticationPreparationRealTunnelCase(string parent, TunnelFixtureAgent agent)
+        {
+            string python = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_PYTHON");
+            string script = Environment.GetEnvironmentVariable("PROGO_TEST_SSH_FIXTURE_SCRIPT");
+            if (String.IsNullOrEmpty(python) || !File.Exists(python) || String.IsNullOrEmpty(script) || !File.Exists(script))
+                throw new InvalidOperationException("combined SSH fixture runtime was not prepared");
+            string root = Path.Combine(parent, "real-tunnel-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
+            string key = Path.Combine(root, "selected key"), config = Path.Combine(root, "config");
+            string executable = OpenSshClient.Executable;
+            if (agent == null) {
+                var generated = DiagnosticProcess.RunReadOnly(OpenSshClient.KeygenExecutable(executable),
+                    "-q -t rsa -b 2048 -N \"\" -C disposable-combined-ssh -f " + SshConnection.Quote(key), null, 10000, CancellationToken.None);
+                Check(generated.ExitCode == 0 && File.Exists(key + ".pub"), "combined fixture generates only its own disposable direct key");
+            } else {
+                string reference = "ssh-rsa " + Convert.ToBase64String(agent.PublicBlob) + " disposable-agent-only\n";
+                File.WriteAllText(key, reference); File.WriteAllText(key + ".pub", reference);
+                Check(File.ReadAllText(key).StartsWith("ssh-rsa "), "combined agent fixture exposes public references only; private key exists only in its owned agent");
+            }
+            Process server = null; ProxyService proxy = null; Task<bool> start = null;
+            Task<string> output = null, errors = null;
+            try {
+                server = Process.Start(new ProcessStartInfo(python, SshConnection.Quote(script) + " --public-key " +
+                    SshConnection.Quote(key + ".pub") + " --directory " + SshConnection.Quote(root)) {
+                    UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true
+                });
+                if (server == null) throw new IOException("owned SSH fixture process did not start");
+                output = server.StandardOutput.ReadToEndAsync(); errors = server.StandardError.ReadToEndAsync();
+                var ready = Path.Combine(root, "ready.json"); var watch = Stopwatch.StartNew();
+                while (!File.Exists(ready)) {
+                    if (server.HasExited || watch.ElapsedMilliseconds >= 7000) throw new TimeoutException("owned SSH server did not publish readiness within seven seconds");
+                    Thread.Sleep(20);
+                }
+                var metadata = new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(ready));
+                int sshPort = Convert.ToInt32(metadata["ssh_port"]), httpPort = Convert.ToInt32(metadata["http_port"]);
+                string known = Path.Combine(root, "known_hosts");
+                File.WriteAllText(known, "[127.0.0.1]:" + sshPort + " " + (string)metadata["host_key"] + "\n");
+                File.WriteAllText(config, "Host *\n" + (agent == null ? " IdentityAgent none\n" : "") + " StrictHostKeyChecking yes\n UserKnownHostsFile " +
+                    ConfigQuoted(known) + "\n GlobalKnownHostsFile none\n PreferredAuthentications publickey\n PubkeyAuthentication yes\n ConnectTimeout 2\n");
+                var settings = AppSettings.Defaults(); settings.SocksHost = "127.0.0.1"; settings.AutoSwitchSshProfile = false; settings.AutoRestartSocks = true;
+                var reserve = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+                try {
+                    reserve.Start(); settings.SocksPort = ((System.Net.IPEndPoint)reserve.LocalEndpoint).Port;
+                } finally { reserve.Stop(); }
+                settings.SshProfile = "owned-direct-fixture";
+                settings.SshProfiles = new List<SshProfileSetting> { new SshProfileSetting { Target = settings.SshProfile,
+                    Server = "127.0.0.1", User = "progo-fixture", Port = sshPort, IdentityFile = key } };
+                DateTime now = DateTime.UtcNow; int preparations = 0;
+                var preparationTimes = new System.Collections.Concurrent.ConcurrentQueue<long>();
+                proxy = new ProxyService(() => settings, s => { throw new InvalidOperationException("fixture must not persist settings"); },
+                    executable, () => now, false, "-F " + SshConnection.Quote(config),
+                    prepareAuthentication: (candidate, file, token) => {
+                        Interlocked.Increment(ref preparations);
+                        var elapsed = Stopwatch.StartNew();
+                        try { return SshAuthenticationPreparation.Prepare(new SshAuthenticationPreparationRequest(candidate, file, config), token); }
+                        finally { preparationTimes.Enqueue(elapsed.ElapsedMilliseconds); }
+                    });
+                var startupWatch = Stopwatch.StartNew();
+                start = proxy.StartTunnelAsync(CancellationToken.None);
+                Check(start.Wait(15000) && start.Result && proxy.HasOwnedProcess && preparations == 1,
+                    "real preparation and common ProxyService startup reach owned native SSH and confirmed SOCKS");
+                var preparation = proxy.AuthenticationPreparation as SshAuthenticationPreparationResult;
+                Check(preparation != null && (agent == null ? preparation.Reason == SshAuthenticationPreparationReason.AgentDisabledByProfile && preparation.Signing == null :
+                    preparation.State == SshAuthenticationPreparationState.LocalSigningObserved && agent.Signatures >= 2),
+                    agent == null ? "direct unencrypted key reaches real authentication without making the default agent mandatory" :
+                    "selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent");
+                AuthenticationFixtureHttp(settings, httpPort);
+                AuthenticationFixtureMetrics(proxy, agent == null ? "direct" : "agent", "startup", startupWatch.ElapsedMilliseconds, preparationTimes.ToArray());
+                int oldPid = proxy.CurrentPid.Value;
+                using (var child = Process.GetProcessById(oldPid)) { child.Kill(); Check(child.WaitForExit(3000), "only the fixture owned SSH child is interrupted"); }
+                proxy.PollRecovery(); Check(proxy.NextRecoveryUtc.HasValue, "real owned SSH interruption schedules recovery");
+                now = now.AddSeconds(6); startupWatch.Restart(); proxy.PollRecovery(); watch.Restart();
+                while (!ConnectionHealthMonitor.CheckSocks(settings, CancellationToken.None)) {
+                    if (watch.ElapsedMilliseconds >= 5000) throw new TimeoutException("real recovered SSH did not provide SOCKS within five seconds");
+                    Thread.Sleep(20);
+                }
+                Check(preparations == 2 && proxy.AutomaticRestarts == 1 && proxy.CurrentPid.HasValue && proxy.CurrentPid != oldPid,
+                    "automatic recovery repeats actual preparation and starts exactly one fresh native SSH child");
+                AuthenticationFixtureHttp(settings, httpPort);
+                AuthenticationFixtureMetrics(proxy, agent == null ? "direct" : "agent", "recovery", startupWatch.ElapsedMilliseconds, preparationTimes.ToArray());
+                if (agent != null) Check(agent.Signatures >= 4, "real recovery repeats local signing and actual server authentication against the same selected owned agent key");
+            }
+            finally {
+                try {
+                    if (proxy != null) {
+                        var stop = proxy.StopTunnelAsync();
+                        Check(stop.Wait(5000) && stop.Result && (start == null || start.IsCompleted) && !proxy.HasOwnedProcess,
+                            "combined fixture settles startup and owned SSH cleanup before server disposal");
+                    }
+                }
+                finally {
+                    try { if (proxy != null) proxy.Dispose(); }
+                    finally {
+                        if (server != null) try {
+                            bool graceful = false;
+                            try {
+                                File.WriteAllText(Path.Combine(root, "stop"), "stop");
+                                graceful = server.WaitForExit(7000);
+                            } finally {
+                                if (!server.HasExited) { server.Kill(); if (!server.WaitForExit(3000)) throw new TimeoutException("owned SSH server process did not terminate"); }
+                            }
+                            Check(output != null && errors != null && output.Wait(3000) && errors.Wait(3000) && graceful && server.ExitCode == 0 &&
+                                output.Result.Contains("OWNED_SSH_FIXTURE_CLEANUP_COMPLETE"), "owned SSH server exits with explicit cleanup; timeout is never PASS");
+                        } finally { server.Dispose(); }
+                    }
+                }
+            }
+        }
+
+        private static void AuthenticationFixtureMetrics(ProxyService proxy, string mode, string phase, long elapsedMs, long[] preparationMs)
+        {
+            // Isolated runner measurements only, never owner-PC/HDD acceptance.
+            try {
+                using (var child = Process.GetProcessById(proxy.CurrentPid.Value)) {
+                    Console.WriteLine("COMBINED_SSH_METRICS mode=" + mode + ";phase=" + phase + ";elapsed_ms=" + elapsedMs +
+                        ";preparation_ms=" + String.Join(",", preparationMs.Select(x => x.ToString(System.Globalization.CultureInfo.InvariantCulture))) +
+                        ";ssh_cpu_ms=" + child.TotalProcessorTime.TotalMilliseconds.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                        ";ssh_working_set_bytes=" + child.WorkingSet64 + ";ssh_peak_working_set_bytes=" + child.PeakWorkingSet64);
+                }
+            } catch (Exception error) {
+                Console.WriteLine("NOT_RUN: combined SSH process counters unavailable: " + error.GetType().Name);
+            }
+        }
+
+        // A multi-connection, test-owned Windows agent. LIST and SIGN are real
+        // protocol operations; OpenSSH and the SSH server verify the signatures.
+        // No mutating add/remove protocol or shared agent endpoint is available.
+        private sealed class TunnelFixtureAgent : IDisposable
+        {
+            internal readonly string Name = "progo-tunnel-agent-" + Guid.NewGuid().ToString("N");
+            internal readonly byte[] PublicBlob;
+            internal int Signatures;
+            private readonly RSACryptoServiceProvider rsa;
+            private readonly object gate = new object();
+            private readonly List<System.IO.Pipes.NamedPipeServerStream> pipes = new List<System.IO.Pipes.NamedPipeServerStream>();
+            private readonly List<Task> clients = new List<Task>();
+            private readonly ManualResetEventSlim ready = new ManualResetEventSlim();
+            private readonly Task accept;
+            private volatile bool stopping;
+
+            internal TunnelFixtureAgent(RSACryptoServiceProvider rsa)
+            {
+                this.rsa = rsa; PublicBlob = ReadinessPublicBlob(rsa);
+                accept = Task.Factory.StartNew(Accept, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                if (!ready.Wait(3000)) { Dispose(); throw new TimeoutException("owned agent did not publish its pipe within three seconds"); }
+            }
+            private void Accept()
+            {
+                while (!stopping) {
+                    System.IO.Pipes.NamedPipeServerStream pipe;
+                    lock (gate) {
+                        if (stopping) return;
+                        pipe = new System.IO.Pipes.NamedPipeServerStream(Name, System.IO.Pipes.PipeDirection.InOut, 16,
+                            System.IO.Pipes.PipeTransmissionMode.Byte, System.IO.Pipes.PipeOptions.Asynchronous);
+                        pipes.Add(pipe);
+                        ready.Set();
+                    }
+                    try { pipe.WaitForConnection(); }
+                    catch (IOException) { if (stopping) return; throw; }
+                    catch (ObjectDisposedException) { if (stopping) return; throw; }
+                    lock (gate) {
+                        if (stopping) return;
+                        var ownedPipe = pipe;
+                        clients.Add(Task.Factory.StartNew(() => Serve(ownedPipe), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default));
+                    }
+                }
+            }
+            private void Serve(System.IO.Pipes.NamedPipeServerStream pipe)
+            {
+                try {
+                    while (!stopping) {
+                        byte[] request = ReadinessReadFrame(pipe), body = new byte[] { 5 };
+                        if (request.Length == 1 && request[0] == 11) {
+                            body = new byte[] { 12, 0, 0, 0, 1 }.Concat(ReadinessWire(PublicBlob))
+                                .Concat(ReadinessWire(Encoding.ASCII.GetBytes("disposable-owned-agent"))).ToArray();
+                        } else if (request[0] == 13) {
+                            using (var bytes = new MemoryStream(request)) using (var reader = new BinaryReader(bytes)) {
+                                reader.ReadByte(); byte[] blob = ReadinessReadString(reader), data = ReadinessReadString(reader); uint flags = ReadinessReadUInt(reader);
+                                if (bytes.Position == bytes.Length && blob.SequenceEqual(PublicBlob) && data.Length > 0 && (flags == 0 || flags == 2 || flags == 4)) {
+                                    string algorithm = flags == 2 ? "rsa-sha2-256" : flags == 4 ? "rsa-sha2-512" : "ssh-rsa";
+                                    byte[] signature; lock (rsa) signature = rsa.SignData(data, flags == 2 ? "SHA256" : flags == 4 ? "SHA512" : "SHA1");
+                                    Interlocked.Increment(ref Signatures);
+                                    body = new byte[] { 14 }.Concat(ReadinessWire(ReadinessWire(Encoding.ASCII.GetBytes(algorithm)).Concat(ReadinessWire(signature)).ToArray())).ToArray();
+                                }
+                            }
+                        }
+                        byte[] response = ReadinessWire(body); pipe.Write(response, 0, response.Length); pipe.Flush();
+                    }
+                } catch (IOException) { /* Normal native client disconnect or owned cancellation. */ }
+                catch (ObjectDisposedException) { if (!stopping) throw; }
+                finally { pipe.Dispose(); }
+            }
+            public void Dispose()
+            {
+                lock (gate) { stopping = true; foreach (var pipe in pipes) pipe.Dispose(); }
+                try {
+                    if (!accept.Wait(5000)) throw new TimeoutException("owned agent accept loop cleanup deadline");
+                } finally {
+                    Task[] work; lock (gate) work = clients.ToArray();
+                    try { if (!Task.WaitAll(work, 5000)) throw new TimeoutException("owned agent client cleanup deadline"); }
+                    finally { ready.Dispose(); }
+                }
+            }
+        }
+
+        private static void AuthenticationFixtureHttp(AppSettings settings, int httpPort)
+        {
+            using (var client = new System.Net.Sockets.TcpClient()) {
+                var connect = client.ConnectAsync("127.0.0.1", settings.SocksPort);
+                if (!connect.Wait(3000)) throw new TimeoutException("owned SOCKS connect deadline");
+                connect.GetAwaiter().GetResult(); client.ReceiveTimeout = 3000; client.SendTimeout = 3000;
+                var stream = client.GetStream(); stream.Write(new byte[] { 5, 1, 0 }, 0, 3);
+                Check(HealthRead(stream, 2).SequenceEqual(new byte[] { 5, 0 }), "real tunnel negotiates SOCKS5 before HTTP forwarding");
+                byte[] target = { 5, 1, 0, 1, 127, 0, 0, 1, (byte)(httpPort >> 8), (byte)httpPort };
+                stream.Write(target, 0, target.Length); var reply = HealthRead(stream, 10);
+                Check(reply[0] == 5 && reply[1] == 0, "real authenticated SSH permits only its owned HTTP endpoint");
+                byte[] request = Encoding.ASCII.GetBytes("GET / HTTP/1.0\r\nHost: fixture\r\n\r\n"); stream.Write(request, 0, request.Length);
+                var response = new StringBuilder(); var buffer = new byte[4096]; int count;
+                while ((count = stream.Read(buffer, 0, buffer.Length)) != 0) {
+                    response.Append(Encoding.ASCII.GetString(buffer, 0, count));
+                    if (response.Length > 65536) throw new IOException("owned HTTP response exceeded fixture bound");
+                }
+                Check(response.ToString().Contains("progo-owned-ssh-http-fixture"), "actual selected key and SSH carry SOCKS5 HTTP payload; local signing alone is insufficient");
+            }
         }
     }
 }

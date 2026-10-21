@@ -1,12 +1,177 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `b32ac4ece5cd62b98eab22b7e65aaa079544e5bf`, tree `c987657710561336d54abd77d123babe592769c7`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `7964a99ac4f6adf0d1d9034c855e989f60211c0a`, tree `8c4be1b5bd69d06cbac06f6c4f33c1ff0edc9d85`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## Проверка CI589 во время подготовки следующего source
+
+Windows119540954252: шаг Repository hygiene and build SUCCESS; relay integration
+ещё in_progress. Ubuntu119540953856 SUCCESS. Полный run39692239050 ещё не
+завершён; новый head не отправляется, чтобы не отменить его. Загрузка job log
+во время работы вернула BlobNotFound404: это недоступность ещё не опубликованного
+лога, не FAIL теста. Точное число50 и identity будут сверены после completion.
+Следующий local source `de155d5a786fa1965318b7149fb443ec173eb08c` включает
+separate guidance/native51, изолированный server, direct+agent combined
+start/recovery, bounded launcher и metrics. Все новые Windows сценарии NOT_RUN.
+Git clean, logical commits сохранены; score0 за эти невыполненные проверки.
+Далее: финальный committed diff/secret scan, после completion CI589 — один
+expected-head source update и новый run для изменённого кода, не retry старого SHA.
+
+## F31-R11 test launcher — bounded native Python status
+
+Test-ProGo запускает install и5 server-contract tests как отдельные собственные
+processes с budget60/90с. Stdout/stderr читаются после settlement как log text;
+обычный unittest progress/ожидаемый отказ handshake в stderr не становится
+NativeCommandError PowerShell. Единственный критерий status — проверенный
+exit code; nonzero/timeout → FAIL с причиной, NOT_RUN зависимых native сценариев.
+После timeout завершается только созданный Process; killed timeout не PASS.
+Публичные workflow/upload guards не менялись. Python fixture без subprocess
+команд; pip binary-only без сборщиков. PS execution NOT_RUN в текущей Linux.
+Diff/source/public317/0 PASS. Оценка58–80/22 прежней CI588 базы, прирост0.
+Следующий шаг — результат CI589 и exact-SHA публикация накопленных логических
+test/source commits; измерения ещё не выданы за фактический Windows результат.
+
+## F31-R11 dev measurement — source, показатели ещё NOT_RUN
+
+Combined direct/agent startup и recovery печатают elapsed_ms, все длительности
+реальных preparation, CPU time/working set/peak working set только своего SSH
+child. Счётчики недоступны → явный NOT_RUN с типом ошибки; отсутствие измерения
+не превращается в PASS. Это данные изолированного runner, не замер ПК владельца
+или HDD/VHDX, и не process I/O всей программы. Последние критерии открыты.
+Pinned Paramiko4.0.0 проверяется при создании стенда: другое содержимое старого
+build не выдаётся за испытанную зависимость. Python native5 на этом изменённом
+контракте PASS за3.665с; Windows C#/metrics/PS NOT_RUN, баллов0.
+Agent-only source этап6: `47a7467f4b6d36b33c8ee8b5ad89337ab990e431`.
+Далее: bounded Python test launcher с stdout/stderr как обычным log (ожидаемый
+native negative-case stderr не должен ломать PowerShell независимо от exit code),
+затем checking publication после текущего CI589.
+
+## F31-R11 этап6 — selected agent key в combined native сценарии, NOT_RUN
+
+Второй combined case использует отдельный owned Windows named-pipe agent с
+настоящими LIST/SIGN ответами. Единственный private RSA key остаётся в памяти;
+на диск попадают только выбранные public references. Ни shared/default agent,
+ни mutating ADD/REMOVE, ни системные credentials не используются. Native
+ssh-add проверяет подготовку выбранной identity; затем сам OpenSSH должен
+подписать server authentication тем же ключом, а Paramiko проверяет signature.
+Лишь HTTP payload после SOCKS подтверждает actual SSH, локальная подпись
+отдельно не считается доступом на сервер. Recovery повторяет обе реальные фазы.
+
+Accept/clients single-owned, pipe ready deadline3с; Dispose сначала закрывает
+только свои pipe handles и затем ждёт accept/clients с deadlines5с и finally,
+включая ошибку одного worker. Snapshot env SSH_AUTH_SOCK восстанавливается;
+RSA provider удаляется после settlement. Этот тест моделирует уже загруженный
+ключ, не ввод passphrase/ACL на ПК владельца. Последние по-прежнему отдельные
+критерии; существующий interactive Add suite не заменяется.
+
+Исходный direct combined source `f485cbb0eddd6c05dc9fc21156e9d26d6c7be87e`.
+Текущие compilation/native Windows NOT_RUN; source review/diff/public317/0 PASS.
+Баллы58–80/22 без прироста; CI589 ещё проверяет source7964a99a без этих local
+изменений. Далее — прочитать результат CI589 и опубликовать новый checking
+source direct+agent+recovery, вместе с отдельной guidance/native51.
+
+## F31-R11 этап5 — combined native Windows fixture подключён, NOT_RUN
+
+Local source расширяет SshAuthenticationPreparationWorkflow: реальный disposable
+keygen → explicit immutable preparation с тем же isolated SSH config → общий
+ProxyService StartSingleTunnel → настоящий OpenSSH с pinned host key → SOCKS5
+CONNECT → HTTP payload собственного loopback сервера. После прерывания только
+своего SSH PID timer recovery обязан вновь выполнить preparation, создать один
+новый PID и повторить payload. IdentityAgent none/direct unencrypted сохраняет
+штатный вход. Это общий runtime pipeline, но не GUI/real VPS/зашифрованный agent
+сценарий; SettingsService final revision lease отдельно проверен прежними suites.
+
+Test-ProGo готовит Paramiko только в build/ssh-fixture-deps через binary wheels,
+с install deadline60с; public uploads/workflow не меняются. На dependency FAIL
+native NOT_RUN и CI FAIL; тест не пропускается.5 native Python fixture contracts
+затем Desktop combined test; временные PYTHONPATH/fixture env восстанавливаются.
+Stop/start/server streams и собственные processes имеют локальные deadlines,
+явный server cleanup marker обязателен. Уточнён Python cleanup: закрывает все
+свои принятые sockets даже до старта Transport; stalled-handshake test сохраняет
+клиент открытым до завершения server cleanup (раньше клиент закрывался первым).
+
+C# compilation/native и PowerShell execution NOT_RUN в Linux. Diff/public317/0
+PASS; Python native5 на изменённом fixture PASS за4.343с (Linux OpenSSH).
+Исходный stand source65b98ead4c901aeae66d009f6eaa7ba6fe4c835a сохранён в истории;
+новый Windows source включает также local guidance83cf660e,51 recovery cases.
+Никаких баллов за ещё не выполненный combined Windows тест;58–80/22 остаются
+привязаны к прежнему CI588. Следующий шаг — завершить текущий CI589 и затем
+опубликовать проверенный checking tree этого этапа на одном новом CI.
+
+## F31-R11 dev-стенд — реальный isolated SSH без системной службы
+
+Добавлен test-only Paramiko4.0.0 ServerInterface стенд: signature проверяет сама
+библиотека, разрешён только disposable public key пользователя progo-fixture;
+SSH/HTTP слушают127.0.0.1 на выделенных портах. Единственный direct-tcpip target —
+собственный HTTP listener. Shell/session/password/прочие назначения запрещены.
+Никакие службы/accounts/ACL/сеть/VPS владельца не меняются. Зависимость ставилась
+только в /tmp/progo-isolated-ssh-deps, не в системный Python и не в release.
+
+Linux native ssh/ssh-keygen:5 unittest PASS за4.179с — действительная signature
+→ SOCKS5 → HTTP payload, другой выбранный ключ, changed host key, запрещённый
+destination без dial, закрытие stalled SSH handshake с cleanup собственных
+transports/threads/child. У всех ожиданий и cleanup есть локальные deadlines;
+CLI ready.json атомарен, lifetime90с с обязательным stop/cleanup. Фактический
+host key/key bytes ephemeral и в репозиторий не входят. Это проверка стенда,
+ещё НЕ ProGo production pipeline: Windows/ProGo combined integration NOT_RUN.
+Источник контракта: https://docs.paramiko.org/en/latest/api/server.html и
+https://www.paramiko.org/changelog.html (4.0/Python3.9+; frozen test contract).
+
+Следующий этап — native Windows fixture/общая preparation + owned SSH, pin host
+key в isolated config, exact-SHA запуск; затем agent signing/missing-key/Cancel.
+Средовой Linux blocker /run/sshd для этого тестового пути устранён без изменения
+системы. F31-R11 PARTIAL и баллы58–80/22 не меняются: это не приёмка Windows
+и не разрешение входа на реальные ресурсы. CI589 по-прежнему отдельный run.
+
+## F31-R11 этап4 — раздельная локальная подсказка при реальном SSH отказе
+
+Source `83cf660ea51674cafa905c60835bd071477acd5b`: минимальный local этап — ProxyService snapshot безопасного typed display
+на worker вне process/revision gates. При отказе собственного SSH StartupError
+и permanent recovery pause сохраняют исходную классифицированную причину и
+отдельно показывают локальное наблюдение preparation и существующий Check/Retry
+маршрут. Наблюдение подписи не выдаётся за серверный доступ; UI polling не
+выполняет formatter/I/O. Ошибка formatter не запрещает обычную SSH попытку.
+Никакого автоматического Add/service/ACL изменения или нового hard gate нет.
+
+Один новый bounded native scenario (51 recovery cases в следующем кандидате)
+проверяет separate messages, отсутствие formatter под gate и повторных вызовов
+из UI, реальный отказ child, formatter exception fallback и explicit fresh Retry.
+finally останавливает свои операции, cleanup budget5с. Source/diff/public315/0
+PASS; C# compilation/native NOT_RUN в Linux. Этот local этап не входит в CI589;
+не публиковать его до завершения уже запущенного run39692239050, чтобы не
+отменять проверяемую версию. CI589: Windows119540954252 in_progress,
+Ubuntu119540953856 SUCCESS. Реализация58–80, доказанная база CI58822; рост0.
+Далее: читать exact CI589, затем новый checking source этого отдельного этапа;
+combined real-preparer/native SSH integration по-прежнему не подтверждён.
+
+## CI589 — опубликован общий lifecycle, native ещё NOT_RUN
+
+Подтверждены head PR88 `7964a99ac4f6adf0d1d9034c855e989f60211c0a`, merge
+`f8eb30fddc7f0ecdf0f795de76b8f4be56490705`, tree
+`8c4be1b5bd69d06cbac06f6c4f33c1ff0edc9d85` (local c00aeeea8b41a852604b5475cb95f53cb0707e36).
+Единственный автоматический [CI589/39692239050](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39692239050)
+queued при проверке. Native50 recovery scenarios/compilation этого SHA NOT_RUN.
+Никакого повторного dispatch; читать именно этот ID и exact log identity.
+Предыдущий CI588 SUCCESS и22/100 — доказанная база прошлого snapshot, не PASS
+нового lifecycle. Новых баллов0. Все binary uploads/release остаются запрещены.
+Следующий шаг: пока CI выполняется, узкий source этап разделения preparation и
+actual SSH причин в существующем error UI; проверять lifecycle run отдельно.
+Нижняя запись ref pending — история завершённой операции, не текущая команда.
+
+## Checking lifecycle: commit object создан, branch update ещё PENDING
+
+Local `c00aeeea8b41a852604b5475cb95f53cb0707e36`, GitHub object
+`7964a99ac4f6adf0d1d9034c855e989f60211c0a`, одинаковый tree
+`8c4be1b5bd69d06cbac06f6c4f33c1ff0edc9d85`. Scan7files/739added lines,
+secret/PII0, public315/0, diff PASS, workflows unchanged. Следующий шаг —
+expected-head update от b32ac4ece5cd62b98eab22b7e65aaa079544e5bf без force.
+При обрыве сначала проверить head PR88/runs; этот object ещё не является
+подтверждённо опубликованным head и не имеет Windows PASS. CI588 отдельно.
 
 ## Следующий checking candidate — общий lifecycle F31-R11
 

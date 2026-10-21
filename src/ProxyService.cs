@@ -70,6 +70,7 @@ namespace ProGo
             internal readonly CancellationToken Token;
             internal readonly long Epoch;
             internal ISshLaunchPreparationObservation Observation;
+            internal string ObservationDisplay;
             internal readonly string AgentEndpoint;
             internal readonly TaskCompletionSource<bool> Settled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             internal LaunchPreparation(CancellationToken token, long epoch, int timeoutMs)
@@ -244,7 +245,7 @@ namespace ProGo
                                 if (!alive) {
                                     ObserveAttemptError(ownedAttempt ?? lastFailedAttempt, deadline.Token);
                                     startupError = IsListening() ? "Порт SOCKS занят другим процессом. Выберите другой порт в «Подключениях»." :
-                                        sshError ?? "SSH не подключился. Проверьте доступность сервера и SSH-ключ; для первого входа откройте «Подключения → Первый вход».";
+                                        WithAuthenticationPreparation(sshError ?? "SSH не подключился. Проверьте доступность сервера и SSH-ключ; для первого входа откройте «Подключения → Первый вход».");
                                     return false;
                                 }
                                 await Task.Delay(150, deadline.Token);
@@ -510,10 +511,20 @@ namespace ProGo
             finally { System.Threading.Monitor.Exit(gate); }
         }
 
+        private string WithAuthenticationPreparation(string error)
+        {
+            // Formatting was snapshotted by the worker outside every shared gate.
+            // A local signing observation never replaces the actual SSH failure.
+            var accepted = acceptedAuthenticationPreparation;
+            if (accepted == null || AuthenticationPreparation == null || String.IsNullOrWhiteSpace(accepted.ObservationDisplay)) return error;
+            return error + "\r\nЛокальная подготовка входа: " + accepted.ObservationDisplay +
+                "\r\nОткройте «Подключения → Проверить»; после исправления нажмите «Подключить».";
+        }
+
         private void PauseRecovery(string error)
         {
             // Only fixed, classified guidance is retained; raw stderr is never exported.
-            recoveryPause = error; retryAt = null;
+            recoveryPause = WithAuthenticationPreparation(error); retryAt = null;
             SafeLog.Info("SOCKS recovery paused after permanent SSH refusal.");
         }
         private void ScheduleRecovery()
@@ -628,6 +639,10 @@ namespace ProGo
                     try { observation = prepareAuthentication(SshConnection.Resolve(snapshot.Settings, target).Clone(), sshExecutable, preparation.Token); }
                     catch (OperationCanceledException) { throw; }
                     catch { /* An unconfirmed advisory probe never forbids ordinary OpenSSH authentication. */ }
+                }
+                if (observation != null) {
+                    try { preparation.ObservationDisplay = observation.ToDisplay(); }
+                    catch { /* Presentation failure must not forbid ordinary OpenSSH authentication. */ }
                 }
                 preparation.Token.ThrowIfCancellationRequested();
                 occupied = IsTcpOpen(snapshot.Settings.SocksHost, snapshot.Settings.SocksPort, 700);

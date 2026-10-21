@@ -533,8 +533,46 @@ if ($LASTEXITCODE -ne 0) { Fail 'Update check harness build failed' }
 if ($LASTEXITCODE -ne 0) { Fail 'Update check tests failed' }
 & $Csc /nologo /target:exe /main:ProGo.DesktopTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$DesktopHarness" $DesktopSources (Join-Path $Root 'tests\DesktopTests.cs') (Join-Path $Root 'tests\DesktopUiWorkflowTests.cs') (Join-Path $Root 'tests\DesktopSettingsActionTests.cs') (Join-Path $Root 'tests\DesktopSettingsValidationTests.cs') (Join-Path $Root 'tests\DesktopDashboardLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsPagesLayoutTests.cs') (Join-Path $Root 'tests\DesktopContrastThemeTests.cs') (Join-Path $Root 'tests\DesktopSettingsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopBackupAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopVaultAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopVaultUnlockTests.cs') (Join-Path $Root 'tests\DesktopVaultContextTests.cs') (Join-Path $Root 'tests\DesktopVaultAsyncSaveTests.cs') (Join-Path $Root 'tests\DesktopVaultDurableSaveTests.cs') (Join-Path $Root 'tests\DesktopVaultExpiryTests.cs') (Join-Path $Root 'tests\DesktopVaultDailyRuntimeTests.cs') (Join-Path $Root 'tests\DesktopWizardAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopProfileSharingAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopFriendsAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopHelpAccessibilityTests.cs') (Join-Path $Root 'tests\DesktopUpdateTests.cs') (Join-Path $Root 'tests\DesktopUpdaterHandoffTests.cs') (Join-Path $Root 'tests\DesktopHealthTests.cs') (Join-Path $Root 'tests\DesktopStartupTests.cs') (Join-Path $Root 'tests\DesktopSshEditorTests.cs') (Join-Path $Root 'tests\DesktopSshDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopSshAgentServiceTests.cs') (Join-Path $Root 'tests\DesktopSshAgentProbeTests.cs') (Join-Path $Root 'tests\DesktopSshAgentStartTests.cs') (Join-Path $Root 'tests\DesktopSshAgentStartupTests.cs') (Join-Path $Root 'tests\DesktopSshAgentInventoryTests.cs') (Join-Path $Root 'tests\DesktopSshKeyMatchingTests.cs') (Join-Path $Root 'tests\DesktopSshKeyReadinessTests.cs') (Join-Path $Root 'tests\SshAuthenticationPreparationTests.cs') (Join-Path $Root 'tests\DesktopSshKeyReadinessUiTests.cs') (Join-Path $Root 'tests\DesktopSshAuthPolicyTests.cs') (Join-Path $Root 'tests\DesktopSshConfigTests.cs') (Join-Path $Root 'tests\DesktopRouteDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopWindowsRestoreTests.cs') (Join-Path $Root 'tests\DesktopIntegrationMutationTests.cs') (Join-Path $Root 'tests\DesktopTypedCorrectionRecoveryTests.cs') (Join-Path $Root 'tests\DesktopBackupRetentionTests.cs') (Join-Path $Root 'tests\DesktopBackupMetadataTests.cs') (Join-Path $Root 'tests\DesktopManualBackupTests.cs') (Join-Path $Root 'tests\DesktopStartupBackupTests.cs') (Join-Path $Root 'tests\DesktopStartupMigrationTests.cs') (Join-Path $Root 'tests\DesktopStartupBackupLayoutTests.cs') (Join-Path $Root 'tests\DesktopSettingsPersistenceTests.cs') (Join-Path $Root 'tests\DesktopSettingsLoadFailureTests.cs') (Join-Path $Root 'tests\DesktopBridgeConsumerTests.cs') (Join-Path $Root 'tests\DesktopCodexShortcutOwnershipTests.cs') (Join-Path $Root 'tests\DesktopDiagnosticTests.cs') (Join-Path $Root 'tests\DesktopAsyncDiagnosticPreviewTests.cs') (Join-Path $Root 'tests\DesktopDiagnosticContextTests.cs') (Join-Path $Root 'tests\DesktopStartupPreferenceTests.cs') (Join-Path $Root 'tests\DesktopStartupSnapshotAsyncTests.cs') (Join-Path $Root 'tests\DesktopSettingsFolderTests.cs') (Join-Path $Root 'tests\DesktopTrayPreferenceAsyncTests.cs') (Join-Path $Root 'tests\DesktopVisualPolishTests.cs') (Join-Path $Root 'tests\DesktopAsyncSettingsTests.cs') (Join-Path $Root 'tests\DesktopAsyncRestoreTests.cs') (Join-Path $Root 'tests\DesktopAsyncCleanupTests.cs') (Join-Path $Root 'tests\DesktopAsyncUpdaterTests.cs') (Join-Path $Root 'tests\DesktopSshInteractiveKeyAddTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
-& $DesktopHarness (Join-Path $Root 'build\desktop-shots')
-if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
+# Test-only loopback server dependencies never enter release or system Python.
+$FixtureDeps = Join-Path $Root 'build\ssh-fixture-deps'
+$FixturePython = (Get-Command python -ErrorAction Stop).Source
+$FixtureRequirements = Join-Path $Root 'tests\ssh-fixture-requirements.txt'
+function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
+    $FixtureOut = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stdout.txt')
+    $FixtureError = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stderr.txt')
+    $FixtureTool = Start-Process -FilePath $FixturePython -ArgumentList $ToolArguments -NoNewWindow -PassThru -RedirectStandardOutput $FixtureOut -RedirectStandardError $FixtureError
+    try {
+        if (-not $FixtureTool.WaitForExit($BudgetMs)) {
+            $FixtureTool.Kill()
+            if (-not $FixtureTool.WaitForExit(5000)) { Fail ('Owned SSH fixture ' + $Label + ' did not terminate after its deadline') }
+            Fail ('Owned SSH fixture ' + $Label + ' exceeded ' + $BudgetMs + ' ms; native validation NOT_RUN')
+        }
+        if ($FixtureTool.ExitCode -ne 0) { Fail ('Owned SSH fixture ' + $Label + ' failed with exit code ' + $FixtureTool.ExitCode) }
+    } finally {
+        $FixtureTool.Dispose()
+        # unittest writes normal progress and expected negative-case traces to
+        # stderr. Preserve both as log text; only the checked exit code is status.
+        foreach ($FixtureLog in @($FixtureOut, $FixtureError)) {
+            if (Test-Path -LiteralPath $FixtureLog) { Get-Content -LiteralPath $FixtureLog | ForEach-Object { Write-Host $_ } }
+        }
+    }
+}
+Invoke-IsolatedSshFixtureTool @('-m', 'pip', 'install', '--quiet', '--target', ('"' + $FixtureDeps + '"'), '--only-binary=:all:', '--disable-pip-version-check', '--retries', '0', '--timeout', '10', '-r', ('"' + $FixtureRequirements + '"')) 'install' 60000
+$OldFixturePythonPath = $env:PYTHONPATH
+$OldFixturePython = $env:PROGO_TEST_SSH_PYTHON
+$OldFixtureScript = $env:PROGO_TEST_SSH_FIXTURE_SCRIPT
+try {
+    $env:PYTHONPATH = $FixtureDeps
+    $env:PROGO_TEST_SSH_PYTHON = $FixturePython
+    $env:PROGO_TEST_SSH_FIXTURE_SCRIPT = Join-Path $Root 'tests\ssh_loopback_fixture.py'
+    Invoke-IsolatedSshFixtureTool @('-m', 'unittest', 'discover', '-s', ('"' + (Join-Path $Root 'tests') + '"'), '-p', 'test_ssh_loopback_fixture.py', '-v') 'contract' 90000
+    & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
+    if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
+} finally {
+    $env:PYTHONPATH = $OldFixturePythonPath
+    $env:PROGO_TEST_SSH_PYTHON = $OldFixturePython
+    $env:PROGO_TEST_SSH_FIXTURE_SCRIPT = $OldFixtureScript
+}
 $InstanceHarness = Join-Path $Root 'build\InstanceTests.exe'
 & $Csc /nologo /target:exe /main:ProGo.InstanceTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$InstanceHarness" $DesktopSources (Join-Path $Root 'tests\InstanceTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Instance harness build failed' }

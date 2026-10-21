@@ -1860,14 +1860,15 @@
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "historical_scoped_pass": false,
         "criterion": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
-        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
+        "diagnostic_preview_scoped": "CI588 sourceb32ac4ece5cd62b98eab22b7e65aaa079544e5bf / mergee1039ddd046528fc75b9d46897e6924f597768d5 report32/helper2/modal4/chooser3/Context3 PASS; remaining SafeLog/open/cold-helper UI I/O still FAIL source contract, owner latency NOT_RUN"
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
       "dependencies": [],
-      "next_step": "Tracked Build/save with installed shared API; then bounded logger/open workers, heartbeat/native snapshot/cancel tests"
+      "next_step": "Remaining bounded logger/open workers and slow-disk heartbeat fixtures; do not redo diagnostic modal/chooser/Context work already scoped PASS in CI588"
     },
     {
       "id": "F31-R09",
@@ -1923,18 +1924,18 @@
       "phase": "До",
       "requirement": "Подготовка SSH-agent и итоговая dev приёмка F31",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R11)",
-      "implementation": "Service/AddKey/Start UI and selected public-reference signing backend/UI published; advisory auth aggregate and common launch/recovery integration pending",
+      "implementation": "Published shared StartSingleTunnel preparation/epoch/revision admission source7964a99ac4f6adf0d1d9034c855e989f60211c0a (local lifecycle c0f5610); independent safe error guidance local83cf660ea51674cafa905c60835bd071477acd5b",
       "history": "Dev PENDING",
       "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
+        "candidate": "CI589/39692239050 source7964a99ac4f6adf0d1d9034c855e989f60211c0a mergef8eb30fddc7f0ecdf0f795de76b8f4be56490705 pending Windows native50; local guidance native51 NOT_RUN",
         "historical_scoped_pass": false,
         "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
-        "selected_identity_signing": "PASS scoped backend55/UI50 in CI586 at source656b3d65 / merge7e204c76; advisory aggregate/local UI diff, visual, automatic auth preparation and live auth NOT_RUN; F31-R11 remains PARTIAL"
+        "selected_identity_signing": "CI588/39688353510 sourceb32ac4ece5cd62b98eab22b7e65aaa079544e5bf mergee1039ddd046528fc75b9d46897e6924f597768d5 scoped PASS: aggregate43/signing55/UI50, service/add existing checks; does not prove actual server authorization or new lifecycle"
       },
-      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
+      "integration": "PR88 OPEN/DRAFT unmerged; common launch/recovery source7964a99a published, CI589 pending; local83cf660e not published/tested",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
@@ -1948,7 +1949,7 @@
         "F31-R09",
         "F31-R10"
       ],
-      "next_step": "Пройти exact Windows sign+verify/UI/old-regressions; затем интегрировать свежую подготовку выбранного auth перед SSH без запрета direct/other auth."
+      "next_step": "Read exact CI589 native50; publish/test separate guidance stage native51 afterwards; combined real native SSH/agent integration, performance and owner acceptance remain open"
     },
     {
       "id": "F31-R12",
@@ -2164,56 +2165,20 @@
     }
   ],
   "ci_candidate": {
-    "source": "b32ac4ece5cd62b98eab22b7e65aaa079544e5bf",
-    "tested_merge": "e1039ddd046528fc75b9d46897e6924f597768d5",
-    "run_id": 39688353510,
-    "run_number": 588,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39688353510",
-    "status": "completed",
-    "conclusion": "success",
-    "acceptance": "PARTIAL: full CI SUCCESS only this exact source/merge; core shared lifecycle c0f5610 and later work NOT_RUN; no whole-product/target PASS",
-    "jobs": [
-      {
-        "id": 119528038063,
-        "name": "windows-build",
-        "status": "completed",
-        "conclusion": "success"
-      },
-      {
-        "id": 119528038420,
-        "name": "vpn-server-test",
-        "status": "completed",
-        "conclusion": "success"
-      }
-    ],
-    "build_identity": "0.2.2+e1039ddd046528fc75b9d46897e6924f597768d5",
-    "scoped_pass": {
-      "socks_recovery_tests": 41,
-      "socks_recovery_assertions": 403,
-      "diagnostic_report": 32,
-      "installed_diagnostic_helper": 2,
-      "desktop": 5103,
-      "actual_modal_cancel_retry": 4,
-      "native_chooser_modes": 3,
-      "settings_revision_lease_vectors": 8,
-      "ssh_advisory_preparation": 43,
-      "ssh_selected_key_signing": 55,
-      "ssh_selected_key_signing_ui": 50,
-      "instance": 28,
-      "maintenance": 126,
-      "shutdown": 47,
-      "portable_home_vpn": 90
-    },
-    "runner_package": {
-      "step_conclusion": "success",
-      "version": "0.2.2",
-      "sha256": "7c6febfc2ebda1834ffa1d04ebc0cc13001bb0629de8f505facb78898d223c5c",
-      "uploads": "skipped",
-      "retrieved_bytes_sha256": "NOT_RUN",
-      "private_delivery": "BLOCKED: binary upload/delivery not authorized; no downloaded artifact",
-      "installed_target": "NOT_RUN"
-    },
-    "next": "New exact-SHA run for shared lifecycle/50 recovery scenarios; CI588 does not verify it"
+    "source": "7964a99ac4f6adf0d1d9034c855e989f60211c0a",
+    "tested_merge": "f8eb30fddc7f0ecdf0f795de76b8f4be56490705",
+    "local_sha": "c00aeeea8b41a852604b5475cb95f53cb0707e36",
+    "tree": "8c4be1b5bd69d06cbac06f6c4f33c1ff0edc9d85",
+    "run_id": 39692239050,
+    "run_number": 589,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39692239050",
+    "status": "in_progress",
+    "conclusion": null,
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "target": "NOT_RUN",
+    "next": "Check same run identity/native50; never inherit CI588",
+    "windows_step3": "SUCCESS; exact native/log review pending until job completes"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -2595,35 +2560,35 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI588 completed; prepare shared-lifecycle checking source",
+    "phase": "CI589 running; independent typed preparation guidance source stage",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "5a170b4c061aeb2b8fd5f6b7b58ff095b75d6303",
-    "published_sha": "b32ac4ece5cd62b98eab22b7e65aaa079544e5bf",
-    "ci_run_id": 39688353510,
-    "windows_compilation": "PASS only CI588 published snapshot; local lifecycle NOT_RUN",
-    "windows_native": "PASS scoped CI588; local lifecycle NOT_RUN",
+    "local_sha": "c00aeeea8b41a852604b5475cb95f53cb0707e36",
+    "published_sha": "7964a99ac4f6adf0d1d9034c855e989f60211c0a",
+    "ci_run_id": 39692239050,
+    "windows_compilation": "PASS at exact CI589 build step; raw identity/native review pending",
+    "windows_native": "NOT_RUN for CI589",
     "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
-    "next": "Publish committed common lifecycle/50-case source after range secrets/workflow check; one new CI",
+    "next": "Preflight next source; await same CI589 final status before ref update; review exact log and then new run",
     "readiness_change": 0,
-    "tree": "c987657710561336d54abd77d123babe592769c7",
+    "tree": "8c4be1b5bd69d06cbac06f6c4f33c1ff0edc9d85",
     "publication_scan": {
-      "files": 10,
-      "added_lines": 492,
+      "files": 7,
+      "added_lines": 739,
       "findings": 0,
-      "workflow": "unchanged/no public uploads/release",
-      "tree_match": true
+      "tree_match": true,
+      "workflow": "unchanged/no public uploads/release"
     },
-    "tested_merge": "e1039ddd046528fc75b9d46897e6924f597768d5",
-    "ci_run_number": 588,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39688353510",
+    "tested_merge": "f8eb30fddc7f0ecdf0f795de76b8f4be56490705",
+    "ci_run_number": 589,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39692239050",
     "jobs": {
-      "windows": 119528038063,
-      "ubuntu": 119528038420
+      "windows": 119540954252,
+      "ubuntu": 119540953856
     },
-    "ci_status": "completed success",
+    "ci_status": "in_progress",
     "ubuntu": "SUCCESS",
     "previous_ci_run_id": 39685125066,
-    "next_local_source": "494cbf138647fe60affa0ade3ce7882953647050",
+    "next_local_source": "de155d5a786fa1965318b7149fb443ec173eb08c",
     "pending_scope": "common lifecycle c0f5610 +9 native fixtures (total50), read-only server capability and checkpoints; Windows NOT_RUN"
   },
   "f31_launch_revision_microtask": {
@@ -2716,7 +2681,8 @@
     "P": 0.5,
     "A": 0,
     "reason": "Exact CI588 native partial criteria and runner ZIP/hash; no whole-parent D1/P1/A credit; unfinished/current lifecycle excluded",
-    "local_lifecycle": "NOT_RUN,0 new verification credit"
+    "local_lifecycle": "NOT_RUN,0 new verification credit",
+    "candidate_note": "CI588 score22 is historical verified baseline; CI589 lifecycle is NOT_RUN,0 new credit"
   },
   "local_launch_lifecycle_microtask": {
     "status": "PARTIAL",
@@ -2731,11 +2697,129 @@
     "next": "Exact-SHA Windows compilation/50-scenario recovery run; then real preparer/native tunnel integration and typed UI presentation; retain actual SSH/VPS and owner acceptance NOT_RUN"
   },
   "local_real_ssh_server_capability": {
-    "status": "BLOCKED",
+    "status": "PARTIAL",
     "scope": "current Linux development container only; not a product failure",
     "evidence": "sshd -t with ephemeral host key returned255 missing privilege-separation directory /run/sshd; paramiko/asyncssh absent",
     "system_changes": "none; no listener/account/service/system directory created",
-    "next": "Use isolated Windows test-server capability or test-only dependency before combined real SSH integration; no owner VPS/PC action implied",
-    "windows_probe": "Read-only sshd.exe existence flag added to Test-ProGo; Windows result NOT_RUN until new exact-SHA CI; no server/service mutation"
+    "next": "Compose real preparation/common owned ProxyService with this isolated server on exact Windows SHA; no live owner resources",
+    "windows_probe": "Read-only sshd.exe existence flag added to Test-ProGo; Windows result NOT_RUN until new exact-SHA CI; no server/service mutation",
+    "isolated_alternative": "test-only Paramiko4.0.0 loopback SSH/HTTP fixture, no system sshd prerequisites or changes",
+    "fixture_files": [
+      "tests/ssh_loopback_fixture.py",
+      "tests/test_ssh_loopback_fixture.py",
+      "tests/ssh-fixture-requirements.txt"
+    ],
+    "fixture_sha256": {
+      "tests/ssh_loopback_fixture.py": "1a359837ad5a050e1862a26d69d6932920f298ec8bc1dea41a92f1b7f67b36e7",
+      "tests/test_ssh_loopback_fixture.py": "2240bfcd9a28f8bd2f8faff15f8a92e866826d8f0b89f0f5c4a1c0381d274214",
+      "tests/ssh-fixture-requirements.txt": "31eb34801a716dde39d188f9648770fc504a50b51808a2db976cc6db2dc1bf44"
+    },
+    "native_linux_tests": {
+      "command": "PYTHONPATH=/tmp/progo-isolated-ssh-deps python -m unittest discover -s tests -p test_ssh_loopback_fixture.py -v",
+      "result": "PASS",
+      "tests": 5,
+      "seconds": 4.179
+    },
+    "windows_progo_combined": "NOT_RUN",
+    "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a"
+  },
+  "pending_publication": {
+    "local_sha": "c00aeeea8b41a852604b5475cb95f53cb0707e36",
+    "tree": "8c4be1b5bd69d06cbac06f6c4f33c1ff0edc9d85",
+    "files": [
+      "docs/ACCEPTANCE_RUNBOOK.md",
+      "docs/MICROTASK_SSH_AUTH_PREPARATION_SCOPE.md",
+      "docs/PROJECT_STATE.md",
+      "docs/project_state.json",
+      "scripts/Test-ProGo.ps1",
+      "src/ProxyService.cs",
+      "tests/SocksRecoveryTests.cs"
+    ],
+    "added_lines": 739,
+    "findings": [],
+    "parent_remote": "b32ac4ece5cd62b98eab22b7e65aaa079544e5bf",
+    "base_tree": "c987657710561336d54abd77d123babe592769c7",
+    "workflows": "unchanged; PR uploads guarded OFF; release main/VERSION/dispatch only",
+    "published_object": "7964a99ac4f6adf0d1d9034c855e989f60211c0a",
+    "ref_update": "CONFIRMED; PR head and CI589 observed"
+  },
+  "local_preparation_guidance": {
+    "status": "PARTIAL",
+    "files": [
+      "src/ProxyService.cs",
+      "tests/SocksRecoveryTests.cs"
+    ],
+    "native": "NOT_RUN",
+    "compilation": "NOT_RUN",
+    "tests": "one additional bounded scenario; next total51",
+    "scope": "safe typed display snapshotted on worker, actual SSH failure retained, no mutating add/service/ACL, formatter failure advisory",
+    "ci589_includes": false,
+    "next": "Finish exact CI589 before publishing new source; then execute native51",
+    "source": "83cf660ea51674cafa905c60835bd071477acd5b"
+  },
+  "local_combined_ssh_windows": {
+    "status": "PARTIAL",
+    "compilation": "NOT_RUN",
+    "native": "NOT_RUN",
+    "powershell": "NOT_RUN",
+    "files": [
+      "tests/SshAuthenticationPreparationTests.cs",
+      "scripts/Test-ProGo.ps1",
+      "tests/ssh_loopback_fixture.py",
+      "tests/test_ssh_loopback_fixture.py"
+    ],
+    "scope": "real preparation + common owned ProxyService + real direct-key OpenSSH + pinned host key + SOCKS5/owned HTTP, then real child interruption and automatic recovery",
+    "excludes": [
+      "owner PC/VPS",
+      "encrypted key agent combined",
+      "full GUI",
+      "HTTP proxy bridge integration"
+    ],
+    "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a",
+    "next": "Read CI589 then publish new exact-SHA candidate with guidance/native51 and combined fixture",
+    "python_fixture_tests": {
+      "result": "PASS",
+      "tests": 5,
+      "seconds": 4.343,
+      "platform": "Linux native OpenSSH",
+      "scope": "test server contract only; combined Windows ProGo NOT_RUN"
+    },
+    "fixture_sha256": {
+      "tests/ssh_loopback_fixture.py": "4f0e9b06519180d9776c51fa0909acbcea6f85abe924891a75efcaec539ba148",
+      "tests/test_ssh_loopback_fixture.py": "3ae81c3c8107375045f7226525902c40909605e0fdb184187f679f8b1a363f44"
+    },
+    "source": "f485cbb0eddd6c05dc9fc21156e9d26d6c7be87e",
+    "metrics": {
+      "status": "NOT_RUN",
+      "scope": "isolated native startup/recovery/preparation elapsed, own SSH CPU/RAM; unavailable counters explicitly NOT_RUN",
+      "excluded": "owner hardware and whole-process I/O"
+    },
+    "pinned_fixture_contract_tests": {
+      "status": "PASS",
+      "tests": 5,
+      "seconds": 3.665,
+      "platform": "Linux native OpenSSH, Paramiko4.0.0"
+    },
+    "metrics_source": "c58b8b57d41e6dcae1d9fdccfc514b8a3b723c76",
+    "launcher": {
+      "status": "NOT_RUN",
+      "scope": "own Process install60s / Python contracts90s, own cleanup5s, stdout/stderr as log and checked nonzero/timeout FAIL; no skipped test"
+    },
+    "launcher_source": "de155d5a786fa1965318b7149fb443ec173eb08c"
+  },
+  "local_combined_ssh_agent": {
+    "status": "PARTIAL",
+    "compilation": "NOT_RUN",
+    "native": "NOT_RUN",
+    "scope": "test-owned named-pipe LIST/SIGN, selected public reference, actual ssh-add preparation and OpenSSH server authentication, SOCKS/HTTP and recovery",
+    "excludes": [
+      "owner encrypted-file/passphrase/ACL",
+      "shared agent mutation",
+      "real VPS",
+      "full GUI",
+      "HTTP proxy bridge"
+    ],
+    "next": "Exact-SHA Windows execution after CI589 settles; no credit before native logs",
+    "source": "47a7467f4b6d36b33c8ee8b5ad89337ab990e431"
   }
 }
