@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -73,6 +75,34 @@ namespace ProGo
             }
         }
         internal static DiagnosticProcessResult Run(string executable, string arguments, int timeoutMs, CancellationToken token)
+        { return RunCore(executable, arguments, timeoutMs, token, false, null); }
+
+        // A selected-key probe never inherits a later agent endpoint or an
+        // askpass command. This does not change the legacy diagnostic callers.
+        internal static DiagnosticProcessResult RunReadOnly(string executable, string arguments, string agentEndpoint,
+            int timeoutMs, CancellationToken token)
+        {
+            // Only null means the default Windows agent; an explicit empty
+            // endpoint must not silently fall back to a different agent.
+            if (agentEndpoint != null && (agentEndpoint.Length == 0 || agentEndpoint.Length > 32768 || agentEndpoint.IndexOfAny(new[] { '\0', '\r', '\n' }) >= 0))
+                throw new ArgumentException("Invalid SSH-agent endpoint.", "agentEndpoint");
+            return RunCore(executable, arguments, timeoutMs, token, true, agentEndpoint);
+        }
+        private static IntPtr ReadOnlyEnvironment(string agentEndpoint)
+        {
+            var values = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables()) values[(string)entry.Key] = (string)entry.Value;
+            values.Remove("SSH_ASKPASS"); values.Remove("DISPLAY"); values.Remove("WAYLAND_DISPLAY");
+            values["SSH_ASKPASS_REQUIRE"] = "never";
+            values.Remove("SSH_AUTH_SOCK");
+            if (!String.IsNullOrEmpty(agentEndpoint)) values["SSH_AUTH_SOCK"] = agentEndpoint;
+            var block = new StringBuilder();
+            foreach (var value in values) block.Append(value.Key).Append('=').Append(value.Value).Append('\0');
+            block.Append('\0');
+            return Marshal.StringToHGlobalUni(block.ToString());
+        }
+        private static DiagnosticProcessResult RunCore(string executable, string arguments, int timeoutMs, CancellationToken token,
+            bool readOnlyEnvironment, string agentEndpoint)
         {
             if (timeoutMs < 1) throw new ArgumentOutOfRangeException("timeoutMs");
             var watch = Stopwatch.StartNew(); CheckDeadline(watch, timeoutMs, token);
@@ -87,7 +117,7 @@ namespace ProGo
                 var limits = new ExtendedLimits(); limits.Basic.LimitFlags = 0x2000; // KILL_ON_JOB_CLOSE; no breakaway.
                 Native(SetInformationJobObject(job, 9, ref limits, Marshal.SizeOf(typeof(ExtendedLimits))));
                 ProcessInfo child = new ProcessInfo(); SafeFileHandle process = null, thread = null;
-                IntPtr attributes = IntPtr.Zero, handles = IntPtr.Zero; bool initialized = false, assigned = false, cleanupAttempted = false;
+                IntPtr attributes = IntPtr.Zero, handles = IntPtr.Zero, environment = IntPtr.Zero; bool initialized = false, assigned = false, cleanupAttempted = false;
                 Task<Capture> readOutput = null, readError = null;
                 try {
                     var inherited = new[] { input.ClientSafePipeHandle.DangerousGetHandle(), output.ClientSafePipeHandle.DangerousGetHandle(), error.ClientSafePipeHandle.DangerousGetHandle() };
@@ -102,8 +132,10 @@ namespace ProGo
                     startup.Info.Flags = 0x100; startup.Info.Input = inherited[0]; startup.Info.Output = inherited[1]; startup.Info.Error = inherited[2];
                     CheckDeadline(watch, timeoutMs, token);
                     // Restrict inheritance to three pipe handles, then assign before any child code runs.
+                    if (readOnlyEnvironment) environment = ReadOnlyEnvironment(agentEndpoint);
                     Native(CreateProcess(path, new StringBuilder(SshConnection.Quote(path) + " " + arguments), IntPtr.Zero, IntPtr.Zero, true,
-                        0x08080004, IntPtr.Zero, null, ref startup, out child)); // NO_WINDOW | EXTENDED_STARTUPINFO | SUSPENDED
+                        readOnlyEnvironment ? 0x08080404u : 0x08080004u, environment, null, ref startup, out child));
+                    // NO_WINDOW | EXTENDED_STARTUPINFO | SUSPENDED; optional UNICODE_ENVIRONMENT.
                     process = new SafeFileHandle(child.Process, true); thread = new SafeFileHandle(child.Thread, true);
                     Native(AssignProcessToJobObject(job, process)); assigned = true;
                     output.DisposeLocalCopyOfClientHandle(); error.DisposeLocalCopyOfClientHandle(); input.DisposeLocalCopyOfClientHandle(); input.Dispose();
@@ -136,6 +168,7 @@ namespace ProGo
                         if (process != null) process.Dispose(); if (thread != null) thread.Dispose();
                         if (initialized) DeleteProcThreadAttributeList(attributes);
                         if (attributes != IntPtr.Zero) Marshal.FreeHGlobal(attributes); if (handles != IntPtr.Zero) Marshal.FreeHGlobal(handles);
+                        if (environment != IntPtr.Zero) Marshal.FreeHGlobal(environment);
                     }
                 }
             }

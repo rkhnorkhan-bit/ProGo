@@ -13,26 +13,29 @@ namespace ProGo
         private readonly Func<SshProfileSetting, CancellationToken, SshProfileDiagnosticResult> check;
         private readonly Func<SshAgentKeyAddRequest, CancellationToken, SshAgentKeyAddResult> add;
         private readonly SshAgentServiceProbe agentProbe;
+        private readonly Func<SshProfileDiagnosticResult, string, CancellationToken, SshKeyReadinessResult> signing;
         private readonly Label status = UiTheme.Label("", UiTheme.Body, UiTheme.Muted);
         private readonly TextBox report = new TextBox { Name = "SshDiagnosticReport", ReadOnly = true, Multiline = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Vertical, WordWrap = true };
-        private readonly Button retry, cancel, addKey, startAgent;
+        private readonly Button retry, cancel, addKey, startAgent, verifyKey;
         private readonly ComboBox identities = new ComboBox { Name = "SshDiagnosticIdentity", DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
         private readonly Label keyHint = UiTheme.Label("Сначала дождитесь проверки SSH-профиля.", UiTheme.Body, UiTheme.Muted);
         private CancellationTokenSource cancellation;
         private readonly TaskCompletionSource<bool> ownerClosed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        private bool busy, closing, adding, starting, agentStartAvailable;
+        private bool busy, closing, adding, starting, verifying, agentStartAvailable, hasSigningResult;
         internal Task Work { get; private set; }
         internal Task CheckWork { get; private set; }
         internal Task KeyWork { get; private set; }
         internal Task StartWork { get; private set; }
+        internal Task ReadinessWork { get; private set; }
         private sealed class KeyChoice
         {
             internal readonly SshAgentKeyAddRequest Request;
             internal readonly SshAgentKeyAddState State;
+            internal readonly string Identity, Scope;
             private readonly string label;
-            internal KeyChoice(string identity, int index, SshAgentKeyAddRequest request, SshAgentKeyAddState state)
+            internal KeyChoice(string identity, int index, SshAgentKeyAddRequest request, SshAgentKeyAddState state, string scope)
             {
-                Request = request; State = state;
+                Request = request; State = state; Identity = identity; Scope = scope;
                 char[] labelChars = (identity ?? "").ToCharArray();
                 for (int i = 0; i < labelChars.Length; i++) if (Char.IsControl(labelChars[i])) labelChars[i] = ' ';
                 string name = new string(labelChars);
@@ -41,12 +44,14 @@ namespace ProGo
             public override string ToString() { return label; }
         }
         internal SshDiagnosticForm(SshProfileSetting selected, Func<SshProfileSetting, CancellationToken, SshProfileDiagnosticResult> check = null,
-            Func<SshAgentKeyAddRequest, CancellationToken, SshAgentKeyAddResult> add = null, SshAgentServiceProbe agentProbe = null)
+            Func<SshAgentKeyAddRequest, CancellationToken, SshAgentKeyAddResult> add = null, SshAgentServiceProbe agentProbe = null,
+            Func<SshProfileDiagnosticResult, string, CancellationToken, SshKeyReadinessResult> signing = null)
         {
             profile = selected.Clone(); this.check = check ?? ((p, token) => SshProfileDiagnostics.Check(p, token));
             this.add = add ?? ((request, token) => SshAgentKeyAdd.Run(request, token));
             this.agentProbe = agentProbe ?? SshAgentServiceProbe.Shared;
-            CheckWork = KeyWork = StartWork = Task.FromResult(false);
+            this.signing = signing ?? ((result, identity, token) => SshKeyReadiness.Check(result, identity, token));
+            CheckWork = KeyWork = StartWork = ReadinessWork = Task.FromResult(false);
             Text = "Проверка настроек SSH · ProGo"; ClientSize = new Size(790, 660); MinimumSize = new Size(650, 560);
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiTheme.DialogPadding, ColumnCount = 1, RowCount = 6 };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -54,14 +59,18 @@ namespace ProGo
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 46)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 64));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
             root.Controls.Add(UiTheme.Label("Проверяем настройки подключения", UiTheme.Heading, UiTheme.Text), 0, 0); root.Controls.Add(report, 0, 1);
-            var keys = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
+            var keys = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, Margin = Padding.Empty };
             keys.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 65)); keys.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            keys.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
             keys.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
             keys.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             keys.Controls.Add(UiTheme.Label("Ключ:", UiTheme.Body, UiTheme.Text), 0, 0); keys.Controls.Add(identities, 1, 0);
             addKey = UiTheme.Button("Добавить ключ", delegate { if (!busy && SelectedRequest != null) Work = RunAdd(); }, true);
             addKey.Name = "SshDiagnosticAddKey"; addKey.AutoSize = false; addKey.Dock = DockStyle.Fill;
             addKey.TextAlign = ContentAlignment.MiddleCenter; keys.Controls.Add(addKey, 2, 0);
+            verifyKey = UiTheme.Button("Проверить ключ", delegate { if (!busy && SelectedRequest != null) Work = RunSigning(); }, true);
+            verifyKey.Name = "SshDiagnosticVerifyKey"; verifyKey.AutoSize = false; verifyKey.Dock = DockStyle.Fill;
+            verifyKey.TextAlign = ContentAlignment.MiddleCenter; keys.Controls.Add(verifyKey, 3, 0);
             root.Controls.Add(keys, 0, 2);
             keyHint.Name = "SshDiagnosticKeyHint"; keyHint.AutoSize = false; keyHint.Dock = DockStyle.Fill; root.Controls.Add(keyHint, 0, 3);
             status.AutoSize = false; status.Dock = DockStyle.Fill; root.Controls.Add(status, 0, 4);
@@ -79,11 +88,15 @@ namespace ProGo
             identities.AccessibleName = "Ключ выбранного SSH-профиля";
             identities.AccessibleDescription = "Выберите один IdentityFile из результата проверки. Полный путь указан в отчёте. Во время операции выбор недоступен.";
             addKey.AccessibleDescription = "Добавляет выбранный ключ через отдельное окно OpenSSH. Парольная фраза вводится только там; ProGo её не читает. Вход на сервер этим не подтверждается.";
-            keyHint.AccessibleName = "Доступность добавления ключа";
+            keyHint.AccessibleName = "Доступность действий с выбранным ключом";
             keyHint.TextChanged += delegate { keyHint.AccessibleDescription = keyHint.Text; };
             keyHint.AccessibleDescription = keyHint.Text;
-            identities.SelectedIndexChanged += delegate { RefreshKeyAction(); };
-            identities.Enabled = addKey.Enabled = false;
+            verifyKey.AccessibleDescription = "Проверяет подпись одним выбранным ключом через OpenSSH и агент. Ключи не добавляются и не удаляются; вход на сервер не подтверждается.";
+            identities.SelectedIndexChanged += delegate {
+                if (hasSigningResult) { hasSigningResult = false; status.Text = "Выбор ключа изменён. Подпись нового выбранного ключа ещё не проверена."; }
+                RefreshKeyAction();
+            };
+            identities.Enabled = addKey.Enabled = verifyKey.Enabled = false;
             retry.AccessibleDescription = "Повторяет локальную проверку выбранного сервера. Во время проверки недоступна.";
             SetStartAvailability(false, "Сначала дождитесь проверки службы ssh-agent.");
             cancel.TextChanged += delegate { DescribeCancel(); };
@@ -99,6 +112,7 @@ namespace ProGo
             cancel.AccessibleDescription = cancel.Text == "Закрыть"
                 ? "Закрывает результаты проверки. Повторная проверка не запускается."
                 : adding ? "Отменяет добавление и закрывает только его окно OpenSSH после очистки. Уже принятый агентом ключ не удаляется. Окно остаётся открытым."
+                : verifying ? "Прекращает проверку подписи и ожидает завершения только своих процессов. Ключи не добавляются и не удаляются."
                 : starting ? "Прекращает ожидание запуска. Если Windows уже приняла запрос, отмена не остановит службу. Окно остаётся открытым."
                 : "Прекращает ожидание и останавливает только процессы этой проверки. Системный запрос может завершиться позже. Окно остаётся открытым для повтора.";
         }
@@ -108,7 +122,8 @@ namespace ProGo
             if (source == null) return;
             try { source.Cancel(); } catch (ObjectDisposedException) { }
             if (!closing) { status.Text = adding ? "Отменяем добавление и ожидаем очистки окна OpenSSH…" :
-                starting ? "Прекращаем ожидание запуска; запрос Windows мог быть принят…" : "Отменяем проверку и закрываем её процессы…"; cancel.Enabled = false; }
+                starting ? "Прекращаем ожидание запуска; запрос Windows мог быть принят…" :
+                verifying ? "Отменяем проверку подписи и ожидаем завершения своих процессов…" : "Отменяем проверку и закрываем её процессы…"; cancel.Enabled = false; }
         }
         private void SetStartAvailability(bool available, string reason)
         {
@@ -135,10 +150,10 @@ namespace ProGo
         private SshAgentKeyAddRequest SelectedRequest
         { get { var choice = identities.SelectedItem as KeyChoice; return choice == null ? null : choice.Request; } }
         private void ClearKeys(string hint)
-        { identities.Items.Clear(); identities.Enabled = addKey.Enabled = false; keyHint.Text = hint; }
+        { hasSigningResult = false; identities.Items.Clear(); identities.Enabled = addKey.Enabled = verifyKey.Enabled = false; keyHint.Text = hint; }
         private void RefreshKeyAction()
         {
-            addKey.Enabled = !busy && !closing && SelectedRequest != null;
+            addKey.Enabled = verifyKey.Enabled = !busy && !closing && SelectedRequest != null;
             if (busy) return;
             var choice = identities.SelectedItem as KeyChoice;
             keyHint.Text = choice == null ? "Выберите ключ из проверенного профиля." : KeyHint(choice.State);
@@ -164,14 +179,70 @@ namespace ProGo
                 if (choices.Count == SshProfileKeyMatching.IdentityLimit) break;
                 if (!seen.Add(identity)) continue;
                 SshAgentKeyAddState state; var request = SshAgentKeyAddRequest.Prepare(result, identity, out state);
-                choices.Add(new KeyChoice(identity, choices.Count + 1, request, state));
+                choices.Add(new KeyChoice(identity, choices.Count + 1, request, state, SigningScope(result, identity)));
             }
             return choices;
+        }
+        private static string SigningScope(SshProfileDiagnosticResult result, string identity)
+        {
+            if (result == null || !result.SshResolved || String.IsNullOrEmpty(identity) || !result.IdentityFiles.Contains(identity)) return null;
+            string path; if (!result.IdentityPaths.TryGetValue(identity, out path)) return null;
+            var scope = new System.Text.StringBuilder();
+            foreach (string field in new[] { result.Target, result.OriginalHost, result.ConfigPath, result.ExecutablePath,
+                result.ResolvedHostName, result.ResolvedUser, result.ResolvedPort, result.IdentityAgent, result.IdentitiesOnly,
+                result.PubkeyAuthentication, result.PreferredAuthentications, identity, path })
+                scope.Append(field == null ? -1 : field.Length).Append(':').Append(field).Append(';');
+            scope.Append(result.IdentityListLimited).Append(';');
+            foreach (string item in result.IdentityFiles) scope.Append(item == null ? -1 : item.Length).Append(':').Append(item).Append(';');
+            return scope.ToString();
+        }
+        private async Task RunSigning()
+        {
+            var choice = identities.SelectedItem as KeyChoice;
+            if (busy || closing || choice == null || choice.Request == null) return;
+            busy = verifying = true; hasSigningResult = false;
+            retry.Enabled = identities.Enabled = addKey.Enabled = verifyKey.Enabled = startAgent.Enabled = false;
+            cancel.Enabled = true; cancel.Text = "Отменить проверку"; cancel.Focus();
+            report.Clear();
+            status.Text = "Повторно проверяем выбранный SSH-профиль, затем подпись одного выбранного ключа. Ключи не меняются; вход на сервер не проверяется.";
+            var source = new CancellationTokenSource(); cancellation = source; var token = source.Token;
+            try {
+                SshKeyReadinessResult result; string text = ""; bool mayStart = false;
+                string startReason = "Повторите проверку службы перед запуском.";
+                try {
+                    var operation = Task.Factory.StartNew(() => {
+                        token.ThrowIfCancellationRequested();
+                        var fresh = check(profile.Clone(), token);
+                        token.ThrowIfCancellationRequested();
+                        if (choice.Scope == null || choice.Scope != SigningScope(fresh, choice.Identity))
+                            return new SshKeyReadinessResult(SshKeyReadinessState.Changed);
+                        text = fresh.ToReport(); startReason = StartReason(fresh, out mayStart);
+                        return signing(fresh, choice.Identity, token) ?? new SshKeyReadinessResult(SshKeyReadinessState.Failed);
+                    }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    ReadinessWork = operation; result = await operation.ConfigureAwait(false);
+                } catch (OperationCanceledException) { result = new SshKeyReadinessResult(SshKeyReadinessState.Cancelled); }
+                catch { result = new SshKeyReadinessResult(SshKeyReadinessState.Failed); }
+                await Publish(delegate {
+                    if (token.IsCancellationRequested) result = new SshKeyReadinessResult(SshKeyReadinessState.Cancelled);
+                    else if (!Object.ReferenceEquals(identities.SelectedItem, choice)) result = new SshKeyReadinessResult(SshKeyReadinessState.Changed);
+                    report.Text = text;
+                    cancellation = null; busy = verifying = false;
+                    retry.Enabled = cancel.Enabled = true; cancel.Text = "Закрыть";
+                    status.Text = result.ToDisplay() + (result.ExitCode.HasValue ? " Код ssh-add: " + result.ExitCode.Value + "." : "");
+                    if (result.State == SshKeyReadinessState.Changed || result.State == SshKeyReadinessState.Cancelled || text.Length == 0) {
+                        report.Clear(); ClearKeys("Сведения о выбранном ключе сброшены. Нажмите «Проверить ещё раз».");
+                        SetStartAvailability(false, "Повторите проверку службы после отмены или изменения выбранного профиля.");
+                    } else {
+                        hasSigningResult = true; identities.Enabled = true; RefreshKeyAction();
+                        SetStartAvailability(mayStart, startReason);
+                    }
+                }).ConfigureAwait(false);
+            } finally { Interlocked.CompareExchange(ref cancellation, null, source); source.Dispose(); }
         }
         private async Task Run()
         {
             if (busy || closing) return;
-            busy = true; adding = starting = false; retry.Enabled = false; cancel.Enabled = true; cancel.Text = "Отменить проверку";
+            busy = true; adding = starting = verifying = hasSigningResult = false; retry.Enabled = false; cancel.Enabled = true; cancel.Text = "Отменить проверку";
             SetStartAvailability(false, "Проверка службы выполняется.");
             ClearKeys("Сначала дождитесь проверки SSH-профиля.");
             report.Clear(); status.Text = "Проверяем SSH и ключи без подключения к серверу. Лимиты фаз: SSH — 7 с; служба — 3 с; агент — 3 с; отпечатки — 3 с. Очистка своих процессов — до 2 с. Можно отменить.";
@@ -219,7 +290,7 @@ namespace ProGo
         {
             var request = SelectedRequest;
             if (busy || closing || request == null) return;
-            busy = adding = true; retry.Enabled = identities.Enabled = addKey.Enabled = startAgent.Enabled = false;
+            busy = adding = true; hasSigningResult = false; retry.Enabled = identities.Enabled = addKey.Enabled = verifyKey.Enabled = startAgent.Enabled = false;
             cancel.Enabled = true; cancel.Text = "Отменить добавление"; cancel.Focus();
             status.Text = "Открываем отдельное окно OpenSSH. Введите парольную фразу там. Лимит — 2 минуты; после отмены ожидаем очистки своих процессов.";
             var source = new CancellationTokenSource(); cancellation = source; var token = source.Token;
@@ -247,7 +318,7 @@ namespace ProGo
         private async Task RunStart()
         {
             if (busy || closing || !agentStartAvailable) return;
-            busy = starting = true; retry.Enabled = identities.Enabled = addKey.Enabled = startAgent.Enabled = false;
+            busy = starting = true; hasSigningResult = false; retry.Enabled = identities.Enabled = addKey.Enabled = verifyKey.Enabled = startAgent.Enabled = false;
             cancel.Enabled = true; cancel.Text = "Отменить запуск"; cancel.Focus();
             status.Text = "Запрашиваем запуск ssh-agent с текущими правами. Ожидание — до 3 с; системный вызов может завершиться позже.";
             var source = new CancellationTokenSource(); cancellation = source; var token = source.Token;

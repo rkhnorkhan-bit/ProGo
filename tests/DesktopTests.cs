@@ -32,6 +32,7 @@ namespace ProGo
             if (args.Length > 0 && args[0] == "--ssh-console-fixture") return SshConsoleFixture(args);
             if (args.Length > 0 && args[0] == "--ssh-console-feed") return SshConsoleFeed(args);
             if (KeyFingerprintAskpassFixture()) return 1;
+            if (args.Length > 0 && args[0] == "--key-readiness-env") return KeyReadinessEnvironmentFixture();
             if (args.Length > 0 && args[0] == "--typed-correction-retry-child") return TypedCorrectionRetryChild(args);
             if (args.Length > 0 && (args[0] == "-G" || args[0] == "--diagnostic-child")) return DiagnosticFixture(args);
             // The guard must not depend on the worker pool it is supervising.
@@ -145,6 +146,8 @@ namespace ProGo
                     SshAgentStartupWorkflow(settings);
                     SshAgentInventoryWorkflow();
                     SshKeyMatchingWorkflow();
+                    SshKeyReadinessWorkflow();
+                    SshKeyReadinessUiWorkflow();
                     SshAuthPolicyWorkflow();
                     SshInteractiveKeyAddWorkflow();
                     SshAgentCoordinationWorkflow();

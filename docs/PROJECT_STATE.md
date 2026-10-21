@@ -147,3 +147,13 @@ review startup/rollback завершены. Исторический непри�
 существующую интеграционную ветку после fresh head check, новый Windows/Ubuntu CI,
 разбор конкретного первого FAIL либо запись completed evidence. Затем selected-key
 readiness и остальные открытые ID; полный F31-R11 не закрыт этим startup fix.
+
+## Следующий связанный блок: выбранный ключ
+
+Source review пройден для SshKeyReadiness, frozen Unicode child environment и
+явного «Проверить ключ» в SSH диагностике. Есть отдельные native backend/UI suites,
+строгое расширение прежнего keyboard test; timeout/Cancel/Close/freshness покрыты
+подготовленными сценариями. Фактический новый Windows run пока NOT_RUN.
+Протокол: [MICROTASK_SSH_SELECTED_KEY_SIGNING.md](MICROTASK_SSH_SELECTED_KEY_SIGNING.md).
+Подпись публичной reference не доказывает private bytes либо вход на VPS;
+автоматическая подготовка выбранного auth перед SSH остаётся в F31-R11.

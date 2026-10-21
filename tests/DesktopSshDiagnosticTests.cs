@@ -270,7 +270,7 @@ namespace ProGo
                     Check(add.Enabled && choices.AccessibilityObject.Name.Contains("SSH-профиля") && add.AccessibilityObject.Description.Contains("OpenSSH") &&
                         form.AcceptButton == null && ((Label)Field(form, "keyHint")).AccessibilityObject.Description.Contains("Парольная фраза"),
                         "selected key action explains native secret entry and has no implicit Enter action");
-                    KeyboardWalk(form, new Control[] { report, choices, add, retry, cancel }, "SSH key addition ready");
+                    KeyboardWalk(form, new Control[] { report, choices, add, (Button)Field(form, "verifyKey"), retry, cancel }, "SSH key addition ready");
                     form.ClientSize = new Size(650, 560); form.PerformLayout();
                     Check(report.Height > 60 && add.Right <= add.Parent.ClientSize.Width && add.Bottom <= add.Parent.ClientSize.Height &&
                         add.ClientSize.Height >= TextRenderer.MeasureText(add.Text, add.Font).Height + add.Padding.Vertical &&

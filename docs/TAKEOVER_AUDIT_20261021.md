@@ -193,3 +193,37 @@ SSH спецификации не добавлены. Значения поте�
 Это нужно для соблюдения запрета публичного установщика и согласования передачи.
 Новый CI запускается на следующем точном SHA без переписывания четырёх коммитов;
 последний из них содержит skip-ci. Релиз/merge/установка не выполняются.
+
+## Опубликованные SHA и начало CI583
+
+Обычный gitpush не имел локальной авторизации. Подключённый GitHub API создал
+blobs/trees/commits, после чего expected-head fast-forward безforce передвинул
+существующую integration ветку. Каждый tree сравнен с локальным и совпал:
+
+| Блок | Исходный локальный SHA | Опубликованный SHA | Git tree |
+| --- | --- | --- | --- |
+| Registry/QR | bd9c0fb17b4ca4e84bdcec2cf5e1c6d90820f69d | 6009675e0b4f72f100e19bb7adfb966d79e95fda | a30546cf54fc4416c469b15efdb9c52496453136 |
+| Startup | e2fccacb8c7a859217cc854cb91bc7ee7ac57bd8 | b4a95d2cc67af929fabe94248ae9a854c5fe2b32 | 2d2fc8f3507a70dc6dd41c4f2c1d90dfc0a71725 |
+| Rollback | 5c803be5534601233e0041202890cbd7c04cd575 | 8fa8b6dd5da1aedebdc17c11e33d0be9aaf1eea2 | e0e774371eaced3517f9fcd0120fc663c025f01f |
+| Evidence | 641f3a3bd929b1c342d313ce194e11af65a5df03 | f06e5e547a6adb59dd3ac9118a5a66b2e8eaa1be | 8c578f3efdbc2aeae208578c5cfd764fa3c458a2 |
+| PublicCI gate | 83b0aa55558d7c04617a75e1007c24b4991d476c | e9fcfc3279269075eddd6def306c1ca2500cd28c | 8bc4a80e56c7a910412b871a3ece569ae33a8e96 |
+
+PR88 обновлён; новый run39660551553/CI583 запущен наe9fcfc3.
+На момент записи Ubuntu completedSUCCESS, Windows in_progress. ОбщегоPASS нет.
+Полные исходные локальные commits сохранены в прежней work ветке; active branch
+work/progo-published-20261021 создана изAPIhead с идентичной base tree. Чужие
+изменения не перезаписывались. Установщик/release не публиковались.
+
+## Продолжение F31-R11: signing backend и UI
+
+Добавлены два связанных микрошагa: локальная sign+verify одной выбранной
+public reference и явное действие «Проверить ключ» после fresh profile check.
+Shared lease/owned job, frozen endpoint/sanitized Unicode env, bounded snapshots,
+post-read scope/cancel guard и UI retained task исключают заявленный ложный успех
+в проверяемых контрактных сценариях. Это не auth gate и не доказательство VPS.
+Независимые backend/UI source reviews завершены. Исправлены конкретный
+post-read freshness gap, emptyendpoint ambiguity, Unicode console encoding;
+подготовлены регрессионные векторы. Root включил оба native suites ровноодинраз
+и расширил существующий строгий Tab route новой кнопкой. Public scan304/0,
+Python41PASS/3SKIP и diff checks не подменяют Windows/visual приёмку нового кода.
+CI583 наe9fcfc3 ещё не содержит signing изменений.

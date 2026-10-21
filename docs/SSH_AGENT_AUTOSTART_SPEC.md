@@ -128,6 +128,13 @@ VPS; конкретные адреса, пользователи и пути н�
 - Существующие настройки и профили мигрируют без потерь. Наличие файла ключа,
   работающей службы или успешного `ssh -G` не объявляется аутентификацией.
 
+## Продолжение21.10.2026: selected-key signing
+
+[Новый протокол PGA-06E](MICROTASK_SSH_SELECTED_KEY_SIGNING.md): backend и явная
+UI проверка одной выбранной публичной identity. Native Windows нового source
+NOT_RUN; источник предыдущего CI583e9fcfc3 не включает эти изменения.
+Подпись не является private-file/server-auth proof и не закрывает F31-R11.
+
 ## PGA: микрозадачи, состояние и существующие ID
 
 20.10.2026 PGA-06D: explicit Start ssh-agent UI, lifetime/cancel/freshness —
