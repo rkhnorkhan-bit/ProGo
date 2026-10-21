@@ -46,7 +46,7 @@ foreach ($statement in $ast.EndBlock.Statements) {
     }
 }
 function Show-UserMessage($Text, $Title) {}
-function Show-UpdateDialog($Text, $Title, $Kind) {}
+function Show-UpdateDialog($Text, $Title, $Kind) { Set-Content -LiteralPath (Join-Path $Fixture 'update-dialog.txt') -Value ($Kind + "`n" + $Text) }
 function Test-UpdateRequired { $State.RemoteVersion = (Get-Content (Join-Path $Release 'VERSION')).Trim(); return $true }
 function Get-ReleaseDirForUpdate { return $Release }
 if ($Mode -eq 'restore-source-changed') {
@@ -96,12 +96,49 @@ if ($Mode -eq 'restore-installed-corrupt' -or $Mode -eq 'restore-self-check-fail
         function Start-ProGo { $script:launchCount++; if ($script:launchCount -eq 1) { throw 'Injected launch failure' } }
     }
 }
-if ($Mode -eq 'rollback') {
+if ($Mode -in @('rollback','rollback-copy-fail','rollback-corrupt','rollback-self-check-fail','rollback-self-check-timeout')) {
     function Install-StagingToMain($TargetDir) {
         $State.MainWasChanged = $true
         Copy-Item (Join-Path $TargetDir 'ProGo.exe') (Join-Path $InstallDir 'ProGo.exe') -Force
         Set-Content (Join-Path $InstallDir 'VERSION') 'broken-fixture'
     }
+}
+if ($Mode -eq 'rollback-copy-fail' -or $Mode -eq 'rollback-corrupt') {
+    $realCopyFile = ${function:Copy-FileIfExists}
+    function Copy-FileIfExists($SourceRoot, $Name, $DestinationRoot, $Required) {
+        $isRollback = (Split-Path -Leaf $SourceRoot).StartsWith('ProGo-restore-') -and $DestinationRoot -eq $InstallDir
+        if ($isRollback -and $Name -eq 'VERSION' -and $Mode -eq 'rollback-copy-fail') { throw 'Injected rollback copy failure' }
+        & $realCopyFile $SourceRoot $Name $DestinationRoot $Required
+        if ($isRollback -and $Name -eq 'VERSION' -and $Mode -eq 'rollback-corrupt') {
+            Set-Content -LiteralPath (Join-Path $InstallDir 'VERSION') 'corrupt-restored-bytes'
+        }
+    }
+}
+if ($Mode -eq 'rollback-self-check-fail') { function Test-RollbackApplication { throw 'Injected rollback self-check failure' } }
+if ($Mode -eq 'rollback-self-check-timeout') {
+    function Test-RollbackApplication {
+        $info = New-Object Diagnostics.ProcessStartInfo
+        $info.FileName = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $readyPath = Join-Path $Fixture 'rollback-self-check-pid'
+        $command = 'Set-Content -LiteralPath ''' + $readyPath.Replace("'", "''") + ''' -Value ($PID.ToString() + ":" + (Get-Process -Id $PID).StartTime.ToUniversalTime().Ticks); Start-Sleep -Seconds 30'
+        $childScript = Join-Path $Fixture 'rollback-self-check-child.ps1'
+        Set-Content -LiteralPath $childScript -Value $command -Encoding UTF8
+        $info.Arguments = '-NoProfile -File "' + $childScript + '"'
+        $info.UseShellExecute = $false; $info.CreateNoWindow = $true
+        $ownedChild = [Diagnostics.Process]::Start($info)
+        # Readiness is fixture setup, not part of the production timeout budget.
+        # The real waiter below must time out and terminate this running child.
+        $readyDeadline = [DateTime]::UtcNow.AddSeconds(3)
+        while (-not (Test-Path -LiteralPath $readyPath) -and [DateTime]::UtcNow -lt $readyDeadline -and -not $ownedChild.HasExited) { Start-Sleep -Milliseconds 20 }
+        if (-not (Test-Path -LiteralPath $readyPath)) {
+            try { $ownedChild.Kill(); [void]$ownedChild.WaitForExit(2000) } finally { $ownedChild.Dispose() }
+            throw 'Native rollback timeout fixture did not become ready.'
+        }
+        Wait-RollbackSelfCheck $ownedChild 100 2000
+    }
+}
+if ($Mode -like 'rollback*') {
+    function Start-UpdatedProGo($ExePath) { Set-Content -LiteralPath (Join-Path $Fixture 'unexpected-rollback-launch') $ExePath }
 }
 foreach ($statement in $ast.EndBlock.Statements) {
     if ($statement -isnot [Management.Automation.Language.FunctionDefinitionAst]) {

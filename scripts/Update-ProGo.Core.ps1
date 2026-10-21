@@ -468,21 +468,89 @@ function Install-StagingToMain($TargetDir) {
     Copy-DirectoryIfExists $TargetDir "scripts" $InstallDir $true
 }
 
+function Get-RollbackProgramState($Root) {
+    # Enumerate one level at a time: a junction must be rejected before traversal.
+    $lines = New-Object System.Collections.Generic.List[string]
+    $pending = New-Object System.Collections.Generic.Queue[string]
+    $rootItem = Get-Item -LiteralPath $Root -Force -ErrorAction Stop
+    if (-not $rootItem.PSIsContainer -or ($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw 'Rollback root is not a regular directory.'
+    }
+    foreach ($name in @('ProGo.exe','VERSION','scripts','ProGo.ico')) { $pending.Enqueue($name) }
+    while ($pending.Count -gt 0) {
+        $relative = $pending.Dequeue(); $path = Join-Path $Root $relative
+        if (-not (Test-Path -LiteralPath $path)) { $lines.Add($relative + ':absent'); continue }
+        $item = Get-Item -LiteralPath $path -Force -ErrorAction Stop
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Rollback program path contains a reparse point.' }
+        if ($item.PSIsContainer) {
+            $lines.Add($relative + ':directory')
+            foreach ($child in @(Get-ChildItem -LiteralPath $path -Force -ErrorAction Stop)) {
+                $pending.Enqueue((Join-Path $relative $child.Name))
+            }
+        } else { $lines.Add($relative + ':' + (Get-FileHash -LiteralPath $path -Algorithm SHA256 -ErrorAction Stop).Hash) }
+    }
+    return (($lines | Sort-Object) -join "`n")
+}
+
+function Wait-RollbackSelfCheck([Diagnostics.Process]$Process, [int]$TimeoutMs = 30000, [int]$CleanupTimeoutMs = 2000) {
+    if ($null -eq $Process) { throw 'Rollback self-check did not start.' }
+    if ($TimeoutMs -lt 1 -or $TimeoutMs -gt 30000 -or $CleanupTimeoutMs -lt 1 -or $CleanupTimeoutMs -gt 2000) { throw 'Invalid rollback self-check budget.' }
+    $settled = $false; $waitFailure = $null; $killFailure = $null
+    # Only this exact child may be terminated. A PID is recovery evidence, never
+    # permission to reopen and kill a process after an unconfirmed cleanup.
+    $identity = 'PID=' + $Process.Id
+    try { $identity += ';start_ticks=' + $Process.StartTime.ToUniversalTime().Ticks } catch { }
+    try {
+        try { $settled = $Process.WaitForExit($TimeoutMs) } catch { $waitFailure = $_.Exception.Message }
+        if (-not $settled) {
+            try { $Process.Kill() } catch { $killFailure = $_.Exception.Message }
+            try { $settled = $Process.WaitForExit($CleanupTimeoutMs) } catch { $waitFailure = $_.Exception.Message }
+            if (-not $settled) {
+                # Keep the owned handle observable until the helper terminates;
+                # the caller retains the backup and reports rollback_failed.
+                $script:RollbackUnsettledSelfCheck = $Process
+                throw "Rollback self-check cleanup unconfirmed; owned $identity; wait=$waitFailure; kill=$killFailure"
+            }
+            if ($null -ne $waitFailure) { throw "Rollback self-check wait failed; owned child exit confirmed; $identity" }
+            throw "Rollback self-check timed out; owned child exit confirmed; $identity"
+        }
+        if ($Process.ExitCode -ne 0) { throw "Rollback self-check failed: exit=$($Process.ExitCode)" }
+    } finally { if ($settled) { $Process.Dispose() } }
+}
+
+function Test-RollbackApplication {
+    $info = New-Object Diagnostics.ProcessStartInfo
+    $info.FileName = Join-Path $InstallDir 'ProGo.exe'; $info.Arguments = '--self-check'
+    $info.WorkingDirectory = $InstallDir; $info.UseShellExecute = $false; $info.CreateNoWindow = $true
+    Wait-RollbackSelfCheck ([Diagnostics.Process]::Start($info))
+}
+
 function Restore-BackupToMain($SourceBackupDir) {
-    if ([string]::IsNullOrWhiteSpace($SourceBackupDir) -or -not (Test-Path $SourceBackupDir)) {
-        Write-UpdateLog "Rollback skipped: backup directory is not available."
-        return
+    if ([string]::IsNullOrWhiteSpace($SourceBackupDir) -or -not (Test-Path -LiteralPath $SourceBackupDir)) {
+        throw 'Rollback backup directory is not available.'
     }
-
     Write-UpdateLog "Rolling back main application from backup: $SourceBackupDir"
-
-    # Updating only replaces program files. A failure must not rewind current
-    # settings, vault, VPN access, ownership journals or logs to a historical copy.
-    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
-        try { Copy-FileIfExists $SourceBackupDir $name $InstallDir $false } catch { Write-UpdateLog "Rollback warning for ${name}: $($_.Exception.Message)" }
-    }
-
-    try { Copy-DirectoryIfExists $SourceBackupDir "scripts" $InstallDir $false } catch { Write-UpdateLog "Rollback warning for scripts: $($_.Exception.Message)" }
+    # Freeze and validate recorded evidence before replacing any program file.
+    # The original backup is retained even if a later copy or self-check fails.
+    $prepared = [ProGo.BackupIntegrity]::Prepare($SourceBackupDir)
+    try {
+        $source = $prepared.Path
+        $expected = Get-RollbackProgramState $source
+        # Reject destination reparse paths before copying through them.
+        $null = Get-RollbackProgramState $InstallDir
+        foreach ($name in @('ProGo.exe','VERSION')) { Copy-FileIfExists $source $name $InstallDir $true }
+        $scriptsPath = Join-Path $InstallDir 'scripts'
+        if (Test-Path -LiteralPath $scriptsPath) { Remove-Item -LiteralPath $scriptsPath -Recurse -Force -ErrorAction Stop }
+        Copy-DirectoryIfExists $source 'scripts' $InstallDir $true
+        if (Test-Path -LiteralPath (Join-Path $source 'ProGo.ico')) { Copy-FileIfExists $source 'ProGo.ico' $InstallDir $true }
+        elseif (Test-Path -LiteralPath (Join-Path $InstallDir 'ProGo.ico')) { Remove-Item -LiteralPath (Join-Path $InstallDir 'ProGo.ico') -Force -ErrorAction Stop }
+        if ((Get-RollbackProgramState $InstallDir) -cne $expected) { throw 'Rollback program verification failed.' }
+        Test-RollbackApplication
+        # Self-check is not allowed to mutate restored program evidence either.
+        if ((Get-RollbackProgramState $InstallDir) -cne $expected) { throw 'Rollback program changed during self-check.' }
+        Write-UpdateLog 'Rollback program hashes, version and self-check PASS.'
+    } finally { $prepared.Dispose() }
+    # settings, vault, VPN access, ownership journals and logs are never restored.
 }
 
 function Find-ReleaseDirInExtractedPackage($Root) {
@@ -675,11 +743,18 @@ try {
     Write-UpdateLog "TRANSACTION FAILED: $message"
     Set-BackupUpdateResult -BackupPath $BackupDir -Result "failed"
 
+    $rollbackFailure = $null
     if ($State.MainWasChanged) {
-        [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
-        Show-UpdatePhase rollback
-        Restore-BackupToMain -SourceBackupDir $BackupDir
-        Write-UpdateLog "Rollback completed after failed main commit."
+        try {
+            [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
+            Show-UpdatePhase rollback
+            Restore-BackupToMain -SourceBackupDir $BackupDir
+            Write-UpdateLog "Rollback completed after failed main commit."
+        } catch {
+            $rollbackFailure = $_.Exception.Message
+            Set-BackupUpdateResult -BackupPath $BackupDir -Result "rollback_failed"
+            Write-UpdateLog "Rollback incomplete. Backup retained: $BackupDir; $rollbackFailure"
+        }
     } else {
         Write-UpdateLog "Main application was not changed; rollback is not required."
     }
@@ -687,7 +762,12 @@ try {
     Clear-UpdateProgress
     Close-UpdateWindow
     try { Write-Host 'Обновление не выполнено. Подробности доступны в журнале обновления.' } catch { }
-    Show-UpdateDialog (('Обновление ProGo не выполнено. Основное приложение сохранено или восстановлено из резервной копии. Подробности в update.log.
+    if ($null -ne $rollbackFailure) {
+        Show-UpdateDialog (('Обновление не выполнено, откат не подтверждён. Не запускайте повреждённую программу. Резервная копия сохранена:
+') + $BackupDir + "`r`n`r`n" + $message + "`r`n" + $rollbackFailure) ('Обновление ProGo') "Error"
+        throw "Update failed; rollback incomplete. Backup retained: $BackupDir; $message; $rollbackFailure"
+    }
+    Show-UpdateDialog (('Обновление ProGo не выполнено. Основное приложение сохранено или проверено после восстановления из резервной копии. Подробности в update.log.
 
 ') + $message) ('Обновление ProGo') "Error"
     throw

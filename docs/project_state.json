@@ -6,7 +6,7 @@
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "NOT_RUN",
+  "fresh_candidate_verification": "BLOCKED: repository visibility=public conflicts with requested private destination; Windows/.NET/PowerShell unavailable locally",
   "status_values": [
     "PASS",
     "FAIL",
@@ -36,7 +36,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Миграции, один запрос CLI, on/off и итоговые переменные окружения."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Миграции, один запрос CLI, on/off и итоговые переменные окружения.",
@@ -57,7 +57,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Временный/постоянный отказ, ручная отмена, успешный повтор без перезапуска."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Временный/постоянный отказ, ручная отмена, успешный повтор без перезапуска.",
@@ -78,7 +78,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Одновременный запуск, авария owner, handoff, update/restore/install без параллельной записи."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Одновременный запуск, авария owner, handoff, update/restore/install без параллельной записи.",
@@ -99,7 +99,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Чужой listener, silent SOCKS, egress, NO_PROXY, устаревшие данные и частичный CLI."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Чужой listener, silent SOCKS, egress, NO_PROXY, устаревшие данные и частичный CLI.",
@@ -120,7 +120,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Задержка старта, отказ ключа, один клик CLI, отмена, host trust; настоящий VPS позже."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Задержка старта, отказ ключа, один клик CLI, отмена, host trust; настоящий VPS позже.",
@@ -141,7 +141,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer.",
@@ -162,7 +162,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Preview/Cancel, изменившийся manifest, baseline/pre-update, новая копия и junction."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Preview/Cancel, изменившийся manifest, baseline/pre-update, новая копия и junction.",
@@ -183,7 +183,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Отмена без UI pump, точная owned cleanup, locked files, tamper, rollback и сохранение личных данных."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Поздняя отмена/очистка уже исправлялась. Сохранить результат CI582; новая итоговая регрессия restore/path/reparse/tamper/rollback и приёмка пакета. Старый FAIL без нового воспроизведения не считается текущим.",
@@ -204,7 +204,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Все типы PIN, повтор/другой код, restart, полночь, смена часов, I/O и атомарные Add/Edit/Delete."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "PIN и фоновые vault операции уже реализованы. Нужны регрессия на итоговом SHA/пакете и приёмка установленного кандидата; повторная реализация не требуется.",
@@ -225,7 +225,7 @@
         "candidate": "NOT_RUN",
         "criterion": "CLI/Windows/scoped отдельно, последний consumer, Shutdown(Send), нагрузка, Stop и ошибки cleanup."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: CLI/Windows/scoped отдельно, последний consumer, Shutdown(Send), нагрузка, Stop и ошибки cleanup.",
@@ -246,7 +246,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Главное окно, трей, настройки, закрытие диалогов, симметричные on/off."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Главное окно, трей, настройки, закрытие диалогов, симметричные on/off.",
@@ -267,7 +267,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Stop во время Connect, независимость каналов, Quit и подтверждённое завершение."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Stop во время Connect, независимость каналов, Quit и подтверждённое завершение.",
@@ -288,7 +288,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Первый/повторный запуск, закрытие окна, timeout и старый ответ."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Первый/повторный запуск, закрытие окна, timeout и старый ответ.",
@@ -309,7 +309,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Heartbeat UI, медленная сеть, отмена/timeout, отсутствие поздних изменений."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Heartbeat UI, медленная сеть, отмена/timeout, отсутствие поздних изменений.",
@@ -330,7 +330,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения.",
@@ -351,7 +351,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Настоящие Windows DPI 100/125/150/200%, 1366×768, длинный текст, доступные главные действия."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Настоящие Windows DPI 100/125/150/200%, 1366×768, длинный текст, доступные главные действия.",
@@ -372,7 +372,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Tab/Shift+Tab/Enter/Esc, Narrator и High Contrast в среде разработки; недоступную среду отметить."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Tab/Shift+Tab/Enter/Esc, Narrator и High Contrast в среде разработки; недоступную среду отметить.",
@@ -393,7 +393,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Выдача/отзыв/повтор не дают ложный installed; реальная установка проверяется позже."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Выдача/отзыв/повтор не дают ложный installed; реальная установка проверяется позже.",
@@ -414,7 +414,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Стендовые ошибки сети; после установки - DNS, смена сети, idle, большие передачи и телефон."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Стендовые ошибки сети; после установки - DNS, смена сети, idle, большие передачи и телефон.",
@@ -435,7 +435,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Отзыв только выбранного доступа, исходный ID запроса, отмена списка, повтор/ошибка API."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Отзыв только выбранного доступа, исходный ID запроса, отмена списка, повтор/ошибка API.",
@@ -456,7 +456,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Busy clipboard, таймер, закрытие/выход, чужая замена и пустой secret без ложного «скопировано»."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Busy clipboard, таймер, закрытие/выход, чужая замена и пустой secret без ложного «скопировано».",
@@ -477,7 +477,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные.",
@@ -498,7 +498,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag.",
@@ -519,7 +519,7 @@
         "candidate": "NOT_RUN",
         "criterion": "UI/документы/пакеты совпадают; понятные Windows/CLI/Android/iPhone сценарии без личных примеров."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: UI/документы/пакеты совпадают; понятные Windows/CLI/Android/iPhone сценарии без личных примеров.",
@@ -540,7 +540,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Пределы журнала, отчёт до отправки, ошибки чтения, отсутствие секретов и блокировки запуска."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Пределы журнала, отчёт до отправки, ошибки чтения, отсутствие секретов и блокировки запуска.",
@@ -561,7 +561,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Комбинации настроек в dev Windows; фактический вход владельца - после установки."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Комбинации настроек в dev Windows; фактический вход владельца - после установки.",
@@ -582,7 +582,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Совпадение payload, проверяемая подпись, timestamp и отдельные Defender/Kaspersky результаты."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Совпадение payload, проверяемая подпись, timestamp и отдельные Defender/Kaspersky результаты.",
@@ -603,7 +603,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Нет неописанных handlers; отдельно scenarios/assertions, FAIL/SKIP/NOT_CHECKED и общий результат."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Нет неописанных handlers; отдельно scenarios/assertions, FAIL/SKIP/NOT_CHECKED и общий результат.",
@@ -624,7 +624,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Native screenshots общей сборки, 16/24 px на разных фонах, читаемость и геометрия."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Native screenshots общей сборки, 16/24 px на разных фонах, читаемость и геометрия.",
@@ -645,7 +645,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Sandbox/интеграционные сценарии, проверенный webhook, дубликаты, возврат, paid→activation retry, отзыв активных сеансов."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Sandbox/интеграционные сценарии, проверенный webhook, дубликаты, возврат, paid→activation retry, отзыв активных сеансов.",
@@ -666,7 +666,7 @@
         "candidate": "NOT_RUN",
         "criterion": "Dev service/key/ACL/cancel/ownership и slow disk/network fixtures, latency/CPU/I/O; фактический encrypted agent, другой ПК/VPS и Rescue замеры — после установки."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Dev service/key/ACL/cancel/ownership и slow disk/network fixtures, latency/CPU/I/O; фактический encrypted agent, другой ПК/VPS и Rescue замеры — после установки.",
@@ -689,7 +689,7 @@
         "historical_scoped_pass": false,
         "criterion": "Проверить оставшиеся и поздние формы на переполнение, длинный текст, минимальный размер и доступность главных действий; исправить обнаруженные дефекты."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить оставшиеся и поздние формы на переполнение, длинный текст, минимальный размер и доступность главных действий; исправить обнаруженные дефекты.",
@@ -712,7 +712,7 @@
         "historical_scoped_pass": false,
         "criterion": "Будущие формы удовлетворяют тем же требованиям геометрии. Их функциональное создание считается в F23/F30; здесь принимается компоновка."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Будущие формы удовлетворяют тем же требованиям геометрии. Их функциональное создание считается в F23/F30; здесь принимается компоновка.",
@@ -735,7 +735,7 @@
         "historical_scoped_pass": false,
         "criterion": "Настроить режим для используемого runtime и подтвердить перестроение при смене DPI/монитора без потери управления."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Настроить режим для используемого runtime и подтвердить перестроение при смене DPI/монитора без потери управления.",
@@ -758,7 +758,7 @@
         "historical_scoped_pass": false,
         "criterion": "Один протокол всех итоговых форм: реальные Windows 100/125/150/200%, 1366×768, минимальные размеры, длинные тексты и доступные действия. Synthetic Scale сам по себе критерия не закрывает."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Один протокол всех итоговых форм: реальные Windows 100/125/150/200%, 1366×768, минимальные размеры, длинные тексты и доступные действия. Synthetic Scale сам по себе критерия не закрывает.",
@@ -781,7 +781,7 @@
         "historical_scoped_pass": false,
         "criterion": "Проверить итоговые поздние и новые формы: Tab/Shift+Tab/Enter/Esc, focus order, доступные имена, статусы и ошибки; устранить только найденные gaps. Для будущих agent UI отдельно проверить состояния службы/ключа/SSH/SOCKS, Start Agent/Add Key/Check Profile/Retry и объяснения недоступных действий по [спецификации](SSH_AGENT_AUTOSTART_SPEC.md). Новое замечание по 3 PNG CI #551: тусклая подпись disabled startup CheckBox на тёмном фоне; исправление ещё впереди ([фиксация](MICROTASK_F31_STARTUP_BACKGROUND.md))."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить итоговые поздние и новые формы: Tab/Shift+Tab/Enter/Esc, focus order, доступные имена, статусы и ошибки; устранить только найденные gaps. Для будущих agent UI отдельно проверить состояния службы/ключа/SSH/SOCKS, Start Agent/Add Key/Check Profile/Retry и объяснения недоступных действий по [спецификации](SSH_AGENT_AUTOSTART_SPEC.md). Новое замечание по 3 PNG CI #551: тусклая подпись disabled startup CheckBox на тёмном фоне; исправление ещё впереди ([фиксация](MICROTASK_F31_STARTUP_BACKGROUND.md)).",
@@ -804,7 +804,7 @@
         "historical_scoped_pass": true,
         "criterion": "Исправлены тёмные подписи выключенных текстовых Save-действий и яркая pending primary-кнопка Unlock; native bitmap/state проверки и свежие снимки приняты в CI #541. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md)."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Исправлены тёмные подписи выключенных текстовых Save-действий и яркая pending primary-кнопка Unlock; native bitmap/state проверки и свежие снимки приняты в CI #541. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md).",
@@ -827,7 +827,7 @@
         "historical_scoped_pass": true,
         "criterion": "Повтор правила четырёх цифр убран; форматная ошибка доступна, исправление локального ввода возвращает инструкцию без неявной отправки. Ошибки аутентификации/worker/owner gate сохраняются; CI #541 и свежие снимки приняты. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md)."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Повтор правила четырёх цифр убран; форматная ошибка доступна, исправление локального ввода возвращает инструкцию без неявной отправки. Ошибки аутентификации/worker/owner gate сохраняются; CI #541 и свежие снимки приняты. [Доказательства](MICROTASK_F17_BUTTONS_PIN.md).",
@@ -850,7 +850,7 @@
         "historical_scoped_pass": false,
         "criterion": "Проверить конечные маршруты и чтение названий, порядка, состояний и ошибок; недоступную dev среду явно оставить NOT_CHECKED с причиной."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить конечные маршруты и чтение названий, порядка, состояний и ошибок; недоступную dev среду явно оставить NOT_CHECKED с причиной.",
@@ -873,7 +873,7 @@
         "historical_scoped_pass": false,
         "criterion": "Проверить системную тему, её переключение, контраст разных состояний и видимый фокус на итоговых формах. Synthetic palette не заменяет этот результат."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверить системную тему, её переключение, контраст разных состояний и видимый фокус на итоговых формах. Synthetic palette не заменяет этот результат.",
@@ -896,7 +896,7 @@
         "historical_scoped_pass": false,
         "criterion": "Различать обнаруженное ограничение, предположение и отсутствие достаточных сведений; dev fixtures подтверждают корректные verdicts."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Различать обнаруженное ограничение, предположение и отсутствие достаточных сведений; dev fixtures подтверждают корректные verdicts.",
@@ -919,7 +919,7 @@
         "historical_scoped_pass": false,
         "criterion": "Отдельное доказательство пути 500→15000 и 4500→14500 либо честная ошибка/NOT_CHECKED. Галочка и relay handshake внешнего проброса не доказывают."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Отдельное доказательство пути 500→15000 и 4500→14500 либо честная ошибка/NOT_CHECKED. Галочка и relay handshake внешнего проброса не доказывают.",
@@ -942,7 +942,7 @@
         "historical_scoped_pass": false,
         "criterion": "Связать preflight, SSH/SOCKS, VPS, relay и телефонные этапы с конкретной причиной и следующим действием; dev отказ/timeout/cancel/устаревший результат проверены."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Связать preflight, SSH/SOCKS, VPS, relay и телефонные этапы с конкретной причиной и следующим действием; dev отказ/timeout/cancel/устаревший результат проверены.",
@@ -965,7 +965,7 @@
         "historical_scoped_pass": false,
         "criterion": "После установки владельцем подтвердить подключение, рабочий DNS/интернет и ожидаемый внешний маршрут для точного установленного кандидата."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки владельцем подтвердить подключение, рабочий DNS/интернет и ожидаемый внешний маршрут для точного установленного кандидата.",
@@ -990,7 +990,7 @@
         "historical_scoped_pass": false,
         "criterion": "После установки проверить смену сети, простой и крупные передачи с честным состоянием работы/восстановления; новые численные гарантии не вводятся."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки проверить смену сети, простой и крупные передачи с честным состоянием работы/восстановления; новые численные гарантии не вводятся.",
@@ -1015,7 +1015,7 @@
         "historical_scoped_pass": false,
         "criterion": "Подтвердить заявленные settings/vault/private/access/request/proxy snapshots, manifest/hashes и исключение временных секретов; обычный rollback сохраняет текущие личные данные."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подтвердить заявленные settings/vault/private/access/request/proxy snapshots, manifest/hashes и исключение временных секретов; обычный rollback сохраняет текущие личные данные.",
@@ -1038,7 +1038,7 @@
         "historical_scoped_pass": false,
         "criterion": "Portable90 уже PASS; дополнительно подтвердить другую Windows identity, новую DPAPI-защиту, исходные VPS/trust/request bindings, отказ tamper/path/reparse/cancel и показ границ состава."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Portable90 уже PASS; дополнительно подтвердить другую Windows identity, новую DPAPI-защиту, исходные VPS/trust/request bindings, отказ tamper/path/reparse/cancel и показ границ состава.",
@@ -1061,7 +1061,7 @@
         "historical_scoped_pass": false,
         "criterion": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку.",
@@ -1084,7 +1084,7 @@
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить импорт VPN, сохранение доверия и pending requests на реальном окружении владельца."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить импорт VPN, сохранение доверия и pending requests на реальном окружении владельца.",
@@ -1109,7 +1109,7 @@
         "historical_scoped_pass": false,
         "criterion": "Пользователь устанавливает готовый проверенный продукт без Build-ProGo или самостоятельной сборки исходников. [SSH-agent](SSH_AGENT_AUTOSTART_SPEC.md): отдельная необязательная настройка Automatic+Start, OFF по умолчанию, только по явному выбору пользователя; отсутствие службы/прав/policy объясняется, uninstall сохраняет общую службу и её настройки."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Пользователь устанавливает готовый проверенный продукт без Build-ProGo или самостоятельной сборки исходников. [SSH-agent](SSH_AGENT_AUTOSTART_SPEC.md): отдельная необязательная настройка Automatic+Start, OFF по умолчанию, только по явному выбору пользователя; отсутствие службы/прав/policy объясняется, uninstall сохраняет общую службу и её настройки.",
@@ -1132,7 +1132,7 @@
         "historical_scoped_pass": false,
         "criterion": "Одно владение app/update/restore/install, проверенная копия/retention, staging, установленный self-check и rollback; параллельная запись исключена."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Одно владение app/update/restore/install, проверенная копия/retention, staging, установленный self-check и rollback; параллельная запись исключена.",
@@ -1157,7 +1157,7 @@
         "historical_scoped_pass": false,
         "criterion": "Проверенная автоматическая загрузка пакета либо setup; полный installer запускается в новом окне с заранее зафиксированными существующими program/data paths, сохраняя данные и выборы."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверенная автоматическая загрузка пакета либо setup; полный installer запускается в новом окне с заранее зафиксированными существующими program/data paths, сохраняя данные и выборы.",
@@ -1175,20 +1175,20 @@
       "phase": "До",
       "requirement": "Подтверждённый честный rollback updater",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F23-R04)",
-      "implementation": "UpdateLauncher; Update-ProGo.Core.ps1; Install-ProGo.ps1",
+      "implementation": "Restore-BackupToMain + Wait-RollbackSelfCheck: verified backup, exact program hashes, self-check, bounded cleanup; reviewed code, Windows NOT_RUN",
       "history": "Открытый дефект",
-      "status": "FAIL",
+      "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: remote CI blocked by visibility mismatch",
         "historical_scoped_pass": false,
         "criterion": "Отказ копирования/самотеста остаётся ошибкой; успех только после проверки восстановленного runtime. Подавление copy errors не превращает откат в завершённый."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
-      "remaining": "Отказ копирования/самотеста остаётся ошибкой; успех только после проверки восстановленного runtime. Подавление copy errors не превращает откат в завершённый.",
+      "remaining": "Выполнить prepared Maintenance/BackupRetention native cases на точном новом SHA; source review не закрывает criterion.",
       "dependencies": [],
       "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
     },
@@ -1208,7 +1208,7 @@
         "historical_scoped_pass": false,
         "criterion": "Привязать version/commit/tag/hash и устранить release UID gap; старый asset нельзя заменить другим payload той же версии. Новый формат UID заранее не предписывается."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Привязать version/commit/tag/hash и устранить release UID gap; старый asset нельзя заменить другим payload той же версии. Новый формат UID заранее не предписывается.",
@@ -1231,7 +1231,7 @@
         "historical_scoped_pass": false,
         "criterion": "Одна версия/commit, release notes, чистая установка и оба пути обновления, fixed paths, cancel/offline/hash failures, self-check, rollback/handoff. Это общий пакетный результат F23."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Одна версия/commit, release notes, чистая установка и оба пути обновления, fixed paths, cancel/offline/hash failures, self-check, rollback/handoff. Это общий пакетный результат F23.",
@@ -1261,7 +1261,7 @@
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить сохранение реальных данных/путей/выборов; отменённое SSH-ожидание сохраняет исходный запрос, проверка результата не повторяет выдачу."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить сохранение реальных данных/путей/выборов; отменённое SSH-ожидание сохраняет исходный запрос, проверка результата не повторяет выдачу.",
@@ -1286,7 +1286,7 @@
         "historical_scoped_pass": false,
         "criterion": "Подготовить exe/scripts/installer/payload, защищённое подключение signer, проверку подписи/timestamp. Тестовая сборка явно unsigned; реальный сертификат после тестов."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подготовить exe/scripts/installer/payload, защищённое подключение signer, проверку подписи/timestamp. Тестовая сборка явно unsigned; реальный сертификат после тестов.",
@@ -1309,7 +1309,7 @@
         "historical_scoped_pass": false,
         "criterion": "Добавить и проверить механизм подписи/издателя/состава к существующим hash/archive/version checks; dev режим не выдаёт unsigned артефакт за подписанный."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Добавить и проверить механизм подписи/издателя/состава к существующим hash/archive/version checks; dev режим не выдаёт unsigned артефакт за подписанный.",
@@ -1332,7 +1332,7 @@
         "historical_scoped_pass": false,
         "criterion": "После тестов подключить сертификат и проверить реальные подписи, timestamp и соответствие payload конечных артефактов."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После тестов подключить сертификат и проверить реальные подписи, timestamp и соответствие payload конечных артефактов.",
@@ -1359,7 +1359,7 @@
         "historical_scoped_pass": false,
         "criterion": "Отдельные результаты Defender и Kaspersky, исправление обнаруженных проблем и относящаяся к ним повторная проверка. Это один пакет приёмки с двумя результатами."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Отдельные результаты Defender и Kaspersky, исправление обнаруженных проблем и относящаяся к ним повторная проверка. Это один пакет приёмки с двумя результатами.",
@@ -1391,7 +1391,7 @@
           "scope": "real loopback HTTP; no live server/mail; 4 new cases, 2 RED on baseline"
         }
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "QR capacity исправлен; реализовать mail и общий критерий, перепроверить на итоговом пакете.",
@@ -1414,7 +1414,7 @@
         "historical_scoped_pass": false,
         "criterion": "Сохранённые тарифы/периоды/лимиты, free/trial/paid, владелец/операторы, серверная авторизация и история действий."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Сохранённые тарифы/периоды/лимиты, free/trial/paid, владелец/операторы, серверная авторизация и история действий.",
@@ -1437,7 +1437,7 @@
         "historical_scoped_pass": false,
         "criterion": "Выдача/продление/приостановка/отзыв, тариф/цена/период, история платежей/действий; pending/success/error/unknown различаются."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Выдача/продление/приостановка/отзыв, тариф/цена/период, история платежей/действий; pending/success/error/unknown различаются.",
@@ -1462,7 +1462,7 @@
         "historical_scoped_pass": false,
         "criterion": "Первый успешный авторизованный connect либо 7×24 ч после оплаты, что раньше; серверное время, сроки free/trial/paid, только ручное продление, без двойного продления от дублей."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Первый успешный авторизованный connect либо 7×24 ч после оплаты, что раньше; серверное время, сроки free/trial/paid, только ручное продление, без двойного продления от дублей.",
@@ -1487,7 +1487,7 @@
         "historical_scoped_pass": false,
         "criterion": "Новые соединения проверяют срок/приостановку/отзыв; список и принудительное прекращение выбранных активных сеансов сохраняют чужой доступ."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Новые соединения проверяют срок/приостановку/отзыв; список и принудительное прекращение выбранных активных сеансов сохраняют чужой доступ.",
@@ -1510,7 +1510,7 @@
         "historical_scoped_pass": false,
         "criterion": "Собственная/агентская услуга, СБП/карты, единая цена с включёнными 5%; сервер фиксирует цену/поставщика/доступ, секреты остаются на сервере."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Собственная/агентская услуга, СБП/карты, единая цена с включёнными 5%; сервер фиксирует цену/поставщика/доступ, секреты остаются на сервере.",
@@ -1536,7 +1536,7 @@
         "historical_scoped_pass": false,
         "criterion": "Webhook/API, идемпотентность/дубли/отказ/возврат; оплаченный заказ не теряется, активация повторяется контролируемо с видимым состоянием."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Webhook/API, идемпотентность/дубли/отказ/возврат; оплаченный заказ не теряется, активация повторяется контролируемо с видимым состоянием.",
@@ -1561,7 +1561,7 @@
         "historical_scoped_pass": false,
         "criterion": "Поставщик виден клиенту; данные/проверенные статусы ИП/НПД, роли и чековые сведения соответствуют утверждённым собственной/агентской моделям."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Поставщик виден клиенту; данные/проверенные статусы ИП/НПД, роли и чековые сведения соответствуют утверждённым собственной/агентской моделям.",
@@ -1587,7 +1587,7 @@
         "historical_scoped_pass": false,
         "criterion": "Платежи, возвраты, фактические комиссии, корректировки и выплаты; база и доли 25/75 по утверждённому контракту, без повторного вычета условных 5%."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Платежи, возвраты, фактические комиссии, корректировки и выплаты; база и доли 25/75 по утверждённому контракту, без повторного вычета условных 5%.",
@@ -1613,7 +1613,7 @@
         "historical_scoped_pass": false,
         "criterion": "Подключённый аккаунт/SMTP/провайдер и подтверждённая доставка временных ссылок, ошибки и повтор."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подключённый аккаунт/SMTP/провайдер и подтверждённая доставка временных ссылок, ошибки и повтор.",
@@ -1638,7 +1638,7 @@
         "historical_scoped_pass": false,
         "criterion": "Пригодные аккаунты/реквизиты/договоры, проверенные поставщики; подтверждённые СБП/карты, чеки, возвраты, комиссии, выплаты и сверка после отдельного разрешения реальных операций."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Пригодные аккаунты/реквизиты/договоры, проверенные поставщики; подтверждённые СБП/карты, чеки, возвраты, комиссии, выплаты и сверка после отдельного разрешения реальных операций.",
@@ -1667,7 +1667,7 @@
         "historical_scoped_pass": false,
         "criterion": "Подтвердить связь оплаты с авторизованным connect, сроком/ручным продлением и прекращением выбранных действующих сеансов. DNS/смена сети/idle/передачи остаются F19."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Подтвердить связь оплаты с авторизованным connect, сроком/ручным продлением и прекращением выбранных действующих сеансов. DNS/смена сети/idle/передачи остаются F19.",
@@ -1692,7 +1692,7 @@
         "historical_scoped_pass": true,
         "criterion": "Корректные native аргументы -D, реальный IPv6-only SOCKS/CLI HTTP/CONNECT и bounded DNS/cancel подтверждены в CI #544. [Доказательства](MICROTASK_F31_IPV6.md)."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Корректные native аргументы -D, реальный IPv6-only SOCKS/CLI HTTP/CONNECT и bounded DNS/cancel подтверждены в CI #544. [Доказательства](MICROTASK_F31_IPV6.md).",
@@ -1715,7 +1715,7 @@
         "historical_scoped_pass": true,
         "criterion": "Отказ одного профиля не исключает разрешённые остальные кандидаты; выбор требует настоящего SOCKS handshake и owned child. Stop/cancel/settings guards и отдельный consumer reuse готового SOCKS подтверждены CI #547. [Доказательства](MICROTASK_F31_FALLBACK.md)."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Отказ одного профиля не исключает разрешённые остальные кандидаты; выбор требует настоящего SOCKS handshake и owned child. Stop/cancel/settings guards и отдельный consumer reuse готового SOCKS подтверждены CI #547. [Доказательства](MICROTASK_F31_FALLBACK.md).",
@@ -1738,7 +1738,7 @@
         "historical_scoped_pass": true,
         "criterion": "Известные fatal config/arguments и prelaunch validation приостанавливают только отказавший candidate; разрешённый backup остаётся доступен. Transient/warnings и key/host-key refusal разделены; actual native parser/replay/no-PID/retry подтверждены CI #548. [Доказательства](MICROTASK_F31_SSH_ERRORS.md)."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Известные fatal config/arguments и prelaunch validation приостанавливают только отказавший candidate; разрешённый backup остаётся доступен. Transient/warnings и key/host-key refusal разделены; actual native parser/replay/no-PID/retry подтверждены CI #548. [Доказательства](MICROTASK_F31_SSH_ERRORS.md).",
@@ -1761,7 +1761,7 @@
         "historical_scoped_pass": true,
         "criterion": "Native OpenSSH — источник effective конфигурации; raw IdentityFile отделён от подтверждённого пути, неизвестный контекст явно NOT_CHECKED без догадок. CI #549 Desktop3910/+59 и свежий SSH report visual приняты. [Доказательства](MICROTASK_F31_SSH_CONFIG.md)."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Native OpenSSH — источник effective конфигурации; raw IdentityFile отделён от подтверждённого пути, неизвестный контекст явно NOT_CHECKED без догадок. CI #549 Desktop3910/+59 и свежий SSH report visual приняты. [Доказательства](MICROTASK_F31_SSH_CONFIG.md).",
@@ -1784,7 +1784,7 @@
         "historical_scoped_pass": false,
         "criterion": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Пакет A: startup snapshot и field-only tray preference в owned workers приняты по CI #551, Desktop3939/+29. [Доказательства](MICROTASK_F31_STARTUP_BACKGROUND.md). Пакет B: startup menu migration перенесена в tracked worker после instance.Attach; CI #552, Desktop3961/+22 PASS ([доказательства](MICROTASK_F31_MENU_MIGRATION.md)). Пакет C: constructor folder discovery перенесён после Shown, CI #554, Desktop3991/+30 PASS ([доказательства](MICROTASK_F31_SETTINGS_FOLDERS.md)). Ранние bootstrap/settings и scoped shortcuts/launch ещё впереди; у Codex .lnk ещё требуется fresh target/arguments ownership guard перед overwrite/delete (read-only source finding). Критерий всего R05 не закрыт.",
@@ -1807,7 +1807,7 @@
         "historical_scoped_pass": false,
         "criterion": "Owned worker, отмена, повторная проверка плана перед удалением; UI не выполняет Plan/ApplyCleanupPlan синхронно."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Owned worker, отмена, повторная проверка плана перед удалением; UI не выполняет Plan/ApplyCleanupPlan синхронно.",
@@ -1830,7 +1830,7 @@
         "historical_scoped_pass": false,
         "criterion": "ACK/ownership сохраняются, незавершённый helper запрещает handoff; ожидание StartHandoff не блокирует UI. Сам installer создаётся в F23."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "ACK/ownership сохраняются, незавершённый helper запрещает handoff; ожидание StartHandoff не блокирует UI. Сам installer создаётся в F23.",
@@ -1853,7 +1853,7 @@
         "historical_scoped_pass": false,
         "criterion": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
@@ -1876,7 +1876,7 @@
         "historical_scoped_pass": false,
         "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
@@ -1899,7 +1899,7 @@
         "historical_scoped_pass": false,
         "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
@@ -1912,17 +1912,17 @@
       "phase": "До",
       "requirement": "Подготовка SSH-agent и итоговая dev приёмка F31",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R11)",
-      "implementation": "Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService",
+      "implementation": "Start/Add Key UI inherited; startup waiter ordering e2fccacb8c7a859217cc854cb91bc7ee7ac57bd8 source reviewed,22 native assertions prepared; selected-key proof remains TODO",
       "history": "Dev PENDING",
       "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN",
+        "candidate": "NOT_RUN: no native Windows tools; remote CI blocked by visibility mismatch",
         "historical_scoped_pass": false,
         "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
@@ -1954,7 +1954,7 @@
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить unattended auth, отказ/восстановление и реальный SOCKS→HTTP/HTTPS маршрут. Проверить реальные encrypted-key сценарии [PGA-10](SSH_AGENT_AUTOSTART_SPEC.md); разработка и dev-проверки этого функционала обязательны раньше в F31-R11."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить unattended auth, отказ/восстановление и реальный SOCKS→HTTP/HTTPS маршрут. Проверить реальные encrypted-key сценарии [PGA-10](SSH_AGENT_AUTOSTART_SPEC.md); разработка и dev-проверки этого функционала обязательны раньше в F31-R11.",
@@ -1979,7 +1979,7 @@
         "historical_scoped_pass": false,
         "criterion": "Переносимые пути, независимые порты/профили и выбор локального ключа; SSH-поведение отдельно от VPN-архива F22."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Переносимые пути, независимые порты/профили и выбор локального ключа; SSH-поведение отдельно от VPN-архива F22.",
@@ -2004,7 +2004,7 @@
         "historical_scoped_pass": false,
         "criterion": "После установки подтвердить identity exe и startup/UI latency, CPU/RAM/process I/O/физический диск, idle и unavailable VPS/agent."
       },
-      "integration": "PR88 branch; unmerged to main",
+      "integration": "Inherited baseline7861ea9 in PR88/unmerged; new work in local work/progo-takeover-20261021 only, unpushed",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить identity exe и startup/UI latency, CPU/RAM/process I/O/физический диск, idle и unavailable VPS/agent.",
@@ -2021,6 +2021,28 @@
       "local_tests": "PASS 13; exact server/tests files at commit",
       "windows": "NOT_RUN",
       "independent_review": "root reviewed agent diff"
+    },
+    {
+      "name": "SSH startup ordering",
+      "commit": "e2fccacb8c7a859217cc854cb91bc7ee7ac57bd8",
+      "source_review": "PASS independent read-only; not runtime proof",
+      "windows": "NOT_RUN",
+      "assertions_added": 22
     }
-  ]
+  ],
+  "remote_visibility": {
+    "observed": "public",
+    "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
+    "push": "BLOCKED awaiting privacy decision",
+    "ci": "NOT_RUN for new commits",
+    "pr88": "unchanged"
+  },
+  "local_regression": {
+    "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
+    "reported": 44,
+    "passed": 41,
+    "skipped": 3,
+    "skip_reason": "compiled C# relay harness unavailable",
+    "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone"
+  }
 }

@@ -240,6 +240,36 @@ try {
     Check (((Get-Content (Join-Path $install 'VERSION')).Trim()) -eq '0.0.1') 'failed update rolls back while retaining exclusive ownership'
     Check ((Test-Path (Join-Path $manualCopy 'payload.txt')) -and (Test-Path $unknownCopy)) 'failed update rollback also preserves protected backup folders'
     Check ((Run (DriverInfo 'startup')) -eq 0) 'failure cleanup releases ownership for subsequent startup'
+    $updateLog = Join-Path $install 'update.log'
+    Check ((Get-Content -LiteralPath $updateLog -Raw).Contains('Rollback program hashes, version and self-check PASS.')) 'successful updater rollback verifies program bytes and runs the compiled self-check'
+    foreach ($mode in @('rollback-copy-fail','rollback-corrupt','rollback-self-check-fail','rollback-self-check-timeout')) {
+        # Each failure begins with the same valid installed runtime. The next
+        # transaction must not certify the damaged result from an earlier case.
+        Copy-Item -LiteralPath $Exe -Destination (Join-Path $install 'ProGo.exe') -Force
+        Set-Content -LiteralPath (Join-Path $install 'VERSION') '0.0.1'
+        if (Test-Path -LiteralPath $updateLog) { Remove-Item -LiteralPath $updateLog -Force }
+        $beforePersonal = (Get-FileHash -LiteralPath (Join-Path $install 'settings.json')).Hash
+        Check ((Run (DriverInfo $mode)) -ne 0) "updater reports an incomplete rollback: $mode"
+        $log = Get-Content -LiteralPath $updateLog -Raw
+        Check ($log.Contains('Rollback incomplete. Backup retained:') -and -not $log.Contains('Rollback completed after failed main commit.') -and -not $log.Contains('Rollback program hashes, version and self-check PASS.')) "failed rollback cannot publish the verified-success markers: $mode"
+        $dialog = Get-Content -LiteralPath (Join-Path $fixture 'update-dialog.txt') -Raw
+        Check ($dialog.Contains('откат не подтверждён') -and -not $dialog.Contains('проверено после восстановления')) "failed rollback UI does not promise a restored application: $mode"
+        $failedCopies = @(Get-ChildItem -LiteralPath (Join-Path $install 'backups') -Directory | Where-Object {
+            $manifest = Join-Path $_.FullName 'manifest.txt'
+            (Test-Path -LiteralPath $manifest) -and (Get-Content -LiteralPath $manifest -Raw).Contains('update_result=rollback_failed')
+        })
+        Check ($failedCopies.Count -ge 1) "incomplete rollback retains a labelled recovery backup: $mode"
+        foreach ($copy in $failedCopies) { [ProGo.BackupIntegrity]::Validate($copy.FullName) }
+        Check ((Get-FileHash -LiteralPath (Join-Path $install 'settings.json')).Hash -eq $beforePersonal) "incomplete rollback preserves current personal settings: $mode"
+        Check (-not (Test-Path -LiteralPath (Join-Path $fixture 'unexpected-rollback-launch'))) "incomplete rollback never launches the damaged application: $mode"
+        Check ((Run (DriverInfo 'startup')) -eq 0) "incomplete rollback releases only its maintenance ownership: $mode"
+        if ($mode -eq 'rollback-self-check-timeout') {
+            Check ($log.Contains('Rollback self-check timed out; owned child exit confirmed; PID=')) 'native sleeping self-check reaches the bounded timeout and confirms owned-child termination'
+            $identity = (Get-Content -LiteralPath (Join-Path $fixture 'rollback-self-check-pid') -Raw).Trim().Split(':')
+            $remaining = Get-Process -Id ([int]$identity[0]) -ErrorAction SilentlyContinue
+            Check ($null -eq $remaining -or $remaining.StartTime.ToUniversalTime().Ticks -ne [long]$identity[1]) 'native self-check timeout leaves no surviving process with the recorded identity'
+        }
+    }
     Write-Host "Maintenance tests PASS: $passed"
 } finally {
     if ($null -ne $lease) { $lease.Dispose() }

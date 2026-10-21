@@ -120,3 +120,49 @@ shutdown/settings/явная команда инвалидируют late start;
 no-late-start/other-auth инварианты просмотрены. Локальные diff/public scan PASS;
 native Windows execution до нового CI NOT_RUN. Selected-key readiness остаётся
 F31-R11 PARTIAL. Этот блок не закрывает полный критерий SSH-agent.
+
+## Блок 3: проверенный результат rollback
+
+Restore-BackupToMain подготавливает проверенную detached backup до изменений,
+восстанавливает только program roots и сравнивает точные состав/hashes/версию.
+Затем запускает self-check и повторно сверяет program evidence. При отказе
+копирования, проверки либо cleanup остаётся rollback_failed; backup сохранена,
+успех/повторный запуск не обещаются. Текущие personal roots не восстанавливаются
+из старой копии. Независимое source review нашло и затем подтвердило устранение
+unbounded WaitForExit: теперь30s ожидания+2s cleanup; неподтверждённый owned child
+сохраняет handle/PID/start identity для диагностики. Prepared Windows tests
+включают copy fail/corruption/self-check fail/настоящий sleeping child timeout,
+missing/tampered backup. Native execution NOT_RUN. F23-R04 остаётся PARTIAL.
+
+Локальная общая регрессия: `python -m unittest discover -s tests -p 'test_*.py' -v`
+сообщила44 tests:41 PASS,3 SKIP из-за отсутствующего compiled C# relay harness.
+Ни SKIP, ни source review не считаются Windows PASS.
+
+## Дополнительные source findings и гипотеза
+
+- A11 / FAIL: `SettingsService.Load`, `src/Core.cs:342–365`, возвращает defaults
+  после ошибки read/JSON. Следующий `SaveCore:426–430` может заменить исходный
+  settings без загруженных profiles/unknown fields. Статическое доказательство;
+  locked-file/native reproduction NOT_RUN. Нужен degraded-load state с сохранением
+  исходного файла и понятным recovery; тест locked→unlock→unrelated Save.
+- A12 / FAIL: `CodexProxyService.Enable/Disable`, `src/ProxyAutomation.cs:133–149,
+  187–191`, проверяет marker cmd, но пишет/удаляет одноимённый lnk без fresh
+  target/arguments ownership guard. Воспроизведение: заменить только lnk чужим
+  после создания launcher; native execution NOT_RUN. Исправить fresh COM read
+  перед изменением, тест foreign/repointed shortcut. F31-R05.
+- H01 / PARTIAL, гипотеза: `ProxyService.StartSingleTunnel/StopProcessOnly` владеет
+  root ssh Process, не job tree. ProxyCommand descendants могут пережить Stop.
+  Наличие orphan НЕ воспроизведено; нужны native owned-descendant fixtures прежде,
+  чем объявлять подтверждённый дефект процессов.
+
+## Блокер remote CI и передачи пакета
+
+GitHub get_repo по full name и URL дважды вернул `visibility=public` для ProGo.
+Это расходится с указанным владельцем приватным назначением. Новый push сделал
+бы код/отчёт публичным, поэтому до privacy decision он не выполняется.
+PR88 не изменён, новый CI не запущен, видимость/permissions не менялись.
+Локально нет Windows/.NET/PowerShell: сборка и native validation нового кода
+NOT_RUN. Поэтому новый бинарный пакет/его SHA256 пока отсутствуют.
+Нужен один шаг владельца: разрешить push этих проверяемых изменений в публичный
+ProGo либо сделать назначение приватным. Это блокирует публикацию и CI, а не
+подменяет оставшийся объём разработки завершением проекта.

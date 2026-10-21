@@ -66,9 +66,27 @@ try {
     }
     Set-Content (Join-Path $InstallDir 'ProGo.exe') 'new program; never execute'
     $personalBeforeRollback = @($preservedNames | ForEach-Object { (Get-FileHash (Join-Path $InstallDir $_)).Hash }) -join ','
+    # This storage-only fixture uses text instead of an executable. The actual
+    # compiled self-check and failed-check outcome run in MaintenanceTests.
+    $script:rollbackSelfChecks = 0
+    function Test-RollbackApplication { $script:rollbackSelfChecks++ }
     Restore-BackupToMain $backup
+    if ($script:rollbackSelfChecks -ne 1) { throw 'Rollback skipped its self-check boundary' }
     if ((Get-Content (Join-Path $InstallDir 'ProGo.exe') -Raw) -notmatch 'fixture; never execute') { throw 'Actual rollback did not restore the program' }
     if ((@($preservedNames | ForEach-Object { (Get-FileHash (Join-Path $InstallDir $_)).Hash }) -join ',') -cne $personalBeforeRollback) { throw 'Automatic rollback rewound current personal state' }
+    $programBeforeRefusal = Get-RollbackProgramState $InstallDir
+    $refused = $false
+    try { Restore-BackupToMain (Join-Path $BackupsDir 'missing-backup') } catch { $refused = $true }
+    if (-not $refused -or (Get-RollbackProgramState $InstallDir) -cne $programBeforeRefusal) { throw 'Missing rollback backup was accepted or changed installed program' }
+    $backupVersionPath = Join-Path $backup 'VERSION'
+    $backupVersionBytes = [IO.File]::ReadAllBytes($backupVersionPath)
+    try {
+        Set-Content -LiteralPath $backupVersionPath 'tampered-rollback-version'
+        $refused = $false
+        try { Restore-BackupToMain $backup } catch { $refused = $true }
+        if (-not $refused -or (Get-RollbackProgramState $InstallDir) -cne $programBeforeRefusal -or $script:rollbackSelfChecks -ne 1) { throw 'Damaged rollback backup reached copy or self-check' }
+    } finally { [IO.File]::WriteAllBytes($backupVersionPath, $backupVersionBytes) }
+    [ProGo.BackupIntegrity]::Validate($backup)
     $Timestamp = '20260201-000001'
     Set-Content (Join-Path $InstallDir 'settings.json') 'synthetic settings'
     $locked = [IO.File]::Open((Join-Path $InstallDir 'settings.json'), [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
