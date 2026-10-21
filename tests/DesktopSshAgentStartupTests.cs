@@ -21,10 +21,11 @@ namespace ProGo
             private readonly HomeVpnService home;
             private readonly ClipboardService clipboard;
             private readonly ConnectionHealthMonitor health;
-            internal AgentStartupContextFixture(SettingsService settings)
+            internal ProxyService Proxy { get { return proxy; } }
+            internal AgentStartupContextFixture(SettingsService settings, string executable = null)
             {
                 Directory.CreateDirectory(Root);
-                proxy = new ProxyService(() => settings.Current, value => settings.Save(value), "unused-agent-startup-ssh", () => DateTime.UtcNow, false);
+                proxy = new ProxyService(() => settings.Current, value => settings.Save(value), executable ?? "unused-agent-startup-ssh", () => DateTime.UtcNow, false);
                 bridge = new CliProxyBridgeService(settings); relay = new Ikev2RelayService(); home = new HomeVpnService(relay);
                 clipboard = new ClipboardService(settings); health = new ConnectionHealthMonitor(() => settings.Current);
                 Context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false, health,
@@ -33,7 +34,7 @@ namespace ProGo
             }
             public void Dispose()
             {
-                Context.Dispose(); AgentProbeSettled(Context.SshAgentStartupWork); AgentProbeSettled(Context.DailyWork);
+                Context.Dispose(); AgentProbeSettled(Context.SshAgentStartupWork); AgentProbeSettled(Context.AutomaticTunnelStartupWork); AgentProbeSettled(Context.DailyWork);
                 bridge.Dispose(); clipboard.Dispose(); home.Dispose(); relay.Dispose(); health.Dispose(); proxy.Dispose();
                 Directory.Delete(Root, true);
             }
@@ -82,8 +83,97 @@ namespace ProGo
                 AgentStartupShutdown(settings, true);
                 AgentStartupForeignRead(settings);
                 AgentStartupLogOwnership(settings);
+                AgentStartupTunnelOrdering(settings);
             } finally { Control.CheckForIllegalCrossThreadCalls = previous; settings.Save(original); }
             Console.WriteLine("SSH-agent startup checks PASS: " + (passed - baseline));
+        }
+        private static void AgentStartupTunnelSettings(SettingsService settings)
+        {
+            var reservation = Occupy(0); int port = Number(reservation); reservation.Stop();
+            var configured = AppSettings.Defaults(); configured.TrayCloseExplained = true;
+            configured.SocksHost = "127.0.0.1"; configured.SocksPort = port; configured.SshProfile = "ready";
+            configured.AutoStartSocks = true; configured.AutoRestartSocks = configured.AutoSwitchSshProfile = false;
+            configured.AutoCliProxy = configured.AutoSystemProxy = false;
+            configured.TestEndpoint = "http://127.0.0.1:1/"; settings.Save(configured);
+        }
+        private static void AgentStartupTunnelOrdering(SettingsService settings)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
+            string executable = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "SocksRecoveryTests.exe");
+            Check(File.Exists(executable), "startup ordering uses the already compiled native loopback SSH fixture");
+            // Running, access denied, and a timed-out native waiter all permit a
+            // later SSH attempt. None of these service results is key/auth proof.
+            for (int variant = 0; variant < 3; variant++) {
+                AgentStartupTunnelSettings(settings); int current = variant;
+                using (var native = new AgentStartupProbeFixture("start-open", n => { if (current == 1) n.OpenServiceError = 5; }))
+                using (var owner = new AgentStartupContextFixture(settings, executable))
+                using (var heartbeat = new System.Windows.Forms.Timer { Interval = 15 }) {
+                    int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                    var work = owner.Context.StartSshAgentAsync(native.Probe, variant == 2 ? 1000 : 10000, message => { });
+                    try {
+                        PumpUntil(() => native.Entered.IsSet && ticks >= 3);
+                        Check(!owner.Proxy.ConnectionRequested && !owner.Proxy.CurrentPid.HasValue && !owner.Context.AutomaticTunnelStartupWork.IsCompleted && ticks >= 3,
+                            "queued automatic SSH waits for the bounded service waiter while the UI pumps: " + variant);
+                        if (variant != 2) native.Release.Set();
+                        PumpUntil(() => owner.Context.AutomaticTunnelStartupWork.IsCompleted);
+                        Check(!owner.Context.AutomaticTunnelStartupWork.IsFaulted && owner.Proxy.CurrentPid.HasValue &&
+                            ConnectionHealthMonitor.CheckSocks(settings.Current, CancellationToken.None),
+                            "service outcome permits one real loopback SSH/SOCKS attempt without requiring a running agent: " + variant);
+                        var first = owner.Proxy.CurrentPid;
+                        Check(Object.ReferenceEquals(work, owner.Context.StartSshAgentAsync(native.Probe)) && owner.Proxy.CurrentPid == first && native.Calls == 1 &&
+                            (variant != 2 || owner.Context.SshAgentStartupResult.State == SshAgentProbeState.TimedOut && !native.Probe.PendingWork.IsCompleted),
+                            "repeat scheduling shares the startup and timeout does not wait for late native cleanup: " + variant);
+                    } finally { native.Release.Set(); AgentProbeSettled(work); AgentProbeSettled(native.Probe.PendingWork); }
+                }
+            }
+            for (int variant = 0; variant < 4; variant++) {
+                AgentStartupTunnelSettings(settings);
+                using (var native = new AgentStartupProbeFixture("before-query"))
+                using (var owner = new AgentStartupContextFixture(settings, executable)) {
+                    var context = owner.Context; var work = context.StartSshAgentAsync(native.Probe, 10000, message => { });
+                    try {
+                        PumpUntil(() => native.Entered.IsSet);
+                        if (variant == 0) { Call(context, "Execute", "stop"); PumpUntil(() => context.IntegrationWork.IsCompleted); }
+                        if (variant == 1) { var changed = settings.Current.Clone(); changed.SshProfile = "changed"; settings.Save(changed); }
+                        if (variant == 2) context.Dispose();
+                        if (variant == 3) { var shutdown = context.RequestShutdownAsync(); PumpUntil(() => shutdown.IsCompleted); Check(shutdown.Result, "startup waiting on agent can prepare a clean shutdown"); context.CancelShutdown(); }
+                        native.Release.Set(); PumpUntil(() => context.AutomaticTunnelStartupWork.IsCompleted); AgentProbeSettled(work);
+                        Check(!owner.Proxy.ConnectionRequested && !owner.Proxy.CurrentPid.HasValue && !owner.Proxy.IsConnecting,
+                            "manual stop settings change disposal or cancelled shutdown prevents a late automatic SSH start: " + variant);
+                        Application.DoEvents();
+                        Check(!owner.Proxy.CurrentPid.HasValue && Object.ReferenceEquals(work, context.StartSshAgentAsync(native.Probe)),
+                            "a settled stale startup cannot be rearmed by repeating its one-shot agent API: " + variant);
+                    } finally { native.Release.Set(); AgentProbeSettled(native.Probe.PendingWork); }
+                }
+            }
+            AgentStartupTunnelSettings(settings);
+            using (var native = new AgentStartupProbeFixture("before-query"))
+            using (var owner = new AgentStartupContextFixture(settings, executable)) {
+                var context = owner.Context; var work = context.StartSshAgentAsync(native.Probe, 10000, message => { });
+                try {
+                    PumpUntil(() => native.Entered.IsSet);
+                    Call(context, "Execute", "connect"); Application.DoEvents();
+                    Check(context.PendingRouteCount == 1 && !owner.Proxy.ConnectionRequested && !owner.Proxy.CurrentPid.HasValue,
+                        "an explicit connection joins the pending startup waiter instead of bypassing it");
+                    Call(context, "Execute", "stop"); PumpUntil(() => context.IntegrationWork.IsCompleted);
+                    native.Release.Set(); PumpUntil(() => context.AutomaticTunnelStartupWork.IsCompleted); AgentProbeSettled(work); Application.DoEvents();
+                    Check(context.PendingRouteCount == 0 && !owner.Proxy.ConnectionRequested && !owner.Proxy.CurrentPid.HasValue,
+                        "manual stop withdraws an explicit connection waiting on the agent without a late child");
+                } finally { native.Release.Set(); AgentProbeSettled(native.Probe.PendingWork); }
+            }
+            AgentStartupTunnelSettings(settings);
+            using (var native = new AgentStartupProbeFixture())
+            using (var owner = new AgentStartupContextFixture(settings, executable))
+            using (var logging = new ManualResetEventSlim()) using (var releaseLog = new ManualResetEventSlim()) {
+                var work = owner.Context.StartSshAgentAsync(native.Probe, 3000, message => { logging.Set(); if (!releaseLog.Wait(10000)) throw new TimeoutException(); });
+                try {
+                    PumpUntil(() => logging.IsSet && owner.Context.AutomaticTunnelStartupWork.IsCompleted);
+                    Check(!work.IsCompleted && owner.Context.SshAgentStartupResult != null && owner.Proxy.CurrentPid.HasValue &&
+                        ConnectionHealthMonitor.CheckSocks(settings.Current, CancellationToken.None),
+                        "a slow best-effort agent log cannot hold back automatic SSH after the bounded check completed");
+                } finally { releaseLog.Set(); AgentProbeSettled(work); }
+            }
+            var reset = settings.Current.Clone(); reset.AutoStartSocks = false; settings.Save(reset);
         }
         private static void AgentStartupBoundaries(SettingsService settings)
         {

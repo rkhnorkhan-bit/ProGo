@@ -40,6 +40,8 @@ namespace ProGo
         internal Task ShortcutMigrationWork { get; private set; }
         private volatile SshAgentStartupSession sshAgentStartup;
         private readonly Task sshAgentIdle = Task.FromResult(false);
+        private long automaticTunnelIntent;
+        internal Task AutomaticTunnelStartupWork { get; private set; }
         internal Task SshAgentStartupWork { get { return sshAgentStartup == null ? sshAgentIdle : sshAgentStartup.Work; } }
         internal SshAgentStartupState SshAgentStartupState { get { return sshAgentStartup == null ? ProGo.SshAgentStartupState.NotStarted : sshAgentStartup.State; } }
         internal SshAgentProbeResult SshAgentStartupResult { get { return sshAgentStartup == null ? null : sshAgentStartup.Result; } }
@@ -125,6 +127,7 @@ namespace ProGo
             IntegrationWork = Task.FromResult(false);
             TrayPreferenceWork = Task.FromResult(false);
             ShortcutMigrationWork = Task.FromResult(false);
+            AutomaticTunnelStartupWork = Task.FromResult(false);
             proxy = proxyService;
             cliProxy = cliProxyService;
             appConsumers = new AppProxyConsumers(cliProxy, settings);
@@ -268,7 +271,32 @@ namespace ProGo
             if (sshAgentStartup != null) return sshAgentStartup.Work;
             if (closing || disposed || shutdownPrepared || shutdownPreparing) return sshAgentIdle;
             sshAgentStartup = new SshAgentStartupSession(probe ?? SshAgentServiceProbe.Shared, timeoutMilliseconds, report ?? (message => SafeLog.Info(message)));
-            return sshAgentStartup.Schedule(action => activationDispatcher.BeginInvoke(action));
+            var work = sshAgentStartup.Schedule(action => activationDispatcher.BeginInvoke(action));
+            ScheduleAutomaticTunnelStartup();
+            return work;
+        }
+        private void ScheduleAutomaticTunnelStartup()
+        {
+            if (!settings.Current.AutoStartSocks || closing || disposed || shutdownPrepared || shutdownPreparing) return;
+            var expected = settings.Capture(); long intent = ++automaticTunnelIntent;
+            AutomaticTunnelStartupWork = StartAutomaticTunnelAfterAgent(expected, intent,
+                sshAgentStartup == null ? sshAgentIdle : sshAgentStartup.CheckCompletion);
+        }
+        private async Task StartAutomaticTunnelAfterAgent(SettingsRevisionSnapshot expected, long intent, Task checkedAgent)
+        {
+            try {
+                await checkedAgent.ConfigureAwait(false);
+                var work = await DispatchUi(delegate {
+                    // Manual control, a saved settings change, or shutdown wins
+                    // before the first SSH request. A failed/disabled agent does
+                    // not prohibit direct keys or other supported SSH methods.
+                    if (closing || disposed || shutdownPrepared || shutdownPreparing || intent != automaticTunnelIntent ||
+                        settings.Revision != expected.Revision || !settings.Current.AutoStartSocks) return (Task<bool>)null;
+                    return proxy.StartTunnelAsync(routeLifetime.Token);
+                }).ConfigureAwait(false);
+                if (work != null) await work.ConfigureAwait(false);
+            } catch (OperationCanceledException) { }
+            catch (Exception ex) { if (!closing) SafeLog.Error("Automatic SSH startup failed after the agent check.", ex); }
         }
         // Program calls this only after instance.Attach. The shared task includes
         // both its owner-dispatch reservation and the actual worker/COM cleanup.
@@ -356,7 +384,7 @@ namespace ProGo
                         // The accepted owner publication already updates recovery
                         // and automation once. Do not reset a pending auto-apply
                         // that the message pump may have started before dialog close.
-                        if (!before.AutoStartSocks && settings.Current.AutoStartSocks) proxy.StartTunnelAsync(System.Threading.CancellationToken.None);
+                        if (!before.AutoStartSocks && settings.Current.AutoStartSocks) ScheduleAutomaticTunnelStartup();
                     }
                 } finally { CommandStateChanged -= form.RefreshCommandAvailability; }
             }
@@ -555,6 +583,7 @@ namespace ProGo
         }
         private void StopDesktop()
         {
+            automaticTunnelIntent++;
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             IntegrationWork = StopDesktopAsync();
@@ -563,6 +592,7 @@ namespace ProGo
         private void BeginRouteAction(AppCommand action)
         {
             if (!AppCommands.CanExecute(action, GetCommandState())) return;
+            automaticTunnelIntent++; // Explicit control supersedes a queued automatic connection.
             long request = ++nextRouteRequest; pendingRoutes[action] = request;
             // A reconnect invalidates all previous requests before a new connection is awaited.
             if (action == AppCommand.Reconnect || (action == AppCommand.Connect && proxy.CurrentPid.HasValue)) {
@@ -577,7 +607,15 @@ namespace ProGo
             IDisposable routeConsumers = null;
             AppSettings borrowedRoute = null;
             try {
-                var token = routeLifetime.Token;
+                var token = routeLifetime.Token; long expectedRevision = settings.Revision;
+                var agentStartup = sshAgentStartup;
+                if (agentStartup != null) await agentStartup.CheckCompletion.ConfigureAwait(false);
+                bool currentRequest = await DispatchUi(delegate {
+                    long active;
+                    return !closing && !shutdownPrepared && !shutdownPreparing && settings.Revision == expectedRevision &&
+                        pendingRoutes.TryGetValue(action, out active) && active == request;
+                }).ConfigureAwait(false);
+                if (!currentRequest) throw new OperationCanceledException(token);
                 bool consumer = action == AppCommand.StartCli || action == AppCommand.EnableWindows ||
                     action == AppCommand.CreateCodexShortcut || action == AppCommand.OpenCodex || action == AppCommand.OpenTerminal;
                 if (consumer && !proxy.IsConnecting && !proxy.IsStopping) {
@@ -588,7 +626,7 @@ namespace ProGo
                     }).ConfigureAwait(false);
                     var startup = await DispatchUi(delegate {
                         long active;
-                        if (closing || !pendingRoutes.TryGetValue(action, out active) || active != request || !MatchesConsumerRoute(saved))
+                        if (closing || shutdownPrepared || shutdownPreparing || !pendingRoutes.TryGetValue(action, out active) || active != request || !MatchesConsumerRoute(saved))
                             return (Task<bool>)null;
                         token.ThrowIfCancellationRequested();
                         // A configured transport may be consumed without owning its process.
@@ -598,7 +636,16 @@ namespace ProGo
                     }).ConfigureAwait(false);
                     if (startup == null) cancelled = true;
                     else ready = await startup.ConfigureAwait(false);
-                } else ready = await proxy.StartTunnelAsync(token).ConfigureAwait(false);
+                } else {
+                    var startup = await DispatchUi(delegate {
+                        long active;
+                        if (closing || shutdownPrepared || shutdownPreparing || settings.Revision != expectedRevision ||
+                            !pendingRoutes.TryGetValue(action, out active) || active != request) return (Task<bool>)null;
+                        return proxy.StartTunnelAsync(token);
+                    }).ConfigureAwait(false);
+                    if (startup == null) cancelled = true;
+                    else ready = await startup.ConfigureAwait(false);
+                }
             }
             catch (OperationCanceledException) { cancelled = true; }
             catch (Exception ex) { failure = ex; }
@@ -1082,7 +1129,7 @@ namespace ProGo
         private async Task<bool> PrepareShutdownCore(bool dialog, BackupWorkSession preservedBackup)
         {
             ObserveVaultDate();
-            shutdownPreparing = true;
+            shutdownPreparing = true; automaticTunnelIntent++;
             pendingRoutes.Clear(); RefreshPendingRoutes();
             foreach (ProxyFeature feature in Enum.GetValues(typeof(ProxyFeature))) automation.Cancel(feature);
             Exception failure = null;

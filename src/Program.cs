@@ -68,11 +68,6 @@ namespace ProGo
                     using (var clipboardService = new ClipboardService(settingsService))
                     using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, cliProxyService, homeVpn, clipboardService, showStatusOnStartup))
                     {
-                        if (settingsService.Current.AutoStartSocks)
-                        {
-                            proxyService.StartTunnelAsync(System.Threading.CancellationToken.None);
-                        }
-
                         context.StartAutomation();
                         instance.Attach(context.RequestShowStatus, context.RequestShutdown, context.CompleteShutdown, context.CancelShutdown);
                         context.StartSshAgentAsync();

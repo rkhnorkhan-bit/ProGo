@@ -12,37 +12,37 @@ CI582 независимо проверен через jobs и Windows log: Wind
 
 | ID | Требование | Статус | Реализация / область | Остаток / следующий шаг |
 | --- | --- | --- | --- | --- |
-| F01 | Общий CLI/Codex | PARTIAL | CliProxyEnvironmentService | Сохранить единый режим и миграцию флагов, обычный запуск CLI; один обработчик на всех поверхностях. |
-| F02 | Автоматика и повторы | PARTIAL | AutomationPlan; ProxyService | Сохранить задание до успеха, ограниченные повторы, видимую паузу и отмену. Причину ошибки не терять. |
-| F03 | Один экземпляр | PARTIAL | ApplicationInstance; MaintenanceOperation | Единое владение приложением и обслуживанием; второй запуск открывает окно. Полный installer включить в тот же протокол. |
-| F04 | Честный статус связи | PARTIAL | ConnectionHealthMonitor | Различать применённые настройки, рабочий SOCKS и проверенный интернет. Старые результаты инвалидировать. |
-| F05 | Один клик и SSH-вход | PARTIAL | ProxyService; SshInteractiveLogin | Сохранить ожидание готовности SOCKS, понятные host/user/port/key и отдельный первый вход; скрытый вход без интерактивных запросов. |
-| F06 | Возврат proxy-настроек | PARTIAL | CliProxyEnvironmentService; WindowsProxyService | Исправить partial OFF→ON→OFF и повторный CLI ON после внешней смены окружения. Не терять baseline; сохранять journal при ошибке. |
-| F07 | Сохранность копий | PARTIAL | BackupRetention; BackupService | Одна retention для приложения, updater и installer. Ручные/неизвестные копии сохранять; удалять только подтверждённые кандидаты. |
-| F08 | Транзакционный restore | PARTIAL | BackupIntegrity; Restore-ProGoBackup.ps1 | Устранить текущий FAIL отмены/очистки. Проверять источники до чтения: reparse/path escape исключить. Staging, self-check и подтверждённый rollback. |
-| F09 | Настоящий и ложный vault | PARTIAL | VaultService; VaultDailyStore; VaultOpenService | Реализовать утверждённый контракт F09 выше; убрать catch-all «успешный вход», ложное сохранение и работу KDF/диска на UI. |
-| F10 | Жизненный цикл bridge | PARTIAL | CliProxyBridgeService; HttpConnectProxyServer | Сохранить учёт потребителей; исправить TCP half-close, блокирующие relay workers и освобождение ресурсов. |
-| F11 | Навигация и команды | PARTIAL | AppCommand; UpdateAwareTrayApplicationContext | Единые названия и переходы к нужному разделу. Согласованные состояния новых экранов обновления и кабинета. |
-| F12 | Область отключения | PARTIAL | UpdateAwareTrayApplicationContext; HomeVpnService | Раздельные stop PC/phone/all. Phone Stop завершает owned процессы и сообщает о незавершённой очистке; поздний запуск исключить. |
-| F13 | Проверка маршрута | PARTIAL | RouteTester | Первое нажатие запускает проверку. Источник и время результата отделены от ping/status; перекрывающихся запусков нет. |
-| F14 | Фоновая диагностика | PARTIAL | SshProfileDiagnostics; DiagnosticProcess | Сохранить фон, deadlines и отмену сетевых задач. Новые операции используют тот же жизненный цикл. |
-| F15 | Save и немедленные действия | PARTIAL | SettingsService; SshProfilesSettingsForm | Атомарно сохранять настройки; немедленные действия явно обозначить. Не терять ввод при отказе или позднем завершении. |
-| F16 | Адаптивность и DPI | PARTIAL | MainWindow; SshProfilesSettingsForm; Program | Завершить компоновку всех форм и installer. Настроить подходящий DPI-режим и перестроение при смене монитора. |
-| F17 | Доступность | PARTIAL | UiTheme; native forms | Полная клавиатура, focus order, доступные имена/состояния/ошибки и контраст. Покрыть все новые формы. |
-| F18 | Выдача и установка | PARTIAL | HomeVpnWizardForm | Сохранить отдельные состояния выдачи профиля, установки и проверенного интернета телефона. |
-| F19 | Условия подключения | PARTIAL | HomeVpnWizardForm; HomeVpnService | Preflight LAN/NAT/CGNAT/UDP и поэтапная диагностика. Ручная отметка не считается доказанным пробросом. Настройка роутера вручную. |
-| F20 | Управление друзьями | PARTIAL | HomeInvitationsForm; server/home_vpn_setup.py | Сохранить ID/имя/дату/отзыв и корректную перевыдачу; связать доступ со сроками, тарифами и серверным исполнением F30. |
-| F21 | Очистка clipboard | PARTIAL | ClipboardService | Повторять очистку при временно занятом буфере. Не забывать владение; чужое содержимое не удалять. Корректные ошибки копирования. |
-| F22 | Копии и перенос | PARTIAL | BackupService; HomeVpnPortableTransfer; Repair-ProGo.ps1 | Проверить полный состав private/access/proxy snapshots. Защищённый экспорт/импорт на чистый ПК; repair восстанавливает весь runtime. |
-| F23 | Обновление и installer | PARTIAL | UpdateLauncher; Update-ProGo.Core.ps1; Install-ProGo.ps1 | Одна кнопка и оба пути F23 выше. Исправить ложный успех отката, release UID gap, повторный asset старой версии и неполный repair. |
-| F24 | Помощь и версия | PARTIAL | HelpForm; README.ru.md | Помощь, README и полный changelog описывают итоговые функции и один номер версии. Убрать устаревшие нерешённые развилки. |
-| F25 | Журналы и экспорт | PARTIAL | BoundedLog; DiagnosticReport; DiagnosticPreview | Сохранить ротацию и очищенный preview. Вывести файловую работу из UI, скрывать PIN/ключи/токены и секреты handoff. |
-| F26 | Автозапуск | PARTIAL | ApplicationShortcuts; Install-ProGo.ps1 | Раздельно запуск ProGo при входе и соединение при старте. Installer сохраняет выбор и пути; uninstall удаляет только своё. |
-| F27 | Подпись и антивирусы | PARTIAL | .github/workflows/release.yml | Подготовить signing/verification для exe, scripts, installer и ZIP. Реальный сертификат после тестов; ключ защищён. |
-| F28 | Команды и поддержка | PARTIAL | AppCommand; Test-ProGo.ps1 | Сохранить единый каталог команд; выделить границы сервисов. Разделить отчёт suites, чтобы ранний FAIL не скрывал весь хвост. |
-| F29 | Визуальный стиль | PARTIAL | BrandIcon; UiTheme | Сохранить принятую иконку и текстовые статусы. Единые отступы/кнопки/пустые/загрузочные/ошибочные состояния новых экранов. |
-| F30 | Почта, кабинет, биллинг | PARTIAL | server/profile_share.py; HomeInvitationsForm; remaining commercial modules absent | Реализовать весь утверждённый контур F30 выше: серверные данные/роли/сроки, письма, оплаты, ручное продление, комиссии, реестр выплат и сверка. |
-| F31 | SSH, переносимость, скорость | PARTIAL | Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService | Завершить вынос disk/crypto/DPAPI из UI, фоновые Stop/cleanup. Исправить SSH IPv6, профильный fallback, ошибки config и диагностику Include/tokens. До установщика реализовать agent status/start без elevation, готовность выбранного ключа, безопасную интерактивную разблокировку и раздельные причины/действия по [PGA-спецификации](SSH_AGENT_AUTOSTART_SPEC.md). |
+| F01 | Общий CLI/Codex | PARTIAL | CliProxyEnvironmentService | Перепроверить на итоговом SHA и пакете: Миграции, один запрос CLI, on/off и итоговые переменные окружения. |
+| F02 | Автоматика и повторы | PARTIAL | AutomationPlan; ProxyService | Перепроверить на итоговом SHA и пакете: Временный/постоянный отказ, ручная отмена, успешный повтор без перезапуска. |
+| F03 | Один экземпляр | PARTIAL | ApplicationInstance; MaintenanceOperation | Перепроверить на итоговом SHA и пакете: Одновременный запуск, авария owner, handoff, update/restore/install без параллельной записи. |
+| F04 | Честный статус связи | PARTIAL | ConnectionHealthMonitor | Перепроверить на итоговом SHA и пакете: Чужой listener, silent SOCKS, egress, NO_PROXY, устаревшие данные и частичный CLI. |
+| F05 | Один клик и SSH-вход | PARTIAL | ProxyService; SshInteractiveLogin | Перепроверить на итоговом SHA и пакете: Задержка старта, отказ ключа, один клик CLI, отмена, host trust; настоящий VPS позже. |
+| F06 | Возврат proxy-настроек | PARTIAL | CliProxyEnvironmentService; WindowsProxyService | Перепроверить на итоговом SHA и пакете: Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer. |
+| F07 | Сохранность копий | PARTIAL | BackupRetention; BackupService | Перепроверить на итоговом SHA и пакете: Preview/Cancel, изменившийся manifest, baseline/pre-update, новая копия и junction. |
+| F08 | Транзакционный restore | PARTIAL | BackupIntegrity; Restore-ProGoBackup.ps1 | Поздняя отмена/очистка уже исправлялась. Сохранить результат CI582; новая итоговая регрессия restore/path/reparse/tamper/rollback и приёмка пакета. Старый FAIL без нового воспроизведения не считается текущим. |
+| F09 | Настоящий и ложный vault | PARTIAL | VaultService; VaultDailyStore; VaultOpenService | PIN и фоновые vault операции уже реализованы. Нужны регрессия на итоговом SHA/пакете и приёмка установленного кандидата; повторная реализация не требуется. |
+| F10 | Жизненный цикл bridge | PARTIAL | CliProxyBridgeService; HttpConnectProxyServer | Перепроверить на итоговом SHA и пакете: CLI/Windows/scoped отдельно, последний consumer, Shutdown(Send), нагрузка, Stop и ошибки cleanup. |
+| F11 | Навигация и команды | PARTIAL | AppCommand; UpdateAwareTrayApplicationContext | Перепроверить на итоговом SHA и пакете: Главное окно, трей, настройки, закрытие диалогов, симметричные on/off. |
+| F12 | Область отключения | PARTIAL | UpdateAwareTrayApplicationContext; HomeVpnService | Перепроверить на итоговом SHA и пакете: Stop во время Connect, независимость каналов, Quit и подтверждённое завершение. |
+| F13 | Проверка маршрута | PARTIAL | RouteTester | Перепроверить на итоговом SHA и пакете: Первый/повторный запуск, закрытие окна, timeout и старый ответ. |
+| F14 | Фоновая диагностика | PARTIAL | SshProfileDiagnostics; DiagnosticProcess | Перепроверить на итоговом SHA и пакете: Heartbeat UI, медленная сеть, отмена/timeout, отсутствие поздних изменений. |
+| F15 | Save и немедленные действия | PARTIAL | SettingsService; SshProfilesSettingsForm | Перепроверить на итоговом SHA и пакете: Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения. |
+| F16 | Адаптивность и DPI | PARTIAL | MainWindow; SshProfilesSettingsForm; Program | Перепроверить на итоговом SHA и пакете: Настоящие Windows DPI 100/125/150/200%, 1366×768, длинный текст, доступные главные действия. |
+| F17 | Доступность | PARTIAL | UiTheme; native forms | Перепроверить на итоговом SHA и пакете: Tab/Shift+Tab/Enter/Esc, Narrator и High Contrast в среде разработки; недоступную среду отметить. |
+| F18 | Выдача и установка | PARTIAL | HomeVpnWizardForm | Перепроверить на итоговом SHA и пакете: Выдача/отзыв/повтор не дают ложный installed; реальная установка проверяется позже. |
+| F19 | Условия подключения | PARTIAL | HomeVpnWizardForm; HomeVpnService | Перепроверить на итоговом SHA и пакете: Стендовые ошибки сети; после установки - DNS, смена сети, idle, большие передачи и телефон. |
+| F20 | Управление друзьями | PARTIAL | HomeInvitationsForm; server/home_vpn_setup.py | Перепроверить на итоговом SHA и пакете: Отзыв только выбранного доступа, исходный ID запроса, отмена списка, повтор/ошибка API. |
+| F21 | Очистка clipboard | PARTIAL | ClipboardService | Перепроверить на итоговом SHA и пакете: Busy clipboard, таймер, закрытие/выход, чужая замена и пустой secret без ложного «скопировано». |
+| F22 | Копии и перенос | PARTIAL | BackupService; HomeVpnPortableTransfer; Repair-ProGo.ps1 | Перепроверить на итоговом SHA и пакете: Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные. |
+| F23 | Обновление и installer | PARTIAL | UpdateLauncher; Update-ProGo.Core.ps1; Install-ProGo.ps1 | Перепроверить на итоговом SHA и пакете: Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag. |
+| F24 | Помощь и версия | PARTIAL | HelpForm; README.ru.md | Перепроверить на итоговом SHA и пакете: UI/документы/пакеты совпадают; понятные Windows/CLI/Android/iPhone сценарии без личных примеров. |
+| F25 | Журналы и экспорт | PARTIAL | BoundedLog; DiagnosticReport; DiagnosticPreview | Перепроверить на итоговом SHA и пакете: Пределы журнала, отчёт до отправки, ошибки чтения, отсутствие секретов и блокировки запуска. |
+| F26 | Автозапуск | PARTIAL | ApplicationShortcuts; Install-ProGo.ps1 | Перепроверить на итоговом SHA и пакете: Комбинации настроек в dev Windows; фактический вход владельца - после установки. |
+| F27 | Подпись и антивирусы | PARTIAL | .github/workflows/release.yml | Перепроверить на итоговом SHA и пакете: Совпадение payload, проверяемая подпись, timestamp и отдельные Defender/Kaspersky результаты. |
+| F28 | Команды и поддержка | PARTIAL | AppCommand; Test-ProGo.ps1 | Перепроверить на итоговом SHA и пакете: Нет неописанных handlers; отдельно scenarios/assertions, FAIL/SKIP/NOT_CHECKED и общий результат. |
+| F29 | Визуальный стиль | PARTIAL | BrandIcon; UiTheme | Перепроверить на итоговом SHA и пакете: Native screenshots общей сборки, 16/24 px на разных фонах, читаемость и геометрия. |
+| F30 | Почта, кабинет, биллинг | PARTIAL | server/profile_share.py; HomeInvitationsForm; remaining commercial modules absent | Перепроверить на итоговом SHA и пакете: Sandbox/интеграционные сценарии, проверенный webhook, дубликаты, возврат, paid→activation retry, отзыв активных сеансов. |
+| F31 | SSH, переносимость, скорость | PARTIAL | Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService | Перепроверить на итоговом SHA и пакете: Dev service/key/ACL/cancel/ownership и slow disk/network fixtures, latency/CPU/I/O; фактический encrypted agent, другой ПК/VPS и Rescue замеры — после установки. |
 
 ## Декомпозиция остатка: 55 подпунктов
 

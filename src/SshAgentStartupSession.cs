@@ -22,6 +22,7 @@ namespace ProGo
         private bool scheduled, started, closed;
         private SshAgentStartupState state;
         private SshAgentProbeResult result;
+        private readonly TaskCompletionSource<bool> checkedAgent = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         internal SshAgentStartupSession(SshAgentServiceProbe probe, int timeoutMilliseconds = SshAgentServiceProbe.DefaultTimeoutMilliseconds,
             Action<string> report = null)
@@ -31,6 +32,9 @@ namespace ProGo
             this.probe = probe; this.timeoutMilliseconds = timeoutMilliseconds; this.report = report;
         }
         internal Task Work { get { lock (gate) return work; } }
+        // The bounded waiter settles before best-effort logging. It is not an
+        // assertion that the service is running or a selected key can authenticate.
+        internal Task CheckCompletion { get { return checkedAgent.Task; } }
         internal SshAgentStartupState State { get { lock (gate) return state; } }
         internal SshAgentProbeResult Result { get { lock (gate) return result; } }
 
@@ -51,7 +55,7 @@ namespace ProGo
                         result = new SshAgentProbeResult(SshAgentProbeState.Unavailable);
                         state = SshAgentStartupState.Completed;
                         cancellation.Dispose(); cancellation = null;
-                        reservation.TrySetResult(idle);
+                        reservation.TrySetResult(idle); checkedAgent.TrySetResult(false);
                     }
                 }
                 return work;
@@ -69,7 +73,7 @@ namespace ProGo
                 } catch (Exception) {
                     result = new SshAgentProbeResult(SshAgentProbeState.Unavailable);
                     state = SshAgentStartupState.Completed;
-                    source.Dispose(); cancellation = null; reservation.TrySetResult(idle);
+                    source.Dispose(); cancellation = null; reservation.TrySetResult(idle); checkedAgent.TrySetResult(false);
                 }
             }
         }
@@ -77,7 +81,7 @@ namespace ProGo
         {
             lock (gate) {
                 if (closed || token.IsCancellationRequested) return false;
-                result = value; state = SshAgentStartupState.Completed; return true;
+                result = value; state = SshAgentStartupState.Completed; checkedAgent.TrySetResult(true); return true;
             }
         }
         private void Report(SshAgentProbeResult value, CancellationToken token)
@@ -100,14 +104,14 @@ namespace ProGo
                 var value = new SshAgentProbeResult(SshAgentProbeState.Unavailable);
                 if (Publish(value, token)) Report(value, token);
             } finally {
-                lock (gate) { if (ReferenceEquals(cancellation, source)) cancellation = null; source.Dispose(); }
+                lock (gate) { checkedAgent.TrySetResult(false); if (ReferenceEquals(cancellation, source)) cancellation = null; source.Dispose(); }
             }
         }
         internal void Close()
         {
             lock (gate) {
                 if (closed) return;
-                closed = true;
+                closed = true; checkedAgent.TrySetResult(false);
                 if (result == null) state = SshAgentStartupState.Cancelled;
                 if (cancellation != null) {
                     try { cancellation.Cancel(); } catch (AggregateException) { }

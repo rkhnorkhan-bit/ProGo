@@ -99,3 +99,24 @@ paths. Сохраняются личные данные, профили, клю�
 только соответствующие live/provider-specific критерии, не общую разработку.
 Боевые платежи/письма/изменение VPS и установка владельцу требуют отдельного шага.
 Полноту двух чатов можно подтвердить только после получения их экспорта.
+
+## Блок 1: реестр и QR
+
+Commit `bd9c0fb17b4ca4e84bdcec2cf5e1c6d90820f69d`: единый реестр86 ID,
+исправление QR capacity, устранение устаревшего PIN описания. Повторная команда
+`python -m unittest discover -s tests -p 'test_profile_share*.py' -q`:
+13/13 PASS после commit (серверные файлы идентичны commit). Два новых сценария
+раньше воспроизвели исходный400 вместо200. Root независимо просмотрел diff;
+изолированные HTTP/server tests не являются проверкой live VPS/mail.
+
+## Блок 2: порядок startup
+
+Удалён ранний вызов SSH из Program. Tracked automatic task ожидает bounded
+service waiter; медленный best-effort log его не задерживает. Stop/Close,
+shutdown/settings/явная команда инвалидируют late start; ручная команда ждёт
+тот же waiter. Failed/Disabled/Timeout агента не запрещает direct/other auth.
+Добавлены22 native assertions поверх прежних40, с локальным SOCKS child.
+Независимый source review вторым исполнителем: блокеров не найдено; UI/ownership/
+no-late-start/other-auth инварианты просмотрены. Локальные diff/public scan PASS;
+native Windows execution до нового CI NOT_RUN. Selected-key readiness остаётся
+F31-R11 PARTIAL. Этот блок не закрывает полный критерий SSH-agent.
