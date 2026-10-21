@@ -74,6 +74,8 @@ namespace ProGo
         internal Func<RestorePreparedInfo, bool> RestoreConfirm;
         internal Func<RestorePreparedInfo, ProcessStartInfo> RestoreLaunchInfo;
         internal Task RestoreWork { get; private set; }
+        internal Func<BackupRetentionPlan, bool> CleanupConfirm;
+        internal Task CleanupWork { get; private set; }
         private Task backupCompletion = Task.FromResult(false);
         private BackupCreationForm backupForm;
         private readonly Func<bool, HomeVpnPortableForm> createPortableForm;
@@ -1354,27 +1356,55 @@ namespace ProGo
             }
         }
 
-        private void CleanupBackups()
+        private async void CleanupBackups() { await StartCleanupAsync().ConfigureAwait(false); }
+
+        internal Task StartCleanupAsync()
         {
-            try
-            {
-                var plan = BackupRetention.Plan(BackupService.BackupsRoot);
-                if (plan.Candidates.Count == 0)
-                {
-                    MessageBox.Show("Старых автоматических копий для удаления нет. Ручные и неизвестные папки сохраняются.",
-                        "Очистка резервных копий ProGo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-                using (var preview = new BackupCleanupForm(plan))
-                    if (preview.ShowDialog() != DialogResult.OK) return;
-                var cleanup = BackupService.ApplyCleanupPlan(plan, true);
-                MessageBox.Show(cleanup.Message, "Очистка резервных копий ProGo", MessageBoxButtons.OK, cleanup.Failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
+                throw new InvalidOperationException("Очистка копий запускается владельцем интерфейса.");
+            if (closing || shutdownPrepared || shutdownPreparing) return Task.FromResult(false);
+            if (IsPortableRunning || IsVaultRunning) return Task.FromResult(false);
+            if (IsBackupRunning) { ShowBackupProgress(); return backupCompletion; }
+            BeginBackupActivity("cleanup", "Читаем список старых автоматических копий в фоне.");
+            var activity = backupActivity;
+            CleanupWork = backupActivityWorkflow = backupCompletion = Task.Run(() => RunCleanupWorkflow(activity));
+            ShowBackupProgress(); return CleanupWork;
+        }
+
+        private async Task RunCleanupWorkflow(BackupWorkSession work)
+        {
+            BackupActivityResult result;
+            try { result = await CleanupCore(work).ConfigureAwait(false); }
+            catch (OperationCanceledException) {
+                result = new BackupActivityResult { Cancelled = true, Message = "Очистка копий отменена. Уже удалённые копии не восстанавливаются; оставшиеся папки сохранены. Перед повтором список будет проверен заново." };
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 SafeLog.Error("Backup cleanup failed.", ex);
-                MessageBox.Show("Не удалось очистить резервные копии. Подробности записаны в журнал.", "Очистка резервных копий ProGo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                result = new BackupActivityResult { Failed = true, Message = "Очистка копий не завершена: ошибка чтения или удаления. Уже удалённые копии не восстанавливаются; подробности — в журнале ProGo." };
             }
+            await CompleteBackupActivity(work, result).ConfigureAwait(false);
+        }
+
+        private async Task<BackupActivityResult> CleanupCore(BackupWorkSession work)
+        {
+            var plan = await work.Run("cleanup-plan", token => BackupRetention.Plan(BackupService.BackupsRoot, null, token)).ConfigureAwait(false);
+            work.Token.ThrowIfCancellationRequested();
+            if (plan.Candidates.Count == 0)
+                return new BackupActivityResult { Message = "Старых автоматических копий для удаления нет. Ручные и неизвестные папки сохраняются." };
+            await ActivityStatus(work, "Список прочитан. Подтвердите точные папки для удаления.").ConfigureAwait(false);
+            var consent = await DispatchUi(delegate {
+                if (work.Token.IsCancellationRequested || !ReferenceEquals(backupActivity, work)) return false;
+                if (CleanupConfirm != null) return CleanupConfirm(plan);
+                using (var preview = new BackupCleanupForm(plan))
+                    return ShowBackupDialog(preview) == DialogResult.OK;
+            }).ConfigureAwait(false);
+            if (!consent) throw new OperationCanceledException();
+            work.Token.ThrowIfCancellationRequested();
+            await ActivityStatus(work, "Повторно проверяем подтверждённые папки и удаляем старые копии в фоне. Отмена сохраняет ещё не удалённые папки.").ConfigureAwait(false);
+            var cleanup = await work.Run("cleanup-apply", token => BackupService.ApplyCleanupPlan(plan, true, token)).ConfigureAwait(false);
+            // The completed OS deletes stay committed if cancellation arrives
+            // after the final operation has returned its actual result.
+            return new BackupActivityResult { Failed = cleanup.Failed > 0, Message = cleanup.Message };
         }
 
         private void CreateBackup() { CreateManualBackupAsync(); }

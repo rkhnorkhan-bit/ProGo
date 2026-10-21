@@ -108,7 +108,7 @@ opt-in, который в этом прогоне не используется.
 | F31-R03 → F31 | Постоянные ошибки SSH config/arguments | PARTIAL | **Code/Dev PASS** | нет внешней блокировки | Подтвердить сохранение исторического Code/Dev критерия на новом SHA. |
 | F31-R04 → F31 | Include/aliases/IdentityFile tokens в диагностике | PARTIAL | **Code/Dev PASS** | нет внешней блокировки | Подтвердить сохранение исторического Code/Dev критерия на новом SHA. |
 | F31-R05 → F31 | Остаточные startup/settings/shortcut операции вне UI | PARTIAL | Частично | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
-| F31-R06 → F31 | Фоновый retention preview/cleanup | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
+| F31-R06 → F31 | Фоновый retention preview/cleanup | PARTIAL | Исправлен source-confirmed UI I/O; native NOT_RUN | новый CI, итоговый пакет | Выполнить AsyncCleanupWorkflow и retention regression на точном SHA; visual/target отдельно. |
 | F31-R07 → F31 | Фоновое ожидание updater handoff | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R08 → F31 | Фоновая работа logs/diagnostic export | PARTIAL | Частично | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
 | F31-R09 → F31 | HomeVPN private I/O, DPAPI и session preparation в worker | FAIL | Открытый дефект | нет внешней блокировки | Выполнить критерий; зафиксировать тесты и точный SHA. |
@@ -192,3 +192,43 @@ Genuine missing создаёт defaults через exclusive Move: появив�
 Реальные isolated lock→unlock, malformed/null JSON, missing/creation race,
 все write APIs и fresh trusted recovery — подготовлены, Windows NOT_RUN.
 A11 становится PARTIAL до точного CI; F15/F22/F31-R05 полностью не закрыты.
+
+## Текущий опубликованный кандидат CI584
+
+PR88, source `6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8`,
+merge `2f6b901a6fd537e0e0eeb81c0431b200e29260b2`,
+run [39663669399](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39663669399).
+Signing `28b7a8a155abff0e0f073adcf07ac4f68f2d02e9`,
+encoding `883787b6a392020fd10bb07e00f80bfff00e3bf5`,
+settings `6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8`.
+Каждый API tree совпал с локальным; expected-head fast-forward без force.
+До публикации17files/1499addedlines: targeted secrets/PII0findings,
+public-content305/0 и diff checks PASS. Ubuntu completed SUCCESS;
+Windows in_progress, общего PASS нет. Public uploads выключены.
+
+Точный остаток auth preparation и исключения direct/custom/other-auth:
+[MICROTASK_SSH_AUTH_PREPARATION_SCOPE.md](MICROTASK_SSH_AUTH_PREPARATION_SCOPE.md).
+Реальный общий launch в ProxyService покрывает и StartTunnelCore, и PollRecovery;
+одна вставка в Context не закрыла бы F31-R11. Новый запрет SSH по неуспеху
+локальной подписи не введён.
+
+## F31-R06: фоновая очистка подтверждённых копий
+
+Tray CleanupBackups теперь запускает одну BackupWorkSession: план в worker,
+готовый точный список и явное подтверждение на UI, fresh revalidation/delete
+в worker. Повторные cleanup/restore/manual requests разделяют текущий actor;
+команды удерживаются до полного workflow и owner completion. Cancel/Close,
+shutdown refusal/retry и forced disposal сохраняют ownership; поздняя публикация
+на закрытый UI не требуется для завершения worker.
+
+Старые retention APIs сохраняются; token overloads проверяют отмену при чтении,
+обходе и перед каждым удалением. Approved list не расширяется; изменённый manifest,
+manual/unknown и junction guards сохранены. In-flight Directory.Delete не имеет
+принудительной отмены: worker остаётся owned до его возврата. Успешный фактический
+результат после последнего delete не превращается в abort при поздней отмене.
+При отмене/ошибке UI честно сообщает, что уже удалённые копии не восстанавливаются.
+
+Независимое backend source review и root UI/test review PASS; diff/public scan PASS.
+Низкоуровневый pre-cancel/no-delete и10 native actor/preview/revalidation/lifecycle
+сценариев подготовлены. Отмена внутри OS delete не исполнена/не заявлена.
+Runtime всех новых retention изменений NOT_RUN до следующего CI; F31-R06 PARTIAL.

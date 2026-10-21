@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace ProGo
 {
@@ -31,13 +32,18 @@ namespace ProGo
     {
         private const int MaxAutomaticBackups = 10;
 
-        public static BackupRetentionPlan Plan(string root) { return Plan(root, null); }
+        public static BackupRetentionPlan Plan(string root) { return Plan(root, null, CancellationToken.None); }
 
         public static BackupRetentionPlan Plan(string root, string activeBackup)
+        { return Plan(root, activeBackup, CancellationToken.None); }
+
+        public static BackupRetentionPlan Plan(string root, string activeBackup, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             var plan = new BackupRetentionPlan { Root = System.IO.Path.GetFullPath(root) };
             if (!Directory.Exists(plan.Root)) return plan;
             var dirs = Directory.GetDirectories(plan.Root);
+            cancellation.ThrowIfCancellationRequested();
             plan.Total = dirs.Length;
             if (IsLink(plan.Root)) return plan;
             // Generated names begin with a sortable timestamp. Use one ordering
@@ -48,8 +54,9 @@ namespace ProGo
             bool baseline = false, preUpdate = false;
             foreach (var dir in dirs)
             {
+                cancellation.ThrowIfCancellationRequested();
                 string manifest, kind;
-                if (!TryReadAutomatic(dir, out manifest, out kind)) continue;
+                if (!TryReadAutomatic(dir, cancellation, out manifest, out kind)) continue;
                 bool protectedKind = (kind == "baseline" && !baseline) || (kind == "pre-update" && !preUpdate);
                 if (kind == "baseline") baseline = true;
                 if (kind == "pre-update") preUpdate = true;
@@ -57,19 +64,25 @@ namespace ProGo
                 if (!protectedKind && !recent && !String.Equals(dir, activeBackup, StringComparison.OrdinalIgnoreCase))
                     plan.Candidates.Add(new BackupRetentionCandidate { Path = dir, Manifest = manifest });
             }
+            cancellation.ThrowIfCancellationRequested();
             return plan;
         }
 
         public static BackupRetentionResult Apply(BackupRetentionPlan approved)
+        { return Apply(approved, CancellationToken.None); }
+
+        public static BackupRetentionResult Apply(BackupRetentionPlan approved, CancellationToken cancellation)
         {
             if (approved == null) throw new ArgumentNullException("approved");
-            var current = Plan(approved.Root);
+            cancellation.ThrowIfCancellationRequested();
+            var current = Plan(approved.Root, null, cancellation);
             var eligible = new Dictionary<string, BackupRetentionCandidate>(StringComparer.OrdinalIgnoreCase);
             foreach (var item in current.Candidates) eligible[item.Path] = item;
             var result = new BackupRetentionResult();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var item in approved.Candidates)
             {
+                cancellation.ThrowIfCancellationRequested();
                 BackupRetentionCandidate live;
                 if (!seen.Add(item.Path)) continue;
                 if (!eligible.TryGetValue(item.Path, out live) || item.Manifest != live.Manifest)
@@ -79,8 +92,11 @@ namespace ProGo
                     string manifest, kind;
                     // Never expand a confirmed list or follow a junction. A changed
                     // manifest must be reviewed again, including manual relabelling.
-                    if (!TryReadAutomatic(item.Path, out manifest, out kind) || manifest != item.Manifest || HasLinks(item.Path))
+                    if (!TryReadAutomatic(item.Path, cancellation, out manifest, out kind) || manifest != item.Manifest || HasLinks(item.Path, cancellation))
                     { result.Skipped++; continue; }
+                    cancellation.ThrowIfCancellationRequested();
+                    // Cancellation never abandons an in-flight OS delete. The
+                    // owner retains this worker until that call has completed.
                     Directory.Delete(item.Path, true);
                     result.Deleted++;
                 }
@@ -96,26 +112,36 @@ namespace ProGo
             return (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
         }
 
-        private static bool HasLinks(string path)
+        private static bool HasLinks(string path, CancellationToken cancellation)
         {
+            cancellation.ThrowIfCancellationRequested();
             if (IsLink(path)) return true;
-            foreach (var file in Directory.GetFiles(path)) if (IsLink(file)) return true;
-            foreach (var dir in Directory.GetDirectories(path)) if (HasLinks(dir)) return true;
-            return false;
+            foreach (var file in Directory.GetFiles(path)) {
+                cancellation.ThrowIfCancellationRequested();
+                if (IsLink(file)) return true;
+            }
+            foreach (var dir in Directory.GetDirectories(path)) {
+                cancellation.ThrowIfCancellationRequested();
+                if (HasLinks(dir, cancellation)) return true;
+            }
+            cancellation.ThrowIfCancellationRequested(); return false;
         }
 
-        private static bool TryReadAutomatic(string dir, out string manifest, out string kind)
+        private static bool TryReadAutomatic(string dir, CancellationToken cancellation, out string manifest, out string kind)
         {
             manifest = null; kind = null;
             try
             {
+                cancellation.ThrowIfCancellationRequested();
                 if (IsLink(dir)) return false;
                 var file = System.IO.Path.Combine(dir, "manifest.txt");
                 if (!File.Exists(file) || IsLink(file)) return false;
                 manifest = File.ReadAllText(file);
+                cancellation.ThrowIfCancellationRequested();
                 var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var line in manifest.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
                 {
+                    cancellation.ThrowIfCancellationRequested();
                     int separator = line.IndexOf('=');
                     if (separator <= 0) return false;
                     string key = line.Substring(0, separator).Trim();

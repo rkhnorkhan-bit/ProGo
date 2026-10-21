@@ -99,6 +99,7 @@ namespace ProGo
                     SettingsLoadFailureWorkflow();
                     AsyncSettingsWorkflow(settings);
                     AsyncRestoreWorkflow();
+                    AsyncCleanupWorkflow();
                     BackupCleanupPreview();
                     RestoreScopeAndPreparationUi();
                     BackupAccessibility();

@@ -217,8 +217,11 @@ namespace ProGo
         }
 
         internal static BackupCleanupResult ApplyCleanupPlan(BackupRetentionPlan plan, bool includeSummary)
+        { return ApplyCleanupPlan(plan, includeSummary, CancellationToken.None); }
+
+        internal static BackupCleanupResult ApplyCleanupPlan(BackupRetentionPlan plan, bool includeSummary, CancellationToken cancellation)
         {
-            var result = BackupRetention.Apply(plan);
+            var result = BackupRetention.Apply(plan, cancellation);
             var output = new BackupCleanupResult
             {
                 Deleted = result.Deleted, Kept = result.Kept, Failed = result.Failed,

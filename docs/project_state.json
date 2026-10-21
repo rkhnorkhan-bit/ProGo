@@ -6,7 +6,7 @@
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "FAIL: CI583 Windows parser/encoding failure; new signing/settings and encoding fix NOT_RUN pending new exact-source CI",
+  "fresh_candidate_verification": "NOT_RUN: CI584 in_progress; CI583 failure retained in history",
   "status_values": [
     "PASS",
     "FAIL",
@@ -1800,22 +1800,23 @@
       "phase": "До",
       "requirement": "Фоновый retention preview/cleanup",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R06)",
-      "implementation": "Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService",
+      "implementation": "UpdateAwareTrayApplicationContext.StartCleanupAsync/CleanupCore: one tracked BackupWorkSession, owner preview, worker Plan/Apply; token overloads preserve revalidation",
       "history": "Открытый дефект",
-      "status": "FAIL",
+      "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN",
         "historical_scoped_pass": false,
-        "criterion": "Owned worker, отмена, повторная проверка плана перед удалением; UI не выполняет Plan/ApplyCleanupPlan синхронно."
+        "criterion": "Owned worker, отмена, повторная проверка плана перед удалением; UI не выполняет Plan/ApplyCleanupPlan синхронно.",
+        "new_native": "NOT_RUN: DesktopAsyncCleanupTests10 scenarios + BackupRetentionTests pre-cancel/no-delete; independent backend/root UI source review PASS"
       },
       "integration": "PR88 unmerged; four transferred logical commits published with exact tree equivalence; new signing work local/unpublished until review/CI",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
-      "remaining": "Owned worker, отмена, повторная проверка плана перед удалением; UI не выполняет Plan/ApplyCleanupPlan синхронно.",
+      "remaining": "Exact Windows CI + package/target checks; in-flight OS Directory.Delete is nonpreemptive, actor stays owned; no runtime PASS yet",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Run fresh exact-SHA Windows regression including cleanup ownership/cancel/revalidation/shutdown; do not count whole55 acceptance yet"
     },
     {
       "id": "F31-R07",
@@ -2044,8 +2045,8 @@
     "observed": "public",
     "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
     "push": "PASS: API fast-forward with expected7861ea9, no force; source trees identical",
-    "ci": "FAIL: CI583 completed; Ubuntu SUCCESS, Windows FAILURE",
-    "pr88": "OPEN/DRAFT, head e9fcfc3279269075eddd6def306c1ca2500cd28c",
+    "ci": "NOT_RUN: CI584 in_progress",
+    "pr88": "OPEN/DRAFT, head6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
     "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
   },
   "local_regression": {
@@ -2057,7 +2058,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "5c803be5534601233e0041202890cbd7c04cd575",
+  "candidate_source": "6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -2066,11 +2067,11 @@
     "fresh_candidate_code_package_target": "NOT_RUN/BLOCKED; no total product PASS"
   },
   "publication_scan": {
-    "source_range": "7861ea9..641f3a3",
-    "added_lines": 2896,
-    "changed_files": 19,
+    "source_range": "e9fcfc3..6b3122f0",
+    "added_lines": 1499,
+    "changed_files": 17,
     "findings": 0,
-    "independent_review": "PASS; no secrets/PII found; no values disclosed"
+    "independent_review": "PASS source review signing/UI/settings/encoding; native acceptance separate"
   },
   "publication_mapping": [
     {
@@ -2097,32 +2098,31 @@
       "local": "83b0aa55558d7c04617a75e1007c24b4991d476c",
       "published": "e9fcfc3279269075eddd6def306c1ca2500cd28c",
       "tree": "8bc4a80e56c7a910412b871a3ece569ae33a8e96"
+    },
+    {
+      "local": "beca18b0ea26e8dfa3301639792eee9f66512189",
+      "published": "28b7a8a155abff0e0f073adcf07ac4f68f2d02e9",
+      "tree": "9de6fc095e0d391d1ed3d930af7844ece161dd82"
+    },
+    {
+      "local": "646e8ebc3960e3d2c6c095bf06e05ffa94161af8",
+      "published": "883787b6a392020fd10bb07e00f80bfff00e3bf5",
+      "tree": "b4bf02b95aa9eaefe8bf3819927541949b994d87"
+    },
+    {
+      "local": "e26308f164c73337038f88c28073f9fc7846271c",
+      "published": "6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
+      "tree": "ac697a695e83c7d2f55fe260cae05d122cdf21d6"
     }
   ],
   "ci_candidate": {
-    "source": "e9fcfc3279269075eddd6def306c1ca2500cd28c",
-    "run_id": 39660551553,
-    "run_number": 583,
-    "status": "completed",
-    "acceptance": "FAIL: PS5.1 ANSI decoding of UTF8 without BOM in MaintenanceTests.ps1:256",
-    "artifact_upload": "public default disabled; delivery not approved",
-    "conclusion": "failure",
-    "tested_merge": "d379acd6a0dc5dc55d5d01417cc5c674237d1f27",
-    "scoped_pass": {
-      "socks_recovery_tests": 41,
-      "socks_recovery_assertions": 403,
-      "ssh_agent_startup": 62,
-      "desktop": 4539,
-      "instance": 28
-    },
-    "not_run": [
-      "MaintenanceTests",
-      "ShutdownTests",
-      "HomeVPNTests",
-      "package",
-      "complete F23-R04"
-    ],
-    "next": "UTF8 BOM + early ParseFile all PowerShell tests; fresh CI on new source, no blind retry"
+    "source": "6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8",
+    "tested_merge": "2f6b901a6fd537e0e0eeb81c0431b200e29260b2",
+    "run_id": 39663669399,
+    "run_number": 584,
+    "status": "in_progress",
+    "acceptance": "NOT_RUN until completed exact-source evidence",
+    "artifact_upload": "public default disabled; private delivery not agreed"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -2140,5 +2140,40 @@
     "source_review": "PASS independent source review",
     "native": "NOT_RUN",
     "next": "exact Windows CI DesktopSettingsLoadFailureTests then package/target regression"
+  },
+  "ci_history": [
+    {
+      "source": "e9fcfc3279269075eddd6def306c1ca2500cd28c",
+      "run_id": 39660551553,
+      "run_number": 583,
+      "status": "completed",
+      "acceptance": "FAIL: PS5.1 ANSI decoding of UTF8 without BOM in MaintenanceTests.ps1:256",
+      "artifact_upload": "public default disabled; delivery not approved",
+      "conclusion": "failure",
+      "tested_merge": "d379acd6a0dc5dc55d5d01417cc5c674237d1f27",
+      "scoped_pass": {
+        "socks_recovery_tests": 41,
+        "socks_recovery_assertions": 403,
+        "ssh_agent_startup": 62,
+        "desktop": 4539,
+        "instance": 28
+      },
+      "not_run": [
+        "MaintenanceTests",
+        "ShutdownTests",
+        "HomeVPNTests",
+        "package",
+        "complete F23-R04"
+      ],
+      "next": "UTF8 BOM + early ParseFile all PowerShell tests; fresh CI on new source, no blind retry"
+    }
+  ],
+  "retention_microtask": {
+    "requirement": "F31-R06",
+    "finding": "A05",
+    "status": "PARTIAL",
+    "source_review": "PASS independent backend and root UI/tests",
+    "runtime": "NOT_RUN",
+    "cancellation_boundary": "before/between deletion; in-flight OS call retained, no forced cancellation; committed final actual result preserved"
   }
 }

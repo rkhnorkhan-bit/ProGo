@@ -261,3 +261,32 @@ lock и unlock, Save/TrySave/tray/rollback/recovery/async, byte/memory/revision/
 сохранность, malformed/null, missing и creation race, fresh profiles/unknown fields.
 Независимое read-only review PASS, C# source/registration checks PASS;
 Windows runtime NOT_RUN. A11 PARTIAL, пока fresh CI не выполнит критерий.
+
+## Публикация следующего связанного блока и CI584
+
+После source review и prepublication scan17files/1499addedlines0findings
+передвинут существующий ref с expectede9fcfc3 на
+`6b3122f0cd375ff1c0ae597bc677df58bbd2e5b8`, без force/merge.
+Signing APIcommit28b7a8a, encoding883787b, settings6b3122f;
+полное соответствие local→published→tree в machine registry.
+Новый CI584/run39663669399 использует merge2f6b901/source6b3122f.
+Ubuntu completedSUCCESS, Windowsin_progress; полный новый runtime не принят.
+Новые локальные изменения retention/handoff не входят в этот кандидат и
+получат отдельный CI. Автоматическая public публикация всех artifacts OFF.
+
+## A05/F31-R06 исправление source-confirmed UI I/O
+
+`UpdateAwareTrayApplicationContext.StartCleanupAsync/CleanupCore` переносит
+Plan и Apply в context-owned BackupWorkSession. Preview на owner после read;
+Apply получает token и сохраняет повторную проверку только подтверждённых paths.
+`BackupRetention.Plan/Apply/TryReadAutomatic/HasLinks` содержит cooperative
+checkpoints; `BackupService.ApplyCleanupPlan` передаёт token. Legacy calls None.
+Уже выполняющийся Directory.Delete не бросается и не прерывается насильно.
+Cancel сообщает о возможном частичном удалении; actual final result сохраняется.
+
+`DesktopAsyncCleanupTests` использует изолированную реальную backup tree,
+slow plan/apply, native heartbeat/settings/repeat/Close, decline/fresh retry,
+empty, changedmanifest/latefolder, shutdown timeout/retry, delayed owner completion
+и forcedDispose без message pump. Fixture ждёт CleanupWork до возврата root.
+`BackupRetentionTests` дополнен real pre-cancel/no-delete. Runtime NOT_RUN;
+independent backend + root UI/test source review PASS. A05/F31-R06 PARTIAL.

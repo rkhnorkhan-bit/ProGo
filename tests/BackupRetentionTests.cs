@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace ProGo
 {
@@ -64,6 +65,14 @@ namespace ProGo
                 string malformed = Add(root, 7, "automatic"); File.AppendAllText(Path.Combine(malformed, "manifest.txt"), "backup_kind=automatic\n");
                 string legacy = Add(root, 8, "automatic"); File.WriteAllText(Path.Combine(legacy, "manifest.txt"), "reason=before-update\n");
                 var plan = BackupRetention.Plan(root);
+                var beforeCancel = Directory.GetDirectories(root).OrderBy(path => path).ToArray();
+                using (var cancelled = new CancellationTokenSource()) {
+                    cancelled.Cancel(); bool previewCancelled = false, cleanupCancelled = false;
+                    try { BackupRetention.Plan(root, null, cancelled.Token); } catch (OperationCanceledException) { previewCancelled = true; }
+                    try { BackupRetention.Apply(plan, cancelled.Token); } catch (OperationCanceledException) { cleanupCancelled = true; }
+                    Check(previewCancelled && cleanupCancelled && Directory.GetDirectories(root).OrderBy(path => path).SequenceEqual(beforeCancel),
+                        "cancelled preview and approved cleanup preserve every real backup before any deletion");
+                }
                 Check(!BackupRetention.Plan(root, oldBaseline).Candidates.Any(c => c.Path == oldBaseline), "newly created transaction backup is pinned even after clock reversal");
                 Check(plan.Candidates.Count == 22, "mixed pool over 20 uses ten automatic slots plus protected kinds");
                 Check(plan.Candidates.Any(c => c.Path == oldBaseline) && plan.Candidates.Any(c => c.Path == oldPre), "older known baseline and pre-update may expire");
