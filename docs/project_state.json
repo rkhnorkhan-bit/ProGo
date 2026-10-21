@@ -6,7 +6,7 @@
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "BLOCKED: repository visibility=public conflicts with requested private destination; Windows/.NET/PowerShell unavailable locally",
+  "fresh_candidate_verification": "NOT_RUN: exact remote Windows/Ubuntu CI pending after approved push",
   "status_values": [
     "PASS",
     "FAIL",
@@ -2040,9 +2040,10 @@
   "remote_visibility": {
     "observed": "public",
     "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
-    "push": "BLOCKED awaiting privacy decision",
-    "ci": "NOT_RUN for new commits",
-    "pr88": "unchanged"
+    "push": "AUTHORIZED by owner on2026-10-21; fresh nonforce push pending",
+    "ci": "AUTHORIZED, exact new SHA pending",
+    "pr88": "unchanged",
+    "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
   },
   "local_regression": {
     "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
@@ -2060,5 +2061,12 @@
     "dependent": 12,
     "new_subtasks_accepted_this_session": 0,
     "fresh_candidate_code_package_target": "NOT_RUN/BLOCKED; no total product PASS"
+  },
+  "publication_scan": {
+    "source_range": "7861ea9..641f3a3",
+    "added_lines": 2896,
+    "changed_files": 19,
+    "findings": 0,
+    "independent_review": "PASS; no secrets/PII found; no values disclosed"
   }
 }
