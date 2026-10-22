@@ -24,6 +24,8 @@ namespace ProGo
         internal Task<bool> InitializationWork { get { return InitialRead.Task; } }
         internal Task PendingReadWork = Task.FromResult(0);
         internal Task Work = Task.FromResult(0);
+        internal HomeProfileUiDispatcher UiDispatcher;
+        internal int UiPublications { get { return UiDispatcher == null ? 0 : UiDispatcher.PublicationCount; } }
     }
 
     internal static class HomeProfileShare
@@ -167,7 +169,7 @@ namespace ProGo
                 close.Click += delegate { dialog.Close(); };
                 dialog.CancelButton = close;
                 panel.Controls.Add(install); panel.Controls.Add(verify); panel.Controls.Add(recover); panel.Controls.Add(close); panel.Controls.Add(status); dialog.Controls.Add(panel);
-                var dispatcher = new HomeProfileUiDispatcher(dialog);
+                var dispatcher = new HomeProfileUiDispatcher(dialog); dialog.UiDispatcher = dispatcher;
                 bool working = true, closeAfterHttp = false, httpStage = false, trackedHttp = false, initialRead = true, pending = true, draftEdited = false, reading = false, persisting = false;
                 address.TextChanged += delegate { draftEdited = true; };
                 CancellationTokenSource activeHttp = null;

@@ -575,7 +575,7 @@ namespace ProGo
                 using (var entered = new ManualResetEventSlim())
                 using (var release = new ManualResetEventSlim()) {
                     HomeProfileConfigureForm form = null; int phase = 0, turns = 0, workerThread = 0, actions = 0, updates = 0, ui = Thread.CurrentThread.ManagedThreadId;
-                    bool closed = false, closedAfterRead = false;
+                    bool closed = false, closedAfterRead = false; int disposedPublications = 0, nativeDisposeUpdates = 0;
                     try {
                         Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
                         var watch = Stopwatch.StartNew();
@@ -597,20 +597,27 @@ namespace ProGo
                                 phase = 1; turns = 0;
                                 if (route == "close") form.Close();
                                 if (route == "dispose") {
-                                    var controls = Controls(form).ToArray(); form.Dispose();
+                                    disposedPublications = form.UiPublications; var controls = Controls(form).ToArray(); form.Dispose();
                                     foreach (var control in controls) { control.TextChanged += delegate { updates++; }; control.EnabledChanged += delegate { updates++; }; control.VisibleChanged += delegate { updates++; }; }
                                 }
                                 return false;
                             }
                             if (phase == 1) {
+                                if (route == "dispose" && form.Modal) return false; // Wait for the real ShowDialog finally before releasing I/O.
                                 if (++turns < 3) return false;
+                                if (route == "dispose") {
+                                    check(form.UiPublications == disposedPublications && !form.InitializationWork.IsCompleted, "disposed configure admits no product publication even while native ShowDialog unwinds");
+                                    nativeDisposeUpdates = updates;
+                                }
                                 check(!form.PendingReadWork.IsCompleted && (route == "dispose" ? form.IsDisposed : form.Visible), "configure close/disposal retains its own pending worker across native message turns: " + route);
                                 release.Set(); phase = 2; return false;
                             }
                             if (!form.InitializationWork.IsCompleted || !form.Work.IsCompleted || (route == "close" && form.Modal)) return false;
                             check(route == "ready" ? form.InitializationWork.GetAwaiter().GetResult() && form.Visible && Controls(form).OfType<TextBox>().Single().Text == "https://profiles.example" && Controls(form).OfType<TextBox>().Single().Enabled :
-                                !form.InitializationWork.GetAwaiter().GetResult() && (route == "close" ? closed && closedAfterRead && !form.Visible && !form.Modal : form.IsDisposed && updates == 0),
-                                "configure read publishes only to its live owner; Close waits for physical settlement and Dispose gets no late controls: " + route);
+                                !form.InitializationWork.GetAwaiter().GetResult() && (route == "close" ? closed && closedAfterRead && !form.Visible && !form.Modal : form.IsDisposed && updates == nativeDisposeUpdates && form.UiPublications == disposedPublications),
+                                "configure read publishes only to its live owner; Close waits for physical settlement and Dispose gets no late controls: " + route
+                                + "; initialized=" + form.InitializationWork.GetAwaiter().GetResult() + "/disposed=" + form.IsDisposed + "/modal=" + form.Modal
+                                + "/controlEvents=" + updates + "/nativeDisposeEvents=" + nativeDisposeUpdates + "/publications=" + form.UiPublications + "/disposedAt=" + disposedPublications);
                             check(actions == 0 && !relay.IsRunning, "initial configure read never admits save, SSH or HTTPS: " + route);
                             foreach (var item in expected) check(item.Value == null ? !File.Exists(item.Key) : item.Value.SequenceEqual(File.ReadAllBytes(item.Key)), "configure owned read/cancel preserves actual private source bytes: " + route);
                             return true;

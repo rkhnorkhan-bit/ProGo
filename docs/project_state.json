@@ -3744,7 +3744,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
+  "candidate_source": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3842,38 +3842,26 @@
     }
   ],
   "ci_candidate": {
-    "source": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
-    "tested_merge": "f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7",
-    "local_sha": "ee240bcc5abd69f48dbd0be73283239da5d59b24",
-    "tree": "7da84ab401825c7483d62770ad73114003d57a9a",
-    "run_id": 39740277423,
-    "run_number": 611,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39740277423",
+    "source": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+    "tested_merge": "27a8d83cd6a1cb704ab36269eabd3406abd402f4",
+    "local_sha": "023bf0779010f22b6a89211668f0c1e5835053e7",
+    "tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
+    "run_id": 39744824752,
+    "run_number": 612,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752",
     "status": "completed",
-    "conclusion": "success",
-    "windows_compilation": "PASS exact611 build identity0.2.2+f0bf91f6 and native harness compile",
-    "windows_native": "PASS full611 Desktop5281/Home1521/Portable91/Python28=26PASS2SKIP; shared store9+9, service7+9 and receipt worker8; actual configure UI migration/import excluded",
+    "conclusion": "failure",
+    "windows_compilation": "PASS exact612 build identity and full Test-ProGo/Desktop5283",
+    "windows_native": "PARTIAL exact612 read-modal3 and configure initial ready/Close PASS; initial Dispose compound assertion FAIL, individual failed value unknown; later store/owned/modal write/receipt/Portable/Python tail NOT_RUN",
     "jobs": {
-      "windows": 119695558302,
-      "ubuntu": 119695558139
+      "windows": 119710569658,
+      "ubuntu": 119710569884
     },
     "ubuntu": "SUCCESS",
-    "scope": "shared per-server protected store/service/receipt worker API and native vectors;5 source/test+3 docs",
-    "excludes": "actual configure UI9faa and importAPI99ad/wizard UI/initial setup probes/full R09/R10/R11/owner acceptance",
-    "package": {
-      "version": "0.2.2",
-      "source": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
-      "tested_merge": "f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7",
-      "run_id": 39740277423,
-      "sha256": "321759f1a32fc1c8bfc7250b3fa482ed2687b22f22f91eb685c65ef7bbc9d021",
-      "build": "PASS runner ZIP only",
-      "uploads": "SKIPPED all",
-      "retrieved": false,
-      "delivered": false,
-      "installed": false,
-      "delivery": "BLOCKED owner-approved private channel",
-      "installer": "NOT_RUN"
-    }
+    "scope": "actual configure owned constructor/read/gates/persistence/receipt UI and3 initial+8 persistence modal vectors",
+    "excludes": "importAPI99ad (Stop560/pair7bb/service4a/setupfc), actual wizard import/initial setup probes/full R09/R10/R11/target acceptance",
+    "failure": "2026-10-22T08:25:35.5384376Z configure initial Dispose compound assertion; exact subcondition unknown, modal native unwind event hypothesis not confirmed",
+    "package": "NOT_RUN pack skipped; uploads SKIPPED all"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5102,6 +5090,28 @@
         "delivery": "BLOCKED owner-approved private channel",
         "installer": "NOT_RUN"
       }
+    },
+    {
+      "source": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+      "tested_merge": "27a8d83cd6a1cb704ab36269eabd3406abd402f4",
+      "local_sha": "023bf0779010f22b6a89211668f0c1e5835053e7",
+      "tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
+      "run_id": 39744824752,
+      "run_number": 612,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752",
+      "status": "completed",
+      "conclusion": "failure",
+      "windows_compilation": "PASS exact612 build identity and full Test-ProGo/Desktop5283",
+      "windows_native": "PARTIAL exact612 read-modal3 and configure initial ready/Close PASS; initial Dispose compound assertion FAIL, individual failed value unknown; later store/owned/modal write/receipt/Portable/Python tail NOT_RUN",
+      "jobs": {
+        "windows": 119710569658,
+        "ubuntu": 119710569884
+      },
+      "ubuntu": "SUCCESS",
+      "scope": "actual configure owned constructor/read/gates/persistence/receipt UI and3 initial+8 persistence modal vectors",
+      "excludes": "importAPI99ad (Stop560/pair7bb/service4a/setupfc), actual wizard import/initial setup probes/full R09/R10/R11/target acceptance",
+      "failure": "2026-10-22T08:25:35.5384376Z configure initial Dispose compound assertion; exact subcondition unknown, modal native unwind event hypothesis not confirmed",
+      "package": "NOT_RUN pack skipped; uploads SKIPPED all"
     }
   ],
   "retention_microtask": {
@@ -5237,36 +5247,36 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI611 full SUCCESS; next frozen UI9faa checking; import API99ad frozen independently",
+    "phase": "CI612 FAIL initial Dispose compound assertion; isolate diagnostic correction79f next",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "ee240bcc5abd69f48dbd0be73283239da5d59b24",
-    "local_development_sha": "fc257e151856d7e9224c4fe6b1db75dc11b66749",
-    "published_sha": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
-    "tree": "7da84ab401825c7483d62770ad73114003d57a9a",
-    "tested_merge": "f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7",
-    "ci_run_id": 39740277423,
-    "ci_run_number": 611,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39740277423",
+    "local_sha": "023bf0779010f22b6a89211668f0c1e5835053e7",
+    "local_development_sha": "79fcb6b419935f90e4bf5d3a4f0f26a2ff5217cc",
+    "published_sha": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+    "tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
+    "tested_merge": "27a8d83cd6a1cb704ab36269eabd3406abd402f4",
+    "ci_run_id": 39744824752,
+    "ci_run_number": 612,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752",
     "jobs": {
-      "windows": 119695558302,
-      "ubuntu": 119695558139
+      "windows": 119710569658,
+      "ubuntu": 119710569884
     },
     "ci_status": "completed",
-    "ci_conclusion": "success",
-    "windows_compilation": "PASS exact611 build identity0.2.2+f0bf91f6 and native harness compile",
-    "windows_native": "PASS full611 Desktop5281/Home1521/Portable91/Python28=26PASS2SKIP; shared store9+9, service7+9 and receipt worker8; actual configure UI migration/import excluded",
+    "ci_conclusion": "failure",
+    "windows_compilation": "PASS exact612 build identity and full Test-ProGo/Desktop5283",
+    "windows_native": "PARTIAL exact612 read-modal3 and configure initial ready/Close PASS; initial Dispose compound assertion FAIL, individual failed value unknown; later store/owned/modal write/receipt/Portable/Python tail NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
     "publication_scan": {
-      "files": 8,
-      "added_lines": 937,
-      "deleted_lines": 155,
+      "files": 11,
+      "added_lines": 849,
+      "deleted_lines": 150,
       "findings": 0,
       "tree_match": true
     },
-    "next": "Freeze UI9faa runtime on latest tested local ee240, add exact611 evidence docs and scan/tree publication; import API99ad excluded. Independently wizard owned import/receipt and setup initial/status read migration",
+    "next": "Isolate79f correction on local023bf, exact612 failure docs and scan/tree/CAS source17; no same-SHA retry. Keep importAPI99ad/wizarda501/839 excluded",
     "readiness_change": 0,
-    "current_ci_step": "Repository hygiene and build"
+    "current_ci_step": "pending exact jobs/log outcome"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5359,7 +5369,7 @@
     "A": 0,
     "reason": "Same28 parent partial criteria verified exact611 text anchors; unchanged weight87/D0.5/P0.5/A0 raw21.75, no bonus for more tests or helper code",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact611 only; root UI9faa/importAPI99ad/wizard setup probes NOT_RUN; no inherited success",
+    "candidate_note": "612 overall FAIL with scoped compile/Test-ProGo and initial ready/Close PASS; Dispose compound subcondition unknown. Correction79f and import/wizard work NOT_RUN; scoring anchors exact611 unchanged.",
     "score_anchors": {
       "F01": "2026-10-22T07:35:37.3853206Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T07:29:46.7750278Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -7645,6 +7655,40 @@
         "delivery": "BLOCKED owner-approved private channel",
         "installer": "NOT_RUN"
       }
+    },
+    {
+      "source": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
+      "tested_merge": "f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7",
+      "local_sha": "ee240bcc5abd69f48dbd0be73283239da5d59b24",
+      "tree": "7da84ab401825c7483d62770ad73114003d57a9a",
+      "run_id": 39740277423,
+      "run_number": 611,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39740277423",
+      "status": "completed",
+      "conclusion": "success",
+      "windows_compilation": "PASS exact611 build identity0.2.2+f0bf91f6 and native harness compile",
+      "windows_native": "PASS full611 Desktop5281/Home1521/Portable91/Python28=26PASS2SKIP; shared store9+9, service7+9 and receipt worker8; actual configure UI migration/import excluded",
+      "jobs": {
+        "windows": 119695558302,
+        "ubuntu": 119695558139
+      },
+      "ubuntu": "SUCCESS",
+      "scope": "shared per-server protected store/service/receipt worker API and native vectors;5 source/test+3 docs",
+      "excludes": "actual configure UI9faa and importAPI99ad/wizard UI/initial setup probes/full R09/R10/R11/owner acceptance",
+      "package": {
+        "version": "0.2.2",
+        "source": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
+        "tested_merge": "f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7",
+        "run_id": 39740277423,
+        "sha256": "321759f1a32fc1c8bfc7250b3fa482ed2687b22f22f91eb685c65ef7bbc9d021",
+        "build": "PASS runner ZIP only",
+        "uploads": "SKIPPED all",
+        "retrieved": false,
+        "delivered": false,
+        "installed": false,
+        "delivery": "BLOCKED owner-approved private channel",
+        "installer": "NOT_RUN"
+      }
     }
   ],
   "connection_recovery_20261022": {
@@ -7959,7 +8003,11 @@
     "scope": "8 source/test paths305add60delete; ctor/actions/modal tests only; future token work excluded",
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
-    "next": "Maintain separate source freeze, after predecessor API checking add exact evidence docs and scan/tree"
+    "next": "Maintain separate source freeze, after predecessor API checking add exact evidence docs and scan/tree",
+    "final_local_source": "023bf0779010f22b6a89211668f0c1e5835053e7",
+    "final_tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
+    "published_source": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+    "run_id": 39744824752
   },
   "r09_import_consumption_trace": {
     "source": "b1b2139cf3b338ca4ed965941bfab07d8158cec7",
@@ -8055,5 +8103,53 @@
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
     "next": "After UI predecessor exact result, attach evidence docs only and scan/tree checking"
+  },
+  "pending_configure_ui_publication": {
+    "source_object": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+    "parent": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
+    "local_source": "023bf0779010f22b6a89211668f0c1e5835053e7",
+    "tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
+    "publication": "PASS CAS and actual PR head/merge/unique CI612 verified",
+    "checks": "PASS11 paths849add150delete8 frozen UI +3 docs secretPII0/public320/0/syntax/C#5/diff/JSON31+55/full-tree equality; import/Stop/setup excluded; fresh public/workflow check uploads OFF",
+    "next": "Wizard owned import/receipt and modal regressions; then setup initial/status worker migration; poll same612, no duplicate/source push",
+    "merge": "27a8d83cd6a1cb704ab36269eabd3406abd402f4",
+    "run_id": 39744824752,
+    "run_number": 612,
+    "jobs": {
+      "windows": 119710569658,
+      "ubuntu": 119710569884
+    }
+  },
+  "local_r09_wizard_import_await": {
+    "source": "a501f57fff7bf2244c265ea2ba093f74a32edb99",
+    "status": "PARTIAL",
+    "implementation": "PASS source actual owned import/receipt await, input and public Stop scope; constructor/status probes still sync",
+    "checks": "PASS3 source paths98add16delete diff/manual call-site+scope review/syntax/C#5/public320/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN excluded612/importAPI99ad",
+    "next": "Real modal import/receipt cancel-retry/close/dispose/accepted/global-stop/partial-file-error tests, then separate pending ctor/status worker"
+  },
+  "local_r09_wizard_import_modal": {
+    "source": "83945c64026a5eef21637830aa711ff675535089",
+    "status": "PARTIAL",
+    "checks": "PASS1 path99add2delete source/syntax/public320/0/secretPII0",
+    "native_cases_written": 11,
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN excluded612/narrow correction",
+    "scope": "real modal import/receipt; real protected I/O, existing local SSH substitute only for explicit retry; no live VPS/OpenSSH acceptance claim",
+    "next": "After current Dispose diagnosis, apply measured event interval to new wizard Dispose cases and preserve source freeze; initial/status setup worker migration later"
+  },
+  "local_ci612_dispose_diagnosis": {
+    "source": "79fcb6b419935f90e4bf5d3a4f0f26a2ff5217cc",
+    "status": "PARTIAL",
+    "confirmed": "612 compound initial Dispose assertion FAIL; exact subcondition unknown",
+    "hypothesis": "native modal unwind property events before held worker resumes; full ReferenceSource pages unavailable",
+    "checks": "PASS4 paths24add9delete source/syntax/public320/0/secretPII0, deadlines unchanged",
+    "proof": "zero dispatcher callback execution after Dispose across full interval plus zero post-I/O control delta; baseline while physical worker held, detailed flags",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "next": "One isolated correction checking with exact diagnostics; do not label hypothesis confirmed until runtime"
   }
 }

@@ -17,6 +17,8 @@ namespace ProGo
         private readonly object gate = new object();
         private readonly HashSet<TaskCompletionSource<bool>> pending = new HashSet<TaskCompletionSource<bool>>();
         private bool closed;
+        private int publications;
+        internal int PublicationCount { get { return Volatile.Read(ref publications); } }
         internal HomeProfileUiDispatcher(Form owner)
         {
             this.owner = owner; handle.CreateControl();
@@ -34,6 +36,7 @@ namespace ProGo
                     // A callback may intentionally close its owner. Its own
                     // acceptance must settle before Dispose drops queued work.
                     lock (gate) pending.Remove(completion);
+                    Interlocked.Increment(ref publications);
                     action(); completion.TrySetResult(true);
                 } catch (Exception ex) { completion.TrySetException(ex); }
                 finally { lock (gate) pending.Remove(completion); }

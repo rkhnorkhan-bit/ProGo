@@ -1,12 +1,116 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a`, tree `7da84ab401825c7483d62770ad73114003d57a9a`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `17c64b6276567f1b2f2c090ef8130b1c064aa45c`, tree `cf0eb0f428029c314dcf191fc0e2df1aa24eebcb`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## CI612 FAIL — dispose compound assertion, detailed ownership proof pending
+
+Exact source `17c64b6276567f1b2f2c090ef8130b1c064aa45c`, merge/build identity
+`27a8d83cd6a1cb704ab36269eabd3406abd402f4`, treecf0eb0f428029c314dcf191fc0e2df1aa24eebcb.
+[CI612/39744824752](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752)
+Ubuntu119710569884 SUCCESS, Windows119710569658 FAIL at08:25:35.5384376Z:
+`configure read publishes only to its live owner; Close waits for physical settlement
+and Dispose gets no late controls: dispose`. Compilation and full Test-ProGo PASS
+08:25:16.3862166Z/Desktop5283; read-modal old3 and new initial ready/Close cases PASS.
+The compound Dispose test gives no individual values; exact failed subcondition
+not established. Remaining new modal persistence/recovery8, Home suite tail,
+Portable and Python tail NOT_RUN; pack/public release-content steps SKIPPED, all
+uploads SKIPPED. Last full SUCCESS/scoring/package still611 only, no new credit.
+
+Hypothesis (not confirmed): controls emit lifecycle events when native ShowDialog
+finally unwinds after direct Dispose, before the held private worker is released.
+Microsoft Form.Close/ShowDialog contract already distinguishes modal disposal;
+ReferenceSource Form/Control full pages were unavailable (DisabledError), only
+search snippets were accessible, so no claim they were fully read. Next exact
+runtime measurement must establish the event interval instead of assuming cause.
+
+Narrow local diagnostic correction `79fcb6b419935f90e4bf5d3a4f0f26a2ff5217cc`: a
+memory-only dispatcher PublicationCount exposed to its configure fixture proves
+zero product callback execution after Dispose across the full interval. Existing
+control-change observer additionally requires zero delta after real modal unwind
+and physical-I/O release; baseline captured while actual work is still held and
+publications cannot change. Detailed initialized/disposed/modal/event/callback
+values accompany the assertion. Both initial-read and save Dispose cases use the
+same proof;15s/5s budgets and owned cleanup unchanged.4 files24add9delete source/
+syntax/public320/0/secretPII0 PASS; compilation/native NOT_RUN. No claim fixed until
+new exact CI; no612 rerun or success inherited. Publish isolated correction+docs,
+exclude all future import and wizard work.
+
+Independent `83945c64026a5eef21637830aa711ff675535089` adds11 actual ShowDialog
+import/receipt cases: cancel/different-token retry, explicit Close/Dispose, accepted
+Cancel/Close/Dispose/global Stop, actual partial-owner-save→Retry, receipt Cancel/
+Close/global Stop. Real DPAPI and fixed private bytes; successful retry uses the
+existing owned local SSH substitute (not live VPS/native OpenSSH acceptance).
+15s modal/5s barriers and joined service/window cleanup; no new external setup or
+late SSH after Stop expected. One file99add2delete source/syntax/public/secretPII0
+PASS, compilation/native NOT_RUN; actual wizard sourcea501 also untested. Future
+wizard Dispose event observer will adopt this measured interval separately if
+validated; not included in isolated correction. Constructor/status PendingOwner
+still sync, full R09 FAIL. I58–80/Y22 exact611 unchanged. Ниже история.
+
+## R09 wizard import await — locala501f57, modal regression next
+
+Source `a501f57fff7bf2244c265ea2ba093f74a32edb99`: actual Advance step1 captures
+token/own-mode/owner copy/recovery intent and public StopWork identity before any
+await. Reads pending setup via owned cancellable helper, preserves readonly recovery
+intent and preparedToken/owner identity, awaits UseTokenAsync and then worker same-
+request ConfirmConsumedAsync. Two new waits explicitly use DialogResult.None,
+retain raw tasks and CTS until actual I/O completion, permit Cancel→Retry/explicit
+Close, and suppress disposed-owner publication. Accepted save followed by cancellation
+is reported saved without starting the channel. Public Stop identity guards before
+admin/import/receipt/start: even an already completed StopAll cannot be followed by
+an obsolete late SSH start. Context/card phone persistence gate includes share
+saving and importing; Desktop/settings/Stop commands remain independent.
+
+Three source paths98add16delete diff/manual call-site+scope review/syntax/C#5/
+public320/0/secretPII0 PASS. Existing regressions retained; native modal token import/
+receipt Cancel/Retry/close/dispose/accepted/global-stop/real partial-save tests are
+next, compilation/native NOT_RUN. Source unpushed/excluded612 and frozen importAPI99ad.
+Constructor and UpdateSetupRecoveryState still call sync PendingOwner, separate
+remaining R09 task; not hidden by this actual import migration. Next real modal
+regressions before source freeze, then initial/status cached worker migration.
+CI61239744824752 Windows119710569658 build in_progress, Ubuntu119710569884 SUCCESS.
+I58–80/Y22 exact611 unchanged, full R09 FAIL and target/installer NOT_RUN.
+
+## CI612 running — actual configure UI published, import still separate
+
+PR88 actual source `17c64b6276567f1b2f2c090ef8130b1c064aa45c`, merge
+`27a8d83cd6a1cb704ab36269eabd3406abd402f4`, full treecf0eb0f428029c314dcf191fc0e2df1aa24eebcb
+= local023bf0779010f22b6a89211668f0c1e5835053e7. Single automatic
+[CI612/39744824752](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752)
+Windows119710569658/Ubuntu119710569884 in_progress at verification. Initial webhook
+lookup empty, then unique run observed; no manual duplicate. CAS expectedd896→17c64
+PASS. Source8 frozen UI paths +3 evidence docs,11 paths849add150delete, full scan/
+syntax/C#5/diff/JSON/tree PASS. Workflows/VERSION unchanged/public uploads OFF.
+New actual UI compilation/native NOT_RUN pending exact logs; no inherited611
+success. Last full SUCCESS611 only sourced896/mergef0bf, same28 score anchors.
+
+Import API99ad (Stop/pair/service/setup worker) excluded from612. Next independently:
+actual wizard await UseTokenAsync/ConfirmConsumedAsync with captured input/scope,
+modal Cancel/close/accepted/partial/retry outcomes and context loading gates. Setup
+constructor/text-change pending probes still sync and remain a later separate
+worker migration; do not declare full R09 finished after importing alone. Source
+head/doc-only pushes must wait for same612 completion, preserve checking source.
+I58–80/Y22 raw21.75 exact611 unchanged; target/installer/private delivery blocked.
+Ниже object-before-CAS checkpoint — история, не повторять публикацию.
+
+## Actual configure UI object17c64 — ref CAS pending
+
+Created source object `17c64b6276567f1b2f2c090ef8130b1c064aa45c`, expected parentd89673c27aa8ce72ffc5e13eb8e5dc849398ea5a,
+full tree `cf0eb0f428029c314dcf191fc0e2df1aa24eebcb` exactly equals isolated local
+`023bf0779010f22b6a89211668f0c1e5835053e7` (ProGo-ci611-ui).11 paths849add150delete:
+8 frozen actual configure source/test paths +3 evidence docs. Import API99ad/
+Stop560/setup changes excluded; workflows/VERSION equal611 and fresh repo public,
+automatic uploads OFF, no release trigger. Full scan secretPII0/public320/0/source/
+syntax/C#5/diff/JSON31+55/full-tree equality PASS.611 completed full SUCCESS; new
+compilation/native NOT_RUN. Ref NOT_RUN at this checkpoint; after interruption
+inspect actual PR head/run before retry. Next CAS expectedd896→17c64, one CI,
+record exact merge/run/jobs; I58–80/Y22 exact611 unchanged. No binary upload.
 
 ## CI611 full SUCCESS — share API, actual UI migration still excluded
 

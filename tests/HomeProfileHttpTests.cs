@@ -354,7 +354,7 @@ namespace ProGo
                     using (var server = new Server((wire, stream, fixture) => fixture.Reply(stream, Health))) {
                         HomeProfileConfigureForm form = null; Task<bool> first = null; FileStream held = null;
                         int phase = 0, turns = 0, saves = 0, admin = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, updates = 0;
-                        bool closed = false, closedAfterSave = false;
+                        bool closed = false, closedAfterSave = false; int disposedPublications = 0, nativeDisposeUpdates = 0;
                         try {
                             if (Finish(service.InitializationWork) != null) throw new Exception("Configure save fixture initial state did not settle");
                             form = HomeProfileShare.CreateConfigureForm(service, (current, action, label, id, progress) => {
@@ -393,13 +393,15 @@ namespace ProGo
                                     phase = 2; turns = 0;
                                     if (mode.EndsWith("close", StringComparison.Ordinal)) form.Close();
                                     if (mode == "verify-dispose") {
-                                        var controls = Controls(form).ToArray(); form.Dispose();
+                                        disposedPublications = form.UiPublications; var controls = Controls(form).ToArray(); form.Dispose();
                                         foreach (var control in controls) { control.TextChanged += delegate { updates++; }; control.EnabledChanged += delegate { updates++; }; control.VisibleChanged += delegate { updates++; }; }
                                     }
                                     return false;
                                 }
                                 if (phase == 2) {
+                                    if (mode == "verify-dispose" && form.Modal) return false;
                                     if (++turns < 3) return false;
+                                    if (mode == "verify-dispose") { check(form.UiPublications == disposedPublications && !first.IsCompleted, "disposed configure save cannot publish while physical I/O is still held"); nativeDisposeUpdates = updates; }
                                     check(!first.IsCompleted && (mode == "verify-dispose" ? form.IsDisposed : form.Visible), "configure Close/Dispose retains actual protected write across native loop turns: " + mode);
                                     release.Set(); phase = 3; return false;
                                 }
@@ -415,8 +417,9 @@ namespace ProGo
                                 bool success = mode.EndsWith("save", StringComparison.Ordinal) || retry, persisted = success || afterAdmission;
                                 check(persisted ? HomeVpnPrivateFiles.Load(name) == Origin : before.SequenceEqual(File.ReadAllBytes(share)), "modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: " + mode);
                                 check(success ? form.DialogResult == DialogResult.OK && closed && closedAfterSave : form.DialogResult != DialogResult.OK &&
-                                    (mode == "verify-dispose" ? form.IsDisposed && updates == 0 : closed && closedAfterSave && !form.Visible),
-                                    "configure acknowledges only physically completed save/receipt, and cancelled/disposed owners get no late success: " + mode);
+                                    (mode == "verify-dispose" ? form.IsDisposed && updates == nativeDisposeUpdates && form.UiPublications == disposedPublications : closed && closedAfterSave && !form.Visible),
+                                    "configure acknowledges only physically completed save/receipt, and cancelled/disposed owners get no late success: " + mode
+                                    + "; controlEvents=" + updates + "/nativeDisposeEvents=" + nativeDisposeUpdates + "/publications=" + form.UiPublications + "/disposedAt=" + disposedPublications);
                                 check(recovery ? (success ? !File.Exists(pending) : journal.SequenceEqual(File.ReadAllBytes(pending))) : !File.Exists(pending),
                                     "modal recovery consumes only its completed saved receipt; cancellation retains the exact original request: " + mode);
                                 check(admin == (recovery ? 1 : 0) && saves == (retry ? 2 : 1) && server.Requests.Length == (retry ? 2 : 1) && server.Requests.All(wire => wire.Method == "GET" && wire.Path == "/health"),
