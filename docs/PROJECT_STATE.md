@@ -1,12 +1,324 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `4dd4987cf6f453847931820a6f9ba1298f99f802`, tree `71a53965acd9d4eb19b6fbe6a9a691693d6b56b6`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `5f3420d72e5f8c8ac282af6ca7ac57db1d89534c`, tree `ddb95e7ed68f1cf1ad3f27130575f2a4c923df97`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## Phone/relay final checking review —11 C# syntax PASS, native NOT_RUN
+
+Все5 logical blocks сохранены отдельными commits: service owner df104d5,
+wizard f5b2236, Context89dfcf6, Run drain6b4ec6f, public relay a34b0db.
+11 изменённых C# files parse0errors; wiring новых Desktop tests и явного
+console StopAsync await проверен, PowerShell UTF8 BOM сохранён. Backend Python4
+PASS,3 C# cases skipped=NOT_RUN; public319/0 и diff PASS. Это self-review,
+independent agent review и Windows compilation/native NOT_RUN. В595 не входят.
+
+Небольшой callback guard предотвращает obsolete Stop failure balloon, если
+другая попытка service Stop уже стала текущей; actual old task сохраняет свой
+результат, UI/новая попытка не перезаписываются. ОстаткиR09 и аварийная/целевая
+приёмка не скрыты. Следующий фиксированный checking tree включает только
+phone/relay source/tests и checkpoints, после secret/PII/workflow scan. Ref
+обновлять только после установленного completion595; нового CI на старом SHA
+не создавать. Score11 относится к completed594, новые изменения дают0.
+Реализация58–80; полная готовность R10/R11 не объявляется.
+
+## R10 relay этап5 — public async startup/Stop/Dispose, local NOT_RUN
+
+Start и Stop публикуют свои task до native worker. Дубликат реального pending
+Start получает тот же task. Stop сразу закрывает admission, вне metadata gate
+отменяет и ждёт startup probe, затем все retiring Run tasks; новый Start не
+обходит pending/faulted retire. UDP/timer setup выполняется worker вне service
+metadata gate, stale startup не публикуется после Stop/Dispose reservation.
+Dispose idempotent, сохраняет StopWork и не ждёт UI. Home cleanup ждёт этот
+настоящий relay lifetime на своём worker. Console harness явно ждёт StopAsync
+перед exit: process exit не выдаётся за успешно завершённую очистку.
+
+2 actual native Windows Forms cases держат настоящий loopback SOCKS probe:
+Stop и Dispose, EOF своего peer до результата, один start/stop owner, новый
+Start refused до settlement, heartbeat, оба UDP ports свободны. Barrier/peer/
+cleanup waits3/4/5s; finally release, свои listener/client/task закрыты, ни один
+чужой process/socket не затрагивается. C#syntax3/public319/0/diff PASS,
+Python backend4 PASS, native harness3 skipped=NOT_RUN. New Windows compilation/
+native NOT_RUN, не относится к595. Пять local phone/relay этапов не опубликованы.
+
+Остаток: один exact-SHA checking run всех13 новых service/wizard/Context/probe
+cases и усиленного real UDP/SOCKS flow drain; token import всё ещё sync Stop/
+DPAPI на UI (R09). Forced process kill/restart recovery и целевой ПК/реальный
+телефон NOT_RUN: retained managed task живёт лишь пока жив процесс; полная
+аварийная приёмка не выдумывается. F31-R10 PARTIAL. Реализация58–80,
+verified11(exact594), прирост0 за исходники и невыполненные native tests.
+Далее финальный review/scan checking tree и тот же CI595 result.
+
+## R10 relay этап4 — Run receive/flow tasks отслеживаются, local NOT_RUN
+
+Run сохраняет оба receiver task и все незавершённые flow workers. Один stop
+reservation ставится до worker, закрывает свои сокеты/flows и ждёт Task.WhenAll
+прежде чем завершить результат. Self-stopping Run регистрируется в retiring
+list до удаления current: concurrent cleanup больше не может потерять его.
+Успешные завершения удаляются, неожиданный fault не превращается в success.
+Serialized compatibility Stop ждёт этот drain на Home cleanup worker/console.
+
+Существующий real Windows frontend test усилен без новых моков:4 потока по
+обоим UDP ports через own SOCKS, STOPPED0 acknowledgment после task settlement,
+EOF всех своих TCP handlers и rebind обоих UDP ports. Fixture teardown теперь
+имеет bounded waits и finally убивает только свой subprocess при ошибке/
+timeout, закрывает свои servers/tasks; timeout остаётся FAIL. Backend Python4
+PASS,3 C# harness cases skipped=NOT_RUN. C#syntax2/public319/0/diff PASS,
+Windows compilation/native NOT_RUN, в595 не входит.
+
+Это отдельный private Run этап: public relay startup/StopAsync admission и
+Dispose ещё требуют следующей микрозадачи. Полный R10 не закрыт; UseToken
+UI Stop/DPAPI остаётся R09. Source не опубликован. Реализация58–80,
+verified11(exact594),0 новых баллов. Далее public relay lifetime reservation,
+затем checking tree после completion595.
+
+## CI595 — isolated SafeLog fixture fix опубликован, один run
+
+Source `5f3420d72e5f8c8ac282af6ca7ac57db1d89534c`, merge candidate
+`a2851df351a8ef86c7965761821f64a66c2dd960`, tree
+`ddb95e7ed68f1cf1ad3f27130575f2a4c923df97` = local
+`a70943991c96907afd829f715bf4fa75a9ee6552`.
+[CI595/39704288681](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39704288681)
+in_progress. One-file fix9 additions, secrets/PII0, source syntax/public318/0/
+diff/tree PASS, new Windows compilation/native NOT_RUN. Expected-head lease
+подтверждён; PR88 OPEN/DRAFT обновлён. Phone stages остаются только local и в595
+НЕ входят. Full CI594 не был SUCCESS, его узкие PASS относятся только к6f615/
+5cf4. Score11/raw10.50 — completed594, не новая проверка595; I58–80 unchanged.
+Никаких public binaries/release/main merge. После обрыва проверить595/head,
+не повторять push/CI. Далее independent local R10 relay task ownership stage.
+
+## CI594 — R08 compilation PASS, native PARTIAL; isolated fixture fix pending
+
+[CI594/39702615908](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39702615908)
+completed FAILURE, source6f615c9fa7243f1365b721a6b78f17dcda6a6538 /
+merge5cf4a131b653439396c79f87f84a3f4dc97544ec, exact build identity matched.
+Windows119575163356 FAILURE, Ubuntu119575163598 SUCCESS. Parser/BOM fix PASS,
+R08 C# compilation PASS; phone stages excluded. Native recovery51/456,
+bounded log43/report32/installed helper2,6 actual modal Cancel→Retry and3
+chooser, prepared real Windows SSH server contracts5 PASS. In01:06:17 first
+SafeLogWorkerWorkflow elapsed/entered assertion FAIL; full Context/log-open,
+selected-agent combined and later Desktop/tail/ZIP NOT_RUN, uploads SKIPPED.
+
+Missing fixture precondition confirmed in source: standalone test never creates
+its logger epoch after preceding Context.Dispose seals queue admission. The
+exact paused/drop cause of failed combined assertion is an inference (old log
+cannot distinguish elapsed vs entry); no false claim of product failure/fix.
+Isolated a70943991c96907afd829f715bf4fa75a9ee6552 owns/drains/resumes one epoch,
+finally suspends it; producer1000ms and native entry3000ms checked separately,
+entry waits with real UI pump. Real sink/heartbeat/redaction/file checks remain.
+No production changes or timeout increases,9 added lines. C#syntax1/public318/0/
+diff/secrets0/full tree equality PASS; Windows new fix NOT_RUN. GitHub object
+5f3420d72e5f8c8ac282af6ca7ac57db1d89534c, tree
+ ddb95e7ed68f1cf1ad3f27130575f2a4c923df97, ref update PENDING expected6f615.
+All root phone stages remain local and excluded from this checking object.
+
+V1.0 exact59419 traced parents weight70×D0.5×30%, P/A0 =>raw10.50→11/100.
++10.50 raw vs593 preflight-only0 reflects actual native criteria, no new weight
+or credit for fix code. Source/merge/timestamps in JSON; all whole IDs remain
+open where their full criteria are unmet. Implementation58–80 unchanged.
+Next: inspect PR head, publish isolated object once, preserve new run/merge;
+no duplicate594. Workflows unchanged, no public binary/release/main merge.
+
+## R10 checking review —9 C# syntax PASS, native остаётся NOT_RUN
+
+Финальный self-review3 local phone этапов: syntax9files0errors, suite wiring
+(explicit compile+entrypoint), PS UTF8 BOM, public319/0 и diff PASS. Добавлены
+native assertions actual main phone card pending→stopped. Независимое agent
+review NOT_RUN, Windows compiler/typecheck/native NOT_RUN, баллов0.
+
+Уточнён остаток: sync compatibility Stop вызывается из UseToken на UI, это
+не non-UI путь; его worker/DPAPI migration — F31-R09, пока не исправлен.
+Relay.Stop закрывает сокеты, но не предоставляет tracked drain всех receive/
+flow tasks; полную lifetime приёмку R10 до этой проверки не объявлять.
+Новые native tests не подменяют real phone/VPS/owner integration. Следующий
+checking source содержит только phone блоки и их tests/docs после completion
+единственного CI594; никаких дубликатов или раннего head update.
+
+## F31-R10 этап3 — actual tray/exit ownership, local Windows NOT_RUN
+
+StopPhone/StopAll используют retained async observation; повтор Stop общий,
+phone commands disabled до результата, StopDesktop остаётся независимым.
+Result TCS завершается перед RefreshPendingRoutes, чтобы меню не зависло в
+pending после cleanup; closed owner завершает observation без late UI.
+Main phone card показывает «Остановка…»/«Запуск…»/«Нужна очистка» честно.
+
+Shutdown/maintenance останавливают phone worker до изменений desktop proxy,
+ждут реальную очистку в существующем settings budget и отказывают handoff при
+timeout/false. Admission новых phone starts заранее paused; после отказа или
+отмены prepared handoff явно resumed, после успешной подготовки остаётся sealed.
+CompleteShutdown больше не выполняет sync Stop на UI. Forced Context.Dispose
+вызывает idempotent Home.Dispose: метаданные резервируются до возврата, worker
+сохраняется в StopWork без ожидания файлов/процессов на UI. UI Stop во всём
+Context переведён; non-UI compatibility Stop остаётся для UseToken (R09).
+
+5 actual Context fixtures: tray, StopAll, bounded refusal→retry→CancelShutdown,
+ForceDispose, реальный locked-file refusal→retry. Реальные собственные session
+files, native message loop, deadline250ms и fixture waits3/5s; всегда release и
+await cleanup. Не выдаются за реальные SSH/phone integrations: те проверяются
+отдельно. Новая suite явно включена в Test-ProGo/entrypoint; shared fixture
+теперь ждёт Home.StopWork перед dispose Relay. Source syntax7/public319/0/diff
+PASS, Windows compilation/native NOT_RUN; это не scope CI594.
+
+Этапы1 df104d5 и2 f5b2236 сохранены отдельно; этот этап — отдельный local commit.
+Далее финальный review/scan всех3 phone блоков и один exact Windows checking
+SHA после completion594. R10 остаётся PARTIAL, R09 private IO остаётся открытым.
+Реализация58–80, verified0(CI593),0 баллов за новые невыполненные тесты.
+
+## F31-R10 этап2 — actual Wizard Stop использует async owner, local NOT_RUN
+
+Кнопка «Остановить VPN для телефона» теперь идёт через RunStep/StopAsync,
+явно сообщает pending/неполную очистку/подтверждённый результат и сбрасывает
+только прежнее подтверждение phone internet. Конкурирующие действия disabled.
+Title close ждёт successful cleanup, после ошибки окно остаётся для retry;
+forced Dispose не прерывает owned task и подавляет late UI. Счётчики не
+называют held/failed cleanup завершённой остановкой. Сохранённый доступ остаётся.
+
+3 actual button native fixtures: stay+реальный locked-file failure/retry,
+queued close и ForceDispose. Собственный child/session, heartbeat, ожидания
+3/5/8s; finally release и await собственной очистки. C#syntax3/public318/0/
+diff PASS, Windows compilation/native NOT_RUN (не входят в594). Source review
+проверяет и gap между завершением StopChannel и outer RunStep: stopping flag
+снимается только в общем finally, queued close не теряется в этом интервале.
+Сервисный этап1 df104d5 сохранён отдельно. Полный F31-R10 остаётся открытым:
+tray/StopAll/exit ещё sync compatibility, R09 private-load/save отдельно.
+Следующий шаг — actual Context Stop/shutdown ownership и exact594 log.
+Реализация58–80, verified0(CI593), прирост0 за невыполненные новые тесты.
+
+## CI594 — BOM fix опубликован, один exact-SHA run
+
+Source `6f615c9fa7243f1365b721a6b78f17dcda6a6538`, merge candidate
+`5cf4a131b653439396c79f87f84a3f4dc97544ec`, tree
+`bd0853c7ce82916a202a0b3c2495e24c824a854a` = local
+`5fc228f144d6b91adb8a77f158a93785ae7c7db1`.
+[CI594/39702615908](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39702615908)
+in_progress, compilation/native NOT_RUN. Точный diff:3 BOM bytes, никаких
+изменений assertions/deadlines/guards. PR88 OPEN/DRAFT updated, expected-head
+без force подтверждён; public uploads OFF, release/main merge не выполнялись.
+Локальный phone lifecycle df104d5 в этот source НЕ входит. Проверить тот же
+run после обрыва; второй CI/повтор push не создавать. Реализация58–80;
+verified0 относится к completed593 preflight, historical59213 сохранён,
+прирост за этот source0. Продолжить независимую local UI часть R10.
+
+## CI593 parser FAILURE — BOM-only fix ready, ref PENDING
+
+Sourcec3a67ebff9a6ac10e93059bc73dc2fadd8fef29a / merge30a39709b1144b99c493c49db0e10ada8f6cef2e,
+run39701960142 completed FAILURE. Windows119573054034 остановился в00:49:43
+на ParseFile tests/DiagnosticPreviewTests.ps1; Ubuntu119573054253 SUCCESS.
+Новые C#/native R08, relay/new discovery/ZIP NOT_RUN; uploads SKIPPED.
+Причина: добавленная русская header assertion в UTF8 без BOM. WindowsPS5.1
+читает default ANSI; bytesD092 первой В становятся smart quote и ломают literal.
+Локальный cp1252 decode воспроизводит smart quote; native parser ещё NOT_RUN.
+
+Isolated local5fc228f144d6b91adb8a77f158a93785ae7c7db1 / treebd0853c7ce82916a202a0b3c2495e24c824a854a
+= GitHub object6f615c9fa7243f1365b721a6b78f17dcda6a6538. Ровно3 BOM bytes,
+все assertions/timeout/content сохранены (byte equality BOM+old PASS).
+Public318/0/diff/tree equality PASS; semantic additions/secret/PII0; workflows
+unchanged, public uploads OFF. Phone lifecycle df104d5 excluded, Windows NOT_RUN.
+Следующий шаг: проверить actual PR head, один expectedc3a67→6f615 без force,
+новый exact-SHA run. Не повторять593. Результат предыдущего source сохранён.
+
+V1.0 current593 raw0→0/100: Windows проверки до критериев не дошли, P/A0.
+Это отсутствие доказательств на новом SHA, не FAIL всех функций. CI59213/raw13.05
+остаётся историей; его баллы новому source не приписываются. Реализация58–80,
+прирост за BOM0. Главный ближайший blocker: exact R08 Windows execution.
+
+## F31-R10 этап1 — owned phone lifecycle, local Windows NOT_RUN
+
+HomeVpnService резервирует StartWork/StopWork до Task.Run. Повторный Start
+получает тот же task; Stop/Dispose сразу резервируют один cleanup, отменяют
+worker и ждут его фактического завершения перед удалением exact session.
+Новый Start во время Stop отклоняется. ACL/key/known_hosts/config подготовка,
+relay/native disposal/session delete теперь worker-only, короткий lifecycleGate
+не держится на I/O. SSH inputs копируются на admission; отмена проверяется
+между файловыми операциями и до child/relay publication. Stop false/fault не
+теряет directory/process owner; повторная явная остановка пробует его снова.
+Dispose не ждёт UI, StopWork остаётся доступным. RecoveryStatus читает один
+snapshot proxy, избегая null-race между двумя чтениями.
+
+3 bounded native fixture scenarios добавлены в существующий Windows harness:
+held preparation→Stop, held preparation→Dispose, held cleanup + реальная
+FileShare.None блокировка→false→retry. Проверяют native heartbeat, single
+flight, отсутствие позднего child/config, saved DPAPI bytes и собственный
+child cleanup. Каждый finally release+await cleanup; ожидания3/5/8s ограничены.
+C#syntax2files/public318/0/diff PASS; Windows compilation/native NOT_RUN, не
+входит в593. Это не end-to-end R10 PASS: tray/wizard/exit пока вызывают sync
+compatibility Stop. R09 constructor/share/token/DPAPI I/O остаётся отдельно.
+После сохранения этого локального блока приоритет — parser failure CI593,
+отдельным isolated checking source без phone изменений. Баллов за source0.
+
+## CI593 — R08 checking source опубликован, один run в работе
+
+Source `c3a67ebff9a6ac10e93059bc73dc2fadd8fef29a`, merge candidate
+`30a39709b1144b99c493c49db0e10ada8f6cef2e`, tree
+`e3104d9fead1a4fff51d598b6099690cb72bcf4e` = local
+`e62d21c9d84b110fd7f588c27c912cf48d861413`.
+[CI593/39701960142](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39701960142)
+in_progress; новые R08 Windows compilation/native NOT_RUN. Source scan17 paths/
+929 additions0 secrets/PII; public318/0, diff/tree equality PASS, workflows/VERSION
+unchanged, public binary uploads OFF. Expected-head4dd→c3a67 без force confirmed;
+PR88 OPEN/DRAFT updated, main merge/release/installer upload не выполнялись.
+Score13/raw13.05 принадлежит только предыдущему exact CI592 scoped native;
+новый source даёт0 баллов до logs. Реализация58–80. После обрыва проверять
+этот же593 и фактический head, не повторять push/CI. Пока он выполняется,
+разрешена независимая локальная работа F31-R10; в593 она не входит.
+
+## Текущее подтверждение CI592 — completed FAILURE, узкие Windows PASS
+
+Source `4dd4987cf6f453847931820a6f9ba1298f99f802`, tested merge
+`4cf49375895d64e79a951bfc926a01502f9a7352`.
+[CI592/39698918707](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39698918707):
+Windows119563052615 FAILURE, Ubuntu119563052956 SUCCESS. Build identity совпала.
+Repository build/Test-ProGo SUCCESS: report32/helper2,4 modal Cancel→Retry,
+3 chooser,3 diagnostic Context; recovery51/456/guidance10, signing55/UI50,
+aggregate72, Desktop5132, Instance28/Maintenance126/Shutdown47 PASS.
+Оба настоящих direct/owned-agent сценария прошли выбранный ключ→native
+OpenSSH→SOCKS5→owned HTTP→прерывание child→повторная preparation/recovery.
+Это локальный SOCKS HTTP payload, не полная проверка HTTP bridge/внешнего VPS.
+
+Измерения из native log: direct startup2014/preparation29ms,
+recovery1938/preparation29,28ms; agent startup1999/preparation87ms,
+recovery1994/preparation87,82ms. CPU own SSH31.25/15.625ms, RAM~11MB.
+Это изолированный runner, owner HDD/whole-process I/O/целевой ПК NOT_RUN.
+HomeVPN975/Portable90 PASS; relay Python29 tests завершились с1 import error:
+в00:43:53 старое test_ssh_loopback_fixture.py повторно обнаружено без Paramiko
+после восстановления PYTHONPATH. Причина теперь подтверждена exact log;
+new-name explicit prepared discovery уже исправлен отдельным local e62d21c.
+Pack SKIPPED, новый ZIP/hash отсутствует; все uploads SKIPPED.
+
+V1.0 прежние веса:28 родителей кромеF19/F27/F30, сумма87, D0.5/P0/A0.
+Raw13.05→13/100; +2.55 raw к591 за реально выполненные native критерии,
+не за fix/commit. Все28 timestamp anchors находятся в JSON current_readiness.
+Реализация58–80 без изменения. R08 checking objectc3a67/treee3104d9
+ещё НЕ опубликован, его Windows compilation/native NOT_RUN,0 новых баллов.
+Следующий шаг — один expected-head update4dd→c3a67, сохранить новый run/merge;
+пять mandatory SSH contracts не отключаются. F31-R11 остаётся PARTIAL:
+R08/R09/R10, полная итоговая performance/owner приёмка не закрыты.
+
+Ниже сохранены прежние checkpoints; их pending/in_progress — исторические
+наблюдения, заменённые актуальным разделом и машинными полями выше.
+
+## R08 checking object подготовлен — ref update PENDING completion592
+
+Local `e62d21c9d84b110fd7f588c27c912cf48d861413`, GitHub commit object
+`c3a67ebff9a6ac10e93059bc73dc2fadd8fef29a`, одинаковый tree
+`e3104d9fead1a4fff51d598b6099690cb72bcf4e`. Scan17 tree paths (включая old/new
+имя одного Git rename),929 added lines:0 secrets/PII; public318/0, diff/JSON,
+C#syntax10files0errors PASS. Rename не отключает5 mandatory native SSH tests;
+проверены новым именем локально5 PASS4.237с. Workflows/VERSION без изменений,
+public uploads/release выключены прежними guards. Windows R08 NOT_RUN.
+
+Branch пока остаётся4dd4987c:592 repository build SUCCESS, relay ещё в работе.
+Не запускать второй CI/не обновлять head до completion592. Если прервано,
+проверить head PR88 и run39698918707 перед любым ref update; затем один
+expected-head update от полного4dd4987c без force, новый exact-SHA native run.
+R08 object включает logger/open/folders/installed VERSION и discovery boundary;
+PS updater cold-load/log/folder GUI I/O остаётся вне исправленного scope.
+Evidence11(CI591),0 баллов за подготовленный object. Следующий шаг — exact592
+logs и публикация только после установленного результата, не blind retry.
 
 ## Test-suite boundary fix — explicit SSH fixture discovery preserved
 

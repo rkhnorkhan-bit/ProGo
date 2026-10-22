@@ -27,7 +27,7 @@ namespace ProGo
         private readonly Button cancelWait = new Button();
         private readonly object channelWaitGate = new object();
         private CancellationTokenSource channelWait;
-        private bool closeAfterWait, cancelledWait;
+        private bool closeAfterWait, cancelledWait, stoppingChannel;
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
         private bool own, routerDone, recoverSetup, setupBlocked, fittingSetup;
@@ -179,7 +179,7 @@ namespace ProGo
             {
                 Paragraph(service.Access == null ? "Сначала добавьте VPS или токен." : "VPS: " + service.Access.Host + "\nДомашний адрес: " + (service.HomeAddress ?? "ещё не указан"));
                 Action("Запустить канал", async delegate { await RunStep(async delegate { await ownerUi.Await(StartChannel()); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }); }, "Запускает канал этого ПК к VPS. Подключение телефона и интернет проверяются отдельно.");
-                Action("Остановить VPN для телефона", delegate { service.Stop(); verification.SetInternet(PhoneInternet.Unknown); RefreshStatus(); }, "Останавливает только VPN телефона и сбрасывает результат проверки интернета. Прокси на ПК не отключается.");
+                Action("Остановить VPN для телефона", async delegate { await RunStep(StopChannel); }, "Останавливает только VPN телефона и сбрасывает результат проверки интернета. Прокси на ПК не отключается.");
                 AddInstallationConfirmation();
                 Paragraph("Проверка на телефоне: 1. Выключите Wi-Fi и включите VPN ProGo. 2. Убедитесь, что телефон показывает «Подключено». 3. Откройте сайт проверки IP и сравните IPv4 с адресом выхода VPS. 4. Отметьте результат ниже. Это ваша проверка, ProGo не выполняет её на телефоне автоматически.");
                 internetCheck = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 640, AccessibleName = "Результат проверки интернета на телефоне",
@@ -287,6 +287,7 @@ namespace ProGo
             }
             catch (Exception ex) { closeAfterWait = false; if (!ownerUi.Closed && !IsDisposed && !Disposing) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; } }
             finally {
+                stoppingChannel = false;
                 busy = false;
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
@@ -313,6 +314,17 @@ namespace ProGo
                 }
             }
         }
+        private async Task StopChannel()
+        {
+            stoppingChannel = true;
+            verification.SetInternet(PhoneInternet.Unknown);
+            SetProgress("Останавливаем VPN для телефона и удаляем его временные файлы. Дождитесь подтверждения…");
+            if (!await ownerUi.Await(service.StopAsync()))
+                throw new InvalidOperationException("VPN для телефона остановлен не полностью: процесс или временные файлы ещё принадлежат ProGo. Закройте программы, использующие эти файлы, и повторите остановку.");
+            RefreshStatus();
+            SetProgress("VPN для телефона остановлен; его процессы и временные файлы очищены. Сохранённый доступ к VPS остаётся.");
+        }
+
         private void CancelChannelWait()
         {
             lock (channelWaitGate) {
@@ -464,7 +476,9 @@ namespace ProGo
             if (internetCheck != null && internetCheck.SelectedIndex != (int)verification.Internet) internetCheck.SelectedIndex = (int)verification.Internet;
             if (profileState != null) profileState.Text = verification.IssuanceText;
             if (step != 4 || counters == null) return;
-            counters.Text = (service.Relay.IsRunning ? "Канал ПК → VPS запущен. Это ещё не подтверждение подключения телефона." : "Канал остановлен.") + "\nSOCKS: " + service.RecoveryStatus
+            counters.Text = (service.IsStopping ? "Остановка канала ещё не завершена; временные файлы остаются под управлением ProGo."
+                : service.Relay.IsRunning ? "Канал ПК → VPS запущен. Это ещё не подтверждение подключения телефона."
+                : service.HasOwnedResources ? "Канал остановлен не полностью. Повторите остановку для очистки временных файлов." : "Канал остановлен.") + "\nSOCKS: " + service.RecoveryStatus
                 + "\n" + verification.Describe(service.Relay.Received, service.Relay.Returned)
                 + "\nПакеты: от телефона " + service.Relay.Received + ", на VPS " + service.Relay.Sent + ", обратно " + service.Relay.Returned
                 + (service.Relay.LastError == null ? "" : "\n" + service.Relay.LastError);
@@ -474,6 +488,7 @@ namespace ProGo
             if (busy) {
                 e.Cancel = true;
                 if (channelWait != null) { closeAfterWait = true; CancelChannelWait(); }
+                else if (stoppingChannel) { closeAfterWait = true; SetProgress("Дождитесь подтверждения остановки и очистки VPN для телефона; затем окно закроется."); }
                 else status.Text = "Дождитесь окончания операции. При запросе SSH ответьте в открывшемся окне. Закрытие окна не отменяет текущую операцию и не подтверждает её завершение.";
             }
             base.OnFormClosing(e);

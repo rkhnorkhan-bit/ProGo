@@ -264,7 +264,8 @@ namespace ProGo
             cliToggle.AccessibleDescription = AppCommands.Get(cliPending || !cliApplied ? AppCommand.StartCli : AppCommand.StopCli).Effect;
             windowsToggle.AccessibleDescription = AppCommands.Get(windowsPending || !windowsApplied ? AppCommand.EnableWindows : AppCommand.DisableWindows).Effect;
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
-            phoneState.Text = home.Relay.IsRunning ? "Канал включён" : "Не запущен";
+            phoneState.Text = home.IsStopping ? "Остановка…" : home.IsStarting ? "Запуск…"
+                : home.Relay.IsRunning ? "Канал включён" : home.HasOwnedResources ? "Нужна очистка" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +
                 (appProxy != null && appProxy.IsRunning ? " · работает" +
                     (appConsumers == null ? "" : " для: " + appConsumers.Summary) : " · служба остановлена");

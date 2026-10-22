@@ -110,6 +110,7 @@ namespace ProGo
                     DiagnosticPreviewWorkflow();
                     AsyncDiagnosticPreviewWorkflow();
                     DiagnosticContextWorkflow();
+                    PhoneStopContextWorkflow();
                     UpdateChecksUi(settings);
                     using (var errors = WatchStartupErrors()) {
                     CommandCatalogContract();

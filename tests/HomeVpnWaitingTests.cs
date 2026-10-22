@@ -74,6 +74,12 @@ namespace ProGo
                 ImportCancel(token, clipboard);
                 CleanupFailure(token, clipboard);
                 ServiceChecks(token);
+                OwnedPreparationStop(token, false);
+                OwnedPreparationStop(token, true);
+                OwnedCleanupStop(token);
+                foreach (string route in new[] { "stay", "close", "dispose" }) WizardOwnedStop(token, clipboard, route);
+                RelayOwnedLifecycle(false);
+                RelayOwnedLifecycle(true);
                 ProtectedOperation(clipboard);
                 check(!unrelated.HasExited, "all channel cancellation and cleanup paths preserve an unrelated process");
             }
@@ -253,6 +259,243 @@ namespace ProGo
                 service.Stop(); check(!Directory.Exists(session), "explicit stop retries private session removal after its lock is released"); form.Close();
             }
         }
+        private static void OwnedPreparationStop(string token, bool dispose)
+        {
+            Mode("ready");
+            using (var relay = new Ikev2RelayService())
+            using (var service = Service(relay))
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            using (var entered = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim())
+            {
+                service.UseToken(token, null);
+                var accessBefore = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"));
+                form.Show(); int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                service.BeforeSessionIo = delegate(string stage) {
+                    if (stage == "config") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned session preparation barrier timed out"); }
+                };
+                Task start = null; Task<bool> stop = null;
+                try
+                {
+                    var watch = Stopwatch.StartNew(); start = service.StartAsync();
+                    check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(start, service.StartWork),
+                        "phone start publishes its tracked worker without synchronous private I/O");
+                    Pump(() => entered.IsSet && ticks >= 3, 3000);
+                    string session = (string)Field(service, "sessionDirectory");
+                    check(!start.IsCompleted && File.Exists(Path.Combine(session, "access"))
+                        && !File.Exists(Path.Combine(session, "ssh_config")) && !File.Exists(Path.Combine(marker, "pid")),
+                        "held real session preparation retains its private files before any native child");
+                    check(Object.ReferenceEquals(start, service.StartAsync()), "duplicate phone start observes the same owned preparation task");
+                    watch.Restart();
+                    if (dispose) { service.Dispose(); stop = service.StopWork; } else stop = service.StopAsync();
+                    check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(stop, service.StopAsync()),
+                        "phone Stop or Dispose returns promptly and retains one shared cleanup task: " + dispose);
+                    int before = ticks; Pump(() => ticks >= before + 3, 1000);
+                    var refused = service.StartAsync(); bool blocked = false;
+                    try { refused.GetAwaiter().GetResult(); } catch (ObjectDisposedException) { blocked = dispose; } catch (InvalidOperationException) { blocked = true; }
+                    check(blocked && !stop.IsCompleted && !start.IsCompleted && Directory.Exists(session),
+                        "pending phone stop preserves session ownership and refuses a competing start: " + dispose);
+                    release.Set(); Pump(() => start.IsCompleted && stop.IsCompleted, 8000);
+                    check(start.IsCanceled && stop.GetAwaiter().GetResult() && !Directory.Exists(session)
+                        && Field(service, "proxy") == null && Field(service, "sessionDirectory") == null && !relay.IsRunning
+                        && !File.Exists(Path.Combine(marker, "pid")),
+                        "cancelled preparation settles before cleanup without late config or native launch: " + dispose);
+                    check(accessBefore.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"))),
+                        "async phone cancellation preserves the exact saved DPAPI access: " + dispose);
+                    if (!dispose)
+                    {
+                        service.BeforeSessionIo = null;
+                        var retry = service.StartAsync(); Pump(() => retry.IsCompleted, 8000); retry.GetAwaiter().GetResult();
+                        check(relay.IsRunning && !Object.ReferenceEquals(retry, start), "phone retry admits one fresh operation only after the cancelled worker settled");
+                        int pid = Pid(); stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
+                        check(stop.GetAwaiter().GetResult() && Gone(pid), "async phone stop confirms its own native child exit before success");
+                    }
+                }
+                finally
+                {
+                    release.Set(); service.BeforeSessionIo = null;
+                    try { var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 8000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned phone fixture cleanup incomplete"); }
+                    finally { heartbeat.Stop(); form.Close(); }
+                }
+            }
+        }
+
+        private static void OwnedCleanupStop(string token)
+        {
+            Mode("ready");
+            using (var relay = new Ikev2RelayService())
+            using (var service = Service(relay))
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            using (var entered = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim())
+            {
+                service.UseToken(token, null); form.Show();
+                int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                try
+                {
+                    var start = service.StartAsync(); Pump(() => start.IsCompleted, 8000); start.GetAwaiter().GetResult();
+                    int pid = Pid(); string session = (string)Field(service, "sessionDirectory");
+                    service.BeforeSessionIo = delegate(string stage) {
+                        if (stage == "cleanup") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned session cleanup barrier timed out"); }
+                    };
+                    var watch = Stopwatch.StartNew(); var stop = service.StopAsync();
+                    check(watch.ElapsedMilliseconds < 500, "phone cleanup queues native disposal and directory removal outside the UI thread");
+                    Pump(() => entered.IsSet, 3000); int before = ticks; Pump(() => ticks >= before + 3, 1000);
+                    check(!stop.IsCompleted && Object.ReferenceEquals(stop, service.StopAsync()) && Gone(pid)
+                        && !relay.IsRunning && Directory.Exists(session),
+                        "phone cleanup heartbeat continues while its exact private session remains owned after child exit");
+                    release.Set(); Pump(() => stop.IsCompleted, 5000);
+                    check(stop.GetAwaiter().GetResult() && !Directory.Exists(session), "phone cleanup success follows actual directory removal");
+                    service.BeforeSessionIo = null;
+                    start = service.StartAsync(); Pump(() => start.IsCompleted, 8000); start.GetAwaiter().GetResult();
+                    session = (string)Field(service, "sessionDirectory"); pid = Pid();
+                    using (var held = File.Open(Path.Combine(session, "ssh_config"), FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
+                        check(!stop.GetAwaiter().GetResult() && Gone(pid) && Directory.Exists(session)
+                            && (string)Field(service, "sessionDirectory") == session,
+                            "real locked session makes async phone stop fail honestly while retaining its exact cleanup owner");
+                    }
+                    stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
+                    check(stop.GetAwaiter().GetResult() && !Directory.Exists(session), "explicit phone stop retry removes the previously locked owned session");
+                }
+                finally
+                {
+                    release.Set(); service.BeforeSessionIo = null;
+                    try { var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 8000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned phone fixture cleanup incomplete"); }
+                    finally { heartbeat.Stop(); form.Close(); }
+                }
+            }
+        }
+
+        private static void WizardOwnedStop(string token, ClipboardService clipboard, string route)
+        {
+            Mode("ready");
+            using (var relay = new Ikev2RelayService())
+            using (var service = Service(relay))
+            using (var form = new HomeVpnWizardForm(service, clipboard))
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            using (var entered = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim())
+            {
+                service.UseToken(token, null); Invoke(form, "ShowStep", 4); form.Show();
+                int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                try
+                {
+                    var start = service.StartAsync(); Pump(() => start.IsCompleted, 8000); start.GetAwaiter().GetResult();
+                    int pid = Pid(); string session = (string)Field(service, "sessionDirectory");
+                    service.BeforeSessionIo = delegate(string stage) {
+                        if (stage == "cleanup") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Wizard phone cleanup barrier timed out"); }
+                    };
+                    var stopButton = Controls(form).OfType<Button>().Single(b => b.Text == "Остановить VPN для телефона");
+                    var watch = Stopwatch.StartNew(); stopButton.PerformClick();
+                    check(watch.ElapsedMilliseconds < 500, "actual wizard phone Stop click returns while native cleanup remains owned: " + route);
+                    Pump(() => entered.IsSet, 3000); int before = ticks; Pump(() => ticks >= before + 3, 1000);
+                    var status = (Label)Field(form, "status");
+                    check((bool)Field(form, "busy") && !((Control)Field(form, "body")).Enabled && !service.StopWork.IsCompleted
+                        && Gone(pid) && Directory.Exists(session) && status.Text.Contains("Дождитесь"),
+                        "actual phone Stop keeps responsive UI and honest pending cleanup without duplicate actions: " + route);
+                    if (route == "close")
+                    {
+                        form.Close(); check(form.Visible && !form.IsDisposed && status.Text.Contains("подтверждения остановки"),
+                            "phone Stop title close waits for local cleanup rather than claiming completion or cancelling it");
+                    }
+                    else if (route == "dispose") form.Dispose();
+                    release.Set(); Pump(() => service.StopWork.IsCompleted && !(bool)Field(form, "busy"), 8000);
+                    check(service.StopWork.GetAwaiter().GetResult() && !Directory.Exists(session) && !service.HasOwnedResources,
+                        "wizard close or disposal cannot abandon its actual phone cleanup: " + route);
+                    if (route != "stay") check(form.IsDisposed, "queued phone close and forced disposal settle without late UI access: " + route);
+                    else
+                    {
+                        check(form.Visible && ((Control)Field(form, "body")).Enabled && status.Text.Contains("временные файлы очищены"),
+                            "completed phone Stop restores explicit retry and reports success only after cleanup");
+                        service.BeforeSessionIo = null;
+                        start = service.StartAsync(); Pump(() => start.IsCompleted, 8000); start.GetAwaiter().GetResult();
+                        session = (string)Field(service, "sessionDirectory");
+                        using (var held = File.Open(Path.Combine(session, "ssh_config"), FileMode.Open, FileAccess.Read, FileShare.None))
+                        {
+                            stopButton.PerformClick(); Pump(() => !(bool)Field(form, "busy"), 5000);
+                            check(form.Visible && status.ForeColor == UiTheme.Error && status.Text.Contains("остановлен не полностью")
+                                && Directory.Exists(session) && ((Control)Field(form, "body")).Enabled,
+                                "actual phone Stop shows locked-file failure and restores explicit retry without claiming cleanup");
+                        }
+                        stopButton.PerformClick(); Pump(() => !(bool)Field(form, "busy"), 5000);
+                        check(!Directory.Exists(session) && status.Text.Contains("временные файлы очищены"),
+                            "actual wizard retry cleans the same previously locked phone session");
+                    }
+                }
+                finally
+                {
+                    release.Set(); service.BeforeSessionIo = null;
+                    try { var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 8000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Wizard phone fixture cleanup incomplete"); }
+                    finally { heartbeat.Stop(); form.Dispose(); }
+                }
+            }
+        }
+
+        private static void RelayOwnedLifecycle(bool dispose)
+        {
+            using (var relay = new Ikev2RelayService())
+            using (var form = new Form())
+            using (var pulse = new System.Windows.Forms.Timer { Interval = 20 })
+            using (var probeEntered = new ManualResetEventSlim())
+            using (var stopping = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim())
+            {
+                var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
+                TcpClient accepted = null;
+                var peer = Task.Run(delegate {
+                    using (var client = listener.AcceptTcpClient()) {
+                        Interlocked.Exchange(ref accepted, client); client.ReceiveTimeout = 4000;
+                        var stream = client.GetStream(); var hello = Read(stream, 3);
+                        if (hello[0] != 5 || hello[1] != 1 || hello[2] != 0) throw new IOException("Unexpected owned probe greeting");
+                        probeEntered.Set();
+                        if (stream.ReadByte() != -1) throw new IOException("Cancelled probe sent unexpected data");
+                    }
+                });
+                int socksPort = ((IPEndPoint)listener.LocalEndpoint).Port, ikePort = UdpPort(), natPort = UdpPort();
+                while (natPort == ikePort) natPort = UdpPort();
+                int ticks = 0; pulse.Tick += delegate { ticks++; }; form.Show(); pulse.Start();
+                relay.BeforeStopComplete = delegate { stopping.Set(); if (!release.Wait(5000)) throw new TimeoutException("Relay stop finalization barrier"); };
+                try
+                {
+                    var start = relay.StartAsync("127.0.0.1", socksPort, ikePort, natPort, 17878, CancellationToken.None);
+                    check(Object.ReferenceEquals(start, relay.StartAsync("127.0.0.1", socksPort, ikePort, natPort, 17878, CancellationToken.None)),
+                        "duplicate pending relay startup shares its actual native probe task");
+                    Pump(() => probeEntered.IsSet && ticks >= 3, 3000);
+                    var watch = Stopwatch.StartNew();
+                    if (dispose) relay.Dispose(); else relay.StopAsync();
+                    var stop = relay.StopWork;
+                    check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(stop, relay.StopAsync()),
+                        "relay Stop or Dispose reserves one lifetime without waiting on pending native I/O: " + dispose);
+                    Pump(() => stopping.IsSet && peer.IsCompleted, 3000); peer.GetAwaiter().GetResult();
+                    int before = ticks; Pump(() => ticks >= before + 3, 1000);
+                    check(start.IsCanceled && !relay.IsRunning && !stop.IsCompleted && relay.LastError == null,
+                        "real stalled SOCKS probe closes before relay stop reports completion and native UI stays responsive: " + dispose);
+                    bool refused = false;
+                    try { relay.StartAsync("127.0.0.1", socksPort, ikePort, natPort, 17878, CancellationToken.None).GetAwaiter().GetResult(); }
+                    catch (ObjectDisposedException) { refused = dispose; }
+                    catch (InvalidOperationException) { refused = true; }
+                    check(refused && !stop.IsCompleted, "relay cannot admit a competing start while its stop owner is unfinished: " + dispose);
+                    foreach (int port in new[] { ikePort, natPort }) using (var available = new UdpClient(new IPEndPoint(IPAddress.Loopback, port))) { }
+                    release.Set(); Pump(() => stop.IsCompleted, 5000); stop.GetAwaiter().GetResult();
+                    check(!stop.IsFaulted && relay.PendingStopCount == 0, "relay stop completes only after startup and retiring network tasks settle: " + dispose);
+                }
+                finally
+                {
+                    release.Set(); relay.BeforeStopComplete = null;
+                    try { var cleanup = relay.StopAsync(); Pump(() => cleanup.IsCompleted, 5000); cleanup.GetAwaiter().GetResult(); }
+                    finally {
+                        pulse.Stop(); form.Close(); listener.Stop();
+                        var client = Interlocked.CompareExchange(ref accepted, null, null); if (client != null) client.Close();
+                        Pump(() => peer.IsCompleted, 5000); var observed = peer.Exception;
+                    }
+                }
+            }
+        }
+
         private static void ProtectedOperation(ClipboardService clipboard)
         {
             using (var relay = new Ikev2RelayService())

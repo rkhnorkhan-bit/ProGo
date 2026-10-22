@@ -410,6 +410,10 @@ namespace ProGo
                 Context.Dispose();
                 var restore = Context.RestoreWork;
                 if (restore != null) WaitAsyncRestoreWithoutPump(restore, 25000);
+                // Context owns cancellation; never abandon a real phone worker before
+                // disposing its relay or removing fixture directories.
+                WaitAsyncRestoreWithoutPump(Home.StopWork, 8000);
+                if (!Home.StopWork.GetAwaiter().GetResult()) throw new IOException("Fixture phone cleanup incomplete");
                 Monitor.Dispose(); Clipboard.Dispose(); Home.Dispose(); Relay.Dispose(); Bridge.Dispose(); Proxy.Dispose(); Settings.Dispose();
                 if (Directory.Exists(BackupService.BackupsRoot)) Directory.Delete(BackupService.BackupsRoot, true);
                 if (moved) Directory.Move(previous, BackupService.BackupsRoot);

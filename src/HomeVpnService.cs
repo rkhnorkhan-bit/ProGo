@@ -68,14 +68,27 @@ namespace ProGo
             if (Access == null) throw new InvalidOperationException("Сначала добавьте доступ к VPS.");
             HomeVpnPrivateFiles.Save("share-" + Access.ServerId, HomeProfileShare.Origin(value));
         }
-        private ProxyService proxy;
-        private string sessionDirectory;
+        private volatile ProxyService proxy;
+        private volatile string sessionDirectory;
+        private readonly object lifecycleGate = new object();
         private CancellationTokenSource starting;
-        private bool disposed;
+        private Task startWork = Task.FromResult(0);
+        private Task<bool> stopWork = Task.FromResult(true);
+        private bool disposed, startsPaused;
+        // Fixture barriers surround real private I/O; no production replacement sink.
+        internal Action<string> BeforeSessionIo;
+        internal Task StartWork { get { lock (lifecycleGate) return startWork; } }
+        internal Task<bool> StopWork { get { lock (lifecycleGate) return stopWork; } }
+        internal bool IsStopping { get { lock (lifecycleGate) return !stopWork.IsCompleted; } }
+        internal bool IsStarting { get { lock (lifecycleGate) return !startWork.IsCompleted; } }
+        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null; } }
+        internal bool StartsPaused { get { lock (lifecycleGate) return startsPaused; } }
+        internal void PauseStarts() { lock (lifecycleGate) startsPaused = true; }
+        internal void ResumeStarts() { lock (lifecycleGate) { if (!disposed) startsPaused = false; } }
         private readonly string sshExecutable;
         private readonly int ikePort, natPort, bridgePort;
-        internal bool AutoRestart = true;
-        internal string RecoveryStatus { get { return proxy == null ? "Не запущен" : proxy.RecoveryStatus; } }
+        internal volatile bool AutoRestart = true;
+        internal string RecoveryStatus { get { var current = proxy; return current == null ? "Не запущен" : current.RecoveryStatus; } }
 
         internal HomeVpnService(Ikev2RelayService relay)
             : this(relay, OpenSshClient.Executable, Ikev2RelayService.IkePort, Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort) { }
@@ -112,88 +125,162 @@ namespace ProGo
             HomeVpnPrivateFiles.Save("home-address", address); HomeAddress = address;
         }
 
-        internal async Task StartAsync()
+        internal Task StartAsync() { return StartAsync(CancellationToken.None); }
+
+        internal Task StartAsync(CancellationToken token)
         {
-            await StartAsync(CancellationToken.None);
+            TaskCompletionSource<int> completion;
+            CancellationTokenSource cancellation;
+            HomeVpnAccess access;
+            Action<string> beforeIo;
+            lock (lifecycleGate)
+            {
+                if (token.IsCancellationRequested) return FailedStart(new OperationCanceledException(token));
+                if (disposed) return FailedStart(new ObjectDisposedException("HomeVpnService"));
+                if (startsPaused) return FailedStart(new InvalidOperationException("ProGo завершает работу или готовит обслуживание. Запуск VPN для телефона временно недоступен."));
+                if (Access == null) return FailedStart(new InvalidOperationException("Сначала добавьте VPS или вставьте токен."));
+                if (!stopWork.IsCompleted) return FailedStart(new InvalidOperationException("Остановка VPN для телефона ещё не завершена. Дождитесь очистки и повторите запуск."));
+                if (!startWork.IsCompleted) return startWork;
+                if (Relay.IsRunning) return Task.FromResult(0);
+                var current = Access;
+                access = new HomeVpnAccess { ServerId = current.ServerId, Host = current.Host,
+                    Port = current.Port, User = current.User, PrivateKey = current.PrivateKey, HostKey = current.HostKey };
+                cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+                completion = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+                starting = cancellation;
+                startWork = completion.Task; // Publish ownership before any worker, file or child.
+                beforeIo = BeforeSessionIo;
+            }
+            Task.Run(() => StartOwnedAsync(access, cancellation, beforeIo, completion));
+            return completion.Task;
         }
 
-        internal async Task StartAsync(CancellationToken token)
+        private static Task FailedStart(Exception failure)
+        {
+            var result = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (failure is OperationCanceledException) result.SetCanceled(); else result.SetException(failure);
+            return result.Task;
+        }
+
+        private async Task StartOwnedAsync(HomeVpnAccess access, CancellationTokenSource cancellation,
+            Action<string> beforeIo, TaskCompletionSource<int> completion)
+        {
+            Exception failure = null;
+            try { await StartCoreAsync(access, cancellation.Token, beforeIo).ConfigureAwait(false); }
+            catch (Exception ex) { failure = ex; }
+            finally
+            {
+                lock (lifecycleGate) { if (starting == cancellation) starting = null; }
+                cancellation.Dispose();
+            }
+            // Start completion means the worker and any failed-start cleanup settled.
+            if (failure is OperationCanceledException) completion.TrySetCanceled();
+            else if (failure != null) completion.TrySetException(failure);
+            else completion.TrySetResult(0);
+        }
+
+        private async Task StartCoreAsync(HomeVpnAccess access, CancellationToken token, Action<string> beforeIo)
         {
             token.ThrowIfCancellationRequested();
-            if (disposed) throw new ObjectDisposedException("HomeVpnService");
-            if (Access == null) throw new InvalidOperationException("Сначала добавьте VPS или вставьте токен.");
-            if (Relay.IsRunning || starting != null) return;
-            Stop();
-            if (proxy != null || sessionDirectory != null)
+            if (!CleanupOwned(beforeIo))
                 throw new InvalidOperationException("Предыдущий запуск канала ещё не очищен. Закройте программы, использующие временные файлы, и повторите остановку VPN для телефона.");
-            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token); starting = cancellation;
             try
             {
+                SessionBoundary(beforeIo, "prepare", token);
                 HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
+                token.ThrowIfCancellationRequested();
                 sessionDirectory = Path.Combine(HomeVpnPrivateFiles.Root, "session-" + Guid.NewGuid().ToString("N"));
                 HomeVpnPrivateFiles.SecureDirectory(sessionDirectory);
                 var key = Path.Combine(sessionDirectory, "access");
                 var known = Path.Combine(sessionDirectory, "known_hosts");
                 var config = Path.Combine(sessionDirectory, "ssh_config");
-                File.WriteAllText(key, Access.PrivateKey, new UTF8Encoding(false));
-                File.WriteAllText(known, "progo-home-" + Access.ServerId + " " + Access.HostKey + "\n", new UTF8Encoding(false));
-                File.WriteAllText(config, "Host progo-home\n HostName " + Access.Host + "\n Port " + Access.Port + "\n User " + Access.User
+                SessionBoundary(beforeIo, "key", token);
+                File.WriteAllText(key, access.PrivateKey, new UTF8Encoding(false));
+                SessionBoundary(beforeIo, "known-hosts", token);
+                File.WriteAllText(known, "progo-home-" + access.ServerId + " " + access.HostKey + "\n", new UTF8Encoding(false));
+                SessionBoundary(beforeIo, "config", token);
+                File.WriteAllText(config, "Host progo-home\n HostName " + access.Host + "\n Port " + access.Port + "\n User " + access.User
                     + "\n IdentityFile " + ConfigPath(key) + "\n IdentitiesOnly yes\n IdentityAgent none\n BatchMode yes\n StrictHostKeyChecking yes"
-                    + "\n HostKeyAlias progo-home-" + Access.ServerId + "\n HostKeyAlgorithms ssh-ed25519\n UserKnownHostsFile " + ConfigPath(known)
+                    + "\n HostKeyAlias progo-home-" + access.ServerId + "\n HostKeyAlgorithms ssh-ed25519\n UserKnownHostsFile " + ConfigPath(known)
                     + "\n GlobalKnownHostsFile NUL\n", new UTF8Encoding(false));
+                token.ThrowIfCancellationRequested();
                 int port;
                 var reservation = new TcpListener(IPAddress.Loopback, 0); reservation.Start();
                 try { port = ((IPEndPoint)reservation.LocalEndpoint).Port; } finally { reservation.Stop(); }
                 var options = AppSettings.Defaults(); options.SocksPort = port; options.SshProfile = "progo-home";
                 proxy = new ProxyService(delegate { options.AutoRestartSocks = AutoRestart; return options; }, delegate { }, sshExecutable, delegate { return DateTime.UtcNow; }, true,
                     "-F " + Argument(config) + " ", 10000);
-                // Reuse the owned asynchronous SOCKS handshake, deadline and cancellation.
-                if (!await proxy.StartTunnelAsync(cancellation.Token)) throw new InvalidOperationException("SOCKS не готов.");
-                cancellation.Token.ThrowIfCancellationRequested();
-                await Relay.StartAsync("127.0.0.1", port, ikePort, natPort, bridgePort, cancellation.Token);
-                cancellation.Token.ThrowIfCancellationRequested();
+                token.ThrowIfCancellationRequested();
+                if (!await proxy.StartTunnelAsync(token).ConfigureAwait(false)) throw new InvalidOperationException("SOCKS не готов.");
+                token.ThrowIfCancellationRequested();
+                await Relay.StartAsync("127.0.0.1", port, ikePort, natPort, bridgePort, token).ConfigureAwait(false);
+                token.ThrowIfCancellationRequested();
             }
             catch
             {
-                CleanupFailedStart();
-                cancellation.Token.ThrowIfCancellationRequested();
+                if (!CleanupOwned(beforeIo))
+                    throw new InvalidOperationException("Канал остановлен не полностью: процесс или временные файлы доступа ещё принадлежат ProGo. Повторите остановку VPN для телефона; отмена пока не подтверждена.");
+                token.ThrowIfCancellationRequested();
                 throw new InvalidOperationException("Канал к VPS не готов. Проверьте интернет и токен: владелец мог отозвать доступ или изменить SSH-ключ сервера. Можно повторить запуск.");
             }
-            finally { if (starting == cancellation) starting = null; cancellation.Dispose(); }
         }
 
-        private void CleanupFailedStart()
+        private static void SessionBoundary(Action<string> beforeIo, string stage, CancellationToken token)
         {
-            Relay.Stop();
+            token.ThrowIfCancellationRequested();
+            if (beforeIo != null) beforeIo(stage);
+            token.ThrowIfCancellationRequested();
+        }
+
+        // Only the retained start worker, or the stop worker after awaiting it,
+        // may mutate this session/proxy. No process/filesystem work holds lifecycleGate.
+        private bool CleanupOwned(Action<string> beforeIo)
+        {
+            Relay.StopAsync().GetAwaiter().GetResult(); // This method belongs to an owned worker.
             if (proxy != null)
             {
                 proxy.Dispose();
-                if (proxy.HasOwnedProcess) throw new InvalidOperationException("Не удалось подтвердить остановку процесса канала. Повторите остановку VPN для телефона; отмена пока не подтверждена.");
+                if (proxy.HasOwnedProcess) return false;
                 proxy = null;
             }
             if (sessionDirectory != null)
             {
+                if (beforeIo != null) beforeIo("cleanup");
                 try { if (Directory.Exists(sessionDirectory)) Directory.Delete(sessionDirectory, true); }
-                catch { throw new InvalidOperationException("Канал остановлен, но временные файлы доступа не удалось удалить. Закройте программы, использующие эти файлы; отмена пока не подтверждена."); }
+                catch { return false; } // Keep the exact directory for explicit retry.
                 sessionDirectory = null;
             }
+            return true;
         }
 
-        internal void Stop()
+        internal Task<bool> StopAsync()
         {
-            if (starting != null) starting.Cancel();
-            Relay.Stop();
-            if (proxy != null) {
-                proxy.Dispose();
-                if (proxy.HasOwnedProcess) return; // Retain ownership; never overwrite an unsettled child.
-                proxy = null;
-            }
-            if (sessionDirectory != null)
+            Task start;
+            CancellationTokenSource cancellation;
+            TaskCompletionSource<bool> completion;
+            Action<string> beforeIo;
+            lock (lifecycleGate)
             {
-                try { if (Directory.Exists(sessionDirectory)) Directory.Delete(sessionDirectory, true); sessionDirectory = null; }
-                catch { /* Keep ownership so cancellation/retry cannot claim cleanup succeeded. */ }
+                if (!stopWork.IsCompleted) return stopWork;
+                start = startWork; cancellation = starting; beforeIo = BeforeSessionIo;
+                completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                stopWork = completion.Task; // Duplicate Stop and Start see the reservation immediately.
             }
+            Task.Run(async delegate {
+                try
+                {
+                    // Cancellation callbacks and native disposal also belong to a worker.
+                    if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+                    try { await start.ConfigureAwait(false); } catch { /* Start already reports its own failure. */ }
+                    completion.TrySetResult(CleanupOwned(beforeIo));
+                }
+                catch (Exception ex) { completion.TrySetException(ex); }
+            });
+            return completion.Task;
         }
+
+        // Synchronous compatibility; the token-import caller is an open R09 UI follow-up.
+        internal void Stop() { StopAsync().GetAwaiter().GetResult(); }
 
         private static string ConfigPath(string path)
         {
@@ -466,6 +553,18 @@ namespace ProGo
 
         private static string Shell(string value) { return "'" + value.Replace("'", "'\"'\"'") + "'"; }
 
-        public void Dispose() { disposed = true; Stop(); }
+        public void Dispose()
+        {
+            Task<bool> work;
+            lock (lifecycleGate)
+            {
+                if (disposed) return;
+                disposed = true;
+                work = StopAsync(); // Reentrant metadata gate; publish before Dispose returns.
+            }
+            // Do not wait for an uninterruptible native I/O call on the UI thread.
+            // The task and exact session remain owned and inspectable through StopWork.
+            work.ContinueWith(delegate(Task<bool> failed) { var ignored = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+        }
     }
 }

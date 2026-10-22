@@ -15,6 +15,8 @@ namespace ProGo
         private readonly ProxyService proxy;
         private readonly CliProxyBridgeService cliProxy;
         private readonly HomeVpnService homeVpn;
+        private Task<bool> phoneStopObservation;
+        internal Task<bool> PhoneStopWork { get { var observed = phoneStopObservation; return observed != null && !observed.IsCompleted ? observed : homeVpn.StopWork; } }
         private readonly AppProxyConsumers appConsumers;
         private readonly ClipboardService clipboard;
         private readonly NotifyIcon tray;
@@ -580,8 +582,8 @@ namespace ProGo
                     case AppCommand.Exit: ExitProGo(); break;
                     case AppCommand.StopDesktop:
                         StopDesktop(); break;
-                    case AppCommand.StopPhone: homeVpn.Stop(); break;
-                    case AppCommand.StopAll: try { StopDesktop(); } finally { homeVpn.Stop(); } break;
+                    case AppCommand.StopPhone: StopPhoneAsync(); break;
+                    case AppCommand.StopAll: try { StopDesktop(); } finally { StopPhoneAsync(); } break;
                     case AppCommand.Settings: ShowSettings(); break;
                     case AppCommand.Connections: ShowSettings(SettingsSection.Connections); break;
                     case AppCommand.WindowsSettings: ShowSettings(SettingsSection.Windows); break;
@@ -603,6 +605,34 @@ namespace ProGo
             }
             catch (Exception ex) { SafeLog.Error("User action failed: " + command.LegacyId, ex); MessageBox.Show(ex.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
             finally { if (isPage && mainWindow != null && !mainWindow.IsDisposed) mainWindow.SetNavigation("home"); }
+        }
+        internal Task<bool> StopPhoneAsync()
+        {
+            var pending = phoneStopObservation;
+            if (pending != null && !pending.IsCompleted) return pending;
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            phoneStopObservation = completion.Task;
+            var work = homeVpn.StopAsync();
+            ObservePhoneStop(work, completion);
+            RefreshPendingRoutes();
+            return completion.Task;
+        }
+        private async Task ObservePhoneStop(Task<bool> work, TaskCompletionSource<bool> completion)
+        {
+            bool stopped = false;
+            try { stopped = await work.ConfigureAwait(false); }
+            catch (Exception ex) { SafeLog.Error("Phone VPN cleanup failed; ownership retained.", ex); }
+            try
+            {
+                await DispatchUi(delegate {
+                    if (!stopped && Object.ReferenceEquals(homeVpn.StopWork, work)) tray.ShowBalloonTip(10000, "VPN для телефона остановлен не полностью",
+                        "Процесс или временные файлы ещё принадлежат ProGo. Закройте программы, использующие эти файлы, и повторите остановку VPN для телефона.", ToolTipIcon.Warning);
+                    completion.TrySetResult(stopped);
+                    RefreshPendingRoutes(); return true;
+                }).ConfigureAwait(false);
+            }
+            catch (Exception ex) { SafeLog.Error("Phone VPN result display failed.", ex); }
+            finally { completion.TrySetResult(stopped); }
         }
         private void StopDesktop()
         {
@@ -750,7 +780,7 @@ namespace ProGo
                 SshConnection.Signature(current) == SshConnection.Signature(expected);
         }
         private AppCommandState GetCommandState()
-        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing || MaintenancePending, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending); }
+        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing || MaintenancePending, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending, homeVpn.IsStopping || (phoneStopObservation != null && !phoneStopObservation.IsCompleted)); }
         private void RefreshPendingRoutes()
         {
             var state = GetCommandState();
@@ -1218,6 +1248,8 @@ namespace ProGo
             Exception failure = null;
             var vaultDeadline = Stopwatch.StartNew();
             try {
+                homeVpn.PauseStarts();
+                var phoneStop = homeVpn.StopAsync();
                 dailyRuntime.Pause();
                 CancelVault();
                 if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
@@ -1238,6 +1270,10 @@ namespace ProGo
                 // Cancellation/fixed export failures are already shown by the
                 // form. Only actual settlement is a prerequisite for handoff.
                 try { await diagnostic.ConfigureAwait(false); } catch (Exception) { }
+                if (!phoneStop.IsCompleted && await Task.WhenAny(phoneStop, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != phoneStop)
+                    throw new InvalidOperationException("Остановка VPN для телефона ещё не завершена: процесс или накопитель не завершили очистку. ProGo остаётся запущенным; дождитесь результата и повторите выход или обслуживание.");
+                if (!await phoneStop.ConfigureAwait(false))
+                    throw new InvalidOperationException("VPN для телефона остановлен не полностью. ProGo сохраняет управление процессом и временными файлами; повторите остановку перед выходом или обслуживанием.");
                 var vault = Task.WhenAll(VaultWork ?? Task.FromResult(false), DailyWork);
                 if (vault != null && !vault.IsCompleted && await Task.WhenAny(vault, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != vault)
                     throw new InvalidOperationException("Операция хранилища ещё не завершена. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
@@ -1376,7 +1412,7 @@ namespace ProGo
             if (closing || activationDispatcher.IsDisposed || maintenanceReservation != null) return;
             try { activationDispatcher.BeginInvoke(new Action(delegate {
                 if (!shutdownPrepared || closing || maintenanceReservation != null) return;
-                closing = true; homeVpn.Stop(); tray.Visible = false; ExitThread();
+                closing = true; tray.Visible = false; ExitThread();
             })); } catch (InvalidOperationException) { }
         }
         internal void CancelShutdown()
@@ -1392,6 +1428,7 @@ namespace ProGo
             if (!closing && !disposed && !shutdownPrepared && !shutdownPreparing &&
                 maintenanceReservation == null && !maintenanceHandedOff) {
                 SafeLog.ResumeOwner(logOwner);
+                homeVpn.ResumeStarts();
                 if (dailyRuntime.IsPaused) dailyRuntime.Resume();
             }
         }
@@ -1869,6 +1906,7 @@ namespace ProGo
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
                 lock (integrationLifetimeGate) closing = true;
+                homeVpn.Dispose(); // Seal new starts and retain actual cleanup without waiting on UI.
                 logWriterSettling = SafeLog.SuspendOwnerAsync(logOwner);
                 if (sshAgentStartup != null) sshAgentStartup.Close();
                 CancelShortcutMigration();
