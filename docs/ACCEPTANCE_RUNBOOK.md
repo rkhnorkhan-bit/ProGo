@@ -1,3 +1,66 @@
+## CI606 full SUCCESS — sourcebf1c / mergecd20, staged R09 ещё NOT_RUN
+
+[CI606/39724309390](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39724309390)
+Windows119644614336/Ubuntu119644614044 SUCCESS. Build identity
+0.2.2+cd20daf85da786d42244e7ce17fc83726b81fbcc проверен по log;
+source `bf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc`, full tree
+`8cf494f4ab7c2dfc247a2ad8f96689632f3cb983` = local0152426bd4c6b8723e3232a0463fc8c224296cce.
+
+Новые narrow native PASS: committed repair cleanup04:47:52.4180059 (реальный
+locked old snapshot, -Recover только residue cleanup); coherent DPAPI reader
+05:08:39.9645891 +cancel/conflict/lock/defaults; failed old cleanup refuses token
+import before DPAPI/identity change05:09:30.2421268. Это не закрывает весь R09.
+Main regression51/456; bounded43/report32/helper2; actual modal Cancel→Retry,
+chooser3/Context ownership, signing55/UI50/prep72 +real direct/owned-agent
+prepare→native SSH→SOCKS→HTTP→crash/fresh recovery PASS. Desktop5274/Instance28/
+Maintenance126/Shutdown47/HomeVPN1051/Portable90; SSH contracts5; Python28=
+26PASS2SKIP. Exact28 parent anchors обновлены, веса и уровни не повышены.
+
+Runner ZIP0.2.2 SHA256 `198a7ed7d2e2839e3be023814a0273ef62bc20a08e2a3e4ea0510635b0f73822`.
+All uploads SKIPPED. Bytes не получены/не переданы/не установлены; installer и
+owner acceptance NOT_RUN, передача BLOCKED до разрешённого приватного канала.
+I58–80, verified21.75→22, изменение0: D0.5/P0.5/A0 для тех же28 parents weight87.
+
+Frozen next checking local `dfe70563a136a21edeae1b514a219a067a0a64a7` /tree
+`7016b466f779fc02168e538626e6f610780325ea` содержит только staged API/optional
+warnings/loading gates/owned share retry +tests и docs:9files661 additions,
+scan0 secrets/PII/public320/0/syntax/C#5 structure/diff PASS. Windows NOT_RUN.
+Перед publication evidence docs обновить до exact606, source files не менять.
+
+Отдельный root local `5cce98404647a2dd4e0ea4d88f13daf9957a9018` подключает
+owned cancellable share read к configure/QR actions wizard. Written actual UI
+Cancel→Retry/queued close/Dispose cases с реальным protected read и own configure
+modal, без SSH/HTTP действий. Syntax/C#5/source/public/diff PASS; compiler/native
+NOT_RUN. Этот UI block исключён из frozen checkingdfe; Program/default ctor и
+getter пока legacy. R09 private writes/recovery I/O остаются FAIL/open.
+
+Следующее: обновить checking docs, exact scan/tree, expectedbf1c публикация одного
+source в PR88 и один CI. Пока идёт его Windows — отдельно default startup/cache
+integration; не приписывать ему606 SUCCESS. No binaries/release/main merge/owner
+PC/VPS actions. Ниже все checkpoint-записи — история.
+
+## Текущий staged R09 checking — ещё без Windows результата
+
+Published606 source `bf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc` / merge
+`cd20daf85da786d42244e7ce17fc83726b81fbcc`, run39724309390 проверяет guard/read
+primitive/committed cleanup vector. Windows119644614336 in_progress,
+Ubuntu119644614044 SUCCESS; новый source не наследует SUCCESS605.
+
+Следующий отдельный checking включает optional background initialization API
+ad3fa3e, optional-metadata compatibility00a1831, actual Context/main loading gates
+7d9d80f, owned share refresh/retrye385513 и их native tests. Program/default
+startup/ShareOrigin getter/QR-configure production routes остаются legacy;
+новые tests Windows compilation/native NOT_RUN до exact нового run. Минимальный
+Windows прогон — scripts/Test-ProGo.ps1: held initial read/Stop/Dispose, optional
+real-lock basic start, Context/tray/dashboard pending/no modal, share real
+lock→unlock→retry/cancel/newer publication/cleanup; затем общие native regressions,
+диагностика/modal Cancel→Retry/chooser3/Context ownership/selected-key SSH chain.
+
+I58–80, verified22/raw21.75 только exact605;0 баллов за staged code/tests/docs.
+No public binary uploads/release/main merge/owner PC/VPS actions. Далее exact606
+result, checking source/tree scan and one PR CI; затем actual route integration.
+Ниже сохранённые checkpoints — история, не новые результаты.
+
 ## CI605 full SUCCESS — exact163d/522ca, новые local blocks excluded
 
 [run39721135629](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39721135629)

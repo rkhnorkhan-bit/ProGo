@@ -16,7 +16,7 @@ namespace ProGo
         private readonly ConnectionHealthMonitor health;
         private readonly Label connection, subtitle, recovery, windowsState, terminalState, phoneState;
         private readonly Button connect;
-        private Button windowsToggle, cliToggle;
+        private Button windowsToggle, cliToggle, phoneOpen;
         private readonly Func<AppCommandState> commandState;
         private readonly Func<string> backupStatus;
         private readonly LinkLabel backupProgress;
@@ -229,6 +229,7 @@ namespace ProGo
                 configure.LinkClicked += delegate { action(AppCommand.WindowsSettings); }; heading.Controls.Add(configure);
             }
             if (column == 1) cliToggle = open;
+            if (column == 2) phoneOpen = open;
             open.MinimumSize = new Size(100, UiTheme.CompactActionHeight); open.Padding = new Padding(7, 0, 7, 0);
             var card = Surface(heading, state, caption, open); card.Dock = DockStyle.Fill; card.Padding = new Padding(16);
             statusCards.Add(card); cards.Controls.Add(card, column, 0); return state;
@@ -240,7 +241,7 @@ namespace ProGo
                 backupProgress.Text = backupStatus() ?? "";
                 backupProgress.Visible = backupProgress.Text.Length > 0;
             }
-            var commands = commandState == null ? new AppCommandState(new AppCommand[0], proxy.IsConnecting, false) : commandState();
+            var commands = commandState == null ? new AppCommandState(new AppCommand[0], proxy.IsConnecting, false, phoneStopping: home.IsStopping, phoneInitializing: home.IsInitializing) : commandState();
             bool cliPending = commands.IsPending(AppCommand.StartCli), windowsPending = commands.IsPending(AppCommand.EnableWindows);
             var status = health == null ? new ConnectionHealthSnapshot("", ConnectionProbeState.Unknown, ConnectionProbeState.Unknown) : health.Current;
             bool ready = status.SocksReady;
@@ -264,8 +265,10 @@ namespace ProGo
             cliToggle.AccessibleDescription = AppCommands.Get(cliPending || !cliApplied ? AppCommand.StartCli : AppCommand.StopCli).Effect;
             windowsToggle.AccessibleDescription = AppCommands.Get(windowsPending || !windowsApplied ? AppCommand.EnableWindows : AppCommand.DisableWindows).Effect;
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
-            phoneState.Text = home.IsStopping ? "Остановка…" : home.IsStarting ? "Запуск…"
-                : home.Relay.IsRunning ? "Канал включён" : home.HasOwnedResources ? "Нужна очистка" : "Не запущен";
+            phoneOpen.Enabled = navigation["iphone"].Enabled = AppCommands.CanExecute(AppCommand.Phone, commands);
+            phoneState.Text = home.IsStopping ? "Остановка…" : home.IsInitializing ? "Чтение сохранённого доступа…" : home.IsStarting ? "Запуск…"
+                : home.Relay.IsRunning ? "Канал включён" : home.HasOwnedResources ? "Нужна очистка"
+                : home.InitializationFailed ? "Данные доступа требуют проверки" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +
                 (appProxy != null && appProxy.IsRunning ? " · работает" +
                     (appConsumers == null ? "" : " для: " + appConsumers.Summary) : " · служба остановлена");

@@ -54,6 +54,9 @@ namespace ProGo
         }
     }
 
+    [Flags]
+    internal enum HomeVpnStoredStateWarning { None = 0, Owner = 1, HomeAddress = 2, ShareOrigin = 4 }
+
     // Read-only preparation for the R09 startup route. No file, ACL or settings
     // writes occur here; service/UI publication remains an owned caller step.
     internal sealed class HomeVpnStoredState
@@ -61,8 +64,9 @@ namespace ProGo
         private readonly HomeVpnAccess access;
         private readonly HomeVpnOwner owner;
         internal readonly string HomeAddress, ShareOrigin;
-        private HomeVpnStoredState(HomeVpnAccess access, HomeVpnOwner owner, string home, string share)
-        { this.access = access; this.owner = owner; HomeAddress = home; ShareOrigin = share; }
+        internal readonly HomeVpnStoredStateWarning Warnings;
+        private HomeVpnStoredState(HomeVpnAccess access, HomeVpnOwner owner, string home, string share, HomeVpnStoredStateWarning warnings)
+        { this.access = access; this.owner = owner; HomeAddress = home; ShareOrigin = share; Warnings = warnings; }
         internal HomeVpnAccess CopyAccess()
         {
             if (access == null) return null;
@@ -78,6 +82,27 @@ namespace ProGo
         internal static Task<HomeVpnStoredState> LoadAsync(CancellationToken cancellation, Action<string> beforeRead = null)
         {
             return Task.Run(() => Load(cancellation, beforeRead), cancellation);
+        }
+        internal static Task<string> LoadShareAsync(string serverId, string fallback, CancellationToken cancellation, Action<string> beforeRead)
+        {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(serverId ?? "", @"\A[0-9a-f]{32}\z"))
+                throw new ArgumentException("Сначала проверьте сохранённый доступ к VPS.");
+            return Task.Run(delegate {
+                byte[] encrypted = null, current = null;
+                try {
+                    cancellation.ThrowIfCancellationRequested();
+                    if (beforeRead != null) beforeRead("read");
+                    cancellation.ThrowIfCancellationRequested();
+                    encrypted = Read("share-" + serverId); string result = Decode(encrypted) ?? fallback;
+                    if (beforeRead != null) beforeRead("verify");
+                    cancellation.ThrowIfCancellationRequested(); current = Read("share-" + serverId);
+                    if (!Same(encrypted, current)) throw new InvalidOperationException("Сохранённый HTTPS-адрес изменился во время чтения. Повторите проверку.");
+                    cancellation.ThrowIfCancellationRequested(); return result;
+                } finally {
+                    if (encrypted != null) Array.Clear(encrypted, 0, encrypted.Length);
+                    if (current != null) Array.Clear(current, 0, current.Length);
+                }
+            }, cancellation);
         }
         private static byte[] Read(string name)
         {
@@ -114,10 +139,21 @@ namespace ProGo
             {
                 string token = Decode(read("access"));
                 var access = token == null ? null : HomeVpnAccess.Parse(token);
-                string ownerJson = Decode(read("owner"));
-                var owner = ownerJson == null ? null : new JavaScriptSerializer().Deserialize<HomeVpnOwner>(ownerJson);
-                string home = Decode(read("home-address")) ?? "";
-                string share = access == null ? null : Decode(read("share-" + access.ServerId)) ?? access.ShareUrl;
+                var warnings = HomeVpnStoredStateWarning.None;
+                HomeVpnOwner owner = null; string home = "", share = null;
+                try {
+                    string ownerJson = Decode(read("owner"));
+                    owner = ownerJson == null ? null : new JavaScriptSerializer().Deserialize<HomeVpnOwner>(ownerJson);
+                } catch (OperationCanceledException) { throw; }
+                catch (Exception ex) { if (ex is OutOfMemoryException) throw; warnings |= HomeVpnStoredStateWarning.Owner; }
+                try { home = Decode(read("home-address")) ?? ""; }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex) { if (ex is OutOfMemoryException) throw; warnings |= HomeVpnStoredStateWarning.HomeAddress; }
+                if (access != null) {
+                    try { share = Decode(read("share-" + access.ServerId)) ?? access.ShareUrl; }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex) { if (ex is OutOfMemoryException) throw; warnings |= HomeVpnStoredStateWarning.ShareOrigin; }
+                }
                 cancellation.ThrowIfCancellationRequested();
                 if (beforeRead != null) beforeRead("verify");
                 foreach (var pair in files)
@@ -128,7 +164,7 @@ namespace ProGo
                     } finally { if (current != null) Array.Clear(current, 0, current.Length); }
                 }
                 cancellation.ThrowIfCancellationRequested();
-                return new HomeVpnStoredState(access, owner, home, share);
+                return new HomeVpnStoredState(access, owner, home, share, warnings);
             }
             finally { foreach (var value in files.Values) if (value != null) Array.Clear(value, 0, value.Length); }
         }
@@ -142,17 +178,36 @@ namespace ProGo
         internal string HomeAddress { get; private set; }
         internal string ShareOrigin
         {
-            get { return Access == null ? null : HomeVpnPrivateFiles.Load("share-" + Access.ServerId) ?? Access.ShareUrl; }
+            get {
+                if (!backgroundInitialization) return Access == null ? null : HomeVpnPrivateFiles.Load("share-" + Access.ServerId) ?? Access.ShareUrl;
+                if ((loadedWarnings & HomeVpnStoredStateWarning.ShareOrigin) != 0)
+                    throw new InvalidOperationException("Сохранённый HTTPS-адрес недоступен. Повторите чтение после освобождения файла; прежние данные сохранены.");
+                return loadedShareOrigin;
+            }
         }
         internal void SetShareOrigin(string value)
         {
             if (Access == null) throw new InvalidOperationException("Сначала добавьте доступ к VPS.");
-            HomeVpnPrivateFiles.Save("share-" + Access.ServerId, HomeProfileShare.Origin(value));
+            string origin = HomeProfileShare.Origin(value);
+            HomeVpnPrivateFiles.Save("share-" + Access.ServerId, origin);
+            lock (lifecycleGate) {
+                shareRevision++;
+                if (backgroundInitialization) { loadedShareOrigin = origin; loadedWarnings &= ~HomeVpnStoredStateWarning.ShareOrigin; initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None; }
+            }
         }
         private volatile ProxyService proxy;
         private volatile string sessionDirectory;
         private readonly object lifecycleGate = new object();
         private CancellationTokenSource starting;
+        private CancellationTokenSource initializing, shareRefreshing, shareRefreshCancelled;
+        private Task<bool> shareRefreshWork = Task.FromResult(true);
+        private long shareRevision;
+        internal Task<bool> ShareRefreshWork { get { lock (lifecycleGate) return shareRefreshWork; } }
+        private Task<bool> initializationWork = Task.FromResult(true);
+        private readonly bool backgroundInitialization;
+        private volatile bool initializationFailed;
+        private volatile string loadedShareOrigin;
+        private volatile HomeVpnStoredStateWarning loadedWarnings;
         private Task startWork = Task.FromResult(0);
         private Task<bool> stopWork = Task.FromResult(true);
         private bool disposed, startsPaused;
@@ -160,6 +215,9 @@ namespace ProGo
         internal Action<string> BeforeSessionIo;
         internal Task StartWork { get { lock (lifecycleGate) return startWork; } }
         internal Task<bool> StopWork { get { lock (lifecycleGate) return stopWork; } }
+        internal Task<bool> InitializationWork { get { lock (lifecycleGate) return initializationWork; } }
+        internal bool IsInitializing { get { lock (lifecycleGate) return !initializationWork.IsCompleted; } }
+        internal bool InitializationFailed { get { return initializationFailed; } }
         internal bool IsStopping { get { lock (lifecycleGate) return !stopWork.IsCompleted; } }
         internal bool IsStarting { get { lock (lifecycleGate) return !startWork.IsCompleted; } }
         internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null; } }
@@ -174,11 +232,28 @@ namespace ProGo
         internal HomeVpnService(Ikev2RelayService relay)
             : this(relay, OpenSshClient.Executable, Ikev2RelayService.IkePort, Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort) { }
 
+        internal HomeVpnService(Ikev2RelayService relay, bool initializeInBackground)
+            : this(relay, OpenSshClient.Executable, Ikev2RelayService.IkePort, Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort, initializeInBackground) { }
+
         // Isolated Windows fixtures use their own executable and unprivileged UDP ports.
         internal HomeVpnService(Ikev2RelayService relay, string sshExecutable, int ikePort, int natPort, int bridgePort)
+            : this(relay, sshExecutable, ikePort, natPort, bridgePort, false) { }
+
+        internal HomeVpnService(Ikev2RelayService relay, string sshExecutable, int ikePort, int natPort, int bridgePort,
+            bool initializeInBackground, Action<string> beforeStoredRead = null)
         {
             Relay = relay; this.sshExecutable = sshExecutable;
             this.ikePort = ikePort; this.natPort = natPort; this.bridgePort = bridgePort;
+            backgroundInitialization = initializeInBackground;
+            if (initializeInBackground)
+            {
+                HomeAddress = "";
+                var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var cancellation = new CancellationTokenSource();
+                initializationWork = completion.Task; initializing = cancellation;
+                Task.Run(() => InitializeOwnedAsync(cancellation, completion, beforeStoredRead));
+                return;
+            }
             try
             {
                 var token = HomeVpnPrivateFiles.Load("access");
@@ -187,17 +262,100 @@ namespace ProGo
                 if (owner != null) Owner = new JavaScriptSerializer().Deserialize<HomeVpnOwner>(owner);
                 HomeAddress = HomeVpnPrivateFiles.Load("home-address") ?? "";
             }
-            catch { SafeLog.Info("Saved home VPN access needs to be imported again."); }
+            catch { initializationFailed = true; initializationWork = Task.FromResult(false); SafeLog.Info("Saved home VPN access needs to be imported again."); }
+        }
+
+        private async Task InitializeOwnedAsync(CancellationTokenSource cancellation,
+            TaskCompletionSource<bool> completion, Action<string> beforeStoredRead)
+        {
+            Exception failure = null;
+            var warnings = HomeVpnStoredStateWarning.None;
+            HomeVpnAccess access = null; HomeVpnOwner owner = null; string home = null, share = null;
+            try {
+                var state = await HomeVpnStoredState.LoadAsync(cancellation.Token, beforeStoredRead).ConfigureAwait(false);
+                access = state.CopyAccess(); owner = state.CopyOwner(); home = state.HomeAddress; share = state.ShareOrigin; warnings = state.Warnings;
+            } catch (Exception ex) { failure = ex; }
+            lock (lifecycleGate)
+            {
+                if (disposed || cancellation.IsCancellationRequested) failure = new OperationCanceledException();
+                if (failure == null) { Access = access; Owner = owner; HomeAddress = home; loadedShareOrigin = share; loadedWarnings = warnings; }
+                initializationFailed = failure == null ? warnings != HomeVpnStoredStateWarning.None : !(failure is OperationCanceledException);
+                if (initializing == cancellation) initializing = null;
+            }
+            cancellation.Dispose();
+            if (failure is OperationCanceledException) completion.TrySetCanceled();
+            else {
+                if (failure != null) try { SafeLog.Info("Saved home VPN access needs to be imported again."); } catch { }
+                completion.TrySetResult(failure == null && warnings == HomeVpnStoredStateWarning.None);
+            }
+        }
+
+        internal Task<bool> RefreshShareOriginAsync(CancellationToken token, Action<string> beforeRead = null)
+        {
+            TaskCompletionSource<bool> completion;
+            CancellationTokenSource cancellation;
+            HomeVpnAccess access; string serverId, fallback; long revision;
+            lock (lifecycleGate)
+            {
+                if (disposed || startsPaused || token.IsCancellationRequested || !initializationWork.IsCompleted || !stopWork.IsCompleted)
+                {
+                    var refused = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    if (token.IsCancellationRequested) refused.SetCanceled();
+                    else refused.SetException(new InvalidOperationException("Дождитесь чтения или остановки VPN для телефона и повторите проверку адреса."));
+                    return refused.Task;
+                }
+                if (!shareRefreshWork.IsCompleted) return shareRefreshWork;
+                access = Access; if (access == null) return Task.FromResult(false);
+                serverId = access.ServerId; fallback = access.ShareUrl; revision = shareRevision;
+                completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+                shareRefreshing = cancellation; shareRefreshWork = completion.Task;
+            }
+            Task.Run(() => RefreshShareOwnedAsync(access, serverId, fallback, revision, cancellation, completion, beforeRead));
+            return completion.Task;
+        }
+
+        private async Task RefreshShareOwnedAsync(HomeVpnAccess access, string serverId, string fallback, long revision,
+            CancellationTokenSource cancellation, TaskCompletionSource<bool> completion, Action<string> beforeRead)
+        {
+            Exception failure = null; string origin = null;
+            try { origin = await HomeVpnStoredState.LoadShareAsync(serverId, fallback, cancellation.Token, beforeRead).ConfigureAwait(false); }
+            catch (Exception ex) { failure = ex; }
+            lock (lifecycleGate)
+            {
+                if (disposed || cancellation.IsCancellationRequested || shareRefreshCancelled == cancellation) failure = new OperationCanceledException();
+                else if (!Object.ReferenceEquals(Access, access) || shareRevision != revision)
+                    failure = new InvalidOperationException("Адрес или доступ уже изменён. Результат прежнего чтения не применён; повторите проверку.");
+                else {
+                    if (failure == null) { loadedShareOrigin = origin; loadedWarnings &= ~HomeVpnStoredStateWarning.ShareOrigin; }
+                    else loadedWarnings |= HomeVpnStoredStateWarning.ShareOrigin;
+                    initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None;
+                }
+                if (shareRefreshing == cancellation) shareRefreshing = null;
+                if (shareRefreshCancelled == cancellation) shareRefreshCancelled = null;
+            }
+            cancellation.Dispose();
+            if (failure is OperationCanceledException) completion.TrySetCanceled();
+            else if (failure is InvalidOperationException) completion.TrySetException(failure);
+            else completion.TrySetResult(failure == null);
         }
 
         internal void UseToken(string token, HomeVpnOwner owner)
         {
+            initializationWork.GetAwaiter().GetResult(); // Compatibility importer; real async persistence remains R09.
             var access = HomeVpnAccess.Parse(token);
             if (!StopAsync().GetAwaiter().GetResult())
                 throw new HomeVpnLocalCleanupException("Очистка прежнего канала VPN для телефона не завершена. Новый доступ не сохранён. Повторите остановку после освобождения временных файлов.");
             HomeVpnPrivateFiles.Save("access", token.Trim());
             HomeVpnPrivateFiles.Save("owner", new JavaScriptSerializer().Serialize(owner));
             Access = access; Owner = owner;
+            if (backgroundInitialization) {
+                loadedWarnings &= HomeVpnStoredStateWarning.HomeAddress;
+                loadedShareOrigin = null;
+                try { loadedShareOrigin = HomeVpnPrivateFiles.Load("share-" + access.ServerId) ?? access.ShareUrl; }
+                catch (Exception ex) { if (ex is OutOfMemoryException) throw; loadedWarnings |= HomeVpnStoredStateWarning.ShareOrigin; }
+                initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None;
+            }
         }
 
         internal void SetHomeAddress(string address)
@@ -205,6 +363,7 @@ namespace ProGo
             address = (address ?? "").Trim();
             if (!HomeVpnAccess.ValidHost(address)) throw new ArgumentException("Введите внешний адрес домашнего роутера или DDNS, без https:// и порта.");
             HomeVpnPrivateFiles.Save("home-address", address); HomeAddress = address;
+            if (backgroundInitialization) { loadedWarnings &= ~HomeVpnStoredStateWarning.HomeAddress; initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None; }
         }
 
         internal Task StartAsync() { return StartAsync(CancellationToken.None); }
@@ -220,12 +379,12 @@ namespace ProGo
                 if (token.IsCancellationRequested) return FailedStart(new OperationCanceledException(token));
                 if (disposed) return FailedStart(new ObjectDisposedException("HomeVpnService"));
                 if (startsPaused) return FailedStart(new InvalidOperationException("ProGo завершает работу или готовит обслуживание. Запуск VPN для телефона временно недоступен."));
-                if (Access == null) return FailedStart(new InvalidOperationException("Сначала добавьте VPS или вставьте токен."));
+                if (Access == null && initializationWork.IsCompleted) return FailedStart(new InvalidOperationException("Сначала добавьте VPS или вставьте токен."));
                 if (!stopWork.IsCompleted) return FailedStart(new InvalidOperationException("Остановка VPN для телефона ещё не завершена. Дождитесь очистки и повторите запуск."));
                 if (!startWork.IsCompleted) return startWork;
                 if (Relay.IsRunning) return Task.FromResult(0);
                 var current = Access;
-                access = new HomeVpnAccess { ServerId = current.ServerId, Host = current.Host,
+                access = current == null ? null : new HomeVpnAccess { ServerId = current.ServerId, Host = current.Host,
                     Port = current.Port, User = current.User, PrivateKey = current.PrivateKey, HostKey = current.HostKey };
                 cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
                 completion = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -248,7 +407,19 @@ namespace ProGo
             Action<string> beforeIo, TaskCompletionSource<int> completion)
         {
             Exception failure = null;
-            try { await StartCoreAsync(access, cancellation.Token, beforeIo).ConfigureAwait(false); }
+            try {
+                await initializationWork.ConfigureAwait(false);
+                cancellation.Token.ThrowIfCancellationRequested();
+                if (access == null) {
+                    lock (lifecycleGate) {
+                        var current = Access;
+                        if (current == null) throw new InvalidOperationException("Сначала добавьте VPS или вставьте токен.");
+                        access = new HomeVpnAccess { ServerId = current.ServerId, Host = current.Host, Port = current.Port,
+                            User = current.User, PrivateKey = current.PrivateKey, HostKey = current.HostKey };
+                    }
+                }
+                await StartCoreAsync(access, cancellation.Token, beforeIo).ConfigureAwait(false);
+            }
             catch (Exception ex) { failure = ex; }
             finally
             {
@@ -337,14 +508,16 @@ namespace ProGo
 
         internal Task<bool> StopAsync()
         {
-            Task start;
-            CancellationTokenSource cancellation;
+            Task start, initial, shareRead;
+            CancellationTokenSource cancellation, shareCancellation;
             TaskCompletionSource<bool> completion;
             Action<string> beforeIo;
             lock (lifecycleGate)
             {
                 if (!stopWork.IsCompleted) return stopWork;
                 start = startWork; cancellation = starting; beforeIo = BeforeSessionIo;
+                initial = initializationWork; shareRead = shareRefreshWork; shareCancellation = shareRefreshing;
+                shareRefreshCancelled = shareCancellation; // Admission is cancelled before the worker can publish; native cancellation stays off UI.
                 completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 stopWork = completion.Task; // Duplicate Stop and Start see the reservation immediately.
             }
@@ -353,7 +526,10 @@ namespace ProGo
                 {
                     // Cancellation callbacks and native disposal also belong to a worker.
                     if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+                    if (shareCancellation != null) try { shareCancellation.Cancel(); } catch (ObjectDisposedException) { }
                     try { await start.ConfigureAwait(false); } catch { /* Start already reports its own failure. */ }
+                    try { await initial.ConfigureAwait(false); } catch { /* Read outcome remains observable through InitializationWork. */ }
+                    try { await shareRead.ConfigureAwait(false); } catch { /* Read failure remains on ShareRefreshWork; cleanup still owns the actual worker. */ }
                     completion.TrySetResult(CleanupOwned(beforeIo));
                 }
                 catch (Exception ex) { completion.TrySetException(ex); }
@@ -638,12 +814,19 @@ namespace ProGo
         public void Dispose()
         {
             Task<bool> work;
+            CancellationTokenSource initialCancellation, shareCancellation;
             lock (lifecycleGate)
             {
                 if (disposed) return;
                 disposed = true;
+                initialCancellation = initializing; shareCancellation = shareRefreshing;
                 work = StopAsync(); // Reentrant metadata gate; publish before Dispose returns.
             }
+            // This private source has only owned read scheduling/checkpoints,
+            // never user/native cancellation callbacks. Cancel even if an
+            // earlier Stop already awaits the read; actual I/O remains owned.
+            if (initialCancellation != null) try { initialCancellation.Cancel(); } catch (ObjectDisposedException) { }
+            if (shareCancellation != null) try { shareCancellation.Cancel(); } catch (ObjectDisposedException) { }
             // Do not wait for an uninterruptible native I/O call on the UI thread.
             // The task and exact session remain owned and inspectable through StopWork.
             work.ContinueWith(delegate(Task<bool> failed) { var ignored = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);

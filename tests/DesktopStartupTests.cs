@@ -30,6 +30,70 @@ namespace ProGo
             };
             timer.Start(); return timer;
         }
+        private static void PhoneInitializationAvailabilityWorkflow(SettingsService settings)
+        {
+            using (var entered = new System.Threading.ManualResetEventSlim())
+            using (var release = new System.Threading.ManualResetEventSlim())
+            using (var relay = new Ikev2RelayService())
+            using (var home = new HomeVpnService(relay, OpenSshClient.Executable, Ikev2RelayService.IkePort,
+                Ikev2RelayService.NatPort, Ikev2RelayService.BridgePort, true, delegate(string stage) {
+                    if (stage == "access") { entered.Set(); if (!release.Wait(10000)) throw new TimeoutException("Phone UI initialization fixture read deadline"); }
+                }))
+            {
+                try {
+                    using (var proxy = new ProxyService(settings))
+                    using (var bridge = new CliProxyBridgeService(settings))
+                    using (var clipboard = new ClipboardService(settings))
+                    using (var context = new UpdateAwareTrayApplicationContext(settings, proxy, bridge, home, clipboard, false))
+                    using (var heartbeat = new Timer { Interval = 20 })
+                    using (var modalGuard = new Timer { Interval = 20 })
+                    {
+                        context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow");
+                        int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                        bool unexpectedWizard = false;
+                        var existing = Application.OpenForms.Cast<Form>().ToArray();
+                        uint ownerProcess; uint ownerThread = DiagnosticChooserWindows.GetWindowThreadProcessId(main.Handle, out ownerProcess);
+                        Check(DiagnosticChooserWindows.Find(main.Handle, ownerThread, ownerProcess, null) == IntPtr.Zero,
+                            "initialization dispatcher fixture starts without any native modal owned by its new main window");
+                        modalGuard.Tick += delegate {
+                            foreach (var form in Application.OpenForms.Cast<Form>().Where(f => f is HomeVpnWizardForm && !existing.Contains(f)).ToArray()) {
+                                unexpectedWizard = true; form.Dispose(); // Only this attempted dispatch can own these new modal windows.
+                            }
+                            if (DiagnosticChooserWindows.Find(main.Handle, ownerThread, ownerProcess, null) != IntPtr.Zero) {
+                                unexpectedWizard = true; DiagnosticChooserWindows.CloseOwned(main.Handle, ownerThread, ownerProcess);
+                            }
+                        };
+                        try {
+                            PumpUntil(() => entered.IsSet && ticks >= 3);
+                            Call(context, "RefreshPendingRoutes");
+                            var tray = (NotifyIcon)Field(context, "tray");
+                            var menu = MenuItems(tray.ContextMenuStrip.Items).Where(i => i.Tag is AppCommand).ToDictionary(i => (AppCommand)i.Tag);
+                            var phone = (Button)Field(main, "phoneOpen");
+                            var navigation = (System.Collections.Generic.Dictionary<string, Button>)Field(main, "navigation");
+                            Check(!menu[AppCommand.Phone].Enabled && !phone.Enabled && !navigation["iphone"].Enabled &&
+                                ((Label)Field(main, "phoneState")).Text.Contains("Чтение") && !home.InitializationWork.IsCompleted,
+                                "actual tray and both dashboard phone entry points show pending real private read without exposing an incomplete wizard");
+                            Check(menu[AppCommand.StopPhone].Enabled && menu[AppCommand.StopAll].Enabled && menu[AppCommand.Settings].Enabled,
+                                "pending initial read preserves actual tray stop and independent settings availability");
+                            modalGuard.Start(); var watch = Stopwatch.StartNew();
+                            Call(context, "Execute", "iphone"); modalGuard.Stop();
+                            Check(watch.ElapsedMilliseconds < 500 && !unexpectedWizard && !home.HasOwnedResources && !home.IsStarting,
+                                "actual dispatcher rejects a stale phone command without modal, blocking read, native child or queued startup");
+                            release.Set(); PumpUntil(() => home.InitializationWork.IsCompleted);
+                            home.InitializationWork.GetAwaiter().GetResult(); Call(context, "RefreshPendingRoutes");
+                            Check(menu[AppCommand.Phone].Enabled && phone.Enabled && navigation["iphone"].Enabled &&
+                                !((Label)Field(main, "phoneState")).Text.Contains("Чтение"),
+                                "settled actual read restores tray and dashboard phone actions without an automatic modal or startup");
+                        } finally { release.Set(); heartbeat.Stop(); modalGuard.Stop(); }
+                    }
+                } finally {
+                    release.Set(); home.Dispose(); var cleanup = home.StopAsync();
+                    PumpUntil(() => cleanup.IsCompleted && home.InitializationWork.IsCompleted);
+                    if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Phone initialization UI fixture cleanup incomplete");
+                    try { home.InitializationWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
+                }
+            }
+        }
         private static void CommandAvailabilityWorkflow(SettingsService settings)
         {
             var source = new[] { AppCommand.StartCli };
@@ -45,7 +109,13 @@ namespace ProGo
             var background = new AppCommandState(new AppCommand[0], true, false);
             Check(!AppCommands.CanExecute(AppCommand.Connect, background) && AppCommands.CanExecute(AppCommand.StartCli, background),
                 "manual CLI can join background startup without plain Connect replacing it");
+            var loadingPhone = new AppCommandState(new AppCommand[0], false, false, phoneInitializing: true);
+            Check(!AppCommands.CanExecute(AppCommand.Phone, loadingPhone) &&
+                new[] { AppCommand.Connect, AppCommand.StopDesktop, AppCommand.StopPhone, AppCommand.StopAll, AppCommand.Settings }
+                    .All(c => AppCommands.CanExecute(c, loadingPhone)),
+                "saved phone read blocks its incomplete wizard while independent desktop actions and explicit stop remain available");
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
+            PhoneInitializationAvailabilityWorkflow(settings);
             var original = settings.Current.Clone();
             var environment = CliProxyEnvironmentService.Names.ToDictionary(n => n, n => Environment.GetEnvironmentVariable(n, EnvironmentVariableTarget.User));
             var release = Path.Combine(Path.GetTempPath(), "progo-command-ready-" + Guid.NewGuid().ToString("N"));

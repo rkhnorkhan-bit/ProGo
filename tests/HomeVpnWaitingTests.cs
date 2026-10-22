@@ -72,6 +72,8 @@ namespace ProGo
             try {
                 PublicationReadiness();
                 StoredStateWorker(token, work);
+                OwnedInitializationWorker(token);
+                OwnedShareRefreshWorker(token);
                 foreach (string mode in new[] { "no-listener", "silent" }) {
                     foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(token, clipboard, work, mode, route);
                 }
@@ -220,6 +222,206 @@ namespace ProGo
             }
         }
         private static int UdpPort() { using (var socket = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0))) return ((IPEndPoint)socket.Client.LocalEndPoint).Port; }
+        private static void OwnedShareRefreshWorker(string token)
+        {
+            string shareName = "share-" + HomeVpnAccess.Parse(token).ServerId;
+            var original = new Dictionary<string, byte[]>();
+            foreach (string name in new[] { "access", "owner", "home-address", shareName }) {
+                string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+                original[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            {
+                int ticks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
+                try {
+                    HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", "null");
+                    HomeVpnPrivateFiles.Save("home-address", "home.example"); HomeVpnPrivateFiles.Save(shareName, "https://profiles.example");
+                    foreach (string mode in new[] { "clean", "cancel", "stop", "dispose", "newer", "change" })
+                    using (var relay = new Ikev2RelayService())
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var cancellation = new CancellationTokenSource())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
+                    {
+                        Task<bool> read = null, stop = null; int readThread = 0, reads = 0;
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                            service.SetShareOrigin("https://profiles.example");
+                            var expected = original.Keys.ToDictionary(path => path, File.ReadAllBytes);
+                            var watch = Stopwatch.StartNew();
+                            read = service.RefreshShareOriginAsync(cancellation.Token, delegate(string stage) {
+                                Interlocked.Exchange(ref readThread, Thread.CurrentThread.ManagedThreadId);
+                                if (stage == "read") Interlocked.Increment(ref reads);
+                                if (stage == "verify") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned share read fixture deadline"); }
+                            });
+                            check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(read, service.ShareRefreshWork), "share retry publishes actual read ownership before returning: " + mode);
+                            int beforeTicks = ticks; Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                            check(readThread != uiThread && !read.IsCompleted && reads == 1 &&
+                                Object.ReferenceEquals(read, service.RefreshShareOriginAsync(CancellationToken.None)),
+                                "held real share read keeps UI alive and duplicate retry joins one worker: " + mode);
+                            if (mode == "cancel") cancellation.Cancel();
+                            if (mode == "stop") { watch.Restart(); stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "stop retains and cancels actual share reader without waiting on UI"); }
+                            if (mode == "dispose") { watch.Restart(); service.Dispose(); stop = service.StopWork; check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "dispose retains cancelled actual share read even after owner closes"); }
+                            if (mode == "newer") service.SetShareOrigin("https://newer.example");
+                            if (mode == "change") HomeVpnPrivateFiles.Save(shareName, "https://changed.example");
+                            if (mode == "newer" || mode == "change") expected[Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat")] = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"));
+                            release.Set(); Pump(() => read.IsCompleted && (stop == null || stop.IsCompleted), 5000);
+                            bool cancelled = false, stale = false; bool result = false;
+                            try { result = read.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; } catch (InvalidOperationException) { stale = true; }
+                            if (mode == "cancel" || mode == "stop" || mode == "dispose") check(cancelled && !stale, "cancelled share reader cannot publish late cache or error: " + mode);
+                            else if (mode == "newer") check(stale && service.ShareOrigin == "https://newer.example", "old actual read cannot overwrite a newer explicitly saved share value");
+                            else if (mode == "change") {
+                                bool warned = false; try { var ignored = service.ShareOrigin; } catch (InvalidOperationException) { warned = true; }
+                                check(stale && warned, "external protected-file change refuses an incoherent share result with an honest cached warning");
+                            } else check(result && service.ShareOrigin == "https://profiles.example", "clean owned share read publishes the verified value");
+                            if (stop != null) check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "stop settles only after cancelled real share reader exits: " + mode);
+                            if (mode != "dispose") {
+                                var retry = service.RefreshShareOriginAsync(CancellationToken.None); Pump(() => retry.IsCompleted, 5000);
+                                check(!Object.ReferenceEquals(read, retry) && retry.GetAwaiter().GetResult() && !service.InitializationFailed &&
+                                    service.ShareOrigin == (mode == "change" ? "https://changed.example" : mode == "newer" ? "https://newer.example" : "https://profiles.example"),
+                                    "explicit retry after settled read restores fresh cache without parallel workers: " + mode);
+                            }
+                            foreach (var pair in expected) check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "share read and retry never overwrite protected source bytes: " + mode);
+                        } finally {
+                            release.Set(); cancellation.Cancel(); service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && service.ShareRefreshWork.IsCompleted && service.InitializationWork.IsCompleted, 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned share read fixture cleanup incomplete");
+                            if (read != null) try { read.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (InvalidOperationException) { }
+                            try { service.ShareRefreshWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (InvalidOperationException) { }
+                        }
+                    }
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true)) {
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                            Task<bool> refused;
+                            using (var held = File.Open(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"), FileMode.Open, FileAccess.Read, FileShare.None)) {
+                                refused = service.RefreshShareOriginAsync(CancellationToken.None); Pump(() => refused.IsCompleted, 5000);
+                                check(!refused.GetAwaiter().GetResult() && service.InitializationFailed, "real sharing violation leaves an observable failed share read");
+                            }
+                            var retry = service.RefreshShareOriginAsync(CancellationToken.None); Pump(() => retry.IsCompleted, 5000);
+                            check(retry.GetAwaiter().GetResult() && !service.InitializationFailed && !String.IsNullOrEmpty(service.ShareOrigin), "unlock then explicit retry recovers the saved share without restarting or rewriting the service");
+                        } finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Share lock retry cleanup incomplete"); }
+                    }
+                } finally {
+                    heartbeat.Stop(); form.Close();
+                    foreach (var pair in original) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); }
+                }
+            }
+        }
+        private static void OwnedInitializationWorker(string token)
+        {
+            string shareName = "share-" + HomeVpnAccess.Parse(token).ServerId;
+            var original = new Dictionary<string, byte[]>();
+            foreach (string name in new[] { "access", "owner", "home-address", shareName }) {
+                string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+                original[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            {
+                int ticks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                form.Show(); heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                try {
+                    HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", "null");
+                    HomeVpnPrivateFiles.Save("home-address", "home.example"); HomeVpnPrivateFiles.Save(shareName, "https://profiles.example");
+                    var before = original.Keys.ToDictionary(path => path, File.ReadAllBytes);
+                    foreach (string mode in new[] { "load", "stop", "dispose", "stop-dispose" })
+                    using (var relay = new Ikev2RelayService())
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    {
+                        HomeVpnService service = null; Task start = null; Task<bool> stop = null;
+                        int readThread = 0;
+                        try {
+                            var watch = Stopwatch.StartNew();
+                            service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true, delegate(string stage) {
+                                Interlocked.Exchange(ref readThread, Thread.CurrentThread.ManagedThreadId);
+                                if (stage == "verify") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned initialization read barrier"); }
+                            });
+                            check(watch.ElapsedMilliseconds < 500 && service.IsInitializing, "async service constructor returns a published initialization owner before private I/O settles: " + mode);
+                            int beforeTicks = ticks; Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                            check(readThread != uiThread && service.Access == null && !service.InitializationWork.IsCompleted,
+                                "held actual initialization keeps UI alive and cannot expose a partially read identity: " + mode);
+                            if (mode == "stop" || mode == "stop-dispose") {
+                                start = service.StartAsync(); check(Object.ReferenceEquals(start, service.StartAsync()), "start before load retains one physical startup task");
+                                watch.Restart(); stop = service.StopAsync();
+                                check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted && !start.IsCompleted && !service.HasOwnedResources,
+                                    "phone stop retains pending initialization and cancelled startup without private session or native launch");
+                            }
+                            if (mode == "dispose" || mode == "stop-dispose") {
+                                watch.Restart(); service.Dispose(); stop = service.StopWork;
+                                check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted && !service.InitializationWork.IsCompleted,
+                                    "dispose cancels even an earlier waiting stop without abandoning its initialization task: " + mode);
+                            }
+                            release.Set(); Pump(() => service.InitializationWork.IsCompleted && (stop == null || stop.IsCompleted), 5000);
+                            if (mode == "dispose" || mode == "stop-dispose") {
+                                bool cancelled = false; try { service.InitializationWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; }
+                                check(cancelled && service.Access == null && service.Owner == null && service.HomeAddress == "" && service.ShareOrigin == null,
+                                    "disposed initialization settles cancelled without late identity or share publication: " + mode);
+                            } else {
+                                check(service.InitializationWork.GetAwaiter().GetResult() && !service.InitializationFailed && service.Access != null && service.HomeAddress == "home.example",
+                                    "settled initialization publishes the complete coherent saved state: " + mode);
+                                using (var held = File.Open(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"), FileMode.Open, FileAccess.Read, FileShare.None))
+                                    check(service.ShareOrigin == "https://profiles.example", "initialized service share getter uses frozen memory even when the real protected source is locked");
+                            }
+                            if (start != null) { bool cancelled = false; try { start.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; } check(cancelled, "stop before initialized startup prevents late SSH or relay admission"); }
+                            if (stop != null) check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources && !relay.IsRunning, "initialization-aware stop completes only after the actual worker settled: " + mode);
+                            foreach (var pair in before) check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "owned initialization never rewrites its source bytes: " + mode);
+                        } finally {
+                            release.Set();
+                            if (service != null) {
+                                service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                                if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned initialization cleanup did not settle");
+                                try { service.InitializationWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
+                                if (start != null) try { start.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
+                            }
+                        }
+                    }
+                    using (var relay = new Ikev2RelayService())
+                    using (var held = File.Open(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"), FileMode.Open, FileAccess.Read, FileShare.None))
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true)) {
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000);
+                            check(!service.InitializationWork.GetAwaiter().GetResult() && service.InitializationFailed && service.Access == null,
+                                "real initialization sharing refusal has an observable failed outcome and no partial saved identity");
+                        } finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Failed initialization cleanup did not settle"); }
+                    }
+                    foreach (string optional in new[] { "owner", "home-address", shareName })
+                    {
+                        Mode("ready");
+                        int ike = UdpPort(), nat = UdpPort(); while (nat == ike) nat = UdpPort();
+                        using (var relay = new Ikev2RelayService())
+                        using (var held = File.Open(Path.Combine(HomeVpnPrivateFiles.Root, optional + ".dat"), FileMode.Open, FileAccess.Read, FileShare.None))
+                        using (var service = new HomeVpnService(relay, Application.ExecutablePath, ike, nat, 17878, true))
+                        {
+                            Task start = null;
+                            try {
+                                Pump(() => service.InitializationWork.IsCompleted, 5000);
+                                check(!service.InitializationWork.GetAwaiter().GetResult() && service.InitializationFailed && service.Access != null,
+                                    "unreadable optional metadata is an explicit warning and cannot erase independently valid channel access: " + optional);
+                                if (optional == shareName) {
+                                    bool refused = false; try { var ignored = service.ShareOrigin; } catch (InvalidOperationException) { refused = true; }
+                                    check(refused, "unreadable cached share has an honest metadata error without disk I/O or unconfirmed fallback");
+                                }
+                                start = service.StartAsync(); Pump(() => start.IsCompleted, 8000); start.GetAwaiter().GetResult();
+                                check(relay.IsRunning, "actual owned process and real local relay can start while optional metadata stays unavailable: " + optional);
+                            } finally {
+                                service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 8000);
+                                if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Optional metadata fixture cleanup incomplete");
+                                if (start != null) try { start.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
+                            }
+                        }
+                        foreach (var pair in before) check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "optional metadata warning/start never repairs or overwrites the protected source: " + optional);
+                    }
+                } finally {
+                    heartbeat.Stop(); form.Close();
+                    foreach (var pair in original) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); }
+                }
+            }
+        }
         private static void PublicationReadiness()
         {
             string path = Path.Combine(marker, "publication-probe"); File.Delete(path);

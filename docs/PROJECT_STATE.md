@@ -1,12 +1,143 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `163d97436d68f5169a8a22ea9f17d38344f8ad88`, tree `c8b4209c4faebfb42ff33774f9bc2db16f43cd7d`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `bf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc`, tree `8cf494f4ab7c2dfc247a2ad8f96689632f3cb983`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## CI606 full SUCCESS — sourcebf1c / mergecd20, staged R09 ещё NOT_RUN
+
+[CI606/39724309390](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39724309390)
+Windows119644614336/Ubuntu119644614044 SUCCESS. Build identity
+0.2.2+cd20daf85da786d42244e7ce17fc83726b81fbcc проверен по log;
+source `bf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc`, full tree
+`8cf494f4ab7c2dfc247a2ad8f96689632f3cb983` = local0152426bd4c6b8723e3232a0463fc8c224296cce.
+
+Новые narrow native PASS: committed repair cleanup04:47:52.4180059 (реальный
+locked old snapshot, -Recover только residue cleanup); coherent DPAPI reader
+05:08:39.9645891 +cancel/conflict/lock/defaults; failed old cleanup refuses token
+import before DPAPI/identity change05:09:30.2421268. Это не закрывает весь R09.
+Main regression51/456; bounded43/report32/helper2; actual modal Cancel→Retry,
+chooser3/Context ownership, signing55/UI50/prep72 +real direct/owned-agent
+prepare→native SSH→SOCKS→HTTP→crash/fresh recovery PASS. Desktop5274/Instance28/
+Maintenance126/Shutdown47/HomeVPN1051/Portable90; SSH contracts5; Python28=
+26PASS2SKIP. Exact28 parent anchors обновлены, веса и уровни не повышены.
+
+Runner ZIP0.2.2 SHA256 `198a7ed7d2e2839e3be023814a0273ef62bc20a08e2a3e4ea0510635b0f73822`.
+All uploads SKIPPED. Bytes не получены/не переданы/не установлены; installer и
+owner acceptance NOT_RUN, передача BLOCKED до разрешённого приватного канала.
+I58–80, verified21.75→22, изменение0: D0.5/P0.5/A0 для тех же28 parents weight87.
+
+Frozen next checking local `dfe70563a136a21edeae1b514a219a067a0a64a7` /tree
+`7016b466f779fc02168e538626e6f610780325ea` содержит только staged API/optional
+warnings/loading gates/owned share retry +tests и docs:9files661 additions,
+scan0 secrets/PII/public320/0/syntax/C#5 structure/diff PASS. Windows NOT_RUN.
+Перед publication evidence docs обновить до exact606, source files не менять.
+
+Отдельный root local `5cce98404647a2dd4e0ea4d88f13daf9957a9018` подключает
+owned cancellable share read к configure/QR actions wizard. Written actual UI
+Cancel→Retry/queued close/Dispose cases с реальным protected read и own configure
+modal, без SSH/HTTP действий. Syntax/C#5/source/public/diff PASS; compiler/native
+NOT_RUN. Этот UI block исключён из frozen checkingdfe; Program/default ctor и
+getter пока legacy. R09 private writes/recovery I/O остаются FAIL/open.
+
+Следующее: обновить checking docs, exact scan/tree, expectedbf1c публикация одного
+source в PR88 и один CI. Пока идёт его Windows — отдельно default startup/cache
+integration; не приписывать ему606 SUCCESS. No binaries/release/main merge/owner
+PC/VPS actions. Ниже все checkpoint-записи — история.
+
+## R09 owned share read/retry — locale385513, routes ещё не переключены
+
+Source `e38551307dd16be3410b3957ddd5a746c888725f`: RefreshShareOriginAsync
+публикует retained task до I/O; duplicate join, immutable profile ID/fallback,
+DPAPI/cohort reread off UI, очищение временных массивов. Generation guard не
+публикует старый результат поверх явно сохранённого нового адреса; внешний
+conflict — честный отказ. Stop отменяет admission memory-only до worker cancel
+и join actual read; Dispose не даёт late cache update. Source/private writes
+не выполняются reader. Синхронный setter остаётся отдельным R09 долгом.
+
+Written native vectors clean/cancel/Stop/Dispose/newer-save/external-change,
+real lock→unlock→retry, UI heartbeat/thread/duplicate ownership/source bytes;
+каждый worker/Stop наблюдается до восстановления своих private fixtures.
+Modern syntax/targeted C#5/diff/public320/0 PASS; Windows compilation/native
+NOT_RUN. Program/default ctor/getter и QR/configure routes пока legacy; этот
+API не объявлен подключённым. I58–80, verified22 exact605,0 новых баллов.
+
+CI606 sourcebf1/mergecd20, run39724309390 не менялся: Windows119644614336
+repository step in_progress, Ubuntu119644614044 SUCCESS. Не делать head-only
+push/duplicate. Далее exact606 результат; отдельный checking API+availability+
+loading gates+refresh на этой проверенной базе, затем actual UI/startup switch.
+Ниже checkpoints — история.
+
+## R09 loading gates — local7d9d80f, default startup ещё legacy
+
+Source `7d9d80fbdf35309c10f13179cf2c0554281df830`: AppCommandState имеет отдельный
+PhoneInitializing; actual Context dispatcher и tray не открывают мастер до конца
+owned read. MainWindow показывает чтение/ошибку, обе точки входа телефона
+согласованы; StopPhone/StopAll/settings/desktop продолжают работать. Добавлен
+native Context+dashboard held-read test: heartbeat, pending menu/buttons/status,
+rejected stale command, bounded own-modal guard, восстановление entry points.
+Fixture освобождает barrier и наблюдает retained initialization/Stop до выхода.
+
+4-file syntax/targeted C#5/diff/public320/0 и public-doc tests3 PASS; Windows
+compilation/native NOT_RUN. Это staged route, Program/default ещё не активирован.
+Новый block не входит в606. I58–80, verified22 exact605,0 новых баллов. Далее
+owned share read/retry, затем default startup integration и один exact checking
+после результата606. Private writes R09 остаются открыты.
+
+## R09 optional metadata availability — local00a1831, production ещё legacy
+
+Local source `00a183199da722a1d97441ad4b36838de3100aea` сохраняет valid Access,
+если optional owner/home/share недоступны: отдельные warning flags, честный
+отрицательный read outcome, без подмены share непроверенным fallback. Mandatory
+access/cohort conflict остаются отказом. Добавлены native real-lock cases для
+трёх optional файлов с запуском собственного process/local relay и проверкой
+неизменности private bytes. Это staged API, не переключение Program.
+
+Diff/public320/0/modern syntax/targeted C#5 structure PASS; Windows compiler/native
+NOT_RUN. Source606 не содержит этот блок: Windows119644614336 in_progress,
+Ubuntu119644614044 SUCCESS в run39724309390. Без нового push/duplicate CI.
+I58–80, verified22/raw21.75 только exact605,0 новых баллов. Далее отдельные
+Context/main loading gates и native held-read regression; перед production
+activation нужен owned refresh/retry, затем startup switch. Sync private writes
+и весь R09 остаются открыты. Ниже checkpoints — история.
+
+## CI606 — finished blocks checking опубликован, один run
+
+Sourcebf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc, merge candidatecd20daf85da786d42244e7ce17fc83726b81fbcc,
+full tree8cf494f4ab7c2dfc247a2ad8f96689632f3cb983 = local0152426bd4c6b8723e3232a0463fc8c224296cce.
+[CI606/39724309390](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39724309390)
+in_progress. Expected163d→bf1c lease/actual PR88 head+merge подтверждены, body
+updated.6files2048 additions secret/PII0/public320/0/syntax/diff/tree PASS;
+workflow/VERSION unchanged/public uploads OFF. Guard/read primitive/committed
+extra native vector впервые входят в source606, их Windows пока NOT_RUN.
+
+Staged initializerad3/optional-metadata/Context/Program switch НЕ входят. Для него
+до активации нужно сохранить basic access при ошибке optional metadata; это
+следующая local микрозадача. Не приписывать source606 успех605, не запускать
+duplicate/head-only docs CI. После обрыва сначала этот же run/head/log.
+I58–80, verified22/raw21.75 только exact evaluated605,0 баллов за новый checking.
+No binary/release/main merge/owner PC/VPS actions. Private delivery/setup/target
+acceptance остаются blocked/NOT_RUN. После606 результата — exact native evidence,
+а не новая интерпретация старых SUCCESS.
+
+## Pending finished followup checking publication
+
+Objectbf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc parent163d97436d68f5169a8a22ea9f17d38344f8ad88;
+full tree8cf494f4ab7c2dfc247a2ad8f96689632f3cb983 = local0152426bd4c6b8723e3232a0463fc8c224296cce.
+6files2048 additions secret/PII0/public320/0/source syntax/diff/tree PASS;
+workflow/VERSION unchanged, uploads OFF,605 EOF fixture fix унаследован.
+Только законченные source3 blocks (guard/read primitive/committed extra test) и
+актуальные3 docs. initializerad3/optional metadata/UI integration excluded.
+
+Ref ещё NOT_RUN в этот момент. После обрыва actual PR head/run проверить прежде
+повтора.605 завершён, новый head его не отменит. New Windows compilation/native
+NOT_RUN; read primitive всё ещё не подключён к startup. I58–80, verified22/raw21.75
+только exact605;0 новых баллов за checking. Далее expected163d→bf1c и один CI,
+без binary uploads/release/main merge/owner PC/VPS действий.
 
 ## CI605 full SUCCESS — exact163d/522ca, новые local blocks excluded
 
