@@ -96,7 +96,7 @@ function Set-RepairFile([string]$Source, [string]$Destination, [string]$Hash) {
     $temporaryFiles.Add($temporary)
     [IO.File]::Copy($Source, $temporary, $false)
     if ((Get-RepairHash $temporary) -cne $Hash) { throw 'Repair staged file changed before replacement.' }
-    if ([IO.File]::Exists($Destination)) { [IO.File]::Replace($temporary, $Destination, $null) }
+    if ([IO.File]::Exists($Destination)) { [IO.File]::Replace($temporary, $Destination, [System.Management.Automation.Language.NullString]::Value) }
     else { [IO.File]::Move($temporary, $Destination) }
 }
 function Write-RepairJournal([string]$Phase) {
@@ -118,7 +118,7 @@ function Write-RepairJournal([string]$Phase) {
     $temporaryFiles.Add($temporary)
     $stream = [IO.File]::Open($temporary, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
     try { $stream.Write($bytes, 0, $bytes.Length); $stream.Flush($true) } finally { $stream.Dispose() }
-    if ([IO.File]::Exists($journalPath)) { [IO.File]::Replace($temporary, $journalPath, $null) }
+    if ([IO.File]::Exists($journalPath)) { [IO.File]::Replace($temporary, $journalPath, [System.Management.Automation.Language.NullString]::Value) }
     else { [IO.File]::Move($temporary, $journalPath) }
     $script:journalCreated = $true
 }

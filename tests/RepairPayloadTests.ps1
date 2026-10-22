@@ -50,6 +50,24 @@ try {
     [IO.File]::WriteAllText((Join-Path $installed 'vault.enc.json'), 'opaque protected vault fixture')
     [IO.File]::WriteAllText((Join-Path $installed 'backups\keep.txt'), 'opaque backup fixture')
     $before = Get-FixtureSnapshot
+    # Exercise the actual PS5.1-to-.NET string binder. A plain $null can
+    # become an illegal empty backup path; NullString must pass a real null.
+    $interop = Join-Path $work 'null-string-interop'; [IO.Directory]::CreateDirectory($interop) | Out-Null
+    $newFile = Join-Path $interop 'new'; $oldFile = Join-Path $interop 'target'
+    [IO.File]::WriteAllText($newFile, 'new'); [IO.File]::WriteAllText($oldFile, 'old')
+    $plainNullRefused = $false
+    try { [IO.File]::Replace($newFile, $oldFile, $null) }
+    catch {
+        $cause = $_.Exception.GetBaseException()
+        if ($cause -isnot [ArgumentException]) { throw }
+        $plainNullRefused = $true
+    }
+    if ($PSVersionTable.PSVersion.Major -eq 5 -and -not $plainNullRefused) { throw 'Expected native PS5 null-string boundary was not reproduced' }
+    if ($plainNullRefused -and ([IO.File]::ReadAllText($oldFile) -cne 'old' -or [IO.File]::ReadAllText($newFile) -cne 'new')) { throw 'Refused null-string replacement changed fixture bytes' }
+    [IO.File]::WriteAllText($newFile, 'new'); [IO.File]::WriteAllText($oldFile, 'old')
+    [IO.File]::Replace($newFile, $oldFile, [System.Management.Automation.Language.NullString]::Value)
+    if ([IO.File]::ReadAllText($oldFile) -cne 'new' -or [IO.File]::Exists($newFile) -or @(Get-ChildItem -LiteralPath $interop -File).Count -ne 1) { throw 'Real null backup replacement failed or created an unexpected file' }
+    Write-Host 'Repair native null-string interop tests PASS: 1'
     $passed = 0
     foreach ($relative in @('ProGo.exe', 'scripts\InstalledUpdateTransport.cs', 'scripts\home-vpn\server\profile_share.py', 'scripts\Update-ProGo.Core.ps1')) {
         Get-ChildItem -LiteralPath $payload -Force | Remove-Item -Force -Recurse
