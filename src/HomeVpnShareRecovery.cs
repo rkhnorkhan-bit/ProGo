@@ -155,6 +155,70 @@ namespace ProGo
             } catch (HomeVpnSharePendingException) { throw; }
             catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeVpnSharePendingException("VPS вернул неподтверждённый статус HTTPS. Запрос сохранён; новая настройка не запускалась."); }
         }
+        internal static Task<bool> HasPendingAsync(CancellationToken token, Action beforeRead = null)
+        {
+            return Task.Run(delegate {
+                token.ThrowIfCancellationRequested(); if (beforeRead != null) beforeRead();
+                token.ThrowIfCancellationRequested(); bool result = HasPending(); token.ThrowIfCancellationRequested(); return result;
+            });
+        }
+
+        // Physical request/proof reads and consumption belong to the retained
+        // worker. Owner callbacks only admit memory state; they perform no I/O.
+        internal static Task ConfirmOwnedAsync(HomeVpnOwner owner, HomeVpnAccess access, string origin, Func<Task> verify,
+            Func<string, CancellationToken, Task> save, Func<bool> canSave, CancellationToken token,
+            Func<Action, Task<bool>> acceptOnOwner, Action<string> beforeIo = null)
+        {
+            var frozenOwner = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            return Task.Run(async delegate {
+                bool saved = false;
+                try {
+                    token.ThrowIfCancellationRequested();
+                    using (var lease = await AcquireAsync().ConfigureAwait(false)) {
+                        ConfirmationBoundary(beforeIo, "read", token);
+                        var request = Load(frozenOwner);
+                        if (!Same(request, completed) || completedOrigin != origin || !SameAccess(request, access))
+                            throw new HomeVpnSharePendingException(PendingMessage);
+                        RequireResult(frozenOwner, request, origin);
+                        await verify().ConfigureAwait(false);
+                        ConfirmationBoundary(beforeIo, "before-save", token);
+                        RequireResult(frozenOwner, request, origin);
+                        bool admitted = await acceptOnOwner(delegate {
+                            token.ThrowIfCancellationRequested();
+                            if (!canSave() || !SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
+                        }).ConfigureAwait(false);
+                        if (!admitted) throw new HomeVpnSharePendingException(PendingMessage);
+                        token.ThrowIfCancellationRequested();
+                        if (!SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
+                        try { await save(origin, token).ConfigureAwait(false); saved = true; }
+                        catch (OperationCanceledException) { throw; }
+                        catch (Exception ex) {
+                            if (ex is OutOfMemoryException) throw;
+                            throw new HomeVpnSharePendingException("Не удалось подтвердить сохранение HTTPS-адреса. Запрос сохранён; повторяйте только проверку прежней настройки.");
+                        }
+                        ConfirmationBoundary(beforeIo, "consume", token);
+                        RequireResult(frozenOwner, request, origin);
+                        bool accepted = await acceptOnOwner(delegate {
+                            token.ThrowIfCancellationRequested();
+                            if (!canSave() || !SameAccess(request, access)) throw new HomeVpnSharePendingException(PendingMessage);
+                        }).ConfigureAwait(false);
+                        if (!accepted) throw new HomeVpnSharePendingException(PendingMessage);
+                        // Recheck the physical receipt after the owner queue.
+                        ConfirmationBoundary(beforeIo, "commit-consume", token);
+                        RequireResult(frozenOwner, request, origin); token.ThrowIfCancellationRequested();
+                        File.Delete(PathFor()); completed = null; completedOrigin = null;
+                    }
+                } catch (Exception ex) {
+                    if (ex is OutOfMemoryException || !saved) throw;
+                    // A save admitted before Cancel may finish. Never claim it
+                    // was rolled back, and never clear the request on uncertainty.
+                    throw new HomeVpnSharePendingException("HTTPS-адрес сохранён, но завершение запроса не удалось подтвердить. Запрос остаётся для проверки; новая настройка заблокирована.");
+                }
+            });
+        }
+        private static void ConfirmationBoundary(Action<string> beforeIo, string stage, CancellationToken token)
+        { token.ThrowIfCancellationRequested(); if (beforeIo != null) beforeIo(stage); token.ThrowIfCancellationRequested(); }
+
         internal static Task ConfirmAsync(HomeVpnOwner owner, HomeVpnAccess access, string origin, Func<Task> verify, Action<string> save, Func<bool> canSave)
         { return ConfirmAsync(owner, access, origin, verify, save, canSave, CancellationToken.None, action => { action(); return Task.FromResult(true); }); }
         internal static async Task ConfirmAsync(HomeVpnOwner owner, HomeVpnAccess access, string origin, Func<Task> verify, Action<string> save, Func<bool> canSave,

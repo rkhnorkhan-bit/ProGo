@@ -149,13 +149,25 @@ namespace ProGo
         private readonly string destination;
         private byte[] previous, encrypted;
         private bool ownsStaging, stagedVerified, attempted, committed, disposed;
-        internal HomeVpnAddressWrite(string value)
+        internal HomeVpnAddressWrite(string value) : this("home-address", HomeValue(value)) { }
+        private HomeVpnAddressWrite(string name, string value)
+        {
+            Value = value;
+            destination = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+            StagingPath = Path.Combine(HomeVpnPrivateFiles.Root, ".address-write-" + Guid.NewGuid().ToString("N") + ".dat");
+        }
+        private static string HomeValue(string value)
         {
             value = (value ?? "").Trim();
             if (!HomeVpnAccess.ValidHost(value)) throw new ArgumentException("Введите внешний адрес домашнего роутера или DDNS, без https:// и порта.");
-            Value = value;
-            destination = Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat");
-            StagingPath = Path.Combine(HomeVpnPrivateFiles.Root, ".address-write-" + Guid.NewGuid().ToString("N") + ".dat");
+            return value;
+        }
+        internal static HomeVpnAddressWrite ForShareOrigin(string serverId, string value)
+        {
+            // Capture only the agreed per-server file, never a caller-supplied path.
+            if (serverId == null || !Regex.IsMatch(serverId, @"\A[0-9a-f]{32}\z"))
+                throw new ArgumentException("Идентификатор сервера для сохранения HTTPS-адреса недопустим.");
+            return new HomeVpnAddressWrite("share-" + serverId, HomeProfileShare.Origin(value));
         }
         internal void Prepare(CancellationToken cancellation, Action<string> beforeIo = null)
         {

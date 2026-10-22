@@ -1,12 +1,200 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `34740802206b6bd24ec41838ba25c44980ddec6c`, tree `4752a5e04f2b38c4516d969f466bf163f10abee6`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `04ca974519bfffdb70a1706066ebaef7ed26bf6b`, tree `36c0e5cb4f0842d9273105b4ae9265e99d4da2e2`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## CI610 full SUCCESS — home-address/modal block accepted in isolated Windows
+
+[CI610/39736682268](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268)
+Windows119683904424/Ubuntu119683904096 SUCCESS. Exact source
+`04ca974519bfffdb70a1706066ebaef7ed26bf6b`, merge/build identity0.2.2+
+`c506814d33c4ef39f5cb946c41121a70850ff851`, tree36c0e5cb4f0842d9273105b4ae9265e99d4da2e2
+= localfa61c973a5c9878fb2154ada0d02b6d5fa618a09. Same run completed, no rerun.
+New native: read-modal3 (actual Close order07:12:57.6950548Z), protected store9
+07:12:58.162–59.165, service-owned save7 07:12:59.254–13:02, actual write-modal7
+07:13:02.344–05.399. Cancel→Retry, explicit Close after physical I/O, Dispose/no
+late controls, accepted save after Cancel, real file sharing error→Retry and
+retained locked-stage cleanup→unlock→Stop→Retry PASS. Previous609 test defect fixed
+without deadline increase or assertion removal. New source home write now compiled
+and executed; later root share/init/configure/Stop changes remain NOT_RUN.
+
+Full: Desktop5281/HomeVPN1325/Portable91; selected-key signing55/UI50/prep72,
+diagnostics modal6/chooser3/Context ownership, Instance28/Maintenance126/Shutdown47,
+actual direct+owned-agent OpenSSH→SOCKS→HTTP→crash→fresh preparation; Python28=
+26PASS2SKIP. Native combined SSH measured direct startup1945ms/prep33ms/SSH CPU0ms/
+working-set11382784B/peak11460608B, recovery1949ms/prep33,28ms/CPU31.25ms/working-set
+11350016B/peak11423744B. These are isolated fixture observations, not full app I/O/
+slow hardware/owner acceptance or final performance PASS. Program process GUI /
+full ShowQr→real VPS / target Windows still NOT_RUN.
+
+Runner ZIP0.2.2 SHA256 `c472e2b61e6f5f5b2def0c1ebb208b54e662d299380386496f63099a967513df`.
+Pack PASS, every upload SKIPPED; bytes not retrieved/delivered/installed. Private
+delivery BLOCKED until approved channel; final installer and target acceptance
+NOT_RUN. Fixed v1.0 same28 criteria/text anchors verified exact610, weight87 with
+D0.5/P0.5/A0 =>21.75/display22 unchanged. No extra credit for more native cases or
+reusing criterion/parent-child weights. I58–80/Y22, delta0, R09 full FAIL/R11 PARTIAL.
+
+Independent root `56084e8a5c1bbbdbaf4a72b8c4b1ea6593a2270f` separates public stop task
+reservation/completion from retained physical StopChannelAsync. Existing start/read/
+write gates now reject both stop owners; cancellation, actual cleanup and retry
+body unchanged. This enables future import to stop channel without self-await,
+then outer Stop can join import. One file25add7delete diff/manual review/syntax/
+C#5/public320/0/secretPII0 PASS; existing native lifecycle regressions NOT_RUN.
+No import code/schema changed, not in610 or frozen399/API or9faa/UI checking.
+Next publish frozen399/API+exact610 evidence docs after scan/tree and one CI;
+actual UI9faa and Stop560 remain independent and untested. Ниже — история.
+
+## Configure UI checking frozen9faa — token import trace, no new implementation
+
+Local `9faa1eafc6006115b52244f5571537d3f495bddd`, tree52780738e01d2d4ab22dcdae3c9650531b99598b
+in ProGo-ci610-ui, based frozen API399e88d75e38366cefb8bcf179df4e813dc7e2f4.
+8 source/test paths305add60delete (c5 initializer,17 async actions,b1 modal suites).
+Every source path equals root; future token/Stop work excluded. Compilation/native
+NOT_RUN. Source frozen separately from running610 and next API399 checking; preserve
+order, no publishing to cancel610. Later add exact predecessor evidence docs only.
+
+Narrow next trace (source facts, target runtime latency here NOT_RUN):
+
+| File / symbol | Evidence / effect | Bounded next correction / check |
+|---|---|---|
+| HomeVpnWizardForm.Next step1 | UI calls UseToken then SetupRecovery.ConfirmConsumed before StartChannel | Await retained import then owned receipt check, capture inputs and preserve preparedToken/owner ID so no second setup |
+| HomeVpnService.UseToken | Initialization.GetResult + StopAsync.GetResult + parse/DPAPI/access+owner files and per-server share read synchronously | Parse/stage/write worker with immutable token/owner and admission; public Stop must join it without self-await |
+| HomeVpnPrivateFiles.Save via UseToken | Sequential access then owner; second failure may leave partial local save | Existing native SetupRecovery failure test retains request/result; do not falsely claim full rollback or consume request |
+| HomeVpnSetupRecovery.ConfirmConsumed | Sync semaphore/GetResult, real request/access/owner DPAPI reads and Delete on UI | Retained worker under same lease and same request/result/owner binding; save/consume failure keeps recovery, no external replay |
+| HomeVpnService.StopAsync | One retained stopWork currently joins start/init/share-read/address-write | Separate physical channel stop admission from outer stop that also joins import, avoiding import→Stop→import cycles; preserve all native ownership tests |
+
+Existing contracts: old-session cleanup failure forbids new credential write;
+second local-save failure retains exact request/result; locked receipt delete
+retains matching access and request; only complete access+owner persistence allows
+consumption. Source tests/HomeVpnSetupRecoveryTests.cs96–112 and native guard606.
+Do not strengthen historical proof into untested full crash atomicity: emergency
+restart/power loss and target PC remain R10/NOT_RUN. No new file-format/transaction
+mechanism silently chosen here. Proposed microstages: (1) channel/outer Stop split
+with existing lifecycle regressions; (2) retained immutable-input import save with
+pre-admission cancel/accepted outcome/partial-save/retry; (3) actual wizard awaits
+import and worker receipt consumption with modal/owner-close/no-repeat tests.
+Current source still610; I58–80/Y22 exact608 unchanged, full R09 FAIL.
+
+## R09 actual modal persistence vectors — localb1b2139, Windows NOT_RUN
+
+Source `b1b2139cf3b338ca4ed965941bfab07d8158cec7`:8 actual configure ShowDialog cases
+verify-save/close/dispose/accepted-close/real replace-error→explicit retry, recovery
+save/close/accepted-close. Real loopback HTTP /health goes through production
+HomeProfileHttp, actual DPAPI/atomic per-server save and private request/proof check
+remain in place. Recovery transport supplies synthetic completed status only;
+no live VPS/setup action, no claim this is target TLS/VPS acceptance. Tests assert
+one GET/save per explicit attempt, no profile POST or repeated setup, exact receipt
+preservation on cancellation, consumption after real save, ordered modal close,
+zero late disposed controls. Hook5s/modal15s/cleanup5s; release/owned streams/window/
+work joins/service Stop/private byte restoration use nested finally. Save failures
+now expose local file/access/protection errors rather than a misleading network
+message.3 paths115add5delete diff/syntax/C#5/public320/0/secretPII0 PASS, compilation/
+native NOT_RUN. Actual UI source c5/17/b1 remains separate from frozen API399 and610.
+
+CI610 Windows119683904424 now IKEv2 relay integration in_progress; earlier build
+step SUCCESS. Exact completed log/overall outcome not yet read, no duplicate run.
+Next preserve separate UI checking source; read same610 on completion and publish
+only frozen399 API+exact evidence docs after scan/tree. Independent next trace:
+UseToken/import and setup receipt consumption must move together without losing
+pair integrity or repeating remote setup; do not wrap synchronous GetResult on UI.
+I58–80/Y22 exact608 unchanged, R09 still FAIL, target/owner/installer NOT_RUN.
+
+## R09 actual configure async persistence — local17d3988, Windows NOT_RUN
+
+Source `17d39886ed05d15b44d90bbfe423a56395bf6057`: production CreateConfigureForm
+uses captured Access with service.SetShareOriginAsync. All button routes await
+HasPendingAsync; admin admission remains on owner UI (so native SSH preparation
+ownership is preserved), then HTTP, retained save and ConfirmOwned receipt flow.
+Pure memory owner callbacks gate before/after persistence; verify-only holds the
+same request lease across last pending check/save. OK follows actual save and, for
+recovery, matching receipt consumption. Closed owner/cancel cannot start a late save;
+a save already admitted is reported honestly if it finishes after Cancel. Retained
+cleanup failure preserves its explicit Stop/retry instruction. Legacy sync Action
+save overload remains fixture adapter on worker; normal product uses the typed API.
+No direct HasPending/DPAPI/receipt I/O or blocking Wait/GetResult in configure UI.
+
+Two source paths53add34delete: diff/syntax/C#5/public320/0/secretPII0 PASS. Existing
+native regressions retained; new actual modal persistence cases are next. Compiler/
+native NOT_RUN, unpushed/excluded frozen399 and current610. Initial readc5f0dda
+also still untested. Next8 bounded actual modal cases: verify save/Close/Dispose/
+accepted-Close/real save error→explicit retry; recovery save/Close/accepted-Close,
+with real loopback HTTP health and real protected save/journal. No live VPS/setup.
+I58–80/Y22 exact608 unchanged; no points for written/unexecuted code or tests.
+
+## R09 configure initial read — localc5f0dda, not in frozen API checking
+
+Source `c5f0dda0ee65272eb1f93d743e85e8eae5b0acfd`: actual CreateConfigureForm now
+returns HomeProfileConfigureForm with retained Work/InitializationWork and physical
+PendingReadWork. Constructor/UI refreshGate no longer read private pending files or
+call the legacy ShareOrigin disk getter. Initial HasPending/DPAPI getter execute
+on owned workers; loading gates actions, permits Close, respects queued cancellation
+and drops publication after disposal. A caller's draft entered during loading is
+preserved. Failed later operations refresh pending state on worker before cached
+UI gates. Click work remains observed and retained, without detached mutations.
+
+Existing keyboard/owner/HTTP/recovery fixtures now await actual readiness with5s
+bounds; wizard child-modal guard waits for its read and finally joins it before
+private backup restoration. Three new actual ShowDialog cases (ready/close/dispose)
+hold a real-path worker, assert native message turns/close ordering/zero late controls
+and source byte preservation; overall15s, barrier5s and finally release/join/restore.
+Diff/manual ownership review/syntax/C#5/public320/0/secretPII0 PASS; compilation/native
+NOT_RUN.7 paths144add28delete, source not published and excluded frozen399/API
+candidate and current610. No higher score for written tests. Actual button run still
+has synchronous HasPending/save/legacy Confirm callback; next stage changes only
+these routes to owned save/ConfirmOwned, then modal save/receipt regression.
+CI610 same run39736682268 Windows119683904424 still build/testing, Ubuntu SUCCESS.
+I58–80/Y22 exact608 unchanged, full R09 FAIL and full R11/target acceptance open.
+
+## Share API checking frozen399e — actual configure UI excluded
+
+Local `399e88d75e38366cefb8bcf179df4e813dc7e2f4`, treec45fc44e657928d73b4fd231ad42fdb79217e61d
+in ProGo-ci610-followups, basefa61c973a5c9878fb2154ada0d02b6d5fa618a09. Only5 source/
+test paths314add75delete: shared store, service ownership, new receipt worker API,
+parameterized native home/share suites and8 confirmation cases. Matches root source
+exactly for those5 files; further UI work excluded. Compiler/native NOT_RUN; attach
+exact610 evidence docs only after same run completes, then scan/tree and one new CI.
+Do not publish while610 active or inherit its result for these changes.
+CI610 job IDs now known: Windows119683904424 in_progress, Ubuntu119683904096 SUCCESS.
+Next UI stage1: retained initial/pending read with pure cached UI gate, meaningful
+loading/cancellation/close handling and old fixture readiness adjusted. Stage2 actual
+async save/ConfirmOwned routes; stage3 native modal acceptance/cancel/receipt tests.
+No new product requirements, scope expansion or score growth: I58–80/Y22 exact608.
+
+## CI610 queued — isolated modal Close proof, source04ca
+
+PR88 head independently verified `04ca974519bfffdb70a1706066ebaef7ed26bf6b`, merge
+`c506814d33c4ef39f5cb946c41121a70850ff851`, full tree36c0e5cb4f0842d9273105b4ae9265e99d4da2e2
+= localfa61c973a5c9878fb2154ada0d02b6d5fa618a09. One automatic
+[CI610/39736682268](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268),
+queued at verification; job IDs not yet read. Expected-head CAS3474→04ca PASS.
+Only one test file modal Close assertions +3 evidence docs published, secrets/
+PII0/full tree PASS, workflows unchanged/public uploads OFF. New compilation/native
+NOT_RUN; no duplicate609 retry. Last full SUCCESS608 remains scoring evidence,
+609 Test-ProGo PASS followed by native Close-test FAIL remains historical partial.
+
+Root share-address primitivea2fd/service02bc/receipt5610 source is NOT in610.
+Next independently: actual configure UI owned pending-read/save/receipt route,
+then bounded native modal acceptance/cancel tests; poll same610. I58–80/Y22
+raw21.75 unchanged, full R09 FAIL/R11 PARTIAL, no binary delivery/owner acceptance.
+Ниже checkpoint до CAS — история, не указание повторить публикацию.
+
+## Narrow modal checking object04ca — ref update pending
+
+Created source object `04ca974519bfffdb70a1706066ebaef7ed26bf6b`, parent34740802206b6bd24ec41838ba25c44980ddec6c,
+full tree `36c0e5cb4f0842d9273105b4ae9265e99d4da2e2` exactly equals local
+`fa61c973a5c9878fb2154ada0d02b6d5fa618a09` in ProGo-ci609-fix.
+4 paths420add58delete: one narrow modal test fix +3 evidence docs. Full delta
+secretPII0/public320/0/diff/syntax/JSON31+55 PASS; unpublished share source excluded.
+Workflows/VERSION equal609, fresh repo public check and upload guards OFF. CI609
+completed failure, no active predecessor cancelled. Ref CAS expected3474→04ca
+NOT_RUN at this checkpoint. After interruption inspect actual PR head/run before
+retry. New compilation/native NOT_RUN; no inherited609 or608 success. I58–80/Y22
+unchanged. Next one expected-head CAS, record actual merge/run/jobs; no binary upload.
 
 ## CI609 FAIL — modal test assumption isolated, new private-write vectors NOT_RUN
 

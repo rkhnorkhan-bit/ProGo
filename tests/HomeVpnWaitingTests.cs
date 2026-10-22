@@ -76,7 +76,7 @@ namespace ProGo
                 OwnedShareRefreshWorker(token);
                 WizardShareRead(token, clipboard);
                 PreparedHomeAddressWorker();
-                OwnedHomeAddressWorker();
+                OwnedHomeAddressWorker(token);
                 WizardHomeAddressWrite(token, clipboard);
                 foreach (string mode in new[] { "no-listener", "silent" }) {
                     foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(token, clipboard, work, mode, route);
@@ -226,21 +226,34 @@ namespace ProGo
             }
         }
         private static int UdpPort() { using (var socket = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0))) return ((IPEndPoint)socket.Client.LocalEndPoint).Port; }
-        private static void OwnedHomeAddressWorker()
+        private static void OwnedHomeAddressWorker(string token)
+        { OwnedAddressWorker(false, token); OwnedAddressWorker(true, token); }
+        private static Task<bool> SaveAddress(HomeVpnService service, bool share, string value, CancellationToken token, Action<string> beforeIo = null)
+        { return share ? service.SetShareOriginAsync(service.Access, value, token, beforeIo) : service.SetHomeAddressAsync(value, token, beforeIo); }
+        private static string SavedAddress(HomeVpnService service, bool share)
+        { return share ? service.ShareOrigin : service.HomeAddress; }
+        private static void OwnedAddressWorker(bool share, string token)
         {
-            string path = Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat");
-            byte[] original = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            string serverId = HomeVpnAccess.Parse(token).ServerId;
+            string name = share ? "share-" + serverId : "home-address";
+            string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+            string beforeValue = share ? "https://before.example" : "before.example";
+            string afterValue = share ? "https://after.example" : "after.example";
+            var original = new Dictionary<string, byte[]>();
+            foreach (string file in new[] { path, Path.Combine(HomeVpnPrivateFiles.Root, "access.dat") }) original[file] = File.Exists(file) ? File.ReadAllBytes(file) : null;
             using (var form = new Form())
             using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
             {
                 int ticks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
                 heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
                 try {
-                    foreach (string mode in new[] { "save", "cancel", "stop", "dispose", "accepted-stop", "accepted-dispose", "cleanup-lock" })
+                    HomeVpnPrivateFiles.Save("access", token);
+                    foreach (string mode in share ? new[] { "save", "cancel", "stop", "dispose", "accepted-stop", "accepted-dispose", "cleanup-lock", "stale-server", "stale-access" } :
+                        new[] { "save", "cancel", "stop", "dispose", "accepted-stop", "accepted-dispose", "cleanup-lock" })
                     {
-                        HomeVpnPrivateFiles.Save("home-address", "before.example"); byte[] before = File.ReadAllBytes(path);
+                        HomeVpnPrivateFiles.Save(name, beforeValue); byte[] before = File.ReadAllBytes(path);
                         using (var relay = new Ikev2RelayService())
-                        using (var service = Service(relay))
+                        using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, share))
                         using (var entered = new ManualResetEventSlim())
                         using (var release = new ManualResetEventSlim())
                         using (var accepted = new ManualResetEventSlim())
@@ -249,33 +262,44 @@ namespace ProGo
                         {
                             Task<bool> saving = null, stop = null; FileStream held = null; int workerThread = 0;
                             try {
+                                Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
                                 var watch = Stopwatch.StartNew();
-                                saving = service.SetHomeAddressAsync(" after.example ", cancellation.Token, delegate(string stage) {
+                                saving = SaveAddress(service, share, " after.example ", cancellation.Token, delegate(string stage) {
                                     Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
                                     if (stage == "prepared") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned address prepare fixture deadline"); }
                                     if (stage == "accepted" && mode.StartsWith("accepted-", StringComparison.Ordinal)) { accepted.Set(); if (!publish.Wait(5000)) throw new TimeoutException("Owned accepted address fixture deadline"); }
                                 });
-                                check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(saving, service.HomeAddressWork) && service.IsSavingHomeAddress,
-                                    "service publishes one owned home address write before private I/O can settle: " + mode);
+                                check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(saving, service.HomeAddressWork) && (share ? service.IsSavingShareOrigin && !service.IsSavingHomeAddress : service.IsSavingHomeAddress),
+                                    "service publishes one owned home address write before private I/O can settle: " + (share ? "share/" : "") + mode);
                                 int beforeTicks = ticks; Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
-                                check(workerThread != uiThread && !saving.IsCompleted && service.HasOwnedResources && service.HomeAddress == "before.example" &&
-                                    Object.ReferenceEquals(saving, service.SetHomeAddressAsync("after.example", CancellationToken.None)),
-                                    "held real address write keeps heartbeat, original state and duplicate physical ownership: " + mode);
-                                bool differentRefused = false; try { service.SetHomeAddressAsync("other.example", CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { differentRefused = true; }
-                                check(differentRefused, "another address cannot replace or run beside the owned pending save: " + mode);
+                                check(workerThread != uiThread && !saving.IsCompleted && service.HasOwnedResources && SavedAddress(service, share) == beforeValue &&
+                                    Object.ReferenceEquals(saving, SaveAddress(service, share, "after.example", CancellationToken.None)),
+                                    "held real address write keeps heartbeat, original state and duplicate physical ownership: " + (share ? "share/" : "") + mode);
+                                bool differentRefused = false; try { SaveAddress(service, share, "other.example", CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { differentRefused = true; }
+                                check(differentRefused, "another address cannot replace or run beside the owned pending save: " + (share ? "share/" : "") + mode);
+                                bool crossKindRefused = false;
+                                try { SaveAddress(service, !share, "after.example", CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { crossKindRefused = true; }
+                                check(crossKindRefused, "home and share address writes cannot have parallel physical ownership: " + (share ? "share/" : "") + mode);
+                                if (share) {
+                                    bool otherAccessRefused = false;
+                                    try { service.SetShareOriginAsync(HomeVpnAccess.Parse(token), "after.example", CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { otherAccessRefused = true; }
+                                    check(otherAccessRefused, "equal server ID on a different access object cannot join the captured write");
+                                }
+                                if (mode == "stale-server") service.Access.ServerId = new string(serverId[0] == 'b' ? 'c' : 'b', 32);
+                                if (mode == "stale-access") typeof(HomeVpnService).GetProperty("Access", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(service, HomeVpnAccess.Parse(token), null);
                                 if (mode.StartsWith("accepted-", StringComparison.Ordinal)) { release.Set(); Pump(() => accepted.IsSet, 3000); }
                                 if (mode == "cancel" || mode == "cleanup-lock") cancellation.Cancel();
                                 if (mode == "cleanup-lock") held = File.Open(((HomeVpnAddressWrite)Field(service, "addressWrite")).StagingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                                if (mode == "stop" || mode == "accepted-stop") { watch.Restart(); stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Stop joins actual private address I/O without blocking UI: " + mode); }
-                                if (mode == "dispose" || mode == "accepted-dispose") { watch.Restart(); service.Dispose(); stop = service.StopWork; check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Dispose retains actual private address I/O without late owner writes: " + mode); }
-                                check(!saving.IsCompleted && before.SequenceEqual(File.ReadAllBytes(path)), "pending accepted or cancelled write cannot claim a physical disk result before it settles: " + mode);
+                                if (mode == "stop" || mode == "accepted-stop") { watch.Restart(); stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Stop joins actual private address I/O without blocking UI: " + (share ? "share/" : "") + mode); }
+                                if (mode == "dispose" || mode == "accepted-dispose") { watch.Restart(); service.Dispose(); stop = service.StopWork; check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Dispose retains actual private address I/O without late owner writes: " + (share ? "share/" : "") + mode); }
+                                check(!saving.IsCompleted && before.SequenceEqual(File.ReadAllBytes(path)), "pending accepted or cancelled write cannot claim a physical disk result before it settles: " + (share ? "share/" : "") + mode);
                                 release.Set(); publish.Set(); Pump(() => saving.IsCompleted && (stop == null || stop.IsCompleted), 5000);
                                 Exception failure = null; bool saved = false; try { saved = saving.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
                                 bool committed = mode == "save" || mode.StartsWith("accepted-", StringComparison.Ordinal);
-                                check(committed ? saved && failure == null && HomeVpnPrivateFiles.Load("home-address") == "after.example" :
-                                    (mode == "cleanup-lock" ? failure is HomeVpnLocalCleanupException : failure is OperationCanceledException && saving.IsCanceled) && before.SequenceEqual(File.ReadAllBytes(path)), "private save result distinguishes accepted commit from pre-admission cancellation: " + mode);
-                                check(service.HomeAddress == (committed && mode != "accepted-dispose" ? "after.example" : "before.example"), "disposed address owner gets no late metadata update; accepted live scope gets its actual value: " + mode);
-                                if (stop != null) check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "Stop result owns and joins both actual write and private cleanup: " + mode);
+                                check(committed ? saved && failure == null && HomeVpnPrivateFiles.Load(name) == afterValue :
+                                    (mode == "cleanup-lock" ? failure is HomeVpnLocalCleanupException : failure is OperationCanceledException && saving.IsCanceled) && before.SequenceEqual(File.ReadAllBytes(path)), "private save result distinguishes accepted commit from pre-admission cancellation: " + (share ? "share/" : "") + mode);
+                                check(SavedAddress(service, share) == (committed && mode != "accepted-dispose" ? afterValue : beforeValue), "disposed address owner gets no late metadata update; accepted live scope gets its actual value: " + (share ? "share/" : "") + mode);
+                                if (stop != null) check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "Stop result owns and joins both actual write and private cleanup: " + (share ? "share/" : "") + mode);
                                 if (mode == "cleanup-lock") {
                                     check(failure is HomeVpnLocalCleanupException && service.HasOwnedResources, "failed real stage deletion retains exact write ownership instead of reporting cancellation cleanup complete");
                                     stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
@@ -283,8 +307,8 @@ namespace ProGo
                                     held.Dispose(); held = null;
                                     stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
                                     check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "unlock then explicit Stop retries only its retained address stage cleanup");
-                                    var retry = service.SetHomeAddressAsync("after.example", CancellationToken.None); Pump(() => retry.IsCompleted, 5000);
-                                    check(retry.GetAwaiter().GetResult() && service.HomeAddress == "after.example", "new explicit save becomes available only after actual owned cleanup completes");
+                                    var retry = SaveAddress(service, share, "after.example", CancellationToken.None); Pump(() => retry.IsCompleted, 5000);
+                                    check(retry.GetAwaiter().GetResult() && SavedAddress(service, share) == afterValue, "new explicit save becomes available only after actual owned cleanup completes");
                                 }
                             } finally {
                                 release.Set(); publish.Set(); cancellation.Cancel(); if (held != null) held.Dispose(); service.Dispose();
@@ -294,19 +318,48 @@ namespace ProGo
                             }
                         }
                     }
-                } finally { heartbeat.Stop(); form.Close(); if (original == null) File.Delete(path); else File.WriteAllBytes(path, original); }
+                } finally { heartbeat.Stop(); form.Close(); foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
             }
         }
         private static void PreparedHomeAddressWorker()
         {
-            string target = Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat");
-            byte[] original = File.Exists(target) ? File.ReadAllBytes(target) : null;
+            PreparedAddressWorker(false); PreparedAddressWorker(true);
+            foreach (string invalid in new[] { "", "../home-address", new string('a', 31), new string('a', 33), new string('A', 32) }) {
+                bool refused = false;
+                try { using (var unused = HomeVpnAddressWrite.ForShareOrigin(invalid, "profiles.example")) { } }
+                catch (ArgumentException) { refused = true; }
+                check(refused, "share-address factory refuses a noncanonical server identity before private I/O");
+            }
+            foreach (string invalid in new[] { "http://profiles.example", "https://profiles.example/path", "https://profiles.example:8443", "https://user@profiles.example" }) {
+                bool refused = false;
+                try { using (var unused = HomeVpnAddressWrite.ForShareOrigin(new string('a', 32), invalid)) { } }
+                catch (ArgumentException) { refused = true; }
+                check(refused, "share-address factory preserves existing HTTPS origin validation before private I/O");
+            }
+        }
+        private static void PreparedAddressWorker(bool share)
+        {
+            string name = share ? "share-" + new string('a', 32) : "home-address";
+            string afterValue = share ? "https://after.example" : "after.example";
+            string beforeValue = share ? "https://before.example" : "before.example";
+            string changedValue = share ? "https://changed.example" : "changed.example";
+            string target = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+            var original = new Dictionary<string, byte[]>();
+            string home = Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat");
+            string other = Path.Combine(HomeVpnPrivateFiles.Root, "share-" + new string('b', 32) + ".dat");
+            foreach (string path in new[] { target, home, other }) original[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            byte[] untouchedHome = original[home], untouchedOther = original[other];
             using (var form = new Form())
             using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
             {
                 int ticks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
                 heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
                 try {
+                    if (share) {
+                        HomeVpnPrivateFiles.Save("home-address", "untouched-home.example");
+                        HomeVpnPrivateFiles.Save("share-" + new string('b', 32), "https://untouched.example");
+                        untouchedHome = File.ReadAllBytes(home); untouchedOther = File.ReadAllBytes(other);
+                    }
                     foreach (string mode in new[] { "create", "replace", "refuse", "cancel", "locked", "changed", "stage-changed", "cleanup-lock", "accepted-cancel" })
                     using (var entered = new ManualResetEventSlim())
                     using (var release = new ManualResetEventSlim())
@@ -314,9 +367,9 @@ namespace ProGo
                     using (var acceptedEntered = new ManualResetEventSlim())
                     using (var publishRelease = new ManualResetEventSlim())
                     {
-                        HomeVpnPrivateFiles.Save("home-address", "before.example"); if (mode == "create") File.Delete(target);
+                        HomeVpnPrivateFiles.Save(name, beforeValue); if (mode == "create") File.Delete(target);
                         byte[] before = File.Exists(target) ? File.ReadAllBytes(target) : null, stagedBefore = null;
-                        var operation = new HomeVpnAddressWrite(" after.example ");
+                        var operation = share ? HomeVpnAddressWrite.ForShareOrigin(new string('a', 32), " AFTER.example ") : new HomeVpnAddressWrite(" after.example ");
                         Task worker = null; FileStream held = null; int workerThread = 0, accepted = 0;
                         try {
                             worker = Task.Run(delegate {
@@ -335,13 +388,13 @@ namespace ProGo
                             }, cancellation.Token);
                             int beforeTicks = ticks; Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
                             stagedBefore = File.ReadAllBytes(operation.StagingPath);
-                            check(workerThread != uiThread && !worker.IsCompleted && HomeVpnPrivateFiles.Load(Path.GetFileNameWithoutExtension(operation.StagingPath)) == "after.example" &&
+                            check(workerThread != uiThread && !worker.IsCompleted && HomeVpnPrivateFiles.Load(Path.GetFileNameWithoutExtension(operation.StagingPath)) == afterValue &&
                                 (before == null ? !File.Exists(target) : before.SequenceEqual(File.ReadAllBytes(target))),
-                                "actual DPAPI staging is off UI, verified, owned and cannot replace the previous address before admission: " + mode);
+                                "actual DPAPI staging is off UI, verified, owned and cannot replace the previous address before admission: " + (share ? "share/" : "") + mode);
                             if (mode == "cancel" || mode == "cleanup-lock") cancellation.Cancel();
                             if (mode == "locked") held = File.Open(target, FileMode.Open, FileAccess.Read, FileShare.Read);
                             if (mode == "cleanup-lock") held = File.Open(operation.StagingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                            if (mode == "changed") { HomeVpnPrivateFiles.Save("home-address", "changed.example"); before = File.ReadAllBytes(target); }
+                            if (mode == "changed") { HomeVpnPrivateFiles.Save(name, changedValue); before = File.ReadAllBytes(target); }
                             if (mode == "stage-changed") File.WriteAllBytes(operation.StagingPath, new byte[] { 1, 2, 3 });
                             release.Set();
                             if (mode == "accepted-cancel") {
@@ -352,15 +405,15 @@ namespace ProGo
                             Pump(() => worker.IsCompleted, 5000);
                             Exception failure = null; try { worker.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
                             bool success = mode == "create" || mode == "replace" || mode == "accepted-cancel";
-                            if (success) check(failure == null && accepted == 1 && HomeVpnPrivateFiles.Load("home-address") == "after.example",
+                            if (success) check(failure == null && accepted == 1 && HomeVpnPrivateFiles.Load(name) == afterValue,
                                 "accepted protected address uses actual atomic " + (mode == "create" ? "Move" : "Replace") + " without losing its new value");
                             else {
                                 check(failure != null && (before == null ? !File.Exists(target) : before.SequenceEqual(File.ReadAllBytes(target))),
-                                    "cancel/refusal/conflict/real sharing failure preserves the actual previous or newer address bytes: " + mode);
-                                check(accepted == (mode == "locked" ? 1 : 0), "failed private write reports its exact commit admission boundary: " + mode);
+                                    "cancel/refusal/conflict/real sharing failure preserves the actual previous or newer address bytes: " + (share ? "share/" : "") + mode);
+                                check(accepted == (mode == "locked" ? 1 : 0), "failed private write reports its exact commit admission boundary: " + (share ? "share/" : "") + mode);
                             }
                             if (mode == "cleanup-lock" || mode == "stage-changed") {
-                                check(File.Exists(operation.StagingPath), "failed cleanup retains this exact prepared object and its staging path for explicit retry: " + mode);
+                                check(File.Exists(operation.StagingPath), "failed cleanup retains this exact prepared object and its staging path for explicit retry: " + (share ? "share/" : "") + mode);
                                 if (mode == "stage-changed") {
                                     check(File.ReadAllBytes(operation.StagingPath).SequenceEqual(new byte[] { 1, 2, 3 }), "cleanup refuses to erase a changed prepared file");
                                     File.WriteAllBytes(operation.StagingPath, stagedBefore); // Restore only this fixture's deliberate edit.
@@ -368,7 +421,12 @@ namespace ProGo
                                 if (held != null) { held.Dispose(); held = null; }
                                 var cleanup = Task.Run(() => operation.Dispose()); Pump(() => cleanup.IsCompleted, 5000); cleanup.GetAwaiter().GetResult();
                             }
-                            check(!File.Exists(operation.StagingPath), "prepared address worker or explicit cleanup retry removes only its own unique stage: " + mode);
+                            if (share) {
+                                check((untouchedHome == null ? !File.Exists(home) : untouchedHome.SequenceEqual(File.ReadAllBytes(home))) &&
+                                    (untouchedOther == null ? !File.Exists(other) : untouchedOther.SequenceEqual(File.ReadAllBytes(other))),
+                                    "captured per-server share write preserves the home address and another server's protected bytes: " + mode);
+                            }
+                            check(!File.Exists(operation.StagingPath), "prepared address worker or explicit cleanup retry removes only its own unique stage: " + (share ? "share/" : "") + mode);
                         } finally {
                             release.Set(); publishRelease.Set(); cancellation.Cancel(); if (held != null) held.Dispose();
                             if (worker != null) { Pump(() => worker.IsCompleted, 5000); try { worker.GetAwaiter().GetResult(); } catch { } }
@@ -378,7 +436,7 @@ namespace ProGo
                     }
                 } finally {
                     heartbeat.Stop(); form.Close();
-                    if (original == null) File.Delete(target); else File.WriteAllBytes(target, original);
+                    foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); }
                 }
             }
         }

@@ -185,16 +185,10 @@ namespace ProGo
                 return loadedShareOrigin;
             }
         }
+        // Compatibility callbacks still wait; the configure route migrates separately.
         internal void SetShareOrigin(string value)
-        {
-            if (Access == null) throw new InvalidOperationException("Сначала добавьте доступ к VPS.");
-            string origin = HomeProfileShare.Origin(value);
-            HomeVpnPrivateFiles.Save("share-" + Access.ServerId, origin);
-            lock (lifecycleGate) {
-                shareRevision++;
-                if (backgroundInitialization) { loadedShareOrigin = origin; loadedWarnings &= ~HomeVpnStoredStateWarning.ShareOrigin; initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None; }
-            }
-        }
+        { SetShareOriginAsync(Access, value, CancellationToken.None).GetAwaiter().GetResult(); }
+
         private volatile ProxyService proxy;
         private volatile string sessionDirectory;
         private readonly object lifecycleGate = new object();
@@ -203,11 +197,14 @@ namespace ProGo
         private Task<bool> shareRefreshWork = Task.FromResult(true);
         private volatile HomeVpnAddressWrite addressWrite;
         private CancellationTokenSource addressSaving, addressSaveCancelled;
-        private Task<bool> homeAddressWork = Task.FromResult(true);
-        private string addressSaveValue;
-        private bool addressCommitAccepted;
-        internal Task<bool> HomeAddressWork { get { lock (lifecycleGate) return homeAddressWork; } }
-        internal bool IsSavingHomeAddress { get { lock (lifecycleGate) return !homeAddressWork.IsCompleted; } }
+        private Task<bool> privateAddressWork = Task.FromResult(true);
+        private string addressSaveValue, addressSaveServerId;
+        private HomeVpnAccess addressSaveAccess;
+        private bool addressIsShare, addressCommitAccepted;
+        internal Task<bool> HomeAddressWork { get { lock (lifecycleGate) return privateAddressWork; } }
+        internal Task<bool> PrivateAddressWork { get { lock (lifecycleGate) return privateAddressWork; } }
+        internal bool IsSavingHomeAddress { get { lock (lifecycleGate) return !addressIsShare && !privateAddressWork.IsCompleted; } }
+        internal bool IsSavingShareOrigin { get { lock (lifecycleGate) return addressIsShare && !privateAddressWork.IsCompleted; } }
         private long shareRevision;
         internal Task<bool> ShareRefreshWork { get { lock (lifecycleGate) return shareRefreshWork; } }
         private Task<bool> initializationWork = Task.FromResult(true);
@@ -369,26 +366,39 @@ namespace ProGo
         internal void SetHomeAddress(string address) { SetHomeAddressAsync(address, CancellationToken.None).GetAwaiter().GetResult(); }
 
         internal Task<bool> SetHomeAddressAsync(string address, CancellationToken token, Action<string> beforeIo = null)
+        { return SetPrivateAddressAsync(address, null, false, token, beforeIo); }
+
+        internal Task<bool> SetShareOriginAsync(HomeVpnAccess expectedAccess, string origin, CancellationToken token, Action<string> beforeIo = null)
+        { return SetPrivateAddressAsync(origin, expectedAccess, true, token, beforeIo); }
+
+        private Task<bool> SetPrivateAddressAsync(string value, HomeVpnAccess expectedAccess, bool share, CancellationToken token, Action<string> beforeIo)
         {
-            address = (address ?? "").Trim();
-            if (!HomeVpnAccess.ValidHost(address)) return FailedPrivateWrite(new ArgumentException("Введите внешний адрес домашнего роутера или DDNS, без https:// и порта."));
-            TaskCompletionSource<bool> completion; CancellationTokenSource cancellation;
-            HomeVpnAddressWrite work; Task initial;
+            HomeVpnAddressWrite work; string serverId = share && expectedAccess != null ? expectedAccess.ServerId : null;
+            // Construction is validation and immutable capture only, without private I/O.
+            try {
+                if (share && expectedAccess == null) throw new InvalidOperationException("Сначала добавьте доступ к VPS.");
+                work = share ? HomeVpnAddressWrite.ForShareOrigin(serverId, value) : new HomeVpnAddressWrite(value);
+            } catch (Exception ex) { if (ex is OutOfMemoryException) throw; return FailedPrivateWrite(ex); }
+            TaskCompletionSource<bool> completion; CancellationTokenSource cancellation; Task initial;
             lock (lifecycleGate)
             {
                 if (token.IsCancellationRequested) return FailedPrivateWrite(new OperationCanceledException(token));
                 if (disposed) return FailedPrivateWrite(new ObjectDisposedException("HomeVpnService"));
                 if (startsPaused || !stopWork.IsCompleted) return FailedPrivateWrite(new InvalidOperationException("Дождитесь остановки или обслуживания перед сохранением адреса."));
-                if (!homeAddressWork.IsCompleted) return String.Equals(addressSaveValue, address, StringComparison.Ordinal)
-                    ? homeAddressWork : FailedPrivateWrite(new InvalidOperationException("Предыдущее сохранение адреса ещё выполняется. Дождитесь результата и повторите изменение."));
+                if (share && (!Object.ReferenceEquals(Access, expectedAccess) || !String.Equals(expectedAccess.ServerId, serverId, StringComparison.Ordinal)))
+                    return FailedPrivateWrite(new InvalidOperationException("Доступ к VPS уже изменён. Повторите настройку HTTPS-адреса для выбранного сервера."));
+                if (!privateAddressWork.IsCompleted) return addressIsShare == share && String.Equals(addressSaveValue, work.Value, StringComparison.Ordinal) &&
+                    String.Equals(addressSaveServerId, serverId, StringComparison.Ordinal) && Object.ReferenceEquals(addressSaveAccess, expectedAccess)
+                    ? privateAddressWork : FailedPrivateWrite(new InvalidOperationException("Предыдущее сохранение адреса ещё выполняется. Дождитесь результата и повторите изменение."));
                 if (addressWrite != null) return FailedPrivateWrite(new HomeVpnLocalCleanupException("Временное сохранение адреса требует очистки. Освободите его файл и повторите остановку VPN для телефона."));
-                work = new HomeVpnAddressWrite(address); initial = initializationWork;
+                initial = initializationWork;
                 completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
-                addressWrite = work; addressSaveValue = address; addressSaving = cancellation; addressCommitAccepted = false;
-                homeAddressWork = completion.Task; // Publish ownership before private filesystem/DPAPI work.
+                addressWrite = work; addressSaveValue = work.Value; addressSaveServerId = serverId; addressSaveAccess = expectedAccess;
+                addressIsShare = share; addressSaving = cancellation; addressCommitAccepted = false;
+                privateAddressWork = completion.Task; // One home/share owner published before private filesystem/DPAPI work.
             }
-            Task.Run(() => SaveHomeAddressOwnedAsync(work, initial, cancellation, completion, beforeIo));
+            Task.Run(() => SavePrivateAddressOwnedAsync(work, initial, expectedAccess, serverId, share, cancellation, completion, beforeIo));
             return completion.Task;
         }
         private static Task<bool> FailedPrivateWrite(Exception failure)
@@ -397,8 +407,8 @@ namespace ProGo
             if (failure is OperationCanceledException) result.SetCanceled(); else result.SetException(failure);
             return result.Task;
         }
-        private async Task SaveHomeAddressOwnedAsync(HomeVpnAddressWrite work, Task initial, CancellationTokenSource cancellation,
-            TaskCompletionSource<bool> completion, Action<string> beforeIo)
+        private async Task SavePrivateAddressOwnedAsync(HomeVpnAddressWrite work, Task initial, HomeVpnAccess expectedAccess, string serverId, bool share,
+            CancellationTokenSource cancellation, TaskCompletionSource<bool> completion, Action<string> beforeIo)
         {
             Exception failure = null; bool committed = false, cleaned = false; HomeVpnAccess access = null;
             try {
@@ -407,27 +417,35 @@ namespace ProGo
                 lock (lifecycleGate) {
                     if (disposed || addressSaveCancelled == cancellation) throw new OperationCanceledException();
                     access = Access;
+                    if (share && (!Object.ReferenceEquals(access, expectedAccess) || !String.Equals(access.ServerId, serverId, StringComparison.Ordinal)))
+                        throw new InvalidOperationException("Доступ к VPS уже изменён. Прежний HTTPS-адрес не заменён.");
                 }
                 work.Prepare(cancellation.Token, beforeIo);
                 work.Commit(delegate {
                     lock (lifecycleGate) {
                         if (disposed || startsPaused || cancellation.IsCancellationRequested || addressSaveCancelled == cancellation ||
-                            !Object.ReferenceEquals(addressWrite, work) || !Object.ReferenceEquals(Access, access)) return false;
+                            !Object.ReferenceEquals(addressWrite, work) || !Object.ReferenceEquals(Access, access) ||
+                            (share && !String.Equals(access.ServerId, serverId, StringComparison.Ordinal))) return false;
                         addressCommitAccepted = true; return true;
                     }
                 }, beforeIo);
                 committed = true;
                 lock (lifecycleGate) {
-                    if (!disposed && Object.ReferenceEquals(addressWrite, work) && Object.ReferenceEquals(Access, access)) {
-                        HomeAddress = work.Value;
-                        if (backgroundInitialization) { loadedWarnings &= ~HomeVpnStoredStateWarning.HomeAddress; initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None; }
+                    if (!disposed && Object.ReferenceEquals(addressWrite, work) && Object.ReferenceEquals(Access, access) &&
+                        (!share || String.Equals(access.ServerId, serverId, StringComparison.Ordinal))) {
+                        if (share) { shareRevision++; loadedShareOrigin = work.Value; }
+                        else HomeAddress = work.Value;
+                        if (backgroundInitialization) {
+                            loadedWarnings &= ~(share ? HomeVpnStoredStateWarning.ShareOrigin : HomeVpnStoredStateWarning.HomeAddress);
+                            initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None;
+                        }
                     }
                 }
             } catch (Exception ex) { failure = ex; }
             try { work.Dispose(); cleaned = true; }
             catch (Exception ex) {
                 failure = new HomeVpnLocalCleanupException("Временный файл адреса остался под управлением ProGo. Освободите файл и повторите остановку VPN для телефона; новый запуск сохранения пока недоступен.");
-                try { SafeLog.Info("Home address cleanup remains pending (" + ex.GetType().Name + ")."); } catch { }
+                try { SafeLog.Info("Private address cleanup remains pending (" + ex.GetType().Name + ")."); } catch { }
             }
             lock (lifecycleGate) {
                 if (Object.ReferenceEquals(addressWrite, work)) { if (cleaned) addressWrite = null; addressCommitAccepted = false; }
@@ -453,7 +471,7 @@ namespace ProGo
                 if (token.IsCancellationRequested) return FailedStart(new OperationCanceledException(token));
                 if (disposed) return FailedStart(new ObjectDisposedException("HomeVpnService"));
                 if (startsPaused) return FailedStart(new InvalidOperationException("ProGo завершает работу или готовит обслуживание. Запуск VPN для телефона временно недоступен."));
-                if (addressWrite != null && homeAddressWork.IsCompleted) return FailedStart(new HomeVpnLocalCleanupException("Очистка временного сохранения адреса не завершена. Повторите остановку VPN для телефона перед запуском."));
+                if (addressWrite != null && privateAddressWork.IsCompleted) return FailedStart(new HomeVpnLocalCleanupException("Очистка временного сохранения адреса не завершена. Повторите остановку VPN для телефона перед запуском."));
                 if (Access == null && initializationWork.IsCompleted) return FailedStart(new InvalidOperationException("Сначала добавьте VPS или вставьте токен."));
                 if (!stopWork.IsCompleted) return FailedStart(new InvalidOperationException("Остановка VPN для телефона ещё не завершена. Дождитесь очистки и повторите запуск."));
                 if (!startWork.IsCompleted) return startWork;
@@ -600,7 +618,7 @@ namespace ProGo
                 start = startWork; cancellation = starting; beforeIo = BeforeSessionIo;
                 initial = initializationWork; shareRead = shareRefreshWork; shareCancellation = shareRefreshing;
                 shareRefreshCancelled = shareCancellation; // Admission is cancelled before the worker can publish; native cancellation stays off UI.
-                addressWork = homeAddressWork; addressCancellation = addressCommitAccepted ? null : addressSaving;
+                addressWork = privateAddressWork; addressCancellation = addressCommitAccepted ? null : addressSaving;
                 addressSaveCancelled = addressCancellation; // A previously accepted atomic save remains owned until completion.
                 completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 stopWork = completion.Task; // Duplicate Stop and Start see the reservation immediately.

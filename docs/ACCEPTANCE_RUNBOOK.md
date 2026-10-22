@@ -1,3 +1,62 @@
+## CI610 full SUCCESS — home-address/modal block accepted in isolated Windows
+
+[CI610/39736682268](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268)
+Windows119683904424/Ubuntu119683904096 SUCCESS. Exact source
+`04ca974519bfffdb70a1706066ebaef7ed26bf6b`, merge/build identity0.2.2+
+`c506814d33c4ef39f5cb946c41121a70850ff851`, tree36c0e5cb4f0842d9273105b4ae9265e99d4da2e2
+= localfa61c973a5c9878fb2154ada0d02b6d5fa618a09. Same run completed, no rerun.
+New native: read-modal3 (actual Close order07:12:57.6950548Z), protected store9
+07:12:58.162–59.165, service-owned save7 07:12:59.254–13:02, actual write-modal7
+07:13:02.344–05.399. Cancel→Retry, explicit Close after physical I/O, Dispose/no
+late controls, accepted save after Cancel, real file sharing error→Retry and
+retained locked-stage cleanup→unlock→Stop→Retry PASS. Previous609 test defect fixed
+without deadline increase or assertion removal. New source home write now compiled
+and executed; later root share/init/configure/Stop changes remain NOT_RUN.
+
+Full: Desktop5281/HomeVPN1325/Portable91; selected-key signing55/UI50/prep72,
+diagnostics modal6/chooser3/Context ownership, Instance28/Maintenance126/Shutdown47,
+actual direct+owned-agent OpenSSH→SOCKS→HTTP→crash→fresh preparation; Python28=
+26PASS2SKIP. Native combined SSH measured direct startup1945ms/prep33ms/SSH CPU0ms/
+working-set11382784B/peak11460608B, recovery1949ms/prep33,28ms/CPU31.25ms/working-set
+11350016B/peak11423744B. These are isolated fixture observations, not full app I/O/
+slow hardware/owner acceptance or final performance PASS. Program process GUI /
+full ShowQr→real VPS / target Windows still NOT_RUN.
+
+Runner ZIP0.2.2 SHA256 `c472e2b61e6f5f5b2def0c1ebb208b54e662d299380386496f63099a967513df`.
+Pack PASS, every upload SKIPPED; bytes not retrieved/delivered/installed. Private
+delivery BLOCKED until approved channel; final installer and target acceptance
+NOT_RUN. Fixed v1.0 same28 criteria/text anchors verified exact610, weight87 with
+D0.5/P0.5/A0 =>21.75/display22 unchanged. No extra credit for more native cases or
+reusing criterion/parent-child weights. I58–80/Y22, delta0, R09 full FAIL/R11 PARTIAL.
+
+Independent root `56084e8a5c1bbbdbaf4a72b8c4b1ea6593a2270f` separates public stop task
+reservation/completion from retained physical StopChannelAsync. Existing start/read/
+write gates now reject both stop owners; cancellation, actual cleanup and retry
+body unchanged. This enables future import to stop channel without self-await,
+then outer Stop can join import. One file25add7delete diff/manual review/syntax/
+C#5/public320/0/secretPII0 PASS; existing native lifecycle regressions NOT_RUN.
+No import code/schema changed, not in610 or frozen399/API or9faa/UI checking.
+Next publish frozen399/API+exact610 evidence docs after scan/tree and one CI;
+actual UI9faa and Stop560 remain independent and untested. Ниже — история.
+
+## CI610 queued — isolated modal Close proof, source04ca
+
+PR88 head independently verified `04ca974519bfffdb70a1706066ebaef7ed26bf6b`, merge
+`c506814d33c4ef39f5cb946c41121a70850ff851`, full tree36c0e5cb4f0842d9273105b4ae9265e99d4da2e2
+= localfa61c973a5c9878fb2154ada0d02b6d5fa618a09. One automatic
+[CI610/39736682268](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268),
+queued at verification; job IDs not yet read. Expected-head CAS3474→04ca PASS.
+Only one test file modal Close assertions +3 evidence docs published, secrets/
+PII0/full tree PASS, workflows unchanged/public uploads OFF. New compilation/native
+NOT_RUN; no duplicate609 retry. Last full SUCCESS608 remains scoring evidence,
+609 Test-ProGo PASS followed by native Close-test FAIL remains historical partial.
+
+Root share-address primitivea2fd/service02bc/receipt5610 source is NOT in610.
+Next independently: actual configure UI owned pending-read/save/receipt route,
+then bounded native modal acceptance/cancel tests; poll same610. I58–80/Y22
+raw21.75 unchanged, full R09 FAIL/R11 PARTIAL, no binary delivery/owner acceptance.
+Ниже checkpoint до CAS — история, не указание повторить публикацию.
+
 ## CI609 FAIL — modal test assumption isolated, new private-write vectors NOT_RUN
 
 Exact source `34740802206b6bd24ec41838ba25c44980ddec6c`, merge

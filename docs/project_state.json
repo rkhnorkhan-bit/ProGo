@@ -3523,14 +3523,15 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Exact608 code wires Program background constructor and actual configure/QR read helpers. Native configure click read/cancel/retry/close/dispose uses Show() parent, imported-data background ctor/memory getter PASS. Full Program GUI startup and wizard QR→VPS owner integration NOT_RUN; modal fix/address418/cf29/882 untested. Token/share/recovery writes sync; whole R09 FAIL",
+        "candidate": "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open.",
         "historical_scoped_pass": false,
         "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
         "local_import_guard": "PASS narrow exact606 guard under real locked old session; current staged service extensions NOT_RUN",
         "local_read_primitive": "PASS narrow published606 coherent read preparation, cancel/conflict/mandatory lock/default cases; staged metadata warnings and initialization integration NOT_RUN",
         "historical_candidate_notes": [
-          "Exact605 existing session prepare/owned Stop/cleanup PASS; live constructor/getter/writes remain sync. Local primitive/guard6353 and optional init APIad3 C#5/native NOT_RUN; init optional metadata availability regression must be fixed before UI switch"
+          "Exact605 existing session prepare/owned Stop/cleanup PASS; live constructor/getter/writes remain sync. Local primitive/guard6353 and optional init APIad3 C#5/native NOT_RUN; init optional metadata availability regression must be fixed before UI switch",
+          "Exact608 code wires Program background constructor and actual configure/QR read helpers. Native configure click read/cancel/retry/close/dispose uses Show() parent, imported-data background ctor/memory getter PASS. Full Program GUI startup and wizard QR→VPS owner integration NOT_RUN; modal fix/address418/cf29/882 untested. Token/share/recovery writes sync; whole R09 FAIL"
         ],
         "current_read_primitive_guard": {
           "source": "bf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc",
@@ -3543,7 +3544,7 @@
         "historical_local_import_guard": "Sourcea75df7b +fixture7cc8159: refuse import before any DPAPI/identity change when actual old cleanup false; native NOT_RUN; excluded598/b342",
         "historical_local_read_primitive": "5017167/8863ea9 HomeVpnStoredState worker +actual native vectors written; source/syntax only PASS, compiler/native NOT_RUN; production constructor/UI still synchronous, no full criterion credit"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged; full CI610 source04ca/mergec506 only; later root changes excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
@@ -3562,15 +3563,16 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Exact608 full Windows build/regressions SUCCESS; full criterion status/remaining and target NOT_RUN remain separate. Phone parent read tests Show(); address writes/modal fix excluded",
+        "candidate": "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open.",
         "historical_scoped_pass": false,
         "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
         "historical_candidate_notes": [
-          "CI598 source37f02/merge16bf1 scoped native PASS13 phone cases/full-stop identity/actual four-flow drain; target-PC/emergency process interruption and R09 import caller not accepted"
+          "CI598 source37f02/merge16bf1 scoped native PASS13 phone cases/full-stop identity/actual four-flow drain; target-PC/emergency process interruption and R09 import caller not accepted",
+          "Exact608 full Windows build/regressions SUCCESS; full criterion status/remaining and target NOT_RUN remain separate. Phone parent read tests Show(); address writes/modal fix excluded"
         ]
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged; full CI610 source04ca/mergec506 only; later root changes excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
@@ -3589,15 +3591,16 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Exact608 signing55/UI50/prep72 +actual direct/owned-agent OpenSSH→SOCKS→HTTP→crash→fresh preparation PASS. Common start/recovery already integrated; R08/R09/performance/owner acceptance open",
+        "candidate": "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open.",
         "historical_scoped_pass": false,
         "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
         "selected_identity_signing": "CI592 exact source/merge: signing55, UI50, actual agent LIST/SIGN preparation+server auth+recovery PASS; owner agent/encrypted key/VPS not accepted",
         "historical_candidate_notes": [
-          "Exact605 full CI SUCCESS signing55/UI50/prep72 +actual direct/owned-agent preparation→SSH→SOCKS→HTTP→crash→fresh recovery PASS; R08/R09/owner/performance criteria still open"
+          "Exact605 full CI SUCCESS signing55/UI50/prep72 +actual direct/owned-agent preparation→SSH→SOCKS→HTTP→crash→fresh recovery PASS; R08/R09/owner/performance criteria still open",
+          "Exact608 signing55/UI50/prep72 +actual direct/owned-agent OpenSSH→SOCKS→HTTP→crash→fresh preparation PASS. Common start/recovery already integrated; R08/R09/performance/owner acceptance open"
         ]
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged; full CI610 source04ca/mergec506 only; later root changes excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
@@ -3738,7 +3741,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "34740802206b6bd24ec41838ba25c44980ddec6c",
+  "candidate_source": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3836,26 +3839,38 @@
     }
   ],
   "ci_candidate": {
-    "source": "34740802206b6bd24ec41838ba25c44980ddec6c",
-    "tested_merge": "0da565ba835dbf63fc2f402eafdac3f380f23624",
-    "local_sha": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
-    "tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
-    "run_id": 39733721723,
-    "run_number": 609,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723",
+    "source": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
+    "tested_merge": "c506814d33c4ef39f5cb946c41121a70850ff851",
+    "local_sha": "fa61c973a5c9878fb2154ada0d02b6d5fa618a09",
+    "tree": "36c0e5cb4f0842d9273105b4ae9265e99d4da2e2",
+    "run_id": 39736682268,
+    "run_number": 610,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268",
     "status": "completed",
-    "conclusion": "failure",
-    "windows_compilation": "PASS exact609 main build and native test harness compile; build identity verified",
-    "windows_native": "PARTIAL exact609: Test-ProGo.ps1 full PASS/Desktop5281; actual read-modal Cancel→Retry PASS, next Close assertion FAIL due incorrect IsDisposed expectation; read Dispose/store9/owned-save7/write-modal7 NOT_RUN",
+    "conclusion": "success",
+    "windows_compilation": "PASS exact610 build identity and native harness compilation verified",
+    "windows_native": "PASS full exact610 Test-ProGo/Desktop5281/Home1325/Portable91 and late Python28=26PASS2SKIP; new read-modal3/store9/owned-save7/write-modal7 actual private I/O cases PASS",
     "jobs": {
-      "windows": 119674440595,
-      "ubuntu": 119674440425
+      "windows": 119683904424,
+      "ubuntu": 119683904096
     },
+    "scope": "isolated modal Close proof via real FormClosed/worker ordering/ShowDialog return; explicit Dispose and15s/cleanup unchanged",
+    "excludes": "root share API399/configure UI9faa/Stop560; full R09/R10/R11/normal Program.Main GUI/ShowQr→real VPS/owner acceptance",
     "ubuntu": "SUCCESS",
-    "scope": "8 frozen address/modal source-test paths and3 evidence docs; home store9/owned-save7/write-modal7/read-modal3 native cases written, not yet credited",
-    "excludes": "root share primitivea2fd/service02bc/confirmation5610; fixed modal expectations784/d251; whole R09/R10/R11/owner acceptance",
-    "failure": "2026-10-22T06:42:52.7584245Z explicit modal close/disposal waits for its actual read result: close; ShowDialog Close does not Dispose",
-    "package": "NOT_RUN pack skipped; uploads SKIPPED all"
+    "package": {
+      "version": "0.2.2",
+      "source": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
+      "tested_merge": "c506814d33c4ef39f5cb946c41121a70850ff851",
+      "run_id": 39736682268,
+      "sha256": "c472e2b61e6f5f5b2def0c1ebb208b54e662d299380386496f63099a967513df",
+      "build": "PASS runner ZIP only",
+      "uploads": "SKIPPED all",
+      "retrieved": false,
+      "delivered": false,
+      "installed": false,
+      "delivery": "BLOCKED owner-approved private channel",
+      "installer": "NOT_RUN"
+    }
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5016,6 +5031,40 @@
       "excludes": "root share primitivea2fd/service02bc/confirmation5610; fixed modal expectations784/d251; whole R09/R10/R11/owner acceptance",
       "failure": "2026-10-22T06:42:52.7584245Z explicit modal close/disposal waits for its actual read result: close; ShowDialog Close does not Dispose",
       "package": "NOT_RUN pack skipped; uploads SKIPPED all"
+    },
+    {
+      "source": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
+      "tested_merge": "c506814d33c4ef39f5cb946c41121a70850ff851",
+      "local_sha": "fa61c973a5c9878fb2154ada0d02b6d5fa618a09",
+      "tree": "36c0e5cb4f0842d9273105b4ae9265e99d4da2e2",
+      "run_id": 39736682268,
+      "run_number": 610,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268",
+      "status": "completed",
+      "conclusion": "success",
+      "windows_compilation": "PASS exact610 build identity and native harness compilation verified",
+      "windows_native": "PASS full exact610 Test-ProGo/Desktop5281/Home1325/Portable91 and late Python28=26PASS2SKIP; new read-modal3/store9/owned-save7/write-modal7 actual private I/O cases PASS",
+      "jobs": {
+        "windows": 119683904424,
+        "ubuntu": 119683904096
+      },
+      "scope": "isolated modal Close proof via real FormClosed/worker ordering/ShowDialog return; explicit Dispose and15s/cleanup unchanged",
+      "excludes": "root share API399/configure UI9faa/Stop560; full R09/R10/R11/normal Program.Main GUI/ShowQr→real VPS/owner acceptance",
+      "ubuntu": "SUCCESS",
+      "package": {
+        "version": "0.2.2",
+        "source": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
+        "tested_merge": "c506814d33c4ef39f5cb946c41121a70850ff851",
+        "run_id": 39736682268,
+        "sha256": "c472e2b61e6f5f5b2def0c1ebb208b54e662d299380386496f63099a967513df",
+        "build": "PASS runner ZIP only",
+        "uploads": "SKIPPED all",
+        "retrieved": false,
+        "delivered": false,
+        "installed": false,
+        "delivery": "BLOCKED owner-approved private channel",
+        "installer": "NOT_RUN"
+      }
     }
   ],
   "retention_microtask": {
@@ -5151,35 +5200,36 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI609 FAIL isolated to modal Close fixture assumption; narrow checking prepared",
+    "phase": "CI610 full SUCCESS; publish frozen399 API next; root UI9faa/Stop560 excluded",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
-    "local_development_sha": "784194e5b1fb14f338612303b9732f8126f1d8b2",
-    "published_sha": "34740802206b6bd24ec41838ba25c44980ddec6c",
-    "tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
-    "tested_merge": "0da565ba835dbf63fc2f402eafdac3f380f23624",
-    "ci_run_id": 39733721723,
-    "ci_run_number": 609,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723",
+    "local_sha": "fa61c973a5c9878fb2154ada0d02b6d5fa618a09",
+    "local_development_sha": "56084e8a5c1bbbdbaf4a72b8c4b1ea6593a2270f",
+    "published_sha": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
+    "tree": "36c0e5cb4f0842d9273105b4ae9265e99d4da2e2",
+    "tested_merge": "c506814d33c4ef39f5cb946c41121a70850ff851",
+    "ci_run_id": 39736682268,
+    "ci_run_number": 610,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268",
     "jobs": {
-      "windows": 119674440595,
-      "ubuntu": 119674440425
+      "windows": 119683904424,
+      "ubuntu": 119683904096
     },
     "ci_status": "completed",
-    "ci_conclusion": "failure",
-    "windows_compilation": "PASS exact609 main build and native test harness compile; build identity verified",
-    "windows_native": "PARTIAL exact609: Test-ProGo.ps1 full PASS/Desktop5281; actual read-modal Cancel→Retry PASS, next Close assertion FAIL due incorrect IsDisposed expectation; read Dispose/store9/owned-save7/write-modal7 NOT_RUN",
+    "ci_conclusion": "success",
+    "windows_compilation": "PASS exact610 build identity and native harness compilation verified",
+    "windows_native": "PASS full exact610 Test-ProGo/Desktop5281/Home1325/Portable91 and late Python28=26PASS2SKIP; new read-modal3/store9/owned-save7/write-modal7 actual private I/O cases PASS",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
     "publication_scan": {
-      "files": 11,
-      "added_lines": 1424,
-      "deleted_lines": 299,
+      "files": 4,
+      "added_lines": 420,
+      "deleted_lines": 58,
       "findings": 0,
       "tree_match": true
     },
-    "next": "Publish isolated d251 modal Close expectation fix plus evidence docs after scan/full-tree equality; one new source CI. Root share stages excluded; then actual configure integration",
-    "readiness_change": 0
+    "next": "Attach exact610 evidence to frozen399 API; scan/full-tree/CAS04ca and one CI; preserve root UI9faa/Stop560 source separately",
+    "readiness_change": 0,
+    "current_ci_step": "IKEv2 relay integration in_progress; build step SUCCESS, completed exact log pending"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5225,8 +5275,8 @@
   },
   "current_readiness": {
     "method": "v1.0 unchanged W and D/P/A30/20/50",
-    "evidence_source": "479addfd6f711831a12e1c7b49019a446f7970ce",
-    "tested_merge": "36f39fb080e0195cad40922793b298a5da500914",
+    "evidence_source": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
+    "tested_merge": "c506814d33c4ef39f5cb946c41121a70850ff851",
     "implementation_range": [
       58,
       80
@@ -5270,38 +5320,38 @@
     "D": 0.5,
     "P": 0.5,
     "A": 0,
-    "reason": "Exact608 same28 parent partial levels D0.5/P0.5/A0 weight87 give21.75. F22 copy/import reload anchor now production background ctor rather than legacy, same partial criterion; no weight/level increase",
-    "local_lifecycle": "PASS scoped full608 published routes; new phone modal risk remains partial local fix, full R09/R10/R11/owner open",
-    "candidate_note": "609 overall FAIL, scoped compilation/Test-ProGo/read-modal CancelRetry PASS; later modal close expectation fix/native not yet verified. Scoring stays exact608, raw21.75 unchanged.",
+    "reason": "Same28 parent anchors exact text performed on610, unchanged weight87/D0.5/P0.5/A0;21.75 unchanged despite more specific address/modal native evidence",
+    "local_lifecycle": "PASS narrow full610 home address/read-modal/store/service/write-modal; full R09/R10/R11/owner remain open",
+    "candidate_note": "Only exact610 source04ca/mergec506; root shareAPI/configureUI/Stop560 compilation/native NOT_RUN",
     "score_anchors": {
-      "F01": "2026-10-22T05:58:23.9995590Z PASS: CLI migration preserves unrelated preferences 0",
-      "F02": "2026-10-22T05:52:59.5675158Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
-      "F03": "2026-10-22T06:05:44.9775627Z PASS: restarted application retains single-instance ownership after handoff",
-      "F04": "2026-10-22T05:51:45.0133425Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)",
-      "F05": "2026-10-22T06:04:05.6932458Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent",
-      "F06": "2026-10-22T05:58:31.7450765Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes",
-      "F07": "2026-10-22T05:56:09.8058703Z Backup retention tests PASS: 29",
-      "F08": "2026-10-22T05:58:42.4769567Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles",
-      "F09": "2026-10-22T05:49:29.2149687Z PASS: wrong-pin read leaves source bytes and file set unchanged",
-      "F10": "2026-10-22T05:58:23.9288892Z PASS: Windows uses tested HTTP/CONNECT bridge",
-      "F11": "2026-10-22T05:58:25.6320952Z PASS: real tray command dispatches its expected dialog: Settings",
-      "F12": "2026-10-22T05:58:46.3341499Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned",
-      "F13": "2026-10-22T06:04:30.4073860Z PASS: Escape closes the actual modal route dialog while measurements run",
-      "F14": "2026-10-22T06:04:29.7652205Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context",
-      "F15": "2026-10-22T05:58:30.5565719Z Settings initial-load preservation checks PASS: 93",
-      "F16": "2026-10-22T06:00:05.1507829Z PASS: scaled cleanup list and actions do not overlap",
-      "F17": "2026-10-22T06:04:30.2607684Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1",
-      "F18": "2026-10-22T06:02:55.1469927Z PASS: wizard accessible issuance result never claims installation",
-      "F20": "2026-10-22T06:02:57.2366613Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect",
-      "F21": "2026-10-22T06:08:12.7369935Z PASS: secret copy writes current clipboard",
-      "F23": "2026-10-22T06:08:10.7580282Z Updater package tests PASS: 5",
-      "F24": "2026-10-22T06:01:54.5128820Z PASS: help Начало 820 exposes a focusable read-only instruction pane",
-      "F25": "2026-10-22T05:58:27.2100654Z PASS: real tray command dispatches its expected dialog: Diagnostics",
-      "F26": "2026-10-22T05:56:07.5875401Z PASS: startup runs quietly without changing SSH preferences",
-      "F28": "2026-10-22T06:00:44.9319364Z PASS: every typed command has one unique round-trippable compatibility ID: Connect",
-      "F29": "2026-10-22T06:03:27.3365539Z PASS: built icon has a valid Windows ICO header",
-      "F31": "2026-10-22T05:58:05.4773378Z Update check tests PASS: 72",
-      "F22": "2026-10-22T06:11:56.2206615Z PASS: production background constructor loads clean imported data through its actual owned worker without activating SSH or relay"
+      "F01": "2026-10-22T07:02:16.0309996Z PASS: CLI migration preserves unrelated preferences 0",
+      "F02": "2026-10-22T06:57:08.9892345Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
+      "F03": "2026-10-22T07:09:58.2776775Z PASS: restarted application retains single-instance ownership after handoff",
+      "F04": "2026-10-22T06:55:54.0531825Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)",
+      "F05": "2026-10-22T07:08:16.2303687Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent",
+      "F06": "2026-10-22T07:02:24.3973508Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes",
+      "F07": "2026-10-22T07:00:24.9512737Z Backup retention tests PASS: 29",
+      "F08": "2026-10-22T07:02:37.1192035Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles",
+      "F09": "2026-10-22T06:53:28.4652073Z PASS: wrong-pin read leaves source bytes and file set unchanged",
+      "F10": "2026-10-22T07:02:15.8995156Z PASS: Windows uses tested HTTP/CONNECT bridge",
+      "F11": "2026-10-22T07:02:17.8180776Z PASS: real tray command dispatches its expected dialog: Settings",
+      "F12": "2026-10-22T07:02:41.0756795Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned",
+      "F13": "2026-10-22T07:08:41.0514331Z PASS: Escape closes the actual modal route dialog while measurements run",
+      "F14": "2026-10-22T07:08:40.5147252Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context",
+      "F15": "2026-10-22T07:02:23.0860984Z Settings initial-load preservation checks PASS: 93",
+      "F16": "2026-10-22T07:04:01.0828964Z PASS: scaled cleanup list and actions do not overlap",
+      "F17": "2026-10-22T07:08:40.9301857Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1",
+      "F18": "2026-10-22T07:07:03.8323774Z PASS: wizard accessible issuance result never claims installation",
+      "F20": "2026-10-22T07:07:05.8723902Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect",
+      "F21": "2026-10-22T07:12:42.6862758Z PASS: secret copy writes current clipboard",
+      "F23": "2026-10-22T07:12:40.2470951Z Updater package tests PASS: 5",
+      "F24": "2026-10-22T07:06:00.8835829Z PASS: help Начало 820 exposes a focusable read-only instruction pane",
+      "F25": "2026-10-22T07:02:19.4667334Z PASS: real tray command dispatches its expected dialog: Diagnostics",
+      "F26": "2026-10-22T07:00:22.4579165Z PASS: startup runs quietly without changing SSH preferences",
+      "F28": "2026-10-22T07:04:41.7990675Z PASS: every typed command has one unique round-trippable compatibility ID: Connect",
+      "F29": "2026-10-22T07:07:38.2428786Z PASS: built icon has a valid Windows ICO header",
+      "F31": "2026-10-22T07:01:55.4012008Z Update check tests PASS: 72",
+      "F22": "2026-10-22T07:17:01.2206849Z PASS: production background constructor loads clean imported data through its actual owned worker without activating SSH or relay"
     },
     "credited_P_half_ids": [
       "F01",
@@ -5333,7 +5383,7 @@
       "F29",
       "F31"
     ],
-    "runner_package_sha256": "cc39eef38418287617e8bc2ddb9c175a7b0bbe8474ee477b428bebc4d2bb7ab2"
+    "runner_package_sha256": "c472e2b61e6f5f5b2def0c1ebb208b54e662d299380386496f63099a967513df"
   },
   "local_launch_lifecycle_microtask": {
     "status": "PARTIAL",
@@ -6295,6 +6345,118 @@
       },
       "credited_P_half_ids": [],
       "runner_package_sha256": null
+    },
+    {
+      "method": "v1.0 unchanged W and D/P/A30/20/50",
+      "evidence_source": "479addfd6f711831a12e1c7b49019a446f7970ce",
+      "tested_merge": "36f39fb080e0195cad40922793b298a5da500914",
+      "implementation_range": [
+        58,
+        80
+      ],
+      "verified_raw": 21.75,
+      "verified_display": 22,
+      "previous_baseline_raw": 21.75,
+      "previous_baseline_display": 22,
+      "change_raw": 0,
+      "credited_D_half_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F20",
+        "F21",
+        "F22",
+        "F23",
+        "F24",
+        "F25",
+        "F26",
+        "F28",
+        "F29",
+        "F31"
+      ],
+      "credited_weight": 87,
+      "D": 0.5,
+      "P": 0.5,
+      "A": 0,
+      "reason": "Exact608 same28 parent partial levels D0.5/P0.5/A0 weight87 give21.75. F22 copy/import reload anchor now production background ctor rather than legacy, same partial criterion; no weight/level increase",
+      "local_lifecycle": "PASS scoped full608 published routes; new phone modal risk remains partial local fix, full R09/R10/R11/owner open",
+      "candidate_note": "Current610 queued NOT_RUN; scoring remains exact608.609 full Test-ProGo PASS then later native Close expectation FAIL; no full success inheritance.",
+      "score_anchors": {
+        "F01": "2026-10-22T05:58:23.9995590Z PASS: CLI migration preserves unrelated preferences 0",
+        "F02": "2026-10-22T05:52:59.5675158Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
+        "F03": "2026-10-22T06:05:44.9775627Z PASS: restarted application retains single-instance ownership after handoff",
+        "F04": "2026-10-22T05:51:45.0133425Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)",
+        "F05": "2026-10-22T06:04:05.6932458Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent",
+        "F06": "2026-10-22T05:58:31.7450765Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes",
+        "F07": "2026-10-22T05:56:09.8058703Z Backup retention tests PASS: 29",
+        "F08": "2026-10-22T05:58:42.4769567Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles",
+        "F09": "2026-10-22T05:49:29.2149687Z PASS: wrong-pin read leaves source bytes and file set unchanged",
+        "F10": "2026-10-22T05:58:23.9288892Z PASS: Windows uses tested HTTP/CONNECT bridge",
+        "F11": "2026-10-22T05:58:25.6320952Z PASS: real tray command dispatches its expected dialog: Settings",
+        "F12": "2026-10-22T05:58:46.3341499Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned",
+        "F13": "2026-10-22T06:04:30.4073860Z PASS: Escape closes the actual modal route dialog while measurements run",
+        "F14": "2026-10-22T06:04:29.7652205Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context",
+        "F15": "2026-10-22T05:58:30.5565719Z Settings initial-load preservation checks PASS: 93",
+        "F16": "2026-10-22T06:00:05.1507829Z PASS: scaled cleanup list and actions do not overlap",
+        "F17": "2026-10-22T06:04:30.2607684Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1",
+        "F18": "2026-10-22T06:02:55.1469927Z PASS: wizard accessible issuance result never claims installation",
+        "F20": "2026-10-22T06:02:57.2366613Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect",
+        "F21": "2026-10-22T06:08:12.7369935Z PASS: secret copy writes current clipboard",
+        "F23": "2026-10-22T06:08:10.7580282Z Updater package tests PASS: 5",
+        "F24": "2026-10-22T06:01:54.5128820Z PASS: help Начало 820 exposes a focusable read-only instruction pane",
+        "F25": "2026-10-22T05:58:27.2100654Z PASS: real tray command dispatches its expected dialog: Diagnostics",
+        "F26": "2026-10-22T05:56:07.5875401Z PASS: startup runs quietly without changing SSH preferences",
+        "F28": "2026-10-22T06:00:44.9319364Z PASS: every typed command has one unique round-trippable compatibility ID: Connect",
+        "F29": "2026-10-22T06:03:27.3365539Z PASS: built icon has a valid Windows ICO header",
+        "F31": "2026-10-22T05:58:05.4773378Z Update check tests PASS: 72",
+        "F22": "2026-10-22T06:11:56.2206615Z PASS: production background constructor loads clean imported data through its actual owned worker without activating SSH or relay"
+      },
+      "credited_P_half_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F20",
+        "F21",
+        "F22",
+        "F23",
+        "F24",
+        "F25",
+        "F26",
+        "F28",
+        "F29",
+        "F31"
+      ],
+      "runner_package_sha256": "cc39eef38418287617e8bc2ddb9c175a7b0bbe8474ee477b428bebc4d2bb7ab2"
     }
   ],
   "local_ci590_exitcode_fix": {
@@ -7278,6 +7440,28 @@
         "ubuntu": 119663025549
       },
       "excludes": "root address primitive418/servicecf29 and wizard async save stage3"
+    },
+    {
+      "source": "34740802206b6bd24ec41838ba25c44980ddec6c",
+      "tested_merge": "0da565ba835dbf63fc2f402eafdac3f380f23624",
+      "local_sha": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
+      "tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
+      "run_id": 39733721723,
+      "run_number": 609,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723",
+      "status": "completed",
+      "conclusion": "failure",
+      "windows_compilation": "PASS exact609 main build and native test harness compile; build identity verified",
+      "windows_native": "PARTIAL exact609: Test-ProGo.ps1 full PASS/Desktop5281; actual read-modal Cancel→Retry PASS, next Close assertion FAIL due incorrect IsDisposed expectation; read Dispose/store9/owned-save7/write-modal7 NOT_RUN",
+      "jobs": {
+        "windows": 119674440595,
+        "ubuntu": 119674440425
+      },
+      "ubuntu": "SUCCESS",
+      "scope": "8 frozen address/modal source-test paths and3 evidence docs; home store9/owned-save7/write-modal7/read-modal3 native cases written, not yet credited",
+      "excludes": "root share primitivea2fd/service02bc/confirmation5610; fixed modal expectations784/d251; whole R09/R10/R11/owner acceptance",
+      "failure": "2026-10-22T06:42:52.7584245Z explicit modal close/disposal waits for its actual read result: close; ShowDialog Close does not Dispose",
+      "package": "NOT_RUN pack skipped; uploads SKIPPED all"
     }
   ],
   "connection_recovery_20261022": {
@@ -7497,5 +7681,117 @@
     "status": "PARTIAL",
     "checks": "PASS source/syntax/diff; native/compiler NOT_RUN",
     "next": "Evidence docs then exact scope/scan/tree/CAS source347; no609 duplicate rerun"
+  },
+  "pending_modal_close_publication": {
+    "source_object": "04ca974519bfffdb70a1706066ebaef7ed26bf6b",
+    "parent": "34740802206b6bd24ec41838ba25c44980ddec6c",
+    "local_sha": "fa61c973a5c9878fb2154ada0d02b6d5fa618a09",
+    "tree": "36c0e5cb4f0842d9273105b4ae9265e99d4da2e2",
+    "checks": "PASS4 paths420add58delete secretPII0/public320/0/diff/syntax/JSON31+55/full-tree equality; root share implementation excluded; workflows equal609/public uploadsOFF",
+    "publication": "PASS expected-head CAS and actual PR head verified; one CI610 queued",
+    "next": "Attach exact610 evidence to frozen399 API; scan/full-tree/CAS04ca and one CI; preserve root UI9faa/Stop560 source separately",
+    "merge": "c506814d33c4ef39f5cb946c41121a70850ff851",
+    "run_id": 39736682268,
+    "run_number": 610,
+    "windows_compilation": "PASS exact610 build identity and native harness compilation verified",
+    "windows_native": "PASS full exact610 Test-ProGo/Desktop5281/Home1325/Portable91 and late Python28=26PASS2SKIP; new read-modal3/store9/owned-save7/write-modal7 actual private I/O cases PASS"
+  },
+  "frozen_r09_share_api": {
+    "local_source": "399e88d75e38366cefb8bcf179df4e813dc7e2f4",
+    "tree": "c45fc44e657928d73b4fd231ad42fdb79217e61d",
+    "base_local": "fa61c973a5c9878fb2154ada0d02b6d5fa618a09",
+    "worktree": "ProGo-ci610-followups",
+    "files": [
+      "src/HomeVpnAccess.cs",
+      "src/HomeVpnService.cs",
+      "src/HomeVpnShareRecovery.cs",
+      "tests/HomeVpnShareRecoveryTests.cs",
+      "tests/HomeVpnWaitingTests.cs"
+    ],
+    "scope": "5 paths314add75delete; store/service/receipt API and native tests only",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "next": "Freeze source, evidence docs after610 then scan/full-tree publication; actual UI excluded"
+  },
+  "local_r09_configure_initial_read": {
+    "source": "c5f0dda0ee65272eb1f93d743e85e8eae5b0acfd",
+    "status": "PARTIAL",
+    "implementation": "PASS narrow source actual constructor/gate background read/retained close/disposal; button save and receipt callback not yet migrated",
+    "checks": "PASS7 paths144add28delete diff/manual ownership review/syntax/C#5/public320/0/secretPII0",
+    "native_cases_written": 3,
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN; excluded frozen399 and ongoing610",
+    "next": "Actual configure owned save/ConfirmOwned button routes; new native modal persistence/receipt cases"
+  },
+  "local_r09_configure_async_persistence": {
+    "source": "17d39886ed05d15b44d90bbfe423a56395bf6057",
+    "status": "PARTIAL",
+    "implementation": "PASS source actual product typed save/ConfirmOwned; memory owner admission; physical outcomes before OK",
+    "checks": "PASS2 paths53add34delete diff/syntax/C#5/public320/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN excluded frozen399 and ongoing610",
+    "next": "8 actual modal persistence/recovery scenarios with real local HTTP/protected I/O and bounded cleanup; then separate source checking"
+  },
+  "local_r09_configure_modal_persistence": {
+    "source": "b1b2139cf3b338ca4ed965941bfab07d8158cec7",
+    "status": "PARTIAL",
+    "checks": "PASS3 paths115add5delete diff/syntax/C#5/public320/0/secretPII0",
+    "native_cases_written": 8,
+    "scope": "Actual ShowDialog +real loopback GET health/DPAPI save/request proof, explicit retry/close/dispose/accepted outcomes. Synthetic remote receipt transport only, no live VPS/TLS acceptance claim",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN excluded399 and610",
+    "next": "Freeze separate UI checking, exact610 then frozen399/API checking; trace import/paired persistence/setup receipt boundary independently"
+  },
+  "frozen_r09_configure_ui": {
+    "local_source": "9faa1eafc6006115b52244f5571537d3f495bddd",
+    "tree": "52780738e01d2d4ab22dcdae3c9650531b99598b",
+    "base_local": "399e88d75e38366cefb8bcf179df4e813dc7e2f4",
+    "worktree": "ProGo-ci610-ui",
+    "files": [
+      "src/HomeProfileShare.cs",
+      "src/HomeVpnShareRecovery.cs",
+      "tests/DesktopProfileSharingAccessibilityTests.cs",
+      "tests/HomeProfileHttpTests.cs",
+      "tests/HomeVpnOwnerWaitingTests.cs",
+      "tests/HomeVpnPreparationTests.cs",
+      "tests/HomeVpnShareRecoveryTests.cs",
+      "tests/HomeVpnWaitingTests.cs"
+    ],
+    "scope": "8 source/test paths305add60delete; ctor/actions/modal tests only; future token work excluded",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "next": "Maintain separate source freeze, after predecessor API checking add exact evidence docs and scan/tree"
+  },
+  "r09_import_consumption_trace": {
+    "source": "b1b2139cf3b338ca4ed965941bfab07d8158cec7",
+    "source_trace": "PASS narrow source, no new implementation",
+    "runtime_latency": "NOT_RUN",
+    "implementation": "TODO",
+    "preserved_contracts": [
+      "failed old-session cleanup forbids credential write",
+      "second local-save failure retains request/result",
+      "locked receipt delete cannot claim completion",
+      "same access/owner binding required before consumption",
+      "no repeated remote setup; preserve prepared token identity"
+    ],
+    "stages": [
+      "Separate physical channel stop and outer import-joining stop without self-await; preserve native lifecycle",
+      "Owned import worker immutable token/owner, cancel before admission and honest accepted/partial outcomes",
+      "Wizard awaits import and worker same-request receipt consumption; modal close/dispose/no repeat regressions"
+    ],
+    "full_crash_atomicity": "NOT_RUN; not inferred or silently redesigned"
+  },
+  "local_r09_stop_ownership_split": {
+    "source": "56084e8a5c1bbbdbaf4a72b8c4b1ea6593a2270f",
+    "status": "PARTIAL",
+    "checks": "PASS1 path25add7delete diff/manual ownership review/syntax/C#5/public320/0/secretPII0",
+    "implementation": "public stop reservation joins separate retained physical worker; no import implementation/schema change",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN existing lifecycle regressions",
+    "publication": "NOT_RUN excluded610/API399/UI9faa",
+    "next": "Test split on exact source before full import acceptance; retained immutable import API then wizard/receipt worker"
   }
 }

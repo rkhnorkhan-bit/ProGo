@@ -108,6 +108,7 @@ namespace ProGo
                     ConfirmedCleanupFailure();
                     foreach (bool failure in new[] { false, true }) DisposedVerification(failure);
                     ProofAndStorage();
+                    OwnedConfirmation();
                     check(threadFailure == null && !unrelated.HasExited, "HTTPS recovery settles without a UI exception or touching an unrelated native process");
                     check(Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Length == 0 && Directory.GetFiles(HomeVpnPrivateFiles.Root, "share-request.dat.*.new").Length == 0,
                         "HTTPS recovery cleans owned private work and atomic journal temporaries");
@@ -431,6 +432,92 @@ namespace ProGo
             foreach (string domain in new[] { "old.example.org.", "old..example.org", "-old.example.org", "old-.example.org", new string('a', 64) + ".example.org" })
                 check(Dispatch("share", null, domain) is ArgumentException && copies == 0 && Calls().Length == 0 && !File.Exists(PendingPath) && Same(before),
                     "invalid DNS labels fail before helper copy or HTTPS request registration");
+        }
+        private static void OwnedConfirmation()
+        {
+            foreach (string mode in new[] { "complete", "cancel-read", "cancel-prepared", "dispose-prepared", "accepted-cancel", "save-lock", "consume-lock", "changed-request" }) {
+                Reset("complete"); const string previousOrigin = "https://previous.example.org";
+                HomeVpnPrivateFiles.Save("share-" + HomeVpnAccess.Parse(token).ServerId, previousOrigin);
+                var request = HomeVpnShareRecovery.Register(Owner, "qr.example.org");
+                HomeVpnShareRecovery.RequireCompleted(Json.Serialize(Status(request, "complete")), request);
+                HomeVpnShareRecovery.RequireResult(Owner, request, Origin);
+                byte[] journal = File.ReadAllBytes(PendingPath), before = File.ReadAllBytes(sharePath), expectedJournal = journal;
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay))
+                using (var source = new CancellationTokenSource())
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim())
+                using (var host = new Form())
+                using (var target = new Form())
+                using (var dispatcher = new HomeProfileUiDispatcher(target)) {
+                    Task operation = null; FileStream held = null; bool released = false;
+                    int pulses = 0, workerThread = 0, saves = 0, verifications = 0, ownerChecks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                    target.Disposed += delegate { source.Cancel(); };
+                    string barrier = mode == "complete" || mode == "cancel-read" ? "read" : mode == "consume-lock" ? "consume" : mode == "changed-request" ? "commit-consume" : null;
+                    Action<string> hold = phase => {
+                        Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
+                        entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned HTTPS confirmation fixture deadline: " + phase);
+                    };
+                    try {
+                        Loop(host, delegate {
+                            target.Show(host); var watch = Stopwatch.StartNew(); var capturedAccess = service.Access;
+                            operation = HomeVpnShareRecovery.ConfirmOwnedAsync(Owner, capturedAccess, Origin,
+                                () => { Interlocked.Increment(ref verifications); return Task.FromResult(0); },
+                                (origin, cancellation) => {
+                                    Interlocked.Increment(ref saves);
+                                    return service.SetShareOriginAsync(capturedAccess, origin, cancellation, phase => {
+                                        if ((phase == "prepared" && (mode == "cancel-prepared" || mode == "dispose-prepared" || mode == "save-lock")) ||
+                                            (phase == "accepted" && mode == "accepted-cancel")) hold(phase);
+                                    });
+                                }, () => !target.IsDisposed && !target.Disposing && Object.ReferenceEquals(service.Access, capturedAccess),
+                                source.Token, action => dispatcher.DispatchAsync(delegate {
+                                    ownerChecks++; check(Thread.CurrentThread.ManagedThreadId == uiThread && !target.IsDisposed, "confirmation owner admission stays on its live UI thread: " + mode); action();
+                                }), phase => { if (phase == barrier) hold(phase); });
+                            check(watch.ElapsedMilliseconds < 500, "retained confirmation returns before any request/proof/DPAPI/file work can settle: " + mode);
+                        }, () => operation != null && operation.IsCompleted, null, null, delegate {
+                            if (released || !entered.IsSet) return;
+                            if (++pulses < 3) return;
+                            released = true;
+                            check(workerThread != uiThread && !operation.IsCompleted && journal.SequenceEqual(File.ReadAllBytes(PendingPath)),
+                                "held physical confirmation keeps the owner UI responsive and the original request until completion: " + mode);
+                            if (mode == "cancel-read" || mode == "cancel-prepared" || mode == "accepted-cancel") source.Cancel();
+                            if (mode == "dispose-prepared") target.Dispose();
+                            if (mode == "save-lock") held = File.Open(sharePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "consume-lock") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "changed-request") {
+                                var fields = Json.Deserialize<Dictionary<string, object>>(Json.Serialize(request)); fields["RequestId"] = new string('d', 32);
+                                Protect(fields); expectedJournal = File.ReadAllBytes(PendingPath);
+                            }
+                            release.Set();
+                        }, "owned-confirmation:" + mode);
+                        Exception failure = null; try { operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                        bool saved = mode == "complete" || mode == "accepted-cancel" || mode == "consume-lock" || mode == "changed-request";
+                        check(released && pulses >= 3 && (saved ? service.ShareOrigin == Origin : before.SequenceEqual(File.ReadAllBytes(sharePath))),
+                            "owned confirmation records the real protected-save outcome without rollback claims: " + mode);
+                        if (mode == "complete") check(failure == null && !File.Exists(PendingPath) && verifications == 1 && saves == 1 && ownerChecks == 2,
+                            "owned confirmation consumes only the matching receipt after real save and both live owner checks");
+                        else check(failure != null && expectedJournal.SequenceEqual(File.ReadAllBytes(PendingPath)) &&
+                            (saved ? failure is HomeVpnSharePendingException && failure.Message.Contains("адрес сохранён") : true),
+                            "cancel/disposal/real I/O error/changed request cannot consume a pending receipt or report false success: " + mode);
+                        check(Calls().Length == 0 && copies == 0 && verifications == (mode == "cancel-read" ? 0 : 1) && saves == (mode == "cancel-read" ? 0 : 1),
+                            "confirmation never submits SSH/setup and cancellation before proof read prevents verification/save: " + mode);
+                    } finally {
+                        release.Set(); source.Cancel(); if (held != null) held.Dispose();
+                        if (operation != null) JoinOwnedConfirmation(operation);
+                        service.Dispose(); var cleanup = service.StopAsync(); JoinOwnedConfirmation(cleanup);
+                        if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned HTTPS confirmation cleanup incomplete");
+                    }
+                }
+            }
+        }
+        private static void JoinOwnedConfirmation(Task operation)
+        {
+            var watch = Stopwatch.StartNew();
+            while (!operation.IsCompleted) {
+                if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned HTTPS confirmation cleanup deadline");
+                Application.DoEvents(); Thread.Sleep(1);
+            }
+            try { operation.GetAwaiter().GetResult(); } catch (Exception) { /* Outcome asserted by scenario; observe it before fixture restore. */ }
         }
         private static void ProofAndStorage()
         {
