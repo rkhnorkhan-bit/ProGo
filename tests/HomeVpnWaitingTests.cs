@@ -75,6 +75,9 @@ namespace ProGo
                 OwnedInitializationWorker(token);
                 OwnedShareRefreshWorker(token);
                 WizardShareRead(token, clipboard);
+                PreparedHomeAddressWorker();
+                OwnedHomeAddressWorker();
+                WizardHomeAddressWrite(token, clipboard);
                 foreach (string mode in new[] { "no-listener", "silent" }) {
                     foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(token, clipboard, work, mode, route);
                 }
@@ -223,6 +226,188 @@ namespace ProGo
             }
         }
         private static int UdpPort() { using (var socket = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0))) return ((IPEndPoint)socket.Client.LocalEndPoint).Port; }
+        private static void OwnedHomeAddressWorker()
+        {
+            string path = Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat");
+            byte[] original = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            {
+                int ticks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
+                try {
+                    foreach (string mode in new[] { "save", "cancel", "stop", "dispose", "accepted-stop", "accepted-dispose", "cleanup-lock" })
+                    {
+                        HomeVpnPrivateFiles.Save("home-address", "before.example"); byte[] before = File.ReadAllBytes(path);
+                        using (var relay = new Ikev2RelayService())
+                        using (var service = Service(relay))
+                        using (var entered = new ManualResetEventSlim())
+                        using (var release = new ManualResetEventSlim())
+                        using (var accepted = new ManualResetEventSlim())
+                        using (var publish = new ManualResetEventSlim())
+                        using (var cancellation = new CancellationTokenSource())
+                        {
+                            Task<bool> saving = null, stop = null; FileStream held = null; int workerThread = 0;
+                            try {
+                                var watch = Stopwatch.StartNew();
+                                saving = service.SetHomeAddressAsync(" after.example ", cancellation.Token, delegate(string stage) {
+                                    Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
+                                    if (stage == "prepared") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned address prepare fixture deadline"); }
+                                    if (stage == "accepted" && mode.StartsWith("accepted-", StringComparison.Ordinal)) { accepted.Set(); if (!publish.Wait(5000)) throw new TimeoutException("Owned accepted address fixture deadline"); }
+                                });
+                                check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(saving, service.HomeAddressWork) && service.IsSavingHomeAddress,
+                                    "service publishes one owned home address write before private I/O can settle: " + mode);
+                                int beforeTicks = ticks; Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                                check(workerThread != uiThread && !saving.IsCompleted && service.HasOwnedResources && service.HomeAddress == "before.example" &&
+                                    Object.ReferenceEquals(saving, service.SetHomeAddressAsync("after.example", CancellationToken.None)),
+                                    "held real address write keeps heartbeat, original state and duplicate physical ownership: " + mode);
+                                bool differentRefused = false; try { service.SetHomeAddressAsync("other.example", CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { differentRefused = true; }
+                                check(differentRefused, "another address cannot replace or run beside the owned pending save: " + mode);
+                                if (mode.StartsWith("accepted-", StringComparison.Ordinal)) { release.Set(); Pump(() => accepted.IsSet, 3000); }
+                                if (mode == "cancel" || mode == "cleanup-lock") cancellation.Cancel();
+                                if (mode == "cleanup-lock") held = File.Open(((HomeVpnAddressWrite)Field(service, "addressWrite")).StagingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                if (mode == "stop" || mode == "accepted-stop") { watch.Restart(); stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Stop joins actual private address I/O without blocking UI: " + mode); }
+                                if (mode == "dispose" || mode == "accepted-dispose") { watch.Restart(); service.Dispose(); stop = service.StopWork; check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Dispose retains actual private address I/O without late owner writes: " + mode); }
+                                check(!saving.IsCompleted && before.SequenceEqual(File.ReadAllBytes(path)), "pending accepted or cancelled write cannot claim a physical disk result before it settles: " + mode);
+                                release.Set(); publish.Set(); Pump(() => saving.IsCompleted && (stop == null || stop.IsCompleted), 5000);
+                                Exception failure = null; bool saved = false; try { saved = saving.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                                bool committed = mode == "save" || mode.StartsWith("accepted-", StringComparison.Ordinal);
+                                check(committed ? saved && failure == null && HomeVpnPrivateFiles.Load("home-address") == "after.example" :
+                                    (mode == "cleanup-lock" ? failure is HomeVpnLocalCleanupException : failure is OperationCanceledException && saving.IsCanceled) && before.SequenceEqual(File.ReadAllBytes(path)), "private save result distinguishes accepted commit from pre-admission cancellation: " + mode);
+                                check(service.HomeAddress == (committed && mode != "accepted-dispose" ? "after.example" : "before.example"), "disposed address owner gets no late metadata update; accepted live scope gets its actual value: " + mode);
+                                if (stop != null) check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "Stop result owns and joins both actual write and private cleanup: " + mode);
+                                if (mode == "cleanup-lock") {
+                                    check(failure is HomeVpnLocalCleanupException && service.HasOwnedResources, "failed real stage deletion retains exact write ownership instead of reporting cancellation cleanup complete");
+                                    stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
+                                    check(!stop.GetAwaiter().GetResult() && service.HasOwnedResources, "locked pending address cleanup makes actual Stop fail honestly and remain retryable");
+                                    held.Dispose(); held = null;
+                                    stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
+                                    check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "unlock then explicit Stop retries only its retained address stage cleanup");
+                                    var retry = service.SetHomeAddressAsync("after.example", CancellationToken.None); Pump(() => retry.IsCompleted, 5000);
+                                    check(retry.GetAwaiter().GetResult() && service.HomeAddress == "after.example", "new explicit save becomes available only after actual owned cleanup completes");
+                                }
+                            } finally {
+                                release.Set(); publish.Set(); cancellation.Cancel(); if (held != null) held.Dispose(); service.Dispose();
+                                var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted && service.HomeAddressWork.IsCompleted, 5000);
+                                if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned home address fixture cleanup incomplete");
+                                if (saving != null) try { saving.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (HomeVpnLocalCleanupException) { }
+                            }
+                        }
+                    }
+                } finally { heartbeat.Stop(); form.Close(); if (original == null) File.Delete(path); else File.WriteAllBytes(path, original); }
+            }
+        }
+        private static void PreparedHomeAddressWorker()
+        {
+            string target = Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat");
+            byte[] original = File.Exists(target) ? File.ReadAllBytes(target) : null;
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            {
+                int ticks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
+                try {
+                    foreach (string mode in new[] { "create", "replace", "refuse", "cancel", "locked", "changed", "stage-changed", "cleanup-lock", "accepted-cancel" })
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var cancellation = new CancellationTokenSource())
+                    using (var acceptedEntered = new ManualResetEventSlim())
+                    using (var publishRelease = new ManualResetEventSlim())
+                    {
+                        HomeVpnPrivateFiles.Save("home-address", "before.example"); if (mode == "create") File.Delete(target);
+                        byte[] before = File.Exists(target) ? File.ReadAllBytes(target) : null, stagedBefore = null;
+                        var operation = new HomeVpnAddressWrite(" after.example ");
+                        Task worker = null; FileStream held = null; int workerThread = 0, accepted = 0;
+                        try {
+                            worker = Task.Run(delegate {
+                                try {
+                                    operation.Prepare(cancellation.Token, delegate(string stage) {
+                                        Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
+                                        if (stage == "prepared") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Prepared home address fixture deadline"); }
+                                    });
+                                    operation.Commit(delegate {
+                                        if (mode == "refuse" || cancellation.IsCancellationRequested) return false;
+                                        Interlocked.Increment(ref accepted); return true;
+                                    }, delegate(string stage) {
+                                        if (mode == "accepted-cancel") { acceptedEntered.Set(); if (!publishRelease.Wait(5000)) throw new TimeoutException("Accepted address publication fixture deadline"); }
+                                    });
+                                } finally { operation.Dispose(); }
+                            }, cancellation.Token);
+                            int beforeTicks = ticks; Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                            stagedBefore = File.ReadAllBytes(operation.StagingPath);
+                            check(workerThread != uiThread && !worker.IsCompleted && HomeVpnPrivateFiles.Load(Path.GetFileNameWithoutExtension(operation.StagingPath)) == "after.example" &&
+                                (before == null ? !File.Exists(target) : before.SequenceEqual(File.ReadAllBytes(target))),
+                                "actual DPAPI staging is off UI, verified, owned and cannot replace the previous address before admission: " + mode);
+                            if (mode == "cancel" || mode == "cleanup-lock") cancellation.Cancel();
+                            if (mode == "locked") held = File.Open(target, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "cleanup-lock") held = File.Open(operation.StagingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "changed") { HomeVpnPrivateFiles.Save("home-address", "changed.example"); before = File.ReadAllBytes(target); }
+                            if (mode == "stage-changed") File.WriteAllBytes(operation.StagingPath, new byte[] { 1, 2, 3 });
+                            release.Set();
+                            if (mode == "accepted-cancel") {
+                                Pump(() => acceptedEntered.IsSet, 3000); cancellation.Cancel();
+                                check(!worker.IsCompleted && before.SequenceEqual(File.ReadAllBytes(target)), "cancellation after admission retains actual pending atomic publication without claiming rollback");
+                                publishRelease.Set();
+                            }
+                            Pump(() => worker.IsCompleted, 5000);
+                            Exception failure = null; try { worker.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                            bool success = mode == "create" || mode == "replace" || mode == "accepted-cancel";
+                            if (success) check(failure == null && accepted == 1 && HomeVpnPrivateFiles.Load("home-address") == "after.example",
+                                "accepted protected address uses actual atomic " + (mode == "create" ? "Move" : "Replace") + " without losing its new value");
+                            else {
+                                check(failure != null && (before == null ? !File.Exists(target) : before.SequenceEqual(File.ReadAllBytes(target))),
+                                    "cancel/refusal/conflict/real sharing failure preserves the actual previous or newer address bytes: " + mode);
+                                check(accepted == (mode == "locked" ? 1 : 0), "failed private write reports its exact commit admission boundary: " + mode);
+                            }
+                            if (mode == "cleanup-lock" || mode == "stage-changed") {
+                                check(File.Exists(operation.StagingPath), "failed cleanup retains this exact prepared object and its staging path for explicit retry: " + mode);
+                                if (mode == "stage-changed") {
+                                    check(File.ReadAllBytes(operation.StagingPath).SequenceEqual(new byte[] { 1, 2, 3 }), "cleanup refuses to erase a changed prepared file");
+                                    File.WriteAllBytes(operation.StagingPath, stagedBefore); // Restore only this fixture's deliberate edit.
+                                }
+                                if (held != null) { held.Dispose(); held = null; }
+                                var cleanup = Task.Run(() => operation.Dispose()); Pump(() => cleanup.IsCompleted, 5000); cleanup.GetAwaiter().GetResult();
+                            }
+                            check(!File.Exists(operation.StagingPath), "prepared address worker or explicit cleanup retry removes only its own unique stage: " + mode);
+                        } finally {
+                            release.Set(); publishRelease.Set(); cancellation.Cancel(); if (held != null) held.Dispose();
+                            if (worker != null) { Pump(() => worker.IsCompleted, 5000); try { worker.GetAwaiter().GetResult(); } catch { } }
+                            if (mode == "stage-changed" && stagedBefore != null && File.Exists(operation.StagingPath)) File.WriteAllBytes(operation.StagingPath, stagedBefore);
+                            var cleanup = Task.Run(() => operation.Dispose()); Pump(() => cleanup.IsCompleted, 5000); cleanup.GetAwaiter().GetResult();
+                        }
+                    }
+                } finally {
+                    heartbeat.Stop(); form.Close();
+                    if (original == null) File.Delete(target); else File.WriteAllBytes(target, original);
+                }
+            }
+        }
+        private static void ModalWizardCase(HomeVpnWizardForm form, Func<bool> step, Func<bool> expectedClose)
+        {
+            Exception failure = null; bool done = false, inTick = false;
+            var watch = Stopwatch.StartNew();
+            using (var driver = new System.Windows.Forms.Timer { Interval = 20 }) {
+                driver.Tick += delegate {
+                    if (done) return;
+                    if (watch.ElapsedMilliseconds > 15000) {
+                        failure = new TimeoutException("Owned modal wizard fixture deadline"); done = true; form.Dispose(); return;
+                    }
+                    if (inTick) return;
+                    inTick = true;
+                    try { done = step(); }
+                    catch (Exception ex) { failure = ex; done = true; }
+                    finally { inTick = false; }
+                    if (done) form.Dispose();
+                };
+                driver.Start();
+                try {
+                    form.ShowDialog();
+                    if (!done && !expectedClose()) throw new Exception("Modal wizard exited before its owned scenario settled; cancellation must keep the modal open");
+                    if (!done) Pump(() => done, 5000); // Explicit close/disposal still owns its actual background I/O.
+                    if (failure != null) throw failure;
+                } finally { driver.Stop(); form.Dispose(); }
+            }
+        }
         private static void WizardShareRead(string token, ClipboardService clipboard)
         {
             string shareName = "share-" + HomeVpnAccess.Parse(token).ServerId;
@@ -239,11 +424,11 @@ namespace ProGo
                 using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
                 using (var entered = new ManualResetEventSlim())
                 using (var release = new ManualResetEventSlim())
-                using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
                 using (var modalGuard = new System.Windows.Forms.Timer { Interval = 20 })
                 {
                     HomeVpnWizardForm form = null; ProGoForm dialog = null;
-                    bool shown = false, fresh = false; int ticks = 0, reads = 0, readThread = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                    bool shown = false, fresh = false, closeExpected = false; int phase = 0, turns = 0, reads = 0, readThread = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                    byte[] retryBytes = null; var expected = original.Keys.ToDictionary(path => path, File.ReadAllBytes);
                     var existingForms = Application.OpenForms.Cast<Form>().ToArray();
                     try {
                         Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
@@ -253,44 +438,140 @@ namespace ProGo
                             if (stage == "read") Interlocked.Increment(ref reads);
                             if (stage == "verify") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Wizard share reader fixture deadline"); }
                         };
-                        Invoke(form, "ShowStep", 3); form.Show();
-                        heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                        Invoke(form, "ShowStep", 3);
                         modalGuard.Tick += delegate {
                             var child = Application.OpenForms.Cast<Form>().OfType<ProGoForm>().FirstOrDefault(f => f != form && !existingForms.Contains(f) && f.Text == "QR: адрес выдачи профиля");
                             if (child == null) return;
-                            dialog = child; shown = true;
-                            fresh = Controls(child).OfType<TextBox>().Any(t => t.Text == "https://retry.example");
-                            child.Dispose(); // Only this action creates a new address dialog; no SSH/HTTP button is clicked.
+                            dialog = child; shown = true; fresh = Controls(child).OfType<TextBox>().Any(t => t.Text == "https://retry.example");
+                            child.Dispose(); // Only this action owns the new dialog; no SSH/HTTP button is clicked.
                         };
                         var button = Controls(form).OfType<Button>().Single(b => b.Text == "Настроить адрес выдачи QR…");
-                        var expected = original.Keys.ToDictionary(path => path, File.ReadAllBytes);
-                        var watch = Stopwatch.StartNew(); button.PerformClick();
-                        check(watch.ElapsedMilliseconds < 500, "actual configure action returns while its saved address read remains owned: " + route);
-                        Pump(() => entered.IsSet && ticks >= 3, 3000);
-                        check(readThread != uiThread && (bool)Field(form, "busy") && !service.ShareRefreshWork.IsCompleted && !shown && !button.Enabled,
-                            "configure waits for real off-thread protected data without modal, duplicate action or frozen UI: " + route);
-                        if (route == "cancel-retry") ((Button)Field(form, "cancelWait")).PerformClick();
-                        else if (route == "close") { form.Close(); check(form.Visible && !form.IsDisposed, "title close waits for cancelled owned share I/O before closing the wizard"); }
-                        else form.Dispose();
-                        check(!service.ShareRefreshWork.IsCompleted, "cancel and close cannot pretend a held native share read has settled: " + route);
-                        release.Set(); Pump(() => service.ShareRefreshWork.IsCompleted && !(bool)Field(form, "busy"), 5000);
-                        bool cancelled = false; try { service.ShareRefreshWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; }
-                        check(cancelled && !shown && !relay.IsRunning && !service.HasOwnedResources, "cancelled actual configure read cannot open a late modal or admit external work: " + route);
-                        foreach (var pair in expected) check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "wizard read cancellation preserves protected bytes: " + route);
-                        if (route == "cancel-retry") {
-                            check(form.Visible && button.Enabled && ((Label)Field(form, "status")).Text.Contains("Чтение адреса отменено"), "cancelled configure remains open with explicit retry available");
-                            HomeVpnPrivateFiles.Save(shareName, "https://retry.example"); byte[] retryBytes = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"));
-                            modalGuard.Start(); button.PerformClick(); Pump(() => shown && !(bool)Field(form, "busy"), 5000); modalGuard.Stop();
+                        ModalWizardCase(form, delegate {
+                            if (phase == 0) {
+                                check(form.Modal, "actual configure cancellation runs inside ShowDialog: " + route);
+                                button.PerformClick(); phase = 1; return false;
+                            }
+                            if (phase == 1) {
+                                if (!entered.IsSet || ++turns < 3) return false;
+                                check(readThread != uiThread && (bool)Field(form, "busy") && !service.ShareRefreshWork.IsCompleted && !shown && !button.Enabled &&
+                                    ((Button)Field(form, "cancelWait")).DialogResult == DialogResult.None,
+                                    "real modal configure waits responsively on owned read without implicit Cancel close: " + route);
+                                turns = 0; phase = 2;
+                                if (route == "cancel-retry") ((Button)Field(form, "cancelWait")).PerformClick();
+                                else { closeExpected = true; if (route == "close") form.Close(); else form.Dispose(); }
+                                return false;
+                            }
+                            if (phase == 2) {
+                                if (++turns < 3) return false;
+                                check(!service.ShareRefreshWork.IsCompleted && (route == "dispose" || form.Visible), "real modal cancel/close retains held read across native loop turns: " + route);
+                                release.Set(); phase = 3; return false;
+                            }
+                            if (phase == 3) {
+                                if (!service.ShareRefreshWork.IsCompleted || (bool)Field(form, "busy")) return false;
+                                bool cancelled = false; try { service.ShareRefreshWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; }
+                                check(cancelled && !shown && !relay.IsRunning && !service.HasOwnedResources, "cancelled modal configure cannot open a late dialog or admit external work: " + route);
+                                foreach (var pair in expected) check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "modal configure cancellation preserves protected bytes: " + route);
+                                if (route != "cancel-retry") { check(form.IsDisposed, "explicit modal close/disposal waits for its actual read result: " + route); return true; }
+                                check(form.Visible && button.Enabled && ((Label)Field(form, "status")).Text.Contains("Чтение адреса отменено"), "settled modal cancellation keeps explicit configure retry available");
+                                HomeVpnPrivateFiles.Save(shareName, "https://retry.example"); retryBytes = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"));
+                                phase = 4; modalGuard.Start(); button.PerformClick(); return false;
+                            }
+                            if (!shown || (bool)Field(form, "busy")) return false;
                             check(reads == 2 && fresh && form.Visible && button.Enabled && !service.InitializationFailed,
-                                "actual Cancel then Retry rereads fresh protected address and opens only its matching configure modal");
-                            check(retryBytes.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"))), "opening and cancelling the fresh address dialog does not save or rewrite its source");
-                        } else check(form.IsDisposed, "closed configure owner receives no late UI or modal after actual read settles: " + route);
+                                "actual modal Cancel then Retry rereads fresh address and opens only its matching configure dialog");
+                            check(retryBytes.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"))), "cancelling the fresh modal address dialog never rewrites its source");
+                            return true;
+                        }, () => closeExpected);
                     } finally {
-                        release.Set(); heartbeat.Stop(); modalGuard.Stop(); if (dialog != null) dialog.Dispose(); if (form != null) form.Dispose();
+                        release.Set(); modalGuard.Stop(); if (dialog != null) dialog.Dispose(); if (form != null) form.Dispose();
                         service.Dispose(); var cleanup = service.StopAsync();
                         Pump(() => cleanup.IsCompleted && service.ShareRefreshWork.IsCompleted && service.InitializationWork.IsCompleted, 5000);
                         if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Wizard share reader fixture cleanup incomplete");
                         try { service.ShareRefreshWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
+                    }
+                }
+            } finally { foreach (var pair in original) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); } }
+        }
+        private static void WizardHomeAddressWrite(string token, ClipboardService clipboard)
+        {
+            var original = new Dictionary<string, byte[]>();
+            foreach (string name in new[] { "access", "owner", "home-address" }) {
+                string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"); original[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            string addressPath = Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat");
+            try {
+                HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", "null");
+                foreach (string route in new[] { "cancel-retry", "close", "dispose", "accepted-cancel", "accepted-close", "accepted-dispose", "error-retry" })
+                {
+                    HomeVpnPrivateFiles.Save("home-address", "before.example"); byte[] before = File.ReadAllBytes(addressPath);
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var accepted = new ManualResetEventSlim())
+                    using (var publish = new ManualResetEventSlim())
+                    {
+                        HomeVpnWizardForm form = null; Task<bool> first = null; FileStream held = null; int phase = 0, turns = 0, workerThread = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                        bool afterAdmission = route.StartsWith("accepted-", StringComparison.Ordinal), closeExpected = false;
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                            form = new HomeVpnWizardForm(service, clipboard);
+                            form.BeforeHomeAddressIo = delegate(string stage) {
+                                Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
+                                if (stage == "prepared") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Wizard address prepare deadline"); }
+                                if (stage == "accepted" && afterAdmission) { accepted.Set(); if (!publish.Wait(5000)) throw new TimeoutException("Wizard accepted address deadline"); }
+                            };
+                            Invoke(form, "ShowStep", 2); ((TextBox)Field(form, "home")).Text = "after.example";
+                            ((CheckBox)Field(form, "routerCheck")).Checked = true;
+                            var next = (Button)Field(form, "next");
+                            ModalWizardCase(form, delegate {
+                                if (phase == 0) { check(form.Modal, "actual address save cancellation uses ShowDialog: " + route); next.PerformClick(); first = service.HomeAddressWork; phase = 1; return false; }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    check(workerThread != uiThread && !first.IsCompleted && (bool)Field(form, "busy") && !next.Enabled &&
+                                        ((Button)Field(form, "cancelWait")).DialogResult == DialogResult.None,
+                                        "actual modal save remains responsive and cannot implicitly close or duplicate owned write: " + route);
+                                    if (afterAdmission) { release.Set(); phase = 2; return false; }
+                                    phase = 2;
+                                }
+                                if (phase == 2) {
+                                    if (afterAdmission && !accepted.IsSet) return false;
+                                    turns = 0; phase = 3;
+                                    if (route == "error-retry") held = File.Open(addressPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    else if (route == "cancel-retry" || route == "accepted-cancel") ((Button)Field(form, "cancelWait")).PerformClick();
+                                    else { closeExpected = true; if (route == "close" || route == "accepted-close") form.Close(); else form.Dispose(); }
+                                    return false;
+                                }
+                                if (phase == 3) {
+                                    if (++turns < 3) return false;
+                                    check(!first.IsCompleted && before.SequenceEqual(File.ReadAllBytes(addressPath)) && (route.EndsWith("dispose", StringComparison.Ordinal) || form.Visible),
+                                        "modal cancellation/close waits for actual address I/O across native message turns: " + route);
+                                    release.Set(); publish.Set(); phase = 4; return false;
+                                }
+                                if (phase == 4) {
+                                    if (!first.IsCompleted || (bool)Field(form, "busy")) return false;
+                                    bool cancelled = false, saved = false; Exception failure = null;
+                                    try { saved = first.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; cancelled = ex is OperationCanceledException; }
+                                    check(route == "error-retry" ? failure is IOException && before.SequenceEqual(File.ReadAllBytes(addressPath)) :
+                                        afterAdmission ? saved && !cancelled && HomeVpnPrivateFiles.Load("home-address") == "after.example" : cancelled && before.SequenceEqual(File.ReadAllBytes(addressPath)), "actual modal result distinguishes accepted persistence from confirmed cancellation: " + route);
+                                    if (closeExpected) { check(form.IsDisposed, "explicit modal close/disposal admits no late page or controls: " + route); return true; }
+                                    check(form.Visible && next.Enabled && (int)Field(form, "step") == 2, "cancelled modal save stays open with an explicit next action: " + route);
+                                    if (afterAdmission) { check(((Label)Field(form, "status")).Text.Contains("уже сохранён"), "late cancellation reports accepted address as saved without claiming rollback"); return true; }
+                                    check(((Label)Field(form, "status")).Text.Contains(route == "error-retry" ? "Не удалось подтвердить" : "Сохранение адреса отменено"), "modal address cancellation or real file error gives an honest actionable retry result: " + route);
+                                    if (held != null) { held.Dispose(); held = null; }
+                                    phase = 5; next.PerformClick(); return false;
+                                }
+                                if ((bool)Field(form, "busy") || (int)Field(form, "step") != 3) return false;
+                                check(!Object.ReferenceEquals(first, service.HomeAddressWork) && service.HomeAddressWork.GetAwaiter().GetResult() && service.HomeAddress == "after.example",
+                                    "modal Cancel then Retry owns one fresh actual address write and advances only after its saved result");
+                                return true;
+                            }, () => closeExpected);
+                        } finally {
+                            release.Set(); publish.Set(); if (held != null) held.Dispose(); if (form != null) form.Dispose(); service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && service.HomeAddressWork.IsCompleted && service.InitializationWork.IsCompleted, 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Modal address save fixture cleanup incomplete");
+                            if (first != null) try { first.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { }
+                        }
                     }
                 }
             } finally { foreach (var pair in original) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); } }

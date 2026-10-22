@@ -201,6 +201,13 @@ namespace ProGo
         private CancellationTokenSource starting;
         private CancellationTokenSource initializing, shareRefreshing, shareRefreshCancelled;
         private Task<bool> shareRefreshWork = Task.FromResult(true);
+        private volatile HomeVpnAddressWrite addressWrite;
+        private CancellationTokenSource addressSaving, addressSaveCancelled;
+        private Task<bool> homeAddressWork = Task.FromResult(true);
+        private string addressSaveValue;
+        private bool addressCommitAccepted;
+        internal Task<bool> HomeAddressWork { get { lock (lifecycleGate) return homeAddressWork; } }
+        internal bool IsSavingHomeAddress { get { lock (lifecycleGate) return !homeAddressWork.IsCompleted; } }
         private long shareRevision;
         internal Task<bool> ShareRefreshWork { get { lock (lifecycleGate) return shareRefreshWork; } }
         private Task<bool> initializationWork = Task.FromResult(true);
@@ -220,7 +227,7 @@ namespace ProGo
         internal bool InitializationFailed { get { return initializationFailed; } }
         internal bool IsStopping { get { lock (lifecycleGate) return !stopWork.IsCompleted; } }
         internal bool IsStarting { get { lock (lifecycleGate) return !startWork.IsCompleted; } }
-        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null; } }
+        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null || addressWrite != null; } }
         internal bool StartsPaused { get { lock (lifecycleGate) return startsPaused; } }
         internal void PauseStarts() { lock (lifecycleGate) startsPaused = true; }
         internal void ResumeStarts() { lock (lifecycleGate) { if (!disposed) startsPaused = false; } }
@@ -358,12 +365,79 @@ namespace ProGo
             }
         }
 
-        internal void SetHomeAddress(string address)
+        // Compatibility fixtures may wait synchronously; the wizard uses the owned async API.
+        internal void SetHomeAddress(string address) { SetHomeAddressAsync(address, CancellationToken.None).GetAwaiter().GetResult(); }
+
+        internal Task<bool> SetHomeAddressAsync(string address, CancellationToken token, Action<string> beforeIo = null)
         {
             address = (address ?? "").Trim();
-            if (!HomeVpnAccess.ValidHost(address)) throw new ArgumentException("Введите внешний адрес домашнего роутера или DDNS, без https:// и порта.");
-            HomeVpnPrivateFiles.Save("home-address", address); HomeAddress = address;
-            if (backgroundInitialization) { loadedWarnings &= ~HomeVpnStoredStateWarning.HomeAddress; initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None; }
+            if (!HomeVpnAccess.ValidHost(address)) return FailedPrivateWrite(new ArgumentException("Введите внешний адрес домашнего роутера или DDNS, без https:// и порта."));
+            TaskCompletionSource<bool> completion; CancellationTokenSource cancellation;
+            HomeVpnAddressWrite work; Task initial;
+            lock (lifecycleGate)
+            {
+                if (token.IsCancellationRequested) return FailedPrivateWrite(new OperationCanceledException(token));
+                if (disposed) return FailedPrivateWrite(new ObjectDisposedException("HomeVpnService"));
+                if (startsPaused || !stopWork.IsCompleted) return FailedPrivateWrite(new InvalidOperationException("Дождитесь остановки или обслуживания перед сохранением адреса."));
+                if (!homeAddressWork.IsCompleted) return String.Equals(addressSaveValue, address, StringComparison.Ordinal)
+                    ? homeAddressWork : FailedPrivateWrite(new InvalidOperationException("Предыдущее сохранение адреса ещё выполняется. Дождитесь результата и повторите изменение."));
+                if (addressWrite != null) return FailedPrivateWrite(new HomeVpnLocalCleanupException("Временное сохранение адреса требует очистки. Освободите его файл и повторите остановку VPN для телефона."));
+                work = new HomeVpnAddressWrite(address); initial = initializationWork;
+                completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+                addressWrite = work; addressSaveValue = address; addressSaving = cancellation; addressCommitAccepted = false;
+                homeAddressWork = completion.Task; // Publish ownership before private filesystem/DPAPI work.
+            }
+            Task.Run(() => SaveHomeAddressOwnedAsync(work, initial, cancellation, completion, beforeIo));
+            return completion.Task;
+        }
+        private static Task<bool> FailedPrivateWrite(Exception failure)
+        {
+            var result = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (failure is OperationCanceledException) result.SetCanceled(); else result.SetException(failure);
+            return result.Task;
+        }
+        private async Task SaveHomeAddressOwnedAsync(HomeVpnAddressWrite work, Task initial, CancellationTokenSource cancellation,
+            TaskCompletionSource<bool> completion, Action<string> beforeIo)
+        {
+            Exception failure = null; bool committed = false, cleaned = false; HomeVpnAccess access = null;
+            try {
+                await initial.ConfigureAwait(false);
+                cancellation.Token.ThrowIfCancellationRequested();
+                lock (lifecycleGate) {
+                    if (disposed || addressSaveCancelled == cancellation) throw new OperationCanceledException();
+                    access = Access;
+                }
+                work.Prepare(cancellation.Token, beforeIo);
+                work.Commit(delegate {
+                    lock (lifecycleGate) {
+                        if (disposed || startsPaused || cancellation.IsCancellationRequested || addressSaveCancelled == cancellation ||
+                            !Object.ReferenceEquals(addressWrite, work) || !Object.ReferenceEquals(Access, access)) return false;
+                        addressCommitAccepted = true; return true;
+                    }
+                }, beforeIo);
+                committed = true;
+                lock (lifecycleGate) {
+                    if (!disposed && Object.ReferenceEquals(addressWrite, work) && Object.ReferenceEquals(Access, access)) {
+                        HomeAddress = work.Value;
+                        if (backgroundInitialization) { loadedWarnings &= ~HomeVpnStoredStateWarning.HomeAddress; initializationFailed = loadedWarnings != HomeVpnStoredStateWarning.None; }
+                    }
+                }
+            } catch (Exception ex) { failure = ex; }
+            try { work.Dispose(); cleaned = true; }
+            catch (Exception ex) {
+                failure = new HomeVpnLocalCleanupException("Временный файл адреса остался под управлением ProGo. Освободите файл и повторите остановку VPN для телефона; новый запуск сохранения пока недоступен.");
+                try { SafeLog.Info("Home address cleanup remains pending (" + ex.GetType().Name + ")."); } catch { }
+            }
+            lock (lifecycleGate) {
+                if (Object.ReferenceEquals(addressWrite, work)) { if (cleaned) addressWrite = null; addressCommitAccepted = false; }
+                if (addressSaving == cancellation) addressSaving = null;
+                if (addressSaveCancelled == cancellation) addressSaveCancelled = null;
+            }
+            cancellation.Dispose();
+            if (failure is OperationCanceledException) completion.TrySetCanceled();
+            else if (failure != null) completion.TrySetException(failure);
+            else completion.TrySetResult(committed);
         }
 
         internal Task StartAsync() { return StartAsync(CancellationToken.None); }
@@ -379,6 +453,7 @@ namespace ProGo
                 if (token.IsCancellationRequested) return FailedStart(new OperationCanceledException(token));
                 if (disposed) return FailedStart(new ObjectDisposedException("HomeVpnService"));
                 if (startsPaused) return FailedStart(new InvalidOperationException("ProGo завершает работу или готовит обслуживание. Запуск VPN для телефона временно недоступен."));
+                if (addressWrite != null && homeAddressWork.IsCompleted) return FailedStart(new HomeVpnLocalCleanupException("Очистка временного сохранения адреса не завершена. Повторите остановку VPN для телефона перед запуском."));
                 if (Access == null && initializationWork.IsCompleted) return FailedStart(new InvalidOperationException("Сначала добавьте VPS или вставьте токен."));
                 if (!stopWork.IsCompleted) return FailedStart(new InvalidOperationException("Остановка VPN для телефона ещё не завершена. Дождитесь очистки и повторите запуск."));
                 if (!startWork.IsCompleted) return startWork;
@@ -487,7 +562,7 @@ namespace ProGo
 
         // Only the retained start worker, or the stop worker after awaiting it,
         // may mutate this session/proxy. No process/filesystem work holds lifecycleGate.
-        private bool CleanupOwned(Action<string> beforeIo)
+        private bool CleanupOwned(Action<string> beforeIo, bool includePrivateWrite = false)
         {
             Relay.StopAsync().GetAwaiter().GetResult(); // This method belongs to an owned worker.
             if (proxy != null)
@@ -503,13 +578,20 @@ namespace ProGo
                 catch { return false; } // Keep the exact directory for explicit retry.
                 sessionDirectory = null;
             }
+            if (includePrivateWrite) {
+                var pendingAddress = addressWrite;
+                if (pendingAddress != null) {
+                    try { pendingAddress.Dispose(); } catch { return false; }
+                    lock (lifecycleGate) { if (Object.ReferenceEquals(addressWrite, pendingAddress)) addressWrite = null; }
+                }
+            }
             return true;
         }
 
         internal Task<bool> StopAsync()
         {
-            Task start, initial, shareRead;
-            CancellationTokenSource cancellation, shareCancellation;
+            Task start, initial, shareRead, addressWork;
+            CancellationTokenSource cancellation, shareCancellation, addressCancellation;
             TaskCompletionSource<bool> completion;
             Action<string> beforeIo;
             lock (lifecycleGate)
@@ -518,6 +600,8 @@ namespace ProGo
                 start = startWork; cancellation = starting; beforeIo = BeforeSessionIo;
                 initial = initializationWork; shareRead = shareRefreshWork; shareCancellation = shareRefreshing;
                 shareRefreshCancelled = shareCancellation; // Admission is cancelled before the worker can publish; native cancellation stays off UI.
+                addressWork = homeAddressWork; addressCancellation = addressCommitAccepted ? null : addressSaving;
+                addressSaveCancelled = addressCancellation; // A previously accepted atomic save remains owned until completion.
                 completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 stopWork = completion.Task; // Duplicate Stop and Start see the reservation immediately.
             }
@@ -527,10 +611,12 @@ namespace ProGo
                     // Cancellation callbacks and native disposal also belong to a worker.
                     if (cancellation != null) try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
                     if (shareCancellation != null) try { shareCancellation.Cancel(); } catch (ObjectDisposedException) { }
+                    if (addressCancellation != null) try { addressCancellation.Cancel(); } catch (ObjectDisposedException) { }
                     try { await start.ConfigureAwait(false); } catch { /* Start already reports its own failure. */ }
                     try { await initial.ConfigureAwait(false); } catch { /* Read outcome remains observable through InitializationWork. */ }
                     try { await shareRead.ConfigureAwait(false); } catch { /* Read failure remains on ShareRefreshWork; cleanup still owns the actual worker. */ }
-                    completion.TrySetResult(CleanupOwned(beforeIo));
+                    try { await addressWork.ConfigureAwait(false); } catch { /* Actual write cleanup remains inspectable and is retried below. */ }
+                    completion.TrySetResult(CleanupOwned(beforeIo, true));
                 }
                 catch (Exception ex) { completion.TrySetException(ex); }
             });
@@ -814,12 +900,14 @@ namespace ProGo
         public void Dispose()
         {
             Task<bool> work;
-            CancellationTokenSource initialCancellation, shareCancellation;
+            CancellationTokenSource initialCancellation, shareCancellation, addressCancellation;
             lock (lifecycleGate)
             {
                 if (disposed) return;
                 disposed = true;
                 initialCancellation = initializing; shareCancellation = shareRefreshing;
+                addressCancellation = addressCommitAccepted ? null : addressSaving;
+                if (addressCancellation != null) addressSaveCancelled = addressCancellation;
                 work = StopAsync(); // Reentrant metadata gate; publish before Dispose returns.
             }
             // This private source has only owned read scheduling/checkpoints,
@@ -827,6 +915,7 @@ namespace ProGo
             // earlier Stop already awaits the read; actual I/O remains owned.
             if (initialCancellation != null) try { initialCancellation.Cancel(); } catch (ObjectDisposedException) { }
             if (shareCancellation != null) try { shareCancellation.Cancel(); } catch (ObjectDisposedException) { }
+            if (addressCancellation != null) try { addressCancellation.Cancel(); } catch (ObjectDisposedException) { }
             // Do not wait for an uninterruptible native I/O call on the UI thread.
             // The task and exact session remain owned and inspectable through StopWork.
             work.ContinueWith(delegate(Task<bool> failed) { var ignored = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);

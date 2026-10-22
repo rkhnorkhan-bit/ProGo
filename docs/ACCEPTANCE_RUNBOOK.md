@@ -1,3 +1,39 @@
+## CI608 full SUCCESS — live read routes, address/modal-save excluded
+
+[CI608/39730132565](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39730132565)
+Windows119663025746/Ubuntu119663025549 SUCCESS. Exact source
+`479addfd6f711831a12e1c7b49019a446f7970ce`, merge/build identity
+`36f39fb080e0195cad40922793b298a5da500914`, tree22821ad5fdf6f654deea6eb0ab293e629b817b79
+= local8417f9a9b9d51cadeac8a29088a689d4b602c0f1. Program selects background API.
+New narrow native: real configure action actual protected read/cancel/retry
+06:08:26.982–27.238, queued close/Dispose/no late dialog06:08:27.369–744;
+production background imported-data reload06:11:56.2206615 and memory share
+getter with actual exclusive source lock06:11:56.2207408. Эти wizard parent cases
+использовали Show(), не подтверждают реальную modal CancelButton семантику.
+Новая explicit-None fix/ShowDialog regression882 в этот source не входят.
+
+Full regressions: Desktop5280/HomeVPN1195/Portable91;51/456, report32/diagnostic
+modal6/chooser3/Context ownership, selected-key signing55/UI50/prep72 и actual
+direct/owned-agent OpenSSH→SOCKS→HTTP→crash→fresh preparation, Instance28/
+Maintenance126/Shutdown47. Python28=26PASS2SKIP. Runner ZIP0.2.2 SHA256
+`cc39eef38418287617e8bc2ddb9c175a7b0bbe8474ee477b428bebc4d2bb7ab2`.
+All uploads SKIPPED; bytes не получены/не доставлены/не установлены; final setup/
+owner acceptance NOT_RUN, delivery BLOCKED до согласованного приватного канала.
+
+V1.0 I58–80, Y21.75→22 unchanged: same28 parents weight87, D0.5/P0.5/A0.
+27 прежних anchors выполнены с тем же текстом; F22 copy/import reload теперь
+имеет новый stronger background-constructor anchor того же partial критерия,
+не другой вес/уровень и не дополнительный балл. Whole R09 FAIL/R11 PARTIAL.
+
+Следующее source — frozen address draft `d6517e871854bb1d161bde55c6a3282a40339a01`
+8 source/test paths553add52delete: primitive418/servicecf29/actual modal UI882,
+9 store+7 owned-save+7 actual write-modal и3read-modal сценария написаны; compiler/
+native NOT_RUN. Добавить только exact608 evidence docs, full scan/tree и один
+expected479a publication/CI. Дальнейшие share persistence changes excluded;
+узкий trace в PROJECT_STATE сохраняет прежние owner/request/receipt boundaries.
+Не приписывать608 успех home-address writer, modal phone fix или всему R09.
+No binary/release/main merge/owner PC/VPS actions. Ниже checkpoints — история.
+
 ## CI607 full SUCCESS — staged API/gates/refresh native подтверждены
 
 [CI607/39727292233](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39727292233)

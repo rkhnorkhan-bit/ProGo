@@ -114,6 +114,10 @@ namespace ProGo
                 new[] { AppCommand.Connect, AppCommand.StopDesktop, AppCommand.StopPhone, AppCommand.StopAll, AppCommand.Settings }
                     .All(c => AppCommands.CanExecute(c, loadingPhone)),
                 "saved phone read blocks its incomplete wizard while independent desktop actions and explicit stop remain available");
+            var savingPhone = new AppCommandState(new AppCommand[0], false, false, phoneSaving: true);
+            Check(!AppCommands.CanExecute(AppCommand.Phone, savingPhone) &&
+                new[] { AppCommand.Connect, AppCommand.StopDesktop, AppCommand.StopPhone, AppCommand.StopAll, AppCommand.Settings }.All(c => AppCommands.CanExecute(c, savingPhone)),
+                "owned phone address save blocks a competing wizard while independent desktop commands and explicit stop remain available");
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
             PhoneInitializationAvailabilityWorkflow(settings);
             var original = settings.Current.Clone();

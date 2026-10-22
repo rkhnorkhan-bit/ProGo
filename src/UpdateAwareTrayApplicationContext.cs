@@ -784,7 +784,7 @@ namespace ProGo
                 SshConnection.Signature(current) == SshConnection.Signature(expected);
         }
         private AppCommandState GetCommandState()
-        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing || MaintenancePending, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending, homeVpn.IsStopping || (phoneStopObservation != null && !phoneStopObservation.IsCompleted), homeVpn.IsInitializing); }
+        { return new AppCommandState(pendingRoutes.Keys, proxy.IsConnecting || proxy.IsStopping, closing || shutdownPrepared || shutdownPreparing || MaintenancePending, IsManualBackupRunning || IsPortableRunning || IsVaultRunning, IntegrationPending, homeVpn.IsStopping || (phoneStopObservation != null && !phoneStopObservation.IsCompleted), homeVpn.IsInitializing, homeVpn.IsSavingHomeAddress); }
         private void RefreshPendingRoutes()
         {
             var state = GetCommandState();

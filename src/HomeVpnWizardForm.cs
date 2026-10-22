@@ -27,8 +27,9 @@ namespace ProGo
         private readonly Button cancelWait = new Button();
         private readonly object channelWaitGate = new object();
         private CancellationTokenSource channelWait;
-        private bool closeAfterWait, cancelledWait, stoppingChannel, readingShare, cancelledShareWait;
+        private bool closeAfterWait, cancelledWait, stoppingChannel, readingShare, cancelledShareWait, savingAddress, cancelledAddressSave;
         internal Action<string> BeforeShareRead; // Fixture boundary around the real protected-file read.
+        internal Action<string> BeforeHomeAddressIo; // Fixture boundaries surround actual protected persistence.
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
         private bool own, routerDone, recoverSetup, setupBlocked, fittingSetup;
@@ -251,8 +252,8 @@ namespace ProGo
                 else if (step == 2)
                 {
                     if (!routerDone) throw new InvalidOperationException("Сначала настройте обе записи на роутере и отметьте галочку.");
-                    service.SetHomeAddress(draftHome);
-                    verification.Reset();
+                    if (!await ownerUi.Await(SaveHomeAddress(draftHome))) return;
+                    if (closeAfterWait) return;
                 }
                 else if (step == 3 && !verification.Installed) throw new InvalidOperationException("Подтвердите установку профиля в настройках телефона. Создание QR или сохранение файла не подтверждает установку.");
                 ShowStep(step + 1);
@@ -261,7 +262,7 @@ namespace ProGo
         private async Task RunStep(Func<Task> action)
         {
             if (busy || ownerUi.Closed || IsDisposed || Disposing) return;
-            cancelledWait = closeAfterWait = cancelledShareWait = false;
+            cancelledWait = closeAfterWait = cancelledShareWait = cancelledAddressSave = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await ownerUi.Await(action()); }
             catch (HomeVpnListCancelledException ex)
@@ -283,7 +284,8 @@ namespace ProGo
             {
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     status.ForeColor = cancelledWait ? UiTheme.Muted : UiTheme.Error;
-                    status.Text = cancelledWait ? (cancelledShareWait ? "Чтение адреса отменено. Сохранённые данные остаются; можно повторить чтение."
+                    status.Text = cancelledWait ? (cancelledAddressSave ? "Сохранение адреса отменено до начала записи. Прежний адрес сохранён; можно повторить изменение."
+                        : cancelledShareWait ? "Чтение адреса отменено. Сохранённые данные остаются; можно повторить чтение."
                         : "Запуск канала отменён. Сохранённый доступ к VPS остаётся; можно повторить запуск.") : "Операция прервана. Результат не подтверждён.";
                 }
             }
@@ -305,6 +307,7 @@ namespace ProGo
                 cancelWait.Text = "Отменить запуск канала"; cancelWait.AccessibleName = cancelWait.Text;
                 cancelWait.AccessibleDescription = "Отменяет только запуск канала к VPS. Сохранённый доступ остаётся; окно ждёт остановки процессов.";
                 cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
+                cancelWait.DialogResult = DialogResult.None; // CancelButton assignment otherwise supplies an implicit modal close result.
                 UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus();
                 SetProgress("Ожидаем канал к VPS: до 10 секунд для SOCKS, затем до 10 секунд для приёмника. Можно отменить запуск; сохранённый доступ остаётся.");
                 try { await ownerUi.Await(service.StartAsync(source.Token)); SetProgress("Канал ПК → VPS запущен. Подключение VPN и интернет проверяются на телефоне отдельно."); }
@@ -326,6 +329,7 @@ namespace ProGo
                 cancelWait.Text = "Отменить чтение адреса"; cancelWait.AccessibleName = cancelWait.Text;
                 cancelWait.AccessibleDescription = "Отменяет чтение сохранённого HTTPS-адреса. Данные не изменяются; окно ждёт завершения принадлежащего ему чтения.";
                 cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
+                cancelWait.DialogResult = DialogResult.None; // CancelButton assignment otherwise supplies an implicit modal close result.
                 UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus();
                 SetProgress("Читаем сохранённый HTTPS-адрес выдачи QR. Можно отменить; данные не изменяются…");
                 try {
@@ -336,6 +340,36 @@ namespace ProGo
                 finally {
                     lock (channelWaitGate) channelWait = null;
                     readingShare = false;
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                }
+            }
+        }
+        private async Task<bool> SaveHomeAddress(string address)
+        {
+            using (var source = new CancellationTokenSource()) {
+                lock (channelWaitGate) channelWait = source;
+                savingAddress = true;
+                cancelWait.Text = "Отменить сохранение адреса"; cancelWait.AccessibleName = cancelWait.Text;
+                cancelWait.AccessibleDescription = "Отменяет ещё не принятое сохранение домашнего адреса. Если запись уже принята, окно ждёт её результата и не обещает откат.";
+                cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
+                cancelWait.DialogResult = DialogResult.None; // CancelButton assignment otherwise supplies an implicit modal close result.
+                UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus();
+                SetProgress("Сохраняем домашний адрес. Можно отменить до принятия записи; дождитесь результата…");
+                try {
+                    if (!await ownerUi.Await(service.SetHomeAddressAsync(address, source.Token, BeforeHomeAddressIo)))
+                        throw new InvalidOperationException("Сохранение домашнего адреса не подтверждено. Повторите проверку перед выдачей профиля.");
+                    verification.Reset();
+                    bool proceed = !source.IsCancellationRequested;
+                    SetProgress(proceed ? "Домашний адрес сохранён." : "Домашний адрес уже сохранён. Отмена не откатила принятую запись; можно изменить адрес или продолжить.");
+                    return proceed;
+                } catch (OperationCanceledException) { cancelledWait = source.IsCancellationRequested; cancelledAddressSave = true; throw; }
+                catch (HomeVpnLocalCleanupException) { throw; }
+                catch (IOException) { throw new InvalidOperationException("Не удалось подтвердить сохранение домашнего адреса. Освободите файл и повторите сохранение перед выдачей профиля."); }
+                catch (UnauthorizedAccessException) { throw new InvalidOperationException("Нет доступа для сохранения домашнего адреса. Проверьте доступ к личным данным ProGo и повторите сохранение."); }
+                catch (System.Security.Cryptography.CryptographicException) { throw new InvalidOperationException("Windows не подтвердила защиту домашнего адреса. Проверьте профиль текущего пользователя и повторите сохранение."); }
+                finally {
+                    lock (channelWaitGate) channelWait = null;
+                    savingAddress = false;
                     if (!ownerUi.Closed && !IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
                 }
             }
@@ -365,7 +399,8 @@ namespace ProGo
                 var source = channelWait;
                 if (source == null || source.IsCancellationRequested) return;
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) cancelWait.Enabled = false;
-                SetProgress(readingShare ? "Отменяем чтение адреса. Дождитесь завершения чтения; данные не изменяются…" : "Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
+                SetProgress(savingAddress ? "Отмена сохранения запрошена. Дождитесь результата: уже принятая запись завершается."
+                    : readingShare ? "Отменяем чтение адреса. Дождитесь завершения чтения; данные не изменяются…" : "Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
                 source.Cancel();
             }
         }
