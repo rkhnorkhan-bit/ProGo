@@ -102,6 +102,11 @@ namespace ProGo
 
         private static void SafeLogWorkerWorkflow()
         {
+            // Prior Context fixtures seal their logger. Own and drain a fresh
+            // epoch, then explicitly resume it, just like a new live Context.
+            long logOwner = SafeLog.BeginOwner();
+            WaitAsyncRestoreWithoutPump(SafeLog.SuspendOwnerAsync(logOwner), 5000);
+            SafeLog.ResumeOwner(logOwner);
             string secret = "fixture-only-never-log-" + Guid.NewGuid().ToString("N");
             const string marker = "safe-log-owned-worker-fixture";
             var captured = new System.Collections.Concurrent.ConcurrentQueue<string>();
@@ -117,7 +122,9 @@ namespace ProGo
                 pulse.Tick += delegate { ticks++; }; owner.Show(); pulse.Start();
                 try {
                     var watch = Stopwatch.StartNew(); SafeLog.Info(marker + " token=" + secret);
-                    Check(watch.ElapsedMilliseconds < 1000 && entered.Wait(3000), "actual SafeLog call returns without waiting for its held native sink");
+                    Check(watch.ElapsedMilliseconds < 1000, "actual SafeLog producer returns before waiting for its native sink");
+                    PumpAsyncRestore(() => entered.IsSet, 3000);
+                    Check(entered.IsSet, "actual SafeLog owned epoch admits the record to its held native sink");
                     SafeLog.Error(marker + " second", new IOException("password=" + secret));
                     SafeLog.Info(new String('x', BoundedLog.MaxRecordChars + 1) + " token=" + secret);
                     pending = SafeLog.FlushAsync(); PumpAsyncRestore(() => ticks >= 4, 5000);
@@ -132,7 +139,7 @@ namespace ProGo
                 }
                 finally {
                     pulse.Stop(); release.Set();
-                    try { WaitAsyncRestoreWithoutPump(SafeLog.FlushAsync(), 5000); }
+                    try { WaitAsyncRestoreWithoutPump(SafeLog.SuspendOwnerAsync(logOwner), 5000); }
                     finally { SafeLog.BeforeDiskWrite = previous; }
                 }
             }
