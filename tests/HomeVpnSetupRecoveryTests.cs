@@ -33,7 +33,7 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token);
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work);
                 // NativeRecovery calls Application.Run/ExitThread. Keep it last:
                 // later modeless timer fixtures would inherit an exited UI context.
                 NativeRecovery(token, clipboard, work);
@@ -224,9 +224,149 @@ namespace ProGo
             try { operation.GetAwaiter().GetResult(); } catch (Exception) { /* Asserted separately, observed before restoring owned fixture bytes. */ }
         }
         private static void Backup(Dictionary<string, byte[]> saved, string path) { saved[path] = File.Exists(path) ? File.ReadAllBytes(path) : null; }
-        private static void Pump(Func<bool> ready)
+        private static void AdminRequestSnapshot(string token, string work)
         {
-            var watch = Stopwatch.StartNew(); while (!ready()) { Application.DoEvents(); Thread.Sleep(10); if (watch.ElapsedMilliseconds > 12000) throw new Exception("Setup recovery fixture timeout"); } Application.DoEvents();
+            var saved = new[] { "access", HomeVpnSetupRecovery.StorageName, HomeVpnAdminRecovery.StorageName, HomeVpnShareRecovery.StorageName }
+                .ToDictionary(name => Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"), path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            var access = HomeVpnAccess.Parse(token);
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
+                try {
+                    foreach (string mode in new[] { "setup", "invite", "share", "empty", "missing-setup", "missing-invite", "missing-share", "pending-invite", "pending-share", "cancel", "corrupt", "missing-key" }) {
+                        File.Delete(PendingPath); File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnAdminRecovery.StorageName + ".dat")); File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnShareRecovery.StorageName + ".dat"));
+                        HomeVpnPrivateFiles.Save("access", token);
+                        var owner = new HomeVpnOwner { Host = access.Host, Port = access.Port, Login = "root", KeyFile = "" };
+                        string action = mode == "setup" ? "setup" : mode == "invite" || mode == "share" ? "recover-" + mode
+                            : mode.StartsWith("missing-", StringComparison.Ordinal) ? "recover-" + mode.Substring(8)
+                            : mode.StartsWith("pending-", StringComparison.Ordinal) ? mode.Substring(8) : mode == "corrupt" ? "recover-setup" : "list";
+                        string requestId = null;
+                        if (mode == "setup") requestId = HomeVpnSetupRecovery.Register(owner, "My iPhone").RequestId;
+                        if (mode == "invite" || mode == "pending-invite") requestId = HomeVpnAdminRecovery.Register(owner, "My iPhone", null).RequestId;
+                        if (mode == "share" || mode == "pending-share") requestId = HomeVpnShareRecovery.Register(owner, "profiles.example").RequestId;
+                        if (mode == "corrupt") File.WriteAllBytes(PendingPath, new byte[] { 1, 2, 3 });
+                        if (mode == "missing-key") owner.KeyFile = Path.Combine(work, "absent-selected-key-" + Guid.NewGuid().ToString("N"));
+                        string capturedKey = owner.KeyFile;
+                        var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                        Func<Task<IDisposable>> acquire = action.Contains("invite") ? (Func<Task<IDisposable>>)HomeVpnAdminRecovery.AcquireAsync
+                            : action.Contains("share") ? (Func<Task<IDisposable>>)HomeVpnShareRecovery.AcquireAsync : HomeVpnSetupRecovery.AcquireAsync;
+                        using (var entered = new ManualResetEventSlim())
+                        using (var release = new ManualResetEventSlim())
+                        using (var cancellation = new CancellationTokenSource()) {
+                            IDisposable lease = null; Task<HomeVpnAdminRequestSnapshot> operation = null; int worker = 0;
+                            try {
+                                lease = acquire().GetAwaiter().GetResult(); int beforeTicks = ticks; var watch = Stopwatch.StartNew();
+                                operation = HomeVpnAdminRequestSnapshot.LoadAsync(owner, action, "My iPhone", cancellation.Token, delegate {
+                                    Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                    if (!release.Wait(5000)) throw new TimeoutException("Admin request snapshot fixture deadline");
+                                });
+                                check(watch.ElapsedMilliseconds < 500, "admin request snapshot returns owned read before selected-key/private-file I/O: " + mode);
+                                Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                                owner.Host = "changed-after-capture.example"; owner.KeyFile = "changed-after-capture";
+                                check(worker != ui && !operation.IsCompleted && Failure(acquire()) is InvalidOperationException,
+                                    "held admin snapshot keeps UI responsive and caller's existing family lease retained: " + mode);
+                                if (mode == "cancel") cancellation.Cancel(); release.Set(); Pump(() => operation.IsCompleted, 5000);
+                                HomeVpnAdminRequestSnapshot snapshot = null; Exception failure = null; try { snapshot = operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                                bool success = mode == "setup" || mode == "invite" || mode == "share" || mode == "empty";
+                                if (success) {
+                                    var copy = snapshot == null ? null : snapshot.CopyOwner();
+                                    check(failure == null && copy != null && copy.Host == access.Host && copy.Port == access.Port && copy.KeyFile == capturedKey && snapshot.Checking == (mode != "empty")
+                                        && (mode != "setup" || snapshot.CopySetup().RequestId == requestId) && (mode != "invite" || snapshot.CopyInvite().RequestId == requestId) && (mode != "share" || snapshot.CopyShare().RequestId == requestId),
+                                        "admin worker reads the actual matching protected request and original copied owner: " + mode);
+                                    copy.Host = "edited-result.example";
+                                    check(snapshot.CopyOwner().Host == access.Host, "returned admin owner copies cannot change the retained snapshot: " + mode);
+                                } else check(mode == "cancel" ? failure is OperationCanceledException : mode == "missing-key" ? failure is ArgumentException
+                                    : action.Contains("invite") ? failure is HomeVpnAdminPendingException : action.Contains("share") ? failure is HomeVpnSharePendingException : failure is HomeVpnSetupPendingException,
+                                    "admin snapshot preserves exact missing/pending/corrupt/key/cancel refusal type without a remote action: " + mode);
+                                var after = Directory.GetFiles(HomeVpnPrivateFiles.Root);
+                                check(before.Count == after.Length && before.All(item => File.Exists(item.Key) && item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                                    "read-only admin snapshot never registers/consumes/stages or changes actual protected bytes: " + mode);
+                            } finally {
+                                release.Set();
+                                try { if (operation != null) { Pump(() => operation.IsCompleted, 5000); try { operation.GetAwaiter().GetResult(); } catch (Exception) { } } }
+                                finally { if (lease != null) lease.Dispose(); }
+                            }
+                            using (var released = acquire().GetAwaiter().GetResult()) check(released != null, "caller releases family lease only after actual snapshot settles: " + mode);
+                        }
+                    }
+                } finally { heartbeat.Stop(); form.Close(); foreach (var item in saved) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
+            }
+        }
+        private static void AdminTransportDispatch(string work)
+        {
+            foreach (string route in new[] { "ready", "before-dispose", "during-dispose", "file-fault", "worker-only" })
+            using (var form = new Form())
+            using (var dispatcher = new HomeProfileUiDispatcher(form))
+            using (var entered = new ManualResetEventSlim())
+            using (var release = new ManualResetEventSlim())
+            using (var published = new ManualResetEventSlim()) {
+                string path = Path.Combine(work, "admin-transport-" + Guid.NewGuid().ToString("N") + ".txt");
+                byte[] previous = new byte[] { 1, 2, 3, 4 }; Task physical = null, operation = null; FileStream held = null;
+                int ui = Thread.CurrentThread.ManagedThreadId, startupThread = 0, ioThread = 0, starts = 0, phase = 0, turns = 0;
+                bool closeExpected = route == "before-dispose" || route == "during-dispose";
+                var originalContext = SynchronizationContext.Current;
+                try {
+                    if (route == "file-fault") { File.WriteAllBytes(path, previous); held = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None); }
+                    Func<Task> start = delegate {
+                        Interlocked.Exchange(ref startupThread, Thread.CurrentThread.ManagedThreadId); Interlocked.Increment(ref starts);
+                        physical = Task.Run(delegate {
+                            if (!published.Wait(5000)) throw new TimeoutException("Admin transport publication fixture deadline");
+                            Interlocked.Exchange(ref ioThread, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                            if (!release.Wait(5000)) throw new TimeoutException("Admin transport physical fixture deadline");
+                            File.WriteAllText(path, "actual owned local transport");
+                        });
+                        // The worker must not expose entry before its actual Task
+                        // is assigned, including the worker-only transport case.
+                        published.Set(); return physical;
+                    };
+                    HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                        if (phase == 0) {
+                            check(form.Modal, "admin transport contract runs inside actual ShowDialog: " + route);
+                            SynchronizationContext.SetSynchronizationContext(null);
+                            if (route == "before-dispose") form.Dispose();
+                            operation = Task.Run(() => HomeVpnService.DispatchAdminTransportAsync(route == "worker-only" ? null : dispatcher, start));
+                            phase = 1; return false;
+                        }
+                        if (route == "before-dispose") {
+                            if (!operation.IsCompleted) return false;
+                            check(Failure(operation) is OperationCanceledException && starts == 0 && physical == null && !File.Exists(path) && dispatcher.PublicationCount == 0,
+                                "closed dispatcher refuses a new transport before startup without a late callback or file I/O"); return true;
+                        }
+                        if (phase == 1) {
+                            if (!entered.IsSet || ++turns < 3) return false;
+                            check(starts == 1 && physical != null && !physical.IsCompleted && !operation.IsCompleted && ioThread != ui
+                                && (route == "worker-only" ? startupThread != ui && dispatcher.PublicationCount == 0 : startupThread == ui && dispatcher.PublicationCount == 1),
+                                "admin transport starts once on its explicit owner and retains real worker I/O with lost UI context: " + route);
+                            if (route == "during-dispose") form.Dispose();
+                            turns = 0; phase = 2; return false;
+                        }
+                        if (phase == 2) {
+                            if (++turns < 3) return false;
+                            check(!physical.IsCompleted && !operation.IsCompleted && (route == "during-dispose" ? form.IsDisposed : form.Visible && form.Modal),
+                                "owner loss never completes or discards an already admitted transport task: " + route);
+                            release.Set(); phase = 3; return false;
+                        }
+                        if (!operation.IsCompleted || !physical.IsCompleted) return false;
+                        Exception failure = null; try { operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                        if (held != null) { held.Dispose(); held = null; }
+                        check(route == "file-fault" ? failure is IOException && previous.SequenceEqual(File.ReadAllBytes(path))
+                            : failure == null && File.ReadAllText(path) == "actual owned local transport",
+                            "admitted admin transport preserves actual success or original native file error despite later owner loss: " + route);
+                        check(starts == 1 && dispatcher.PublicationCount == (route == "worker-only" ? 0 : 1), "settled transport performs no late UI dispatch or duplicate action: " + route);
+                        return true;
+                    }, () => closeExpected);
+                } finally {
+                    published.Set(); release.Set(); form.Dispose();
+                    try {
+                        if (operation != null) { Pump(() => operation.IsCompleted, 5000); try { operation.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { } }
+                        if (physical != null) { Pump(() => physical.IsCompleted, 5000); try { physical.GetAwaiter().GetResult(); } catch (IOException) { } }
+                    } finally { if (held != null) held.Dispose(); if (physical == null || physical.IsCompleted) File.Delete(path); SynchronizationContext.SetSynchronizationContext(originalContext); }
+                }
+            }
+        }
+        private static void Pump(Func<bool> ready, int timeout = 12000)
+        {
+            var watch = Stopwatch.StartNew(); while (!ready()) { Application.DoEvents(); Thread.Sleep(10); if (watch.ElapsedMilliseconds > timeout) throw new Exception("Setup recovery fixture timeout"); } Application.DoEvents();
         }
         private static Exception Failure(Task task)
         {

@@ -8,7 +8,52 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: UI экспорта на точном CI625 — подготовлен отдельный кандидат
+## Текущий этап: Admin snapshot + dispatcher на точном CI626
+
+База source `ec5b0e9e2f9c52ab7437ae3b99b79d897a734262`, merge
+`041aa00c505bb88b0d1bb876c9a79f004336d23f`; [CI626/39823713132](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132)
+независимо подтверждён SUCCESS: Windows119981330817/Ubuntu119981328113. Windows build identity
+совпадает с merge; Desktop5294, все11 modal export и3 native chooser (cancel/missing/error)
+PASS в завершённом логе. Upload steps SKIPPED. Это узкий результат точной базы; прежние
+pending/NOT_RUN записи ниже отражают момент их сохранения. Методика и баллы58–80/22 неизменны,
+новый полный критерий проекта/приёмка на ПК не закрыты.
+
+Новый код `30c712c4102aa93cb5f22ac5ce101311bd8468d6`, ветка
+`work/progo-admin-api-on626-20261022`, worktree `ProGo-admin-api-on626`.
+Перенесены только a1fb9316c32537fdbdd3a30d248ebabfdd963329 и
+74f90504778f90ef9d89010e61f4ef2975e13853: src/HomeVpnService.cs и
+ tests/HomeVpnSetupRecoveryTests.cs,194 добавления/3 удаления. Snapshot сохраняет копию
+owner и читает существующие DPAPI-журналы в worker, возвращает отдельные копии запросов.
+Dispatcher запускает transport на явно выбранном UI owner и удерживает фактический Task
+после admission даже при закрытии owner. Это подготовительные API; production AdminAsync
+и существующие пользовательские маршруты в этом этапе не мигрируются.
+
+Зависимости PASS на точном ec5b0e9: HomeVpnOwner.Validate; существующие request/exception,
+Load/HasPending/AcquireAsync API в HomeVpnSetupRecovery/AdminRecovery/ShareRecovery;
+HomeProfileUiDispatcher в HomeProfileHttpWaitForm.cs (DispatchAsync/PublicationCount);
+HomeVpnWaitingTests.ModalWizardCase. Test-HomeVpnRelay.ps1 уже компилирует эти файлы,
+HomeVpnWizardTests вызывает HomeVpnSetupRecoveryTests.Run. Незавершённые ownership/cleanup,
+AdminOwnedAsync или новая invitation/HTTPS интеграция не нужны и не переносятся.
+
+17 новых native случаев:12 snapshot (setup/invite/share/empty, missing3, pending2,
+cancel/corrupt/missing-key) с реальными защищёнными файлами, lease и UI heartbeat;
+5 dispatcher (ready/before-dispose/during-dispose/file-fault/worker-only) с реальным
+ShowDialog и file I/O. Новые границы3s/5s, modal helper15s; исходный Pump default12s
+сохранён, обе группы вызываются перед NativeRecovery. Windows compilation/native17
+NOT_RUN: локальная среда Linux без PowerShell/.NET. SUCCESS626 на новый код не переносится.
+
+PASS локально: полный ручной diff, syntax/await-scope2 (не компиляция), diff --check,
+public content321/0, добавленные secret/PII0, каноническое совпадение source2 с frozen
+Admin API c1dfc6d. Исходное тело AdminAsync, UI экспорта/его тесты, весь EOF launcher/BOM,
+invitation/HTTPS файлы, workflows и VERSION побайтно совпадают с ec5b0e9.
+
+Далее в этом этапе: точный source-only tree (2 code+3 checkpoint docs), свежий PR/public/
+workflow guard, guarded fast-forward только существующей ветки PR88 и один автоматический
+PR CI. Артефакты public uploads OFF; release/main merge/выгрузка бинарников/установка
+не разрешены. После сохранения source/merge/run завершить ответ без ожидания CI и без
+следующего этапа. Сохранённые root73ebde9/UI8c89168/Admin-on622 c1dfc6d не изменяются.
+
+## История: подготовка UI экспорта на CI625
 
 База source `cc835548a51e525b4537959d414dc4a4fb17280a`, проверенный merge
 `080e54c3312d62cc72977afb94d55c3c1a4f42ce`; [CI625/39811359508](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508)

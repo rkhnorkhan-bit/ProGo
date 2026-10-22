@@ -1,4 +1,29 @@
-## Текущий проверочный кандидат: UI экспорта на CI625
+## Текущий кандидат: только Admin snapshot + dispatcher поверх CI626
+
+Проверенная база: source `ec5b0e9e2f9c52ab7437ae3b99b79d897a734262`, merge
+`041aa00c505bb88b0d1bb876c9a79f004336d23f`, [CI626 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132).
+Завершённый Windows лог подтверждает Desktop5294, export modal11/native chooser3 PASS.
+Новый код `30c712c4102aa93cb5f22ac5ce101311bd8468d6`: compiler/native17 NOT_RUN.
+
+Проверка зависимостей PASS: все используемые recovery request/lease API, owner.Validate,
+HomeProfileUiDispatcher и ModalWizardCase существуют в точной базе; текущий relay harness
+уже компилирует и вызывает новые сценарии. Ownership/cleanup/production Admin migration
+и invitation/HTTPS UI не входят в этап. Два исходных файла совпадают с сохранённым API17.
+
+Минимальный Windows прогон — существующий CI: scripts/Test-ProGo.ps1, затем
+scripts/Test-HomeVpnRelay.ps1. В новом точном build identity проверить12 snapshot случаев
+(реальные DPAPI/lease/heartbeat, исходные типы ошибок, сохранность bytes),5 dispatcher
+случаев (ShowDialog, owner loss до/после admission, native locked file error, single startup,
+retained physical Task), затем полную регрессию включая ранее подтверждённые export14.
+NOT_RUN не является PASS. Новый код не получает SUCCESS626 от базы.
+
+Локальные PASS: syntax/await-scope2, полный diff, public321/0, secretPII0; source2 only,
+полная сохранность EOF скрипта, export UI/tests, production AdminAsync, invitation/HTTPS,
+workflows/VERSION. Один guarded PR update создаёт один автоматический CI; ручной dispatch
+не нужен, public uploads OFF/release не запускается. Сохранить новый source/merge/run и
+закончить этап без ожидания CI. Веса58–80/22 неизменны, изменение0. Ниже — история.
+
+## История: проверочный кандидат UI экспорта на CI625
 
 Последняя проверенная база: source `cc835548a51e525b4537959d414dc4a4fb17280a`, merge
 `080e54c3312d62cc72977afb94d55c3c1a4f42ce`, [CI625 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508).

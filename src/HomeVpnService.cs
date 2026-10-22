@@ -175,6 +175,44 @@ namespace ProGo
         }
     }
 
+    // Read-only worker preparation. The caller retains its existing family
+    // lease through this task and subsequent command/result/cleanup work.
+    internal sealed class HomeVpnAdminRequestSnapshot
+    {
+        private readonly HomeVpnOwner owner;
+        private readonly string setup, invite, share;
+        internal readonly bool Checking;
+        private HomeVpnAdminRequestSnapshot(HomeVpnOwner owner, HomeVpnSetupRequest setup, HomeVpnAdminRequest invite, HomeVpnShareRequest share)
+        {
+            this.owner = owner; var json = new JavaScriptSerializer();
+            this.setup = setup == null ? null : json.Serialize(setup); this.invite = invite == null ? null : json.Serialize(invite); this.share = share == null ? null : json.Serialize(share);
+            Checking = setup != null || invite != null || share != null;
+        }
+        internal HomeVpnOwner CopyOwner() { return owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile }; }
+        internal HomeVpnSetupRequest CopySetup() { return setup == null ? null : new JavaScriptSerializer().Deserialize<HomeVpnSetupRequest>(setup); }
+        internal HomeVpnAdminRequest CopyInvite() { return invite == null ? null : new JavaScriptSerializer().Deserialize<HomeVpnAdminRequest>(invite); }
+        internal HomeVpnShareRequest CopyShare() { return share == null ? null : new JavaScriptSerializer().Deserialize<HomeVpnShareRequest>(share); }
+        internal static Task<HomeVpnAdminRequestSnapshot> LoadAsync(HomeVpnOwner owner, string action, string label, CancellationToken cancellation, Action beforeRead = null)
+        {
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            return Task.Run(delegate {
+                cancellation.ThrowIfCancellationRequested(); if (beforeRead != null) beforeRead(); cancellation.ThrowIfCancellationRequested();
+                if (frozen == null) throw new ArgumentException("Проверьте исходные SSH-данные владельца VPS.");
+                frozen.Validate(); // Includes actual selected-key File.Exists; worker only.
+                var setup = action == "setup" || action == "recover-setup" ? HomeVpnSetupRecovery.Load(frozen, label) : null;
+                var invite = action == "recover-invite" ? HomeVpnAdminRecovery.Load(frozen) : null;
+                var share = action == "recover-share" ? HomeVpnShareRecovery.Load(frozen) : null;
+                bool checking = setup != null || invite != null || share != null;
+                if (action == "recover-setup" && !checking) throw new HomeVpnSetupPendingException("Сохранённый запрос настройки отсутствует. Новая команда не запускалась.");
+                if (action == "recover-invite" && invite == null) throw new HomeVpnAdminPendingException("Сохранённый запрос выдачи отсутствует. Новая выдача не запускалась.");
+                if (action == "invite" && HomeVpnAdminRecovery.HasPending()) throw new HomeVpnAdminPendingException(HomeVpnAdminRecovery.PendingMessage);
+                if (action == "recover-share" && share == null) throw new HomeVpnSharePendingException("Сохранённый HTTPS-запрос отсутствует. Новая настройка не запускалась.");
+                if (action == "share" && HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
+                cancellation.ThrowIfCancellationRequested(); return new HomeVpnAdminRequestSnapshot(frozen, setup, invite, share);
+            });
+        }
+    }
+
     internal sealed class HomeVpnService : IDisposable
     {
         internal readonly Ikev2RelayService Relay;
@@ -836,6 +874,19 @@ namespace ProGo
                 result.Append('\\', c == '"' ? slashes * 2 + 1 : slashes); result.Append(c); slashes = 0;
             }
             result.Append('\\', slashes * 2); return result.Append('"').ToString();
+        }
+
+        // Only startup crosses to the UI owner. Once admitted, the actual
+        // transport task remains awaited even if that window/dispatcher closes.
+        // A null dispatcher is reserved for worker-compatible injected transports.
+        internal static async Task DispatchAdminTransportAsync(HomeProfileUiDispatcher dispatcher, Func<Task> start)
+        {
+            Task physical = null;
+            if (dispatcher == null) physical = start();
+            else if (!await dispatcher.DispatchAsync(() => physical = start()).ConfigureAwait(false))
+                throw new OperationCanceledException("Окно закрыто до запуска команды. Новая команда не запускалась.");
+            if (physical == null) throw new InvalidOperationException("Запуск команды не вернул принадлежащую ей задачу.");
+            await physical.ConfigureAwait(false);
         }
 
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)

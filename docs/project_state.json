@@ -3831,7 +3831,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "cc835548a51e525b4537959d414dc4a4fb17280a",
+  "candidate_source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3929,23 +3929,27 @@
     }
   ],
   "ci_candidate": {
-    "source": "cc835548a51e525b4537959d414dc4a4fb17280a",
-    "tested_merge": "080e54c3312d62cc72977afb94d55c3c1a4f42ce",
-    "tree": "bef4b344a28d6d882058743e6842f10bec2ba1da",
-    "run_id": 39811359508,
-    "run_number": 625,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508",
+    "source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
+    "tested_merge": "041aa00c505bb88b0d1bb876c9a79f004336d23f",
+    "tree": "47292baf0229cc0435169c60709bae92bfdacfe5",
+    "run_id": 39823713132,
+    "run_number": 626,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132",
     "status": "completed",
     "conclusion": "success",
     "jobs": {
-      "windows": 119938159124,
-      "ubuntu": 119938159595
+      "windows": 119981330817,
+      "ubuntu": 119981328113
     },
-    "windows_compilation": "PASS exact CI625 production/Desktop/HomeWaiting",
-    "windows_native": "PASS exact625 complete suite including export API5+ownership9; actual new UI14 excluded",
+    "windows_compilation": "PASS exact626 complete suite",
+    "windows_native": "PASS exact626 Desktop5294 including export modal11+native chooser3, baseline export API14 and complete regression",
+    "modal_cases": 11,
+    "native_chooser_cases": 3,
     "ubuntu": "SUCCESS",
-    "excludes": "Local reconstructed profile export UI/modal11/native chooser3; all reconstructed Admin/invitation extensions",
     "artifact_uploads": "SKIPPED all public upload guards OFF",
+    "runner_zip_sha256": "c00c8bce3a5146d76cde06c3ffe7a6f1dbc34d20636c47a08c7af921ddf82355",
+    "package_delivery": "NOT_RUN bytes not retrieved/uploaded/installed",
+    "excludes": "All reconstructed Admin snapshot/dispatcher/ownership/cleanup/invitation extensions",
     "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
@@ -5482,23 +5486,21 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Prepared exact UI export integration on CI625; one guarded PR source publication next",
-    "base_source": "cc835548a51e525b4537959d414dc4a4fb17280a",
-    "local_sha": "46cb9a253abd1aa8e2f69861e8a50ad216808ed4",
-    "local_development_sha": "46cb9a253abd1aa8e2f69861e8a50ad216808ed4",
-    "published_sha": "cc835548a51e525b4537959d414dc4a4fb17280a",
-    "tested_merge": "080e54c3312d62cc72977afb94d55c3c1a4f42ce",
-    "ci_run_id": 39811359508,
-    "ci_run_number": 625,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508",
+    "phase": "Prepared isolated Admin snapshot+dispatcher API17 on verified626; one guarded publication next",
+    "base_source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
+    "local_sha": "30c712c4102aa93cb5f22ac5ce101311bd8468d6",
+    "local_development_sha": "30c712c4102aa93cb5f22ac5ce101311bd8468d6",
+    "published_sha": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
+    "tested_merge": "041aa00c505bb88b0d1bb876c9a79f004336d23f",
+    "ci_run_id": 39823713132,
+    "ci_run_number": 626,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132",
     "ci_status": "completed",
     "ci_conclusion": "success",
-    "windows_compilation": "NOT_RUN for new UI code; previous625 PASS applies only to base",
-    "windows_native": "NOT_RUN new modal11+native chooser3",
-    "scope": "8 UI/test/harness files plus3 current checkpoint docs; Admin/invitation untouched",
-    "preserved_development_sha": "73ebde96f769962e4f086ab0af9c1a9cbca2d16f",
-    "preserved_recovery_object": "3b1090f57cc1f123bc8d0a77d5fe3d7f37c64cf3",
-    "next": "Guarded fast-forward once, capture one automatic run, persist exact source/merge/run then stop without waiting for completion",
+    "windows_compilation": "NOT_RUN for new Admin API17; base626 SUCCESS only",
+    "windows_native": "NOT_RUN snapshot12+dispatcher5",
+    "scope": "Only2 source/test files +3 checkpoint docs; all UI export/EOF/invitation/HTTPS/other Admin preserved",
+    "next": "Guarded fast-forward once, capture one automatic CI, save exact source/merge/run then stop without waiting for completion",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -5592,7 +5594,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact625 SUCCESS for its own source; new UI14 compiler/native NOT_RUN. Existing method/weights/620 credited anchors unchanged. Preserved reconstructed development is separate; owner installation A0.",
+    "candidate_note": "Exact626 SUCCESS belongs to ec5b0e9/041aa00; all export UI14 passed. New Admin snapshot12/dispatcher5 compiler/native NOT_RUN. Fixed method/weights/620 credited anchors unchanged; no new full gate, owner A0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9845,6 +9847,49 @@
         "published_windows_native": "PARTIAL positive Python launcher0 PASS; new EOF test expectation FAIL42; Desktop/phone/HomeAPI14 NOT_RUN"
       },
       "candidate_source": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952"
+    },
+    "before_admin_snapshot_dispatch_on626": {
+      "ci_candidate": {
+        "source": "cc835548a51e525b4537959d414dc4a4fb17280a",
+        "tested_merge": "080e54c3312d62cc72977afb94d55c3c1a4f42ce",
+        "tree": "bef4b344a28d6d882058743e6842f10bec2ba1da",
+        "run_id": 39811359508,
+        "run_number": 625,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508",
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": {
+          "windows": 119938159124,
+          "ubuntu": 119938159595
+        },
+        "windows_compilation": "PASS exact CI625 production/Desktop/HomeWaiting",
+        "windows_native": "PASS exact625 complete suite including export API5+ownership9; actual new UI14 excluded",
+        "ubuntu": "SUCCESS",
+        "excludes": "Local reconstructed profile export UI/modal11/native chooser3; all reconstructed Admin/invitation extensions",
+        "artifact_uploads": "SKIPPED all public upload guards OFF",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "phase": "Prepared exact UI export integration on CI625; one guarded PR source publication next",
+        "base_source": "cc835548a51e525b4537959d414dc4a4fb17280a",
+        "local_sha": "46cb9a253abd1aa8e2f69861e8a50ad216808ed4",
+        "local_development_sha": "46cb9a253abd1aa8e2f69861e8a50ad216808ed4",
+        "published_sha": "cc835548a51e525b4537959d414dc4a4fb17280a",
+        "tested_merge": "080e54c3312d62cc72977afb94d55c3c1a4f42ce",
+        "ci_run_id": 39811359508,
+        "ci_run_number": 625,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508",
+        "ci_status": "completed",
+        "ci_conclusion": "success",
+        "windows_compilation": "NOT_RUN for new UI code; previous625 PASS applies only to base",
+        "windows_native": "NOT_RUN new modal11+native chooser3",
+        "scope": "8 UI/test/harness files plus3 current checkpoint docs; Admin/invitation untouched",
+        "preserved_development_sha": "73ebde96f769962e4f086ab0af9c1a9cbca2d16f",
+        "preserved_recovery_object": "3b1090f57cc1f123bc8d0a77d5fe3d7f37c64cf3",
+        "next": "Guarded fast-forward once, capture one automatic run, persist exact source/merge/run then stop without waiting for completion",
+        "readiness_change": 0
+      },
+      "candidate_source": "cc835548a51e525b4537959d414dc4a4fb17280a"
     }
   },
   "prepared_owned_stdin_publication": {
@@ -9996,13 +10041,87 @@
     "native_chooser_cases": 3,
     "static": "PASS manual/syntax7/C#5 await-scope/diff/public321/0/added-content secretPII0; canonical unchanged EOF and protected scope",
     "eof_preservation": "PASS complete canonical script equal625 after removing sole DesktopProfileNativeChooserTests compiler argument; BOM retained",
+    "windows_compilation": "PASS exact626",
+    "windows_native": "PASS exact626 actual modal11+native chooser3",
+    "publication": "PASS current PR source and equal canonical tree; completed exact626 Windows log checked",
+    "run_id": 39823713132,
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "excluded": "All local Admin/invitation extensions; service/access/recovery/routes/workflows/VERSION unchanged625",
+    "readiness_change": 0,
+    "published_source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
+    "published_merge": "041aa00c505bb88b0d1bb876c9a79f004336d23f",
+    "published_tree": "47292baf0229cc0435169c60709bae92bfdacfe5",
+    "run_number": 626,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132",
+    "owner_pc": "NOT_RUN"
+  },
+  "previous_verified_ci626": {
+    "source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
+    "tested_merge": "041aa00c505bb88b0d1bb876c9a79f004336d23f",
+    "tree": "47292baf0229cc0435169c60709bae92bfdacfe5",
+    "run_id": 39823713132,
+    "run_number": 626,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": {
+      "windows": 119981330817,
+      "ubuntu": 119981328113
+    },
+    "windows_compilation": "PASS exact626 complete suite",
+    "windows_native": "PASS exact626 Desktop5294 including export modal11+native chooser3, baseline export API14 and complete regression",
+    "modal_cases": 11,
+    "native_chooser_cases": 3,
+    "ubuntu": "SUCCESS",
+    "artifact_uploads": "SKIPPED all public upload guards OFF",
+    "runner_zip_sha256": "c00c8bce3a5146d76cde06c3ffe7a6f1dbc34d20636c47a08c7af921ddf82355",
+    "package_delivery": "NOT_RUN bytes not retrieved/uploaded/installed",
+    "excludes": "All reconstructed Admin snapshot/dispatcher/ownership/cleanup/invitation extensions",
+    "owner_pc": "NOT_RUN"
+  },
+  "admin_snapshot_dispatch_integration_on626": {
+    "status": "PARTIAL",
+    "base_source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
+    "base_merge": "041aa00c505bb88b0d1bb876c9a79f004336d23f",
+    "base_ci": 39823713132,
+    "code_sha": "30c712c4102aa93cb5f22ac5ce101311bd8468d6",
+    "source_commits": [
+      "a1fb9316c32537fdbdd3a30d248ebabfdd963329",
+      "74f90504778f90ef9d89010e61f4ef2975e13853"
+    ],
+    "saved_api_freeze": "c1dfc6d0162bacfbe3a476d4febc3a9d7b0cf0df",
+    "branch": "work/progo-admin-api-on626-20261022",
+    "worktree": "ProGo-admin-api-on626",
+    "code_paths": [
+      "src/HomeVpnService.cs",
+      "tests/HomeVpnSetupRecoveryTests.cs"
+    ],
+    "snapshot_cases": 12,
+    "dispatcher_cases": 5,
+    "dependencies": {
+      "status": "PASS",
+      "source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262",
+      "symbols": [
+        "HomeVpnOwner.Validate",
+        "HomeVpnSetupRecovery request/Load/AcquireAsync",
+        "HomeVpnAdminRecovery request/Load/HasPending/AcquireAsync",
+        "HomeVpnShareRecovery request/Load/HasPending/AcquireAsync",
+        "HomeProfileUiDispatcher.DispatchAsync/PublicationCount",
+        "HomeVpnWaitingTests.ModalWizardCase"
+      ],
+      "harness": "Existing Test-HomeVpnRelay.ps1 explicit compiler list and HomeVpnWizardTests→HomeVpnSetupRecoveryTests.Run",
+      "unfinished_dependencies": []
+    },
+    "static": "PASS manual full diff/syntax2/await-scope/diff/public321/0/added secretPII0; canonical source2 equals saved API17",
+    "preservation": "PASS whole export UI/tests and EOF launcher/BOM unchanged; original AdminAsync body and invitation/HTTPS/workflows/VERSION unchanged626",
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
-    "publication": "TODO guarded ref update after exact canonical tree equality and fresh PR preflight",
+    "publication": "TODO guarded existing PR ref update after canonical tree equality/fresh preflight",
     "run_id": null,
     "ci_status": "NOT_RUN",
     "ci_conclusion": null,
-    "excluded": "All local Admin/invitation extensions; service/access/recovery/routes/workflows/VERSION unchanged625",
+    "production_route_binding": "TODO outside this explicitly limited stage; no AdminOwnedAsync/task ownership/cleanup migration",
     "readiness_change": 0
   }
 }
