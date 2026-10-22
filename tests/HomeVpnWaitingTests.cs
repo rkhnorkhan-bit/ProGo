@@ -75,6 +75,7 @@ namespace ProGo
                 OwnedInitializationWorker(token);
                 OwnedShareRefreshWorker(token);
                 WizardShareRead(token, clipboard);
+                ConfigureInitialization(token);
                 PreparedHomeAddressWorker();
                 OwnedHomeAddressWorker(token);
                 WizardHomeAddressWrite(token, clipboard);
@@ -440,7 +441,7 @@ namespace ProGo
                 }
             }
         }
-        private static void ModalWizardCase(HomeVpnWizardForm form, Func<bool> step, Func<bool> expectedClose)
+        internal static void ModalWizardCase(Form form, Func<bool> step, Func<bool> expectedClose)
         {
             Exception failure = null; bool done = false, inTick = false;
             var watch = Stopwatch.StartNew();
@@ -501,7 +502,9 @@ namespace ProGo
                         modalGuard.Tick += delegate {
                             var child = Application.OpenForms.Cast<Form>().OfType<ProGoForm>().FirstOrDefault(f => f != form && !existingForms.Contains(f) && f.Text == "QR: адрес выдачи профиля");
                             if (child == null) return;
-                            dialog = child; shown = true; fresh = Controls(child).OfType<TextBox>().Any(t => t.Text == "https://retry.example");
+                            dialog = child; var initializing = child as HomeProfileConfigureForm;
+                            if (initializing != null && !initializing.InitializationWork.IsCompleted) return;
+                            shown = true; fresh = Controls(child).OfType<TextBox>().Any(t => t.Text == "https://retry.example");
                             child.Dispose(); // Only this action owns the new dialog; no SSH/HTTP button is clicked.
                         };
                         var button = Controls(form).OfType<Button>().Single(b => b.Text == "Настроить адрес выдачи QR…");
@@ -545,7 +548,8 @@ namespace ProGo
                             return true;
                         }, () => closeExpected);
                     } finally {
-                        release.Set(); modalGuard.Stop(); if (dialog != null) dialog.Dispose(); if (form != null) form.Dispose();
+                        release.Set(); modalGuard.Stop(); if (dialog != null) { dialog.Dispose(); var configure = dialog as HomeProfileConfigureForm;
+                            if (configure != null) Pump(() => configure.Work.IsCompleted && configure.InitializationWork.IsCompleted && configure.PendingReadWork.IsCompleted, 5000); } if (form != null) form.Dispose();
                         service.Dispose(); var cleanup = service.StopAsync();
                         Pump(() => cleanup.IsCompleted && service.ShareRefreshWork.IsCompleted && service.InitializationWork.IsCompleted, 5000);
                         if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Wizard share reader fixture cleanup incomplete");
@@ -553,6 +557,71 @@ namespace ProGo
                     }
                 }
             } finally { foreach (var pair in original) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); } }
+        }
+        private static void ConfigureInitialization(string token)
+        {
+            string share = "share-" + HomeVpnAccess.Parse(token).ServerId;
+            var original = new Dictionary<string, byte[]>();
+            foreach (string name in new[] { "access", "owner", share, HomeVpnShareRecovery.StorageName }) {
+                string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"); original[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            try {
+                HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", "null"); HomeVpnPrivateFiles.Save(share, "https://profiles.example");
+                File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnShareRecovery.StorageName + ".dat"));
+                var expected = original.Keys.ToDictionary(path => path, path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+                foreach (string route in new[] { "ready", "close", "dispose" })
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay, true))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim()) {
+                    HomeProfileConfigureForm form = null; int phase = 0, turns = 0, workerThread = 0, actions = 0, updates = 0, ui = Thread.CurrentThread.ManagedThreadId;
+                    bool closed = false, closedAfterRead = false;
+                    try {
+                        Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                        var watch = Stopwatch.StartNew();
+                        form = HomeProfileShare.CreateConfigureForm(service,
+                            (owner, action, name, id, progress) => { actions++; throw new Exception("Unexpected initial-read SSH"); },
+                            (origin, access, cancellation) => { actions++; throw new Exception("Unexpected initial-read HTTPS"); },
+                            origin => { actions++; throw new Exception("Unexpected initial-read save"); }, delegate {
+                                Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Configure actual pending-read fixture deadline");
+                            });
+                        check(watch.ElapsedMilliseconds < 500 && !form.InitializationWork.IsCompleted, "configure constructor publishes owned loading before physical private read settles: " + route);
+                        form.FormClosed += delegate { closed = true; closedAfterRead = form.PendingReadWork.IsCompleted; };
+                        ModalWizardCase(form, delegate {
+                            if (phase == 0) {
+                                if (!entered.IsSet || ++turns < 3) return false;
+                                check(form.Modal && workerThread != ui && !form.PendingReadWork.IsCompleted && !Controls(form).OfType<TextBox>().Single().Enabled &&
+                                    !Controls(form).OfType<Button>().Single(b => b.Text == "Адрес уже настроен — проверить").Enabled && ((Button)form.CancelButton).Enabled,
+                                    "actual configure ShowDialog stays responsive with actions gated and explicit close during owned read: " + route);
+                                phase = 1; turns = 0;
+                                if (route == "close") form.Close();
+                                if (route == "dispose") {
+                                    var controls = Controls(form).ToArray(); form.Dispose();
+                                    foreach (var control in controls) { control.TextChanged += delegate { updates++; }; control.EnabledChanged += delegate { updates++; }; control.VisibleChanged += delegate { updates++; }; }
+                                }
+                                return false;
+                            }
+                            if (phase == 1) {
+                                if (++turns < 3) return false;
+                                check(!form.PendingReadWork.IsCompleted && (route == "dispose" ? form.IsDisposed : form.Visible), "configure close/disposal retains its own pending worker across native message turns: " + route);
+                                release.Set(); phase = 2; return false;
+                            }
+                            if (!form.InitializationWork.IsCompleted || !form.Work.IsCompleted || (route == "close" && form.Modal)) return false;
+                            check(route == "ready" ? form.InitializationWork.GetAwaiter().GetResult() && form.Visible && Controls(form).OfType<TextBox>().Single().Text == "https://profiles.example" && Controls(form).OfType<TextBox>().Single().Enabled :
+                                !form.InitializationWork.GetAwaiter().GetResult() && (route == "close" ? closed && closedAfterRead && !form.Visible && !form.Modal : form.IsDisposed && updates == 0),
+                                "configure read publishes only to its live owner; Close waits for physical settlement and Dispose gets no late controls: " + route);
+                            check(actions == 0 && !relay.IsRunning, "initial configure read never admits save, SSH or HTTPS: " + route);
+                            foreach (var item in expected) check(item.Value == null ? !File.Exists(item.Key) : item.Value.SequenceEqual(File.ReadAllBytes(item.Key)), "configure owned read/cancel preserves actual private source bytes: " + route);
+                            return true;
+                        }, () => route != "ready");
+                    } finally {
+                        release.Set();
+                        try { if (form != null) { form.Dispose(); Pump(() => form.Work.IsCompleted && form.InitializationWork.IsCompleted && form.PendingReadWork.IsCompleted, 5000); } }
+                        finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Configure owned initial read cleanup incomplete"); }
+                    }
+                }
+            } finally { foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
         }
         private static void WizardHomeAddressWrite(string token, ClipboardService clipboard)
         {

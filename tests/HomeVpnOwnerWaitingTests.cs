@@ -186,7 +186,7 @@ namespace ProGo
         {
             var result = new Observation(); bool started = false; Exception failure = null; var watch = Stopwatch.StartNew();
             using (var timer = new System.Windows.Forms.Timer { Interval = 20 }) {
-                main.Shown += delegate { main.BeginInvoke(new Action(delegate { started = true; try { start(); } catch (Exception ex) { failure = ex; } })); };
+                main.Shown += delegate { main.BeginInvoke(new Action(delegate { try { HomeVpnFixtureFiles.ConfigureReady(main); started = true; start(); } catch (Exception ex) { started = true; failure = ex; } })); };
                 timer.Tick += delegate {
                     result.Ticks++;
                     try {

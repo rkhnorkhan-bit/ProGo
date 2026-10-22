@@ -167,7 +167,7 @@ namespace ProGo
                 };
                 main.Shown += delegate { main.BeginInvoke(new Action(delegate {
                     if (terminal) return;
-                    started = true; try { start(); } catch (Exception ex) { remember(ex); abort(); }
+                    try { HomeVpnFixtureFiles.ConfigureReady(main); started = true; start(); } catch (Exception ex) { remember(ex); abort(); }
                 })); };
                 timer.Tick += delegate {
                     if (terminal || inTick) return;
@@ -332,7 +332,7 @@ namespace ProGo
             using (var host = new Form())
             using (var form = HomeProfileShare.CreateConfigureForm(service, (owner, action, name, id, progress) => Admin(owner, action, name, id, progress),
                 (origin, access) => { verified++; return ready.Task; }, origin => { saved++; service.SetShareOrigin(origin); })) {
-                Loop(host, delegate { form.Show(host); Button(form, "Проверить прежнюю настройку HTTPS").PerformClick(); }, () => settled && drain >= 3, null, null, delegate {
+                Loop(host, delegate { form.Show(host); HomeVpnFixtureFiles.ConfigureReady(form); Button(form, "Проверить прежнюю настройку HTTPS").PerformClick(); }, () => settled && drain >= 3, null, null, delegate {
                     if (verified == 1 && !disposed) {
                         check(SynchronizationContext.Current is WindowsFormsSynchronizationContext, "disposed HTTPS fixture retains a live owner UI context");
                         var retained = Controls(form).ToArray(); form.Dispose(); disposed = true;

@@ -193,7 +193,7 @@ namespace ProGo
                         try { await save(origin, token).ConfigureAwait(false); saved = true; }
                         catch (OperationCanceledException) { throw; }
                         catch (Exception ex) {
-                            if (ex is OutOfMemoryException) throw;
+                            if (ex is OutOfMemoryException || ex is HomeVpnLocalCleanupException) throw;
                             throw new HomeVpnSharePendingException("Не удалось подтвердить сохранение HTTPS-адреса. Запрос сохранён; повторяйте только проверку прежней настройки.");
                         }
                         ConfirmationBoundary(beforeIo, "consume", token);

@@ -123,7 +123,7 @@ namespace ProGo
             try {
                 Success(); Delays(); Cancellation(); Bounds(); Errors(); Tls();
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "null-context" }) Waiting(route);
-                WaitingSuccess(); Configure(token, false); Configure(token, true); QueuedSuccess(token, false); QueuedSuccess(token, true);
+                WaitingSuccess(); Configure(token, false); Configure(token, true); QueuedSuccess(token, false); QueuedSuccess(token, true); ConfigurePrivateSave(token);
                 check(threadFailure == null && ServicePointManager.ServerCertificateValidationCallback == validation, "HTTP fixtures cause no UI exception and preserve global certificate validation");
             } finally { Application.ThreadException -= handler; }
         }
@@ -314,7 +314,7 @@ namespace ProGo
                             Started = "2026-01-01T00:00:00+00:00", Finished = "2026-01-01T00:00:01+00:00", ResultAvailable = true }), request);
                         return Task.FromResult(HomeVpnShareRecovery.RequireResult(owner, request, Origin));
                     }, (origin, current, cancellation) => HomeProfileShare.VerifyAsync(origin, current, cancellation, 5000, server.Factory), origin => { saved++; service.SetShareOrigin(origin); })) {
-                        Loop(host, delegate { form.Show(host); SynchronizationContext.SetSynchronizationContext(null);
+                        Loop(host, delegate { form.Show(host); HomeVpnFixtureFiles.ConfigureReady(form); SynchronizationContext.SetSynchronizationContext(null);
                             Controls(form).OfType<Button>().Single(value => value.Text == "Проверить прежнюю настройку HTTPS").PerformClick();
                         }, () => settled && ticks >= 3, delegate {
                             if (!closed && server.Requests.Length == 1) {
@@ -331,6 +331,112 @@ namespace ProGo
                     check(closed && saved == 0 && admin == 1 && server.Factories == 1 && server.Requests.Length == 1 && journal.SequenceEqual(File.ReadAllBytes(pending))
                         && (oldShare == null ? !File.Exists(share) : oldShare.SequenceEqual(File.ReadAllBytes(share))) && (!dispose || updates == 0),
                         "closing/disposing real configuration during HTTP verification preserves the N journal and former address without late save: dispose=" + dispose);
+                }
+            } finally { foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
+        }
+        private static void ConfigurePrivateSave(string token)
+        {
+            string name = "share-" + access.ServerId, share = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"), pending = Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnShareRecovery.StorageName + ".dat");
+            var paths = new[] { pending, share, Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"), Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat"), Path.Combine(HomeVpnPrivateFiles.Root, "setup-request.dat") };
+            var original = paths.ToDictionary(path => path, path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            try {
+                foreach (string mode in new[] { "verify-save", "verify-close", "verify-dispose", "verify-accepted-close", "verify-error-retry", "recover-save", "recover-close", "recover-accepted-close" }) {
+                    bool recovery = mode.StartsWith("recover-", StringComparison.Ordinal), afterAdmission = mode.Contains("accepted"), retry = mode == "verify-error-retry";
+                    File.Delete(pending); File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, "setup-request.dat"));
+                    var owner = new HomeVpnOwner { Host = access.Host, Port = access.Port, Login = "root", KeyFile = "" };
+                    HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", new JavaScriptSerializer().Serialize(owner)); HomeVpnPrivateFiles.Save(name, "https://previous.example.org");
+                    byte[] before = File.ReadAllBytes(share); HomeVpnShareRequest request = recovery ? HomeVpnShareRecovery.Register(owner, new Uri(Origin).Host) : null;
+                    byte[] journal = recovery ? File.ReadAllBytes(pending) : null;
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, true))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var server = new Server((wire, stream, fixture) => fixture.Reply(stream, Health))) {
+                        HomeProfileConfigureForm form = null; Task<bool> first = null; FileStream held = null;
+                        int phase = 0, turns = 0, saves = 0, admin = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, updates = 0;
+                        bool closed = false, closedAfterSave = false;
+                        try {
+                            if (Finish(service.InitializationWork) != null) throw new Exception("Configure save fixture initial state did not settle");
+                            form = HomeProfileShare.CreateConfigureForm(service, (current, action, label, id, progress) => {
+                                Interlocked.Increment(ref admin);
+                                check(recovery && action == "recover-share" && label == null && id == null, "actual configure recovery never submits a new installation or a new domain: " + mode);
+                                return Task.Run(delegate {
+                                    HomeVpnShareRecovery.RequireCompleted(new JavaScriptSerializer().Serialize(new { Version = 1, RequestId = request.RequestId, Action = "share", State = "succeeded",
+                                        Started = "2026-01-01T00:00:00+00:00", Finished = "2026-01-01T00:00:01+00:00", ResultAvailable = true }), request);
+                                    return HomeVpnShareRecovery.RequireResult(current, request, Origin);
+                                });
+                            }, (origin, current, cancellation) => HomeProfileShare.VerifyAsync(origin, current, cancellation, 5000, server.Factory),
+                            (current, origin, cancellation) => {
+                                int attempt = Interlocked.Increment(ref saves);
+                                return service.SetShareOriginAsync(current, origin, cancellation, stage => {
+                                    if (attempt != 1 || stage != (afterAdmission ? "accepted" : "prepared")) return;
+                                    Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                    if (!release.Wait(5000)) throw new TimeoutException("Actual configure protected-save fixture deadline");
+                                });
+                            });
+                            form.FormClosed += delegate { closed = true; closedAfterSave = service.PrivateAddressWork.IsCompleted; };
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    if (!form.InitializationWork.IsCompleted) return false;
+                                    check(form.Modal && form.InitializationWork.GetAwaiter().GetResult(), "actual configure save/recovery starts inside a ready ShowDialog: " + mode);
+                                    Controls(form).OfType<TextBox>().Single().Text = recovery ? "ignored.example.org" : Origin;
+                                    Controls(form).OfType<Button>().Single(b => b.Text == (recovery ? "Проверить прежнюю настройку HTTPS" : "Адрес уже настроен — проверить")).PerformClick();
+                                    phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    first = service.PrivateAddressWork;
+                                    check(worker != ui && !first.IsCompleted && form.Modal && form.Visible && !Controls(form).OfType<TextBox>().Single().Enabled &&
+                                        before.SequenceEqual(File.ReadAllBytes(share)) && server.Requests.Length == 1 && saves == 1,
+                                        "actual configure keeps native heartbeat, one real HTTP health and one owned physical save until settlement: " + mode);
+                                    if (retry) held = File.Open(share, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    phase = 2; turns = 0;
+                                    if (mode.EndsWith("close", StringComparison.Ordinal)) form.Close();
+                                    if (mode == "verify-dispose") {
+                                        var controls = Controls(form).ToArray(); form.Dispose();
+                                        foreach (var control in controls) { control.TextChanged += delegate { updates++; }; control.EnabledChanged += delegate { updates++; }; control.VisibleChanged += delegate { updates++; }; }
+                                    }
+                                    return false;
+                                }
+                                if (phase == 2) {
+                                    if (++turns < 3) return false;
+                                    check(!first.IsCompleted && (mode == "verify-dispose" ? form.IsDisposed : form.Visible), "configure Close/Dispose retains actual protected write across native loop turns: " + mode);
+                                    release.Set(); phase = 3; return false;
+                                }
+                                if (phase == 3 && retry) {
+                                    if (!form.Work.IsCompleted || !first.IsCompleted) return false;
+                                    check(first.IsFaulted && before.SequenceEqual(File.ReadAllBytes(share)) && form.Modal && Controls(form).OfType<TextBox>().Single().Enabled &&
+                                        Controls(form).OfType<Label>().Any(l => l.AccessibleName == "Результат настройки HTTPS-выдачи" && l.Text.Contains("сохранить")),
+                                        "real share-file replace failure keeps modal and original bytes with an actionable explicit retry");
+                                    held.Dispose(); held = null; phase = 4;
+                                    Controls(form).OfType<Button>().Single(b => b.Text == "Адрес уже настроен — проверить").PerformClick(); return false;
+                                }
+                                if (!form.Work.IsCompleted || !service.PrivateAddressWork.IsCompleted || (mode != "verify-dispose" && form.Modal)) return false;
+                                bool success = mode.EndsWith("save", StringComparison.Ordinal) || retry, persisted = success || afterAdmission;
+                                check(persisted ? HomeVpnPrivateFiles.Load(name) == Origin : before.SequenceEqual(File.ReadAllBytes(share)), "modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: " + mode);
+                                check(success ? form.DialogResult == DialogResult.OK && closed && closedAfterSave : form.DialogResult != DialogResult.OK &&
+                                    (mode == "verify-dispose" ? form.IsDisposed && updates == 0 : closed && closedAfterSave && !form.Visible),
+                                    "configure acknowledges only physically completed save/receipt, and cancelled/disposed owners get no late success: " + mode);
+                                check(recovery ? (success ? !File.Exists(pending) : journal.SequenceEqual(File.ReadAllBytes(pending))) : !File.Exists(pending),
+                                    "modal recovery consumes only its completed saved receipt; cancellation retains the exact original request: " + mode);
+                                check(admin == (recovery ? 1 : 0) && saves == (retry ? 2 : 1) && server.Requests.Length == (retry ? 2 : 1) && server.Requests.All(wire => wire.Method == "GET" && wire.Path == "/health"),
+                                    "actual configure retries only after an explicit click and never replays setup or creates a profile: " + mode);
+                                return true;
+                            }, () => true);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose();
+                            try {
+                                if (form != null) {
+                                    form.Dispose(); Exception workFailure = Finish(form.Work), initialFailure = Finish(form.InitializationWork), readFailure = Finish(form.PendingReadWork);
+                                    if (workFailure != null || initialFailure != null || readFailure != null) throw new Exception("Configure modal work cleanup incomplete");
+                                }
+                            } finally {
+                                service.Dispose(); var cleanup = service.StopAsync();
+                                try { if (Finish(cleanup) != null || !cleanup.GetAwaiter().GetResult()) throw new Exception("Configure modal private-write cleanup incomplete"); }
+                                finally { if (first != null) { var observed = Finish(first); } }
+                            }
+                        }
+                    }
                 }
             } finally { foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
         }

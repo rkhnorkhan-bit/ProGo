@@ -1,12 +1,143 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `04ca974519bfffdb70a1706066ebaef7ed26bf6b`, tree `36c0e5cb4f0842d9273105b4ae9265e99d4da2e2`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a`, tree `7da84ab401825c7483d62770ad73114003d57a9a`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## CI611 full SUCCESS — share API, actual UI migration still excluded
+
+[CI611/39740277423](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39740277423)
+Windows119695558302/Ubuntu119695558139 SUCCESS. Source
+`d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a`, merge/build identity0.2.2+
+`f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7`, tree7da84ab401825c7483d62770ad73114003d57a9a
+= localee240bcc5abd69f48dbd0be73283239da5d59b24. Native store9 home+9 share and
+invalid-ID5/origin4 refusals, service-save7 home+9 share including stale server/
+Access and cross-kind write exclusion PASS07:47:42–46.8 receipt worker cases PASS
+07:51:29.407–30.706: actual protected save, live UI checks, cancel/dispose, real
+replace/delete locks and changed request keep exact recovery. Actual configure
+still uses legacy sync callback at this source; no inherited UI9faa/import success.
+
+Full Desktop5281/HomeVPN1521/Portable91; diagnostics modal6/chooser3/Context ownership,
+selected-key signing55/UI50/prep72 +actual direct/owned-agent OpenSSH→SOCKS→HTTP→crash/
+fresh preparation, Instance28/Maintenance126/Shutdown47; Python28=26PASS2SKIP.
+Runner ZIP0.2.2 SHA256 `321759f1a32fc1c8bfc7250b3fa482ed2687b22f22f91eb685c65ef7bbc9d021`.
+Pack PASS, uploads SKIPPED all; bytes not retrieved/delivered/installed. Private
+delivery BLOCKED until approved channel; installer/owner acceptance NOT_RUN.
+Same28 score anchors exact611 with same criterion text/weight87/D0.5/P0.5/A0=>
+21.75/display22, delta0. I58–80, full R09 FAIL/R11 PARTIAL; no target readiness claim.
+
+Independent source `fc257e151856d7e9224c4fe6b1db75dc11b66749`: setup HasPending/
+PendingOwner/ConfirmConsumed worker APIs, copied inputs and cancellation/memory
+admission, rechecked same request/result and both actual saved credentials before
+Delete. Seven native read/cancel/scope/real lock/new request/new credentials vectors
+written,98add10delete in2 files; source/syntax/public320/0/secretPII0 PASS, native/
+compilation NOT_RUN. Actual wizard still calls sync adapter and synchronous setup
+constructor/status probes; these are explicitly remaining R09, not closed.
+
+Frozen later import API: local `99ad0031e48a5e420d6149d2025a5345a6893bb9`, tree
+8b8b432942c88a0582ffb30cd29d113dd6fa5803 in ProGo-import-api based UI9faa.5 source/
+test paths444add32delete (Stop560,pair7bb,service4a,setupfc), exact root source
+match; token/owner format unchanged, partial-save honest, no crash-atomicity claim.
+All compilation/native NOT_RUN; later wizard changes excluded. Next publish only
+frozen UI9faa+exact611 evidence docs after scan/tree, one CI; preserve import API
+source separately while actual wizard/initial setup probes migrate. Ниже история.
+
+## R09 owned import service — local4a4f934, wizard caller still synchronous
+
+Source `4a4f93434e58a270db0f2bea52303f48db04e9a5`: UseTokenAsync reserves immutable
+trimmed token/copied owner, task/CTS before parse/Stop/private I/O; exact duplicate
+joins across phases, different input/private write/start refuse. Worker parses,
+awaits initial state, snapshots previous scope, awaits private physical StopChannel
+(no import self-await), reads optional share state, stages access/owner and admits
+commit only for live matching scope. Pair metadata publishes after both physical
+writes; cancellation before admission preserves bytes, accepted save may finish,
+second write failure is typed partial and keeps old live metadata. Retained failed
+stage cleanup blocks writes/import until explicit Stop cleanup retry. Owner input
+mutations after capture cannot change the persisted identity.
+
+Outer public Stop closes import admission before off-UI cancellation, awaits
+physical stop and ImportWork even after a physical stop error, then retries only
+owned import cleanup. Dispose returns without waiting and retains this same task;
+accepted write completes with no disposed-service metadata. Legacy UseToken now
+sync compatibility adapter; actual wizard/ConfirmConsumed still await migration,
+so whole R09 remains FAIL. No setup request consumed, no extra SSH/setup action.
+
+9 native service vectors written: save/cancel/stop/dispose/accepted-stop/accepted-
+dispose/real second-file sharing error/cleanup-lock→unlock→Stop→Retry/stale Access,
+with duplicate identity, fixed owner copy, blocked parallel writes/start, original
+receipt byte preservation and5s bounded held I/O/cleanup. Two paths202add19delete
+source/manual ownership review/syntax/C#5/public320/0/secretPII0 PASS, compilation/
+native NOT_RUN. Excluded611/frozen9faa UI. Stop560 +pair7bb +service4a remain later
+checking source. Next actual wizard captures/imports via owned await and worker
+same-request setup-consumption check; preserve preparedToken/owner ID to avoid
+remote replay, then real modal import Cancel/close/accepted outcomes. I58–80/Y22
+exact610 unchanged; current611 Windows build in_progress, Ubuntu SUCCESS.
+
+## R09 staged import pair primitive — local7bb6451, not yet service/UI
+
+Source `7bb6451ea8d611b5dfd753a7165d9736a0e02df3`: HomeVpnImportWrite owns two
+fixed-name access/owner HomeVpnAddressWrite stages, prepares/protects/verifies both
+on worker before admission, exposes actual AccessCommitted/OwnerCommitted flags.
+Accepted cancellation finishes the known pair; second-file failure is partial,
+not a claimed rollback. Every Dispose attempts both owned stages and retains any
+failed/changed one for exact retry. No new schema/journal/remote action or setup
+receipt consumption; this is not a crash-atomic two-file transaction. Existing
+single-address commit validation extracted unchanged for reuse.
+
+9 native vectors written: real valid before/after tokens and DPAPI owner, save,
+cancel/refuse, changed owner, first/second target sharing failures, accepted Cancel,
+locked cleanup→unlock retry and changed-stage preservation. Live UI heartbeat,
+5s owned barriers/join/cleanup and finally exact private byte restoration. Old
+setup request bytes preserved; no token/private key/owner path printed. Two paths
+124add1delete source/manual diff/syntax/public320/0/secretPII0 PASS. Compilation/
+native NOT_RUN; factory not yet connected to service or wizard, excluded611 and
+frozen9faa UI. Stop560 still untested. Next retained import ownership worker must
+parse/capture before physical channel Stop, reserve task/CTS before I/O, join on
+outer Stop without self-await, block concurrent writes/start, preserve partial
+state and retryable cleanup, publish only to live matching owner. Then actual
+wizard and setup-consumption worker with no repeated external setup. I58–80/Y22
+exact610 unchanged; R09 FAIL/R10 partial and target acceptance remain open.
+
+## CI611 running — published frozen share API, UI/Stop excluded
+
+PR88 actual head `d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a`, merge
+`f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7`, tree7da84ab401825c7483d62770ad73114003d57a9a
+= localee240bcc5abd69f48dbd0be73283239da5d59b24. One automatic
+[CI611/39740277423](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39740277423),
+Windows119695558302 in_progress (build), Ubuntu119695558139 SUCCESS. Initial run
+lookup was empty until webhook appeared; no duplicate manual workflow dispatched.
+CAS expected04ca→d896 PASS, independent actual PR head/merge/run verified.
+5 frozen API source/test paths +3 evidence docs, full tree/secretPII/public/diff/
+syntax/JSON PASS; automatic binary uploads OFF, no release. Current compilation/
+native NOT_RUN pending exact completed log. Last full SUCCESS610 only source04ca/
+mergec506; its28 score anchors remain current evidence. Root UI9faa and Stop560
+not published/tested by611. No source-head/document-only pushes while611 active.
+
+Next independent microtask: staged access+owner persistence primitive under fixed
+private destinations, immutable inputs, real DPAPI/file locks/cancel/partial-save/
+owned cleanup tests. Preserve existing recovery contract and truthful partial write
+outcomes; no new format, no crash-atomicity claim. Then retained import ownership
+using split physical/public stop; actual wizard awaits import/receipt later.
+I58–80/Y22 raw21.75 unchanged, no credit for pending611 or unexecuted local code.
+Ниже object-before-CAS checkpoint — история, не повторять ref update.
+
+## Frozen share API objectd896 — ref CAS pending
+
+Source object `d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a`, expected parent04ca974519bfffdb70a1706066ebaef7ed26bf6b,
+full tree `7da84ab401825c7483d62770ad73114003d57a9a` = isolated local
+`ee240bcc5abd69f48dbd0be73283239da5d59b24` (ProGo-ci610-followups).8 paths937add155delete:
+5 frozen API source/test paths +3 exact610 evidence docs. Actual UI9faa/Stop560
+implementation excluded. Full-delta syntax/C#5/diff/JSON31+55/public320/0/actionable
+secretPII0 (one reserved synthetic URL fixture reviewed)/full-tree equality PASS.
+Fresh PR head04ca/base4bb and public visibility verified, workflows/VERSION
+unchanged, automatic uploads OFF and release not triggered.610 completed SUCCESS.
+Ref update NOT_RUN at this checkpoint; inspect actual PR head/run after interruption
+before any retry. Next CAS expected04ca→d896, one PR CI, record merge/run/jobs.
+New compilation/native NOT_RUN; I58–80/Y22 exact610 unchanged. No binary upload.
 
 ## CI610 full SUCCESS — home-address/modal block accepted in isolated Windows
 

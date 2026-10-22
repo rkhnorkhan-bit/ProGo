@@ -1,3 +1,64 @@
+## CI611 full SUCCESS — share API, actual UI migration still excluded
+
+[CI611/39740277423](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39740277423)
+Windows119695558302/Ubuntu119695558139 SUCCESS. Source
+`d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a`, merge/build identity0.2.2+
+`f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7`, tree7da84ab401825c7483d62770ad73114003d57a9a
+= localee240bcc5abd69f48dbd0be73283239da5d59b24. Native store9 home+9 share and
+invalid-ID5/origin4 refusals, service-save7 home+9 share including stale server/
+Access and cross-kind write exclusion PASS07:47:42–46.8 receipt worker cases PASS
+07:51:29.407–30.706: actual protected save, live UI checks, cancel/dispose, real
+replace/delete locks and changed request keep exact recovery. Actual configure
+still uses legacy sync callback at this source; no inherited UI9faa/import success.
+
+Full Desktop5281/HomeVPN1521/Portable91; diagnostics modal6/chooser3/Context ownership,
+selected-key signing55/UI50/prep72 +actual direct/owned-agent OpenSSH→SOCKS→HTTP→crash/
+fresh preparation, Instance28/Maintenance126/Shutdown47; Python28=26PASS2SKIP.
+Runner ZIP0.2.2 SHA256 `321759f1a32fc1c8bfc7250b3fa482ed2687b22f22f91eb685c65ef7bbc9d021`.
+Pack PASS, uploads SKIPPED all; bytes not retrieved/delivered/installed. Private
+delivery BLOCKED until approved channel; installer/owner acceptance NOT_RUN.
+Same28 score anchors exact611 with same criterion text/weight87/D0.5/P0.5/A0=>
+21.75/display22, delta0. I58–80, full R09 FAIL/R11 PARTIAL; no target readiness claim.
+
+Independent source `fc257e151856d7e9224c4fe6b1db75dc11b66749`: setup HasPending/
+PendingOwner/ConfirmConsumed worker APIs, copied inputs and cancellation/memory
+admission, rechecked same request/result and both actual saved credentials before
+Delete. Seven native read/cancel/scope/real lock/new request/new credentials vectors
+written,98add10delete in2 files; source/syntax/public320/0/secretPII0 PASS, native/
+compilation NOT_RUN. Actual wizard still calls sync adapter and synchronous setup
+constructor/status probes; these are explicitly remaining R09, not closed.
+
+Frozen later import API: local `99ad0031e48a5e420d6149d2025a5345a6893bb9`, tree
+8b8b432942c88a0582ffb30cd29d113dd6fa5803 in ProGo-import-api based UI9faa.5 source/
+test paths444add32delete (Stop560,pair7bb,service4a,setupfc), exact root source
+match; token/owner format unchanged, partial-save honest, no crash-atomicity claim.
+All compilation/native NOT_RUN; later wizard changes excluded. Next publish only
+frozen UI9faa+exact611 evidence docs after scan/tree, one CI; preserve import API
+source separately while actual wizard/initial setup probes migrate. Ниже история.
+
+## CI611 running — published frozen share API, UI/Stop excluded
+
+PR88 actual head `d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a`, merge
+`f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7`, tree7da84ab401825c7483d62770ad73114003d57a9a
+= localee240bcc5abd69f48dbd0be73283239da5d59b24. One automatic
+[CI611/39740277423](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39740277423),
+Windows119695558302 in_progress (build), Ubuntu119695558139 SUCCESS. Initial run
+lookup was empty until webhook appeared; no duplicate manual workflow dispatched.
+CAS expected04ca→d896 PASS, independent actual PR head/merge/run verified.
+5 frozen API source/test paths +3 evidence docs, full tree/secretPII/public/diff/
+syntax/JSON PASS; automatic binary uploads OFF, no release. Current compilation/
+native NOT_RUN pending exact completed log. Last full SUCCESS610 only source04ca/
+mergec506; its28 score anchors remain current evidence. Root UI9faa and Stop560
+not published/tested by611. No source-head/document-only pushes while611 active.
+
+Next independent microtask: staged access+owner persistence primitive under fixed
+private destinations, immutable inputs, real DPAPI/file locks/cancel/partial-save/
+owned cleanup tests. Preserve existing recovery contract and truthful partial write
+outcomes; no new format, no crash-atomicity claim. Then retained import ownership
+using split physical/public stop; actual wizard awaits import/receipt later.
+I58–80/Y22 raw21.75 unchanged, no credit for pending611 or unexecuted local code.
+Ниже object-before-CAS checkpoint — история, не повторять ref update.
+
 ## CI610 full SUCCESS — home-address/modal block accepted in isolated Windows
 
 [CI610/39736682268](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39736682268)

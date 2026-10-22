@@ -694,6 +694,17 @@ namespace ProGo
     // complete file so that signal cannot expose File.WriteAllText's open writer.
     internal static class HomeVpnFixtureFiles
     {
+        internal static void ConfigureReady(Form form)
+        {
+            var dialog = form as HomeProfileConfigureForm; if (dialog == null) return;
+            var watch = Stopwatch.StartNew();
+            while (!dialog.InitializationWork.IsCompleted) {
+                if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Configure fixture initial read deadline");
+                Application.DoEvents(); Thread.Sleep(1);
+            }
+            if (!dialog.InitializationWork.GetAwaiter().GetResult()) throw new Exception("Configure fixture initial read did not publish usable state");
+        }
+
         internal static void Publish(string path, string value, Action beforeClose = null)
         {
             string pending = path + "." + Guid.NewGuid().ToString("N") + ".tmp";

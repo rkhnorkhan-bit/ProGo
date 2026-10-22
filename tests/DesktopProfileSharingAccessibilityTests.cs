@@ -23,7 +23,8 @@ namespace ProGo
                     typeof(HomeVpnService).GetProperty("Owner", PrivateInstance).SetValue(service, owner
                         ? new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "example", KeyFile = "" } : null, null);
                     using (var form = HomeProfileShare.CreateConfigureForm(service)) {
-                        form.Show(); Application.DoEvents();
+                        form.Show(); PumpUntil(() => form.InitializationWork.IsCompleted);
+                        Check(form.InitializationWork.GetAwaiter().GetResult(), "share keyboard fixture waits for the actual owned initial read before interacting");
                         var address = Descendants(form).OfType<TextBox>().Single(); var close = (Button)form.CancelButton;
                         var install = Descendants(form).OfType<Button>().Single(b => b.Text == "Настроить HTTPS на VPS");
                         var verify = Descendants(form).OfType<Button>().Single(b => b.Text == "Адрес уже настроен — проверить");
@@ -35,11 +36,11 @@ namespace ProGo
                             close.AccessibilityObject.Description.Contains("без сохранения"), "share address actions distinguish server setup, verification and dismissal");
                         address.Text = "http://vpn.example.org"; address.Focus(); dialogKey.Invoke(form, new object[] { Keys.Enter }); Application.DoEvents();
                         Check(status.Text == "" && form.DialogResult == DialogResult.None, "share address Enter never starts setup or verification");
-                        verify.PerformClick(); Application.DoEvents();
+                        verify.PerformClick(); PumpUntil(() => form.Work.IsCompleted);
                         Check(status.Text.Contains("Укажите HTTPS-домен") && status.AccessibilityObject.Description == status.Text &&
                             address.Enabled && verify.Enabled && install.Enabled && close.Enabled && service.ShareOrigin == null,
                             "invalid share address exposes current textual error and restores actions without saving or making a request");
-                        if (owner) { install.PerformClick(); Application.DoEvents(); Check(status.AccessibilityObject.Description == status.Text && service.ShareOrigin == null,
+                        if (owner) { install.PerformClick(); PumpUntil(() => form.Work.IsCompleted); Check(status.AccessibilityObject.Description == status.Text && service.ShareOrigin == null,
                             "invalid setup input also fails before SSH and leaves address unchanged"); }
                         KeyboardWalk(form, owner ? new Control[] { address, install, verify, close } : new Control[] { address, verify, close }, "share address after validation error owner=" + owner);
                         Shot(form, owner ? "keyboard-share-owner" : "keyboard-share-friend");
