@@ -1,4 +1,4 @@
-param([string]$Scripts, [switch]$Isolated)
+﻿param([string]$Scripts, [switch]$Isolated)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: real clipboard preview test requires isolated Windows CI'; return }
