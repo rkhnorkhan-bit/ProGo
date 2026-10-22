@@ -45,7 +45,7 @@ try {
             if ($preview.Text.Length -eq 0) { return }
             $script:seen = $true
             $script:previewText = $preview.Text
-            if (-not $preview.ReadOnly -or $preview.Text.Contains('private-helper-fixture') -or -not $preview.Text.Contains('UPDATE_FAILED')) { throw 'Unsafe or empty updater preview' }
+            if (-not $preview.ReadOnly -or $preview.Text.Contains('private-helper-fixture') -or -not $preview.Text.Contains('UPDATE_FAILED') -or -not $preview.Text.Contains('Версия: 0.2.2')) { throw 'Unsafe or empty updater preview' }
             if ($script:copyReport) {
                 $actions = @($layout.Controls | Where-Object { $_ -is [Windows.Forms.FlowLayoutPanel] })[0]
                 $actions.Controls[0].PerformClick()

@@ -1,12 +1,145 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `693de8abda98f48108cea97624cbf9cd165b376d`, tree `789f87c6aaab9748a43be493ec175451b2f43e0e`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `4dd4987cf6f453847931820a6f9ba1298f99f802`, tree `71a53965acd9d4eb19b6fbe6a9a691693d6b56b6`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## Test-suite boundary fix — explicit SSH fixture discovery preserved
+
+Пять SSH server contract tests переименованы в ssh_loopback_fixture_tests.py,
+Test-ProGo.ps1 явно запускает новый pattern в том же подготовленном pinned
+PYTHONPATH и с прежним90с budget. Число/содержание тестов не уменьшено; actual
+native Linux new-name suite5 PASS за4.237с. Git rename сохраняет историю.
+
+Причина: Test-HomeVpnRelay.ps1 позднее делает discover test_*.py уже после
+restore environment и setup другого Python. Старое имя случайно импортировало
+SSH test без его dependency environment. Clean local Python discovery old-name
+дал1 import error при отсутствии глобального Paramiko (без запуска сценариев).
+Новый filename не входит в relay pattern; mandatory prepared launch остаётся
+в Test-ProGo. Это отдельный исправленный harness-boundary source defect, не
+отключение проверки и не утверждение о результате ещё работающего CI592.
+
+CI592 сейчас repository build SUCCESS, relay step in_progress; старое имя
+входит в его source4dd4987c. До exact log не объявлять end-to-end SUCCESS.
+Windows new discovery wiring NOT_RUN. Следующий checking tree включает этот
+отдельный rename commit и R08 блок; source/secret/workflow scan перед push,
+после completion592, без дубликата. Evidence11(CI591), прирост0 за rename.
+
+## R08 checking scope — source syntax/dependencies reviewed, Windows pending
+
+Текущий code checkpoint `f7ec7f2cc95bb723ee111f1ba58e2d5ce31fc0cd` содержит7
+логических R08 этапов отдельными commits. Diff к isolated47f03e3:14 files,
+827 additions/158 deletions (до этого checkpoint текста), без workflows/VERSION.
+Tree-sitter0.25.2/C#grammar0.23.1: все10 изменённых C# files parse PASS,0 ERROR/
+missing nodes. Это только syntax, не C# typecheck/compilation/native. Инструмент
+установлен только в /tmp, не стал product/CI dependency. Public318/0, JSON и
+diff PASS; shared BoundedLog.cs сохраняет Core/bootstrap/installed helper source
+связи, новый LogOpenOperation включается существующим src wildcard desktop build.
+
+Минимальный поддержанный Windows-прогон — scripts/Test-ProGo.ps1 на новом
+точном source/merge (narrow Desktop selector отсутствует):
+- BoundedLog existing rotation/privacy + new capacity/single-sink/pause/resume/
+  refusal/exception lifetime vectors; Core bootstrap и installed Add-Type compile.
+- Actual SafeLog held sink/heartbeat/redaction,3 epoch assertions,2 Context logger
+  shutdown/Dispose scenarios;4 open worker cases,6 actual log/folder route cases.
+-6 actual modal Cancel→Retry cases (4 прежних +2 installed VERSION),3 native
+  chooser cases,3 Diagnostic Context ownership cases; fresh installed helper
+  privacy/clipboard/header tests. Old loaded-API transition отдельно NOT_RUN.
+- Existing full Desktop/instance/maintenance/shutdown/portable and real SSH
+  direct/agent/recovery regression; runner package/hash только после success.
+
+CI592 source4dd4987c НЕ содержит этот R08 code. Не отправлять новый head до
+completion592; затем one checking tree с secrets/PII/workflow scan и один CI.
+Новые tests ещё NOT_RUN, score11(CI591), прирост0 за parser/review/commits.
+Остаток R08: installed updater cold dot-source/Add-Type и его PS Open-UpdateLog/
+Open-ProGoFolder/Write-UpdateLog GUI I/O. Source confirmed; actual slow-I/O
+Windows reproduction/acceptance NOT_RUN, не объявлять эти пути исправленными.
+
+## F31-R08 этап7 — installed VERSION читается в preview worker, local NOT_RUN
+
+Diagnostics-ProGo.ps1 больше не выполняет Test-Path/OpenText/Read VERSION в
+Click. Новый ShowInstalled(root) сначала показывает пустой shared modal UI,
+затем tracked Build worker читает максимум32 chars, проверяет отмену до/после
+native read и передаёт snapshot существующему allowlisted builder. Missing/
+denied/invalid version становится unknown; raw VERSION текст не экспортируется.
+Cancel не объявляет незавершённый I/O завершённым, Retry вновь читает version.
+
+2 дополнительных настоящих ShowDialog Cancel→Retry cases (click/Escape) держат
+version-read boundary, сохраняют responsive loop/одного owner/cleanup; после
+отмены меняют VERSION0.2.2→0.2.3, принимается только fresh header и fresh log.
+Установленный fresh PowerShell helper test также требует header0.2.2 и прежнюю
+privacy/copy гарантию. Все прежние deadlines3с/8с/cleanup5с сохранены.
+Source/diff/public318/0 PASS; C#/PS/native Windows NOT_RUN, не входят в592.
+
+Совместимость при update: уже загруженный old API может не иметь ShowInstalled,
+хотя helper script уже заменён. Metadata feature detection вызывает старый
+Show(root,'') с честной unknown версией без нового UI file read; actual old-API
+transition native NOT_RUN, не объявляется принятой интеграцией.
+
+Уточнение прежнего source finding: normal Initialize-UpdateWindow заранее
+компилирует diagnostic types до error-dialog. Cold Add-Type на Click остаётся
+возможен в early-error/fresh helper path, а dot-source/PS helper log/folder I/O
+тоже отдельный остаток. Этот шаг устраняет только unconditional VERSION read,
+не закрывает весь R08. Native root log/queue/folder/version блок ещё ждёт своего
+checking SHA после592. Evidence11(CI591), прирост0 за source.
+
+## F31-R08 этап6 — folder/backups actions на owned worker, local NOT_RUN
+
+OpenProGoFolder/OpenBackups используют тот же tracked open workflow. Фиксированный
+requested path вычисляется без I/O; Ensure/CreateDirectory и native Explorer
+start выполняет worker. directoryOnly mode не проверяет/не создаёт log file.
+Все4 viewer commands имеют общий pending owner и защищены от duplicate launch;
+settings/routes не блокируются этим локальным просмотром. Error остаётся на
+UI, пути корректно quoted, принятый пользовательский Explorer не завершается
+при закрытии ProGo. Shutdown/Dispose с прежним budget сохраняют ownership и
+отменяют admission до позднего launch; fixed error теперь относится к файлу/
+папке, не ошибочно только к журналу.
+
+4 дополнительных actual command-route cases (2 folders × shutdown/ForceDispose)
+используют настоящий собственный native child вместо системного Explorer.
+Проверяют подготовку выбранной папки, heartbeat, duplicate/cancel/retry, один
+cleanup и unchanged installed bytes. finally всегда release до cleanup,
+свои native child handles и read-only fixture attributes очищаются также при
+ошибке/timeout предыдущего ожидания. Source/diff/public318/0 PASS; Windows
+compilation/native NOT_RUN, не входят в592. Согласованные функции не расширены.
+
+R08 source блок теперь охватывает logger +3 viewer paths, но ещё требует exact
+Windows и installed updater cold diagnostics UI path. Последний не закрыт;
+slow target disk/owner measurements также NOT_RUN. Evidence11(CI591), прирост0.
+Далее — source acceptance checklist/secret scan R08 checking tree и текущий
+CI592; после его completion отдельная проверка всех этих новых Native cases.
+
+## CI592 — delimiter fix опубликован, один run в работе
+
+Head PR88 `4dd4987cf6f453847931820a6f9ba1298f99f802`, merge
+`4cf49375895d64e79a951bfc926a01502f9a7352`, tree
+`71a53965acd9d4eb19b6fbe6a9a691693d6b56b6` = isolated local47f03e3bc8f054305d810095a3bfc6128c494cb1.
+Единственный [CI592/39698918707](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39698918707)
+in_progress. Source scan5files/347lines0 secrets/PII, public317/0/diff/tree PASS,
+expected-head update без force. Новый Windows compilation/native NOT_RUN до
+logs; прежний591 observed FAIL не превращается в592 PASS. Source-import root
+`964bf83fb22d40f931d38de972475607a52baa19`; R08 log/queue code до5d30993 остаётся
+отдельным неотправленным блоком. Следующий шаг: same run592 exact logs;
+независимо довести folder/backups viewer через тот же owned worker, затем
+один Windows checking tree R08 после592. Evidence11/raw10.50 остаётся у591;
+0 баллов за source/push. Releases/binary uploads/main merge/целевой ПК/VPS/
+system settings не выполнялись.
+
+## Delimiter fix object создан, ref update PENDING
+
+Local fix `47f03e3bc8f054305d810095a3bfc6128c494cb1`, GitHub object
+`4dd4987cf6f453847931820a6f9ba1298f99f802`, одинаковый tree
+`71a53965acd9d4eb19b6fbe6a9a691693d6b56b6`. Scan5files/347addedlines:
+secret/PII0, public317/0, diff/tree equality PASS; workflows/VERSION/launcher
+не менялись. Следующий шаг — expected-head693de8ab →4dd4987c без force и один
+автоматический новый CI. При обрыве сначала проверить PR88/runs, не повторять
+внешнюю операцию вслепую. Root импортировал только два code files+docs, R08
+работа сохранена отдельными commits и в fixed checking tree отсутствует.
+Windows этого fix NOT_RUN; evidence11 относится к591, прирост0 за commit.
 
 ## CI591 delimiter-fix candidate — source only, separate from R08
 

@@ -607,7 +607,7 @@ try {
     $env:PYTHONPATH = $FixtureDeps
     $env:PROGO_TEST_SSH_PYTHON = $FixturePython
     $env:PROGO_TEST_SSH_FIXTURE_SCRIPT = Join-Path $Root 'tests\ssh_loopback_fixture.py'
-    Invoke-IsolatedSshFixtureTool @('-m', 'unittest', 'discover', '-s', ('"' + (Join-Path $Root 'tests') + '"'), '-p', 'test_ssh_loopback_fixture.py', '-v') 'contract' 90000
+    Invoke-IsolatedSshFixtureTool @('-m', 'unittest', 'discover', '-s', ('"' + (Join-Path $Root 'tests') + '"'), '-p', 'ssh_loopback_fixture_tests.py', '-v') 'contract' 90000
     & $DesktopHarness (Join-Path $Root 'build\desktop-shots')
     if ($LASTEXITCODE -ne 0) { Fail 'Desktop tests failed' }
 } finally {

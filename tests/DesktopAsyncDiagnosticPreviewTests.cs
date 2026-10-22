@@ -25,6 +25,8 @@ namespace ProGo
                 AsyncDiagnosticModalCancelRetry(root, false, true);
                 AsyncDiagnosticModalCancelRetry(root, true, false);
                 AsyncDiagnosticModalCancelRetry(root, true, true);
+                AsyncDiagnosticModalCancelRetry(root, false, false, true);
+                AsyncDiagnosticModalCancelRetry(root, false, true, true);
                 AsyncDiagnosticClose(root, "build", false);
                 AsyncDiagnosticClose(root, "build", true);
                 AsyncDiagnosticClose(root, "save", false);
@@ -100,11 +102,12 @@ namespace ProGo
                 finally { release.Set(); form.Dispose(); WaitAsyncRestoreWithoutPump(form.Work); }
             }
         }
-        private static void AsyncDiagnosticModalCancelRetry(string root, bool saving, bool escape)
+        private static void AsyncDiagnosticModalCancelRetry(string root, bool saving, bool escape, bool installedVersion = false)
         {
             var source = Path.Combine(root, "modal-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(source);
             var log = Path.Combine(source, "progo.log"); var destination = Path.Combine(source, "reviewed.txt");
             File.WriteAllText(log, "SOCKS start requested.\n");
+            if (installedVersion) File.WriteAllText(Path.Combine(source, "VERSION"), "0.2.2");
             int builds = 0, writes = 0, stage = 0, ticks = 0, afterCancel = 0, afterRetry = 0;
             string snapshot = null, accepted = null; Task first = null, retry = null; Exception failure = null;
             CancellationToken firstToken = default(CancellationToken);
@@ -118,7 +121,7 @@ namespace ProGo
                         phase == "save" ? Interlocked.Increment(ref writes) : 0;
                     // First build has already read the old log: cancellation must
                     // discard its real report even when publication is delayed.
-                    if ((!saving && phase == "owner-completion" && Volatile.Read(ref builds) == 1) || (saving && phase == "save" && attempt == 1)) {
+                    if ((!saving && phase == (installedVersion ? "version-read" : "owner-completion") && Volatile.Read(ref builds) == 1) || (saving && phase == "save" && attempt == 1)) {
                         firstToken = token; firstEntered.Set();
                         if (!releaseFirst.Wait(3000)) throw new TimeoutException("modal first phase deadline");
                     }
@@ -126,7 +129,7 @@ namespace ProGo
                         retryEntered.Set();
                         if (!releaseRetry.Wait(3000)) throw new TimeoutException("modal retry phase deadline");
                     }
-                }))
+                }, readInstalledVersion: installedVersion))
             using (var pulse = new System.Windows.Forms.Timer { Interval = 10 })
             {
                 var deadline = Stopwatch.StartNew();
@@ -155,6 +158,7 @@ namespace ProGo
                             Check(form.Visible && form.IsBusy && !first.IsCompleted && Object.ReferenceEquals(first, form.StartBuildAsync()),
                                 "modal cancellation preserves single flight across subsequent native message-loop turns");
                             File.WriteAllText(log, "SOCKS listener is ready.\n");
+                            if (installedVersion) File.WriteAllText(Path.Combine(source, "VERSION"), "0.2.3");
                             releaseFirst.Set(); stage = 3;
                         }
                         if (stage == 3 && first.IsCompleted && !form.IsBusy) {
@@ -181,7 +185,8 @@ namespace ProGo
                             accepted = AsyncDiagnosticText(form);
                             Check(!retry.IsFaulted && form.Visible && form.ReportReady &&
                                 (saving ? accepted == snapshot && File.ReadAllText(destination) == snapshot :
-                                    accepted.Contains("SOCKS_READY") && !accepted.Contains("SOCKS_START")),
+                                    accepted.Contains("SOCKS_READY") && !accepted.Contains("SOCKS_START") &&
+                                    (!installedVersion || accepted.Contains("Версия: 0.2.3") && !accepted.Contains("Версия: 0.2.2"))),
                                 "modal retry publishes only its fresh report or the exact reviewed save snapshot");
                             afterRetry = ticks; stage = 6;
                         }

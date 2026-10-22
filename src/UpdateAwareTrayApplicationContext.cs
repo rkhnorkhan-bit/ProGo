@@ -51,6 +51,14 @@ namespace ProGo
         private Task diagnosticSettling = Task.FromResult(false);
         internal Func<string, string, DiagnosticPreviewForm> DiagnosticFormFactory;
         internal Task DiagnosticWork { get { return diagnosticForm == null ? diagnosticSettling : diagnosticForm.Work; } }
+        private readonly long logOwner;
+        private Task logWriterSettling = Task.FromResult(false);
+        internal Task LogWriterWork { get { return logWriterSettling; } }
+        private LogOpenOperation logOpening;
+        private Task logOpenSettling = Task.FromResult(false);
+        internal Task LogOpenWork { get { return logOpenSettling; } }
+        internal Action<CancellationToken> LogOpenIoProbe;
+        internal Action<string> LogViewerLaunch;
         private readonly bool ownsHealth;
         private readonly Timer statusTimer = new Timer { Interval = 1000 };
         private Timer startupShowTimer;
@@ -124,6 +132,7 @@ namespace ProGo
             this.beforeBaselineProbe = beforeBaselineProbe;
             if (backupShutdownTimeoutMilliseconds < 1 || backupShutdownTimeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("backupShutdownTimeoutMilliseconds");
             this.backupShutdownTimeoutMilliseconds = backupShutdownTimeoutMilliseconds;
+            logOwner = SafeLog.BeginOwner();
             createPortableForm = portableFormFactory ?? (exporting => new HomeVpnPortableForm(exporting, HomeVpnPrivateFiles.Root));
             PortableWork = Task.FromResult(false);
             createUpdateForm = updateFormFactory ?? (() => new UpdateCheckForm());
@@ -745,7 +754,9 @@ namespace ProGo
         private void RefreshPendingRoutes()
         {
             var state = GetCommandState();
-            foreach (var item in commandItems) item.Value.Enabled = AppCommands.CanExecute(item.Key, state);
+            foreach (var item in commandItems) item.Value.Enabled = AppCommands.CanExecute(item.Key, state) &&
+                (logOpening == null || item.Key != AppCommand.OpenAppLog && item.Key != AppCommand.OpenUpdateLog &&
+                    item.Key != AppCommand.OpenFolder && item.Key != AppCommand.OpenBackups);
             if (backupStatusItem != null) {
                 backupStatusItem.Text = "Состояние копии: " + (IsBackupRunning ? "операция выполняется…" :
                     String.IsNullOrEmpty(backupStatus) ? "ещё не проверена" : lastBackupFailed ? "ошибка" : lastBackupCancelled ? "отменено" : "готова");
@@ -1194,6 +1205,12 @@ namespace ProGo
         }
         private async Task<bool> PrepareShutdownCore(bool dialog, BackupWorkSession preservedBackup)
         {
+            bool prepared = false;
+            try { prepared = await PrepareShutdownOwnedCore(dialog, preservedBackup).ConfigureAwait(false); return prepared; }
+            finally { if (!prepared && !closing && !disposed) SafeLog.ResumeOwner(logOwner); }
+        }
+        private async Task<bool> PrepareShutdownOwnedCore(bool dialog, BackupWorkSession preservedBackup)
+        {
             ObserveVaultDate();
             shutdownPreparing = true; automaticTunnelIntent++;
             pendingRoutes.Clear(); RefreshPendingRoutes();
@@ -1206,10 +1223,18 @@ namespace ProGo
                 if (!ReferenceEquals(backupActivity, preservedBackup) || preservedBackup == null) CancelBackup();
                 CancelPortable();
                 CancelShortcutMigration();
+                logWriterSettling = SafeLog.SuspendOwnerAsync(logOwner);
+                var logOpen = CancelLogOpening();
                 var diagnostic = CancelDiagnosticPreview();
                 if (sshAgentStartup != null) sshAgentStartup.Close();
-                if (!diagnostic.IsCompleted && await Task.WhenAny(diagnostic, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != diagnostic)
-                    throw new InvalidOperationException("Диагностика ещё не завершена: накопитель не завершил чтение или запись. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
+                var logAndDiagnostic = Task.WhenAll(logOpen, diagnostic, logWriterSettling);
+                if (!logAndDiagnostic.IsCompleted && await Task.WhenAny(logAndDiagnostic, Task.Delay(settingsShutdownTimeoutMilliseconds)).ConfigureAwait(false) != logAndDiagnostic)
+                    throw new InvalidOperationException(!logWriterSettling.IsCompleted ?
+                        "Запись журнала ещё не завершена: накопитель не завершил операцию. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание." : !logOpen.IsCompleted ?
+                        "Открытие файла или папки ещё не завершено: накопитель или Windows не завершили операцию. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание." :
+                        "Диагностика ещё не завершена: накопитель не завершил чтение или запись. ProGo остаётся запущенным; дождитесь завершения и повторите выход или обслуживание.");
+                await logWriterSettling.ConfigureAwait(false);
+                await logOpen.ConfigureAwait(false);
                 // Cancellation/fixed export failures are already shown by the
                 // form. Only actual settlement is a prerequisite for handoff.
                 try { await diagnostic.ConfigureAwait(false); } catch (Exception) { }
@@ -1268,12 +1293,13 @@ namespace ProGo
             return await DispatchUi(delegate {
                 try {
                     if (failure != null) {
+                        SafeLog.ResumeOwner(logOwner);
                         SafeLog.Error("Shutdown refused: owned proxy cleanup incomplete.", failure);
                         if (dialog) MessageBox.Show(failure.Message, "ProGo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         else tray.ShowBalloonTip(10000, "ProGo остаётся запущенным", failure.Message, ToolTipIcon.Warning);
                         return false;
                     }
-                    if (preservedBackup != null && preservedBackup.Token.IsCancellationRequested) return false;
+                    if (preservedBackup != null && preservedBackup.Token.IsCancellationRequested) { SafeLog.ResumeOwner(logOwner); return false; }
                     shutdownPrepared = true;
                     if (updateForm != null && !updateForm.IsDisposed) updateForm.CancelAndClose();
                     return true;
@@ -1357,64 +1383,59 @@ namespace ProGo
         {
             if (closing || activationDispatcher.IsDisposed || maintenanceHandedOff || maintenanceReservation != null) return;
             try { activationDispatcher.BeginInvoke(new Action(delegate {
-                if (!closing && !maintenanceHandedOff && maintenanceReservation == null) { shutdownPrepared = false; ResumeVaultDaily(); RefreshPendingRoutes(); }
+                if (!closing && !maintenanceHandedOff && maintenanceReservation == null) { shutdownPrepared = false; SafeLog.ResumeOwner(logOwner); ResumeVaultDaily(); RefreshPendingRoutes(); }
             })); }
             catch (InvalidOperationException) { }
         }
         private void ResumeVaultDaily()
         {
             if (!closing && !disposed && !shutdownPrepared && !shutdownPreparing &&
-                maintenanceReservation == null && !maintenanceHandedOff && dailyRuntime.IsPaused) dailyRuntime.Resume();
+                maintenanceReservation == null && !maintenanceHandedOff) {
+                SafeLog.ResumeOwner(logOwner);
+                if (dailyRuntime.IsPaused) dailyRuntime.Resume();
+            }
         }
         private async void ExitProGo()
         {
             if (await PrepareShutdownAsync(true).ConfigureAwait(false)) CompleteShutdown();
         }
 
-        private void OpenLogFile(string path, string title)
+        private void OpenLogFile(string path, string title) { OpenLocalPath(path, title, false); }
+        private void OpenLocalPath(string path, string title, bool directoryOnly)
         {
-            try
-            {
-                AppPaths.EnsureDirectories();
-                if (String.Equals(path, Path.Combine(AppPaths.Root, "update.log"), StringComparison.OrdinalIgnoreCase))
-                    path = BoundedLog.UpdaterLogPath(AppPaths.Root);
-                if (!File.Exists(path)) File.WriteAllText(path, "");
-                Process.Start("notepad.exe", path);
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Open log failed: " + title + ".", ex);
-                MessageBox.Show("Не удалось открыть " + title + ".", AppConstants.ProductName);
-            }
+            if (closing || disposed || shutdownPreparing || shutdownPrepared || MaintenancePending || !logOpenSettling.IsCompleted) return;
+            var operation = new LogOpenOperation(AppPaths.Root, path, delegate {
+                    AppPaths.EnsureDirectories(); if (directoryOnly) Directory.CreateDirectory(path);
+                }, LogViewerLaunch ?? delegate(string selected) {
+                    // The user explicitly opens this viewer. Once Windows accepts
+                    // it, release only our handle; do not kill their editor.
+                    using (var viewer = Process.Start(directoryOnly ? "explorer.exe" : "notepad.exe", SshConnection.Quote(selected))) { }
+                }, LogOpenIoProbe, directoryOnly);
+            logOpening = operation;
+            logOpenSettling = ObserveLogOpening(operation, title);
+            operation.Begin(); RefreshPendingRoutes();
+        }
+        private async Task ObserveLogOpening(LogOpenOperation operation, string title)
+        {
+            await operation.Work.ConfigureAwait(false);
+            if (operation.Error != null) SafeLog.Error("Open local path failed: " + title + ".", operation.Error);
+            await DispatchUi(delegate {
+                if (ReferenceEquals(logOpening, operation)) logOpening = null;
+                RefreshPendingRoutes();
+                if (operation.Error != null && !operation.IsCancellationRequested && !closing && !disposed && !shutdownPreparing && !shutdownPrepared)
+                    MessageBox.Show("Не удалось открыть " + title + ".", AppConstants.ProductName);
+                return true;
+            }).ConfigureAwait(false);
+        }
+        private Task CancelLogOpening()
+        {
+            var operation = logOpening;
+            if (operation != null) operation.Cancel();
+            return logOpenSettling;
         }
 
-        private void OpenProGoFolder()
-        {
-            try
-            {
-                AppPaths.EnsureDirectories();
-                Process.Start("explorer.exe", AppPaths.Root);
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Open ProGo folder failed.", ex);
-                MessageBox.Show("Не удалось открыть папку ProGo.", AppConstants.ProductName);
-            }
-        }
-
-        private void OpenBackups()
-        {
-            try
-            {
-                Directory.CreateDirectory(BackupService.BackupsRoot);
-                Process.Start("explorer.exe", BackupService.BackupsRoot);
-            }
-            catch (Exception ex)
-            {
-                SafeLog.Error("Open backups failed.", ex);
-                MessageBox.Show("Не удалось открыть папку резервных копий.", AppConstants.ProductName);
-            }
-        }
+        private void OpenProGoFolder() { OpenLocalPath(AppPaths.Root, "папку ProGo", true); }
+        private void OpenBackups() { OpenLocalPath(BackupService.BackupsRoot, "папку резервных копий", true); }
 
         private async void CleanupBackups() { await StartCleanupAsync().ConfigureAwait(false); }
 
@@ -1848,9 +1869,11 @@ namespace ProGo
                 if (disposed) return; // WinForms and Program's using scope can both dispose the context.
                 disposed = true;
                 lock (integrationLifetimeGate) closing = true;
+                logWriterSettling = SafeLog.SuspendOwnerAsync(logOwner);
                 if (sshAgentStartup != null) sshAgentStartup.Close();
                 CancelShortcutMigration();
                 CancelDiagnosticPreview();
+                CancelLogOpening();
                 if (diagnosticForm != null && !diagnosticForm.IsDisposed) diagnosticForm.Dispose();
                 trayPreferenceCancellation.Cancel(); trayPreferenceCancellation.Dispose();
                 UnregisterVaultDateEvents(); dailyRuntime.Close();

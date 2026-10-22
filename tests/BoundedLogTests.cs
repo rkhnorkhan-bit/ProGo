@@ -4,6 +4,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace ProGo
 {
@@ -89,11 +90,66 @@ namespace ProGo
                 Check(BoundedLog.ReadTail(current, 4) == "end", "tail skips partial UTF-8 character");
                 Check(BoundedLog.ReadTail(Path.Combine(root, "absent"), 10) == "", "absent diagnostic log is nonfatal");
                 Check(BoundedLog.ReadTail(current, 0) == "", "zero-sized diagnostic read is empty");
+                QueueOwnership(root);
                 Console.WriteLine("Bounded log tests PASS: " + passed);
                 return 0;
             }
             catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
             finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+        }
+
+        private static void QueueOwnership(string root)
+        {
+            string path = Path.Combine(root, "queued.log"); int ownerThread = Thread.CurrentThread.ManagedThreadId, sinkThread = 0, writes = 0, active = 0, maximum = 0;
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+                var queue = new BoundedLogQueue(record => {
+                    int count = Interlocked.Increment(ref active); maximum = Math.Max(maximum, count);
+                    try {
+                        sinkThread = Thread.CurrentThread.ManagedThreadId; Interlocked.Increment(ref writes);
+                        if (record == "first") { entered.Set(); release.Wait(); }
+                        return BoundedLog.TryWrite(path, record);
+                    } finally { Interlocked.Decrement(ref active); }
+                }, 2);
+                Task paused = null;
+                try {
+                    Check(queue.TryEnqueue("first") && entered.Wait(3000), "queued log enters its owned real file sink on a worker");
+                    var first = queue.Work; var watch = Stopwatch.StartNew();
+                    Check(queue.TryEnqueue("second") && queue.TryEnqueue("third"), "bounded backlog accepts two rows while its current native sink remains held");
+                    Check(!queue.TryEnqueue("overflow") && !queue.TryEnqueue(new String('x', BoundedLog.MaxRecordChars + 1)), "full queue and oversized row are rejected without growing memory or touching disk");
+                    Check(watch.ElapsedMilliseconds < 500 && sinkThread != ownerThread && !first.IsCompleted && Object.ReferenceEquals(first, queue.Work),
+                        "caller never waits on held file I/O and all accepted rows retain the same single drain lifetime");
+                    paused = queue.SuspendAsync();
+                    Check(!paused.IsCompleted && !queue.TryEnqueue("paused") && queue.Dropped == 3 && writes == 1,
+                        "suspension forbids new rows immediately but retains the in-flight sink and exact backlog");
+                    release.Set(); Check(paused.Wait(5000) && first.IsCompleted && maximum == 1 && queue.Failed == 0,
+                        "suspension settles one serial worker only after actual file writes finish");
+                    Check(File.ReadAllLines(path).SequenceEqual(new[] { "first", "second", "third" }), "accepted queued rows preserve order and never retry an external write");
+                    queue.Resume(); Check(queue.TryEnqueue("fresh"), "explicit resume allows a new owned drain after settlement");
+                    var next = queue.Work; Check(!Object.ReferenceEquals(first, next) && next.Wait(5000) && File.ReadAllLines(path).Last() == "fresh",
+                        "old drain completion cannot erase the resumed drain lifetime or its real file result");
+                }
+                finally {
+                    release.Set(); var finish = queue.SuspendAsync();
+                    if (!finish.Wait(5000) || paused != null && !paused.Wait(5000)) throw new TimeoutException("owned log queue cleanup deadline");
+                }
+            }
+            using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+                int calls = 0;
+                var queue = new BoundedLogQueue(record => {
+                    Interlocked.Increment(ref calls);
+                    if (record == "rejected") { entered.Set(); release.Wait(); return false; }
+                    if (record == "exception") throw new IOException("owned log fixture failure");
+                    return BoundedLog.TryWrite(path, record);
+                });
+                try {
+                    Check(queue.TryEnqueue("rejected") && entered.Wait(3000) && queue.TryEnqueue("exception") && queue.TryEnqueue("after failure"),
+                        "failure vectors are queued behind one known pending sink");
+                    release.Set(); var finish = queue.SuspendAsync();
+                    Check(finish.Wait(5000) && queue.Failed == 2 && calls == 3 && File.ReadAllLines(path).Last() == "after failure",
+                        "sink refusal and exception remain observable failures without retries, abandoned rows or a stuck lifetime");
+                }
+                finally { release.Set(); if (!queue.SuspendAsync().Wait(5000)) throw new TimeoutException("failed log queue cleanup deadline"); }
+            }
         }
     }
 }

@@ -274,6 +274,7 @@ namespace ProGo
                 var repeated = new ClipboardService(settings); repeated.Dispose(); repeated.Dispose();
                 bool disposed = false; try { repeated.CopySecret(secret); } catch (ObjectDisposedException) { disposed = true; }
                 Check(disposed, "disposed secret service cannot restart timer");
+                Check(SafeLog.FlushAsync().Wait(5000), "clipboard secret log check waits for the owned asynchronous sink");
                 Check(!File.ReadAllText(AppPaths.LogPath).Contains(secret) && !File.ReadAllText(AppPaths.LogPath).Contains("second-fixture-secret"), "clipboard logs never contain secret values");
             } finally { Clipboard.Clear(); }
         }

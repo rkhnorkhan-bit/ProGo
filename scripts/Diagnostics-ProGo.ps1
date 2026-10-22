@@ -7,14 +7,16 @@
             $sources = @('DiagnosticReport.cs','DiagnosticPreview.cs','UpdateInstallSession.cs','UiTheme.cs','BrandIcon.cs') | ForEach-Object { Join-Path $sourceRoot $_ }
             Add-Type -Path $sources -ReferencedAssemblies System.dll,System.Core.dll,System.Drawing.dll,System.Windows.Forms.dll -ErrorAction Stop
         }
-        $version = ''
-        $versionPath = Join-Path $Root 'VERSION'
-        try { if (Test-Path $versionPath) {
-            # VERSION is untrusted input too; avoid an unlimited file read.
-            $reader = [IO.File]::OpenText($versionPath)
-            try { $buffer = New-Object char[] 32; $count = $reader.Read($buffer, 0, $buffer.Length); $version = (-join $buffer[0..([Math]::Max(0, $count - 1))]).Trim() } finally { $reader.Dispose() }
-        } } catch { $version = '' }
-        [ProGo.DiagnosticPreview]::Show($Root, $version)
+        # The owned preview worker reads the bounded installed VERSION; Click
+        # never performs this file read or treats a stale cancelled value as ready.
+        $diagnosticApi = 'ProGo.DiagnosticPreview' -as [type]
+        if ($null -ne $diagnosticApi.GetMethod('ShowInstalled')) {
+            [ProGo.DiagnosticPreview]::ShowInstalled($Root)
+        } else {
+            # A running updater may retain the previous API assembly after its
+            # files were replaced. Do not claim its old version or read on Click.
+            [ProGo.DiagnosticPreview]::Show($Root, '')
+        }
     } catch {
         # No raw-file or raw-error fallback may escape through the export action.
         Write-Host 'Не удалось открыть предпросмотр диагностики. Личный журнал доступен на этом компьютере.'

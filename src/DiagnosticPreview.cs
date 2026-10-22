@@ -15,6 +15,10 @@ namespace ProGo
         {
             using (var form = new DiagnosticPreviewForm(root, version)) form.ShowDialog();
         }
+        public static void ShowInstalled(string root)
+        {
+            using (var form = new DiagnosticPreviewForm(root, null, readInstalledVersion: true)) form.ShowDialog();
+        }
     }
 
     internal sealed class DiagnosticPreviewForm : ProGoForm
@@ -34,6 +38,7 @@ namespace ProGo
             internal bool Cancelled, Failed, Saved;
         }
         private readonly string root, version;
+        private readonly bool readInstalledVersion;
         private readonly Action<string> copy;
         private readonly Func<string, bool> legacySave;
         private readonly Func<IWin32Window, string> chooseSave;
@@ -58,8 +63,8 @@ namespace ProGo
         // The installed PowerShell helper uses the same root/version path. No
         // log read is performed while constructing or showing the empty window.
         internal DiagnosticPreviewForm(string root, string version, Action<string> copy = null,
-            Func<IWin32Window, string> chooseSave = null, Action<string, CancellationToken> beforeIo = null)
-            : this(null, root, version, copy, null, chooseSave, beforeIo) { }
+            Func<IWin32Window, string> chooseSave = null, Action<string, CancellationToken> beforeIo = null, bool readInstalledVersion = false)
+            : this(null, root, version, copy, null, chooseSave, beforeIo, readInstalledVersion) { }
 
         // Existing snapshot callers retain their reviewed immutable report. The
         // optional legacy test writer runs on the save worker, never on the owner.
@@ -69,9 +74,9 @@ namespace ProGo
         { if (report == null) throw new ArgumentNullException("report"); return report; }
 
         private DiagnosticPreviewForm(DiagnosticReport report, string root, string version, Action<string> copy,
-            Func<string, bool> legacySave, Func<IWin32Window, string> chooseSave, Action<string, CancellationToken> beforeIo)
+            Func<string, bool> legacySave, Func<IWin32Window, string> chooseSave, Action<string, CancellationToken> beforeIo, bool readInstalledVersion = false)
         {
-            this.report = report; this.root = root; this.version = version; this.copy = copy;
+            this.report = report; this.root = root; this.version = version; this.copy = copy; this.readInstalledVersion = readInstalledVersion;
             this.legacySave = legacySave; this.chooseSave = chooseSave; this.beforeIo = beforeIo;
             Work = BuildWork = SaveWork = Task.FromResult(false); dispatcher.CreateControl();
             Text = "Передать диагностику · ProGo"; ClientSize = new Size(820, 600); MinimumSize = new Size(700, 500);
@@ -154,6 +159,19 @@ namespace ProGo
             if (!disposed && !closing && early == null) status.Text = "Сохраняем показанный отчёт в выбранный файл. Можно запросить отмену.";
             operation.Workflow = Task.Run(() => RunOperation(operation, true, path, snapshot, early)); return operation.Completion.Task;
         }
+        private static string ReadInstalledVersion(string root, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            try {
+                using (var reader = File.OpenText(Path.Combine(root, "VERSION"))) {
+                    var buffer = new char[32]; int count = reader.Read(buffer, 0, buffer.Length);
+                    token.ThrowIfCancellationRequested(); return new string(buffer, 0, count).Trim();
+                }
+            }
+            catch (OperationCanceledException) { throw; }
+            catch { token.ThrowIfCancellationRequested(); return String.Empty; }
+        }
+
         private async Task RunOperation(Operation operation, bool saving, string path, string snapshot, Outcome early = null)
         {
             Outcome outcome = early;
@@ -163,7 +181,14 @@ namespace ProGo
                         var worker = Task.Run(delegate {
                             operation.Token.ThrowIfCancellationRequested();
                             Probe(saving ? "save" : "build", operation.Token); operation.Token.ThrowIfCancellationRequested();
-                            if (!saving) return new Outcome { Report = DiagnosticReport.Build(root, version, operation.Token) };
+                            if (!saving) {
+                                string snapshotVersion = version;
+                                if (readInstalledVersion) {
+                                    Probe("version-read", operation.Token); operation.Token.ThrowIfCancellationRequested();
+                                    snapshotVersion = ReadInstalledVersion(root, operation.Token);
+                                }
+                                return new Outcome { Report = DiagnosticReport.Build(root, snapshotVersion, operation.Token) };
+                            }
                             if (legacySave != null) return new Outcome { Saved = legacySave(snapshot), Cancelled = false };
                             operation.Token.ThrowIfCancellationRequested();
                             File.WriteAllText(path, snapshot, new UTF8Encoding(true));

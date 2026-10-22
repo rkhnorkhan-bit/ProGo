@@ -3,9 +3,90 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ProGo
 {
+    // Core and installed helpers already share this file. Keep the queue free
+    // of AppPaths, UI, redaction policy and any I/O on its caller's thread.
+    internal sealed class BoundedLogQueue
+    {
+        private readonly object gate = new object();
+        private readonly Queue<string> records = new Queue<string>();
+        private readonly Func<string, bool> write;
+        private readonly int capacity;
+        private bool draining;
+        private int paused;
+        private long dropped, failed;
+        private volatile Task work = Task.FromResult(false);
+        internal Task Work { get { return work; } }
+        internal long Dropped { get { return Interlocked.Read(ref dropped); } }
+        internal long Failed { get { return Interlocked.Read(ref failed); } }
+
+        internal BoundedLogQueue(Func<string, bool> write, int capacity = 128)
+        {
+            if (write == null) throw new ArgumentNullException("write");
+            if (capacity < 1 || capacity > 1024) throw new ArgumentOutOfRangeException("capacity");
+            this.write = write; this.capacity = capacity;
+        }
+        internal bool TryEnqueue(string safeRecord)
+        {
+            safeRecord = safeRecord ?? String.Empty;
+            if (safeRecord.Length > BoundedLog.MaxRecordChars || !Monitor.TryEnter(gate)) {
+                Interlocked.Increment(ref dropped); return false;
+            }
+            try {
+                if (Volatile.Read(ref paused) != 0 || records.Count >= capacity) {
+                    Interlocked.Increment(ref dropped); return false;
+                }
+                records.Enqueue(safeRecord);
+                if (!draining) {
+                    var settled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    draining = true; work = settled.Task;
+                    try { Task.Run(() => Drain(settled)); }
+                    catch {
+                        Interlocked.Add(ref dropped, records.Count); records.Clear(); draining = false;
+                        settled.TrySetResult(false); return false;
+                    }
+                }
+                return true;
+            }
+            finally { Monitor.Exit(gate); }
+        }
+        private void Drain(TaskCompletionSource<bool> settled)
+        {
+            while (true) {
+                string record;
+                lock (gate) {
+                    if (records.Count == 0) { draining = false; break; }
+                    record = records.Dequeue();
+                }
+                // No queue gate is held across a possibly uninterruptible sink.
+                try { if (!write(record)) Interlocked.Increment(ref failed); }
+                catch { Interlocked.Increment(ref failed); }
+            }
+            // A newer producer may already own another drain. Never clear its
+            // lifetime or admission flags from this older completion.
+            settled.TrySetResult(true);
+        }
+        internal Task SuspendAsync()
+        {
+            Interlocked.Exchange(ref paused, 1);
+            return DrainAsync();
+        }
+        internal Task DrainAsync()
+        {
+            // Snapshot under the gate on a worker. This includes a producer that
+            // already passed admission when suspension began, without blocking UI.
+            return Task.Run(async delegate {
+                Task pending; lock (gate) pending = work;
+                await pending.ConfigureAwait(false);
+            });
+        }
+        internal void Resume() { Interlocked.Exchange(ref paused, 0); }
+    }
+
     // Shared with the installed PowerShell helpers. Logging is best effort:
     // a busy/locked log loses this record rather than delaying an operation.
     public static class BoundedLog

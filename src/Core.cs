@@ -634,22 +634,57 @@ namespace ProGo
             Write("ERROR", message, ex);
         }
 
+        private static readonly BoundedLogQueue writer = new BoundedLogQueue(delegate(string record) {
+            var probe = BeforeDiskWrite; if (probe != null) probe(record);
+            AppPaths.EnsureDirectories();
+            return BoundedLog.TryWrite(AppPaths.LogPath, record);
+        });
+        internal static Action<string> BeforeDiskWrite;
+        internal static Task FlushAsync() { return writer.DrainAsync(); }
+        internal static Task WriteWork { get { return writer.Work; } }
+        private static readonly object ownerGate = new object();
+        private static long ownerEpoch;
+        internal static long BeginOwner()
+        {
+            lock (ownerGate) { ownerEpoch++; writer.Resume(); return ownerEpoch; }
+        }
+        internal static Task SuspendOwnerAsync(long expected)
+        {
+            lock (ownerGate) return expected == ownerEpoch ? writer.SuspendAsync() : Task.FromResult(false);
+        }
+        internal static void ResumeOwner(long expected)
+        {
+            lock (ownerGate) { if (expected == ownerEpoch) writer.Resume(); }
+        }
+        internal static Task SealProcessAsync()
+        {
+            lock (ownerGate) { ownerEpoch++; return writer.SuspendAsync(); }
+        }
+
+        private static string BoundedInput(string text)
+        {
+            // Never cut a raw secret in half before redaction. Oversized input
+            // is omitted in full; ordinary bounded text retains the old policy.
+            return text != null && text.Length > BoundedLog.MaxRecordChars ? "[oversized detail omitted]" : text;
+        }
         private static void Write(string level, string message, Exception ex)
         {
             try
             {
-                AppPaths.EnsureDirectories();
-                var line = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz") + " [" + level + "] " + Redact(message);
-                if (ex != null)
-                {
-                    line += " | " + Redact(ex.GetType().Name + ": " + ex.Message);
+                var line = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz") + " [" + level + "] " + Redact(BoundedInput(message));
+                if (ex != null) line += " | " + ex.GetType().Name + ": " + Redact(BoundedInput(ex.Message));
+                // Queue only an already-redacted bounded immutable string. No
+                // Exception, raw message, AppPaths or disk work escapes to it.
+                if (line.Length > BoundedLog.MaxRecordChars) {
+                    const string marker = " [truncated]"; int length = BoundedLog.MaxRecordChars - marker.Length;
+                    if (Char.IsHighSurrogate(line[length - 1])) length--;
+                    line = line.Substring(0, length) + marker;
                 }
-
-                BoundedLog.TryWrite(AppPaths.LogPath, line);
+                writer.TryEnqueue(line);
             }
             catch
             {
-                // Logging must never crash the tray application.
+                // Best-effort logging must never crash or wait on a native sink.
             }
         }
 

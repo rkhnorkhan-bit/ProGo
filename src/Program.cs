@@ -38,6 +38,13 @@ namespace ProGo
                     {
                         var ex = eventArgs.ExceptionObject as Exception;
                         SafeLog.Error("Fatal unhandled exception.", ex ?? new Exception(Convert.ToString(eventArgs.ExceptionObject)));
+                        // A terminating CLR event may bypass Main's finally.
+                        // Bound this best-effort terminal flush; normal UI logging
+                        // and recoverable ThreadException remain asynchronous.
+                        try {
+                            var log = eventArgs.IsTerminating ? SafeLog.SealProcessAsync() : SafeLog.FlushAsync();
+                            if (!log.Wait(500)) Console.WriteLine("NOT_RUN: fatal log sink did not settle before termination");
+                        } catch { }
                     };
 
                     Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs eventArgs)
@@ -94,6 +101,14 @@ namespace ProGo
                 }
 
                 ShowFatal(ex);
+            }
+            finally {
+                // This runs after the native UI loop has ended (or startup
+                // failed). Ordinary handoff already sealed/drained its owner.
+                if (ownsApplication) try {
+                    if (!SafeLog.SealProcessAsync().Wait(500))
+                        Console.WriteLine("NOT_RUN: final best-effort log sink did not settle before process exit");
+                } catch { /* Logging cannot prevent process termination. */ }
             }
         }
 
