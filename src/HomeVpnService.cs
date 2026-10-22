@@ -995,6 +995,55 @@ namespace ProGo
             }
         }
 
+        // Read-only list uses its actual wizard/friends owner, without borrowing
+        // ActiveForm or running key/helper/output I/O on the native UI thread.
+        internal async Task<string> ListAdminOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
+            HomeProfileUiDispatcher dispatcher, Action<string> progress, Func<string, string, Task> copy = null,
+            string commandExecutable = null, int timeoutMs = HomeVpnPreparationProcess.TimeoutMs)
+        {
+            if (window == null) throw new ArgumentNullException("window");
+            if (dispatcher == null) throw new ArgumentNullException("dispatcher");
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            var stop = StopWork; int reporting = 1;
+            try {
+                return await RunAdminOwnedAsync(async delegate {
+                    try {
+                        RequireListScope(stop);
+                        return await AdminAsync(frozen, "list", null, null,
+                            text => dispatcher.Post(delegate { if (Volatile.Read(ref reporting) != 0) progress(text); }),
+                            (executable, arguments) => DispatchListTransportAsync(stop, dispatcher, delegate {
+                                return copy == null ? HomeVpnPreparationForm.CopyForListAsync(window, executable, arguments) : copy(executable, arguments);
+                            }),
+                            (executable, arguments, output) => DispatchListTransportAsync(stop, dispatcher, delegate {
+                                return HomeVpnPreparationForm.WaitForListAsync(window, commandExecutable ?? executable, arguments, output, timeoutMs);
+                            }), RetainAdminCleanup).ConfigureAwait(false);
+                    } finally { Volatile.Write(ref reporting, 0); }
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException error) {
+                if (error is HomeVpnListCancelledException) throw;
+                throw new HomeVpnListCancelledException(); // Admission refusal adds no mutation uncertainty.
+            }
+        }
+        private async Task DispatchListTransportAsync(Task<bool> stop, HomeProfileUiDispatcher dispatcher, Func<Task> start)
+        {
+            bool admitted = false;
+            try {
+                await DispatchAdminTransportAsync(dispatcher, delegate {
+                    RequireListScope(stop); admitted = true; return start();
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) {
+                if (!admitted) throw new HomeVpnListCancelledException();
+                throw;
+            }
+        }
+        private void RequireListScope(Task<bool> stop)
+        {
+            lock (lifecycleGate) {
+                if (disposed || startsPaused || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted)
+                    throw new HomeVpnListCancelledException();
+            }
+        }
+
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
             return await AdminAsync(owner, action, label, identifier, progress,

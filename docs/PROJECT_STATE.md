@@ -8,7 +8,72 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: production Admin repair → owned worker на CI629
+## Текущий этап: read-only Admin list → owned worker на CI630
+
+Checkpoint `4ba3ade1699c50bcabdd5c5e0d9f356a2138982f` прочитан. При начале этапа актуальный PR88
+OPEN/DRAFT был на source `e8588af677b15f6d72a9543f22658ca7ccdc06a9`, tested merge `75a0e468986846e836f1f430454bc705eaaca5c7`.
+[CI630/39860593042](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39860593042)
+независимо подтверждён SUCCESS через completed Windows120109980387/Ubuntu120109980505
+и точный build identity. Repair8, ownership8, cleanup4, snapshot12/dispatcher5/export
+modal11/chooser3, Desktop5294/HomeVPN2347/Portable91 и полная регрессия PASS. Все uploads/
+prune SKIPPED, артефактов нет. Новый код этим SUCCESS не подтверждается. Git/worktree
+чистые; активных Git/build операций и другого доступного исполнителя не обнаружено.
+
+Один согласованный срез: существующий read-only list при «Доступ друзей…» и Refresh.
+Code `f13e12ecfc44651c9de7943cc4cfc359b7bf18e7`, ветка work/progo-admin-list-on630-20261023,
+worktree ProGo-admin-list-on630 от точного630. Только HomeVpnService/HomeVpnWizardForm/
+HomeVpnPreparationTests:235 добавлений/2 удаления. Все зависимости уже есть в630:
+ownership8/cleanup4, core list, dispatcher, list native waiting process/forms и harness.
+Repair не повторяется; setup/HTTPS/выдача/отзыв/восстановление invitation не изменены.
+
+Default list delegate использует ListAdminOwnedAsync. Owner копируется до scheduling,
+File.Exists выбранного ключа, helpers/output и точный cleanup выполняются в retained worker.
+Для первого списка UI owner — мастер; для существующего Refresh — именно окно списка,
+с отдельным dispatcher на срок его ShowDialog и восстановлением scope в finally.
+Нет Form.ActiveForm или подмены принятого физического Task. Stop/Dispose до следующего
+transport отказывает в запуске; уже принятый SSH остаётся owned до исхода/локальной отмены.
+Публичный Stop не ожидается внутри тела. Cancel/pre-worker admission refusal сохраняет
+HomeVpnListCancelledException и не создаёт неопределённость мутации. Callback удерживает
+точную очистку; старый queued progress не перезаписывает новый результат. Initial list
+после закрытия мастера/смены Stop identity не открывает новое окно. При закрытии Friends
+его dispatcher запрещает поздний transport/publication; данные мутаций не переписываются.
+
+Новые10 native режимов: default-refusal/complete/cancel-retry/stop-copy/dispose-copy/
+owner-dispose/stop-command/cleanup-lock/refresh-cancel-retry/refresh-dispose. Тесты используют
+исходную production Admin list привязку и реальные кнопки/ShowDialog, включая открытие
+Friends и его Refresh. Seam заменяет только copy transport/SSH executable вокруг того же
+owned API/core: фактические helper files/read/sharing и native subprocess tree, без VPS.
+Проверяются heartbeat/нет duplicate admission, typed Cancel→Retry, Stop/Dispose drain,
+отказ следующего SSH, honest locked Stop false→unlock retry true, no replay, сохранность
+protected bytes/чужого sibling/процесса и строк/selection/search/draft/старого mutation gate.
+Refresh-dispose проверяет фактический child owner и отсутствие late dispatcher updates.
+Default-refusal не заменяет production delegate и использует отсутствующий fixture key,
+чтобы при ошибке legacy binding не запустить настоящий OpenSSH; paused admission также
+проверяет read-only тип отказа. Ограничения: barrier5s/modal15s/cleanup5s/native20s, finally
+release/close own windows/stop fixture/join operation+Stop. Existing harness уже включает
+этот файл; группа вызывается до прежних list regression. Windows выполнение10 NOT_RUN.
+
+PASS локально: полный manual review/diff, syntax3/C#5 await-scope (не компиляция),
+diff --check/public content321/0/added secretPII0. Все65 baseline service methods (включая
+repair) сохранены;40 wizard methods кроме ManageInvitations и36 prep-test methods кроме
+одного вызова ListWaiting неизменны. Every other tracked blob равен630: repair8, API17,
+ownership8/cleanup4, export14/методы UI экспорта, EOF/BOM, invitation mutation/recovery,
+HTTPS, scripts/workflows/VERSION. Windows compilation/native10 NOT_RUN: локально нет
+PowerShell/.NET Framework. Полный R09, прочие Admin routes/installer/owner acceptance открыты.
+
+Публикация TODO: после финального secret/public/workflow scan один guarded update
+существующей PR88 ветки создаёт один автоматический CI нового source. Public uploads OFF,
+release workflow исключён; main merge/release/бинарники/установка/VPS/credentials/network
+не выполняются. Личный внешний deployment/секреты не читаются и не изменяются. Перед
+длительной операцией сохранена эта точка. После публикации записать source/merge/tree/run
+и STOP без ожидания всего CI или второго этапа. Следующая проверка — тот же run list10
++ repair8/ownership8/cleanup4/API17/export14/full regression. После proof отдельно небольшой
+setup/recover-setup snapshot/preparation worker срез; сейчас он не начинается.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: полный взвешенный критерий
+не закрыт, веса/методика/620 anchors прежние. Главный блокер — Windows proof нового list10;
+прочие Admin-маршруты и реальная приёмка остаются открыты.
+
+## История: этап production Admin repair → owned worker на CI629
 
 Прочитан checkpoint `51d79ff99e443c36a871314d733d5c142dbd4ef8`; при начале этапа актуальный PR88
 OPEN/DRAFT был на source `2b10ed6df31e2f40711c4efd856f98c5c2420a05`, tested merge `15448208d8bcb6428c1fbc8d2538729d978be9d5`.
@@ -69,7 +134,7 @@ release workflow не запускается; main merge/release/бинарни�
 не закрыт, методика/веса/620 anchors прежние. Главный блокер — Windows proof новой
 production привязки; остальные Admin-маршруты и реальная приёмка остаются открыты.
 
-## Текущий этап: exact Admin cleanup4 на проверенном CI628
+## История: этап exact Admin cleanup4 на проверенном CI628
 
 Точка восстановления `28d43e1f9076fd76403a7060f73e0b247c8d8646` прочитана; актуальный PR88 OPEN/DRAFT остаётся
 на source `b2c79830d078497fadc284e96b02e6be815aa300`, tested merge `72d546f06ebc680029b202b75ba5489bcfcb7d51`.

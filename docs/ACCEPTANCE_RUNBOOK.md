@@ -1,4 +1,39 @@
-## Текущий кандидат: production repair owned-worker8; Windows NOT_RUN
+## Текущий кандидат: read-only Admin list owned-worker10; Windows NOT_RUN
+
+Проверенная база `e8588af677b15f6d72a9543f22658ca7ccdc06a9` / merge `75a0e468986846e836f1f430454bc705eaaca5c7`,
+[CI630 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39860593042): completed
+build identity/Windows120109980387/Ubuntu120109980505, repair8/ownership8/cleanup4/API17/
+export14 и Desktop5294/HomeVPN2347/Portable91 PASS. Все uploads/prune SKIPPED, артефактов нет.
+Checkpoint `4ba3ade1699c50bcabdd5c5e0d9f356a2138982f` сохранён; старые pending ниже — история.
+
+Новый code `f13e12ecfc44651c9de7943cc4cfc359b7bf18e7`: existing initial list/Refresh → ListAdminOwnedAsync →
+retained worker → dispatcher фактического wizard/Friends owner → native list waiting →
+точный cleanup. Только3 source/test файла +3 docs. Все зависимости в630; repair/создание/
+отзыв/recovery invitation, setup/HTTPS не меняются. Scope child dispatcher восстанавливается
+в finally, disposed/Stop owner не запускает следующий transport/новое окно. Принятый Task
+дренируется до реального исхода; cancel остаётся read-only typed, без mutation uncertainty.
+
+Минимальный Windows прогон нового точного source/merge: scripts/Test-ProGo.ps1 и
+scripts/Test-HomeVpnRelay.ps1. Требовать10 новых PASS: default-refusal, complete,
+cancel-retry, stop-copy, dispose-copy, owner-dispose, stop-command, cleanup-lock,
+refresh-cancel-retry, refresh-dispose. Production binding/real modal buttons, фактический
+owner wizard/Friends, heartbeat/no duplicate, Cancel→Retry, исходный typed result,
+Stop/Dispose drain, next SSH refusal, no late UI, locked false→unlock true без copy/SSH
+replay, protected bytes/sibling/unrelated process и rows/selection/search/draft/gate сохранены.
+Изолированы только transport/SSH executable; helpers/sharing/native process tree реальные.
+Bounded5s barrier/15s modal/5s finally cleanup/20s native; timeout не PASS, свои окна/процессы.
+Обязательна прежняя repair8/ownership8/cleanup4/snapshot12/dispatcher5/export14 и полная
+регрессия. Новые Windows compiler/native10 NOT_RUN до exact evidence; SUCCESS630 не наследуется.
+
+PASS local manual/syntax3/await-scope/diff/public321/0/secretPII0/AST-preservation;
+это не compilation/native. EOF/BOM/export UI methods/API17/task8/cleanup4/repair8 и прочие
+источники/workflows/VERSION сохранены. Один guarded PR88 update → один automatic PR CI;
+uploads OFF/release исключён. Записать run и STOP без ожидания или второго этапа.
+Следующий этап сначала проверяет тот же run; после proof — отдельный setup/recover-setup
+snapshot/preparation worker срез. Веса58–80/22 неизменны,delta0. Полный R09/owner acceptance
+открыты; main merge/release/бинарники/установка/VPS исключены.
+
+## История: кандидат production repair owned-worker8; Windows NOT_RUN
 
 Проверенная база: source `2b10ed6df31e2f40711c4efd856f98c5c2420a05`, merge `15448208d8bcb6428c1fbc8d2538729d978be9d5`,
 [CI629 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39854845261).

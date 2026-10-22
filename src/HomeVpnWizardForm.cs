@@ -64,12 +64,17 @@ namespace ProGo
         private string preparedToken, preparedOwner;
         private Label counters;
         internal Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> Admin;
+        internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, Action<string>, Task<string>> ReadAdminList;
+        private Form readOnlyListOwner;
+        private HomeProfileUiDispatcher readOnlyListUi;
 
         internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard, Action beforeSetupSnapshotRead = null)
         {
             this.service = service; this.clipboard = clipboard; BeforeSetupSnapshotRead = beforeSetupSnapshotRead; httpDispatcher = new HomeProfileUiDispatcher(this);
+            ReadAdminList = (owner, window, dispatcher, report) => service.ListAdminOwnedAsync(owner, window, dispatcher, report);
             Admin = (owner, action, label, identifier, report) => action == "repair"
                 ? service.RepairAdminOwnedAsync(owner, this, httpDispatcher, report)
+                : action == "list" ? ReadAdminList(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, report)
                 : HomeVpnService.AdminAsync(owner, action, label, identifier, report);
             Text = "VPN для телефона"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;
@@ -718,12 +723,19 @@ namespace ProGo
         {
             await RunStep(async delegate
             {
+                var stop = service.StopWork;
                 var response = await ownerUi.Await(Admin(service.Owner, "list", null, null, SetProgress));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (service.IsStopping || service.StartsPaused || !Object.ReferenceEquals(service.StopWork, stop)) throw new HomeVpnListCancelledException();
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(response);
                 using (var dialog = new HomeInvitationsForm(items,
                     (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard))
-                    dialog.ShowDialog(this);
-                status.Text = "";
+                using (var listUi = new HomeProfileUiDispatcher(dialog)) {
+                    readOnlyListOwner = dialog; readOnlyListUi = listUi;
+                    try { dialog.ShowDialog(this); }
+                    finally { readOnlyListOwner = null; readOnlyListUi = null; }
+                }
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = "";
             });
         }
         private void AddInstallationConfirmation()

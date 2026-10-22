@@ -308,6 +308,7 @@ namespace ProGo
                 new HomeVpnInvitation { Id = new string('a', 24), Name = "Друг", Revoked = true },
                 new HomeVpnInvitation { Id = new string('b', 24), Name = "Друг" } }));
             try {
+                OwnedList(token, clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "deadline" }) ListWizardWaiting(token, clipboard, work, route);
                 ListWizardCleanupWaiting(token, clipboard, true);
                 ListWizardCleanupWaiting(token, clipboard, false);
@@ -320,6 +321,177 @@ namespace ProGo
                         "accepted list cancellation cannot publish a queued successful response");
                 }
             } finally { Reset(); Environment.SetEnvironmentVariable("PROGO_LIST_WAIT_FIXTURE", previous); }
+        }
+        private static async Task HeldListCopy(Form owner, Action<HomeVpnPreparationForm> publish, Action<CancellationToken> read)
+        {
+            using (var wait = new HomeVpnPreparationForm(ct => Task.Run(() => read(ct)), HomeVpnWaitPurpose.ListCopy)) {
+                publish(wait); wait.ShowDialog(owner); await wait.Completion;
+            }
+        }
+        private static Exception ListFailure(Task task)
+        { try { task.GetAwaiter().GetResult(); return null; } catch (Exception error) { return error; } }
+        private static void OwnedList(string token, ClipboardService clipboard)
+        {
+            foreach (string mode in new[] { "default-refusal", "complete", "cancel-retry", "stop-copy", "dispose-copy", "owner-dispose", "stop-command", "cleanup-lock", "refresh-cancel-retry", "refresh-dispose" }) {
+                ListMode(mode == "stop-command" ? "hold" : "complete", true);
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim()) {
+                    service.UseToken(token, new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "root", KeyFile = "" });
+                    var before = ListPrivateSnapshot();
+                    string sibling = Path.Combine(HomeVpnPrivateFiles.Root, "admin-unrelated-" + Guid.NewGuid().ToString("N"));
+                    Directory.CreateDirectory(sibling); File.WriteAllText(Path.Combine(sibling, "keep"), "unrelated");
+                    var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root);
+                    HomeVpnWizardForm wizard = null; HomeInvitationsForm friends = null; HomeVpnPreparationForm copyWindow = null;
+                    HomeProfileUiDispatcher targetUi = null; Form target = null; Button start = null;
+                    Task<string> operation = null, cancelled = null; Task<bool> stop = null; Exception original = null;
+                    string coreWork = null; FileStream held = null; HomeVpnInvitation selected = null;
+                    int phase = 0, turns = 0, attempts = 0, worker = 0, retained = 0, closedPublications = 0;
+                    bool helperRead = false, refreshCase = mode.StartsWith("refresh-", StringComparison.Ordinal), closing = mode == "owner-dispose";
+                    int ui = Thread.CurrentThread.ManagedThreadId;
+                    try {
+                        if (mode == "default-refusal") { service.RetainAdminCleanup(() => retained++); service.Owner.KeyFile = Path.Combine(folder, "missing-owned-list-key"); }
+                        wizard = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(wizard); Call(wizard, "ShowStep", 4);
+                        var open = ((Control)Field(wizard, "body")).Controls.OfType<Button>().Single(b => b.Text == "Доступ друзей…");
+                        target = wizard; start = open;
+                        if (mode != "default-refusal") wizard.ReadAdminList = (owner, window, dispatcher, report) => {
+                            check(Thread.CurrentThread.ManagedThreadId == ui && window == (refreshCase && attempts != 0 ? (Form)friends : wizard),
+                                "production list binding selects its actual wizard or friends UI owner: " + mode);
+                            targetUi = dispatcher;
+                            operation = service.ListAdminOwnedAsync(owner, window, dispatcher, report, (exe, args) => {
+                                check(Thread.CurrentThread.ManagedThreadId == ui && exe == "scp.exe" && args.Contains(" -P 22 "), "owned list copy starts on the explicit UI owner with production SSH options");
+                                int attempt = ++attempts;
+                                if (attempt != (refreshCase ? 2 : 1)) return Task.FromResult(0);
+                                return HeldListCopy(window, value => copyWindow = value, ct => {
+                                    Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                                    coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
+                                    string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single();
+                                    helperRead = File.ReadAllText(helper).Length != 0;
+                                    if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned list copy fixture deadline");
+                                    ct.ThrowIfCancellationRequested();
+                                });
+                            }, Application.ExecutablePath, 20000);
+                            return operation;
+                        };
+                        HomeVpnWaitingTests.ModalWizardCase(wizard, delegate {
+                            if (phase == 0) { check(wizard.Modal, "owned list uses real ShowDialog and production list binding: " + mode); open.PerformClick(); phase = refreshCase ? 10 : 1; return false; }
+                            if (mode == "default-refusal") {
+                                if ((bool)Field(wizard, "busy")) return false;
+                                check(((Label)Field(wizard, "status")).Text.Contains("Очистка прежней команды") && attempts == 0 && ListCalls() == 0,
+                                    "default production list refuses pending cleanup before selected-key I/O or real OpenSSH");
+                                if (stop == null) { stop = service.StopAsync(); return false; }
+                                if (!stop.IsCompleted) return false;
+                                check(stop.GetAwaiter().GetResult() && retained == 1 && !service.HasOwnedResources, "default list refusal keeps exact cleanup ownership");
+                                service.PauseStarts();
+                                check(ListFailure(wizard.Admin(service.Owner, "list", null, null, delegate { })) is HomeVpnListCancelledException,
+                                    "pre-worker list admission refusal retains its read-only cancellation type before key I/O");
+                                service.ResumeStarts();
+                                check(true, "owned production list slice PASS: " + mode); return true;
+                            }
+                            if (phase == 10) {
+                                friends = wizard.OwnedForms.OfType<HomeInvitationsForm>().FirstOrDefault();
+                                if (friends == null) { if (operation.IsCompleted && ListFailure(operation) != null) operation.GetAwaiter().GetResult(); return false; }
+                                target = friends; start = (Button)Field(friends, "refresh");
+                                var view = (HomeInvitationList)Field(friends, "list");
+                                ((TextBox)Field(view, "search")).Text = "Друг"; ((ListBox)Field(view, "list")).SelectedIndex = 0; selected = view.Selected;
+                                ((TextBox)Field(friends, "name")).Text = "Сохранённый черновик";
+                                Call(friends, "RequireRefresh", "Существующий gate до read-only запроса");
+                                start.PerformClick(); phase = 1; return false;
+                            }
+                            if (phase == 1) {
+                                if (!entered.IsSet) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                if (++turns < 3) return false;
+                                int expected = refreshCase ? 2 : 1;
+                                check(helperRead && worker != ui && !operation.IsCompleted && service.IsAdminWorking && !start.Enabled && copyWindow.Owner == target,
+                                    "actual list worker retains I/O while its native owner stays responsive: " + mode);
+                                start.PerformClick(); check(attempts == expected, "pending list has no parallel UI admission: " + mode);
+                                if (mode == "cancel-retry" || mode == "refresh-cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
+                                if (mode == "stop-copy" || mode == "dispose-copy" || closing || mode == "refresh-dispose") {
+                                    var watch = Stopwatch.StartNew(); if (mode == "dispose-copy" || closing) service.Dispose();
+                                    stop = service.StopAsync();
+                                    if (closing || mode == "refresh-dispose") { target.Dispose(); closedPublications = targetUi.PublicationCount; }
+                                    check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted && service.HasOwnedResources, "list Stop Dispose returns promptly and retains actual work: " + mode);
+                                }
+                                turns = 0; phase = 2; return false;
+                            }
+                            if (phase == 2) {
+                                if (++turns < 3) return false;
+                                check(!operation.IsCompleted && (stop == null || !stop.IsCompleted), "list cancel Stop Dispose cannot discard a held worker: " + mode);
+                                release.Set(); phase = 3; return false;
+                            }
+                            if (phase == 3 && mode == "stop-command") {
+                                if (!File.Exists(Path.Combine(folder, "child"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                var wait = wizard.OwnedForms.OfType<HomeVpnPreparationForm>().Single();
+                                stop = service.StopAsync(); check(!stop.IsCompleted && service.IsAdminWorking, "list Stop retains the already admitted native process tree");
+                                ((Button)Field(wait, "cancel")).PerformClick(); phase = 4; return false;
+                            }
+                            if (phase == 3 || phase == 4) {
+                                if (!operation.IsCompleted || (stop != null && !stop.IsCompleted)) return false;
+                                Exception failure = ListFailure(operation);
+                                if (mode == "cleanup-lock") {
+                                    if ((bool)Field(wizard, "busy")) return false;
+                                    original = failure; check(failure is HomeVpnLocalCleanupException && service.HasPendingAdminCleanup && Directory.Exists(coreWork), "list keeps its actual typed cleanup failure and exact locked directory");
+                                    stop = service.StopAsync(); phase = 5; return false;
+                                }
+                                bool retry = mode == "cancel-retry" || mode == "refresh-cancel-retry";
+                                if (retry && cancelled == null) {
+                                    if ((bool)Field(target, refreshCase ? "working" : "busy")) return false;
+                                    cancelled = operation; original = failure;
+                                    check(failure is HomeVpnListCancelledException && !Directory.Exists(coreWork) && start.Enabled && target.Visible && wizard.Modal,
+                                        "cancelled read-only list stays open with cleanup complete and explicit Retry: " + mode);
+                                    if (refreshCase) {
+                                        var view = (HomeInvitationList)Field(friends, "list");
+                                        check(view.Selected == selected && ((TextBox)Field(view, "search")).Text == "Друг" && ((TextBox)Field(friends, "name")).Text == "Сохранённый черновик" && (bool)Field(friends, "needsRefresh"),
+                                            "owned refresh cancellation preserves rows selection search draft and existing mutation gate");
+                                    }
+                                    start.PerformClick(); phase = 4; return false;
+                                }
+                                bool success = mode == "complete" || retry;
+                                check(success ? failure == null : failure is HomeVpnListCancelledException, "read-only list keeps its actual typed result without mutation uncertainty: " + mode);
+                                if (success && !refreshCase) {
+                                    friends = wizard.OwnedForms.OfType<HomeInvitationsForm>().FirstOrDefault(); if (friends == null) return false;
+                                    check(((ListBox)Field(Field(friends, "list"), "list")).Items.Count == 2, "accepted initial list opens actual server rows once"); friends.Close();
+                                }
+                                if (mode == "refresh-cancel-retry") {
+                                    if ((bool)Field(friends, "working")) return false;
+                                    check(!((bool)Field(friends, "needsRefresh")) && ((Label)Field(friends, "status")).Text.StartsWith("Список обновлён") && ((TextBox)Field(friends, "name")).Text == "Сохранённый черновик",
+                                        "explicit owned refresh Retry publishes the new result without reissuing or losing draft"); friends.Close();
+                                }
+                                if (cancelled != null) check(Object.ReferenceEquals(original, ListFailure(cancelled)), "old cancelled list cannot overwrite its new explicit Retry");
+                                if (stop != null) check(stop.GetAwaiter().GetResult(), "list Stop joins body and exact local cleanup: " + mode);
+                                if (closing || mode == "refresh-dispose") check(targetUi.PublicationCount == closedPublications, "closed list owner receives no late dispatcher publication");
+                                phase = 7;
+                            }
+                            if (phase == 5) {
+                                if (!stop.IsCompleted) return false;
+                                check(!stop.GetAwaiter().GetResult() && service.HasPendingAdminCleanup && service.HasOwnedResources, "locked list cleanup keeps honest failed Stop and retained owner");
+                                var refused = service.ListAdminOwnedAsync(service.Owner, wizard, (HomeProfileUiDispatcher)Field(wizard, "httpDispatcher"), delegate { });
+                                check(ListFailure(refused) is HomeVpnLocalCleanupException && attempts == 1 && ListCalls() == 1, "pending list cleanup refuses a new transport without replay");
+                                held.Dispose(); held = null; stop = service.StopAsync(); phase = 6; return false;
+                            }
+                            if (phase == 6) {
+                                if (!stop.IsCompleted) return false;
+                                check(stop.GetAwaiter().GetResult() && !service.HasPendingAdminCleanup && Object.ReferenceEquals(original, ListFailure(operation)), "unlock then explicit Stop retries only list deletion and preserves its original typed failure"); phase = 7;
+                            }
+                            if (phase != 7 || (bool)Field(wizard, "busy")) return false;
+                            int commands = mode == "complete" || mode == "cancel-retry" || mode == "stop-command" || mode == "cleanup-lock" || mode == "refresh-dispose" ? 1 : mode == "refresh-cancel-retry" ? 2 : 0;
+                            check(ListCalls() == commands && ListPrivateUnchanged(before) && !service.HasOwnedResources && !Directory.Exists(coreWork)
+                                && File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated" && (!File.Exists(Path.Combine(folder, "pid")) || Gone(Id("pid"))) && (!File.Exists(Path.Combine(folder, "child")) || Gone(Id("child"))),
+                                "owned list preserves protected data unrelated files and processes without replay: " + mode);
+                            check(true, "owned production list slice PASS: " + mode); return true;
+                        }, () => closing);
+                    } finally {
+                        release.Set(); if (held != null) held.Dispose(); if (copyWindow != null) copyWindow.Dispose();
+                        if (friends != null) friends.Dispose(); if (wizard != null) wizard.Dispose(); KillFixtures(); service.Dispose(); var cleanup = service.StopAsync();
+                        var watch = Stopwatch.StartNew();
+                        while (!cleanup.IsCompleted || (operation != null && !operation.IsCompleted)) { Application.DoEvents(); Thread.Sleep(10); if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned list fixture cleanup did not settle"); }
+                        if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned list fixture retained local cleanup"); if (operation != null) ListFailure(operation);
+                        Directory.Delete(sibling, true);
+                    }
+                }
+            }
         }
         private static void ListCopyWaiting()
         {
