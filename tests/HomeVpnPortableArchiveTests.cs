@@ -246,6 +246,15 @@ namespace ProGo
                 try { Reject(() => { using (HomeVpnPortableArchive.Prepare(archive, wrong, CancellationToken.None)) { } }, "wrong password produces a fixed non-secret failure without destination writes"); } finally { Array.Clear(wrong, 0, wrong.Length); }
             } finally { if (Directory.Exists(source)) Directory.Delete(source, true); if (Directory.Exists(target)) Directory.Delete(target, true); if (archive != null) File.Delete(archive); }
         }
+        private static void PumpStoredAccess(Func<bool> ready, string phase)
+        {
+            var watch = Stopwatch.StartNew();
+            while (!ready()) {
+                if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned imported access deadline: " + phase);
+                Application.DoEvents(); Thread.Sleep(10);
+            }
+            Application.DoEvents();
+        }
         private static void TestInstalledReload(string archive, Dictionary<string, string> expected)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") { Console.WriteLine("NOT_CHECKED: actual application reload requires isolated CI"); return; }
@@ -254,9 +263,21 @@ namespace ProGo
             if (moved) Directory.Move(root, previous);
             try {
                 using (var prepared = HomeVpnPortableArchive.Prepare(archive, Password, CancellationToken.None)) HomeVpnPortableArchive.Import(prepared, root, CancellationToken.None);
-                using (var relay = new Ikev2RelayService()) using (var service = new HomeVpnService(relay)) {
-                    Check(service.Access != null && service.Access.ServerId == new string('a', 32) && service.Owner != null && service.Owner.KeyFile == "" && service.HomeAddress == "home.example.org" &&
-                        service.ShareOrigin == "https://profiles.example.org" && !relay.IsRunning && service.RecoveryStatus == "Не запущен", "a new real HomeVpnService loads clean imported data without activating SSH or relay");
+                using (var relay = new Ikev2RelayService()) using (var service = new HomeVpnService(relay, true)) {
+                    try {
+                        PumpStoredAccess(() => service.InitializationWork.IsCompleted, "imported access initialization");
+                        Check(service.InitializationWork.GetAwaiter().GetResult() && !service.InitializationFailed && service.Access != null &&
+                            service.Access.ServerId == new string('a', 32) && service.Owner != null && service.Owner.KeyFile == "" && service.HomeAddress == "home.example.org" &&
+                            service.ShareOrigin == "https://profiles.example.org" && !relay.IsRunning && service.RecoveryStatus == "Не запущен",
+                            "production background constructor loads clean imported data through its actual owned worker without activating SSH or relay");
+                        using (var held = File.Open(Path.Combine(root, "share-" + service.Access.ServerId + ".dat"), FileMode.Open, FileAccess.Read, FileShare.None))
+                            Check(service.ShareOrigin == "https://profiles.example.org", "production background share getter reads prepared memory even while its real imported file is exclusively held");
+                    } finally {
+                        service.Dispose(); var stopped = service.StopAsync();
+                        PumpStoredAccess(() => stopped.IsCompleted && service.InitializationWork.IsCompleted, "imported access cleanup");
+                        if (!stopped.GetAwaiter().GetResult()) throw new Exception("Imported access worker cleanup incomplete");
+                        try { service.InitializationWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
+                    }
                 }
                 Check(HomeVpnSetupRecovery.HasPending() && HomeVpnSetupRecovery.Load(new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "root" }, "My iPhone").RequestId == new string('d', 32) &&
                     HomeVpnAdminRecovery.HasPending() && HomeVpnAdminRecovery.Pending().RequestId == new string('e', 32), "actual setup and invite recovery retain the imported IDs and pending gates");

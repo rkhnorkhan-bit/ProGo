@@ -73,7 +73,7 @@ namespace ProGo
                             new SshAuthenticationPreparationRequest(candidate, executable), token)))
                     using (var cliProxyService = new CliProxyBridgeService(settingsService))
                     using (var ikev2Relay = new Ikev2RelayService())
-                    using (var homeVpn = new HomeVpnService(ikev2Relay))
+                    using (var homeVpn = new HomeVpnService(ikev2Relay, true))
                     using (var clipboardService = new ClipboardService(settingsService))
                     using (var context = new UpdateAwareTrayApplicationContext(settingsService, proxyService, cliProxyService, homeVpn, clipboardService, showStatusOnStartup))
                     {

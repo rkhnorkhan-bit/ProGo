@@ -1,3 +1,38 @@
+## CI607 full SUCCESS — staged API/gates/refresh native подтверждены
+
+[CI607/39727292233](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39727292233)
+Windows119654028621/Ubuntu119654028836 SUCCESS. Exact source
+`ab6a16fda8a80adb494bc7245af867c04487ac18`, merge/build identity
+`73f972a9a09f3f56d6d120bd0625bc83273f935e`, tree9876155a50502a23e0c377d9e7c9507950f45a76
+= local2fbe4d3c8b006136864a24b5911749c8e814148a. Новые scoped native PASS:
+actual Context/tray/dashboard held read/no modal/action restore05:30:31.820–854;
+owned initialization load/Stop/Dispose/Stop→Dispose05:37:21.410–793;
+optional owner/home/share real lock warning +basic own process/local relay
+start05:37:21.937–27.900; share cancel/stop/dispose/no late value05:37:28.196–511,
+newer-save protection05:37:28.642, real unlock→retry05:37:28.877.
+
+Full native regressions проходят: Desktop5280/HomeVPN1165/Portable90; остальные
+наборы51/456, diagnostic report32/modal6/chooser3/Context ownership, selected-key
+signing55/UI50/prep72 и actual direct/owned-agent OpenSSH→SOCKS→HTTP→crash→fresh
+preparation, Instance28/Maintenance126/Shutdown47. Late Python28=26PASS2SKIP.
+ZIP0.2.2 SHA256 `35c034cc25c428f6abc16c5a58ded57c7c8e2792090d806c7bdd5099bc241785`.
+All uploads SKIPPED; bytes не получены/не переданы/не установлены, installer и
+owner acceptance NOT_RUN. Private delivery BLOCKED до согласованного канала.
+
+Program source607 ещё legacy: не приписывать этому run live default switch/
+wizard5cce/eb97, а также storage418/servicecf29. Whole R09 FAIL, R11 PARTIAL.
+V1.0 I58–80, verified21.75→22, изменение0: те же28 parent anchors переведены
+на exact607, D0.5/P0.5/A0 weight87 без роста уровней и двойного учёта подпунктов.
+
+Следующее проверочное source — frozen production-route localda77228; обновить
+только3 evidence docs и выполнить один expectedab6a publication после scan/tree.
+Source4 paths не меняются. Local address persistence primitive418 и service
+`cf29d23e4e67105ba56024e8c0be346ac2677388` исключить из него: API task-before-I/O,
+immutable input/Stop join/cancel-before-commit/accepted-save completion/retained
+cleanup+7 native vectors написаны, source/syntax/C#5/public/diff PASS, compiler/
+native NOT_RUN. Actual wizard still uses sync address adapter; stage3 отдельно.
+No binary/release/main merge/owner PC/VPS actions. Ниже checkpoints — история.
+
 ## CI606 full SUCCESS — sourcebf1c / mergecd20, staged R09 ещё NOT_RUN
 
 [CI606/39724309390](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39724309390)

@@ -74,6 +74,7 @@ namespace ProGo
                 StoredStateWorker(token, work);
                 OwnedInitializationWorker(token);
                 OwnedShareRefreshWorker(token);
+                WizardShareRead(token, clipboard);
                 foreach (string mode in new[] { "no-listener", "silent" }) {
                     foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(token, clipboard, work, mode, route);
                 }
@@ -222,6 +223,78 @@ namespace ProGo
             }
         }
         private static int UdpPort() { using (var socket = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0))) return ((IPEndPoint)socket.Client.LocalEndPoint).Port; }
+        private static void WizardShareRead(string token, ClipboardService clipboard)
+        {
+            string shareName = "share-" + HomeVpnAccess.Parse(token).ServerId;
+            var original = new Dictionary<string, byte[]>();
+            foreach (string name in new[] { "access", "owner", "home-address", shareName }) {
+                string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+                original[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            try {
+                HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", "null");
+                HomeVpnPrivateFiles.Save("home-address", "home.example"); HomeVpnPrivateFiles.Save(shareName, "https://profiles.example");
+                foreach (string route in new[] { "cancel-retry", "close", "dispose" })
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim())
+                using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+                using (var modalGuard = new System.Windows.Forms.Timer { Interval = 20 })
+                {
+                    HomeVpnWizardForm form = null; ProGoForm dialog = null;
+                    bool shown = false, fresh = false; int ticks = 0, reads = 0, readThread = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                    var existingForms = Application.OpenForms.Cast<Form>().ToArray();
+                    try {
+                        Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                        form = new HomeVpnWizardForm(service, clipboard);
+                        form.BeforeShareRead = delegate(string stage) {
+                            Interlocked.Exchange(ref readThread, Thread.CurrentThread.ManagedThreadId);
+                            if (stage == "read") Interlocked.Increment(ref reads);
+                            if (stage == "verify") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Wizard share reader fixture deadline"); }
+                        };
+                        Invoke(form, "ShowStep", 3); form.Show();
+                        heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                        modalGuard.Tick += delegate {
+                            var child = Application.OpenForms.Cast<Form>().OfType<ProGoForm>().FirstOrDefault(f => f != form && !existingForms.Contains(f) && f.Text == "QR: адрес выдачи профиля");
+                            if (child == null) return;
+                            dialog = child; shown = true;
+                            fresh = Controls(child).OfType<TextBox>().Any(t => t.Text == "https://retry.example");
+                            child.Dispose(); // Only this action creates a new address dialog; no SSH/HTTP button is clicked.
+                        };
+                        var button = Controls(form).OfType<Button>().Single(b => b.Text == "Настроить адрес выдачи QR…");
+                        var expected = original.Keys.ToDictionary(path => path, File.ReadAllBytes);
+                        var watch = Stopwatch.StartNew(); button.PerformClick();
+                        check(watch.ElapsedMilliseconds < 500, "actual configure action returns while its saved address read remains owned: " + route);
+                        Pump(() => entered.IsSet && ticks >= 3, 3000);
+                        check(readThread != uiThread && (bool)Field(form, "busy") && !service.ShareRefreshWork.IsCompleted && !shown && !button.Enabled,
+                            "configure waits for real off-thread protected data without modal, duplicate action or frozen UI: " + route);
+                        if (route == "cancel-retry") ((Button)Field(form, "cancelWait")).PerformClick();
+                        else if (route == "close") { form.Close(); check(form.Visible && !form.IsDisposed, "title close waits for cancelled owned share I/O before closing the wizard"); }
+                        else form.Dispose();
+                        check(!service.ShareRefreshWork.IsCompleted, "cancel and close cannot pretend a held native share read has settled: " + route);
+                        release.Set(); Pump(() => service.ShareRefreshWork.IsCompleted && !(bool)Field(form, "busy"), 5000);
+                        bool cancelled = false; try { service.ShareRefreshWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; }
+                        check(cancelled && !shown && !relay.IsRunning && !service.HasOwnedResources, "cancelled actual configure read cannot open a late modal or admit external work: " + route);
+                        foreach (var pair in expected) check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "wizard read cancellation preserves protected bytes: " + route);
+                        if (route == "cancel-retry") {
+                            check(form.Visible && button.Enabled && ((Label)Field(form, "status")).Text.Contains("Чтение адреса отменено"), "cancelled configure remains open with explicit retry available");
+                            HomeVpnPrivateFiles.Save(shareName, "https://retry.example"); byte[] retryBytes = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"));
+                            modalGuard.Start(); button.PerformClick(); Pump(() => shown && !(bool)Field(form, "busy"), 5000); modalGuard.Stop();
+                            check(reads == 2 && fresh && form.Visible && button.Enabled && !service.InitializationFailed,
+                                "actual Cancel then Retry rereads fresh protected address and opens only its matching configure modal");
+                            check(retryBytes.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"))), "opening and cancelling the fresh address dialog does not save or rewrite its source");
+                        } else check(form.IsDisposed, "closed configure owner receives no late UI or modal after actual read settles: " + route);
+                    } finally {
+                        release.Set(); heartbeat.Stop(); modalGuard.Stop(); if (dialog != null) dialog.Dispose(); if (form != null) form.Dispose();
+                        service.Dispose(); var cleanup = service.StopAsync();
+                        Pump(() => cleanup.IsCompleted && service.ShareRefreshWork.IsCompleted && service.InitializationWork.IsCompleted, 5000);
+                        if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Wizard share reader fixture cleanup incomplete");
+                        try { service.ShareRefreshWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
+                    }
+                }
+            } finally { foreach (var pair in original) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); } }
+        }
         private static void OwnedShareRefreshWorker(string token)
         {
             string shareName = "share-" + HomeVpnAccess.Parse(token).ServerId;

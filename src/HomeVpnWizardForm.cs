@@ -27,7 +27,8 @@ namespace ProGo
         private readonly Button cancelWait = new Button();
         private readonly object channelWaitGate = new object();
         private CancellationTokenSource channelWait;
-        private bool closeAfterWait, cancelledWait, stoppingChannel;
+        private bool closeAfterWait, cancelledWait, stoppingChannel, readingShare, cancelledShareWait;
+        internal Action<string> BeforeShareRead; // Fixture boundary around the real protected-file read.
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
         private bool own, routerDone, recoverSetup, setupBlocked, fittingSetup;
@@ -166,7 +167,7 @@ namespace ProGo
             {
                 Paragraph("Сканируйте QR камерой телефона. Откроется защищённая страница с выбором iPhone или Android; сервер, логин и пароль уже будут заполнены.");
                 Action("Установить на телефон по QR", async delegate { await ShowQr(); }, "Создаёт временную ссылку и QR для установки профиля. Предыдущая ссылка доступа перестаёт работать; установка телефоном не подтверждается.");
-                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); }, "Открывает настройку HTTPS-адреса выдачи профилей на VPS.");
+                Action("Настроить адрес выдачи QR…", async delegate { await ConfigureShare(); }, "Открывает настройку HTTPS-адреса выдачи профилей на VPS.");
                 Action("Сохранить профиль iPhone файлом…", SaveProfile, "Открывает выбор нового файла профиля iPhone. Сохранение файла не подтверждает установку на телефоне.");
                 profileState = Paragraph(verification.IssuanceText); DescribeStatus(profileState, "Выдача профиля VPN");
                 Paragraph("iPhone: откройте страницу в Safari, разрешите загрузку и подтвердите установку в Настройки → Основные → VPN и управление устройством. Android: импортируйте профиль в strongSwan VPN Client.");
@@ -191,7 +192,7 @@ namespace ProGo
                 counters = Paragraph(""); DescribeStatus(counters, "Состояние канала и проверки телефона");
                 Paragraph("На телефоне выключите Wi-Fi, выберите профиль ProGo и включите VPN. Затем откройте сайт проверки IP: должен отображаться выход вашего VPS. Счётчики подтверждают пересылку, а статус «Подключено» проверяется на телефоне.");
                 Action("Установить на телефон по QR", async delegate { await ShowQr(); }, "Создаёт временную ссылку и QR для установки профиля. Предыдущая ссылка доступа перестаёт работать; установка телефоном не подтверждается.");
-                Action("Настроить адрес выдачи QR…", delegate { HomeProfileShare.Configure(this, service); }, "Открывает настройку HTTPS-адреса выдачи профилей на VPS.");
+                Action("Настроить адрес выдачи QR…", async delegate { await ConfigureShare(); }, "Открывает настройку HTTPS-адреса выдачи профилей на VPS.");
                 Action("Настроить роутер / создать профиль снова", delegate { ShowStep(2); }, "Возвращает к домашнему адресу и правилам роутера для повторной выдачи профиля.");
                 Action("Выбрать другой VPS или токен", delegate { ShowStep(0); }, "Открывает выбор другого доступа. Сам переход не останавливает текущий канал.");
                 if (service.Owner != null) Action("Доступ друзей…", async delegate { await ManageInvitations(); }, "Запрашивает список друзей на VPS и открывает управление отдельными токенами доступа.");
@@ -260,7 +261,7 @@ namespace ProGo
         private async Task RunStep(Func<Task> action)
         {
             if (busy || ownerUi.Closed || IsDisposed || Disposing) return;
-            cancelledWait = closeAfterWait = false;
+            cancelledWait = closeAfterWait = cancelledShareWait = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await ownerUi.Await(action()); }
             catch (HomeVpnListCancelledException ex)
@@ -282,7 +283,8 @@ namespace ProGo
             {
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     status.ForeColor = cancelledWait ? UiTheme.Muted : UiTheme.Error;
-                    status.Text = cancelledWait ? "Запуск канала отменён. Сохранённый доступ к VPS остаётся; можно повторить запуск." : "Операция прервана. Результат не подтверждён.";
+                    status.Text = cancelledWait ? (cancelledShareWait ? "Чтение адреса отменено. Сохранённые данные остаются; можно повторить чтение."
+                        : "Запуск канала отменён. Сохранённый доступ к VPS остаётся; можно повторить запуск.") : "Операция прервана. Результат не подтверждён.";
                 }
             }
             catch (Exception ex) { closeAfterWait = false; if (!ownerUi.Closed && !IsDisposed && !Disposing) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; } }
@@ -300,6 +302,8 @@ namespace ProGo
         {
             using (var source = new CancellationTokenSource()) {
                 lock (channelWaitGate) channelWait = source;
+                cancelWait.Text = "Отменить запуск канала"; cancelWait.AccessibleName = cancelWait.Text;
+                cancelWait.AccessibleDescription = "Отменяет только запуск канала к VPS. Сохранённый доступ остаётся; окно ждёт остановки процессов.";
                 cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
                 UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus();
                 SetProgress("Ожидаем канал к VPS: до 10 секунд для SOCKS, затем до 10 секунд для приёмника. Можно отменить запуск; сохранённый доступ остаётся.");
@@ -314,6 +318,36 @@ namespace ProGo
                 }
             }
         }
+        private async Task ReadShareOrigin()
+        {
+            using (var source = new CancellationTokenSource()) {
+                lock (channelWaitGate) channelWait = source;
+                readingShare = true;
+                cancelWait.Text = "Отменить чтение адреса"; cancelWait.AccessibleName = cancelWait.Text;
+                cancelWait.AccessibleDescription = "Отменяет чтение сохранённого HTTPS-адреса. Данные не изменяются; окно ждёт завершения принадлежащего ему чтения.";
+                cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait;
+                UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus();
+                SetProgress("Читаем сохранённый HTTPS-адрес выдачи QR. Можно отменить; данные не изменяются…");
+                try {
+                    if (!await ownerUi.Await(service.RefreshShareOriginAsync(source.Token, BeforeShareRead)))
+                        throw new InvalidOperationException("Сохранённый HTTPS-адрес недоступен. Освободите файл и повторите настройку; прежние данные не изменены.");
+                    SetProgress("Чтение HTTPS-адреса завершено. Можно проверить или настроить адрес.");
+                } catch (OperationCanceledException) { cancelledWait = source.IsCancellationRequested; cancelledShareWait = true; throw; }
+                finally {
+                    lock (channelWaitGate) channelWait = null;
+                    readingShare = false;
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                }
+            }
+        }
+        private async Task ConfigureShare()
+        {
+            await RunStep(async delegate {
+                await ownerUi.Await(ReadShareOrigin());
+                HomeProfileShare.Configure(this, service);
+            });
+        }
+
         private async Task StopChannel()
         {
             stoppingChannel = true;
@@ -331,7 +365,7 @@ namespace ProGo
                 var source = channelWait;
                 if (source == null || source.IsCancellationRequested) return;
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) cancelWait.Enabled = false;
-                SetProgress("Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
+                SetProgress(readingShare ? "Отменяем чтение адреса. Дождитесь завершения чтения; данные не изменяются…" : "Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
                 source.Cancel();
             }
         }
@@ -408,9 +442,10 @@ namespace ProGo
         {
             if (service.Access == null || !HomeVpnAccess.ValidHost(service.HomeAddress))
             { ShowStep(2); status.Text = "Сначала укажите внешний домашний адрес."; return; }
-            if (String.IsNullOrEmpty(service.ShareOrigin) && !HomeProfileShare.Configure(this, service)) return;
             await RunStep(async delegate
             {
+                await ownerUi.Await(ReadShareOrigin());
+                if (String.IsNullOrEmpty(service.ShareOrigin) && !HomeProfileShare.Configure(this, service)) return;
                 SetProgress("Создаём QR на 15 минут. Предыдущая ссылка этого доступа перестанет работать…");
                 var origin = service.ShareOrigin;
                 var access = service.Access;
