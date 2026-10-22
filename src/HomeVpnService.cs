@@ -267,7 +267,9 @@ namespace ProGo
         internal Task<bool> ProfileExportWork { get { lock (lifecycleGate) return profileExportWork; } }
         internal bool IsExportingProfile { get { lock (lifecycleGate) return !profileExportWork.IsCompleted; } }
         private readonly HashSet<Task<string>> adminOwnedWork = new HashSet<Task<string>>();
+        private readonly HashSet<Action> adminOwnedCleanup = new HashSet<Action>();
         internal bool IsAdminWorking { get { lock (lifecycleGate) return adminOwnedWork.Count != 0; } }
+        internal bool HasPendingAdminCleanup { get { lock (lifecycleGate) return adminOwnedCleanup.Count != 0; } }
         private long shareRevision;
         internal Task<bool> ShareRefreshWork { get { lock (lifecycleGate) return shareRefreshWork; } }
         private Task<bool> initializationWork = Task.FromResult(true);
@@ -287,7 +289,7 @@ namespace ProGo
         internal bool InitializationFailed { get { return initializationFailed; } }
         internal bool IsStopping { get { lock (lifecycleGate) return !stopWork.IsCompleted || !channelStopWork.IsCompleted; } }
         internal bool IsStarting { get { lock (lifecycleGate) return !startWork.IsCompleted; } }
-        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null || addressWrite != null || importWrite != null || IsExportingProfile || IsAdminWorking; } }
+        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null || addressWrite != null || importWrite != null || IsExportingProfile || IsAdminWorking || HasPendingAdminCleanup; } }
         internal bool StartsPaused { get { lock (lifecycleGate) return startsPaused; } }
         internal void PauseStarts() { lock (lifecycleGate) startsPaused = true; }
         internal void ResumeStarts() { lock (lifecycleGate) { if (!disposed) startsPaused = false; } }
@@ -793,6 +795,21 @@ namespace ProGo
             return true;
         }
 
+        // Attach only the exact generated-directory deletion from an owned body,
+        // before its original cleanup failure completes that operation.
+        internal void RetainAdminCleanup(Action cleanup)
+        { if (cleanup == null) throw new ArgumentNullException("cleanup"); lock (lifecycleGate) adminOwnedCleanup.Add(cleanup); }
+        private bool RetryAdminCleanup()
+        {
+            Action[] pending;
+            lock (lifecycleGate) { pending = new Action[adminOwnedCleanup.Count]; adminOwnedCleanup.CopyTo(pending); }
+            bool cleaned = true;
+            foreach (var cleanup in pending) {
+                try { cleanup(); lock (lifecycleGate) adminOwnedCleanup.Remove(cleanup); }
+                catch { cleaned = false; } // Keep this exact owner for explicit retry; never scan/replay.
+            }
+            return cleaned;
+        }
         // Bodies must not await this service's public Stop: Stop owns their drain.
         internal Task<string> RunAdminOwnedAsync(Func<Task<string>> start, Action beforeStart = null)
         {
@@ -801,6 +818,9 @@ namespace ProGo
                 completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
                 if (disposed || startsPaused || !stopWork.IsCompleted) {
                     completion.SetException(new OperationCanceledException("Команда не запущена: дождитесь завершения остановки VPN для телефона.")); return completion.Task;
+                }
+                if (adminOwnedCleanup.Count != 0) {
+                    completion.SetException(new HomeVpnLocalCleanupException("Очистка прежней команды не завершена. Освободите её локальные файлы и повторите остановку VPN для телефона перед новой командой.")); return completion.Task;
                 }
                 stop = stopWork; adminOwnedWork.Add(completion.Task); // Reserve before scheduling or factory admission.
             }
@@ -814,6 +834,7 @@ namespace ProGo
                 lock (lifecycleGate) {
                     if (disposed || startsPaused || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted)
                         throw new OperationCanceledException("Команда отменена до начала подготовки. Новая команда не запускалась.");
+                    if (adminOwnedCleanup.Count != 0) throw new HomeVpnLocalCleanupException("Локальная очистка прежней команды не завершена. Повторите остановку перед новой командой.");
                 }
                 // Only metadata holds the gate. The admitted real body (including
                 // synchronous factory work) belongs to this retained worker.
@@ -851,7 +872,8 @@ namespace ProGo
                 try { await pendingExport.ConfigureAwait(false); } catch { /* Exact save/refusal outcome remains on ProfileExportWork. */ }
                 try { await pendingAdmin.ConfigureAwait(false); } catch { /* Actual typed body outcomes remain on their public operation tasks. */ }
                 bool cleaned = CleanupImportOwned();
-                if (failure != null) completion.TrySetException(failure); else completion.TrySetResult(stopped && cleaned);
+                bool adminCleaned = RetryAdminCleanup();
+                if (failure != null) completion.TrySetException(failure); else completion.TrySetResult(stopped && cleaned && adminCleaned);
             });
             return completion.Task;
         }
@@ -957,7 +979,7 @@ namespace ProGo
 
         // Injected transports keep Windows fixtures isolated from live VPS credentials.
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress,
-            Func<string, string, Task> copy, Func<string, string, string, Task> commandTransport)
+            Func<string, string, Task> copy, Func<string, string, string, Task> commandTransport, Action<Action> retainCleanup = null)
         {
             // Freeze the endpoint and authentication path before the first await;
             // a caller's mutable settings object cannot redirect this operation.
@@ -987,12 +1009,12 @@ namespace ProGo
                 if (action == "share" && HomeVpnShareRecovery.HasPending()) throw new HomeVpnSharePendingException(HomeVpnShareRecovery.PendingMessage);
                 HomeVpnPrivateFiles.SecureDirectory(HomeVpnPrivateFiles.Root);
                 var work = Path.Combine(HomeVpnPrivateFiles.Root, "admin-" + Guid.NewGuid().ToString("N"));
-                HomeVpnPrivateFiles.SecureDirectory(work);
                 var name = "progo-" + Guid.NewGuid().ToString("N");
-                var upload = Path.Combine(work, name); Directory.CreateDirectory(upload);
+                var upload = Path.Combine(work, name);
                 var output = Path.Combine(work, "result.txt");
                 bool remoteStarted = false;
                 return await CompleteAdminWorkAsync(work, action, checking, () => remoteStarted, async delegate {
+                HomeVpnPrivateFiles.SecureDirectory(work); Directory.CreateDirectory(upload);
                 try
                 {
                     foreach (var file in new[] { "home_vpn_setup.py", "ikev2_relay.py", "install-ikev2-relay.sh", "profile_share_setup.py", "profile_share.py", "qrcodegen.py", "QR_LICENSE.txt" })
@@ -1115,11 +1137,11 @@ namespace ProGo
                     if (ex is OutOfMemoryException || !setup || request == null) throw;
                     throw new HomeVpnSetupPendingException(HomeVpnSetupRecovery.PendingMessage);
                 }
-                });
+                }, retainCleanup);
             }
         }
 
-        private static async Task<string> CompleteAdminWorkAsync(string work, string action, bool checking, Func<bool> remoteStarted, Func<Task<string>> operation)
+        private static async Task<string> CompleteAdminWorkAsync(string work, string action, bool checking, Func<bool> remoteStarted, Func<Task<string>> operation, Action<Action> retainCleanup)
         {
             string result = null; ExceptionDispatchInfo failure = null;
             try { result = await operation(); }
@@ -1127,7 +1149,10 @@ namespace ProGo
             // C# 5 cannot await inside finally. Keep the recovery lease above
             // until this worker settles, then preserve the original outcome.
             bool started = remoteStarted();
-            await Task.Run(() => DeleteAdminWork(work, action, checking, started));
+            Action cleanup = () => DeleteAdminWork(work, action, checking, started);
+            ExceptionDispatchInfo cleanupFailure = null;
+            try { await Task.Run(cleanup); } catch (Exception error) { cleanupFailure = ExceptionDispatchInfo.Capture(error); }
+            if (cleanupFailure != null) { if (retainCleanup != null) retainCleanup(cleanup); cleanupFailure.Throw(); }
             if (failure != null) failure.Throw();
             return result;
         }

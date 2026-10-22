@@ -1,4 +1,35 @@
-## Текущий кандидат: Admin task ownership8 поверх точного CI627
+## Текущий кандидат: exact Admin cleanup4; Windows NOT_RUN
+
+Проверенная база `b2c79830d078497fadc284e96b02e6be815aa300` / merge `72d546f06ebc680029b202b75ba5489bcfcb7d51`;
+[CI628 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39849852240)
+независимо подтверждён completed jobs и Windows log: ownership8, snapshot12/dispatcher5,
+export modal11/chooser3, Desktop5294/HomeVPN2241/Portable91 PASS. Все uploads/prune SKIPPED,
+артефактов нет. Локальный исходный checkpoint `28d43e1f9076fd76403a7060f73e0b247c8d8646` сохранён.
+
+Новый отдельный код `ef9bd8d7d730912874b2f32ed6589b8038f6e26d`: только HomeVpnService и SetupRecoveryTests,
+точный replay e1e793e0. Dependencies уже в628; HTTPS/UI/invitation не нужны и не добавляются.
+Фиксация exact cleanup action до typed fault; Stop/Dispose drain actual bodies, затем
+только точное удаление. Пока lock остаётся — false/retained; unlock→explicit Stop — true,
+без повторного copy/SSH. New factories отклоняются до завершения cleanup. Callback ещё
+не подключён к production Admin UI; fullR09 остаётся открытым.
+
+Минимальная Windows проверка нового source: существующие scripts/Test-ProGo.ps1 и
+scripts/Test-HomeVpnRelay.ps1. Требовать точный source/merge build identity и PASS четырёх
+режимов complete/list-lock/preparation-lock/dispose-lock: actual core, sharing failure,
+исходный typed error, честный locked Stop false, unlock/retry true, Dispose drain,
+защищённые bytes/чужой sibling сохранены, transport счётчики не увеличились при retry.
+Bounded3s/5s и finally cleanup, исходный Pump12s; NativeRecovery остаётся последним.
+Обязательна прежняя ownership8/snapshot12/dispatcher5/export14 и полная регрессия.
+Локальные syntax/await-scope/manual/diff/public321/0/secretPII0/scope checks PASS;
+новые Windows compilation/native4 NOT_RUN до фактического exact CI, старый628 не наследуется.
+
+Один guarded update существующей PR88 ветки после scan; один automatic PR CI, без manual
+dispatch/retry. Public uploads OFF, release/main merge/бинарники/установка/VPS исключены.
+Сохранить source/merge/tree/run и завершить проход без ожидания; следующий этап сначала
+проверяет этот же run. Отдельный дальнейший кодовый этап — owned Admin core wrapper.
+Реализация58–80/22, изменение0, методика и веса прежние; NOT_RUN не PASS.
+
+## История: подготовка кандидата Admin task ownership8 поверх точного CI627
 
 Последняя проверенная база: source `8637c5e7ffcb19e2ed0622d74532bd88e245f9a0`, merge
 `8968a9b0506fb0157a1f130c4a8379a2b78e8820`, [CI627 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388).

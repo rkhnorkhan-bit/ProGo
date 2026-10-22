@@ -3831,7 +3831,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
+  "candidate_source": "b2c79830d078497fadc284e96b02e6be815aa300",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3929,28 +3929,40 @@
     }
   ],
   "ci_candidate": {
-    "source": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
-    "tested_merge": "8968a9b0506fb0157a1f130c4a8379a2b78e8820",
-    "tree": "0cb98d96ae4a466f9d4de828a4d8e87233f6f1da",
-    "run_id": 39829750388,
-    "run_number": 627,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388",
+    "source": "b2c79830d078497fadc284e96b02e6be815aa300",
+    "tested_merge": "72d546f06ebc680029b202b75ba5489bcfcb7d51",
+    "tree": "5ba01af64e20edcf07f00878d4bc4bc9cf63cfb7",
+    "run_id": 39849852240,
+    "run_number": 628,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39849852240",
     "status": "completed",
     "conclusion": "success",
+    "run_updated_at": "2026-10-22T20:59:02Z",
     "jobs": {
-      "windows": 120002424298,
-      "ubuntu": 120002424507
+      "windows": 120072781434,
+      "ubuntu": 120072782038
     },
-    "windows_compilation": "PASS exact627 complete suite",
-    "windows_native": "PASS exact627 Desktop5294, snapshot12+dispatcher5, export modal11+native chooser3 and complete regression",
+    "windows_compilation": "PASS exact628 completed Windows build",
+    "windows_native": "PASS exact628 Desktop5294/HomeVPN2241/Portable91; ownership8, snapshot12, dispatcher5, export modal11 and native chooser3; complete existing regression",
+    "ownership_modes": [
+      "complete",
+      "stop",
+      "dispose",
+      "lock",
+      "typed",
+      "queued-stop",
+      "queued-dispose",
+      "multiple"
+    ],
     "snapshot_cases": 12,
     "dispatcher_cases": 5,
     "export_modal_cases": 11,
     "export_native_chooser_cases": 3,
-    "ubuntu": "SUCCESS",
-    "runner_zip_sha256": "041551983f19ef6a606b96e41ac021edce9a59323a6bf4b8c90e9f53a274351f",
-    "package_delivery": "NOT_RUN bytes not retrieved/uploaded/installed",
-    "excludes": "Local Admin task ownership8/cleanup4/owned worker/default binding and invitation extensions",
+    "ubuntu": "PASS exact628 completed job",
+    "artifact_uploads": "SKIPPED all four uploads and prune; no artifacts",
+    "runner_zip_sha256": "5ec38a35225b0d58f54ad1b1c2ce03bc6634afab02e864d88448694f8686f787",
+    "package_delivery": "NOT_RUN bytes not retrieved, uploaded, delivered or installed",
+    "excludes": "New cleanup4, future AdminOwnedAsync production wrapper, HTTPS/UI/invitation migration",
     "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
@@ -5487,21 +5499,22 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Prepared one bounded Admin task ownership8 stage on verified627; guarded source publication next",
-    "base_source": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
-    "local_sha": "736740009c02fd88e65d4830f204166c953a471a",
-    "local_development_sha": "736740009c02fd88e65d4830f204166c953a471a",
-    "published_sha": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
-    "tested_merge": "8968a9b0506fb0157a1f130c4a8379a2b78e8820",
-    "ci_run_id": 39829750388,
-    "ci_run_number": 627,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388",
+    "phase": "One limited Admin cleanup4 phase prepared on independently verified628; publication next",
+    "recovery_checkpoint": "28d43e1f9076fd76403a7060f73e0b247c8d8646",
+    "base_source": "b2c79830d078497fadc284e96b02e6be815aa300",
+    "base_merge": "72d546f06ebc680029b202b75ba5489bcfcb7d51",
+    "local_sha": "ef9bd8d7d730912874b2f32ed6589b8038f6e26d",
+    "local_development_sha": "ef9bd8d7d730912874b2f32ed6589b8038f6e26d",
+    "published_sha": "b2c79830d078497fadc284e96b02e6be815aa300",
+    "tested_merge": "72d546f06ebc680029b202b75ba5489bcfcb7d51",
+    "ci_run_id": 39849852240,
     "ci_status": "completed",
     "ci_conclusion": "success",
-    "windows_compilation": "NOT_RUN for new ownership8; exact627 SUCCESS only for base",
-    "windows_native": "NOT_RUN new ownership8",
-    "scope": "Only2 source/test files +3 checkpoint docs; full UI/EOF/API17 preserved; cleanup and route migration excluded",
-    "next": "Publish once after exact scans and canonical tree guard, capture one automatic CI, save source/merge/run then STOP after this stage without waiting for completion or proceeding to cleanup",
+    "baseline_only": true,
+    "windows_compilation": "NOT_RUN new cleanup4; Linux has no .NET Framework/PowerShell",
+    "windows_native": "NOT_RUN new complete/list-lock/preparation-lock/dispose-lock; old628 SUCCESS belongs only to base",
+    "scope": "Only src/HomeVpnService.cs, tests/HomeVpnSetupRecoveryTests.cs and3 checkpoint docs; HTTPS/UI/invitation excluded",
+    "next": "Publish one scanned frozen tree to existing PR88 with expected base SHA; record source/merge/one automatic run and STOP without waiting or starting another stage",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -5595,7 +5608,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact627 SUCCESS belongs to8637c5e/8968a9b and includes snapshot12/dispatcher5/export14. New ownership8 compiler/native NOT_RUN. Fixed method/weights/620 credited anchors unchanged; external personal MTProto result separate and uncredited; owner ProGo acceptance A0.",
+    "candidate_note": "Exact628 sourceb2c7983/merge72d546f independently SUCCESS with ownership8/API17/export14. New cleanup4 is a separate local code candidate, compiler/native NOT_RUN until its exact CI. No new complete weighted gate or target acceptance; fixed v1.0 weights and620 credited anchors unchanged; external personal deployment separate and uncredited.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9936,6 +9949,88 @@
         "readiness_change": 0
       },
       "candidate_source": "ec5b0e9e2f9c52ab7437ae3b99b79d897a734262"
+    },
+    "before_admin_cleanup_on628": {
+      "ci_candidate": {
+        "source": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
+        "tested_merge": "8968a9b0506fb0157a1f130c4a8379a2b78e8820",
+        "tree": "0cb98d96ae4a466f9d4de828a4d8e87233f6f1da",
+        "run_id": 39829750388,
+        "run_number": 627,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388",
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": {
+          "windows": 120002424298,
+          "ubuntu": 120002424507
+        },
+        "windows_compilation": "PASS exact627 complete suite",
+        "windows_native": "PASS exact627 Desktop5294, snapshot12+dispatcher5, export modal11+native chooser3 and complete regression",
+        "snapshot_cases": 12,
+        "dispatcher_cases": 5,
+        "export_modal_cases": 11,
+        "export_native_chooser_cases": 3,
+        "ubuntu": "SUCCESS",
+        "runner_zip_sha256": "041551983f19ef6a606b96e41ac021edce9a59323a6bf4b8c90e9f53a274351f",
+        "package_delivery": "NOT_RUN bytes not retrieved/uploaded/installed",
+        "excludes": "Local Admin task ownership8/cleanup4/owned worker/default binding and invitation extensions",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "phase": "Prepared one bounded Admin task ownership8 stage on verified627; guarded source publication next",
+        "base_source": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
+        "local_sha": "736740009c02fd88e65d4830f204166c953a471a",
+        "local_development_sha": "736740009c02fd88e65d4830f204166c953a471a",
+        "published_sha": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
+        "tested_merge": "8968a9b0506fb0157a1f130c4a8379a2b78e8820",
+        "ci_run_id": 39829750388,
+        "ci_run_number": 627,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388",
+        "ci_status": "completed",
+        "ci_conclusion": "success",
+        "windows_compilation": "NOT_RUN for new ownership8; exact627 SUCCESS only for base",
+        "windows_native": "NOT_RUN new ownership8",
+        "scope": "Only2 source/test files +3 checkpoint docs; full UI/EOF/API17 preserved; cleanup and route migration excluded",
+        "next": "Publish once after exact scans and canonical tree guard, capture one automatic CI, save source/merge/run then STOP after this stage without waiting for completion or proceeding to cleanup",
+        "readiness_change": 0
+      },
+      "candidate_source": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
+      "admin_task_ownership_integration_on627": {
+        "status": "PARTIAL",
+        "base_source": "8637c5e7ffcb19e2ed0622d74532bd88e245f9a0",
+        "base_merge": "8968a9b0506fb0157a1f130c4a8379a2b78e8820",
+        "base_ci": 39829750388,
+        "code_sha": "736740009c02fd88e65d4830f204166c953a471a",
+        "source_commits": [
+          "437b69e8037a9c33e0f581679f0736dfc1321f2c"
+        ],
+        "branch": "work/progo-admin-ownership-on627-20261022",
+        "worktree": "ProGo-admin-ownership-on627",
+        "code_paths": [
+          "src/HomeVpnService.cs",
+          "tests/HomeVpnSetupRecoveryTests.cs"
+        ],
+        "native_cases": 8,
+        "criteria": [
+          "Reservation published before worker scheduling",
+          "Stop/Dispose before admission refuses factory",
+          "Admitted actual bodies retained through I/O and original typed outcomes",
+          "Public Stop joins every owned body and refuses late factories"
+        ],
+        "dependencies": "PASS exact627 base contains required service lifecycle, typed errors and existing Windows harness; no cleanup/route migration needed",
+        "static": "PASS full manual diff/syntax2/await-scope/diff/public321/0/added secretPII0/canonical source equality437b69e",
+        "preservation": "PASS snapshot/dispatcher API17 and existing AdminAsync body; export UI/tests/EOF/BOM/invitation/HTTPS/workflows/VERSION unchanged627",
+        "windows_compilation": "NOT_RUN",
+        "windows_native": "NOT_RUN",
+        "publication": "TODO guarded existing PR ref update after remote canonical equality/fresh guards",
+        "run_id": null,
+        "ci_status": "NOT_RUN",
+        "ci_conclusion": null,
+        "contract": "Bodies must never await service public Stop which owns their drain",
+        "production_route_binding": "TODO outside this stage, requires cleanup retention and owned core wrapper first",
+        "next_stage": "Exact Admin cleanup retention4, saved separate e1e793e0b0789e8d686454b052fd3b773623ed57; do not implement in this response",
+        "readiness_change": 0
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -10226,16 +10321,19 @@
     "dependencies": "PASS exact627 base contains required service lifecycle, typed errors and existing Windows harness; no cleanup/route migration needed",
     "static": "PASS full manual diff/syntax2/await-scope/diff/public321/0/added secretPII0/canonical source equality437b69e",
     "preservation": "PASS snapshot/dispatcher API17 and existing AdminAsync body; export UI/tests/EOF/BOM/invitation/HTTPS/workflows/VERSION unchanged627",
-    "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN",
+    "windows_compilation": "PASS exact628",
+    "windows_native": "PASS exact628 all ownership8 with snapshot12/dispatcher5/export14 and complete regression",
     "publication": "TODO guarded existing PR ref update after remote canonical equality/fresh guards",
-    "run_id": null,
-    "ci_status": "NOT_RUN",
-    "ci_conclusion": null,
+    "run_id": 39849852240,
+    "ci_status": "completed",
+    "ci_conclusion": "success",
     "contract": "Bodies must never await service public Stop which owns their drain",
     "production_route_binding": "TODO outside this stage, requires cleanup retention and owned core wrapper first",
-    "next_stage": "Exact Admin cleanup retention4, saved separate e1e793e0b0789e8d686454b052fd3b773623ed57; do not implement in this response",
-    "readiness_change": 0
+    "next_stage": "Limited exact cleanup4 integration on verified628; production wrapper/UI excluded",
+    "readiness_change": 0,
+    "published_source": "b2c79830d078497fadc284e96b02e6be815aa300",
+    "published_merge": "72d546f06ebc680029b202b75ba5489bcfcb7d51",
+    "next": "Ownership API proof complete at exact628; cleanup4 is now the separate checking phase; production route remains TODO"
   },
   "external_personal_mtproto_check": {
     "source": "Owner report, separate deployment outside ProGo",
@@ -10248,6 +10346,81 @@
     "progo_acceptance": "NOT_RUN this is not acceptance of the ProGo phone VPN or full project",
     "private_connection_details": "Deployment connection details intentionally omitted from public files; credential material not accessed; no VPS commands or credential reads performed",
     "agent_vps_actions": "NONE",
+    "readiness_change": 0
+  },
+  "previous_verified_ci628": {
+    "source": "b2c79830d078497fadc284e96b02e6be815aa300",
+    "tested_merge": "72d546f06ebc680029b202b75ba5489bcfcb7d51",
+    "tree": "5ba01af64e20edcf07f00878d4bc4bc9cf63cfb7",
+    "run_id": 39849852240,
+    "run_number": 628,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39849852240",
+    "status": "completed",
+    "conclusion": "success",
+    "run_updated_at": "2026-10-22T20:59:02Z",
+    "jobs": {
+      "windows": 120072781434,
+      "ubuntu": 120072782038
+    },
+    "windows_compilation": "PASS exact628 completed Windows build",
+    "windows_native": "PASS exact628 Desktop5294/HomeVPN2241/Portable91; ownership8, snapshot12, dispatcher5, export modal11 and native chooser3; complete existing regression",
+    "ownership_modes": [
+      "complete",
+      "stop",
+      "dispose",
+      "lock",
+      "typed",
+      "queued-stop",
+      "queued-dispose",
+      "multiple"
+    ],
+    "snapshot_cases": 12,
+    "dispatcher_cases": 5,
+    "export_modal_cases": 11,
+    "export_native_chooser_cases": 3,
+    "ubuntu": "PASS exact628 completed job",
+    "artifact_uploads": "SKIPPED all four uploads and prune; no artifacts",
+    "runner_zip_sha256": "5ec38a35225b0d58f54ad1b1c2ce03bc6634afab02e864d88448694f8686f787",
+    "package_delivery": "NOT_RUN bytes not retrieved, uploaded, delivered or installed",
+    "excludes": "New cleanup4, future AdminOwnedAsync production wrapper, HTTPS/UI/invitation migration",
+    "owner_pc": "NOT_RUN"
+  },
+  "admin_cleanup_integration_on628": {
+    "status": "PARTIAL",
+    "recovery_checkpoint": "28d43e1f9076fd76403a7060f73e0b247c8d8646",
+    "base_source": "b2c79830d078497fadc284e96b02e6be815aa300",
+    "base_merge": "72d546f06ebc680029b202b75ba5489bcfcb7d51",
+    "base_ci": 39849852240,
+    "code_sha": "ef9bd8d7d730912874b2f32ed6589b8038f6e26d",
+    "source_commit": "e1e793e0b0789e8d686454b052fd3b773623ed57",
+    "branch": "work/progo-admin-cleanup-on628-20261023",
+    "worktree": "ProGo-admin-cleanup-on628",
+    "code_paths": [
+      "src/HomeVpnService.cs",
+      "tests/HomeVpnSetupRecoveryTests.cs"
+    ],
+    "native_modes": [
+      "complete",
+      "list-lock",
+      "preparation-lock",
+      "dispose-lock"
+    ],
+    "implementation": "Exact generated-directory cleanup action retained before original typed failure settles; work/upload creation inside completion envelope; public Stop drains accepted bodies then retries only retained deletion actions on worker; pending cleanup refuses new factories",
+    "criteria": [
+      "Normal core removes only its generated files",
+      "Sharing lock yields typed error and retains exact cleanup; locked Stop returns false",
+      "Unlock then explicit Stop removes retained directory without copy/SSH replay",
+      "Dispose remains asynchronous and owns actual body plus cleanup; protected bytes and unrelated sibling unchanged"
+    ],
+    "dependencies": "PASS public628 source2 canonical blobs exactly match saved cleanup parent; existing ownership/typed errors/private-file helpers and relay harness present; no unfinished block needed",
+    "static": "PASS full manual diff, syntax2/C#5 await-scope (not compilation), diff check, exact saved source2 equality, public321/0, added secretPII0",
+    "preservation": "PASS every other tracked blob unchanged628 before docs; export UI/EOF/BOM/API17/ownership8/invitation/HTTPS/scripts/workflows/VERSION preserved",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "TODO one guarded existing PR88 branch update after final scan",
+    "production_route_binding": "TODO existing static Admin routes do not pass retention callback; future AdminOwnedAsync wrapper required; fullR09 remains open",
+    "contract": "Owned bodies must not await public Stop, which owns their drain; retry never scans directories or repeats transport",
+    "next": "Inspect the single new CI exact build identity and cleanup4 plus ownership8/snapshot12/dispatcher5/export14 regression; then separate owned Admin core wrapper stage only after proof",
     "readiness_change": 0
   }
 }

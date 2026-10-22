@@ -1,6 +1,6 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Точные текущие source/merge/CI указаны в последнем checkpoint ниже и JSON ci_candidate; локальный код отдельно в active_work.local_development_sha; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено23.10.2026 (МСК). Точные текущие source/merge/CI указаны в последнем checkpoint ниже и JSON ci_candidate; локальный код отдельно в active_work.local_development_sha; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
@@ -8,7 +8,59 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: владение Admin-задачами и Stop/Dispose на проверенном CI627
+## Текущий этап: exact Admin cleanup4 на проверенном CI628
+
+Точка восстановления `28d43e1f9076fd76403a7060f73e0b247c8d8646` прочитана; актуальный PR88 OPEN/DRAFT остаётся
+на source `b2c79830d078497fadc284e96b02e6be815aa300`, tested merge `72d546f06ebc680029b202b75ba5489bcfcb7d51`.
+[CI628/39849852240](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39849852240)
+независимо проверен SUCCESS: Windows120072781434/Ubuntu120072782038; completed Windows
+лог подтверждает Desktop5294/HomeVPN2241/Portable91, ownership8, snapshot12/dispatcher5,
+export modal11/chooser3 и полную прежнюю регрессию. Все uploads/prune SKIPPED, артефактов нет.
+Это доказательство точной базы; новый cleanup4 им не подтверждается. Старые in_progress
+ниже — история на момент записи. Других активных Git/build операций и грязных worktree нет.
+
+Один разрешённый блок: код `ef9bd8d7d730912874b2f32ed6589b8038f6e26d` из сохранённого
+e1e793e0b0789e8d686454b052fd3b773623ed57, только src/HomeVpnService.cs и
+tests/HomeVpnSetupRecoveryTests.cs,111 добавлений/9 удалений. Отдельный worktree
+ProGo-admin-cleanup-on628, ветка work/progo-admin-cleanup-on628-20261023 от точного628.
+Зависимости уже в базе: оба исходных blob равны родителю сохранённого блока;
+существующий Windows relay harness компилирует и вызывает эти сценарии.
+
+RetainAdminCleanup сохраняет только точное удаление созданной командой директории
+до завершения её исходной typed ошибки. Stop сначала дожидается принятых тел,
+затем повторяет удержанные удаления в worker. Заблокированный файл сохраняет owner
+и false от Stop; после освобождения явный Stop завершает удаление. Новая factory
+запрещена при pending cleanup; copy/SSH не повторяются, чужие директории не сканируются.
+Создание work/upload охвачено общей completion/cleanup оболочкой. Исходный тип ошибки
+остаётся на operation task. Тела не должны ожидать public Stop, владеющий их drain.
+
+Четыре тестовых режима: complete/list-lock/preparation-lock/dispose-lock. Они вызывают
+реальный Admin core с изолированным transport, реальные helper/result/sharing операции,
+проверяют heartbeat, typed failure, false→unlock→retry true, отсутствие повторного copy/SSH,
+сохранность защищённых bytes и чужой sibling. Ожидания3s/5s, finally release/drain,
+исходный Pump12s сохранён; группа идёт перед terminal NativeRecovery.
+
+PASS локально: полный ручной diff, diff --check, syntax2/await-scope (не компиляция),
+source2 канонически равны сохранённому cleanup4; public content321/0, secret/PII0.
+Остальные исходные blobs неизменны: UI экспорта и14 тестов, EOF/BOM, snapshot/dispatcher,
+ownership8, invitation/HTTPS, scripts/workflows/VERSION. Windows compilation/native4
+NOT_RUN: локальная Linux-среда не имеет PowerShell/.NET Framework. Production Admin UI
+по-прежнему не передаёт callback; общий R09 открыт. HTTPS/UI/invitation не внедряются.
+
+Публикация пока TODO: после финального scan один guarded PR88 fast-forward создаёт один
+автоматический CI нового source; public uploads OFF, release workflow не запускается.
+Ни merge/release, ни выгрузка бинарников/установщика, ни установка/VPS/credentials/network
+не выполняются. Перед длительной операцией сохранена эта точка; после публикации записать
+полные source/merge/tree/run и закончить этап без ожидания всего CI.
+
+Следующий шаг этого этапа: публикация проверенного frozen tree и фиксация единственного CI.
+Следующий отдельный этап: проверить тот же CI (cleanup4 + прежняя регрессия); после PASS
+отдельно реализовать owned Admin core wrapper, без автоматического перехода сейчас.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: новый полный взвешенный
+критерий не закрыт, веса/методика/owner acceptance прежние. Главный блокер: cleanup4
+ещё не проверен Windows, production Admin worker binding и общая приёмка остаются открыты.
+
+## История: подготовка этапа владение Admin-задачами и Stop/Dispose на проверенном CI627
 
 Свежий head PR88 source `8637c5e7ffcb19e2ed0622d74532bd88e245f9a0`, merge
 `8968a9b0506fb0157a1f130c4a8379a2b78e8820`; [CI627/39829750388](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388)

@@ -33,7 +33,7 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work); OwnedAdminTasks(work);
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work); OwnedAdminTasks(work); RetainedAdminCleanup();
                 // NativeRecovery calls Application.Run/ExitThread. Keep it last:
                 // later modeless timer fixtures would inherit an exited UI context.
                 NativeRecovery(token, clipboard, work);
@@ -425,6 +425,83 @@ namespace ProGo
                             if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned Admin task cleanup incomplete");
                             foreach (var task in new[] { operation, second }) if (task != null) try { task.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { }
                             File.Delete(path); File.Delete(secondPath);
+                        }
+                    }
+                } finally { pulse.Stop(); form.Close(); }
+            }
+        }
+        private static void RetainedAdminCleanup()
+        {
+            using (var form = new Form())
+            using (var pulse = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; pulse.Tick += delegate { ticks++; }; form.Show(); pulse.Start();
+                try {
+                    foreach (string mode in new[] { "complete", "list-lock", "preparation-lock", "dispose-lock" })
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, true))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        string sibling = Path.Combine(HomeVpnPrivateFiles.Root, "admin-unrelated-" + Guid.NewGuid().ToString("N")), coreWork = null;
+                        string kept = Path.Combine(sibling, "keep.txt"); Directory.CreateDirectory(sibling); File.WriteAllText(kept, "unrelated fixture directory");
+                        var previousDirectories = Directory.GetDirectories(HomeVpnPrivateFiles.Root);
+                        var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                        Task<string> operation = null; Task<bool> stop = null; FileStream held = null; int copies = 0, commands = 0, worker = 0, retained = 0;
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                            Action wait = delegate {
+                                Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Retained Admin cleanup fixture deadline");
+                            };
+                            Func<string, string, Task> copy = (executable, arguments) => {
+                                Interlocked.Increment(ref copies);
+                                if (mode == "preparation-lock") {
+                                    // This isolated fixture has one core call. Only
+                                    // tests identify its new directory; retry code
+                                    // retains an exact closure and never scans.
+                                    coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(previousDirectories).Single();
+                                    var helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single();
+                                    held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read); wait(); throw new HomeVpnPreparationCancelledException();
+                                }
+                                return Task.FromResult(0);
+                            };
+                            Func<string, string, string, Task> command = (executable, arguments, output) => {
+                                Interlocked.Increment(ref commands); coreWork = Path.GetDirectoryName(output); File.WriteAllText(output, "[]");
+                                if (mode != "complete") held = File.Open(output, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                wait(); return Task.FromResult(0);
+                            };
+                            int beforeTicks = ticks;
+                            operation = service.RunAdminOwnedAsync(() => HomeVpnService.AdminAsync(Owner, "list", null, null, delegate { }, copy, command,
+                                cleanup => { service.RetainAdminCleanup(cleanup); Interlocked.Increment(ref retained); }));
+                            Pump(() => entered.IsSet && ticks >= beforeTicks + 3 || operation.IsCompleted, 3000);
+                            if (!entered.IsSet) operation.GetAwaiter().GetResult(); // Surface the original core preparation error instead of a generic heartbeat timeout.
+                            check(worker != ui && !operation.IsCompleted && service.IsAdminWorking && Directory.Exists(coreWork),
+                                "actual Admin core helper/copy/result files remain owned while native heartbeat continues: " + mode);
+                            if (mode == "dispose-lock") { var watch = Stopwatch.StartNew(); service.Dispose(); stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Dispose retains actual Admin core work and cleanup before returning"); }
+                            release.Set(); Pump(() => operation.IsCompleted && (stop == null || stop.IsCompleted), 5000);
+                            Exception failure = null; string result = null; try { result = operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                            if (mode == "complete") check(failure == null && result == "[]" && retained == 0 && !Directory.Exists(coreWork) && !service.HasOwnedResources,
+                                "normal actual Admin core removes its generated directory without retaining or replaying cleanup");
+                            else {
+                                check(failure is HomeVpnLocalCleanupException && retained == 1 && service.HasPendingAdminCleanup && service.HasOwnedResources && Directory.Exists(coreWork),
+                                    "real sharing failure retains the exact generated Admin cleanup before its original typed error settles: " + mode);
+                                if (stop == null) stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
+                                check(!stop.GetAwaiter().GetResult() && service.HasPendingAdminCleanup && Directory.Exists(coreWork), "still-locked exact Admin cleanup keeps honest failed Stop and retained owner: " + mode);
+                                int late = 0; var refused = service.RunAdminOwnedAsync(() => { late++; return Task.FromResult("unstarted"); });
+                                var refusal = Failure(refused);
+                                check((refusal is HomeVpnLocalCleanupException || refusal is OperationCanceledException) && late == 0, "retained cleanup or disposed service refuses any new Admin factory: " + mode);
+                                held.Dispose(); held = null; var retry = service.StopAsync(); Pump(() => retry.IsCompleted, 5000);
+                                check(retry.GetAwaiter().GetResult() && !service.HasPendingAdminCleanup && !service.HasOwnedResources && !Directory.Exists(coreWork)
+                                    && Object.ReferenceEquals(failure, Failure(operation)), "unlock then explicit Stop retries only its owned deletion and preserves the original operation failure: " + mode);
+                            }
+                            check(copies == 1 && commands == (mode == "preparation-lock" ? 0 : 1) && retained == (mode == "complete" ? 0 : 1)
+                                && File.ReadAllText(kept) == "unrelated fixture directory" && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))) && !relay.IsRunning,
+                                "Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: " + mode);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && (operation == null || operation.IsCompleted), 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Retained Admin cleanup fixture incomplete");
+                            if (operation != null) try { operation.GetAwaiter().GetResult(); } catch (HomeVpnLocalCleanupException) { }
+                            Directory.Delete(sibling, true); // Only this fixture's unrelated sentinel.
                         }
                     }
                 } finally { pulse.Stop(); form.Close(); }
