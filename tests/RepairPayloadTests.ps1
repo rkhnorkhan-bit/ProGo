@@ -92,10 +92,11 @@ try {
     # Build also supplies three distributable documents. Install-ProGo does
     # not deploy them as runtime leaves; every other built file is mandatory.
     $documents = @('README.md', 'README.ru.md', 'LICENSE.md')
+    $payloadRoot = (Get-Item -LiteralPath $payload).FullName.TrimEnd([char]'\')
     $sourceFiles = @(Get-ChildItem -LiteralPath $payload -File -Recurse | Where-Object {
-        $documents -cnotcontains $_.FullName.Substring($payload.Length + 1)
+        -not ($_.DirectoryName -ieq $payloadRoot -and $documents -icontains $_.Name)
     })
-    if ($sourceFiles.Count -ne 41) { throw 'Built runtime changed: repair fixture must explicitly cover every mandatory leaf' }
+    if ($sourceFiles.Count -ne 41) { throw ('Built runtime changed: repair fixture must explicitly cover every mandatory leaf; runtime_count=' + $sourceFiles.Count) }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
     $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
@@ -119,7 +120,8 @@ try {
         } finally { $child.Dispose() }
     }
     foreach ($source in $sourceFiles) {
-        $relative = $source.FullName.Substring($payload.Length + 1)
+        if (-not $source.FullName.StartsWith($payloadRoot + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'Runtime fixture source escaped its own payload root' }
+        $relative = $source.FullName.Substring($payloadRoot.Length + 1)
         $target = Join-Path $installed $relative
         if (-not (Test-Path -LiteralPath $target -PathType Leaf) -or (Get-FileHash -LiteralPath $target).Hash -cne (Get-FileHash -LiteralPath $source.FullName).Hash) {
             throw ('Complete repair omitted or mixed runtime bytes: ' + $relative)
