@@ -3637,7 +3637,25 @@
           "Exact605 full CI SUCCESS signing55/UI50/prep72 +actual direct/owned-agent preparation→SSH→SOCKS→HTTP→crash→fresh recovery PASS; R08/R09/owner/performance criteria still open",
           "Exact608 signing55/UI50/prep72 +actual direct/owned-agent OpenSSH→SOCKS→HTTP→crash→fresh preparation PASS. Common start/recovery already integrated; R08/R09/performance/owner acceptance open",
           "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open."
-        ]
+        ],
+        "local_process_io_metrics": {
+          "source": "f9f27896d5830dc75e7d9ba526f105446514456a",
+          "paths": 1,
+          "added_lines": 29,
+          "deleted_lines": 2,
+          "implementation": "test-only real tracked SSH child GetProcessIoCounters six totals, child_lifetime scope at direct/agent startup/recovery; unavailable collection NOT_RUN plus failed assertion outside catch",
+          "static": "PASS manual official Win32 API/layout/scope, syntax/diff/public321/0/secretsPII0",
+          "sources": [
+            "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessiocounters",
+            "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-io_counters"
+          ],
+          "windows_compilation": "NOT_RUN",
+          "windows_native": "NOT_RUN",
+          "measurements": "NOT_RUN no invented numbers",
+          "excluded_ci": 616,
+          "excludes": "physical disk/app/UI/agent/server totals, slowhardware/owner-PC/final performance acceptance",
+          "readiness_change": 0
+        }
       },
       "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -3780,7 +3798,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+  "candidate_source": "5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3878,23 +3896,24 @@
     }
   ],
   "ci_candidate": {
-    "source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
-    "tested_merge": "2c7db226b9705367574ca6806b550e6e40b59cd0",
-    "tree": "c3efc70354edb1b9b880af6e78d29153a78a9b4c",
-    "local_sha": "63dae01967394a25ad735b17353bd50cddeb67d8",
-    "run_id": 39753790118,
-    "run_number": 615,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118",
+    "source": "5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf",
+    "tested_merge": "e9b8b681b07d1e480bc309303fa52f8508425694",
+    "tree": "b26fca3af636009cb33fca50d5ec561afc546b34",
+    "local_sha": "9829d870db750c2e32ebd11c60aefb8aac21844a",
+    "run_id": 39758749192,
+    "run_number": 616,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39758749192",
     "status": "completed",
     "conclusion": "failure",
     "jobs": {
-      "windows": 119740579385,
-      "ubuntu": 119740579716
+      "windows": 119757324701,
+      "ubuntu": 119757325146
     },
-    "windows_compilation": "PASS exact615 build identity and full Test-ProGo/Desktop5283",
-    "windows_native": "PARTIAL pair9/service import9 and earlier regressions PASS; first receipt complete heartbeat FAIL unknown stage/task/ticks; receipt7 and Home/Portable/Python tail NOT_RUN",
+    "windows_compilation": "PASS exact616 build identity and full Test-ProGo/Desktop5283",
+    "windows_native": "PARTIAL: pair/import9+9 and earlier regressions PASS; receipt input flags alltrue, stage2 enteredTrue but native ticks0; remainder NOT_RUN",
     "ubuntu": "SUCCESS",
-    "excludes": "wizard a501/839/a0e3413/bbcc335",
+    "scope": "receipt-only fixture safe stage/task/tick/precondition diagnostics; no runtime/script/workflow/VERSION change",
+    "excludes": "wizardd940 and all profile export source",
     "package": "SKIPPED",
     "artifact_upload": "SKIPPED all"
   },
@@ -5212,6 +5231,28 @@
       "excludes": "wizard a501/839/a0e3413/bbcc335",
       "package": "SKIPPED",
       "artifact_upload": "SKIPPED all"
+    },
+    {
+      "source": "5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf",
+      "tested_merge": "e9b8b681b07d1e480bc309303fa52f8508425694",
+      "tree": "b26fca3af636009cb33fca50d5ec561afc546b34",
+      "local_sha": "9829d870db750c2e32ebd11c60aefb8aac21844a",
+      "run_id": 39758749192,
+      "run_number": 616,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39758749192",
+      "status": "completed",
+      "conclusion": "failure",
+      "jobs": {
+        "windows": 119757324701,
+        "ubuntu": 119757325146
+      },
+      "windows_compilation": "PASS exact616 build identity and full Test-ProGo/Desktop5283",
+      "windows_native": "PARTIAL: pair/import9+9 and earlier regressions PASS; receipt input flags alltrue, stage2 enteredTrue but native ticks0; remainder NOT_RUN",
+      "ubuntu": "SUCCESS",
+      "scope": "receipt-only fixture safe stage/task/tick/precondition diagnostics; no runtime/script/workflow/VERSION change",
+      "excludes": "wizardd940 and all profile export source",
+      "package": "SKIPPED",
+      "artifact_upload": "SKIPPED all"
     }
   ],
   "retention_microtask": {
@@ -5347,24 +5388,24 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI615 failure identified at receipt heartbeat; unknown exact cause, safe fail-fast diagnostic next",
+    "phase": "CI616 safe flags isolate dead timer; terminal fixture order and private state restoration corrected locally",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "63dae01967394a25ad735b17353bd50cddeb67d8",
-    "local_development_sha": "8342cef684081d2b9e214173dd9c87560dab45f7",
-    "published_sha": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
-    "tree": "c3efc70354edb1b9b880af6e78d29153a78a9b4c",
-    "tested_merge": "2c7db226b9705367574ca6806b550e6e40b59cd0",
-    "ci_run_id": 39753790118,
-    "ci_run_number": 615,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118",
+    "local_sha": "9829d870db750c2e32ebd11c60aefb8aac21844a",
+    "local_development_sha": "7f1d6f14c7a6ef3bff26f9ff83eeaacfe7b63170",
+    "published_sha": "5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf",
+    "tree": "b26fca3af636009cb33fca50d5ec561afc546b34",
+    "tested_merge": "e9b8b681b07d1e480bc309303fa52f8508425694",
+    "ci_run_id": 39758749192,
+    "ci_run_number": 616,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39758749192",
     "jobs": {
-      "windows": 119740579385,
-      "ubuntu": 119740579716
+      "windows": 119757324701,
+      "ubuntu": 119757325146
     },
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "PASS exact615 build identity and full Test-ProGo/Desktop5283",
-    "windows_native": "PARTIAL pair9/service import9 and earlier regressions PASS; first receipt complete heartbeat FAIL unknown stage/task/ticks; receipt7 and Home/Portable/Python tail NOT_RUN",
+    "windows_compilation": "PASS exact616 build identity and full Test-ProGo/Desktop5283",
+    "windows_native": "PARTIAL: pair/import9+9 and earlier regressions PASS; receipt input flags alltrue, stage2 enteredTrue but native ticks0; remainder NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
     "publication_scan": {
@@ -5374,7 +5415,7 @@
       "findings": 0,
       "tree_match": true
     },
-    "next": "Publish only isolated receipt diagnostic5739 plus3 exact evidence docs after preflight; newCI, no same615 retry; future wizard/export excluded",
+    "next": "Freeze/publish only isolated cf4dbce order/input fixture fix+3 docs; one new exactCI; no616 rerun. Future wizard/export/metrics/admin snapshot stay excluded",
     "readiness_change": 0,
     "current_ci_step": "completed both jobs; all uploads/prune SKIPPED"
   },
@@ -8505,6 +8546,76 @@
     "windows_native": "NOT_RUN",
     "excluded": "future wizardd940 and all profile export source",
     "next": "Freeze isolated1test+3docs/scan/workflow/tree/CAS and one new diagnostic CI; no615 rerun",
+    "readiness_change": 0
+  },
+  "pending_receipt_diagnostic_publication": {
+    "source": "5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf",
+    "expected_parent": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+    "tree": "b26fca3af636009cb33fca50d5ec561afc546b34",
+    "local_sha": "9829d870db750c2e32ebd11c60aefb8aac21844a",
+    "paths": 4,
+    "added_lines": 493,
+    "deleted_lines": 31,
+    "tree_match": true,
+    "secret_pii_findings": 0,
+    "ref_cas": "PASS actualhead5ee/mergee9b8 and single616 independently verified",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "cause615": "UNKNOWN pending safe runtime flags",
+    "readiness_change": 0
+  },
+  "local_f31_r11_process_io_metrics": {
+    "source": "f9f27896d5830dc75e7d9ba526f105446514456a",
+    "paths": 1,
+    "added_lines": 29,
+    "deleted_lines": 2,
+    "implementation": "test-only real tracked SSH child GetProcessIoCounters six totals, child_lifetime scope at direct/agent startup/recovery; unavailable collection NOT_RUN plus failed assertion outside catch",
+    "static": "PASS manual official Win32 API/layout/scope, syntax/diff/public321/0/secretsPII0",
+    "sources": [
+      "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessiocounters",
+      "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-io_counters"
+    ],
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "measurements": "NOT_RUN no invented numbers",
+    "excluded_ci": 616,
+    "excludes": "physical disk/app/UI/agent/server totals, slowhardware/owner-PC/final performance acceptance",
+    "readiness_change": 0
+  },
+  "local_r09_admin_request_snapshot": {
+    "source": "ca3d2f3e18bea39a112d068e082a87d16c4a9b09",
+    "paths": 2,
+    "added_lines": 105,
+    "deleted_lines": 1,
+    "implementation": "PARTIAL read-only copied-input worker snapshot; caller existing family lease remains owned outside result; actual AdminAsync remains synchronous",
+    "native_vectors": 12,
+    "static": "PASS manual parity/input/lease contract/syntax2/diff/public321/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 616,
+    "excluded_wizard_freeze": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
+    "next": [
+      "UI transport dispatch/lifetime bridge retaining actual outcome",
+      "wire metadata/staging worker",
+      "remaining register/result/file/receipt worker",
+      "exact native full flow regressions"
+    ],
+    "readiness_change": 0
+  },
+  "ci616_receipt_diagnosis": {
+    "source": "5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf",
+    "tested_merge": "e9b8b681b07d1e480bc309303fa52f8508425694",
+    "run_id": 39758749192,
+    "precondition_anchor": "2026-10-22T10:16:07.1234579Z access=True/owner=True/request=True",
+    "failure_anchor": "2026-10-22T10:16:10.1283004Z mode=complete; stage=2; entered=True; ticks=0; status=Running",
+    "finding": "Confirmed fixture lifetime order violation: modeless OwnedConsumption after terminal NativeRecovery.Application.Run/ExitThread, already forbidden by harnessMain contract",
+    "product_deadlock": "not demonstrated; intentional worker consume barrier reached",
+    "fix_source": "7f1d6f14c7a6ef3bff26f9ff83eeaacfe7b63170",
+    "isolated_fix_source": "cf4dbce3f78b7d39b7cb87c7c1ad00d6e046af96",
+    "change": "NativeRecovery last; restore own receipt fixture access/owner/request inputs to prevent reordered scenario pollution; seven-case body byte-identical; all budgets/assertions retained",
+    "static": "PASS manual order/input/body-parity/syntax/diff/public321/0 root/secretsPII0",
+    "new_windows_compilation": "NOT_RUN",
+    "new_windows_native": "NOT_RUN",
     "readiness_change": 0
   }
 }

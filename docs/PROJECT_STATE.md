@@ -8,15 +8,136 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Receipt-only checking scope before publication
+## Fixture-order-only checking scope before publication
 
-Only tests/HomeVpnSetupRecoveryTests.cs16add2delete +3 current evidence docs on exact
-CI615 base. Product runtime unchanged. Safe precondition/task/stage/tick diagnostic,
-no increased timeout/disabled check. New compilation/native NOT_RUN;615 failure cause
-UNKNOWN. Future wizard d940 and profile export6d180/320a/1edef/4c1/0b5 excluded. Full
-source tree320 files; no new Desktop profile chooser file or Test-ProGo source-list
-change in this checking. Last fullSUCCESS613, I58–80/Y22/delta0. Before publishing
-verify current6f8 parent/public/workflows/uploadsOFF and canonical fulltree equality.
+Only receipt fixture11add1delete +3 evidence docs on exact616 local9829. Original
+seven-case body byte-identical, heartbeat3s/worker+join5s unchanged. Move all timer
+fixtures before terminal NativeRecovery.ExitThread; restore only its own seeded
+access/owner/request before subsequent recovery. New compilation/native NOT_RUN.
+Runtime/scripts/workflow/VERSION unchanged; isolated320 sources. Entire future
+wizard/export/IOmetrics/adminsnapshot excluded, no inheritedSUCCESS. Before CAS5ee,
+scan full delta and verify public/unchanged workflows/uploadsOFF/fulltree equality.
+Last fullSUCCESS613/I58–80/Y22/delta0, no package upload/installation/merge/release.
+
+## CI616 FAIL — receipt worker held correctly, UI timer did not tick
+
+Exact source `5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf`, merge/build identity
+`e9b8b681b07d1e480bc309303fa52f8508425694`, treeb26fca3af636009cb33fca50d5ec561afc546b34.
+[CI616/39758749192](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39758749192):
+Windows119757324701 FAIL, Ubuntu119757325146 SUCCESS, completed jobs/log checked.
+Build09:52:36.6364113Z; Desktop5283/full Test-ProGo PASS10:12:15.5275318Z. Previous
+pair9/import9 and regressions reached. New receipt preconditions10:16:07.1234579Z:
+access=True/owner=True/request=True. Failure10:16:10.1283004Z:
+`mode=complete; stage=2; entered=True; ticks=0; status=Running`. Actual worker passed
+private reads/RequireSavedImport and is held at its intentional consume barrier;
+missing condition is native heartbeat, not evidence of a product I/O deadlock.
+Remaining receipt7/Home tail/Portable/Python tail NOT_RUN, package/uploads SKIPPED.
+Last fullSUCCESS/scoring/package613 only; no616 credit.
+
+Confirmed fixture-order defect: tests/HomeVpnSetupRecoveryTests.cs::Run appended
+OwnedConsumption after NativeRecovery; NativeRecovery starts Application.Run and
+calls loop.ExitThread. tests/HomeVpnWizardTests.cs::Main already documents that this
+terminal recovery must run after all modeless timer checks. New fixture violated
+that lifetime contract. Fix `7f1d6f14c7a6ef3bff26f9ff83eeaacfe7b63170`, isolated
+`cf4dbce3f78b7d39b7cb87c7c1ad00d6e046af96` on checking9829:1 test path11add1delete.
+All timer fixtures now precede terminal NativeRecovery. OwnedConsumption wrapper
+also restores its own access/owner/request bytes before subsequent scenarios: its
+last changed-credentials case otherwise intentionally leaves invalid access/pending
+request and would pollute reordered recovery. Original seven-case body byte-identical,
+3s/5s budgets and every assertion unchanged. Static diff/syntax/public321/0(root)/
+secretPII0 PASS; new Windows/native NOT_RUN. Exact new CI must confirm causal repair;
+no claim old615 individual flags were recorded or exclusive OS mechanism measured.
+
+Next isolate only this test +3 current evidence docs, runtime/scripts/workflows/
+VERSION unchanged, public uploadsOFF, canonicaltree/CAS on5ee; one new exactCI,
+not a rerun616. Future wizardd940/export/metricsf9/adminsnapshotca3d excluded and
+NOT_RUN. After full success rebuild wizard on the latest checked diagnostic/order
+base; preserve this terminal ordering when adding future native fixtures. FullR09
+FAIL/R11 PARTIAL, I58–80/Y22 exact613 unchanged. History below.
+
+## Admin request snapshot ca3d — read-only primitive, production still sync
+
+Source `ca3d2f3e18bea39a112d068e082a87d16c4a9b09`,2 paths105add1delete. New
+HomeVpnAdminRequestSnapshot.LoadAsync freezes owner/action/label and runs key-file
+existence validation plus actual setup/admin/share protected reads and existing
+pending/recovery refusals in worker. No register/consume/staging/remote command or
+lease is created/transferred. Caller keeps its EXISTING family lease through actual
+read and later commands/cleanup, so owner-loss awaits cannot discard a returned
+lease resource. Existing AdminAsync is not yet rewired: its sync validation/reads/
+staging/copies/register/output reads remain an open R09 defect; default setup copy
+still does extra HasPending on UI. No claim this primitive fixes the user route.
+
+Twelve native worker vectors written: setup/invite/share/empty; missing recover3;
+pending new invite/share2; cancel; corrupted request; missing selected key. Real
+DPAPI/request IDs/host/cipher bytes, held worker/native heartbeat, changed caller
+owner after capture, actual family lease retained until join.3s heartbeat/5s barrier/
+join, no VPS/SSH/system changes. Static manual parity/input/lease contract review,
+syntax2/diff/public321/0/secretPII0 PASS; Windows compilation/native NOT_RUN, excluded
+current616 and wizardd940. I58–80/Y22 exact613/delta0; fullR09 FAIL/R11 PARTIAL.
+
+Next split: (1) preserve UI dispatch/lifetime of interactive copy+command transports
+through existing HomeProfileUiDispatcher, retaining actual admitted Task outcomes;
+(2) wire this request snapshot and stage helpers in worker; (3) move remaining
+register/result/read/receipt writes; (4) exact native regressions. Do not place all
+AdminAsync in Task.Run and create modal windows on pool threads. Same616 first:
+Windows build step PASS, integration running, UbuntuSUCCESS; exact receipt flags/log
+pending, no rerun or changed checking head. History below.
+
+## F31-R11 native process I/O collection f9f2789 — evidence NOT_RUN
+
+Source `f9f27896d5830dc75e7d9ba526f105446514456a`,1 test path29add2delete, runtime/
+workflow/scripts unchanged. Existing real native direct+owned-agent SSH→SOCKS→HTTP
+startup/recovery metrics now read Win32 GetProcessIoCounters from the exact tracked
+child and emit six operation/byte totals with `ssh_io_scope=child_lifetime` alongside
+latency/preparation/CPU/working-set. These are cumulative process I/O counters, NOT
+physical-disk traffic or totals for app/UI/agent/server. Each recovery uses a new
+child; no cross-child subtraction, no arbitrary performance ceilings added. Missing
+native counter collection logsNOT_RUN and fails a separate required dev assertion
+outside catch (Check failures cannot be swallowed as collection success).
+
+Primary signatures reviewed: [GetProcessIoCounters](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessiocounters)
+and [IO_COUNTERS](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-io_counters).
+Six ULONGLONG fields/BOOL return/SetLastError; no system settings, privileges, process
+termination or live resource introduced. Static manual API/layout/scope review/
+syntax/diff/public321/0/secretPII0 PASS; Windows compilation/Win32 execution and
+actual values NOT_RUN. Excluded current616 and wizardd940. Final slow hardware/UI/
+full-app I/O/owner acceptance remain open, F31-R11 PARTIAL. I58–80/Y22 exact613/delta0.
+
+Same61639758749192 Windows119757324701 Test-ProGo running, Ubuntu119757325146 SUCCESS;
+no new push/duplicate. Next independent source trace: default AdminAsync copy
+classification still invokes HasPending() from its UI copy callback for setup;
+check existing worker preparation metadata before a minimal migration. Do not
+invent a replacement recovery/PIN policy or weaken cancellation wording. History below.
+
+## CI616 actual running — receipt-only diagnostic published
+
+PR88 OPEN/DRAFT source `5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf`, merge
+`e9b8b681b07d1e480bc309303fa52f8508425694`, treeb26fca3af636009cb33fca50d5ec561afc546b34
+= local9829d870db750c2e32ebd11c60aefb8aac21844a. CAS expected6f8→5ee PASS,
+один автоматический [CI616/39758749192](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39758749192),
+Windows119757324701/Ubuntu119757325146 in_progress. PR body обновлён.4 paths493add31delete,
+only1 receipt test16add2 +3docs, runtime/scripts/workflows/VERSION unchanged,
+fullscan/tree equality PASS/public uploadsOFF. New compilation/native NOT_RUN;
+615 cause UNKNOWN pending stage/tick/task/input flags. Do not rerun615 or duplicate616.
+Future wizard d940 and all profile export source excluded; their native NOT_RUN.
+Last fullSUCCESS613/28anchors/runner ZIP remain current evidence, I58–80/Y22/delta0.
+Next same616 exact result and minimal causal fix. Independently F31-R11 native
+resource report lacks process I/O counters; inspect existing owned SSH metrics scope
+and add only that missing test evidence if supported, no product concept change.
+Historical object-before-CAS notes below are not current unfinished publication.
+
+## Receipt diagnostic object5ee — before guarded ref-CAS
+
+Source object `5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf`, parent
+`6f8b200cd34910ee167b44e6dab661c86cb506aa`, tree `b26fca3af636009cb33fca50d5ec561afc546b34`
+точно равен isolated local `9829d870db750c2e32ebd11c60aefb8aac21844a` в ProGo-ci615-receipt.
+4 paths493add31delete:1 receipt fixture16add2delete +3 evidence docs. Full secretPII0/
+public320/0/syntax/diff/JSON86/fulltree PASS, product/runtime/scripts/workflow/VERSION
+unchanged. Freshpublic/head6f8/base4bb checked, uploads OFF;615 completed FAIL,
+no same-run retry. New compilation/native NOT_RUN; cause615 UNKNOWN. Entire future
+wizard/export excluded. Ref-CAS NOT_RUN at checkpoint: inspect actual PR/run after
+interruption before retry. Next expected6f8→5ee forcefalse, one automatic exact CI.
+I58–80/Y22 last full613 unchanged. History below.
 
 ## Receipt fixture diagnostic8342 — unchanged budgets, new evidence pending
 

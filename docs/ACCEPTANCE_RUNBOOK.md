@@ -1,12 +1,66 @@
-## Receipt-only checking scope before publication
+## Fixture-order-only checking scope before publication
 
-Only tests/HomeVpnSetupRecoveryTests.cs16add2delete +3 current evidence docs on exact
-CI615 base. Product runtime unchanged. Safe precondition/task/stage/tick diagnostic,
-no increased timeout/disabled check. New compilation/native NOT_RUN;615 failure cause
-UNKNOWN. Future wizard d940 and profile export6d180/320a/1edef/4c1/0b5 excluded. Full
-source tree320 files; no new Desktop profile chooser file or Test-ProGo source-list
-change in this checking. Last fullSUCCESS613, I58–80/Y22/delta0. Before publishing
-verify current6f8 parent/public/workflows/uploadsOFF and canonical fulltree equality.
+Only receipt fixture11add1delete +3 evidence docs on exact616 local9829. Original
+seven-case body byte-identical, heartbeat3s/worker+join5s unchanged. Move all timer
+fixtures before terminal NativeRecovery.ExitThread; restore only its own seeded
+access/owner/request before subsequent recovery. New compilation/native NOT_RUN.
+Runtime/scripts/workflow/VERSION unchanged; isolated320 sources. Entire future
+wizard/export/IOmetrics/adminsnapshot excluded, no inheritedSUCCESS. Before CAS5ee,
+scan full delta and verify public/unchanged workflows/uploadsOFF/fulltree equality.
+Last fullSUCCESS613/I58–80/Y22/delta0, no package upload/installation/merge/release.
+
+## CI616 FAIL — receipt worker held correctly, UI timer did not tick
+
+Exact source `5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf`, merge/build identity
+`e9b8b681b07d1e480bc309303fa52f8508425694`, treeb26fca3af636009cb33fca50d5ec561afc546b34.
+[CI616/39758749192](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39758749192):
+Windows119757324701 FAIL, Ubuntu119757325146 SUCCESS, completed jobs/log checked.
+Build09:52:36.6364113Z; Desktop5283/full Test-ProGo PASS10:12:15.5275318Z. Previous
+pair9/import9 and regressions reached. New receipt preconditions10:16:07.1234579Z:
+access=True/owner=True/request=True. Failure10:16:10.1283004Z:
+`mode=complete; stage=2; entered=True; ticks=0; status=Running`. Actual worker passed
+private reads/RequireSavedImport and is held at its intentional consume barrier;
+missing condition is native heartbeat, not evidence of a product I/O deadlock.
+Remaining receipt7/Home tail/Portable/Python tail NOT_RUN, package/uploads SKIPPED.
+Last fullSUCCESS/scoring/package613 only; no616 credit.
+
+Confirmed fixture-order defect: tests/HomeVpnSetupRecoveryTests.cs::Run appended
+OwnedConsumption after NativeRecovery; NativeRecovery starts Application.Run and
+calls loop.ExitThread. tests/HomeVpnWizardTests.cs::Main already documents that this
+terminal recovery must run after all modeless timer checks. New fixture violated
+that lifetime contract. Fix `7f1d6f14c7a6ef3bff26f9ff83eeaacfe7b63170`, isolated
+`cf4dbce3f78b7d39b7cb87c7c1ad00d6e046af96` on checking9829:1 test path11add1delete.
+All timer fixtures now precede terminal NativeRecovery. OwnedConsumption wrapper
+also restores its own access/owner/request bytes before subsequent scenarios: its
+last changed-credentials case otherwise intentionally leaves invalid access/pending
+request and would pollute reordered recovery. Original seven-case body byte-identical,
+3s/5s budgets and every assertion unchanged. Static diff/syntax/public321/0(root)/
+secretPII0 PASS; new Windows/native NOT_RUN. Exact new CI must confirm causal repair;
+no claim old615 individual flags were recorded or exclusive OS mechanism measured.
+
+Next isolate only this test +3 current evidence docs, runtime/scripts/workflows/
+VERSION unchanged, public uploadsOFF, canonicaltree/CAS on5ee; one new exactCI,
+not a rerun616. Future wizardd940/export/metricsf9/adminsnapshotca3d excluded and
+NOT_RUN. After full success rebuild wizard on the latest checked diagnostic/order
+base; preserve this terminal ordering when adding future native fixtures. FullR09
+FAIL/R11 PARTIAL, I58–80/Y22 exact613 unchanged. History below.
+
+## CI616 actual running — receipt-only diagnostic published
+
+PR88 OPEN/DRAFT source `5ee7f1eb2545abef5ba03a1ef2f0e56253f55eaf`, merge
+`e9b8b681b07d1e480bc309303fa52f8508425694`, treeb26fca3af636009cb33fca50d5ec561afc546b34
+= local9829d870db750c2e32ebd11c60aefb8aac21844a. CAS expected6f8→5ee PASS,
+один автоматический [CI616/39758749192](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39758749192),
+Windows119757324701/Ubuntu119757325146 in_progress. PR body обновлён.4 paths493add31delete,
+only1 receipt test16add2 +3docs, runtime/scripts/workflows/VERSION unchanged,
+fullscan/tree equality PASS/public uploadsOFF. New compilation/native NOT_RUN;
+615 cause UNKNOWN pending stage/tick/task/input flags. Do not rerun615 or duplicate616.
+Future wizard d940 and all profile export source excluded; their native NOT_RUN.
+Last fullSUCCESS613/28anchors/runner ZIP remain current evidence, I58–80/Y22/delta0.
+Next same616 exact result and minimal causal fix. Independently F31-R11 native
+resource report lacks process I/O counters; inspect existing owned SSH metrics scope
+and add only that missing test evidence if supported, no product concept change.
+Historical object-before-CAS notes below are not current unfinished publication.
 
 ## CI615 FAIL — setup consumption heartbeat ambiguity; no blind rerun
 

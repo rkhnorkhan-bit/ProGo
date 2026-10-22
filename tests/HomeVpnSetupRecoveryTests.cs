@@ -33,7 +33,10 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeRecovery(token, clipboard, work); OwnedConsumption(token);
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); OwnedConsumption(token);
+                // NativeRecovery calls Application.Run/ExitThread. Keep it last:
+                // later modeless timer fixtures would inherit an exited UI context.
+                NativeRecovery(token, clipboard, work);
                 check(!Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Any()
                     && !Directory.GetFiles(HomeVpnPrivateFiles.Root, "setup-request.dat.*.new").Any(), "recovery settles its private local work and atomic-save temporary files");
             } finally {
@@ -41,6 +44,13 @@ namespace ProGo
             }
         }
         private static void OwnedConsumption(string token)
+        {
+            var paths = new[] { "access", "owner", HomeVpnSetupRecovery.StorageName }.Select(name => Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat")).ToArray();
+            var previous = paths.ToDictionary(path => path, path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            try { OwnedConsumptionCases(token); }
+            finally { foreach (var pair in previous) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); } }
+        }
+        private static void OwnedConsumptionCases(string token)
         {
             using (var host = new Form())
             using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
