@@ -109,8 +109,13 @@ try {
         if (-not $child.WaitForExit(20000)) { throw 'Complete repair with bounded self-check exceeded its twenty-second limit' }
         if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Complete repair output did not settle' }
         if ($child.ExitCode -ne 0 -or -not $stdout.Result.Contains('Repair runtime restored and verified:') -or -not $stdout.Result.Contains('Repair self-check PASS:')) {
-            $safe = [regex]::Match($stderr.Result, 'Cause: [A-Za-z0-9]+; stage=[a-z-]+; hresult=-?\d+; native=-?\d+; check_exit=-?\d+')
-            $evidence = if ($safe.Success) { $safe.Value } else { 'no classified repair failure' }
+            $safe = [regex]::Match($stderr.Result, '(?m)^PROGO_REPAIR_FAILURE Cause: [A-Za-z0-9]+; stage=[a-z-]+; script_line=\d+; hresult=-?\d+; native=-?\d+; check_exit=-?\d+')
+            $position = [regex]::Match($stderr.Result, ':(\d+) char:(\d+)')
+            $evidence = if ($safe.Success) { $safe.Value } else {
+                'no classified repair failure; payload_incomplete=' + $stderr.Result.Contains('Repair payload incomplete or empty:') +
+                '; pending_journal=' + $stderr.Result.Contains('An unfinished repair journal exists.') +
+                '; stderr_script_line=' + $(if ($position.Success) { $position.Groups[1].Value } else { 'unknown' })
+            }
             throw ('Complete repair runtime copy failed; child_exit=' + $child.ExitCode + '; ' + $evidence)
         }
     } finally {

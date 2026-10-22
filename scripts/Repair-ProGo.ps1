@@ -347,6 +347,9 @@ try {
     $failureType = $failure.GetType().Name
     $failureCode = $failure.HResult
     $nativeCode = if ($failure -is [ComponentModel.Win32Exception]) { $failure.NativeErrorCode } else { 0 }
+    # Console output bypasses PowerShell's width-dependent error formatting.
+    # Emit before rollback too: a cleanup failure must not erase the first cause.
+    [Console]::Error.WriteLine('PROGO_REPAIR_FAILURE Cause: ' + $failureType + '; stage=' + $repairPhase + '; script_line=' + $_.InvocationInfo.ScriptLineNumber + '; hresult=' + $failureCode + '; native=' + $nativeCode + '; check_exit=' + $selfCheckExit)
     $conflicts = @()
     for ($index = $applied.Count - 1; $index -ge 0; $index--) {
         $relative = $applied[$index]
