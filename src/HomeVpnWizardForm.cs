@@ -27,9 +27,24 @@ namespace ProGo
         private readonly Button cancelWait = new Button();
         private readonly object channelWaitGate = new object();
         private CancellationTokenSource channelWait;
-        private bool closeAfterWait, cancelledWait, stoppingChannel, readingShare, cancelledShareWait, savingAddress, cancelledAddressSave;
+        private bool closeAfterWait, cancelledWait, stoppingChannel, readingShare, cancelledShareWait, savingAddress, cancelledAddressSave, savingAccess, cancelledAccessSave, readingSetup, cancelledSetupRead;
         internal Action<string> BeforeShareRead; // Fixture boundary around the real protected-file read.
         internal Action<string> BeforeHomeAddressIo; // Fixture boundaries surround actual protected persistence.
+        internal Action<string> BeforeAccessIo, BeforeSetupConsumeIo;
+        private HomeVpnOwner setupOwnerSnapshot;
+        private string setupSnapshotError;
+        private bool setupSnapshotKnown, setupReadBusy, initializingSetup, setupFieldsEdited, applyingSetupOwner;
+        private CancellationTokenSource setupSnapshotCancellation;
+        private Task<bool> setupSnapshotWork = Task.FromResult(true), initializationWork = Task.FromResult(true);
+        private Task setupSnapshotDriver = Task.FromResult(0);
+        internal Task<bool> InitializationWork { get { return initializationWork; } }
+        internal Task<bool> SetupSnapshotWork { get { return setupSnapshotWork; } }
+        internal Action BeforeSetupSnapshotRead;
+        private Task<bool> accessImportWork = Task.FromResult(true);
+        private Task setupConsumptionWork = Task.FromResult(0), setupReadWork = Task.FromResult(0);
+        internal Task<bool> AccessImportWork { get { return accessImportWork; } }
+        internal Task SetupConsumptionWork { get { return setupConsumptionWork; } }
+        internal Task SetupReadWork { get { return setupReadWork; } }
         private readonly System.Windows.Forms.Timer refresh = new System.Windows.Forms.Timer();
         private int step;
         private bool own, routerDone, recoverSetup, setupBlocked, fittingSetup;
@@ -47,9 +62,9 @@ namespace ProGo
         private Label counters;
         internal Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> Admin = HomeVpnService.AdminAsync;
 
-        internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard)
+        internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard, Action beforeSetupSnapshotRead = null)
         {
-            this.service = service; this.clipboard = clipboard; httpDispatcher = new HomeProfileUiDispatcher(this);
+            this.service = service; this.clipboard = clipboard; BeforeSetupSnapshotRead = beforeSetupSnapshotRead; httpDispatcher = new HomeProfileUiDispatcher(this);
             Text = "VPN для телефона"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(750, 650); MinimumSize = new Size(700, 620);
@@ -81,19 +96,95 @@ namespace ProGo
             layout.Controls.Add(status, 0, 3); layout.Controls.Add(footer, 0, 4); Controls.Add(layout);
             draftOwner = service.Owner ?? new HomeVpnOwner { Host = "", Port = 22, Login = "root", KeyFile = "" };
             draftHome = service.HomeAddress;
-            string pendingError = null;
-            try {
-                var pending = HomeVpnSetupRecovery.PendingOwner();
-                if (pending != null) {
-                    if (String.Equals(pending.Host, draftOwner.Host, StringComparison.OrdinalIgnoreCase) && pending.Port == draftOwner.Port && pending.Login == draftOwner.Login)
-                        pending.KeyFile = draftOwner.KeyFile;
-                    draftOwner = pending; own = true;
-                }
-            } catch (HomeVpnSetupPendingException ex) { own = true; pendingError = ex.Message; }
             refresh.Interval = 1000; refresh.Tick += delegate { RefreshStatus(); }; refresh.Start();
-            ShowStep(own ? 1 : service.Access == null ? 0 : 4);
-            if (pendingError != null) { status.ForeColor = UiTheme.Error; status.Text = pendingError; }
+            ShowStep(service.Access == null ? 0 : 4);
+            StartSetupSnapshot(true);
         }
+
+        private Task<bool> StartSetupSnapshot(bool initial)
+        {
+            if (ownerUi.Closed || IsDisposed || Disposing) return Task.FromResult(false);
+            if (!setupSnapshotWork.IsCompleted) return setupSnapshotWork;
+            if (!initial && (busy || step != 1 || !own)) return setupSnapshotWork;
+            var source = new CancellationTokenSource();
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (channelWaitGate) { setupSnapshotCancellation = source; if (initial) channelWait = source; }
+            setupReadBusy = true; initializingSetup = initial; setupSnapshotWork = completion.Task;
+            if (initial) {
+                initializationWork = completion.Task; busy = true; body.Enabled = false; back.Enabled = next.Enabled = false;
+                readingSetup = true; cancelWait.Text = "Отменить чтение настройки"; cancelWait.AccessibleName = cancelWait.Text;
+                cancelWait.AccessibleDescription = "Прерывает локальное чтение прежнего запроса. Данные не изменяются; окно ждёт завершения своего чтения.";
+                cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait; cancelWait.DialogResult = DialogResult.None;
+                SetProgress("Читаем сохранённую настройку VPS… Можно отменить чтение или закрыть окно.");
+            }
+            UpdateSetupRecoveryState();
+            setupSnapshotDriver = ReadSetupSnapshotOwned(initial, source, completion); // Retained completion precedes worker I/O.
+            setupSnapshotDriver.ContinueWith(delegate(Task failed) { completion.TrySetException(failed.Exception.InnerExceptions); }, TaskContinuationOptions.OnlyOnFaulted);
+            return completion.Task;
+        }
+        private async Task ReadSetupSnapshotOwned(bool initial, CancellationTokenSource source, TaskCompletionSource<bool> completion)
+        {
+            HomeVpnOwner pending = null; Exception failure = null; bool applied = false, firstSnapshot = !setupSnapshotKnown;
+            try {
+                source.Token.ThrowIfCancellationRequested();
+                await ownerUi.Await(service.InitializationWork); source.Token.ThrowIfCancellationRequested();
+                var read = HomeVpnSetupRecovery.PendingOwnerAsync(source.Token, BeforeSetupSnapshotRead); setupReadWork = read;
+                pending = await ownerUi.Await(read); source.Token.ThrowIfCancellationRequested();
+            } catch (Exception ex) { failure = ex; }
+            try {
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (failure == null) { setupOwnerSnapshot = pending; setupSnapshotError = null; setupSnapshotKnown = true; }
+                else if (!(failure is OperationCanceledException)) {
+                    setupSnapshotKnown = false; setupSnapshotError = failure is HomeVpnSetupPendingException ? failure.Message
+                        : "Не удалось прочитать прежнюю настройку. Данные сохранены; повторите проверку после освобождения файлов.";
+                } else if (initial) { setupSnapshotKnown = false; setupSnapshotError = "Чтение прежней настройки отменено. Перед настройкой своего VPS повторите проверку."; }
+                if (!initial && firstSnapshot && failure == null && pending != null && !setupFieldsEdited) {
+                    // A cancelled initial read has not restored the pending VPS.
+                    // First successful retry may fill untouched fields, including
+                    // the in-memory draft when navigation already left this page.
+                    draftOwner = RestoreSetupOwner(pending, service.Owner);
+                    if (step == 1 && own && host != null) {
+                        applyingSetupOwner = true;
+                        try { host.Text = draftOwner.Host; port.Value = draftOwner.Port; login.Text = draftOwner.Login; key.Text = draftOwner.KeyFile; }
+                        finally { applyingSetupOwner = false; }
+                    }
+                }
+                if (initial && !closeAfterWait) {
+                    var savedOwner = service.Owner;
+                    draftOwner = savedOwner == null ? new HomeVpnOwner { Host = "", Port = 22, Login = "root", KeyFile = "" }
+                        : new HomeVpnOwner { Host = savedOwner.Host, Port = savedOwner.Port, Login = savedOwner.Login, KeyFile = savedOwner.KeyFile };
+                    draftHome = service.HomeAddress;
+                    if (failure == null && pending != null) {
+                        draftOwner = RestoreSetupOwner(pending, draftOwner); own = true;
+                    } else if (failure is HomeVpnSetupPendingException) own = true;
+                    ShowStep(own ? 1 : service.Access == null ? 0 : 4);
+                    if (failure != null) { status.ForeColor = failure is OperationCanceledException ? UiTheme.Muted : UiTheme.Error; status.Text = setupSnapshotError; }
+                    else status.Text = "";
+                }
+                applied = true;
+            } catch (Exception ex) { failure = ex; }
+            finally {
+                lock (channelWaitGate) { if (setupSnapshotCancellation == source) setupSnapshotCancellation = null; if (initial && channelWait == source) channelWait = null; }
+                setupReadBusy = initializingSetup = false;
+                if (initial) { busy = false; readingSetup = false; }
+                try {
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                        if (initial) { body.Enabled = back.Enabled = true; cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                        UpdateSetupRecoveryState(); RefreshStatus();
+                        if (initial && closeAfterWait) Close();
+                    }
+                } finally { source.Dispose(); }
+                if (failure != null && !(failure is HomeVpnSetupPendingException) && !(failure is OperationCanceledException)) completion.TrySetException(failure);
+                else completion.TrySetResult(applied && failure == null);
+            }
+        }
+        private static HomeVpnOwner RestoreSetupOwner(HomeVpnOwner pending, HomeVpnOwner saved)
+        {
+            bool sameEndpoint = saved != null && String.Equals(pending.Host, saved.Host, StringComparison.OrdinalIgnoreCase) && pending.Port == saved.Port && pending.Login == saved.Login;
+            return new HomeVpnOwner { Host = pending.Host, Port = pending.Port, Login = pending.Login, KeyFile = sameEndpoint ? saved.KeyFile : "" };
+        }
+        private void SetupFieldsChanged()
+        { if (!applyingSetupOwner) setupFieldsEdited = true; UpdateSetupRecoveryState(); }
 
         private void ShowStep(int value)
         {
@@ -130,9 +221,9 @@ namespace ProGo
                 key = Field("Файл SSH-ключа (необязательно)", draftOwner.KeyFile);
                 Action("Выбрать файл ключа…", delegate { using (var dialog = new OpenFileDialog()) if (dialog.ShowDialog(this) == DialogResult.OK) key.Text = dialog.FileName; }, "Выбирает локальный файл закрытого SSH-ключа. Подключение к серверу ещё не выполняется.");
                 Paragraph("Если ключ не указан, SSH использует ваш агент/обычные ключи или попросит пароль в отдельном окне. Пароль не сохраняется в ProGo. При первом входе сверяйте отпечаток ключа сервера.");
-                host.TextChanged += delegate { UpdateSetupRecoveryState(); }; login.TextChanged += delegate { UpdateSetupRecoveryState(); };
-                key.TextChanged += delegate { UpdateSetupRecoveryState(); }; port.ValueChanged += delegate { UpdateSetupRecoveryState(); };
-                UpdateSetupRecoveryState();
+                host.TextChanged += delegate { SetupFieldsChanged(); }; login.TextChanged += delegate { SetupFieldsChanged(); };
+                key.TextChanged += delegate { SetupFieldsChanged(); }; port.ValueChanged += delegate { SetupFieldsChanged(); };
+                UpdateSetupRecoveryState(); if (!initializingSetup) StartSetupSnapshot(false);
             }
             else if (step == 1)
             {
@@ -231,22 +322,27 @@ namespace ProGo
             {
                 if (step == 1)
                 {
-                    var value = draftToken;
-                    if (own)
+                    var value = draftToken; bool ownAccess = own, recoveryRequested = recoverSetup;
+                    var owner = ownAccess ? new HomeVpnOwner { Host = draftOwner.Host, Port = draftOwner.Port, Login = draftOwner.Login, KeyFile = draftOwner.KeyFile } : null;
+                    var stopScope = service.StopWork;
+                    if (service.IsStopping || service.StartsPaused) throw new InvalidOperationException("Дождитесь остановки или обслуживания перед настройкой доступа.");
+                    if (ownAccess)
                     {
-                        // A recovery action stays read-only even if the pending file
-                        // disappears after the button was presented to the user.
-                        bool checking = recoverSetup || HomeVpnSetupRecovery.HasPending();
-                        var ownerId = new JavaScriptSerializer().Serialize(draftOwner);
+                        // A recovery action stays read-only even if the pending
+                        // file disappears after its button was presented.
+                        bool checking = recoveryRequested || await ownerUi.Await(ReadSetupPending(stopScope));
+                        var ownerId = new JavaScriptSerializer().Serialize(owner);
+                        if (!AccessScopeCurrent(stopScope)) throw new OperationCanceledException();
                         if (checking || preparedToken == null || preparedOwner != ownerId)
                         {
-                            preparedToken = await ownerUi.Await(Admin(draftOwner, checking ? "recover-setup" : "setup", "My iPhone", null, SetProgress));
+                            preparedToken = await ownerUi.Await(Admin(owner, checking ? "recover-setup" : "setup", "My iPhone", null, SetProgress));
                             preparedOwner = ownerId;
                         }
                         value = preparedToken;
                     }
-                    service.UseToken(value, own ? draftOwner : null); verification.Reset();
-                    if (own) HomeVpnSetupRecovery.ConfirmConsumed(draftOwner, value);
+                    if (!AccessScopeCurrent(stopScope)) throw new OperationCanceledException();
+                    if (!await ownerUi.Await(SaveAccess(value, owner, ownAccess, stopScope))) return;
+                    if (closeAfterWait || !AccessScopeCurrent(stopScope)) return;
                     await ownerUi.Await(StartChannel()); draftToken = "";
                 }
                 else if (step == 2)
@@ -262,7 +358,7 @@ namespace ProGo
         private async Task RunStep(Func<Task> action)
         {
             if (busy || ownerUi.Closed || IsDisposed || Disposing) return;
-            cancelledWait = closeAfterWait = cancelledShareWait = cancelledAddressSave = false;
+            cancelledWait = closeAfterWait = cancelledShareWait = cancelledAddressSave = cancelledAccessSave = cancelledSetupRead = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await ownerUi.Await(action()); }
             catch (HomeVpnListCancelledException ex)
@@ -284,7 +380,9 @@ namespace ProGo
             {
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     status.ForeColor = cancelledWait ? UiTheme.Muted : UiTheme.Error;
-                    status.Text = cancelledWait ? (cancelledAddressSave ? "Сохранение адреса отменено до начала записи. Прежний адрес сохранён; можно повторить изменение."
+                    status.Text = cancelledWait ? (cancelledAccessSave ? "Импорт доступа отменён до принятия записи. Прежние локальные данные сохранены; можно повторить импорт этого же токена."
+                        : cancelledSetupRead ? "Проверка сохранённой настройки отменена. Данные не изменены; можно повторить проверку."
+                        : cancelledAddressSave ? "Сохранение адреса отменено до начала записи. Прежний адрес сохранён; можно повторить изменение."
                         : cancelledShareWait ? "Чтение адреса отменено. Сохранённые данные остаются; можно повторить чтение."
                         : "Запуск канала отменён. Сохранённый доступ к VPS остаётся; можно повторить запуск.") : "Операция прервана. Результат не подтверждён.";
                 }
@@ -296,10 +394,77 @@ namespace ProGo
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     body.Enabled = true; back.Enabled = true; next.Enabled = step != 3 || verification.Installed;
                     UpdateSetupRecoveryState();
-                    if (closeAfterWait) Close();
+                    if (closeAfterWait) Close(); else StartSetupSnapshot(false);
                 }
             }
         }
+        private bool AccessScopeCurrent(Task<bool> stopScope)
+        { return !ownerUi.Closed && !service.StartsPaused && !service.IsStopping && Object.ReferenceEquals(service.StopWork, stopScope); }
+        private async Task<bool> ReadSetupPending(Task<bool> stopScope)
+        {
+            using (var source = new CancellationTokenSource()) {
+                lock (channelWaitGate) channelWait = source; readingSetup = true;
+                cancelWait.Text = "Отменить проверку настройки"; cancelWait.AccessibleName = cancelWait.Text;
+                cancelWait.AccessibleDescription = "Прерывает локальное чтение прежнего запроса настройки. Команда VPS не запускается; окно ждёт завершения чтения.";
+                cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait; cancelWait.DialogResult = DialogResult.None;
+                UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus(); SetProgress("Проверяем прежний запрос настройки VPS… Можно отменить чтение.");
+                try {
+                    var read = HomeVpnSetupRecovery.HasPendingAsync(source.Token); setupReadWork = read;
+                    bool pending = await ownerUi.Await(read);
+                    if (!AccessScopeCurrent(stopScope)) throw new OperationCanceledException();
+                    return pending;
+                } catch (OperationCanceledException) { cancelledWait = source.IsCancellationRequested; cancelledSetupRead = true; throw; }
+                finally {
+                    lock (channelWaitGate) channelWait = null; readingSetup = false;
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                }
+            }
+        }
+        private Task<bool> SaveAccess(string value, HomeVpnOwner owner, bool ownAccess, Task<bool> stopScope)
+        { accessImportWork = SaveAccessOwned(value, owner, ownAccess, stopScope); return accessImportWork; }
+        private async Task<bool> SaveAccessOwned(string value, HomeVpnOwner owner, bool ownAccess, Task<bool> stopScope)
+        {
+            using (var source = new CancellationTokenSource()) {
+                lock (channelWaitGate) channelWait = source; savingAccess = true;
+                cancelWait.Text = "Отменить импорт доступа"; cancelWait.AccessibleName = cancelWait.Text;
+                cancelWait.AccessibleDescription = "Отменяет ещё не принятое сохранение доступа. Принятая запись может завершиться; отмена не запускает канал и не повторяет настройку VPS.";
+                cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait; cancelWait.DialogResult = DialogResult.None;
+                UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus(); SetProgress("Сохраняем доступ к VPS… Можно отменить до принятия записи; дождитесь фактического результата.");
+                bool saved = false;
+                try {
+                    if (!AccessScopeCurrent(stopScope)) throw new OperationCanceledException();
+                    if (!await ownerUi.Await(service.UseTokenAsync(value, owner, source.Token, BeforeAccessIo)))
+                        throw new InvalidOperationException("Сохранение доступа не подтверждено. Повторите импорт этого же токена.");
+                    saved = true; verification.Reset();
+                    if (source.IsCancellationRequested || !AccessScopeCurrent(stopScope)) {
+                        SetProgress("Доступ уже сохранён. Отмена не откатила принятую запись; запуск канала отменён. Можно проверить прежнюю настройку или продолжить явно."); return false;
+                    }
+                    if (ownAccess) {
+                        var acceptedAccess = service.Access;
+                        SetProgress("Подтверждаем локальное сохранение доступа и прежнего запроса… Можно отменить ожидание.");
+                        setupConsumptionWork = HomeVpnSetupRecovery.ConfirmConsumedAsync(owner, value, source.Token,
+                            () => AccessScopeCurrent(stopScope) && !service.IsImporting && Object.ReferenceEquals(service.Access, acceptedAccess), BeforeSetupConsumeIo);
+                        await ownerUi.Await(setupConsumptionWork);
+                    }
+                    bool proceed = !source.IsCancellationRequested && AccessScopeCurrent(stopScope);
+                    SetProgress(proceed ? "Доступ к VPS сохранён." : "Доступ уже сохранён. Запуск канала отменён; для продолжения нужно явное действие.");
+                    return proceed;
+                } catch (OperationCanceledException) {
+                    cancelledWait = source.IsCancellationRequested; cancelledAccessSave = true;
+                    if (saved) { SetProgress("Доступ уже сохранён. Ожидание прервано; запуск канала отменён, прежний запрос можно проверить отдельно."); return false; }
+                    throw;
+                } catch (HomeVpnImportPartialException) { throw; }
+                catch (HomeVpnLocalCleanupException) { throw; }
+                catch (IOException) { throw new InvalidOperationException("Не удалось сохранить доступ. Освободите локальные файлы и повторите импорт этого же токена; новая команда VPS не нужна."); }
+                catch (UnauthorizedAccessException) { throw new InvalidOperationException("Нет доступа для сохранения данных ProGo. Проверьте доступ к личной папке и повторите импорт этого же токена."); }
+                catch (System.Security.Cryptography.CryptographicException) { throw new InvalidOperationException("Windows не подтвердила защиту доступа для текущего пользователя. Прежний запрос настройки сохранён; повторите импорт после восстановления профиля пользователя."); }
+                finally {
+                    lock (channelWaitGate) channelWait = null; savingAccess = false;
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                }
+            }
+        }
+
         private async Task StartChannel()
         {
             using (var source = new CancellationTokenSource()) {
@@ -399,7 +564,9 @@ namespace ProGo
                 var source = channelWait;
                 if (source == null || source.IsCancellationRequested) return;
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) cancelWait.Enabled = false;
-                SetProgress(savingAddress ? "Отмена сохранения запрошена. Дождитесь результата: уже принятая запись завершается."
+                SetProgress(savingAccess ? "Отмена импорта запрошена. Уже принятая запись может завершиться; ждём результата без запуска канала."
+                    : readingSetup ? "Отменяем чтение прежней настройки. Дождитесь результата; команда VPS не запускается."
+                    : savingAddress ? "Отмена сохранения запрошена. Дождитесь результата: уже принятая запись завершается."
                     : readingShare ? "Отменяем чтение адреса. Дождитесь завершения чтения; данные не изменяются…" : "Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
                 source.Cancel();
             }
@@ -434,19 +601,18 @@ namespace ProGo
             if (step != 1 || !own || setupState == null) return;
             var entered = new HomeVpnOwner { Host = host.Text.Trim(), Port = (int)port.Value, Login = login.Text.Trim(), KeyFile = key.Text.Trim() };
             bool retained = preparedToken != null && preparedOwner == new JavaScriptSerializer().Serialize(entered);
-            try {
-                recoverSetup = HomeVpnSetupRecovery.PendingOwner() != null; setupBlocked = false;
-                setupState.Text = recoverSetup
-                    ? "Ответ прошлой настройки не подтверждён. ProGo сохранил запрос и проверит его результат. Новый доступ не выдаётся. Используйте исходные SSH-данные; пароль при необходимости вводится в отдельном окне."
-                    : retained ? "Доступ к VPS уже сохранён. Продолжение запустит канал с этим доступом; повторная настройка сервера не требуется."
-                    : "Укажите свой Ubuntu VPS. ProGo добавит VPN-сервер, ограниченные SSH-учётные записи и правила выхода VPN в интернет.";
-            } catch (HomeVpnSetupPendingException ex) { recoverSetup = setupBlocked = true; setupState.Text = ex.Message; }
+            recoverSetup = setupOwnerSnapshot != null; setupBlocked = !setupSnapshotKnown || setupSnapshotError != null;
+            setupState.Text = setupReadBusy ? "Проверяем прежний запрос настройки… Введённые SSH-данные сохраняются."
+                : setupSnapshotError != null ? setupSnapshotError
+                : recoverSetup ? "Ответ прошлой настройки не подтверждён. ProGo сохранил запрос и проверит его результат. Новый доступ не выдаётся. Используйте исходные SSH-данные; пароль при необходимости вводится в отдельном окне."
+                : retained ? "Доступ к VPS уже сохранён. Продолжение запустит канал с этим доступом; повторная настройка сервера не требуется."
+                : "Укажите свой Ubuntu VPS. ProGo добавит VPN-сервер, ограниченные SSH-учётные записи и правила выхода VPN в интернет.";
             next.Text = recoverSetup ? "Проверить прошлую настройку" : retained ? "Запустить канал и продолжить" : "Настроить VPS и продолжить";
             next.AccessibleName = next.Text;
             next.AccessibleDescription = recoverSetup ? "Проверяет сохранённый запрос на VPS и получает исходный доступ. Новая настройка и повторная выдача доступа не выполняются."
                 : retained ? "Использует уже сохранённый доступ и запускает канал к VPS. Настройка сервера не повторяется."
                 : "Настраивает VPN на вашем VPS через SSH и запускает канал. Изменяет настройки сервера.";
-            next.Enabled = !busy && !setupBlocked;
+            next.Enabled = !busy && !setupReadBusy && !setupBlocked;
         }
         private Label Paragraph(string text)
         {
@@ -542,7 +708,7 @@ namespace ProGo
         }
         private void RefreshStatus()
         {
-            if (!busy) next.Enabled = !setupBlocked && (step != 3 || verification.Installed);
+            if (!busy) next.Enabled = !setupReadBusy && !setupBlocked && (step != 3 || verification.Installed);
             if (internetCheck != null && internetCheck.SelectedIndex != (int)verification.Internet) internetCheck.SelectedIndex = (int)verification.Internet;
             if (profileState != null) profileState.Text = verification.IssuanceText;
             if (step != 4 || counters == null) return;
@@ -569,7 +735,9 @@ namespace ProGo
         }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { ownerUi.Dispose(); if (channelWait != null) CancelChannelWait(); refresh.Stop(); refresh.Dispose(); }
+            if (disposing) { ownerUi.Dispose();
+                lock (channelWaitGate) { var snapshot = setupSnapshotCancellation; if (snapshot != null) try { snapshot.Cancel(); } catch (ObjectDisposedException) { } }
+                if (channelWait != null) CancelChannelWait(); refresh.Stop(); refresh.Dispose(); }
             base.Dispose(disposing);
         }
     }

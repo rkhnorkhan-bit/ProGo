@@ -79,6 +79,7 @@ namespace ProGo
                 PreparedHomeAddressWorker();
                 PreparedImportWorker(token);
                 OwnedImportWorker(token);
+                WizardAccessImport(token, clipboard);
                 OwnedHomeAddressWorker(token);
                 WizardHomeAddressWrite(token, clipboard);
                 foreach (string mode in new[] { "no-listener", "silent" }) {
@@ -324,12 +325,114 @@ namespace ProGo
                 } finally { heartbeat.Stop(); form.Close(); foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
             }
         }
-        private static string BeforeImportToken(string token)
+        private static string BeforeImportToken(string token) { return ImportTokenForHost(token, "before.example"); }
+        private static string ImportTokenForHost(string token, string host)
         {
             var json = new System.Web.Script.Serialization.JavaScriptSerializer();
             string encoded = token.Trim().Substring(7).Replace('-', '+').Replace('_', '/'); encoded = encoded.PadRight((encoded.Length + 3) / 4 * 4, '=');
-            var fields = json.Deserialize<Dictionary<string, object>>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded))); fields["Host"] = "before.example";
+            var fields = json.Deserialize<Dictionary<string, object>>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded))); fields["Host"] = host;
             string value = "PROGO1." + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json.Serialize(fields))).TrimEnd('=').Replace('+', '-').Replace('/', '_'); HomeVpnAccess.Parse(value); return value;
+        }
+        private static void WizardAccessImport(string token, ClipboardService clipboard)
+        {
+            string accessPath = Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"), ownerPath = Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat"), pendingPath = Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat");
+            var original = new[] { accessPath, ownerPath, pendingPath }.ToDictionary(path => path, path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            string beforeToken = BeforeImportToken(token), retryToken = ImportTokenForHost(token, "retry.example"); var parsed = HomeVpnAccess.Parse(token);
+            var json = new System.Web.Script.Serialization.JavaScriptSerializer();
+            try {
+                foreach (string route in new[] { "cancel-retry", "close", "dispose", "accepted-cancel", "accepted-close", "accepted-dispose", "accepted-global-stop", "partial-retry", "receipt-cancel", "receipt-close", "receipt-global-stop" }) {
+                    bool receipt = route.StartsWith("receipt-", StringComparison.Ordinal), afterAdmission = route.StartsWith("accepted-", StringComparison.Ordinal), retry = route.EndsWith("-retry", StringComparison.Ordinal);
+                    File.Delete(pendingPath); File.Delete(Path.Combine(marker, "pid")); File.WriteAllText(Path.Combine(marker, "mode"), "ready");
+                    HomeVpnPrivateFiles.Save("access", beforeToken); HomeVpnPrivateFiles.Save("owner", json.Serialize(new HomeVpnOwner { Host = "before.example", Port = parsed.Port, Login = "root", KeyFile = "" }));
+                    byte[] beforeAccess = File.ReadAllBytes(accessPath), beforeOwner = File.ReadAllBytes(ownerPath), journal = null;
+                    if (receipt) {
+                        var owner = new HomeVpnOwner { Host = parsed.Host, Port = parsed.Port, Login = "root", KeyFile = "" };
+                        var request = HomeVpnSetupRecovery.Register(owner, "My iPhone"); HomeVpnSetupRecovery.RetainResult(owner, request, token); journal = File.ReadAllBytes(pendingPath);
+                    }
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        HomeVpnWizardForm form = null; Task<bool> first = null, globalStop = null; FileStream held = null;
+                        bool closeExpected = false, closed = false, closedAfterWork = false; int phase = 0, turns = 0, attempts = 0, admin = 0, updates = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId; int nativeDisposeUpdates = 0;
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                            form = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(form);
+                            typeof(HomeVpnWizardForm).GetField("own", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(form, receipt); Invoke(form, "ShowStep", 1);
+                            if (!receipt) ((TextBox)Field(form, "token")).Text = token;
+                            form.Admin = (owner, action, label, id, progress) => {
+                                Interlocked.Increment(ref admin); check(receipt && action == "recover-setup" && HomeVpnSetupRecovery.Load(owner, "My iPhone").Result == token.Trim(), "modal setup import checks only its cached original request; never creates another setup: " + route); return Task.FromResult(token);
+                            };
+                            form.BeforeAccessIo = stage => {
+                                if (stage == "prepared") Interlocked.Increment(ref attempts);
+                                if (receipt || attempts != 1 || stage != (afterAdmission ? "accepted" : "prepared")) return;
+                                Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Modal token import fixture deadline");
+                            };
+                            form.BeforeSetupConsumeIo = stage => {
+                                if (!receipt || stage != "consume") return;
+                                Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Modal setup consumption fixture deadline");
+                            };
+                            form.FormClosed += delegate { closed = true; closedAfterWork = service.ImportWork.IsCompleted && form.AccessImportWork.IsCompleted && form.SetupConsumptionWork.IsCompleted; };
+                            var next = (Button)Field(form, "next");
+                            ModalWizardCase(form, delegate {
+                                if (phase == 0) { check(form.Modal, "actual token import/consumption runs inside ShowDialog: " + route); next.PerformClick(); phase = 1; return false; }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    first = service.ImportWork;
+                                    check(worker != ui && (bool)Field(form, "busy") && !next.Enabled && !form.AccessImportWork.IsCompleted && ((Button)Field(form, "cancelWait")).Enabled &&
+                                        ((Button)Field(form, "cancelWait")).DialogResult == DialogResult.None && !File.Exists(Path.Combine(marker, "pid")), "real modal import retains heartbeat/cancel and cannot start SSH while private work remains held: " + route);
+                                    if (route == "partial-retry") held = File.Open(ownerPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    phase = 2; turns = 0;
+                                    if (route.EndsWith("global-stop", StringComparison.Ordinal)) { var watch = Stopwatch.StartNew(); globalStop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500, "StopAll physical owner returns immediately during modal import/receipt: " + route); }
+                                    else if (route.EndsWith("close", StringComparison.Ordinal)) { closeExpected = true; form.Close(); }
+                                    else if (route.EndsWith("dispose", StringComparison.Ordinal)) {
+                                        closeExpected = true; var controls = Controls(form).ToArray(); form.Dispose();
+                                        foreach (var control in controls) { control.TextChanged += delegate { updates++; }; control.EnabledChanged += delegate { updates++; }; control.VisibleChanged += delegate { updates++; }; }
+                                    } else if (route != "partial-retry") ((Button)Field(form, "cancelWait")).PerformClick();
+                                    return false;
+                                }
+                                if (phase == 2) {
+                                    if (route.EndsWith("dispose", StringComparison.Ordinal) && form.Modal) return false;
+                                    if (++turns < 3) return false;
+                                    if (route.EndsWith("dispose", StringComparison.Ordinal)) {
+                                        check(((OwnerUiDispatcher)Field(form, "ownerUi")).Closed && !form.AccessImportWork.IsCompleted, "disposed import owner closes publication admission while native modal unwind settles");
+                                        nativeDisposeUpdates = updates;
+                                    }
+                                    check(!form.AccessImportWork.IsCompleted && (route.EndsWith("dispose", StringComparison.Ordinal) ? form.IsDisposed : form.Visible), "modal cancel/close/Stop retains actual import or receipt work across native loop turns: " + route);
+                                    release.Set(); phase = 3; return false;
+                                }
+                                if (phase == 3) {
+                                    if (!form.AccessImportWork.IsCompleted || !service.ImportWork.IsCompleted || !form.SetupConsumptionWork.IsCompleted || !form.SetupSnapshotWork.IsCompleted || (bool)Field(form, "busy") ||
+                                        (globalStop != null && !globalStop.IsCompleted) || (closeExpected && !route.EndsWith("dispose", StringComparison.Ordinal) && form.Modal)) return false;
+                                    if (globalStop != null) check(globalStop.GetAwaiter().GetResult(), "modal public Stop joins accepted persistence without a self-wait: " + route);
+                                    bool complete = afterAdmission || receipt, partial = route == "partial-retry";
+                                    check(complete || partial ? HomeVpnPrivateFiles.Load("access") == token.Trim() : beforeAccess.SequenceEqual(File.ReadAllBytes(accessPath)), "modal cancellation reports actual saved/partial/unchanged token bytes: " + route);
+                                    check(complete ? (receipt ? json.Deserialize<HomeVpnOwner>(HomeVpnPrivateFiles.Load("owner")).Host == parsed.Host : HomeVpnPrivateFiles.Load("owner") == "null") : beforeOwner.SequenceEqual(File.ReadAllBytes(ownerPath)), "modal import preserves the actual owner file on pre-admission cancel or second-save failure: " + route);
+                                    check(!File.Exists(Path.Combine(marker, "pid")) && !relay.IsRunning && admin == (receipt ? 1 : 0) && (receipt ? journal.SequenceEqual(File.ReadAllBytes(pendingPath)) : !File.Exists(pendingPath)), "cancel/global Stop cannot launch late SSH, consume pending setup or repeat remote setup: " + route);
+                                    if (closeExpected) { check(route.EndsWith("dispose", StringComparison.Ordinal) ? form.IsDisposed && ((OwnerUiDispatcher)Field(form, "ownerUi")).Closed && updates == nativeDisposeUpdates : closed && closedAfterWork && !form.Modal && !form.Visible,
+                                        "explicit modal close follows actual import/receipt settlement; Dispose gets no late controls: " + route + "; controlEvents=" + updates + "/nativeDisposeEvents=" + nativeDisposeUpdates); return true; }
+                                    check(form.Visible && form.Modal && next.Enabled && (int)Field(form, "step") == 1, "cancelled/partial modal import stays on its input step with explicit retry: " + route);
+                                    if (!retry) { check(((Label)Field(form, "status")).Text.Contains("уже сохранён"), "accepted or completed token save is reported saved while connection remains cancelled: " + route); return true; }
+                                    if (partial) check(((Label)Field(form, "status")).Text.Contains("частично"), "partial physical import never claims complete save or rollback");
+                                    else check(((Label)Field(form, "status")).Text.Contains("Импорт доступа отменён"), "pre-admission modal cancel keeps an honest explicit retry message");
+                                    if (held != null) { held.Dispose(); held = null; }
+                                    ((TextBox)Field(form, "token")).Text = retryToken; phase = 4; next.PerformClick(); return false;
+                                }
+                                if ((bool)Field(form, "busy") || (int)Field(form, "step") != 2) return false;
+                                check(attempts == 2 && !Object.ReferenceEquals(first, service.ImportWork) && service.ImportWork.GetAwaiter().GetResult() && service.Access.Host == "retry.example" &&
+                                    HomeVpnPrivateFiles.Load("access") == retryToken && relay.IsRunning && File.Exists(Path.Combine(marker, "pid")), "explicit modal retry owns one new token import and only then starts its isolated local SSH/SOCKS channel without an old result overwrite: " + route);
+                                return true;
+                            }, () => closeExpected);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); if (form != null) form.Dispose(); service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && service.ImportWork.IsCompleted && service.StartWork.IsCompleted && (form == null || form.InitializationWork.IsCompleted && form.SetupSnapshotWork.IsCompleted && form.AccessImportWork.IsCompleted && form.SetupConsumptionWork.IsCompleted && form.SetupReadWork.IsCompleted), 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Modal access import cleanup incomplete");
+                            if (first != null) try { first.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { }
+                            if (form != null) try { form.AccessImportWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { }
+                        }
+                    }
+                }
+            } finally { foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
         }
         private static void OwnedImportWorker(string token)
         {
@@ -649,7 +752,7 @@ namespace ProGo
                     var existingForms = Application.OpenForms.Cast<Form>().ToArray();
                     try {
                         Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
-                        form = new HomeVpnWizardForm(service, clipboard);
+                        form = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(form);
                         form.FormClosed += delegate { closed = true; closedAfterRead = service.ShareRefreshWork.IsCompleted && !(bool)Field(form, "busy"); };
                         form.BeforeShareRead = delegate(string stage) {
                             Interlocked.Exchange(ref readThread, Thread.CurrentThread.ManagedThreadId);
@@ -811,7 +914,7 @@ namespace ProGo
                         bool afterAdmission = route.StartsWith("accepted-", StringComparison.Ordinal), closeExpected = false, closed = false, closedAfterWrite = false;
                         try {
                             Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
-                            form = new HomeVpnWizardForm(service, clipboard);
+                            form = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(form);
                             form.FormClosed += delegate { closed = true; closedAfterWrite = first != null && first.IsCompleted && !(bool)Field(form, "busy"); };
                             form.BeforeHomeAddressIo = delegate(string stage) {
                                 Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
@@ -1124,7 +1227,7 @@ namespace ProGo
             Application.DoEvents();
         }
         private static object Field(object target, string name) { return target.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(target); }
-        private static void Invoke(object target, string name, params object[] args) { target.GetType().GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance).Invoke(target, args); }
+        private static void Invoke(object target, string name, params object[] args) { HomeVpnFixtureFiles.ConfigureReady(target as Form); target.GetType().GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance).Invoke(target, args); HomeVpnFixtureFiles.ConfigureReady(target as Form); }
         private static IEnumerable<Control> Controls(Control root) { foreach (Control c in root.Controls) { yield return c; foreach (var child in Controls(c)) yield return child; } }
         private static void Shot(Form form, string work, string name) { using (var image = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(image, new Rectangle(Point.Empty, image.Size)); image.Save(Path.Combine(work, name + ".png")); } }
         private static void Clean(HomeVpnService service, int pid)
@@ -1502,7 +1605,7 @@ namespace ProGo
             using (var relay = new Ikev2RelayService())
             using (var service = Service(relay))
             using (var form = new HomeVpnWizardForm(service, clipboard)) {
-                var pending = new TaskCompletionSource<int>(); form.Show();
+                var pending = new TaskCompletionSource<int>(); form.Show(); HomeVpnFixtureFiles.ConfigureReady(form);
                 var task = (Task)typeof(HomeVpnWizardForm).GetMethod("RunStep", BindingFlags.NonPublic | BindingFlags.Instance)
                     .Invoke(form, new object[] { new Func<Task>(() => pending.Task) });
                 form.Close();

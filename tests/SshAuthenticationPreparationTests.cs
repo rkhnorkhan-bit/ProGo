@@ -379,19 +379,46 @@ namespace ProGo
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct AuthenticationFixtureIoCounters
+        {
+            internal ulong ReadOperations, WriteOperations, OtherOperations, ReadBytes, WriteBytes, OtherBytes;
+        }
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", EntryPoint = "GetProcessIoCounters", SetLastError = true)]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static extern bool AuthenticationFixtureReadIo(IntPtr process, out AuthenticationFixtureIoCounters counters);
         private static void AuthenticationFixtureMetrics(ProxyService proxy, string mode, string phase, long elapsedMs, long[] preparationMs)
         {
             // Isolated runner measurements only, never owner-PC/HDD acceptance.
+            // IO_COUNTERS are cumulative for this exact child lifetime, not
+            // physical-disk traffic or totals for the UI/agent/server processes.
+            bool collected = false; string failure = "none"; int nativeError = 0;
             try {
                 using (var child = Process.GetProcessById(proxy.CurrentPid.Value)) {
+                    AuthenticationFixtureIoCounters io;
+                    if (!AuthenticationFixtureReadIo(child.Handle, out io)) {
+                        nativeError = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                        throw new System.ComponentModel.Win32Exception(nativeError);
+                    }
                     Console.WriteLine("COMBINED_SSH_METRICS mode=" + mode + ";phase=" + phase + ";elapsed_ms=" + elapsedMs +
                         ";preparation_ms=" + String.Join(",", preparationMs.Select(x => x.ToString(System.Globalization.CultureInfo.InvariantCulture))) +
                         ";ssh_cpu_ms=" + child.TotalProcessorTime.TotalMilliseconds.ToString(System.Globalization.CultureInfo.InvariantCulture) +
-                        ";ssh_working_set_bytes=" + child.WorkingSet64 + ";ssh_peak_working_set_bytes=" + child.PeakWorkingSet64);
+                        ";ssh_working_set_bytes=" + child.WorkingSet64 + ";ssh_peak_working_set_bytes=" + child.PeakWorkingSet64 +
+                        ";ssh_io_scope=child_lifetime;ssh_io_read_operations=" + io.ReadOperations.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                        ";ssh_io_write_operations=" + io.WriteOperations.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                        ";ssh_io_other_operations=" + io.OtherOperations.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                        ";ssh_io_read_bytes=" + io.ReadBytes.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                        ";ssh_io_write_bytes=" + io.WriteBytes.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                        ";ssh_io_other_bytes=" + io.OtherBytes.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    collected = true;
                 }
             } catch (Exception error) {
-                Console.WriteLine("NOT_RUN: combined SSH process counters unavailable: " + error.GetType().Name);
+                failure = error.GetType().Name;
+                Console.WriteLine("NOT_RUN: combined SSH process counters unavailable: " + failure + "; win32=" + nativeError);
             }
+            // Collection failures must not be swallowed as successful dev I/O
+            // acceptance. No arbitrary CPU/RAM/I/O performance ceiling is added.
+            Check(collected, "actual owned SSH latency/CPU/RAM/process I/O counters collected: " + mode + "/" + phase + "; failure=" + failure + "/win32=" + nativeError);
         }
 
         // A multi-connection, test-owned Windows agent. LIST and SIGN are real

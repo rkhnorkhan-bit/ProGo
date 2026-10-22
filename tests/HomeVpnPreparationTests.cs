@@ -74,7 +74,7 @@ namespace ProGo
             }
         }
         private static object Field(object target, string name) { return target.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(target); }
-        private static void Call(object target, string name, params object[] args) { target.GetType().GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance).Invoke(target, args); }
+        private static void Call(object target, string name, params object[] args) { HomeVpnFixtureFiles.ConfigureReady(target as Form); target.GetType().GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance).Invoke(target, args); HomeVpnFixtureFiles.ConfigureReady(target as Form); }
         private static void Pump(Func<bool> ready, int timeout = 12000)
         {
             var watch = Stopwatch.StartNew(); while (!ready()) { Application.DoEvents(); Thread.Sleep(10); if (watch.ElapsedMilliseconds > timeout) throw new Exception("Preparation fixture timeout"); } Application.DoEvents();
@@ -127,7 +127,7 @@ namespace ProGo
             using (Form form = wizard ? (Form)new HomeVpnWizardForm(service, clipboard)
                 : new HomeInvitationsForm(new[] { new HomeVpnInvitation { Id = new string('e', 24), Name = "Saved friend" } },
                     (action, label, id) => completion.Task, clipboard)) {
-                form.Show();
+                form.Show(); HomeVpnFixtureFiles.ConfigureReady(form);
                 var status = (Label)Field(form, "status");
                 var enabled = (Control)Field(form, wizard ? "body" : "refresh");
                 int ownerThread = Thread.CurrentThread.ManagedThreadId, textUpdates = 0, enabledUpdates = 0, wrongThreadUpdates = 0;
@@ -383,7 +383,7 @@ namespace ProGo
             using (var wizard = new HomeVpnWizardForm(service, clipboard))
             using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
             using (var controller = new System.Windows.Forms.Timer { Interval = 20 }) {
-                service.UseToken(token, new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22 });
+                service.UseToken(token, new HomeVpnOwner { Host = "vpn.example.org", Login = "root", Port = 22 }); HomeVpnFixtureFiles.ConfigureReady(wizard);
                 wizard.Admin = (owner, action, label, id, progress) => {
                     check(action == "list", "initial Friends action dispatches only a read-only list");
                     return HomeVpnService.AdminAsync(owner, action, label, id, message => { progressMessages.Add(message); progress(message); },
@@ -616,7 +616,7 @@ namespace ProGo
                             wait.ShowDialog(form); await wait.Completion;
                         }
                     }, (exe, args, output) => { commands++; throw new Exception("Remote mutation must not start"); });
-                typeof(HomeVpnWizardForm).GetField("own", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(form, true);
+                HomeVpnFixtureFiles.ConfigureReady(form); typeof(HomeVpnWizardForm).GetField("own", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(form, true);
                 Call(form, "ShowStep", 1); form.Show(); ((TextBox)Field(form, "host")).Text = "vpn.example.org";
                 ((TextBox)Field(form, "login")).Text = "root"; ((TextBox)Field(form, "key")).Text = "";
                 timer.Tick += delegate {
@@ -696,15 +696,17 @@ namespace ProGo
     {
         internal static void ConfigureReady(Form form)
         {
-            var dialog = form as HomeProfileConfigureForm; if (dialog == null) return;
+            var dialog = form as HomeProfileConfigureForm; var wizard = form as HomeVpnWizardForm;
+            if (dialog == null && wizard == null) return;
             var watch = Stopwatch.StartNew();
-            while (!dialog.InitializationWork.IsCompleted) {
-                if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Configure fixture initial read deadline");
+            Func<bool> complete = () => dialog != null ? dialog.InitializationWork.IsCompleted : wizard.InitializationWork.IsCompleted && wizard.SetupSnapshotWork.IsCompleted;
+            while (!complete()) {
+                if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned form fixture initial/state read deadline");
                 Application.DoEvents(); Thread.Sleep(1);
             }
-            if (!dialog.InitializationWork.GetAwaiter().GetResult()) throw new Exception("Configure fixture initial read did not publish usable state");
+            if (dialog != null && !dialog.InitializationWork.GetAwaiter().GetResult()) throw new Exception("Configure fixture initial read did not publish usable state");
+            if (wizard != null) { wizard.InitializationWork.GetAwaiter().GetResult(); wizard.SetupSnapshotWork.GetAwaiter().GetResult(); }
         }
-
         internal static void Publish(string path, string value, Action beforeClose = null)
         {
             string pending = path + "." + Guid.NewGuid().ToString("N") + ".tmp";

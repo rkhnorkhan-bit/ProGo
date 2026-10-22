@@ -108,12 +108,12 @@ namespace ProGo
                 using (var service = new HomeVpnService(relay))
                 using (var form = new HomeVpnWizardForm(service, clipboard))
                 {
-                    form.Show(); Application.DoEvents();
+                    form.Show(); HomeVpnFixtureFiles.ConfigureReady(form);
                     var show = typeof(HomeVpnWizardForm).GetMethod("ShowStep", BindingFlags.Instance | BindingFlags.NonPublic);
                     show.Invoke(form, new object[] { 0 }); Application.DoEvents();
                     var buttons = AllControls(form).OfType<Button>().ToArray();
                     Check(buttons.Any(b => b.Text == "Подключиться к готовому VPS") && buttons.Any(b => b.Text == "Добавить свой VPS"), "wizard presents both entry choices");
-                    buttons.Single(b => b.Text == "Добавить свой VPS").PerformClick(); Application.DoEvents();
+                    buttons.Single(b => b.Text == "Добавить свой VPS").PerformClick(); HomeVpnFixtureFiles.ConfigureReady(form);
                     Check(AllControls(form).OfType<TextBox>().Count(t => t.Parent is FlowLayoutPanel) == 3 && AllControls(form).OfType<NumericUpDown>().Count() == 1, "own VPS step has host, account, key and port");
                     show.Invoke(form, new object[] { 0 }); Application.DoEvents();
                     AllControls(form).OfType<Button>().Single(b => b.Text == "Подключиться к готовому VPS").PerformClick(); Application.DoEvents();

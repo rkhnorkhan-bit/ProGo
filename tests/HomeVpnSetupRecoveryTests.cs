@@ -33,7 +33,7 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); OwnedConsumption(token);
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token);
                 // NativeRecovery calls Application.Run/ExitThread. Keep it last:
                 // later modeless timer fixtures would inherit an exited UI context.
                 NativeRecovery(token, clipboard, work);
@@ -42,6 +42,115 @@ namespace ProGo
             } finally {
                 foreach (var item in saved) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); }
             }
+        }
+        private static void NativeSetupSnapshot(ClipboardService clipboard)
+        {
+            foreach (string route in new[] { "ready", "cancel-retry", "cancel-edited-retry", "close", "dispose" }) {
+                File.Delete(PendingPath); HomeVpnSetupRecovery.Register(Owner, "My iPhone");
+                byte[] journal = File.ReadAllBytes(PendingPath);
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim()) {
+                    HomeVpnWizardForm form = null; int reads = 0, worker = 0, phase = 0, turns = 0, ui = Thread.CurrentThread.ManagedThreadId;
+                    bool closeExpected = route == "close" || route == "dispose", closedAfterRead = false, retry = route.StartsWith("cancel-", StringComparison.Ordinal), editedRetry = route == "cancel-edited-retry"; Task<bool> first = null;
+                    try {
+                        Pump(() => service.InitializationWork.IsCompleted); service.InitializationWork.GetAwaiter().GetResult();
+                        typeof(HomeVpnService).GetProperty("Owner", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(service,
+                            new HomeVpnOwner { Host = "other-account.example", Port = 2222, Login = "different", KeyFile = "unrelated-key" }, null);
+                        var watch = Stopwatch.StartNew();
+                        form = new HomeVpnWizardForm(service, clipboard, delegate {
+                            Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                            int attempt = Interlocked.Increment(ref reads);
+                            if (attempt != 1 && !(editedRetry && attempt == 2)) return;
+                            entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Wizard initial setup snapshot fixture deadline");
+                        });
+                        first = form.InitializationWork;
+                        check(watch.ElapsedMilliseconds < 500, "wizard constructor returns before held private setup read: " + route);
+                        form.FormClosed += delegate { closedAfterRead = form.SetupReadWork.IsCompleted && !(bool)Field(form, "busy"); };
+                        HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                            if (phase == 0) {
+                                if (!entered.IsSet || ++turns < 3) return false;
+                                check(form.Modal && form.Visible && worker != ui && !first.IsCompleted && !((Button)Field(form, "next")).Enabled &&
+                                    ((Button)Field(form, "cancelWait")).DialogResult == DialogResult.None && journal.SequenceEqual(File.ReadAllBytes(PendingPath)),
+                                    "real modal initial setup read keeps UI responsive and owns unchanged request bytes: " + route);
+                                phase = 1; turns = 0;
+                                if (route == "close") form.Close();
+                                else if (route == "dispose") form.Dispose();
+                                else if (retry) ((Button)Field(form, "cancelWait")).PerformClick();
+                                return false;
+                            }
+                            if (phase == 1) {
+                                if (++turns < 3 || route == "dispose" && form.Modal) return false;
+                                check(!first.IsCompleted && (route == "dispose" ? form.IsDisposed : form.Modal && form.Visible),
+                                    "initial read cancel/close retains its physical worker until settlement: " + route);
+                                release.Set(); phase = 2; return false;
+                            }
+                            if (phase == 2) {
+                                if (!first.IsCompleted || !form.SetupReadWork.IsCompleted || (bool)Field(form, "busy")) return false;
+                                bool loaded = first.GetAwaiter().GetResult();
+                                check(journal.SequenceEqual(File.ReadAllBytes(PendingPath)) && reads == 1 && loaded == (route == "ready"),
+                                    "initial setup completion reports only its actual uncancelled snapshot and never changes the request: " + route);
+                                if (closeExpected) {
+                                    if (route == "close" && form.Modal) return false;
+                                    check(route == "dispose" ? form.IsDisposed && Field(form, "setupOwnerSnapshot") == null : closedAfterRead && !form.Visible,
+                                        "explicit modal close joins its read; disposed wizard receives no cached owner: " + route); return true;
+                                }
+                                check(form.Modal && form.Visible, "cancelled initial setup read does not close ShowDialog");
+                                if (retry) {
+                                    if (editedRetry) { entered.Reset(); release.Reset(); }
+                                    while ((int)Field(form, "step") > 0) ((Button)Field(form, "back")).PerformClick();
+                                    ((FlowLayoutPanel)Field(form, "body")).Controls.OfType<Button>().Single(button => button.Text == "Добавить свой VPS").PerformClick();
+                                    var nextRead = form.SetupSnapshotWork;
+                                    check(!Object.ReferenceEquals(first, nextRead), "retry through the actual own-VPS choice owns a new snapshot completion"); turns = 0; phase = editedRetry ? 5 : 3; return false;
+                                }
+                                phase = 3;
+                            }
+                            if (phase == 5) {
+                                if (!entered.IsSet || ++turns < 3) return false;
+                                ((TextBox)Field(form, "host")).Text = "typed-before-result.example"; ((NumericUpDown)Field(form, "port")).Value = 2022;
+                                ((TextBox)Field(form, "login")).Text = "typed"; ((TextBox)Field(form, "key")).Text = "explicit-key";
+                                check(!form.SetupSnapshotWork.IsCompleted && ((Control)Field(form, "body")).Enabled && !((Button)Field(form, "next")).Enabled, "first successful retry retains editing while its real snapshot is still held");
+                                release.Set(); phase = 3; return false;
+                            }
+                            if (!form.SetupSnapshotWork.IsCompleted) return false;
+                            if (phase == 4) {
+                                check(form.SetupSnapshotWork.GetAwaiter().GetResult() && ((TextBox)Field(form, "host")).Text == "edited.example" && ((NumericUpDown)Field(form, "port")).Value == 2222
+                                    && ((TextBox)Field(form, "login")).Text == "edited" && ((TextBox)Field(form, "key")).Text == "fixture-key" && reads == (retry ? 3 : 2), "explicit recheck preserves edited owner fields and performs exactly one fresh read: " + route); return true;
+                            }
+                            check(editedRetry ? ((TextBox)Field(form, "host")).Text == "typed-before-result.example" && ((NumericUpDown)Field(form, "port")).Value == 2022 && ((TextBox)Field(form, "login")).Text == "typed" && ((TextBox)Field(form, "key")).Text == "explicit-key"
+                                : ((TextBox)Field(form, "host")).Text == Owner.Host && ((NumericUpDown)Field(form, "port")).Value == Owner.Port && ((TextBox)Field(form, "login")).Text == Owner.Login && ((TextBox)Field(form, "key")).Text == "",
+                                "first successful snapshot restores pending endpoint without borrowing another VPS key or overwriting newer user edits: " + route);
+                            check(form.SetupSnapshotWork.GetAwaiter().GetResult() && (int)Field(form, "step") == 1 && ((Button)Field(form, "next")).Enabled,
+                                "ready or retried setup snapshot restores the cached recovery action: " + route);
+                            var snapshot = form.SetupSnapshotWork; int count = reads;
+                            using (File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None)) {
+                                var fieldsWatch = Stopwatch.StartNew();
+                                ((TextBox)Field(form, "host")).Text = "edited.example"; ((TextBox)Field(form, "login")).Text = "edited";
+                                ((TextBox)Field(form, "key")).Text = "fixture-key"; ((NumericUpDown)Field(form, "port")).Value = 2222;
+                                typeof(HomeVpnWizardForm).GetMethod("RefreshStatus", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(form, null);
+                                check(fieldsWatch.ElapsedMilliseconds < 500 && reads == count && Object.ReferenceEquals(snapshot, form.SetupSnapshotWork) && ((Button)Field(form, "next")).Enabled,
+                                    "typing and status use only cached setup state even while the actual request file is exclusively locked: " + route);
+                            }
+                            check(((TextBox)Field(form, "host")).Text == "edited.example" && reads == (retry ? 2 : 1),
+                                "old cancelled snapshot cannot overwrite new editable fields or launch parallel reads: " + route);
+                            ((Button)Field(form, "back")).PerformClick();
+                            ((FlowLayoutPanel)Field(form, "body")).Controls.OfType<Button>().Single(button => button.Text == "Добавить свой VPS").PerformClick();
+                            phase = 4; return false;
+                        }, () => closeExpected);
+                    } finally {
+                        release.Set(); if (form != null) form.Dispose();
+                        try {
+                            Pump(() => form == null || form.InitializationWork.IsCompleted && form.SetupSnapshotWork.IsCompleted && form.SetupReadWork.IsCompleted && ((Task)Field(form, "setupSnapshotDriver")).IsCompleted);
+                            if (form != null) { form.InitializationWork.GetAwaiter().GetResult(); form.SetupSnapshotWork.GetAwaiter().GetResult(); }
+                        } finally {
+                            service.Dispose(); var stop = service.StopAsync(); Pump(() => stop.IsCompleted);
+                            check(stop.GetAwaiter().GetResult(), "initial setup snapshot fixture joins only its owned resources: " + route);
+                        }
+                    }
+                }
+            }
+            File.Delete(PendingPath);
         }
         private static void OwnedConsumption(string token)
         {
@@ -337,7 +446,7 @@ namespace ProGo
             using (var service = new HomeVpnService(relay, Path.Combine(work, "absent-ssh-fixture.exe"), 15000, 14500, 17878))
             using (var form = new HomeVpnWizardForm(service, clipboard))
             using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
-                form.Show(); int ticks = 0, commands = 0; var response = new TaskCompletionSource<object>();
+                form.Show(); HomeVpnFixtureFiles.ConfigureReady(form); int ticks = 0, commands = 0; var response = new TaskCompletionSource<object>();
                 check(SynchronizationContext.Current is WindowsFormsSynchronizationContext, "native recovery has the Windows Forms UI continuation context");
                 heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
                 var next = (Button)Field(form, "next"); var state = (Label)Field(form, "setupState"); var status = (Label)Field(form, "status");
@@ -399,7 +508,7 @@ namespace ProGo
             using (var relay = new Ikev2RelayService())
             using (var service = new HomeVpnService(relay))
             using (var form = new HomeVpnWizardForm(service, clipboard)) {
-                form.Show(); Application.DoEvents();
+                form.Show(); HomeVpnFixtureFiles.ConfigureReady(form);
                 check((int)Field(form, "step") == 1 && !((Button)Field(form, "next")).Enabled && ((Label)Field(form, "setupState")).Text.Contains("повреждён")
                     && service.Access != null, "corrupt pending journal opens a blocked recovery step while preserving saved access"); form.Close();
             }

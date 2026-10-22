@@ -228,7 +228,7 @@ namespace ProGo
                 Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> admin = (owner, kind, label, id, progress) => Admin(owner, kind, label, id, progress, route == "deadline" ? 5000 : 20000, realCopy);
                 Form main; Button button; Func<bool> done; Func<string> status;
                 if (action == "repair") {
-                    var wizard = new HomeVpnWizardForm(service, clipboard); wizard.Admin = admin;
+                    var wizard = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(wizard); wizard.Admin = admin;
                     typeof(HomeVpnWizardForm).GetMethod("ShowStep", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(wizard, new object[] { 4 });
                     main = wizard; button = Controls(wizard).OfType<Button>().Single(control => control.Text == "Исправить выход VPN в интернет");
                     done = () => !(bool)Field(wizard, "busy"); status = () => {

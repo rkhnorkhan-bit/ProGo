@@ -1,13 +1,86 @@
-## Fixture-order-only checking scope before publication
+## Wizard + native I/O checking scope before publication
 
-Only receipt fixture11add1delete +3 evidence docs on exact616 local9829. Original
-seven-case body byte-identical, heartbeat3s/worker+join5s unchanged. Move all timer
-fixtures before terminal NativeRecovery.ExitThread; restore only its own seeded
-access/owner/request before subsequent recovery. New compilation/native NOT_RUN.
-Runtime/scripts/workflow/VERSION unchanged; isolated320 sources. Entire future
-wizard/export/IOmetrics/adminsnapshot excluded, no inheritedSUCCESS. Before CAS5ee,
-scan full delta and verify public/unchanged workflows/uploadsOFF/fulltree equality.
-Last fullSUCCESS613/I58–80/Y22/delta0, no package upload/installation/merge/release.
+Runtime/test local89e44d5ea0c9226a0b1444921919049be8043631 on exact617 localf412/sourcef255.
+Only10 source/test paths477add68delete +3 current evidence docs. Async actual wizard
+import/receipt, cached initial setup snapshot with first-success owner restore/user
+edit protection,11 import/receipt+5 initial modal routes and4 exact SSH child process
+I/O metric assertions. Existing receipt7 safe diagnostics/state restoration and
+terminal NativeRecovery-last retained. Core service/access/recovery source, scripts,
+server/workflows/VERSION unchanged. All profile export/native profile chooser/admin
+snapshot/transport code excluded (no references to those new APIs/types). New compiler/
+native NOT_RUN. Last fullSUCCESS617 and same fixed v1.0 I58–80/Y22, delta0; F31 current
+representative anchor corrected to actual selected-key SSH native recovery, weights
+unchanged. BeforeCAS expectedf255 verify public/uploadsOFF/full delta scan/fulltree.
+No package upload, main merge, release, owner-PC install or live VPS authorized.
+
+## Wizard checking rebuilt on617 — code89e static-only; F31 anchor corrected
+
+Runtime/test source `89e44d5ea0c9226a0b1444921919049be8043631`, tree3200f55fcf5202d269ff9f226f70dc09b299d307
+in ProGo-ci617-wizard, on verified617 localf412/sourcef255.10 paths477add68delete:
+3 wizard/context/card +7 tests, async import/receipt, initial cached setup snapshot,
+first-success owner restore preserving edits,11 import/receipt+5 initial modal routes,
+actual owned SSH child I/O counters4. Only Run call-order cherry conflict resolved;
+receipt diagnostic, own3file restoration and terminal NativeRecovery-last preserved.
+Service/access/recovery source, scripts/server/workflows/VERSION unchanged. All later
+profile export/native profile chooser/admin snapshot/transport helpers excluded.
+Manual scoped diff/call-site/conflict/receipt-parity/syntax10/C#5/public320/0/secretPII0
+PASS; compiler/native NOT_RUN. Docs still predecessor in worktree until final freeze.
+
+Evidence correction without points/weight change: current F31 representative score
+anchor had unrelated `Update check tests PASS:72`. Replaced with exact617 native
+`real recovery repeats local signing and actual server authentication against the
+same selected owned agent key` (same completed log), matching original F31 table's
+signing/UI/SSH basis. Historical entry retained in JSON correction record. Underlying
+partial gate, v1.0 weights/I58–80/Y22 raw21.75 unchanged; written metrics not credited.
+Next attach latest3 evidence docs, whole delta scan/public workflow/canonicaltree/CAS,
+one exact newCI.617 fullSUCCESS applies only to f255/7f720. History below.
+
+## CI617 SUCCESS — exact import/receipt API cohort, future UI excluded
+
+Exact source `f255e8ad7339af4481e0590c31c7db32ab959bfe`, merge/build identity
+`7f72092c47f68617f9fec6bf1b7c2dc273c9f426`, tree323f022e49ac2b485e6d9c32f528ffd0d6822a98
+= localf41257f78ba1e8fb4166257c2db9012be16a0fd7.
+[CI617/39763459020](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39763459020)
+Windows119773047477/Ubuntu119773046886 SUCCESS; completed jobs/log checked. Build
+10:29:34.0880510Z, full Test-ProGo PASS10:47:50.1596462Z, Desktop5283/Home1805/
+Portable91, Python28=26PASS2SKIP. Pair9/import9 PASS and all7 real receipt worker cases
+PASS10:51:26.400–27.174Z: complete/cancel-read/cancel-consume/scope-refused/real delete
+lock/changed-request/changed-credentials. Terminal recovery after these also PASS,
+confirming corrected fixture ordering/state restoration without a timeout increase.
+Full configure initial/readmodal3+3/private-save8, diagnostics modal/chooser3/Context
+ownership, selected-key signing55/UI50/prep72, actual direct+owned-agent native SSH→
+SOCKS→HTTP/crash→fresh preparation, Instance28/Maintenance126/Shutdown47 also PASS.
+
+Same28 weighted criterion anchors match613 verbatim: I58–80/Y22 raw21.75, delta0.
+This validates the published API cohort, NOT future wizard a501/839/a0/bbcc/d940,
+profile export6d180/320a/1edef/4c1/0b5, process I/O metricsf9 or admin snapshotca3d/
+transport819d9+760. Their compiler/native remain NOT_RUN. Published wizard still uses
+sync compatibility importer; full R09 FAIL and R11 PARTIAL, owner/installer gates open.
+Next before isolated wizard publication: fix first-success setup snapshot retry
+restoring stale saved-owner endpoint for a different pending VPS, preserving edits;
+then rebuild on checked617 with diagnostics/order fix retained and review scope.
+
+Runner ZIP0.2.2 SHA256 `91f617b9b9d09ed460aab74c05e12fde6b267994642c2cae77094bc46c6b17d7`.
+All upload/prune steps SKIPPED; bytes not retrieved/delivered/installed. Private
+transfer BLOCKED pending approved channel; no main merge/release/owner-PC install.
+History below; previous running/object states are historical, do not repeat617.
+
+## CI617 actual running — fixture order/state fix only
+
+PR88 OPEN/DRAFT source `f255e8ad7339af4481e0590c31c7db32ab959bfe`, merge
+`7f72092c47f68617f9fec6bf1b7c2dc273c9f426`, tree323f022e49ac2b485e6d9c32f528ffd0d6822a98
+= localf41257f78ba1e8fb4166257c2db9012be16a0fd7. CAS expected5ee→f255 PASS,
+один автоматический [CI617/39763459020](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39763459020),
+Windows119773047477/Ubuntu119773046886 in_progress. Empty initial webhook lookup
+followed by one run; no manual duplicate. PR body updated.4 paths343add47delete,
+only1 fixture11add1delete+3docs, product runtime/scripts/workflow/VERSION unchanged,
+fullscan/canonicaltree PASS/public uploadsOFF. New compilation/native NOT_RUN until
+exact log. Future wizardd940/export/metricsf9/adminsnapshotca3d excluded and NOT_RUN.
+Last fullSUCCESS613/28anchors/runnerZIP remain current evidence; I58–80/Y22/delta0.
+Next check same617; do not publish checkpoint-only docs on active head. Independent
+next stage: task-preserving UI transport adapter using existing owner dispatcher,
+then wire Admin snapshot/staging without moving modal windows onto worker threads.
+Historical pending-CAS notes below are not a new unfinished publication.
 
 ## CI616 FAIL — receipt worker held correctly, UI timer did not tick
 

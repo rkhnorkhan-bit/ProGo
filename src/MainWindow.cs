@@ -241,7 +241,7 @@ namespace ProGo
                 backupProgress.Text = backupStatus() ?? "";
                 backupProgress.Visible = backupProgress.Text.Length > 0;
             }
-            var commands = commandState == null ? new AppCommandState(new AppCommand[0], proxy.IsConnecting, false, phoneStopping: home.IsStopping, phoneInitializing: home.IsInitializing, phoneSaving: home.IsSavingHomeAddress) : commandState();
+            var commands = commandState == null ? new AppCommandState(new AppCommand[0], proxy.IsConnecting, false, phoneStopping: home.IsStopping, phoneInitializing: home.IsInitializing, phoneSaving: home.IsSavingHomeAddress || home.IsSavingShareOrigin || home.IsImporting) : commandState();
             bool cliPending = commands.IsPending(AppCommand.StartCli), windowsPending = commands.IsPending(AppCommand.EnableWindows);
             var status = health == null ? new ConnectionHealthSnapshot("", ConnectionProbeState.Unknown, ConnectionProbeState.Unknown) : health.Current;
             bool ready = status.SocksReady;
@@ -266,7 +266,7 @@ namespace ProGo
             windowsToggle.AccessibleDescription = AppCommands.Get(windowsPending || !windowsApplied ? AppCommand.EnableWindows : AppCommand.DisableWindows).Effect;
             windowsToggle.AccessibleName = windowsToggle.Text + " прокси Windows"; cliToggle.AccessibleName = cliToggle.Text;
             phoneOpen.Enabled = navigation["iphone"].Enabled = AppCommands.CanExecute(AppCommand.Phone, commands);
-            phoneState.Text = home.IsStopping ? "Остановка…" : home.IsInitializing ? "Чтение сохранённого доступа…" : home.IsSavingHomeAddress ? "Сохранение адреса…" : home.IsStarting ? "Запуск…"
+            phoneState.Text = home.IsStopping ? "Остановка…" : home.IsInitializing ? "Чтение сохранённого доступа…" : home.IsImporting ? "Сохранение доступа…" : home.IsSavingShareOrigin ? "Сохранение адреса выдачи…" : home.IsSavingHomeAddress ? "Сохранение адреса…" : home.IsStarting ? "Запуск…"
                 : home.Relay.IsRunning ? "Канал включён" : home.HasOwnedResources ? "Нужна очистка"
                 : home.InitializationFailed ? "Данные доступа требуют проверки" : "Не запущен";
             recovery.Text = proxy.RecoveryStatus + "\nПрокси приложений: " + CliProxyBridgeService.UrlFor(settings.Current.HttpProxyPort) +

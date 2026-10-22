@@ -31,7 +31,7 @@ namespace ProGo
                     new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "example", KeyFile = "" }, null);
                 typeof(HomeVpnService).GetProperty("HomeAddress", PrivateInstance).SetValue(service, "home.example.org", null);
                 using (var form = new HomeVpnWizardForm(service, clipboard)) {
-                    form.Show(); Application.DoEvents(); ((Timer)Field(form, "refresh")).Stop();
+                    form.Show(); PumpUntil(() => form.InitializationWork.IsCompleted); form.InitializationWork.GetAwaiter().GetResult(); ((Timer)Field(form, "refresh")).Stop();
                     var body = (FlowLayoutPanel)Field(form, "body"); var back = (Button)Field(form, "back"); var next = (Button)Field(form, "next");
                     var heading = (Label)Field(form, "heading"); var status = (Label)Field(form, "status"); var progress = (WizardProgress)Field(form, "progress");
                     Func<string, Button> button = text => body.Controls.OfType<Button>().Single(b => b.Text == text);
@@ -45,7 +45,7 @@ namespace ProGo
                     };
                     Check(form.AcceptButton == null && form.CancelButton == null, "wizard has no implicit setup or stop default");
                     walk("choice");
-                    button("Добавить свой VPS").PerformClick(); Application.DoEvents();
+                    button("Добавить свой VPS").PerformClick(); PumpUntil(() => form.SetupSnapshotWork.IsCompleted); form.SetupSnapshotWork.GetAwaiter().GetResult();
                     var host = (TextBox)Field(form, "host"); var port = (NumericUpDown)Field(form, "port");
                     var login = (TextBox)Field(form, "login"); var key = (TextBox)Field(form, "key");
                     Check(host.AccessibilityObject.Name == "Адрес VPS (IP или имя)" && port.AccessibilityObject.Name == "SSH-порт" &&
@@ -53,7 +53,7 @@ namespace ProGo
                     host.Text = "pending.example.org"; port.Value = 2222; login.Text = "pending"; key.Text = "fixture-key";
                     walk("own VPS"); Shot(form, "keyboard-wizard-owner");
                     Check(next.AccessibilityObject.Description.Contains("Изменяет настройки сервера"), "wizard own-VPS continuation explains its server effect");
-                    back.PerformClick(); Application.DoEvents(); button("Добавить свой VPS").PerformClick(); Application.DoEvents();
+                    back.PerformClick(); Application.DoEvents(); button("Добавить свой VPS").PerformClick(); PumpUntil(() => form.SetupSnapshotWork.IsCompleted); form.SetupSnapshotWork.GetAwaiter().GetResult();
                     Check(((TextBox)Field(form, "host")).Text == "pending.example.org" && ((NumericUpDown)Field(form, "port")).Value == 2222 &&
                         ((TextBox)Field(form, "login")).Text == "pending" && ((TextBox)Field(form, "key")).Text == "fixture-key", "wizard Back retains pending owner fields in memory");
                     back.PerformClick(); Application.DoEvents(); button("Подключиться к готовому VPS").PerformClick(); Application.DoEvents();
