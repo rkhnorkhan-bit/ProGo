@@ -1,3 +1,24 @@
+## Текущий проверочный кандидат: UI экспорта на CI625
+
+Последняя проверенная база: source `cc835548a51e525b4537959d414dc4a4fb17280a`, merge
+`080e54c3312d62cc72977afb94d55c3c1a4f42ce`, [CI625 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508).
+Новый локальный код `46cb9a253abd1aa8e2f69861e8a50ad216808ed4`: Windows compilation/native NOT_RUN.
+Один следующий PR CI выполняет scripts/Test-ProGo.ps1 на новом точном source/merge.
+
+Минимальное доказательство нового блока:11 реальных ShowDialog post-chooser случаев
+(save, Cancel→Retry, close, Dispose, accepted cancel/close/Dispose, Stop до/после admission,
+existing-file→Retry, accepted access change) и3 native SaveFileDialog child-сценария
+(cancel, deliberately missing, injected error). Каждый child ограничен20s, discovery5s,
+cleanup5s; missing/error должны сохранять ожидаемые ненулевые коды20/21 и подтверждённую
+очистку только собственных окон/процесса. Исходный export API5+ownership9 и общий Desktop/
+HomeWaiting regression также должны пройти. NOT_RUN не является PASS. Приёмка на ПК NOT_RUN.
+
+До публикации PASS: syntax7/C#5 scope, public321/0, diff/secretPII0, восемь кодовых файлов;
+полная каноническая побайтная сохранность EOF launcher кроме добавления одного harness
+source; Admin/invitation/workflows/VERSION идентичны625. Upload guards OFF, release workflow
+не срабатывает на integration/PR. Сохранить новый SHA/merge/run, закончить этот этап без
+ожидания CI. Баллы58–80/22, изменение0. Прежние записи ниже являются историей.
+
 ## Exact EOF expectation corrected locally — strict protocol, native NOT_RUN
 
 Isolated `c548e3baefd805bca43dbdd0cd9b6ea0081b898a` on exact624; one test script

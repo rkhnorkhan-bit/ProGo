@@ -38,6 +38,7 @@ namespace ProGo
                 AsyncDiagnosticSaveCommitted(root, true);
                 AsyncDiagnosticSaveFailureAndChooserCancel(root);
                 AsyncDiagnosticNativeChooserCancel(root);
+                ProfileNativeChooserWorkflow(root);
             }
             finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
         }

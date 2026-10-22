@@ -8,6 +8,45 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
+## Текущий этап: UI экспорта на точном CI625 — подготовлен отдельный кандидат
+
+База source `cc835548a51e525b4537959d414dc4a4fb17280a`, проверенный merge
+`080e54c3312d62cc72977afb94d55c3c1a4f42ce`; [CI625/39811359508](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39811359508)
+завершён SUCCESS (Windows119938159124 и Ubuntu119938159595). Это доказательство
+относится только к базе: API экспорта5+9, исправления phone fixture и EOF launcher.
+Исторические записи ниже сохраняют состояние на момент записи.
+
+Код кандидата `46cb9a253abd1aa8e2f69861e8a50ad216808ed4`, ветка
+`work/progo-export-ui-on625-20261022`, worktree `ProGo-export-ui-on625`.
+Перенесены только UI9b555e5/modal11 b1f9967/chooser3 a1fb4e7: восемь файлов.
+Выбор файла вызывает удерживаемый ExportProfileAsync; Cancel не закрывает ShowDialog,
+повтор доступен после фактического завершения I/O; закрытие/Dispose/Stop удерживают
+принятый worker, поздняя отмена не подменяет сохранённый результат. Phone command gate
+учитывает экспорт. Сохранение файла подтверждает выдачу, а не установку на телефоне.
+
+Проверки PASS: ручное ревью полного diff, syntax/C#5 await-scope7 (не компиляция),
+public content321/0, diff --check, добавленные secret/PII0, точный scope восьми файлов.
+Канонические Git-блобы семи C# файлов совпадают с сохранённым UI-on624. В Test-ProGo.ps1
+добавлен только исходник DesktopProfileNativeChooserTests; после удаления этого одного
+аргумента скрипт побайтно совпадает с cc835548, включая EOF-поправку и BOM. Первоначальная
+проверка байтов рабочей копии обнаружила ожидаемый checkout CRLF; сравнение канонических
+Git-блобов прошло. Admin/invitation/service/access/workflows/VERSION идентичны базе.
+Новая Windows compilation/native14: NOT_RUN; PowerShell/.NET в локальной Linux-среде
+отсутствуют. SUCCESS625 на новый код не распространяется. Веса и баллы неизменны:
+реализация58–80/100, проверенная22/100(raw21.75), изменение0.
+
+Публикация: подготовить точный source-only tree с тремя документами, проверить равенство
+деревьев и свежий head PR88; один guarded fast-forward cc835548→новый SHA. Ветка integration
+запускает только автоматический PR CI; ручной dispatch не нужен. Public upload guards OFF,
+release workflow только main/VERSION либо manual. После публикации сохранить source/merge,
+ID единственного запуска и его фактический статус; завершить этап без ожидания всего CI.
+
+Восстановленная более полная локальная разработка сохранена отдельно:73ebde96f769962e4f086ab0af9c1a9cbca2d16f;
+проверенный GitHub source checkpoint3b1090f57cc1f123bc8d0a77d5fe3d7f37c64cf3 имеет то же дерево,
+не является head PR88 и не имеет CI. Его Admin/invitation не входят в этот кандидат.
+Следующий этап только после команды владельца: проверить тот же новый run и его точные
+14 UI/modal/chooser сценариев; не создавать повторный CI при неизвестном результате.
+
 ## Exact EOF expectation corrected locally — strict protocol, native NOT_RUN
 
 Isolated `c548e3baefd805bca43dbdd0cd9b6ea0081b898a` on exact624; one test script

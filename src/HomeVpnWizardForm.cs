@@ -27,10 +27,13 @@ namespace ProGo
         private readonly Button cancelWait = new Button();
         private readonly object channelWaitGate = new object();
         private CancellationTokenSource channelWait;
-        private bool closeAfterWait, cancelledWait, stoppingChannel, readingShare, cancelledShareWait, savingAddress, cancelledAddressSave, savingAccess, cancelledAccessSave, readingSetup, cancelledSetupRead;
+        private bool closeAfterWait, cancelledWait, stoppingChannel, readingShare, cancelledShareWait, savingAddress, cancelledAddressSave, savingAccess, cancelledAccessSave, readingSetup, cancelledSetupRead, savingProfile, cancelledProfileSave;
         internal Action<string> BeforeShareRead; // Fixture boundary around the real protected-file read.
         internal Action<string> BeforeHomeAddressIo; // Fixture boundaries surround actual protected persistence.
         internal Action<string> BeforeAccessIo, BeforeSetupConsumeIo;
+        internal Action<string> BeforeProfileIo;
+        private Task profileExportWork = Task.FromResult(0);
+        internal Task ProfileExportWork { get { return profileExportWork; } }
         private HomeVpnOwner setupOwnerSnapshot;
         private string setupSnapshotError;
         private bool setupSnapshotKnown, setupReadBusy, initializingSetup, setupFieldsEdited, applyingSetupOwner;
@@ -358,7 +361,7 @@ namespace ProGo
         private async Task RunStep(Func<Task> action)
         {
             if (busy || ownerUi.Closed || IsDisposed || Disposing) return;
-            cancelledWait = closeAfterWait = cancelledShareWait = cancelledAddressSave = cancelledAccessSave = cancelledSetupRead = false;
+            cancelledWait = closeAfterWait = cancelledShareWait = cancelledAddressSave = cancelledAccessSave = cancelledSetupRead = cancelledProfileSave = false;
             busy = true; body.Enabled = false; back.Enabled = next.Enabled = false; status.ForeColor = UiTheme.Muted;
             try { await ownerUi.Await(action()); }
             catch (HomeVpnListCancelledException ex)
@@ -381,6 +384,7 @@ namespace ProGo
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     status.ForeColor = cancelledWait ? UiTheme.Muted : UiTheme.Error;
                     status.Text = cancelledWait ? (cancelledAccessSave ? "Импорт доступа отменён до принятия записи. Прежние локальные данные сохранены; можно повторить импорт этого же токена."
+                        : cancelledProfileSave ? "Сохранение профиля отменено до начала записи. Файл не создан; можно повторить сохранение."
                         : cancelledSetupRead ? "Проверка сохранённой настройки отменена. Данные не изменены; можно повторить проверку."
                         : cancelledAddressSave ? "Сохранение адреса отменено до начала записи. Прежний адрес сохранён; можно повторить изменение."
                         : cancelledShareWait ? "Чтение адреса отменено. Сохранённые данные остаются; можно повторить чтение."
@@ -565,6 +569,7 @@ namespace ProGo
                 if (source == null || source.IsCancellationRequested) return;
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) cancelWait.Enabled = false;
                 SetProgress(savingAccess ? "Отмена импорта запрошена. Уже принятая запись может завершиться; ждём результата без запуска канала."
+                    : savingProfile ? "Отмена сохранения профиля запрошена. Уже принятая запись завершается; дождитесь результата."
                     : readingSetup ? "Отменяем чтение прежней настройки. Дождитесь результата; команда VPS не запускается."
                     : savingAddress ? "Отмена сохранения запрошена. Дождитесь результата: уже принятая запись завершается."
                     : readingShare ? "Отменяем чтение адреса. Дождитесь завершения чтения; данные не изменяются…" : "Отменяем запуск канала и закрываем его процессы. Дождитесь результата…");
@@ -662,19 +667,49 @@ namespace ProGo
                 }).ConfigureAwait(false);
             });
         }
-        private void SaveProfile(object sender, EventArgs args)
+        private async void SaveProfile(object sender, EventArgs args)
         {
+            if (busy || ownerUi.Closed || IsDisposed || Disposing) return;
+            string path;
             using (var dialog = new SaveFileDialog { Filter = "Профиль iPhone|*.mobileconfig", FileName = "ProGo-iPhone.mobileconfig" })
             {
                 if (dialog.ShowDialog(this) != DialogResult.OK) return;
-                try
-                {
-                    if (File.Exists(dialog.FileName)) throw new IOException("Выберите новое имя файла: старый профиль сохранён.");
-                    service.Access.WriteProfile(dialog.FileName, service.HomeAddress);
-                    RecordProfileIssue(); status.Text = "Профиль сохранён. Передайте файл на iPhone и установите его.";
-                }
-                catch (Exception ex) { status.ForeColor = UiTheme.Error; status.Text = ex.Message; }
+                path = dialog.FileName;
             }
+            // The owned helper handles explicit owner loss. Do not resume this
+            // async event through an owner await after it has safely settled.
+            await ExportProfile(path).ConfigureAwait(false);
+        }
+        private Task ExportProfile(string path)
+        {
+            if (busy || ownerUi.Closed || IsDisposed || Disposing) return profileExportWork;
+            profileExportWork = RunStep(async delegate {
+                using (var source = new CancellationTokenSource()) {
+                    lock (channelWaitGate) channelWait = source; savingProfile = true;
+                    var access = service.Access; string address = service.HomeAddress; var stop = service.StopWork;
+                    cancelWait.Text = "Отменить сохранение профиля"; cancelWait.AccessibleName = cancelWait.Text;
+                    cancelWait.AccessibleDescription = "Отменяет запись до её принятия. Принятая запись завершается; окно ждёт её фактического результата.";
+                    cancelWait.Visible = cancelWait.Enabled = true; CancelButton = cancelWait; cancelWait.DialogResult = DialogResult.None;
+                    UiTheme.ConfigureKeyboardOrder(this); cancelWait.Focus(); SetProgress("Сохраняем профиль iPhone. Можно отменить до начала записи; дождитесь результата…");
+                    try {
+                        await ownerUi.Await(service.ExportProfileAsync(path, source.Token,
+                            () => AccessScopeCurrent(stop) && Object.ReferenceEquals(service.Access, access) && service.HomeAddress == address, BeforeProfileIo));
+                        bool current = Object.ReferenceEquals(service.Access, access) && service.HomeAddress == address;
+                        if (current) RecordProfileIssue();
+                        SetProgress(!current ? "Профиль прежнего доступа уже сохранён. Доступ или домашний адрес изменился; для текущего подключения сохраните новый профиль. Установка на телефоне не подтверждена."
+                            : source.IsCancellationRequested || !AccessScopeCurrent(stop) ? "Профиль уже сохранён. Отмена не откатила принятую запись; установка на телефоне не подтверждена."
+                            : "Профиль сохранён. Передайте файл на iPhone и установите его; сохранение файла не подтверждает установку.");
+                    } catch (OperationCanceledException) { cancelledWait = cancelledProfileSave = true; throw; }
+                    catch (IOException) { throw new InvalidOperationException("Не удалось сохранить профиль. Выберите новое имя файла или освободите место и повторите сохранение; существующий профиль не заменяется."); }
+                    catch (UnauthorizedAccessException) { throw new InvalidOperationException("Нет доступа к выбранному месту. Выберите доступную папку и новое имя профиля."); }
+                    finally {
+                        lock (channelWaitGate) { if (channelWait == source) channelWait = null; }
+                        savingProfile = false;
+                        if (!ownerUi.Closed && !IsDisposed && !Disposing) { cancelWait.Visible = cancelWait.Enabled = false; CancelButton = null; }
+                    }
+                }
+            });
+            return profileExportWork;
         }
         private async Task ManageInvitations()
         {

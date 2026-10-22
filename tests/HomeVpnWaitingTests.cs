@@ -73,6 +73,7 @@ namespace ProGo
                 PublicationReadiness();
                 ProfileExportWorker(token, work);
                 OwnedProfileExport(token, work);
+                WizardProfileExport(token, clipboard, work);
                 StoredStateWorker(token, work);
                 OwnedInitializationWorker(token);
                 OwnedShareRefreshWorker(token);
@@ -443,6 +444,112 @@ namespace ProGo
                     }
                 } finally { heartbeat.Stop(); host.Close(); foreach (var item in originals) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
             }
+        }
+        private static void WizardProfileExport(string token, ClipboardService clipboard, string work)
+        {
+            var originals = new[] { "access", "owner", "home-address" }.ToDictionary(name => Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"), path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            try {
+                foreach (string route in new[] { "save", "cancel-retry", "close", "dispose", "accepted-cancel", "accepted-close", "accepted-dispose", "global-stop", "accepted-global-stop", "existing-retry", "accepted-access-change" }) {
+                    HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", "null"); HomeVpnPrivateFiles.Save("home-address", "home.example");
+                    var expected = originals.Keys.ToDictionary(path => path, File.ReadAllBytes);
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        HomeVpnWizardForm form = null; Task<bool> first = null, stop = null; Task firstUi = null; FileStream held = null;
+                        string path = Path.Combine(work, "modal-export-" + Guid.NewGuid().ToString("N") + ".mobileconfig"), retryPath = path + ".retry.mobileconfig";
+                        byte[] oldFile = new byte[] { 7, 6, 5, 4 }; bool accepted = route.StartsWith("accepted-", StringComparison.Ordinal), closeExpected = route.EndsWith("close", StringComparison.Ordinal) || route.EndsWith("dispose", StringComparison.Ordinal);
+                        bool closed = false, closedAfterWork = false; int attempts = 0, worker = 0, phase = 0, turns = 0, updates = 0, disposedUpdates = -1, ui = Thread.CurrentThread.ManagedThreadId;
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                            string identity = service.Access.Identity;
+                            form = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(form); Invoke(form, "ShowStep", 3);
+                            form.FormClosed += delegate { closed = true; closedAfterWork = service.ProfileExportWork.IsCompleted && !(bool)Field(form, "busy"); };
+                            foreach (var control in Controls(form)) { control.TextChanged += delegate { updates++; }; control.EnabledChanged += delegate { updates++; }; }
+                            if (route == "existing-retry") { File.WriteAllBytes(path, oldFile); held = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None); }
+                            form.BeforeProfileIo = stage => {
+                                if (stage == "prepared") Interlocked.Increment(ref attempts);
+                                if (Volatile.Read(ref attempts) != 1 || stage != (accepted ? "accepted" : "prepared")) return;
+                                Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Modal profile export fixture deadline");
+                            };
+                            Func<string, Task> start = destination => (Task)typeof(HomeVpnWizardForm).GetMethod("ExportProfile", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(form, new object[] { destination });
+                            ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    check(form.Modal, "actual post-chooser profile export runs inside ShowDialog: " + route);
+                                    firstUi = start(path); first = service.ProfileExportWork; phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    var cancel = (Button)Field(form, "cancelWait");
+                                    check(worker != ui && !first.IsCompleted && !firstUi.IsCompleted && (bool)Field(form, "busy") && service.IsExportingProfile
+                                        && cancel.Visible && cancel.Enabled && cancel.DialogResult == DialogResult.None && Object.ReferenceEquals(firstUi, start(retryPath)) && attempts == 1,
+                                        "held modal export keeps UI responsive, owns one run and cannot implicitly close on Cancel: " + route);
+                                    phase = 2; turns = 0;
+                                    if (route == "cancel-retry" || route == "accepted-cancel") cancel.PerformClick();
+                                    else if (route.EndsWith("close", StringComparison.Ordinal)) form.Close();
+                                    else if (route.EndsWith("dispose", StringComparison.Ordinal)) { form.Dispose(); disposedUpdates = updates; }
+                                    else if (route.Contains("global-stop")) stop = service.StopAsync();
+                                    else if (route == "accepted-access-change") {
+                                        var changed = HomeVpnAccess.Parse(token); changed.ServerId = new string('f', 32);
+                                        typeof(HomeVpnService).GetProperty("Access", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(service, changed, null);
+                                    }
+                                    return false;
+                                }
+                                if (phase == 2) {
+                                    if (++turns < 3) return false;
+                                    check(!first.IsCompleted && !firstUi.IsCompleted && (disposedUpdates >= 0 ? form.IsDisposed : form.Visible && form.Modal)
+                                        && (stop == null || !stop.IsCompleted), "modal Cancel/Close/Dispose/Stop retains its held physical file task: " + route);
+                                    release.Set(); phase = 3; return false;
+                                }
+                                if (phase == 3) {
+                                    if (!first.IsCompleted || !firstUi.IsCompleted || (bool)Field(form, "busy") || (stop != null && !stop.IsCompleted) || (route.EndsWith("close", StringComparison.Ordinal) && form.Modal)) return false;
+                                    firstUi.GetAwaiter().GetResult(); bool saved = false; Exception failure = null; try { saved = first.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                                    bool shouldSave = accepted || route == "save";
+                                    if (held != null) { held.Dispose(); held = null; }
+                                    if (shouldSave) {
+                                        var xml = new System.Xml.XmlDocument { XmlResolver = null }; xml.Load(path);
+                                        check(failure == null && saved && xml.SelectSingleNode("//key[text()='RemoteIdentifier']/following-sibling::*[1]").InnerText == identity,
+                                            "modal accepted save reports the real captured file despite later cancellation or owner change: " + route);
+                                    } else if (route == "existing-retry") check(failure is IOException && oldFile.SequenceEqual(File.ReadAllBytes(path)), "real locked existing profile remains unchanged and available for explicit new-name retry");
+                                    else check(failure is OperationCanceledException && !File.Exists(path), "modal pre-admission cancellation creates no late profile: " + route);
+                                    check(expected.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))) && !relay.IsRunning && !service.HasOwnedResources,
+                                        "modal export preserves protected settings and cannot start a late relay: " + route);
+                                    if (stop != null) check(stop.GetAwaiter().GetResult(), "modal global Stop joins the actual export without a self-wait: " + route);
+                                    if (closeExpected) {
+                                        check(disposedUpdates >= 0 ? form.IsDisposed && ((OwnerUiDispatcher)Field(form, "ownerUi")).Closed && updates == disposedUpdates
+                                            : closed && closedAfterWork && !form.Visible && !form.Modal, "explicit modal close waits for physical export; disposed window receives no late control updates: " + route);
+                                        return true;
+                                    }
+                                    var verification = (PhoneVerification)Field(form, "verification");
+                                    check(form.Visible && form.Modal && !verification.Installed && verification.Issued == (shouldSave && route != "accepted-access-change"),
+                                        "file save marks only the current profile issued and never claims phone installation: " + route);
+                                    if (route != "cancel-retry" && route != "existing-retry") {
+                                        check(!accepted || ((Label)Field(form, "status")).Text.Contains("сохранён"), "accepted modal cancellation retains an honest saved result: " + route); return true;
+                                    }
+                                    check(((FlowLayoutPanel)Field(form, "body")).Enabled && ((Button)Field(form, "cancelWait")).Visible == false
+                                        && ((Label)Field(form, "status")).Text.Contains(route == "cancel-retry" ? "Сохранение профиля отменено" : "новое имя"), "settled modal cancellation/file error keeps explicit retry available: " + route);
+                                    phase = 4; start(retryPath); return false;
+                                }
+                                if (!form.ProfileExportWork.IsCompleted || (bool)Field(form, "busy")) return false;
+                                form.ProfileExportWork.GetAwaiter().GetResult();
+                                check(attempts == 2 && !Object.ReferenceEquals(first, service.ProfileExportWork) && service.ProfileExportWork.GetAwaiter().GetResult()
+                                    && File.Exists(retryPath) && form.Visible && form.Modal && ((PhoneVerification)Field(form, "verification")).Issued
+                                    && ((Label)Field(form, "status")).Text.StartsWith("Профиль сохранён.", StringComparison.Ordinal),
+                                    "Cancel/file-error then Retry owns one fresh modal export and the old result cannot overwrite the new success: " + route);
+                                return true;
+                            }, () => closeExpected);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); if (form != null) form.Dispose(); service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && service.ProfileExportWork.IsCompleted && (form == null || form.ProfileExportWork.IsCompleted && form.InitializationWork.IsCompleted && form.SetupSnapshotWork.IsCompleted), 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Modal profile export cleanup incomplete");
+                            if (first != null) try { first.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { }
+                            if (form != null) form.ProfileExportWork.GetAwaiter().GetResult();
+                            File.Delete(path); File.Delete(retryPath);
+                        }
+                    }
+                }
+            } finally { foreach (var item in originals) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
         }
         private static string BeforeImportToken(string token) { return ImportTokenForHost(token, "before.example"); }
         private static string ImportTokenForHost(string token, string host)

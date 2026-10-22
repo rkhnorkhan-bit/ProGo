@@ -35,6 +35,7 @@ namespace ProGo
             if (args.Length > 0 && args[0] == "--key-readiness-env") return KeyReadinessEnvironmentFixture();
             if (args.Length > 0 && args[0] == "--typed-correction-retry-child") return TypedCorrectionRetryChild(args);
             if (args.Length > 0 && args[0] == "--diagnostic-save-chooser-fixture") return AsyncDiagnosticNativeChooserFixture(args);
+            if (args.Length > 0 && args[0] == "--profile-save-chooser-fixture") return ProfileNativeChooserFixture(args);
             if (args.Length > 0 && (args[0] == "-G" || args[0] == "--diagnostic-child")) return DiagnosticFixture(args);
             // The guard must not depend on the worker pool it is supervising.
             new System.Threading.Thread(delegate() {
