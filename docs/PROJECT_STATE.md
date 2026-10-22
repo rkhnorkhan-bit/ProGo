@@ -8,6 +8,92 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
+## Exact EOF expectation corrected locally — strict protocol, native NOT_RUN
+
+Isolated `c548e3baefd805bca43dbdd0cd9b6ea0081b898a` on exact624; one test script
+5add1delete only. Read raw stdin to EOF and compare EXACT declared Console.InputEncoding
+preamble passed as safe hex; reject arbitrary/extra/missing bytes with42. Logs lengths/
+match only,no input data. This corrects my empty-text expectation against documented
+Framework StreamWriter/AutoFlush behavior; no Console.InputEncoding/codepage mutation,
+no broad acceptance of unexpected data. Actual624 byte count not invented. All0/17/
+200ms/EOF5s/termination/stream/entry marker gates retained. Manual source/quoting/BOM/
+diff/public320/0/secretsPII0 PASS; embedded Linux protocol accepted empty/exact BOM2,
+rejected arbitrary/extra/missing42 in3 cases,all5s. Actual new PowerShell/native NOT_RUN.
+Next only script+latest3docs freeze/canonical tree/fresh public workflow+PR guard and
+one exact correction CI; UI/Admin/invitation code stays excluded. I58–80/Y22,delta0.
+
+## CI624 actual startup PASS; new EOF test expectation FAIL — no full SUCCESS
+
+Source63264c4119735220fa560ec0b20fb350d45e7754 /merge3f0b0c14ba3db55ea63b6825d486ea07e04e94b6,
+run39807343603 completed Windows119923973872 FAIL/Ubuntu119923974608 SUCCESS.
+Production/Desktop compilation PASS15:42:50.408. Actual positive Python exit0/body-entry
+PASS15:52:24.5987627(process5780/start15ms,within5s); prior pre-entry stall did not recur.
+New EOF probe reached its body15:52:24.6379583(process7316/start1ms) then returned42:
+nonempty text,exact bytes/count NOT logged. This is my new test expectation error:
+[Framework Process](https://github.com/microsoft/referencesource/blob/main/System/services/monitoring/system/diagnosticts/Process.cs)
+creates Console.InputEncoding StreamWriter with AutoFlush; [StreamWriter](https://github.com/microsoft/referencesource/blob/main/mscorlib/system/io/streamwriter.cs)
+flush writes its encoding preamble without application text. Next compare raw input to
+EXACT declared preamble and EOF,reject all other bytes with42. No encoding/codepage or
+system configuration change, deadline/negative-check weakening. Prior622/623 native
+stack cause remains UNKNOWN; no retroactive causal certainty. exit17/200ms negatives,
+Desktop/phone correction/HomeAPI14/harness/package NOT_RUN after new probe failed;
+all uploads/prune SKIPPED. Native fixture failure preserved until corrected exact proof.
+
+New agreed existing receipt-consumption worker `e8fbd2ae6dad919b95c2b92ed34bda3005aa52d6`
+first implemented after recovery(pre409 patch never applied). Owns family lease through
+actual private read/delete; validates exact token and rechecks all10 fields before
+memory admission; cancel/refusal/stale ID or valid changed result preserves journal,
+missing false,accepted actual delete true,sharing failure typed/no private error text.
+Eight actual ShowDialog/real DPAPI+delete sharing/cancel/race vectors with3s/5s bounds,
+full protected bytes/lease cleanup. Static manual/syntax2/C#5/diff/public321/0/secretsPII0
+PASS; compiler/native8 NOT_RUN. Invitation view still synchronous/unconnected. Next
+freeze its API14(pending6+consume8) separately; native proof before owned UI binding.
+I58–80/Y22 exact620 weighted partial gates,delta0/fullR09 FAIL/R11 open/targetA0.
+
+## Profile UI14 retargeted on624 — separate complete checking input
+
+ProGo-export-ui-on624 /work/progo-export-ui-on624-20261022 local
+`e15cefc7392a35020b6376a192aa516065a21b83`,tree
+`2f8207bd90cc8c182824c5b7eb625c5f3f7eb912`,base63264c. Same reviewed UI9b555e5/
+modal11 b1f9967/chooser3 a1fb4e7,now includes current phone/launcher/owned-stdin fixes.
+Exactly11 paths(8 source+3docs),all Admin/service/access/recovery/workflow/VERSION
+unchanged. Only new explicit Desktop harness source in script; current launcher body
+byte-equivalent. Fullscope/syntax7/C#5/diff/public321/0/secretsPII0/JSON86/current620
+weighted evidence and published/local pointer consistency PASS. New compiler/native14
+NOT_RUN; not published while624 active. Old07363f7 freeze untouched history.
+Next independent small agreed R09 component: existing invitation consumption worker8
+with actual request/result recheck,cancellation and DPAPI/delete sharing fixtures. This
+patch never applied before409,so it is new implementation,not a restored old commit.
+I58–80/Y22,delta0; no new source head/CI/points.
+
+## CI624 in progress — owned stdin source published once
+
+Source `63264c4119735220fa560ec0b20fb350d45e7754`, merge
+`3f0b0c14ba3db55ea63b6825d486ea07e04e94b6`, full tree
+`7a04b4e6b3850bdd52469cdb700854a2e6de7492` equals local freeze4794599 and fetched
+source/merge exactly. [CI624/39807343603](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39807343603)
+in_progress; one automatic run after guarded e847→63264c, no duplicate623/manual run.
+Only test launcher owned stdin+strict EOF regression and three docs; runtime/src/tests/
+workflows/VERSION unchanged623. New exact compiler/native/package NOT_RUN until final
+completed evidence. Earlier623 zero-CPU pre-entry stall and622/621 failures preserved;
+causal stdin hypothesis not retroactively proven. Local development UI14/Admin17/task8/
+cleanup4/pending6 are EXCLUDED and compilation/native NOT_RUN. All public uploads OFF;
+no release/main merge/install/binary delivery. Next retarget separate UI14 checking
+freeze on exact624 with latest fixture/launcher fixes, preserving every local block;
+inspect same624 before any new source changes its checking head. Scores I58–80/Y22
+exact620 weighted partial evidence,delta0/fullR09 FAIL/R11 open/targetA0.
+
+## Owned stdin publication recovery checkpoint — CAS next
+
+Prepared remote `63264c4119735220fa560ec0b20fb350d45e7754`,parent/expected refe847,
+canonical tree `7a04b4e6b3850bdd52469cdb700854a2e6de7492` equals frozen local
+`47945999ba7da439622f0561761abb6ca03ee75d`. Four paths only,script+three docs;
+src/tests/workflows/VERSION identical623. Fresh public PR e847/base4bb/623completed
+FAIL,upload guards OFF/release not triggered. Full scan/diff/JSON/BOM/public320/0 and
+embedded Linux0/EOF0/wrong-input42 checks PASS. Actual new Windows NOT_RUN. CAS next;
+verify exact result before any repeat after interruption. Local development compiler/
+native fields explicitly NOT_RUN; published results kept only with their exact source.
+
 ## Owned stdin correction prepared — strict native EOF check, Windows NOT_RUN
 
 Isolated code `2e011b71219c5d7f3032c269911ade6edec3092b` on exact623,one test

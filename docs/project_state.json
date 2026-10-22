@@ -3929,24 +3929,21 @@
     }
   ],
   "ci_candidate": {
-    "source": "e84792499b2949602691c349c369d62a533fb444",
-    "tested_merge": "539e2a23fe7da9640c15971d0b35c7d3b3b47af6",
-    "tree": "d527b0007a1cf4ef793cb3ccf2556078e2bb64fc",
-    "local_sha": "f5484d65ae5f6b34d155937e5cfb383e116a9366",
-    "run_id": 39803053552,
-    "run_number": 623,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39803053552",
+    "source": "63264c4119735220fa560ec0b20fb350d45e7754",
+    "tested_merge": "3f0b0c14ba3db55ea63b6825d486ea07e04e94b6",
+    "tree": "7a04b4e6b3850bdd52469cdb700854a2e6de7492",
+    "local_sha": "47945999ba7da439622f0561761abb6ca03ee75d",
+    "run_id": 39807343603,
+    "run_number": 624,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39807343603",
     "status": "completed",
     "conclusion": "failure",
-    "jobs": {
-      "windows": 119908864469,
-      "ubuntu": 119908863649
-    },
-    "windows_compilation": "PASS production/Desktop; HomeWaiting compilation NOT_RUN",
-    "windows_native": "FAIL own Python exit0 before entry; Desktop/phone correction/API14 NOT_RUN",
-    "ubuntu": "SUCCESS exact623 job119908863649",
-    "scope": "Exact622 source plus safe owned Python startup/deadline diagnostic and positive entry proof; fresh exact full regression",
-    "excludes": "All actual profile export UI/modal/chooser, Admin snapshot/transport/ownership/cleanup and later binding",
+    "jobs": {},
+    "windows_compilation": "PASS production/Desktop; build identity15:42:50.408, HomeWaiting compilation NOT_RUN",
+    "windows_native": "PARTIAL positive Python launcher0 PASS; new EOF test expectation FAIL42; Desktop/phone/HomeAPI14 NOT_RUN",
+    "ubuntu": "NOT_RUN",
+    "scope": "Exact623 source plus owned noninteractive stdin EOF regression; fresh exact launcher/full native regression",
+    "excludes": "All actual profile export UI/modal/chooser and local Admin snapshot/transport/ownership/cleanup/invitation pending state/production binding",
     "windows_job_status": "completed"
   },
   "signing_microtask": {
@@ -5483,24 +5480,24 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Narrow owned stdin correction prepared; exact new Windows proof pending",
+    "phase": "Minimal exact EOF preamble correction prepared; actual new Windows proof next",
     "base_source": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
-    "local_sha": "cfb93a2325e206f09e5f578e2f30a263e128b372",
-    "local_development_sha": "cfb93a2325e206f09e5f578e2f30a263e128b372",
-    "published_sha": "e84792499b2949602691c349c369d62a533fb444",
-    "tree": "d527b0007a1cf4ef793cb3ccf2556078e2bb64fc",
-    "tested_merge": "539e2a23fe7da9640c15971d0b35c7d3b3b47af6",
-    "ci_run_id": 39803053552,
-    "ci_run_number": 623,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39803053552",
+    "local_sha": "fe27090ac1610c3b42507c493cb80cf82d9c2a5e",
+    "local_development_sha": "fe27090ac1610c3b42507c493cb80cf82d9c2a5e",
+    "published_sha": "63264c4119735220fa560ec0b20fb350d45e7754",
+    "tree": "7a04b4e6b3850bdd52469cdb700854a2e6de7492",
+    "tested_merge": "3f0b0c14ba3db55ea63b6825d486ea07e04e94b6",
+    "ci_run_id": 39807343603,
+    "ci_run_number": 624,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39807343603",
     "jobs": {
-      "windows": 119908864469,
-      "ubuntu": 119908863649
+      "windows": 119923973872,
+      "ubuntu": 119923974608
     },
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "PASS production/Desktop; HomeWaiting compilation NOT_RUN",
-    "windows_native": "FAIL own Python exit0 before entry; Desktop/phone correction/API14 NOT_RUN",
+    "windows_compilation": "NOT_RUN for local_development_sha; exact published result is ci_candidate",
+    "windows_native": "NOT_RUN for local_development_sha; exact published result is ci_candidate",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repo22Oct, workflows and VERSION unchanged; PR upload guards OFF, no release trigger",
     "publication_scan": {
@@ -5508,11 +5505,13 @@
       "findings": 0,
       "tree_match": "TODO remote canonical equality before CAS"
     },
-    "next": "Freeze script+latest3docs on exact623, full-scope/secret/public workflow/head/canonical tree check; one new exact CI to verify actual stdin/launcher and blocked native routes",
+    "next": "Freeze script+latest3docs, exact tree/secret/fresh public PR+workflow check, one new exact correction CI; keep all local feature cohorts excluded",
     "readiness_change": 0,
-    "current_ci_step": "15:24:47.2387699Z owned Python exit0-regression exceeded5000ms before Desktop execution",
+    "current_ci_step": "624 FAIL at new EOF probe42, original positive startup passed; no full native success",
     "historical_original_base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_development_tree": "cc047f3053c0e619bb1f39462b380a83216c3245"
+    "local_development_tree": "c3bd6bab3390ea5882f560d8cdf6ffd83a16d046",
+    "published_windows_compilation": "PASS production/Desktop; build identity15:42:50.408, HomeWaiting compilation NOT_RUN",
+    "published_windows_native": "PARTIAL positive Python launcher0 PASS; new EOF test expectation FAIL42; Desktop/phone/HomeAPI14 NOT_RUN"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -9804,5 +9803,116 @@
   },
   "historical_current_field_values": {
     "fresh_candidate_verification_before_recovery": "CI608 full SUCCESS only source479addfd6f711831a12e1c7b49019a446f7970ce / merge36f39fb080e0195cad40922793b298a5da500914; address primitive/service/modal-save root changes excluded, Windows NOT_RUN"
+  },
+  "prepared_owned_stdin_publication": {
+    "frozen_local_sha": "47945999ba7da439622f0561761abb6ca03ee75d",
+    "tree": "7a04b4e6b3850bdd52469cdb700854a2e6de7492",
+    "remote_commit": "63264c4119735220fa560ec0b20fb350d45e7754",
+    "expected_ref": "e84792499b2949602691c349c369d62a533fb444",
+    "status": "PASS guarded CAS and PR/head independently confirmed, fetched source/merge/local canonical trees equal, sole active624",
+    "scan": "PASS4 paths/script9add1delete+3docs, added secretsPII0/public320/0/diff/JSON/BOM/embedded Linux0+EOF0+wrong-input42; src/tests/workflows/VERSION identical623",
+    "next": "CAS expectede847 once then verify PR/head/merge/one new run; on interruption inspect this exact result before repeating",
+    "readiness_change": 0,
+    "run_id": 39807343603,
+    "merge": "3f0b0c14ba3db55ea63b6825d486ea07e04e94b6"
+  },
+  "previous_failed_ci623": {
+    "source": "e84792499b2949602691c349c369d62a533fb444",
+    "tested_merge": "539e2a23fe7da9640c15971d0b35c7d3b3b47af6",
+    "tree": "d527b0007a1cf4ef793cb3ccf2556078e2bb64fc",
+    "local_sha": "f5484d65ae5f6b34d155937e5cfb383e116a9366",
+    "run_id": 39803053552,
+    "run_number": 623,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39803053552",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": {
+      "windows": 119908864469,
+      "ubuntu": 119908863649
+    },
+    "windows_compilation": "PASS production/Desktop; HomeWaiting compilation NOT_RUN",
+    "windows_native": "FAIL own Python exit0 before entry; Desktop/phone correction/API14 NOT_RUN",
+    "ubuntu": "SUCCESS exact623 job119908863649",
+    "scope": "Exact622 source plus safe owned Python startup/deadline diagnostic and positive entry proof; fresh exact full regression",
+    "excludes": "All actual profile export UI/modal/chooser, Admin snapshot/transport/ownership/cleanup and later binding",
+    "windows_job_status": "completed"
+  },
+  "frozen_reconstructed_export_ui_on624": {
+    "local_sha": "e15cefc7392a35020b6376a192aa516065a21b83",
+    "tree": "2f8207bd90cc8c182824c5b7eb625c5f3f7eb912",
+    "base_source": "63264c4119735220fa560ec0b20fb350d45e7754",
+    "worktree": "ProGo-export-ui-on624",
+    "branch": "work/progo-export-ui-on624-20261022",
+    "supersedes_local_freeze": "07363f7cefa52841b03bde9e421871c81cbb730a retained untouched as history",
+    "scope": "Exactly11 paths:8 UI/native chooser/harness source files +latest3docs; every Admin/sourceAccess/service/SetupRecovery/AdminRecovery/workflow/VERSION unchanged vs624",
+    "native_cases": 14,
+    "static": "PASS syntax7/C#5/diff/public321/0/secretsPII0/explicit script-line-only change; latest owned-stdin launcher byte-equivalent; JSON86/current readyness unchanged/published-local pointer consistency",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN, wait same624 final evidence; refresh exact result docs before guarded next source CAS",
+    "readiness_change": 0
+  },
+  "invitation_consumption_worker": {
+    "source": "e8fbd2ae6dad919b95c2b92ed34bda3005aa52d6",
+    "status": "PARTIAL",
+    "history": "NEW first implementation after recovery; pre409 patch never applied, no old source commit restored",
+    "requirement": "F31-R09 existing ConfirmConsumed private I/O migration",
+    "implementation": "Worker owns family lease through actual result; exact token and all10 request fields snapshotted/re-read before memory admission/delete; cancellation before admission, missing false, accepted delete true with no late cancellation override; typed safe sharing failure",
+    "native_cases": 8,
+    "static": "PASS manual record/token/lease/admission/cancel/cleanup trace/syntax2/C#5/diff/public321/0/secretPII0; real DPAPI, real delete sharing lock, changed valid ID/result, actual ShowDialog3s/5s bounds",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621,
+      622,
+      623,
+      624
+    ],
+    "actual_invitation_ui": "UNCONNECTED; legacy synchronous ConfirmConsumed remains until separate owned view binding; no fullR09 PASS",
+    "next": "Freeze pending-state6+consumption8 independently and verify exact nativeAPI14 before invitation view binding",
+    "readiness_change": 0
+  },
+  "ci624_failure": {
+    "source": "63264c4119735220fa560ec0b20fb350d45e7754",
+    "merge": "3f0b0c14ba3db55ea63b6825d486ea07e04e94b6",
+    "run_id": 39807343603,
+    "windows_job": 119923973872,
+    "ubuntu_job": 119923974608,
+    "status": "completed",
+    "conclusion": "failure",
+    "windows_compilation": "PASS production/Desktop; build identity15:42:50.408, HomeWaiting compilation NOT_RUN",
+    "positive_launcher": "PASS actual exit0/body marker15:52:24.5987627 after owned-stdin fix; process5780 start15ms, bounded5s, no earlier pre-entry hang in this run",
+    "eof_probe": "Body reached15:52:24.6379583/actual exit42 at24.6815043: received nonempty text, test incorrectly required empty text; data bytes not logged, do not invent exact byte count",
+    "confirmed_test_expectation_error": "Microsoft reference Process creates StreamWriter(Console.InputEncoding),AutoFlush=true; StreamWriter flush writes encoding preamble even with no application text. Probe must accept exactly the framework-declared preamble plus EOF, reject all other bytes",
+    "primary_sources": [
+      "https://github.com/microsoft/referencesource/blob/main/System/services/monitoring/system/diagnosticts/Process.cs",
+      "https://github.com/microsoft/referencesource/blob/main/mscorlib/system/io/streamwriter.cs"
+    ],
+    "historical622_623_cause": "Busy inherited stdin remains hypothesis, not a captured native stack. New actual positive0 PASS proves corrected input ownership route works on624, not prior cause certainty",
+    "remaining_launcher_negatives": "exit17/timeout200ms NOT_RUN after earlier EOF probe failed",
+    "desktop_phone_export14": "NOT_RUN execution/harness after launcher failure",
+    "package": "NOT_RUN",
+    "uploads": "all SKIPPED",
+    "ubuntu": "SUCCESS exact624",
+    "next": "Correct test-specific EOF expectation to exact Console.InputEncoding.GetPreamble raw bytes, retain arbitrary-input42 and all strict deadlines/exit gates; no console codepage/system change or production modification",
+    "readiness_change": 0
+  },
+  "ci624_eof_preamble_correction": {
+    "source": "c548e3baefd805bca43dbdd0cd9b6ea0081b898a",
+    "development_copy": "fe27090ac1610c3b42507c493cb80cf82d9c2a5e",
+    "base_source": "63264c4119735220fa560ec0b20fb350d45e7754",
+    "paths": [
+      "scripts/Test-ProGo.ps1"
+    ],
+    "status": "PARTIAL",
+    "cause": "New test wrongly required empty text despite Framework StreamWriter(Console.InputEncoding)/AutoFlush preamble.624 proved actual EOF/body reached and nonempty input42; actual byte count was not logged",
+    "correction": "Read raw stdin through EOF; require EXACT current Console.InputEncoding.GetPreamble bytes passed as safe hex, no application input. Reject all other/missing/extra bytes42. Emit lengths/match only. No encoding/codepage write",
+    "static": "PASS manual reference-source/Windows argument quoting/scope/diff/BOM/public320/0/secretPII0; embedded protocol on Linux: empty and declared BOM accepted2, arbitrary/extra/missing rejected42 in3 cases, all bounded5s",
+    "unchanged": "Original0/17/200ms and EOF5s/termination/stream/marker gates; own redirected input; runtime/src/tests/workflows/VERSION unchanged",
+    "powershell_execution": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "next": "Freeze script+latest3docs, exact tree/secret/fresh public PR+workflow check, one new exact correction CI; keep all local feature cohorts excluded",
+    "readiness_change": 0
   }
 }

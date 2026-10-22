@@ -613,7 +613,11 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
 # Regression vectors use only this test's own Python processes. Expected
 # negative cases must throw the precise reason; no timeout becomes success.
 Invoke-IsolatedSshFixtureTool @('-c', '"import sys; print(''PROGO_FIXTURE_EXIT0_ENTERED'', flush=True); sys.exit(0)"') 'exit0-regression' 5000
-Invoke-IsolatedSshFixtureTool @('-c', '"import sys; data=sys.stdin.read(); print(''PROGO_FIXTURE_STDIN_EOF'', flush=True); sys.exit(0 if data == '''' else 42)"') 'stdin-eof-regression' 5000
+# .NET Framework creates its input writer with Console.InputEncoding and
+# AutoFlush: its declared preamble is transport output even without our text.
+# Require exact preamble + EOF; any other bytes still fail with exit42.
+$FixtureInputPreambleHex = [System.BitConverter]::ToString([Console]::InputEncoding.GetPreamble()).Replace('-', '')
+Invoke-IsolatedSshFixtureTool @('-c', '"import sys; data=sys.stdin.buffer.read(); expected=bytes.fromhex(sys.argv[1]); print(''PROGO_FIXTURE_STDIN_EOF bytes='' + str(len(data)) + '' expected='' + str(len(expected)) + '' match='' + str(data == expected), flush=True); sys.exit(0 if data == expected else 42)"', ('"' + $FixtureInputPreambleHex + '"')) 'stdin-eof-regression' 5000
 $FixtureNonzeroObserved = $false
 try { Invoke-IsolatedSshFixtureTool @('-c', '"import sys; sys.exit(17)"') 'exit17-regression' 5000 }
 catch { if ($_.Exception.Message -notlike '*exit17-regression failed with exit code 17') { throw }; $FixtureNonzeroObserved = $true }
