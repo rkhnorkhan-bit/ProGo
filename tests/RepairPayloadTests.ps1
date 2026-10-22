@@ -2,15 +2,41 @@ param([string]$Scripts)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: repair payload tests require isolated Windows CI'; return }
+if (-not ('RepairFixtureImagePath' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.ComponentModel;
+using System.Text;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+public static class RepairFixtureImagePath {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern uint GetFinalPathNameByHandle(SafeFileHandle file, StringBuilder path, uint size, uint flags);
+    private static string Canonical(string path) {
+        using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) {
+            var text = new StringBuilder(32768);
+            uint size = GetFinalPathNameByHandle(file.SafeFileHandle, text, (uint)text.Capacity, 0);
+            if (size == 0 || size >= text.Capacity) throw new Win32Exception(Marshal.GetLastWin32Error());
+            return text.ToString();
+        }
+    }
+    public static bool Same(string left, string right) {
+        return String.Equals(Canonical(left), Canonical(right), StringComparison.OrdinalIgnoreCase);
+    }
+}
+'@
+}
 $release = Join-Path (Split-Path -Parent $Scripts) 'release'
 $work = Join-Path $env:TEMP ('ProGo-repair-preflight-' + [guid]::NewGuid().ToString('N'))
 $payload = Join-Path $work 'payload'
 $userRoot = Join-Path $work 'local-app-data'
 $installed = Join-Path $userRoot 'ProGo'
-function Get-FixtureSnapshot {
+function Get-FixtureSnapshot([string]$SnapshotRoot = $userRoot) {
     $result = @{}
-    foreach ($file in @(Get-ChildItem -LiteralPath $userRoot -File -Recurse)) {
-        $result[$file.FullName.Substring($userRoot.Length)] = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+    if (-not [IO.Directory]::Exists($SnapshotRoot)) { return $result }
+    foreach ($file in @(Get-ChildItem -LiteralPath $SnapshotRoot -File -Recurse)) {
+        $result[$file.FullName.Substring($SnapshotRoot.Length)] = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
     }
     return $result
 }
@@ -115,6 +141,9 @@ try {
         -not ($_.DirectoryName -ieq $payloadRoot -and $documents -icontains $_.Name)
     })
     if ($sourceFiles.Count -ne 41) { throw ('Built runtime changed: repair fixture must explicitly cover every mandatory leaf; runtime_count=' + $sourceFiles.Count) }
+    $knownRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) 'ProGo'
+    $knownRootExisted = [IO.Directory]::Exists($knownRoot)
+    $knownBefore = Get-FixtureSnapshot $knownRoot
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
     $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
@@ -150,6 +179,10 @@ try {
             throw ('Complete repair omitted or mixed runtime bytes: ' + $relative)
         }
     }
+    $knownAfter = Get-FixtureSnapshot $knownRoot
+    if ($knownRootExisted -ne [IO.Directory]::Exists($knownRoot) -or $knownBefore.Count -ne $knownAfter.Count) { throw 'Repair self-check touched the real Windows known-folder profile instead of its isolated data root' }
+    foreach ($path in $knownBefore.Keys) { if (-not $knownAfter.ContainsKey($path) -or $knownAfter[$path] -cne $knownBefore[$path]) { throw 'Repair self-check changed known-folder profile bytes' } }
+    Write-Host 'PASS: actual installed self-check uses a fresh explicit data root and leaves the Windows known-folder profile unchanged'
     $after = Get-FixtureSnapshot
     foreach ($path in $before.Keys) { if (-not $after.ContainsKey($path) -or $after[$path] -cne $before[$path]) { throw 'Complete runtime repair changed private fixture bytes' } }
     Write-Host 'PASS: complete prepared runtime copied byte-for-byte while private settings, vault and backup bytes remain unchanged'
@@ -234,8 +267,10 @@ internal static class RepairCheckFixture {
                     try {
                         $idText = [IO.File]::ReadAllText($marker)
                         $process = [Diagnostics.Process]::GetProcessById([int]$idText)
-                        if ($process.MainModule.FileName -ine (Join-Path $installed 'ProGo.exe')) { $process.Dispose(); throw 'Unexpected self-check fixture image' }
-                        $ownedChecks.Add($process); $knownChecks[$name] = $true
+                        try {
+                            if (-not [RepairFixtureImagePath]::Same($process.MainModule.FileName, (Join-Path $installed 'ProGo.exe'))) { throw 'Unexpected self-check fixture image' }
+                            $ownedChecks.Add($process); $knownChecks[$name] = $true
+                        } catch { $process.Dispose(); throw }
                     } catch [IO.IOException] { } catch [ArgumentException] { }
                 }
             }
@@ -283,8 +318,10 @@ internal static class RepairCheckFixture {
                 if (-not $knownChecks.ContainsKey($name) -and [IO.File]::Exists($marker)) {
                     try {
                         $process = [Diagnostics.Process]::GetProcessById([int][IO.File]::ReadAllText($marker))
-                        if ($process.MainModule.FileName -ine (Join-Path $installed 'ProGo.exe')) { $process.Dispose(); throw 'Unexpected interrupted self-check fixture image' }
-                        $ownedChecks.Add($process); $knownChecks[$name] = $true
+                        try {
+                            if (-not [RepairFixtureImagePath]::Same($process.MainModule.FileName, (Join-Path $installed 'ProGo.exe'))) { throw 'Unexpected interrupted self-check fixture image' }
+                            $ownedChecks.Add($process); $knownChecks[$name] = $true
+                        } catch { $process.Dispose(); throw }
                     } catch [IO.IOException] { } catch [ArgumentException] { }
                 }
             }

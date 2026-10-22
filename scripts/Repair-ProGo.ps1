@@ -326,10 +326,13 @@ try {
     $check.FileName = Join-Path $InstallDir 'ProGo.exe'
     $check.Arguments = '--self-check'; $check.WorkingDirectory = $InstallDir
     $check.UseShellExecute = $false; $check.CreateNoWindow = $true
-    $check.EnvironmentVariables['LOCALAPPDATA'] = Join-Path $transaction 'self-check-data'
+    $checkDataRoot = Join-Path $transaction 'self-check-data'
+    $check.EnvironmentVariables['LOCALAPPDATA'] = $checkDataRoot
+    $check.EnvironmentVariables['PROGO_SELF_CHECK_ROOT'] = $checkDataRoot
     $repairPhase = 'self-check'
     $selfCheckExit = [ProGo.MaintenanceOperation]::RunOwnedSelfCheck($check, 8000)
     if ($selfCheckExit -ne 0) { throw 'Installed repair self-check failed.' }
+    if (-not [IO.Directory]::Exists($checkDataRoot)) { throw 'Installed repair self-check did not confirm its isolated data root.' }
     foreach ($relative in $RequiredRuntimePaths) {
         if ((Get-RepairHash (Join-Path $InstallDir $relative)) -cne $payloadHashes[$relative]) { throw ('Runtime changed during repair self-check: ' + $relative) }
     }

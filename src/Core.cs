@@ -25,10 +25,33 @@ namespace ProGo
 
     internal static class AppPaths
     {
-        public static readonly string Root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppConstants.ProductName);
+        public static readonly string Root = ResolveRoot();
         public static readonly string SettingsPath = Path.Combine(Root, AppConstants.SettingsFileName);
         public static readonly string VaultPath = Path.Combine(Root, AppConstants.VaultFileName);
         public static readonly string LogPath = Path.Combine(Root, AppConstants.LogFileName);
+
+        private static string ResolveRoot()
+        {
+            // Maintenance smoke checks must not load/migrate a real profile.
+            // LOCALAPPDATA alone does not select the Windows known folder.
+            bool selfCheck = false;
+            var args = Environment.GetCommandLineArgs();
+            for (int index = 1; index < args.Length; index++)
+                if (String.Equals(args[index], "--self-check", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(args[index], "/self-check", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(args[index], "self-check", StringComparison.OrdinalIgnoreCase)) selfCheck = true;
+            if (selfCheck)
+            {
+                string isolated = Environment.GetEnvironmentVariable("PROGO_SELF_CHECK_ROOT");
+                if (!String.IsNullOrEmpty(isolated))
+                {
+                    if (!Path.IsPathRooted(isolated) || Directory.Exists(isolated) || File.Exists(isolated))
+                        throw new InvalidOperationException("Self-check requires a fresh absolute data root.");
+                    return Path.GetFullPath(isolated);
+                }
+            }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppConstants.ProductName);
+        }
 
         public static void EnsureDirectories()
         {
