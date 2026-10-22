@@ -402,7 +402,7 @@ namespace ProGo
                 if (!await StopChannelAsync().ConfigureAwait(false))
                     throw new HomeVpnLocalCleanupException("Очистка прежнего канала VPN для телефона не завершена. Новый доступ не сохранён. Повторите остановку после освобождения временных файлов.");
                 cancellation.Token.ThrowIfCancellationRequested();
-                try { share = await HomeVpnStoredState.LoadShareAsync(access.ServerId, access.ShareUrl, cancellation.Token).ConfigureAwait(false); }
+                try { share = await HomeVpnStoredState.LoadShareAsync(access.ServerId, access.ShareUrl, cancellation.Token, null).ConfigureAwait(false); }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex) { if (ex is OutOfMemoryException) throw; warnings |= HomeVpnStoredStateWarning.ShareOrigin; }
                 work = new HomeVpnImportWrite(value, new JavaScriptSerializer().Serialize(owner));

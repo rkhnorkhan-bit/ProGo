@@ -8,23 +8,51 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Изолированный import API — candidate before publication
+## CI614 завершён FAIL — narrow callback argument correction saved
 
-Runtime/test source `39e05f19b02f2947fa3fd7beff0e0b64f27ffeb2`, база exact613 local
-`bcb699bb9f3641d0d5a870836fd233e155748214`. Только Stop560 / prepared-pair7bb /
-owned-import4a / receipt-workerfc:5 путей444add32delete. Возможная частичная запись
-access/owner сообщается честно; двухфайловая crash-atomic гарантия не заявляется.
-Новые native25 сценариев: pair9, service import9, receipt consumption7; existing
-cleanup/compatibility coverage сохраняется (точное число новых PASS будет установлено по log,
-не по оценке количества). Actual wizard a501/839/a0e3413 исключён.
+[CI614/39753293285](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753293285)
+завершён: Windows119738915213 FAIL CS1501, Ubuntu119738914876 SUCCESS. Source
+`0bfa2f97c3cb627e7bc6a7b1053260084a8f28c8`, merge4b25e365a50779395f0a4c99576f7a8041258b61.
+Compilation FAIL, full Test-ProGo/native NOT_RUN, pack/uploads SKIPPED; старый
+SUCCESS613 не распространяется на этот API. Повтор614 не запускался.
 
-Full-tree freeze добавляет только3 evidence docs. Diff/секретыPII0/public320/0/syntax5/
-C#5 PASS. Windows compilation/native этого API NOT_RUN, не наследуют SUCCESS613.
-Предыдущий613 завершён; повтор его не нужен. Перед ref-CAS проверить актуальный
-source de7/treebc5, public visibility и workflow uploads OFF. После публикации
-сохранить фактический source/merge/run; не создавать ручной дубль при задержке webhook.
-I58–80/Y22 exact613 unchanged; target/full R09/R11 acceptance остаются открыты.
-Ниже история с проверенным613 и точками локальной работы.
+Исправление `bc9abc24ebc2b52af6e7a4205ae5da8d60002809`: явный четвёртый null beforeRead
+в вызове LoadShareAsync для импорта, без изменения сигнатуры/поведения. Изолированная
+копия `102efb03d869ce5d8ee37b4ffbc3af9a7a4780bc` на locala2b6422 (exact614). Один путь1add1delete,
+manual diff/AST syntax +оба вызова с4 аргументами/public320/0 PASS. Это не компиляция:
+новый Windows compile/native NOT_RUN. Следующий кандидат — только эта правка плюс
+3 evidence docs на том же API; wizard a501/839/a0e3413 исключён. Перед публикацией
+повторить full delta scan/workflow/tree/CAS, один новый CI обоснован конкретным fix.
+I58–80/Y22 exact613, delta0. Ниже история.
+
+## CI614 actual publication — Windows compilation FAIL, native NOT_RUN
+
+CAS de7→`0bfa2f97c3cb627e7bc6a7b1053260084a8f28c8` PASS; PR88 OPEN/DRAFT,
+merge `4b25e365a50779395f0a4c99576f7a8041258b61`, treecfd761a43bfe4e5b736c15460dfd4df8f48342e7
+= locala2b6422bed9d0955e612ca1385db2a71994ee63c. Один автоматический
+[CI614/39753293285](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753293285),
+Windows119738915213 FAIL, Ubuntu119738914876 пока in_progress. Windows completed log:
+09:10:12.8112991Z src/HomeVpnService.cs405 CS1501 — LoadShareAsync вызван с3 аргументами,
+объявленная сигнатура91 требует4 (beforeRead). Build failed; full Test-ProGo/native
+NOT_RUN, pack/uploads SKIPPED. Причина определена; таймауты/проверки не меняются.
+Следующая микрозадача — передать явный null callback только в этом месте, проверить
+все вызовы сигнатуры и новый exact SHA. Не повторять тот же614/ошибочный source.
+Последний полный SUCCESS613 source de7/merge5262; I58–80/Y22 unchanged. Actual wizard
+и snapshot sourcea0e3413 исключены614 и Windows NOT_RUN. Ниже история до/после CAS.
+
+## Import API object0bfa — перед ref-CAS
+
+Создан source object `0bfa2f97c3cb627e7bc6a7b1053260084a8f28c8`, parent
+`de7b42628ccd656f369ba0e286e9b406cc20dee6`, tree `cfd761a43bfe4e5b736c15460dfd4df8f48342e7`
+точно равен local checking `a2b6422bed9d0955e612ca1385db2a71994ee63c` в ProGo-ci613-import-api.
+8 путей930add132delete:5 runtime/test444add32delete +3 evidence docs; manual diff/
+syntax5/C#5/full-secretPII0/public320/0/JSON86/tree PASS. Свежая проверка public
+visibility/PR88 draft source de7/base4bb PASS, workflows/VERSION неизменны, uploads
+OFF/release не сработает.613 полный SUCCESS проверен; его не повторять. Ref-CAS
+NOT_RUN в этой точке: при обрыве сначала сверить фактический head/run, не повторять
+слепо. Новый API compilation/native NOT_RUN. Wizard a501/839/a0e3413 исключён.
+Далее CAS expected de7→0bfa forcefalse, сохранить единственный автоматический CI.
+I58–80/Y22 exact613, delta0. Ниже проверенная история.
 
 ## CI613 SUCCESS — exact configure UI/owned persistence evidence
 
