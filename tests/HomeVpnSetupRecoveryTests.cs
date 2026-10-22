@@ -33,7 +33,7 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work);
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work); OwnedAdminTasks(work);
                 // NativeRecovery calls Application.Run/ExitThread. Keep it last:
                 // later modeless timer fixtures would inherit an exited UI context.
                 NativeRecovery(token, clipboard, work);
@@ -362,6 +362,72 @@ namespace ProGo
                         if (physical != null) { Pump(() => physical.IsCompleted, 5000); try { physical.GetAwaiter().GetResult(); } catch (IOException) { } }
                     } finally { if (held != null) held.Dispose(); if (physical == null || physical.IsCompleted) File.Delete(path); SynchronizationContext.SetSynchronizationContext(originalContext); }
                 }
+            }
+        }
+        private static void OwnedAdminTasks(string work)
+        {
+            using (var form = new Form())
+            using (var pulse = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; pulse.Tick += delegate { ticks++; }; form.Show(); pulse.Start();
+                try {
+                    foreach (string mode in new[] { "complete", "stop", "dispose", "lock", "typed", "queued-stop", "queued-dispose", "multiple" })
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, true))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        string path = Path.Combine(work, "admin-owned-" + Guid.NewGuid().ToString("N") + ".txt"), secondPath = path + ".second";
+                        var previous = new byte[] { 4, 3, 2, 1 }; Task<string> operation = null, second = null; Task<bool> stop = null; FileStream held = null;
+                        int factories = 0, worker = 0; bool queued = mode.StartsWith("queued-", StringComparison.Ordinal), multiple = mode == "multiple";
+                        try {
+                            Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                            var before = Directory.Exists(HomeVpnPrivateFiles.Root) ? Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(p => p, File.ReadAllBytes) : new Dictionary<string, byte[]>();
+                            if (mode == "lock") { File.WriteAllBytes(path, previous); held = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None); }
+                            Action wait = delegate {
+                                Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Owned Admin fixture deadline");
+                            };
+                            Func<string, Task<string>> body = destination => {
+                                int count = Interlocked.Increment(ref factories);
+                                if (!multiple || count == 2) wait();
+                                else if (!release.Wait(5000)) throw new TimeoutException("Second owned Admin fixture deadline");
+                                if (mode == "typed") throw new HomeVpnPreparationCancelledException(true);
+                                File.WriteAllText(destination, "actual owned Admin file"); return Task.FromResult(destination);
+                            };
+                            int beforeTicks = ticks; var watch = Stopwatch.StartNew();
+                            operation = service.RunAdminOwnedAsync(() => body(path), queued ? wait : null);
+                            if (multiple) second = service.RunAdminOwnedAsync(() => body(secondPath));
+                            check(watch.ElapsedMilliseconds < 500 && service.IsAdminWorking, "Admin factory task is published before scheduling or local file work: " + mode);
+                            Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                            check(worker != ui && !operation.IsCompleted && service.HasOwnedResources && factories == (queued ? 0 : multiple ? 2 : 1),
+                                "held Admin factory runs off UI, keeps native heartbeat and tracks every accepted body: " + mode);
+                            if (mode.Contains("stop") || mode.Contains("dispose") || multiple || mode == "lock" || mode == "typed") {
+                                watch.Restart(); if (mode.Contains("dispose")) service.Dispose(); stop = service.StopAsync();
+                                check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted && Object.ReferenceEquals(stop, service.StopAsync()),
+                                    "public Stop/Dispose retains one drain until actual Admin bodies settle: " + mode);
+                                int late = 0; var refused = service.RunAdminOwnedAsync(() => { late++; return Task.FromResult("unstarted"); });
+                                check(Failure(refused) is OperationCanceledException && late == 0, "pending Admin drain refuses a new factory without running it: " + mode);
+                            }
+                            release.Set(); Pump(() => operation.IsCompleted && (second == null || second.IsCompleted) && (stop == null || stop.IsCompleted), 5000);
+                            Exception failure = null; string result = null; try { result = operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                            if (held != null) { held.Dispose(); held = null; }
+                            if (queued) check(failure is OperationCanceledException && factories == 0 && !File.Exists(path), "queued Stop/Dispose prevents the old unadmitted factory from later file work: " + mode);
+                            else if (mode == "lock") check(failure is IOException && previous.SequenceEqual(File.ReadAllBytes(path)), "actual locked Admin output preserves original file and exact body failure");
+                            else if (mode == "typed") check(failure is HomeVpnPreparationCancelledException && failure.Message.Contains("Прежняя команда"), "owned Admin task preserves the original typed recovery cancellation rather than generic cancellation");
+                            else check(failure == null && result == path && File.ReadAllText(path) == "actual owned Admin file"
+                                && (second == null || second.GetAwaiter().GetResult() == secondPath && File.ReadAllText(secondPath) == "actual owned Admin file"),
+                                "accepted Admin body outcome stays honest after Stop/Dispose and all accepted families drain: " + mode);
+                            if (stop != null) check(stop.GetAwaiter().GetResult(), "Admin body error/outcome cannot lose the service Stop owner: " + mode);
+                            check(!service.IsAdminWorking && !service.HasOwnedResources && !relay.IsRunning && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                                "settled Admin accounting leaves no pending work, late relay or altered protected bytes: " + mode);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && (operation == null || operation.IsCompleted) && (second == null || second.IsCompleted), 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned Admin task cleanup incomplete");
+                            foreach (var task in new[] { operation, second }) if (task != null) try { task.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { }
+                            File.Delete(path); File.Delete(secondPath);
+                        }
+                    }
+                } finally { pulse.Stop(); form.Close(); }
             }
         }
         private static void Pump(Func<bool> ready, int timeout = 12000)

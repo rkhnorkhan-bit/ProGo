@@ -8,7 +8,54 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: Admin snapshot + dispatcher на точном CI626
+## Текущий этап: владение Admin-задачами и Stop/Dispose на проверенном CI627
+
+Свежий head PR88 source `8637c5e7ffcb19e2ed0622d74532bd88e245f9a0`, merge
+`8968a9b0506fb0157a1f130c4a8379a2b78e8820`; [CI627/39829750388](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388)
+независимо подтверждён SUCCESS: Windows120002424298/Ubuntu120002424507. Build identity
+совпадает с merge; Desktop5294, snapshot12/dispatcher5, export modal11/chooser3 PASS.
+Все новые результаты ниже относятся к своим SHA; старые pending записи сохраняют историю.
+
+Выбран следующий минимальный этап по зависимостям: учёт каждой принятой Admin-задачи,
+необходимый для последующего удержания cleanup и production worker. Код
+`736740009c02fd88e65d4830f204166c953a471a`, ветка
+`work/progo-admin-ownership-on627-20261022`, worktree `ProGo-admin-ownership-on627`.
+Перенесён только сохранённый437b69e8037a9c33e0f581679f0736dfc1321f2c:2 исходных файла,
+107 добавлений/3 удаления. RunAdminOwnedAsync резервирует публичную задачу до scheduling,
+проверяет Stop/Dispose admission до factory и выполняет синхронную часть factory в worker.
+Stop/Dispose получает snapshot всех принятых задач и удерживает drain до их завершения;
+ошибка тела и исходный тип отмены остаются на соответствующей operation task.
+HasOwnedResources учитывает pending Admin. Тело не должно ожидать публичный Stop,
+который владеет его drain; это обязательный контракт будущего production wrapper.
+
+Новые8 native случаев: complete/stop/dispose/lock/typed/queued-stop/queued-dispose/multiple.
+Реальные файловые операции и sharing lock, UI heartbeat, bounded barriers3s/5s,
+исходный Pump default12s; группы идут перед terminal NativeRecovery. Проверены зависимости
+в точном627 и существующий Windows harness. Snapshot/dispatcher API17, исходное тело
+AdminAsync, UI экспорта/тесты, полный EOF launcher/BOM, invitation/HTTPS, workflows и
+VERSION сохранены побайтно. Cleanup retention, AdminOwnedAsync и production route migration
+не входят в этот этап. Поэтому общий R09 остаётся открытым.
+
+Локальные PASS: полный ручной diff, syntax/await-scope2 (не компиляция), canonical source2
+равно сохранённому437b69e, diff --check, public content321/0, добавленные secret/PII0.
+Новые Windows compilation/native8 NOT_RUN: PowerShell/.NET отсутствуют в Linux-среде.
+CI627 SUCCESS не переносится на новый код. Методика/веса и баллы58–80/22(raw21.75)
+не изменяются; новый полный критерий проекта не закрыт.
+
+Внешняя личная проверка: владелец сообщил об успешной работе отдельного MTProto-сервера
+с iPhone в мобильной сети без VPN (сообщения/медиа) и включении автозапуска службы.
+Это не интегрированная функция ProGo и не приёмка его телефонного VPN-маршрута.
+Wi-Fi, перезагрузка сервера и длительная проверка отдельно не подтверждены. Адреса,
+домены, пути и секреты внешнего deployment здесь не сохраняются; к VPS агент не подключался.
+Баллы ProGo за эту отдельную проверку не начисляются.
+
+Далее только в этом этапе: source-only tree2+3docs, свежие public/PR/workflow guards,
+guarded fast-forward существующей ветки PR88 и один автоматический CI на новом SHA.
+Public uploads OFF/release workflow исключён. Сохранить source/merge/run и завершить
+этап без ожидания CI и без перехода к cleanup. Следующий конкретный этап после этого
+результата — retained exact Admin cleanup4; он пока только сохранён отдельно.
+
+## История: подготовка Admin snapshot + dispatcher на CI626
 
 База source `ec5b0e9e2f9c52ab7437ae3b99b79d897a734262`, merge
 `041aa00c505bb88b0d1bb876c9a79f004336d23f`; [CI626/39823713132](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132)

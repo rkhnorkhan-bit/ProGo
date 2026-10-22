@@ -1,4 +1,31 @@
-## Текущий кандидат: только Admin snapshot + dispatcher поверх CI626
+## Текущий кандидат: Admin task ownership8 поверх точного CI627
+
+Последняя проверенная база: source `8637c5e7ffcb19e2ed0622d74532bd88e245f9a0`, merge
+`8968a9b0506fb0157a1f130c4a8379a2b78e8820`, [CI627 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39829750388).
+Завершённый Windows лог подтверждает Desktop5294/snapshot12/dispatcher5/export modal11+
+chooser3. Новый код `736740009c02fd88e65d4830f204166c953a471a`: compiler/native8 NOT_RUN.
+
+Критерий этапа: reservation перед scheduling; Stop/Dispose до admission не запускает
+factory; принятые задачи удерживаются до фактического file I/O; typed failure не теряется;
+общий Stop drain учитывает несколько задач и запрещает новые factories во время ожидания.
+Bodies не ожидают public Stop (он владеет их drain). Новый тест8: complete/stop/dispose/
+lock/typed/queued-stop/queued-dispose/multiple, реальные локальные файлы, UI heartbeat,
+ограниченные3s/5s ожидания и finally cleanup. Исходный Pump12s сохранён.
+
+Следующий существующий CI выполняет scripts/Test-ProGo.ps1 и Test-HomeVpnRelay.ps1.
+Проверить точный build identity,8 новых ownership случаев, прежние snapshot12/dispatcher5,
+export14 и полную регрессию. NOT_RUN не PASS; чужой/старый SHA не подтверждает этот код.
+Локальные PASS: syntax/await-scope2/manual/diff/public321/0/secretPII0/canonical scope2.
+Snapshot/dispatcher и тело AdminAsync, UI/EOF, invitation/HTTPS/workflows/VERSION неизменны.
+Public uploads OFF, release/main merge/выгрузка бинарников/установка исключены.
+
+Отдельный личный MTProto deployment: по отчёту владельца iPhone/mobile без VPN,
+сообщения/медиа PASS; автозапуск включён. Wi-Fi/server reboot/длительный прогон NOT_RUN.
+Интеграция MTProto в ProGo и приёмка проекта этим не подтверждаются; личные реквизиты
+не сохраняются. Веса и баллы58–80/22 прежние,delta0. После публикации сохранить SHA/run,
+завершить этап без ожидания CI; следующий отдельный блок — exact Admin cleanup4.
+
+## История: подготовка Admin snapshot + dispatcher поверх CI626
 
 Проверенная база: source `ec5b0e9e2f9c52ab7437ae3b99b79d897a734262`, merge
 `041aa00c505bb88b0d1bb876c9a79f004336d23f`, [CI626 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39823713132).

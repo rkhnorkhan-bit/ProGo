@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -265,6 +266,8 @@ namespace ProGo
         private bool profileExportAccepted;
         internal Task<bool> ProfileExportWork { get { lock (lifecycleGate) return profileExportWork; } }
         internal bool IsExportingProfile { get { lock (lifecycleGate) return !profileExportWork.IsCompleted; } }
+        private readonly HashSet<Task<string>> adminOwnedWork = new HashSet<Task<string>>();
+        internal bool IsAdminWorking { get { lock (lifecycleGate) return adminOwnedWork.Count != 0; } }
         private long shareRevision;
         internal Task<bool> ShareRefreshWork { get { lock (lifecycleGate) return shareRefreshWork; } }
         private Task<bool> initializationWork = Task.FromResult(true);
@@ -284,7 +287,7 @@ namespace ProGo
         internal bool InitializationFailed { get { return initializationFailed; } }
         internal bool IsStopping { get { lock (lifecycleGate) return !stopWork.IsCompleted || !channelStopWork.IsCompleted; } }
         internal bool IsStarting { get { lock (lifecycleGate) return !startWork.IsCompleted; } }
-        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null || addressWrite != null || importWrite != null || IsExportingProfile; } }
+        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null || addressWrite != null || importWrite != null || IsExportingProfile || IsAdminWorking; } }
         internal bool StartsPaused { get { lock (lifecycleGate) return startsPaused; } }
         internal void PauseStarts() { lock (lifecycleGate) startsPaused = true; }
         internal void ResumeStarts() { lock (lifecycleGate) { if (!disposed) startsPaused = false; } }
@@ -790,9 +793,42 @@ namespace ProGo
             return true;
         }
 
+        // Bodies must not await this service's public Stop: Stop owns their drain.
+        internal Task<string> RunAdminOwnedAsync(Func<Task<string>> start, Action beforeStart = null)
+        {
+            TaskCompletionSource<string> completion; Task<bool> stop;
+            lock (lifecycleGate) {
+                completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+                if (disposed || startsPaused || !stopWork.IsCompleted) {
+                    completion.SetException(new OperationCanceledException("Команда не запущена: дождитесь завершения остановки VPN для телефона.")); return completion.Task;
+                }
+                stop = stopWork; adminOwnedWork.Add(completion.Task); // Reserve before scheduling or factory admission.
+            }
+            Task.Run(() => CompleteAdminOwnedAsync(start, beforeStart, stop, completion)); return completion.Task;
+        }
+        private async Task CompleteAdminOwnedAsync(Func<Task<string>> start, Action beforeStart, Task<bool> stop, TaskCompletionSource<string> completion)
+        {
+            Exception failure = null; string result = null;
+            try {
+                if (beforeStart != null) beforeStart();
+                lock (lifecycleGate) {
+                    if (disposed || startsPaused || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted)
+                        throw new OperationCanceledException("Команда отменена до начала подготовки. Новая команда не запускалась.");
+                }
+                // Only metadata holds the gate. The admitted real body (including
+                // synchronous factory work) belongs to this retained worker.
+                result = await start().ConfigureAwait(false);
+            } catch (Exception ex) { failure = ex; }
+            lock (lifecycleGate) {
+                adminOwnedWork.Remove(completion.Task);
+                // Keep typed preparation/recovery cancellation, rather than
+                // replacing it with a generic TaskCanceledException.
+                if (failure != null) completion.TrySetException(failure); else completion.TrySetResult(result);
+            }
+        }
         internal Task<bool> StopAsync()
         {
-            TaskCompletionSource<bool> completion; Task<bool> physical, pendingImport, pendingExport; CancellationTokenSource importCancellation, exportCancellation;
+            TaskCompletionSource<bool> completion; Task<bool> physical, pendingImport, pendingExport; Task pendingAdmin; CancellationTokenSource importCancellation, exportCancellation;
             lock (lifecycleGate) {
                 if (!stopWork.IsCompleted) return stopWork;
                 completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -801,6 +837,7 @@ namespace ProGo
                 importCancelled = importCancellation; // Memory admission closes before cancellation callbacks run.
                 pendingExport = profileExportWork; exportCancellation = profileExportAccepted ? null : profileExporting;
                 profileExportCancelled = exportCancellation;
+                var admin = new Task<string>[adminOwnedWork.Count]; adminOwnedWork.CopyTo(admin); pendingAdmin = Task.WhenAll(admin);
                 physical = StopChannelAsync();
             }
             Task.Run(async delegate {
@@ -812,6 +849,7 @@ namespace ProGo
                 try { stopped = await physical.ConfigureAwait(false); } catch (Exception ex) { if (failure == null) failure = ex; }
                 try { await pendingImport.ConfigureAwait(false); } catch { /* Import outcome remains on ImportWork; exact cleanup is retried below. */ }
                 try { await pendingExport.ConfigureAwait(false); } catch { /* Exact save/refusal outcome remains on ProfileExportWork. */ }
+                try { await pendingAdmin.ConfigureAwait(false); } catch { /* Actual typed body outcomes remain on their public operation tasks. */ }
                 bool cleaned = CleanupImportOwned();
                 if (failure != null) completion.TrySetException(failure); else completion.TrySetResult(stopped && cleaned);
             });
