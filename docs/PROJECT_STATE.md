@@ -8,6 +8,67 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
+## Текущий этап: production Admin repair → owned worker на CI629
+
+Прочитан checkpoint `51d79ff99e443c36a871314d733d5c142dbd4ef8`; при начале этапа актуальный PR88
+OPEN/DRAFT был на source `2b10ed6df31e2f40711c4efd856f98c5c2420a05`, tested merge `15448208d8bcb6428c1fbc8d2538729d978be9d5`.
+[CI629/39854845261](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39854845261)
+независимо подтверждён SUCCESS через completed Windows120090256338/Ubuntu120090256606
+и Windows build identity. Cleanup4 complete/list-lock/preparation-lock/dispose-lock,
+ownership8, snapshot12/dispatcher5, export modal11/chooser3, Desktop5294/HomeVPN2263/
+Portable91 и прежняя полная регрессия PASS. Все uploads/prune SKIPPED, артефактов нет.
+Новый код этим SUCCESS не подтверждается; pending записи ниже являются историей.
+Git/worktree чистые, незавершённых Git/build операций и другого исполнителя не обнаружено.
+
+Выбран один реальный production срез вместо слишком большого всего Admin: существующая
+кнопка «Исправить выход VPN в интернет». Код `92a6304e5c66db0007878266e5e1eb4e2f5e8b02`,
+ветка work/progo-admin-repair-on629-20261023, worktree ProGo-admin-repair-on629 от точного629.
+Только HomeVpnService/HomeVpnWizardForm/HomeVpnOwnerWaitingTests:203 добавления/1 удаление.
+Dependencies уже в629: owned task8, exact cleanup4, существующий repair core, dispatcher,
+нативные preparation forms/process и Windows harness. Receipt/HTTPS/invitation блоки не нужны.
+
+Default Admin delegate мастера направляет только repair в RepairAdminOwnedAsync.
+Копия SSH-метаданных делается до scheduling; File.Exists выбранного ключа, чтение helpers,
+защищённые каталоги и output/cleanup остаются внутри retained worker. Запуск окна copy/SSH
+переходит к dispatcher именно этого мастера, без Form.ActiveForm и утраты фактического Task.
+Перед каждым transport повторяется admission: Stop/Dispose не допускает следующий запуск.
+Отказ до admission сохраняет typed preparation cancellation; принятый native SSH остаётся
+под управлением до исхода/явной локальной отмены. Stop не повторяет внешнюю команду и не
+обещает её откат; worker не ждёт public Stop, владеющий его drain. Callback удерживает
+точный cleanup; отложенный progress завершённой операции больше не заменяет новый результат.
+
+Новые8 режимов: default-refusal/complete/cancel-retry/stop-copy/dispose-copy/owner-dispose/
+stop-command/cleanup-lock. Default-refusal вызывает реальную исходную привязку кнопки с
+pending cleanup и отсутствующим fixture key, исключая запуск настоящего OpenSSH при ошибке.
+Остальные сохраняют ту же кнопку/owned API/реальный core и окна; заменены только copy
+transport и SSH executable: реальные helper-файлы/барьер/sharing и native subprocess tree,
+без VPS/личных credentials. ShowDialog, UI heartbeat/duplicate refusal, Cancel→Retry,
+первоначальный typed outcome, Stop/Dispose drain, owner loss, locked false→unlock true,
+сохранность protected bytes/чужого sibling/процесса и отсутствие replay проверяются тестами.
+Ожидания ограничены: held copy5s, modal15s, fixture cleanup5s; native process20s.
+Finally освобождает barrier/lock, закрывает только свои окна, останавливает fixture и
+дожидается operation/Stop. Existing harness уже компилирует и вызывает этот файл;
+новая группа идёт до прежних terminal native loops. Windows выполнение8 пока NOT_RUN.
+
+PASS локально: полный manual diff/review, syntax3/C#5 await-scope (не компиляция),
+diff --check, public content321/0, added secret/PII0. Existing Service62/Wizard41 methods
+побайтно сохранены; old owner-test24 кроме явного добавления одного вызова Run неизменны.
+Все остальные tracked blobs равны629: EOF/BOM, export14 и UI export methods, API17,
+ownership8/cleanup4, invitation/HTTPS, scripts/workflows/VERSION. Новых функций/экранов нет.
+Windows compilation/native8 NOT_RUN: PowerShell/.NET Framework отсутствуют в Linux.
+Остальной Admin остаётся legacy; полный R09, установщик и owner acceptance не закрыты.
+
+Публикация TODO: после финального secret/public/workflow scan один guarded update
+существующей PR88 ветки, один автоматический CI нового source. Public uploads OFF,
+release workflow не запускается; main merge/release/бинарники/установка/VPS/credentials/
+сетевая конфигурация не выполняются. До длительной операции сохранена эта точка.
+После публикации записать source/merge/tree/run и STOP, не ждать всего CI и не начинать
+второй этап. Следующая проверка — тот же run repair8 + cleanup4/ownership8/API17/export14
+и полная регрессия; затем отдельно небольшой read-only Admin list owned-worker срез.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: полный взвешенный критерий
+не закрыт, методика/веса/620 anchors прежние. Главный блокер — Windows proof новой
+production привязки; остальные Admin-маршруты и реальная приёмка остаются открыты.
+
 ## Текущий этап: exact Admin cleanup4 на проверенном CI628
 
 Точка восстановления `28d43e1f9076fd76403a7060f73e0b247c8d8646` прочитана; актуальный PR88 OPEN/DRAFT остаётся

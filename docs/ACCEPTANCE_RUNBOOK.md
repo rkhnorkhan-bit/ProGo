@@ -1,4 +1,40 @@
-## Текущий кандидат: exact Admin cleanup4; Windows NOT_RUN
+## Текущий кандидат: production repair owned-worker8; Windows NOT_RUN
+
+Проверенная база: source `2b10ed6df31e2f40711c4efd856f98c5c2420a05`, merge `15448208d8bcb6428c1fbc8d2538729d978be9d5`,
+[CI629 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39854845261).
+Completed build identity/Windows120090256338/Ubuntu120090256606 подтверждают cleanup4,
+ownership8, snapshot12/dispatcher5/export modal11/chooser3, Desktop5294/HomeVPN2263/
+Portable91 PASS. Все uploads/prune SKIPPED, артефактов нет. Checkpoint `51d79ff99e443c36a871314d733d5c142dbd4ef8`
+сохранён; старые pending записи ниже — история, не состояние нового кода.
+
+Новый code `92a6304e5c66db0007878266e5e1eb4e2f5e8b02`: существующая repair кнопка → retained worker →
+явный wizard dispatcher → actual preparation copy/native SSH → exact cleanup callback.
+Только3 source/test файла +3 docs. Setup/recovery/list/HTTPS/invitation migration исключены.
+Зависимости уже в629, незавершённых обязательных блоков нет. При Stop/Dispose перед
+следующим transport он не запускается; принятый native Task остаётся owned до результата
+или локальной отмены. Public Stop не ожидается внутри owned worker. Replay/откат не обещаются.
+
+Минимальный Windows прогон — существующие scripts/Test-ProGo.ps1 и Test-HomeVpnRelay.ps1
+на новом точном source/merge. Требовать8 новых mode PASS: default-refusal, complete,
+cancel-retry, stop-copy, dispose-copy, owner-dispose, stop-command, cleanup-lock.
+Default binding probe отказывает до key I/O; остальные вызывают real modal wizard button,
+real helper/file sharing и native command substitute без VPS. Проверить responsive UI,
+single admission, Cancel→Retry без старого результата, Stop/Dispose drain, отказ следующего
+SSH после Stop, отсутствие post-dispose UI, honest typed outcome, locked false/unlock retry
+true и отсутствие repeated copy/SSH/изменения protected bytes/чужих файлов/процессов.
+Ожидания5s barrier/15s modal/5s fixture cleanup/20s native; finally release/dispose/drain.
+Не повышать таймауты и не превращать timeout в PASS. Дополнительно прежние cleanup4,
+ownership8/API17/export14 и полная регрессия. Новые compiler/native8 NOT_RUN до exact CI.
+
+Локальные PASS manual diff/syntax3/await-scope/diff/public321/0/secretPII0/AST-preservation;
+не считать их Windows compilation/native. EOF/BOM/UI export/API17/task8/cleanup4 и прочие
+источники/workflows/VERSION сохранены. Один guarded PR88 update → один automatic PR CI,
+uploads OFF/release исключён. Записать ID и STOP без ожидания или второго этапа.
+Следующая проверка того же run; после доказательства — отдельный read-only Admin list срез.
+Реализация58–80/22, изменение0, фиксированная методика прежняя. Остальной Admin/R09/owner
+acceptance открыты; main merge/release/бинарники/установка/VPS исключены.
+
+## История: кандидат exact Admin cleanup4; Windows NOT_RUN
 
 Проверенная база `b2c79830d078497fadc284e96b02e6be815aa300` / merge `72d546f06ebc680029b202b75ba5489bcfcb7d51`;
 [CI628 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39849852240)

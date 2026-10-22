@@ -127,6 +127,7 @@ namespace ProGo
                     File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, "setup-request.dat")); File.Delete(PendingPath); File.Delete(SharePendingPath);
                     HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", Json.Serialize(Owner));
                     Environment.SetEnvironmentVariable(Variable, folder);
+                    OwnedRepair(token, clipboard);
                     foreach (string action in new[] { "revoke", "repair", "share" }) Entry(token, clipboard, action, "button", false, false);
                     foreach (string route in new[] { "escape", "close", "dispose", "deadline" }) Entry(token, clipboard, "repair", route, false, false);
                     Entry(token, clipboard, "reissue", "button", false, false);
@@ -140,6 +141,158 @@ namespace ProGo
                     Application.ThreadException -= handler; Environment.SetEnvironmentVariable(Variable, previous); KillFixtures();
                     if (!unrelated.HasExited) { unrelated.Kill(); unrelated.WaitForExit(2000); }
                     foreach (var item in saved) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); }
+                }
+            }
+        }
+        private static async Task HeldRepairCopy(Form owner, Action<HomeVpnPreparationForm> publish, Action<CancellationToken> read)
+        {
+            using (var wait = new HomeVpnPreparationForm(token => Task.Run(() => read(token)))) {
+                publish(wait); wait.ShowDialog(owner); await wait.Completion;
+            }
+        }
+        private static Exception RepairFailure(Task task)
+        { try { task.GetAwaiter().GetResult(); return null; } catch (Exception ex) { return ex; } }
+        private static void OwnedRepair(string token, ClipboardService clipboard)
+        {
+            foreach (string mode in new[] { "default-refusal", "complete", "cancel-retry", "stop-copy", "dispose-copy", "owner-dispose", "stop-command", "cleanup-lock" }) {
+                Reset(mode == "stop-command" ? "hold" : "complete");
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim()) {
+                    service.UseToken(token, Owner);
+                    var before = Snapshot(inputPaths);
+                    string sibling = Path.Combine(HomeVpnPrivateFiles.Root, "admin-unrelated-" + Guid.NewGuid().ToString("N"));
+                    Directory.CreateDirectory(sibling); File.WriteAllText(Path.Combine(sibling, "keep"), "unrelated");
+                    var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root);
+                    string coreWork = null; FileStream held = null; HomeVpnPreparationForm copyWindow = null;
+                    HomeVpnWizardForm wizard = null; Task<string> operation = null, cancelled = null; Task<bool> stop = null;
+                    Exception cancellation = null; int phase = 0, turns = 0, worker = 0, attempts = 0, retained = 0, closedPublications = 0;
+                    int ui = Thread.CurrentThread.ManagedThreadId; bool closing = mode == "owner-dispose", helperRead = false;
+                    try {
+                        if (mode == "default-refusal") {
+                            service.RetainAdminCleanup(() => retained++);
+                            // A broken legacy binding fails validation locally;
+                            // this negative probe must never start real OpenSSH.
+                            service.Owner.KeyFile = Path.Combine(folder, "missing-owned-repair-key");
+                        }
+                        wizard = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(wizard);
+                        typeof(HomeVpnWizardForm).GetMethod("ShowStep", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(wizard, new object[] { 4 });
+                        var dispatcher = (HomeProfileUiDispatcher)Field(wizard, "httpDispatcher");
+                        var button = Controls(wizard).OfType<Button>().Single(b => b.Text == "Исправить выход VPN в интернет");
+                        if (mode != "default-refusal") wizard.Admin = (owner, action, label, id, report) => {
+                            check(action == "repair", "owned repair slice cannot dispatch another Admin action");
+                            operation = service.RepairAdminOwnedAsync(owner, wizard, dispatcher, report, (executable, arguments) => {
+                                check(Thread.CurrentThread.ManagedThreadId == ui && executable == "scp.exe" && arguments.Contains(" -P 22 "), "owned repair copy starts on its explicit UI owner with production SSH options");
+                                if (++attempts != 1) return Task.FromResult(0);
+                                return HeldRepairCopy(wizard, value => copyWindow = value, ct => {
+                                    Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                                    coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
+                                    string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single();
+                                    helperRead = File.ReadAllText(helper).Length != 0;
+                                    if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned repair copy fixture deadline");
+                                    ct.ThrowIfCancellationRequested();
+                                });
+                            }, Application.ExecutablePath, 20000);
+                            return operation;
+                        };
+                        HomeVpnWaitingTests.ModalWizardCase(wizard, delegate {
+                            if (phase == 0) {
+                                check(wizard.Modal, "owned repair executes the real wizard button inside ShowDialog: " + mode);
+                                button.PerformClick(); phase = 1; return false;
+                            }
+                            if (mode == "default-refusal") {
+                                if ((bool)Field(wizard, "busy")) return false;
+                                check(((Label)Field(wizard, "status")).Text.Contains("Очистка прежней команды") && attempts == 0 && !File.Exists(At("pid")),
+                                    "default production repair binding refuses retained cleanup before key I/O or transport");
+                                if (stop == null) { stop = service.StopAsync(); return false; }
+                                if (!stop.IsCompleted) return false;
+                                check(stop.GetAwaiter().GetResult() && retained == 1 && !service.HasOwnedResources, "default repair refusal preserves only its exact cleanup owner");
+                                check(true, "owned production repair slice PASS: " + mode);
+                                return true;
+                            }
+                            if (phase == 1) {
+                                if (!entered.IsSet) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                if (++turns < 3) return false;
+                                check(helperRead && worker != ui && service.IsAdminWorking && !operation.IsCompleted && (bool)Field(wizard, "busy") && !button.Enabled && copyWindow.Owner == wizard,
+                                    "actual repair core and copy keep ownership and native heartbeat without parallel UI admission: " + mode);
+                                button.PerformClick(); check(attempts == 1, "pending repair refuses a duplicate button invocation: " + mode);
+                                if (mode == "cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
+                                if (mode == "stop-copy" || mode == "dispose-copy" || closing) {
+                                    var watch = Stopwatch.StartNew();
+                                    if (mode == "dispose-copy" || closing) service.Dispose();
+                                    stop = service.StopAsync();
+                                    if (closing) { wizard.Dispose(); closedPublications = dispatcher.PublicationCount; }
+                                    check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted && service.HasOwnedResources,
+                                        "Stop Dispose returns promptly while retaining actual repair I/O: " + mode);
+                                }
+                                turns = 0; phase = 2; return false;
+                            }
+                            if (phase == 2) {
+                                if (++turns < 3) return false;
+                                check(!operation.IsCompleted && (stop == null || !stop.IsCompleted), "repair cancellation and Stop cannot settle before their held real work: " + mode);
+                                release.Set(); phase = 3; return false;
+                            }
+                            if (phase == 3 && mode == "stop-command") {
+                                if (!File.Exists(At("child"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                var wait = wizard.OwnedForms.OfType<HomeVpnPreparationForm>().Single();
+                                stop = service.StopAsync(); check(!stop.IsCompleted && service.IsAdminWorking && wait.Owner == wizard, "Stop retains already admitted real native repair process tree");
+                                ((Button)Field(wait, "cancel")).PerformClick(); phase = 4; return false;
+                            }
+                            if (phase == 3 || phase == 4) {
+                                if (!operation.IsCompleted || (bool)Field(wizard, "busy") || (stop != null && !stop.IsCompleted)) return false;
+                                var failure = RepairFailure(operation);
+                                if (mode == "cleanup-lock") {
+                                    check(failure is HomeVpnOwnerUnconfirmedException && service.HasPendingAdminCleanup && Directory.Exists(coreWork), "actual repair keeps its typed unconfirmed outcome and exact locked cleanup");
+                                    stop = service.StopAsync(); phase = 5; return false;
+                                }
+                                if (mode == "cancel-retry" && cancelled == null) {
+                                    cancelled = operation; cancellation = failure;
+                                    check(failure is HomeVpnPreparationCancelledException && Calls().Length == 0 && !Directory.Exists(coreWork) && wizard.Modal && button.Enabled,
+                                        "cancelled repair stays open with cleanup complete and explicit Retry before SSH");
+                                    button.PerformClick(); phase = 4; return false;
+                                }
+                                bool success = mode == "complete" || mode == "cancel-retry";
+                                check(success ? failure == null && ((Label)Field(wizard, "status")).Text.Contains("Правила выхода VPN обновлены")
+                                    : mode == "stop-command" ? failure is HomeVpnOwnerUnconfirmedException
+                                    : failure is HomeVpnPreparationCancelledException || failure is OperationCanceledException,
+                                    "repair reports the actual accepted outcome without inventing completion or replay: " + mode);
+                                if (cancelled != null) check(Object.ReferenceEquals(cancellation, RepairFailure(cancelled)) && attempts == 2, "cancelled repair result cannot overwrite its successful explicit Retry");
+                                if (stop != null) check(stop.GetAwaiter().GetResult(), "repair Stop drains its body and local cleanup: " + mode);
+                                if (closing) check(dispatcher.PublicationCount == closedPublications, "disposed wizard receives no late repair UI publication");
+                                phase = 7;
+                            }
+                            if (phase == 5) {
+                                if (!stop.IsCompleted) return false;
+                                check(!stop.GetAwaiter().GetResult() && service.HasPendingAdminCleanup && service.HasOwnedResources, "locked repair cleanup keeps honest failed Stop and owner");
+                                var refused = service.RepairAdminOwnedAsync(Owner, wizard, dispatcher, delegate { });
+                                check(RepairFailure(refused) is HomeVpnLocalCleanupException && attempts == 1 && Calls().SequenceEqual(new[] { "repair" }), "retained repair cleanup refuses a new command without native replay");
+                                held.Dispose(); held = null; stop = service.StopAsync(); phase = 6; return false;
+                            }
+                            if (phase == 6) {
+                                if (!stop.IsCompleted) return false;
+                                check(stop.GetAwaiter().GetResult() && !service.HasPendingAdminCleanup && RepairFailure(operation) is HomeVpnOwnerUnconfirmedException, "explicit Stop retries only unlocked repair deletion and preserves the original outcome"); phase = 7;
+                            }
+                            if (phase != 7) return false;
+                            int expectedCommands = mode == "complete" || mode == "cancel-retry" || mode == "stop-command" || mode == "cleanup-lock" ? 1 : 0;
+                            check(Calls().Length == expectedCommands && Calls().All(value => value == "repair") && Unchanged(before)
+                                && File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated" && !service.HasOwnedResources && !Directory.Exists(coreWork)
+                                && (!File.Exists(At("pid")) || Gone(Id("pid"))) && (!File.Exists(At("child")) || Gone(Id("child"))),
+                                "owned repair preserves protected bytes unrelated files and processes with no automatic command replay: " + mode);
+                            check(true, "owned production repair slice PASS: " + mode); return true;
+                        }, () => closing);
+                    } finally {
+                        release.Set(); if (held != null) held.Dispose();
+                        if (copyWindow != null) copyWindow.Dispose(); if (wizard != null) wizard.Dispose();
+                        KillFixtures(); service.Dispose(); var cleanup = service.StopAsync(); var watch = Stopwatch.StartNew();
+                        while (!cleanup.IsCompleted || (operation != null && !operation.IsCompleted)) {
+                            Application.DoEvents(); Thread.Sleep(10); if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned repair fixture cleanup did not settle");
+                        }
+                        if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned repair fixture retained local cleanup");
+                        if (operation != null) RepairFailure(operation);
+                        Directory.Delete(sibling, true);
+                    }
                 }
             }
         }

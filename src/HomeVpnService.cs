@@ -949,6 +949,52 @@ namespace ProGo
             await physical.ConfigureAwait(false);
         }
 
+        // Limited production slice: repair has no issuance/recovery receipt.
+        // Freeze metadata before scheduling; key/file/helper/output I/O belongs
+        // to the retained worker. Only native window startup crosses to its UI.
+        internal Task<string> RepairAdminOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
+            HomeProfileUiDispatcher dispatcher, Action<string> progress, Func<string, string, Task> copy = null,
+            string commandExecutable = null, int timeoutMs = HomeVpnPreparationProcess.TimeoutMs)
+        {
+            if (window == null) throw new ArgumentNullException("window");
+            if (dispatcher == null) throw new ArgumentNullException("dispatcher");
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            var stop = StopWork; int reporting = 1;
+            return RunAdminOwnedAsync(async delegate {
+                try {
+                    RequireRepairScope(stop);
+                    return await AdminAsync(frozen, "repair", null, null,
+                        text => dispatcher.Post(delegate { if (Volatile.Read(ref reporting) != 0) progress(text); }),
+                        (executable, arguments) => DispatchRepairTransportAsync(stop, dispatcher, delegate {
+                            return copy == null ? HomeVpnPreparationForm.CopyAsync(window, executable, arguments)
+                                : copy(executable, arguments);
+                        }),
+                        (executable, arguments, output) => DispatchRepairTransportAsync(stop, dispatcher, delegate {
+                            return HomeVpnPreparationForm.WaitForOwnerAsync(window, commandExecutable ?? executable, arguments, output, timeoutMs);
+                        }), RetainAdminCleanup).ConfigureAwait(false);
+                } finally { Volatile.Write(ref reporting, 0); } // Queued old progress cannot replace a later outcome.
+            });
+        }
+        private async Task DispatchRepairTransportAsync(Task<bool> stop, HomeProfileUiDispatcher dispatcher, Func<Task> start)
+        {
+            bool admitted = false;
+            try {
+                await DispatchAdminTransportAsync(dispatcher, delegate {
+                    RequireRepairScope(stop); admitted = true; return start();
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) {
+                if (!admitted) throw new HomeVpnPreparationCancelledException();
+                throw; // An admitted native task keeps its actual typed outcome.
+            }
+        }
+        private void RequireRepairScope(Task<bool> stop)
+        {
+            lock (lifecycleGate) {
+                if (disposed || startsPaused || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted)
+                    throw new HomeVpnPreparationCancelledException(); // No new transport was admitted.
+            }
+        }
+
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
             return await AdminAsync(owner, action, label, identifier, progress,

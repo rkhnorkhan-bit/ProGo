@@ -63,11 +63,14 @@ namespace ProGo
         private string draftToken = "", draftHome;
         private string preparedToken, preparedOwner;
         private Label counters;
-        internal Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> Admin = HomeVpnService.AdminAsync;
+        internal Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> Admin;
 
         internal HomeVpnWizardForm(HomeVpnService service, ClipboardService clipboard, Action beforeSetupSnapshotRead = null)
         {
             this.service = service; this.clipboard = clipboard; BeforeSetupSnapshotRead = beforeSetupSnapshotRead; httpDispatcher = new HomeProfileUiDispatcher(this);
+            Admin = (owner, action, label, identifier, report) => action == "repair"
+                ? service.RepairAdminOwnedAsync(owner, this, httpDispatcher, report)
+                : HomeVpnService.AdminAsync(owner, action, label, identifier, report);
             Text = "VPN для телефона"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(750, 650); MinimumSize = new Size(700, 620);
