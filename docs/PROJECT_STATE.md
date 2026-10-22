@@ -8,6 +8,110 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
+## Python launcher diagnostic prepared — unchanged strict native deadlines
+
+Isolated code `7c95af616c38fd146e47e4dac388784d15d474f6` on exact622; one test
+script16add2delete. Adds own PID/start duration/interpreter-path category and timeout
+HasExited/CPU/RAM/stream-task state/error-type facts, never arguments/environment or
+personal paths. Exit0 probe emits an entry marker and must both execute its body and
+exit0. Kill is conditional on this owned process still running; deadline remains FAIL
+even if it exits at the boundary. Existing5s exit0/exit17,200ms negative timeout,5s
+termination/3s stream joins and all exit/error criteria retained. This diagnoses UNKNOWN
+622 failure, not an invented cause fix or relaxed check. Manual PS5.1 quoting/lifetime/
+strict-criteria/BOM/diff/public320/0/secretsPII0 PASS; exact embedded Python body executed
+under Linux5s, required marker/exit0 PASS. Actual PowerShell/Windows launcher NOT_RUN.
+Next isolated script+latest3docs freeze/canonical tree/fresh public PR+workflow/secret
+check and one new exact diagnostic CI. Product/UI/Admin/workflows/VERSION unchanged622;
+local later code excluded. I58–80/Y22 exact620 partial evidence,delta0.
+
+## CI622 FAIL — different earlier Python startup boundary, cause UNKNOWN
+
+Source9e6e5a15e9414d562af6f1788505437f2ac96d9c /merge8db81f1c11cc713690f3c87f9669d2e12b9aba73,
+run39800500570 completed Windows119899498867 FAIL/Ubuntu119899499567 SUCCESS.
+Production/Desktop compilation PASS, build identity14:59:13.4176149Z. Native owned
+Python exit0-regression failed15:08:05.7445169: process exceeded5000ms and was cleaned.
+Empty captured stdout/stderr; no old interpreter-entry/CPU/RAM/HasExited/stream-state
+facts, so cause UNKNOWN. Desktop execution was NOT_RUN: phone budget correction is
+NOT_RUN, not a repeat of621 or a claimed fix PASS. Later Home/API14/harness/package
+NOT_RUN; all upload/prune SKIPPED. Existing test failure preserved, no timeout PASS.
+
+Next isolate script-only safe startup/deadline facts and positive interpreter-entry
+marker; retain5s positive,exit17/200ms negative criteria and exact owned cleanup. No
+production or workflow change, no global timeout increase or blind same-SHA rerun.
+UI freeze07363f7/Admin API17 c1dfc6d/ownership437b69e preserved and excluded.
+I58–80/Y22 exact620 partial evidence,delta0/fullR09 FAIL/R11 open/targetA0.
+
+## Admin ownership8 reconstructed; CI622 failed step awaiting final evidence
+
+Local `437b69e8037a9c33e0f581679f0736dfc1321f2c` reserves every Admin public task
+before scheduling, checks Stop identity/lifetime before factory admission, keeps actual
+accepted body outcomes and snapshots/drains all tasks in public Stop/Dispose. Original
+typed recovery cancellation survives. Metadata only under lifecycle gate; admitted body
+runs on worker and must not await the public Stop that owns its drain. HasOwnedResources
+includes pending bodies. Eight bounded real-file cases complete/Stop/Dispose/lock-fault/
+typed-fault/queued Stop/queued Dispose/multiple accepted bodies check heartbeat, exact
+single drain, no unstarted factory after Stop and protected-file preservation. Errors
+also occur while Stop waits. Static manual ownership/lifetime/error/diff/syntax2/C#5/
+public321/0/secretPII0 PASS; new compiler/native8 NOT_RUN. Actual Admin route unconnected;
+no failed-cleanup retention yet. Excluded API17 freeze c1dfc6d and checking622.
+
+Same622 Windows119899498867 latest job in_progress but build step completed FAILURE;
+later test/package/upload steps SKIPPED,Ubuntu119899499567 SUCCESS. Final completed
+log/conclusion must be checked before claiming cause or another fix. Next inspect this
+same run's exact phone-state diagnostics, preserve every local block, no blind rerun.
+I58–80/Y22 exact620 partial evidence,delta0/fullR09 FAIL/R11 open.
+
+## Admin API17 isolated freeze preserved
+
+ProGo-admin-api-on622 /work/progo-admin-api-on622-20261022 local
+`c1dfc6d0162bacfbe3a476d4febc3a9d7b0cf0df`,tree
+`e7fdf97d077d227ef636b1603d36abfc0a9a5ce8` on published9e6e5a. Exactly HomeVpnService,
+HomeVpnSetupRecoveryTests and latest3 docs; production UI/HomeWaiting/scripts/workflows/
+VERSION unchanged622. Static scope/diff/public320/0 PASS, new compiler/native17 NOT_RUN;
+local only, no publication cancelling622. UI freeze07363f7 separately retained.
+Next independent local foundation: owned Admin task admission/accounting and public
+Stop/Dispose drain8; actual AdminAsync remains unconnected until owned worker/UI binding.
+
+## Admin transport5 reconstructed — explicit owner, actual Task retained
+
+Local `74f90504778f90ef9d89010e61f4ef2975e13853` reconstructs the reviewed UI
+startup adapter and its publication-barrier followup in one coherent block. Only
+callback startup uses HomeProfileUiDispatcher; actual returned Task is awaited after
+owner disposal. Closed-before-admission refuses callback, null dispatcher permits only
+worker-compatible injection. No automatic retry/process/lease creation, no production
+AdminAsync binding yet. Five actual ShowDialog local-file vectors ready/before Dispose/
+during Dispose/real locked-file IOException/worker-only; lost ambient context, worker
+heartbeat, actual outcome and single UI publication, publication signal only AFTER
+physical Task assignment.15s modal/5s barriers+join, own GUID outputs/cleanup only.
+Manual lifecycle/publication/cleanup,diff,syntax2/C#5/public321/0/secretPII0 PASS;
+compiler/native5 NOT_RUN. Snapshot12 a1fb931 also NOT_RUN, both excluded622.
+Next freeze these two API blocks17 on published622 without UI or later task ownership.
+Same622 Windows119899498867 in_progress(build step),Ubuntu119899499567 SUCCESS;
+no duplicate/new checking head. I58–80/Y22 exact620 partial evidence,delta0.
+
+## CI622 queued — narrow phone fixture correction published once
+
+Source `9e6e5a15e9414d562af6f1788505437f2ac96d9c`, merge
+`8db81f1c11cc713690f3c87f9669d2e12b9aba73`, canonical tree
+`abf6f9e0f568d30833f9917ed2025d302c472a14` equals isolated freezeebe59b1 and fetched
+source/merge exactly. [CI622/39800500570](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39800500570)
+queued; new compiler/native/full regression/package NOT_RUN. Runtime unchanged621,
+only two test files+three docs over2c0cb. Source CAS independently confirmed, no manual
+rerun/duplicate621; preserve that failed exact result and620 last full SUCCESS separately.
+All uploads OFF/no release/merge/install. UI freeze07363f7/Admin snapshota1fb931 excluded.
+Next independent local Admin transport bridge5; poll same622 completed evidence before
+any source publication cancels it. I58–80/Y22 exact620 partial gates,delta0.
+
+## Phone fixture publication recovery checkpoint — CAS next
+
+Prepared remote `9e6e5a15e9414d562af6f1788505437f2ac96d9c`, expected parent/ref2c0cb,
+canonical tree `abf6f9e0f568d30833f9917ed2025d302c472a14` equals frozen local
+`ebe59b124c412f571994d970a5093ce39df93c1a`. Five paths only,two test files+three docs;
+source runtime/UI/Admin/workflows/VERSION unchanged621. Full secretPII0/public320/0/
+diff/syntax2/C#5/JSON checks PASS; fresh public PR head2c0cb/base4bb/621completedFAIL.
+CAS not yet claimed updated; do once then independently inspect PR/new run. Unknown
+operation on interruption must be verified before any repeat. New Windows NOT_RUN.
+
 ## Narrow CI621 fixture correction prepared — Windows NOT_RUN
 
 Isolated code `c5e35cc62dd40d8ccec2b7409489cbb0ac4a1c32` on exact published2c0cb;

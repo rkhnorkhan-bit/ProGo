@@ -555,13 +555,24 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureStarted = $false
     $FixtureOutRead = $null
     $FixtureErrorRead = $null
+    $FixtureLaunchWatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $FixturePythonClass = if ($FixturePython -match '\\WindowsApps\\') { 'WindowsApps' } elseif ($FixturePython -match 'hostedtoolcache') { 'hostedtoolcache' } else { 'other' }
     try {
         if (-not $FixtureTool.Start()) { Fail ('Owned SSH fixture ' + $Label + ' did not start') }
         $FixtureStarted = $true
+        Write-Host ('SSH_FIXTURE_STARTED label=' + $Label + '; pid=' + $FixtureTool.Id + '; startMs=' + $FixtureLaunchWatch.ElapsedMilliseconds + '; pythonClass=' + $FixturePythonClass)
         $FixtureOutRead = $FixtureTool.StandardOutput.ReadToEndAsync()
         $FixtureErrorRead = $FixtureTool.StandardError.ReadToEndAsync()
         if (-not $FixtureTool.WaitForExit($BudgetMs)) {
-            $FixtureTool.Kill()
+            # Safe owned-process facts only; never print arguments/environment
+            # or turn a process that exits at the deadline into a successful test.
+            $FixtureCpuMs = 'unavailable'; $FixtureRamBytes = 'unavailable'; $FixtureProbeError = 'none'
+            try { $FixtureCpuMs = $FixtureTool.TotalProcessorTime.TotalMilliseconds; $FixtureRamBytes = $FixtureTool.WorkingSet64 }
+            catch { $FixtureProbeError = $_.Exception.GetType().Name }
+            Write-Host ('SSH_FIXTURE_DEADLINE label=' + $Label + '; elapsedMs=' + $FixtureLaunchWatch.ElapsedMilliseconds + '; exited=' + $FixtureTool.HasExited + '; stdoutTask=' + $FixtureOutRead.Status + '; stderrTask=' + $FixtureErrorRead.Status + '; cpuMs=' + $FixtureCpuMs + '; ramBytes=' + $FixtureRamBytes + '; probeErrorType=' + $FixtureProbeError)
+            if (-not $FixtureTool.HasExited) {
+                try { $FixtureTool.Kill() } catch { if (-not $FixtureTool.HasExited) { throw } }
+            }
             if (-not $FixtureTool.WaitForExit(5000)) { Fail ('Owned SSH fixture ' + $Label + ' did not terminate after its deadline') }
             Fail ('Owned SSH fixture ' + $Label + ' exceeded ' + $BudgetMs + ' ms; native validation NOT_RUN')
         }
@@ -588,10 +599,13 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
             }
         } finally { $FixtureTool.Dispose() }
     }
+    if ($Label -eq 'exit0-regression' -and -not $FixtureOutRead.Result.Contains('PROGO_FIXTURE_EXIT0_ENTERED')) {
+        Fail 'Owned SSH fixture exit0-regression returned zero without executing its Python body'
+    }
 }
 # Regression vectors use only this test's own Python processes. Expected
 # negative cases must throw the precise reason; no timeout becomes success.
-Invoke-IsolatedSshFixtureTool @('-c', '"import sys; sys.exit(0)"') 'exit0-regression' 5000
+Invoke-IsolatedSshFixtureTool @('-c', '"import sys; print(''PROGO_FIXTURE_EXIT0_ENTERED'', flush=True); sys.exit(0)"') 'exit0-regression' 5000
 $FixtureNonzeroObserved = $false
 try { Invoke-IsolatedSshFixtureTool @('-c', '"import sys; sys.exit(17)"') 'exit17-regression' 5000 }
 catch { if ($_.Exception.Message -notlike '*exit17-regression failed with exit code 17') { throw }; $FixtureNonzeroObserved = $true }

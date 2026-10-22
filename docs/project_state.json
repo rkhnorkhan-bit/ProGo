@@ -3929,24 +3929,24 @@
     }
   ],
   "ci_candidate": {
-    "source": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
-    "tested_merge": "2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c",
-    "tree": "d75aa2836c8d83ac1a1ccae39ac9b088ae3940f4",
-    "local_sha": "48343aac81ea82b835cfd9919b0d3f6e19b22974",
-    "run_id": 39797286590,
-    "run_number": 621,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39797286590",
+    "source": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
+    "tested_merge": "8db81f1c11cc713690f3c87f9669d2e12b9aba73",
+    "tree": "abf6f9e0f568d30833f9917ed2025d302c472a14",
+    "local_sha": "ebe59b124c412f571994d970a5093ce39df93c1a",
+    "run_id": 39800500570,
+    "run_number": 622,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39800500570",
     "status": "completed",
     "conclusion": "failure",
     "jobs": {
-      "windows": 119887722612,
-      "ubuntu": 119887722929
+      "windows": 119899498867,
+      "ubuntu": 119899499567
     },
-    "windows_compilation": "PASS production/Desktop; build identity14:38:00.173; later HomeWaiting harness compilation NOT_RUN",
-    "windows_native": "FAIL Desktop shutdown phone cleanup compound criterion; later Home/API14 NOT_RUN",
-    "ubuntu": "SUCCESS",
-    "scope": "Reconstructed profile export primitive5 + owned service9; regression suite on new exact checking source",
-    "excludes": "Actual export UI/native chooser/Admin/invitation extensions",
+    "windows_compilation": "PASS production and Desktop; later HomeWaiting compilation NOT_RUN",
+    "windows_native": "FAIL owned Python exit0 5000ms before Desktop; phone fixture/new API14 NOT_RUN",
+    "ubuntu": "SUCCESS exact622 job119899499567",
+    "scope": "Exact621 API plus two-test phone fixture budget correction/failure diagnostic; fresh full regression",
+    "excludes": "Actual profile export UI/modal/chooser and Admin snapshot/transport/later invitation code",
     "windows_job_status": "completed"
   },
   "signing_microtask": {
@@ -5483,24 +5483,24 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI621 failed; narrow isolated phone fixture budget correction prepared, new exact proof next",
+    "phase": "Isolated script-only safe Python launcher diagnostic prepared; new exact Windows proof required",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
     "local_sha": "8903762ee659efaaa1923aacf146f7201e90c557",
-    "local_development_sha": "4543d831ea7ea18ea5d91b91601688a037aad46d",
-    "published_sha": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "local_development_sha": "fc5ebeef0a4cddc570d23b1a9b3b7e184002779f",
+    "published_sha": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
     "tree": "e160e3a481292fa6df0f20628120932f9ea2caab",
-    "tested_merge": "2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c",
-    "ci_run_id": 39797286590,
-    "ci_run_number": 621,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39797286590",
+    "tested_merge": "8db81f1c11cc713690f3c87f9669d2e12b9aba73",
+    "ci_run_id": 39800500570,
+    "ci_run_number": 622,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39800500570",
     "jobs": {
-      "windows": 119887722612,
-      "ubuntu": 119887722929
+      "windows": 119899498867,
+      "ubuntu": 119899499567
     },
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "PASS production/Desktop; build identity14:38:00.173; later HomeWaiting harness compilation NOT_RUN",
-    "windows_native": "FAIL Desktop shutdown phone cleanup compound criterion; later Home/API14 NOT_RUN",
+    "windows_compilation": "PASS production and Desktop; later HomeWaiting compilation NOT_RUN",
+    "windows_native": "FAIL owned Python exit0 5000ms before Desktop; phone fixture/new API14 NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repo22Oct, workflows and VERSION unchanged; PR upload guards OFF, no release trigger",
     "publication_scan": {
@@ -5508,9 +5508,9 @@
       "findings": 0,
       "tree_match": "TODO remote canonical equality before CAS"
     },
-    "next": "Freeze latest3docs on isolated exact621+c5e35cc; full-tree equality/secrets/public-workflow/fresh-head guard then one new CI; no duplicate621",
+    "next": "Freeze only script and latest3docs on exact622; canonical tree/secret/public-head/workflow guard then one fresh diagnostic CI, never same-SHA blind retry",
     "readiness_change": 0,
-    "current_ci_step": "14:50:27.8268657Z Desktop PhoneStopContextHeld/shutdown: phone cleanup deadline refuses handoff before proxy effects and preserves retry with responsive UI"
+    "current_ci_step": "15:08:05.7445169Z Owned SSH fixture exit0-regression exceeded5000ms; native validation NOT_RUN"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -9548,6 +9548,128 @@
     "windows_native": "NOT_RUN",
     "excludes": "No production, export UI/modal/chooser/Admin changes in isolated checking source",
     "next": "Freeze latest3docs on isolated exact621+c5e35cc; full-tree equality/secrets/public-workflow/fresh-head guard then one new CI; no duplicate621",
+    "readiness_change": 0
+  },
+  "prepared_phone_fixture_publication": {
+    "frozen_local_sha": "ebe59b124c412f571994d970a5093ce39df93c1a",
+    "tree": "abf6f9e0f568d30833f9917ed2025d302c472a14",
+    "remote_commit": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
+    "expected_ref": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "status": "PASS CAS and PR source/merge independently confirmed; fetched source/merge/local full trees equal; one new queued622",
+    "scan": "PASS5 exact files, secretsPII0/public320/0/syntax2/C#5/diff/JSON; runtime/src/workflows/VERSION identical621",
+    "ci621": "completed FAILURE; do not rerun blindly",
+    "next": "CAS expected2c0cb once, independently verify PR9e6e5a and record one new automatic CI ID; on interruption inspect before repeating",
+    "readiness_change": 0,
+    "run_id": 39800500570,
+    "merge": "8db81f1c11cc713690f3c87f9669d2e12b9aba73"
+  },
+  "previous_failed_ci621": {
+    "source": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "tested_merge": "2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c",
+    "tree": "d75aa2836c8d83ac1a1ccae39ac9b088ae3940f4",
+    "local_sha": "48343aac81ea82b835cfd9919b0d3f6e19b22974",
+    "run_id": 39797286590,
+    "run_number": 621,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39797286590",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": {
+      "windows": 119887722612,
+      "ubuntu": 119887722929
+    },
+    "windows_compilation": "PASS production/Desktop; build identity14:38:00.173; later HomeWaiting harness compilation NOT_RUN",
+    "windows_native": "FAIL Desktop shutdown phone cleanup compound criterion; later Home/API14 NOT_RUN",
+    "ubuntu": "SUCCESS",
+    "scope": "Reconstructed profile export primitive5 + owned service9; regression suite on new exact checking source",
+    "excludes": "Actual export UI/native chooser/Admin/invitation extensions",
+    "windows_job_status": "completed"
+  },
+  "reconstructed_admin_ui_transport": {
+    "source": "74f90504778f90ef9d89010e61f4ef2975e13853",
+    "original_missing_sources": [
+      "819d9b2cf6e9e4799427b3e4876db47bff5900b1",
+      "76076aacf8bb57864197f70864a3d318968e9eff"
+    ],
+    "status": "PARTIAL",
+    "native_cases": 5,
+    "implementation": "Explicit owner dispatcher starts callback only; admitted actual Task outcome survives owner disposal/context loss; closed before startup OCE; null only worker-compatible injected transport; published barrier precedes worker entry signal",
+    "static": "PASS manual publication/lifetime/phase/cleanup trace/syntax2/C#5/diff/public321/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621,
+      622
+    ],
+    "next": "Freeze readonly snapshot12 + transport5 on published622 without UI or future ownership; then separate Admin task ownership/drain foundation",
+    "readiness_change": 0
+  },
+  "frozen_reconstructed_admin_api": {
+    "local_sha": "c1dfc6d0162bacfbe3a476d4febc3a9d7b0cf0df",
+    "tree": "e7fdf97d077d227ef636b1603d36abfc0a9a5ce8",
+    "base_source": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
+    "worktree": "ProGo-admin-api-on622",
+    "branch": "work/progo-admin-api-on622-20261022",
+    "scope": "Readonly snapshot12 + explicit-owner transport5 plus latest3 evidence documents; no actual profile UI/chooser or Admin ownership/cleanup binding",
+    "status": "PARTIAL local freeze; compiler/native17 NOT_RUN; not published while622 active",
+    "static": "PASS exact5paths/production UI+scripts+workflows+VERSION+HomeWaiting unchanged vs622; public320/0/diff",
+    "next": "After622/next actual UI proof, refresh evidence docs and prepare one guarded API verification source; do not conflate excluded later code",
+    "readiness_change": 0
+  },
+  "reconstructed_admin_task_ownership": {
+    "source": "437b69e8037a9c33e0f581679f0736dfc1321f2c",
+    "original_missing_source": "e4c23e01f2c216162ccf4f5ba3ab535dccb6e122",
+    "status": "PARTIAL",
+    "native_cases": 8,
+    "implementation": "Service reserves every task before scheduling, memory Stop/lifetime admission before factory; actual body retained including sync file work; Stop/Dispose drains all captured accepted tasks even on error; original typed cancellation preserved; bodies must never await public Stop",
+    "static": "PASS manual admission/lifetime/drain/error/scope/syntax2/C#5/diff/public321/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621,
+      622
+    ],
+    "actual_admin_route": "UNCONNECTED, static AdminAsync and UI binding still open fullR09",
+    "next": "Retain/retry only exact failed Admin cleanup closure before actual owned worker/UI binding; first diagnose completed622 failure",
+    "readiness_change": 0
+  },
+  "ci622_failure": {
+    "source": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
+    "merge": "8db81f1c11cc713690f3c87f9669d2e12b9aba73",
+    "run_id": 39800500570,
+    "windows_job": 119899498867,
+    "ubuntu_job": 119899499567,
+    "status": "completed",
+    "conclusion": "failure",
+    "build_identity": "0.2.2+8db81f1c11cc713690f3c87f9669d2e12b9aba73 at14:59:13.4176149Z",
+    "windows_compilation": "PASS production and Desktop; later HomeWaiting compilation NOT_RUN",
+    "failure": "15:08:05.7445169Z Owned SSH fixture exit0-regression exceeded5000ms; native validation NOT_RUN",
+    "cause": "UNKNOWN: no interpreter-entry, live process CPU/RAM/HasExited/stream-state or launch elapsed diagnostic in old log; stdout/stderr empty after termination",
+    "phone_budget_correction": "NOT_RUN Desktop never reached; do not claim passed or same621 failure reproduced",
+    "home_export_api14": "NOT_RUN",
+    "package": "NOT_RUN",
+    "uploads": "all SKIPPED",
+    "ubuntu": "SUCCESS exact622",
+    "next": "Narrow script-only positive probe entry marker and safe owned process/deadline state; keep5s positive/200ms negative/exit17 strict criteria; fresh exact CI only after source review",
+    "readiness_change": 0
+  },
+  "ci622_python_launcher_diagnostic": {
+    "source": "7c95af616c38fd146e47e4dac388784d15d474f6",
+    "development_copy": "fc5ebeef0a4cddc570d23b1a9b3b7e184002779f",
+    "base_source": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
+    "paths": [
+      "scripts/Test-ProGo.ps1"
+    ],
+    "status": "PARTIAL",
+    "purpose": "Collect missing startup/deadline evidence on a new exact source rather than blind retry of failed622; original Python timeout cause UNKNOWN",
+    "change": "Own PID/start elapsed/python path category, timeout CPU/RAM/HasExited/stream status/error type only; positive body marker must exist as well as exit0; conditional targeted Kill preserves deadline FAIL even if process exited at boundary",
+    "unchanged": "5s exit0/exit17, 200ms deliberate timeout, all nonzero/timeout failures,5s targeted termination+3s streams, public upload guards, product runtime and workflows",
+    "static": "PASS manual PS5.1 quoting/lifetime/scope/diff/BOM/strict criterion parity/public320/0/secretPII0; exact embedded positive body ran under Linux5s and emitted required marker with exit0",
+    "powershell_execution": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "All actual profile UI/chooser/Admin code",
+    "next": "Freeze only script and latest3docs on exact622; canonical tree/secret/public-head/workflow guard then one fresh diagnostic CI, never same-SHA blind retry",
     "readiness_change": 0
   }
 }
