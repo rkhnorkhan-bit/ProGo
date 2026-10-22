@@ -1,6 +1,6 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `de7b42628ccd656f369ba0e286e9b406cc20dee6`, tree `bc5d3f70d2ff0833692d91d75eb62d108b33b215`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `c12200870264832f6ad6d7a325ef19678ee1447e`, tree `205e6e6e5583d669e03664ea44eafa9749c2a829`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
@@ -8,20 +8,100 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Wizard + native I/O checking scope before publication
+## Frozen shutdown diagnostic — one source file on exact618 tree
 
-Runtime/test local89e44d5ea0c9226a0b1444921919049be8043631 on exact617 localf412/sourcef255.
-Only10 source/test paths477add68delete +3 current evidence docs. Async actual wizard
-import/receipt, cached initial setup snapshot with first-success owner restore/user
-edit protection,11 import/receipt+5 initial modal routes and4 exact SSH child process
-I/O metric assertions. Existing receipt7 safe diagnostics/state restoration and
-terminal NativeRecovery-last retained. Core service/access/recovery source, scripts,
-server/workflows/VERSION unchanged. All profile export/native profile chooser/admin
-snapshot/transport code excluded (no references to those new APIs/types). New compiler/
-native NOT_RUN. Last fullSUCCESS617 and same fixed v1.0 I58–80/Y22, delta0; F31 current
-representative anchor corrected to actual selected-key SSH native recovery, weights
-unchanged. BeforeCAS expectedf255 verify public/uploadsOFF/full delta scan/fulltree.
-No package upload, main merge, release, owner-PC install or live VPS authorized.
+Isolated source `f4659691b65b2ca957d9473b8cb75ff26069d6a1` in ProGo-ci618-diagnostic
+on34aa/c122; only tests/ShutdownTests.cs19add8delete. Root original diagnostic
+0292411e9be5608980797be15a5683f5acb47615 +d919cc5ab998c655ce81bf520a505656a7431664.
+No production behavior change, readiness predicates/12s limit unchanged; new safe
+boolean/listener state only. Full delta source/manual diff/public320/0 PASS; new
+Windows compiler/native NOT_RUN. All local export/admin extensions excluded. Next
+latest3 evidence docs, full secret/PII/static/canonical-tree check, guarded c122→new
+source CAS once.618 failure and617 last full SUCCESS remain separate. I58–80/Y22
+unchanged. This pre-publication freeze is history once actual ref/run is verified.
+
+## CI618 FAIL — shutdown startup predicate unknown; narrow diagnostic next
+
+Exact published source `c12200870264832f6ad6d7a325ef19678ee1447e` /merge
+`dbed93e150be5eeafb274e88826389aacff78d0a`, run39769965390 Windows119794736280 FAIL,
+Ubuntu119794735960 SUCCESS. Completed log checked: build identity11:21:49.067,
+Desktop5287 PASS11:40:12.906, Instance28/Maintenance126 PASS. Four actual direct/agent
+startup/recovery child-lifetime process I/O collections PASS11:38:55–11:39:02,
+with latency/preparation/CPU/RAM and six counters; not full-app/physical-disk or
+owner-PC performance acceptance. Full Test-ProGo FAIL at ShutdownTests11:43:44.509:
+`Timed out: external-edit fixture fully applied`, third external startup after
+attempts1/2 passed. Existing12s bound. Last startup logged no CLI/Windows completion;
+individual alive/journal/windows/environment/logged/listener flags were not emitted,
+so exact underlying cause is UNKNOWN, not a proven product regression or flake.
+HomeVPN wizard new11+5 modal cases and all later suites NOT_RUN because execution
+stopped before their stage. Package NOT_RUN; uploads SKIPPED. No618 SUCCESS claimed.
+
+Local narrow diagnostic `0292411` plus scope-preserving probe follow-up
+`d919cc5ab998c655ce81bf520a505656a7431664` adds only individual boolean readiness and
+owned SOCKS listener Task/error-type facts on timeout. All existing criteria/12s
+budget and original guarded port probe retained; no rerun of same SHA, no fallback
+PASS. Next isolated checking from34aa/c122, these test edits +latest evidence docs
+only, excluding e4 Admin foundation and all profile export/admin helpers. Recheck
+scope/secrets/workflows/fulltree, publish once then inspect exact newCI. Windows
+compiler/native for this new diagnostic NOT_RUN. CI618 failure preserved below.
+I58–80/Y22 exact617 partial evidence unchanged, delta0; no new full weighted gate.
+
+## Local Admin task accounting — foundation only, not yet wired
+
+Source `e4c23e01f2c216162ccf4f5ba3ab535dccb6e122`,2 paths117add2delete. Service
+reserves each Admin completion before worker scheduling, checks Stop/lifetime before
+factory admission, retains every accepted actual body, and drains their snapshot in
+public Stop/Dispose even when an individual body faults. Original typed cancellation/
+recovery errors remain on that operation. New factories are refused during Stop;
+independent accepted families can coexist. HasOwnedResources includes pending work.
+
+Eight bounded real-file native fixtures written: complete/Stop/Dispose/real lock
+failure/typed recovery cancellation/queued Stop/queued Dispose/two accepted bodies.
+They check UI heartbeat, immediate Stop return, one drain, no unstarted factory,
+physical settlement, original error and own-file cleanup. Static manual diff/lifetime/
+syntax2/C#5/public321/0/secretPII0 PASS; compiler/native NOT_RUN (Linux no .NET/Windows).
+Actual static AdminAsync/user routes remain UNCONNECTED: this foundation does not
+close R09, prove SCP/server effects, or retain/retry a failed work-directory cleanup.
+Next separate exact-owned cleanup retention, then explicit owner-dispatched production
+transport and worker binding; no whole method Task.Run over native UI callbacks.
+
+CI618 same c122/dbed run39769965390 still Windows in_progress at last check; Ubuntu
+SUCCESS, new native result pending. Published tree unchanged; this source excluded.
+I58–80/Y22/raw21.75/delta0; full R09 FAIL/R11PARTIAL. History below.
+
+## CI618 actual running — wizard/IO candidate published
+
+PR88 OPEN/DRAFT source `c12200870264832f6ad6d7a325ef19678ee1447e`, merge
+`dbed93e150be5eeafb274e88826389aacff78d0a`, tree205e6e6e5583d669e03664ea44eafa9749c2a829
+= local34aa821d1e86fc86c5d381a6bad337d28ef76068. CAS expectedf255→c122 PASS,
+один автоматический [CI618/39769965390](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39769965390),
+Windows119794736280 in_progress/Ubuntu119794735960 SUCCESS atverification. Initial
+empty webhook lookup then one run, no manual duplicate. PR body updated.13 paths
+957add182delete,10 source/test477add68 +3docs; fullscope/secretsPII0/syntax10/C#5/
+public320/0/JSON86/canonicaltree PASS, workflows/VERSION unchanged/uploadsOFF.
+New compiler/native NOT_RUN pending exact Windows log, no inherited617 result.
+Later profile export/admin snapshot/UI-transport code excluded, their Windows NOT_RUN.
+
+Last full617 sourcef255/merge7f720 remains evidence/package/28partial weighted criteria,
+I58–80/Y22/raw21.75/delta0. Next same618 exact result; do not change active head for
+checkpoint-only docs. Independently add service tracking/drain of accepted Admin
+Tasks before actual static AdminAsync worker migration, then retained-cleanup routing.
+Do not claim global task accounting already connected to the user route. History
+below; object-before-CAS entries are not current incomplete publication.
+
+## Wizard/IO checking object c122 — before guarded ref-CAS
+
+Source object `c12200870264832f6ad6d7a325ef19678ee1447e`, parent
+`f255e8ad7339af4481e0590c31c7db32ab959bfe`, tree `205e6e6e5583d669e03664ea44eafa9749c2a829`
+= isolated local `34aa821d1e86fc86c5d381a6bad337d28ef76068` in ProGo-ci617-wizard.
+13 paths957add182delete:10 wizard/test477add68 +3 evidence docs. Full secretPII0/
+public320/0/syntax10/C#5/diff/JSON86/exclusions/canonicaltree PASS; service/access/
+recovery source, scripts/server/workflow/VERSION unchanged. Freshpublic/headf255/
+base4bb checked, uploadsOFF;617 completedSUCCESS, not repeated. New compilation/
+native NOT_RUN;11+5modal cases and4 I/O collections still unexecuted. Entire profile
+export/admin snapshot/transport code excluded. Ref-CAS NOT_RUN at checkpoint:
+recover actual PR/run before retry after interruption. Next expectedf255→c122,
+forcefalse, one automatic exactCI. I58–80/Y22 exact617 unchanged. History below.
 
 ## Wizard checking rebuilt on617 — code89e static-only; F31 anchor corrected
 

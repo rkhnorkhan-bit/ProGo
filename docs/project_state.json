@@ -3826,7 +3826,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "f255e8ad7339af4481e0590c31c7db32ab959bfe",
+  "candidate_source": "c12200870264832f6ad6d7a325ef19678ee1447e",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3924,27 +3924,24 @@
     }
   ],
   "ci_candidate": {
-    "source": "f255e8ad7339af4481e0590c31c7db32ab959bfe",
-    "tested_merge": "7f72092c47f68617f9fec6bf1b7c2dc273c9f426",
-    "tree": "323f022e49ac2b485e6d9c32f528ffd0d6822a98",
-    "local_sha": "f41257f78ba1e8fb4166257c2db9012be16a0fd7",
-    "run_id": 39763459020,
-    "run_number": 617,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39763459020",
+    "source": "c12200870264832f6ad6d7a325ef19678ee1447e",
+    "tested_merge": "dbed93e150be5eeafb274e88826389aacff78d0a",
+    "tree": "205e6e6e5583d669e03664ea44eafa9749c2a829",
+    "local_sha": "34aa821d1e86fc86c5d381a6bad337d28ef76068",
+    "run_id": 39769965390,
+    "run_number": 618,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39769965390",
     "status": "completed",
-    "conclusion": "success",
+    "conclusion": "failure",
     "jobs": {
-      "windows": 119773047477,
-      "ubuntu": 119773046886
+      "windows": 119794736280,
+      "ubuntu": 119794735960
     },
-    "windows_compilation": "PASS exact617 build identity/full Test-ProGo/Desktop5283",
-    "windows_native": "PASS exact617 full Home1805/Portable91, pair9/import9/receipt7 and all regressions",
+    "windows_compilation": "PASS exact618",
+    "windows_native": "PARTIAL Desktop5287/Instance28/Maintenance126/processIO4 PASS; ShutdownFAIL; Home/modal11+5/later NOT_RUN",
     "ubuntu": "SUCCESS",
-    "scope": "receipt fixture ordering before terminal ExitThread and own3file state restoration; seven-case body/budgets unchanged",
-    "excludes": "future wizard/export/IOmetrics/admin snapshot",
-    "runner_zip_sha256": "91f617b9b9d09ed460aab74c05e12fde6b267994642c2cae77094bc46c6b17d7",
-    "artifact_upload": "SKIPPED all, bytes not retrieved/delivered/installed",
-    "acceptance": "PARTIAL API/dev only; published wizard sync importer and full R09/R11/final owner gates still open"
+    "scope": "actual async wizard import/receipt/snapshot/guarded first-success restore +test-only native owned child I/O counters",
+    "excludes": "all profile export/admin snapshot/admin transport code"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5305,6 +5302,26 @@
       "runner_zip_sha256": "91f617b9b9d09ed460aab74c05e12fde6b267994642c2cae77094bc46c6b17d7",
       "artifact_upload": "SKIPPED all, bytes not retrieved/delivered/installed",
       "acceptance": "PARTIAL API/dev only; published wizard sync importer and full R09/R11/final owner gates still open"
+    },
+    {
+      "source": "c12200870264832f6ad6d7a325ef19678ee1447e",
+      "merge": "dbed93e150be5eeafb274e88826389aacff78d0a",
+      "run_id": 39769965390,
+      "windows_job": 119794736280,
+      "ubuntu_job": 119794735960,
+      "conclusion": "FAIL",
+      "compilation": "PASS exact build identity11:21:49.067",
+      "desktop": "PASS5287 at11:40:12.906",
+      "instance": "PASS28",
+      "maintenance": "PASS126",
+      "process_io_metrics": "PASS four actual direct/agent startup/recovery child-lifetime counter collections11:38:55–11:39:02; no owner/full-app acceptance",
+      "failure": "11:43:44.509 third external startup 12s readiness timeout; underlying individual predicate/listener state UNKNOWN",
+      "home_wizard_modal": "NOT_RUN later stage not reached",
+      "full_test_progo": "FAIL ShutdownTests",
+      "package": "NOT_RUN",
+      "uploads": "SKIPPED",
+      "next": "One new diagnostic source only, not duplicate same-SHA rerun",
+      "readiness_change": 0
     }
   ],
   "retention_microtask": {
@@ -5351,7 +5368,7 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "Published live Program/wizard private read routes checking608 full SUCCESS; phone modal fix/address persistence followups excluded",
+  "candidate_source_scope": "Current published618 c122/dbed wizard import/receipt/snapshot and process IO metrics; Windows result pending. Export/admin future code excluded. Prior candidate scopes retained in historical snapshots.",
   "uncommitted_candidate": {
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
     "source_sha": "cd8c468b48f293fe809aea1d1ed75662a8e5a97f",
@@ -5440,36 +5457,36 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Exact617 full SUCCESS API; fix staged wizard first-success retry prefill then rebuild on checked base",
+    "phase": "CI618 shutdown failure; narrow diagnostic source next",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "f41257f78ba1e8fb4166257c2db9012be16a0fd7",
-    "local_development_sha": "3c9ddccaf3158d74a858ec9d6b6283603f0fb7f0",
-    "published_sha": "f255e8ad7339af4481e0590c31c7db32ab959bfe",
-    "tree": "323f022e49ac2b485e6d9c32f528ffd0d6822a98",
-    "tested_merge": "7f72092c47f68617f9fec6bf1b7c2dc273c9f426",
-    "ci_run_id": 39763459020,
-    "ci_run_number": 617,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39763459020",
+    "local_sha": "34aa821d1e86fc86c5d381a6bad337d28ef76068",
+    "local_development_sha": "d919cc5ab998c655ce81bf520a505656a7431664",
+    "published_sha": "c12200870264832f6ad6d7a325ef19678ee1447e",
+    "tree": "205e6e6e5583d669e03664ea44eafa9749c2a829",
+    "tested_merge": "dbed93e150be5eeafb274e88826389aacff78d0a",
+    "ci_run_id": 39769965390,
+    "ci_run_number": 618,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39769965390",
     "jobs": {
-      "windows": 119773047477,
-      "ubuntu": 119773046886
+      "windows": 119794736280,
+      "ubuntu": 119794735960
     },
     "ci_status": "completed",
-    "ci_conclusion": "success",
-    "windows_compilation": "PASS exact617 build identity/full Test-ProGo/Desktop5283",
-    "windows_native": "PASS exact617 full Home1805/Portable91, pair9/import9/receipt7 and all regressions",
+    "ci_conclusion": "failure",
+    "windows_compilation": "PASS exact618",
+    "windows_native": "PARTIAL Desktop5287/Instance28/Maintenance126/processIO4 PASS; ShutdownFAIL; Home/modal11+5/later NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
     "publication_scan": {
-      "files": 7,
-      "added_lines": 342,
-      "deleted_lines": 60,
+      "files": 13,
+      "added_lines": 957,
+      "deleted_lines": 182,
       "findings": 0,
       "tree_match": true
     },
-    "next": "Publish only frozen89e wizard+test-onlyI/Ometrics after final3doc/scan/workflow/canonicaltree preflight; no old617 success inherited. Other export/admin helpers excluded.",
+    "next": "Isolate diagnostic only on34aa, fresh secret/workflow/tree check, publish once; keep Admin/export local unconnected and NOT_RUN",
     "readiness_change": 0,
-    "current_ci_step": "completed both jobs; all uploads/prune SKIPPED"
+    "current_ci_step": "Completed618 Windows failure; same-source duplicate prohibited; prepare diagnostic newSHA"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5562,7 +5579,7 @@
     "A": 0,
     "reason": "Same28 weighted partial criteria matched verbatim on exact617. Seven receipt and18import API cases extend coverage without completing a weighted gate; no new points.",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact617 full SUCCESS only; future wizard/export/processIOmetrics/admin snapshot/transport helpers excluded and Windows NOT_RUN",
+    "candidate_note": "Exact617 full SUCCESS remains last full partial evidence/package baseline; exact618 partial Desktop/processIO PASS but full shutdown FAIL, Home modal NOT_RUN. Export/admin extensions excluded/NOT_RUN.",
     "score_anchors": {
       "F01": "2026-10-22T10:38:38.2280603Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T10:33:43.1145974Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -8700,7 +8717,7 @@
     "windows_native": "NOT_RUN",
     "excluded_ci": 617,
     "excluded_wizard_freeze": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
-    "next": "Verify app/service tracking for accepted admin work/retained cleanup before worker migration; first fix prepared wizard first-success retry prefill while preserving edits",
+    "next": "Service task ownership foundation e4c23 local/unconnected. Next exact owned cleanup retention, then actual production worker/owner-dispatch binding.",
     "readiness_change": 0
   },
   "ci617_receipt_evidence": {
@@ -8762,6 +8779,78 @@
     "windows_native": "NOT_RUN",
     "excludes": "all profile export/actual native profile chooser/admin snapshot/admin UI transport code; service/access/recovery/scripts/server/workflow/VERSION unchanged",
     "next": "Attach latest617 evidence+3 docs, final scan/workflow/canonicaltree/CAS, one new exactCI",
+    "readiness_change": 0
+  },
+  "pending_wizard_io_publication": {
+    "source": "c12200870264832f6ad6d7a325ef19678ee1447e",
+    "expected_parent": "f255e8ad7339af4481e0590c31c7db32ab959bfe",
+    "tree": "205e6e6e5583d669e03664ea44eafa9749c2a829",
+    "local_sha": "34aa821d1e86fc86c5d381a6bad337d28ef76068",
+    "paths": 13,
+    "added_lines": 957,
+    "deleted_lines": 182,
+    "tree_match": true,
+    "secret_pii_findings": 0,
+    "ref_cas": "PASS actualheadc122/mergedbed and unique618 independently verified",
+    "windows_compilation": "PASS exact618",
+    "windows_native": "PARTIAL processIO4/Desktop PASS; new Home/modal11+5 NOT_RUN after shutdown failure",
+    "excludes": "profile export/admin snapshot/admin transport code",
+    "readiness_change": 0
+  },
+  "local_r09_admin_task_ownership": {
+    "source": "e4c23e01f2c216162ccf4f5ba3ab535dccb6e122",
+    "paths": 2,
+    "added_lines": 117,
+    "deleted_lines": 2,
+    "implementation": "PARTIAL unconnected service-owned Admin admission/settlement/drain foundation",
+    "native_cases_written": 8,
+    "static": "PASS manual lifetime/diff/syntax2/C#5/public321/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 618,
+    "next": "Retain exact owned Admin cleanup failures before actual worker/UI transport binding",
+    "readiness_change": 0
+  },
+  "ci618_shutdown_failure": {
+    "source": "c12200870264832f6ad6d7a325ef19678ee1447e",
+    "merge": "dbed93e150be5eeafb274e88826389aacff78d0a",
+    "run_id": 39769965390,
+    "windows_job": 119794736280,
+    "ubuntu_job": 119794735960,
+    "conclusion": "FAIL",
+    "compilation": "PASS exact build identity11:21:49.067",
+    "desktop": "PASS5287 at11:40:12.906",
+    "instance": "PASS28",
+    "maintenance": "PASS126",
+    "process_io_metrics": "PASS four actual direct/agent startup/recovery child-lifetime counter collections11:38:55–11:39:02; no owner/full-app acceptance",
+    "failure": "11:43:44.509 third external startup 12s readiness timeout; underlying individual predicate/listener state UNKNOWN",
+    "home_wizard_modal": "NOT_RUN later stage not reached",
+    "full_test_progo": "FAIL ShutdownTests",
+    "package": "NOT_RUN",
+    "uploads": "SKIPPED",
+    "next": "One new diagnostic source only, not duplicate same-SHA rerun",
+    "readiness_change": 0
+  },
+  "local_ci618_shutdown_diagnostic": {
+    "source": "d919cc5ab998c655ce81bf520a505656a7431664",
+    "paths": 1,
+    "implementation": "Boolean startup readiness +owned SOCKS listener Task status/error type; every criterion/12s deadline/guarded port probe retained",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "all local profile export/admin extensions",
+    "next": "Isolate from34aa/c122 then fulltree/publication scan and one exactCI"
+  },
+  "frozen_ci618_shutdown_diagnostic": {
+    "local_code_sha": "f4659691b65b2ca957d9473b8cb75ff26069d6a1",
+    "base_local": "34aa821d1e86fc86c5d381a6bad337d28ef76068",
+    "base_public": "c12200870264832f6ad6d7a325ef19678ee1447e",
+    "source_paths": 1,
+    "source_added_lines": 19,
+    "source_deleted_lines": 8,
+    "excludes": "all profile export/admin source and tests",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "next": "Guarded exact source publication then one CI, no same-SHA rerun",
     "readiness_change": 0
   }
 }

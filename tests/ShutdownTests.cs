@@ -13,9 +13,23 @@ namespace ProGo
         private static int passed;
         private static string uninstallError;
         private static void Check(bool value, string name) { if (!value) throw new Exception(name); passed++; Console.WriteLine("PASS: " + name); }
-        private static void Wait(Func<bool> test, string name) {
+        private static void Wait(Func<bool> test, string name, Func<string> diagnostics = null) {
             var deadline = DateTime.UtcNow.AddSeconds(12);
-            while (!test()) { if (DateTime.UtcNow >= deadline) throw new Exception("Timed out: " + name); System.Threading.Thread.Sleep(40); }
+            while (!test()) { if (DateTime.UtcNow >= deadline) throw new Exception("Timed out: " + name + (diagnostics == null ? "" : "; " + diagnostics())); System.Threading.Thread.Sleep(40); }
+        }
+        private static void WaitForApplied(Process owner, AppSettings prefs, string marker, System.Threading.Tasks.Task listenerWork, int attempt, bool requirePort) {
+            bool alive = false, journal = false, windows = false, environment = false, logged = false, port = false;
+            Wait(delegate {
+                alive = !owner.HasExited; journal = File.Exists(SystemProxyService.BackupPath);
+                windows = SystemProxyService.IsApplied(prefs); environment = CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort);
+                logged = WindowsApplyCompleted(marker, prefs.HttpProxyPort);
+                port = !requirePort || alive && journal && windows && environment && logged && PortOpen(prefs.HttpProxyPort);
+                return alive && journal && windows && environment && logged && port;
+            }, attempt == 0 ? "actual proxy modes fully applied" : "external-edit fixture fully applied", delegate {
+                var listenerError = listenerWork.IsFaulted ? listenerWork.Exception.GetBaseException().GetType().Name : "none";
+                return "attempt=" + attempt + "; alive=" + alive + "; journal=" + journal + "; windows=" + windows + "; environment=" + environment
+                    + "; logged=" + logged + "; portRequired=" + requirePort + "; port=" + port + "; listener=" + listenerWork.Status + "; listenerError=" + listenerError;
+            });
         }
         private static int Uninstall(string script) {
             string shell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
@@ -132,7 +146,7 @@ namespace ProGo
                     "real phone firewall rules seeded for actual uninstall");
 
                 listener.Start();
-                System.Threading.Tasks.Task.Run(async delegate {
+                var listenerWork = System.Threading.Tasks.Task.Run(async delegate {
                     try { while (true) using (var client = await listener.AcceptTcpClientAsync()) {
                         var stream = client.GetStream(); stream.ReadTimeout = 1500;
                         if (stream.ReadByte() == 5 && stream.ReadByte() == 1 && stream.ReadByte() == 0) stream.Write(new byte[] { 5, 0 }, 0, 2);
@@ -145,9 +159,7 @@ namespace ProGo
                 using (var settings = new SettingsService()) settings.Save(prefs);
                 string applyLogMarker = LogMarker();
                 primary = Process.Start(new ProcessStartInfo(installed) { UseShellExecute = false, CreateNoWindow = true });
-                Wait(() => !primary.HasExited && File.Exists(SystemProxyService.BackupPath) && SystemProxyService.IsApplied(prefs) &&
-                    CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) &&
-                    WindowsApplyCompleted(applyLogMarker, prefs.HttpProxyPort) && PortOpen(prefs.HttpProxyPort), "actual proxy modes fully applied");
+                WaitForApplied(primary, prefs, applyLogMarker, listenerWork, 0, true);
                 string settingsBefore = File.ReadAllText(AppPaths.SettingsPath);
                 using (var locked = File.Open(SystemProxyService.BackupPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     Check(Uninstall(uninstall) != 0, "actual uninstall reports refused cleanup of a locked journal");
@@ -170,8 +182,7 @@ namespace ProGo
                 File.Copy(args[0], installed);
                 applyLogMarker = LogMarker();
                 primary = Process.Start(new ProcessStartInfo(installed) { UseShellExecute = false, CreateNoWindow = true });
-                Wait(() => !primary.HasExited && File.Exists(SystemProxyService.BackupPath) && SystemProxyService.IsApplied(prefs) && CliProxyEnvironmentService.IsAppliedToUserEnvironment(prefs.HttpProxyPort) &&
-                    WindowsApplyCompleted(applyLogMarker, prefs.HttpProxyPort), "external-edit fixture fully applied");
+                WaitForApplied(primary, prefs, applyLogMarker, listenerWork, externalAttempt, false);
                 using (var key = Registry.CurrentUser.OpenSubKey(keyPath, true)) {
                     key.SetValue("ProxyServer", "external.example.org:9090", RegistryValueKind.String);
                     key.SetValue("ProxyOverride", "external.example.org", RegistryValueKind.String);
