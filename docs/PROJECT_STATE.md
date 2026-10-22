@@ -1,12 +1,147 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `479addfd6f711831a12e1c7b49019a446f7970ce`, tree `22821ad5fdf6f654deea6eb0ab293e629b817b79`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `34740802206b6bd24ec41838ba25c44980ddec6c`, tree `4752a5e04f2b38c4516d969f466bf163f10abee6`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## CI609 FAIL — modal test assumption isolated, new private-write vectors NOT_RUN
+
+Exact source `34740802206b6bd24ec41838ba25c44980ddec6c`, merge
+`0da565ba835dbf63fc2f402eafdac3f380f23624`, tree4752a5e04f2b38c4516d969f466bf163f10abee6.
+[CI609/39733721723](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723):
+Ubuntu119674440425 SUCCESS; Windows119674440595 FAIL at06:42:52.7584245Z,
+`explicit modal close/disposal waits for its actual read result: close`.
+Compilation/build identity0.2.2+merge and complete scripts/Test-ProGo.ps1 PASS
+(06:42:36.5499890Z): Desktop5281, signing55/UI50/prep72, diagnostics actual modal/
+three chooser/Context ownership, Instance28/Maintenance126/Shutdown47. Later
+Test-HomeVpnRelay native fails after actual read-modal Cancel→Retry PASS at
+06:42:52.4008475Z. Read Close asserts passed physical cancellation/no late dialog/
+source preservation, then incorrectly required IsDisposed. Read Dispose and new
+9 store+7 owned-save+7 write-modal vectors were not reached: NOT_RUN. Python tail/
+public release-content check/pack NOT_RUN (steps SKIPPED); all uploads SKIPPED.
+
+Root cause: modal ShowDialog Close returns/hides a reusable form and requires
+explicit fixture Dispose; it does not establish IsDisposed. Microsoft contract:
+[Form.Close](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.form.close?view=netframework-4.8)
+and [ShowDialog](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.form.showdialog?view=netframework-4.8).
+Isolated fix source `d2512ed83577cb46cb4e10ca6c4d1f83ef00f376` (ProGo-ci609-fix,
+root equivalent `784194e5b1fb14f338612303b9732f8126f1d8b2`) changes only18 lines
+in tests/HomeVpnWaitingTests.cs. Close now requires actual FormClosed event,
+worker-completed/busy-false at that event, and real ShowDialog return (Modal false,
+not visible) before fixture Dispose. Explicit Dispose remains independently
+asserted and physical worker joined. Both read and write Close expectations fixed;
+no assertion disabled, deadline15s and cleanup preserved. Production code unchanged.
+Local syntax/diff PASS; fixed assertion Windows/native NOT_RUN. No blind rerun of609:
+new checking commit needed, including only this fix and current evidence docs.
+
+Independent root source `5610af7ddec886956ff269543064bf54fb333850` adds worker pending
+read and ConfirmOwnedAsync: receipt/proof/private consumption outside UI, two
+memory-only owner checks around actual retained save, physical receipt recheck after
+the final owner queue. Cancel/save failure/new receipt/closed owner keep the request;
+accepted save followed by cancellation is reported as saved with pending receipt.
+Eight native vectors written using real DPAPI, real delete/replace locks, changed
+request, live UI heartbeat and bounded join/cleanup. Source/syntax/C#5/public320/0/
+secretPII0 PASS; compiler/native NOT_RUN. API not yet used by actual configure UI.
+Source a2fd/02bc/5610 remains excluded from isolated modal-fix checking. Next after
+it: connect actual configure form to owned read/save/confirmation, preserve receipt
+and Cancel/close outcomes. Whole R09 FAIL, R11 PARTIAL. I58–80/Y22 raw21.75 exact608,
+change0. Last known ZIP remains exact608 only, no delivered/installed package.
+Ниже checkpoints — история; running609 status superseded by this completed result.
+
+## R09 common owned service write — local02bc9ef, Windows NOT_RUN
+
+Source `02bc9efe1f15caffc2704a04e37505b5e3e70ae9`: HomeVpnService.SetShareOriginAsync
+и SetHomeAddressAsync используют один retained privateAddressWork/addressWrite.
+Резервирование task/CTS предшествует private I/O; exact duplicate join учитывает
+тип адреса, canonical value, captured server ID и тот же Access object. Иная
+запись отказывается. Worker повторно проверяет Access/server при commit; cache/
+revision обновляются только после фактической записи в live scope. Stop/Dispose
+join/cancel-before-admission/accepted-result/retained cleanup общие для обеих
+записей. Sync SetShareOrigin теперь compatibility adapter GetResult над owned API:
+actual configure/recovery callbacks пока блокируют UI и остаются следующей задачей.
+
+Прежние7 home native cases сохранены,9 share cases дополнительно покрывают Stop/
+Dispose до и после admission, cancel, cleanup-lock→unlock→Stop→Retry, stale server/
+access и cross-kind/same-ID-different-access refusal; real DPAPI/files, heartbeat,
+bounded waits и finally join/restore. Локально diff/syntax/C#5 structure/public320/0/
+secretPII0 PASS, compiler/native NOT_RUN. Source ещё не опубликован/не входит609.
+CI609 Windows119674440595 продолжает Repository hygiene and build, Ubuntu SUCCESS.
+Следующий этап — async receipt read/acceptance/consume с сохранением same-request/
+owner boundary до подключения actual configure UI. I58–80/Y22 exact608,0 роста.
+
+## R09 shared protected-address primitive — local a2fd23e, Windows NOT_RUN
+
+Source `a2fd23e8205e50f69991fb877bee89361f26477a`: HomeVpnAddressWrite.ForShareOrigin
+использует прежний staged DPAPI/atomic Move-or-Replace/retained cleanup механизм.
+Destination задаётся только canonical32-hex server ID; HTTPS нормализуется прежним
+HomeProfileShare.Origin. Home constructor/API и commit/cancel boundary сохранены.
+Native suite параметризован: прежние9 home +9 share cases,5 invalid ID +4 invalid
+origin refusals, реальные сохранённые home/other-server bytes защищены assertions.
+Waits bounded, release/join/own-stage cleanup и backup restore в finally.
+
+Проверки локально: diff, syntax/C#5 await structure и public320/0 PASS; actionable
+secret/PII0. Один scanner email-pattern — намеренный отрицательный URL fixture в
+зарезервированном .example, вручную классифицирован; реальных секретов не найдено.
+Linux без Windows compiler/DPAPI/native: compilation и native NOT_RUN. Код ещё не
+подключён к service/UI, не опубликован и не входит в running609. Баллы не изменены.
+Следующий этап: единый retained private-write slot для home/share в HomeVpnService,
+immutable Access/server capture и logical acceptance, cancel/Stop/Dispose/stale
+scope native cases; прежний UI/recovery receipt boundary отдельно. Проверять тот
+же609, не создавать дубликат. I58–80/Y22 exact608,0 роста; whole R09 FAIL.
+
+## CI609 опубликован — новый адресный/modal блок проверяется
+
+Публикация подтверждена фактическим head PR88: source
+`34740802206b6bd24ec41838ba25c44980ddec6c`, merge
+`0da565ba835dbf63fc2f402eafdac3f380f23624`, полный tree
+`4752a5e04f2b38c4516d969f466bf163f10abee6` = isolated local
+`968fe3d461f402a892ebf8662cf84c2eb59223e6` (ProGo-ci608-followups).
+[CI609/39733721723](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723)
+единственный известный запуск для этого source: Ubuntu119674440425 SUCCESS,
+Windows119674440595 in_progress (Repository hygiene and build). Compilation/
+native нового source остаются NOT_RUN до чтения завершённого результата.
+Проверенный ранее CI608 SUCCESS относится только к source479addfd/merge36f39fb0.
+
+Перед CAS479a→3474 проверены все11 файлов:8 source/test +3 evidence docs,
+secret/PII0, public320/0, source/C#5 structure, diff, JSON31+55 и полное совпадение
+tree. Репозиторий public перепроверен; workflows/VERSION unchanged, автоматическая
+загрузка бинарных артефактов OFF, release не запускается этим PR/branch push.
+Никакого повторного push/CI: после обрыва сначала проверить этот же run.
+
+Новый scope: staged protected home-address write, retained service ownership/
+Stop/Dispose/commit admission, actual async wizard save и явный DialogResult.None
+после CancelButton для трёх ожиданий. Написаны9 store +7 owned-save +7 write-modal
+и3 read-modal cases с ShowDialog(), bounded deadline и owned cleanup. До результата
+609 это не Windows PASS. Полный R09/R10/R11/owner/installer acceptance остаётся
+открытым. Общий startup Program.Main/ShowQr→VPS и целевой ПК NOT_RUN.
+
+Следующая независимая микрозадача: общий staged private-address primitive для
+captured per-server HTTPS origin с безопасным фиксированным destination; сохранить
+home-address контракты и добавить native cancellation/refusal/real-file-lock cases.
+Далее — owned share persistence и прежний same-request receipt boundary. Изменения
+не входят в609; не менять текущий проверяемый source ради checkpoint-документов.
+Реализация58–80/100, проверенная готовность22/100 (raw21.75, exact608), изменение0.
+Ниже — история, включая запись object до фактического CAS.
+
+## Pending address/modal publication — object3474, ref NOT_RUN
+
+Object `34740802206b6bd24ec41838ba25c44980ddec6c`, parent479addfd6f711831a12e1c7b49019a446f7970ce,
+full tree `4752a5e04f2b38c4516d969f466bf163f10abee6` = isolated local
+`968fe3d461f402a892ebf8662cf84c2eb59223e6` in ProGo-ci608-followups.
+11files1424add299delete: frozen8 related address source/test paths +3 evidence
+docs. SecretPII0/public320/0/source/C#5/diff/JSON31+55/full-tree equality PASS.
+Workflows/VERSION unchanged/public uploads OFF; integration PR/push не trigger
+release.608 completed SUCCESS, новый head не отменяет running predecessor.
+
+New address writer/real modal phone fix Windows compilation/native NOT_RUN;
+608 не наследуется. Future share persistence implementation excluded (trace
+only in docs). I58–80/Y22 raw21.75 exact608 unchanged. После обрыва сначала actual
+PR head/run до retry. Далее CAS expected479a→3474 without force, один automatic
+PR CI; record exact merge/run/jobs. No binary/release/main/owner PC/VPS actions.
 
 ## CI608 full SUCCESS — live read routes, address/modal-save excluded
 

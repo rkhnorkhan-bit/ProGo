@@ -1,3 +1,81 @@
+## CI609 FAIL — modal test assumption isolated, new private-write vectors NOT_RUN
+
+Exact source `34740802206b6bd24ec41838ba25c44980ddec6c`, merge
+`0da565ba835dbf63fc2f402eafdac3f380f23624`, tree4752a5e04f2b38c4516d969f466bf163f10abee6.
+[CI609/39733721723](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723):
+Ubuntu119674440425 SUCCESS; Windows119674440595 FAIL at06:42:52.7584245Z,
+`explicit modal close/disposal waits for its actual read result: close`.
+Compilation/build identity0.2.2+merge and complete scripts/Test-ProGo.ps1 PASS
+(06:42:36.5499890Z): Desktop5281, signing55/UI50/prep72, diagnostics actual modal/
+three chooser/Context ownership, Instance28/Maintenance126/Shutdown47. Later
+Test-HomeVpnRelay native fails after actual read-modal Cancel→Retry PASS at
+06:42:52.4008475Z. Read Close asserts passed physical cancellation/no late dialog/
+source preservation, then incorrectly required IsDisposed. Read Dispose and new
+9 store+7 owned-save+7 write-modal vectors were not reached: NOT_RUN. Python tail/
+public release-content check/pack NOT_RUN (steps SKIPPED); all uploads SKIPPED.
+
+Root cause: modal ShowDialog Close returns/hides a reusable form and requires
+explicit fixture Dispose; it does not establish IsDisposed. Microsoft contract:
+[Form.Close](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.form.close?view=netframework-4.8)
+and [ShowDialog](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.form.showdialog?view=netframework-4.8).
+Isolated fix source `d2512ed83577cb46cb4e10ca6c4d1f83ef00f376` (ProGo-ci609-fix,
+root equivalent `784194e5b1fb14f338612303b9732f8126f1d8b2`) changes only18 lines
+in tests/HomeVpnWaitingTests.cs. Close now requires actual FormClosed event,
+worker-completed/busy-false at that event, and real ShowDialog return (Modal false,
+not visible) before fixture Dispose. Explicit Dispose remains independently
+asserted and physical worker joined. Both read and write Close expectations fixed;
+no assertion disabled, deadline15s and cleanup preserved. Production code unchanged.
+Local syntax/diff PASS; fixed assertion Windows/native NOT_RUN. No blind rerun of609:
+new checking commit needed, including only this fix and current evidence docs.
+
+Independent root source `5610af7ddec886956ff269543064bf54fb333850` adds worker pending
+read and ConfirmOwnedAsync: receipt/proof/private consumption outside UI, two
+memory-only owner checks around actual retained save, physical receipt recheck after
+the final owner queue. Cancel/save failure/new receipt/closed owner keep the request;
+accepted save followed by cancellation is reported as saved with pending receipt.
+Eight native vectors written using real DPAPI, real delete/replace locks, changed
+request, live UI heartbeat and bounded join/cleanup. Source/syntax/C#5/public320/0/
+secretPII0 PASS; compiler/native NOT_RUN. API not yet used by actual configure UI.
+Source a2fd/02bc/5610 remains excluded from isolated modal-fix checking. Next after
+it: connect actual configure form to owned read/save/confirmation, preserve receipt
+and Cancel/close outcomes. Whole R09 FAIL, R11 PARTIAL. I58–80/Y22 raw21.75 exact608,
+change0. Last known ZIP remains exact608 only, no delivered/installed package.
+Ниже checkpoints — история; running609 status superseded by this completed result.
+
+## CI609 опубликован — новый адресный/modal блок проверяется
+
+Публикация подтверждена фактическим head PR88: source
+`34740802206b6bd24ec41838ba25c44980ddec6c`, merge
+`0da565ba835dbf63fc2f402eafdac3f380f23624`, полный tree
+`4752a5e04f2b38c4516d969f466bf163f10abee6` = isolated local
+`968fe3d461f402a892ebf8662cf84c2eb59223e6` (ProGo-ci608-followups).
+[CI609/39733721723](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723)
+единственный известный запуск для этого source: Ubuntu119674440425 SUCCESS,
+Windows119674440595 in_progress (Repository hygiene and build). Compilation/
+native нового source остаются NOT_RUN до чтения завершённого результата.
+Проверенный ранее CI608 SUCCESS относится только к source479addfd/merge36f39fb0.
+
+Перед CAS479a→3474 проверены все11 файлов:8 source/test +3 evidence docs,
+secret/PII0, public320/0, source/C#5 structure, diff, JSON31+55 и полное совпадение
+tree. Репозиторий public перепроверен; workflows/VERSION unchanged, автоматическая
+загрузка бинарных артефактов OFF, release не запускается этим PR/branch push.
+Никакого повторного push/CI: после обрыва сначала проверить этот же run.
+
+Новый scope: staged protected home-address write, retained service ownership/
+Stop/Dispose/commit admission, actual async wizard save и явный DialogResult.None
+после CancelButton для трёх ожиданий. Написаны9 store +7 owned-save +7 write-modal
+и3 read-modal cases с ShowDialog(), bounded deadline и owned cleanup. До результата
+609 это не Windows PASS. Полный R09/R10/R11/owner/installer acceptance остаётся
+открытым. Общий startup Program.Main/ShowQr→VPS и целевой ПК NOT_RUN.
+
+Следующая независимая микрозадача: общий staged private-address primitive для
+captured per-server HTTPS origin с безопасным фиксированным destination; сохранить
+home-address контракты и добавить native cancellation/refusal/real-file-lock cases.
+Далее — owned share persistence и прежний same-request receipt boundary. Изменения
+не входят в609; не менять текущий проверяемый source ради checkpoint-документов.
+Реализация58–80/100, проверенная готовность22/100 (raw21.75, exact608), изменение0.
+Ниже — история, включая запись object до фактического CAS.
+
 ## CI608 full SUCCESS — live read routes, address/modal-save excluded
 
 [CI608/39730132565](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39730132565)

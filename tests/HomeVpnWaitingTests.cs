@@ -427,12 +427,13 @@ namespace ProGo
                 using (var modalGuard = new System.Windows.Forms.Timer { Interval = 20 })
                 {
                     HomeVpnWizardForm form = null; ProGoForm dialog = null;
-                    bool shown = false, fresh = false, closeExpected = false; int phase = 0, turns = 0, reads = 0, readThread = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                    bool shown = false, fresh = false, closeExpected = false, closed = false, closedAfterRead = false; int phase = 0, turns = 0, reads = 0, readThread = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
                     byte[] retryBytes = null; var expected = original.Keys.ToDictionary(path => path, File.ReadAllBytes);
                     var existingForms = Application.OpenForms.Cast<Form>().ToArray();
                     try {
                         Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
                         form = new HomeVpnWizardForm(service, clipboard);
+                        form.FormClosed += delegate { closed = true; closedAfterRead = service.ShareRefreshWork.IsCompleted && !(bool)Field(form, "busy"); };
                         form.BeforeShareRead = delegate(string stage) {
                             Interlocked.Exchange(ref readThread, Thread.CurrentThread.ManagedThreadId);
                             if (stage == "read") Interlocked.Increment(ref reads);
@@ -467,11 +468,14 @@ namespace ProGo
                                 release.Set(); phase = 3; return false;
                             }
                             if (phase == 3) {
-                                if (!service.ShareRefreshWork.IsCompleted || (bool)Field(form, "busy")) return false;
+                                if (!service.ShareRefreshWork.IsCompleted || (bool)Field(form, "busy") || (route == "close" && form.Modal)) return false;
                                 bool cancelled = false; try { service.ShareRefreshWork.GetAwaiter().GetResult(); } catch (OperationCanceledException) { cancelled = true; }
                                 check(cancelled && !shown && !relay.IsRunning && !service.HasOwnedResources, "cancelled modal configure cannot open a late dialog or admit external work: " + route);
                                 foreach (var pair in expected) check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "modal configure cancellation preserves protected bytes: " + route);
-                                if (route != "cancel-retry") { check(form.IsDisposed, "explicit modal close/disposal waits for its actual read result: " + route); return true; }
+                                // ShowDialog Close returns a hidden, reusable form;
+                                // fixture Dispose below owns its final destruction.
+                                if (route != "cancel-retry") { check(route == "close" ? closed && closedAfterRead && !form.Visible && !form.Modal : form.IsDisposed,
+                                    "explicit modal close returns after actual read settlement; explicit disposal retains worker ownership: " + route); return true; }
                                 check(form.Visible && button.Enabled && ((Label)Field(form, "status")).Text.Contains("Чтение адреса отменено"), "settled modal cancellation keeps explicit configure retry available");
                                 HomeVpnPrivateFiles.Save(shareName, "https://retry.example"); retryBytes = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat"));
                                 phase = 4; modalGuard.Start(); button.PerformClick(); return false;
@@ -512,10 +516,11 @@ namespace ProGo
                     using (var publish = new ManualResetEventSlim())
                     {
                         HomeVpnWizardForm form = null; Task<bool> first = null; FileStream held = null; int phase = 0, turns = 0, workerThread = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
-                        bool afterAdmission = route.StartsWith("accepted-", StringComparison.Ordinal), closeExpected = false;
+                        bool afterAdmission = route.StartsWith("accepted-", StringComparison.Ordinal), closeExpected = false, closed = false, closedAfterWrite = false;
                         try {
                             Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
                             form = new HomeVpnWizardForm(service, clipboard);
+                            form.FormClosed += delegate { closed = true; closedAfterWrite = first != null && first.IsCompleted && !(bool)Field(form, "busy"); };
                             form.BeforeHomeAddressIo = delegate(string stage) {
                                 Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
                                 if (stage == "prepared") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Wizard address prepare deadline"); }
@@ -549,12 +554,13 @@ namespace ProGo
                                     release.Set(); publish.Set(); phase = 4; return false;
                                 }
                                 if (phase == 4) {
-                                    if (!first.IsCompleted || (bool)Field(form, "busy")) return false;
+                                    if (!first.IsCompleted || (bool)Field(form, "busy") || ((route == "close" || route == "accepted-close") && form.Modal)) return false;
                                     bool cancelled = false, saved = false; Exception failure = null;
                                     try { saved = first.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; cancelled = ex is OperationCanceledException; }
                                     check(route == "error-retry" ? failure is IOException && before.SequenceEqual(File.ReadAllBytes(addressPath)) :
                                         afterAdmission ? saved && !cancelled && HomeVpnPrivateFiles.Load("home-address") == "after.example" : cancelled && before.SequenceEqual(File.ReadAllBytes(addressPath)), "actual modal result distinguishes accepted persistence from confirmed cancellation: " + route);
-                                    if (closeExpected) { check(form.IsDisposed, "explicit modal close/disposal admits no late page or controls: " + route); return true; }
+                                    if (closeExpected) { check(route.EndsWith("dispose", StringComparison.Ordinal) ? form.IsDisposed : closed && closedAfterWrite && !form.Visible && !form.Modal,
+                                        "explicit modal close returns after physical save settlement; disposal admits no late controls: " + route); return true; }
                                     check(form.Visible && next.Enabled && (int)Field(form, "step") == 2, "cancelled modal save stays open with an explicit next action: " + route);
                                     if (afterAdmission) { check(((Label)Field(form, "status")).Text.Contains("уже сохранён"), "late cancellation reports accepted address as saved without claiming rollback"); return true; }
                                     check(((Label)Field(form, "status")).Text.Contains(route == "error-retry" ? "Не удалось подтвердить" : "Сохранение адреса отменено"), "modal address cancellation or real file error gives an honest actionable retry result: " + route);

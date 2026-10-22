@@ -3738,7 +3738,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "479addfd6f711831a12e1c7b49019a446f7970ce",
+  "candidate_source": "34740802206b6bd24ec41838ba25c44980ddec6c",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3836,22 +3836,26 @@
     }
   ],
   "ci_candidate": {
-    "source": "479addfd6f711831a12e1c7b49019a446f7970ce",
-    "tested_merge": "36f39fb080e0195cad40922793b298a5da500914",
-    "local_sha": "8417f9a9b9d51cadeac8a29088a689d4b602c0f1",
-    "tree": "22821ad5fdf6f654deea6eb0ab293e629b817b79",
-    "run_id": 39730132565,
-    "run_number": 608,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39730132565",
+    "source": "34740802206b6bd24ec41838ba25c44980ddec6c",
+    "tested_merge": "0da565ba835dbf63fc2f402eafdac3f380f23624",
+    "local_sha": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
+    "tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
+    "run_id": 39733721723,
+    "run_number": 609,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723",
     "status": "completed",
-    "conclusion": "success",
-    "windows_compilation": "PASS exact608 only",
-    "windows_native": "PASS complete scripts/Test-ProGo.ps1 suites and later tail at exact608; native configure read and imported-data constructor scoped proof only. Program normal GUI process/target, full wizard ShowQr→VPS, phone modal cancellation fix and all address-write stages remain NOT_RUN",
+    "conclusion": "failure",
+    "windows_compilation": "PASS exact609 main build and native test harness compile; build identity verified",
+    "windows_native": "PARTIAL exact609: Test-ProGo.ps1 full PASS/Desktop5281; actual read-modal Cancel→Retry PASS, next Close assertion FAIL due incorrect IsDisposed expectation; read Dispose/store9/owned-save7/write-modal7 NOT_RUN",
     "jobs": {
-      "windows": 119663025746,
-      "ubuntu": 119663025549
+      "windows": 119674440595,
+      "ubuntu": 119674440425
     },
-    "excludes": "root address primitive418/servicecf29 and wizard async save stage3"
+    "ubuntu": "SUCCESS",
+    "scope": "8 frozen address/modal source-test paths and3 evidence docs; home store9/owned-save7/write-modal7/read-modal3 native cases written, not yet credited",
+    "excludes": "root share primitivea2fd/service02bc/confirmation5610; fixed modal expectations784/d251; whole R09/R10/R11/owner acceptance",
+    "failure": "2026-10-22T06:42:52.7584245Z explicit modal close/disposal waits for its actual read result: close; ShowDialog Close does not Dispose",
+    "package": "NOT_RUN pack skipped; uploads SKIPPED all"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -4990,6 +4994,28 @@
         "late_python": "28 total=26PASS2SKIP"
       },
       "scoring": "raw21.75/display22 unchanged, exact28 anchors, same F22 partial criterion using new production constructor message"
+    },
+    {
+      "source": "34740802206b6bd24ec41838ba25c44980ddec6c",
+      "tested_merge": "0da565ba835dbf63fc2f402eafdac3f380f23624",
+      "local_sha": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
+      "tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
+      "run_id": 39733721723,
+      "run_number": 609,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723",
+      "status": "completed",
+      "conclusion": "failure",
+      "windows_compilation": "PASS exact609 main build and native test harness compile; build identity verified",
+      "windows_native": "PARTIAL exact609: Test-ProGo.ps1 full PASS/Desktop5281; actual read-modal Cancel→Retry PASS, next Close assertion FAIL due incorrect IsDisposed expectation; read Dispose/store9/owned-save7/write-modal7 NOT_RUN",
+      "jobs": {
+        "windows": 119674440595,
+        "ubuntu": 119674440425
+      },
+      "ubuntu": "SUCCESS",
+      "scope": "8 frozen address/modal source-test paths and3 evidence docs; home store9/owned-save7/write-modal7/read-modal3 native cases written, not yet credited",
+      "excludes": "root share primitivea2fd/service02bc/confirmation5610; fixed modal expectations784/d251; whole R09/R10/R11/owner acceptance",
+      "failure": "2026-10-22T06:42:52.7584245Z explicit modal close/disposal waits for its actual read result: close; ShowDialog Close does not Dispose",
+      "package": "NOT_RUN pack skipped; uploads SKIPPED all"
     }
   ],
   "retention_microtask": {
@@ -5125,45 +5151,35 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI608 full SUCCESS; frozen address d651 waiting evidence docs/publication; share acceptance trace complete",
+    "phase": "CI609 FAIL isolated to modal Close fixture assumption; narrow checking prepared",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "8417f9a9b9d51cadeac8a29088a689d4b602c0f1",
-    "published_sha": "479addfd6f711831a12e1c7b49019a446f7970ce",
-    "ci_run_id": 39730132565,
-    "windows_compilation": "PASS exact608 only",
-    "windows_native": "PASS complete scripts/Test-ProGo.ps1 suites and later tail at exact608; native configure read and imported-data constructor scoped proof only. Program normal GUI process/target, full wizard ShowQr→VPS, phone modal cancellation fix and all address-write stages remain NOT_RUN",
-    "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
-    "next": "Add exact608 evidence docs to frozen addressd651 source, full scan/tree and one new checking; preserve shared share-persistence boundaries in later independent work",
-    "readiness_change": 0,
-    "tree": "22821ad5fdf6f654deea6eb0ab293e629b817b79",
-    "publication_scan": {
-      "files": 6,
-      "added_lines": 2048,
-      "findings": 0,
-      "tree_match": true,
-      "workflow": "unchanged/uploadsOFF"
-    },
-    "tested_merge": "36f39fb080e0195cad40922793b298a5da500914",
-    "ci_run_number": 608,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39730132565",
+    "local_sha": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
+    "local_development_sha": "784194e5b1fb14f338612303b9732f8126f1d8b2",
+    "published_sha": "34740802206b6bd24ec41838ba25c44980ddec6c",
+    "tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
+    "tested_merge": "0da565ba835dbf63fc2f402eafdac3f380f23624",
+    "ci_run_id": 39733721723,
+    "ci_run_number": 609,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39733721723",
     "jobs": {
-      "windows": 119663025746,
-      "ubuntu": 119663025549
+      "windows": 119674440595,
+      "ubuntu": 119674440425
     },
     "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "windows_compilation": "PASS exact609 main build and native test harness compile; build identity verified",
+    "windows_native": "PARTIAL exact609: Test-ProGo.ps1 full PASS/Desktop5281; actual read-modal Cancel→Retry PASS, next Close assertion FAIL due incorrect IsDisposed expectation; read Dispose/store9/owned-save7/write-modal7 NOT_RUN",
     "ubuntu": "SUCCESS",
-    "previous_checkpoint_fields": {
-      "previous_ci_run_id": 39685125066,
-      "next_local_source": "de155d5a786fa1965318b7149fb443ec173eb08c",
-      "pending_scope": "common lifecycle c0f5610 +9 native fixtures (total50), read-only server capability and checkpoints; Windows NOT_RUN"
+    "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
+    "publication_scan": {
+      "files": 11,
+      "added_lines": 1424,
+      "deleted_lines": 299,
+      "findings": 0,
+      "tree_match": true
     },
-    "ci_conclusion": "success",
-    "local_development_sha": "88295d0758f1a6d18e51f9f18761eba0411cc5db",
-    "pending_independent_local": [
-      "staged initializerad3/warnings00a/loading7d9/share retrye385: local checkingdfe, compiler/native NOT_RUN",
-      "wizard configure/QR share read5cce: excluded checkingdfe, compiler/native NOT_RUN",
-      "default startup/cache and async private writes/recovery remain open"
-    ]
+    "next": "Publish isolated d251 modal Close expectation fix plus evidence docs after scan/full-tree equality; one new source CI. Root share stages excluded; then actual configure integration",
+    "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5256,7 +5272,7 @@
     "A": 0,
     "reason": "Exact608 same28 parent partial levels D0.5/P0.5/A0 weight87 give21.75. F22 copy/import reload anchor now production background ctor rather than legacy, same partial criterion; no weight/level increase",
     "local_lifecycle": "PASS scoped full608 published routes; new phone modal risk remains partial local fix, full R09/R10/R11/owner open",
-    "candidate_note": "Only source479a/merge36f3; root address418/cf29/modal882 compilation/native NOT_RUN. Existing Show() phone parent cases do not prove modal fix",
+    "candidate_note": "609 overall FAIL, scoped compilation/Test-ProGo/read-modal CancelRetry PASS; later modal close expectation fix/native not yet verified. Scoring stays exact608, raw21.75 unchanged.",
     "score_anchors": {
       "F01": "2026-10-22T05:58:23.9995590Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T05:52:59.5675158Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -5317,7 +5333,7 @@
       "F29",
       "F31"
     ],
-    "runner_package_sha256": "3f40efcfa8a109e166509e42eb75b0fceecd9dc87c5a959873a7c99ca69e071e"
+    "runner_package_sha256": "cc39eef38418287617e8bc2ddb9c175a7b0bbe8474ee477b428bebc4d2bb7ab2"
   },
   "local_launch_lifecycle_microtask": {
     "status": "PARTIAL",
@@ -7105,6 +7121,50 @@
         },
         "candidate_source_scope": "Current published checking candidate, CI588 in progress; last checked partial evidence is CI587; root lifecycle WIP excluded"
       }
+    },
+    {
+      "checkpoint": "before actual CI609 verification",
+      "active_work": {
+        "phase": "CI608 full SUCCESS; frozen address d651 waiting evidence docs/publication; share acceptance trace complete",
+        "base_source": "656b3d65e03d540be859ee69635c492631093446",
+        "local_sha": "8417f9a9b9d51cadeac8a29088a689d4b602c0f1",
+        "published_sha": "479addfd6f711831a12e1c7b49019a446f7970ce",
+        "ci_run_id": 39730132565,
+        "windows_compilation": "PASS exact608 only",
+        "windows_native": "PASS complete scripts/Test-ProGo.ps1 suites and later tail at exact608; native configure read and imported-data constructor scoped proof only. Program normal GUI process/target, full wizard ShowQr→VPS, phone modal cancellation fix and all address-write stages remain NOT_RUN",
+        "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
+        "next": "Add exact608 evidence docs to frozen addressd651 source, full scan/tree and one new checking; preserve shared share-persistence boundaries in later independent work",
+        "readiness_change": 0,
+        "tree": "22821ad5fdf6f654deea6eb0ab293e629b817b79",
+        "publication_scan": {
+          "files": 6,
+          "added_lines": 2048,
+          "findings": 0,
+          "tree_match": true,
+          "workflow": "unchanged/uploadsOFF"
+        },
+        "tested_merge": "36f39fb080e0195cad40922793b298a5da500914",
+        "ci_run_number": 608,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39730132565",
+        "jobs": {
+          "windows": 119663025746,
+          "ubuntu": 119663025549
+        },
+        "ci_status": "completed",
+        "ubuntu": "SUCCESS",
+        "previous_checkpoint_fields": {
+          "previous_ci_run_id": 39685125066,
+          "next_local_source": "de155d5a786fa1965318b7149fb443ec173eb08c",
+          "pending_scope": "common lifecycle c0f5610 +9 native fixtures (total50), read-only server capability and checkpoints; Windows NOT_RUN"
+        },
+        "ci_conclusion": "success",
+        "local_development_sha": "88295d0758f1a6d18e51f9f18761eba0411cc5db",
+        "pending_independent_local": [
+          "staged initializerad3/warnings00a/loading7d9/share retrye385: local checkingdfe, compiler/native NOT_RUN",
+          "wizard configure/QR share read5cce: excluded checkingdfe, compiler/native NOT_RUN",
+          "default startup/cache and async private writes/recovery remain open"
+        ]
+      }
     }
   ],
   "latest_runner_package": {
@@ -7200,6 +7260,24 @@
         "ubuntu": 119654028836
       },
       "excludes": "root wizard5cce/default startup/private write followups"
+    },
+    {
+      "source": "479addfd6f711831a12e1c7b49019a446f7970ce",
+      "tested_merge": "36f39fb080e0195cad40922793b298a5da500914",
+      "local_sha": "8417f9a9b9d51cadeac8a29088a689d4b602c0f1",
+      "tree": "22821ad5fdf6f654deea6eb0ab293e629b817b79",
+      "run_id": 39730132565,
+      "run_number": 608,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39730132565",
+      "status": "completed",
+      "conclusion": "success",
+      "windows_compilation": "PASS exact608 only",
+      "windows_native": "PASS complete scripts/Test-ProGo.ps1 suites and later tail at exact608; native configure read and imported-data constructor scoped proof only. Program normal GUI process/target, full wizard ShowQr→VPS, phone modal cancellation fix and all address-write stages remain NOT_RUN",
+      "jobs": {
+        "windows": 119663025746,
+        "ubuntu": 119663025549
+      },
+      "excludes": "root address primitive418/servicecf29 and wizard async save stage3"
     }
   ],
   "connection_recovery_20261022": {
@@ -7313,7 +7391,11 @@
     "worktree": "ProGo-ci608-followups",
     "scope": "8 source/test paths: staged address store418/servicecf29/actual modal wizard882 +command/main gates; no new persistence work",
     "checks": "8files553add52delete source/syntax/C#5 structure/secretPII0/public320/0/diff PASS; compiler/native NOT_RUN",
-    "next": "Preserve source freeze, attach exact608 evidence docs only after same run completes; next narrow source publication; independent share callback/owner/request trace"
+    "next": "Read completed exact609 logs; no retry or inherited608 success",
+    "final_local_source": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
+    "final_tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
+    "published_source": "34740802206b6bd24ec41838ba25c44980ddec6c",
+    "run_id": 39733721723
   },
   "r09_share_persistence_trace": {
     "status": "PASS source trace only, implementation TODO, runtime latency NOT_RUN",
@@ -7354,5 +7436,66 @@
     ],
     "scoring_change": 0,
     "excludes": "CI608 and frozen addressd651 unchanged"
+  },
+  "pending_address_write_publication": {
+    "source_object": "34740802206b6bd24ec41838ba25c44980ddec6c",
+    "expected_parent": "479addfd6f711831a12e1c7b49019a446f7970ce",
+    "local_source": "968fe3d461f402a892ebf8662cf84c2eb59223e6",
+    "tree": "4752a5e04f2b38c4516d969f466bf163f10abee6",
+    "publication": "PASS CAS and actual PR head verified; single CI609",
+    "scope": "8 frozen address source/test paths and3 evidence docs; future share persistence implementation excluded",
+    "checks": "11files1424add299delete secretPII0/public320/0/source/C#5 structure/diff/JSON31+55/full-tree equality; workflows/VERSION unchanged/public uploadsOFF;608 completed SUCCESS",
+    "windows_compilation": "PASS exact609 main build and native test harness compile; build identity verified",
+    "windows_native": "PARTIAL exact609: Test-ProGo.ps1 full PASS/Desktop5281; actual read-modal Cancel→Retry PASS, next Close assertion FAIL due incorrect IsDisposed expectation; read Dispose/store9/owned-save7/write-modal7 NOT_RUN",
+    "next": "Publish isolated d251 modal Close expectation fix plus evidence docs after scan/full-tree equality; one new source CI. Root share stages excluded; then actual configure integration",
+    "run_id": 39733721723,
+    "run_number": 609,
+    "merge": "0da565ba835dbf63fc2f402eafdac3f380f23624",
+    "jobs": {
+      "windows": 119674440595,
+      "ubuntu": 119674440425
+    }
+  },
+  "local_r09_share_address_primitive": {
+    "source": "a2fd23e8205e50f69991fb877bee89361f26477a",
+    "status": "PARTIAL",
+    "implementation": "PASS narrow source factory only, not service/UI integration",
+    "checks": "PASS diff/syntax/C#5 await structure/public320/0/actionable secret-PII0; one manually classified synthetic .example URL fixture",
+    "native_cases_written": "9 home preserved +9 share +5 invalid IDs +4 invalid origins; actual protected home and other-server bytes, real file sharing and cleanup retry",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN; excluded running609",
+    "next": "Common owned service private-write slot and captured access/server acceptance; then UI/recovery receipt boundary"
+  },
+  "local_r09_share_address_ownership": {
+    "source": "02bc9efe1f15caffc2704a04e37505b5e3e70ae9",
+    "status": "PARTIAL",
+    "implementation": "PASS scoped service source; actual configure/recovery UI remains synchronous compatibility adapter",
+    "checks": "PASS diff/syntax/C#5 structure/public320/0/secretPII0",
+    "native_cases_written": "7 home retained;9 share incl cancellation/Stop/Dispose/accepted outcome/cleanup retry/stale Access/server/cross-kind and different Access duplicate refusal",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN; excluded609",
+    "next": "Async share request/receipt preparation and same-request consumption with retained physical persistence; then actual configure UI"
+  },
+  "local_r09_share_confirmation_worker": {
+    "source": "5610af7ddec886956ff269543064bf54fb333850",
+    "status": "PARTIAL",
+    "implementation": "PASS narrow source new worker API, not actual configure UI integration",
+    "checks": "PASS diff/syntax/C#5 await structure/public320/0/secretPII0",
+    "native_cases_written": 8,
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN; excluded isolated modal fix",
+    "next": "Wire actual configure form owned pending read, save and receipt confirmation; honest close/cancel outcome"
+  },
+  "local_ci609_modal_close_fix": {
+    "root_source": "784194e5b1fb14f338612303b9732f8126f1d8b2",
+    "isolated_source": "d2512ed83577cb46cb4e10ca6c4d1f83ef00f376",
+    "worktree": "ProGo-ci609-fix",
+    "scope": "one test file12add6delete; actual FormClosed plus completion order and modal return, explicit disposal separate; production unchanged",
+    "status": "PARTIAL",
+    "checks": "PASS source/syntax/diff; native/compiler NOT_RUN",
+    "next": "Evidence docs then exact scope/scan/tree/CAS source347; no609 duplicate rerun"
   }
 }
