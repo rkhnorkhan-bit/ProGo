@@ -1,3 +1,72 @@
+## Frozen actual-SSH boundary fixture fix — one file on exact619
+
+Code `b1eec12581c67a53c7ecc0fbdd512488f0c0b904`, code treebabe3b22bf81ed9bc1e9b12035fa893c9f9d5c76,
+ProGo-ci619-boundary on5c5ac7e/f682. Root5387ddeb narrow test fix only,19add6delete.
+Unchanged original SSH Close assertions after a bounded actual command admission;
+finally releases/joins exact response/task/snapshot. Production files and all
+export/Admin extensions/default configure binding excluded. Fullsource manual/diff/
+public320/0/syntax/C#5 PASS; new Windows compiler/native NOT_RUN. Next latest3 docs
+freeze, added-content secret/PII and fresh public workflow/head checks, fulltree equality,
+guarded f682→new source CAS once.619 FAIL/partial proofs and617 last full SUCCESS
+kept separately. I58–80/Y22/raw21.75/delta0. History below.
+
+## CI619 FAIL after full Test-ProGo PASS — asynchronous fixture boundary fix
+
+Exact source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, merge
+`5d615896c349051606e6212ed119b3a2cb8ce356`, run39773542091 Windows119806729629 FAIL,
+Ubuntu119806729392 SUCCESS, completed log checked. Build identity11:50:13.807;
+full Test-ProGo step SUCCESS, Desktop5287 PASS12:08:30.718/Instance28/Maintenance126/
+Shutdown47 PASS12:12:04.641. Prior618 startup timeout did not reproduce; underlying
+predicate cause still UNKNOWN, diagnostic retained (no fabricated root-cause fix).
+Four actual direct/agent startup/recovery latency/CPU/RAM/child-I/O collections PASS
+12:07:14.820–21.684. HomeWaiting completed actual modal import/receipt11 routes
+12:12:32–41, preserving Cancel→Retry/Close/Dispose/global Stop/partial owner behavior.
+Later HomePreparation.WizardBoundary failed12:14:18.407 at original protected-SSH
+Close assertion. Dedicated initial snapshot5, setup receipt7 and later Home/Admin/
+portable/Python relay suites NOT_RUN after this point. ZIP/package NOT_RUN/uploads
+SKIPPED; overall619 FAIL, not full SUCCESS.
+
+Confirmed test sequencing defect: second Next immediately followed by Close while
+new cached refresh/ReadSetupPending is asynchronous. That tests cancelling a local
+read rather than the intended actual held command; old compound assert did not emit
+individual flags, so their historical values are not invented. Root narrow fix
+`5387ddeb498d8bf3f51189447f26b9e1e03af315`,1file19add6delete: wait actual snapshot
+readiness, then actual command callback (bounded5s) before Close; preserve original
+close-refusal/status criterion and assert real command entered. Finally releases
+pending response, joins exact retry and refresh, observes typed outcome. No product
+change, global timeout increase, gate removal or same-SHA blind retry. Syntax/C#5/
+manual phase/cleanup/diff PASS, new compiler/native NOT_RUN. Next isolated checking
+from exact619 local5c5ac7e +only this fix/latest3 evidence docs; all export/Admin code
+excluded. I58–80/Y22 exact617 partial evidence/package, delta0. History below.
+
+## CI619 actual running — exact diagnostic publication verified
+
+PR88 OPEN/DRAFT source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, merge
+`5d615896c349051606e6212ed119b3a2cb8ce356`, tree7da67502463739fd3a427ebf7ebddc629679858c
+= local5c5ac7e05da8fde49c66313c6c1779045d478f7a. Guarded c122→f682 CAS PASS;
+actual PR/ref/merge independently checked. One automatic [CI619/39773542091](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39773542091),
+Windows119806729629/Ubuntu119806729392 in_progress at verification. Initial empty
+webhook lookup then one run; no manual duplicate. PR body updated.4 paths300add77:
+only readiness diagnostic test19add8 +3 docs; public uploadsOFF/workflows unchanged.
+New Windows compiler/native NOT_RUN pending exact completed log. Old618 partial
+Desktop/IO success does not cover this SHA or its unexecuted Home modal routes.
+
+Next inspect same619; independent exact-owned Admin cleanup retention foundation
+before real worker/owner-dispatch binding. Local task trackinge4 remains unconnected
+and NOT_RUN, as do all export/Admin future code. Last full617 I58–80/Y22/raw21.75,
+no score growth. Do not push checkpoint-only docs while CI active. History below.
+
+## Diagnostic source object f682 — ref-CAS not yet attempted at checkpoint
+
+Source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, parentc122, full canonical tree
+`7da67502463739fd3a427ebf7ebddc629679858c` = local5c5ac7e05da8fde49c66313c6c1779045d478f7a.
+4 paths300add77delete: test-only readiness diagnostic19add8 +3 evidence docs.
+Fullscope/manual/secretsPII0/public320/0/syntax/C#5/JSON86/fulltree PASS. Fresh public
+repo/headc122/base4bb verified, workflows unchanged/uploadsOFF/release not triggered.
+New compiler/native NOT_RUN. Ref-CAS NOT_RUN here: recover actual PR/run after any
+interruption before retry. Next expectedc122→f682 forcefalse once, automatic exactCI.
+No profile export/Admin code included; I58–80/Y22 same617 partial evidence.
+
 ## Frozen shutdown diagnostic — one source file on exact618 tree
 
 Isolated source `f4659691b65b2ca957d9473b8cb75ff26069d6a1` in ProGo-ci618-diagnostic

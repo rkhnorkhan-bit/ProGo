@@ -1,12 +1,229 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `c12200870264832f6ad6d7a325ef19678ee1447e`, tree `205e6e6e5583d669e03664ea44eafa9749c2a829`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, tree `7da67502463739fd3a427ebf7ebddc629679858c`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## Frozen actual-SSH boundary fixture fix — one file on exact619
+
+Code `b1eec12581c67a53c7ecc0fbdd512488f0c0b904`, code treebabe3b22bf81ed9bc1e9b12035fa893c9f9d5c76,
+ProGo-ci619-boundary on5c5ac7e/f682. Root5387ddeb narrow test fix only,19add6delete.
+Unchanged original SSH Close assertions after a bounded actual command admission;
+finally releases/joins exact response/task/snapshot. Production files and all
+export/Admin extensions/default configure binding excluded. Fullsource manual/diff/
+public320/0/syntax/C#5 PASS; new Windows compiler/native NOT_RUN. Next latest3 docs
+freeze, added-content secret/PII and fresh public workflow/head checks, fulltree equality,
+guarded f682→new source CAS once.619 FAIL/partial proofs and617 last full SUCCESS
+kept separately. I58–80/Y22/raw21.75/delta0. History below.
+
+## CI619 FAIL after full Test-ProGo PASS — asynchronous fixture boundary fix
+
+Exact source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, merge
+`5d615896c349051606e6212ed119b3a2cb8ce356`, run39773542091 Windows119806729629 FAIL,
+Ubuntu119806729392 SUCCESS, completed log checked. Build identity11:50:13.807;
+full Test-ProGo step SUCCESS, Desktop5287 PASS12:08:30.718/Instance28/Maintenance126/
+Shutdown47 PASS12:12:04.641. Prior618 startup timeout did not reproduce; underlying
+predicate cause still UNKNOWN, diagnostic retained (no fabricated root-cause fix).
+Four actual direct/agent startup/recovery latency/CPU/RAM/child-I/O collections PASS
+12:07:14.820–21.684. HomeWaiting completed actual modal import/receipt11 routes
+12:12:32–41, preserving Cancel→Retry/Close/Dispose/global Stop/partial owner behavior.
+Later HomePreparation.WizardBoundary failed12:14:18.407 at original protected-SSH
+Close assertion. Dedicated initial snapshot5, setup receipt7 and later Home/Admin/
+portable/Python relay suites NOT_RUN after this point. ZIP/package NOT_RUN/uploads
+SKIPPED; overall619 FAIL, not full SUCCESS.
+
+Confirmed test sequencing defect: second Next immediately followed by Close while
+new cached refresh/ReadSetupPending is asynchronous. That tests cancelling a local
+read rather than the intended actual held command; old compound assert did not emit
+individual flags, so their historical values are not invented. Root narrow fix
+`5387ddeb498d8bf3f51189447f26b9e1e03af315`,1file19add6delete: wait actual snapshot
+readiness, then actual command callback (bounded5s) before Close; preserve original
+close-refusal/status criterion and assert real command entered. Finally releases
+pending response, joins exact retry and refresh, observes typed outcome. No product
+change, global timeout increase, gate removal or same-SHA blind retry. Syntax/C#5/
+manual phase/cleanup/diff PASS, new compiler/native NOT_RUN. Next isolated checking
+from exact619 local5c5ac7e +only this fix/latest3 evidence docs; all export/Admin code
+excluded. I58–80/Y22 exact617 partial evidence/package, delta0. History below.
+
+## Default configure checking isolated — depends on API proof
+
+Code `19d0c64ddf1e8f10963a6753410b94446054f541`, tree3f547a2f491eda31b9cbda9b6f638692a8803b67
+in ProGo-admin-configure on owned API85b634f. Single root0ffc3d2 cherried without
+conflict,3 paths67add3delete, same reviewed delta byte-for-byte excluding offsets/blob
+IDs. Actual default HTTPS configure→owned worker/exact own dispatcher,2 native modal
+Stop/Dispose-before-factory tests. No export UI/native chooser or wizard/friend Admin
+binding. Scope/manual/root delta parity/syntax3/C#5/public320/0/secretsPII0 PASS;
+new compilation/native NOT_RUN, docs not attached, publication NOT_RUN. Follow the
+prepared export→read/dispatch→owned-worker API dependency order and rebuild on any
+required predecessor fix. Active619 unchanged; do not push docs-only checkpoints.
+I58–80/Y22/raw21.75/delta0. History below.
+
+## Local default HTTPS Admin route connected — Windows NOT_RUN
+
+Source `0ffc3d241962f523d6b02214e908a3c895567da3`,3 paths67add3delete. Default
+CreateConfigureForm now binds AdminOwnedAsync to its exact dialog/dispatcher; explicitly
+injected test/admin callbacks remain unchanged. Worker uses the existing captured
+BeforeSessionIo fixture boundary named admin before factory admission; explicit
+per-call barriers keep their precedence. No ActiveForm or caller-UI private validation.
+
+Two native actual ShowDialog default-install routes written: public Stop/service
+Dispose while owned preparation is held; assert UI heartbeat, retained shared Stop,
+no request/save/acceptance and exact private bytes. A GUID missing key guarantees a
+regressed legacy path fails validation before SCP/SSH, never live network. Watch15s/
+barrier5s/owned-task cleanup, no timeouts converted to success. Existing default
+accessibility path inspected: it only submits an invalid origin, no new remote call.
+Manual diff/default callsite/owner scope/fixture fallback/syntax3/C#5/public321/0/
+secretsPII0 PASS; compilation/native2 NOT_RUN. This code is excluded from active619
+and all prepared API-only cohorts; not published. Only this default HTTPS route is
+now source-connected; wizard and invitation routes remain legacy. No dev/owner PASS.
+
+Next exact619 result, then separate export API/read-dispatch/owned Admin API cohorts;
+rebuild on any predecessor fix. Verify default route before broader view migration,
+including phone-specific pending Admin gate while unrelated desktop/settings/Stop
+remain independent. FullR09 FAIL/R11PARTIAL; I58–80/Y22/raw21.75/delta0. History below.
+
+## Admin ownership/cleanup/worker checking isolated — dependent/unpublished
+
+Code `85b634f32112b6a9b758b51ee08fce58ac28ab06`, treea527041049f8ff2b81cff4808a7845e034f5454c
+in ProGo-admin-owned-api on unverified read/dispatch8c6a664, in turn export APIe263
+on active619 local5c5ac7e. Three original commits e4c23e0/61b289b/a6a263a cherried
+without conflict as80ceb31/e31784f/85b634f.3 paths351add12delete: owned task8 +retained
+exact cleanup4 +owned core/UI-dispatch worker8 native cases. All normal views still
+legacy; actual export UI/native chooser absent. Source/template method parity with
+root, receipt body/wrapper preservation and NativeRecovery-last PASS.
+
+Fullscope/manual/syntax3/C#5/public320/0/secretsPII0 (one exact reserved SSH fixture
+false positive separately inspected) PASS. New compiler/native20 cases NOT_RUN.
+No latest docs attached; no publication/CI for this branch. Must rebuild on any
+predecessor correction and verify export API then Admin read/dispatch before sending
+this cohort; do not replace active619 head. After Windows proof, bind wizard and
+child invitations to each own window/dispatcher, then default HTTPS configure path;
+add actual UI route tests and include pending Admin in phone-specific gating without
+blocking unrelated desktop/settings/Stop. FullR09 FAIL/R11PARTIAL, scores unchanged.
+History below.
+
+## Admin read/dispatch API checking isolated — no view/owned-worker code
+
+Code `8c6a664333811cf4e1a4086d278f1e004ae1e66e`, tree2c67aff52e87e178adc78fd8eb63f15144d89b4e
+in ProGo-admin-read-dispatch on unverified export APIe263. Three original code commits
+ca3d/819d/760 cherried as26203d6/8720ffc/8c6a664.3 paths193add1delete: readonly request/
+key validation snapshot12 cases +transport Task ownership/owner dispatch5 modal cases.
+Two cherry conflicts were context only: preserve NativeRecovery last with receipt
+wrapper/body identical; retain only AdminTransportOwnership, excluding adjacent future
+WizardProfileExport method and its calls. AST method-body parity with reviewed root
+and prior receipt cases PASS; no changes to old diagnostic/owner-restore/IO metrics.
+
+Scope/manual/syntax3/C#5/public320/0/secretsPII0/receipt+order parity PASS. Compilation/
+native NOT_RUN; actual owned Admin wrapper/views/retained cleanup and export UI/native
+chooser absent. Latest docs not attached; publication NOT_RUN and depends on exact619
+result then export API Windows acceptance. Rebuild on any required predecessor fix.
+I58–80/Y22/raw21.75/delta0. History below.
+
+## Local owned Admin worker/transport binding API — views still unconnected
+
+Source `a6a263afa76feb4740f879e6666200bd404e05b7`,2 paths133add3delete. New
+AdminOwnedAsync freezes endpoint/key memory before scheduling instance-owned work.
+Actual existing core validation/private DPAPI/journal/helper/result/cleanup runs on
+that worker; only native copy/command startup and progress dispatch to the supplied
+window's dispatcher. Uses explicit window, not ActiveForm. Recovery HasPending is
+read on worker before UI callback. Memory-only service Stop/lifetime admission seals
+new transports; admitted physical Tasks still settle and retain exact cleanup. No
+lifecycle lock spans ShowDialog. Typed list/preparation/pending errors preserve
+known/unknown remote outcome and prevent automatic replay.
+
+Eight actual ShowDialog fixtures written around the real core and real local files,
+with isolated copy/command transports: ready/changed owner/Close before copy/Stop
+before factory/Close during/Dispose during/Stop during/Stop after copy. They require
+snapshot identity, UI callback thread even after context loss, heartbeat, pending
+actual I/O ownership, no late progress or new command after Stop, and bounded own
+cleanup. Barriers5s/modal15s; not a claim of actual SCP or live VPS/native transport
+integration (existing selected-key chain is separate). Static manual owner/admission/
+lock/fixture cleanup/syntax2/C#5/public321/0 PASS. Secret/PII scan first flagged one
+literal reserved SSH fixture target as email-shaped; exact fixture inspected, no
+secret/personal data; remaining counts0. Local commit existed before completing this
+false-positive review; no publication occurred. New compilation/native NOT_RUN.
+
+Normal wizard/share/invitations still call legacy static route: API is unconnected,
+wholeR09 FAIL/R11PARTIAL. Next validate isolated export API, then small Admin snapshot/
+transport and owned-worker cohorts before view routing; each child window must use
+its own dispatcher, not borrow the wizard owner. CI619 samef682/5d615 active, this
+source excluded. I58–80/Y22/raw21.75/delta0. History below.
+
+## Profile export API checking isolated — waiting for exact619 result
+
+Code `e2630bd565fc3c634ad0323dd884c85ab6add159`, tree31b2f4825eead4dcd5a5c28308beaeefb70b1691
+in ProGo-export-api on exact published619 local5c5ac7e. Original6d180fd +320a476
+cherried as c4198fa/e2630bd without conflict.3 source/test paths196add2delete:
+immutable profile XML worker5 native cases +service ownership/Stop9 cases. All real
+FileMode.CreateNew/non-overwrite behavior remains; exact duplicates join, stale
+pre-admission scopes cancel, accepted physical writes settle honestly after Cancel.
+No actual wizard export/native profile chooser/Admin snapshot/dispatch/drain/cleanup
+code included. Those future root changes remain preserved and NOT_RUN.
+
+Final code-only manual diff/admission/Stop/fixture cleanup/callsite/syntax3/C#5/
+public320/0/secretsPII0 PASS. New compiler/native NOT_RUN, no inherited618/619 proof.
+Do not publish until same619 diagnostic outcome is known; if619 fails, fix its
+established cause first and rebuild this cohort on that checked source. Latest3 docs
+not attached/frozen yet. I58–80/Y22/raw21.75/delta0. Next same619; independent explicit
+Admin owner transport wrapper can be prepared separately without changing active head.
+History below.
+
+## Local retained Admin cleanup — exact owner retry, production binding pending
+
+Source `61b289b1b3ce27382688fa4d642b2eacfe83ef26`,2 paths103add9delete on local
+unpublished service ownershipe4. Core Admin has an optional owning retention callback:
+a failed directory deletion preserves its exact generated-directory closure before
+the original typed cleanup error settles. Stop awaits every owned task then retries
+only retained closures on its worker; still-locked cleanup returns false/remains owned,
+unlock+Stop removes only its own tree without any copy/SSH/request replay. New owned
+Admin factories are refused while cleanup remains. Work/upload directory creation
+now sits inside the existing completion/cleanup envelope, covering partial preparation.
+No broad directory scan/removal, no request/result format changes.
+
+Four bounded native fixtures written around the actual core with isolated transports
+and real helper files: complete/list lock/preparation lock/Dispose lock. They require
+UI heartbeat, honest failed Stop, unlock+retry, unchanged original operation failure,
+no new copy/command, unchanged protected files and an unrelated sibling directory.
+Existing seven-family recovery/native order preserved. Manual diff/ownership/callsite/
+syntax2/C#5/public321/0/secretsPII0 PASS; Windows compilation/native NOT_RUN.
+Normal wizard/share/invitation Admin route is still UNCONNECTED to instance ownership
+and still contains UI private I/O; full R09 FAIL. This source does not prove live SCP,
+owner-VPS actions or complete UI cancellation. Next validate small API cohorts then
+bind explicit owner-dispatched native transports before moving real Admin core to worker.
+CI619 same f682/5d615 run39773542091 remains active, this source excluded. Scores
+I58–80/Y22/raw21.75/delta0, exact617 last full evidence. History below.
+
+## CI619 actual running — exact diagnostic publication verified
+
+PR88 OPEN/DRAFT source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, merge
+`5d615896c349051606e6212ed119b3a2cb8ce356`, tree7da67502463739fd3a427ebf7ebddc629679858c
+= local5c5ac7e05da8fde49c66313c6c1779045d478f7a. Guarded c122→f682 CAS PASS;
+actual PR/ref/merge independently checked. One automatic [CI619/39773542091](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39773542091),
+Windows119806729629/Ubuntu119806729392 in_progress at verification. Initial empty
+webhook lookup then one run; no manual duplicate. PR body updated.4 paths300add77:
+only readiness diagnostic test19add8 +3 docs; public uploadsOFF/workflows unchanged.
+New Windows compiler/native NOT_RUN pending exact completed log. Old618 partial
+Desktop/IO success does not cover this SHA or its unexecuted Home modal routes.
+
+Next inspect same619; independent exact-owned Admin cleanup retention foundation
+before real worker/owner-dispatch binding. Local task trackinge4 remains unconnected
+and NOT_RUN, as do all export/Admin future code. Last full617 I58–80/Y22/raw21.75,
+no score growth. Do not push checkpoint-only docs while CI active. History below.
+
+## Diagnostic source object f682 — ref-CAS not yet attempted at checkpoint
+
+Source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, parentc122, full canonical tree
+`7da67502463739fd3a427ebf7ebddc629679858c` = local5c5ac7e05da8fde49c66313c6c1779045d478f7a.
+4 paths300add77delete: test-only readiness diagnostic19add8 +3 evidence docs.
+Fullscope/manual/secretsPII0/public320/0/syntax/C#5/JSON86/fulltree PASS. Fresh public
+repo/headc122/base4bb verified, workflows unchanged/uploadsOFF/release not triggered.
+New compiler/native NOT_RUN. Ref-CAS NOT_RUN here: recover actual PR/run after any
+interruption before retry. Next expectedc122→f682 forcefalse once, automatic exactCI.
+No profile export/Admin code included; I58–80/Y22 same617 partial evidence.
 
 ## Frozen shutdown diagnostic — one source file on exact618 tree
 

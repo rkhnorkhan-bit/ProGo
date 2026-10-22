@@ -631,13 +631,26 @@ namespace ProGo
                 Shot(form, Path.GetDirectoryName(folder), "vps-preparation-cancelled");
                 check(accessBefore.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat")))
                     && !Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Any(), "cancelled preparation preserves saved access and removes its private local work directory");
-                var pending = new TaskCompletionSource<object>();
-                form.Admin = (owner, action, label, id, progress) => HomeVpnService.AdminAsync(owner, action, label, id, progress,
+                var pending = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously); Task<string> retry = null;
+                form.Admin = (owner, action, label, id, progress) => retry = HomeVpnService.AdminAsync(owner, action, label, id, progress,
                     (exe, args) => Task.FromResult(0), (exe, args, output) => { commands++; return pending.Task; });
-                ((Button)Field(form, "next")).PerformClick(); form.Close();
-                check(commands == 1 && form.Visible && (bool)Field(form, "busy") && !((Button)Field(form, "cancelWait")).Visible
-                    && status.Text.Contains("не отменяет"), "successful preparation crosses into protected remote setup, where closing cannot claim rollback");
-                pending.SetException(new IOException("Remote result not confirmed")); Pump(() => !(bool)Field(form, "busy")); form.Close();
+                try {
+                    // Retry first owns a fresh cached snapshot and pending read.
+                    // Close must test the actual SSH boundary, not cancel those reads.
+                    HomeVpnFixtureFiles.ConfigureReady(form);
+                    ((Button)Field(form, "next")).PerformClick(); Pump(() => commands == 1 || !(bool)Field(form, "busy"), 5000);
+                    check(commands == 1 && (bool)Field(form, "busy"), "retry reaches the actual held SSH command after asynchronous setup reads");
+                    form.Close();
+                    check(commands == 1 && form.Visible && (bool)Field(form, "busy") && !((Button)Field(form, "cancelWait")).Visible
+                        && status.Text.Contains("не отменяет"), "successful preparation crosses into protected remote setup, where closing cannot claim rollback");
+                } finally {
+                    pending.TrySetException(new IOException("Remote result not confirmed"));
+                    Pump(() => !(bool)Field(form, "busy") && (retry == null || retry.IsCompleted), 5000);
+                    if (retry != null) try { retry.GetAwaiter().GetResult(); } catch (HomeVpnSetupPendingException) { }
+                    else { var observed = pending.Task.Exception; }
+                    HomeVpnFixtureFiles.ConfigureReady(form);
+                }
+                form.Close();
             }
         }
         private static void CompletionRace()

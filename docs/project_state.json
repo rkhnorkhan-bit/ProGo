@@ -3826,7 +3826,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "c12200870264832f6ad6d7a325ef19678ee1447e",
+  "candidate_source": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3924,24 +3924,24 @@
     }
   ],
   "ci_candidate": {
-    "source": "c12200870264832f6ad6d7a325ef19678ee1447e",
-    "tested_merge": "dbed93e150be5eeafb274e88826389aacff78d0a",
-    "tree": "205e6e6e5583d669e03664ea44eafa9749c2a829",
-    "local_sha": "34aa821d1e86fc86c5d381a6bad337d28ef76068",
-    "run_id": 39769965390,
-    "run_number": 618,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39769965390",
+    "source": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
+    "tested_merge": "5d615896c349051606e6212ed119b3a2cb8ce356",
+    "tree": "7da67502463739fd3a427ebf7ebddc629679858c",
+    "local_sha": "5c5ac7e05da8fde49c66313c6c1779045d478f7a",
+    "run_id": 39773542091,
+    "run_number": 619,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39773542091",
     "status": "completed",
     "conclusion": "failure",
     "jobs": {
-      "windows": 119794736280,
-      "ubuntu": 119794735960
+      "windows": 119806729629,
+      "ubuntu": 119806729392
     },
-    "windows_compilation": "PASS exact618",
-    "windows_native": "PARTIAL Desktop5287/Instance28/Maintenance126/processIO4 PASS; ShutdownFAIL; Home/modal11+5/later NOT_RUN",
+    "windows_compilation": "PASS exact619",
+    "windows_native": "PARTIAL full Test-ProGo/Desktop5287/Shutdown47/IO4/modal import11 PASS; HomePreparationFAIL; dedicated initial5/receipt7/later NOT_RUN",
     "ubuntu": "SUCCESS",
-    "scope": "actual async wizard import/receipt/snapshot/guarded first-success restore +test-only native owned child I/O counters",
-    "excludes": "all profile export/admin snapshot/admin transport code"
+    "scope": "only startup diagnostic plus3 evidence docs on exact618 tree",
+    "excludes": "all local export/admin extensions"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5322,6 +5322,26 @@
       "uploads": "SKIPPED",
       "next": "One new diagnostic source only, not duplicate same-SHA rerun",
       "readiness_change": 0
+    },
+    {
+      "source": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
+      "merge": "5d615896c349051606e6212ed119b3a2cb8ce356",
+      "run_id": 39773542091,
+      "windows_job": 119806729629,
+      "ubuntu_job": 119806729392,
+      "conclusion": "FAIL",
+      "compilation": "PASS11:50:13.807 build identity",
+      "test_progo": "PASS full job step; Desktop5287/Instance28/Maintenance126/Shutdown47 at12:12:04.641",
+      "previous_618_shutdown": "Not reproduced; exact historical underlying flags/cause UNKNOWN, diagnostic retained",
+      "process_io_metrics": "PASS four direct/agent startup/recovery child counters12:07:14.820–21.684",
+      "home_import_modal": "PASS actual11 held-I/O routes12:12:32.100–41.311, final result41.449",
+      "failure": "12:14:18.407 HomePreparation.WizardBoundary protected SSH Close assertion; old sync test calls Close immediately after Next despite async snapshot/pending read",
+      "dedicated_setup_modal5": "NOT_RUN later test stage",
+      "setup_receipt7": "NOT_RUN later test stage",
+      "later_home_portable_python": "NOT_RUN after failure",
+      "package": "NOT_RUN",
+      "uploads": "SKIPPED",
+      "readiness_change": 0
     }
   ],
   "retention_microtask": {
@@ -5368,7 +5388,7 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "Current published618 c122/dbed wizard import/receipt/snapshot and process IO metrics; Windows result pending. Export/admin future code excluded. Prior candidate scopes retained in historical snapshots.",
+  "candidate_source_scope": "only startup diagnostic plus3 evidence docs on exact618 tree",
   "uncommitted_candidate": {
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
     "source_sha": "cd8c468b48f293fe809aea1d1ed75662a8e5a97f",
@@ -5457,36 +5477,36 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI618 shutdown failure; narrow diagnostic source next",
+    "phase": "CI619 fixture boundary failure; minimal new source fix next",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "34aa821d1e86fc86c5d381a6bad337d28ef76068",
-    "local_development_sha": "d919cc5ab998c655ce81bf520a505656a7431664",
-    "published_sha": "c12200870264832f6ad6d7a325ef19678ee1447e",
-    "tree": "205e6e6e5583d669e03664ea44eafa9749c2a829",
-    "tested_merge": "dbed93e150be5eeafb274e88826389aacff78d0a",
-    "ci_run_id": 39769965390,
-    "ci_run_number": 618,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39769965390",
+    "local_sha": "5c5ac7e05da8fde49c66313c6c1779045d478f7a",
+    "local_development_sha": "5387ddeb498d8bf3f51189447f26b9e1e03af315",
+    "published_sha": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
+    "tree": "7da67502463739fd3a427ebf7ebddc629679858c",
+    "tested_merge": "5d615896c349051606e6212ed119b3a2cb8ce356",
+    "ci_run_id": 39773542091,
+    "ci_run_number": 619,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39773542091",
     "jobs": {
-      "windows": 119794736280,
-      "ubuntu": 119794735960
+      "windows": 119806729629,
+      "ubuntu": 119806729392
     },
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "PASS exact618",
-    "windows_native": "PARTIAL Desktop5287/Instance28/Maintenance126/processIO4 PASS; ShutdownFAIL; Home/modal11+5/later NOT_RUN",
+    "windows_compilation": "PASS exact619",
+    "windows_native": "PARTIAL full Test-ProGo/Desktop5287/Shutdown47/IO4/modal import11 PASS; HomePreparationFAIL; dedicated initial5/receipt7/later NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
     "publication_scan": {
-      "files": 13,
-      "added_lines": 957,
-      "deleted_lines": 182,
+      "files": 4,
+      "added_lines": 300,
+      "deleted_lines": 77,
       "findings": 0,
       "tree_match": true
     },
-    "next": "Isolate diagnostic only on34aa, fresh secret/workflow/tree check, publish once; keep Admin/export local unconnected and NOT_RUN",
+    "next": "Isolate narrow boundary fix5387 on5c5ac7e and publish once; prepared API/UI branches must rebuild on checked fix before their later publications",
     "readiness_change": 0,
-    "current_ci_step": "Completed618 Windows failure; same-source duplicate prohibited; prepare diagnostic newSHA"
+    "current_ci_step": "Completed619 overallFAIL; source fix5387 local; prepared export/admin cohorts withheld"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5579,7 +5599,7 @@
     "A": 0,
     "reason": "Same28 weighted partial criteria matched verbatim on exact617. Seven receipt and18import API cases extend coverage without completing a weighted gate; no new points.",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact617 full SUCCESS remains last full partial evidence/package baseline; exact618 partial Desktop/processIO PASS but full shutdown FAIL, Home modal NOT_RUN. Export/admin extensions excluded/NOT_RUN.",
+    "candidate_note": "Last full617 remains partial weighted baseline/package. Exact619 full Test-ProGo and import11/IO4 PASS but later HomePreparationFAIL, dedicated initial5/receipt7 and later NOT_RUN; all export/Admin extensions excluded.",
     "score_anchors": {
       "F01": "2026-10-22T10:38:38.2280603Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T10:33:43.1145974Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -7922,6 +7942,26 @@
       "excludes": "importAPI99ad (Stop560/pair7bb/service4a/setupfc), actual wizard import/initial setup probes/full R09/R10/R11/target acceptance",
       "failure": "2026-10-22T08:25:35.5384376Z configure initial Dispose compound assertion; exact subcondition unknown, modal native unwind event hypothesis not confirmed",
       "package": "NOT_RUN pack skipped; uploads SKIPPED all"
+    },
+    {
+      "source": "c12200870264832f6ad6d7a325ef19678ee1447e",
+      "tested_merge": "dbed93e150be5eeafb274e88826389aacff78d0a",
+      "tree": "205e6e6e5583d669e03664ea44eafa9749c2a829",
+      "local_sha": "34aa821d1e86fc86c5d381a6bad337d28ef76068",
+      "run_id": 39769965390,
+      "run_number": 618,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39769965390",
+      "status": "completed",
+      "conclusion": "failure",
+      "jobs": {
+        "windows": 119794736280,
+        "ubuntu": 119794735960
+      },
+      "windows_compilation": "PASS exact618",
+      "windows_native": "PARTIAL Desktop5287/Instance28/Maintenance126/processIO4 PASS; ShutdownFAIL; Home/modal11+5/later NOT_RUN",
+      "ubuntu": "SUCCESS",
+      "scope": "actual async wizard import/receipt/snapshot/guarded first-success restore +test-only native owned child I/O counters",
+      "excludes": "all profile export/admin snapshot/admin transport code"
     }
   ],
   "connection_recovery_20261022": {
@@ -8851,6 +8891,203 @@
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
     "next": "Guarded exact source publication then one CI, no same-SHA rerun",
+    "readiness_change": 0
+  },
+  "pending_shutdown_diagnostic_publication": {
+    "source": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
+    "expected_parent": "c12200870264832f6ad6d7a325ef19678ee1447e",
+    "tree": "7da67502463739fd3a427ebf7ebddc629679858c",
+    "local_sha": "5c5ac7e05da8fde49c66313c6c1779045d478f7a",
+    "paths": 4,
+    "added_lines": 300,
+    "deleted_lines": 77,
+    "tree_match": true,
+    "secret_pii_findings": 0,
+    "ref_cas": "PASS actual headf682/merge5d615/unique619 independently verified",
+    "windows_compilation": "PASS exact619",
+    "windows_native": "PARTIAL overallFAIL; exact619 Test-ProGo and modal import11 PASS, later dedicated5/receipt7 NOT_RUN",
+    "excludes": "all profile export/admin source/tests",
+    "readiness_change": 0
+  },
+  "local_r09_admin_cleanup_retention": {
+    "source": "61b289b1b3ce27382688fa4d642b2eacfe83ef26",
+    "paths": 2,
+    "added_lines": 103,
+    "deleted_lines": 9,
+    "implementation": "PARTIAL exact cleanup closure retention/core optional hook +owned Stop retry; production Admin UI binding unconnected",
+    "native_cases_written": 4,
+    "static": "PASS manual diff/ownership/callsites/syntax2/C#5/public321/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 619,
+    "next": "Validate small API cohorts then explicit owner-dispatched production transport/worker binding",
+    "readiness_change": 0
+  },
+  "frozen_r09_profile_export_api": {
+    "local_code_sha": "e2630bd565fc3c634ad0323dd884c85ab6add159",
+    "tree_without_latest_docs": "31b2f4825eead4dcd5a5c28308beaeefb70b1691",
+    "base_local": "5c5ac7e05da8fde49c66313c6c1779045d478f7a",
+    "base_public": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
+    "paths": 3,
+    "added_lines": 196,
+    "deleted_lines": 2,
+    "native_cases_written": [
+      5,
+      9
+    ],
+    "static": "PASS manual/scope/syntax3/C#5/public320/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "all actual export UI/native chooser and Admin extensions",
+    "latest_docs_attached": false,
+    "publication": "NOT_RUN pending same619 outcome; rebuild on any required fix",
+    "readiness_change": 0
+  },
+  "local_r09_admin_owned_worker_api": {
+    "source": "a6a263afa76feb4740f879e6666200bd404e05b7",
+    "paths": 2,
+    "added_lines": 133,
+    "deleted_lines": 3,
+    "implementation": "PARTIAL actual core worker +explicit owning window transport dispatch, typed service/owner admission, retained task/cleanup; views UNCONNECTED",
+    "native_cases_written": 8,
+    "static": "PASS manual owner/admission/no lock over ShowDialog/cleanup/syntax2/C#5/public321/0",
+    "secret_pii": "PASS0 after inspection of one exact reserved SSH fixture target email-shaped false positive; no publication before review",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 619,
+    "next": "Validate small API cohorts before production view routing; each invitation child needs its own dispatcher/window",
+    "readiness_change": 0
+  },
+  "frozen_r09_admin_read_dispatch_api": {
+    "local_code_sha": "8c6a664333811cf4e1a4086d278f1e004ae1e66e",
+    "tree_without_latest_docs": "2c67aff52e87e178adc78fd8eb63f15144d89b4e",
+    "base_local": "e2630bd565fc3c634ad0323dd884c85ab6add159",
+    "paths": 3,
+    "added_lines": 193,
+    "deleted_lines": 1,
+    "native_cases_written": [
+      12,
+      5
+    ],
+    "static": "PASS scope/manual/conflict context exclusion/AST method parity/receipt wrapper+body unchanged/NativeRecovery last/syntax3/C#5/public320/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "owned Admin task/cleanup/worker/view binding and actual export UI/native chooser",
+    "publication": "NOT_RUN depends exact619 diagnostic and export API proof; rebuild on predecessor fix",
+    "readiness_change": 0
+  },
+  "frozen_r09_admin_owned_api": {
+    "local_code_sha": "85b634f32112b6a9b758b51ee08fce58ac28ab06",
+    "tree_without_latest_docs": "a527041049f8ff2b81cff4808a7845e034f5454c",
+    "base_local": "8c6a664333811cf4e1a4086d278f1e004ae1e66e",
+    "paths": 3,
+    "added_lines": 351,
+    "deleted_lines": 12,
+    "native_cases_written": [
+      8,
+      4,
+      8
+    ],
+    "static": "PASS fullscope/manual/method parity8/receipt preservation/NativeRecovery last/syntax3/C#5/public320/0/secretsPII0 after exact reserved fixture review",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "all actual view routing and export UI/native chooser",
+    "publication": "NOT_RUN depends exact619 then export API/read-dispatch proof; rebuild on predecessor fix",
+    "next": "After native proof: wizard +each own invitation child dispatcher, default configure owner, phone-specific pending-work gating; preserve unrelated desktop/settings/Stop",
+    "readiness_change": 0
+  },
+  "local_r09_default_configure_admin_binding": {
+    "source": "0ffc3d241962f523d6b02214e908a3c895567da3",
+    "paths": 3,
+    "added_lines": 67,
+    "deleted_lines": 3,
+    "implementation": "PARTIAL default HTTPS configure source-connected to owned Admin worker/exact dialog dispatcher; wizard/invitations legacy",
+    "native_cases_written": 2,
+    "static": "PASS manual default/callsite/owner/fixture no-external fallback/diff/syntax3/C#5/public321/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 619,
+    "excludes_api_cohorts": true,
+    "next": "Native API cohort proof, default configure checking, then other views and pending Admin phone gate",
+    "readiness_change": 0
+  },
+  "frozen_r09_default_configure_admin": {
+    "local_code_sha": "19d0c64ddf1e8f10963a6753410b94446054f541",
+    "tree_without_latest_docs": "3f547a2f491eda31b9cbda9b6f638692a8803b67",
+    "base_local": "85b634f32112b6a9b758b51ee08fce58ac28ab06",
+    "paths": 3,
+    "added_lines": 67,
+    "deleted_lines": 3,
+    "native_cases_written": 2,
+    "static": "PASS scope/manual/root delta parity/syntax3/C#5/public320/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "export UI/native chooser and wizard/invitation default Admin binding",
+    "publication": "NOT_RUN depends exact619 then export/read-dispatch/owned API proof; rebuild on predecessor fix",
+    "readiness_change": 0
+  },
+  "ci619_boundary_failure": {
+    "source": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
+    "merge": "5d615896c349051606e6212ed119b3a2cb8ce356",
+    "run_id": 39773542091,
+    "windows_job": 119806729629,
+    "ubuntu_job": 119806729392,
+    "conclusion": "FAIL",
+    "compilation": "PASS11:50:13.807 build identity",
+    "test_progo": "PASS full job step; Desktop5287/Instance28/Maintenance126/Shutdown47 at12:12:04.641",
+    "previous_618_shutdown": "Not reproduced; exact historical underlying flags/cause UNKNOWN, diagnostic retained",
+    "process_io_metrics": "PASS four direct/agent startup/recovery child counters12:07:14.820–21.684",
+    "home_import_modal": "PASS actual11 held-I/O routes12:12:32.100–41.311, final result41.449",
+    "failure": "12:14:18.407 HomePreparation.WizardBoundary protected SSH Close assertion; old sync test calls Close immediately after Next despite async snapshot/pending read",
+    "dedicated_setup_modal5": "NOT_RUN later test stage",
+    "setup_receipt7": "NOT_RUN later test stage",
+    "later_home_portable_python": "NOT_RUN after failure",
+    "package": "NOT_RUN",
+    "uploads": "SKIPPED",
+    "readiness_change": 0
+  },
+  "local_ci619_boundary_fix": {
+    "source": "5387ddeb498d8bf3f51189447f26b9e1e03af315",
+    "paths": 1,
+    "added_lines": 19,
+    "deleted_lines": 6,
+    "implementation": "Wait cached refresh +actual SSH command boundary before original Close assertion; bounded5s finally releases/joins exact retry and snapshot",
+    "static": "PASS manual phase/original criterion/cleanup/syntax/C#5/diff",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "next": "Isolate only fix on exact619, latest3 docs, scope/secrets/workflow/tree, one new CI",
+    "readiness_change": 0
+  },
+  "frozen_r09_profile_export_ui": {
+    "local_code_sha": "489dfb64af9c6396afe7268a28ad5f1e43ba8cae",
+    "tree_without_latest_docs": "4b382e205202265cb8fd75940ee78c504a9d1481",
+    "base_local": "e2630bd565fc3c634ad0323dd884c85ab6add159",
+    "paths": 8,
+    "added_lines": 251,
+    "deleted_lines": 14,
+    "native_cases_written": [
+      11,
+      3
+    ],
+    "static": "PASS scope8/manual/root source parity7+modal method/native bounded chooser/explicit compile list/syntax7/C#5/public321/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "publication": "NOT_RUN; rebuild on checked619 boundary fix and verified export API",
+    "excludes": "all Admin read/dispatch/ownership/worker/default UI code",
+    "readiness_change": 0
+  },
+  "frozen_ci619_boundary_fix": {
+    "local_code_sha": "b1eec12581c67a53c7ecc0fbdd512488f0c0b904",
+    "code_tree_without_latest_docs": "babe3b22bf81ed9bc1e9b12035fa893c9f9d5c76",
+    "base_local": "5c5ac7e05da8fde49c66313c6c1779045d478f7a",
+    "base_public": "f682432f4afd53bc7b3e7c9142d60dcb42a6a22e",
+    "source_paths": 1,
+    "source_added_lines": 19,
+    "source_deleted_lines": 6,
+    "excludes": "all export/Admin extensions and default configure binding",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "next": "Latest3 evidence docs/full secret/workflow/canonical tree scan then one new CI",
     "readiness_change": 0
   }
 }
