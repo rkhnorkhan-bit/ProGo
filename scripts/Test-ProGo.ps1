@@ -552,6 +552,7 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureTool.StartInfo.CreateNoWindow = $true
     $FixtureTool.StartInfo.RedirectStandardOutput = $true
     $FixtureTool.StartInfo.RedirectStandardError = $true
+    $FixtureTool.StartInfo.RedirectStandardInput = $true
     $FixtureStarted = $false
     $FixtureOutRead = $null
     $FixtureErrorRead = $null
@@ -560,6 +561,9 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     try {
         if (-not $FixtureTool.Start()) { Fail ('Owned SSH fixture ' + $Label + ' did not start') }
         $FixtureStarted = $true
+        # These fixture tools are noninteractive. Own and close their input;
+        # never inherit a CI host pipe with another outstanding reader.
+        $FixtureTool.StandardInput.Close()
         Write-Host ('SSH_FIXTURE_STARTED label=' + $Label + '; pid=' + $FixtureTool.Id + '; startMs=' + $FixtureLaunchWatch.ElapsedMilliseconds + '; pythonClass=' + $FixturePythonClass)
         $FixtureOutRead = $FixtureTool.StandardOutput.ReadToEndAsync()
         $FixtureErrorRead = $FixtureTool.StandardError.ReadToEndAsync()
@@ -602,10 +606,14 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     if ($Label -eq 'exit0-regression' -and -not $FixtureOutRead.Result.Contains('PROGO_FIXTURE_EXIT0_ENTERED')) {
         Fail 'Owned SSH fixture exit0-regression returned zero without executing its Python body'
     }
+    if ($Label -eq 'stdin-eof-regression' -and -not $FixtureOutRead.Result.Contains('PROGO_FIXTURE_STDIN_EOF')) {
+        Fail 'Owned SSH fixture stdin-eof-regression returned zero without confirming its owned input EOF'
+    }
 }
 # Regression vectors use only this test's own Python processes. Expected
 # negative cases must throw the precise reason; no timeout becomes success.
 Invoke-IsolatedSshFixtureTool @('-c', '"import sys; print(''PROGO_FIXTURE_EXIT0_ENTERED'', flush=True); sys.exit(0)"') 'exit0-regression' 5000
+Invoke-IsolatedSshFixtureTool @('-c', '"import sys; data=sys.stdin.read(); print(''PROGO_FIXTURE_STDIN_EOF'', flush=True); sys.exit(0 if data == '''' else 42)"') 'stdin-eof-regression' 5000
 $FixtureNonzeroObserved = $false
 try { Invoke-IsolatedSshFixtureTool @('-c', '"import sys; sys.exit(17)"') 'exit17-regression' 5000 }
 catch { if ($_.Exception.Message -notlike '*exit17-regression failed with exit code 17') { throw }; $FixtureNonzeroObserved = $true }
@@ -614,7 +622,7 @@ $FixtureTimeoutObserved = $false
 try { Invoke-IsolatedSshFixtureTool @('-c', '"import time; time.sleep(5)"') 'timeout-regression' 200 }
 catch { if ($_.Exception.Message -notlike '*timeout-regression exceeded 200 ms; native validation NOT_RUN') { throw }; $FixtureTimeoutObserved = $true }
 if (-not $FixtureTimeoutObserved) { Fail 'Fixture launcher accepted a timed-out native process' }
-Write-Host 'SSH fixture launcher exit0/exit17/owned-timeout regression PASS'
+Write-Host 'SSH fixture launcher exit0/exit17/owned-timeout/owned-stdin-EOF regression PASS'
 Invoke-IsolatedSshFixtureTool @('-m', 'pip', 'install', '--quiet', '--target', ('"' + $FixtureDeps + '"'), '--only-binary=:all:', '--disable-pip-version-check', '--retries', '0', '--timeout', '10', '-r', ('"' + $FixtureRequirements + '"')) 'install' 60000
 $OldFixturePythonPath = $env:PYTHONPATH
 $OldFixturePython = $env:PROGO_TEST_SSH_PYTHON

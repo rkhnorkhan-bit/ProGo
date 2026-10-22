@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "updated_moscow_date": "2026-10-22",
-  "authority": "Current active_work, ci_candidate, current_readiness and per-requirement current evidence are canonical; prior checkpoint fields and dated reports are preserved history",
+  "authority": "Current active_work, ci_candidate, current_readiness and per-requirement current evidence are canonical; active_work.tree is published candidate tree, local_development_tree is its separate local code SHA tree; prior checkpoint fields and dated reports are preserved history",
   "audit_baseline": "7861ea919eed24c5fe9964fc35a23d3958ba5a9d",
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
   "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
-  "fresh_candidate_verification": "CI608 full SUCCESS only source479addfd6f711831a12e1c7b49019a446f7970ce / merge36f39fb080e0195cad40922793b298a5da500914; address primitive/service/modal-save root changes excluded, Windows NOT_RUN",
+  "fresh_candidate_verification": "Current published verification is exclusively ci_candidate; reconstructed local code uses exact source-specific NOT_RUN records. Superseded string preserved in historical_current_field_values.",
   "status_values": [
     "PASS",
     "FAIL",
@@ -3929,24 +3929,24 @@
     }
   ],
   "ci_candidate": {
-    "source": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
-    "tested_merge": "8db81f1c11cc713690f3c87f9669d2e12b9aba73",
-    "tree": "abf6f9e0f568d30833f9917ed2025d302c472a14",
-    "local_sha": "ebe59b124c412f571994d970a5093ce39df93c1a",
-    "run_id": 39800500570,
-    "run_number": 622,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39800500570",
+    "source": "e84792499b2949602691c349c369d62a533fb444",
+    "tested_merge": "539e2a23fe7da9640c15971d0b35c7d3b3b47af6",
+    "tree": "d527b0007a1cf4ef793cb3ccf2556078e2bb64fc",
+    "local_sha": "f5484d65ae5f6b34d155937e5cfb383e116a9366",
+    "run_id": 39803053552,
+    "run_number": 623,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39803053552",
     "status": "completed",
     "conclusion": "failure",
     "jobs": {
-      "windows": 119899498867,
-      "ubuntu": 119899499567
+      "windows": 119908864469,
+      "ubuntu": 119908863649
     },
-    "windows_compilation": "PASS production and Desktop; later HomeWaiting compilation NOT_RUN",
-    "windows_native": "FAIL owned Python exit0 5000ms before Desktop; phone fixture/new API14 NOT_RUN",
-    "ubuntu": "SUCCESS exact622 job119899499567",
-    "scope": "Exact621 API plus two-test phone fixture budget correction/failure diagnostic; fresh full regression",
-    "excludes": "Actual profile export UI/modal/chooser and Admin snapshot/transport/later invitation code",
+    "windows_compilation": "PASS production/Desktop; HomeWaiting compilation NOT_RUN",
+    "windows_native": "FAIL own Python exit0 before entry; Desktop/phone correction/API14 NOT_RUN",
+    "ubuntu": "SUCCESS exact623 job119908863649",
+    "scope": "Exact622 source plus safe owned Python startup/deadline diagnostic and positive entry proof; fresh exact full regression",
+    "excludes": "All actual profile export UI/modal/chooser, Admin snapshot/transport/ownership/cleanup and later binding",
     "windows_job_status": "completed"
   },
   "signing_microtask": {
@@ -5483,24 +5483,24 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Isolated script-only safe Python launcher diagnostic prepared; new exact Windows proof required",
-    "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "8903762ee659efaaa1923aacf146f7201e90c557",
-    "local_development_sha": "fc5ebeef0a4cddc570d23b1a9b3b7e184002779f",
-    "published_sha": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
-    "tree": "e160e3a481292fa6df0f20628120932f9ea2caab",
-    "tested_merge": "8db81f1c11cc713690f3c87f9669d2e12b9aba73",
-    "ci_run_id": 39800500570,
-    "ci_run_number": 622,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39800500570",
+    "phase": "Narrow owned stdin correction prepared; exact new Windows proof pending",
+    "base_source": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
+    "local_sha": "cfb93a2325e206f09e5f578e2f30a263e128b372",
+    "local_development_sha": "cfb93a2325e206f09e5f578e2f30a263e128b372",
+    "published_sha": "e84792499b2949602691c349c369d62a533fb444",
+    "tree": "d527b0007a1cf4ef793cb3ccf2556078e2bb64fc",
+    "tested_merge": "539e2a23fe7da9640c15971d0b35c7d3b3b47af6",
+    "ci_run_id": 39803053552,
+    "ci_run_number": 623,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39803053552",
     "jobs": {
-      "windows": 119899498867,
-      "ubuntu": 119899499567
+      "windows": 119908864469,
+      "ubuntu": 119908863649
     },
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "PASS production and Desktop; later HomeWaiting compilation NOT_RUN",
-    "windows_native": "FAIL owned Python exit0 5000ms before Desktop; phone fixture/new API14 NOT_RUN",
+    "windows_compilation": "PASS production/Desktop; HomeWaiting compilation NOT_RUN",
+    "windows_native": "FAIL own Python exit0 before entry; Desktop/phone correction/API14 NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repo22Oct, workflows and VERSION unchanged; PR upload guards OFF, no release trigger",
     "publication_scan": {
@@ -5508,9 +5508,11 @@
       "findings": 0,
       "tree_match": "TODO remote canonical equality before CAS"
     },
-    "next": "Freeze only script and latest3docs on exact622; canonical tree/secret/public-head/workflow guard then one fresh diagnostic CI, never same-SHA blind retry",
+    "next": "Freeze script+latest3docs on exact623, full-scope/secret/public workflow/head/canonical tree check; one new exact CI to verify actual stdin/launcher and blocked native routes",
     "readiness_change": 0,
-    "current_ci_step": "15:08:05.7445169Z Owned SSH fixture exit0-regression exceeded5000ms; native validation NOT_RUN"
+    "current_ci_step": "15:24:47.2387699Z owned Python exit0-regression exceeded5000ms before Desktop execution",
+    "historical_original_base_source": "656b3d65e03d540be859ee69635c492631093446",
+    "local_development_tree": "cc047f3053c0e619bb1f39462b380a83216c3245"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -9671,5 +9673,136 @@
     "excludes": "All actual profile UI/chooser/Admin code",
     "next": "Freeze only script and latest3docs on exact622; canonical tree/secret/public-head/workflow guard then one fresh diagnostic CI, never same-SHA blind retry",
     "readiness_change": 0
+  },
+  "prepared_launcher_diagnostic_publication": {
+    "frozen_local_sha": "f5484d65ae5f6b34d155937e5cfb383e116a9366",
+    "tree": "d527b0007a1cf4ef793cb3ccf2556078e2bb64fc",
+    "remote_commit": "e84792499b2949602691c349c369d62a533fb444",
+    "expected_ref": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
+    "status": "PASS guarded CAS and PR independently confirmed; fetched source/merge/local trees equal; one active623",
+    "scan": "PASS4 exact paths/scripts only runtime test fixture diagnostic+3docs; secretsPII0/public320/0/diff/JSON/BOM/body Linux; runtime/tests/workflows/VERSION identical622",
+    "next": "CAS once expected9e6e5a then independently inspect PR/head/one new workflow ID; verify unknown result before retry",
+    "readiness_change": 0,
+    "run_id": 39803053552,
+    "merge": "539e2a23fe7da9640c15971d0b35c7d3b3b47af6"
+  },
+  "previous_failed_ci622": {
+    "source": "9e6e5a15e9414d562af6f1788505437f2ac96d9c",
+    "tested_merge": "8db81f1c11cc713690f3c87f9669d2e12b9aba73",
+    "tree": "abf6f9e0f568d30833f9917ed2025d302c472a14",
+    "local_sha": "ebe59b124c412f571994d970a5093ce39df93c1a",
+    "run_id": 39800500570,
+    "run_number": 622,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39800500570",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": {
+      "windows": 119899498867,
+      "ubuntu": 119899499567
+    },
+    "windows_compilation": "PASS production and Desktop; later HomeWaiting compilation NOT_RUN",
+    "windows_native": "FAIL owned Python exit0 5000ms before Desktop; phone fixture/new API14 NOT_RUN",
+    "ubuntu": "SUCCESS exact622 job119899499567",
+    "scope": "Exact621 API plus two-test phone fixture budget correction/failure diagnostic; fresh full regression",
+    "excludes": "Actual profile export UI/modal/chooser and Admin snapshot/transport/later invitation code",
+    "windows_job_status": "completed"
+  },
+  "reconstructed_admin_cleanup_retention": {
+    "source": "e1e793e0b0789e8d686454b052fd3b773623ed57",
+    "original_missing_source": "61b289b1b3ce27382688fa4d642b2eacfe83ef26",
+    "status": "PARTIAL",
+    "native_cases": 4,
+    "implementation": "Optional core retention callback saves exact generated-directory deletion before original typed cleanup fault; service Stop drains bodies then retries only retained actions on worker; locked false/unlock retry true with no copy/SSH replay; new factories refused until cleanup; work/upload creation inside completion envelope",
+    "static": "PASS manual exact closure/cleanup/lease/error/overload/call-site/syntax2/C#5/diff/public321/0/secretPII0 and terminalNativeRecovery last",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621,
+      622,
+      623
+    ],
+    "actual_admin_route": "UNCONNECTED to service owned worker/UI; existing static routes do not pass retention callback yet; fullR09 FAIL",
+    "next": "Native API proof before production owned worker binding; independently reconstruct lost invitation pending-state readonly primitive6 while623 runs",
+    "readiness_change": 0
+  },
+  "reconstructed_invitation_pending_state": {
+    "source": "d500df68629d8af7533e4eca2993284c3675161a",
+    "original_missing_source": "9859dce6318878186a4b4068cff57ecf5bc26666",
+    "status": "PARTIAL",
+    "native_cases": 6,
+    "implementation": "Readonly Pending/Unreadable advisory snapshot; actual HasPending/Pending DPAPI validation on worker, cancellation before/after, corrupt/locked stays pending+unreadable, no token/journal/lease returned or modified; actual family admission authoritative",
+    "static": "PASS manual status/cancel/lease/byte-preservation/cleanup/syntax2/C#5/diff/public321/0/secretPII0; new real ShowDialog avoids modeless fixture after earlier terminal message loop;3s entry+heartbeat/5s settlement+cleanup, original Pump default15s unchanged",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621,
+      622,
+      623
+    ],
+    "actual_invitation_ui": "UNCONNECTED sync RefreshPending/HasPending/Pending and ConfirmConsumed remain; consumption-worker patch never applied before409 and still TODO",
+    "next": "Fresh exact API6 proof and owned initial/repeated invitation snapshot binding; consumption worker separate with its own exact request/result guards",
+    "readiness_change": 0
+  },
+  "ci623_failure": {
+    "source": "e84792499b2949602691c349c369d62a533fb444",
+    "merge": "539e2a23fe7da9640c15971d0b35c7d3b3b47af6",
+    "run_id": 39803053552,
+    "windows_job": 119908864469,
+    "ubuntu_job": 119908863649,
+    "status": "completed",
+    "conclusion": "failure",
+    "build_identity": "0.2.2+539e2a23fe7da9640c15971d0b35c7d3b3b47af6 at15:15:32.6960280Z",
+    "windows_compilation": "PASS production/Desktop; HomeWaiting compilation NOT_RUN",
+    "failure": "15:24:47.2387699Z owned Python exit0-regression exceeded5000ms before Desktop execution",
+    "native_facts": {
+      "created_pid": 1732,
+      "start_ms": 95,
+      "python_class": "hostedtoolcache",
+      "deadline_elapsed_ms": 5115,
+      "has_exited": false,
+      "cpu_ms": 0,
+      "working_set_bytes": 5959680,
+      "stdout_task": "WaitingForActivation",
+      "stderr_task": "WaitingForActivation",
+      "probe_error_type": "none",
+      "entry_marker": "ABSENT",
+      "cleanup": "targeted own process terminated; captured streams empty"
+    },
+    "confirmed_code_gap": "Fixture redirects stdout/stderr but inherits stdin; noninteractive launcher does not own or close its input",
+    "cause": "UNKNOWN exact native stack; inherited busy stdin is a source-supported hypothesis consistent with no-code-entry/zeroCPU, not yet proven causal",
+    "primary_sources": [
+      "https://github.com/python/cpython/issues/78961",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.redirectstandardinput"
+    ],
+    "phone_budget_correction": "NOT_RUN Desktop not executed",
+    "home_export_api14": "NOT_RUN",
+    "package": "NOT_RUN",
+    "uploads": "all SKIPPED",
+    "ubuntu": "SUCCESS",
+    "next": "Minimal script fix: own RedirectStandardInput and close immediately; add deterministic EOF positive/negative input body regression with unchanged5s/200ms criteria; one fresh exact Windows proof, no blind623 retry",
+    "readiness_change": 0
+  },
+  "ci623_owned_stdin_fix": {
+    "source": "2e011b71219c5d7f3032c269911ade6edec3092b",
+    "development_copy": "cfb93a2325e206f09e5f578e2f30a263e128b372",
+    "base_source": "e84792499b2949602691c349c369d62a533fb444",
+    "paths": [
+      "scripts/Test-ProGo.ps1"
+    ],
+    "status": "PARTIAL",
+    "confirmed_gap": "Noninteractive child stdout/stderr were owned but stdin inherited; corrected by RedirectStandardInput true and immediate owned EOF close",
+    "historical_cause": "Busy inherited CI stdin remains a hypothesis, not proven native stack/cause for622/623; source-backed risk removed and dedicated regression added",
+    "regression": "Native stdin-eof-regression reads to EOF, requires marker and exit0 within5000ms; wrong input returns42 in embedded-body Linux check; original positive0/nonzero17/timeout200ms preserved",
+    "static": "PASS manual PS5.1 quoting/own input/kill/stream lifetime, diff/BOM/public320/0/secretsPII0; exact embedded0/EOF/wrong-input42 bodies ran under Linux5s",
+    "powershell_execution": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "No src/test-body/workflow/VERSION or user interactive SSH changes",
+    "next": "Freeze script+latest3docs on exact623, full-scope/secret/public workflow/head/canonical tree check; one new exact CI to verify actual stdin/launcher and blocked native routes",
+    "readiness_change": 0
+  },
+  "historical_current_field_values": {
+    "fresh_candidate_verification_before_recovery": "CI608 full SUCCESS only source479addfd6f711831a12e1c7b49019a446f7970ce / merge36f39fb080e0195cad40922793b298a5da500914; address primitive/service/modal-save root changes excluded, Windows NOT_RUN"
   }
 }

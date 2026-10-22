@@ -1,3 +1,81 @@
+## Owned stdin correction prepared — strict native EOF check, Windows NOT_RUN
+
+Isolated code `2e011b71219c5d7f3032c269911ade6edec3092b` on exact623,one test
+script9add1delete. Noninteractive Python fixture tools now own RedirectStandardInput
+and immediately close their own input for EOF, removing dependence on CI host input.
+Dedicated stdin-eof-regression reads to EOF and requires marker+exit0 within5000ms.
+Original positive0/nonzero17/200ms timeout and termination/stream criteria unchanged;
+no runtime/interactive SSH/workflow/VERSION or system configuration changes. Busy CI
+stdin remains a supported hypothesis for622/623, not an asserted captured native stack.
+Manual input/stream/lifetime/PS5.1 quoting/BOM/diff/public320/0/secretsPII0 PASS. Exact
+embedded bodies positive0/EOF0/wrong-input42 passed under Linux5s; actual PowerShell/
+Windows launcher/native suites NOT_RUN. Next script+latest3docs freeze/scans/canonical
+fulltree/fresh public PR+workflow guard and one new exact CI. All local UI/Admin/pending
+changes excluded; no points. Current JSON pointers now explicitly separate published
+tree and local development tree; obsolete608 current-string preserved as history.
+I58–80/Y22 exact620 weighted partial gates,delta0/fullR09 FAIL/R11 open/targetA0.
+
+## CI623 FAIL — native pre-entry facts; stdin ownership correction next
+
+Sourcee84792499b2949602691c349c369d62a533fb444 /merge539e2a23fe7da9640c15971d0b35c7d3b3b47af6,
+run39803053552 completed Windows119908864469 FAIL/Ubuntu119908863649 SUCCESS.
+Production/Desktop compilation PASS15:15:32.696. Positive Python process started95ms
+at15:24:42.145,pid1732,hostedtoolcache. Deadline15:24:47.169 elapsed5115ms: alive,
+CPU0ms,RAM5959680bytes,both streams WaitingForActivation,no probe error,entry marker
+ABSENT. Own process terminated/streams empty; strict5000ms failure retained. Desktop/
+phone correction/API14/later Home/package NOT_RUN; all uploads/prune SKIPPED.
+
+Confirmed launcher ownership gap: stdout/stderr redirected, stdin inherited. Exact
+native stack/root cause still UNKNOWN. Busy inherited stdin is a supported HYPOTHESIS,
+not a proven explanation: [CPython78961](https://github.com/python/cpython/issues/78961)
+documents pre-entry Windows blocking on a pipe with outstanding I/O;
+[Microsoft RedirectStandardInput](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.redirectstandardinput)
+documents owning input/closing it for EOF. Next minimal script change: redirect stdin,
+close it immediately for noninteractive fixture tools, add strict EOF regression. Keep
+all deadlines/exit/error gates, no system/network/security changes or blind same-SHA run.
+
+Local pending-state worker `d500df68629d8af7533e4eca2993284c3675161a` reconstructs
+missing9859 as NEW source: Pending/Unreadable booleans, worker actual DPAPI validation,
+corrupt/locked stays unreadable+pending,cancel distinct,no token/write/lease. Six actual
+ShowDialog worker vectors empty/pending/completed/corrupt/locked/cancel preserve exact
+encrypted file set/bytes and caller lease;3s heartbeat/5s settlement+cleanup, old Pump15s
+unchanged. Manual/syntax2/C#5/diff/public321/0/secretsPII0 PASS; compiler/native6 NOT_RUN.
+Invitation UI binding/consumption worker still TODO; no missing original object restored.
+I58–80/Y22 exact620 partial gates,delta0/fullR09 FAIL/R11 open/targetA0.
+
+## Exact Admin cleanup retention4 reconstructed locally — Windows NOT_RUN
+
+Code `e1e793e0b0789e8d686454b052fd3b773623ed57` reconstructs optional core exact
+cleanup retention before its original typed error completes; work/upload creation is
+inside completion envelope. Service Stop drains all bodies, then retries only retained
+closures off UI, keeps locked cleanup owned/false and permits explicit unlock+Stop
+without copy/SSH/request replay. New factories refused while cleanup pending. No
+production broad directory scan/delete; same exact cleanup routine and typed outcomes.
+Four actual-core/injected local transport fixtures complete/list lock/preparation lock/
+Dispose lock use real helper/output/DPAPI files, heartbeat/bounded barriers, strict
+failed Stop then unlock retry, exact original failure, preserved unrelated sibling and
+protected files. Early core failure surfaces directly instead of generic entry timeout.
+Manual closure/lease/overload/lifetime/cleanup/diff/syntax2/C#5/public321/0/secretsPII0
+PASS; compiler/native4 NOT_RUN, excluded623/API17 freeze. Static Admin UI still legacy;
+no complete R09 or VPS claim. Next native API proof before owned production binding;
+independent lost invitation pending-state primitive6 can be reconstructed separately.
+Same623 Windows119908864469 build in_progress,Ubuntu119908863649 SUCCESS; no duplicate
+or head change. I58–80/Y22 exact620 partial gates,delta0/fullR09 FAIL/R11 open/targetA0.
+
+## CI623 in progress — bounded launcher diagnostic source published once
+
+Source `e84792499b2949602691c349c369d62a533fb444`, merge
+`539e2a23fe7da9640c15971d0b35c7d3b3b47af6`, full tree
+`d527b0007a1cf4ef793cb3ccf2556078e2bb64fc` equals local freezef5484d6 and fetched
+source/merge exactly. [CI623/39803053552](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39803053552)
+in_progress; one automatic run, no duplicate622/manual dispatch. Script-only owned
+Python startup facts/positive entry marker +three docs over622; all runtime/src/tests/
+workflows/VERSION unchanged. New exact compiler/native/package NOT_RUN until completed
+evidence. Earlier621 phone failure and622 Python timeout preserved separately, neither
+silently converted to success. Upload guards OFF/no release/merge/install/binary delivery.
+Next independent local exact Admin cleanup closure retention/retry4; UI/API17 frozen and
+excluded623. I58–80/Y22 exact620 partial gates,delta0/fullR09 FAIL/R11 open/targetA0.
+
 ## Python launcher diagnostic prepared — unchanged strict native deadlines
 
 Isolated code `7c95af616c38fd146e47e4dac388784d15d474f6` on exact622; one test
