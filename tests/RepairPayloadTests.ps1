@@ -89,7 +89,13 @@ try {
     # installed image must pass the isolated self-check before success.
     Get-ChildItem -LiteralPath $payload -Force | Remove-Item -Force -Recurse
     Get-ChildItem -LiteralPath $release -Force | Copy-Item -Destination $payload -Recurse -Force
-    $sourceFiles = @(Get-ChildItem -LiteralPath $payload -File -Recurse)
+    # Build also supplies three distributable documents. Install-ProGo does
+    # not deploy them as runtime leaves; every other built file is mandatory.
+    $documents = @('README.md', 'README.ru.md', 'LICENSE.md')
+    $sourceFiles = @(Get-ChildItem -LiteralPath $payload -File -Recurse | Where-Object {
+        $documents -cnotcontains $_.FullName.Substring($payload.Length + 1)
+    })
+    if ($sourceFiles.Count -ne 41) { throw 'Built runtime changed: repair fixture must explicitly cover every mandatory leaf' }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
     $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
@@ -102,7 +108,9 @@ try {
         if (-not $child.WaitForExit(20000)) { throw 'Complete repair with bounded self-check exceeded its twenty-second limit' }
         if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Complete repair output did not settle' }
         if ($child.ExitCode -ne 0 -or -not $stdout.Result.Contains('Repair runtime restored and verified:') -or -not $stdout.Result.Contains('Repair self-check PASS:')) {
-            throw 'Complete repair runtime copy failed'
+            $safe = [regex]::Match($stderr.Result, 'Cause: [A-Za-z0-9]+; stage=[a-z-]+; hresult=-?\d+; native=-?\d+; check_exit=-?\d+')
+            $evidence = if ($safe.Success) { $safe.Value } else { 'no classified repair failure' }
+            throw ('Complete repair runtime copy failed; child_exit=' + $child.ExitCode + '; ' + $evidence)
         }
     } finally {
         try {

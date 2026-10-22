@@ -268,11 +268,13 @@ foreach ($relative in $RequiredRuntimePaths) {
 if ($missing.Count -gt 0) { throw ('Repair payload incomplete or empty: ' + ($missing -join ', ')) }
 # Freeze all expected bytes before any installation write.
 foreach ($relative in $RequiredRuntimePaths) { $payloadHashes[$relative] = Get-RepairHash (Join-Path $ReleaseDir $relative) }
+$repairPhase = 'maintenance-load'; $selfCheckExit = -1
 try {
     if (-not ('ProGo.MaintenanceOperation' -as [type])) {
         Add-Type -TypeDefinition ([IO.File]::ReadAllText((Join-Path $ReleaseDir 'scripts\MaintenanceOperation.cs')))
     }
     if ($null -eq [ProGo.MaintenanceOperation].GetMethod('RunOwnedSelfCheck')) { throw 'Repair requires a fresh PowerShell process with its prepared maintenance helper.' }
+    $repairPhase = 'maintenance-gate'
     $maintenance = [ProGo.MaintenanceOperation]::Enter()
     [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
     [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
@@ -282,6 +284,7 @@ try {
     $leaseCreated = -not (Test-Path -LiteralPath $lockPath)
     $lease = [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     Ensure-RepairDirectory $transaction
+    $repairPhase = 'snapshot'
     Write-RepairJournal 'preparing'
     foreach ($relative in $RequiredRuntimePaths) {
         Assert-RepairTarget $relative
@@ -302,6 +305,7 @@ try {
         if ((Get-RepairHash $staged) -cne $payloadHashes[$relative]) { throw ('Repair payload changed while staging: ' + $relative) }
     }
     Write-RepairJournal 'prepared'
+    $repairPhase = 'runtime-copy'
     foreach ($relative in $RequiredRuntimePaths) {
         Assert-RepairTarget $relative
         $target = Join-Path $InstallDir $relative
@@ -312,6 +316,7 @@ try {
         Write-RepairJournal 'applying'
         Set-RepairFile (Join-Path (Join-Path $transaction 'new') $relative) $target $payloadHashes[$relative]
     }
+    $repairPhase = 'runtime-verify'
     foreach ($relative in $RequiredRuntimePaths) {
         if ((Get-RepairHash (Join-Path $InstallDir $relative)) -cne $payloadHashes[$relative]) { throw ('Repair runtime verification failed: ' + $relative) }
     }
@@ -322,17 +327,26 @@ try {
     $check.Arguments = '--self-check'; $check.WorkingDirectory = $InstallDir
     $check.UseShellExecute = $false; $check.CreateNoWindow = $true
     $check.EnvironmentVariables['LOCALAPPDATA'] = Join-Path $transaction 'self-check-data'
-    if ([ProGo.MaintenanceOperation]::RunOwnedSelfCheck($check, 8000) -ne 0) { throw 'Installed repair self-check failed.' }
+    $repairPhase = 'self-check'
+    $selfCheckExit = [ProGo.MaintenanceOperation]::RunOwnedSelfCheck($check, 8000)
+    if ($selfCheckExit -ne 0) { throw 'Installed repair self-check failed.' }
     foreach ($relative in $RequiredRuntimePaths) {
         if ((Get-RepairHash (Join-Path $InstallDir $relative)) -cne $payloadHashes[$relative]) { throw ('Runtime changed during repair self-check: ' + $relative) }
     }
     Write-Host 'Repair self-check PASS: installed image, isolated local data root'
     $selfCheckPassed = $true
+    $repairPhase = 'commit'
     Ensure-RepairDirectory $BackupsDir
     Write-RepairJournal 'committed'
     $committed = $true; $journalSettled = $true
 } catch {
-    $failureType = $_.Exception.GetType().Name
+    # Never print exception messages: paths or personal data can appear there.
+    # Stable phase, type and numeric codes retain actionable CI evidence.
+    $failure = $_.Exception
+    for ($depth = 0; $depth -lt 8 -and $null -ne $failure.InnerException; $depth++) { $failure = $failure.InnerException }
+    $failureType = $failure.GetType().Name
+    $failureCode = $failure.HResult
+    $nativeCode = if ($failure -is [ComponentModel.Win32Exception]) { $failure.NativeErrorCode } else { 0 }
     $conflicts = @()
     for ($index = $applied.Count - 1; $index -ge 0; $index--) {
         $relative = $applied[$index]
@@ -358,7 +372,7 @@ try {
         try { Write-RepairJournal 'rolled-back'; $journalSettled = $true }
         catch { throw ('Original runtime restored but durable cleanup is still pending: ' + $transaction) }
     } else { $journalSettled = $true }
-    throw ('Repair failed; original runtime restored. Cause: ' + $failureType)
+    throw ('Repair failed; original runtime restored. Cause: ' + $failureType + '; stage=' + $repairPhase + '; hresult=' + $failureCode + '; native=' + $nativeCode + '; check_exit=' + $selfCheckExit)
 } finally {
     try {
         foreach ($temporary in $temporaryFiles) { if ([IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) } }
