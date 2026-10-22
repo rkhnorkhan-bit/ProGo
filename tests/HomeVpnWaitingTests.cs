@@ -20,7 +20,10 @@ namespace ProGo
         // This executable is also the owned SSH substitute, never a live SSH client.
         internal static bool Fixture(string[] args)
         {
-            if (args.Length == 1 && args[0] == "unrelated-wait") { Thread.Sleep(60000); return true; }
+            // An unrelated fixture outlives its owner's test scope, rather than
+            // dying on an arbitrary wall clock during a still-bounded scenario.
+            // Parent exit also closes this private pipe and releases the child.
+            if (args.Length == 1 && args[0] == "unrelated-wait") { Console.In.ReadLine(); return true; }
             int index = Array.IndexOf(args, "-D");
             if (index < 0) return false;
             string folder = Environment.GetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE");
@@ -65,7 +68,7 @@ namespace ProGo
                 saved[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
             }
             Environment.SetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE", marker);
-            var unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "unrelated-wait") { UseShellExecute = false, CreateNoWindow = true });
+            var unrelated = StartUnrelatedFixture();
             try {
                 PublicationReadiness();
                 foreach (string mode in new[] { "no-listener", "silent" }) {
@@ -84,10 +87,29 @@ namespace ProGo
                 check(!unrelated.HasExited, "all channel cancellation and cleanup paths preserve an unrelated process");
             }
             finally {
-                KillFixture(); Environment.SetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE", previous);
-                if (!unrelated.HasExited) { unrelated.Kill(); unrelated.WaitForExit(2000); } unrelated.Dispose();
-                foreach (var item in saved) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); }
+                try { KillFixture(); Environment.SetEnvironmentVariable("PROGO_HOME_WAIT_FIXTURE", previous); }
+                finally {
+                    try { StopUnrelatedFixture(unrelated); }
+                    finally { foreach (var item in saved) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
+                }
             }
+        }
+        internal static Process StartUnrelatedFixture()
+        {
+            return Process.Start(new ProcessStartInfo(Application.ExecutablePath, "unrelated-wait") {
+                UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true });
+        }
+        internal static void StopUnrelatedFixture(Process process)
+        {
+            try {
+                if (!process.HasExited) {
+                    process.StandardInput.Close();
+                    if (!process.WaitForExit(500)) {
+                        process.Kill();
+                        if (!process.WaitForExit(1500)) throw new TimeoutException("Owned unrelated fixture did not exit after pipe close or targeted cleanup");
+                    }
+                }
+            } finally { process.Dispose(); }
         }
         private static HomeVpnService Service(Ikev2RelayService relay)
         {

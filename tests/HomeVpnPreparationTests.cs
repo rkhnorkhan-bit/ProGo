@@ -57,7 +57,7 @@ namespace ProGo
                 string target = Path.Combine(helpers, file); previous[target] = File.Exists(target) ? File.ReadAllBytes(target) : null;
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
-            var unrelated = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "unrelated-wait") { UseShellExecute = false, CreateNoWindow = true });
+            var unrelated = HomeVpnWaitingTests.StartUnrelatedFixture();
             try {
                 OwnerContinuationLifecycle(clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(route, work);
@@ -66,8 +66,11 @@ namespace ProGo
                 ListWaiting(token, clipboard, work);
                 check(!unrelated.HasExited, "preparation cancellation, deadline and normal completion preserve an unrelated process");
             } finally {
-                KillFixtures(); if (!unrelated.HasExited) { unrelated.Kill(); unrelated.WaitForExit(2000); } unrelated.Dispose();
-                foreach (var item in previous) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); }
+                try { KillFixtures(); }
+                finally {
+                    try { HomeVpnWaitingTests.StopUnrelatedFixture(unrelated); }
+                    finally { foreach (var item in previous) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
+                }
             }
         }
         private static object Field(object target, string name) { return target.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(target); }
