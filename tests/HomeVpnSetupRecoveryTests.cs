@@ -33,12 +33,62 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeRecovery(token, clipboard, work);
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeRecovery(token, clipboard, work); OwnedConsumption(token);
                 check(!Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Any()
                     && !Directory.GetFiles(HomeVpnPrivateFiles.Root, "setup-request.dat.*.new").Any(), "recovery settles its private local work and atomic-save temporary files");
             } finally {
                 foreach (var item in saved) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); }
             }
+        }
+        private static void OwnedConsumption(string token)
+        {
+            using (var host = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; heartbeat.Tick += delegate { ticks++; }; host.Show(); heartbeat.Start();
+                try {
+                    foreach (string mode in new[] { "complete", "cancel-read", "cancel-consume", "scope-refused", "locked", "changed-request", "changed-credentials" })
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var cancellation = new CancellationTokenSource()) {
+                        File.Delete(PendingPath); var owner = Owner;
+                        HomeVpnPrivateFiles.Save("access", token.Trim()); HomeVpnPrivateFiles.Save("owner", Json.Serialize(owner));
+                        var request = HomeVpnSetupRecovery.Register(owner, "My iPhone"); HomeVpnSetupRecovery.RetainResult(owner, request, token);
+                        byte[] journal = File.ReadAllBytes(PendingPath), expectedJournal = journal, beforeAccess = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat")), beforeOwner = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat"));
+                        byte[] expectedAccess = beforeAccess; Task operation = null; FileStream held = null; int worker = 0, allowed = 1;
+                        try {
+                            var watch = Stopwatch.StartNew();
+                            operation = HomeVpnSetupRecovery.ConfirmConsumedAsync(owner, token, cancellation.Token, () => Volatile.Read(ref allowed) != 0, stage => {
+                                if (stage != (mode == "cancel-read" ? "read" : "consume")) return;
+                                Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Owned setup consumption fixture deadline");
+                            });
+                            check(watch.ElapsedMilliseconds < 500, "setup consumption returns owned work before private receipt/credential I/O: " + mode);
+                            int beforeTicks = ticks; var wait = Stopwatch.StartNew();
+                            while (!entered.IsSet || ticks < beforeTicks + 3) { if (wait.ElapsedMilliseconds > 3000) throw new TimeoutException("Setup consumption heartbeat deadline"); Application.DoEvents(); Thread.Sleep(1); }
+                            owner.KeyFile = "changed-after-capture";
+                            check(worker != ui && !operation.IsCompleted && journal.SequenceEqual(File.ReadAllBytes(PendingPath)), "held real setup consumption retains its original request while native owner UI stays responsive: " + mode);
+                            if (mode.StartsWith("cancel-", StringComparison.Ordinal)) cancellation.Cancel();
+                            if (mode == "scope-refused") Interlocked.Exchange(ref allowed, 0);
+                            if (mode == "locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "changed-request") {
+                                request.RequestId = new string('d', 32); HomeVpnPrivateFiles.Save(HomeVpnSetupRecovery.StorageName, Json.Serialize(request)); expectedJournal = File.ReadAllBytes(PendingPath);
+                            }
+                            if (mode == "changed-credentials") { HomeVpnPrivateFiles.Save("access", "changed-private-fixture"); expectedAccess = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat")); }
+                            release.Set(); JoinConsumption(operation); Exception failure = null; try { operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                            check(mode == "complete" ? failure == null && !File.Exists(PendingPath) : failure != null && expectedJournal.SequenceEqual(File.ReadAllBytes(PendingPath)), "only exact saved credentials and live admission consume the setup request; cancel/real lock/new request retain it: " + mode);
+                            check((mode.StartsWith("cancel-", StringComparison.Ordinal) || mode == "scope-refused" ? failure is OperationCanceledException : mode == "complete" || failure is HomeVpnSetupPendingException)
+                                && expectedAccess.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"))) && beforeOwner.SequenceEqual(File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat"))),
+                                "consumption is read/delete only, respects copied owner and never overwrites credentials or starts another setup: " + mode);
+                        } finally { release.Set(); cancellation.Cancel(); if (held != null) held.Dispose(); if (operation != null) JoinConsumption(operation); }
+                    }
+                } finally { heartbeat.Stop(); host.Close(); }
+            }
+        }
+        private static void JoinConsumption(Task operation)
+        {
+            var watch = Stopwatch.StartNew();
+            while (!operation.IsCompleted) { if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned setup consumption cleanup deadline"); Application.DoEvents(); Thread.Sleep(1); }
+            try { operation.GetAwaiter().GetResult(); } catch (Exception) { /* Asserted separately, observed before restoring owned fixture bytes. */ }
         }
         private static void Backup(Dictionary<string, byte[]> saved, string path) { saved[path] = File.Exists(path) ? File.ReadAllBytes(path) : null; }
         private static void Pump(Func<bool> ready)

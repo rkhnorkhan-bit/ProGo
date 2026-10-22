@@ -77,6 +77,8 @@ namespace ProGo
                 WizardShareRead(token, clipboard);
                 ConfigureInitialization(token);
                 PreparedHomeAddressWorker();
+                PreparedImportWorker(token);
+                OwnedImportWorker(token);
                 OwnedHomeAddressWorker(token);
                 WizardHomeAddressWrite(token, clipboard);
                 foreach (string mode in new[] { "no-listener", "silent" }) {
@@ -317,6 +319,162 @@ namespace ProGo
                                 if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned home address fixture cleanup incomplete");
                                 if (saving != null) try { saving.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (HomeVpnLocalCleanupException) { }
                             }
+                        }
+                    }
+                } finally { heartbeat.Stop(); form.Close(); foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
+            }
+        }
+        private static string BeforeImportToken(string token)
+        {
+            var json = new System.Web.Script.Serialization.JavaScriptSerializer();
+            string encoded = token.Trim().Substring(7).Replace('-', '+').Replace('_', '/'); encoded = encoded.PadRight((encoded.Length + 3) / 4 * 4, '=');
+            var fields = json.Deserialize<Dictionary<string, object>>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded))); fields["Host"] = "before.example";
+            string value = "PROGO1." + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json.Serialize(fields))).TrimEnd('=').Replace('+', '-').Replace('/', '_'); HomeVpnAccess.Parse(value); return value;
+        }
+        private static void OwnedImportWorker(string token)
+        {
+            string accessPath = Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"), ownerPath = Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat"), pendingPath = Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat");
+            var original = new[] { accessPath, ownerPath, pendingPath }.ToDictionary(path => path, path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            var json = new System.Web.Script.Serialization.JavaScriptSerializer(); string beforeToken = BeforeImportToken(token);
+            var current = HomeVpnAccess.Parse(token); var beforeOwner = new HomeVpnOwner { Host = "before.example", Port = current.Port, Login = "root", KeyFile = "" };
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
+                try {
+                    foreach (string mode in new[] { "save", "cancel", "stop", "dispose", "accepted-stop", "accepted-dispose", "second-lock", "cleanup-lock", "stale-access" }) {
+                        HomeVpnPrivateFiles.Save("access", beforeToken); HomeVpnPrivateFiles.Save("owner", json.Serialize(beforeOwner));
+                        byte[] beforeAccess = File.ReadAllBytes(accessPath), ownerBytes = File.ReadAllBytes(ownerPath);
+                        using (var relay = new Ikev2RelayService())
+                        using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
+                        using (var entered = new ManualResetEventSlim())
+                        using (var release = new ManualResetEventSlim())
+                        using (var accepted = new ManualResetEventSlim())
+                        using (var publish = new ManualResetEventSlim())
+                        using (var cancellation = new CancellationTokenSource()) {
+                            Task<bool> importing = null, stop = null; FileStream held = null; int worker = 0;
+                            var owner = new HomeVpnOwner { Host = current.Host, Port = current.Port, Login = "root", KeyFile = "" };
+                            try {
+                                Pump(() => service.InitializationWork.IsCompleted, 5000); service.InitializationWork.GetAwaiter().GetResult();
+                                var watch = Stopwatch.StartNew();
+                                importing = service.UseTokenAsync(" " + token.Trim() + " ", owner, cancellation.Token, stage => {
+                                    Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                                    if (stage == "prepared") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned import prepare fixture deadline"); }
+                                    if (stage == "accepted" && mode.StartsWith("accepted-", StringComparison.Ordinal)) { accepted.Set(); if (!publish.Wait(5000)) throw new TimeoutException("Owned accepted import fixture deadline"); }
+                                });
+                                check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(importing, service.ImportWork) && service.IsImporting, "import publishes immutable-input/task ownership before parse, channel stop or credential I/O: " + mode);
+                                int beforeTicks = ticks; Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                                owner.KeyFile = "changed-after-capture";
+                                check(worker != ui && !importing.IsCompleted && service.HasOwnedResources && service.Access.Host == "before.example" &&
+                                    Object.ReferenceEquals(importing, service.UseTokenAsync(token, new HomeVpnOwner { Host = current.Host, Port = current.Port, Login = "root", KeyFile = "" }, CancellationToken.None)),
+                                    "held import retains native heartbeat, the old live access and one physical owner for exact duplicates: " + mode);
+                                bool refused = false; try { service.SetHomeAddressAsync("other.example", CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { refused = true; }
+                                check(refused, "another private write cannot run beside a pending credential import: " + mode);
+                                refused = false; try { service.StartAsync().GetAwaiter().GetResult(); } catch (InvalidOperationException) { refused = true; }
+                                check(refused, "channel start cannot use a partial credential import: " + mode);
+                                refused = false; try { service.UseTokenAsync(beforeToken, beforeOwner, CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { refused = true; }
+                                check(refused, "a different token/owner cannot replace or run beside the retained import: " + mode);
+                                if (mode.StartsWith("accepted-", StringComparison.Ordinal)) { release.Set(); Pump(() => accepted.IsSet, 3000); }
+                                if (mode == "cancel" || mode == "cleanup-lock") cancellation.Cancel();
+                                if (mode == "second-lock") held = File.Open(ownerPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                if (mode == "cleanup-lock") held = File.Open(((HomeVpnImportWrite)Field(service, "importWrite")).OwnerStagingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                if (mode == "stale-access") typeof(HomeVpnService).GetProperty("Access", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(service, HomeVpnAccess.Parse(beforeToken), null);
+                                if (mode == "stop" || mode == "accepted-stop") { watch.Restart(); stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted && Object.ReferenceEquals(stop, service.StopAsync()), "public Stop joins the actual import without self-await or duplicate physical stop: " + mode); }
+                                if (mode == "dispose" || mode == "accepted-dispose") { watch.Restart(); service.Dispose(); stop = service.StopWork; check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Dispose retains the actual import and returns to native UI: " + mode); }
+                                check(!importing.IsCompleted && beforeAccess.SequenceEqual(File.ReadAllBytes(accessPath)), "cancelled or admitted import cannot report a disk result while its real worker is held: " + mode);
+                                release.Set(); publish.Set(); Pump(() => importing.IsCompleted && (stop == null || stop.IsCompleted), 5000);
+                                Exception failure = null; bool saved = false; try { saved = importing.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                                bool complete = mode == "save" || mode.StartsWith("accepted-", StringComparison.Ordinal), partial = mode == "second-lock";
+                                check(complete ? saved && failure == null && HomeVpnPrivateFiles.Load("access") == token.Trim() && json.Deserialize<HomeVpnOwner>(HomeVpnPrivateFiles.Load("owner")).KeyFile == "" :
+                                    partial ? failure is HomeVpnImportPartialException && HomeVpnPrivateFiles.Load("access") == token.Trim() && ownerBytes.SequenceEqual(File.ReadAllBytes(ownerPath)) :
+                                    (mode == "cleanup-lock" ? failure is HomeVpnLocalCleanupException : failure is OperationCanceledException && importing.IsCanceled) && beforeAccess.SequenceEqual(File.ReadAllBytes(accessPath)) && ownerBytes.SequenceEqual(File.ReadAllBytes(ownerPath)),
+                                    "import result distinguishes complete save, partial second save and pre-admission cancellation with fixed captured owner: " + mode);
+                                check(service.Access.Host == (complete && mode != "accepted-dispose" ? current.Host : "before.example"), "disposed or cancelled importer cannot publish late access metadata: " + mode);
+                                check(original[pendingPath] == null ? !File.Exists(pendingPath) : original[pendingPath].SequenceEqual(File.ReadAllBytes(pendingPath)), "import does not consume setup receipt or submit another setup action: " + mode);
+                                if (stop != null) check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "outer Stop completes only after its real import and cleanup settle: " + mode);
+                                if (mode == "cleanup-lock") {
+                                    check(service.HasOwnedResources, "failed import stage cleanup retains its exact owner instead of reporting cancellation cleanup complete");
+                                    stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000); check(!stop.GetAwaiter().GetResult() && service.HasOwnedResources, "locked retained import stage makes Stop fail honestly and remain retryable");
+                                    held.Dispose(); held = null; stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000); check(stop.GetAwaiter().GetResult() && !service.HasOwnedResources, "unlock then Stop retries only the retained import stage");
+                                    var retry = service.UseTokenAsync(token, new HomeVpnOwner { Host = current.Host, Port = current.Port, Login = "root", KeyFile = "" }, CancellationToken.None); Pump(() => retry.IsCompleted, 5000);
+                                    check(retry.GetAwaiter().GetResult() && service.Access.Host == current.Host, "fresh explicit import becomes available only after actual owned cleanup completes");
+                                }
+                            } finally {
+                                release.Set(); publish.Set(); cancellation.Cancel(); if (held != null) held.Dispose(); service.Dispose(); var cleanup = service.StopAsync();
+                                Pump(() => cleanup.IsCompleted && service.ImportWork.IsCompleted, 5000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned import cleanup incomplete");
+                                if (importing != null) try { importing.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (IOException) { }
+                            }
+                        }
+                    }
+                } finally { heartbeat.Stop(); form.Close(); foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
+            }
+        }
+        private static void PreparedImportWorker(string token)
+        {
+            string accessPath = Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"), ownerPath = Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat"), pendingPath = Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat");
+            var original = new[] { accessPath, ownerPath, pendingPath }.ToDictionary(path => path, path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            var json = new System.Web.Script.Serialization.JavaScriptSerializer();
+            string encoded = token.Trim().Substring(7).Replace('-', '+').Replace('_', '/'); encoded = encoded.PadRight((encoded.Length + 3) / 4 * 4, '=');
+            var beforeFields = json.Deserialize<Dictionary<string, object>>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded))); beforeFields["Host"] = "before.example";
+            string beforeToken = "PROGO1." + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json.Serialize(beforeFields))).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            HomeVpnAccess.Parse(beforeToken); // Both sides are actual valid token payloads.
+            string beforeOwner = json.Serialize(new HomeVpnOwner { Host = "before.example", Port = 22, Login = "root", KeyFile = "" });
+            var parsed = HomeVpnAccess.Parse(token); string afterOwner = json.Serialize(new HomeVpnOwner { Host = parsed.Host, Port = parsed.Port, Login = "root", KeyFile = "" });
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
+                try {
+                    foreach (string mode in new[] { "save", "cancel", "refuse", "changed-owner", "first-lock", "second-lock", "accepted-cancel", "cleanup-lock", "stage-changed" })
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var accepted = new ManualResetEventSlim())
+                    using (var publish = new ManualResetEventSlim())
+                    using (var cancellation = new CancellationTokenSource()) {
+                        HomeVpnPrivateFiles.Save("access", beforeToken); HomeVpnPrivateFiles.Save("owner", beforeOwner);
+                        byte[] beforeAccess = File.ReadAllBytes(accessPath), beforeOwnerBytes = File.ReadAllBytes(ownerPath), expectedOwner = beforeOwnerBytes, ownerStage = null;
+                        var operation = new HomeVpnImportWrite(" " + token.Trim() + " ", afterOwner); Task work = null; FileStream held = null; int worker = 0, admissions = 0;
+                        try {
+                            work = Task.Run(delegate {
+                                try {
+                                    operation.Prepare(cancellation.Token, stage => {
+                                        Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                                        if (stage == "prepared") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Import pair preparation fixture deadline"); }
+                                    });
+                                    operation.Commit(delegate { if (mode == "refuse" || cancellation.IsCancellationRequested) return false; Interlocked.Increment(ref admissions); return true; }, stage => {
+                                        if (stage == "accepted" && mode == "accepted-cancel") { accepted.Set(); if (!publish.Wait(5000)) throw new TimeoutException("Accepted import pair fixture deadline"); }
+                                    });
+                                } finally { operation.Dispose(); }
+                            });
+                            int startTicks = ticks; Pump(() => entered.IsSet && ticks >= startTicks + 3, 3000);
+                            ownerStage = File.ReadAllBytes(operation.OwnerStagingPath);
+                            check(worker != ui && !work.IsCompleted && !operation.AccessCommitted && !operation.OwnerCommitted && beforeAccess.SequenceEqual(File.ReadAllBytes(accessPath)) && beforeOwnerBytes.SequenceEqual(File.ReadAllBytes(ownerPath)) &&
+                                HomeVpnPrivateFiles.Load(Path.GetFileNameWithoutExtension(operation.AccessStagingPath)) == token.Trim() && HomeVpnPrivateFiles.Load(Path.GetFileNameWithoutExtension(operation.OwnerStagingPath)) == afterOwner,
+                                "actual token and owner stages are protected and owned off UI before either previous credential is replaced: " + mode);
+                            if (mode == "cancel" || mode == "cleanup-lock") cancellation.Cancel();
+                            if (mode == "changed-owner") { HomeVpnPrivateFiles.Save("owner", "null"); expectedOwner = File.ReadAllBytes(ownerPath); }
+                            if (mode == "first-lock") held = File.Open(accessPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "second-lock") held = File.Open(ownerPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "cleanup-lock") held = File.Open(operation.OwnerStagingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            if (mode == "stage-changed") File.WriteAllBytes(operation.OwnerStagingPath, new byte[] { 1, 2, 3 });
+                            release.Set();
+                            if (mode == "accepted-cancel") { Pump(() => accepted.IsSet, 3000); cancellation.Cancel(); check(!work.IsCompleted && beforeAccess.SequenceEqual(File.ReadAllBytes(accessPath)), "accepted import pair stays owned until physical writes finish; cancellation cannot claim rollback"); publish.Set(); }
+                            Pump(() => work.IsCompleted, 5000); Exception failure = null; try { work.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                            bool complete = mode == "save" || mode == "accepted-cancel", partial = mode == "second-lock";
+                            check(operation.AccessCommitted == (complete || partial) && operation.OwnerCommitted == complete && (complete ? failure == null : failure != null), "pair writer exposes actual complete, partial or pre-admission refusal without false success: " + mode);
+                            check(complete || partial ? HomeVpnPrivateFiles.Load("access") == token.Trim() : beforeAccess.SequenceEqual(File.ReadAllBytes(accessPath)), "token publication matches the reported per-file outcome: " + mode);
+                            check(complete ? HomeVpnPrivateFiles.Load("owner") == afterOwner : expectedOwner.SequenceEqual(File.ReadAllBytes(ownerPath)), "second save failure or changed owner keeps its actual previous/newer owner bytes: " + mode);
+                            check(admissions == (complete || mode == "first-lock" || partial ? 1 : 0) && (original[pendingPath] == null ? !File.Exists(pendingPath) : original[pendingPath].SequenceEqual(File.ReadAllBytes(pendingPath))), "pair admission does not consume setup recovery or repeat an external action: " + mode);
+                            if (mode == "cleanup-lock" || mode == "stage-changed") {
+                                check(!File.Exists(operation.AccessStagingPath) && File.Exists(operation.OwnerStagingPath), "pair cleanup attempts both owned stages and retains only the exact failed cleanup: " + mode);
+                                if (mode == "stage-changed") { check(File.ReadAllBytes(operation.OwnerStagingPath).SequenceEqual(new byte[] { 1, 2, 3 }), "changed pair stage is preserved instead of erased"); File.WriteAllBytes(operation.OwnerStagingPath, ownerStage); }
+                                if (held != null) { held.Dispose(); held = null; }
+                                var cleanup = Task.Run(() => operation.Dispose()); Pump(() => cleanup.IsCompleted, 5000); cleanup.GetAwaiter().GetResult();
+                            }
+                            check(!File.Exists(operation.AccessStagingPath) && !File.Exists(operation.OwnerStagingPath), "settled pair or explicit cleanup retry removes only its own unique stages: " + mode);
+                        } finally {
+                            release.Set(); publish.Set(); cancellation.Cancel(); if (held != null) held.Dispose();
+                            if (work != null) { Pump(() => work.IsCompleted, 5000); try { work.GetAwaiter().GetResult(); } catch { } }
+                            if (mode == "stage-changed" && ownerStage != null && File.Exists(operation.OwnerStagingPath)) File.WriteAllBytes(operation.OwnerStagingPath, ownerStage);
+                            var cleanup = Task.Run(() => operation.Dispose()); Pump(() => cleanup.IsCompleted, 5000); cleanup.GetAwaiter().GetResult();
                         }
                     }
                 } finally { heartbeat.Stop(); form.Close(); foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }

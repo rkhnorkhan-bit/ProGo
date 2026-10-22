@@ -169,6 +169,11 @@ namespace ProGo
                 throw new ArgumentException("Идентификатор сервера для сохранения HTTPS-адреса недопустим.");
             return new HomeVpnAddressWrite("share-" + serverId, HomeProfileShare.Origin(value));
         }
+        internal static HomeVpnAddressWrite ForImportPart(bool owner, string value)
+        {
+            if (String.IsNullOrEmpty(value)) throw new ArgumentException("Данные локального сохранения доступа пусты.");
+            return new HomeVpnAddressWrite(owner ? "owner" : "access", value);
+        }
         internal void Prepare(CancellationToken cancellation, Action<string> beforeIo = null)
         {
             if (disposed || attempted) throw new InvalidOperationException("Подготовка адреса уже выполнялась.");
@@ -206,7 +211,7 @@ namespace ProGo
             return true;
         }
         private static void Clear(byte[] value) { if (value != null) Array.Clear(value, 0, value.Length); }
-        internal void Commit(Func<bool> accept, Action<string> beforeIo = null)
+        internal void VerifyPrepared()
         {
             if (disposed || committed || !stagedVerified) throw new InvalidOperationException("Сохранение адреса не подготовлено или уже завершено.");
             byte[] current = Read(destination), staged = null;
@@ -215,6 +220,10 @@ namespace ProGo
                 if (!Same(previous, current)) throw new InvalidOperationException("Сохранённый адрес уже изменён. Повторите сохранение; более новые данные не заменены.");
                 if (!Same(encrypted, staged)) throw new InvalidOperationException("Временный файл адреса изменён. Сохранение не принято; прежний адрес не заменён.");
             } finally { Clear(current); Clear(staged); }
+        }
+        internal void Commit(Func<bool> accept, Action<string> beforeIo = null)
+        {
+            VerifyPrepared();
             if (accept == null || !accept()) throw new OperationCanceledException("Сохранение адреса отменено до принятия записи. Прежние данные сохранены.");
             // After admission cancellation cannot undo this atomic publication.
             // Stop/Dispose must retain this worker until the actual result settles.
@@ -240,6 +249,47 @@ namespace ProGo
             // A cleanup exception deliberately retains both object and arrays:
             // its owner can release its own stream and retry this exact cleanup.
             Clear(previous); Clear(encrypted); previous = encrypted = null; disposed = true;
+        }
+    }
+
+    // Worker-only two-file import preparation. The existing on-disk format is
+    // retained; two separate atomic files are not a crash-atomic transaction.
+    internal sealed class HomeVpnImportWrite : IDisposable
+    {
+        private readonly HomeVpnAddressWrite access, owner;
+        internal bool AccessCommitted { get; private set; }
+        internal bool OwnerCommitted { get; private set; }
+        internal string AccessStagingPath { get { return access.StagingPath; } }
+        internal string OwnerStagingPath { get { return owner.StagingPath; } }
+        internal HomeVpnImportWrite(string token, string ownerJson)
+        {
+            access = HomeVpnAddressWrite.ForImportPart(false, (token ?? "").Trim());
+            owner = HomeVpnAddressWrite.ForImportPart(true, ownerJson);
+        }
+        internal void Prepare(CancellationToken token, Action<string> beforeIo = null)
+        {
+            access.Prepare(token, stage => { if (beforeIo != null) beforeIo("access-" + stage); });
+            owner.Prepare(token, stage => { if (beforeIo != null) beforeIo("owner-" + stage); });
+            token.ThrowIfCancellationRequested(); if (beforeIo != null) beforeIo("prepared"); token.ThrowIfCancellationRequested();
+        }
+        internal void Commit(Func<bool> admit, Action<string> beforeIo = null)
+        {
+            // Both previous targets/stages are verified before the first write.
+            access.VerifyPrepared(); owner.VerifyPrepared();
+            if (admit == null || !admit()) throw new OperationCanceledException("Сохранение доступа отменено до принятия записи. Прежние данные сохранены.");
+            // After admission finish the known pair; cancellation cannot roll
+            // back a physical publication. Expose any partial result honestly.
+            if (beforeIo != null) beforeIo("accepted");
+            access.Commit(() => true); AccessCommitted = true;
+            if (beforeIo != null) beforeIo("access-saved");
+            owner.Commit(() => true); OwnerCommitted = true;
+        }
+        public void Dispose()
+        {
+            Exception failure = null;
+            try { access.Dispose(); } catch (Exception ex) { failure = ex; }
+            try { owner.Dispose(); } catch (Exception ex) { if (failure == null) failure = ex; }
+            if (failure != null) throw new IOException("Временное сохранение доступа требует очистки. Освободите его файлы и повторите остановку VPN для телефона; новые данные пока не сохраняйте.");
         }
     }
 

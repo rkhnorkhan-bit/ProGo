@@ -87,7 +87,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:16.4067725Z PASS: CLI migration preserves unrelated preferences 0"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -161,7 +162,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:42:51.5075264Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -235,7 +237,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:57:12.9438792Z PASS: restarted application retains single-instance ownership after handoff"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -309,7 +312,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:41:36.8879131Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -383,7 +387,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:55:24.4408909Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -458,7 +463,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:26.2456292Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -532,7 +538,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:46:27.3969241Z Backup retention tests PASS: 29"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -606,7 +613,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:42.1882093Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -680,7 +688,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:38:56.2539990Z PASS: wrong-pin read leaves source bytes and file set unchanged"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -754,7 +763,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:16.2967235Z PASS: Windows uses tested HTTP/CONNECT bridge"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -828,7 +838,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:18.4968816Z PASS: real tray command dispatches its expected dialog: Settings"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -902,7 +913,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:46.3652774Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -976,7 +988,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:55:52.5490500Z PASS: Escape closes the actual modal route dialog while measurements run"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1050,7 +1063,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:55:51.8202083Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1125,7 +1139,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:24.7726675Z Settings initial-load preservation checks PASS: 93"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1199,7 +1214,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:50:08.5990485Z PASS: scaled cleanup list and actions do not overlap"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1273,7 +1289,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:55:52.3542884Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1347,7 +1364,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:53:56.6839154Z PASS: wizard accessible issuance result never claims installation"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1445,7 +1463,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:53:59.3663447Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1519,7 +1538,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:59:58.5755269Z PASS: secret copy writes current clipboard"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1594,7 +1614,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T09:04:23.8280101Z PASS: production background constructor loads clean imported data through its actual owned worker without activating SSH or relay"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1668,7 +1689,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:59:56.1345073Z Updater package tests PASS: 5"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1742,7 +1764,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:52:33.8256369Z PASS: help Начало 820 exposes a focusable read-only instruction pane"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1816,7 +1839,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:48:20.4659756Z PASS: real tray command dispatches its expected dialog: Diagnostics"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1890,7 +1914,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:46:24.0870446Z PASS: startup runs quietly without changing SSH preferences"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -1988,7 +2013,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:50:51.6704308Z PASS: every typed command has one unique round-trippable compatibility ID: Connect"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -2062,7 +2088,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:54:38.5148259Z PASS: built icon has a valid Windows ICO header"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -2160,7 +2187,8 @@
           "P": 0.5,
           "A": 0,
           "limitation": "Partial parent only, no full acceptance or child double credit"
-        }
+        },
+        "ci613_score_anchor": "2026-10-22T08:47:54.9426186Z Update check tests PASS: 72"
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -3523,7 +3551,7 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Exact611 full SUCCESS sourced896/mergef0bf: shared store9+9/service7+9/receipt worker8 API PASS and all regressions incl direct+owned-agent real SSH chain. Actual configure UI9faa/importAPI99ad/wizard setup probes NOT_RUN, full R09/R10/R11 and target criteria open.",
+        "candidate": "Exact613 source de7b42628ccd656f369ba0e286e9b406cc20dee6 /merge5262c806c06ba715d61bf3e070b52fbc31b3f2ab complete SUCCESS: configure initial/readmodal3+3/private-save8 and shared persistence APIs PASS. Later import and wizard Windows NOT_RUN; whole R09 FAIL.",
         "historical_scoped_pass": false,
         "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
@@ -3543,7 +3571,15 @@
           "status": "PASS narrow only; primitive not live startup"
         },
         "historical_local_import_guard": "Sourcea75df7b +fixture7cc8159: refuse import before any DPAPI/identity change when actual old cleanup false; native NOT_RUN; excluded598/b342",
-        "historical_local_read_primitive": "5017167/8863ea9 HomeVpnStoredState worker +actual native vectors written; source/syntax only PASS, compiler/native NOT_RUN; production constructor/UI still synchronous, no full criterion credit"
+        "historical_local_read_primitive": "5017167/8863ea9 HomeVpnStoredState worker +actual native vectors written; source/syntax only PASS, compiler/native NOT_RUN; production constructor/UI still synchronous, no full criterion credit",
+        "local_wizard_setup_snapshot": {
+          "source": "a0e34136ca5cce469e39a2a870542c090f40ea99",
+          "implementation": "PARTIAL owned worker/cached UI source",
+          "static": "PASS",
+          "windows_compilation": "NOT_RUN",
+          "windows_native": "NOT_RUN",
+          "ci_excluded": 613
+        }
       },
       "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -3744,7 +3780,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+  "candidate_source": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3842,26 +3878,27 @@
     }
   ],
   "ci_candidate": {
-    "source": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
-    "tested_merge": "27a8d83cd6a1cb704ab36269eabd3406abd402f4",
-    "local_sha": "023bf0779010f22b6a89211668f0c1e5835053e7",
-    "tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
-    "run_id": 39744824752,
-    "run_number": 612,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752",
+    "source": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+    "tested_merge": "5262c806c06ba715d61bf3e070b52fbc31b3f2ab",
+    "local_sha": "bcb699bb9f3641d0d5a870836fd233e155748214",
+    "tree": "bc5d3f70d2ff0833692d91d75eb62d108b33b215",
+    "run_id": 39749169861,
+    "run_number": 613,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39749169861",
     "status": "completed",
-    "conclusion": "failure",
-    "windows_compilation": "PASS exact612 build identity and full Test-ProGo/Desktop5283",
-    "windows_native": "PARTIAL exact612 read-modal3 and configure initial ready/Close PASS; initial Dispose compound assertion FAIL, individual failed value unknown; later store/owned/modal write/receipt/Portable/Python tail NOT_RUN",
+    "conclusion": "success",
+    "windows_compilation": "PASS exact613 build identity and full Test-ProGo",
+    "windows_native": "PASS exact613 complete suite incl configure initial3/readmodal3/private-save8, Desktop5283/Home1619/Portable91",
     "jobs": {
-      "windows": 119710569658,
-      "ubuntu": 119710569884
+      "windows": 119725094348,
+      "ubuntu": 119725094777
     },
     "ubuntu": "SUCCESS",
-    "scope": "actual configure owned constructor/read/gates/persistence/receipt UI and3 initial+8 persistence modal vectors",
-    "excludes": "importAPI99ad (Stop560/pair7bb/service4a/setupfc), actual wizard import/initial setup probes/full R09/R10/R11/target acceptance",
-    "failure": "2026-10-22T08:25:35.5384376Z configure initial Dispose compound assertion; exact subcondition unknown, modal native unwind event hypothesis not confirmed",
-    "package": "NOT_RUN pack skipped; uploads SKIPPED all"
+    "scope": "narrow disposal publication counter +native unwind interval/control delta and detailed assertions; no removed criteria or increased deadlines",
+    "excludes": "importAPI99ad/wizard a501+839/initial status probes/whole R09/R10/R11/owner acceptance",
+    "runner_zip_sha256": "242078d847fb3ac8dcae27f1c739ae507cb4e6e302fb5d901e46733c1b049879",
+    "artifact_upload": "SKIPPED all; bytes not retrieved/delivered/installed",
+    "acceptance": "PARTIAL scoped only; full R09/R10/R11 and owner/installer acceptance remain open"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5112,6 +5149,29 @@
       "excludes": "importAPI99ad (Stop560/pair7bb/service4a/setupfc), actual wizard import/initial setup probes/full R09/R10/R11/target acceptance",
       "failure": "2026-10-22T08:25:35.5384376Z configure initial Dispose compound assertion; exact subcondition unknown, modal native unwind event hypothesis not confirmed",
       "package": "NOT_RUN pack skipped; uploads SKIPPED all"
+    },
+    {
+      "source": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+      "tested_merge": "5262c806c06ba715d61bf3e070b52fbc31b3f2ab",
+      "local_sha": "bcb699bb9f3641d0d5a870836fd233e155748214",
+      "tree": "bc5d3f70d2ff0833692d91d75eb62d108b33b215",
+      "run_id": 39749169861,
+      "run_number": 613,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39749169861",
+      "status": "completed",
+      "conclusion": "success",
+      "windows_compilation": "PASS exact613 build identity and full Test-ProGo",
+      "windows_native": "PASS exact613 complete suite incl configure initial3/readmodal3/private-save8, Desktop5283/Home1619/Portable91",
+      "jobs": {
+        "windows": 119725094348,
+        "ubuntu": 119725094777
+      },
+      "ubuntu": "SUCCESS",
+      "scope": "narrow disposal publication counter +native unwind interval/control delta and detailed assertions; no removed criteria or increased deadlines",
+      "excludes": "importAPI99ad/wizard a501+839/initial status probes/whole R09/R10/R11/owner acceptance",
+      "runner_zip_sha256": "242078d847fb3ac8dcae27f1c739ae507cb4e6e302fb5d901e46733c1b049879",
+      "artifact_upload": "SKIPPED all; bytes not retrieved/delivered/installed",
+      "acceptance": "PARTIAL scoped only; full R09/R10/R11 and owner/installer acceptance remain open"
     }
   ],
   "retention_microtask": {
@@ -5247,36 +5307,36 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI612 FAIL initial Dispose compound assertion; isolate diagnostic correction79f next",
+    "phase": "CI613 exact full SUCCESS; isolated import API source39e05f prepared, not yet published",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "023bf0779010f22b6a89211668f0c1e5835053e7",
-    "local_development_sha": "79fcb6b419935f90e4bf5d3a4f0f26a2ff5217cc",
-    "published_sha": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
-    "tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
-    "tested_merge": "27a8d83cd6a1cb704ab36269eabd3406abd402f4",
-    "ci_run_id": 39744824752,
-    "ci_run_number": 612,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752",
+    "local_sha": "bcb699bb9f3641d0d5a870836fd233e155748214",
+    "local_development_sha": "a0e34136ca5cce469e39a2a870542c090f40ea99",
+    "published_sha": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+    "tree": "bc5d3f70d2ff0833692d91d75eb62d108b33b215",
+    "tested_merge": "5262c806c06ba715d61bf3e070b52fbc31b3f2ab",
+    "ci_run_id": 39749169861,
+    "ci_run_number": 613,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39749169861",
     "jobs": {
-      "windows": 119710569658,
-      "ubuntu": 119710569884
+      "windows": 119725094348,
+      "ubuntu": 119725094777
     },
     "ci_status": "completed",
-    "ci_conclusion": "failure",
-    "windows_compilation": "PASS exact612 build identity and full Test-ProGo/Desktop5283",
-    "windows_native": "PARTIAL exact612 read-modal3 and configure initial ready/Close PASS; initial Dispose compound assertion FAIL, individual failed value unknown; later store/owned/modal write/receipt/Portable/Python tail NOT_RUN",
+    "ci_conclusion": "success",
+    "windows_compilation": "PASS exact613 build identity and full Test-ProGo",
+    "windows_native": "PASS exact613 complete suite incl configure initial3/readmodal3/private-save8, Desktop5283/Home1619/Portable91",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
     "publication_scan": {
-      "files": 11,
-      "added_lines": 849,
-      "deleted_lines": 150,
+      "files": 7,
+      "added_lines": 342,
+      "deleted_lines": 60,
       "findings": 0,
       "tree_match": true
     },
-    "next": "Isolate79f correction on local023bf, exact612 failure docs and scan/tree/CAS source17; no same-SHA retry. Keep importAPI99ad/wizarda501/839 excluded",
+    "next": "Final isolated import API preflight/workflow/tree before one CAS/CI; actual future wizard remains NOT_RUN",
     "readiness_change": 0,
-    "current_ci_step": "pending exact jobs/log outcome"
+    "current_ci_step": "completed both jobs; all uploads/prune SKIPPED"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5322,8 +5382,8 @@
   },
   "current_readiness": {
     "method": "v1.0 unchanged W and D/P/A30/20/50",
-    "evidence_source": "d89673c27aa8ce72ffc5e13eb8e5dc849398ea5a",
-    "tested_merge": "f0bf91f6e0a15b5e01e4ecd7f274096565cd1cc7",
+    "evidence_source": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+    "tested_merge": "5262c806c06ba715d61bf3e070b52fbc31b3f2ab",
     "implementation_range": [
       58,
       80
@@ -5367,38 +5427,38 @@
     "D": 0.5,
     "P": 0.5,
     "A": 0,
-    "reason": "Same28 parent partial criteria verified exact611 text anchors; unchanged weight87/D0.5/P0.5/A0 raw21.75, no bonus for more tests or helper code",
+    "reason": "Same28 weighted partial acceptance criteria matched verbatim on exact613; configure new native coverage does not complete a new weighted gate. No credit for later untested import/wizard source.",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "612 overall FAIL with scoped compile/Test-ProGo and initial ready/Close PASS; Dispose compound subcondition unknown. Correction79f and import/wizard work NOT_RUN; scoring anchors exact611 unchanged.",
+    "candidate_note": "Exact613 full SUCCESS only; importAPI560/7bb/4a/fc and wizard a501/839/a0e3413 excluded and Windows NOT_RUN",
     "score_anchors": {
-      "F01": "2026-10-22T07:35:37.3853206Z PASS: CLI migration preserves unrelated preferences 0",
-      "F02": "2026-10-22T07:29:46.7750278Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
-      "F03": "2026-10-22T07:44:27.4170706Z PASS: restarted application retains single-instance ownership after handoff",
-      "F04": "2026-10-22T07:28:32.1411650Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)",
-      "F05": "2026-10-22T07:42:36.9217276Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent",
-      "F06": "2026-10-22T07:35:47.6319502Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes",
-      "F07": "2026-10-22T07:33:12.2871737Z Backup retention tests PASS: 29",
-      "F08": "2026-10-22T07:36:04.2887243Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles",
-      "F09": "2026-10-22T07:25:45.1291750Z PASS: wrong-pin read leaves source bytes and file set unchanged",
-      "F10": "2026-10-22T07:35:37.2951196Z PASS: Windows uses tested HTTP/CONNECT bridge",
-      "F11": "2026-10-22T07:35:39.5455976Z PASS: real tray command dispatches its expected dialog: Settings",
-      "F12": "2026-10-22T07:36:08.5413731Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned",
-      "F13": "2026-10-22T07:43:04.8938504Z PASS: Escape closes the actual modal route dialog while measurements run",
-      "F14": "2026-10-22T07:43:04.1040433Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context",
-      "F15": "2026-10-22T07:35:46.0850398Z Settings initial-load preservation checks PASS: 93",
-      "F16": "2026-10-22T07:37:32.1767377Z PASS: scaled cleanup list and actions do not overlap",
-      "F17": "2026-10-22T07:43:04.6800352Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1",
-      "F18": "2026-10-22T07:41:14.0009292Z PASS: wizard accessible issuance result never claims installation",
-      "F20": "2026-10-22T07:41:16.6619422Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect",
-      "F21": "2026-10-22T07:47:25.4401799Z PASS: secret copy writes current clipboard",
-      "F23": "2026-10-22T07:47:22.7707518Z Updater package tests PASS: 5",
-      "F24": "2026-10-22T07:39:55.9958279Z PASS: help Начало 820 exposes a focusable read-only instruction pane",
-      "F25": "2026-10-22T07:35:41.5691651Z PASS: real tray command dispatches its expected dialog: Diagnostics",
-      "F26": "2026-10-22T07:33:09.4498415Z PASS: startup runs quietly without changing SSH preferences",
-      "F28": "2026-10-22T07:38:14.9993492Z PASS: every typed command has one unique round-trippable compatibility ID: Connect",
-      "F29": "2026-10-22T07:41:58.0849222Z PASS: built icon has a valid Windows ICO header",
-      "F31": "2026-10-22T07:35:12.8303314Z Update check tests PASS: 72",
-      "F22": "2026-10-22T07:52:16.4740510Z PASS: production background constructor loads clean imported data through its actual owned worker without activating SSH or relay"
+      "F01": "2026-10-22T08:48:16.4067725Z PASS: CLI migration preserves unrelated preferences 0",
+      "F02": "2026-10-22T08:42:51.5075264Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
+      "F03": "2026-10-22T08:57:12.9438792Z PASS: restarted application retains single-instance ownership after handoff",
+      "F04": "2026-10-22T08:41:36.8879131Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)",
+      "F05": "2026-10-22T08:55:24.4408909Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent",
+      "F06": "2026-10-22T08:48:26.2456292Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes",
+      "F07": "2026-10-22T08:46:27.3969241Z Backup retention tests PASS: 29",
+      "F08": "2026-10-22T08:48:42.1882093Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles",
+      "F09": "2026-10-22T08:38:56.2539990Z PASS: wrong-pin read leaves source bytes and file set unchanged",
+      "F10": "2026-10-22T08:48:16.2967235Z PASS: Windows uses tested HTTP/CONNECT bridge",
+      "F11": "2026-10-22T08:48:18.4968816Z PASS: real tray command dispatches its expected dialog: Settings",
+      "F12": "2026-10-22T08:48:46.3652774Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned",
+      "F13": "2026-10-22T08:55:52.5490500Z PASS: Escape closes the actual modal route dialog while measurements run",
+      "F14": "2026-10-22T08:55:51.8202083Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context",
+      "F15": "2026-10-22T08:48:24.7726675Z Settings initial-load preservation checks PASS: 93",
+      "F16": "2026-10-22T08:50:08.5990485Z PASS: scaled cleanup list and actions do not overlap",
+      "F17": "2026-10-22T08:55:52.3542884Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1",
+      "F18": "2026-10-22T08:53:56.6839154Z PASS: wizard accessible issuance result never claims installation",
+      "F20": "2026-10-22T08:53:59.3663447Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect",
+      "F21": "2026-10-22T08:59:58.5755269Z PASS: secret copy writes current clipboard",
+      "F23": "2026-10-22T08:59:56.1345073Z Updater package tests PASS: 5",
+      "F24": "2026-10-22T08:52:33.8256369Z PASS: help Начало 820 exposes a focusable read-only instruction pane",
+      "F25": "2026-10-22T08:48:20.4659756Z PASS: real tray command dispatches its expected dialog: Diagnostics",
+      "F26": "2026-10-22T08:46:24.0870446Z PASS: startup runs quietly without changing SSH preferences",
+      "F28": "2026-10-22T08:50:51.6704308Z PASS: every typed command has one unique round-trippable compatibility ID: Connect",
+      "F29": "2026-10-22T08:54:38.5148259Z PASS: built icon has a valid Windows ICO header",
+      "F31": "2026-10-22T08:47:54.9426186Z Update check tests PASS: 72",
+      "F22": "2026-10-22T09:04:23.8280101Z PASS: production background constructor loads clean imported data through its actual owned worker without activating SSH or relay"
     },
     "credited_P_half_ids": [
       "F01",
@@ -5430,7 +5490,7 @@
       "F29",
       "F31"
     ],
-    "runner_package_sha256": "321759f1a32fc1c8bfc7250b3fa482ed2687b22f22f91eb685c65ef7bbc9d021"
+    "runner_package_sha256": "242078d847fb3ac8dcae27f1c739ae507cb4e6e302fb5d901e46733c1b049879"
   },
   "local_launch_lifecycle_microtask": {
     "status": "PARTIAL",
@@ -7689,6 +7749,28 @@
         "delivery": "BLOCKED owner-approved private channel",
         "installer": "NOT_RUN"
       }
+    },
+    {
+      "source": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+      "tested_merge": "27a8d83cd6a1cb704ab36269eabd3406abd402f4",
+      "local_sha": "023bf0779010f22b6a89211668f0c1e5835053e7",
+      "tree": "cf0eb0f428029c314dcf191fc0e2df1aa24eebcb",
+      "run_id": 39744824752,
+      "run_number": 612,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39744824752",
+      "status": "completed",
+      "conclusion": "failure",
+      "windows_compilation": "PASS exact612 build identity and full Test-ProGo/Desktop5283",
+      "windows_native": "PARTIAL exact612 read-modal3 and configure initial ready/Close PASS; initial Dispose compound assertion FAIL, individual failed value unknown; later store/owned/modal write/receipt/Portable/Python tail NOT_RUN",
+      "jobs": {
+        "windows": 119710569658,
+        "ubuntu": 119710569884
+      },
+      "ubuntu": "SUCCESS",
+      "scope": "actual configure owned constructor/read/gates/persistence/receipt UI and3 initial+8 persistence modal vectors",
+      "excludes": "importAPI99ad (Stop560/pair7bb/service4a/setupfc), actual wizard import/initial setup probes/full R09/R10/R11/target acceptance",
+      "failure": "2026-10-22T08:25:35.5384376Z configure initial Dispose compound assertion; exact subcondition unknown, modal native unwind event hypothesis not confirmed",
+      "package": "NOT_RUN pack skipped; uploads SKIPPED all"
     }
   ],
   "connection_recovery_20261022": {
@@ -8151,5 +8233,83 @@
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
     "next": "One isolated correction checking with exact diagnostics; do not label hypothesis confirmed until runtime"
+  },
+  "pending_dispose_diagnostic_publication": {
+    "source_object": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+    "parent": "17c64b6276567f1b2f2c090ef8130b1c064aa45c",
+    "local_source": "bcb699bb9f3641d0d5a870836fd233e155748214",
+    "tree": "bc5d3f70d2ff0833692d91d75eb62d108b33b215",
+    "publication": "PASS CAS and actual PR source/merge/unique CI613 verified",
+    "checks": "PASS7 paths342add60delete4 narrow source+3 docs secretPII0/public320/0/syntax/C#5/diff/JSON31+55/full-tree equality; import/wizard/Stop excluded; public visibility/unchanged guards OFF checked",
+    "next": "Owned wizard initial/status snapshot worker and actual lifecycle fixture readiness; poll same613, no duplicate/source push",
+    "merge": "5262c806c06ba715d61bf3e070b52fbc31b3f2ab",
+    "run_id": 39749169861,
+    "run_number": 613,
+    "jobs": {
+      "windows": 119725094348,
+      "ubuntu": 119725094777
+    }
+  },
+  "local_r09_wizard_setup_snapshot": {
+    "source": "a0e34136ca5cce469e39a2a870542c090f40ea99",
+    "status": "PARTIAL",
+    "paths": 7,
+    "added_lines": 210,
+    "deleted_lines": 49,
+    "implementation": "Owned initial/step-entry setup snapshot worker; cached field/status updates, CTS/task retained, Close joins own I/O and Dispose suppresses publication",
+    "native_cases": [
+      "ShowDialog ready",
+      "ShowDialog Cancel to real own-VPS choice retry",
+      "ShowDialog explicit Close",
+      "ShowDialog Dispose",
+      "Actual request exclusively locked while editing cached fields/status on ready/retry"
+    ],
+    "static_checks": "PASS manual diff/call-site/syntax7/C#5-await-scope/public320/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "published": false,
+    "excluded_from_ci": 613,
+    "readiness_change": 0,
+    "next": "Check exact existing CI613; freeze import API separately on latest checked diagnostic base; later wizard native checks"
+  },
+  "ci613_configure_modal_evidence": {
+    "source": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+    "tested_merge": "5262c806c06ba715d61bf3e070b52fbc31b3f2ab",
+    "run_id": 39749169861,
+    "initial_dispose_anchor": "2026-10-22T09:00:15.0283133Z initialized=False/disposed=True/modal=False/controlEvents=2/nativeDisposeEvents=2/publications=0/disposedAt=0",
+    "native_cases": {
+      "verify-save": "2026-10-22T09:03:42.7517198Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: verify-save",
+      "verify-close": "2026-10-22T09:03:43.0967139Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: verify-close",
+      "verify-dispose": "2026-10-22T09:03:43.4169083Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: verify-dispose",
+      "verify-accepted-close": "2026-10-22T09:03:43.7190627Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: verify-accepted-close",
+      "verify-error-retry": "2026-10-22T09:03:44.0994388Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: verify-error-retry",
+      "recover-save": "2026-10-22T09:03:44.4485286Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: recover-save",
+      "recover-close": "2026-10-22T09:03:44.7960632Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: recover-close",
+      "recover-accepted-close": "2026-10-22T09:03:45.1293266Z PASS: modal configure reports the actual protected-save outcome without pretending accepted writes rolled back: recover-accepted-close"
+    },
+    "status": "PASS exact narrow criteria",
+    "old612_exact_failed_subcondition": "unknown; compound historical assertion did not record values"
+  },
+  "pending_import_api_publication": {
+    "base_source": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+    "base_merge": "5262c806c06ba715d61bf3e070b52fbc31b3f2ab",
+    "runtime_local_sha": "39e05f19b02f2947fa3fd7beff0e0b64f27ffeb2",
+    "paths": [
+      "src/HomeVpnAccess.cs",
+      "src/HomeVpnService.cs",
+      "src/HomeVpnSetupRecovery.cs",
+      "tests/HomeVpnSetupRecoveryTests.cs",
+      "tests/HomeVpnWaitingTests.cs"
+    ],
+    "native_vectors": {
+      "pair": 9,
+      "service": 9,
+      "receipt": 7
+    },
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "actual_wizard": "excluded a501/839/a0e3413",
+    "publication": "NOT_RUN before final tree/CAS",
+    "readiness_change": 0
   }
 }

@@ -1,3 +1,109 @@
+## Изолированный import API — candidate before publication
+
+Runtime/test source `39e05f19b02f2947fa3fd7beff0e0b64f27ffeb2`, база exact613 local
+`bcb699bb9f3641d0d5a870836fd233e155748214`. Только Stop560 / prepared-pair7bb /
+owned-import4a / receipt-workerfc:5 путей444add32delete. Возможная частичная запись
+access/owner сообщается честно; двухфайловая crash-atomic гарантия не заявляется.
+Новые native25 сценариев: pair9, service import9, receipt consumption7; existing
+cleanup/compatibility coverage сохраняется (точное число новых PASS будет установлено по log,
+не по оценке количества). Actual wizard a501/839/a0e3413 исключён.
+
+Full-tree freeze добавляет только3 evidence docs. Diff/секретыPII0/public320/0/syntax5/
+C#5 PASS. Windows compilation/native этого API NOT_RUN, не наследуют SUCCESS613.
+Предыдущий613 завершён; повтор его не нужен. Перед ref-CAS проверить актуальный
+source de7/treebc5, public visibility и workflow uploads OFF. После публикации
+сохранить фактический source/merge/run; не создавать ручной дубль при задержке webhook.
+I58–80/Y22 exact613 unchanged; target/full R09/R11 acceptance остаются открыты.
+Ниже история с проверенным613 и точками локальной работы.
+
+## CI613 SUCCESS — exact configure UI/owned persistence evidence
+
+Точный source `de7b42628ccd656f369ba0e286e9b406cc20dee6`, merge/build identity
+`5262c806c06ba715d61bf3e070b52fbc31b3f2ab`, treebc5d3f70d2ff0833692d91d75eb62d108b33b215
+= localbcb699bb9f3641d0d5a870836fd233e155748214. [CI613/39749169861](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39749169861):
+Windows119725094348 и Ubuntu119725094777 SUCCESS, проверены jobs и completed Windows
+log. Build identity08:38:06.6443827Z; full Test-ProGo PASS08:59:56.1352563Z,
+Desktop5283/Home1619/Portable91, Python28=26PASS2SKIP. Native initial configure ready/
+Close/Dispose3 и прежний modal read Cancel→Retry/Close/Dispose3 PASS. Actual configure
+private-save/recovery8 PASS09:03:42.751–45.129Z: verify-save/close/dispose/accepted-close/
+error-retry; recover-save/close/accepted-close. Реальные DPAPI, локальный HTTP и
+защищённые файлы; fixture recovery transport не подтверждает работу реального VPS.
+
+Dispose09:00:15.0283133Z: initialized=False/disposed=True/modal=False/controlEvents=2/
+nativeDisposeEvents=2/publications=0/disposedAt=0. На613 наблюдались два native unwind
+события, ни одной принятой публикации продукта послеDispose и нулевой прирост событий
+после physical I/O. Это подтверждает измеренный интервал613; индивидуальные значения
+старого612 не зарегистрированы, его failure сохранён как история. Будущий wizard
+observer839 ещё требует отдельного аналогичного измерения, SUCCESS не наследуется.
+Selected-key signing55/UI50/preparation72, реальная direct+owned-agent SSH→SOCKS→HTTP
+и crash→fresh preparation, diagnostics modal/chooser/Context ownership, Instance28/
+Maintenance126/Shutdown47 также PASS в полном прогоне.28 score-anchor критериев
+совпали дословно с611: I58–80/Y22 raw21.75, delta0, веса неизменны.
+
+Runner ZIP0.2.2 SHA256 `242078d847fb3ac8dcae27f1c739ae507cb4e6e302fb5d901e46733c1b049879`.
+Все upload/prune шаги SKIPPED; bytes не получены/не переданы/не установлены. Приватная
+передача BLOCKED до согласования канала владельцем. Main merge/release NOT_RUN.
+Полный R09 FAIL/R11 PARTIAL, target/installer NOT_RUN. ImportAPI560/7bb/4a/fc,
+wizard a501/839/a0e3413 исключены из613: compilation/native NOT_RUN. Далее изолированный
+API-кандидат39e05f19b02f2947fa3fd7beff0e0b64f27ffeb2 (5 runtime/test paths444add32delete)
+на613 disposal base; финальные scan/workflow/tree/CAS и один новый CI. Ниже история.
+
+## Восстановление09:04Z и локальный wizard setup snapshot
+
+PR88 OPEN/DRAFT, source `de7b42628ccd656f369ba0e286e9b406cc20dee6`, merge
+`5262c806c06ba715d61bf3e070b52fbc31b3f2ab`; единственный CI613/39749169861
+in_progress: Windows119725094348 build PASS, integration step running;
+Ubuntu119725094777 SUCCESS. Completed Windows log ещё недоступен: полный
+Test-ProGo/native результат NOT_RUN до его проверки. Публикация direct+agent после
+589 состоялась ранее (590 FAIL, исправления595 SUCCESS); повторный push/CI не
+создавался. Других активных исполнителей/локальных build/git/SSH процессов не
+найдено. Все worktree и изменения сохранены.
+
+Локальный source `a0e34136ca5cce469e39a2a870542c090f40ea99`:7 путей210add49delete.
+Constructor мастера удерживает собственные CTS/TCS/driver до фактического окончания
+worker PendingOwnerAsync после service initialization. Поля и RefreshStatus читают
+только snapshot; смена страницы/завершение операции обновляет его без чтения на
+каждое нажатие. Начальная отмена сохраняет окно, явный Close ждёт собственное I/O,
+Dispose запрещает позднюю публикацию. Фикстуры ожидают реальную инициализацию без
+синхронного тестового обхода. Четыре новых ShowDialog-сценария: ready, Cancel→retry
+через реальный выбор своего VPS, Close, Dispose;15s окно/5s worker barrier,
+ограниченная очистка удерживаемых задач и ресурсов. Ready/retry дополнительно
+редактируют поля и обновляют статус при реальной эксклюзивной блокировке request
+file: требуется отсутствие повторного чтения/замены нового ввода.
+
+Manual diff/call-site review, syntax7/C#5 await-scope/diff/public320/0/secretPII0
+PASS. Это статические проверки, не компиляция. Windows compilation/native всех
+этих новых изменений NOT_RUN, в CI613 они исключены. Local importAPI99ad и wizard
+a501/839 также не получают SUCCESS613. Полный R09 остаётся FAIL, R11 PARTIAL.
+I58–80/Y22 raw21.75 exact611, delta0: код и невыполненный тест баллы не добавляют.
+
+Далее проверить тот же613. После результата изолировать importAPI560/7bb/4a/fc
+на последней проверенной базе с disposal79, исключив дальнейший wizard-код;
+финальный diff/секреты/workflow/tree перед единственным новым CI. До проверки613
+не менять опубликованный head. Будущий import-modal Dispose observer требует
+отдельной проверки native-unwind интервала по фактическим значениям613. История ниже.
+
+## CI613 running — narrow disposal diagnostic source, future import excluded
+
+PR88 head independently verified `de7b42628ccd656f369ba0e286e9b406cc20dee6`, merge
+`5262c806c06ba715d61bf3e070b52fbc31b3f2ab`, full treebc5d3f70d2ff0833692d91d75eb62d108b33b215
+= localbcb699bb9f3641d0d5a870836fd233e155748214. One automatic
+[CI613/39749169861](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39749169861),
+Windows119725094348/Ubuntu119725094777 in_progress at verification. CAS expected
+17c64→de7 PASS, empty initial webhook lookup followed by single run, no manual
+retry.7 paths342add60delete:4 diagnostic source/test paths +3 docs, full scan/tree
+PASS, workflows/VERSION unchanged/public uploads OFF. New compilation/native
+NOT_RUN. Dispose failure cause remains hypothesis until detailed flags/interval
+are observed; do not label narrowed measurement successful before actual result.
+
+ImportAPI99ad/wizard a501+839 remain excluded and NOT_RUN. Next independently
+move wizard initial PendingOwner/status probes to owned cached worker state and
+adapt actual native lifecycle fixtures; source writer/format unchanged. Do not
+change the checked613 head for checkpoint-only commits. Last full SUCCESS611 and
+its28 score anchors/ZIP remain the only current readiness evidence: I58–80/Y22
+raw21.75, delta0. Full R09 FAIL/R11 PARTIAL; owner/installer/delivery still open.
+Ниже object-before-CAS record — история, не повторять публикацию.
+
 ## CI612 FAIL — dispose compound assertion, detailed ownership proof pending
 
 Exact source `17c64b6276567f1b2f2c090ef8130b1c064aa45c`, merge/build identity

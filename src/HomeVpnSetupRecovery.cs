@@ -165,21 +165,59 @@ namespace ProGo
             return token;
         }
 
-        internal static void ConfirmConsumed(HomeVpnOwner owner, string token)
+        internal static Task<bool> HasPendingAsync(CancellationToken cancellation)
+        { return Task.Run(delegate { cancellation.ThrowIfCancellationRequested(); bool result = HasPending(); cancellation.ThrowIfCancellationRequested(); return result; }); }
+        internal static Task<HomeVpnOwner> PendingOwnerAsync(CancellationToken cancellation, Action beforeRead = null)
         {
+            return Task.Run(delegate {
+                cancellation.ThrowIfCancellationRequested(); if (beforeRead != null) beforeRead(); cancellation.ThrowIfCancellationRequested();
+                var result = PendingOwner(); cancellation.ThrowIfCancellationRequested(); return result;
+            });
+        }
+        internal static void ConfirmConsumed(HomeVpnOwner owner, string token)
+        { ConfirmConsumedCore(owner, token, CancellationToken.None, null, null); }
+        internal static Task ConfirmConsumedAsync(HomeVpnOwner owner, string value, CancellationToken cancellation,
+            Func<bool> canConsume = null, Action<string> beforeIo = null)
+        {
+            // Only immutable input copies cross to the private worker; the
+            // optional admission callback must inspect memory, never controls.
+            owner = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            value = (value ?? "").Trim();
+            return Task.Run(() => ConfirmConsumedCore(owner, value, cancellation, canConsume, beforeIo));
+        }
+        private static void ConsumptionBoundary(CancellationToken cancellation, Action<string> beforeIo, string stage)
+        { cancellation.ThrowIfCancellationRequested(); if (beforeIo != null) beforeIo(stage); cancellation.ThrowIfCancellationRequested(); }
+        private static void RequireSavedImport(HomeVpnOwner owner, HomeVpnSetupRequest request)
+        {
+            try {
+                var savedOwner = Json.Deserialize<HomeVpnOwner>(HomeVpnPrivateFiles.Load("owner") ?? "null");
+                if (HomeVpnPrivateFiles.Load("access") != request.Result || savedOwner == null
+                    || !String.Equals(savedOwner.Host, owner.Host, StringComparison.OrdinalIgnoreCase) || savedOwner.Port != owner.Port
+                    || savedOwner.Login != owner.Login || savedOwner.KeyFile != owner.KeyFile) throw new IOException();
+            } catch (Exception ex) {
+                if (ex is OutOfMemoryException) throw;
+                throw new HomeVpnSetupPendingException("Доступ и SSH-данные ещё не подтверждены в локальном сохранении. Запрос сохранён; повторная выдача не требуется.");
+            }
+        }
+        private static void ConfirmConsumedCore(HomeVpnOwner owner, string token, CancellationToken cancellation, Func<bool> canConsume, Action<string> beforeIo)
+        {
+            cancellation.ThrowIfCancellationRequested();
             using (var lease = AcquireAsync().GetAwaiter().GetResult()) {
+                ConsumptionBoundary(cancellation, beforeIo, "read");
                 var request = Load(owner, "My iPhone");
                 if (request == null) return; // Imported tokens and fixture transports have no journal.
                 if (request.Result == null || request.Result != token.Trim()) throw new HomeVpnSetupPendingException(PendingMessage);
-                try {
-                    var savedOwner = Json.Deserialize<HomeVpnOwner>(HomeVpnPrivateFiles.Load("owner") ?? "null");
-                    if (HomeVpnPrivateFiles.Load("access") != request.Result || savedOwner == null
-                        || !String.Equals(savedOwner.Host, owner.Host, StringComparison.OrdinalIgnoreCase) || savedOwner.Port != owner.Port
-                        || savedOwner.Login != owner.Login || savedOwner.KeyFile != owner.KeyFile) throw new IOException();
-                } catch (Exception ex) {
-                    if (ex is OutOfMemoryException) throw;
-                    throw new HomeVpnSetupPendingException("Доступ и SSH-данные ещё не подтверждены в локальном сохранении. Запрос сохранён; повторная выдача не требуется.");
-                }
+                RequireSavedImport(owner, request);
+                ConsumptionBoundary(cancellation, beforeIo, "consume");
+                // A queued owner/cancel or changed credential/request must not
+                // clear somebody else's setup result. This does no remote I/O.
+                var current = Load(owner, "My iPhone");
+                if (current == null || current.RequestId != request.RequestId || current.Result != request.Result)
+                    throw new HomeVpnSetupPendingException(PendingMessage);
+                RequireSavedImport(owner, request); cancellation.ThrowIfCancellationRequested();
+                if (canConsume != null && !canConsume()) throw new OperationCanceledException("Окно или доступ изменились; прежний запрос настройки сохранён.");
+                // Admission is final for this local Delete; Cancel cannot undo
+                // an already completed consumption and never restarts setup.
                 try { File.Delete(PathFor()); }
                 catch { throw new HomeVpnSetupPendingException("Доступ сохранён, но завершение запроса не удалось записать. Можно проверить прежнюю настройку; повторная выдача не требуется."); }
             }
