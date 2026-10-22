@@ -1,3 +1,107 @@
+## Narrow CI621 fixture correction prepared — Windows NOT_RUN
+
+Isolated code `c5e35cc62dd40d8ccec2b7409489cbb0ac4a1c32` on exact published2c0cb;
+two TEST files11add4delete only. New optional fixture settings budget retains old
+shared3000 default; phone vectors explicitly select250 for phone/settings as well as
+backup. Original compound refusal/responsiveness/paused/native proxy effects and retry
+criteria unchanged byte-for-byte, barrier5s unchanged. Safe per-flag/task-status/fault-
+type/elapsed diagnostic prints only if the original predicate fails. No product or
+global timeout change; exact historical621 failing flag remains UNKNOWN. Confirmed
+configuration mismatch is fixed; fresh Windows evidence must establish the result.
+Manual timing/parity/arity/diff/syntax2/C#5/public320/0/secretPII0 PASS; new compiler/
+native NOT_RUN. Next latest3 docs freeze on isolated621+c5e35cc, scan/canonical tree/
+fresh PR head+workflow guard, publish one new source and inspect one fresh CI. UI freeze
+07363f7 and Admin snapshota1fb931 are excluded and remain NOT_RUN. I58–80/Y22,delta0.
+
+## CI621 FAIL — preserve local Admin snapshot; narrow fixture correction next
+
+Exact source2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850 /merge2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c,
+run39797286590 completed: Windows119887722612 FAIL,Ubuntu119887722929 SUCCESS.
+Completed Windows log build identity14:38:00.173 PASS production/Desktop compilation;
+diagnostic native chooser3 PASS14:49:54–14:50:00. Desktop fails14:50:27.8268657 in
+PhoneStopContextHeld/shutdown original compound phone-cleanup-deadline assertion.
+Individual failed flags UNKNOWN. Later Home/API14,harness compilation,package NOT_RUN;
+all uploads/prune SKIPPED. Earlier API responses said queued; completed log proves
+Windows already ran14:38–14:50, so no duration is falsely attributed to a queue.
+
+Confirmed fixture configuration mismatch: AsyncRestoreContextFixture(root,250) forwards
+250 only to backup budget; actual phone/settings budget defaults3000 while its held
+cleanup barrier is5000. Sequential preceding drains can consume the remaining margin;
+exact failed621 predicate still UNKNOWN. Next isolate two test-file correction: explicit
+phone/settings budget250 for these phone vectors plus safe per-flag/task-type/elapsed
+failure diagnostic. Retain all original criteria,5s barrier and existing shared defaults;
+no production timeout increase/disabled checks/blind same-SHA rerun. Freeze on exact621,
+exclude UI/Admin work, publish new source only after review and one fresh CI.
+
+Local readonly Admin snapshot `a1fb9316c32537fdbdd3a30d248ebabfdd963329` preserved:
+frozen owner, worker selected-key existence/DPAPI request reads, existing family refusals,
+no lease/register/consume/staging/remote action; copied snapshot outputs.12 bounded
+native vectors before terminalNativeRecovery; original Pump default12s retained while
+new vectors use3s heartbeat/5s barrier+join. Static manual/syntax2/C#5/diff/public321/0/
+secretPII0 PASS; new compiler/native NOT_RUN, actual AdminAsync still sync. Excluded621.
+UI freeze07363f7 untouched. I58–80/Y22 exact620 partial evidence,delta0/fullR09 FAIL.
+
+## Native profile chooser3 reconstructed — Windows NOT_RUN
+
+Code/tests `a1fb4e78d6b8a3d1e4e9a1e214db1af7ec7193fa`: actual production profile
+Save button inside real outer ShowDialog/nested SaveFileDialog, own child/job20s;
+existing PID/thread/root-owner helper unchanged, native discovery/close5s and cleanup
+join5s. Positive Cancel verifies modal owner remains open, no export task/file/issuance,
+unchanged protected tree. Deliberate missing20 and injected error21 require the exact
+nonzero outcome plus cleanup marker and actual native-window observation; real timeout
+in positive case fails. Explicit new DesktopTests partial file compiled exactly once;
+script BOM preserved. Manual trace/diff/syntax3/C#5/public321/0/added secretPII0 PASS.
+PowerShell/compiler/native3 NOT_RUN. Not included in620 or API-only621.
+
+Local export UI9b555e5 +modal11 b1f9967 +chooser3 a1fb4e7 form a separate next checking
+cohort; freeze on exact published621 source with latest3 docs, but do not publish while
+621 is active (would cancel it). Same621 Windows119887722612 queued/Ubuntu119887722929
+SUCCESS. Continue independent reviewed Admin read snapshot locally; preserve both frozen
+sources. I58–80/Y22,delta0; fullR09 and target/installer/private delivery remain open.
+
+## Modal export regression reconstructed — Windows NOT_RUN
+
+Tests `b1f99672aaecc0bb3a9916b1af6b51ae11988e36` add11 actual outer ShowDialog
+post-chooser scenarios: save,Cancel→Retry,Close,Dispose,accepted Cancel/Close/Dispose,
+global Stop/accepted Stop,locked existing→new-name retry,accepted access change.
+Checks retain one physical task across native loop turns, DialogResult.None, honest
+actual file result, original captured identity, no old result over new retry, unchanged
+DPAPI settings, no installation claim/late relay/late disposed controls. Existing15s
+modal/5s worker+cleanup budgets, exact owned GUID outputs only; shared production
+ExportProfile helper invoked after chooser. Actual native chooser proof is separate.
+Manual phase/cleanup/lifetime diff,syntax1/C#5/public320/0/secretsPII0 PASS. New compiler/
+native11 NOT_RUN; excluded from621. Next native profile chooser3 with existing owned
+PID/thread/root-owner helper and unchanged5s discovery/20s child job budgets.
+I58–80/Y22,delta0; do not alter checking621 source while Windows is queued.
+
+## Actual export UI reconstructed locally — NOT_RUN on Windows
+
+Code `9b555e5ea0f4d8de797b516a84ed464db32561cd`, three production files only:
+actual SaveFileDialog now selects the path before retained ExportProfile/ExportProfileAsync;
+all profile XML/file I/O is worker-owned, CancelButton stays DialogResult.None and
+explicit Close/Dispose retains actual work. Cancel before admission permits retry;
+accepted save is reported honestly, changed access/home cannot mark the current
+profile issued, file saving never confirms installation. IOException messages omit
+local paths. Export blocks only another phone route; desktop/settings/Stop remain
+available under existing command policy. Manual diff/syntax3/C#5-await/public320/0/
+secretPII0 PASS; new compiler/native NOT_RUN. Not included in checking621.
+Next reconstruct11 actual ShowDialog post-chooser cases, then native chooser3; preserve
+exact621 source while its Windows119887722612 is queued. Ubuntu119887722929 SUCCESS
+only for621/2c0cb/2d3f. No duplicate CI or upload. I58–80/Y22,delta0.
+
+## CI621 queued — reconstructed API published once
+
+Published source `2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850`, merge
+`2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c`, full tree
+`d75aa2836c8d83ac1a1ccae39ac9b088ae3940f4` equals local freeze48343aa; fetched source
+and merge equal exactly. Guarded source CAS independently confirmed in PR88.
+[CI621/39797286590](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39797286590)
+queued; new Windows compilation/native14/regression and package NOT_RUN. Do not inherit
+620 SUCCESS or launch duplicate CI. Poll this same ID/completed jobs and log. Public
+uploads OFF, workflow/VERSION unchanged; no release/merge/install or binary delivery.
+First independent local next task: reconstruct actual post-chooser export UI ownership
+in a separate commit, without changing621 while it runs. I58–80/Y22(raw21.75),delta0.
+
 ## Reconstructed owned export API — checking publication pending
 
 Local service/test code `8903762ee659efaaa1923aacf146f7201e90c557` follows worker

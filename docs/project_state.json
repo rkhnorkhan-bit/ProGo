@@ -3929,24 +3929,25 @@
     }
   ],
   "ci_candidate": {
-    "source": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
-    "tested_merge": "7853b8cd1aefe09456392e9b30b765943ea5e5af",
-    "tree": "e160e3a481292fa6df0f20628120932f9ea2caab",
-    "local_sha": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
-    "run_id": 39777591168,
-    "run_number": 620,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39777591168",
+    "source": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "tested_merge": "2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c",
+    "tree": "d75aa2836c8d83ac1a1ccae39ac9b088ae3940f4",
+    "local_sha": "48343aac81ea82b835cfd9919b0d3f6e19b22974",
+    "run_id": 39797286590,
+    "run_number": 621,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39797286590",
     "status": "completed",
-    "conclusion": "success",
+    "conclusion": "failure",
     "jobs": {
-      "windows": 119820381219,
-      "ubuntu": 119820380887
+      "windows": 119887722612,
+      "ubuntu": 119887722929
     },
-    "windows_compilation": "PASS exact620",
-    "windows_native": "PASS scoped full Test-ProGo/Home1948/Portable91/Python26+2; modal11+5/receipt7/SSH IO4; owner target NOT_RUN",
+    "windows_compilation": "PASS production/Desktop; build identity14:38:00.173; later HomeWaiting harness compilation NOT_RUN",
+    "windows_native": "FAIL Desktop shutdown phone cleanup compound criterion; later Home/API14 NOT_RUN",
     "ubuntu": "SUCCESS",
-    "scope": "exact published wizard async import/snapshot/first-success retry and test metrics plus bounded fixture correction",
-    "excludes": "all later unpublished export/Admin/default configure/pending-state code"
+    "scope": "Reconstructed profile export primitive5 + owned service9; regression suite on new exact checking source",
+    "excludes": "Actual export UI/native chooser/Admin/invitation extensions",
+    "windows_job_status": "completed"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5482,24 +5483,24 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Reconstructed profile export API5+9 frozen for first new exact Windows CI",
+    "phase": "CI621 failed; narrow isolated phone fixture budget correction prepared, new exact proof next",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
     "local_sha": "8903762ee659efaaa1923aacf146f7201e90c557",
-    "local_development_sha": "8903762ee659efaaa1923aacf146f7201e90c557",
-    "published_sha": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
+    "local_development_sha": "4543d831ea7ea18ea5d91b91601688a037aad46d",
+    "published_sha": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
     "tree": "e160e3a481292fa6df0f20628120932f9ea2caab",
-    "tested_merge": "7853b8cd1aefe09456392e9b30b765943ea5e5af",
-    "ci_run_id": 39777591168,
-    "ci_run_number": 620,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39777591168",
+    "tested_merge": "2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c",
+    "ci_run_id": 39797286590,
+    "ci_run_number": 621,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39797286590",
     "jobs": {
-      "windows": 119820381219,
-      "ubuntu": 119820380887
+      "windows": 119887722612,
+      "ubuntu": 119887722929
     },
     "ci_status": "completed",
-    "ci_conclusion": "success",
-    "windows_compilation": "NOT_RUN for reconstructed local code; exact620 published baseline PASS only",
-    "windows_native": "NOT_RUN for reconstructed local code; exact620 baseline scoped PASS only",
+    "ci_conclusion": "failure",
+    "windows_compilation": "PASS production/Desktop; build identity14:38:00.173; later HomeWaiting harness compilation NOT_RUN",
+    "windows_native": "FAIL Desktop shutdown phone cleanup compound criterion; later Home/API14 NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repo22Oct, workflows and VERSION unchanged; PR upload guards OFF, no release trigger",
     "publication_scan": {
@@ -5507,9 +5508,9 @@
       "findings": 0,
       "tree_match": "TODO remote canonical equality before CAS"
     },
-    "next": "Publish reviewed export API cohort plus three evidence documents; CAS expected12d5 once; save one CI ID; meanwhile reconstruct reviewed actual export UI separately",
+    "next": "Freeze latest3docs on isolated exact621+c5e35cc; full-tree equality/secrets/public-workflow/fresh-head guard then one new CI; no duplicate621",
     "readiness_change": 0,
-    "current_ci_step": "620 complete SUCCESS; no rerun needed"
+    "current_ci_step": "14:50:27.8268657Z Desktop PhoneStopContextHeld/shutdown: phone cleanup deadline refuses handoff before proxy effects and preserves retry with responsive UI"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -9401,11 +9402,152 @@
       "docs/project_state.json"
     ],
     "native_cases": 14,
-    "status": "TODO guarded source CAS; no CI yet",
+    "status": "PASS source CAS12d5 to2c0cb independently confirmed, exact source/merge/local canonical tree equality; CI621 queued",
     "excludes": "All actual export UI/chooser/Admin/invitation changes; original lost source SHAs remain missing",
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
     "uploads": "Disabled by existing public PR guard; no workflow/VERSION changes",
+    "readiness_change": 0,
+    "frozen_local_sha": "48343aac81ea82b835cfd9919b0d3f6e19b22974",
+    "canonical_tree": "d75aa2836c8d83ac1a1ccae39ac9b088ae3940f4",
+    "remote_commit": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "expected_ref": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
+    "run_id": 39797286590,
+    "merge": "2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c"
+  },
+  "previous_verified_ci620": {
+    "source": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
+    "tested_merge": "7853b8cd1aefe09456392e9b30b765943ea5e5af",
+    "tree": "e160e3a481292fa6df0f20628120932f9ea2caab",
+    "local_sha": "12d5cbc47b5cf2c1be0a0b16b2186b938da51952",
+    "run_id": 39777591168,
+    "run_number": 620,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39777591168",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": {
+      "windows": 119820381219,
+      "ubuntu": 119820380887
+    },
+    "windows_compilation": "PASS exact620",
+    "windows_native": "PASS scoped full Test-ProGo/Home1948/Portable91/Python26+2; modal11+5/receipt7/SSH IO4; owner target NOT_RUN",
+    "ubuntu": "SUCCESS",
+    "scope": "exact published wizard async import/snapshot/first-success retry and test metrics plus bounded fixture correction",
+    "excludes": "all later unpublished export/Admin/default configure/pending-state code"
+  },
+  "reconstructed_export_ui": {
+    "source": "9b555e5ea0f4d8de797b516a84ed464db32561cd",
+    "original_missing_source": "1edef0f56e6dff3fe4eaa0713206e8f0c52aeca1",
+    "status": "PARTIAL",
+    "implementation": "Actual native chooser captures destination then retained service export; owner memory admission, busy/Cancel None, explicit Close/Dispose keeps actual I/O owned; safe file errors; current identity only records issuance; phone-only command gate",
+    "static": "PASS diff/manual/syntax3/C#5-await-scope/public320/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621
+    ],
+    "next": "Reconstruct11 bounded actual ShowDialog post-chooser regressions and3 real native chooser scenarios",
+    "readiness_change": 0
+  },
+  "reconstructed_export_modal": {
+    "source": "b1f99672aaecc0bb3a9916b1af6b51ae11988e36",
+    "original_missing_source": "4c1b1840fa9b9077550b550d7adfbc69fa4d9cb5",
+    "native_cases": 11,
+    "status": "PARTIAL",
+    "static": "PASS manual phase/cleanup/owner trace, syntax1/C#5-await-scope/diff/public320/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621
+    ],
+    "profile_native_chooser": "NOT_RUN distinct next microtask; tests use actual shared post-chooser helper under outer ShowDialog",
+    "bounds": "Modal15s, worker5s, cleanup/join5s; own GUID file only, no new process/network",
+    "next": "Reconstruct actual production SaveFileDialog child cancel/missing/error with existing PID/thread/root-owner helper and unchanged5s/20s bounds",
+    "readiness_change": 0
+  },
+  "reconstructed_export_native_chooser": {
+    "source": "a1fb4e78d6b8a3d1e4e9a1e214db1af7ec7193fa",
+    "original_missing_source": "0b5ca87f65ed20b687864d36ef519874e191bf66",
+    "status": "PARTIAL",
+    "files": 4,
+    "native_cases": 3,
+    "implementation": "Actual production profile Save button inside outer ShowDialog and native SaveFileDialog; existing PID/thread/root-owner helper; positive Cancel and explicit nonzero missing20/error21 with cleanup marker",
+    "bounds": "Native discovery/closure5s, owned child/job20s, cleanup join5s; no unrelated windows/processes or system changes",
+    "static": "PASS manual source/phase/cleanup, syntax3/C#5/diff/public321/0/secretsPII0, exact explicit harness list/BOM preserved",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "powershell_execution": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621
+    ],
+    "readiness_change": 0
+  },
+  "frozen_reconstructed_export_ui": {
+    "local_sha": "07363f7cefa52841b03bde9e421871c81cbb730a",
+    "tree": "ed40d9060420be912f53ca11f25cc62467456796",
+    "base_source": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "worktree": "ProGo-export-ui-on621",
+    "branch": "work/progo-export-ui-on621-20261022",
+    "status": "PARTIAL local freeze only; not published, new Windows compilation/native14 NOT_RUN",
+    "full_tree_equality": "PASS equals development c3f01a6 before any Admin addition",
+    "scope": "Actual export UI3production files/modal11/native chooser3/harness list and latest3docs; no Admin additions",
+    "next": "Wait same621 final evidence; ifPASS refresh only evidence docs, scan and guarded source publication once; never cancel621 with new head"
+  },
+  "reconstructed_admin_request_snapshot": {
+    "source": "a1fb9316c32537fdbdd3a30d248ebabfdd963329",
+    "original_missing_source": "ca3d2f3e18bea39a112d068e082a87d16c4a9b09",
+    "status": "PARTIAL",
+    "native_vectors": 12,
+    "implementation": "Frozen owner and worker key-file validation/DPAPI request reads with existing refusal parity; serialized private snapshot exposes independent copies; caller existing family lease retained; actual AdminAsync not rewired",
+    "static": "PASS diff/manual/read-only lease/input trace/syntax2/C#5/public321/0/secretPII0; default existing Pump12000 unchanged, new tight3s/5s vectors before terminalNativeRecovery",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": [
+      620,
+      621
+    ],
+    "next": "Separate owned UI transport admission bridge preserving actual transport Task; paused while addressing CI621 failure",
+    "readiness_change": 0
+  },
+  "ci621_failure": {
+    "source": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "merge": "2d3f1144a9608fdd85b7ed8ed99d99d4238b8d0c",
+    "run_id": 39797286590,
+    "windows_job": 119887722612,
+    "ubuntu_job": 119887722929,
+    "status": "completed",
+    "conclusion": "failure",
+    "windows_compilation": "PASS production/Desktop; build identity14:38:00.173; later HomeWaiting harness compilation NOT_RUN",
+    "failure": "14:50:27.8268657Z Desktop PhoneStopContextHeld/shutdown: phone cleanup deadline refuses handoff before proxy effects and preserves retry with responsive UI",
+    "individual_failed_predicates": "UNKNOWN old composite assertion emitted no flags",
+    "confirmed_fixture_configuration": "AsyncRestoreContextFixture(root,250) sets backup budget only; actual phone/settings shutdown budget remains default3000, own cleanup barrier5000. Sequential earlier drains can consume the margin; exact621 failed predicate/cause still UNKNOWN",
+    "diagnostic_chooser3": "PASS14:49:54.480/59.780/14:50:00.319",
+    "later_home_export14": "NOT_RUN after Desktop failure",
+    "package": "NOT_RUN",
+    "uploads": "all SKIPPED",
+    "next": "Narrow test-only correct explicit phone/settings budget and safe failed-predicate diagnostics; preserve every original assertion and5s barrier, no production timeout increase or blind same-SHA retry",
+    "readiness_change": 0
+  },
+  "ci621_phone_fixture_correction": {
+    "source": "c5e35cc62dd40d8ccec2b7409489cbb0ac4a1c32",
+    "development_copy": "4543d831ea7ea18ea5d91b91601688a037aad46d",
+    "base_source": "2c0cb1418dd2c6dc4b82698f1ee1fc49f1a57850",
+    "paths": [
+      "tests/DesktopAsyncRestoreTests.cs",
+      "tests/DesktopPhoneStopTests.cs"
+    ],
+    "status": "PARTIAL",
+    "confirmed_configuration_defect": "PhoneStop fixture requested250 only for backup; phone/settings retained3000 against5s own barrier",
+    "change": "Add optional settings fixture budget retaining default3000; phone cases explicitly250, unchanged original strict assertions/5s barrier; print safe compound predicate/task-type/elapsed flags only on failure",
+    "old621_failed_predicate": "UNKNOWN, no invented failure cause",
+    "static": "PASS manual timing/arity/parity/diff/syntax2/C#5/public320/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excludes": "No production, export UI/modal/chooser/Admin changes in isolated checking source",
+    "next": "Freeze latest3docs on isolated exact621+c5e35cc; full-tree equality/secrets/public-workflow/fresh-head guard then one new CI; no duplicate621",
     "readiness_change": 0
   }
 }

@@ -34,7 +34,7 @@ namespace ProGo
 
         private static void PhoneStopContextHeld(string root, string route)
         {
-            using (var fixture = new AsyncRestoreContextFixture(root, 250))
+            using (var fixture = new AsyncRestoreContextFixture(root, 250, settingsShutdownTimeout: 250))
             using (var entered = new ManualResetEventSlim())
             using (var release = new ManualResetEventSlim())
             using (var pulse = new System.Windows.Forms.Timer { Interval = 10 })
@@ -49,6 +49,8 @@ namespace ProGo
                 };
                 pulse.Tick += delegate { ticks++; }; pulse.Start();
                 try {
+                    Check((int)Field(fixture.Context, "settingsShutdownTimeoutMilliseconds") == 250 && (int)Field(fixture.Context, "backupShutdownTimeoutMilliseconds") == 250,
+                        "phone cleanup fixture explicitly selects its short phone/settings deadline as well as backup deadline: " + route);
                     Task<bool> shutdown = null;
                     if (route == "tray") fixture.Commands[AppCommand.ShowMain].PerformClick();
                     var watch = Stopwatch.StartNew();
@@ -79,6 +81,10 @@ namespace ProGo
                     if (route == "shutdown") {
                         Check(Object.ReferenceEquals(shutdown, fixture.Context.RequestShutdownAsync()), "duplicate shutdown shares phone cleanup reservation");
                         PumpAsyncRestore(() => shutdown.IsCompleted, 5000);
+                        if (shutdown.Result || pending.IsCompleted || ticks <= 5 || fixture.Home.StartsPaused || fixture.CliCleanup != 0 || fixture.WindowsCleanup != 0)
+                            Console.WriteLine("PHONE_SHUTDOWN_STATE accepted=" + shutdown.Result + "; phoneTask=" + pending.Status + "; ticks=" + ticks
+                                + "; paused=" + fixture.Home.StartsPaused + "; cliCleanup=" + fixture.CliCleanup + "; windowsCleanup=" + fixture.WindowsCleanup
+                                + "; elapsedMs=" + watch.ElapsedMilliseconds + "; faultType=" + (pending.IsFaulted ? pending.Exception.GetBaseException().GetType().Name : "none"));
                         Check(!shutdown.Result && !pending.IsCompleted && ticks > 5 && !fixture.Home.StartsPaused
                             && fixture.CliCleanup == 0 && fixture.WindowsCleanup == 0,
                             "phone cleanup deadline refuses handoff before proxy effects and preserves retry with responsive UI");
@@ -117,7 +123,7 @@ namespace ProGo
 
         private static void PhoneStopContextLocked(string root)
         {
-            using (var fixture = new AsyncRestoreContextFixture(root, 250)) {
+            using (var fixture = new AsyncRestoreContextFixture(root, 250, settingsShutdownTimeout: 250)) {
                 string session = PhoneContextSession(fixture, root);
                 try {
                     using (var held = File.Open(Path.Combine(session, "ssh_config"), FileMode.Open, FileAccess.Read, FileShare.None)) {
