@@ -1,3 +1,75 @@
+## Receipt-only checking scope before publication
+
+Only tests/HomeVpnSetupRecoveryTests.cs16add2delete +3 current evidence docs on exact
+CI615 base. Product runtime unchanged. Safe precondition/task/stage/tick diagnostic,
+no increased timeout/disabled check. New compilation/native NOT_RUN;615 failure cause
+UNKNOWN. Future wizard d940 and profile export6d180/320a/1edef/4c1/0b5 excluded. Full
+source tree320 files; no new Desktop profile chooser file or Test-ProGo source-list
+change in this checking. Last fullSUCCESS613, I58–80/Y22/delta0. Before publishing
+verify current6f8 parent/public/workflows/uploadsOFF and canonical fulltree equality.
+
+## CI615 FAIL — setup consumption heartbeat ambiguity; no blind rerun
+
+Exact source `6f8b200cd34910ee167b44e6dab661c86cb506aa`, merge/build identity
+`2c7db226b9705367574ca6806b550e6e40b59cd0`, treec3efc70354edb1b9b880af6e78d29153a78a9b4c.
+[CI615/39753790118](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118)
+Windows119740579385 FAIL, Ubuntu119740579716 SUCCESS, completed jobs/log checked.
+Build09:14:05.8795949Z; full Test-ProGo PASS09:36:51.8168291Z/Desktop5283. Import pair9
+PASS09:37:14.265–15.333Z, service import9 PASS09:37:15.555–16.929Z incl real partial
+save/cleanup retry/stale access/acceptedStopDispose. Previous configure/UI/key/direct+
+agent regressions reached. At09:41:09.246Z first new receipt `complete` returns owned
+task;09:41:12.256Z `Setup consumption heartbeat deadline`. Its loop ignores early
+operation completion and prints no stage/timer/task state: actual reason UNKNOWN,
+not yet a confirmed product deadlock or timer defect. Existing3s deadline remains.
+Receipt7 criteria not passed; Home suite tail/Portable/Python tail NOT_RUN, package/
+uploads SKIPPED. Last fullSUCCESS/scoring/package remains613, no615 credit.
+
+Next narrow test correction: assert exact real saved request/owner/token preconditions,
+record read/consume stage and detect unexpected task completion before held barrier;
+on timeout print safe booleans/counters/type only. Do not print credentials/paths or
+increase timeouts. Isolate on615 checking63dae, exclude wizard d940 and profile export
+work; one new diagnostic SHA/CI is justified by new evidence, not same-run retry.
+
+Independent native profile chooser fixtures source `0b5ca87f65ed20b687864d36ef519874e191bf66`:
+4 paths116add1delete (new DesktopProfileNativeChooserTests +entry/list/call). Uses real
+production profile button, outer ShowDialog and nested native SaveFileDialog; existing
+PID/thread/root-owner helper unmodified. Owned child/job20s, native5s; positiveCancel
+must return0, real missing window fails; deliberately unmatched caption/error fixtures
+must return20/21 with exact failure and cleanup marker. Cleanup checks native window
+absent before owner disposal, joins retained worker/service tasks and unchanged private
+input snapshot, closes only its own windows/processes. Clipboard unused, settings not
+touched. Static syntax3/diff/public321/0/secretPII0/explicit compile list PASS;
+PowerShell execution/Windows compile/native NOT_RUN. Excluded615/wizardd940. FullR09
+FAIL/R11 PARTIAL, I58–80/Y22 exact613 unchanged. History below.
+
+## CI615 running — exact narrow compile fix, future wizard separate
+
+PR88 head `6f8b200cd34910ee167b44e6dab661c86cb506aa`, merge
+`2c7db226b9705367574ca6806b550e6e40b59cd0`, treec3efc70354edb1b9b880af6e78d29153a78a9b4c
+= local63dae01967394a25ad735b17353bd50cddeb67d8. GuardedCAS0bfa→6f8 PASS, один
+автоматический [CI615/39753790118](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118),
+Windows119740579385/Ubuntu119740579716 in_progress. Первоначально пустой webhook lookup
+затем один run; ручного дубля нет.4 paths149add83delete (source call1/1 +3docs),
+full secretsPII0/tree equality PASS, workflows/VERSION unchanged/public uploadsOFF.
+PR body обновлён. Новая compilation/native NOT_RUN до exact completed log;614FAIL
+сохранён. Last fullSUCCESS613 — только его SHA/ZIP/28anchors, I58–80/Y22/delta0.
+
+Независимый local `bbcc3356835ff08df01199990b1d67d7313ab757` (1 test path10add4delete)
+адаптирует будущие modal import Dispose assertions к подтверждённому613 native-unwind
+интервалу: перед release worker требуется завершение ShowDialog unwind, закрытый
+OwnerUi publication gate и всё ещё удерживаемый импорт; после actual I/O нулевой
+прирост control-events относительно измеренной native baseline. Все параметры
+выводятся в assertion. Никакой проверки не удалено/таймаут не увеличен. Ожидается
+также завершение настоящего setup snapshot перед проверкой повторного UI-действия
+и при очистке. Manual diff/syntax/public320/0 PASS; compilation/native NOT_RUN,
+из615 исключено вместе с wizard a501/839/a0e3413.
+
+Далее: подготовить отдельный wizard UI checking с captured async import/snapshot
+и11+4 реальными modal fixtures на последней проверенной API базе после615. Проверять
+тот же615, не менять его head checkpoint-only публикациями. Полный R09 FAIL/R11
+PARTIAL, owner/final installer/delivery BLOCKED или NOT_RUN по прежним критериям.
+Ниже история, pending-CAS записи не означают незавершённую фактическую публикацию.
+
 ## CI614 завершён FAIL — narrow callback argument correction saved
 
 [CI614/39753293285](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753293285)

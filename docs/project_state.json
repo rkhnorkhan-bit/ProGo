@@ -3780,7 +3780,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "de7b42628ccd656f369ba0e286e9b406cc20dee6",
+  "candidate_source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3878,25 +3878,25 @@
     }
   ],
   "ci_candidate": {
-    "source": "0bfa2f97c3cb627e7bc6a7b1053260084a8f28c8",
-    "tested_merge": "4b25e365a50779395f0a4c99576f7a8041258b61",
-    "tree": "cfd761a43bfe4e5b736c15460dfd4df8f48342e7",
-    "local_sha": "a2b6422bed9d0955e612ca1385db2a71994ee63c",
-    "run_id": 39753293285,
-    "run_number": 614,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753293285",
+    "source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+    "tested_merge": "2c7db226b9705367574ca6806b550e6e40b59cd0",
+    "tree": "c3efc70354edb1b9b880af6e78d29153a78a9b4c",
+    "local_sha": "63dae01967394a25ad735b17353bd50cddeb67d8",
+    "run_id": 39753790118,
+    "run_number": 615,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118",
     "status": "completed",
     "conclusion": "failure",
     "jobs": {
-      "windows": 119738915213,
-      "ubuntu": 119738914876
+      "windows": 119740579385,
+      "ubuntu": 119740579716
     },
-    "windows_compilation": "FAIL CS1501 HomeVpnService.cs405 LoadShareAsync 3 args but signature91 needs4; exact completed job log09:10:12.8112991Z",
-    "windows_native": "NOT_RUN compilation failed",
+    "windows_compilation": "PASS exact615 build identity and full Test-ProGo/Desktop5283",
+    "windows_native": "PARTIAL pair9/service import9 and earlier regressions PASS; first receipt complete heartbeat FAIL unknown stage/task/ticks; receipt7 and Home/Portable/Python tail NOT_RUN",
     "ubuntu": "SUCCESS",
+    "excludes": "wizard a501/839/a0e3413/bbcc335",
     "package": "SKIPPED",
-    "artifact_upload": "SKIPPED all",
-    "excludes": "actual wizard a501/839/a0e3413"
+    "artifact_upload": "SKIPPED all"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5191,6 +5191,27 @@
       "package": "SKIPPED",
       "artifact_upload": "SKIPPED all",
       "excludes": "actual wizard a501/839/a0e3413"
+    },
+    {
+      "source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+      "tested_merge": "2c7db226b9705367574ca6806b550e6e40b59cd0",
+      "tree": "c3efc70354edb1b9b880af6e78d29153a78a9b4c",
+      "local_sha": "63dae01967394a25ad735b17353bd50cddeb67d8",
+      "run_id": 39753790118,
+      "run_number": 615,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118",
+      "status": "completed",
+      "conclusion": "failure",
+      "jobs": {
+        "windows": 119740579385,
+        "ubuntu": 119740579716
+      },
+      "windows_compilation": "PASS exact615 build identity and full Test-ProGo/Desktop5283",
+      "windows_native": "PARTIAL pair9/service import9 and earlier regressions PASS; first receipt complete heartbeat FAIL unknown stage/task/ticks; receipt7 and Home/Portable/Python tail NOT_RUN",
+      "ubuntu": "SUCCESS",
+      "excludes": "wizard a501/839/a0e3413/bbcc335",
+      "package": "SKIPPED",
+      "artifact_upload": "SKIPPED all"
     }
   ],
   "retention_microtask": {
@@ -5326,24 +5347,24 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI614 compile cause corrected in one argument; candidate checking102efb NOT_RUN",
+    "phase": "CI615 failure identified at receipt heartbeat; unknown exact cause, safe fail-fast diagnostic next",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "bcb699bb9f3641d0d5a870836fd233e155748214",
-    "local_development_sha": "bc9abc24ebc2b52af6e7a4205ae5da8d60002809",
-    "published_sha": "0bfa2f97c3cb627e7bc6a7b1053260084a8f28c8",
-    "tree": "cfd761a43bfe4e5b736c15460dfd4df8f48342e7",
-    "tested_merge": "4b25e365a50779395f0a4c99576f7a8041258b61",
-    "ci_run_id": 39753293285,
-    "ci_run_number": 614,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753293285",
+    "local_sha": "63dae01967394a25ad735b17353bd50cddeb67d8",
+    "local_development_sha": "8342cef684081d2b9e214173dd9c87560dab45f7",
+    "published_sha": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+    "tree": "c3efc70354edb1b9b880af6e78d29153a78a9b4c",
+    "tested_merge": "2c7db226b9705367574ca6806b550e6e40b59cd0",
+    "ci_run_id": 39753790118,
+    "ci_run_number": 615,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118",
     "jobs": {
-      "windows": 119738915213,
-      "ubuntu": 119738914876
+      "windows": 119740579385,
+      "ubuntu": 119740579716
     },
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "FAIL CS1501 HomeVpnService.cs405 LoadShareAsync 3 args but signature91 needs4; exact completed job log09:10:12.8112991Z",
-    "windows_native": "NOT_RUN",
+    "windows_compilation": "PASS exact615 build identity and full Test-ProGo/Desktop5283",
+    "windows_native": "PARTIAL pair9/service import9 and earlier regressions PASS; first receipt complete heartbeat FAIL unknown stage/task/ticks; receipt7 and Home/Portable/Python tail NOT_RUN",
     "ubuntu": "SUCCESS",
     "workflow_preflight": "PASS public repository checked22Oct; unchanged workflows; PR uploads OFF and release not triggered",
     "publication_scan": {
@@ -5353,7 +5374,7 @@
       "findings": 0,
       "tree_match": true
     },
-    "next": "Freeze/publish narrow callback argument correction+3 docs; one new exactCI, no repeat614",
+    "next": "Publish only isolated receipt diagnostic5739 plus3 exact evidence docs after preflight; newCI, no same615 retry; future wizard/export excluded",
     "readiness_change": 0,
     "current_ci_step": "completed both jobs; all uploads/prune SKIPPED"
   },
@@ -8240,7 +8261,16 @@
     "windows_native": "NOT_RUN",
     "publication": "NOT_RUN excluded612/narrow correction",
     "scope": "real modal import/receipt; real protected I/O, existing local SSH substitute only for explicit retry; no live VPS/OpenSSH acceptance claim",
-    "next": "After current Dispose diagnosis, apply measured event interval to new wizard Dispose cases and preserve source freeze; initial/status setup worker migration later"
+    "next": "After current Dispose diagnosis, apply measured event interval to new wizard Dispose cases and preserve source freeze; initial/status setup worker migration later",
+    "dispose_measurement_followup": {
+      "source": "bbcc3356835ff08df01199990b1d67d7313ab757",
+      "reason": "Exact613 native modal unwind control-events2 baseline; measure late I/O delta separately and require closed publication gate",
+      "static": "PASS manual diff/syntax/public320/0",
+      "windows_compilation": "NOT_RUN",
+      "windows_native": "NOT_RUN",
+      "excluded_ci": 615,
+      "readiness_change": 0
+    }
   },
   "local_ci612_dispose_diagnosis": {
     "source": "79fcb6b419935f90e4bf5d3a4f0f26a2ff5217cc",
@@ -8334,6 +8364,147 @@
     "static": "PASS AST both calls4args, syntax, diff, public320/0",
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
+    "readiness_change": 0
+  },
+  "pending_import_compile_fix_publication": {
+    "source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+    "expected_parent": "0bfa2f97c3cb627e7bc6a7b1053260084a8f28c8",
+    "tree": "c3efc70354edb1b9b880af6e78d29153a78a9b4c",
+    "local_sha": "63dae01967394a25ad735b17353bd50cddeb67d8",
+    "paths": 4,
+    "added_lines": 149,
+    "deleted_lines": 83,
+    "tree_match": true,
+    "secret_pii_findings": 0,
+    "ref_cas": "PASS independently verified actualhead6f8/merge2c7 and unique615",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "readiness_change": 0
+  },
+  "frozen_r09_wizard_ui": {
+    "local_sha": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
+    "tree": "52db924bfca7ff4d24976bbb724ed21bf297b090",
+    "base_local_sha": "63dae01967394a25ad735b17353bd50cddeb67d8",
+    "base_source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+    "worktree": "ProGo-ci615-wizard",
+    "paths": 9,
+    "added_lines": 412,
+    "deleted_lines": 66,
+    "development_runtime_tree": "identical all src/tests/scripts/server/.github/VERSION atfreeze",
+    "static": "PASS manual diff/call-sites/syntax9/C#5/public320/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "published": false,
+    "docs": "predecessor snapshot only; update after615 exact result before public freeze",
+    "next": "Verify same615 then freeze3 docs/fulltree/scan/CAS; one new CI",
+    "readiness_change": 0
+  },
+  "local_r09_profile_export_worker": {
+    "source": "6d180fd7839abe132c08abb552d25723caaa57cc",
+    "paths": 2,
+    "added_lines": 70,
+    "deleted_lines": 0,
+    "implementation": "PARTIAL worker primitive only; actual SaveProfile still synchronous",
+    "native_cases": [
+      "save with original immutable snapshot",
+      "cancel before admission",
+      "refused stale admission",
+      "actual locked existing file unchanged",
+      "accepted cancellation honestly saved"
+    ],
+    "static": "PASS manual diff/syntax2/public320/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 615,
+    "excluded_wizard_freeze": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
+    "next": "Inspect app/window shutdown ownership, then wire actual chooser path to owned worker as separate stage",
+    "readiness_change": 0
+  },
+  "local_r09_profile_export_ownership": {
+    "source": "320a4762765819105eeb1dcd576d0dcfc752866a",
+    "paths": 2,
+    "added_lines": 126,
+    "deleted_lines": 2,
+    "implementation": "PARTIAL service actor reserves immutable export and public Stop joins accepted physical I/O; UI still synchronous",
+    "native_cases": 9,
+    "static": "PASS manual diff/ownership trace/syntax2/C#5/public320/0/secretPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 615,
+    "excluded_wizard_freeze": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
+    "next": "Wire actual chooser→owned service export and modal cancellation/retry/close/disposal; separately freeze API checks",
+    "readiness_change": 0
+  },
+  "local_r09_profile_export_ui": {
+    "source": "1edef0f56e6dff3fe4eaa0713206e8f0c52aeca1",
+    "paths": 3,
+    "added_lines": 51,
+    "deleted_lines": 13,
+    "implementation": "PARTIAL actual chooser→owned service ExportProfileAsync, retained RunStep/window work and cached identity/Stop scope; truthful issuance vs installation",
+    "static": "PASS manual diff/shutdown trace/syntax3/C#5/public320/0/secretsPII0/no sync file probe/write in SaveProfile",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "native_profile_chooser": "NOT_RUN distinct from existing diagnostic chooser3",
+    "excluded_ci": 615,
+    "excluded_wizard_freeze": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
+    "next": "Add bounded actual modal ExportProfile cancel/retry/close/dispose/accepted/Stop/locked tests; separate native chooser selection proof",
+    "readiness_change": 0
+  },
+  "local_r09_profile_export_modal": {
+    "source": "4c1b1840fa9b9077550b550d7adfbc69fa4d9cb5",
+    "paths": 1,
+    "added_lines": 84,
+    "deleted_lines": 0,
+    "native_scenarios": 11,
+    "profile_native_chooser": "NOT_RUN tests call shared production post-chooser helper only",
+    "static": "PASS manual diff/lifecycle trace/syntax/public320/0/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 615,
+    "excluded_wizard_freeze": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
+    "next": "Isolated actual profile native chooser Cancel/missing/error with existing owned window identity helper; no REVIEW02 deadline changes",
+    "readiness_change": 0
+  },
+  "ci615_receipt_failure": {
+    "source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+    "tested_merge": "2c7db226b9705367574ca6806b550e6e40b59cd0",
+    "run_id": 39753790118,
+    "failure_time": "2026-10-22T09:41:12.2560756Z",
+    "failure": "TimeoutException: Setup consumption heartbeat deadline",
+    "last_anchor": "2026-10-22T09:41:09.2460341Z PASS: setup consumption returns owned work before private receipt/credential I/O: complete",
+    "cause": "UNKNOWN: task completion/last stage/ticks absent; do not infer deadlock",
+    "next": "Narrow fail-fast safe task/stage/tick/precondition diagnostic; unchanged3s/5s budgets; isolate on615 base then new exactCI",
+    "readiness_change": 0
+  },
+  "local_r09_profile_export_native_chooser": {
+    "source": "0b5ca87f65ed20b687864d36ef519874e191bf66",
+    "paths": 4,
+    "added_lines": 116,
+    "deleted_lines": 1,
+    "native_cases": 3,
+    "implementation": "real production button with outerShowDialog+nativeSaveFileDialog; owned child/job20s/native5s and existing window identity helper",
+    "static": "PASS syntax3/diff/public321/0/secretsPII0/explicit compile list",
+    "powershell_execution": "NOT_RUN",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded_ci": 615,
+    "excluded_wizard_freeze": "d9405816e6bb54c7adb21f1d442dcf33af5cb2ac",
+    "readiness_change": 0
+  },
+  "local_ci615_receipt_diagnostic": {
+    "source": "8342cef684081d2b9e214173dd9c87560dab45f7",
+    "isolated_source": "5739c916b6384fa6e76a81f28fdbb58708c9f83f",
+    "base_source": "6f8b200cd34910ee167b44e6dab661c86cb506aa",
+    "paths": 1,
+    "added_lines": 16,
+    "deleted_lines": 2,
+    "change": "real saved input booleans, read/consume stage, fail-fast completed task and safe typed failure;3s/5s budgets unchanged",
+    "cause615": "UNKNOWN pending exact runtime flags",
+    "static": "PASS manual diff/syntax/public321/0 development/secretsPII0",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "excluded": "future wizardd940 and all profile export source",
+    "next": "Freeze isolated1test+3docs/scan/workflow/tree/CAS and one new diagnostic CI; no615 rerun",
     "readiness_change": 0
   }
 }

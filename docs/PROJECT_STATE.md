@@ -8,6 +8,211 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
+## Receipt-only checking scope before publication
+
+Only tests/HomeVpnSetupRecoveryTests.cs16add2delete +3 current evidence docs on exact
+CI615 base. Product runtime unchanged. Safe precondition/task/stage/tick diagnostic,
+no increased timeout/disabled check. New compilation/native NOT_RUN;615 failure cause
+UNKNOWN. Future wizard d940 and profile export6d180/320a/1edef/4c1/0b5 excluded. Full
+source tree320 files; no new Desktop profile chooser file or Test-ProGo source-list
+change in this checking. Last fullSUCCESS613, I58–80/Y22/delta0. Before publishing
+verify current6f8 parent/public/workflows/uploadsOFF and canonical fulltree equality.
+
+## Receipt fixture diagnostic8342 — unchanged budgets, new evidence pending
+
+Source `8342cef684081d2b9e214173dd9c87560dab45f7`, isolated
+`5739c916b6384fa6e76a81f28fdbb58708c9f83f` on exact615 checking63dae in
+ProGo-ci615-receipt. One test path16add2delete, product code unchanged. Checks actual
+saved access/owner/request preconditions (only booleans in log); observes read/consume
+stage and premature Task completion before expected held barrier; timeout prints
+stage/entered/tick delta/TaskStatus, failure type only (no message, path, token/key).
+3s heartbeat/5s worker+join unchanged; no check disabled, no timeout treatedPASS.
+Cause615 remains UNKNOWN until actual new runtime values. Static manual diff/
+syntax/public321/0(development)/secretPII0 PASS, Windows compilation/native NOT_RUN.
+
+Next publish only isolated test +3 evidence docs on source6f8 after scan/workflow/
+fulltree/CAS; isolated tree has320 sources, excludes entire wizardd940 and all
+profile export6d180/320a/1edef/4c1/0b5. One new exact diagnostic CI, no615 rerun.
+I58–80/Y22 exact613, delta0. After confirmed diagnosis, minimal fix before carrying
+prepared wizard to a new checked base. All future exports stay independently saved,
+not included or accepted. History below.
+
+## CI615 FAIL — setup consumption heartbeat ambiguity; no blind rerun
+
+Exact source `6f8b200cd34910ee167b44e6dab661c86cb506aa`, merge/build identity
+`2c7db226b9705367574ca6806b550e6e40b59cd0`, treec3efc70354edb1b9b880af6e78d29153a78a9b4c.
+[CI615/39753790118](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118)
+Windows119740579385 FAIL, Ubuntu119740579716 SUCCESS, completed jobs/log checked.
+Build09:14:05.8795949Z; full Test-ProGo PASS09:36:51.8168291Z/Desktop5283. Import pair9
+PASS09:37:14.265–15.333Z, service import9 PASS09:37:15.555–16.929Z incl real partial
+save/cleanup retry/stale access/acceptedStopDispose. Previous configure/UI/key/direct+
+agent regressions reached. At09:41:09.246Z first new receipt `complete` returns owned
+task;09:41:12.256Z `Setup consumption heartbeat deadline`. Its loop ignores early
+operation completion and prints no stage/timer/task state: actual reason UNKNOWN,
+not yet a confirmed product deadlock or timer defect. Existing3s deadline remains.
+Receipt7 criteria not passed; Home suite tail/Portable/Python tail NOT_RUN, package/
+uploads SKIPPED. Last fullSUCCESS/scoring/package remains613, no615 credit.
+
+Next narrow test correction: assert exact real saved request/owner/token preconditions,
+record read/consume stage and detect unexpected task completion before held barrier;
+on timeout print safe booleans/counters/type only. Do not print credentials/paths or
+increase timeouts. Isolate on615 checking63dae, exclude wizard d940 and profile export
+work; one new diagnostic SHA/CI is justified by new evidence, not same-run retry.
+
+Independent native profile chooser fixtures source `0b5ca87f65ed20b687864d36ef519874e191bf66`:
+4 paths116add1delete (new DesktopProfileNativeChooserTests +entry/list/call). Uses real
+production profile button, outer ShowDialog and nested native SaveFileDialog; existing
+PID/thread/root-owner helper unmodified. Owned child/job20s, native5s; positiveCancel
+must return0, real missing window fails; deliberately unmatched caption/error fixtures
+must return20/21 with exact failure and cleanup marker. Cleanup checks native window
+absent before owner disposal, joins retained worker/service tasks and unchanged private
+input snapshot, closes only its own windows/processes. Clipboard unused, settings not
+touched. Static syntax3/diff/public321/0/secretPII0/explicit compile list PASS;
+PowerShell execution/Windows compile/native NOT_RUN. Excluded615/wizardd940. FullR09
+FAIL/R11 PARTIAL, I58–80/Y22 exact613 unchanged. History below.
+
+## Modal profile export regression4c1 — eleven scenarios written, NOT_RUN
+
+Source `4c1b1840fa9b9077550b550d7adfbc69fa4d9cb5`,1 test path84add0delete. Eleven
+actual ShowDialog export scenarios: save, Cancel→Retry, Close/Dispose, accepted
+Cancel/Close/Dispose, global Stop before/after admission, real locked existing
+file→new-name Retry, accepted old-access completion. Tests call the same ExportProfile
+helper used after native chooser; they do NOT prove profile chooser interaction.
+Actual XML/file outcomes/one duplicate task/accepted saved messages/unchanged prior
+file/zero late disposed control delta/current access scope and separate issuance/
+installation state asserted.15s modal +5s barriers/task cleanup; only own GUID outputs,
+service work and private fixture backup restored after settlement. No live SSH/VPS.
+
+Manual diff/lifecycle trace/syntax/public320/0/secretPII0 PASS; Windows compilation/
+native NOT_RUN, excluded615 and frozen wizard d940. Native profile SaveFileDialog
+Cancel/missing/error fixture remains next, distinct from diagnostic chooser3 already
+verified613. No score increase: I58–80/Y22 exact613; wholeR09 FAIL/R11 PARTIAL. Next
+reuse existing PID/thread/root-owner native chooser helper in isolated owned child,
+with5s useful failure/20s outer bound and cleanup, without loosening REVIEW02.
+Same615 running; no source-head/doc-only push or duplicate CI. History below.
+
+## Profile export actual UI1edef — wiring saved, modal regression next
+
+Source `1edef0f56e6dff3fe4eaa0713206e8f0c52aeca1`,3 source paths51add13delete.
+Existing SaveFileDialog stays on UI, only captures selected path; File.Exists and
+WriteProfile no longer run there. Actual ExportProfile runs under existing RunStep
+and retained form task, calls service-owned ExportProfileAsync with captured access/
+home/public Stop scope. Explicit Cancel is DialogResult.None; Cancel→Retry keeps the
+modal, Close waits own work, Dispose closes UI admission. Accepted writes report
+saved even after Cancel; file issuance resets installation confirmation only for
+matching current access/home, never claims installed. Output error text does not
+echo selected/private path. Phone Context/card uses IsExportingProfile as existing
+saving gate; Desktop/settings/Stop remain independent. Event callback has no owner-
+await after explicit close (no controls after ConfigureAwait(false)), avoiding an
+unhandled owner-loss cancellation in asyncvoid after a successful physical save.
+
+Manual diff/actor-shutdown trace/syntax3/C#5/public320/0/secretPII0/call-site scan PASS;
+no synchronous file probe/write in actual SaveProfile path. Windows compilation/
+native NOT_RUN. Native modal export helper regression is next; actual profile
+native chooser selection also NOT_RUN, diagnostic chooser3 evidence613 is not
+relabelled as that scenario. Excluded615 and frozen wizard d940, API/worker6d180/
+320a also NOT_RUN. Whole R09 FAIL/R11 PARTIAL, I58–80/Y22/delta0. Same615 running,
+no duplicate or checkpoint-only push. History below.
+
+## Profile export actor320a — public Stop/Dispose ownership, UI pending
+
+Source `320a4762765819105eeb1dcd576d0dcfc752866a`,2 paths126add2delete, builds on
+primitive6d180. Service publishes ProfileExportWork/CTS/frozen access+home/path before
+worker I/O; exact same input/token/owner callback joins one task, different request
+refused. Memory-only admission checks owner, selected access/home, import/address
+work, public Stop identity and lifetime. Before-admission Cancel/Stop/Dispose suppress
+write; accepted export finishes and its result remains on ProfileExportWork. Public
+Stop cancels off UI and joins physical export even if channel cleanup failed; app's
+existing PrepareShutdown already waits this Stop with its own bounded hold-open
+policy. No new forced native I/O termination or timeout-as-success. Service actor
+has no control access or remote SSH action. Atomic memory cleanup/completion prevents
+an observer seeing a cleared request with an unfinished public task.
+
+Nine native service fixtures written: save/cancel/stop/dispose/accepted-stop/
+accepted-dispose/stale-access/stale-home/owner-refuse. Actual XML file, private bytes
+unchanged, exact duplicate/parallel refusal, UI heartbeat and public Stop join;
+5s barrier/task cleanup, no external process/VPS. Manual diff/ownership trace/
+syntax2/C#5/public320/0/secretPII0 PASS. Windows compilation/native NOT_RUN; excluded
+615 and wizard d940. Actual SaveFileDialog/SaveProfile still synchronous, UI wiring
+and modal regression are next separate stages. No full R09/R11 PASS. I58–80/Y22
+exact613, delta0. Same615 running, no duplicate/head change. History below.
+
+## Profile export worker primitive6d180 — UI wiring still pending
+
+Source `6d180fd7839abe132c08abb552d25723caaa57cc`,2 paths70add0delete. Existing
+SaveProfile→WriteProfile UI I/O finding remains open; this stage prepares the worker
+API only. WriteProfileAsync captures a shallow immutable snapshot (sealed access
+contains only strings/value types), fixed path/home strings and one memory-only
+admission boundary. Cancellation/stale admission before writing creates no output;
+after admission the physical save finishes and reports its actual result. Existing
+WriteProfile FileMode.CreateNew no-overwrite rule/XML format unchanged. No claim
+of crash-atomic export, UI integration, bounded remote filesystem completion or
+full R09 acceptance.
+
+Five native worker fixtures written: save/cancel/refuse/actual locked existing file/
+accepted-cancel. Held worker requires native heartbeat, mutates original access to
+prove captured XML, reads actual generated XML, checks real preserved existing bytes,
+and joins own task before deleting only its own GUID output.5s barrier/task cleanup.
+Manual diff/syntax2/public320/0/secretPII0 PASS; Windows compilation/native NOT_RUN,
+excluded615 and frozen wizard d940. I58–80/Y22/delta0. Next determine application/
+window shutdown ownership before wiring actual SaveFileDialog→worker (separate
+microtask), preserving truthful issuance vs installation and no duplicate export.
+Same61539753790118 remains running: UbuntuSUCCESS, Windows Test-ProGo step running.
+
+## Future wizard UI candidate d940 — source frozen, NOT_RUN
+
+Local `d9405816e6bb54c7adb21f1d442dcf33af5cb2ac`, tree52db924bfca7ff4d24976bbb724ed21bf297b090
+в ProGo-ci615-wizard, на checking63dae01967394a25ad735b17353bd50cddeb67d8 (published
+source6f8/CI615).9 source/test paths412add66delete: captured async import/receipt,
+owned initial/status setup snapshot, Context/card loading gates,11 import/receipt
+ShowDialog +4 initial snapshot modal routes and all existing fixture readiness.
+Полное дерево runtime/tests/scripts/server/workflows/VERSION совпадает с текущим
+локальным development (diff0); будущая публикация не должна потерять compile-fixbc9.
+Manual scoped diff/call-sites/syntax9/C#5/public320/0/secretPII0 PASS; compilation/native
+NOT_RUN. Docs здесь ещё predecessor snapshot, не готовый public freeze.615 head
+не менять. Дождаться exact615 результата; затем актуальные3 evidence docs/full scan/
+canonical tree/CAS перед единственным следующим CI. I58–80/Y22 exact613 unchanged.
+
+## CI615 running — exact narrow compile fix, future wizard separate
+
+PR88 head `6f8b200cd34910ee167b44e6dab661c86cb506aa`, merge
+`2c7db226b9705367574ca6806b550e6e40b59cd0`, treec3efc70354edb1b9b880af6e78d29153a78a9b4c
+= local63dae01967394a25ad735b17353bd50cddeb67d8. GuardedCAS0bfa→6f8 PASS, один
+автоматический [CI615/39753790118](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753790118),
+Windows119740579385/Ubuntu119740579716 in_progress. Первоначально пустой webhook lookup
+затем один run; ручного дубля нет.4 paths149add83delete (source call1/1 +3docs),
+full secretsPII0/tree equality PASS, workflows/VERSION unchanged/public uploadsOFF.
+PR body обновлён. Новая compilation/native NOT_RUN до exact completed log;614FAIL
+сохранён. Last fullSUCCESS613 — только его SHA/ZIP/28anchors, I58–80/Y22/delta0.
+
+Независимый local `bbcc3356835ff08df01199990b1d67d7313ab757` (1 test path10add4delete)
+адаптирует будущие modal import Dispose assertions к подтверждённому613 native-unwind
+интервалу: перед release worker требуется завершение ShowDialog unwind, закрытый
+OwnerUi publication gate и всё ещё удерживаемый импорт; после actual I/O нулевой
+прирост control-events относительно измеренной native baseline. Все параметры
+выводятся в assertion. Никакой проверки не удалено/таймаут не увеличен. Ожидается
+также завершение настоящего setup snapshot перед проверкой повторного UI-действия
+и при очистке. Manual diff/syntax/public320/0 PASS; compilation/native NOT_RUN,
+из615 исключено вместе с wizard a501/839/a0e3413.
+
+Далее: подготовить отдельный wizard UI checking с captured async import/snapshot
+и11+4 реальными modal fixtures на последней проверенной API базе после615. Проверять
+тот же615, не менять его head checkpoint-only публикациями. Полный R09 FAIL/R11
+PARTIAL, owner/final installer/delivery BLOCKED или NOT_RUN по прежним критериям.
+Ниже история, pending-CAS записи не означают незавершённую фактическую публикацию.
+
+## Narrow compile-fix object6f8 — before ref-CAS
+
+Source object `6f8b200cd34910ee167b44e6dab661c86cb506aa`, parent
+`0bfa2f97c3cb627e7bc6a7b1053260084a8f28c8`, tree `c3efc70354edb1b9b880af6e78d29153a78a9b4c`
+= isolated local `63dae01967394a25ad735b17353bd50cddeb67d8` (ProGo-ci614-fix).
+4 paths149add83delete:1 source call1add1delete +3 failure/evidence docs. SecretsPII0/
+public320/0/syntax/all call arities/diff/JSON86/fulltree PASS; freshpublic PR88
+source0bfa/base4bb, unchanged workflows/VERSION/uploadsOFF.614 completed FAIL is
+preserved. New compilation/native NOT_RUN; wizard excluded. Ref-CAS NOT_RUN at
+checkpoint: recover actual head/run before retry. Next guardedCAS0bfa→6f8 and one
+exact automatic CI. Last fullSUCCESS613/I58–80/Y22 unchanged.
+
 ## CI614 завершён FAIL — narrow callback argument correction saved
 
 [CI614/39753293285](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39753293285)

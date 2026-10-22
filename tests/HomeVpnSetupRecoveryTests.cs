@@ -54,17 +54,31 @@ namespace ProGo
                         HomeVpnPrivateFiles.Save("access", token.Trim()); HomeVpnPrivateFiles.Save("owner", Json.Serialize(owner));
                         var request = HomeVpnSetupRecovery.Register(owner, "My iPhone"); HomeVpnSetupRecovery.RetainResult(owner, request, token);
                         byte[] journal = File.ReadAllBytes(PendingPath), expectedJournal = journal, beforeAccess = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat")), beforeOwner = File.ReadAllBytes(Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat"));
-                        byte[] expectedAccess = beforeAccess; Task operation = null; FileStream held = null; int worker = 0, allowed = 1;
+                        byte[] expectedAccess = beforeAccess; Task operation = null; FileStream held = null; int worker = 0, allowed = 1, lastStage = 0;
+                        var savedOwner = Json.Deserialize<HomeVpnOwner>(HomeVpnPrivateFiles.Load("owner"));
+                        var savedRequest = HomeVpnSetupRecovery.Load(owner, "My iPhone");
+                        bool accessMatches = HomeVpnPrivateFiles.Load("access") == token.Trim();
+                        bool ownerMatches = savedOwner != null && String.Equals(savedOwner.Host, owner.Host, StringComparison.OrdinalIgnoreCase) && savedOwner.Port == owner.Port && savedOwner.Login == owner.Login && savedOwner.KeyFile == owner.KeyFile;
+                        bool requestMatches = savedRequest != null && savedRequest.RequestId == request.RequestId && savedRequest.Result == token.Trim();
+                        check(accessMatches && ownerMatches && requestMatches, "setup consumption starts from exact real saved inputs: " + mode + "; access=" + accessMatches + "/owner=" + ownerMatches + "/request=" + requestMatches);
                         try {
                             var watch = Stopwatch.StartNew();
                             operation = HomeVpnSetupRecovery.ConfirmConsumedAsync(owner, token, cancellation.Token, () => Volatile.Read(ref allowed) != 0, stage => {
+                                Interlocked.Exchange(ref lastStage, stage == "read" ? 1 : stage == "consume" ? 2 : 3);
                                 if (stage != (mode == "cancel-read" ? "read" : "consume")) return;
                                 Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
                                 if (!release.Wait(5000)) throw new TimeoutException("Owned setup consumption fixture deadline");
                             });
                             check(watch.ElapsedMilliseconds < 500, "setup consumption returns owned work before private receipt/credential I/O: " + mode);
                             int beforeTicks = ticks; var wait = Stopwatch.StartNew();
-                            while (!entered.IsSet || ticks < beforeTicks + 3) { if (wait.ElapsedMilliseconds > 3000) throw new TimeoutException("Setup consumption heartbeat deadline"); Application.DoEvents(); Thread.Sleep(1); }
+                            while (!entered.IsSet || ticks < beforeTicks + 3) {
+                                if (operation.IsCompleted) {
+                                    string failureType = "none"; try { operation.GetAwaiter().GetResult(); } catch (Exception ex) { failureType = ex.GetType().Name; }
+                                    throw new InvalidOperationException("Setup consumption settled before its held barrier: mode=" + mode + "; stage=" + Volatile.Read(ref lastStage) + "; entered=" + entered.IsSet + "; ticks=" + (ticks - beforeTicks) + "; status=" + operation.Status + "; failure=" + failureType);
+                                }
+                                if (wait.ElapsedMilliseconds > 3000) throw new TimeoutException("Setup consumption heartbeat deadline: mode=" + mode + "; stage=" + Volatile.Read(ref lastStage) + "; entered=" + entered.IsSet + "; ticks=" + (ticks - beforeTicks) + "; status=" + operation.Status);
+                                Application.DoEvents(); Thread.Sleep(1);
+                            }
                             owner.KeyFile = "changed-after-capture";
                             check(worker != ui && !operation.IsCompleted && journal.SequenceEqual(File.ReadAllBytes(PendingPath)), "held real setup consumption retains its original request while native owner UI stays responsive: " + mode);
                             if (mode.StartsWith("cancel-", StringComparison.Ordinal)) cancellation.Cancel();
