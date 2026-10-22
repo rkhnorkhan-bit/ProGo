@@ -218,6 +218,15 @@ namespace ProGo
         private bool importCommitAccepted;
         internal Task<bool> ImportWork { get { lock (lifecycleGate) return importWork; } }
         internal bool IsImporting { get { lock (lifecycleGate) return !importWork.IsCompleted; } }
+        private Task<bool> profileExportWork = Task.FromResult(true);
+        private CancellationTokenSource profileExporting, profileExportCancelled;
+        private HomeVpnAccess profileExportAccess;
+        private string profileExportPath, profileExportHome;
+        private CancellationToken profileExportToken;
+        private Func<bool> profileExportAdmission;
+        private bool profileExportAccepted;
+        internal Task<bool> ProfileExportWork { get { lock (lifecycleGate) return profileExportWork; } }
+        internal bool IsExportingProfile { get { lock (lifecycleGate) return !profileExportWork.IsCompleted; } }
         private long shareRevision;
         internal Task<bool> ShareRefreshWork { get { lock (lifecycleGate) return shareRefreshWork; } }
         private Task<bool> initializationWork = Task.FromResult(true);
@@ -237,7 +246,7 @@ namespace ProGo
         internal bool InitializationFailed { get { return initializationFailed; } }
         internal bool IsStopping { get { lock (lifecycleGate) return !stopWork.IsCompleted || !channelStopWork.IsCompleted; } }
         internal bool IsStarting { get { lock (lifecycleGate) return !startWork.IsCompleted; } }
-        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null || addressWrite != null || importWrite != null; } }
+        internal bool HasOwnedResources { get { return proxy != null || sessionDirectory != null || addressWrite != null || importWrite != null || IsExportingProfile; } }
         internal bool StartsPaused { get { lock (lifecycleGate) return startsPaused; } }
         internal void PauseStarts() { lock (lifecycleGate) startsPaused = true; }
         internal void ResumeStarts() { lock (lifecycleGate) { if (!disposed) startsPaused = false; } }
@@ -449,6 +458,52 @@ namespace ProGo
             try { work.Dispose(); } catch { return false; }
             lock (lifecycleGate) { if (Object.ReferenceEquals(importWrite, work)) importWrite = null; }
             return true;
+        }
+
+        internal Task<bool> ExportProfileAsync(string path, CancellationToken token, Func<bool> ownerAdmission = null, Action<string> beforeIo = null)
+        {
+            TaskCompletionSource<bool> completion; CancellationTokenSource cancellation; Task<bool> physical;
+            lock (lifecycleGate) {
+                if (token.IsCancellationRequested) return FailedPrivateWrite(new OperationCanceledException(token));
+                if (disposed) return FailedPrivateWrite(new ObjectDisposedException("HomeVpnService"));
+                if (!profileExportWork.IsCompleted) return String.Equals(path, profileExportPath, StringComparison.OrdinalIgnoreCase)
+                    && Object.ReferenceEquals(Access, profileExportAccess) && HomeAddress == profileExportHome && token == profileExportToken && ownerAdmission == profileExportAdmission
+                    ? profileExportWork : FailedPrivateWrite(new InvalidOperationException("Предыдущее сохранение профиля ещё выполняется. Дождитесь результата."));
+                if (startsPaused || !stopWork.IsCompleted || !channelStopWork.IsCompleted || !initializationWork.IsCompleted || !importWork.IsCompleted || !privateAddressWork.IsCompleted || Access == null)
+                    return FailedPrivateWrite(new InvalidOperationException("Дождитесь чтения, сохранения или остановки VPN для телефона перед сохранением профиля."));
+                completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var access = Access; var home = HomeAddress; var stop = stopWork;
+                profileExportAccess = access; profileExportHome = home; profileExportPath = path; profileExportToken = token;
+                profileExportAdmission = ownerAdmission; profileExportAccepted = false; profileExporting = cancellation; profileExportWork = completion.Task;
+                // WriteProfileAsync snapshots synchronously, but schedules all file/XML work.
+                physical = access.WriteProfileAsync(path, home, cancellation.Token, delegate {
+                    lock (lifecycleGate) {
+                        if (disposed || startsPaused || cancellation.IsCancellationRequested || profileExportCancelled == cancellation || profileExporting != cancellation
+                            || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted || !channelStopWork.IsCompleted || !importWork.IsCompleted || !privateAddressWork.IsCompleted
+                            || !Object.ReferenceEquals(Access, access) || HomeAddress != home || (ownerAdmission != null && !ownerAdmission())) return false;
+                        profileExportAccepted = true; return true;
+                    }
+                }, beforeIo);
+            }
+            Task.Run(() => CompleteProfileExportAsync(physical, cancellation, completion));
+            return completion.Task;
+        }
+        private async Task CompleteProfileExportAsync(Task<bool> physical, CancellationTokenSource cancellation, TaskCompletionSource<bool> completion)
+        {
+            Exception failure = null; bool saved = false;
+            try { saved = await physical.ConfigureAwait(false); } catch (Exception ex) { failure = ex; }
+            cancellation.Dispose();
+            lock (lifecycleGate) {
+                if (profileExporting == cancellation) {
+                    profileExporting = null; profileExportPath = profileExportHome = null; profileExportAccess = null;
+                    profileExportAdmission = null; profileExportAccepted = false;
+                }
+                if (profileExportCancelled == cancellation) profileExportCancelled = null;
+                // Metadata and public completion settle together, before a new owner can enter.
+                if (failure is OperationCanceledException) completion.TrySetCanceled();
+                else if (failure != null) completion.TrySetException(failure); else completion.TrySetResult(saved);
+            }
         }
 
         // Compatibility fixtures may wait synchronously; the wizard uses the owned async API.
@@ -699,21 +754,26 @@ namespace ProGo
 
         internal Task<bool> StopAsync()
         {
-            TaskCompletionSource<bool> completion; Task<bool> physical, pendingImport; CancellationTokenSource importCancellation;
+            TaskCompletionSource<bool> completion; Task<bool> physical, pendingImport, pendingExport; CancellationTokenSource importCancellation, exportCancellation;
             lock (lifecycleGate) {
                 if (!stopWork.IsCompleted) return stopWork;
                 completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 stopWork = completion.Task; // Public ownership reserves admission before physical cleanup.
                 pendingImport = importWork; importCancellation = importCommitAccepted ? null : importing;
                 importCancelled = importCancellation; // Memory admission closes before cancellation callbacks run.
+                pendingExport = profileExportWork; exportCancellation = profileExportAccepted ? null : profileExporting;
+                profileExportCancelled = exportCancellation;
                 physical = StopChannelAsync();
             }
             Task.Run(async delegate {
                 Exception failure = null; bool stopped = false;
                 try { if (importCancellation != null) try { importCancellation.Cancel(); } catch (ObjectDisposedException) { } }
                 catch (Exception ex) { failure = ex; }
+                try { if (exportCancellation != null) try { exportCancellation.Cancel(); } catch (ObjectDisposedException) { } }
+                catch (Exception ex) { if (failure == null) failure = ex; }
                 try { stopped = await physical.ConfigureAwait(false); } catch (Exception ex) { if (failure == null) failure = ex; }
                 try { await pendingImport.ConfigureAwait(false); } catch { /* Import outcome remains on ImportWork; exact cleanup is retried below. */ }
+                try { await pendingExport.ConfigureAwait(false); } catch { /* Exact save/refusal outcome remains on ProfileExportWork. */ }
                 bool cleaned = CleanupImportOwned();
                 if (failure != null) completion.TrySetException(failure); else completion.TrySetResult(stopped && cleaned);
             });

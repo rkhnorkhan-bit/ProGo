@@ -8,6 +8,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Xml;
 
@@ -82,6 +83,23 @@ namespace ProGo
             return value != null && Regex.IsMatch(value, "\\A[0-9a-f]{" + count + "}\\z");
         }
 
+        // Admission checks memory only. Snapshot before scheduling so later
+        // caller edits cannot redirect an already selected profile export.
+        internal Task<bool> WriteProfileAsync(string path, string homeAddress, CancellationToken cancellation,
+            Func<bool> admit = null, Action<string> beforeIo = null)
+        {
+            var snapshot = (HomeVpnAccess)MemberwiseClone(); // All fields are strings/value types.
+            return Task.Run(delegate {
+                cancellation.ThrowIfCancellationRequested();
+                if (beforeIo != null) beforeIo("prepared");
+                cancellation.ThrowIfCancellationRequested();
+                if (admit != null && !admit()) throw new OperationCanceledException("Сохранение профиля отменено до принятия записи.");
+                // Accepted I/O remains owned until its real outcome. A later
+                // cancellation cannot undo a file that was actually saved.
+                if (beforeIo != null) beforeIo("accepted");
+                snapshot.WriteProfile(path, homeAddress); return true;
+            });
+        }
         public void WriteProfile(string path, string homeAddress)
         {
             if (!ValidHost(homeAddress)) throw new ArgumentException("Введите внешний IPv4-адрес дома или имя DDNS, без https:// и порта.");

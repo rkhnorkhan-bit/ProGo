@@ -1,12 +1,89 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `f682432f4afd53bc7b3e7c9142d60dcb42a6a22e`, tree `7da67502463739fd3a427ebf7ebddc629679858c`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `12d5cbc47b5cf2c1be0a0b16b2186b938da51952`, tree `e160e3a481292fa6df0f20628120932f9ea2caab`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## Reconstructed owned export API — checking publication pending
+
+Local service/test code `8903762ee659efaaa1923aacf146f7201e90c557` follows worker
+`0cf5328f5e00f669a18e91baeb43d72842788d98`; these are NEW reconstructed sources,
+not restored original missing objects. Service publishes one public export task before
+worker/file I/O, joins exact duplicates and refuses conflicting export, captures access,
+home and Stop identity with memory-only owner admission. Stop/Dispose cancels before
+admission and joins actual accepted file work without UI blocking or self-await. Nine
+bounded native cases save/cancel/Stop/Dispose/accepted Stop/accepted Dispose/stale access/
+stale home/refused owner also check unchanged real DPAPI files and no started relay.
+Local manual ownership/lifetime/diff, syntax/C#5 scope, public320/0 and added secretPII0
+PASS; new Windows compilation/native14 NOT_RUN. Actual SaveProfile remains synchronous,
+fullR09 FAIL. CI620 is only the unchanged published baseline, never this local code.
+
+Freeze exactly six files: src/HomeVpnAccess.cs,src/HomeVpnService.cs,
+tests/HomeVpnWaitingTests.cs,docs/PROJECT_STATE.md,docs/ACCEPTANCE_RUNBOOK.md,
+docs/project_state.json. No export UI/chooser/Admin/invitation work or workflow/VERSION
+changes. Public PR88 head still12d5/base4bb,620 completed; upload guards OFF/release not
+triggered. Next canonical tree equality and guarded source CAS once, record one new CI
+ID; new native14 plus existing full regression on its exact SHA. In parallel local UI
+reconstruction can proceed in a separate commit without changing that checking source.
+I58–80/Y22(raw21.75),delta0; target/installer/private delivery gates stay open.
+
+## Reconstructed export worker — new local source, Windows NOT_RUN
+
+Local code `0cf5328f5e00f669a18e91baeb43d72842788d98` reconstructs the missing reviewed
+export primitive on exact published620. Two files,70 additions: immutable value/string
+snapshot before worker scheduling; memory-only admission; real XML/file I/O off UI;
+CreateNew prevents overwrite; cancellation after admission keeps the actual outcome.
+Five bounded native cases cover save/cancel/refusal/locked existing/accepted-cancel,
+including original identity/password/CA after caller edits. Own GUID output only,
+release and join5s, heartbeat3s; this primitive fixture uses Show(), not modal UI proof.
+Manual diff/syntax2/C#5 await-scope/public320/0/added-content secretPII0 PASS. No .NET
+or Windows runtime here: new compilation/native NOT_RUN; CI620 does not cover this
+code. Scores unchanged I58–80/Y22(raw21.75),delta0. Next reconstruct service ownership,
+then publish only reviewed API5+9 and latest evidence docs for one new exact CI.
+
+## Recovery after environment_offline — CI620 verified; local snapshot earlier
+
+Current published/tested source `12d5cbc47b5cf2c1be0a0b16b2186b938da51952`, merge
+`7853b8cd1aefe09456392e9b30b765943ea5e5af`, canonical tree `e160e3a481292fa6df0f20628120932f9ea2caab`.
+[CI620/39777591168](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39777591168)
+Windows119820381219/Ubuntu119820380887 SUCCESS, completed jobs/log verified; local
+source and merge trees exactly equal. Build identity12:21:11.777Z, Desktop5287,
+HomeVPN1948 at12:47:47.040Z, Portable91, Python28=26PASS2SKIP. Actual modal import/
+receipt11 +initial snapshot5 +receipt worker7 PASS, including cancel-edited-retry,
+actual retry SSH boundary and terminal recovery order. Signing55/UI50/preparation76
+and four actual direct/owned-agent SSH startup/recovery child-lifetime I/O metrics
+PASS. These are partial dev criteria, not installed owner/VPS or whole-app performance.
+
+Runner ZIP0.2.2 SHA256 `ba60dcbc4642834baaa8128de3176e1bd751b7a5e5ff8b8dff07dd53b033eae6`;
+all uploads/prune SKIPPED. ZIP bytes not retrieved/delivered/installed; private delivery
+BLOCKED pending owner-approved channel. No release/merge/install or duplicate CI.
+All28 existing weighted partial evidence markers matched exactly in620 completed log:
+same weights/D0.5/P0.5/A0, I58–80/Y22(raw21.75)/delta0; no new full weighted gate.
+
+Environment now executes. Observed old local root HEAD b1b2139cf3b338ca4ed965941bfab07d8158cec7,
+clean20 worktrees, no pending Git operations/build/SSH processes or another executor.
+Later local source/checking objects9859/5387/674e/65590/export/Admin and checkpointfecb718
+are MISSING in this filesystem; the reason for the older snapshot is UNKNOWN. Nothing
+was reset/deleted. Old root protected by recovery/pre-offline-snapshot-20261022 and
+left untouched. Published source+merge fetched successfully; separate current worktree
+ProGo-recovered-ci620 /work/progo-recovered-ci620-20261022 starts at tested12d5.
+No uncommitted changes existed to save. Git fetch sessions completed, no duplicate CI.
+
+Unpublished export/Admin/default-configure/pending-state work described below remains
+historical reviewed work, not present recovered code or Windows PASS. Do not pretend
+the missing original commits were restored. First unfinished task: reconstruct the
+same bounded immutable profile-export worker/API5+9 cases from saved source review,
+with new commits/SHAs and fresh Windows verification. Do not expand features or replay
+any external action. Later Admin blocks and invitation pending-state9859 also require
+explicit reconstruction/verification; consumption-worker patch never applied before
+409. Existing public620 native evidence stays exact; fullR09 FAIL/R11PARTIAL/targetA0.
+
+Historical checkpoint sections below keep their original time/source meaning; their
+in-progress/ref-NOT_RUN entries are superseded by this recovery record.
 
 ## Frozen actual-SSH boundary fixture fix — one file on exact619
 

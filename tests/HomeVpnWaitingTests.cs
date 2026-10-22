@@ -71,6 +71,8 @@ namespace ProGo
             var unrelated = StartUnrelatedFixture();
             try {
                 PublicationReadiness();
+                ProfileExportWorker(token, work);
+                OwnedProfileExport(token, work);
                 StoredStateWorker(token, work);
                 OwnedInitializationWorker(token);
                 OwnedShareRefreshWorker(token);
@@ -323,6 +325,123 @@ namespace ProGo
                         }
                     }
                 } finally { heartbeat.Stop(); form.Close(); foreach (var item in original) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
+            }
+        }
+        private static void ProfileExportWorker(string token, string work)
+        {
+            using (var host = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; heartbeat.Tick += delegate { ticks++; }; host.Show(); heartbeat.Start();
+                foreach (string mode in new[] { "save", "cancel", "refuse", "existing", "accepted-cancel" })
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim())
+                using (var cancellation = new CancellationTokenSource()) {
+                    string path = Path.Combine(work, "owned-export-" + Guid.NewGuid().ToString("N") + ".mobileconfig");
+                    var access = HomeVpnAccess.Parse(token); string expectedIdentity = access.Identity, expectedPassword = access.Password, expectedCa = access.Ca;
+                    byte[] previous = new byte[] { 1, 2, 3, 4 }; Task<bool> operation = null; FileStream held = null; int worker = 0, admitted = 0, allowed = 1;
+                    try {
+                        if (mode == "existing") { File.WriteAllBytes(path, previous); held = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None); }
+                        int beforeTicks = ticks; var watch = Stopwatch.StartNew();
+                        operation = access.WriteProfileAsync(path, "home.example", cancellation.Token, () => Volatile.Read(ref allowed) != 0, stage => {
+                            if (stage == "accepted") { Interlocked.Increment(ref admitted); if (mode == "accepted-cancel") cancellation.Cancel(); return; }
+                            Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                            if (!release.Wait(5000)) throw new TimeoutException("Owned profile export fixture deadline");
+                        });
+                        check(watch.ElapsedMilliseconds < 500, "profile export returns owned work before real XML/file I/O: " + mode);
+                        Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                        access.ServerId = new string('f', 32); access.Password = "changed-after-capture"; access.Ca = "changed-after-capture";
+                        check(worker != ui && !operation.IsCompleted && admitted == 0, "held profile export keeps native UI responsive and captures the original access: " + mode);
+                        if (mode == "cancel") cancellation.Cancel();
+                        if (mode == "refuse") Interlocked.Exchange(ref allowed, 0);
+                        release.Set(); Pump(() => operation.IsCompleted, 5000);
+                        Exception failure = null; bool saved = false;
+                        try { saved = operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                        if (held != null) { held.Dispose(); held = null; }
+                        if (mode == "cancel" || mode == "refuse") check(failure is OperationCanceledException && !File.Exists(path) && admitted == 0,
+                            "cancelled or stale profile export never admits a late destination write: " + mode);
+                        else if (mode == "existing") check(failure is IOException && previous.SequenceEqual(File.ReadAllBytes(path)), "actual locked existing profile is never overwritten or reported saved");
+                        else {
+                            var xml = new System.Xml.XmlDocument { XmlResolver = null }; xml.Load(path);
+                            check(failure == null && saved && admitted == 1 && xml.SelectSingleNode("//key[text()='RemoteAddress']/following-sibling::*[1]").InnerText == "home.example"
+                                && xml.SelectSingleNode("//key[text()='RemoteIdentifier']/following-sibling::*[1]").InnerText == expectedIdentity
+                                && xml.SelectSingleNode("//key[text()='AuthPassword']/following-sibling::*[1]").InnerText == expectedPassword
+                                && xml.SelectSingleNode("//key[text()='PayloadContent']/following-sibling::data[1]").InnerText == expectedCa,
+                                "real profile export uses the captured access and reports an admitted save honestly after Cancel: " + mode);
+                        }
+                    } finally {
+                        release.Set(); if (held != null) held.Dispose();
+                        try {
+                            if (operation != null) { Pump(() => operation.IsCompleted, 5000); try { operation.GetAwaiter().GetResult(); } catch (Exception) { /* Observe the asserted physical outcome before removing only own output. */ } }
+                        } finally { if (operation == null || operation.IsCompleted) File.Delete(path); }
+                    }
+                }
+                heartbeat.Stop(); host.Close();
+            }
+        }
+        private static void OwnedProfileExport(string token, string work)
+        {
+            var originals = new[] { "access", "owner", "home-address" }.ToDictionary(name => Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"), path => File.Exists(path) ? File.ReadAllBytes(path) : null);
+            using (var host = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 }) {
+                int ticks = 0, ui = Thread.CurrentThread.ManagedThreadId; heartbeat.Tick += delegate { ticks++; }; host.Show(); heartbeat.Start();
+                try {
+                    foreach (string mode in new[] { "save", "cancel", "stop", "dispose", "accepted-stop", "accepted-dispose", "stale-access", "stale-home", "owner-refuse" }) {
+                        HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", "null"); HomeVpnPrivateFiles.Save("home-address", "home.example");
+                        var protectedBytes = originals.Keys.ToDictionary(path => path, File.ReadAllBytes);
+                        using (var relay = new Ikev2RelayService())
+                        using (var service = new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878, true))
+                        using (var entered = new ManualResetEventSlim())
+                        using (var release = new ManualResetEventSlim())
+                        using (var cancellation = new CancellationTokenSource()) {
+                            string path = Path.Combine(work, "owned-service-export-" + Guid.NewGuid().ToString("N") + ".mobileconfig");
+                            Task<bool> exporting = null, stop = null; int worker = 0, allowed = 1; bool accepted = mode.StartsWith("accepted-", StringComparison.Ordinal);
+                            Func<bool> admission = () => Volatile.Read(ref allowed) != 0;
+                            try {
+                                Pump(() => service.InitializationWork.IsCompleted, 5000); check(service.InitializationWork.GetAwaiter().GetResult(), "export fixture initializes actual protected access: " + mode);
+                                int beforeTicks = ticks; var watch = Stopwatch.StartNew();
+                                exporting = service.ExportProfileAsync(path, cancellation.Token, admission, stage => {
+                                    if (stage != (accepted ? "accepted" : "prepared")) return;
+                                    Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                    if (!release.Wait(5000)) throw new TimeoutException("Owned service profile export fixture deadline");
+                                });
+                                check(watch.ElapsedMilliseconds < 500 && Object.ReferenceEquals(exporting, service.ProfileExportWork) && service.IsExportingProfile,
+                                    "service publishes export ownership before physical profile I/O: " + mode);
+                                Pump(() => entered.IsSet && ticks >= beforeTicks + 3, 3000);
+                                check(worker != ui && !exporting.IsCompleted && service.HasOwnedResources && !File.Exists(path)
+                                    && Object.ReferenceEquals(exporting, service.ExportProfileAsync(path, cancellation.Token, admission)),
+                                    "held export retains native heartbeat and exact duplicate ownership: " + mode);
+                                bool refused = false; try { service.ExportProfileAsync(path + ".other", cancellation.Token, admission).GetAwaiter().GetResult(); } catch (InvalidOperationException) { refused = true; }
+                                check(refused && !File.Exists(path + ".other"), "different export cannot run beside the retained save: " + mode);
+                                if (mode == "cancel") cancellation.Cancel();
+                                if (mode == "stale-access") typeof(HomeVpnService).GetProperty("Access", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(service, HomeVpnAccess.Parse(token), null);
+                                if (mode == "stale-home") typeof(HomeVpnService).GetProperty("HomeAddress", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(service, "changed.example", null);
+                                if (mode == "owner-refuse") Interlocked.Exchange(ref allowed, 0);
+                                if (mode.Contains("stop") || mode.Contains("dispose")) {
+                                    watch.Restart(); if (mode.Contains("dispose")) service.Dispose();
+                                    stop = service.StopAsync();
+                                    check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted && Object.ReferenceEquals(stop, service.StopAsync()),
+                                        "Stop/Dispose returns promptly and shares a drain until actual held export settles: " + mode);
+                                }
+                                release.Set(); Pump(() => exporting.IsCompleted && (stop == null || stop.IsCompleted), 5000);
+                                bool saved = false; Exception failure = null; try { saved = exporting.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                                if (accepted || mode == "save") {
+                                    var xml = new System.Xml.XmlDocument { XmlResolver = null }; xml.Load(path);
+                                    check(failure == null && saved && xml.SelectSingleNode("//key[text()='RemoteAddress']/following-sibling::*[1]").InnerText == "home.example",
+                                        "accepted physical save keeps honest success despite later service Stop/Dispose: " + mode);
+                                } else check(failure is OperationCanceledException && !File.Exists(path), "cancelled/stale/disposed owner cannot admit a late destination write: " + mode);
+                                if (stop != null) check(stop.GetAwaiter().GetResult(), "public Stop completes after the exact export without a self-wait: " + mode);
+                                check(!service.IsExportingProfile && !service.HasOwnedResources && !relay.IsRunning && protectedBytes.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                                    "settled export leaves protected credentials unchanged and no running relay or owned work: " + mode);
+                            } finally {
+                                release.Set(); service.Dispose(); var cleanup = service.StopAsync();
+                                Pump(() => cleanup.IsCompleted && service.ProfileExportWork.IsCompleted, 5000);
+                                if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned profile export cleanup incomplete");
+                                if (exporting != null) try { exporting.GetAwaiter().GetResult(); } catch (Exception) { /* Observe the asserted owned result. */ }
+                                File.Delete(path);
+                            }
+                        }
+                    }
+                } finally { heartbeat.Stop(); host.Close(); foreach (var item in originals) { if (item.Value == null) File.Delete(item.Key); else File.WriteAllBytes(item.Key, item.Value); } }
             }
         }
         private static string BeforeImportToken(string token) { return ImportTokenForHost(token, "before.example"); }
