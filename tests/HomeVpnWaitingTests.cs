@@ -71,6 +71,7 @@ namespace ProGo
             var unrelated = StartUnrelatedFixture();
             try {
                 PublicationReadiness();
+                StoredStateWorker(token, work);
                 foreach (string mode in new[] { "no-listener", "silent" }) {
                     foreach (string route in new[] { "button", "escape", "close", "dispose" }) NativeCancel(token, clipboard, work, mode, route);
                 }
@@ -114,6 +115,109 @@ namespace ProGo
         private static HomeVpnService Service(Ikev2RelayService relay)
         {
             return new HomeVpnService(relay, Application.ExecutablePath, UdpPort(), UdpPort(), 17878);
+        }
+        private static void StoredStateWorker(string token, string work)
+        {
+            string shareName = "share-" + HomeVpnAccess.Parse(token).ServerId;
+            var original = new Dictionary<string, byte[]>();
+            foreach (var name in new[] { "access", "owner", "home-address", shareName }) {
+                string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+                original[path] = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            using (var form = new Form())
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 20 })
+            {
+                int ticks = 0, uiThread = Thread.CurrentThread.ManagedThreadId;
+                heartbeat.Tick += delegate { ticks++; }; form.Show(); heartbeat.Start();
+                try
+                {
+                    foreach (string mode in new[] { "clean", "cancel", "mutate" })
+                    {
+                        var owner = new HomeVpnOwner { Host = "fixture.example", Port = 2222, Login = "root", KeyFile = Path.Combine(work, "saved-owner-key") };
+                        HomeVpnPrivateFiles.Save("access", token);
+                        HomeVpnPrivateFiles.Save("owner", new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(owner));
+                        HomeVpnPrivateFiles.Save("home-address", "home.example"); HomeVpnPrivateFiles.Save(shareName, "https://profiles.example");
+                        var before = original.Keys.ToDictionary(path => path, File.ReadAllBytes);
+                        using (var entered = new ManualResetEventSlim())
+                        using (var release = new ManualResetEventSlim())
+                        using (var cancellation = new CancellationTokenSource())
+                        {
+                            Task<HomeVpnStoredState> loading = null; int workerThread = 0;
+                            try
+                            {
+                                var watch = Stopwatch.StartNew();
+                                loading = HomeVpnStoredState.LoadAsync(cancellation.Token, delegate(string stage) {
+                                    Interlocked.Exchange(ref workerThread, Thread.CurrentThread.ManagedThreadId);
+                                    if (stage == "verify") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Stored-state read verification barrier"); }
+                                });
+                                check(watch.ElapsedMilliseconds < 500, "stored state read returns its actual worker task before any private DPAPI or disk wait: " + mode);
+                                int startTicks = ticks; Pump(() => entered.IsSet && ticks >= startTicks + 3, 3000);
+                                check(workerThread != uiThread && !loading.IsCompleted, "actual private reads and DPAPI parsing run outside the live native UI while ownership remains pending: " + mode);
+                                if (mode == "cancel") {
+                                    cancellation.Cancel(); startTicks = ticks; Pump(() => ticks >= startTicks + 3, 1000);
+                                    check(!loading.IsCompleted, "stored-state cancellation retains a held real-path worker until it settles");
+                                }
+                                if (mode == "mutate") HomeVpnPrivateFiles.Save("home-address", "changed.example");
+                                release.Set(); Pump(() => loading.IsCompleted, 5000);
+                                if (mode == "clean") {
+                                    var state = loading.GetAwaiter().GetResult(); var copiedAccess = state.CopyAccess(); var copiedOwner = state.CopyOwner();
+                                    check(copiedAccess != null && copiedAccess.Host == HomeVpnAccess.Parse(token).Host && copiedOwner.Host == owner.Host
+                                        && copiedOwner.KeyFile == owner.KeyFile && state.HomeAddress == "home.example" && state.ShareOrigin == "https://profiles.example",
+                                        "actual protected access, owner, home and matching server share form one prepared state");
+                                    copiedAccess.Host = "changed.example"; copiedOwner.KeyFile = "changed";
+                                    check(state.CopyAccess().Host != copiedAccess.Host && state.CopyOwner().KeyFile == owner.KeyFile,
+                                        "mutable consumer copies cannot alter the retained prepared identity or local owner metadata");
+                                } else {
+                                    bool refused = false;
+                                    try { loading.GetAwaiter().GetResult(); }
+                                    catch (OperationCanceledException) { refused = mode == "cancel"; }
+                                    catch (InvalidOperationException) { refused = mode == "mutate"; }
+                                    check(refused && (mode != "cancel" || loading.IsCanceled), "cancelled or concurrently changed private reads cannot return a publishable mixed state: " + mode);
+                                }
+                                foreach (var pair in before) {
+                                    if (mode == "mutate" && Path.GetFileName(pair.Key) == "home-address.dat") continue;
+                                    check(pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)), "stored-state worker never rewrites protected source bytes: " + mode);
+                                }
+                                if (mode == "mutate") check(HomeVpnPrivateFiles.Load("home-address") == "changed.example", "read conflict preserves the actual concurrent change instead of repairing or retrying it");
+                            }
+                            finally {
+                                release.Set();
+                                if (loading != null) { Pump(() => loading.IsCompleted, 5000); try { loading.GetAwaiter().GetResult(); } catch { /* Primary outcome above reports errors; observe only this retained worker for cleanup. */ } }
+                            }
+                        }
+                    }
+                    Task<HomeVpnStoredState> blocked = null;
+                    try {
+                        using (var held = File.Open(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"), FileMode.Open, FileAccess.Read, FileShare.None)) {
+                            blocked = HomeVpnStoredState.LoadAsync(CancellationToken.None);
+                            Pump(() => blocked.IsCompleted, 5000); bool refused = false;
+                            try { blocked.GetAwaiter().GetResult(); } catch (IOException) { refused = true; }
+                            check(refused, "real protected-file sharing refusal fails the read without publishing partial state or rewriting the source");
+                        }
+                    } finally {
+                        // Release the held native stream before the last bounded
+                        // observation; private fixture restoration cannot race it.
+                        if (blocked != null) { Pump(() => blocked.IsCompleted, 5000); try { blocked.GetAwaiter().GetResult(); } catch { } }
+                    }
+                    foreach (bool empty in new[] { false, true }) {
+                        foreach (string name in new[] { "owner", "home-address", shareName }) File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat"));
+                        if (empty) File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, "access.dat"));
+                        var missing = HomeVpnStoredState.LoadAsync(CancellationToken.None);
+                        try {
+                            Pump(() => missing.IsCompleted, 5000); var state = missing.GetAwaiter().GetResult();
+                            check(state.CopyOwner() == null && state.HomeAddress == "" && (empty ? state.CopyAccess() == null && state.ShareOrigin == null
+                                : state.CopyAccess() != null && state.ShareOrigin == HomeVpnAccess.Parse(token).ShareUrl),
+                                "missing saved fields use only in-memory defaults and the frozen access share fallback: " + empty);
+                            check(!File.Exists(Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat")) && !File.Exists(Path.Combine(HomeVpnPrivateFiles.Root, "home-address.dat"))
+                                && !File.Exists(Path.Combine(HomeVpnPrivateFiles.Root, shareName + ".dat")), "stored-state defaults never recreate missing source files");
+                        } finally { Pump(() => missing.IsCompleted, 5000); try { missing.GetAwaiter().GetResult(); } catch { } }
+                    }
+                }
+                finally {
+                    heartbeat.Stop(); form.Close();
+                    foreach (var pair in original) { if (pair.Value == null) File.Delete(pair.Key); else File.WriteAllBytes(pair.Key, pair.Value); }
+                }
+            }
         }
         private static int UdpPort() { using (var socket = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0))) return ((IPEndPoint)socket.Client.LocalEndPoint).Port; }
         private static void PublicationReadiness()
@@ -355,6 +459,7 @@ namespace ProGo
             {
                 service.UseToken(token, null); form.Show();
                 int ticks = 0; heartbeat.Tick += delegate { ticks++; }; heartbeat.Start();
+                Task pendingImport = null;
                 try
                 {
                     var start = service.StartAsync(); Pump(() => start.IsCompleted, 8000); start.GetAwaiter().GetResult();
@@ -379,6 +484,20 @@ namespace ProGo
                         check(!stop.GetAwaiter().GetResult() && Gone(pid) && Directory.Exists(session)
                             && (string)Field(service, "sessionDirectory") == session,
                             "real locked session makes async phone stop fail honestly while retaining its exact cleanup owner");
+                        var oldAccess = service.Access; var oldOwner = service.Owner;
+                        var accessFile = Path.Combine(HomeVpnPrivateFiles.Root, "access.dat");
+                        var ownerFile = Path.Combine(HomeVpnPrivateFiles.Root, "owner.dat");
+                        var accessBytes = File.ReadAllBytes(accessFile); var ownerBytes = File.ReadAllBytes(ownerFile);
+                        bool refusedImport = false;
+                        pendingImport = Task.Run(delegate {
+                            try { service.UseToken(token, new HomeVpnOwner { Host = oldAccess.Host, Port = oldAccess.Port, Login = "root" }); }
+                            catch (HomeVpnLocalCleanupException) { refusedImport = true; }
+                        });
+                        Pump(() => pendingImport.IsCompleted, 5000); pendingImport.GetAwaiter().GetResult();
+                        check(refusedImport && Object.ReferenceEquals(service.Access, oldAccess) && Object.ReferenceEquals(service.Owner, oldOwner)
+                            && accessBytes.SequenceEqual(File.ReadAllBytes(accessFile)) && ownerBytes.SequenceEqual(File.ReadAllBytes(ownerFile))
+                            && (string)Field(service, "sessionDirectory") == session && !relay.IsRunning && Gone(pid),
+                            "failed real cleanup refuses token import before DPAPI or active identity changes and retains the old session for retry");
                     }
                     stop = service.StopAsync(); Pump(() => stop.IsCompleted, 5000);
                     check(stop.GetAwaiter().GetResult() && !Directory.Exists(session), "explicit phone stop retry removes the previously locked owned session");
@@ -386,7 +505,13 @@ namespace ProGo
                 finally
                 {
                     release.Set(); service.BeforeSessionIo = null;
-                    try { var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 8000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned phone fixture cleanup incomplete"); }
+                    try {
+                        // The lock scope has exited even when the assertion or
+                        // primary wait failed. Settle our retained import before
+                        // fixture data restoration can race its compatibility I/O.
+                        if (pendingImport != null) { Pump(() => pendingImport.IsCompleted, 8000); pendingImport.GetAwaiter().GetResult(); }
+                        var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 8000); if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned phone fixture cleanup incomplete");
+                    }
                     finally { heartbeat.Stop(); form.Close(); }
                 }
             }

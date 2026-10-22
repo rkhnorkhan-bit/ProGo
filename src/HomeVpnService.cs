@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,6 +51,86 @@ namespace ProGo
         public override string ToString() {
             var id = Id ?? "";
             return (Name ?? "Без имени") + " — " + Status + " (" + id.Substring(0, Math.Min(8, id.Length)) + ")";
+        }
+    }
+
+    // Read-only preparation for the R09 startup route. No file, ACL or settings
+    // writes occur here; service/UI publication remains an owned caller step.
+    internal sealed class HomeVpnStoredState
+    {
+        private readonly HomeVpnAccess access;
+        private readonly HomeVpnOwner owner;
+        internal readonly string HomeAddress, ShareOrigin;
+        private HomeVpnStoredState(HomeVpnAccess access, HomeVpnOwner owner, string home, string share)
+        { this.access = access; this.owner = owner; HomeAddress = home; ShareOrigin = share; }
+        internal HomeVpnAccess CopyAccess()
+        {
+            if (access == null) return null;
+            return new HomeVpnAccess { Version = access.Version, ServerId = access.ServerId, InviteId = access.InviteId,
+                Host = access.Host, Port = access.Port, User = access.User, PrivateKey = access.PrivateKey,
+                HostKey = access.HostKey, Ca = access.Ca, Password = access.Password, ShareUrl = access.ShareUrl };
+        }
+        internal HomeVpnOwner CopyOwner()
+        {
+            return owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port,
+                Login = owner.Login, KeyFile = owner.KeyFile };
+        }
+        internal static Task<HomeVpnStoredState> LoadAsync(CancellationToken cancellation, Action<string> beforeRead = null)
+        {
+            return Task.Run(() => Load(cancellation, beforeRead), cancellation);
+        }
+        private static byte[] Read(string name)
+        {
+            string path = Path.Combine(HomeVpnPrivateFiles.Root, name + ".dat");
+            try { return File.ReadAllBytes(path); }
+            catch (FileNotFoundException) { return null; }
+            catch (DirectoryNotFoundException) { return null; }
+        }
+        private static string Decode(byte[] encrypted)
+        {
+            if (encrypted == null) return null;
+            byte[] plain = ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
+            try { return Encoding.UTF8.GetString(plain); }
+            finally { Array.Clear(plain, 0, plain.Length); }
+        }
+        private static bool Same(byte[] left, byte[] right)
+        {
+            if (left == null || right == null) return left == right;
+            if (left.Length != right.Length) return false;
+            for (int index = 0; index < left.Length; index++) if (left[index] != right[index]) return false;
+            return true;
+        }
+        private static HomeVpnStoredState Load(CancellationToken cancellation, Action<string> beforeRead)
+        {
+            var files = new System.Collections.Generic.Dictionary<string, byte[]>();
+            Func<string, byte[]> read = delegate(string name) {
+                cancellation.ThrowIfCancellationRequested();
+                if (beforeRead != null) beforeRead(name);
+                cancellation.ThrowIfCancellationRequested();
+                byte[] bytes = Read(name); files.Add(name, bytes);
+                cancellation.ThrowIfCancellationRequested(); return bytes;
+            };
+            try
+            {
+                string token = Decode(read("access"));
+                var access = token == null ? null : HomeVpnAccess.Parse(token);
+                string ownerJson = Decode(read("owner"));
+                var owner = ownerJson == null ? null : new JavaScriptSerializer().Deserialize<HomeVpnOwner>(ownerJson);
+                string home = Decode(read("home-address")) ?? "";
+                string share = access == null ? null : Decode(read("share-" + access.ServerId)) ?? access.ShareUrl;
+                cancellation.ThrowIfCancellationRequested();
+                if (beforeRead != null) beforeRead("verify");
+                foreach (var pair in files)
+                {
+                    cancellation.ThrowIfCancellationRequested(); byte[] current = Read(pair.Key);
+                    try {
+                        if (!Same(pair.Value, current)) throw new InvalidOperationException("Сохранённый доступ изменился во время чтения. Повторите проверку; данные не перезаписаны.");
+                    } finally { if (current != null) Array.Clear(current, 0, current.Length); }
+                }
+                cancellation.ThrowIfCancellationRequested();
+                return new HomeVpnStoredState(access, owner, home, share);
+            }
+            finally { foreach (var value in files.Values) if (value != null) Array.Clear(value, 0, value.Length); }
         }
     }
 
@@ -112,7 +193,8 @@ namespace ProGo
         internal void UseToken(string token, HomeVpnOwner owner)
         {
             var access = HomeVpnAccess.Parse(token);
-            Stop();
+            if (!StopAsync().GetAwaiter().GetResult())
+                throw new HomeVpnLocalCleanupException("Очистка прежнего канала VPN для телефона не завершена. Новый доступ не сохранён. Повторите остановку после освобождения временных файлов.");
             HomeVpnPrivateFiles.Save("access", token.Trim());
             HomeVpnPrivateFiles.Save("owner", new JavaScriptSerializer().Serialize(owner));
             Access = access; Owner = owner;

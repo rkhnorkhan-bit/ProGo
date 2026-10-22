@@ -45,7 +45,7 @@ function Assert-FixtureSnapshot($Expected, [string]$Message) {
     if ($Expected.Count -ne $actual.Count) { throw $Message }
     foreach ($path in $Expected.Keys) { if (-not $actual.ContainsKey($path) -or $actual[$path] -cne $Expected[$path]) { throw $Message } }
 }
-function Invoke-FixtureRepair([switch]$Recover, [string]$ExpectedFailure) {
+function Invoke-FixtureRepair([switch]$Recover, [string]$ExpectedFailure, [ValidateSet('applying', 'committed')][string]$ExpectedPhase = 'applying') {
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
     $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch'
@@ -61,7 +61,7 @@ function Invoke-FixtureRepair([switch]$Recover, [string]$ExpectedFailure) {
         if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Repair recovery command output did not settle' }
         if ($ExpectedFailure) {
             if ($child.ExitCode -eq 0 -or -not $stderr.Result.Contains($ExpectedFailure)) { throw ('Repair recovery did not refuse: ' + $ExpectedFailure) }
-        } elseif ($child.ExitCode -ne 0 -or -not $stdout.Result.Contains('Repair recovery complete: applying; no application launched')) { throw 'Explicit repair recovery did not complete' }
+        } elseif ($child.ExitCode -ne 0 -or -not $stdout.Result.Contains('Repair recovery complete: ' + $ExpectedPhase + '; no application launched')) { throw 'Explicit repair recovery did not complete' }
     } finally {
         try {
             if (-not $child.HasExited) { $child.Kill(); if (-not $child.WaitForExit(3000)) { throw 'Owned recovery command cleanup failed' } }
@@ -187,6 +187,60 @@ try {
     foreach ($path in $before.Keys) { if (-not $after.ContainsKey($path) -or $after[$path] -cne $before[$path]) { throw 'Complete runtime repair changed private fixture bytes' } }
     Write-Host 'PASS: complete prepared runtime copied byte-for-byte while private settings, vault and backup bytes remain unchanged'
     Write-Host 'Repair runtime copy tests PASS: 1'
+    # Keep one old snapshot readable but nondeletable. The actual image check
+    # succeeds; only post-commit cleanup fails. Recovery must retain the accepted
+    # new VERSION rather than restoring the deliberately different old one.
+    $acceptedSnapshot = Get-FixtureSnapshot
+    [IO.File]::WriteAllText((Join-Path $installed 'VERSION'), 'old version before accepted repair')
+    $heldSnapshot = $null
+    $child = [Diagnostics.Process]::Start($info)
+    $stdout = $child.StandardOutput.ReadToEndAsync(); $stderr = $child.StandardError.ReadToEndAsync()
+    try {
+        $deadline = [Diagnostics.Stopwatch]::StartNew()
+        while ($null -eq $heldSnapshot) {
+            if ($child.WaitForExit(20)) { throw 'Repair exited before the owned snapshot sharing barrier' }
+            foreach ($stage in @(Get-ChildItem -LiteralPath $installed -Directory -Filter '.repair-stage-*')) {
+                $oldVersion = Join-Path $stage.FullName 'old\VERSION'
+                try {
+                    if ([IO.File]::Exists($oldVersion)) { $heldSnapshot = [IO.File]::Open($oldVersion, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read); break }
+                } catch [IO.IOException] { }
+            }
+            if ($deadline.ElapsedMilliseconds -gt 10000) { throw 'Owned committed cleanup barrier was not reached within ten seconds' }
+        }
+        if (-not $child.WaitForExit(20000)) { throw 'Post-commit repair cleanup exceeded its bounded image-check budget' }
+        if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Post-commit repair output did not settle' }
+        $journalPath = Join-Path $installed '.repair-state.json'
+        $journal = [IO.File]::ReadAllText($journalPath) | ConvertFrom-Json
+        if ($child.ExitCode -eq 0 -or $journal.phase -cne 'committed' -or -not $journal.self_check_passed -or -not $stdout.Result.Contains('Repair self-check PASS:') -or $stdout.Result.Contains('Repair runtime restored and verified:')) { throw 'Failed post-commit cleanup lost its durable accepted outcome or claimed a completed repair' }
+        $pending = Get-FixtureSnapshot
+        Invoke-FixtureRepair -ExpectedFailure 'An unfinished repair journal exists.'
+        Assert-FixtureSnapshot $pending 'Pending committed cleanup repeated the repair or altered transaction bytes'
+        $heldSnapshot.Dispose(); $heldSnapshot = $null
+        # An accepted outcome needs no new application startup or stopped-app
+        # gate. Own the real lifetime mutex: an accidental self-check could not
+        # return success, while residue-only recovery must still work.
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        try { $instanceName = 'Global\ProGo.Instance.' + $identity.User.Value } finally { $identity.Dispose() }
+        $instanceGate = New-Object Threading.Mutex($false, $instanceName)
+        $instanceOwned = $false
+        try {
+            try { $instanceOwned = $instanceGate.WaitOne(0) } catch [Threading.AbandonedMutexException] { $instanceOwned = $true }
+            if (-not $instanceOwned) { throw 'Isolated committed fixture could not acquire its own application lifetime gate' }
+            Invoke-FixtureRepair -Recover -ExpectedPhase 'committed'
+        } finally {
+            if ($instanceOwned) { $instanceGate.ReleaseMutex() }
+            $instanceGate.Dispose()
+        }
+        Assert-FixtureSnapshot $acceptedSnapshot 'Committed recovery rolled back an accepted runtime or left private/transaction changes'
+        Write-Host 'PASS: real locked old snapshot preserves committed outcome; explicit recovery only cleans owned residue without rollback or relaunch'
+        Write-Host 'Repair committed cleanup tests PASS: 1'
+    } finally {
+        try {
+            if ($null -ne $heldSnapshot) { $heldSnapshot.Dispose() }
+            if (-not $child.HasExited) { $child.Kill(); if (-not $child.WaitForExit(3000)) { throw 'Owned committed repair child cleanup failed' } }
+            if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Owned committed repair output cleanup failed' }
+        } finally { $child.Dispose() }
+    }
     # A real Windows read-sharing handle allows the old VERSION snapshot but
     # denies its replacement after ProGo.exe has already been replaced.
     [IO.File]::WriteAllText((Join-Path $installed 'ProGo.exe'), 'opaque old runtime fixture; never execute')

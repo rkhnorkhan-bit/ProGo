@@ -1,3 +1,203 @@
+## CI605 full SUCCESS — exact163d/522ca, новые local blocks excluded
+
+[run39721135629](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39721135629)
+Windows119634576903/Ubuntu119634576608 SUCCESS. Build identity
+0.2.2+522ca8616d014fec2ebafd176d9a4365e9281e1e совпадает; source163d97436d68f5169a8a22ea9f17d38344f8ad88,
+treec8b4209c4faebfb42ff33774f9bc2db16f43cd7d = local7b3330c35b49306be18740c17f10968532a95921.
+Alive assertions PASS04:36:20.697 Waiting и04:37:11.047 Preparation. Own pipe EOF
+lifetime исправил unreliable fixture, actual preservation теперь подтверждено.
+
+Repair PASS: null1/preflight4/full41 +actual image/fresh Root/default known-folder
+untouched04:13:32.442/real sharing rollback/contained hang/hard-kill recovery
+without original payload/9 strict refusals. Regression51/456, bounded43/report32/
+helper2/modal6/chooser3/context3/worker4/routes6, signing55/UI50/prep72 +real direct
+и owned-agent prepare→native SSH→SOCKS→HTTP→crash recovery; Desktop5274/Instance28/
+Maintenance126/Shutdown47/HomeVPN1022/Portable90. Native SSH server contracts5;
+late Python28=26PASS2SKIP (SKIP не PASS).
+
+Runner ZIP0.2.2 SHA256 `3f40efcfa8a109e166509e42eb75b0fceecd9dc87c5a959873a7c99ca69e071e`.
+All uploads SKIPPED. Bytes не получены/не доставлены/не установлены. Private
+пакетная передача BLOCKED до разрешённого владельцем канала; successful runner
+archive не является предоставленным installer. Release/main/owner PC/VPS не было.
+
+V1.0:28 parents weight87 с exact anchors, D0.5/P0.5/A0 дают21.75→22. +8.70 raw
+к60413.05 — реально выполненный late tail/ZIP, без смены весов/двойного учёта ID.
+I58–80 unchanged. Whole F22/23/R08/R09/R10/R11 и target acceptance остаются partial/
+blocked. Local checking6353 (guard/read primitive/committed extra case) и staged
+initializerad3 НЕ входят в605: их Windows NOT_RUN/баллы0, old SUCCESS не наследуют.
+
+Далее checking6353 плюс актуальные evidence docs, exact diff/secret/workflow/tree
+check и один новый source/run. initializerad3 пока отдельно: optional metadata
+availability нужно исправить до UI/Program switch; нельзя публиковать случайно
+неоконченные стадии вместе с checking. Ниже checkpoints — история.
+
+## CI604 completed FAILURE позднего fixture; repair/main scoped PASS
+
+Source46576c73cf029b4ab0fc2d97ebbac07d15e91fa3 / merge9e2c214a22d11ee1efded8ec2832e62b0bb7e2dd,
+run39717548727 Windows119623188818 FAILURE/Ubuntu119623188527 SUCCESS. Build identity
+совпала; repository step SUCCESS. Repair native PASS: null1/preflight4/full41
+copy+actual self-check1/real known-folder untouched03:34:35.411/sharing rollback1/
+contained hang1/hard-kill then explicit recovery without payload1/strict refusals9.
+New explicit Root и native canonical image validation теперь имеют exact evidence.
+
+Main regression PASS:51/456, bounded43/report32/helper2/modal6/chooser3/context3/
+worker4/route6, selected signing55/UI50/prep72 +actual direct/owned-agent native
+SSH→SOCKS→HTTP→crash recovery, Desktop5274/Instance28/Maintenance126/Shutdown47.
+13 phone cases завершились PASS, но в03:56:54.690 final unrelated-alive check FAIL.
+Source fixture сам завершался после Thread.Sleep60000; группа длится больше60s,
+потому итоговый check не может отличить self-expiration от неверного cleanup.
+Actual сохранность с исправленным lifetime ещё NOT_RUN; обвинение production
+cleanup не подтверждено. Later Home/Portable/Python/content/package NOT_RUN,
+все uploads SKIPPED, installer/private delivery/target не выполнены.
+
+Isolated7b3330c35b49306be18740c17f10968532a95921/treec8b4209c4faebfb42ff33774f9bc2db16f43cd7d
+(см. точный tree JSON; root importbe8a1d1d8aa1b28fbb4f23e3477af9ae7ee76a8b) меняет
+только2 fixture files: собственная redirected stdin pipe вместо elapsed lifetime,
+EOF при cleanup/смерти parent, оба callers Waiting/Preparation используют одну
+схему. Alive assertions остаются, cleanup500+1500ms=прежние2s; app deadlines/CI
+не увеличены, проверки не отключены. Source syntax/ownership/public320/0/diff
+PASS, new native NOT_RUN. Один initial source check ошибочно искал sleep во всём
+fixture, исправлен на unrelated branch; separate fake-SSH waits не менялись.
+
+V1.0:28 parents weight87×D0.5×30%=13.05→13, P/A0. Все exact timestamp anchors
+в JSON. F22 использует actual durable repair recovery критерий вместо NOT_RUN
+portable tail; его вес не менялся/не добавлялся дважды. +13.05 к evaluated6030 —
+выполненные native, не написанные tests. Historical59822 с P0.5 остаётся только
+source37f02/16bf1/того ZIP. I58–80 unchanged. F22-R03 PARTIAL: узкие native PASS,
+extra committed test/final package/owner acceptance всё ещё NOT_RUN.
+
+Далее publish только isolated unrelated fixture fix. ProGo-ci604-followups имеет
+3 dirty copied root source/test paths со старой a859 base: это наш preserved draft,
+не другой исполнитель. Перед его будущей публикацией обновить base/включить
+исправление7b3330c, чтобы не вернуть прежний lifetime. Root token guard/read
+primitive/committed cleanup test остаются local NOT_RUN и не смешиваются с fix.
+
+## CI603 FAILURE на следующем fixture; null/copy/rollback scoped PASS
+
+Source8da78a6bc6c72709b9f21d43a041c65c66ec61a5 / merge4a0bac2b788708a51e5051e4802d0d7fa6698eb6,
+[run39716559040](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39716559040):
+Windows119619939733 FAILURE/Ubuntu119619939421 SUCCESS. PS5 parser/main compile
+PASS. Native null-string bad-vs-good1 PASS подтвердил причину602: plain$null
+даёт ArgumentException без изменений bytes, explicitNullString атомарно заменяет
+без backup.4 preflight/41 manifest/full41 copy+actual installed self-check+
+private fixture preservation1 и actual sharing failure rollback1 PASS.
+
+В03:23:50.784 negative hanging-check fixture отказал на raw image-path comparison.
+Alias short/long Windows path — hypothesis; значения не печатались. Local
+native GetFinalPathNameByHandle compare e2c93f2648f5a8a328ac5762cedf00d9f32c28aa +
+755fc3cea05c778606e150bf178df0b4e512d5c7 disposes failed/unadopted handles. Child
+kill-on-close job и bounded cleanup остаются; новый native NOT_RUN.
+
+Критичный source gap: старый LOCALAPPDATA-only override НЕ гарантировал isolated
+AppPaths, который читает Windows known folder.603 private fixture PASS не
+подтверждает неприкосновенность default Windows profile. Старые утверждения
+изоляции в истории superseded этим выводом; на ПК владельца ничего не запускалось.
+Locala8599c761280f332e9697b87113b48672070c4da/treec5e54b1beef1cc37a942c5af6884e3181d284949
+задаёт fresh absolute PROGO_SELF_CHECK_ROOT только для3 прежних self-check args;
+обычный app игнорирует env, readonly AppPaths API сохранён. Repair требует actual
+созданный child data root. Native test дополнительно сравнит real Windows
+known-folder tree existence/all file hashes до/после actual built-image check.
+
+Все новые native NOT_RUN, source Core/helper syntax/contracts/ASCII/public320/0/
+diff PASS.3 source paths. I58–80, verified0 exact603, прирост0: полного accepted
+parent D/P нет, later recovery/native/ZIP/owner NOT_RUN. Historical59822 остаётся
+только exact37f02/16bf1. Далее scanned isolated source и один новый CI, не rerun603;
+local R09 token guard не включать. Binary/release/main/owner действий не было.
+
+## CI602 FAILURE локализован: journal File.Replace backup-string boundary
+
+Source5ecf7738e3f77832737caad3a43bccda34366e6a / mergef232bfd91cd25d475a38b917cf9398d8f5128cd7,
+run39716108725 Windows119618489243 FAILURE/Ubuntu119618489590 SUCCESS. Parser/
+main compile/4 preflight/41-manifest PASS. Safe record03:18:59.814:
+ArgumentException; stage=snapshot; script_line=121; hresult=-2147024809;
+native=0; check_exit=-1. Подтверждён отказ File.Replace(temp,journal,$null)
+при preparing→prepared, ДО runtime admission/self-check. Initial599 не имел
+такого direct record; причинная связь того запуска восстанавливается по той же
+неизменённой операции, не по вымышленному логированию599.
+
+Local87bcec48a5582a10add3045221525e0cacb4b5fb/treee3365f1d14d49ea825b98c089686d54915a1789d:
+оба journal/runtime File.Replace используют явный NullString.Value. Microsoft
+описывает этот type как передачу настоящего null строковому .NET parameter;
+API File.Replace требует null, когда backup не нужен. Преобразование plain$null
+в пустую строку — пока inference из точного отказа/контракта, его отдельно
+подтвердит native PS5 vector: прежний вызов обязан дать ArgumentException без
+изменения bytes, правильный — заменить owned target/consume temp без extra file.
+Primary URLs сохранены в JSON. Никакого восстановления через отключение проверки.
+
+New native NOT_RUN, source/public320/0/diff PASS.41-file guard/таймауты/workflows
+не менялись. Positive actual repair/rollback/hard-kill/recovery и поздний полный
+native всё ещё обязательны. I58–80, verified0 exact602, прирост0. Далее isolated
+null-boundary fix publication и один exact run; R09 guard не включать.
+
+## CI601 FAILURE: manifest41 прошёл, positive child exit1 без classified cause
+
+Source d239bee8c69519086ddcfe611a637a7627a7ffb7 / mergea9600c5511e79f262e688da3d80284e58692119e,
+run39715671880 Windows119617063751 FAILURE/Ubuntu119617063695 SUCCESS. PS parser/
+main compilation/4 native preflight refusals PASS. Canonical41-runtime guard
+теперь PASSED (достигнут следующий positive child); в03:14:02.040 child_exit1,
+no classified repair failure. Исходная причина599 всё ещё UNKNOWN; последующие
+native/ZIP NOT_RUN. Ошибка форматирования stderr — гипотеза, не подтверждённая
+причина самого repair. Не повторять идентичный601.
+
+Localfa7c7ee4545c7d8230b1ea30e7e0188f18f2644f/tree01509d78d50912f975e6fada81202f5ccfc50e4d:
+Console.Error.WriteLine fixed PROGO_REPAIR_FAILURE record ДО rollback: type,
+phase, script line, HResult/native/check exit только whitelist/numbers. Parent
+также извлекает только numeric stderr source line при ошибке вне handler. Никаких
+raw exception messages/путей/данных. Source/public/diff PASS, native NOT_RUN;
+не ослаблены41 guard/таймауты/реальные проверки. После этого нужны actual codes,
+а не очередное предположение о причине. Root R09 guard excluded.
+
+I58–80, verified0 exact601, прирост0. Historical59822 остаётся exact37f02/16bf1.
+Далее2-file safe marker checking source, expected d239 head и один новый CI.
+
+## CI600 FAILURE раньше positive child; первоначальная причина599 UNKNOWN
+
+Source973fb0a40cee9cbfeb745904e9204be9b418cc9b / merge22a413abcf33d62e81d923ad258201728c69a4be,
+[run39715222513](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39715222513):
+Windows119615596947 FAILURE, Ubuntu119615596679 SUCCESS. PS5.1 parser/main
+compilation PASS,4 missing/empty native payload refusals PASS. В03:08:59.248
+новый test41-runtime count guard FAIL на98 строке ДО positive child. Безопасная
+repair classification пока НЕ выполнена, причина599 всё ещё UNKNOWN. Не
+объявлять исправленную сверку доказательством исправленного repair.
+
+Local7299b84f647e6176f48638550a8fe64131cb8cb9/treef06412841ab9607333a40b8cf674ba8683cb2732
+меняет только test fixture: canonical payload root, root-directory ownership+
+readme/license names вместо slicing ненормализованной строки пути; runtime_count
+в безопасном числовом error, exact41 guard остаётся. Это candidate, native NOT_RUN.
+Source public320/0/diff PASS; no test disable/deadline increase. Один новый SHA
+для новых данных, не identical rerun600. Root R09 guard по-прежнему исключён.
+
+I58–80, verified0 exact600, изменение0. Historical59822/raw21.75 сохранён с его
+SHA/ZIP; new package/поздние native/owner NOT_RUN. Далее проверить actual973 head,
+один targeted delta source CI, по actual count/phase исправить подтверждённую
+причину. Публикация binary/release/установка/реальные VPS не выполнялись.
+
+## CI599 FAILURE — positive repair отказал, root cause пока UNKNOWN
+
+Source0942445dd268f836c5001ec2bf82d27bafc6f3a5 / mergea5d6f7c9afcd6d671b6607447fff7648b109ee45,
+[run39714516345](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39714516345):
+Windows119613322368 FAILURE, Ubuntu119613322153 SUCCESS. Windows PS5.1 parser
+preflight и app C#5 compilation PASS; Build identity совпал. Четыре реальных
+incomplete/empty payload refusals PASS. В03:01:18.866 positive complete repair
+FAIL; fixture скрыл child exit/phase/cause общим сообщением. Причина пока
+UNKNOWN. Последующие runtime rollback/self-check/hard-kill/recovery/native suites
+и пакет NOT_RUN, uploads SKIPPED. Не повторять идентичный599.
+
+Изолированный470e33c6027e31a01754de4bb458d0ae9a229994 добавляет только безопасную
+диагностику: фиксированный stage, root exception type, HResult/native/check exit
+numbers; exception messages/private paths не печатаются.85771b3d764c7b36c488ea178b52e49dafa566c1
+отдельно исправляет source-confirmed latent test mismatch: Build содержит41
+runtime+3 root readme/license; repair test сверяет41 runtime, без пропуска иных
+built leaves.599 упал ДО этой сверки — mismatch не объявляется его причиной.
+Новые native NOT_RUN, таймауты/проверки не ослаблялись,0 баллов за диагностику.
+
+V1.0 current exact599 verified0: четыре узких preflight guards не подтверждают
+parent D при отказе основного repair; поздний Desktop/native transport/package
+не выполнялись. Историческая usable59822/raw21.75 сохранена только source37f02/
+merge16bf1/его ZIP. Это снижение evidence для нового SHA, не объявление всех
+функций FAIL. I58–80 unchanged. Далее один новый exact instrumentation source,
+не rerun599; root token guard не включать. Ниже прежний in_progress — история.
+
 ## CI598 завершён SUCCESS — exact source37f02 / merge16bf1
 
 [CI598/39711511948](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39711511948),
