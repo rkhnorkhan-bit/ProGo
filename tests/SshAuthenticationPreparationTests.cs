@@ -322,7 +322,14 @@ namespace ProGo
                     });
                 var startupWatch = Stopwatch.StartNew();
                 start = proxy.StartTunnelAsync(CancellationToken.None);
-                Check(start.Wait(15000) && start.Result && proxy.HasOwnedProcess && preparations == 1,
+                bool completed = start.Wait(15000);
+                if (!completed || !start.Result || !proxy.HasOwnedProcess || preparations != 1) {
+                    var observed = proxy.AuthenticationPreparation as SshAuthenticationPreparationResult;
+                    Console.WriteLine("COMBINED_SSH_START_FAILURE completed=" + completed + ";status=" + start.Status +
+                        ";preparations=" + preparations + ";owned=" + proxy.HasOwnedProcess + ";local_state=" + (observed == null ? "none" : observed.State.ToString()) +
+                        ";local_reason=" + (observed == null ? "none" : observed.Reason.ToString()) + ";classified_ssh_reason=" + (proxy.StartupError ?? "none").Replace("\r", " ").Replace("\n", " "));
+                }
+                Check(completed && start.Result && proxy.HasOwnedProcess && preparations == 1,
                     "real preparation and common ProxyService startup reach owned native SSH and confirmed SOCKS");
                 var preparation = proxy.AuthenticationPreparation as SshAuthenticationPreparationResult;
                 Check(preparation != null && (agent == null ? preparation.Reason == SshAuthenticationPreparationReason.AgentDisabledByProfile && preparation.Signing == null :

@@ -132,7 +132,8 @@ namespace ProGo
             this.prepareAuthentication = prepareAuthentication; this.acquireLaunchRevision = acquireLaunchRevision;
             this.captureSettings = captureSettings; this.trySelectProfile = trySelectProfile; this.setAutoRestart = setAutoRestart;
             readSettings = read; saveSettings = save; sshExecutable = executable; utcNow = clock;
-            sshOptions = extraOptions;
+            // The prefix is an argument sequence, not part of the next token.
+            sshOptions = String.IsNullOrEmpty(extraOptions) ? "" : extraOptions + " ";
             this.startupTimeoutMs = startupTimeoutMs;
             if (startTimer)
                 recoveryTimer = new System.Threading.Timer(delegate { PollRecovery(); }, null, 5000, 5000);

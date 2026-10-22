@@ -1,3 +1,11 @@
+CI591 completed FAILURE на source693de8abda98f48108cea97624cbf9cd165b376d /
+merge774c77a6f94193ea91281c6adf72a08481db82db. Launcher3 и Windows real server5
+PASS; substantial Desktop/recovery51/456/sign55 прошли до нового combined start
+FAIL при successful cleanup. Agent/recovery/metrics/ZIP NOT_RUN. ExtraOptions
+boundary defect воспроизведён native Linux ssh-G; Windows underlying typed reason
+не был записан. Следующий source fix отдельный от local R08. Evidence11/raw10.50
+по прежним весам70×D0.5×30%, P/A0; полный CI SUCCESS не заявляется.
+
 Текущий CI590 completed FAILURE на source8487594e6d7d4e4eb16df86aae27f2e980329aaa /
 merge20df578c1c2d162f5f373e94aed8107bbfee7d19. Native51/456/guidance10 PASS,
 Desktop compilation PASS, но launcher вернул пустой ExitCode: pip outcome неизвестен;

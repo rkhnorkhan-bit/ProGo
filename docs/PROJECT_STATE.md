@@ -1,12 +1,151 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `8487594e6d7d4e4eb16df86aae27f2e980329aaa`, tree `017b33cbc8504e6af6ff52a619063219bdd6ed69`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `693de8abda98f48108cea97624cbf9cd165b376d`, tree `789f87c6aaab9748a43be493ec175451b2f43e0e`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## CI591 delimiter-fix candidate — source only, separate from R08
+
+ProxyService constructor теперь отделяет непустой extraOptions от следующего
+аргумента пробелом; caller не обязан добавлять trailing space. Пустой production
+prefix остаётся пустым. Существующий native combined fixture намеренно передаёт
+-F quoted(config) без trailing space и остаётся regression, проверки не ослаблены.
+Failure branch печатает только completed/status/preparation count/owned/typed
+local reason и уже classified safe SSH guidance, без raw stderr/argv/key paths.
+Это устраняет недостаток доказательств старого log, не скрывает сам failure.
+
+Native Linux ssh-G separator reproducer PASS: до255/config-N, после0/expected
+host, без TCP/SSH соединения. Windows compilation/combined-native этого нового
+source NOT_RUN. Diff/public317/0 PASS. Код isolated worktree содержит только
+ProxyService и соответствующий fixture; R08 logger/open source по-прежнему
+исключён. Следующий шаг — scan exact commit tree, expected-head693de8ab → новый
+source, один CI. Реализация58–80, verified11(CI591), прирост0 за сам source fix.
+
+## CI591 — launcher PASS, combined start FAIL; exact evidence11
+
+[CI591/39696687583](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39696687583)
+completed FAILURE: Windows119555663751 FAILURE, Ubuntu119555663596 SUCCESS.
+Source `693de8abda98f48108cea97624cbf9cd165b376d`, merge
+`774c77a6f94193ea91281c6adf72a08481db82db`, exact identity0.2.2+этого merge.
+Launcher exit0/exit17/owned-timeout regressions PASS; real dependency install
+прошёл,5 native OpenSSH server contract tests PASS за3.947с на Windows.
+Recovery51/456/guidance10 PASS; report32/helper2/modal4/chooser3/Context3,
+settings93, signing55 и aggregate prior43 vectors reached PASS. Новый full
+aggregate summary и Desktop summary отсутствуют: остановка на первом direct
+combined startup assertion. Agent combined/recovery/metrics и последующий
+Instance/Shutdown/HomeVPN/ZIP NOT_RUN, не PASS; uploads SKIPPED. Собственные
+SSH/server cleanup markers PASS, timeout не скрыт.
+
+Подтверждённый code defect: ProxyService constructor присваивает raw extraOptions,
+StartSingleTunnel склеивает его напрямую с -N. Combined fixture передаёт
+-F quoted(config) без trailing space, argv получает config-N. Native Linux
+isolated ssh-G reproducer: old prefix exit255/config path changed, separated
+prefix exit0/expected host. Windows exact underlying StartupError прежний log
+не печатал; причинная связь этого FAIL с delimiter — обоснованный вывод из
+кода/reproducer, а не прочитанный stderr. Добавляется безопасная typed причина
+и state/count/ownership только при failure; сырые stderr/argv/key paths не выводим.
+
+Отдельный worktree ProGo-ci591-fix от localdd9b17a: нормализует boundary prefix
+(пустой production default не меняется) и использует существующий real native
+combined тест как regression. R08 source commits до5d30993 сохранены отдельно,
+не включать их в эту узкую публикацию. New fix Windows compilation/native NOT_RUN.
+Следующий шаг — scan new exact tree, expected-head693de8ab, один новый CI.
+
+V1.0/W100/D-P-A30/20/50 прежние. Exact log591 подтверждает partial D0.5 у
+19 родителей F01/F02/F04/F05/F06/F07/F08/F09/F10/F11/F12/F14/F15/F16/F17/
+F23/F25/F26/F31 (weight70). К прежним590 добавились native CLI migration,
+actual typed proxy rollback, bridge, tray settings, restore shutdown heartbeat,
+settings persistence, layout и diagnostic keyboard Tab/Shift+Tab. Все anchors
+проверены в raw591 log; F17 диагностическая keyboard доступность00:07:35.526.
+P0/A0 (нет ZIP/приёмки). Raw70×0.30×0.5=10.50→11, изменение от590+4.35 raw,
+потому что реально выполнен дополнительный Desktop scope до FAIL, не за commit
+или полный CI SUCCESS. Реализация58–80 неизменна; F31-R11 всё ещё PARTIAL.
+
+## F31-R08 этап5 — logger owner seal и shutdown/exit lifetime, local NOT_RUN
+
+Context получает epoch logger owner. Begin/resume/suspend управляются коротким
+metadata gate без I/O; старый Context не может приостановить или возобновить
+нового owner. Shutdown немедленно закрывает admission logger и ждёт его
+реальный drain совместно с log-open/diagnostic в прежнем settings budget,
+до proxy cleanup/ACK. При отказе/отмене обслуживания admission возвращается
+только ещё живому текущему owner; early false/exception тоже покрыт wrapper.
+ForceDispose сохраняет LogWriterWork без UI wait. Нельзя вернуть success для
+всё ещё held sink. Поздние subsystem log attempts во время seal best-effort
+отклоняются (счётчик), не создают новые внешние записи после handoff.
+
+Main после UI loop и terminal CLR handler имеют bounded500мс best-effort
+финальный flush (timeout печатает NOT_RUN, не выдаёт durability PASS). Это не
+замена строгому pre-handoff drain в Context; recoverable UI ThreadException
+не ждёт disk. Необратимый process/OS kill по-прежнему может терять best-effort
+logs; профили/секреты никогда не передаются в queue и ею не обновляются.
+
+Native fixtures: obsolete owner resume/suspend, actual held global logger +
+UI heartbeat, shutdown refusal до cleanup, explicit retry, ForceDispose без
+UI pump и unchanged settings/vault/VERSION. Все ожидания/cleanup ограничены;
+global test hooks восстанавливаются в finally даже при timeout/ошибке.
+Source/diff/public318/0 PASS; C# compilation/native NOT_RUN в Linux. SafeLog
+writer source этап4 `da9ad49901ba8eb27f4ac9c39a94023f131a2b1c`.
+Не входит в CI591 source693de8ab; evidence6(CI590), прирост0.
+
+Следующий шаг — exact Windows checking SHA всего связанного R08 блока после
+completion591; отдельно остаются folder/backups/cold helper preparation I/O,
+slow-disk/owner hardware измерения. F31-R08 ещё не PASS. Сначала проверить
+native logger/helper/bootstrap regression, не предполагать её по source review.
+
+## F31-R08 этап4 — SafeLog пишет через bounded worker, local native NOT_RUN
+
+SafeLog больше не вызывает EnsureDirectories/BoundedLog.TryWrite на caller:
+только worker sink разрешает AppPaths, создаёт каталоги/вращает/пишет файл.
+До queue поступает уже redacted immutable string ≤4096chars; Exception/raw
+message не захватываются worker. Oversized raw input не режется посреди
+секрета, а целиком заменяется фиксированным omitted marker; после redaction
+общий bounded record сохраняет корректную UTF16 границу и truncated marker.
+Обычный формат времени/level/redaction сохранён. Queue capacity/dropped/failed
+контракт этапа3; I/O failure не создаёт автоматического retry внешней записи.
+
+FlushAsync — асинхронный snapshot lifetime для observability, не обещание
+долговечности и не запрет новых producers. Новый actual SafeLog native fixture
+держит собственный disk boundary, проверяет UI heartbeat, sanitization до sink,
+pending drain и реальные bytes после release. Existing clipboard log check
+теперь явно ждёт асинхронный sink (5с), не читает файл в ложный момент.
+Source/diff/public318/0 PASS; C# compilation/native NOT_RUN в Linux и не входят
+в CI591. Shutdown/process-exit admission/drain ещё TODO следующего отдельного
+этапа: не считать этот source окончательной logger lifetime приёмкой.
+Реализация58–80, evidence6(CI590), прирост0. Далее — owner-scoped pause/resume
+перед shutdown/handoff и bounded post-UI exit flush; old actor не должен
+возобновлять admission нового owner. Native проверять новым exact source.
+
+## CI591 — launcher fix опубликован, run в работе
+
+Head PR88 `693de8abda98f48108cea97624cbf9cd165b376d`, merge
+`774c77a6f94193ea91281c6adf72a08481db82db`, tree
+`789f87c6aaab9748a43be493ec175451b2f43e0e` = isolated localdd9b17afb01a0264e6f6a96d7a3f6f1f5ba81b44.
+Единственный [CI591/39696687583](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39696687583)
+in_progress. Никакого rerun590 или второго dispatch. Новый fix compilation/PS/
+native NOT_RUN до exact logs; исходный failure590 сохранён ниже со своими SHA.
+Текущая evidence база6/raw6.15 относится к590, не считается PASS591; прирост0.
+
+Root local импортfixb2b510be37b152a1c514dde0a0847d7a6d927286 содержит также
+ранее сохранённые R08 log-open/queue source blocks. Их code НЕ входит в591;
+source queuecdadbf429aaac3db10ebb921e88a08e22770031f пока только foundation,
+SafeLog всё ещё synchronous. Следующий шаг — отдельное wiring SafeLog с
+redaction до queue, bounded data и shutdown/exit drain; параллельно читать тот
+же run591. Main merge/public release/binary uploads/owner installation не делались.
+
+## Launcher fix commit object создан — ref update PENDING
+
+Local fix `dd9b17afb01a0264e6f6a96d7a3f6f1f5ba81b44`, GitHub object
+`693de8abda98f48108cea97624cbf9cd165b376d`, одинаковый tree
+`789f87c6aaab9748a43be493ec175451b2f43e0e`. Scan4files/485addedlines,
+0 secrets/PII, public317/0, diff PASS; workflows/VERSION неизменны. Следующий
+шаг — expected-head8487594e →693de8ab без force. Если прервано, проверить
+фактический head PR88/runs и не повторять update/dispatch вслепую. Native fix
+ещё NOT_RUN. Root безопасно импортировал только script+docs из isolated
+worktree; R08 source commits сохранены и не входят в этот checking tree.
 
 ## CI590 fix candidate — isolated launcher source, native pending
 

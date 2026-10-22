@@ -1931,7 +1931,7 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "CI590 source8487594e / merge20df578c scoped native51/456/guidance10 PASS; Desktop compiled but runtime/combined/server/metrics NOT_RUN due launcher exit-code failure",
+        "candidate": "CI591 source693de8ab / merge774c77a6 launcher3/server5/signing55/native51/456 + earlier Desktop scope PASS; direct combined startup FAIL, cleanup PASS; agent/recovery/package NOT_RUN",
         "historical_scoped_pass": false,
         "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
         "selected_identity_signing": "CI588/39688353510 sourceb32ac4ece5cd62b98eab22b7e65aaa079544e5bf mergee1039ddd046528fc75b9d46897e6924f597768d5 scoped PASS: aggregate43/signing55/UI50, service/add existing checks; does not prove actual server authorization or new lifecycle"
@@ -1950,7 +1950,7 @@
         "F31-R09",
         "F31-R10"
       ],
-      "next_step": "Fix launcher direct process ownership, rerun on new exact source; no product PASS before actual direct/agent integration and remaining criteria"
+      "next_step": "Isolated extraOptions argument-boundary fix then exact native direct/agent pipeline; do not claim all auth ready"
     },
     {
       "id": "F31-R12",
@@ -2166,47 +2166,54 @@
     }
   ],
   "ci_candidate": {
-    "source": "8487594e6d7d4e4eb16df86aae27f2e980329aaa",
-    "tested_merge": "20df578c1c2d162f5f373e94aed8107bbfee7d19",
-    "local_sha": "60f5e92e336d78a5d2f438975773e2c03f61fb16",
-    "tree": "017b33cbc8504e6af6ff52a619063219bdd6ed69",
-    "run_id": 39694720495,
-    "run_number": 590,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39694720495",
+    "source": "693de8abda98f48108cea97624cbf9cd165b376d",
+    "tested_merge": "774c77a6f94193ea91281c6adf72a08481db82db",
+    "local_sha": "dd9b17afb01a0264e6f6a96d7a3f6f1f5ba81b44",
+    "tree": "789f87c6aaab9748a43be493ec175451b2f43e0e",
+    "run_id": 39696687583,
+    "run_number": 591,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39696687583",
     "status": "completed",
     "conclusion": "failure",
-    "windows_compilation": "PASS including Desktop harness; exact identity checked",
-    "windows_native": "PARTIAL: recovery51/456, report32/helper2/updater/retention suites; Desktop/native server/combined/metrics NOT_RUN",
-    "target": "NOT_RUN",
-    "scope": "native51 + server5/direct/agent actual preparation and SSH/SOCKS/HTTP recovery + metrics",
-    "next": "Independent worktree fix direct Process handle + exit0/17/timeout regressions; one new source CI",
+    "windows_compilation": "PASS",
+    "windows_native": "PARTIAL: launcher3 + native Python server5 + recovery51/456 + substantial Desktop before direct combined start FAIL; no full Desktop/package PASS",
+    "scope": "launcher direct handle + exit0/17/timeout regressions; then server/direct/agent/recovery native suites",
+    "excludes": "root R08 log-open/queue code",
+    "next": "Isolated delimiter boundary fix + safe typed failure data; new exact source CI; no blind rerun",
     "jobs": [
       {
-        "id": 119549198567,
+        "id": 119555663751,
         "name": "windows-build",
         "status": "completed",
         "conclusion": "failure"
       },
       {
-        "id": 119549199364,
+        "id": 119555663596,
         "name": "vpn-server-test",
         "status": "completed",
         "conclusion": "success"
       }
     ],
-    "build_identity": "0.2.2+20df578c1c2d162f5f373e94aed8107bbfee7d19",
-    "failure": "Owned SSH fixture install failed with exit code [empty]; actual pip result unknown; Start-Process handle/exit-code observation defect",
+    "build_identity": "0.2.2+774c77a6f94193ea91281c6adf72a08481db82db",
+    "failure": "Direct combined startup assertion failed; own SSH/server cleanup PASS. Source-confirmed extraOptions/-N missing delimiter; native Linux ssh-G reproduces255 vs0; exact Windows underlying reason not logged, causal inference pending fix run",
     "scoped_pass": {
+      "launcher_regressions": 3,
+      "windows_real_ssh_server_contracts": 5,
       "socks_recovery_tests": 51,
-      "socks_recovery_assertions": 456,
-      "guidance_assertions": 10,
-      "diagnostic_report": 32,
-      "diagnostic_helper": 2,
-      "bounded_log": 32,
-      "backup_retention": 29,
-      "backup_integrity": 82
+      "socks_assertions": 456,
+      "settings": 93,
+      "selected_key_signing": 55,
+      "modal_cancel_retry": 4,
+      "native_chooser_modes": 3,
+      "diagnostic_context": 3
     },
-    "runner_package": "NOT_RUN: failed before package step; no new hash; binary uploads skipped"
+    "not_run": [
+      "agent combined",
+      "real recovery/metrics",
+      "full Desktop summary",
+      "Instance/Maintenance/Shutdown/HomeVPN tail",
+      "ZIP"
+    ]
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -2509,6 +2516,49 @@
         "retrieved_bytes": "NOT_RUN",
         "owner_install": "NOT_RUN"
       }
+    },
+    {
+      "source": "8487594e6d7d4e4eb16df86aae27f2e980329aaa",
+      "tested_merge": "20df578c1c2d162f5f373e94aed8107bbfee7d19",
+      "local_sha": "60f5e92e336d78a5d2f438975773e2c03f61fb16",
+      "tree": "017b33cbc8504e6af6ff52a619063219bdd6ed69",
+      "run_id": 39694720495,
+      "run_number": 590,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39694720495",
+      "status": "completed",
+      "conclusion": "failure",
+      "windows_compilation": "PASS including Desktop harness; exact identity checked",
+      "windows_native": "PARTIAL: recovery51/456, report32/helper2/updater/retention suites; Desktop/native server/combined/metrics NOT_RUN",
+      "target": "NOT_RUN",
+      "scope": "native51 + server5/direct/agent actual preparation and SSH/SOCKS/HTTP recovery + metrics",
+      "next": "Independent worktree fix direct Process handle + exit0/17/timeout regressions; one new source CI",
+      "jobs": [
+        {
+          "id": 119549198567,
+          "name": "windows-build",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 119549199364,
+          "name": "vpn-server-test",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "build_identity": "0.2.2+20df578c1c2d162f5f373e94aed8107bbfee7d19",
+      "failure": "Owned SSH fixture install failed with exit code [empty]; actual pip result unknown; Start-Process handle/exit-code observation defect",
+      "scoped_pass": {
+        "socks_recovery_tests": 51,
+        "socks_recovery_assertions": 456,
+        "guidance_assertions": 10,
+        "diagnostic_report": 32,
+        "diagnostic_helper": 2,
+        "bounded_log": 32,
+        "backup_retention": 29,
+        "backup_integrity": 82
+      },
+      "runner_package": "NOT_RUN: failed before package step; no new hash; binary uploads skipped"
     }
   ],
   "retention_microtask": {
@@ -2644,30 +2694,30 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI590 launcher failure; isolated fix worktree; root R08 blocks preserved",
+    "phase": "CI591 direct combined start FAIL; separate delimiter-fix worktree; root R08 logger blocks saved",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "60f5e92e336d78a5d2f438975773e2c03f61fb16",
-    "published_sha": "8487594e6d7d4e4eb16df86aae27f2e980329aaa",
-    "ci_run_id": 39694720495,
-    "windows_compilation": "PASS CI590 source848 only",
-    "windows_native": "PARTIAL: recovery51/456, report32/helper2/updater/retention suites; Desktop/native server/combined/metrics NOT_RUN",
+    "local_sha": "dd9b17afb01a0264e6f6a96d7a3f6f1f5ba81b44",
+    "published_sha": "693de8abda98f48108cea97624cbf9cd165b376d",
+    "ci_run_id": 39696687583,
+    "windows_compilation": "PASS CI591 source693 only",
+    "windows_native": "PARTIAL: launcher3 + native Python server5 + recovery51/456 + substantial Desktop before direct combined start FAIL; no full Desktop/package PASS",
     "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
-    "next": "Fix exit-code observation independently, exact-source native probes then one CI",
+    "next": "Fix extraOptions boundary separately; new exact CI; preserve R08 code",
     "readiness_change": 0,
-    "tree": "017b33cbc8504e6af6ff52a619063219bdd6ed69",
+    "tree": "789f87c6aaab9748a43be493ec175451b2f43e0e",
     "publication_scan": {
-      "files": 9,
-      "added_lines": 1050,
+      "files": 4,
+      "added_lines": 485,
       "findings": 0,
-      "workflow": "unchanged; source-only/no public uploads/release",
-      "tree_match": true
+      "tree_match": true,
+      "workflow": "unchanged/no release or public uploads"
     },
-    "tested_merge": "20df578c1c2d162f5f373e94aed8107bbfee7d19",
-    "ci_run_number": 590,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39694720495",
+    "tested_merge": "774c77a6f94193ea91281c6adf72a08481db82db",
+    "ci_run_number": 591,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39696687583",
     "jobs": {
-      "windows": 119549198567,
-      "ubuntu": 119549199364
+      "windows": 119555663751,
+      "ubuntu": 119555663596
     },
     "ci_status": "completed failure",
     "ubuntu": "SUCCESS",
@@ -2719,36 +2769,45 @@
   },
   "current_readiness": {
     "method": "v1.0 unchanged W and D/P/A30/20/50",
-    "evidence_source": "8487594e6d7d4e4eb16df86aae27f2e980329aaa",
-    "tested_merge": "20df578c1c2d162f5f373e94aed8107bbfee7d19",
+    "evidence_source": "693de8abda98f48108cea97624cbf9cd165b376d",
+    "tested_merge": "774c77a6f94193ea91281c6adf72a08481db82db",
     "implementation_range": [
       58,
       80
     ],
-    "verified_raw": 6.15,
-    "verified_display": 6,
-    "previous_baseline_raw": 21.75,
-    "previous_baseline_display": 22,
-    "change_raw": -15.6,
+    "verified_raw": 10.5,
+    "verified_display": 11,
+    "previous_baseline_raw": 6.15,
+    "previous_baseline_display": 6,
+    "change_raw": 4.35,
     "credited_D_half_ids": [
+      "F01",
       "F02",
       "F04",
       "F05",
+      "F06",
       "F07",
       "F08",
       "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F14",
+      "F15",
+      "F16",
+      "F17",
       "F23",
       "F25",
       "F26",
       "F31"
     ],
-    "credited_weight": 41,
+    "credited_weight": 70,
     "D": 0.5,
     "P": 0,
     "A": 0,
-    "reason": "Conservative exact CI590 native traced criteria only; no Desktop/ZIP/target credit; untraced assertions give no extra points",
+    "reason": "Exact CI591 log adds traced native Desktop criteria before combined FAIL; no full Desktop/ZIP/target credit",
     "local_lifecycle": "NOT_RUN,0 new verification credit",
-    "candidate_note": "CI58922 historical; subsequent local R08 native NOT_RUN,0 credit"
+    "candidate_note": "new delimiter fix and root R08 code NOT_RUN; no credit for source"
   },
   "local_launch_lifecycle_microtask": {
     "status": "PARTIAL",
@@ -2790,26 +2849,23 @@
     "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a"
   },
   "pending_publication": {
-    "local_sha": "60f5e92e336d78a5d2f438975773e2c03f61fb16",
-    "tree": "017b33cbc8504e6af6ff52a619063219bdd6ed69",
+    "local_sha": "dd9b17afb01a0264e6f6a96d7a3f6f1f5ba81b44",
+    "tree": "789f87c6aaab9748a43be493ec175451b2f43e0e",
     "files": [
+      "docs/ACCEPTANCE_RUNBOOK.md",
       "docs/PROJECT_STATE.md",
       "docs/project_state.json",
-      "scripts/Test-ProGo.ps1",
-      "src/ProxyService.cs",
-      "tests/SocksRecoveryTests.cs",
-      "tests/SshAuthenticationPreparationTests.cs",
-      "tests/ssh-fixture-requirements.txt",
-      "tests/ssh_loopback_fixture.py",
-      "tests/test_ssh_loopback_fixture.py"
+      "scripts/Test-ProGo.ps1"
     ],
-    "added_lines": 1050,
+    "added_lines": 485,
     "findings": [],
-    "parent_remote": "7964a99ac4f6adf0d1d9034c855e989f60211c0a",
-    "base_tree": "8c4be1b5bd69d06cbac06f6c4f33c1ff0edc9d85",
-    "workflows": "unchanged; PR binary uploads OFF; no release/main push/dispatch",
-    "ref_update": "CONFIRMED; PR head and CI590 observed",
-    "published_object": "8487594e6d7d4e4eb16df86aae27f2e980329aaa"
+    "parent_remote": "8487594e6d7d4e4eb16df86aae27f2e980329aaa",
+    "base_tree": "017b33cbc8504e6af6ff52a619063219bdd6ed69",
+    "workflows": "unchanged; no public uploads/release/main push",
+    "native": "NOT_RUN until new exact source CI",
+    "code_excludes": "root R08 log open and bounded queue",
+    "published_object": "693de8abda98f48108cea97624cbf9cd165b376d",
+    "ref_update": "CONFIRMED; PR head693de8ab and CI591 observed"
   },
   "local_preparation_guidance": {
     "status": "PARTIAL",
@@ -2910,11 +2966,22 @@
   "local_bounded_log_queue": {
     "status": "PARTIAL",
     "implementation": "src/BoundedLog.cs BoundedLogQueue + tests/BoundedLogTests.cs; bounded nonwaiting admission/single sink/pause/resume/failure counters",
-    "production_wiring": "TODO: SafeLog still synchronous",
+    "production_wiring": "PARTIAL local SafeLog pure bounded/redacted producer -> worker AppPaths/disk; native NOT_RUN",
     "compilation": "NOT_RUN",
     "native": "NOT_RUN",
     "ci590_includes": false,
-    "next": "Fix CI590 exit-code observation independently; then SafeLog formatter/sink and shutdown drain wiring"
+    "next": "Exact Windows checking tree after CI591 completion; remaining folder/backups/cold helper workers still open",
+    "source": "cdadbf429aaac3db10ebb921e88a08e22770031f",
+    "safe_log_files": [
+      "src/Core.cs",
+      "src/BoundedLog.cs",
+      "tests/DesktopDiagnosticContextTests.cs",
+      "tests/HomeVpnWizardTests.cs"
+    ],
+    "native_fixture": "actual SafeLog held native sink + heartbeat/safe queue/bytes; NOT_RUN",
+    "shutdown_exit_drain": "PARTIAL local: owner epoch scoped seal/resume, same-budget actual Context pre-handoff drain, nonblocking forced disposal; post-UI/fatal500ms best effort with explicit NOT_RUN on timeout",
+    "safe_log_source": "da9ad49901ba8eb27f4ac9c39a94023f131a2b1c",
+    "native_owner_fixtures": "3 epoch assertions +2 actual Context held-writer cases; NOT_RUN"
   },
   "readiness_history": [
     {
@@ -2967,23 +3034,70 @@
       "reason": "Exact CI589 same partial D/P coverage plus new common lifecycle evidence; no whole-F31 D1/owner A; new local combined/guidance NOT_RUN",
       "local_lifecycle": "NOT_RUN,0 new verification credit",
       "candidate_note": "score22 evidence CI589 only; CI590 source new tests NOT_RUN,0 new credit"
+    },
+    {
+      "method": "v1.0 unchanged W and D/P/A30/20/50",
+      "evidence_source": "8487594e6d7d4e4eb16df86aae27f2e980329aaa",
+      "tested_merge": "20df578c1c2d162f5f373e94aed8107bbfee7d19",
+      "implementation_range": [
+        58,
+        80
+      ],
+      "verified_raw": 6.15,
+      "verified_display": 6,
+      "previous_baseline_raw": 21.75,
+      "previous_baseline_display": 22,
+      "change_raw": -15.6,
+      "credited_D_half_ids": [
+        "F02",
+        "F04",
+        "F05",
+        "F07",
+        "F08",
+        "F09",
+        "F23",
+        "F25",
+        "F26",
+        "F31"
+      ],
+      "credited_weight": 41,
+      "D": 0.5,
+      "P": 0,
+      "A": 0,
+      "reason": "Conservative exact CI590 native traced criteria only; no Desktop/ZIP/target credit; untraced assertions give no extra points",
+      "local_lifecycle": "NOT_RUN,0 new verification credit",
+      "candidate_note": "Current evidence6 belongs to CI590; CI591 pending and local R08 code NOT_RUN;0 new credit"
     }
   ],
   "local_ci590_exitcode_fix": {
-    "status": "PARTIAL",
+    "status": "PASS",
     "scope": "scripts/Test-ProGo.ps1 direct Diagnostics.Process handle, explicit null/nonzero check, concurrent stdout/stderr reads, bounded own cleanup",
     "regressions": [
       "native exit0 accepted",
       "native exit17 exact error required",
       "native own-timeout200ms exact error and cleanup required"
     ],
-    "windows": "NOT_RUN",
-    "powershell": "NOT_RUN",
+    "windows": "PASS only launcher3/native server5; not whole F31",
+    "powershell": "PASS scoped regressions/install in CI591 source693de8ab merge774c77a6",
     "timeouts": "install60s/contract90s/cleanup5s unchanged",
     "code_excludes": [
       "local R08 LogOpenOperation/Context wiring",
       "local BoundedLogQueue foundation"
     ],
-    "next": "Scan committed tree and publish expected-head source fix; one new CI"
+    "next": "Scan committed tree and publish expected-head source fix; one new CI",
+    "source": "dd9b17afb01a0264e6f6a96d7a3f6f1f5ba81b44"
+  },
+  "local_ci591_delimiter_fix": {
+    "status": "PARTIAL",
+    "files": [
+      "src/ProxyService.cs",
+      "tests/SshAuthenticationPreparationTests.cs"
+    ],
+    "evidence": "Confirmed raw prefix is concatenated with -N; native Linux isolated ssh-G before255/config path altered vs after0/resolved expected host; no network connection",
+    "change": "constructor ensures a separator after nonempty prefix; existing real native fixture remains regression, safe typed failure data added",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "code_excludes": "all local R08 log opener/queue/SafeLog/shutdown code",
+    "next": "Scan exact tree and publish one new SHA; verify same native combined scenario"
   }
 }
