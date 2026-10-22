@@ -94,34 +94,40 @@ namespace ProGo
             Run run = null; Exception failure = null;
             try
             {
-                CheckStartupAdmission(source.Token);
-                using (var probe = await ConnectAsync(address, socksPort, bridgePort, 0, source.Token).ConfigureAwait(false)) { }
-                CheckStartupAdmission(source.Token);
-                run = new Run(this, address, socksPort, bridgePort, ikePort, natPort);
-                lock (sync)
+                try
                 {
                     CheckStartupAdmission(source.Token);
-                    current = run;
-                }
-                run.Start(); // Native socket/timer work does not hold the service metadata gate.
-                lock (sync)
-                {
+                    using (var probe = await ConnectAsync(address, socksPort, bridgePort, 0, source.Token).ConfigureAwait(false)) { }
                     CheckStartupAdmission(source.Token);
-                    if (current != run) throw new IOException("Relay receiver stopped during startup.");
+                    run = new Run(this, address, socksPort, bridgePort, ikePort, natPort);
+                    lock (sync)
+                    {
+                        CheckStartupAdmission(source.Token);
+                        current = run;
+                    }
+                    run.Start(); // Native socket/timer work does not hold the service metadata gate.
+                    lock (sync)
+                    {
+                        CheckStartupAdmission(source.Token);
+                        if (current != run) throw new IOException("Relay receiver stopped during startup.");
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                failure = ex; bool cleanupFailed = false;
-                try { if (run != null) await RetireRun(run).ConfigureAwait(false); }
-                catch (Exception cleanup) { failure = cleanup; cleanupFailed = true; }
-                bool cancelled = source.IsCancellationRequested || failure is OperationCanceledException;
-                if (cancelled && !cleanupFailed) failure = new OperationCanceledException(source.Token);
-                lock (sync)
+                catch (Exception ex) { failure = ex; }
+                // .NET Framework's C# 5 compiler cannot await inside catch.
+                // Keep failure cleanup inside the enclosing CTS lifetime.
+                if (failure != null)
                 {
-                    if (current == run) current = null;
-                    lastError = cleanupFailed ? "Не удалось подтвердить очистку пересылки. Повторите остановку VPN для телефона."
-                        : cancelled ? null : "Не удалось запустить пересылку. Проверьте SOCKS, приёмник на VPS и свободные UDP-порты ПК.";
+                    bool cleanupFailed = false;
+                    try { if (run != null) await RetireRun(run).ConfigureAwait(false); }
+                    catch (Exception cleanup) { failure = cleanup; cleanupFailed = true; }
+                    bool cancelled = source.IsCancellationRequested || failure is OperationCanceledException;
+                    if (cancelled && !cleanupFailed) failure = new OperationCanceledException(source.Token);
+                    lock (sync)
+                    {
+                        if (current == run) current = null;
+                        lastError = cleanupFailed ? "Не удалось подтвердить очистку пересылки. Повторите остановку VPN для телефона."
+                            : cancelled ? null : "Не удалось запустить пересылку. Проверьте SOCKS, приёмник на VPS и свободные UDP-порты ПК.";
+                    }
                 }
             }
             finally
