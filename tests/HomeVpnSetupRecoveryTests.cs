@@ -21,6 +21,35 @@ namespace ProGo
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
         private static HomeVpnOwner Owner { get { return new HomeVpnOwner { Host = "vpn.example.org", Port = 22, Login = "root", KeyFile = "" }; } }
         private static string PendingPath { get { return Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat"); } }
+        private const string OwnedFixture = "PROGO_SETUP_OWNED_FIXTURE";
+        internal static bool Fixture(string[] args)
+        {
+            if (args.Length == 2 && args[0] == "setup-owned-child") {
+                HomeVpnFixtureFiles.Publish(Path.Combine(args[1], "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
+            }
+            string root = Environment.GetEnvironmentVariable(OwnedFixture);
+            if (String.IsNullOrEmpty(root) || args.Length == 0 || args[0] != "-o") return false;
+            string command = args.Last(), id = File.ReadAllText(Path.Combine(root, "expected-id"));
+            string kind = command.Contains("home_vpn_setup.py operation-status --request-id " + id) ? "status"
+                : command.Contains("home_vpn_setup.py operation-result --request-id " + id) ? "result" : null;
+            if (kind == null || !args.Contains("-T") || !args.Contains(Owner.Login + "@" + Owner.Host) || command.Contains("home_vpn_setup.py setup ")
+                || command.Contains(File.ReadAllText(Path.Combine(root, "response"))) || args.Contains("StrictHostKeyChecking=no"))
+                throw new Exception("Owned recovery fixture requires original read-only status/result dispatch without secrets");
+            File.AppendAllText(Path.Combine(root, "calls"), kind + "\n");
+            HomeVpnFixtureFiles.Publish(Path.Combine(root, "pid"), Process.GetCurrentProcess().Id.ToString());
+            string mode = File.ReadAllText(Path.Combine(root, "mode"));
+            if (mode == "cancel-command") {
+                using (var child = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "setup-owned-child " + HomeVpnService.Argument(root)) { UseShellExecute = false, CreateNoWindow = true })) {
+                    var watch = Stopwatch.StartNew(); while (!File.Exists(Path.Combine(root, "child"))) { Thread.Sleep(10); if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned recovery child startup deadline"); }
+                    Thread.Sleep(60000);
+                }
+            }
+            if (mode == "stop-between") {
+                var watch = Stopwatch.StartNew(); while (!File.Exists(Path.Combine(root, "release-status"))) { Thread.Sleep(10); if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned recovery status release deadline"); }
+            }
+            Console.OutputEncoding = new UTF8Encoding(false);
+            Console.Write(File.ReadAllText(Path.Combine(root, kind == "status" ? "status" : "response"))); return true;
+        }
         internal static void Run(Action<bool, string> assert, string token, ClipboardService clipboard, string work)
         {
             check = assert; var saved = new Dictionary<string, byte[]>();
@@ -33,7 +62,7 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work); OwnedAdminTasks(work); RetainedAdminCleanup();
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work); OwnedAdminTasks(work); RetainedAdminCleanup(); OwnedSetupRecovery(token, clipboard, work);
                 // NativeRecovery calls Application.Run/ExitThread. Keep it last:
                 // later modeless timer fixtures would inherit an exited UI context.
                 NativeRecovery(token, clipboard, work);
@@ -505,6 +534,155 @@ namespace ProGo
                         }
                     }
                 } finally { pulse.Stop(); form.Close(); }
+            }
+        }
+        private static async Task HeldRecoveryCopy(Form owner, Action<HomeVpnPreparationForm> publish, Action<CancellationToken> read)
+        {
+            using (var wait = new HomeVpnPreparationForm(ct => Task.Run(() => read(ct)), true)) {
+                publish(wait); wait.ShowDialog(owner); await wait.Completion;
+            }
+        }
+        private static Exception RecoveryOutcome(Task task)
+        { try { task.GetAwaiter().GetResult(); return null; } catch (Exception error) { return error; } }
+        private static bool RecoveryLeaseHeld()
+        {
+            try { using (HomeVpnSetupRecovery.AcquireAsync().GetAwaiter().GetResult()) return false; }
+            catch (HomeVpnSetupPendingException) { return true; }
+        }
+        private static void OwnedSetupRecovery(string token, ClipboardService clipboard, string work)
+        {
+            string root = Path.Combine(work, "owned-setup-recovery-" + Guid.NewGuid().ToString("N")); HomeVpnPrivateFiles.SecureDirectory(root);
+            string previous = Environment.GetEnvironmentVariable(OwnedFixture); Environment.SetEnvironmentVariable(OwnedFixture, root);
+            Process unrelated = null;
+            try {
+                unrelated = HomeVpnWaitingTests.StartUnrelatedFixture();
+                foreach (string mode in new[] { "default-refusal", "status-pending", "cancel-retry", "stop-copy", "dispose-copy", "owner-dispose", "stop-between", "cancel-command", "cleanup-lock", "result" }) {
+                    foreach (string path in Directory.GetFiles(root)) File.Delete(path);
+                    File.Delete(PendingPath); var request = HomeVpnSetupRecovery.Register(Owner, "My iPhone"); byte[] journal = File.ReadAllBytes(PendingPath);
+                    File.WriteAllText(Path.Combine(root, "expected-id"), request.RequestId); File.WriteAllText(Path.Combine(root, "response"), token);
+                    File.WriteAllText(Path.Combine(root, "mode"), mode);
+                    File.WriteAllText(Path.Combine(root, "status"), Json.Serialize(mode == "result" || mode == "stop-between" ? Status(request) : Status(request, "running", false)));
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        service.UseToken(token, Owner);
+                        var credentials = new[] { "access", "owner", "home-address" }.Select(n => Path.Combine(HomeVpnPrivateFiles.Root, n + ".dat")).ToDictionary(p => p, p => File.Exists(p) ? File.ReadAllBytes(p) : null);
+                        string sibling = Path.Combine(HomeVpnPrivateFiles.Root, "admin-unrelated-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(sibling); File.WriteAllText(Path.Combine(sibling, "keep"), "unrelated");
+                        var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root); string coreWork = null;
+                        HomeVpnWizardForm wizard = null; HomeVpnPreparationForm copyWindow = null; FileStream held = null;
+                        Task<string> operation = null, cancelled = null; Task<bool> stop = null; Exception original = null;
+                        int phase = 0, turns = 0, copies = 0, worker = 0, retained = 0, closedPublications = 0, importBoundaries = 0, ui = Thread.CurrentThread.ManagedThreadId;
+                        bool helperRead = false, closing = mode == "owner-dispose";
+                        Func<string[]> calls = () => File.Exists(Path.Combine(root, "calls")) ? File.ReadAllLines(Path.Combine(root, "calls")) : new string[0];
+                        Func<string, bool> gone = name => {
+                            if (!File.Exists(Path.Combine(root, name))) return true;
+                            try { using (var process = Process.GetProcessById(Int32.Parse(File.ReadAllText(Path.Combine(root, name))))) return process.HasExited; }
+                            catch (ArgumentException) { return true; }
+                        };
+                        try {
+                            if (mode == "default-refusal") { service.RetainAdminCleanup(() => retained++); service.Owner.KeyFile = Path.Combine(root, "missing-owned-recovery-key"); }
+                            wizard = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(wizard);
+                            var next = (Button)Field(wizard, "next"); var dispatcher = (HomeProfileUiDispatcher)Field(wizard, "httpDispatcher");
+                            // After a successful read-only result, cancel only the
+                            // local test import before any credential write/tunnel.
+                            wizard.BeforeAccessIo = stage => { Interlocked.Increment(ref importBoundaries); throw new OperationCanceledException(); };
+                            if (mode != "default-refusal") wizard.ReadSetupResult = (owner, window, actualUi, label, report) => {
+                                check(window == wizard && actualUi == dispatcher && label == "My iPhone" && Thread.CurrentThread.ManagedThreadId == ui, "production recover-setup binding keeps explicit wizard owner and original label");
+                                operation = service.RecoverSetupOwnedAsync(owner, window, actualUi, label, report, (exe, args) => {
+                                    check(exe == "scp.exe" && args.Contains(" -P 22 ") && Thread.CurrentThread.ManagedThreadId == ui, "recovery copy startup keeps production SSH parameters on explicit UI owner");
+                                    if (++copies != 1) return Task.FromResult(0);
+                                    return HeldRecoveryCopy(window, value => copyWindow = value, ct => {
+                                        Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                                        coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
+                                        string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single(); helperRead = File.ReadAllText(helper).Length != 0;
+                                        if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                        entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned recovery copy fixture deadline"); ct.ThrowIfCancellationRequested();
+                                    });
+                                }, Application.ExecutablePath); return operation;
+                            };
+                            HomeVpnWaitingTests.ModalWizardCase(wizard, delegate {
+                                if (phase == 0) {
+                                    check(wizard.Modal && next.Enabled && next.Text == "Проверить прошлую настройку", "owned setup recovery uses existing production modal action: " + mode);
+                                    next.PerformClick(); phase = 1; return false;
+                                }
+                                if (mode == "default-refusal") {
+                                    if ((bool)Field(wizard, "busy")) return false;
+                                    check(((Label)Field(wizard, "status")).Text.Contains("Очистка прежней команды") && copies == 0 && calls().Length == 0 && journal.SequenceEqual(File.ReadAllBytes(PendingPath)), "default recovery binding refuses pending cleanup before selected-key I/O or SSH");
+                                    if (stop == null) { stop = service.StopAsync(); return false; } if (!stop.IsCompleted) return false;
+                                    check(stop.GetAwaiter().GetResult() && retained == 1 && !RecoveryLeaseHeld() && !unrelated.HasExited, "default recovery refusal preserves journal and releases exact cleanup owner");
+                                    check(true, "owned production setup recovery PASS: " + mode); return true;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; } if (++turns < 3) return false;
+                                    check(helperRead && worker != ui && service.IsAdminWorking && !operation.IsCompleted && !next.Enabled && copyWindow.Owner == wizard && RecoveryLeaseHeld(), "actual recovery journal/helper work keeps native heartbeat and existing family lease: " + mode);
+                                    next.PerformClick(); check(copies == 1, "pending recovery refuses duplicate UI admission: " + mode);
+                                    if (mode == "cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
+                                    if (mode == "stop-copy" || mode == "dispose-copy" || closing) {
+                                        var watch = Stopwatch.StartNew(); if (mode == "dispose-copy" || closing) service.Dispose(); stop = service.StopAsync();
+                                        if (closing) { wizard.Dispose(); closedPublications = dispatcher.PublicationCount; }
+                                        check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "recovery Stop Dispose returns promptly while draining actual owned I/O");
+                                    }
+                                    turns = 0; phase = 2; return false;
+                                }
+                                if (phase == 2) { if (++turns < 3) return false; check(!operation.IsCompleted && (stop == null || !stop.IsCompleted), "held recovery body cannot be discarded by cancellation or Stop"); release.Set(); phase = 3; return false; }
+                                if (phase == 3 && (mode == "stop-between" || mode == "cancel-command")) {
+                                    string marker = Path.Combine(root, mode == "stop-between" ? "pid" : "child");
+                                    if (!File.Exists(marker)) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                    stop = service.StopAsync(); check(!stop.IsCompleted && service.IsAdminWorking && RecoveryLeaseHeld(), "Stop retains admitted native status query and lease before possible result read");
+                                    if (mode == "stop-between") File.WriteAllText(Path.Combine(root, "release-status"), "release");
+                                    else ((Button)Field(wizard.OwnedForms.OfType<HomeVpnPreparationForm>().Single(), "cancel")).PerformClick();
+                                    phase = 4; return false;
+                                }
+                                if (phase == 3 || phase == 4) {
+                                    if (!operation.IsCompleted || (bool)Field(wizard, "busy") || !service.ImportWork.IsCompleted || (stop != null && !stop.IsCompleted)) return false;
+                                    var failure = RecoveryOutcome(operation);
+                                    if (mode == "cleanup-lock") { original = failure; check(failure is HomeVpnSetupPendingException && service.HasPendingAdminCleanup && Directory.Exists(coreWork), "recovery cleanup failure retains exact directory and original pending-request outcome"); stop = service.StopAsync(); phase = 5; return false; }
+                                    if (mode == "cancel-retry" && cancelled == null) {
+                                        cancelled = operation; original = failure;
+                                        check(failure is HomeVpnPreparationCancelledException && failure.Message.Contains("могла завершиться") && next.Enabled && wizard.Modal && calls().Length == 0 && !RecoveryLeaseHeld(), "cancelled recovery keeps modal explicit Retry and releases lease without replacing request");
+                                        next.PerformClick(); phase = 4; return false;
+                                    }
+                                    check(mode == "result" ? failure == null && Pending().Result == token && importBoundaries > 0
+                                        : mode == "status-pending" || mode == "cancel-retry" || mode == "cancel-command" ? failure is HomeVpnSetupPendingException
+                                        : failure is OperationCanceledException,
+                                        "recovery preserves actual pending/cancelled/original-result outcome without new setup: " + mode);
+                                    if (cancelled != null) check(Object.ReferenceEquals(original, RecoveryOutcome(cancelled)) && copies == 2, "old recovery cancellation cannot replace the explicit Retry outcome");
+                                    if (stop != null) check(stop.GetAwaiter().GetResult(), "recovery Stop drains body lease and exact cleanup: " + mode);
+                                    if (closing) check(dispatcher.PublicationCount == closedPublications, "disposed recovery owner gets no late UI publication"); phase = 7;
+                                }
+                                if (phase == 5) {
+                                    if (!stop.IsCompleted) return false;
+                                    check(!stop.GetAwaiter().GetResult() && service.HasPendingAdminCleanup, "locked recovery cleanup keeps honest failed Stop");
+                                    check(RecoveryOutcome(service.RecoverSetupOwnedAsync(Owner, wizard, dispatcher, "My iPhone", delegate { })) is HomeVpnLocalCleanupException && copies == 1 && calls().Length == 1, "retained recovery cleanup refuses a new copy/query without replay");
+                                    held.Dispose(); held = null; stop = service.StopAsync(); phase = 6; return false;
+                                }
+                                if (phase == 6) { if (!stop.IsCompleted) return false; check(stop.GetAwaiter().GetResult() && Object.ReferenceEquals(original, RecoveryOutcome(operation)), "unlock then explicit Stop retries only exact recovery deletion and preserves typed failure"); phase = 7; }
+                                if (phase != 7) return false;
+                                string[] expected = mode == "result" ? new[] { "status", "result" } : mode == "status-pending" || mode == "cancel-retry" || mode == "stop-between" || mode == "cancel-command" || mode == "cleanup-lock" ? new[] { "status" } : new string[0];
+                                check(calls().SequenceEqual(expected) && Pending().RequestId == request.RequestId && (mode == "result" || journal.SequenceEqual(File.ReadAllBytes(PendingPath)))
+                                    && credentials.All(p => p.Value == null ? !File.Exists(p.Key) : p.Value.SequenceEqual(File.ReadAllBytes(p.Key))) && !RecoveryLeaseHeld() && !service.HasOwnedResources && !Directory.Exists(coreWork)
+                                    && File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated" && !relay.IsRunning && gone("pid") && gone("child") && !unrelated.HasExited,
+                                    "owned recovery preserves original ID protected credentials sibling and exact query counts without issuing or auto replay: " + mode);
+                                check(true, "owned production setup recovery PASS: " + mode); return true;
+                            }, () => closing);
+                        } finally {
+                            release.Set(); File.WriteAllText(Path.Combine(root, "release-status"), "release"); if (held != null) held.Dispose(); if (copyWindow != null) copyWindow.Dispose(); if (wizard != null) wizard.Dispose();
+                            foreach (string name in new[] { "pid", "child" }) if (File.Exists(Path.Combine(root, name))) {
+                                try { using (var process = Process.GetProcessById(Int32.Parse(File.ReadAllText(Path.Combine(root, name))))) if (!process.HasExited) { process.Kill(); if (!process.WaitForExit(2000)) throw new TimeoutException("Owned recovery fixture process cleanup deadline"); } } catch (ArgumentException) { }
+                            }
+                            service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && (operation == null || operation.IsCompleted) && service.ImportWork.IsCompleted
+                                && (wizard == null || wizard.InitializationWork.IsCompleted && wizard.SetupSnapshotWork.IsCompleted && wizard.SetupReadWork.IsCompleted
+                                    && wizard.SetupConsumptionWork.IsCompleted && ((Task)Field(wizard, "setupSnapshotDriver")).IsCompleted), 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned recovery fixture retained local cleanup"); if (operation != null) RecoveryOutcome(operation);
+                            Directory.Delete(sibling, true);
+                        }
+                    }
+                }
+            } finally {
+                try { if (unrelated != null) HomeVpnWaitingTests.StopUnrelatedFixture(unrelated); }
+                finally { Environment.SetEnvironmentVariable(OwnedFixture, previous); File.Delete(PendingPath); Directory.Delete(root, true); }
             }
         }
         private static void Pump(Func<bool> ready, int timeout = 12000)

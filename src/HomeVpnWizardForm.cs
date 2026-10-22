@@ -65,6 +65,7 @@ namespace ProGo
         private Label counters;
         internal Func<HomeVpnOwner, string, string, string, Action<string>, Task<string>> Admin;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, Action<string>, Task<string>> ReadAdminList;
+        internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> ReadSetupResult;
         private Form readOnlyListOwner;
         private HomeProfileUiDispatcher readOnlyListUi;
 
@@ -72,9 +73,11 @@ namespace ProGo
         {
             this.service = service; this.clipboard = clipboard; BeforeSetupSnapshotRead = beforeSetupSnapshotRead; httpDispatcher = new HomeProfileUiDispatcher(this);
             ReadAdminList = (owner, window, dispatcher, report) => service.ListAdminOwnedAsync(owner, window, dispatcher, report);
+            ReadSetupResult = (owner, window, dispatcher, label, report) => service.RecoverSetupOwnedAsync(owner, window, dispatcher, label, report);
             Admin = (owner, action, label, identifier, report) => action == "repair"
                 ? service.RepairAdminOwnedAsync(owner, this, httpDispatcher, report)
                 : action == "list" ? ReadAdminList(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, report)
+                : action == "recover-setup" ? ReadSetupResult(owner, this, httpDispatcher, label, report)
                 : HomeVpnService.AdminAsync(owner, action, label, identifier, report);
             Text = "VPN для телефона"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;

@@ -1,4 +1,41 @@
-## Текущий кандидат: read-only Admin list owned-worker10; Windows NOT_RUN
+## Текущий кандидат: recover-setup owned-worker10; Windows NOT_RUN
+
+Проверенная база `2882b1f104bbfe469be4b51a615c2fe72f43855c` / merge `40dff9acb6c62600ee7495bb06ad76a5fb7332bc`,
+[CI631 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39868272469). Получены
+финальные логи обоих jobs: точный build identity, list10/repair8/ownership8/cleanup4,
+snapshot12/dispatcher5/export modal11/chooser3 PASS, Desktop5294/HomeVPN2465/Portable91.
+Windows Python26 PASS/2 SKIP; Ubuntu16+13 unit OK/isolated smoke PASS. Все uploads/prune
+SKIPPED, артефактов нет. Checkpoint `8a89037677013c1e7e12156a73797800eccb1e19` сохранён; прежние pending — история.
+
+Code `4976a5bf42ee98d7b986c5ec06c75543ecf9edf6`: existing recover-setup modal action → retained worker →
+explicit wizard copy/status/result UI → exact cleanup. Четыре source/test/harness файла
++3 docs. Fresh setup/HTTPS/invitation mutation/recovery исключены, dependencies уже в631.
+Существующий core family lease не захватывается повторно и удерживается через результат/
+cleanup; worker не ждёт public Stop. Принятый native Task остаётся owned, следующий
+transport после Stop/Dispose не запускается; прежний ID не заменяется, issuance/replay нет.
+
+Минимальный Windows прогон нового exact source/merge: scripts/Test-ProGo.ps1 и
+scripts/Test-HomeVpnRelay.ps1. Требовать10 новых mode PASS: default-refusal, status-pending,
+cancel-retry, stop-copy, dispose-copy, owner-dispose, stop-between, cancel-command,
+cleanup-lock, result. Реальная modal кнопка/default binding, lease/heartbeat/no duplicate,
+typed cancellation и исходный ID/journal, Stop после принятого status до result, actual
+native tree cancel/Dispose, locked Stop false→unlock true без copy/query replay, no late UI,
+credentials/sibling/unrelated process сохранены. Native fixture принимает только исходные
+read-only status/result. Positive result сохраняет исходный token; local test import
+отменяется до credential writes/tunnel. Это не целевая приёмка и не live VPS integration.
+Held5s/modal15s/finally join5s, original native300s unchanged; watchdog disposes only own
+forms, cleanup joins actual operation/import/snapshot/driver/Stop. NativeRecovery остаётся последним.
+Обязательны прежние list10/repair8/ownership8/cleanup4/API17/export14/full regression.
+Новые Windows compilation/native10 NOT_RUN до completed exact evidence, старый631 не наследуется.
+
+Local PASS review/syntax4/await-scope/diff/public321/0/secretPII0/AST-preservation;
+это не compiler/native proof. Все прежние service/wizard method bodies и receipt protocol
+сохранены. Один guarded update PR88 → один automatic PR CI, uploads OFF/release excluded.
+Сохранить run и STOP без полного ожидания или второго этапа. После проверки того же CI
+отдельный fresh-setup owned preparation срез. Веса58–80/22 прежние,delta0. Полный R09/owner
+acceptance открыт; main merge/release/бинарники/установка/VPS/credentials/network исключены.
+
+## История: кандидат read-only Admin list owned-worker10; Windows NOT_RUN
 
 Проверенная база `e8588af677b15f6d72a9543f22658ca7ccdc06a9` / merge `75a0e468986846e836f1f430454bc705eaaca5c7`,
 [CI630 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39860593042): completed

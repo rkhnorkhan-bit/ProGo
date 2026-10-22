@@ -8,7 +8,73 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: read-only Admin list → owned worker на CI630
+## Текущий этап: существующий recover-setup → owned worker на CI631
+
+Checkpoint `8a89037677013c1e7e12156a73797800eccb1e19` прочитан. При начале этапа актуальный PR88
+OPEN/DRAFT был на source `2882b1f104bbfe469be4b51a615c2fe72f43855c`, tested merge `40dff9acb6c62600ee7495bb06ad76a5fb7332bc`.
+[CI631/39868272469](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39868272469)
+проверен независимо: получены финальные логи обоих jobs Windows120135894964/Ubuntu120135895252,
+а не только переданные владельцем metadata SUCCESS. Build identity0.2.2+40dff9acb6c62600ee7495bb06ad76a5fb7332bc.
+Явные mode PASS: list10, repair8, ownership8, cleanup4, snapshot12/dispatcher5, export
+modal11/chooser3. ProGo tests PASS; Desktop5294/HomeVPN2465/Portable91. Windows Python28:
+26 PASS/2 SKIP, SKIP не PASS. Ubuntu16+13 unit tests OK и isolated native smoke PASS.
+Все uploads/prune SKIPPED, артефактов нет. Новый код этим SUCCESS не подтверждается.
+Git/worktree чистые, незавершённых Git/build операций и другого доступного исполнителя нет.
+
+Выбран один небольшой production срез подготовки setup/recover-setup: существующая кнопка
+«Проверить прошлую настройку», только recover-setup. Code `4976a5bf42ee98d7b986c5ec06c75543ecf9edf6`,
+ветка work/progo-setup-recovery-on631-20261023, worktree ProGo-setup-recovery-on631 от точного631.
+HomeVpnService/HomeVpnWizardForm/HomeVpnSetupRecoveryTests/HomeVpnWizardTests:228add/2delete.
+Fresh setup, HTTPS и invitation mutation/recovery остаются отдельными этапами.
+
+Default recover delegate вызывает RecoverSetupOwnedAsync. SSH metadata копируются до
+scheduling; File.Exists выбранного ключа, DPAPI Load журнала, helpers/output/RetainResult
+и exact cleanup принадлежат retained worker. Native recovery copy/status/result окна
+запускаются через dispatcher конкретного мастера, без ActiveForm. Существующий core
+удерживает свой family lease от Load до результата/cleanup; wrapper не захватывает его
+повторно и не ждёт public Stop, владеющий его drain. Stop/Dispose до следующего transport
+отказывает в его запуске, уже принятый actual Task дренируется до исхода/локальной отмены.
+Callback сохраняет exact cleanup, поздний progress завершённого тела подавляется.
+Исходный протокол request ID/status/result/RetainResult и дальнейшая import/consumption
+логика не меняются. Новую настройку/выдачу recovery не вызывает и не повторяет автоматически.
+
+Новые10 режимов: default-refusal/status-pending/cancel-retry/stop-copy/dispose-copy/
+owner-dispose/stop-between/cancel-command/cleanup-lock/result. Реальная production привязка
+и modal кнопка, реальный core/DPAPI/helper read/sharing/native subprocess tree; изолированы
+только copy transport и SSH executable. Fixture пропускает только status/result с исходным ID,
+отклоняет fresh setup и передачу token в аргументах. Проверяются UI heartbeat/single admission,
+удержание family lease, Cancel→Retry с неизменными journal/ID и честным running outcome,
+Stop между успешным status и result (result не запускается), Dispose/owner loss, native cancel,
+locked false→unlock true без replay, typed fault, protected credentials/sibling/unrelated process.
+Positive result проверяет два реальных native вывода и сохранение прежнего token в журнале;
+fixture отменяет локальный import до записи credentials/запуска туннеля, не подменяет приёмку ПК.
+Finally release/dispose own windows/processes и join operation/import/initial/snapshot/read/
+consumption/driver/Stop. Held5s/modal15s/cleanup5s/fixture-child5s; исходный native300s timeout
+не меняется, modal watchdog закрывает собственные waiting forms/cancel processes. Группа до
+terminal NativeRecovery; существующий harness уже компилирует файл, Main добавляет только
+маршрутизацию нового native fixture. Windows compilation/native10 NOT_RUN.
+
+PASS локально: full manual review/diff, syntax4/C#5 await-scope (не compilation), diff --check,
+public321/0, added secretPII0. Первичный email-pattern hit оказался synthetic SSH target
+документационного домена; проверен как не личные данные, сравнение выражено через fixture
+metadata, scanner не ослаблен, повторная проверка PASS0. Все68 service и41 wizard methods
+сохранены;26 old setup-test methods кроме Run и5 wizard-harness methods кроме Main неизменны.
+Другие tracked blobs равны631: repair/list/export UI methods/EOF/BOM/snapshot/dispatcher/
+ownership/cleanup/setup core/receipt/HTTPS/invitation/scripts/workflows/VERSION. Локально нет
+PowerShell/.NET Framework. Общий R09, fresh setup/другие Admin routes/installer/owner acceptance открыты.
+
+Публикация TODO: после финального secret/public/workflow scan один guarded PR88 update
+создаёт один automatic CI нового source; uploads OFF/release excluded. Main merge/release/
+бинарники/установка/VPS/credentials/network и личный внешний deployment не выполняются.
+Перед длительной операцией сохранена эта точка; после публикации записать source/merge/
+tree/run и STOP без ожидания всего CI/второго этапа. Следующая проверка того же run:
+recovery10 + list10/repair8/ownership8/cleanup4/API17/export14/full regression; после proof
+отдельный небольшой fresh-setup owned preparation срез, сейчас не начат.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: полный взвешенный критерий
+не закрыт, веса/методика/620 anchors прежние. Главный блокер — Windows proof нового recovery10;
+fresh setup/остальные Admin-маршруты и реальная приёмка остаются открыты.
+
+## История: этап read-only Admin list → owned worker на CI630
 
 Checkpoint `4ba3ade1699c50bcabdd5c5e0d9f356a2138982f` прочитан. При начале этапа актуальный PR88
 OPEN/DRAFT был на source `e8588af677b15f6d72a9543f22658ca7ccdc06a9`, tested merge `75a0e468986846e836f1f430454bc705eaaca5c7`.
