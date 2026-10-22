@@ -1,12 +1,437 @@
 # ProGo: единый реестр фактического состояния
 
-Обновлено22.10.2026 (МСК). Текущий опубликованный source `5f3420d72e5f8c8ac282af6ca7ac57db1d89534c`, tree `ddb95e7ed68f1cf1ad3f27130575f2a4c923df97`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
+Обновлено22.10.2026 (МСК). Текущий опубликованный source `37f02d2a0648fe2efebd7fc932b81668d26c44be`, tree `e6f261e2bdadc227eac3394dc83dc43e43294e05`; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
 
 23/31 и 6/55 — разные исторические области приёмки разработки. Эти исторические счётчики не складываются и не переводятся в процент готовности. Отдельная взвешенная оценка v1.0 приведена ниже. В 55 входят 43 результата до установщика и 12 зависимых приёмок. Шесть исторических Code/Dev PASS: F17-R02, F17-R03, F31-R01, F31-R02, F31-R03, F31-R04. Их полная перепроверка нового кандидата пока NOT_RUN. Верхнеуровневый PASS требует всех применимых слоёв.
 
 Слои каждого ID: реализация; реальный пользовательский маршрут; проверка/commit; интеграция; пакет; целевой ПК. Код находится в PR88, не в main. Общий финальный installer отсутствует, установка и приёмка на ПК владельца NOT_RUN. PARTIAL в таблице не отменяет прежний узкий PASS. FAIL обозначает подтверждённое нарушение критерия; BLOCKED — конкретную внешнюю зависимость.
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
+
+## CI598 завершён SUCCESS — exact source37f02 / merge16bf1
+
+[CI598/39711511948](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39711511948),
+Windows119603692452 и Ubuntu119603692348 SUCCESS. Build identity
+`0.2.2+16bf1e50b66baf1a724a0d2da642b2fe70bb3a46` совпадает. Source `37f02d2a0648fe2efebd7fc932b81668d26c44be`;
+matching local85f33/treee6f. Точный native regression full StopAll PASS в
+02:40:45.557 UTC: старый queued observer не поглощает новую physical stop operation.
+13 новых phone cases PASS:5 Context,3 service preparation/cleanup,3 wizard,
+2 relay lifecycle. Actual relay flow drain/EOF/ports tests PASS.
+
+Regression: recovery51/456; bounded43/report32/helper2/modal6/chooser3/
+diagnosticContext3/worker4/route6; signing55/UI50/prep72; Desktop5274/Instance28/
+Maintenance126/Shutdown47/HomeVPN1022/Portable90. Actual direct и owned-agent
+prepare→native OpenSSH→SOCKS→owned HTTP→child crash→fresh recovery PASS. Native
+startup direct1966/prep37ms, recovery1957/prep37,42; agent2064/prep139 и
+recovery2048/prep139,128. Это CI hardware, owner HDD/whole-app I/O NOT_RUN.
+Поздний Python28=26PASS2SKIP; SKIP не принят за native PASS.
+
+Runner ZIP0.2.2 SHA256 `576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b`.
+Все uploads SKIPPED: bytes не получены/не доставлены/не установлены. Private
+передача BLOCKED до согласования канала владельцем. Нельзя ссылаться на этот ZIP
+как на доступный installer. Release/main merge/owner PC/VPS действий не было.
+
+V1.0:28 parents weight87 с timestamp anchors в JSON; D0.5/P0.5/A0 дают21.75→22.
+Рост raw+11.25 к partial59710.50 подтверждён полными native/runner package,
+не13 написанными tests. I58–80 без изменения. F19/F27/F30/target acceptance0;
+full F31-R10/R11 остаются PARTIAL. Локальные repair144c616…fa48f29 и token guard
+a75df7b/7cc8159 НЕ входят в598, их Windows NOT_RUN/баллы0.
+
+Далее — isolated repair checking sourceb342 плюс эта evidence документация,
+проверка exact delta secrets/PII/workflow guards/tree и expected-head publication.
+Один новый run, не rerun598. Независимый import guard остаётся local отдельно.
+Ниже checkpoints сохранены как история; их in_progress/NOT_RUN отражали прежний
+момент, актуальный итог598 находится в этом разделе и ci_history JSON.
+
+## F31-R09 narrow import guard, local Windows NOT_RUN
+
+Source a75df7b9c62ef1638019886821ecce4b45b76d62 и fixture cleanup followup
+7cc8159629d2cc085c575fdd65687f136bceedb7. Подтверждён source defect: прежний
+UseToken вызывал void Stop, терял false actual cleanup и затем сохранял новый
+доступ поверх неочищенного session. Теперь требуется true physical StopAsync
+result ДО первого Save/Access/Owner replacement, иначе явный отказ с retry.
+
+В existing native FileShare.None cleanup fixture добавлен import другого owner:
+прежние Access/Owner references и access/owner DPAPI bytes должны остаться точно
+исходными, session ownership удерживается, новый relay/PID не появляется. Fixture
+держит Task импорта и после выхода из lock scope ждёт его в bounded finally до
+восстановления private test data. Source order/syntax/C#5 structure/public320/0/
+diff PASS. Windows compilation/native NOT_RUN, код только local и НЕ входит ни
+в598, ни в repair checkingb342. Синхронный UI import и multi-file persistence/
+owner cancellation всё ещё F31-R09 FAIL; полной готовности не объявляем.
+
+CI598 native relay step SUCCESS, public content step in_progress; итог/ZIP ещё
+не подтверждены. I58–80, verified11 exact597, прирост0. Далее final598 logs,
+потом отдельный repair checking publication; local import guard сохраняется.
+
+## Repair checking candidate готов локально, публикация ещё NOT_RUN
+
+Isolated local `b342dfc4c055de5b4e8e7d1733fdb39b0e65ada4`, tree
+`2b9640811e30ccfc5e79c26e767b50830aa5712c`, worktree ProGo-ci598-repair.
+На published matching85f33 включены только4 пути: Repair-ProGo.ps1,
+Test-ProGo.ps1, MaintenanceOperation.cs и новый RepairPayloadTests.ps1.
+4 files727 additions: secret/PII scan0; public320/0, modern C#syntax/targeted
+C#5 structure/diff PASS. Workflow/VERSION unchanged, upload guards4/4 intact.
+
+CI598 источник не меняется; repository build step уже SUCCESS, отдельный native
+relay step in_progress. Новые compilation/native repair NOT_RUN. После final
+jobs/log проверяется actual PR source37f02, затем candidate допускает одну новую
+CI публикацию с full-tree equality. Сборка/доставка бинарей, main merge/release
+не разрешались и не выполнялись. I58–80, verified11 exact597; баллы за подготовку0.
+
+## F22-R03 этап7 — recovery отказ/cleanup, local fa48f29d1fb1b74563b83e9b1b58988499bfe4ed
+
+Review выявил возможность пропустить Dispose lease/maintenance при ошибке
+удаления своего temporary file. Nested finally теперь освобождает оба owner
+независимо от этого отказа; snapshot/journal не объявляются завершёнными.
+Non-object journal и занятый обычным файлом stage path имеют явный отказ.
+Дополнены native vectors: string вместо bool, неправильный admission prefix,
+несогласованный phase, повреждённый old snapshot. Все9 refusal scenarios должны
+оставлять exact baseline установки/journal/snapshot bytes; реальное выполнение
+Windows пока NOT_RUN. Source cleanup/validation contracts/public320/0/diff PASS.
+
+Новые исходники остаются local, CI598 проверяет только source37f02/merge16bf1.
+I58–80, verified11(raw10.50 exact597), прирост0. Следующий этап — isolated repair
+checking tree, секреты/PII/diff/workflow guards, публикация только после завершения
+того же598. Full F22-R03/приёмка владельца остаются открытыми.
+
+## F22-R03 этап6 — explicit recovery, local source 017553607c1eac01f9eb382bb904c2f0a5a0818e
+
+Отдельный `Repair-ProGo.ps1 -Recover` восстанавливает только известные admitted
+runtime paths по проверенным snapshots. Schema1/32-hex GUID/41 canonical paths,
+порядок prefix admission, boolean/hash types, bounded64KiB journal и hash тех же
+прочитанных bytes проверяются до runtime writes. Lease защищает от второго owner;
+redirected stage/runtime paths запрещены, tree проверяется до descent. Foreign
+runtime или повреждённый old snapshot сохраняют journal/stage, не перезаписываются.
+
+Applying recovery использует hash-verified staged Maintenance helper и общий
+maintenance gate/application-stopped/proxy-cleanup checks. Original payload ему
+не нужен. Committed outcome только очищается, без rollback/self-check/launch;
+rolled-back cleanup допускает повторное завершение. Temporary atomic write files
+теперь внутри owned stage — killed writer не оставляет их рядом с private data.
+
+Добавлен Windows regression: настоящий repair parent принудительно завершается
+на barrier двух собственных native check processes; оба должны закончиться через
+kill-on-close job. Pending default repair/schema2/traversal/foreign runtime/repeat
+recovery дают явный отказ, exact installation snapshots неизменны. Затем payload
+удаляется и explicit recovery должен вернуть все исходные runtime/private bytes.
+Все child waits ограничены, cleanup касается только observed own process handles.
+Source contracts/public320/0/diff PASS; PS parser/C#5 shared helper/native repair
+NOT_RUN. Это не Windows PASS и не проверка power-loss durability/целевого ПК.
+
+Рабочее дерево после source commit чистое до этой checkpoint документации.
+CI598/39711511948 всё ещё Windows in_progress, Ubuntu SUCCESS; published source
+37f02d2a0648fe2efebd7fc932b81668d26c44be/merge16bf1e50b66baf1a724a0d2da642b2fe70bb3a46
+не менялся. Jobs Windows119603692452/Ubuntu119603692348; stale older job/pending
+fields в active JSON перенесены в historical checkpoint fields. Repair не входит
+в598. Следующий этап: review phase/conflict interruption boundaries, затем exact
+repair Windows candidate после завершения598. F22-R03 всё ещё открыт.
+I58–80, verified11/raw10.50 exact597, прирост0. Публикации/нового CI не было.
+
+## F22-R03 этап5 — durable admission journal, только local
+
+Repair пишет relative schema1/GUID journal: preparing, проверенный prepared,
+applying ДО каждой atomic OS replacement, committed только после actual
+self-check/повторных hashes, rolled-back перед cleanup. Новый record сначала
+Flush(true) в собственном temp, затем atomic move/replace; чужой transaction_id
+не перезаписывается. Pending journal запрещает новый repair до payload
+validation, установка не меняется повторно. В record нет secret/private values
+или прежних Windows absolute paths, только runtime names/hashes/состояния.
+
+При неподтверждённом durable cleanup snapshot/journal сохраняются, restored
+bytes не объявляются готовым приложением. Существующий negative native check
+наблюдает41 entries/41 admitted paths/phaseapplying/selfcheckfalse во время
+своих живых root+child; после обычного отказа ожидается точный rollback без
+journal residue. Source Flush/admission/order/guard/public320/0/diff PASS;
+PS parser/native NOT_RUN, не входит в598. Hard-kill/recovery ещё не выполнен.
+
+F22-R03 остаётся FAIL/partial local: явный recovery command со строгим schema/
+path/hash ownership ещё не реализован. Следующий этап — recovery и настоящий
+test termination родителя с его own job, затем malformed/foreign journal refusal
+и exact Windows. Recovery не будет повторять self-check/запуск автоматически.
+I58–80, verified11(exact597),0 баллов за написанный journal. CI598 в работе;
+новый head или дублирующий CI не создавались.
+
+## CI598 — exact physical StopAll fix опубликован, один run
+
+Source `37f02d2a0648fe2efebd7fc932b81668d26c44be`, merge candidate
+`16bf1e50b66baf1a724a0d2da642b2fe70bb3a46`, tree
+`e6f261e2bdadc227eac3394dc83dc43e43294e05` = local
+`85f33fdcae96df1231cfeb91af692eb7ad40f97e`.
+[CI598/39711511948](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39711511948)
+in_progress, new compilation/native NOT_RUN. Scan2files76additions0 secrets/
+PII/public319/0/syntax/C#5structure/diff/full tree PASS. Expected-head lease
+подтверждён, PR88 OPEN/DRAFT updated; workflows/VERSION unchanged, uploads OFF.
+Repair stages144c616/5157f78/46fdd45/9d88165 excluded, их Windows NOT_RUN.
+
+I58–80, verified11/raw10.50 принадлежит exact597 partial native, не598. Ни5
+новых Context cases, ни написанный regression не дают отдельных parent баллов.
+Public release/binary upload/main merge/owner PC/VPS/system settings не делались.
+После обрыва проверить этот же598/actual PR head, не повторять push/CI. Далее
+independent durable repair journal (до каждой atomic runtime записи), затем
+восстановление/interrupt regression отдельным local этапом. Blocker full StopAll
+остаётся до exact Windows; full F31-R10/R11 не закрыт.
+
+## CI597 scoped native PASS, full StopAll FAIL — exact identity fix pending
+
+Source `b1fad3c6a6804ab6055b146b5cf284f5136d4288`, tested merge
+`699b50ee7db44cc6ec851d7fcc36069fa574611a`, run39708048332 FAILURE;
+Windows119592612485/Ubuntu119592612681 FAILURE/SUCCESS. Actual build identity
+matched. C#5 fix и main/Core/Desktop compilation PASS; later Home harness
+compilation/native NOT_RUN. Native51/456/bounded43/report32/helper2/modal6/
+chooser3/diagnosticContext3/logger+worker4/routes6 и5 новых phone Context PASS.
+Settings budget phone shutdown действительно3s, не250ms:250ms был только
+backup budget fixture (прежнее описание уточнено). Native log02:03:28→31.
+
+В02:04:09 CheckStopScopes full-stop assertion FAIL. Подтверждённый user defect:
+StopPhoneAsync объединял запросы по незавершённому UI observation, хотя его
+физический Stop уже завершился и channel был заново запущен. StopAll возвращал
+прежний task и не запускал остановку нового channel. Новый isolated candidate
+сначала резервирует physical Home.StopAsync и объединяет UI observers только
+для того же самого Task; stale callback не стирает новое состояние.
+
+Isolated local85f33fdcae96df1231cfeb91af692eb7ad40f97e (первый local93ec714),
+treee6f261e2bdadc227eac3394dc83dc43e43294e05 = GitHub object
+37f02d2a0648fe2efebd7fc932b81668d26c44be. Earlier object2c7fee создан, но ref
+не обновлялся; superseded only. Regression явно держит очередь UI: physical
+cleanup awaited без pump, свежий real loopback relay, новая stop identity,
+confirmed stop обоих каналов/нет timer revival. Fixture peer/startup/cleanup
+ограничены5s и освобождают только свои sockets/session, проверки не отключены.
+Syntax/target C#5 structural/public319/0/diff/tree PASS;2files76additions
+secret/PII0, workflows/VERSION unchanged. New Windows compilation/native NOT_RUN.
+Следующий шаг expectedb1fad→37f02 после проверки head; не rerun597. All repair
+blocks до9d88165 excluded, source импортируется без потери local repair work.
+
+V1.0 exact59719 timestamp-traced parents weight70×D0.5×30%=raw10.50→11;
+P/A0, later full Desktop/selected-key combined/Home/relay/ZIP NOT_RUN. +10.50 к
+compile-only596 отражает выполненные native критерии, не written tests. Новые
+5 Context cases не дают отдельных дополнительных parent баллов. Historical
+59522 сохранён только для его source/merge/package. I58–80 unchanged;
+полная готовность F31-R10/R11 не объявляется.
+
+## F22-R03 этап4 — actual installed self-check before commit, local NOT_RUN
+
+Repair участвует в общем Maintenance gate и требует остановленное приложение/
+завершённую proxy cleanup до target writes. Actual installed EXE --self-check
+выполняется до committed/success/launch. Ему выделен fresh LOCALAPPDATA внутри
+owned stage: smoke-check не мигрирует и не переписывает настоящие profiles/
+settings/vault. Это не приёмка реального профиля/ПК. После child exit повторно
+сверяются все runtime hashes; отказ вызывает прежний conditional rollback.
+
+Shared MaintenanceOperation получил opt-in RunOwnedSelfCheck: suspended child
+помещён в kill-on-close Job до исполнения, root wait8s, tree cleanup3s. При
+смерти PowerShell owner kernel закрывает только этот job. Default accepted
+handoff/старые cleanup budgets не менялись. Fresh prepared helper API требуется;
+old-loaded-API transition не принят. Старые missing/locked-copy tests10s
+сохранены; новый self-check budget20s обоснован8+3+staging/PS startup, не retry
+ради зелёного результата.
+
+Positive case использует настоящий built ProGo. Negative native PE создаёт
+своего child и зависает; PID marker публикуется атомарно, parent наблюдает
+проверенные process handles, ожидает failed result, оба exited и полный byte
+rollback. Это failure/cleanup fixture, не подмена functional application test.
+C#syntax/public320/0/self-check-before-commit/diff PASS; target C#5 compiler,
+PS parser/native NOT_RUN, не входят в597. F22-R03 остаётся открытым: durable
+interruption journal и exact Windows regression ещё отсутствуют.
+
+CI597 теперь completed FAILURE в существующем full Stop scope после5 новых
+Context scoped PASS; exact log сохранён, причина разбирается отдельно. Этот
+repair block фиксируется независимо до переключения на изолированный StopAll
+fix. I58–80, verified0(last evaluated596), новых баллов за repair0;597 evidence
+будет оценено только с exact native anchors, не по написанным тестам.
+
+## F22-R03 этап3 — owned atomic runtime rollback, local NOT_RUN
+
+Repair резервирует per-install exclusive file lease, до первой замены готовит
+проверенные snapshots старых и новых41 leaves. Каждый file commit атомарный
+через собственный verified temp; путь записан как applied до OS call. При
+ошибке rollback меняет только байты, совпавшие с этим кандидатом, либо видит
+неизменённый baseline. Чужое изменение/неподтверждённый путь не перезаписывается:
+owned snapshot сохраняется и выдаётся явная ошибка incomplete rollback.
+Target links не используются для перенаправления владения на внешние файлы.
+Свои temp files/lease и пустые созданные directories очищаются; existing
+private/unknown файлы вне runtime list. Literal .NET directory creation
+сохраняет корректность путей с пробелами/brackets.
+
+Native regression удерживает VERSION FileShare.Read (чтение snapshot разрешено,
+atomic replacement запрещён) после первой замены ProGo.exe. Проверяет failed
+exit, возврат всего исходного runtime/private hash tree и отсутствие residues;
+child10s/output+cleanup3s, NoLaunch, только свои процессы/папки. Source atomic/
+ownership/order/public320/0/diff PASS, PS parser/native NOT_RUN. Не входит в597.
+
+F22-R03 всё ещё FAIL: self-check перед success/launch и durable interruption
+journal ещё не реализованы. Snapshot при конфликте не считается восстановленной
+установкой. Следующий этап self-check/failure regression, затем journal/recovery.
+I58–80, current verified0(compile-failed596), прирост0; historical59522 сохранён.
+CI597 в работе, новый head/дублирующий CI не запускались.
+
+## CI597 — C#5 fix опубликован, один exact-SHA run
+
+Source `b1fad3c6a6804ab6055b146b5cf284f5136d4288`, merge candidate
+`699b50ee7db44cc6ec851d7fcc36069fa574611a`, tree
+`ca320af4f5a6df1b556101a56c0b7e011eddc018` = local
+`272c42697ba7f0928626de2a11bcef6d114d913a`.
+[CI597/39708048332](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39708048332)
+in_progress; new Windows compilation/native NOT_RUN. Expected-head lease
+подтверждён, PR88 OPEN/DRAFT updated. One-file scan29 additions0 secrets/PII,
+syntax/targeted C#5 structural/public319/0/diff/tree PASS; workflows/VERSION
+unchanged, public uploads OFF. No native test disabled or deadline increased.
+
+Repair144c616/5157f78 и последующие local blocks исключены. Source596 native
+NOT_RUN не подменяется историческим595 SUCCESS22. Current verified0 относится
+к compile-failed596, I58–80 unchanged,597 ещё0 новых баллов. После обрыва читать
+этот run/head, не повторять push/CI. Далее independent repair runtime rollback,
+затем self-check и interruption recovery отдельными этапами. Public release/
+binary upload/main merge/целевой ПК/VPS/system settings не выполнялись.
+
+## CI596 compilation FAIL — C#5 compatibility fix готов, ref PENDING
+
+Source654551f80feb485c1ca1f7889797d0cf362c0cf4 / merge3f67193a277574e128a8b06cb1a4ac502d873440,
+[CI596/39707142123](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39707142123)
+FAILURE. Windows119589733115 CS1985 at Ikev2RelayService.cs:116, symbol
+StartOwnedAsync: установленный Framework C#5 compiler запрещает await в catch.
+Ubuntu119589732810 SUCCESS. Native13 phone cases/relay regression/ZIP NOT_RUN,
+uploads SKIPPED. Современный syntax parser этого target limitation не ловил;
+его PASS не выдавался за compilation. Подтверждённый source defect, не flake.
+
+Isolated local272c42697ba7f0928626de2a11bcef6d114d913a / tree
+ca320af4f5a6df1b556101a56c0b7e011eddc018 = GitHub object
+b1fad3c6a6804ab6055b146b5cf284f5136d4288. Catch лишь фиксирует exception;
+await cleanup после него остаётся внутри outer CTS lifetime/finally. Прежняя
+классификация cancel/cleanup failure, все tests/deadlines сохранены. Syntax и
+целевой structural scan C#5 catch/finally/lock await во всех11 C# files PASS;
+это ещё не target compiler. Scan1file29additions0 secrets/PII/public319/0/
+diff/full tree equality PASS; workflows/VERSION unchanged. Windows fix NOT_RUN.
+
+До публикации проверить actualhead PR88; один expected654551→b1fad без force,
+новый SHA CI. Не rerun596. Local repair144c616/5157f78 исключён, импорт fix в
+root не стирает его. Текущая exact596 verification0/100(raw0): native/P/A не
+достигнуты; это не FAIL всех функций. Historical59522/raw21.75 сохранён только
+для5f342/a285. I58–80 unchanged, прирост за code fix0. Главный blocker — exact
+Windows compilation и все новые phone/relay cases после target-compatible fix.
+
+## F22-R03 этап2 — полный single-payload runtime copy, local NOT_RUN
+
+Repair больше не смешивает script files из PSScriptRoot с payload и не
+пропускает отсутствующие компоненты. Сначала фиксирует SHA256 всех41 runtime
+leaves, затем копирует только эти известные пути, сверяет каждый destination
+и повторно весь набор. Включены ранее пропускаемые Install helper,2 update CS
+и9 home-vpn resources. Settings/vault/keys/profiles/backups/unknown files не
+входят в copy list. Окончание называется runtime restored+verified, не Repair OK.
+
+Положительный native child case берёт настоящий Build payload, NoLaunch,
+сверяет каждый built file и прежние private bytes. Сохранились4 negative
+preflight cases; child10s/output+cleanup3s, только свои процессы/папки.
+Static single-source/hash-order/41 parity/public320/0/diff PASS; PS parser/
+native NOT_RUN, не входят в596 или phone654551. Native test counts пока0 PASS.
+
+Это ещё не готовый repair: rollback при отказе посреди копирования и self-check
+перед success/launch отсутствуют. F22-R03 остаётся FAIL до следующих блоков и
+exact Windows. Следующая отдельная микрозадача — transaction/self-check и
+failure regression, затем interruption recovery. I58–80, verified22(exact595),
+прирост0 за этот local source. Основной596 продолжает только phone/relay scope.
+
+## CI596 — phone/relay checking source опубликован, один run
+
+Source `654551f80feb485c1ca1f7889797d0cf362c0cf4`, merge candidate
+`3f67193a277574e128a8b06cb1a4ac502d873440`, tree
+`daf59cf31a82ad253a9914f9b17fae8b6bf53034` = local
+`3d3301a5f95ddfcb5ad60af5555a6de7ae1025b1`.
+[CI596/39707142123](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39707142123)
+in_progress; новые phone/relay Windows compilation/native NOT_RUN. Scan exact
+16paths1835additions0 secrets/PII/full tree equality PASS, workflows/VERSION
+unchanged, uploads guards подтверждены предыдущим595 SKIPPED. Expected-head
+без force успешно проверен, PR88 OPEN/DRAFT updated. Root repair144c616 НЕ
+входит в checking source, его Windows parser/native NOT_RUN.
+
+Score22/raw21.75 принадлежит exact595 source5f342/mergea285, не596. Будущий
+результат596 не распространять на repair, который продолжается независимо.
+При восстановлении проверить PRhead и тот же run596, повтор push/CI не делать.
+Следующий шаг: exact596 logs; пока он идёт full repair copy/verification,
+transaction/self-check отдельными local commits. Release/binary upload/main
+merge/ПК владельца/VPS/system settings не выполнялись. I58–80, прирост за push0.
+
+## CI595 completed SUCCESS — exact R08 и selected-key pipeline proof
+
+Source `5f3420d72e5f8c8ac282af6ca7ac57db1d89534c`, tested merge
+`a2851df351a8ef86c7965761821f64a66c2dd960`, local matching tree
+`ddb95e7ed68f1cf1ad3f27130575f2a4c923df97`.
+[CI595/39704288681](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39704288681):
+Windows119580544561/Ubuntu119580545361 SUCCESS, identity0.2.2+merge matched.
+Exact Windows log прочитан: bounded43/report32/helper2,6 modal Cancel→Retry,
+3 chooser/3 diagnostic Context,4 open workers/6 actual viewer routes, actual
+SafeLog worker+3 epoch assertions+2 owner shutdown/Dispose cases PASS. Missing
+fixture epoch fix native producer/entry/heartbeat/redaction/file PASS, all
+later suites completed. Full R08 не закрыт: PS updater cold/helper/viewer I/O,
+old-loaded-API transition и owner slow hardware/DPI/Narrator ещё открыты.
+
+Fresh selected-key evidence: signing55/UI50/aggregate72/recovery51/456 PASS;
+настоящие direct и owned-agent local preparation→OpenSSH→SOCKS→owned HTTP→
+автоматический recovery PASS. Isolated metrics direct startup1954/prep33ms,
+recovery1947/prep33,34ms; agent startup2012/prep90ms, recovery2007/prep90,93ms.
+Own SSH CPU31.25/15.625ms, RAM~11MB, whole app I/O/owner ПК/VPS NOT_RUN.
+Desktop5240/Instance28/Maintenance126/Shutdown47/HomeVPN976/Portable90 PASS.
+Prepared native SSH server contracts5 и later relay Python28 (26PASS/2SKIP)
+реально выполнены; discovery fix не отключил SSH cases и не требует ambient
+Paramiko. NOT_RUN/skipped не включены как PASS.
+
+Runner ZIP0.2.2 SHA256
+`f1ba5b17e02d4cc0a36b8265851748b1b2529c4dee228b4279cd5ba5c7e5b27b`.
+Uploads SKIPPED, bytes не получены/не переданы/не установлены. Private delivery
+BLOCKED до согласованного владельцем канала; binary upload/release запрещены.
+V1.0 unchanged:28 parents weight87,D0.5/P0.5/A0 =>raw21.75→22. +11.25 raw к594
+из реально выполненных дополнительных native критериев и runner ZIP, не из
+числа коммитов. Все28 timestamp anchors в JSON. I58–80 unchanged.
+
+Phone object654551/source3d3301a и repair144c616 НЕ входят в595, их Windows
+compilation/native NOT_RUN. Следующий шаг — проверить PR88 actualhead и один
+expected5f342→654551 без force, новый exact checking SHA/merge/run. Source scan
+16paths1835additions0 secrets/PII/full tree PASS; workflows/VERSION unchanged.
+Repair остаётся независимым local block, не добавлять его в phone tree.
+
+## F22-R03 этап1 — repair payload preflight, только local
+
+Repair принимает опциональный PayloadDirectory готового payload (default source
+repo/release сохранён). До любого New-Item/копирования в installation проверяет
+41 обязательный непустой file. Native exe/helpers/home-vpn отсутствующий или
+пустой компонент даёт явный отказ с relative names, не «Repair OK».
+Состав статически совпал с независимыми Build outputs:3 root+17PS+12CS+9Home.
+Это presence/length preflight, не signature/whole repair proof.
+
+4 новых negative Windows child cases берут настоящий built payload и удаляют
+exe/InstalledUpdateTransport.cs/home-vpn profile_share.py либо обнуляют updater.
+Только собственный LOCALAPPDATA fixture, hash каждого private fixture file и
+отсутствие нового scripts dir после отказа; NoLaunch. Process10s/output3s,
+finally kill только созданного child при timeout и cleanup streams3s; timeout
+не превращается в PASS. Suite явно wired после Build. PS testASCII и main BOM
+сохранены. Source41 parity/order/public320/0/diff PASS; PS parser/native NOT_RUN.
+Не входят в running595 или prepared phone object654551.
+
+F22-R03 остаётся FAIL: legacy copy ещё неполон/mixed-source, self-check и
+transaction rollback отсутствуют. Следующий отдельный блок — полный prepared
+runtime copy+verification; затем transaction/self-check. Никакой установки на
+ПК владельца, launch/release/upload не выполнялось. Score11(exact594), I58–80,
+прирост0. CI595 repository build уже SUCCESS по jobs, relay in_progress;
+точный полный log/итог/ZIP ещё не проверены, не объявлять полный SUCCESS.
+
+## Phone checking object подготовлен — публикация PENDING completion595
+
+Fixed local `3d3301a5f95ddfcb5ad60af5555a6de7ae1025b1`, GitHub object
+`654551f80feb485c1ca1f7889797d0cf362c0cf4`, одинаковый полный tree
+`daf59cf31a82ad253a9914f9b17fae8b6bf53034`. 16 paths/1835 additions,
+secret/PII findings0; public319/0, diff/JSON/syntax11/wiring PASS. Canonical
+committed blobs прочитаны полностью, GitHub full tree equality подтверждён;
+GitHub commit metadata отличается от local SHA, это не разные runtime bytes.
+Workflows/VERSION unchanged, public binary uploads OFF. Новый code Windows
+compilation/native NOT_RUN, не входит в595 и не получает его будущий SUCCESS.
+
+Branch пока5f3420d7, единственный CI595/39704288681 in_progress. После обрыва
+сначала проверить этот run и PR88 head. Только после установленного completion
+и exact logs один expected-head5f342→654551 без force, новый actual merge/run.
+Старый595 не перезапускать и не отменять head update заранее. Если595 FAIL,
+его причина приоритетнее публикации phone: fix держать изолированно, object
+не обновлять вслепую (parent lease проверяется). Исходники/commits сохранены,
+ничего не удалено/не откатано. Score11 принадлежит594, прирост за object0.
 
 ## Phone/relay final checking review —11 C# syntax PASS, native NOT_RUN
 

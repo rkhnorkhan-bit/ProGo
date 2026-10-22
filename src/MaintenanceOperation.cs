@@ -197,6 +197,21 @@ namespace ProGo
                 }
             }
         }
+        // Repair smoke checks never detach. Kill-on-close contains the entire
+        // tree even if its PowerShell owner is terminated before a finally runs.
+        public static int RunOwnedSelfCheck(ProcessStartInfo info, int timeoutMilliseconds)
+        {
+            if (info.UseShellExecute) throw new ArgumentException("Self-check requires a child environment.");
+            if (timeoutMilliseconds < 1 || timeoutMilliseconds > 30000) throw new ArgumentOutOfRangeException("timeoutMilliseconds");
+            using (var process = new OwnedHandoffProcess(info, true)) {
+                var deadline = Stopwatch.StartNew();
+                while (deadline.ElapsedMilliseconds < timeoutMilliseconds) {
+                    if (process.HasExited) return process.ExitCode;
+                    Thread.Sleep(20);
+                }
+                throw new TimeoutException("Repair self-check exceeded its bounded wait.");
+            }
+        }
         // Kept in this standalone installed source: maintenance scripts compile
         // it without application dependencies. No child code runs before job
         // containment. Accepted helpers are detached; pending trees are settled.
@@ -204,8 +219,11 @@ namespace ProGo
         {
             private SafeFileHandle job, process, thread;
             private bool assigned, accepted;
-            internal OwnedHandoffProcess(ProcessStartInfo info)
+            private readonly bool boundedCleanup;
+            internal OwnedHandoffProcess(ProcessStartInfo info) : this(info, false) { }
+            internal OwnedHandoffProcess(ProcessStartInfo info, bool boundedCleanup)
             {
+                this.boundedCleanup = boundedCleanup;
                 IntPtr environment = IntPtr.Zero;
                 try {
                     job = CreateJobObject(IntPtr.Zero, null);
@@ -213,6 +231,7 @@ namespace ProGo
                     // No breakaway. Explicit confirmed cleanup is required before
                     // closing this handle; accepted helpers must survive app exit.
                     var limits = new ExtendedLimits();
+                    if (boundedCleanup) limits.Basic.LimitFlags = 0x2000; // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
                     Native(SetInformationJobObject(job, 9, ref limits, Marshal.SizeOf(typeof(ExtendedLimits))));
                     var names = new List<string>(); foreach (DictionaryEntry pair in info.EnvironmentVariables) names.Add((string)pair.Key);
                     names.Sort(StringComparer.OrdinalIgnoreCase);
@@ -234,6 +253,9 @@ namespace ProGo
                 get { uint wait = WaitForSingleObject(process, 0); if (wait == 0) return true;
                     if (wait != 258) throw new Win32Exception(Marshal.GetLastWin32Error()); return false; }
             }
+            internal int ExitCode {
+                get { uint code; Native(GetExitCodeProcess(process, out code)); return unchecked((int)code); }
+            }
             internal void Accept()
             {
                 accepted = true;
@@ -241,10 +263,12 @@ namespace ProGo
             internal void StopAndSettle()
             {
                 if (process == null || accepted) return;
+                var deadline = boundedCleanup ? Stopwatch.StartNew() : null;
                 if (!assigned) {
                     while (true) {
                         TerminateProcess(process, 1);
                         if (WaitForSingleObject(process, 100) == 0) break;
+                        if (deadline != null && deadline.ElapsedMilliseconds >= 3000) throw new TimeoutException("Owned self-check root cleanup did not settle.");
                         Thread.Sleep(100);
                     }
                     return;
@@ -255,6 +279,7 @@ namespace ProGo
                     TerminateJobObject(job, 1);
                     Accounting state; uint returned;
                     if (QueryInformationJobObject(job, 1, out state, Marshal.SizeOf(typeof(Accounting)), out returned) && state.ActiveProcesses == 0) break;
+                    if (deadline != null && deadline.ElapsedMilliseconds >= 3000) throw new TimeoutException("Owned self-check tree cleanup did not settle.");
                     Thread.Sleep(100);
                 }
             }
@@ -283,6 +308,7 @@ namespace ProGo
             [DllImport("kernel32.dll", SetLastError = true)] private static extern bool QueryInformationJobObject(SafeFileHandle job, int type, out Accounting info, int size, out uint returned);
             [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern uint SearchPath(string path, string file, string extension, int size, StringBuilder buffer, IntPtr part);
             [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool CreateProcess(string app, StringBuilder command, IntPtr processSecurity, IntPtr threadSecurity, bool inherit, uint flags, IntPtr environment, string directory, ref Startup startup, out ProcessInfo child);
+            [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GetExitCodeProcess(SafeFileHandle process, out uint code);
             [DllImport("kernel32.dll", SetLastError = true)] private static extern uint ResumeThread(SafeFileHandle thread);
             [DllImport("kernel32.dll", SetLastError = true)] private static extern uint WaitForSingleObject(SafeFileHandle process, uint milliseconds);
             [DllImport("kernel32.dll", SetLastError = true)] private static extern bool TerminateProcess(SafeFileHandle process, uint code);

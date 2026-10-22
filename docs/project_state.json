@@ -34,7 +34,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Миграции, один запрос CLI, on/off и итоговые переменные окружения."
+        "criterion": "Миграции, один запрос CLI, on/off и итоговые переменные окружения.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:37:32.1667797Z PASS: CLI migration preserves unrelated preferences 0",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -55,7 +65,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Временный/постоянный отказ, ручная отмена, успешный повтор без перезапуска."
+        "criterion": "Временный/постоянный отказ, ручная отмена, успешный повтор без перезапуска.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:32:23.7375192Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -76,7 +96,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Одновременный запуск, авария owner, handoff, update/restore/install без параллельной записи."
+        "criterion": "Одновременный запуск, авария owner, handoff, update/restore/install без параллельной записи.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:46:44.9673590Z PASS: restarted application retains single-instance ownership after handoff",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -97,7 +127,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Чужой listener, silent SOCKS, egress, NO_PROXY, устаревшие данные и частичный CLI."
+        "criterion": "Чужой listener, silent SOCKS, egress, NO_PROXY, устаревшие данные и частичный CLI.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:31:06.6558921Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -118,7 +158,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Задержка старта, отказ ключа, один клик CLI, отмена, host trust; настоящий VPS позже."
+        "criterion": "Задержка старта, отказ ключа, один клик CLI, отмена, host trust; настоящий VPS позже.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:44:44.7445524Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -140,7 +190,17 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Типы/отсутствие значений, чужие правки, denied write, повтор очистки, uninstall и installer.",
-        "codex_shortcut_ownership": "PASS scoped67 in CI586 at source656b3d65 / merge7e204c76; whole ID PARTIAL; local diff NOT_RUN"
+        "codex_shortcut_ownership": "PASS scoped67 in CI586 at source656b3d65 / merge7e204c76; whole ID PARTIAL; local diff NOT_RUN",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:37:42.6885508Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -161,7 +221,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Preview/Cancel, изменившийся manifest, baseline/pre-update, новая копия и junction."
+        "criterion": "Preview/Cancel, изменившийся manifest, baseline/pre-update, новая копия и junction.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:35:42.2457218Z Backup retention tests PASS: 29",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -182,7 +252,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Отмена без UI pump, точная owned cleanup, locked files, tamper, rollback и сохранение личных данных."
+        "criterion": "Отмена без UI pump, точная owned cleanup, locked files, tamper, rollback и сохранение личных данных.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:38:00.2346861Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -203,7 +283,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Все типы PIN, повтор/другой код, restart, полночь, смена часов, I/O и атомарные Add/Edit/Delete."
+        "criterion": "Все типы PIN, повтор/другой код, restart, полночь, смена часов, I/O и атомарные Add/Edit/Delete.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:28:19.1609351Z PASS: wrong-pin read leaves source bytes and file set unchanged",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -224,7 +314,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "CLI/Windows/scoped отдельно, последний consumer, Shutdown(Send), нагрузка, Stop и ошибки cleanup."
+        "criterion": "CLI/Windows/scoped отдельно, последний consumer, Shutdown(Send), нагрузка, Stop и ошибки cleanup.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:37:32.0977321Z PASS: Windows uses tested HTTP/CONNECT bridge",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -245,7 +345,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Главное окно, трей, настройки, закрытие диалогов, симметричные on/off."
+        "criterion": "Главное окно, трей, настройки, закрытие диалогов, симметричные on/off.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:37:34.4330753Z PASS: real tray command dispatches its expected dialog: Settings",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -266,7 +376,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Stop во время Connect, независимость каналов, Quit и подтверждённое завершение."
+        "criterion": "Stop во время Connect, независимость каналов, Quit и подтверждённое завершение.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:38:04.5371763Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -287,7 +407,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Первый/повторный запуск, закрытие окна, timeout и старый ответ."
+        "criterion": "Первый/повторный запуск, закрытие окна, timeout и старый ответ.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:45:13.3644203Z PASS: Escape closes the actual modal route dialog while measurements run",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -308,7 +438,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Heartbeat UI, медленная сеть, отмена/timeout, отсутствие поздних изменений."
+        "criterion": "Heartbeat UI, медленная сеть, отмена/timeout, отсутствие поздних изменений.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:45:12.5922925Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -330,7 +470,17 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Память/диск согласованы; Save/Cancel, ошибка поля, конкурентные изменения.",
-        "settings_initial_load_preservation": "PASS scoped93 in CI586 at source656b3d65 / merge7e204c76; historical CI584 retained in ci_history; whole ID PARTIAL; local diff NOT_RUN"
+        "settings_initial_load_preservation": "PASS scoped93 in CI586 at source656b3d65 / merge7e204c76; historical CI584 retained in ci_history; whole ID PARTIAL; local diff NOT_RUN",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:37:41.0783563Z Settings initial-load preservation checks PASS: 93",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -351,7 +501,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Настоящие Windows DPI 100/125/150/200%, 1366×768, длинный текст, доступные главные действия."
+        "criterion": "Настоящие Windows DPI 100/125/150/200%, 1366×768, длинный текст, доступные главные действия.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:39:28.0301040Z PASS: scaled cleanup list and actions do not overlap",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -372,7 +532,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Tab/Shift+Tab/Enter/Esc, Narrator и High Contrast в среде разработки; недоступную среду отметить."
+        "criterion": "Tab/Shift+Tab/Enter/Esc, Narrator и High Contrast в среде разработки; недоступную среду отметить.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:45:13.1686890Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -393,7 +563,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Выдача/отзыв/повтор не дают ложный installed; реальная установка проверяется позже."
+        "criterion": "Выдача/отзыв/повтор не дают ложный installed; реальная установка проверяется позже.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:43:15.9989063Z PASS: wizard accessible issuance result never claims installation",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -435,7 +615,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Отзыв только выбранного доступа, исходный ID запроса, отмена списка, повтор/ошибка API."
+        "criterion": "Отзыв только выбранного доступа, исходный ID запроса, отмена списка, повтор/ошибка API.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:43:18.8434124Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -456,7 +646,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Busy clipboard, таймер, закрытие/выход, чужая замена и пустой secret без ложного «скопировано»."
+        "criterion": "Busy clipboard, таймер, закрытие/выход, чужая замена и пустой secret без ложного «скопировано».",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:49:41.1022798Z PASS: secret copy writes current clipboard",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -478,7 +678,17 @@
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
         "criterion": "Tamper/path/reparse/cancel, чистая установка и другой Windows-пользователь; обычный rollback сохраняет данные.",
-        "settings_initial_load_preservation": "PASS scoped93 in CI586 at source656b3d65 / merge7e204c76; historical CI584 retained in ci_history; whole ID PARTIAL; local diff NOT_RUN"
+        "settings_initial_load_preservation": "PASS scoped93 in CI586 at source656b3d65 / merge7e204c76; historical CI584 retained in ci_history; whole ID PARTIAL; local diff NOT_RUN",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:53:50.0811195Z PASS: a new real HomeVpnService loads clean imported data without activating SSH or relay",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -499,7 +709,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag."
+        "criterion": "Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:49:38.0614726Z Updater package tests PASS: 5",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -520,7 +740,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "UI/документы/пакеты совпадают; понятные Windows/CLI/Android/iPhone сценарии без личных примеров."
+        "criterion": "UI/документы/пакеты совпадают; понятные Windows/CLI/Android/iPhone сценарии без личных примеров.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:41:56.6255921Z PASS: help Начало 820 exposes a focusable read-only instruction pane",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -541,7 +771,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Пределы журнала, отчёт до отправки, ошибки чтения, отсутствие секретов и блокировки запуска."
+        "criterion": "Пределы журнала, отчёт до отправки, ошибки чтения, отсутствие секретов и блокировки запуска.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:37:36.4633983Z PASS: real tray command dispatches its expected dialog: Diagnostics",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -562,7 +802,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Комбинации настроек в dev Windows; фактический вход владельца - после установки."
+        "criterion": "Комбинации настроек в dev Windows; фактический вход владельца - после установки.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:35:38.7684407Z PASS: startup runs quietly without changing SSH preferences",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -604,7 +854,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Нет неописанных handlers; отдельно scenarios/assertions, FAIL/SKIP/NOT_CHECKED и общий результат."
+        "criterion": "Нет неописанных handlers; отдельно scenarios/assertions, FAIL/SKIP/NOT_CHECKED и общий результат.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:40:10.1534582Z PASS: every typed command has one unique round-trippable compatibility ID: Connect",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -625,7 +885,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Native screenshots общей сборки, 16/24 px на разных фонах, читаемость и геометрия."
+        "criterion": "Native screenshots общей сборки, 16/24 px на разных фонах, читаемость и геометрия.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:44:02.6174664Z PASS: built icon has a valid Windows ICO header",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -667,7 +937,17 @@
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
         "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
-        "criterion": "Dev service/key/ACL/cancel/ownership и slow disk/network fixtures, latency/CPU/I/O; фактический encrypted agent, другой ПК/VPS и Rescue замеры — после установки."
+        "criterion": "Dev service/key/ACL/cancel/ownership и slow disk/network fixtures, latency/CPU/I/O; фактический encrypted agent, другой ПК/VPS и Rescue замеры — после установки.",
+        "current_scoped_native": {
+          "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+          "merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+          "run_id": 39711511948,
+          "anchor": "2026-10-22T02:44:47.3789813Z SSH advisory authentication preparation checks PASS: 72",
+          "D": 0.5,
+          "P": 0.5,
+          "A": 0,
+          "package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
+        }
       },
       "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
       "package": "NOT_RUN: final setup absent",
@@ -1054,13 +1334,13 @@
       "phase": "До",
       "requirement": "Полный runtime repair",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F22-R03)",
-      "implementation": "BackupService; HomeVpnPortableTransfer; Repair-ProGo.ps1",
+      "implementation": "Local full41 repair, conditional atomic rollback, contained actual self-check, flushed admission journal and explicit validated recovery; Windows NOT_RUN",
       "history": "Открытый дефект",
       "status": "FAIL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
+        "candidate": "Local sourcefa48f29 / isolatedb342 tree2b964; source contracts/syntax/public/diff PASS only; Windows parser/compiler/native NOT_RUN, excluded598",
         "historical_scoped_pass": false,
         "criterion": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
@@ -1070,7 +1350,7 @@
       "target": "NOT_RUN",
       "remaining": "Из проверенного готового payload восстановить обязательные helpers/home-vpn и весь runtime; self-check проходит, личные данные сохранены, отсутствующие обязательные компоненты дают ошибку.",
       "dependencies": [],
-      "next_step": "Shared runtime inventory/payload validation then owned transactional repair; do not merely add current minimal self-check"
+      "next_step": "Prepare isolated repair source after CI598 completion; first verify full source diff, secrets/PII and unchanged workflow upload guards"
     },
     {
       "id": "F22-R04",
@@ -1857,14 +2137,14 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
+        "candidate": "CI598 exact source37f02/merge16bf1 scoped native PASS bounded43/report32/helper2/modal6/chooser3/context3/worker4/route6; remaining PS updater cold I/O, old-loaded API and owner hardware open",
         "historical_scoped_pass": false,
         "criterion": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
         "diagnostic_preview_scoped": "CI588 sourceb32ac4ece5cd62b98eab22b7e65aaa079544e5bf / mergee1039ddd046528fc75b9d46897e6924f597768d5 report32/helper2/modal4/chooser3/Context3 PASS; remaining SafeLog/open/cold-helper UI I/O still FAIL source contract, owner latency NOT_RUN",
         "log_open_candidate": "Local4 worker/2 actual route fixtures, compilation/native NOT_RUN; not in CI590 source8487594e"
       },
-      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
+      "integration": "PR88 OPEN/DRAFT unmerged; source37f02d2a0648fe2efebd7fc932b81668d26c44be CI598 SUCCESS exact merge16bf1e50b66baf1a724a0d2da642b2fe70bb3a46; local repair/import guard excluded; no target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Build/read/write/open и остаточный UI logging не ждут диск на UI; slow/locked fixtures сохраняют отзывчивость и redaction.",
@@ -1883,12 +2163,13 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance",
+        "candidate": "CI598 exact37f02/16bf1 worker session preparation/Stop/cleanup scoped PASS; constructor/ShareOrigin/token/home-address/DPAPI remaining source FAIL; local import guard native NOT_RUN",
         "historical_scoped_pass": false,
         "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
-        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
+        "local_import_guard": "Sourcea75df7b +fixture7cc8159: refuse import before any DPAPI/identity change when actual old cleanup false; native NOT_RUN; excluded598/b342"
       },
-      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
+      "integration": "PR88 OPEN/DRAFT unmerged; source37f02d2a0648fe2efebd7fc932b81668d26c44be CI598 SUCCESS exact merge16bf1e50b66baf1a724a0d2da642b2fe70bb3a46; local repair/import guard excluded; no target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
@@ -1901,23 +2182,23 @@
       "phase": "До",
       "requirement": "Асинхронные phone Stop/cleanup",
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R10)",
-      "implementation": "Local owned service+relay start/stop/Dispose, actual wizard/tray/StopAll and sealed bounded shutdown/handoff;13 new native cases + strengthened real UDP/SOCKS flow drain written, Windows NOT_RUN",
+      "implementation": "Published owned async service+relay Start/Stop/Dispose, actual wizard/tray/StopAll and sealed bounded shutdown;13 new native cases and real transport drain PASS exact598",
       "history": "Открытый дефект",
-      "status": "FAIL",
+      "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Local syntax/public319/0/Python backend4 PASS only;3 native harness tests skipped NOT_RUN; all new phone Windows compilation/native NOT_RUN, excluded from CI595",
+        "candidate": "CI598 source37f02/merge16bf1 scoped native PASS13 phone cases/full-stop identity/actual four-flow drain; target-PC/emergency process interruption and R09 import caller not accepted",
         "historical_scoped_pass": false,
         "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT; published source656b3d65 unmerged; CI586 completed SUCCESS at merge7e204c76 only; local diff Windows compilation/native NOT_RUN; no full ID/package/target acceptance",
+      "integration": "PR88 OPEN/DRAFT unmerged; source37f02d2a0648fe2efebd7fc932b81668d26c44be CI598 SUCCESS exact merge16bf1e50b66baf1a724a0d2da642b2fe70bb3a46; local repair/import guard excluded; no target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
       "dependencies": [],
-      "next_step": "Final source diff/secret scan, prepare one phone/relay checking tree after exact595 completion; full criterion remains PARTIAL, R09 token-import caller and forced-process recovery still open"
+      "next_step": "Retain scoped native evidence; finish dependent R09 import and target/hardware scenarios before full acceptance"
     },
     {
       "id": "F31-R11",
@@ -1931,12 +2212,12 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "CI592 source4dd4987cf6f453847931820a6f9ba1298f99f802 / merge4cf49375895d64e79a951bfc926a01502f9a7352: Test-ProGo PASS; native51/456, real direct and owned-agent selected-key preparation→OpenSSH→SOCKS→owned HTTP→recovery, aggregate72/signing55/UI50 PASS. Relay discovery FAIL; package NOT_RUN. Root R08 NOT_RUN.",
+        "candidate": "CI598 exact source37f02/merge16bf1 full CI SUCCESS: signing55/UI50/prep72 and actual direct+owned-agent prepare→SSH→SOCKS→HTTP→child crash→fresh recovery PASS; related R08/R09/target criteria remain open",
         "historical_scoped_pass": false,
         "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
         "selected_identity_signing": "CI592 exact source/merge: signing55, UI50, actual agent LIST/SIGN preparation+server auth+recovery PASS; owner agent/encrypted key/VPS not accepted"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; common start/recovery and guidance published at 4dd4987cf6f453847931820a6f9ba1298f99f802; exact CI592 scoped native PASS, overall CI FAIL; root R08 source separate NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged; source37f02d2a0648fe2efebd7fc932b81668d26c44be CI598 SUCCESS exact merge16bf1e50b66baf1a724a0d2da642b2fe70bb3a46; local repair/import guard excluded; no target acceptance",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
@@ -1950,7 +2231,7 @@
         "F31-R09",
         "F31-R10"
       ],
-      "next_step": "Run R08/discovery checking source, then remaining R08/R09/R10 and performance criteria. Full F31-R11 stays PARTIAL."
+      "next_step": "Verify phone/relay checking SHA; continue R09 and remaining R08/target performance criteria, no full R11 closure"
     },
     {
       "id": "F31-R12",
@@ -2068,7 +2349,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+  "candidate_source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -2166,19 +2447,20 @@
     }
   ],
   "ci_candidate": {
-    "source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
-    "tested_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
-    "local_sha": "a70943991c96907afd829f715bf4fa75a9ee6552",
-    "tree": "ddb95e7ed68f1cf1ad3f27130575f2a4c923df97",
-    "run_id": 39704288681,
-    "run_number": 595,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39704288681",
+    "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+    "tested_merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+    "local_sha": "85f33fdcae96df1231cfeb91af692eb7ad40f97e",
+    "tree": "e6f261e2bdadc227eac3394dc83dc43e43294e05",
+    "run_id": 39711511948,
+    "run_number": 598,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39711511948",
     "status": "in_progress",
     "conclusion": null,
     "windows_compilation": "NOT_RUN",
     "windows_native": "NOT_RUN",
-    "scope": "R08 + standalone SafeLog epoch fixture fix; all root phone source excluded",
-    "next": "Read this exact595; no rerun/head update while active"
+    "scope": "phone/relay + narrow exact physical task identity StopAll fix and deterministic queued-result native regression",
+    "excludes": "all local repair through9d88165 and later journal work",
+    "next": "Read same598 exact logs; no duplicate or head update until completion"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -2695,6 +2977,210 @@
         "windows_ssh_server_contracts": 5,
         "settings": 93
       }
+    },
+    {
+      "source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+      "tested_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
+      "local_sha": "a70943991c96907afd829f715bf4fa75a9ee6552",
+      "tree": "ddb95e7ed68f1cf1ad3f27130575f2a4c923df97",
+      "run_id": 39704288681,
+      "run_number": 595,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39704288681",
+      "status": "completed",
+      "conclusion": "success",
+      "windows_compilation": "PASS exact source5f342/mergea285; phone/repair source excluded",
+      "windows_native": "PASS scoped mandatory suites including all R08 checking scenarios; full ID/target acceptance not implied",
+      "scope": "R08 + standalone SafeLog epoch fixture fix; all root phone source excluded",
+      "next": "Publish scanned phone object with exact parent lease; one new SHA CI. Repair144c616 remains local and excluded",
+      "build_identity": "0.2.2+a2851df351a8ef86c7965761821f64a66c2dd960",
+      "jobs": [
+        {
+          "id": 119580544561,
+          "name": "windows-build",
+          "conclusion": "success"
+        },
+        {
+          "id": 119580545361,
+          "name": "vpn-server-test",
+          "conclusion": "success"
+        }
+      ],
+      "scoped_pass": {
+        "socks_recovery": 51,
+        "socks_assertions": 456,
+        "bounded_log": 43,
+        "diagnostic_report": 32,
+        "diagnostic_helper": 2,
+        "modal_cancel_retry": 6,
+        "chooser_modes": 3,
+        "diagnostic_context": 3,
+        "log_open_workers": 4,
+        "viewer_command_routes": 6,
+        "logger_context_cases": 2,
+        "logger_epoch_assertions": 3,
+        "settings": 93,
+        "selected_key_signing": 55,
+        "ssh_preparation": 72,
+        "signing_ui": 50,
+        "windows_real_ssh_server_contracts": 5,
+        "desktop_assertions": 5240,
+        "instance": 28,
+        "maintenance": 126,
+        "shutdown": 47,
+        "home_vpn": 976,
+        "portable": 90,
+        "relay_python_reported": 28,
+        "relay_python_skipped": 2
+      },
+      "runner_package": {
+        "status": "PASS scoped runner build only",
+        "version": "0.2.2",
+        "sha256": "f1ba5b17e02d4cc0a36b8265851748b1b2529c4dee228b4279cd5ba5c7e5b27b",
+        "uploads": "SKIPPED",
+        "bytes_retrieved": "NOT_RUN",
+        "owner_install": "NOT_RUN",
+        "private_delivery": "BLOCKED owner-approved channel; no binary upload allowed"
+      }
+    },
+    {
+      "source": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
+      "tested_merge": "3f67193a277574e128a8b06cb1a4ac502d873440",
+      "local_sha": "3d3301a5f95ddfcb5ad60af5555a6de7ae1025b1",
+      "tree": "daf59cf31a82ad253a9914f9b17fae8b6bf53034",
+      "run_id": 39707142123,
+      "run_number": 596,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39707142123",
+      "status": "completed",
+      "conclusion": "failure",
+      "windows_compilation": "FAIL CS1985 src/Ikev2RelayService.cs116: .NET Framework C#5 cannot await in catch",
+      "windows_native": "NOT_RUN",
+      "scope": "phone/relay five logical ownership stages +13 native cases and real flow-drain regression",
+      "excludes": "local repair preflight144c616 and later repair work",
+      "next": "Publish isolated C#5 structure fix, no repair code mixed; new exact SHA CI, no rerun596",
+      "runner_package": "NOT_RUN; all uploads SKIPPED",
+      "jobs": [
+        {
+          "id": 119589733115,
+          "name": "windows-build",
+          "conclusion": "failure"
+        },
+        {
+          "id": 119589732810,
+          "name": "vpn-server-test",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "source": "b1fad3c6a6804ab6055b146b5cf284f5136d4288",
+      "tested_merge": "699b50ee7db44cc6ec851d7fcc36069fa574611a",
+      "local_sha": "272c42697ba7f0928626de2a11bcef6d114d913a",
+      "tree": "ca320af4f5a6df1b556101a56c0b7e011eddc018",
+      "run_id": 39708048332,
+      "run_number": 597,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39708048332",
+      "status": "completed",
+      "conclusion": "failure",
+      "windows_compilation": "PASS actual app/Core/Desktop including new Context cases; Home waiting harness later NOT_RUN",
+      "windows_native": "PARTIAL: R08+5 new phone Context PASS; existing full Stop scopes FAIL; later Home13/relay transport NOT_RUN",
+      "scope": "phone/relay ownership + isolated C#5 await-catch compatibility fix",
+      "excludes": "local repair144c616/5157f78 and later stages",
+      "next": "Isolated physical-work identity fix+deterministic queued-result regression; one new exact SHA, no rerun597; repair excluded",
+      "build_identity": "0.2.2+699b50ee7db44cc6ec851d7fcc36069fa574611a",
+      "jobs": [
+        {
+          "id": 119592612485,
+          "name": "windows-build",
+          "conclusion": "failure"
+        },
+        {
+          "id": 119592612681,
+          "name": "vpn-server-test",
+          "conclusion": "success"
+        }
+      ],
+      "failure": "CheckStopScopes full StopAll leaves new relay running; Context.StopPhoneAsync reuses an obsolete pending UI observation after physical stop already settled and a fresh channel started",
+      "runner_package": "NOT_RUN; all uploads SKIPPED",
+      "scoped_pass": {
+        "socks_recovery": 51,
+        "socks_assertions": 456,
+        "bounded_log": 43,
+        "diagnostic_report": 32,
+        "diagnostic_helper": 2,
+        "modal_cancel_retry": 6,
+        "chooser_modes": 3,
+        "diagnostic_context": 3,
+        "log_open_workers": 4,
+        "viewer_command_routes": 6,
+        "phone_context_cases": 5,
+        "windows_real_ssh_server_contracts": 5,
+        "settings": 93
+      }
+    },
+    {
+      "source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+      "tested_merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+      "local_sha": "85f33fdcae96df1231cfeb91af692eb7ad40f97e",
+      "tree": "e6f261e2bdadc227eac3394dc83dc43e43294e05",
+      "run_id": 39711511948,
+      "run_number": 598,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39711511948",
+      "status": "completed",
+      "conclusion": "success",
+      "windows_compilation": "PASS app/Core/Desktop/Home harness exact source37f02/merge16bf1 only",
+      "windows_native": "PASS full mandatory suites;13 new phone cases and deterministic exact physical-task StopAll regression, actual native relay drain; all local repair/import guard excluded",
+      "scope": "phone/relay ownership plus StopAll identity fix; regression selected-key/diagnostic/maintenance retained",
+      "next": "Publish scanned isolated repair source b342 plus latest evidence docs, one new exact SHA CI; local token guard stays separate",
+      "build_identity": "0.2.2+16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+      "jobs": [
+        {
+          "id": 119603692452,
+          "name": "windows-build",
+          "conclusion": "success"
+        },
+        {
+          "id": 119603692348,
+          "name": "vpn-server-test",
+          "conclusion": "success"
+        }
+      ],
+      "scoped_pass": {
+        "socks_recovery": 51,
+        "socks_assertions": 456,
+        "bounded_log": 43,
+        "diagnostic_report": 32,
+        "diagnostic_helper": 2,
+        "modal_cancel_retry": 6,
+        "chooser_modes": 3,
+        "diagnostic_context": 3,
+        "log_open_workers": 4,
+        "viewer_command_routes": 6,
+        "settings": 93,
+        "selected_key_signing": 55,
+        "ssh_preparation": 72,
+        "signing_ui": 50,
+        "windows_real_ssh_server_contracts": 5,
+        "desktop_assertions": 5274,
+        "instance": 28,
+        "maintenance": 126,
+        "shutdown": 47,
+        "home_vpn": 1022,
+        "portable": 90,
+        "new_phone_cases": 13,
+        "relay_python_reported": 28,
+        "relay_python_skipped": 2
+      },
+      "stop_identity_anchor": "2026-10-22T02:40:45.5573994Z PASS: full stop stops both channels and no timer revives them",
+      "metrics": "direct startup1966/prep37ms/recovery1957/prep37,42; agent startup2064/prep139/recovery2048/prep139,128; native CI hardware only, owner HDD/whole-app I/O NOT_RUN",
+      "runner_package": {
+        "status": "PASS scoped runner build only",
+        "version": "0.2.2",
+        "sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b",
+        "uploads": "SKIPPED",
+        "bytes_retrieved": "NOT_RUN",
+        "owner_install": "NOT_RUN",
+        "private_delivery": "BLOCKED owner-approved channel; no binary upload allowed"
+      }
     }
   ],
   "retention_microtask": {
@@ -2830,36 +3316,39 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI595 in progress; independent local phone relay lifetime",
+    "phase": "CI598 SUCCESS exact published source; prepare independent repair checking publication",
     "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "local_sha": "a70943991c96907afd829f715bf4fa75a9ee6552",
-    "published_sha": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
-    "ci_run_id": 39704288681,
-    "windows_compilation": "NOT_RUN CI595 fix",
-    "windows_native": "NOT_RUN CI595 fix; phone excluded",
+    "local_sha": "85f33fdcae96df1231cfeb91af692eb7ad40f97e",
+    "published_sha": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+    "ci_run_id": 39711511948,
+    "windows_compilation": "PASS app/Core/Desktop/Home harness exact source37f02/merge16bf1 only",
+    "windows_native": "PASS full mandatory suites;13 new phone cases and deterministic exact physical-task StopAll regression, actual native relay drain; all local repair/import guard excluded",
     "workflow_preflight": "PASS source inspection: PR CI public uploads OFF; release not triggered by integration branch PR/push",
-    "next": "Same595 log; independent relay task ownership microstage; no head update until completion",
-    "readiness_change": 0,
-    "tree": "ddb95e7ed68f1cf1ad3f27130575f2a4c923df97",
+    "next": "Publish scanned isolated repair source b342 plus latest evidence docs, one new exact SHA CI; local token guard stays separate",
+    "readiness_change": 11.25,
+    "tree": "e6f261e2bdadc227eac3394dc83dc43e43294e05",
     "publication_scan": {
-      "files": 5,
-      "added_lines": 347,
+      "files": 2,
+      "added_lines": 76,
       "findings": 0,
       "tree_match": true,
       "workflow": "unchanged/no public upload or release"
     },
-    "tested_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
-    "ci_run_number": 595,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39704288681",
+    "tested_merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
+    "ci_run_number": 598,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39711511948",
     "jobs": {
-      "windows": 119563052615,
-      "ubuntu": 119563052956
+      "windows": 119603692452,
+      "ubuntu": 119603692348
     },
-    "ci_status": "in_progress",
+    "ci_status": "completed",
     "ubuntu": "SUCCESS",
-    "previous_ci_run_id": 39685125066,
-    "next_local_source": "de155d5a786fa1965318b7149fb443ec173eb08c",
-    "pending_scope": "common lifecycle c0f5610 +9 native fixtures (total50), read-only server capability and checkpoints; Windows NOT_RUN"
+    "previous_checkpoint_fields": {
+      "previous_ci_run_id": 39685125066,
+      "next_local_source": "de155d5a786fa1965318b7149fb443ec173eb08c",
+      "pending_scope": "common lifecycle c0f5610 +9 native fixtures (total50), read-only server capability and checkpoints; Windows NOT_RUN"
+    },
+    "ci_conclusion": "success"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -2905,20 +3394,21 @@
   },
   "current_readiness": {
     "method": "v1.0 unchanged W and D/P/A30/20/50",
-    "evidence_source": "6f615c9fa7243f1365b721a6b78f17dcda6a6538",
-    "tested_merge": "5cf4a131b653439396c79f87f84a3f4dc97544ec",
+    "evidence_source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+    "tested_merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46",
     "implementation_range": [
       58,
       80
     ],
-    "verified_raw": 10.5,
-    "verified_display": 11,
-    "previous_baseline_raw": 0,
-    "previous_baseline_display": 0,
-    "change_raw": 10.5,
+    "verified_raw": 21.75,
+    "verified_display": 22,
+    "previous_baseline_raw": 10.5,
+    "previous_baseline_display": 11,
+    "change_raw": 11.25,
     "credited_D_half_ids": [
       "F01",
       "F02",
+      "F03",
       "F04",
       "F05",
       "F06",
@@ -2928,43 +3418,91 @@
       "F10",
       "F11",
       "F12",
+      "F13",
       "F14",
       "F15",
       "F16",
       "F17",
+      "F18",
+      "F20",
+      "F21",
+      "F22",
       "F23",
+      "F24",
       "F25",
       "F26",
+      "F28",
+      "F29",
       "F31"
     ],
-    "credited_weight": 70,
+    "credited_weight": 87,
     "D": 0.5,
-    "P": 0,
+    "P": 0.5,
     "A": 0,
-    "reason": "Exact CI59419 traced native parent criteria weights70×D0.5×30%; SafeLog test failure prevents full Context/SSH/Desktop/tail/ZIP; no package/target credit",
-    "local_lifecycle": "NOT_RUN,0 new verification credit",
-    "candidate_note": "Evidence11 only exact594 partial run; isolated fixture owner fix and all local phone changes NOT_RUN,0 new credit",
+    "reason": "Exact CI598 full native suites and runner ZIP cover28 traced parent partial D/P criteria weight87;87*(.30*.5+.20*.5)=21.75; F19/F27/F30 and all owner acceptance0",
+    "local_lifecycle": "13 phone owned cases plus exact old-observer/new-physical StopAll regression PASS scoped exact598; whole R10/R11 acceptance still PARTIAL",
+    "candidate_note": "Evidence22 only source37f02/merge16bf1 and runner digest; all new local repair and import guard Windows NOT_RUN,0 new credit",
     "score_anchors": {
-      "F01": "2026-10-22T01:03:59.1735760Z PASS: CLI migration preserves unrelated preferences 0\r",
-      "F02": "2026-10-22T00:59:11.8381136Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)\r",
-      "F04": "2026-10-22T00:57:57.3963085Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)\r",
-      "F05": "2026-10-22T00:58:12.4823425Z PASS: structured SSH fields reach native child and automatic recovery (4 assertions)\r",
-      "F06": "2026-10-22T01:04:05.8930072Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes\r",
-      "F07": "2026-10-22T01:02:26.2538105Z Backup retention tests PASS: 29\r",
-      "F08": "2026-10-22T01:04:23.4021390Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles\r",
-      "F09": "2026-10-22T00:55:46.1173387Z PASS: wrong-pin read leaves source bytes and file set unchanged\r",
-      "F10": "2026-10-22T01:03:59.1293642Z PASS: Windows uses tested HTTP/CONNECT bridge\r",
-      "F11": "2026-10-22T01:04:00.3538254Z PASS: real tray command dispatches its expected dialog: Settings\r",
-      "F12": "2026-10-22T01:04:27.2050468Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned\r",
-      "F14": "2026-10-22T01:06:04.8180386Z PASS: explicit retry runs real bounded log projection and presents only its sanitized known events from current archives and legacy sources\r",
-      "F15": "2026-10-22T01:04:04.8445553Z Settings initial-load preservation checks PASS: 93\r",
-      "F16": "2026-10-22T01:06:02.9377715Z PASS: scaled cleanup list and actions do not overlap\r",
-      "F17": "2026-10-22T01:06:04.4429840Z PASS: diagnostic failed Копировать отчёт Tab reaches Button Копировать отчёт; focused=Button:Копировать отчёт tab=0\r",
-      "F23": "2026-10-22T01:05:34.5149546Z Updater owned-handoff checks PASS: 23\r",
-      "F25": "2026-10-22T01:01:58.2417894Z Bounded log tests PASS: 43\r",
-      "F26": "2026-10-22T01:02:23.3565197Z PASS: startup runs quietly without changing SSH preferences\r",
-      "F31": "2026-10-22T01:01:57.7985590Z PASS: local preparation guidance remains distinct from actual SSH refusal and is snapshotted off gates (10 assertions)\r"
-    }
+      "F01": "2026-10-22T02:37:32.1667797Z PASS: CLI migration preserves unrelated preferences 0",
+      "F02": "2026-10-22T02:32:23.7375192Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
+      "F03": "2026-10-22T02:46:44.9673590Z PASS: restarted application retains single-instance ownership after handoff",
+      "F04": "2026-10-22T02:31:06.6558921Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)",
+      "F05": "2026-10-22T02:44:44.7445524Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent",
+      "F06": "2026-10-22T02:37:42.6885508Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes",
+      "F07": "2026-10-22T02:35:42.2457218Z Backup retention tests PASS: 29",
+      "F08": "2026-10-22T02:38:00.2346861Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles",
+      "F09": "2026-10-22T02:28:19.1609351Z PASS: wrong-pin read leaves source bytes and file set unchanged",
+      "F10": "2026-10-22T02:37:32.0977321Z PASS: Windows uses tested HTTP/CONNECT bridge",
+      "F11": "2026-10-22T02:37:34.4330753Z PASS: real tray command dispatches its expected dialog: Settings",
+      "F12": "2026-10-22T02:38:04.5371763Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned",
+      "F13": "2026-10-22T02:45:13.3644203Z PASS: Escape closes the actual modal route dialog while measurements run",
+      "F14": "2026-10-22T02:45:12.5922925Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context",
+      "F15": "2026-10-22T02:37:41.0783563Z Settings initial-load preservation checks PASS: 93",
+      "F16": "2026-10-22T02:39:28.0301040Z PASS: scaled cleanup list and actions do not overlap",
+      "F17": "2026-10-22T02:45:13.1686890Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1",
+      "F18": "2026-10-22T02:43:15.9989063Z PASS: wizard accessible issuance result never claims installation",
+      "F20": "2026-10-22T02:43:18.8434124Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect",
+      "F21": "2026-10-22T02:49:41.1022798Z PASS: secret copy writes current clipboard",
+      "F22": "2026-10-22T02:53:50.0811195Z PASS: a new real HomeVpnService loads clean imported data without activating SSH or relay",
+      "F23": "2026-10-22T02:49:38.0614726Z Updater package tests PASS: 5",
+      "F24": "2026-10-22T02:41:56.6255921Z PASS: help Начало 820 exposes a focusable read-only instruction pane",
+      "F25": "2026-10-22T02:37:36.4633983Z PASS: real tray command dispatches its expected dialog: Diagnostics",
+      "F26": "2026-10-22T02:35:38.7684407Z PASS: startup runs quietly without changing SSH preferences",
+      "F28": "2026-10-22T02:40:10.1534582Z PASS: every typed command has one unique round-trippable compatibility ID: Connect",
+      "F29": "2026-10-22T02:44:02.6174664Z PASS: built icon has a valid Windows ICO header",
+      "F31": "2026-10-22T02:44:47.3789813Z SSH advisory authentication preparation checks PASS: 72"
+    },
+    "credited_P_half_ids": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06",
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15",
+      "F16",
+      "F17",
+      "F18",
+      "F20",
+      "F21",
+      "F22",
+      "F23",
+      "F24",
+      "F25",
+      "F26",
+      "F28",
+      "F29",
+      "F31"
+    ],
+    "runner_package_sha256": "576f6034b4768e148a0533ada7596136ef06950dd01ee8d5a19476fcac8d932b"
   },
   "local_launch_lifecycle_microtask": {
     "status": "PARTIAL",
@@ -3006,86 +3544,99 @@
     "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a"
   },
   "pending_publication": {
-    "local_sha": "e62d21c9d84b110fd7f588c27c912cf48d861413",
-    "tree": "e3104d9fead1a4fff51d598b6099690cb72bcf4e",
+    "local_sha": "3d3301a5f95ddfcb5ad60af5555a6de7ae1025b1",
+    "base_local": "a70943991c96907afd829f715bf4fa75a9ee6552",
+    "parent_remote": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+    "base_tree": "ddb95e7ed68f1cf1ad3f27130575f2a4c923df97",
+    "tree": "daf59cf31a82ad253a9914f9b17fae8b6bf53034",
     "changes": [
       {
         "status": "M",
-        "path": "docs/PROJECT_STATE.md"
+        "path": "docs/ACCEPTANCE_RUNBOOK.md",
+        "length": 21790
       },
       {
         "status": "M",
-        "path": "docs/project_state.json"
+        "path": "docs/PROJECT_STATE.md",
+        "length": 163719
       },
       {
         "status": "M",
-        "path": "scripts/Diagnostics-ProGo.ps1"
+        "path": "docs/project_state.json",
+        "length": 211386
       },
       {
         "status": "M",
-        "path": "scripts/Test-ProGo.ps1"
+        "path": "scripts/Test-ProGo.ps1",
+        "length": 46696
       },
       {
         "status": "M",
-        "path": "src/BoundedLog.cs"
+        "path": "src/AppCommands.cs",
+        "length": 10836
       },
       {
         "status": "M",
-        "path": "src/Core.cs"
+        "path": "src/HomeVpnService.cs",
+        "length": 40409
       },
       {
         "status": "M",
-        "path": "src/DiagnosticPreview.cs"
+        "path": "src/HomeVpnWizardForm.cs",
+        "length": 40216
+      },
+      {
+        "status": "M",
+        "path": "src/Ikev2RelayService.cs",
+        "length": 26013
+      },
+      {
+        "status": "M",
+        "path": "src/MainWindow.cs",
+        "length": 21801
+      },
+      {
+        "status": "M",
+        "path": "src/UpdateAwareTrayApplicationContext.cs",
+        "length": 133644
+      },
+      {
+        "status": "M",
+        "path": "tests/DesktopAsyncRestoreTests.cs",
+        "length": 64867
       },
       {
         "status": "A",
-        "path": "src/LogOpenOperation.cs"
+        "path": "tests/DesktopPhoneStopTests.cs",
+        "length": 10017
       },
       {
         "status": "M",
-        "path": "src/Program.cs"
+        "path": "tests/DesktopTests.cs",
+        "length": 60052
       },
       {
         "status": "M",
-        "path": "src/UpdateAwareTrayApplicationContext.cs"
+        "path": "tests/HomeVpnWaitingTests.cs",
+        "length": 38075
       },
       {
         "status": "M",
-        "path": "tests/BoundedLogTests.cs"
+        "path": "tests/RelayHarness.cs",
+        "length": 1268
       },
       {
         "status": "M",
-        "path": "tests/DesktopAsyncDiagnosticPreviewTests.cs"
-      },
-      {
-        "status": "M",
-        "path": "tests/DesktopDiagnosticContextTests.cs"
-      },
-      {
-        "status": "M",
-        "path": "tests/DiagnosticPreviewTests.ps1"
-      },
-      {
-        "status": "M",
-        "path": "tests/HomeVpnWizardTests.cs"
-      },
-      {
-        "status": "A",
-        "path": "tests/ssh_loopback_fixture_tests.py"
-      },
-      {
-        "status": "D",
-        "path": "tests/test_ssh_loopback_fixture.py"
+        "path": "tests/test_ikev2_relay.py",
+        "length": 12841
       }
     ],
-    "added_lines": 929,
-    "findings": [],
-    "parent_remote": "4dd4987cf6f453847931820a6f9ba1298f99f802",
-    "base_tree": "71a53965acd9d4eb19b6fbe6a9a691693d6b56b6",
-    "workflows": "unchanged; no public binary uploads/release/main push",
-    "native": "R08 Windows NOT_RUN; mandatory real SSH contracts preserved under explicit prepared discovery",
-    "ref_update": "PASS expected4dd→c3a67 without force, remote head independently confirmed; CI593 unique",
-    "published_object": "c3a67ebff9a6ac10e93059bc73dc2fadd8fef29a"
+    "added_lines": 1835,
+    "secret_pii_findings": 0,
+    "workflows": "unchanged; PR public uploads OFF, release main/manual excluded",
+    "windows": "all phone/relay compilation/native NOT_RUN; not CI595",
+    "published_object": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
+    "ref_update": "PASS expected5f342→654551 without force; actual PR head confirmed; unique596"
   },
   "local_preparation_guidance": {
     "status": "PARTIAL",
@@ -3200,7 +3751,12 @@
     "wiring_source": "e4dc5a7ff6fd2097334af1274698ebbf568e5396",
     "folder_wiring": "PARTIAL local OpenFolder/OpenBackups same owned worker, no log file operation in directoryOnly mode; Windows NOT_RUN",
     "cleanup": "nested finally releases barriers first and cleans only own viewer/attributes after failure/timeout",
-    "folder_source": "374c57d8b366bde27691675c9822b8b4b49557ae"
+    "folder_source": "374c57d8b366bde27691675c9822b8b4b49557ae",
+    "verification_source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+    "verification_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
+    "verification_run_id": 39704288681,
+    "windows_compilation": "PASS scoped CI595",
+    "windows_native": "PASS scoped actual cases in CI595; no owner/whole-ID claim"
   },
   "local_bounded_log_queue": {
     "status": "PARTIAL",
@@ -3221,7 +3777,12 @@
     "shutdown_exit_drain": "PARTIAL local: owner epoch scoped seal/resume, same-budget actual Context pre-handoff drain, nonblocking forced disposal; post-UI/fatal500ms best effort with explicit NOT_RUN on timeout",
     "safe_log_source": "da9ad49901ba8eb27f4ac9c39a94023f131a2b1c",
     "native_owner_fixtures": "3 epoch assertions +2 actual Context held-writer cases; NOT_RUN",
-    "owner_seal_source": "5d30993f37d078ab0c822ce5659b893c8193fbb1"
+    "owner_seal_source": "5d30993f37d078ab0c822ce5659b893c8193fbb1",
+    "verification_source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+    "verification_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
+    "verification_run_id": 39704288681,
+    "windows_compilation": "PASS scoped CI595",
+    "windows_native": "PASS scoped actual cases in CI595; no owner/whole-ID claim"
   },
   "readiness_history": [
     {
@@ -3453,6 +4014,236 @@
       "local_lifecycle": "NOT_RUN,0 new verification credit",
       "candidate_note": "BOM-only fix Windows NOT_RUN; no old SUCCESS or score transferred to new source",
       "score_anchors": {}
+    },
+    {
+      "method": "v1.0 unchanged W and D/P/A30/20/50",
+      "evidence_source": "6f615c9fa7243f1365b721a6b78f17dcda6a6538",
+      "tested_merge": "5cf4a131b653439396c79f87f84a3f4dc97544ec",
+      "implementation_range": [
+        58,
+        80
+      ],
+      "verified_raw": 10.5,
+      "verified_display": 11,
+      "previous_baseline_raw": 0,
+      "previous_baseline_display": 0,
+      "change_raw": 10.5,
+      "credited_D_half_ids": [
+        "F01",
+        "F02",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F23",
+        "F25",
+        "F26",
+        "F31"
+      ],
+      "credited_weight": 70,
+      "D": 0.5,
+      "P": 0,
+      "A": 0,
+      "reason": "Exact CI59419 traced native parent criteria weights70×D0.5×30%; SafeLog test failure prevents full Context/SSH/Desktop/tail/ZIP; no package/target credit",
+      "local_lifecycle": "NOT_RUN,0 new verification credit",
+      "candidate_note": "Evidence11 only exact594 partial run; isolated fixture owner fix and all local phone changes NOT_RUN,0 new credit",
+      "score_anchors": {
+        "F01": "2026-10-22T01:03:59.1735760Z PASS: CLI migration preserves unrelated preferences 0\r",
+        "F02": "2026-10-22T00:59:11.8381136Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)\r",
+        "F04": "2026-10-22T00:57:57.3963085Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)\r",
+        "F05": "2026-10-22T00:58:12.4823425Z PASS: structured SSH fields reach native child and automatic recovery (4 assertions)\r",
+        "F06": "2026-10-22T01:04:05.8930072Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes\r",
+        "F07": "2026-10-22T01:02:26.2538105Z Backup retention tests PASS: 29\r",
+        "F08": "2026-10-22T01:04:23.4021390Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles\r",
+        "F09": "2026-10-22T00:55:46.1173387Z PASS: wrong-pin read leaves source bytes and file set unchanged\r",
+        "F10": "2026-10-22T01:03:59.1293642Z PASS: Windows uses tested HTTP/CONNECT bridge\r",
+        "F11": "2026-10-22T01:04:00.3538254Z PASS: real tray command dispatches its expected dialog: Settings\r",
+        "F12": "2026-10-22T01:04:27.2050468Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned\r",
+        "F14": "2026-10-22T01:06:04.8180386Z PASS: explicit retry runs real bounded log projection and presents only its sanitized known events from current archives and legacy sources\r",
+        "F15": "2026-10-22T01:04:04.8445553Z Settings initial-load preservation checks PASS: 93\r",
+        "F16": "2026-10-22T01:06:02.9377715Z PASS: scaled cleanup list and actions do not overlap\r",
+        "F17": "2026-10-22T01:06:04.4429840Z PASS: diagnostic failed Копировать отчёт Tab reaches Button Копировать отчёт; focused=Button:Копировать отчёт tab=0\r",
+        "F23": "2026-10-22T01:05:34.5149546Z Updater owned-handoff checks PASS: 23\r",
+        "F25": "2026-10-22T01:01:58.2417894Z Bounded log tests PASS: 43\r",
+        "F26": "2026-10-22T01:02:23.3565197Z PASS: startup runs quietly without changing SSH preferences\r",
+        "F31": "2026-10-22T01:01:57.7985590Z PASS: local preparation guidance remains distinct from actual SSH refusal and is snapshotted off gates (10 assertions)\r"
+      }
+    },
+    {
+      "method": "v1.0 unchanged W and D/P/A30/20/50",
+      "evidence_source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+      "tested_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
+      "implementation_range": [
+        58,
+        80
+      ],
+      "verified_raw": 21.75,
+      "verified_display": 22,
+      "previous_baseline_raw": 10.5,
+      "previous_baseline_display": 11,
+      "change_raw": 11.25,
+      "credited_D_half_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F20",
+        "F21",
+        "F22",
+        "F23",
+        "F24",
+        "F25",
+        "F26",
+        "F28",
+        "F29",
+        "F31"
+      ],
+      "credited_weight": 87,
+      "D": 0.5,
+      "P": 0.5,
+      "A": 0,
+      "reason": "Exact CI59528 traced parent criteria weight87, native D0.5 and runner ZIP P0.5, target A0; full scopes and new R08 passed, no whole ID acceptance",
+      "local_lifecycle": "NOT_RUN,0 new verification credit",
+      "candidate_note": "Score22 belongs only to exact595 source5f342/mergea285; prepared phone654551 and local repair144c616 Windows NOT_RUN,0 new credit",
+      "score_anchors": {
+        "F01": "2026-10-22T01:21:46.7053607Z PASS: CLI migration preserves unrelated preferences 0\r",
+        "F02": "2026-10-22T01:16:34.9250386Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)\r",
+        "F03": "2026-10-22T01:30:20.9284471Z PASS: restarted application retains single-instance ownership after handoff\r",
+        "F04": "2026-10-22T01:15:14.6284737Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)\r",
+        "F05": "2026-10-22T01:28:35.0769106Z PASS: selected public reference signs in actual preparation and then authenticates real native SSH using only the owned agent\r",
+        "F06": "2026-10-22T01:21:56.6532547Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes\r",
+        "F07": "2026-10-22T01:19:53.7158918Z Backup retention tests PASS: 29\r",
+        "F08": "2026-10-22T01:22:12.2868629Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles\r",
+        "F09": "2026-10-22T01:12:25.3760012Z PASS: wrong-pin read leaves source bytes and file set unchanged\r",
+        "F10": "2026-10-22T01:21:46.6495436Z PASS: Windows uses tested HTTP/CONNECT bridge\r",
+        "F11": "2026-10-22T01:21:48.7047433Z PASS: real tray command dispatches its expected dialog: Settings\r",
+        "F12": "2026-10-22T01:22:16.4490160Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned\r",
+        "F13": "2026-10-22T01:29:02.7363187Z PASS: Escape closes the actual modal route dialog while measurements run\r",
+        "F14": "2026-10-22T01:29:02.0169261Z PASS: diagnostic workers preserve UI heartbeat after the caller loses its synchronization context\r",
+        "F15": "2026-10-22T01:21:54.9172721Z Settings initial-load preservation checks PASS: 93\r",
+        "F16": "2026-10-22T01:23:38.5335882Z PASS: scaled cleanup list and actions do not overlap\r",
+        "F17": "2026-10-22T01:29:02.5659062Z PASS: route measurements complete Tab reaches Button Измерить скорость; focused=Button:Измерить скорость tab=1\r",
+        "F18": "2026-10-22T01:27:11.9287113Z PASS: wizard accessible issuance result never claims installation\r",
+        "F20": "2026-10-22T01:27:14.4412134Z PASS: native friends Down distinguishes revoked duplicate and names repeat-revoke effect\r",
+        "F21": "2026-10-22T01:33:15.2170858Z PASS: secret copy writes current clipboard\r",
+        "F22": "2026-10-22T01:37:19.4242503Z PASS: a new real HomeVpnService loads clean imported data without activating SSH or relay\r",
+        "F23": "2026-10-22T01:33:12.6093676Z Updater package tests PASS: 5\r",
+        "F24": "2026-10-22T01:25:51.6446351Z PASS: help Начало 820 exposes a focusable read-only instruction pane\r",
+        "F25": "2026-10-22T01:21:50.6032440Z PASS: real tray command dispatches its expected dialog: Diagnostics\r",
+        "F26": "2026-10-22T01:19:50.1537756Z PASS: startup runs quietly without changing SSH preferences\r",
+        "F28": "2026-10-22T01:24:14.8100804Z PASS: every typed command has one unique round-trippable compatibility ID: Connect\r",
+        "F29": "2026-10-22T01:27:55.3615689Z PASS: built icon has a valid Windows ICO header\r",
+        "F31": "2026-10-22T01:28:37.6335779Z SSH advisory authentication preparation checks PASS: 72\r"
+      }
+    },
+    {
+      "method": "v1.0 unchanged W and D/P/A30/20/50",
+      "evidence_source": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
+      "tested_merge": "3f67193a277574e128a8b06cb1a4ac502d873440",
+      "implementation_range": [
+        58,
+        80
+      ],
+      "verified_raw": 0,
+      "verified_display": 0,
+      "previous_baseline_raw": 21.75,
+      "previous_baseline_display": 22,
+      "change_raw": -21.75,
+      "credited_D_half_ids": [],
+      "credited_weight": 0,
+      "D": 0,
+      "P": 0,
+      "A": 0,
+      "reason": "Exact CI596 failed C# compilation before native criteria/package. Prior59522 remains historical proven snapshot; NOT_RUN does not mean all functions FAIL.",
+      "local_lifecycle": "NOT_RUN,0 new verification credit",
+      "candidate_note": "Isolated compatibility fix pending Windows, repair local excluded, no old SUCCESS or score transferred",
+      "score_anchors": {}
+    },
+    {
+      "method": "v1.0 unchanged W and D/P/A30/20/50",
+      "evidence_source": "b1fad3c6a6804ab6055b146b5cf284f5136d4288",
+      "tested_merge": "699b50ee7db44cc6ec851d7fcc36069fa574611a",
+      "implementation_range": [
+        58,
+        80
+      ],
+      "verified_raw": 10.5,
+      "verified_display": 11,
+      "previous_baseline_raw": 0,
+      "previous_baseline_display": 0,
+      "change_raw": 10.5,
+      "credited_D_half_ids": [
+        "F01",
+        "F02",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F23",
+        "F25",
+        "F26",
+        "F31"
+      ],
+      "credited_weight": 70,
+      "D": 0.5,
+      "P": 0,
+      "A": 0,
+      "reason": "Exact CI59719 traced parent native criteria weight70,D0.5,P/A0; actual new5 Context cases do not independently add beyond parent half-credit; full Stop FAIL/tail/package NOT_RUN",
+      "local_lifecycle": "NOT_RUN,0 new verification credit",
+      "candidate_note": "Evidence11 only sourceb1/merge699 partial run; new observer-generation fix and all repair code Windows NOT_RUN,0 new credit",
+      "score_anchors": {
+        "F01": "2026-10-22T02:00:54.1024697Z PASS: CLI migration preserves unrelated preferences 0\r",
+        "F02": "2026-10-22T01:55:38.4636098Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)\r",
+        "F04": "2026-10-22T01:54:23.6757069Z PASS: asynchronous startup refuses a foreign non-SOCKS listener (1 assertions)\r",
+        "F05": "2026-10-22T01:54:38.8366861Z PASS: structured SSH fields reach native child and automatic recovery (4 assertions)\r",
+        "F06": "2026-10-22T02:01:05.1541046Z PASS: failed actual native move conditionally restores its own environment, typed Windows values and exact file bytes\r",
+        "F07": "2026-10-22T01:58:59.2842766Z Backup retention tests PASS: 29\r",
+        "F08": "2026-10-22T02:01:22.5716047Z PASS: pending restore X requests cancellation and retains its native owner until the real hash operation settles\r",
+        "F09": "2026-10-22T01:51:29.1308812Z PASS: wrong-pin read leaves source bytes and file set unchanged\r",
+        "F10": "2026-10-22T02:00:53.9875061Z PASS: Windows uses tested HTTP/CONNECT bridge\r",
+        "F11": "2026-10-22T02:00:56.4487136Z PASS: real tray command dispatches its expected dialog: Settings\r",
+        "F12": "2026-10-22T02:01:26.8761118Z PASS: actual production three-second shutdown refusal keeps the native UI ticking while its restore reader remains owned\r",
+        "F14": "2026-10-22T02:02:53.9122658Z PASS: explicit retry runs real bounded log projection and presents only its sanitized known events from current archives and legacy sources\r",
+        "F15": "2026-10-22T02:01:03.4206888Z Settings initial-load preservation checks PASS: 93\r",
+        "F16": "2026-10-22T02:02:50.8982589Z PASS: scaled cleanup list and actions do not overlap\r",
+        "F17": "2026-10-22T02:02:53.2958887Z PASS: diagnostic failed Копировать отчёт Tab reaches Button Копировать отчёт; focused=Button:Копировать отчёт tab=0\r",
+        "F23": "2026-10-22T02:02:19.7724989Z Updater owned-handoff checks PASS: 23\r",
+        "F25": "2026-10-22T01:58:26.4109523Z Bounded log tests PASS: 43\r",
+        "F26": "2026-10-22T01:58:55.3597511Z PASS: startup runs quietly without changing SSH preferences\r",
+        "F31": "2026-10-22T01:58:25.6973403Z PASS: local preparation guidance remains distinct from actual SSH refusal and is snapshotted off gates (10 assertions)\r"
+      }
     }
   ],
   "local_ci590_exitcode_fix": {
@@ -3500,7 +4291,12 @@
     "scope": "bounded32-char VERSION read in tracked preview worker;2 additional real ShowDialog cancel/retry version freshness cases; installed helper header check",
     "compatibility": "old preloaded API metadata fallback Show(root,unknown); actual old-API transition NOT_RUN",
     "remaining": "cold Add-Type/dot-source and PS updater log/folder I/O still open",
-    "ci592_includes": false
+    "ci592_includes": false,
+    "verification_source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+    "verification_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
+    "verification_run_id": 39704288681,
+    "windows_compilation": "PASS scoped CI595",
+    "windows_native": "PASS scoped actual cases in CI595; no owner/whole-ID claim"
   },
   "local_r08_checking": {
     "status": "PARTIAL",
@@ -3516,8 +4312,8 @@
     "json": "PASS",
     "diff": "PASS",
     "public_content": "PASS318/0",
-    "windows_compilation": "PASS at CI594 source6f615/merge5cf4; not phone",
-    "windows_native": "PARTIAL: logger43/helper2/modal6/chooser3 PASS, SafeLog first fixture assertion FAIL; remaining Context/log-open/SSH/tail NOT_RUN",
+    "windows_compilation": "PASS exact CI5955f342/a285",
+    "windows_native": "PASS scoped logger43 + actual global/epoch/Context + worker4/command6 + modal6/chooser3/diagnosticContext3 and full regression; not whole R08",
     "scope": "logger queue/sanitization/current owner shutdown; file/folder viewer lifetime; installed VERSION worker/modal freshness",
     "expected_native_groups": [
       "bounded logger original + queue vectors",
@@ -3528,18 +4324,20 @@
       "Core/bootstrap/full regression and real SSH pipeline"
     ],
     "remaining": [
-      "installed updater cold script/type loader",
-      "PS updater log/folder/viewer GUI I/O",
-      "slow owner hardware",
-      "old loaded-API transition native"
+      "PS updater cold script/type loader and viewer/log GUI I/O",
+      "old loaded-API transition native",
+      "owner slow hardware/DPI/Narrator acceptance"
     ],
-    "next": "Isolated SafeLog fixture ownership fix then same mandatory native suites",
+    "next": "Keep scoped proof; unfinished PS updater/target paths still open",
     "checking_source": "e62d21c9d84b110fd7f588c27c912cf48d861413",
     "tree": "e3104d9fead1a4fff51d598b6099690cb72bcf4e",
     "github_object": "c3a67ebff9a6ac10e93059bc73dc2fadd8fef29a",
     "published_source": "c3a67ebff9a6ac10e93059bc73dc2fadd8fef29a",
     "tested_merge": "30a39709b1144b99c493c49db0e10ada8f6cef2e",
-    "run_id": 39701960142
+    "run_id": 39701960142,
+    "verification_source": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+    "verification_merge": "a2851df351a8ef86c7965761821f64a66c2dd960",
+    "verification_run_id": 39704288681
   },
   "local_ssh_discovery_boundary": {
     "status": "PARTIAL",
@@ -3591,11 +4389,11 @@
       "status": "PARTIAL",
       "source": "89dfcf6b949085f1683346bf79d08fff3a524935",
       "scope": "actual StopPhone/StopAll await owned observation; desktop controls independent; pending/error main card; shutdown seals new phone starts and waits cleanup before proxy/handoff within existing budget; refused/cancelled shutdown resumes admission; forced Context.Dispose seals service and retains StopWork",
-      "tests": "5 actual Context cases: tray, StopAll, refused shutdown+retry+cancel handoff, ForceDispose, real locked-file refusal+retry; own real session directories, bounded250ms shutdown and3/5s fixture waits, finally release+await cleanup",
+      "tests": "5 actual Context cases; fixture backup budget250ms, real phone settings shutdown budget3s as native log02:03:28→31 confirms; bounded3/5s cleanup, not falsely250ms",
       "csharp_syntax": "PASS7 source/test files; parser only",
       "public_content": "PASS319/0",
-      "windows_compilation": "NOT_RUN; excluded from CI594",
-      "windows_native": "NOT_RUN",
+      "windows_compilation": "PASS CI597 app/Desktop; later Home waiting harness NOT_RUN",
+      "windows_native": "PASS scoped5 actual Context cases sourceb1/merge699; full StopAll legacy regression FAIL",
       "test_wiring": "new DesktopPhoneStopTests.cs explicitly compiled in Test-ProGo and called from DesktopTests; existing fixture now awaits Home.StopWork before disposing Relay"
     },
     "final_review": {
@@ -3637,8 +4435,8 @@
     "scope": "standalone native SafeLog fixture owns/drains/resumes its epoch and suspends it in finally; producer bound1000ms and native entry bound3000ms now separate; real sink/heartbeat/privacy/file assertions retained",
     "source_review": "PASS missing old fixture owner confirmed; causal paused/drop inference pending native",
     "local_checks": "C#syntax1/public318/0/diff/tree equality PASS;9 additions0 secret/PII; workflows/VERSION unchanged",
-    "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN",
+    "windows_compilation": "PASS CI595 exact mergea285",
+    "windows_native": "PASS real SafeLog producer/entry/heartbeat/redaction/file and all subsequent Context suites",
     "ref_update": "PASS expected6f615→5f342 without force; PR head verified; unique595",
     "excludes": "all root phone stages, service/tray/wizard code",
     "run_id": 39704288681,
@@ -3679,21 +4477,261 @@
     "status": "PARTIAL",
     "base_local": "a70943991c96907afd829f715bf4fa75a9ee6552",
     "parent_remote": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
-    "source": "next fixed local commit",
+    "source": "3d3301a5f95ddfcb5ad60af5555a6de7ae1025b1",
     "scope": "five logical phone/relay ownership stages plus tests; no token/DPAPI save rewrite or unrelated functions",
     "review": "PASS self source review; no independent agent review/native acceptance",
     "csharp_syntax": "PASS11 files0 errors, not compilation",
     "wiring": "PASS explicit DesktopPhoneStopTests compile+entrypoint and real relay Harness StopAsync exit wait",
     "public_content": "PASS319/0",
     "python_backend": "PASS4; native3 skipped=NOT_RUN",
-    "windows_compilation": "NOT_RUN; excluded from595",
-    "windows_native": "NOT_RUN",
+    "windows_compilation": "PASS scoped CI597 app/Desktop; Home harness later NOT_RUN",
+    "windows_native": "PARTIAL5 Context/R08 PASS; full StopAll FAIL; new fix untested",
     "small_review_guard": "Context suppresses obsolete Stop failure balloon if another service stop attempt is already current; does not replace result of actual new attempt",
     "remaining": [
       "exact new Windows checking SHA all13 native phone cases + enhanced real UDP/SOCKS flow drain",
       "R09 token-import sync Stop + private DPAPI load/save",
       "forced process termination/restart and target-PC/real phone acceptance"
     ],
-    "next": "Scan fixed commit diff for secret/PII and workflows; prepare matching tree object, update ref only after595 completion"
+    "next": "Publish exact physical-work identity candidate37f02 once, save new merge/run; repair excluded",
+    "tree": "daf59cf31a82ad253a9914f9b17fae8b6bf53034",
+    "github_object": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
+    "publication_scan": "PASS16 paths1835 additions0 secrets/PII, exact full tree equality; workflow/VERSION unchanged",
+    "published_source": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
+    "tested_merge": "3f67193a277574e128a8b06cb1a4ac502d873440",
+    "run_id": 39707142123
+  },
+  "publication_history": [
+    {
+      "local_sha": "e62d21c9d84b110fd7f588c27c912cf48d861413",
+      "tree": "e3104d9fead1a4fff51d598b6099690cb72bcf4e",
+      "changes": [
+        {
+          "status": "M",
+          "path": "docs/PROJECT_STATE.md"
+        },
+        {
+          "status": "M",
+          "path": "docs/project_state.json"
+        },
+        {
+          "status": "M",
+          "path": "scripts/Diagnostics-ProGo.ps1"
+        },
+        {
+          "status": "M",
+          "path": "scripts/Test-ProGo.ps1"
+        },
+        {
+          "status": "M",
+          "path": "src/BoundedLog.cs"
+        },
+        {
+          "status": "M",
+          "path": "src/Core.cs"
+        },
+        {
+          "status": "M",
+          "path": "src/DiagnosticPreview.cs"
+        },
+        {
+          "status": "A",
+          "path": "src/LogOpenOperation.cs"
+        },
+        {
+          "status": "M",
+          "path": "src/Program.cs"
+        },
+        {
+          "status": "M",
+          "path": "src/UpdateAwareTrayApplicationContext.cs"
+        },
+        {
+          "status": "M",
+          "path": "tests/BoundedLogTests.cs"
+        },
+        {
+          "status": "M",
+          "path": "tests/DesktopAsyncDiagnosticPreviewTests.cs"
+        },
+        {
+          "status": "M",
+          "path": "tests/DesktopDiagnosticContextTests.cs"
+        },
+        {
+          "status": "M",
+          "path": "tests/DiagnosticPreviewTests.ps1"
+        },
+        {
+          "status": "M",
+          "path": "tests/HomeVpnWizardTests.cs"
+        },
+        {
+          "status": "A",
+          "path": "tests/ssh_loopback_fixture_tests.py"
+        },
+        {
+          "status": "D",
+          "path": "tests/test_ssh_loopback_fixture.py"
+        }
+      ],
+      "added_lines": 929,
+      "findings": [],
+      "parent_remote": "4dd4987cf6f453847931820a6f9ba1298f99f802",
+      "base_tree": "71a53965acd9d4eb19b6fbe6a9a691693d6b56b6",
+      "workflows": "unchanged; no public binary uploads/release/main push",
+      "native": "R08 Windows NOT_RUN; mandatory real SSH contracts preserved under explicit prepared discovery",
+      "ref_update": "PASS expected4dd→c3a67 without force, remote head independently confirmed; CI593 unique",
+      "published_object": "c3a67ebff9a6ac10e93059bc73dc2fadd8fef29a"
+    }
+  ],
+  "local_repair_preflight": {
+    "status": "PARTIAL",
+    "source": "144c6167209e07fbf00cd7d57d17885eee1d2266",
+    "files": [
+      "scripts/Repair-ProGo.ps1",
+      "tests/RepairPayloadTests.ps1",
+      "scripts/Test-ProGo.ps1"
+    ],
+    "scope": "explicit prepared PayloadDirectory optional input;41 mandatory nonempty runtime leaves preflight before any target installation directory/write",
+    "checks": "PASS source contract matches41 independently derived Build outputs; preflight order before New-Item; public320/0/diff; new PS test ASCII, main script BOM preserved",
+    "windows_parser": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "tests": "4 child PowerShell negative cases use actual built payload damaged at exe/InstalledUpdateTransport/home-vpn profile-share/empty updater; own redirected LOCALAPPDATA, exact private-byte snapshot and no new scripts directory; bounded10/3s own child cleanup",
+    "excludes": "All repair stages excluded from published source37f02d2a0648fe2efebd7fc932b81668d26c44be / CI598",
+    "remaining": [
+      "exact Windows parser/compiler and real repair/maintenance native cases",
+      "owner target-PC acceptance"
+    ],
+    "next": "Prepare isolated repair source after CI598 completion; first verify full source diff, secrets/PII and unchanged workflow upload guards",
+    "full_copy": {
+      "status": "PARTIAL",
+      "source": "5157f78b7e7e439ded93c9316ad7040cb403b829",
+      "scope": "freeze SHA256 of all41 mandatory runtime leaves before target writes; copy only declared leaves from one prepared payload; per-file and final hash verification; no mixed PSScriptRoot sources or optional skips; private/unknown files not touched",
+      "tests": "one positive Windows child uses actual built payload and compares every built file byte hash plus prior private fixture bytes; NoLaunch,10/3s own child cleanup; four preflight negatives retained",
+      "local_checks": "PASS source single-source/copy-order contract and public320/0/diff; PS parser/native NOT_RUN",
+      "windows_parser": "NOT_RUN",
+      "windows_native": "NOT_RUN",
+      "remaining": "transactional rollback and self-check not yet implemented; full F22-R03 not closed"
+    },
+    "runtime_rollback": {
+      "status": "PARTIAL",
+      "source": "46fdd45d780d0277279c235f5a8af7f9d8c0fa41",
+      "scope": "per-install exclusive lease; source/new+old runtime snapshots; atomic verified replacement of known leaves; planned ownership before OS commit; conditional SHA rollback only new owned bytes; preserve snapshot on conflict; own temporary files and empty created directories cleaned",
+      "tests": "one real Windows FileShare.Read VERSION lock fails second replacement after first ProGo.exe write; expected failed exit, full baseline runtime/private hashes and no transaction residue restored; own child10/3s, no launch",
+      "checks": "PASS source atomic/order/conditional ownership contract and public320/0/diff; PS parser/native NOT_RUN",
+      "windows_parser": "NOT_RUN",
+      "windows_native": "NOT_RUN",
+      "remaining": [
+        "isolated installed executable self-check before success/launch",
+        "durable journal and interruption recovery",
+        "exact Windows parser+all native repair cases"
+      ],
+      "next": "Self-check and its failure regression next; then journal recovery; no publication while597 active"
+    },
+    "self_check": {
+      "status": "PARTIAL",
+      "source": "9d88165d9bec2df72a470d9eb6fbea59767ddec0",
+      "scope": "actual installed --self-check before commit/success/launch; isolated fresh local-data root avoids rewriting real personal data; shared maintenance gate/application-stopped/proxy-cleanup checks; owned suspended process with kill-on-close job,8s root budget and3s confirmed tree cleanup",
+      "shared_helper": "MaintenanceOperation.RunOwnedSelfCheck reuses OwnedHandoffProcess, bounded opt-in; existing accepted handoff/default lifetime unchanged; fresh loaded helper API required",
+      "tests": "positive uses real built ProGo self-check; controlled negative native PE hangs with one real child, captures own process handles, deadline20s covers8s check+3s cleanup+staging/PS startup, asserts both exited and exact baseline rollback; old4 preflight+locked-copy10s budgets unchanged",
+      "checks": "Maintenance C#syntax/public320/0/self-check-before-commit/diff PASS; target C#5 compiler/PS parser/native NOT_RUN",
+      "windows_compilation": "NOT_RUN; excluded from597",
+      "windows_native": "NOT_RUN",
+      "remaining": [
+        "durable journal/interruption recovery",
+        "exact native repair+maintenance regression",
+        "actual owner data/PC acceptance"
+      ],
+      "next": "Prioritize exact597 StopAll failure: isolated context generation fix without mixing repair; then finish durable repair recovery"
+    },
+    "durable_journal": {
+      "status": "PARTIAL",
+      "source": "7d88040a7078f4b20f8ee5d7f8b5ccdcdf14167c",
+      "scope": "relative GUID-bound schema1 journal, atomic replacement after FileStream.Flush(true); preparing/prepared/applying before each OS runtime commit; committed only after installed self-check and final hashes; rolled-back outcome before cleanup; pending journal refuses new repair before payload validation",
+      "tests": "Existing native hanging self-check case observes phaseapplying/all41 entries+41 admitted paths/self_checkfalse while own root and child alive; ordinary failed check must restore baseline and remove settled journal; actual hard-kill recovery vector next",
+      "checks": "PASS source durable-admission/commit-order/pending-guard contracts and public320/0/diff; PS parser/native NOT_RUN",
+      "windows_parser": "NOT_RUN; excluded from598",
+      "windows_native": "NOT_RUN",
+      "remaining": [
+        "actual Windows hard-kill/recovery and strict refusal cases NOT_RUN"
+      ],
+      "next": "Review fail-closed recovery boundaries, then prepare isolated exact repair checking source after CI598 finishes"
+    },
+    "explicit_recovery": {
+      "status": "PARTIAL",
+      "source": "017553607c1eac01f9eb382bb904c2f0a5a0818e",
+      "scope": "Explicit -Recover only: bounded relative schema1/GUID/canonical runtime-prefix validation, journal-byte hash lease check, no link traversal, verified snapshot helper/shared maintenance gate for rollback, hash-conditional known runtime restoration; committed/rolled-back records cleanup without self-check/relaunch; temp writes inside own stage",
+      "tests": "Native hard-kill actual repair parent at real contained root+child barrier; require job descendant exit, pending default repair refusal, schema/path/foreign runtime refusal with exact unchanged snapshots, restore baseline without original payload, repeated recovery refusal; own waits20/10/3s bounded; all Windows NOT_RUN;9 refusal cases include strict boolean, prefix/phase and damaged old snapshot, exact unchanged tree",
+      "checks": "PASS diff/source order/ownership contracts/public320 sources0 release; tests ASCII. No local PowerShell or Windows, parser/compiler/native NOT_RUN; no source publication or duplicate598",
+      "remaining": [
+        "exact Windows parser/compiler and all real repair/maintenance native cases",
+        "additional recovery phase/conflict interruption boundary review",
+        "target-PC real-data acceptance"
+      ],
+      "next": "Review fail-closed recovery boundaries, then prepare isolated exact repair checking source after CI598 finishes",
+      "followup_source": "fa48f29d1fb1b74563b83e9b1b58988499bfe4ed",
+      "cleanup": "Nested finally releases per-install lease/shared maintenance even when own-temp deletion fails; non-object journal and occupied stage path explicitly refused"
+    },
+    "checking_candidate": {
+      "local_sha": "b342dfc4c055de5b4e8e7d1733fdb39b0e65ada4",
+      "tree": "2b9640811e30ccfc5e79c26e767b50830aa5712c",
+      "base_source": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+      "base_matching_local": "85f33fdcae96df1231cfeb91af692eb7ad40f97e",
+      "worktree": "ProGo-ci598-repair",
+      "files": [
+        "scripts/Repair-ProGo.ps1",
+        "scripts/Test-ProGo.ps1",
+        "src/MaintenanceOperation.cs",
+        "tests/RepairPayloadTests.ps1"
+      ],
+      "scan": "PASS4 files727 additions0 secrets/PII; public320/0, modern C#syntax+targetC#5 await structure/diff; tests ASCII, workflow/VERSION unchanged and4 public upload guards intact",
+      "windows": "NOT_RUN: no repair source in CI598",
+      "publication": "NOT_RUN: wait same598 completion, then expected-head lease/full tree equality; no rerun598",
+      "next": "Check same598 final jobs/logs before ref update; repair checking source remains unchanged"
+    }
+  },
+  "local_ci596_csharp5_fix": {
+    "status": "PASS",
+    "local_sha": "272c42697ba7f0928626de2a11bcef6d114d913a",
+    "tree": "ca320af4f5a6df1b556101a56c0b7e011eddc018",
+    "github_object": "b1fad3c6a6804ab6055b146b5cf284f5136d4288",
+    "parent_remote": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
+    "scope": "capture startup failure in catch, await RetireRun in ordinary branch inside same outer CTS finally; cancellation/cleanup failure classification unchanged",
+    "checks": "PASS modern syntax + targeted C#5 catch/finally/lock await scan on11 changed C# files; one-file29addedlines scan0 secrets/PII/public319/0/diff/full tree equality; no tests/deadlines/workflows/VERSION changed",
+    "windows_compilation": "PASS exact CI597 main app/Desktop sourceb1/merge699; narrow compiler compatibility criterion only",
+    "windows_native": "PARTIAL; full StopAll later FAIL, no whole phone claim",
+    "ref_update": "PASS expected654551→b1fad without force; actual PR head verified; unique597",
+    "excludes": "all local repair changes144c616/5157f78",
+    "run_id": 39708048332,
+    "tested_merge": "699b50ee7db44cc6ec851d7fcc36069fa574611a"
+  },
+  "local_ci597_stop_identity_fix": {
+    "status": "PASS",
+    "local_sha": "85f33fdcae96df1231cfeb91af692eb7ad40f97e",
+    "earlier_local": "93ec7148922165b95e0d08ab9cd601bf2817cfee",
+    "tree": "e6f261e2bdadc227eac3394dc83dc43e43294e05",
+    "github_object": "37f02d2a0648fe2efebd7fc932b81668d26c44be",
+    "superseded_unreferenced_object": "2c7fee3dd3969b68f1ab915010783fd59ed5293a; never branch head",
+    "parent_remote": "b1fad3c6a6804ab6055b146b5cf284f5136d4288",
+    "scope": "Ask Home owned physical Stop first; reuse observer only for exact same physical Task. Old queued UI result cannot swallow new StopAll after fresh channel start",
+    "regression": "hold own cleanup, release/await physical stop without UI pump, require old observation still queued, fresh real loopback relay starts, StopAll must own new task and await it before both-channel/no-revival checks; real peer/startup/cleanup bounded5s, only own sockets/session",
+    "checks": "Syntax/target C#5 structure/public319/0/diff/full tree equality PASS;2files76additions0 secrets/PII; tests not disabled, no deadlines increased, workflows/VERSION unchanged",
+    "windows_compilation": "PASS scoped exact598 source37f02/merge16bf1",
+    "windows_native": "PASS scoped deterministic actual queued UI/physical-task/new relay regression; full-stop assertion02:40:45.557",
+    "ref_update": "PASS expectedb1fad→37f02 without force; actual PR head verified; unique598",
+    "excludes": "all local repair and import guarda75/7cc; full ID/owner acceptance not implied",
+    "run_id": 39711511948,
+    "tested_merge": "16bf1e50b66baf1a724a0d2da642b2fe70bb3a46"
+  },
+  "local_token_import_cleanup_guard": {
+    "status": "PARTIAL",
+    "source": "a75df7b9c62ef1638019886821ecce4b45b76d62",
+    "fixture_cleanup_source": "7cc8159629d2cc085c575fdd65687f136bceedb7",
+    "scope": "UseToken requires true physical StopAsync result before first DPAPI write or Access/Owner replacement; failure retains old exact session and asks explicit cleanup retry",
+    "test": "Existing real FileShare.None session cleanup fixture: new import task, failure exception, identical old Access/Owner references and access/owner DPAPI bytes, no new relay/PID; retained task settled after lock scope even on failure",
+    "checks": "PASS source ordering, modern C#syntax/targeted C#5 structure/public320/0/diff; Windows compiler/native NOT_RUN",
+    "publication": "NOT_RUN; excluded from both CI598 and repair checking sourceb342",
+    "remaining": "sync compatibility import still blocks its UI caller, multi-file private persistence and owner cancellation remain F31-R09; this guard closes no full ID",
+    "next": "Keep isolated from repair CI; next R09 owned worker/cancellation design and bounded native vectors"
   }
 }
