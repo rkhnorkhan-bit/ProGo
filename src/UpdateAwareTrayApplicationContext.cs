@@ -16,6 +16,7 @@ namespace ProGo
         private readonly CliProxyBridgeService cliProxy;
         private readonly HomeVpnService homeVpn;
         private Task<bool> phoneStopObservation;
+        private Task<bool> phoneStopObservedWork;
         internal Task<bool> PhoneStopWork { get { var observed = phoneStopObservation; return observed != null && !observed.IsCompleted ? observed : homeVpn.StopWork; } }
         private readonly AppProxyConsumers appConsumers;
         private readonly ClipboardService clipboard;
@@ -608,11 +609,14 @@ namespace ProGo
         }
         internal Task<bool> StopPhoneAsync()
         {
-            var pending = phoneStopObservation;
-            if (pending != null && !pending.IsCompleted) return pending;
-            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            phoneStopObservation = completion.Task;
+            // The service publishes the physical reservation before native I/O.
+            // UI observers merge only when they refer to that exact operation.
             var work = homeVpn.StopAsync();
+            var pending = phoneStopObservation;
+            if (pending != null && !pending.IsCompleted && Object.ReferenceEquals(work, phoneStopObservedWork)) return pending;
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            phoneStopObservedWork = work;
+            phoneStopObservation = completion.Task;
             ObservePhoneStop(work, completion);
             RefreshPendingRoutes();
             return completion.Task;

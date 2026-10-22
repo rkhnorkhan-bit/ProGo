@@ -313,32 +313,81 @@ namespace ProGo
                 Check(!ApplyOnce(plan, ProxyFeature.Cli, true) && !ApplyOnce(plan, ProxyFeature.Windows, true) && !desktop.CurrentPid.HasValue,
                     "PC stop cancels both automatic proxy modes and recovery");
                 plan.Update(null, configured); typeof(ProxyService).GetField("wanted", PrivateInstance).SetValue(desktop, true);
-                Call(context, "Execute", "phone-stop");
-                Check(!relay.IsRunning && Field(home, "proxy") == null && !(bool)Field(phoneProxy, "wanted") && (bool)Field(desktop, "wanted"), "phone stop cancels phone recovery without stopping desktop");
-                Check(ApplyOnce(plan, ProxyFeature.Cli, true) && ApplyOnce(plan, ProxyFeature.Windows, true), "phone stop does not cancel desktop automatic actions");
-                StartFixtureRelay(relay); plan.Update(null, configured);
-                var main = (MainWindow)Field(context, "mainWindow");
-                Descendants(main).OfType<Button>().Single(b => b.Text == "Остановить все\nподключения").PerformClick(); WaitIntegration(context); PumpUntil(() => !desktop.IsStopping); desktop.PollRecovery();
-                Check(!relay.IsRunning && !(bool)Field(desktop, "wanted") && !ApplyOnce(plan, ProxyFeature.Cli, true) && !ApplyOnce(plan, ProxyFeature.Windows, true),
-                    "full stop stops both channels and no timer revives them");
+                var gap = System.IO.Path.Combine(work, "stop-scope-gap-" + Guid.NewGuid().ToString("N"));
+                System.IO.Directory.CreateDirectory(gap); System.IO.File.WriteAllText(System.IO.Path.Combine(gap, "owned.txt"), "owned stop scope fixture");
+                typeof(HomeVpnService).GetField("sessionDirectory", PrivateInstance).SetValue(home, gap);
+                var previousIo = home.BeforeSessionIo;
+                using (var entered = new ManualResetEventSlim()) using (var release = new ManualResetEventSlim()) {
+                    home.BeforeSessionIo = stage => { if (stage == "cleanup") { entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Stop scope cleanup barrier"); } };
+                    try {
+                        Call(context, "Execute", "phone-stop");
+                        var previousObservation = context.PhoneStopWork;
+                        if (!entered.Wait(3000)) throw new Exception("Stop scope did not enter owned cleanup");
+                        release.Set(); WaitAsyncRestoreWithoutPump(home.StopWork, 5000);
+                        Check(!previousObservation.IsCompleted && home.StopWork.IsCompleted,
+                            "phone physical stop can settle while its old native UI result remains deliberately queued");
+                        Check(!relay.IsRunning && Field(home, "proxy") == null && !(bool)Field(phoneProxy, "wanted") && (bool)Field(desktop, "wanted"), "phone stop cancels phone recovery without stopping desktop");
+                        Check(ApplyOnce(plan, ProxyFeature.Cli, true) && ApplyOnce(plan, ProxyFeature.Windows, true), "phone stop does not cancel desktop automatic actions");
+                        home.BeforeSessionIo = null;
+                        // No UI pump here: recreate the exact gap between settled
+                        // cleanup and its queued result, then start a fresh real relay.
+                        StartFixtureRelay(relay); plan.Update(null, configured);
+                        var main = (MainWindow)Field(context, "mainWindow");
+                        Descendants(main).OfType<Button>().Single(b => b.Text == "Остановить все\nподключения").PerformClick();
+                        var currentObservation = context.PhoneStopWork;
+                        Check(!Object.ReferenceEquals(previousObservation, currentObservation),
+                            "StopAll owns a fresh stop for the new phone channel instead of reusing an obsolete queued result");
+                        WaitIntegration(context); PumpUntil(() => !desktop.IsStopping && currentObservation.IsCompleted);
+                        Check(currentObservation.GetAwaiter().GetResult(), "full stop observes confirmed phone cleanup before checking stopped channels");
+                        desktop.PollRecovery();
+                        Check(!relay.IsRunning && !(bool)Field(desktop, "wanted") && !ApplyOnce(plan, ProxyFeature.Cli, true) && !ApplyOnce(plan, ProxyFeature.Windows, true),
+                            "full stop stops both channels and no timer revives them");
+                    }
+                    finally {
+                        release.Set(); home.BeforeSessionIo = previousIo;
+                        var cleanup = home.StopAsync(); WaitAsyncRestoreWithoutPump(cleanup, 5000);
+                        if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned stop scope cleanup incomplete");
+                        if (System.IO.Directory.Exists(gap)) System.IO.Directory.Delete(gap, true);
+                    }
+                }
             }
         }
         private static void StartFixtureRelay(Ikev2RelayService relay)
         {
-            var listener = Occupy(0);
-            var server = Task.Run(async delegate {
-                using (var client = await listener.AcceptTcpClientAsync()) {
-                    var stream = client.GetStream();
-                    await Ikev2RelayService.ReadExactAsync(stream, 3, CancellationToken.None);
-                    var greet = new byte[] { 5, 0 }; await stream.WriteAsync(greet, 0, greet.Length);
-                    await Ikev2RelayService.ReadExactAsync(stream, 10, CancellationToken.None);
-                    var reply = new byte[] { 5, 0, 0, 1, 127, 0, 0, 1, 0, 0 }; await stream.WriteAsync(reply, 0, reply.Length);
-                    var hello = await Ikev2RelayService.ReadExactAsync(stream, 6, CancellationToken.None);
-                    await stream.WriteAsync(hello, 0, hello.Length);
+            var listener = Occupy(0); TcpClient peer = null;
+            using (var source = new CancellationTokenSource())
+            using (source.Token.Register(delegate {
+                listener.Stop(); var current = Interlocked.CompareExchange(ref peer, null, null); if (current != null) current.Close();
+            })) {
+                var server = Task.Run(async delegate {
+                    using (var client = await listener.AcceptTcpClientAsync().ConfigureAwait(false)) {
+                        Interlocked.Exchange(ref peer, client);
+                        var stream = client.GetStream();
+                        await Ikev2RelayService.ReadExactAsync(stream, 3, source.Token).ConfigureAwait(false);
+                        var greet = new byte[] { 5, 0 }; await stream.WriteAsync(greet, 0, greet.Length, source.Token).ConfigureAwait(false);
+                        await Ikev2RelayService.ReadExactAsync(stream, 10, source.Token).ConfigureAwait(false);
+                        var reply = new byte[] { 5, 0, 0, 1, 127, 0, 0, 1, 0, 0 }; await stream.WriteAsync(reply, 0, reply.Length, source.Token).ConfigureAwait(false);
+                        var hello = await Ikev2RelayService.ReadExactAsync(stream, 6, source.Token).ConfigureAwait(false);
+                        await stream.WriteAsync(hello, 0, hello.Length, source.Token).ConfigureAwait(false);
+                    }
+                });
+                var startup = relay.StartAsync("127.0.0.1", Number(listener), 0, 0, 12345, source.Token);
+                try { WaitAsyncRestoreWithoutPump(Task.WhenAll(startup, server), 5000); }
+                catch {
+                    source.Cancel();
+                    WaitAsyncRestoreWithoutPump(relay.StopAsync(), 5000);
+                    throw;
                 }
-            });
-            try { relay.StartAsync("127.0.0.1", Number(listener), 0, 0, 12345).GetAwaiter().GetResult(); server.GetAwaiter().GetResult(); }
-            finally { listener.Stop(); }
+                finally {
+                    source.Cancel(); listener.Stop();
+                    var current = Interlocked.CompareExchange(ref peer, null, null); if (current != null) current.Close();
+                    // Observe cancellation faults after all owned native I/O ends.
+                    if (!server.IsCompleted) try {
+                        if (!server.Wait(5000)) throw new Exception("Owned relay fixture peer cleanup timeout");
+                    } catch (AggregateException) { if (!server.IsCompleted) throw; }
+                    var observed = server.Exception;
+                }
+            }
         }
         private static void RouteTimes(SettingsService settings, ProxyService proxy)
         {
