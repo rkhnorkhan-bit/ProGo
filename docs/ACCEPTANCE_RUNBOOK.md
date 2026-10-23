@@ -1,4 +1,44 @@
-## Текущий кандидат: recover-setup owned-worker10; Windows NOT_RUN
+## Текущий кандидат: fresh setup owned-worker10; Windows NOT_RUN
+
+Checkpoint `c1e8b509eb0dff03175a737dce806472bffb53b0` сохранён. Проверенная база source
+`5d5fed17998f77c1e1225127501f3f32ec4c0557` / tested merge `e52e4dfb1702d09ce7d8ec3a123bafc70d4ef370`,
+[CI632 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39873394320), final BOTH
+job logs independently checked: build identity, recovery10/list10/repair8/ownership8/cleanup4,
+snapshot12/dispatcher5/export modal11/chooser3 explicit PASS; Desktop5294/HomeVPN2569/Portable91.
+Windows Python26 PASS/2 SKIP, Ubuntu16+13 unit OK/isolated smoke PASS. Runner pack SUCCESS,
+uploads/prune SKIPPED, artifacts API empty; package bytes not retrieved/delivered/installed.
+Old pending632 entries below are dated history, not current; new fresh code not covered.
+
+Code `ad66afc42d36b240671187004a0046b09b55bb1f`: existing fresh setup modal button → retained worker →
+explicit wizard native copy/command → exact cleanup. Only2 runtime +1 existing test +3 docs.
+Single unchanged core family lease includes Register/result/cleanup; no wrapper reacquire
+or public Stop self-await. Post-copy Stop check prevents registration and next SSH; if
+already registered/admitted, preserve exact request and offer read-only recovery, no replay.
+Pending appearing after wizard read switches unchanged core to same original request.
+
+Minimum exact new source/merge Windows run: scripts/Test-ProGo.ps1 + Test-HomeVpnRelay.ps1.
+Require fresh10 PASS: default-refusal, copy-fault, cancel-retry, stop-copy, dispose-copy,
+owner-dispose, cancel-command, cleanup-lock, result, pending-race. Actual ShowDialog/default
+binding, single admission/lease/heartbeat and helper work, no request before copy settles,
+Cancel→Retry retains original Task and issues only one setup after explicit retry, Stop/
+Dispose before registration refuses it, native subprocess reads actual DPAPI journal before
+command and retains same ID after cancel, pending race only reads status. Locked cleanup:
+Stop false→unlock true, exact original error, no replay. Credentials/sibling/unrelated
+process unchanged; no late UI. Positive fixture cancels local import before writes/tunnel.
+Only transport/executable isolated, not replacement for real target acceptance. Bounded
+5s I/O,15s modal,5s finally joins, native300s unchanged; finally owns only its resources.
+Require recovery10/list10/repair8/ownership8/cleanup4/API17/export14/full regression as well.
+New Windows compilation/native fresh10/full regression NOT_RUN until completed exact logs.
+
+Local PASS manual review/syntax3/C#5 await-scope/diff/public321/0/secretPII0/AST preservation;
+not compiler/native proof. All71 service and41 wizard methods and existing recovery code
+unchanged, all other blobs/EOF/BOM/workflows/harness preserved. One guarded PR88 update →
+one automatic PR CI, uploads OFF/release excluded. Save source/merge/tree/run and STOP
+without waiting full CI or next code stage. Next check that same run, weights58–80/22 +0.
+FullR09/remaining Admin/owner acceptance open; merge/release/binaries/install/VPS/credentials/
+network and personal deployment excluded.
+
+## История: кандидат recover-setup owned-worker10; Windows NOT_RUN
 
 Проверенная база `2882b1f104bbfe469be4b51a615c2fe72f43855c` / merge `40dff9acb6c62600ee7495bb06ad76a5fb7332bc`,
 [CI631 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39868272469). Получены
@@ -30,10 +70,20 @@ forms, cleanup joins actual operation/import/snapshot/driver/Stop. NativeRecover
 
 Local PASS review/syntax4/await-scope/diff/public321/0/secretPII0/AST-preservation;
 это не compiler/native proof. Все прежние service/wizard method bodies и receipt protocol
-сохранены. Один guarded update PR88 → один automatic PR CI, uploads OFF/release excluded.
-Сохранить run и STOP без полного ожидания или второго этапа. После проверки того же CI
-отдельный fresh-setup owned preparation срез. Веса58–80/22 прежние,delta0. Полный R09/owner
-acceptance открыт; main merge/release/бинарники/установка/VPS/credentials/network исключены.
+сохранены. Публикация PASS в existing PR88, source `5d5fed17998f77c1e1225127501f3f32ec4c0557`,
+merge ref `e52e4dfb1702d09ce7d8ec3a123bafc70d4ef370` (build identity632 ещё NOT_RUN),
+freeze `30c8fa142af5a4b8bf794348a680489e33a2b09d`, tree `21bf1d85c7fce56a17a32926f0925665df8c77f9`.
+Fetched parent/tree проверены, expected HEAD обновлён без force, diff7files581add/35delete.
+Один automatic [CI632/39873394320](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39873394320),
+attempt1/source exact, raw head runs total_count1. Run.updated_at2026-10-22T23:41:06Z:
+in_progress, Windows120153006376/Ubuntu120153006482 in_progress/conclusion null.
+Uploads OFF/release excluded по неизменным workflow guards; completion upload/prune ещё
+не проверен. Новые compiler/native10/full regression NOT_RUN; SUCCESS631 не наследуется.
+Post-publication3-doc checkpoint локальный HEAD (git log -1), не push; свежие IDs в PR body.
+STOP без ожидания или второго этапа. Следующий шаг — финальные логи ЭТОГО ЖЕ CI632 и точный
+tested merge; после proof отдельный fresh-setup owned preparation срез, сейчас не начат.
+Веса58–80/22 прежние,delta0. Полный R09/owner acceptance открыт; main merge/release/
+бинарники/установка/VPS/credentials/network исключены.
 
 ## История: кандидат read-only Admin list owned-worker10; Windows NOT_RUN
 

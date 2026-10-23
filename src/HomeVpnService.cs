@@ -1089,6 +1089,60 @@ namespace ProGo
             }
         }
 
+        // Fresh setup keeps the existing core receipt protocol and single family
+        // lease. All local preparation/registration/result I/O is retained by
+        // the worker; native startup alone crosses to the explicit wizard UI.
+        internal Task<string> SetupOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
+            HomeProfileUiDispatcher dispatcher, string label, Action<string> progress,
+            Func<string, string, Task> copy = null, string commandExecutable = null)
+        {
+            if (window == null) throw new ArgumentNullException("window");
+            if (dispatcher == null) throw new ArgumentNullException("dispatcher");
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            var stop = StopWork; int reporting = 1;
+            return RunAdminOwnedAsync(async delegate {
+                try {
+                    RequireSetupScope(stop, false);
+                    return await AdminAsync(frozen, "setup", label, null,
+                        text => dispatcher.Post(delegate { if (Volatile.Read(ref reporting) != 0) progress(text); }),
+                        async (executable, arguments) => {
+                            // Core owns the lease and has already loaded this
+                            // journal. A request appearing after the wizard's
+                            // read must retain its recovery-only copy purpose.
+                            bool checking = HomeVpnSetupRecovery.HasPending();
+                            await DispatchSetupTransportAsync(stop, dispatcher, delegate {
+                                return copy == null ? HomeVpnPreparationForm.CopyAsync(window, executable, arguments, checking) : copy(executable, arguments);
+                            }, checking).ConfigureAwait(false);
+                            // Stop during accepted copy must drain it, then refuse
+                            // registration/SSH rather than manufacture a new ID.
+                            RequireSetupScope(stop, checking);
+                        },
+                        (executable, arguments, output) => DispatchSetupTransportAsync(stop, dispatcher, delegate {
+                            return HomeVpnPreparationForm.WaitForCommandAsync(window, commandExecutable ?? executable, arguments, output);
+                        }, true), RetainAdminCleanup).ConfigureAwait(false);
+                } finally { Volatile.Write(ref reporting, 0); }
+            });
+        }
+        private async Task DispatchSetupTransportAsync(Task<bool> stop, HomeProfileUiDispatcher dispatcher, Func<Task> start, bool recovery)
+        {
+            bool admitted = false;
+            try {
+                await DispatchAdminTransportAsync(dispatcher, delegate {
+                    RequireSetupScope(stop, recovery); admitted = true; return start();
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) {
+                if (!admitted) throw new HomeVpnPreparationCancelledException(recovery);
+                throw;
+            }
+        }
+        private void RequireSetupScope(Task<bool> stop, bool recovery)
+        {
+            lock (lifecycleGate) {
+                if (disposed || startsPaused || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted)
+                    throw new HomeVpnPreparationCancelledException(recovery);
+            }
+        }
+
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
             return await AdminAsync(owner, action, label, identifier, progress,

@@ -24,6 +24,7 @@ namespace ProGo
         private const string OwnedFixture = "PROGO_SETUP_OWNED_FIXTURE";
         internal static bool Fixture(string[] args)
         {
+            if (FreshSetupFixture(args)) return true;
             if (args.Length == 2 && args[0] == "setup-owned-child") {
                 HomeVpnFixtureFiles.Publish(Path.Combine(args[1], "child"), Process.GetCurrentProcess().Id.ToString()); Thread.Sleep(60000); return true;
             }
@@ -62,7 +63,7 @@ namespace ProGo
                 File.Copy(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "server", file), target, true);
             }
             try {
-                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work); OwnedAdminTasks(work); RetainedAdminCleanup(); OwnedSetupRecovery(token, clipboard, work);
+                LostResponse(token); StatusGuards(token); DispatchGuards(); CorruptJournal(); NativeSetupSnapshot(clipboard); OwnedConsumption(token); AdminRequestSnapshot(token, work); AdminTransportDispatch(work); OwnedAdminTasks(work); RetainedAdminCleanup(); OwnedSetupRecovery(token, clipboard, work); OwnedFreshSetup(token, clipboard, work);
                 // NativeRecovery calls Application.Run/ExitThread. Keep it last:
                 // later modeless timer fixtures would inherit an exited UI context.
                 NativeRecovery(token, clipboard, work);
@@ -683,6 +684,177 @@ namespace ProGo
             } finally {
                 try { if (unrelated != null) HomeVpnWaitingTests.StopUnrelatedFixture(unrelated); }
                 finally { Environment.SetEnvironmentVariable(OwnedFixture, previous); File.Delete(PendingPath); Directory.Delete(root, true); }
+            }
+        }
+        private const string FreshFixture = "PROGO_FRESH_SETUP_OWNED_FIXTURE";
+        private static bool FreshSetupFixture(string[] args)
+        {
+            string root = Environment.GetEnvironmentVariable(FreshFixture);
+            if (String.IsNullOrEmpty(root) || args.Length == 0 || args[0] != "-o") return false;
+            var request = HomeVpnSetupRecovery.Load(Owner, "My iPhone");
+            string command = args.Last(), mode = File.ReadAllText(Path.Combine(root, "mode"));
+            string kind = command.Contains("home_vpn_setup.py setup --host ") ? "setup"
+                : command.Contains("home_vpn_setup.py operation-status --request-id ") ? "status" : null;
+            if (request == null || request.Result != null || kind != (mode == "pending-race" ? "status" : "setup")
+                || !command.Contains("--request-id " + request.RequestId) || !args.Contains("-T") || !args.Contains(Owner.Login + "@" + Owner.Host)
+                || command.Contains(File.ReadAllText(Path.Combine(root, "response"))) || args.Contains("StrictHostKeyChecking=no"))
+                throw new Exception("Fresh setup fixture requires original protected request before native dispatch, without secret arguments");
+            File.AppendAllText(Path.Combine(root, "calls"), kind + "\n");
+            HomeVpnFixtureFiles.Publish(Path.Combine(root, "observed-id"), request.RequestId);
+            HomeVpnFixtureFiles.Publish(Path.Combine(root, "pid"), Process.GetCurrentProcess().Id.ToString());
+            if (mode == "cancel-command") {
+                using (var child = Process.Start(new ProcessStartInfo(Application.ExecutablePath, "setup-owned-child " + HomeVpnService.Argument(root)) { UseShellExecute = false, CreateNoWindow = true })) {
+                    var watch = Stopwatch.StartNew(); while (!File.Exists(Path.Combine(root, "child"))) { Thread.Sleep(10); if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Fresh setup child startup deadline"); }
+                    Thread.Sleep(60000);
+                }
+            }
+            Console.OutputEncoding = new UTF8Encoding(false);
+            Console.Write(kind == "status" ? Json.Serialize(Status(request, "running", false)) : File.ReadAllText(Path.Combine(root, "response"))); return true;
+        }
+        private static async Task HeldFreshSetupCopy(Form owner, Action<HomeVpnPreparationForm> publish, bool recovery, Action<CancellationToken> read)
+        {
+            using (var wait = new HomeVpnPreparationForm(ct => Task.Run(() => read(ct)), recovery)) {
+                publish(wait); wait.ShowDialog(owner); await wait.Completion;
+            }
+        }
+        private static void OwnedFreshSetup(string token, ClipboardService clipboard, string work)
+        {
+            string root = Path.Combine(work, "owned-fresh-setup-" + Guid.NewGuid().ToString("N")); HomeVpnPrivateFiles.SecureDirectory(root);
+            string previous = Environment.GetEnvironmentVariable(FreshFixture); Environment.SetEnvironmentVariable(FreshFixture, root);
+            Process unrelated = null;
+            try {
+                unrelated = HomeVpnWaitingTests.StartUnrelatedFixture();
+                foreach (string mode in new[] { "default-refusal", "copy-fault", "cancel-retry", "stop-copy", "dispose-copy", "owner-dispose", "cancel-command", "cleanup-lock", "result", "pending-race" }) {
+                    foreach (string path in Directory.GetFiles(root)) File.Delete(path);
+                    File.Delete(PendingPath); File.WriteAllText(Path.Combine(root, "response"), token); File.WriteAllText(Path.Combine(root, "mode"), mode);
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        service.UseToken(token, Owner);
+                        var credentials = new[] { "access", "owner", "home-address" }.Select(n => Path.Combine(HomeVpnPrivateFiles.Root, n + ".dat")).ToDictionary(p => p, p => File.Exists(p) ? File.ReadAllBytes(p) : null);
+                        string sibling = Path.Combine(HomeVpnPrivateFiles.Root, "admin-unrelated-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(sibling); File.WriteAllText(Path.Combine(sibling, "keep"), "unrelated");
+                        var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root); string coreWork = null, requestId = null; byte[] journal = null;
+                        HomeVpnWizardForm wizard = null; HomeVpnPreparationForm copyWindow = null; FileStream held = null;
+                        Task<string> operation = null, cancelled = null; Task<bool> stop = null; Exception original = null;
+                        int phase = 0, turns = 0, copies = 0, worker = 0, retained = 0, closedPublications = 0, importBoundaries = 0, ui = Thread.CurrentThread.ManagedThreadId;
+                        bool helperRead = false, closing = mode == "owner-dispose";
+                        Func<string[]> calls = () => File.Exists(Path.Combine(root, "calls")) ? File.ReadAllLines(Path.Combine(root, "calls")) : new string[0];
+                        Func<string, bool> gone = name => {
+                            if (!File.Exists(Path.Combine(root, name))) return true;
+                            try { using (var process = Process.GetProcessById(Int32.Parse(File.ReadAllText(Path.Combine(root, name))))) return process.HasExited; }
+                            catch (ArgumentException) { return true; }
+                        };
+                        try {
+                            if (mode == "default-refusal") { service.RetainAdminCleanup(() => retained++); service.Owner.KeyFile = Path.Combine(root, "missing-owned-setup-key"); }
+                            wizard = new HomeVpnWizardForm(service, clipboard); HomeVpnFixtureFiles.ConfigureReady(wizard);
+                            wizard.GetType().GetField("own", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(wizard, true);
+                            wizard.GetType().GetMethod("ShowStep", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(wizard, new object[] { 1 }); HomeVpnFixtureFiles.ConfigureReady(wizard);
+                            var next = (Button)Field(wizard, "next"); var dispatcher = (HomeProfileUiDispatcher)Field(wizard, "httpDispatcher");
+                            wizard.BeforeAccessIo = stage => { Interlocked.Increment(ref importBoundaries); throw new OperationCanceledException(); };
+                            if (mode != "default-refusal") wizard.PrepareSetup = (owner, window, actualUi, label, report) => {
+                                check(window == wizard && actualUi == dispatcher && label == "My iPhone" && Thread.CurrentThread.ManagedThreadId == ui, "production fresh setup binding retains explicit wizard and label");
+                                if (mode == "pending-race") { requestId = HomeVpnSetupRecovery.Register(owner, label).RequestId; journal = File.ReadAllBytes(PendingPath); }
+                                operation = service.SetupOwnedAsync(owner, window, actualUi, label, report, (exe, args) => {
+                                    check(exe == "scp.exe" && args.Contains(" -P 22 ") && Thread.CurrentThread.ManagedThreadId == ui, "fresh setup copy starts on explicit UI with original SSH parameters");
+                                    if (++copies != 1) return Task.FromResult(0);
+                                    return HeldFreshSetupCopy(window, value => copyWindow = value, mode == "pending-race", ct => {
+                                        Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                                        coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
+                                        string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single(); helperRead = File.ReadAllText(helper).Length != 0;
+                                        if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                        entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned fresh setup copy fixture deadline"); ct.ThrowIfCancellationRequested();
+                                        if (mode == "copy-fault") throw new IOException("Owned fresh setup copy failure");
+                                    });
+                                }, Application.ExecutablePath); return operation;
+                            };
+                            HomeVpnWaitingTests.ModalWizardCase(wizard, delegate {
+                                if (phase == 0) {
+                                    check(wizard.Modal && next.Enabled && next.Text == "Настроить VPS и продолжить" && !File.Exists(PendingPath), "fresh setup uses existing production modal button with no request yet: " + mode);
+                                    next.PerformClick(); phase = 1; return false;
+                                }
+                                if (mode == "default-refusal") {
+                                    if ((bool)Field(wizard, "busy") || !wizard.SetupSnapshotWork.IsCompleted) return false;
+                                    check(((Label)Field(wizard, "status")).Text.Contains("Очистка прежней команды") && copies == 0 && calls().Length == 0 && !File.Exists(PendingPath), "default fresh setup binding refuses retained cleanup before selected-key I/O and registration");
+                                    if (stop == null) { stop = service.StopAsync(); return false; } if (!stop.IsCompleted) return false;
+                                    check(stop.GetAwaiter().GetResult() && retained == 1 && !RecoveryLeaseHeld() && !service.HasOwnedResources && !unrelated.HasExited
+                                        && credentials.All(p => p.Value == null ? !File.Exists(p.Key) : p.Value.SequenceEqual(File.ReadAllBytes(p.Key)))
+                                        && File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated", "default fresh refusal preserves credentials and exact cleanup owner");
+                                    check(true, "owned production fresh setup PASS: " + mode); return true;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; } if (++turns < 3) return false;
+                                    check(helperRead && worker != ui && service.IsAdminWorking && !operation.IsCompleted && !next.Enabled && copyWindow.Owner == wizard && RecoveryLeaseHeld()
+                                        && (mode == "pending-race" ? journal.SequenceEqual(File.ReadAllBytes(PendingPath)) : !File.Exists(PendingPath)), "fresh setup retains helper work and single lease with responsive modal before registration: " + mode);
+                                    next.PerformClick(); check(copies == 1, "fresh setup refuses duplicate UI admission: " + mode);
+                                    if (mode == "cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
+                                    if (mode == "stop-copy" || mode == "dispose-copy" || closing) {
+                                        var watch = Stopwatch.StartNew(); if (mode == "dispose-copy" || closing) service.Dispose(); stop = service.StopAsync();
+                                        if (closing) { wizard.Dispose(); closedPublications = dispatcher.PublicationCount; }
+                                        check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "fresh Stop Dispose returns promptly and retains accepted copy");
+                                    }
+                                    turns = 0; phase = 2; return false;
+                                }
+                                if (phase == 2) { if (++turns < 3) return false; check(!operation.IsCompleted && (stop == null || !stop.IsCompleted), "fresh cancellation Stop cannot discard held physical I/O"); release.Set(); phase = 3; return false; }
+                                if (phase == 3 && mode == "cancel-command") {
+                                    if (!File.Exists(Path.Combine(root, "child"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                    requestId = Pending().RequestId; journal = File.ReadAllBytes(PendingPath);
+                                    check(requestId == File.ReadAllText(Path.Combine(root, "observed-id")) && Pending().Result == null && RecoveryLeaseHeld(), "fresh request is durably protected before admitted native SSH");
+                                    stop = service.StopAsync(); check(!stop.IsCompleted && service.IsAdminWorking, "fresh native command stays owned until explicit local cancel settles");
+                                    ((Button)Field(wizard.OwnedForms.OfType<HomeVpnPreparationForm>().Single(), "cancel")).PerformClick(); phase = 4; return false;
+                                }
+                                if (phase == 3 || phase == 4) {
+                                    if (!operation.IsCompleted || (bool)Field(wizard, "busy") || !wizard.SetupSnapshotWork.IsCompleted || !service.ImportWork.IsCompleted || (stop != null && !stop.IsCompleted)) return false;
+                                    var failure = RecoveryOutcome(operation);
+                                    if (mode == "cleanup-lock") { original = failure; requestId = Pending().RequestId; journal = File.ReadAllBytes(PendingPath); check(failure is HomeVpnSetupPendingException && service.HasPendingAdminCleanup && Directory.Exists(coreWork), "fresh result cleanup failure retains exact owner and completed journal"); stop = service.StopAsync(); phase = 5; return false; }
+                                    if (mode == "cancel-retry" && cancelled == null) {
+                                        cancelled = operation; original = failure;
+                                        check(failure is HomeVpnPreparationCancelledException && failure.Message.Contains("не запускались") && next.Enabled && wizard.Modal && calls().Length == 0 && !File.Exists(PendingPath) && !RecoveryLeaseHeld(), "Cancel before fresh registration keeps modal Retry without issuing or fabricating a pending request");
+                                        next.PerformClick(); phase = 4; return false;
+                                    }
+                                    check(mode == "result" || mode == "cancel-retry" ? failure == null && Pending().Result == token && importBoundaries > 0
+                                        : mode == "copy-fault" ? failure is IOException
+                                        : mode == "cancel-command" || mode == "pending-race" ? failure is HomeVpnSetupPendingException
+                                        : failure is HomeVpnPreparationCancelledException,
+                                        "fresh worker preserves exact success cancellation or pending-request outcome: " + mode);
+                                    if (cancelled != null) check(Object.ReferenceEquals(original, RecoveryOutcome(cancelled)) && copies == 2, "cancelled fresh task cannot replace explicit Retry success");
+                                    if (mode == "cancel-command" || mode == "pending-race") check(next.Text == "Проверить прошлую настройку" && !File.ReadAllText(Path.Combine(root, "calls")).Contains("result"), "pending fresh outcome offers recovery only without automatic result query or setup replay");
+                                    if (stop != null) check(stop.GetAwaiter().GetResult(), "fresh Stop drains body journal lease and cleanup: " + mode);
+                                    if (closing) check(dispatcher.PublicationCount == closedPublications, "disposed fresh owner receives no late UI updates"); phase = 7;
+                                }
+                                if (phase == 5) {
+                                    if (!stop.IsCompleted) return false;
+                                    check(!stop.GetAwaiter().GetResult() && service.HasPendingAdminCleanup, "locked fresh cleanup keeps honest failed Stop");
+                                    check(RecoveryOutcome(service.SetupOwnedAsync(Owner, wizard, dispatcher, "My iPhone", delegate { })) is HomeVpnLocalCleanupException && copies == 1 && calls().Length == 1, "retained fresh cleanup refuses new setup without replay");
+                                    held.Dispose(); held = null; stop = service.StopAsync(); phase = 6; return false;
+                                }
+                                if (phase == 6) { if (!stop.IsCompleted) return false; check(stop.GetAwaiter().GetResult() && Object.ReferenceEquals(original, RecoveryOutcome(operation)), "fresh unlock retries only exact deletion and preserves original typed error"); phase = 7; }
+                                if (phase != 7) return false;
+                                string[] expected = mode == "result" || mode == "cancel-retry" || mode == "cancel-command" || mode == "cleanup-lock" ? new[] { "setup" } : mode == "pending-race" ? new[] { "status" } : new string[0];
+                                check(calls().SequenceEqual(expected) && (expected.Length == 0 ? !File.Exists(PendingPath)
+                                    : Pending().RequestId == File.ReadAllText(Path.Combine(root, "observed-id")) && (journal == null || journal.SequenceEqual(File.ReadAllBytes(PendingPath))) && (requestId == null || Pending().RequestId == requestId))
+                                    && credentials.All(p => p.Value == null ? !File.Exists(p.Key) : p.Value.SequenceEqual(File.ReadAllBytes(p.Key))) && !RecoveryLeaseHeld() && !service.HasOwnedResources && !Directory.Exists(coreWork)
+                                    && File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated" && !relay.IsRunning && gone("pid") && gone("child") && !unrelated.HasExited,
+                                    "fresh setup preserves protected settings exact request and query counts with no replay or unrelated cleanup: " + mode);
+                                check(true, "owned production fresh setup PASS: " + mode); return true;
+                            }, () => closing);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); if (copyWindow != null) copyWindow.Dispose(); if (wizard != null) wizard.Dispose();
+                            foreach (string name in new[] { "pid", "child" }) if (File.Exists(Path.Combine(root, name))) {
+                                try { using (var process = Process.GetProcessById(Int32.Parse(File.ReadAllText(Path.Combine(root, name))))) if (!process.HasExited) { process.Kill(); if (!process.WaitForExit(2000)) throw new TimeoutException("Fresh setup fixture process cleanup deadline"); } } catch (ArgumentException) { }
+                            }
+                            service.Dispose(); var cleanup = service.StopAsync();
+                            Pump(() => cleanup.IsCompleted && (operation == null || operation.IsCompleted) && service.ImportWork.IsCompleted
+                                && (wizard == null || wizard.InitializationWork.IsCompleted && wizard.SetupSnapshotWork.IsCompleted && wizard.SetupReadWork.IsCompleted
+                                    && wizard.SetupConsumptionWork.IsCompleted && ((Task)Field(wizard, "setupSnapshotDriver")).IsCompleted), 5000);
+                            if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Fresh setup fixture retained local cleanup"); if (operation != null) RecoveryOutcome(operation);
+                            Directory.Delete(sibling, true);
+                        }
+                    }
+                }
+            } finally {
+                try { if (unrelated != null) HomeVpnWaitingTests.StopUnrelatedFixture(unrelated); }
+                finally { Environment.SetEnvironmentVariable(FreshFixture, previous); File.Delete(PendingPath); Directory.Delete(root, true); }
             }
         }
         private static void Pump(Func<bool> ready, int timeout = 12000)
