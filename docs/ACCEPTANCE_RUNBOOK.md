@@ -1,4 +1,72 @@
-## Текущий этап: Create handoff owned consumption поверх CI650
+## Текущий этап: Reissue Complete owned consumption поверх CI651
+
+PR88 OPEN/DRAFT/source `23a924705fcc7ab11de123163c94f92de10c2a45` и checkpoint
+`d0871a0c4392547f18b855df33fb7477a26a9141` сверены. До изменений56 worktrees clean/locks0,
+root sole active agent; isolated work/progo-reissue-consume-on651-20261024 сохраняет прежнюю работу.
+Полные [CI651](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40011476143) Windows13580/Ubuntu578
+строк прочитаны самостоятельно. Оба checkout/Windows build identity: exact tested merge
+`153be0f9e5ea74aa6cdae54177ebc1670221de83`. JSON ci651_final — actual per-case evidence.
+PASS Create consumption8/Recover consumption8/API8/Recover name9/Reissue8/Create8/API6/UI8/UI12/
+snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/
+freshHTTPS10/export11/chooser3. Desktop5298/Instance30/Maintenance126/Shutdown47/HomeVPN4101/
+Portable91/SSH policy61; Python reported28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS.
+Pack runner-only PASS; uploads/prune SKIPPED. Owner PC NOT_RUN; historic640/642 causes not proven fixed.
+
+ТОЛЬКО Reissue Complete: local code `4c3a84b6801f7f8a2a7efccd1aff091d518ad385`,1 runtime+1 test164add/1delete.
+Existing ConsumeRecoveredAsync/ConfirmConsumedAsync переиспользуется без изменений: original Stop scope,
+explicit owner/CTS/volatile admission/retained worker/API8 family lease. Guards after handoff/settlement;
+неподтверждённое завершение или accepted delete после отмены остаётся gated. No blind repeat.
+Create/Recover/shared helper/reissue core+uncertainty/API8/service/dispatcher/transport/scripts/workflows/
+VERSION byte-identical. Ни новых функций, ни реальных внешних действий.
+
+Reissue consumption8: complete,close-retry,dispose,stop-retry,service-dispose,locked,changed-request,
+changed-result. Actual ShowDialog/default Reissue/core: ровно один frozen-ID revoke acknowledgement,
+затем один invite same label+SourceInviteId; old access остаётся revoked, same-name sibling не изменён.
+Real protected accepted request/result; consume barrier5s/modal15s/joins5s. Cancel Close→reopen Retry,
+Stop/lock→Refresh→Recover сохраняют recovery ID без нового revoke/invite. Newer receipt/private bytes/
+draft preserved, no late status; accepted delete stays successful after Stop. Callback transport не live VPS
+proof. Все старые bodies/asserts/timeouts/coverage сохранены, cleanup только fixture-owned resources.
+
+PASS local review/signatures/C#5 await scopes/structural isolation/lexical delimiters/diff/JSON/
+public321source0release/added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh нет:
+new compilation/Reissue consumption8/full regressions NOT_RUN. SUCCESS651 не переносится.
+Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
+release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного CI wait/второго этапа.
+Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/Reissue8/Create8/Recover8/API8/all suites.
+
+### Проверяемый остаток: личный кандидат, technical production, полный коммерческий объём
+
+Это delivery gates, не удаление требований31/55 и не изменение весов. Машиночитаемые критерии:
+JSON delivery_gates_after_reissue_consumption. Исторические scoped PASS не заменяют финальную приёмку.
+
+- PC-01 NOT_RUN: exact new CI Reissue consumption8 и все старые suites/merge-source identity.
+- PC-02 TODO: четыре production transport пути invite/revoke/reissue/recover-invite — original scope/ID,
+  no duplicate lease/replay, Cancel/Retry/Stop/Dispose/cleanup. F31-R09/R10 целиком пока не закрыты.
+- PC-03 NOT_RUN: итоговая Windows dev приёмка F31-R09/R10/R11 с selected-key/agent/host-key,
+  slow disk/network/process и latency/CPU/RAM/I/O report на финальном SHA.
+- PC-04 BLOCKED: version/SHA/SHA256 checking package + install/check/rollback steps; нужен разрешённый
+  приватный способ передачи. Runner ZIP не означает полученный пакет; public uploads запрещены.
+- PC-05 NOT_RUN: отдельно разрешённая проверка на ПК владельца: запуск/UI/profile/key+agent,
+  SSH→SOCKS5→HTTP, отмена/recovery/close и сохранность данных/предыдущей версии. Live ресурс/установка
+  в этом этапе не разрешены. Этим закрывается личная приёмка, не весь коммерческий продукт.
+
+Technical production дополнительно требует PR-01 полной технической сверки approved criteria;
+PR-02/F23-R01–R06 готового standalone installer/updater/fallback installer с сохранением program/data
+paths, immutable identity и actual clean install/update/offline/Cancel/hash/self-check/rollback tests;
+PR-03/F19/F22/F31 другого Windows пользователя/ПК/разрешённого VPS, сохранности профилей/ключей/
+settings, network drop/host-key/idle/large transfers и phone для включённого маршрута;
+PR-04/F27 точного signed payload/timestamp и отдельных Defender/Kaspersky результатов;
+PR-05 финальной разрешённой integration/merge/release/публикации/live acceptance на том же SHA.
+Signing credentials/security settings/доступы, установка, live ресурсы, merge/release/private transfer
+требуют соответствующего отдельного решения владельца: BLOCKED, обходов или новых credentials нет.
+
+F30 почта/кабинет/биллинг и остальные коммерческие обязательства остаются PARTIAL в полном плане:
+sandbox/webhook/duplicates/refunds/paid→activation retry/session revocation. Они не объявлены готовыми
+и не удалены ради личного кандидата; это отдельный полный коммерческий объём.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: exact Windows Reissue proof, затем четыре transport paths и delivery gates выше.
+
+## История этапа: Create handoff owned consumption поверх CI650
 
 PR88 OPEN/DRAFT/source `5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec` и checkpoint
 `052309cabb2ff229930ae605011644c16a608621` сверены. До изменений55 worktrees clean/locks0,
@@ -31,9 +99,19 @@ actual delete последующий Stop сохраняет успешный Ta
 PASS local review/signatures/C#5 await scopes/structural isolation/lexical delimiters/diff/JSON/
 public321source0release/added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh нет:
 new compilation/Create consumption8/full relevant regression NOT_RUN. SUCCESS650 не переносится.
-Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
-release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного CI wait/второго этапа.
-Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/Create consumption8/Recover8/API8/all prior suites.
+Publication PASS: source `23a924705fcc7ab11de123163c94f92de10c2a45`, existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched exact650 parent,
+full tree `38a535e3be126fca5a153a45e3389ff26aae3947` равен reviewed freeze
+`57eb7b7b420d4941655ec9da21b1d64353d30919`. Public diff5files689add/47delete:
+1 runtime7add/1delete +1 existing test146add/0delete +3docs536add/46delete.
+Merge ref `153be0f9e5ea74aa6cdae54177ebc1670221de83` пока НЕ final tested merge (NOT_RUN).
+ONE automatic [CI651/40011476143](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40011476143):
+exact-source count1/pull_request/attempt1, run queued/conclusion null at latest metadata snapshot.
+Jobs snapshot: Windows120612656982 in_progress; Ubuntu120612656538 queued. Новые suites NOT_RUN.
+Public uploads OFF/release+prune ineligible/workflows unchanged; final skips not yet checked.
+Postpublication3-doc local checkpoint intentionally NOT pushed, чтобы не запускать второй CI;
+полный SHA в git log -1/PR88 body. STOP без полного wait/второго этапа.
+Далее ТОТ ЖЕ CI651 full final logs/exact source+tested merge/Create consumption8/Recover8/API8/all prior suites.
 Остаток: Reissue Complete consumption; invite/revoke/reissue/recover-invite owned transport (отдельно).
 FullR09/owner PC acceptance open. Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
 главный блокер: Windows proof нового Create UI slice, затем Reissue/transport/owner acceptance.

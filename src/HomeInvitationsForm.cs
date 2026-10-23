@@ -117,7 +117,13 @@ namespace ProGo
                     if (result.State != InvitationReissueState.RevokeUnconfirmed) selected.Revoked = true;
                     list.RefreshSelection();
                     if (result.State == InvitationReissueState.Complete) {
-                        list.Add(result.Replacement); ShowToken(result.Token); HomeVpnAdminRecovery.ConfirmConsumed(result.Token);
+                        list.Add(result.Replacement); ShowToken(result.Token);
+                        if (ownerUi.Closed || IsDisposed || Disposing) return;
+                        bool consumed = await ownerUi.Await(ConsumeRecoveredAsync(result.Token));
+                        if (ownerUi.Closed || IsDisposed || Disposing) return;
+                        if (!consumed) RequireRefresh("Завершение перевыпуска не подтверждено. Проверьте сохранённый запрос без нового отзыва или приглашения.");
+                        else if (closeAfterPending || !RecoveryConsumptionScope(operationStop))
+                            RequireRefresh("Запрос перевыпуска уже завершён. Продолжение отменено; обновите список явно.");
                     } else if (result.State == InvitationReissueState.IssueUnconfirmed) {
                         bool known = await ownerUi.Await(RefreshPendingAsync(operationStop));
                         if (ownerUi.Closed || IsDisposed || Disposing) return;

@@ -113,6 +113,7 @@ namespace ProGo
                 RecoverNameUi(clipboard);
                 RecoverConsumptionUi(clipboard);
                 CreateConsumptionUi(clipboard);
+                ReissueConsumptionUi(clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "deadline" }) NativeWait(route, previous);
                 LostResponseAndReopen(token, clipboard, previous);
                 ReissueBoundary(token); FrozenOwner(); DefaultHandoff(clipboard); LateDisposedUi(clipboard); ReissueHandoffMessage(token, clipboard); StatusAndStorage(token);
@@ -1136,6 +1137,162 @@ namespace ProGo
                                         ((Button)Field(retry, "recover")).PerformClick(); phase = 1; return false; }
                                     if (!retry.ActionWork.IsCompleted) return false; retry.ActionWork.GetAwaiter().GetResult();
                                     check(issues == 1 && calls == 1 && handoffs == 2 && !File.Exists(PendingPath) && retry.ConsumptionWork.Status == TaskStatus.RanToCompletion,
+                                        "Cancel Close then explicit reopen Retry consumes original request once without late cancelled publication"); return true;
+                                }, () => false);
+                            } finally { retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted && retry.ActionWork.IsCompleted && retry.ConsumptionWork.IsCompleted, 5000);
+                                retryService.Dispose(); var cleanup = retryService.StopAsync(); Pump(() => cleanup.IsCompleted, 5000); check(cleanup.GetAwaiter().GetResult(), "consumption reopen joins cleanup"); }
+                        }
+                    }
+                }
+            } finally { if (original == null) File.Delete(PendingPath); else File.WriteAllBytes(PendingPath, original); }
+        }
+        private static void ReissueConsumptionUi(ClipboardService clipboard)
+        {
+            byte[] original = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+            try {
+                foreach (string mode in new[] { "complete", "close-retry", "dispose", "stop-retry", "service-dispose", "locked", "changed-request", "changed-result" }) {
+                    File.Delete(PendingPath); HomeVpnAdminRequest request = null; byte[] receipt = null;
+                    var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).Where(path => path != PendingPath).ToDictionary(path => path, File.ReadAllBytes);
+                    int calls = 0, revokes = 0, issues = 0, handoffs = 0;
+                    var originalRow = new HomeVpnInvitation { Id = new string('d', 24), Name = "Fixture friend" };
+                    var sibling = new HomeVpnInvitation { Id = new string('e', 24), Name = "Fixture friend" };
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        HomeInvitationsForm form = null; FileStream held = null; Task first = null; Task<bool> stop = null;
+                        int consumeReads = 0, phase = 0, turns = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, changes = 0, closedChanges = 0;
+                        bool closing = mode == "close-retry", disposing = mode == "dispose", retrying = mode == "stop-retry" || mode == "locked";
+                        Func<string, string, string, Task<string>> admin = (action, label, id) => {
+                            if (action == "list") return Task.FromResult("[]");
+                            if (action == "revoke") {
+                                ++revokes; check(revokes == 1 && issues == 0 && id == originalRow.Id && label == null,
+                                    "Reissue acknowledges exactly one revoke of frozen selected ID: " + mode);
+                                return Task.FromResult("Access revoked.");
+                            }
+                            if (action == "invite") {
+                                ++issues; check(issues == 1 && revokes == 1 && label == originalRow.Name && id == originalRow.Id && request == null,
+                                    "Reissue freezes its single replacement intent after acknowledged revoke: " + mode);
+                                request = HomeVpnAdminRecovery.Register(Owner, label, id);
+                                HomeVpnAdminRecovery.RetainResult(Owner, request, response); receipt = File.ReadAllBytes(PendingPath);
+                            } else {
+                                ++calls; check(action == "recover-invite" && label == null && id == null && HomeVpnAdminRecovery.Pending().RequestId == request.RequestId,
+                                    "Reissue consumption Retry queries only the accepted recovery ID, never repeats issuing/revoke: " + mode);
+                            }
+                            return Task.FromResult(response);
+                        };
+                        try {
+                            form = new HomeInvitationsForm(new[] { originalRow, sibling }, admin, clipboard, service);
+                            form.Confirm = value => true;
+                            form.ShowToken = value => {
+                                ++handoffs; var rows = (HomeInvitationList)Field(form, "list");
+                                check(value == response && rows.Selected != null && rows.Selected.Id == HomeVpnAccess.Parse(response).InviteId && rows.Selected.Name == request.Name && originalRow.Revoked && !sibling.Revoked
+                                    && request.SourceInviteId == originalRow.Id,
+                                    "Reissue handoff keeps exact accepted token/ID/name: " + mode);
+                            };
+                            form.BeforeConsumeIo = stage => {
+                                if (stage != "consume" || Interlocked.Increment(ref consumeReads) != 1) return;
+                                worker = Thread.CurrentThread.ManagedThreadId; entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Reissue consumption fixture deadline");
+                            };
+                            ((Label)Field(form, "status")).TextChanged += delegate { ++changes; };
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 6) {
+                                    if (!stop.IsCompleted) return false;
+                                    check(stop.GetAwaiter().GetResult() && form.ConsumptionWork.Status == TaskStatus.RanToCompletion && !File.Exists(PendingPath)
+                                        && revokes == 1 && issues == 1 && calls == 0, "Stop after accepted Reissue delete never recancels, recreates or repeats it");
+                                    using (var lease = HomeVpnAdminRecovery.AcquireAsync().GetAwaiter().GetResult()) check(lease != null, "accepted Reissue releases its settled family lease");
+                                    check(true, "invitation Reissue consumption UI PASS: " + mode); return true;
+                                }
+                                if (phase == 0) {
+                                    if (!form.InitializationWork.IsCompleted) return false; form.InitializationWork.GetAwaiter().GetResult();
+                                    var rows = (HomeInvitationList)Field(form, "list");
+                                    ((ListBox)Field(rows, "list")).SelectedIndex = 0;
+                                    ((TextBox)Field(form, "name")).Text = "Different draft";
+                                    check(((Button)Field(form, "reissue")).Enabled, "empty initial request and explicit selected ID permit Reissue: " + mode);
+                                    ((Button)Field(form, "reissue")).PerformClick(); first = form.ActionWork; phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    check(form.Modal && form.Visible && worker != ui && revokes == 1 && issues == 1 && calls == 0 && handoffs == 1 && !first.IsCompleted
+                                        && !form.ConsumptionWork.IsCompleted && service.IsAdminWorking && Failure(HomeVpnAdminRecovery.AcquireAsync()) is HomeVpnAdminPendingException,
+                                        "held Reissue consumption keeps actual lease/work and responsive explicit modal owner: " + mode);
+                                    foreach (string button in new[] { "create", "revoke", "reissue", "refresh", "recover" })
+                                        check(!((Button)Field(form, button)).Enabled, "consumption retains reentry/mutation gate: " + mode + "/" + button);
+                                    ((Button)Field(form, "reissue")).PerformClick(); ((Button)Field(form, "recover")).PerformClick();
+                                    check(revokes == 1 && issues == 1 && calls == 0 && consumeReads == 1, "held Reissue consumption never repeats issuing/recovery/delete admission: " + mode);
+                                    if (mode == "locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    if (mode.StartsWith("changed-", StringComparison.Ordinal)) {
+                                        var changed = HomeVpnAdminRecovery.Pending();
+                                        if (mode == "changed-request") changed.RequestId = Guid.NewGuid().ToString("N");
+                                        else changed.Result = ChangeToken(response, "InviteId", new string('f', 24));
+                                        HomeVpnPrivateFiles.Save(HomeVpnAdminRecovery.StorageName, Json.Serialize(changed)); receipt = File.ReadAllBytes(PendingPath);
+                                    }
+                                    var watch = Stopwatch.StartNew();
+                                    if (closing) form.Close(); if (disposing) { form.Dispose(); closedChanges = changes; }
+                                    if (mode == "service-dispose") service.Dispose();
+                                    if (mode == "stop-retry" || mode == "service-dispose") stop = service.StopAsync();
+                                    check(watch.ElapsedMilliseconds < 500 && !first.IsCompleted && !form.ConsumptionWork.IsCompleted
+                                        && (stop == null || !stop.IsCompleted) && (!closing || !form.IsDisposed), "Close Stop Dispose retain physical consumption without blocking UI: " + mode);
+                                    turns = 0; phase = 2; return false;
+                                }
+                                if (phase == 2) {
+                                    if (++turns < 3) return false;
+                                    check(!first.IsCompleted && (stop == null || !stop.IsCompleted), "cancelled consumption stays owned until actual settlement: " + mode);
+                                    release.Set(); phase = 3; return false;
+                                }
+                                if (phase == 3) {
+                                    if (!first.IsCompleted || (stop != null && !stop.IsCompleted)) return false; first.GetAwaiter().GetResult();
+                                    if (stop != null) check(stop.GetAwaiter().GetResult(), "Stop joins actual receipt consumption: " + mode);
+                                    bool consumed = mode == "complete";
+                                    check((consumed ? form.ConsumptionWork.Status == TaskStatus.RanToCompletion && !File.Exists(PendingPath)
+                                        : File.Exists(PendingPath) && receipt.SequenceEqual(File.ReadAllBytes(PendingPath))) && revokes == 1 && issues == 1 && calls == 0 && handoffs == 1 && !service.IsAdminWorking,
+                                        "accepted delete completes once; cancelled/refused/newer request remains exact and no late recovery repeats: " + mode);
+                                    if (disposing) check(changes == closedChanges, "disposed consumption owner receives no late status");
+                                    if (!closing && !disposing) check((bool)Field(form, "needsRefresh") == !consumed && ((Button)Field(form, "create")).Enabled == consumed
+                                        && ((TextBox)Field(form, "name")).Text == "Different draft", "Reissue consumption keeps honest accepted/cancelled gates and edited draft: " + mode);
+                                    if (held != null) { held.Dispose(); held = null; }
+                                    check(originalRow.Revoked && !sibling.Revoked, "consumption cancellation never restores old access or revokes its same-name sibling: " + mode);
+                                    if (retrying) { ((Button)Field(form, "refresh")).PerformClick(); phase = 4; return false; }
+                                    phase = 5;
+                                }
+                                if (phase == 4) {
+                                    if (!form.ActionWork.IsCompleted) return false; form.ActionWork.GetAwaiter().GetResult();
+                                    check(((Button)Field(form, "recover")).Enabled && revokes == 1 && issues == 1 && calls == 0 && File.Exists(PendingPath), "explicit Refresh restores recovery admission without repeated consumption");
+                                    ((Button)Field(form, "recover")).PerformClick(); phase = 5; return false;
+                                }
+                                if (!form.ActionWork.IsCompleted) return false; form.ActionWork.GetAwaiter().GetResult();
+                                if (retrying) check(revokes == 1 && issues == 1 && calls == 1 && handoffs == 2 && consumeReads == 2 && !File.Exists(PendingPath)
+                                    && form.ConsumptionWork.Status == TaskStatus.RanToCompletion, "explicit Retry consumes the same accepted request once after cancellation/lock, without stale overwrite");
+                                check(before.Count == Directory.GetFiles(HomeVpnPrivateFiles.Root).Count(path => path != PendingPath)
+                                    && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))), "consumption preserves all access/owner/other private bytes: " + mode);
+                                if (mode == "complete") {
+                                    stop = service.StopAsync(); phase = 6; return false;
+                                }
+                                using (var lease = HomeVpnAdminRecovery.AcquireAsync().GetAwaiter().GetResult()) check(lease != null, "consumption UI releases family only after physical settlement: " + mode);
+                                check(true, "invitation Reissue consumption UI PASS: " + mode); return true;
+                            }, () => closing || disposing);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); if (form != null) form.Dispose();
+                            try { if (form != null) { Pump(() => form.InitializationWork.IsCompleted && form.ActionWork.IsCompleted && form.ConsumptionWork.IsCompleted, 5000); form.ActionWork.GetAwaiter().GetResult(); } }
+                            finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                                check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "consumption fixture joins physical work/cleanup: " + mode); }
+                        }
+                    }
+                    if (mode == "close-retry") {
+                        using (var retryRelay = new Ikev2RelayService())
+                        using (var retryService = new HomeVpnService(retryRelay, Application.ExecutablePath, 0, 0, 0))
+                        using (var retry = new HomeInvitationsForm(new HomeVpnInvitation[0], (action, label, id) => {
+                            ++calls; check(action == "recover-invite" && HomeVpnAdminRecovery.Pending().RequestId == request.RequestId,
+                                "reopen Retry uses original accepted request without issuing"); return Task.FromResult(response);
+                        }, clipboard, retryService)) {
+                            int phase = 0; retry.ShowToken = value => { ++handoffs; check(value == response, "reopen handoff retains exact result"); };
+                            try {
+                                HomeVpnWaitingTests.ModalWizardCase(retry, delegate {
+                                    if (phase == 0) { if (!retry.InitializationWork.IsCompleted) return false; retry.InitializationWork.GetAwaiter().GetResult();
+                                        ((Button)Field(retry, "recover")).PerformClick(); phase = 1; return false; }
+                                    if (!retry.ActionWork.IsCompleted) return false; retry.ActionWork.GetAwaiter().GetResult();
+                                    check(revokes == 1 && issues == 1 && calls == 1 && handoffs == 2 && !File.Exists(PendingPath) && retry.ConsumptionWork.Status == TaskStatus.RanToCompletion,
                                         "Cancel Close then explicit reopen Retry consumes original request once without late cancelled publication"); return true;
                                 }, () => false);
                             } finally { retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted && retry.ActionWork.IsCompleted && retry.ConsumptionWork.IsCompleted, 5000);
