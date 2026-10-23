@@ -3929,32 +3929,32 @@
     }
   ],
   "ci_candidate": {
-    "source": "ff8e6e25e7f5b4d58606faf1aff5e290c15d393a",
-    "merge_ref": "f99df0878e1c8a0ffa08363ed52a12d162967852",
-    "tested_merge": "f99df0878e1c8a0ffa08363ed52a12d162967852",
-    "tree": "b7f61ef2e0a70ae30635c6f23e385d523df13b73",
-    "local_freeze": "36edeb58ed1e268db5c330bf09fe9aaa855753ab",
-    "run_id": 39914345110,
-    "run_number": 643,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39914345110",
+    "source": "b5af631eb2285a05a12485b4a45acc565c705f48",
+    "merge_ref": "9c267269441761be2e3f47360916af632f957689",
+    "tested_merge": "9c267269441761be2e3f47360916af632f957689",
+    "tree": "6c628bf2715183e9966cc6391f6aaad2eba4e0d8",
+    "local_freeze": "de63d71d1567e2b6504bf7a35c080d268ea69ed3",
+    "run_id": 39918347267,
+    "run_number": 644,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39918347267",
     "status": "completed",
     "conclusion": "failure",
-    "run_updated_at": "2026-10-23T06:54:11Z",
+    "run_updated_at": "2026-10-23T07:31:42Z",
     "jobs": {
       "windows": {
-        "id": 120284369071,
+        "id": 120297230336,
         "status": "completed",
         "conclusion": "failure"
       },
       "ubuntu": {
-        "id": 120284368749,
+        "id": 120297230272,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Full final Windows10356/Ubuntu578 lines independently inspected; checkout/build identity verified",
-    "windows_compilation": "PASS production/Desktop/relay fixture exact643",
-    "windows_native": "PASS startup both invariants/SSH policy61/Desktop5298/Instance30/export11/chooser3/list10; FAIL ListRefreshWaiting/button retry; API6/UI8/UI12/later suites NOT_RUN",
+    "verification": "Full final Windows10365/Ubuntu578 lines independently read; checkout/build identity verified",
+    "windows_compilation": "PASS production/Desktop/relay exact644",
+    "windows_native": "PASS Desktop5298/Instance30/policy61/export11/chooser3/list10; FAIL sole selection-empty legacy contract; API6/UI8/UI12/later suites NOT_RUN",
     "pack": "SKIPPED",
     "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
@@ -5494,31 +5494,23 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE targeted test-only CI643 Refresh retry diagnostic, no guessed fix",
-    "baseline_source": "ff8e6e25e7f5b4d58606faf1aff5e290c15d393a",
-    "baseline_tested_merge": "f99df0878e1c8a0ffa08363ed52a12d162967852",
-    "baseline_checkpoint": "9d17c59c5098c351cc40274a5e8f5dd581ff3db1",
-    "local_code_sha": "9cc2fd762ed00ee66d15bfd5dbfab3496bc84735",
-    "scope": "Only HomeVpnPreparationTests.ListRefreshWaiting final eight-condition assert instrumentation plus3 docs. No runtime/test-contract expectation fix; preserve original selection-empty expectation and all8 conditions/order/assert count/timeouts/coverage/fixture cleanup.",
-    "reason": "Static contract discrepancy: ordinary Refresh preserves prior selected ID, while legacy button-case retry requires selection-empty. Actual failing conjunct(s) not recorded by safe exception stack. Need targeted evidence before narrowing fix.",
-    "invariants": [
-      "copy-calls-two",
-      "list-calls-two",
-      "create-enabled",
-      "reconciliation-cleared",
-      "selection-empty",
-      "row-count-two",
-      "draft-preserved",
-      "private-bytes-preserved"
-    ],
-    "safe_facts": "route fixture constant, gated, copies/calls/rows counts; createEnabled/needsRefresh/selectionEmpty/selectedOriginalId/draftSame/privateUnchanged booleans; all violated names. Capture all original8 conditions in order before Console; preserve one combined assert, no raw ID/name/path/settings/credentials/journal output; existing safe stack retained.",
-    "local_checks": "PASS manual/static/signatures/AST syntax1/C#5/diff/public321/0/secretPII0; only final assert block differs; all other test bodies/runtime/startup diagnostics/workflows unchanged",
-    "windows_compilation": "NOT_RUN new diagnostic candidate",
-    "windows_native": "NOT_RUN new eight-invariant diagnostics/UI12/API6/UI8/full regressions",
+    "phase": "ONE proven CI644 test-contract correction; runtime unchanged",
+    "baseline_source": "b5af631eb2285a05a12485b4a45acc565c705f48",
+    "baseline_tested_merge": "9c267269441761be2e3f47360916af632f957689",
+    "baseline_checkpoint": "4ec09012d4d2c2b4904a63525d56348f8159acfe",
+    "local_code_sha": "4d511bda96dbb8ba45a32f4a5426f50d16ddcd43",
+    "reason": "Proven stale test-contract: only selection-empty false, selectedOriginalId true; ordinary Refresh now preserves exact ID per approved UI migration. Original uncertain-mutation reconciliation must still clear selection. All other7 original conditions true. Runtime contract already implements both via Replace(items,!needsRefresh).",
+    "contract_source": "Owner approved selection preservation in repeated pending-read migration; source6f8a41e implements Replace(items,!needsRefresh). Older pre-migration Refresh cleared all selection; safety rationale remains for uncertain-mutation reconciliation, not ordinary readonly refresh.",
+    "scope": "ONLY existing HomeVpnPreparationTests.ListRefreshWaiting plus3 docs; no runtime changes/new feature",
+    "correction": "Keep all8 conditions, replace selection predicate with gated ? selectionEmpty : selected!=null&&selected.Id==original.Id. Seven other expectations unchanged. Add assert gated reconciliation disables revoke/reissue.",
+    "regression": "After real non-gated retry, same production Refresh/native fixture returns only same-name second ID; prove selected null/index-1, both destructive buttons disabled, exact survivor ID, no extra calls on button clicks, draft/search/private bytes preserved. Restore fixture response bytes finally; original Pump/timeout/cleanup unchanged.",
+    "local_checks": "PASS manual structural scope/condition preservation/signatures/diff/JSON/public321/0/added secretPII0; AST parser unavailable NOT_RUN, .NET Framework/Windows unavailable compiler/native NOT_RUN",
+    "windows_compilation": "NOT_RUN new correction",
+    "windows_native": "NOT_RUN exact-ID/gated-clear/missing-ID/new full regression; old644 not inherited",
     "readiness_change": 0,
-    "publication": "TODO guarded PR88 exactly one automatic diagnostic CI; no blind rerun",
-    "next": "Read SAME diagnostic CI final full logs/tested merge: all8 retry invariants. Only then choose minimal proven runtime/test-contract correction; preserve original reconciliation clear-selection guarantee for gated routes and current ordinary selection guarantee. No duplicate or second stage.",
-    "checkpoint": "Local HEAD freeze then postpublication local3-doc checkpoint"
+    "publication": "TODO fresh guarded PR88 one automatic CI for proven correction",
+    "next": "Read SAME new CI final full logs/tested merge; all button/escape/close selection contracts, same-name missing-ID no-target/no-dispatch checks, actual API6/UI8/UI12 and mandatory old suites. No duplicate or second stage.",
+    "checkpoint": "Local freeze then postpublication docs-only local HEAD"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5611,7 +5603,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact643ff8e6e2/f99df08 compiled all; startup both original invariants passed, old642 cause unresolved. Desktop5298/Instance30/SSH policy61/export11/chooser3/list10 PASS; ListRefreshWaiting retry FAIL, API6/UI8/UI12/later relay NOT_RUN. Targeted test-only eight-condition diagnostic candidate9cc2fd7, no guessed fix; weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "Exact644b5af631/9c26726 proves stale selection-empty test contract sole failure;7 original conditions true/exact original ID retained. Minimal test-only conditional selection fix plus real same-name missing-ID safety, compiler/native NOT_RUN. API6/UI8/UI12 still NOT_RUN644; weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -12126,6 +12118,90 @@
         "artifact_uploads": "OFF public PR workflow; completion skips not yet observed",
         "owner_pc": "NOT_RUN"
       }
+    },
+    "before_ci644_selection_fix": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE targeted CI643 Refresh retry test-only diagnostic published; sole CI644 in_progress; STOP after checkpoint",
+        "baseline_source": "ff8e6e25e7f5b4d58606faf1aff5e290c15d393a",
+        "baseline_tested_merge": "f99df0878e1c8a0ffa08363ed52a12d162967852",
+        "baseline_checkpoint": "9d17c59c5098c351cc40274a5e8f5dd581ff3db1",
+        "local_code_sha": "9cc2fd762ed00ee66d15bfd5dbfab3496bc84735",
+        "scope": "Only HomeVpnPreparationTests.ListRefreshWaiting final eight-condition assert instrumentation plus3 docs. No runtime/test-contract expectation fix; preserve original selection-empty expectation and all8 conditions/order/assert count/timeouts/coverage/fixture cleanup.",
+        "reason": "Static contract discrepancy: ordinary Refresh preserves prior selected ID, while legacy button-case retry requires selection-empty. Actual failing conjunct(s) not recorded by safe exception stack. Need targeted evidence before narrowing fix.",
+        "invariants": [
+          "copy-calls-two",
+          "list-calls-two",
+          "create-enabled",
+          "reconciliation-cleared",
+          "selection-empty",
+          "row-count-two",
+          "draft-preserved",
+          "private-bytes-preserved"
+        ],
+        "safe_facts": "route fixture constant, gated, copies/calls/rows counts; createEnabled/needsRefresh/selectionEmpty/selectedOriginalId/draftSame/privateUnchanged booleans; all violated names. Capture all original8 conditions in order before Console; preserve one combined assert, no raw ID/name/path/settings/credentials/journal output; existing safe stack retained.",
+        "local_checks": "PASS manual/static/signatures/AST syntax1/C#5/diff/public321/0/secretPII0; only final assert block differs; all other test bodies/runtime/startup diagnostics/workflows unchanged",
+        "windows_compilation": "NOT_RUN new diagnostic candidate",
+        "windows_native": "NOT_RUN new eight-invariant diagnostics/UI12/API6/UI8/full regressions",
+        "readiness_change": 0,
+        "publication": "PASS fresh expected-head non-force PR88 update, fetched parent exact643/full tree equal reviewed freeze; one automatic diagnostic CI644 pull_request attempt1 raw exact-source count1",
+        "next": "Read SAME CI644 full final logs/exact tested merge; all8 original Refresh retry invariant facts, only then choose proven minimal correction. Check actual API6/UI8/UI12/old suites, no inherited PASS. Preserve unresolved startup642 hypothesis/diagnostics; no duplicate CI or second stage.",
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1, intentionally not pushed to avoid second CI; full checkpoint in PR88 body",
+        "published_sha": "b5af631eb2285a05a12485b4a45acc565c705f48",
+        "merge_ref": "9c267269441761be2e3f47360916af632f957689",
+        "tested_merge": null,
+        "tree": "6c628bf2715183e9966cc6391f6aaad2eba4e0d8",
+        "local_freeze": "de63d71d1567e2b6504bf7a35c080d268ea69ed3",
+        "ci_run_id": 39918347267,
+        "ci_run_number": 644,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39918347267",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120297230336,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120297230272,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "public_diff": "4 files405add/51delete:1 test14add/2delete plus3 docs391add/49delete; runtime/startup diagnostics/other tests/workflows/VERSION exact baseline"
+      },
+      "ci_candidate": {
+        "source": "b5af631eb2285a05a12485b4a45acc565c705f48",
+        "merge_ref": "9c267269441761be2e3f47360916af632f957689",
+        "tested_merge": null,
+        "tree": "6c628bf2715183e9966cc6391f6aaad2eba4e0d8",
+        "local_freeze": "de63d71d1567e2b6504bf7a35c080d268ea69ed3",
+        "run_id": 39918347267,
+        "run_number": 644,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39918347267",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T07:31:42Z",
+        "jobs": {
+          "windows": {
+            "id": 120297230336,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120297230272,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Fresh non-force expected-head existing PR88 update; fetched parent exact643/full tree equal reviewed freeze; one automatic diagnostic pull_request attempt1 raw exact-source count1; final checkout/build merge not yet verified",
+        "windows_compilation": "NOT_RUN new targeted diagnostic",
+        "windows_native": "NOT_RUN eight Refresh retry invariants/API6/UI8/UI12/full suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR guard; completion skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -14880,10 +14956,99 @@
     ],
     "safe_facts": "route fixture constant, gated, copies/calls/rows counts; createEnabled/needsRefresh/selectionEmpty/selectedOriginalId/draftSame/privateUnchanged booleans; all violated names. Capture all original8 conditions in order before Console; preserve one combined assert, no raw ID/name/path/settings/credentials/journal output; existing safe stack retained.",
     "local_checks": "PASS manual/static/signatures/AST syntax1/C#5/diff/public321/0/secretPII0; only final assert block differs; all other test bodies/runtime/startup diagnostics/workflows unchanged",
-    "windows_compilation": "NOT_RUN new diagnostic candidate",
-    "windows_native": "NOT_RUN new eight-invariant diagnostics/UI12/API6/UI8/full regressions",
+    "windows_compilation": "PASS exact644",
+    "windows_native": "FAIL only selection-empty,7 other conditions PASS; selectedOriginalIdTrue; API6/UI8/UI12 NOT_RUN",
     "readiness_change": 0,
-    "publication": "TODO guarded PR88 exactly one automatic diagnostic CI; no blind rerun",
-    "next": "Read SAME diagnostic CI final full logs/tested merge: all8 retry invariants. Only then choose minimal proven runtime/test-contract correction; preserve original reconciliation clear-selection guarantee for gated routes and current ordinary selection guarantee. No duplicate or second stage."
+    "publication": "PASS fresh expected-head non-force PR88 update, fetched parent exact643/full tree equal reviewed freeze; one automatic diagnostic CI644 pull_request attempt1 raw exact-source count1",
+    "next": "Verify minimal conditional exact-ID/gated-empty contract plus real missing-ID safety on new exact source",
+    "published_sha": "b5af631eb2285a05a12485b4a45acc565c705f48",
+    "merge_ref": "9c267269441761be2e3f47360916af632f957689",
+    "tested_merge": "9c267269441761be2e3f47360916af632f957689",
+    "tree": "6c628bf2715183e9966cc6391f6aaad2eba4e0d8",
+    "local_freeze": "de63d71d1567e2b6504bf7a35c080d268ea69ed3",
+    "ci_run_id": 39918347267,
+    "ci_run_number": 644,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39918347267",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": {
+        "id": 120297230336,
+        "status": "in_progress",
+        "conclusion": null
+      },
+      "ubuntu": {
+        "id": 120297230272,
+        "status": "in_progress",
+        "conclusion": null
+      }
+    },
+    "root_cause": "Proven stale test-contract: only selection-empty false, selectedOriginalId true; ordinary Refresh now preserves exact ID per approved UI migration. Original uncertain-mutation reconciliation must still clear selection. All other7 original conditions true. Runtime contract already implements both via Replace(items,!needsRefresh)."
+  },
+  "ci644_final": {
+    "source": "b5af631eb2285a05a12485b4a45acc565c705f48",
+    "tested_merge": "9c267269441761be2e3f47360916af632f957689",
+    "run_id": 39918347267,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39918347267",
+    "status": "completed",
+    "conclusion": "failure",
+    "verification": "Full final Windows10365/Ubuntu578 lines independently read; checkout/build identity verified",
+    "retry_facts": [
+      "2026-10-23T07:55:54.8555448Z List Refresh retry facts: route=button; gated=False; copies=2; calls=2; createEnabled=True; needsRefresh=False; selectionEmpty=False; selectedOriginalId=True; rows=2; draftSame=True; privateUnchanged=True; violated=selection-empty",
+      "2026-10-23T07:55:54.8556410Z List Refresh retry invariant: copy-calls-two=True",
+      "2026-10-23T07:55:54.8556717Z List Refresh retry invariant: list-calls-two=True",
+      "2026-10-23T07:55:54.8557004Z List Refresh retry invariant: create-enabled=True",
+      "2026-10-23T07:55:54.8557306Z List Refresh retry invariant: reconciliation-cleared=True",
+      "2026-10-23T07:55:54.8557618Z List Refresh retry invariant: selection-empty=False",
+      "2026-10-23T07:55:54.8557909Z List Refresh retry invariant: row-count-two=True",
+      "2026-10-23T07:55:54.8558194Z List Refresh retry invariant: draft-preserved=True",
+      "2026-10-23T07:55:54.8558521Z List Refresh retry invariant: private-bytes-preserved=True"
+    ],
+    "root_cause": "Proven stale test-contract: only selection-empty false, selectedOriginalId true; ordinary Refresh now preserves exact ID per approved UI migration. Original uncertain-mutation reconciliation must still clear selection. All other7 original conditions true. Runtime contract already implements both via Replace(items,!needsRefresh).",
+    "case_counts": {
+      "api6": 0,
+      "ui8": 0,
+      "ui12": 0,
+      "list10": 10,
+      "export11": 11,
+      "chooser3": 3
+    },
+    "summaries": [
+      "2026-10-23T07:45:06.8887834Z Command availability invariants: pending-route-count-one=True; original-fixture-pid-retained=True; violated=",
+      "2026-10-23T07:48:48.4436923Z SSH public-key policy checks PASS: 61",
+      "2026-10-23T07:49:46.8574866Z Desktop tests PASS: 5298",
+      "2026-10-23T07:49:54.0690939Z Instance tests PASS: 30",
+      "2026-10-23T07:52:38.6620511Z Maintenance tests PASS: 126",
+      "2026-10-23T07:53:06.5704528Z Shutdown tests PASS: 47"
+    ],
+    "compiler": "PASS production/Desktop/relay exact644",
+    "api6": "NOT_RUN",
+    "ui8": "NOT_RUN",
+    "ui12": "NOT_RUN",
+    "later_suites": "NOT_RUN snapshot/dispatcher/ownership/cleanup/repair/recover/fresh/HTTPS/Portable; failure in preparation before AdminRecovery tests",
+    "ubuntu": "PASS operation16/QR13/isolated provisioning final logs",
+    "pack": "SKIPPED",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "historical_causes": "CI640 permissions and CI642 startup not proven fixed; safe diagnostics preserved"
+  },
+  "ci644_selection_contract_fix": {
+    "status": "PARTIAL",
+    "phase": "ONE proven CI644 test-contract correction; runtime unchanged",
+    "baseline_source": "b5af631eb2285a05a12485b4a45acc565c705f48",
+    "baseline_tested_merge": "9c267269441761be2e3f47360916af632f957689",
+    "baseline_checkpoint": "4ec09012d4d2c2b4904a63525d56348f8159acfe",
+    "local_code_sha": "4d511bda96dbb8ba45a32f4a5426f50d16ddcd43",
+    "reason": "Proven stale test-contract: only selection-empty false, selectedOriginalId true; ordinary Refresh now preserves exact ID per approved UI migration. Original uncertain-mutation reconciliation must still clear selection. All other7 original conditions true. Runtime contract already implements both via Replace(items,!needsRefresh).",
+    "contract_source": "Owner approved selection preservation in repeated pending-read migration; source6f8a41e implements Replace(items,!needsRefresh). Older pre-migration Refresh cleared all selection; safety rationale remains for uncertain-mutation reconciliation, not ordinary readonly refresh.",
+    "scope": "ONLY existing HomeVpnPreparationTests.ListRefreshWaiting plus3 docs; no runtime changes/new feature",
+    "correction": "Keep all8 conditions, replace selection predicate with gated ? selectionEmpty : selected!=null&&selected.Id==original.Id. Seven other expectations unchanged. Add assert gated reconciliation disables revoke/reissue.",
+    "regression": "After real non-gated retry, same production Refresh/native fixture returns only same-name second ID; prove selected null/index-1, both destructive buttons disabled, exact survivor ID, no extra calls on button clicks, draft/search/private bytes preserved. Restore fixture response bytes finally; original Pump/timeout/cleanup unchanged.",
+    "local_checks": "PASS manual structural scope/condition preservation/signatures/diff/JSON/public321/0/added secretPII0; AST parser unavailable NOT_RUN, .NET Framework/Windows unavailable compiler/native NOT_RUN",
+    "windows_compilation": "NOT_RUN new correction",
+    "windows_native": "NOT_RUN exact-ID/gated-clear/missing-ID/new full regression; old644 not inherited",
+    "readiness_change": 0,
+    "publication": "TODO fresh guarded PR88 one automatic CI for proven correction",
+    "next": "Read SAME new CI final full logs/tested merge; all button/escape/close selection contracts, same-name missing-ID no-target/no-dispatch checks, actual API6/UI8/UI12 and mandatory old suites. No duplicate or second stage."
   }
 }

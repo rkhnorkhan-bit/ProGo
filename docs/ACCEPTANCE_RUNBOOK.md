@@ -1,4 +1,45 @@
-## Текущий этап: CI643 Refresh retry — test-only восемь инвариантов
+## Текущий этап: доказанное исправление selection test-contract CI644
+
+PR88/source `b5af631eb2285a05a12485b4a45acc565c705f48`, checkpoint
+`4ec09012d4d2c2b4904a63525d56348f8159acfe` сверены; все worktrees clean/locks0,
+активных Git/build процессов/другого агента или писателя нет. Изолированная
+work/progo-ci644-selection-contract-20261023; прежние изменения/ветки сохранены.
+Полные финальные [CI644](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39918347267)
+Windows10365/Ubuntu578 строк прочитаны самостоятельно. Exact checkout/build tested merge
+`9c267269441761be2e3f47360916af632f957689`. Safe exact evidence в JSON ci644_final.
+Единственный violated=selection-empty(False), selectedOriginalId=True; copies2/calls2/rows2,
+needsRefreshFalse. Остальные7 исходных invariant=True, private/draft preserved. Это доказанный
+устаревший test-contract ListRefreshWaiting/button, а не runtime defect.
+
+Изначально Refresh сбрасывал выбор всегда. В утверждённом repeated-read migration владелец потребовал
+сохранить selection; source6f8a41e уже реализует Replace(items,!needsRefresh): обычный read-only Refresh
+сохраняет ТОЧНЫЙ прежний ID, uncertain-mutation reconciliation очищает выбор для нового явного решения.
+Legacy test всё ещё требовал empty и для обычного route button. Исправление не просто снимает assert:
+predicate теперь gated ? selectionEmpty : selected!=null && selected.Id==first.Id. Safety исходного
+reconciliation сохранена и дополнена проверкой disabled Revoke/Reissue. Все7 других условий прежние.
+
+Code local `4d511bda96dbb8ba45a32f4a5426f50d16ddcd43`:ONLY HomeVpnPreparationTests25add/4delete.
+Регрессия missing-ID использует ещё один РЕАЛЬНЫЙ Refresh/native fixture: серверный ответ оставляет
+другого друга с ТЕМ ЖЕ именем и вторым ID. Assert exact survivor ID/selected null/index-1/disabled
+Revoke+Reissue, create/reconciliation/draft/search/private bytes. Нажатия disabled buttons не добавляют
+copy/list calls и не потребляют request. Fixture response восстанавливается finally; исходные ожидания,
+Pump/таймаут/cleanup не менялись, coverage увеличен. Runtime/transport/API/consumption/security unchanged.
+
+CI644 PASS production/Desktop/relay compilation, startup both invariants, policy61/Desktop5298/
+Instance30/Maintenance126/Shutdown47/export11/chooser3/list10; Ubuntu operation16/QR13/provisioning.
+API6/UI8/UI12 и поздние suites NOT_RUN, aggregate HomeVPN/Portable не достигнуты. Pack/uploads/prune
+SKIPPED. Исторические причины permissions640/startup642 не объявляются исправленными; diagnostics сохранены.
+PASS local manual structural review/signatures/diff/JSON/public321/0/secretsPII0. Временный AST parser
+недоступен: AST NOT_RUN, не выдаётся за compilation. .NET Framework/Windows unavailable: новый
+compiler/native exact-ID/gated-clear/missing-ID/full regression NOT_RUN; старые PASS не переносятся.
+Publication TODO: guarded fresh expected-head non-force PR88, ровно один automatic CI для доказанного
+исправления; workflows/VERSION unchanged, PR uploads OFF/release/prune ineligible. Save source/run/
+checkpoint и STOP без полного ожидания/второго этапа. Далее ТОТ ЖЕ CI full final logs/exact merge:
+button/escape/close, missing-ID safety, API6/UI8/UI12 и все mandatory suites.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: Windows proof corrected selection/missing-ID и недостигнутые invitation suites.
+
+## История этапа: CI643 Refresh retry — test-only восемь инвариантов
 
 HEAD PR88/source `ff8e6e25e7f5b4d58606faf1aff5e290c15d393a` и checkpoint
 `9d17c59c5098c351cc40274a5e8f5dd581ff3db1` сверены;47 прежних worktrees clean/locks0,
@@ -37,11 +78,20 @@ Code local `9cc2fd762ed00ee66d15bfd5dbfab3496bc84735`: ONLY HomeVpnPreparationTe
 сохранён. Никаких runtime/new features/security/VPS/network/credential действий.
 PASS local review/static/signatures/AST syntax1/C#5/diff/public321/0/secretsPII0. Windows/.NET Framework/
 PowerShell недоступны: новый compiler/native8-invariant diagnostics/API6/UI8/UI12/full regression NOT_RUN.
-Publication TODO: fresh non-force expected-head PR88 update, ровно один automatic diagnostic CI;
-PR uploads OFF/release/prune ineligible, workflows/VERSION unchanged. Save source/run/checkpoint и STOP,
-не ждать весь CI и не начинать второй этап. Следующий шаг — ТОТ ЖЕ diagnostic CI full final logs/exact
-merge, все8 named conditions; затем отдельно минимальный доказанный fix с сохранением ordinary selection
-и исходного gated reconciliation safety. Не объявлять UI12 PASS до реального выполнения.
+Publication PASS: source `b5af631eb2285a05a12485b4a45acc565c705f48`, existing PR88 integration/approved-plan-31-20261011,
+fresh expected-head non-force update. Fetched parent exact643/full tree `6c628bf2715183e9966cc6391f6aaad2eba4e0d8`
+равен reviewed freeze `de63d71d1567e2b6504bf7a35c080d268ea69ed3`. Public diff4files405add/51delete:
+1 test14add/2delete +3 docs391add/49delete; runtime/startup diagnostics/other tests unchanged.
+Merge ref `9c267269441761be2e3f47360916af632f957689` пока НЕ final tested merge: нужны checkout/build logs.
+Один automatic diagnostic [CI644/39918347267](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39918347267),
+pull_request/attempt1/raw exact-source count1; in_progress/conclusion null, updated07:31:42UTC;
+Windows120297230336/Ubuntu120297230272 in_progress. New compilation/native8-invariants/API6/UI8/UI12/
+full suites NOT_RUN; SUCCESS build643 не переносится. PR uploads OFF/release/prune ineligible,
+completion skips пока не наблюдались. Postpublication3-doc checkpoint local HEAD(git log -1), НЕ
+pushed во избежание второго CI; exact checkpoint в PR88 body. STOP без полного ожидания/второго этапа.
+Следующий шаг — ТОТ ЖЕ CI644 full final logs/exact merge, все8 named conditions, затем отдельно
+минимальный доказанный fix с сохранением ordinary selection/gated reconciliation safety.
+UI12 PASS только по реально выполненным markers; startup642 причина остаётся unresolved.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
 главный блокер: concrete Refresh retry invariant и недостигнутые invitation API6/UI8/UI12.
 

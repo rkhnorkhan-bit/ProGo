@@ -753,13 +753,14 @@ namespace ProGo
                 check(((Label)Field(friends, "status")).Text.StartsWith("Получение списка отменено"), "Friends exposes a clear explicit-refresh retry after list cancellation");
                 if (route == "button") Shot(friends, work, "vps-list-refresh-cancelled");
                 ListMode("complete", false); refresh.PerformClick(); Pump(() => refresh.Enabled);
-                // Snapshot all eight ORIGINAL conditions in their original order before diagnostic output.
+                // Preserve all eight guarantees; ordinary refresh retains the exact ID, reconciliation requires a fresh selection.
                 int retryCopies = copies, retryCalls = ListCalls();
                 bool retryCreate = create.Enabled, retryGate = (bool)Field(friends, "needsRefresh"), retrySelectionEmpty = view.Selected == null;
+                bool retrySelectionContract = gated ? retrySelectionEmpty : view.Selected != null && view.Selected.Id == first.Id;
                 int retryRows = rows.Items.Count;
                 bool retryDraft = name.Text == "Сохранённый черновик", retryPrivate = ListPrivateUnchanged(before);
-                var names = new[] { "copy-calls-two", "list-calls-two", "create-enabled", "reconciliation-cleared", "selection-empty", "row-count-two", "draft-preserved", "private-bytes-preserved" };
-                var conditions = new[] { retryCopies == 2, retryCalls == 2, retryCreate, !retryGate, retrySelectionEmpty, retryRows == 2, retryDraft, retryPrivate };
+                var names = new[] { "copy-calls-two", "list-calls-two", "create-enabled", "reconciliation-cleared", "selection-contract", "row-count-two", "draft-preserved", "private-bytes-preserved" };
+                var conditions = new[] { retryCopies == 2, retryCalls == 2, retryCreate, !retryGate, retrySelectionContract, retryRows == 2, retryDraft, retryPrivate };
                 string violated = String.Join(";", names.Where((value, index) => !conditions[index]));
                 Console.WriteLine("List Refresh retry facts: route=" + route + "; gated=" + gated + "; copies=" + retryCopies + "; calls=" + retryCalls +
                     "; createEnabled=" + retryCreate + "; needsRefresh=" + retryGate + "; selectionEmpty=" + retrySelectionEmpty +
@@ -767,7 +768,27 @@ namespace ProGo
                     "; draftSame=" + retryDraft + "; privateUnchanged=" + retryPrivate + "; violated=" + violated);
                 foreach (int index in Enumerable.Range(0, names.Length)) Console.WriteLine("List Refresh retry invariant: " + names[index] + "=" + conditions[index]);
                 check(conditions.All(value => value),
-                    "one explicit successful Refresh clears reconciliation without choosing/reissuing an identity or losing draft");
+                    "successful Refresh retains exact selected ID ordinarily, clears selection for reconciliation, and preserves all other retry guarantees");
+                check(!gated || (!((Button)Field(friends, "revoke")).Enabled && !((Button)Field(friends, "reissue")).Enabled),
+                    "reconciliation never arms a destructive target before explicit selection");
+                if (!gated) {
+                    string responsePath = Path.Combine(folder, "list-response"); var originalResponse = File.ReadAllBytes(responsePath);
+                    try {
+                        // Same name, different ID: disappearance must never adopt the surviving friend.
+                        File.WriteAllText(responsePath, new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(new[] {
+                            new HomeVpnInvitation { Id = second.Id, Name = first.Name } }));
+                        ListMode("complete", false); refresh.PerformClick(); Pump(() => refresh.Enabled);
+                        var revoke = (Button)Field(friends, "revoke"); var reissue = (Button)Field(friends, "reissue");
+                        check(copies == 3 && ListCalls() == 3 && rows.Items.Count == 1 && ((HomeVpnInvitation)rows.Items[0]).Id == second.Id
+                            && view.Selected == null && rows.SelectedIndex == -1 && !revoke.Enabled && !reissue.Enabled
+                            && create.Enabled && !(bool)Field(friends, "needsRefresh") && search.Text == "Друг"
+                            && name.Text == "Сохранённый черновик" && ListPrivateUnchanged(before),
+                            "actual Refresh missing selected ID keeps same-name survivor unselected and destructive actions disabled, preserving draft and private bytes");
+                        revoke.PerformClick(); reissue.PerformClick();
+                        check(copies == 3 && ListCalls() == 3 && ListPrivateUnchanged(before),
+                            "missing selected ID cannot dispatch revoke/reissue or consume a request");
+                    } finally { File.WriteAllBytes(responsePath, originalResponse); }
+                }
                 friends.Close();
             }
         }
