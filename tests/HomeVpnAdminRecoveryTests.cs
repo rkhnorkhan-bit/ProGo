@@ -108,6 +108,7 @@ namespace ProGo
                 InitialPendingUi(clipboard);
                 RepeatedPendingUi(clipboard);
                 CreateUncertaintyUi(clipboard);
+                ReissueUncertaintyUi(clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "deadline" }) NativeWait(route, previous);
                 LostResponseAndReopen(token, clipboard, previous);
                 ReissueBoundary(token); FrozenOwner(); DefaultHandoff(clipboard); LateDisposedUi(clipboard); ReissueHandoffMessage(token, clipboard); StatusAndStorage(token);
@@ -523,6 +524,143 @@ namespace ProGo
                                 retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted, 5000); retry.InitializationWork.GetAwaiter().GetResult();
                                 retryService.Dispose(); var cleanup = retryService.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
                                 check(cleanup.GetAwaiter().GetResult(), "uncertain Create reopen fixture joins actual cleanup");
+                            }
+                        }
+                    }
+                }
+            } finally { if (original == null) File.Delete(PendingPath); else File.WriteAllBytes(PendingPath, original); }
+        }
+        private static void ReissueUncertaintyUi(ClipboardService clipboard)
+        {
+            byte[] original = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+            try {
+                foreach (string mode in new[] { "empty", "pending", "corrupt", "locked", "close-retry", "dispose", "stop-retry", "service-dispose" }) {
+                    File.Delete(PendingPath);
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        HomeInvitationsForm form = null; FileStream held = null; Task first = null; Task<bool> stop = null;
+                        Dictionary<string, byte[]> before = null;
+                        int reads = 0, revokes = 0, issues = 0, queries = 0, handoffs = 0, phase = 0, turns = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, updates = 0, closedUpdates = 0;
+                        bool closing = mode == "close-retry", disposing = mode == "dispose", pending = mode != "empty" && mode != "stop-retry";
+                        try {
+                            var originalRow = new HomeVpnInvitation { Id = new string('d', 24), Name = "Fixture friend" };
+                            var sibling = new HomeVpnInvitation { Id = new string('e', 24), Name = "Fixture friend" };
+                            form = new HomeInvitationsForm(new[] { originalRow, sibling }, (action, label, id) => {
+                                if (action == "list") { ++queries; return Task.FromResult("[{\"id\":\"" + originalRow.Id + "\",\"name\":\"Fixture friend\",\"revoked\":true},{\"id\":\"" + sibling.Id + "\",\"name\":\"Fixture friend\"}]"); }
+                                if (action == "revoke") { ++revokes; check(id == originalRow.Id && label == null, "uncertain Reissue revokes only frozen selected ID: " + mode); return Task.FromResult("Access revoked."); }
+                                ++issues; check(action == "invite" && label == originalRow.Name && id == originalRow.Id && revokes == 1, "uncertain Reissue retains its exact original intent: " + mode);
+                                throw new IOException("PRIVATE_UNCERTAINTY_CANARY");
+                            }, clipboard, service, delegate {
+                                if (Interlocked.Increment(ref reads) != 2) return;
+                                worker = Thread.CurrentThread.ManagedThreadId; entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Uncertain invitation pending read fixture deadline");
+                            });
+                            form.Confirm = value => true;
+                            form.ShowToken = value => { ++handoffs; throw new Exception("Unconfirmed Reissue cannot hand off a token"); };
+                            ((Label)Field(form, "status")).TextChanged += delegate { ++updates; };
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    if (!form.InitializationWork.IsCompleted) return false; form.InitializationWork.GetAwaiter().GetResult();
+                                    ((TextBox)Field(form, "name")).Text = "Different draft";
+                                    var rows = (HomeInvitationList)Field(form, "list");
+                                    ((TextBox)Field(rows, "search")).Text = "Fixture";
+                                    ((ListBox)Field(rows, "list")).SelectedIndex = 0;
+                                    // Own fixture state models a request retained before the lost native response; no real mutation occurs.
+                                    if (pending && mode != "corrupt") HomeVpnAdminRecovery.Register(Owner, originalRow.Name, originalRow.Id);
+                                    if (mode == "corrupt") File.WriteAllBytes(PendingPath, new byte[] { 1, 2, 3 });
+                                    before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                                    if (mode == "locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None);
+                                    ((Button)Field(form, "reissue")).PerformClick(); first = form.ActionWork; phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    check(form.Modal && form.Visible && worker != ui && reads == 2 && revokes == 1 && issues == 1 && queries == 0 && handoffs == 0
+                                        && !first.IsCompleted && !form.PendingReadWork.IsCompleted && service.IsAdminWorking,
+                                        "uncertain Reissue awaits one actual pending read on responsive explicit modal owner: " + mode);
+                                    check(originalRow.Revoked && !sibling.Revoked, "replacement uncertainty does not restore old access or revoke its same-name sibling: " + mode);
+                                    foreach (string button in new[] { "create", "revoke", "reissue", "refresh", "recover" })
+                                        check(!((Button)Field(form, button)).Enabled, "uncertainty read retains admission gate: " + mode + "/" + button);
+                                    ((Button)Field(form, "reissue")).PerformClick(); check(revokes == 1 && issues == 1, "uncertain held Reissue cannot repeat issuing action: " + mode);
+                                    var watch = Stopwatch.StartNew();
+                                    if (closing) form.Close(); if (disposing) { form.Dispose(); closedUpdates = updates; }
+                                    if (mode == "service-dispose") service.Dispose();
+                                    if (mode == "stop-retry" || mode == "service-dispose") stop = service.StopAsync();
+                                    check(watch.ElapsedMilliseconds < 500 && !first.IsCompleted && !form.PendingReadWork.IsCompleted
+                                        && (!closing || !form.IsDisposed) && (stop == null || !stop.IsCompleted),
+                                        "uncertain read Close Stop Dispose return promptly without abandoning real work: " + mode);
+                                    turns = 0; phase = 2; return false;
+                                }
+                                if (phase == 2) {
+                                    if (++turns < 3) return false;
+                                    check(!first.IsCompleted && (stop == null || !stop.IsCompleted), "uncertainty cancellation retains its held read: " + mode);
+                                    release.Set(); phase = 3; return false;
+                                }
+                                if (phase == 3) {
+                                    if (!first.IsCompleted || (stop != null && !stop.IsCompleted)) return false; first.GetAwaiter().GetResult();
+                                    if (stop != null) check(stop.GetAwaiter().GetResult(), "Stop joins uncertain Reissue pending read: " + mode);
+                                    if (!closing && !disposing) {
+                                        check((bool)Field(form, "needsRefresh") && !((Button)Field(form, "create")).Enabled,
+                                            "lost Reissue response never permits blind reissue even when pending snapshot is empty: " + mode);
+                                        check((bool)Field(form, "pendingAdmin") == (pending || stop != null)
+                                            && (bool)Field(form, "pendingUnreadable") == (mode == "corrupt" || mode == "locked" || stop != null),
+                                            "uncertainty snapshot separates retained unreadable and cancelled requests: " + mode);
+                                        check(!((Label)Field(form, "status")).Text.Contains("PRIVATE_UNCERTAINTY_CANARY") && ((TextBox)Field(form, "name")).Text == "Different draft",
+                                            "uncertainty guidance preserves draft without raw transport detail: " + mode);
+                                    }
+                                    if (!closing && !disposing) {
+                                        var rows = (HomeInvitationList)Field(form, "list");
+                                        check(rows.Selected != null && rows.Selected.Id == originalRow.Id && originalRow.Revoked && !sibling.Revoked
+                                            && ((ListBox)Field(rows, "list")).Items.Count == 2 && ((TextBox)Field(rows, "search")).Text == "Fixture"
+                                            && !((Button)Field(form, "reissue")).Enabled,
+                                            "uncertain Reissue preserves exact selection, confirmed revocation, sibling and search without a replacement: " + mode);
+                                    }
+                                    if (disposing) check(updates == closedUpdates, "disposed uncertainty owner receives no late status");
+                                    check(reads == 2 && revokes == 1 && issues == 1 && handoffs == 0 && !service.IsAdminWorking,
+                                        "uncertain Reissue performs exactly one snapshot without post-action duplicate or token consumption: " + mode);
+                                    if (mode == "stop-retry") { ((Button)Field(form, "refresh")).PerformClick(); phase = 4; return false; }
+                                    phase = 4;
+                                }
+                                if (!form.ActionWork.IsCompleted) return false; form.ActionWork.GetAwaiter().GetResult();
+                                if (mode == "stop-retry") check(queries == 1 && reads == 3 && revokes == 1 && issues == 1 && !((bool)Field(form, "pendingAdmin"))
+                                    && !((bool)Field(form, "needsRefresh")) && ((Button)Field(form, "create")).Enabled,
+                                    "explicit read-only Retry after Stop reconciles without automatic Reissue replay or stale gate overwrite");
+                                if (mode == "stop-retry") {
+                                    var rows = (HomeInvitationList)Field(form, "list");
+                                    check(rows.Selected == null && ((ListBox)Field(rows, "list")).Items.Cast<HomeVpnInvitation>().Single(item => item.Id == originalRow.Id).Revoked
+                                        && !((Button)Field(form, "reissue")).Enabled && ((TextBox)Field(form, "name")).Text == "Different draft",
+                                        "explicit reconciliation keeps revoked identity and draft, requiring deliberate reselection before any reissue");
+                                }
+                                if (held != null) { held.Dispose(); held = null; }
+                                check(before.Count == Directory.GetFiles(HomeVpnPrivateFiles.Root).Length && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                                    "uncertainty read preserves exact protected request identity/result/access bytes: " + mode);
+                                check(true, "invitation Reissue uncertainty UI PASS: " + mode); return true;
+                            }, () => closing || disposing);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); if (form != null) form.Dispose();
+                            try {
+                                if (form != null) { Pump(() => form.InitializationWork.IsCompleted && form.ActionWork.IsCompleted && form.PendingReadWork.IsCompleted, 5000); form.InitializationWork.GetAwaiter().GetResult(); form.ActionWork.GetAwaiter().GetResult(); }
+                            } finally {
+                                service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                                check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "uncertainty fixture joins actual body and cleanup: " + mode);
+                            }
+                        }
+                    }
+                    if (mode == "close-retry") {
+                        using (var retryRelay = new Ikev2RelayService())
+                        using (var retryService = new HomeVpnService(retryRelay, Application.ExecutablePath, 0, 0, 0))
+                        using (var retry = new HomeInvitationsForm(new HomeVpnInvitation[0], (action, label, id) => { throw new Exception("Reopen must not repeat Reissue"); }, clipboard, retryService)) {
+                            try {
+                                HomeVpnWaitingTests.ModalWizardCase(retry, delegate {
+                                    if (!retry.InitializationWork.IsCompleted) return false; retry.InitializationWork.GetAwaiter().GetResult();
+                                    check((bool)Field(retry, "pendingAdmin") && !(bool)Field(retry, "pendingUnreadable") && ((Button)Field(retry, "recover")).Enabled
+                                        && !((Button)Field(retry, "create")).Enabled, "closed uncertain Reissue reopens exact retained request without replay or stale empty publication"); return true;
+                                }, () => false);
+                            } finally {
+                                retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted, 5000); retry.InitializationWork.GetAwaiter().GetResult();
+                                retryService.Dispose(); var cleanup = retryService.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                                check(cleanup.GetAwaiter().GetResult(), "uncertain Reissue reopen fixture joins actual cleanup");
                             }
                         }
                     }

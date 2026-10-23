@@ -3929,32 +3929,32 @@
     }
   ],
   "ci_candidate": {
-    "source": "7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1",
-    "merge_ref": "20ed439869dbfbaf536693c639c8951d2a13dbbb",
-    "tested_merge": "20ed439869dbfbaf536693c639c8951d2a13dbbb",
-    "tree": "9b352d5f9c01305e9e8f5fb63d2e2b672c2be25a",
-    "local_freeze": "756d0a75c9e4d4605c22a5fd264e8d12872f0aa5",
-    "run_id": 39978779254,
-    "run_number": 645,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39978779254",
+    "source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "merge_ref": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "tree": "0caa67cf03efd57f3008b545c94eae0525321be1",
+    "local_freeze": "d7a924660df4a15309e0c01de9e4d39fc07117e3",
+    "run_id": 39984905832,
+    "run_number": 646,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39984905832",
     "status": "completed",
     "conclusion": "success",
-    "run_updated_at": "2026-10-23T15:30:04Z",
+    "run_updated_at": "2026-10-23T16:13:02Z",
     "jobs": {
       "windows": {
-        "id": 120500269788,
+        "id": 120521444261,
         "status": "completed",
         "conclusion": "success"
       },
       "ubuntu": {
-        "id": 120500270121,
+        "id": 120521444000,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Full final Windows12768/Ubuntu578 lines independently read; checkout/build identity verified",
-    "windows_compilation": "PASS production/Desktop/relay exact645",
-    "windows_native": "PASS selection3/missing-ID/no-dispatch/API6/UI8/UI12/all prior exact645 suites",
+    "verification": "Both full final job logs independently read; checkout and Windows build identity exact merge. Per-case markers enumerated, no metadata-only suite PASS.",
+    "windows_compilation": "PASS exact646",
+    "windows_native": "PASS exact646 Create8/API6/UI8/UI12/all prior per-case suites",
     "pack": "PASS runner-only",
     "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
@@ -5494,13 +5494,13 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE Create invitation uncertainty pending-read production slice",
-    "baseline_source": "7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1",
-    "baseline_tested_merge": "20ed439869dbfbaf536693c639c8951d2a13dbbb",
-    "baseline_checkpoint": "42f4dd2260032ccb23ef8bd1526ba05517fa535c",
-    "local_code_sha": "3dd85ed8d5816355ced59ac98a94de439629450e",
-    "scope": "ONLY generic unconfirmed CreateAsync outcome: replace sync HasPending UI call with existing RefreshPendingAsync owned snapshot. No reissue/recovery-name/consumption/API/transport changes.",
-    "implementation": "Await existing readonly worker with original issuing action Stop scope and explicit Friends owner. Empty snapshot still requires explicit list reconciliation, never blind Create replay. Unknown/unreadable stays gated, no raw exception guidance; pending snapshot uses existing pending message. Existing version guard prevents duplicate post-action read.",
+    "phase": "ONE Reissue IssueUnconfirmed owned pending-read production slice",
+    "baseline_source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "baseline_tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "baseline_checkpoint": "b0b7a093e0b991b72bfc1a9cb89f2a0c0d61b82f",
+    "local_code_sha": "89d68a07c812e41c9dbd0d8133ad42c85f027b2f",
+    "scope": "ONLY existing Reissue IssueUnconfirmed branch sync HasPending replaced by existing RefreshPendingAsync. Recovery, consumption, transport, core reissue API and all prior test bodies unchanged.",
+    "implementation": "Original Stop identity/explicit modal owner; pending/unreadable/unknown retain mutation gate. Empty still requires explicit list reconciliation. Read version suppresses duplicate post-action snapshot. No automatic revoke/invite replay, replacement/handoff/consumption or restoration of old access.",
     "native_cases": [
       "empty",
       "pending",
@@ -5511,20 +5511,18 @@
       "stop-retry",
       "service-dispose"
     ],
-    "test_contract": "Actual ShowDialog/default Create button, retained own request fixture/read-only DPAPI worker held5s, modal15s and actual joins5s. One mutation intent/no handoff/no consume/no duplicate snapshot; private bytes/draft, cancellation/drain/Stop/read-only Retry, owner Dispose/no late updates, reopen exact retained pending state. No real SSH/VPS/network. All existing tests unchanged.",
-    "local_checks": "PASS manual/static structural/delimiter/signatures/diff/JSON/public321/0/secretPII0; AST unavailable NOT_RUN, compiler/native Windows NOT_RUN",
-    "windows_compilation": "NOT_RUN new Create uncertainty candidate",
-    "windows_native": "NOT_RUN new uncertainty8/API6/UI8/UI12/full regression;645 success not inherited",
+    "test_contract": "Actual ShowDialog/default Reissue action and existing two-step core; exact selected ID/name and distinct editable draft, same-name sibling, one revoke then one invite. Actual read held5s, modal15s, cleanup joins5s. Responsive UI/gating/cancellation/Stop Retry/owner and service Dispose/no late status/reopen request; exact private bytes preserved; no live SSH. All prior tests unchanged.",
+    "local_checks": "PASS structural preservation/manual review/signatures/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN new Reissue uncertainty8 and full regressions;646 PASS applies only to baseline",
     "remaining_production_paths": [
-      "Reissue issue-unconfirmed direct HasPending UI read",
       "RecoverAsync direct Pending request.Name UI read",
-      "ConfirmConsumed after create/reissue/recover via separate saved consumption API8; not integrated",
+      "ConfirmConsumed after create/reissue/recover through existing consumption API8; not integrated",
       "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, separate bounded stages"
     ],
     "readiness_change": 0,
-    "publication": "TODO guarded existing PR88 one automatic CI; uploads OFF/release ineligible",
-    "next": "Read SAME new exact-source CI full final logs/tested merge: Create uncertainty8 including no replay/request bytes/Stop Retry/reopen, API6/UI8/UI12/selection and old mandatory suites. Stop after checkpoint, no next slice.",
-    "checkpoint": "Local freeze then postpublication3-doc local checkpoint"
+    "publication": "TODO guarded existing PR88 single automatic CI; no artifacts uploads/release",
+    "next": "Inspect SAME new CI final logs/exact tested merge/Reissue uncertainty8 and full old suites; no duplicate. Then separate Recover request.Name read, not in current stage."
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5617,7 +5615,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact6457ce8d20/20ed439 full logs selection3/missing-ID/API6/UI8/UI12/old suites PASS, runner-only pack/no uploads. New bounded Create uncertainty owned pending-read8 candidate compiler/native NOT_RUN. Reissue/recovery-name/consumption/transport remain; weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "CI646 full final logs exact1a0b9ab/2c1787a verified Create8/API6/UI8/UI12/all prior suites PASS; pack runner-only/uploads skipped. New Reissue uncertainty candidate Windows NOT_RUN. Weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9753,8 +9751,8 @@
       622,
       623
     ],
-    "actual_invitation_ui": "Initial/repeated owned snapshots verified645; new generic Create uncertainty candidate now uses same existing reader, native NOT_RUN. Reissue/recovery-name/consumption remain legacy.",
-    "next": "Read SAME new exact-source CI full final logs/tested merge: Create uncertainty8 including no replay/request bytes/Stop Retry/reopen, API6/UI8/UI12/selection and old mandatory suites. Stop after checkpoint, no next slice.",
+    "actual_invitation_ui": "Initial/repeated/Create uncertainty verified646. New Reissue IssueUnconfirmed uses same owned reader, native NOT_RUN; recovery-name/consumption remain legacy.",
+    "next": "Inspect SAME new CI final logs/exact tested merge/Reissue uncertainty8 and full old suites; no duplicate. Then separate Recover request.Name read, not in current stage.",
     "readiness_change": 0,
     "integration_local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
     "integration_source": "6f8a41e67709dae2a9794885e7e975918401f765",
@@ -12292,6 +12290,96 @@
         "artifact_uploads": "OFF public PR workflow; completion skips not yet observed",
         "owner_pc": "NOT_RUN"
       }
+    },
+    "before_reissue_uncertainty_on646": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE Create uncertainty owned pending-read slice published; sole CI646 in_progress; STOP after checkpoint",
+        "baseline_source": "7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1",
+        "baseline_tested_merge": "20ed439869dbfbaf536693c639c8951d2a13dbbb",
+        "baseline_checkpoint": "42f4dd2260032ccb23ef8bd1526ba05517fa535c",
+        "local_code_sha": "3dd85ed8d5816355ced59ac98a94de439629450e",
+        "scope": "ONLY generic unconfirmed CreateAsync outcome: replace sync HasPending UI call with existing RefreshPendingAsync owned snapshot. No reissue/recovery-name/consumption/API/transport changes.",
+        "implementation": "Await existing readonly worker with original issuing action Stop scope and explicit Friends owner. Empty snapshot still requires explicit list reconciliation, never blind Create replay. Unknown/unreadable stays gated, no raw exception guidance; pending snapshot uses existing pending message. Existing version guard prevents duplicate post-action read.",
+        "native_cases": [
+          "empty",
+          "pending",
+          "corrupt",
+          "locked",
+          "close-retry",
+          "dispose",
+          "stop-retry",
+          "service-dispose"
+        ],
+        "test_contract": "Actual ShowDialog/default Create button, retained own request fixture/read-only DPAPI worker held5s, modal15s and actual joins5s. One mutation intent/no handoff/no consume/no duplicate snapshot; private bytes/draft, cancellation/drain/Stop/read-only Retry, owner Dispose/no late updates, reopen exact retained pending state. No real SSH/VPS/network. All existing tests unchanged.",
+        "local_checks": "PASS manual/static structural/delimiter/signatures/diff/JSON/public321/0/secretPII0; AST unavailable NOT_RUN, compiler/native Windows NOT_RUN",
+        "windows_compilation": "NOT_RUN new Create uncertainty candidate",
+        "windows_native": "NOT_RUN new uncertainty8/API6/UI8/UI12/full regression;645 success not inherited",
+        "remaining_production_paths": [
+          "Reissue issue-unconfirmed direct HasPending UI read",
+          "RecoverAsync direct Pending request.Name UI read",
+          "ConfirmConsumed after create/reissue/recover via separate saved consumption API8; not integrated",
+          "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, separate bounded stages"
+        ],
+        "readiness_change": 0,
+        "publication": "PASS fresh expected-head non-force PR88 update; fetched parent exact645/full tree equal reviewed freeze; one automatic CI646 pull_request attempt1 raw exact-source count1",
+        "next": "Read SAME CI646 full final logs/tested merge: Create uncertainty8/no replay/Stop Retry/reopen/request bytes, API6/UI8/UI12/selection and all mandatory suites. No duplicate CI or second stage. After proof separate remaining Reissue uncertainty read.",
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1; intentionally not pushed to avoid second CI; full checkpoint in PR88 body",
+        "published_sha": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+        "merge_ref": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+        "tested_merge": null,
+        "tree": "0caa67cf03efd57f3008b545c94eae0525321be1",
+        "local_freeze": "d7a924660df4a15309e0c01de9e4d39fc07117e3",
+        "ci_run_id": 39984905832,
+        "ci_run_number": 646,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39984905832",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120521444261,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120521444000,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "public_diff": "5 files633add/62delete:1 runtime+1 existing test124add/2delete plus3 docs509add/60delete; other routes/API/worker/consumption/transport/workflows/VERSION unchanged"
+      },
+      "ci_candidate": {
+        "source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+        "merge_ref": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+        "tested_merge": null,
+        "tree": "0caa67cf03efd57f3008b545c94eae0525321be1",
+        "local_freeze": "d7a924660df4a15309e0c01de9e4d39fc07117e3",
+        "run_id": 39984905832,
+        "run_number": 646,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39984905832",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T16:13:02Z",
+        "jobs": {
+          "windows": {
+            "id": 120521444261,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120521444000,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Fresh expected-head non-force existing PR88 update; fetched parent exact645/full tree equal reviewed freeze; one automatic pull_request attempt1 raw exact-source count1; final checkout/build identity not yet verified",
+        "windows_compilation": "NOT_RUN new Create uncertainty candidate",
+        "windows_native": "NOT_RUN Create uncertainty8/API6/UI8/UI12/full mandatory suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR workflow; completion skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -14373,8 +14461,8 @@
       "service-dispose"
     ],
     "api_native_cases": 6,
-    "windows_compilation": "PASS exact645",
-    "windows_native": "PASS exact645 API6/UI8/UI12 actual respective markers; full R09/owner acceptance still open",
+    "windows_compilation": "PASS exact646",
+    "windows_native": "PASS exact646 Create uncertainty8/API6/UI8/UI12 and actual old per-case suites",
     "local_checks": "PASS manual review + AST syntax5/C#5 scope; saved API/API6 exact; preserved old test methods/timeouts/asserts and export/EOF/HTTPS/runtime core; constructor/API signatures checked; public321/0; added secret/PII0; diff check",
     "remaining_production_paths": [
       "Friends post-operation and refresh pending-state reads in RunAsync/RefreshAsync (same saved API, separate owned UI binding)",
@@ -14384,7 +14472,7 @@
     ],
     "readiness_change": 0,
     "publication": "PASS guarded non-force exact639 existing PR88 update, fetched exact parent/full tree equal freeze, one automatic CI640 attempt1 exact-source raw count1",
-    "next": "Read SAME next diagnostic CI full log; retain invitation NOT_RUN until its actual tests execute",
+    "next": "Prior slice verified646; not repeated. Current stage only Reissue uncertainty pending-read.",
     "published_sha": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
     "merge_ref": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
     "tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
@@ -14407,9 +14495,9 @@
         "conclusion": null
       }
     },
-    "verification_source": "7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1",
-    "verification_tested_merge": "20ed439869dbfbaf536693c639c8951d2a13dbbb",
-    "verification_run_id": 39978779254
+    "verification_source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "verification_tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "verification_run_id": 39984905832
   },
   "ci640_final": {
     "source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
@@ -14752,8 +14840,8 @@
     ],
     "test_contract": "Actual ShowDialog/modal heartbeat/held real private read; production Refresh and revoke post-action buttons with fixture transport only; original private request/access bytes; explicit same-window Stop Retry/new owner reopen; no duplicates/late state/row publication; all fixture actual tasks joined5s/barrier5s/modal15s. Old API6/UI8/all old methods unchanged.",
     "local_checks": "PASS manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0; transport/consumption/core/existing tests preserved",
-    "windows_compilation": "PASS exact645",
-    "windows_native": "PASS exact645 API6/UI8/UI12 actual respective markers; full R09/owner acceptance still open",
+    "windows_compilation": "PASS exact646",
+    "windows_native": "PASS exact646 Create uncertainty8/API6/UI8/UI12 and actual old per-case suites",
     "remaining_production_paths": [
       "Direct pending checks in create/reissue uncertainty branches and recovery request.Name read",
       "ConfirmConsumed after create/reissue/recover using separate saved consumption API8, not integrated",
@@ -14761,7 +14849,7 @@
     ],
     "readiness_change": 0,
     "publication": "PASS guarded non-force existing PR88 expected-head update, fetched parent exact641/full tree equal reviewed freeze; one automatic CI642 pull_request attempt1 raw exact-source count1",
-    "next": "Read same next targeted Refresh retry diagnostic CI; no UI12 success before actual markers",
+    "next": "Prior slice verified646; not repeated. Current stage only Reissue uncertainty pending-read.",
     "published_sha": "6f8a41e67709dae2a9794885e7e975918401f765",
     "merge_ref": "709e070d10138ffa330a0def5c21d61e0bf3e235",
     "tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
@@ -14784,9 +14872,9 @@
         "conclusion": null
       }
     },
-    "verification_source": "7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1",
-    "verification_tested_merge": "20ed439869dbfbaf536693c639c8951d2a13dbbb",
-    "verification_run_id": 39978779254
+    "verification_source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "verification_tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "verification_run_id": 39984905832
   },
   "ci642_final": {
     "source": "6f8a41e67709dae2a9794885e7e975918401f765",
@@ -15384,8 +15472,8 @@
     ],
     "test_contract": "Actual ShowDialog/default Create button, retained own request fixture/read-only DPAPI worker held5s, modal15s and actual joins5s. One mutation intent/no handoff/no consume/no duplicate snapshot; private bytes/draft, cancellation/drain/Stop/read-only Retry, owner Dispose/no late updates, reopen exact retained pending state. No real SSH/VPS/network. All existing tests unchanged.",
     "local_checks": "PASS manual/static structural/delimiter/signatures/diff/JSON/public321/0/secretPII0; AST unavailable NOT_RUN, compiler/native Windows NOT_RUN",
-    "windows_compilation": "NOT_RUN new Create uncertainty candidate",
-    "windows_native": "NOT_RUN new uncertainty8/API6/UI8/UI12/full regression;645 success not inherited",
+    "windows_compilation": "PASS exact646",
+    "windows_native": "PASS exact646 Create uncertainty8/API6/UI8/UI12 and actual old per-case suites",
     "remaining_production_paths": [
       "Reissue issue-unconfirmed direct HasPending UI read",
       "RecoverAsync direct Pending request.Name UI read",
@@ -15393,7 +15481,265 @@
       "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, separate bounded stages"
     ],
     "readiness_change": 0,
-    "publication": "TODO guarded existing PR88 one automatic CI; uploads OFF/release ineligible",
-    "next": "Read SAME new exact-source CI full final logs/tested merge: Create uncertainty8 including no replay/request bytes/Stop Retry/reopen, API6/UI8/UI12/selection and old mandatory suites. Stop after checkpoint, no next slice."
+    "publication": "PASS fresh expected-head non-force PR88 update; fetched parent exact645/full tree equal reviewed freeze; one automatic CI646 pull_request attempt1 raw exact-source count1",
+    "next": "Prior slice verified646; not repeated. Current stage only Reissue uncertainty pending-read.",
+    "published_sha": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "merge_ref": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "tree": "0caa67cf03efd57f3008b545c94eae0525321be1",
+    "local_freeze": "d7a924660df4a15309e0c01de9e4d39fc07117e3",
+    "ci_run_id": 39984905832,
+    "ci_run_number": 646,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39984905832",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_jobs": {
+      "windows": {
+        "id": 120521444261,
+        "status": "in_progress",
+        "conclusion": null
+      },
+      "ubuntu": {
+        "id": 120521444000,
+        "status": "in_progress",
+        "conclusion": null
+      }
+    },
+    "verification_source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "verification_tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "verification_run_id": 39984905832
+  },
+  "ci646_final": {
+    "run_id": 39984905832,
+    "run_number": 646,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39984905832",
+    "source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "verification": "Both full final job logs independently read; checkout and Windows build identity exact merge. Per-case markers enumerated, no metadata-only suite PASS.",
+    "line_counts": {
+      "windows": 12904,
+      "ubuntu": 578
+    },
+    "suites": {
+      "create8": [
+        "2026-10-23T16:37:25.6526423Z PASS: invitation Create uncertainty UI PASS: empty\r",
+        "2026-10-23T16:37:25.9378483Z PASS: invitation Create uncertainty UI PASS: pending\r",
+        "2026-10-23T16:37:26.2277090Z PASS: invitation Create uncertainty UI PASS: corrupt\r",
+        "2026-10-23T16:37:26.5127489Z PASS: invitation Create uncertainty UI PASS: locked\r",
+        "2026-10-23T16:37:26.8081491Z PASS: invitation Create uncertainty UI PASS: close-retry\r",
+        "2026-10-23T16:37:27.1883224Z PASS: invitation Create uncertainty UI PASS: dispose\r",
+        "2026-10-23T16:37:27.5106224Z PASS: invitation Create uncertainty UI PASS: stop-retry\r",
+        "2026-10-23T16:37:27.8072184Z PASS: invitation Create uncertainty UI PASS: service-dispose\r"
+      ],
+      "API6": [
+        "2026-10-23T16:37:18.6702215Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: empty\r",
+        "2026-10-23T16:37:18.8541633Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: pending\r",
+        "2026-10-23T16:37:19.0593733Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: completed\r",
+        "2026-10-23T16:37:19.2179665Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: corrupt\r",
+        "2026-10-23T16:37:19.3924289Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: locked\r",
+        "2026-10-23T16:37:19.5672016Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: cancel\r"
+      ],
+      "UI8": [
+        "2026-10-23T16:37:19.8056329Z PASS: invitation initial pending UI PASS: empty\r",
+        "2026-10-23T16:37:20.0742672Z PASS: invitation initial pending UI PASS: pending\r",
+        "2026-10-23T16:37:20.3277405Z PASS: invitation initial pending UI PASS: corrupt\r",
+        "2026-10-23T16:37:20.6029162Z PASS: invitation initial pending UI PASS: locked\r",
+        "2026-10-23T16:37:20.8822149Z PASS: invitation initial pending UI PASS: close-retry\r",
+        "2026-10-23T16:37:21.2622409Z PASS: invitation initial pending UI PASS: dispose\r",
+        "2026-10-23T16:37:21.5481645Z PASS: invitation initial pending UI PASS: stop\r",
+        "2026-10-23T16:37:21.8211495Z PASS: invitation initial pending UI PASS: service-dispose\r"
+      ],
+      "UI12": [
+        "2026-10-23T16:37:22.1064356Z PASS: invitation repeated pending UI PASS: refresh-empty\r",
+        "2026-10-23T16:37:22.4183436Z PASS: invitation repeated pending UI PASS: refresh-pending\r",
+        "2026-10-23T16:37:22.7359018Z PASS: invitation repeated pending UI PASS: refresh-corrupt\r",
+        "2026-10-23T16:37:23.0431721Z PASS: invitation repeated pending UI PASS: refresh-locked\r",
+        "2026-10-23T16:37:23.3227329Z PASS: invitation repeated pending UI PASS: post-complete\r",
+        "2026-10-23T16:37:23.6084010Z PASS: invitation repeated pending UI PASS: post-failure\r",
+        "2026-10-23T16:37:23.9156396Z PASS: invitation repeated pending UI PASS: post-pending\r",
+        "2026-10-23T16:37:24.2111741Z PASS: invitation repeated pending UI PASS: close-retry\r",
+        "2026-10-23T16:37:24.5908819Z PASS: invitation repeated pending UI PASS: dispose\r",
+        "2026-10-23T16:37:24.9245302Z PASS: invitation repeated pending UI PASS: stop-retry\r",
+        "2026-10-23T16:37:25.2406839Z PASS: invitation repeated pending UI PASS: service-dispose\r",
+        "2026-10-23T16:37:25.3699698Z PASS: invitation repeated pending UI PASS: stale-scope\r"
+      ],
+      "snapshot12": [
+        "2026-10-23T16:39:38.4840975Z PASS: caller releases family lease only after actual snapshot settles: setup\r",
+        "2026-10-23T16:39:38.6093411Z PASS: caller releases family lease only after actual snapshot settles: invite\r",
+        "2026-10-23T16:39:38.7360287Z PASS: caller releases family lease only after actual snapshot settles: share\r",
+        "2026-10-23T16:39:38.8624122Z PASS: caller releases family lease only after actual snapshot settles: empty\r",
+        "2026-10-23T16:39:38.9892865Z PASS: caller releases family lease only after actual snapshot settles: missing-setup\r",
+        "2026-10-23T16:39:39.1315562Z PASS: caller releases family lease only after actual snapshot settles: missing-invite\r",
+        "2026-10-23T16:39:39.2426111Z PASS: caller releases family lease only after actual snapshot settles: missing-share\r",
+        "2026-10-23T16:39:39.3810680Z PASS: caller releases family lease only after actual snapshot settles: pending-invite\r",
+        "2026-10-23T16:39:39.4957385Z PASS: caller releases family lease only after actual snapshot settles: pending-share\r",
+        "2026-10-23T16:39:39.6167366Z PASS: caller releases family lease only after actual snapshot settles: cancel\r",
+        "2026-10-23T16:39:39.7330765Z PASS: caller releases family lease only after actual snapshot settles: corrupt\r",
+        "2026-10-23T16:39:39.8679802Z PASS: caller releases family lease only after actual snapshot settles: missing-key\r"
+      ],
+      "dispatcher5": [
+        "2026-10-23T16:39:40.1287560Z PASS: settled transport performs no late UI dispatch or duplicate action: ready\r",
+        "2026-10-23T16:39:40.1922338Z PASS: closed dispatcher refuses a new transport before startup without a late callback or file I/O\r",
+        "2026-10-23T16:39:40.4610689Z PASS: settled transport performs no late UI dispatch or duplicate action: during-dispose\r",
+        "2026-10-23T16:39:40.7306531Z PASS: settled transport performs no late UI dispatch or duplicate action: file-fault\r",
+        "2026-10-23T16:39:40.9836868Z PASS: settled transport performs no late UI dispatch or duplicate action: worker-only\r"
+      ],
+      "ownership8": [
+        "2026-10-23T16:39:41.1161562Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: complete\r",
+        "2026-10-23T16:39:41.2683619Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: stop\r",
+        "2026-10-23T16:39:41.4030202Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: dispose\r",
+        "2026-10-23T16:39:41.5376609Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: lock\r",
+        "2026-10-23T16:39:41.6604448Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: typed\r",
+        "2026-10-23T16:39:41.8065400Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-stop\r",
+        "2026-10-23T16:39:41.9415009Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-dispose\r",
+        "2026-10-23T16:39:42.0759597Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: multiple\r"
+      ],
+      "cleanup4": [
+        "2026-10-23T16:39:42.2345615Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: complete\r",
+        "2026-10-23T16:39:44.3923519Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: list-lock\r",
+        "2026-10-23T16:39:46.5645475Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: preparation-lock\r",
+        "2026-10-23T16:39:48.7300072Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: dispose-lock\r"
+      ],
+      "repair8": [
+        "2026-10-23T16:37:50.2460104Z PASS: owned production repair slice PASS: default-refusal\r",
+        "2026-10-23T16:37:51.4981968Z PASS: owned production repair slice PASS: complete\r",
+        "2026-10-23T16:37:52.8389689Z PASS: owned production repair slice PASS: cancel-retry\r",
+        "2026-10-23T16:37:53.3759635Z PASS: owned production repair slice PASS: stop-copy\r",
+        "2026-10-23T16:37:53.9352858Z PASS: owned production repair slice PASS: dispose-copy\r",
+        "2026-10-23T16:37:54.4695987Z PASS: owned production repair slice PASS: owner-dispose\r",
+        "2026-10-23T16:37:55.7955235Z PASS: owned production repair slice PASS: stop-command\r",
+        "2026-10-23T16:37:59.1092353Z PASS: owned production repair slice PASS: cleanup-lock\r"
+      ],
+      "list10": [
+        "2026-10-23T16:36:47.3672129Z PASS: owned production list slice PASS: default-refusal\r",
+        "2026-10-23T16:36:48.6280697Z PASS: owned production list slice PASS: complete\r",
+        "2026-10-23T16:36:49.9791661Z PASS: owned production list slice PASS: cancel-retry\r",
+        "2026-10-23T16:36:50.4985279Z PASS: owned production list slice PASS: stop-copy\r",
+        "2026-10-23T16:36:51.0420740Z PASS: owned production list slice PASS: dispose-copy\r",
+        "2026-10-23T16:36:51.5467319Z PASS: owned production list slice PASS: owner-dispose\r",
+        "2026-10-23T16:36:52.8131026Z PASS: owned production list slice PASS: stop-command\r",
+        "2026-10-23T16:36:56.0607589Z PASS: owned production list slice PASS: cleanup-lock\r",
+        "2026-10-23T16:36:58.0571873Z PASS: owned production list slice PASS: refresh-cancel-retry\r",
+        "2026-10-23T16:36:59.3120370Z PASS: owned production list slice PASS: refresh-dispose\r"
+      ],
+      "recover10": [
+        "2026-10-23T16:39:49.0037340Z PASS: owned production setup recovery PASS: default-refusal\r",
+        "2026-10-23T16:39:50.0390579Z PASS: owned production setup recovery PASS: status-pending\r",
+        "2026-10-23T16:39:51.1602346Z PASS: owned production setup recovery PASS: cancel-retry\r",
+        "2026-10-23T16:39:51.5947118Z PASS: owned production setup recovery PASS: stop-copy\r",
+        "2026-10-23T16:39:52.0292518Z PASS: owned production setup recovery PASS: dispose-copy\r",
+        "2026-10-23T16:39:52.4456585Z PASS: owned production setup recovery PASS: owner-dispose\r",
+        "2026-10-23T16:39:53.5189857Z PASS: owned production setup recovery PASS: stop-between\r",
+        "2026-10-23T16:39:54.6287665Z PASS: owned production setup recovery PASS: cancel-command\r",
+        "2026-10-23T16:39:57.7462642Z PASS: owned production setup recovery PASS: cleanup-lock\r",
+        "2026-10-23T16:39:59.4277696Z PASS: owned production setup recovery PASS: result\r"
+      ],
+      "fresh10": [
+        "2026-10-23T16:39:59.7372105Z PASS: owned production fresh setup PASS: default-refusal\r",
+        "2026-10-23T16:40:00.1814258Z PASS: owned production fresh setup PASS: copy-fault\r",
+        "2026-10-23T16:40:01.4871401Z PASS: owned production fresh setup PASS: cancel-retry\r",
+        "2026-10-23T16:40:01.9575366Z PASS: owned production fresh setup PASS: stop-copy\r",
+        "2026-10-23T16:40:02.4169713Z PASS: owned production fresh setup PASS: dispose-copy\r",
+        "2026-10-23T16:40:02.8763143Z PASS: owned production fresh setup PASS: owner-dispose\r",
+        "2026-10-23T16:40:04.0511436Z PASS: owned production fresh setup PASS: cancel-command\r",
+        "2026-10-23T16:40:07.2690063Z PASS: owned production fresh setup PASS: cleanup-lock\r",
+        "2026-10-23T16:40:08.3949198Z PASS: owned production fresh setup PASS: result\r",
+        "2026-10-23T16:40:09.5069663Z PASS: owned production fresh setup PASS: pending-race\r"
+      ],
+      "https11": [
+        "2026-10-23T16:39:06.2312566Z PASS: owned production HTTPS recovery PASS: default-refusal\r",
+        "2026-10-23T16:39:07.1957193Z PASS: owned production HTTPS recovery PASS: status-pending\r",
+        "2026-10-23T16:39:08.2564929Z PASS: owned production HTTPS recovery PASS: cancel-retry\r",
+        "2026-10-23T16:39:08.6023205Z PASS: owned production HTTPS recovery PASS: stop-copy\r",
+        "2026-10-23T16:39:08.9351717Z PASS: owned production HTTPS recovery PASS: dispose-copy\r",
+        "2026-10-23T16:39:09.2831525Z PASS: owned production HTTPS recovery PASS: owner-dispose\r",
+        "2026-10-23T16:39:10.3641927Z PASS: owned production HTTPS recovery PASS: cancel-command\r",
+        "2026-10-23T16:39:13.3935969Z PASS: owned production HTTPS recovery PASS: cleanup-lock\r",
+        "2026-10-23T16:39:15.0001569Z PASS: owned production HTTPS recovery PASS: result\r",
+        "2026-10-23T16:39:16.0156950Z PASS: owned production HTTPS recovery PASS: stop-result-copy\r",
+        "2026-10-23T16:39:17.6572308Z PASS: owned production HTTPS recovery PASS: stop-result\r"
+      ],
+      "freshHTTPS10": [
+        "2026-10-23T16:39:17.8207102Z PASS: owned production fresh HTTPS PASS: default-refusal\r",
+        "2026-10-23T16:39:18.1588278Z PASS: owned production fresh HTTPS PASS: copy-fault\r",
+        "2026-10-23T16:39:19.1916318Z PASS: owned production fresh HTTPS PASS: cancel-retry\r",
+        "2026-10-23T16:39:19.5327158Z PASS: owned production fresh HTTPS PASS: stop-copy\r",
+        "2026-10-23T16:39:19.8490752Z PASS: owned production fresh HTTPS PASS: dispose-copy\r",
+        "2026-10-23T16:39:20.1652357Z PASS: owned production fresh HTTPS PASS: owner-dispose\r",
+        "2026-10-23T16:39:21.2432110Z PASS: owned production fresh HTTPS PASS: cancel-command\r",
+        "2026-10-23T16:39:24.3042332Z PASS: owned production fresh HTTPS PASS: cleanup-lock\r",
+        "2026-10-23T16:39:25.2880121Z PASS: owned production fresh HTTPS PASS: result\r",
+        "2026-10-23T16:39:26.2769977Z PASS: owned production fresh HTTPS PASS: stop-result\r"
+      ],
+      "export11": [
+        "2026-10-23T16:34:42.6184882Z PASS: modal export preserves protected settings and cannot start a late relay: save\r",
+        "2026-10-23T16:34:43.0303283Z PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry\r",
+        "2026-10-23T16:34:43.5719845Z PASS: modal export preserves protected settings and cannot start a late relay: close\r",
+        "2026-10-23T16:34:43.9971630Z PASS: modal export preserves protected settings and cannot start a late relay: dispose\r",
+        "2026-10-23T16:34:44.4333074Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel\r",
+        "2026-10-23T16:34:44.8710088Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-close\r",
+        "2026-10-23T16:34:45.3118891Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose\r",
+        "2026-10-23T16:34:45.7273623Z PASS: modal export preserves protected settings and cannot start a late relay: global-stop\r",
+        "2026-10-23T16:34:46.1674174Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop\r",
+        "2026-10-23T16:34:46.5890205Z PASS: modal export preserves protected settings and cannot start a late relay: existing-retry\r",
+        "2026-10-23T16:34:47.0854578Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change\r"
+      ],
+      "chooser3": [
+        "2026-10-23T16:25:24.2426458Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel\r",
+        "2026-10-23T16:25:29.7302816Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing\r",
+        "2026-10-23T16:25:30.5205857Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: error\r"
+      ]
+    },
+    "summaries": {
+      "desktop": 5298,
+      "instance": 30,
+      "maintenance": 126,
+      "shutdown": 47,
+      "home_vpn": 3431,
+      "portable": 91,
+      "ssh_policy": 61,
+      "python_reported": 28,
+      "python_skipped": 2,
+      "ubuntu_operation": 16,
+      "ubuntu_qr": 13
+    },
+    "compiler": "PASS exact646",
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "owner_pc": "NOT_RUN",
+    "historical_flakes": "CI640 permissions and CI642 startup did not reproduce here; causes not proven fixed; diagnostics retained."
+  },
+  "invitation_reissue_uncertainty_on646": {
+    "status": "PARTIAL",
+    "phase": "ONE Reissue IssueUnconfirmed owned pending-read production slice",
+    "baseline_source": "1a0b9ab4a3f75775bb712f418a780fb9f754c40f",
+    "baseline_tested_merge": "2c1787a60146fc7abeb8555af2e60b82bf5238d6",
+    "baseline_checkpoint": "b0b7a093e0b991b72bfc1a9cb89f2a0c0d61b82f",
+    "local_code_sha": "89d68a07c812e41c9dbd0d8133ad42c85f027b2f",
+    "scope": "ONLY existing Reissue IssueUnconfirmed branch sync HasPending replaced by existing RefreshPendingAsync. Recovery, consumption, transport, core reissue API and all prior test bodies unchanged.",
+    "implementation": "Original Stop identity/explicit modal owner; pending/unreadable/unknown retain mutation gate. Empty still requires explicit list reconciliation. Read version suppresses duplicate post-action snapshot. No automatic revoke/invite replay, replacement/handoff/consumption or restoration of old access.",
+    "native_cases": [
+      "empty",
+      "pending",
+      "corrupt",
+      "locked",
+      "close-retry",
+      "dispose",
+      "stop-retry",
+      "service-dispose"
+    ],
+    "test_contract": "Actual ShowDialog/default Reissue action and existing two-step core; exact selected ID/name and distinct editable draft, same-name sibling, one revoke then one invite. Actual read held5s, modal15s, cleanup joins5s. Responsive UI/gating/cancellation/Stop Retry/owner and service Dispose/no late status/reopen request; exact private bytes preserved; no live SSH. All prior tests unchanged.",
+    "local_checks": "PASS structural preservation/manual review/signatures/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN new Reissue uncertainty8 and full regressions;646 PASS applies only to baseline",
+    "remaining_production_paths": [
+      "RecoverAsync direct Pending request.Name UI read",
+      "ConfirmConsumed after create/reissue/recover through existing consumption API8; not integrated",
+      "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, separate bounded stages"
+    ],
+    "readiness_change": 0,
+    "publication": "TODO guarded existing PR88 single automatic CI; no artifacts uploads/release",
+    "next": "Inspect SAME new CI final logs/exact tested merge/Reissue uncertainty8 and full old suites; no duplicate. Then separate Recover request.Name read, not in current stage."
   }
 }

@@ -112,8 +112,15 @@ namespace ProGo
                     list.RefreshSelection();
                     if (result.State == InvitationReissueState.Complete) {
                         list.Add(result.Replacement); ShowToken(result.Token); HomeVpnAdminRecovery.ConfirmConsumed(result.Token);
-                    } else RequireRefresh(result.State == InvitationReissueState.IssueUnconfirmed && HomeVpnAdminRecovery.HasPending()
-                        ? "Старый доступ отозван; выдача замены не подтверждена. " + HomeVpnAdminRecovery.PendingMessage : result.Message);
+                    } else if (result.State == InvitationReissueState.IssueUnconfirmed) {
+                        bool known = await ownerUi.Await(RefreshPendingAsync(operationStop));
+                        if (ownerUi.Closed || IsDisposed || Disposing) return;
+                        if (!known) RequireRefresh("Старый доступ отозван; выдача замены не подтверждена. " + status.Text);
+                        else if (pendingAdmin) {
+                            SetPendingStatus();
+                            RequireRefresh("Старый доступ отозван; выдача замены не подтверждена. " + status.Text);
+                        } else RequireRefresh(result.Message);
+                    } else RequireRefresh(result.Message);
                 });
             };
             InitializationWork = PendingReadWork = ActionWork = Task.FromResult(0);

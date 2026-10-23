@@ -1,4 +1,47 @@
-## Текущий этап: Create invitation uncertainty read поверх CI645
+## Текущий этап: Reissue uncertainty owned pending-read поверх CI646
+
+Сверены PR88 OPEN/DRAFT, source `1a0b9ab4a3f75775bb712f418a780fb9f754c40f`, checkpoint
+`b0b7a093e0b991b72bfc1a9cb89f2a0c0d61b82f`. До изменений51 worktrees clean/locks0,
+root sole agent; работа выполняется в отдельной work/progo-reissue-uncertainty-on646-20261023.
+Полные финальные [CI646](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39984905832) Windows12904/Ubuntu578
+строк самостоятельно прочитаны. Checkout обоих jobs и Windows build identity: tested merge
+`2c1787a60146fc7abeb8555af2e60b82bf5238d6`. Exact per-case evidence: JSON ci646_final.
+PASS Create uncertainty8 (empty,pending,corrupt,locked,close-retry,dispose,stop-retry,service-dispose),
+API6/UI8/UI12, selection exact ID/missing-ID, snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/
+recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3. Desktop5298/Instance30/
+Maintenance126/Shutdown47/HomeVPN3431/Portable91/SSH policy61. Python reported28 incl2SKIPPED,
+Ubuntu operation16/QR13/provisioning PASS. Pack PASS только runner; uploads/prune SKIPPED.
+Прежние CI640 permissions/CI642 startup причины не объявляются исправленными; диагностика сохранена.
+
+Выбран ТОЛЬКО Reissue IssueUnconfirmed pending-read: это следующий согласованный синхронный UI I/O.
+Local code `89d68a07c812e41c9dbd0d8133ad42c85f027b2f`:1 runtime+1 existing test147add/2delete.
+Existing RefreshPendingAsync/RunAdminOwnedAsync/original Stop scope/явный owner; pending/unknown/
+unreadable остаются gated, empty не разрешает слепой повтор без Refresh. Один read/version guard;
+RevokeUnconfirmed и Complete/handoff/consume неизменны. Никакого нового API, recovery/consumption/
+transport изменения. Create uncertainty8 и все прежние тела тестов byte-identical.
+
+Восемь новых actual ShowDialog lifecycle modes: empty,pending,corrupt,locked,close-retry,dispose,
+stop-retry,service-dispose. Реальный reader/DPAPI own fixture под barrier5s, modal15s/joins5s;
+existing reissue core получает ровно revoke+invite frozen selected ID/name, без реального SSH.
+Проверяются UI heartbeat/gating, confirmed old revocation/same-name sibling/selection/search/draft,
+no replacement/handoff/consume/duplicate read, exact private bytes/request. Stop→explicit read-only
+Refresh не повторяет revoke/invite и требует нового явного выбора; Close→reopen retained pending;
+Dispose не получает late status. Finally releases barrier/disposes own window/stream/joins actual body
+и service cleanup; старые timeout/assert/coverage сохранены.
+
+PASS local review/structural isolation/signatures/C#5 await scopes/lexical delimiters/diff/JSON/
+public-content321source0release/added secretsPII0. Lexical не AST/compiler.
+Windows/.NET Framework/PowerShell недоступны: новая compilation/Reissue uncertainty8/full suites
+NOT_RUN; SUCCESS646 не переносится на candidate.
+Publication TODO: fresh expected-head guarded non-force existing PR88, ровно один automatic CI.
+Workflows/VERSION неизменны, public uploads OFF, release/prune ineligible. После сохранения source/run/
+checkpoint STOP без полного ожидания/второго этапа. Следующий шаг — ТОТ ЖЕ CI final logs/exact merge.
+Оставшиеся production paths: RecoverAsync Pending request.Name; ConfirmConsumed bindings existing API8;
+invite/revoke/reissue/recover-invite owned transport (отдельные ограниченные этапы). FullR09/owner ПК open.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: Windows proof нового slice и перечисленные незавершённые UI I/O paths.
+
+## История этапа: Create invitation uncertainty read поверх CI645
 
 HEAD PR88/source `7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1` и checkpoint
 `42f4dd2260032ccb23ef8bd1526ba05517fa535c` сверены;49 прежних worktrees clean/locks0,
@@ -33,11 +76,20 @@ API6/UI8/UI12/selection и прочие test bodies byte-identical; никаки
 PASS local manual/static/signatures/lexical delimiter/diff/JSON/public321/0/secretsPII0. AST parser
 недоступен (NOT_RUN), lexical не выдаётся за AST/compiler. Windows/.NET Framework/PowerShell нет:
 new compilation/uncertainty8/full regression NOT_RUN, SUCCESS645 относится только к exact baseline.
-Publication TODO: fresh expected-head non-force PR88, ровно один automatic CI; workflows/VERSION
-unchanged, public uploads OFF/release/prune ineligible. Save source/run/checkpoint и STOP без полного
-ожидания/второго этапа. Далее ТОТ ЖЕ новый CI full logs/exact merge: uncertainty8/API6/UI8/UI12/
-selection/все mandatory suites. Остаток: reissue HasPending; recovery request.Name; consumption API8
-bindings; invite/revoke/reissue/recover-invite owned transport. Не закрывать fullR09/приёмку ПК.
+Publication PASS: source `1a0b9ab4a3f75775bb712f418a780fb9f754c40f`, existing PR88 integration/approved-plan-31-20261011,
+fresh expected-head non-force update. Fetched parent exact645/full tree `0caa67cf03efd57f3008b545c94eae0525321be1`
+равен reviewed freeze `d7a924660df4a15309e0c01de9e4d39fc07117e3`. Public diff5files633add/62delete:
+1 runtime+1 test124add/2delete +3docs509add/60delete; прочие routes/API/worker/consumption/transport unchanged.
+Merge ref `2c1787a60146fc7abeb8555af2e60b82bf5238d6` пока НЕ final tested merge: нужны checkout/build logs.
+Один automatic [CI646/39984905832](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39984905832),
+pull_request/attempt1/raw exact-source count1; in_progress/conclusion null, updated16:13:02UTC;
+Windows120521444261/Ubuntu120521444000 in_progress. New compilation/uncertainty8/API6/UI8/UI12/full
+suites NOT_RUN; SUCCESS645 не переносится. PR uploads OFF/release/prune ineligible, completion
+skips ещё не наблюдались. Postpublication3-doc checkpoint local HEAD(git log -1), НЕ pushed для
+исключения второго CI; full checkpoint в PR88 body. STOP без полного ожидания/второго этапа.
+Далее ТОТ ЖЕ CI646 full final logs/exact merge: uncertainty8/API6/UI8/UI12/selection/mandatory suites.
+Остаток: reissue HasPending; recovery request.Name; consumption API8 bindings; invite/revoke/reissue/
+recover-invite owned transport. Не закрывать fullR09/приёмку ПК.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
 главный блокер: Windows proof нового Create uncertainty slice, затем названные remaining routes.
 
