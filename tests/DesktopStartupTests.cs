@@ -94,6 +94,29 @@ namespace ProGo
                 }
             }
         }
+        // Fixture-only observation. No blocking process gate, raw PID, path, argument, settings or exception output.
+        private sealed class CommandAvailabilityObservation
+        {
+            internal int Count;
+            internal bool PidPresent, PidSame, Connecting, Stopping, Requested;
+            internal static CommandAvailabilityObservation Capture(UpdateAwareTrayApplicationContext context, ProxyService proxy, int? expectedPid) {
+                int count = context.PendingRouteCount; var current = proxy.CurrentPid;
+                return new CommandAvailabilityObservation { Count = count, PidPresent = current.HasValue, PidSame = current == expectedPid,
+                    Connecting = proxy.IsConnecting, Stopping = proxy.IsStopping, Requested = proxy.ConnectionRequested };
+            }
+            internal string SafeFacts() {
+                return "count=" + Count + "; pidPresent=" + PidPresent + "; pidSame=" + PidSame +
+                    "; connecting=" + Connecting + "; stopping=" + Stopping + "; requested=" + Requested +
+                    "; expectedWaitingLifecycle=" + (Connecting && !Stopping && Requested);
+            }
+        }
+        private static bool? CommandAvailabilityFixtureAlive(int? expectedPid) {
+            if (!expectedPid.HasValue) return null;
+            try { using (var process = Process.GetProcessById(expectedPid.Value)) return !process.HasExited; }
+            catch (ArgumentException) { return false; }
+            catch (InvalidOperationException) { return false; }
+            catch (Exception) { return null; } // No exception message/native detail; failed observation is UNKNOWN.
+        }
         private static void CommandAvailabilityWorkflow(SettingsService settings)
         {
             var source = new[] { AppCommand.StartCli };
@@ -146,8 +169,32 @@ namespace ProGo
                         !((Button)Field(main, "cliToggle")).Enabled && !((Button)Field(main, "connect")).Enabled,
                         "dashboard and tray agree while CLI waits for explicitly gated SOCKS");
                     var pid = proxy.CurrentPid;
-                    Call(context, "Execute", "connect"); Call(context, "Execute", "codex-on");
-                    Check(context.PendingRouteCount == 1 && proxy.CurrentPid == pid, "dispatcher rejects stale plain Connect and duplicate alias without replacing pending route");
+                    var beforeConnect = CommandAvailabilityObservation.Capture(context, proxy, pid);
+                    Call(context, "Execute", "connect");
+                    var afterConnect = CommandAvailabilityObservation.Capture(context, proxy, pid);
+                    Call(context, "Execute", "codex-on");
+                    var afterAlias = CommandAvailabilityObservation.Capture(context, proxy, pid);
+                    // Capture both original invariants in their original order, before any diagnostic I/O.
+                    bool pendingRouteCountExactlyOne = afterAlias.Count == 1;
+                    bool originalFixturePidRetained = afterAlias.PidSame;
+                    bool? fixtureAlive = CommandAvailabilityFixtureAlive(pid);
+                    Console.WriteLine("Command availability fixture: capturedPidPresent=" + pid.HasValue +
+                        "; fixtureAliveKnown=" + fixtureAlive.HasValue + "; fixtureAlive=" + fixtureAlive.GetValueOrDefault() +
+                        "; releaseExists=" + File.Exists(release));
+                    Console.WriteLine("Command availability before-connect: " + beforeConnect.SafeFacts());
+                    Console.WriteLine("Command availability after-connect: " + afterConnect.SafeFacts());
+                    Console.WriteLine("Command availability after-alias: " + afterAlias.SafeFacts());
+                    string violated = (pendingRouteCountExactlyOne ? "" : "pending-route-count-one;") +
+                        (originalFixturePidRetained ? "" : "original-fixture-pid-retained;");
+                    Console.WriteLine("Command availability invariants: pending-route-count-one=" + pendingRouteCountExactlyOne +
+                        "; original-fixture-pid-retained=" + originalFixturePidRetained + "; violated=" + violated);
+                    if (violated.Length != 0) {
+                        var frames = new StackTrace(false).GetFrames();
+                        Console.WriteLine("Command availability safe stack: " + String.Join(" <- ", (frames ?? new StackFrame[0])
+                            .Select(f => f.GetMethod()).Where(m => m != null && m.DeclaringType == typeof(DesktopTests))
+                            .Take(6).Select(m => m.Name)));
+                    }
+                    Check(pendingRouteCountExactlyOne && originalFixturePidRetained, "dispatcher rejects stale plain Connect and duplicate alias without replacing pending route; violated=" + violated);
                     var bytes = File.ReadAllBytes(AppPaths.SettingsPath);
                     CheckModal(context, main, "settings", "settings", delegate(Form dialog) {
                         var form = (SshProfilesSettingsForm)dialog;

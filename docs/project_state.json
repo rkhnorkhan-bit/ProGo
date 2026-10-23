@@ -3929,33 +3929,33 @@
     }
   ],
   "ci_candidate": {
-    "source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
-    "merge_ref": "517b65079be6d6645f132e313b2acf551cbb887c",
-    "tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
-    "tree": "e939ae31e3eb6c5796448d79267ea997e1ca0bf1",
-    "local_freeze": "598f406abe6391c080c8c2077828d27800503996",
-    "run_id": 39907256278,
-    "run_number": 641,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278",
+    "source": "6f8a41e67709dae2a9794885e7e975918401f765",
+    "merge_ref": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "tree": "553612d55db87d0f3dadfe971d6a545c0e7944a1",
+    "local_freeze": "9c6a66f41e7ae2972408081b1464a22f5767ac80",
+    "run_id": 39911077389,
+    "run_number": 642,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389",
     "status": "completed",
-    "conclusion": "success",
-    "run_updated_at": "2026-10-23T05:42:45Z",
+    "conclusion": "failure",
+    "run_updated_at": "2026-10-23T06:22:27Z",
     "jobs": {
       "windows": {
-        "id": 120261940053,
+        "id": 120273983681,
         "status": "completed",
-        "conclusion": "success"
+        "conclusion": "failure"
       },
       "ubuntu": {
-        "id": 120261939848,
+        "id": 120273983952,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Full final Windows12520/Ubuntu578 lines independently inspected, checkout/build identity verified; no metadata-only PASS",
-    "windows_compilation": "PASS exact641 production/Desktop/relay",
-    "windows_native": "PASS exact641 SSH policy61/canary4/API6/UI8/Instance30/full prior regressions; CI640 ACL cause unresolved",
-    "pack": "PASS runner-only ZIP SHA2564d1fcc5f1d312993f7c08bba19bcc190cba288ff2c983714481b4675e33a3986",
+    "verification": "Full final Windows4275 and Ubuntu578 lines independently inspected; exact checkout/build identity verified",
+    "windows_compilation": "PASS production/Desktop exact642; relay fixture compilation NOT_RUN",
+    "windows_native": "FAIL DesktopStartupTests.cs150 composite route-count/PID; SSH policy/API6/UI8/UI12/Instance/relay regressions NOT_RUN",
+    "pack": "SKIPPED",
     "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
   },
@@ -5494,40 +5494,26 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "baseline_source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
-    "baseline_tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
-    "baseline_checkpoint": "70f0d4db5d645244145a58b2f6f1165016af2654",
-    "local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
-    "scope": "ONLY repeated pending-read after operations and Refresh via existing readonly async API/owned worker. No consumption/transport expansion.",
-    "implementation": "Shared initial/repeated owned reader; action captures original StopWork before transport; checks scope before/after read and publication; one pending snapshot/version per action; working gate until actual settlement; owner CTS Close/Dispose; explicit ActionWork/PendingReadWork retained; confirmed Refresh preserves ID/search/draft except established uncertain-mutation reconciliation deliberately requires fresh selection.",
-    "native_cases": [
-      "refresh-empty",
-      "refresh-pending",
-      "refresh-corrupt",
-      "refresh-locked",
-      "post-complete",
-      "post-failure",
-      "post-pending",
-      "close-retry",
-      "dispose",
-      "stop-retry",
-      "service-dispose",
-      "stale-scope"
+    "phase": "ONE authorized test-only diagnostic for CI642 composite command availability",
+    "baseline_source": "6f8a41e67709dae2a9794885e7e975918401f765",
+    "baseline_tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "baseline_checkpoint": "b8f4a52e4fedbca2232316b71d7387f02ac890f0",
+    "local_code_sha": "4fe4e87df3d61a7d391efe07f3c944eafb6cefcf",
+    "authorization": "Owner explicitly authorized test-only evidence collection plus exactly one automatic diagnostic CI; previous diagnostic-CI permission blocker resolved, runtime cause still unproven",
+    "scope": "Only DesktopStartupTests.cs instrumentation plus3 docs. Original connect then codex-on order, original nullable PID equality/count==1 conjunction, one combined Check, timeout/coverage/fixture cleanup preserved. No runtime/security/network changes.",
+    "invariants": [
+      "pending-route-count-one: observed PendingRouteCount == 1",
+      "original-fixture-pid-retained: observed CurrentPid == captured nullable PID, original equality semantics unchanged"
     ],
-    "test_contract": "Actual ShowDialog/modal heartbeat/held real private read; production Refresh and revoke post-action buttons with fixture transport only; original private request/access bytes; explicit same-window Stop Retry/new owner reopen; no duplicates/late state/row publication; all fixture actual tasks joined5s/barrier5s/modal15s. Old API6/UI8/all old methods unchanged.",
-    "local_checks": "PASS manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0; transport/consumption/core/existing tests preserved",
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN repeated12/new full regressions;641 PASS not inherited",
-    "remaining_production_paths": [
-      "Direct pending checks in create/reissue uncertainty branches and recovery request.Name read",
-      "ConfirmConsumed after create/reissue/recover using separate saved consumption API8, not integrated",
-      "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, bounded separate slices"
-    ],
+    "evidence": "Three nonblocking metadata snapshots before-connect/after-connect/after-alias: count,pidPresent,pidSame,connecting,stopping,requested,expectedWaitingLifecycle. Capture final original operands before logging. Separate own fixture process liveness known/value and capturedPidPresent/releaseExists booleans. All violated names collected; failure-only StackTrace(false) filtered to DesktopTests method names max6. No raw PID/path/arguments/settings/exception text/secrets. Sequential observations, not atomic lifecycle proof.",
+    "hypothesis": "CurrentPid Monitor.TryEnter may return null on busy gate while process lives; source contract observed but CI642 root cause NOT PROVEN; no runtime/test-contract fix inferred",
+    "local_checks": "PASS manual/static/signatures/AST syntax1/C#5/diff/public321/0/secretPII0; original old bodies and assert count/order/timeout retained; one temporary review checker false-positive Wait matched WaitingLifecycle, corrected token-level check and rerun PASS before publication",
+    "windows_compilation": "NOT_RUN new diagnostic candidate",
+    "windows_native": "NOT_RUN both invariant diagnostics/UI12/API6/UI8/full regressions on new SHA",
     "readiness_change": 0,
-    "publication": "TODO guarded existing PR88 one automatic CI; uploads OFF/release ineligible",
-    "next": "Read SAME new exact-source CI full final logs, repeated12/API6/UI8 and all old mandatory suites. Stop after checkpoint; no next production path in this stage.",
-    "phase": "ONE repeated invitation pending-read production slice ready for guarded publication",
-    "checkpoint": "local HEAD docs freeze then postpublication local checkpoint"
+    "publication": "TODO fresh expected-head non-force PR88 update; exactly one automatic diagnostic CI, uploads OFF/release ineligible",
+    "next": "Inspect SAME new diagnostic CI full final logs/tested merge: count-one/PID-same/liveness/lifecycle snapshots; no cause declared unless proven. Also note actual executed SSH policy/UI12/API6/UI8/Instance/prior regressions. No duplicate CI or next feature.",
+    "checkpoint": "Local HEAD docs freeze then postpublication local docs-only checkpoint"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5620,7 +5606,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact641589a636/517b650 full final logs verified SSH policy61/API6/UI8/Instance30/prior suites, runner-only pack/no uploads. CI640 ACL refusal did not reproduce, cause unresolved. New repeated pending12 candidate compiler/native NOT_RUN. No full weighted gate closed; weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "Exact6426f8a41e/709e070 failed composite Desktop route-count/PID; cause unproven. Authorized test-only diagnostic candidate4fe4e87 adds named unchanged invariants/safe lifecycle facts; new compiler/native NOT_RUN. API6/UI8/UI12/Instance and SSH policy NOT_RUN642, historical permissions640 unresolved; weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9757,11 +9743,11 @@
       623
     ],
     "actual_invitation_ui": "Initial and repeated post-action/Refresh reads connected to existing async owned API; direct create/reissue uncertainty/recovery request.Name and consumption remain legacy",
-    "next": "Read SAME new exact-source CI full final logs, repeated12/API6/UI8 and all old mandatory suites. Stop after checkpoint; no next production path in this stage.",
+    "next": "Inspect SAME CI642 full final logs/tested merge: repeated12/API6/UI8, reconciliation/selection and all old mandatory regressions; CI640 ACL cause remains unresolved if no refusal. No duplicate CI or second stage.",
     "readiness_change": 0,
     "integration_local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
-    "integration_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
-    "integration_ci_run_id": 39904249694,
+    "integration_source": "6f8a41e67709dae2a9794885e7e975918401f765",
+    "integration_ci_run_id": 39911077389,
     "baseline_windows": "PASS exact641 API6/UI8; repeated12 new candidate compiler/native NOT_RUN"
   },
   "ci623_failure": {
@@ -11945,6 +11931,117 @@
         "integration_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
         "integration_ci_run_id": 39904249694
       }
+    },
+    "before_ci642_diagnosis": {
+      "active_work": {
+        "status": "PARTIAL",
+        "baseline_source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+        "baseline_tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
+        "baseline_checkpoint": "70f0d4db5d645244145a58b2f6f1165016af2654",
+        "local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
+        "scope": "ONLY repeated pending-read after operations and Refresh via existing readonly async API/owned worker. No consumption/transport expansion.",
+        "implementation": "Shared initial/repeated owned reader; action captures original StopWork before transport; checks scope before/after read and publication; one pending snapshot/version per action; working gate until actual settlement; owner CTS Close/Dispose; explicit ActionWork/PendingReadWork retained; confirmed Refresh preserves ID/search/draft except established uncertain-mutation reconciliation deliberately requires fresh selection.",
+        "native_cases": [
+          "refresh-empty",
+          "refresh-pending",
+          "refresh-corrupt",
+          "refresh-locked",
+          "post-complete",
+          "post-failure",
+          "post-pending",
+          "close-retry",
+          "dispose",
+          "stop-retry",
+          "service-dispose",
+          "stale-scope"
+        ],
+        "test_contract": "Actual ShowDialog/modal heartbeat/held real private read; production Refresh and revoke post-action buttons with fixture transport only; original private request/access bytes; explicit same-window Stop Retry/new owner reopen; no duplicates/late state/row publication; all fixture actual tasks joined5s/barrier5s/modal15s. Old API6/UI8/all old methods unchanged.",
+        "local_checks": "PASS manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0; transport/consumption/core/existing tests preserved",
+        "windows_compilation": "NOT_RUN new candidate",
+        "windows_native": "NOT_RUN repeated12/new full regressions;641 PASS not inherited",
+        "remaining_production_paths": [
+          "Direct pending checks in create/reissue uncertainty branches and recovery request.Name read",
+          "ConfirmConsumed after create/reissue/recover using separate saved consumption API8, not integrated",
+          "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, bounded separate slices"
+        ],
+        "readiness_change": 0,
+        "publication": "PASS guarded non-force existing PR88 expected-head update, fetched parent exact641/full tree equal reviewed freeze; one automatic CI642 pull_request attempt1 raw exact-source count1",
+        "next": "Inspect SAME CI642 full final logs/tested merge: repeated12/API6/UI8, reconciliation/selection and all old mandatory regressions; CI640 ACL cause remains unresolved if no refusal. No duplicate CI or second stage.",
+        "phase": "ONE repeated invitation pending-read production slice published; sole CI642 in_progress; STOP after checkpoint",
+        "checkpoint": "Postpublication docs-only local HEAD via git log -1, intentionally NOT pushed to avoid second CI; full checkpoint also PR88 body",
+        "published_sha": "6f8a41e67709dae2a9794885e7e975918401f765",
+        "merge_ref": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+        "tested_merge": null,
+        "tree": "553612d55db87d0f3dadfe971d6a545c0e7944a1",
+        "local_freeze": "9c6a66f41e7ae2972408081b1464a22f5767ac80",
+        "ci_run_id": 39911077389,
+        "ci_run_number": 642,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120273983681,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120273983952,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "public_diff": "6 files730add/88delete:2 runtime+1 existing test204add/36delete plus3 docs526add/52delete; consumption/transport/API/core/workflow/VERSION/old tests preserved"
+      },
+      "ci_candidate": {
+        "source": "6f8a41e67709dae2a9794885e7e975918401f765",
+        "merge_ref": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+        "tested_merge": null,
+        "tree": "553612d55db87d0f3dadfe971d6a545c0e7944a1",
+        "local_freeze": "9c6a66f41e7ae2972408081b1464a22f5767ac80",
+        "run_id": 39911077389,
+        "run_number": 642,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T06:22:27Z",
+        "jobs": {
+          "windows": {
+            "id": 120273983681,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120273983952,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Fresh expected-head non-force PR88 update; fetched parent exact641/full tree equal reviewed freeze; one automatic pull_request attempt1 raw exact-source total_count1; final checkout/build identity not yet read",
+        "windows_compilation": "NOT_RUN new repeated-read candidate, build step in_progress",
+        "windows_native": "NOT_RUN repeated12/API6/UI8/full regression;641 PASS not inherited",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR guard; completion skip not yet observed",
+        "owner_pc": "NOT_RUN"
+      }
+    },
+    "before_ci642_test_instrumentation": {
+      "status": "BLOCKED",
+      "phase": "ONE bounded CI642 investigation complete; no proven fix; STOP without push/new CI",
+      "published_sha": "6f8a41e67709dae2a9794885e7e975918401f765",
+      "tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+      "ci_run_id": 39911077389,
+      "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389",
+      "ci_status": "completed",
+      "ci_conclusion": "failure",
+      "baseline_checkpoint": "b645744846bdf27c5c00201107cb5c3c8c25932e",
+      "finding": "Composite PendingRouteCount1 && originalFixturePidRetained assert failed at DesktopStartupTests.cs150; individual actual values and cause unknown",
+      "scope": "Only final-log investigation +3 documentation files; no runtime/test/workflow changes, no security settings or SSH/network operations",
+      "local_checks": "PASS inventory45 clean worktrees/locks0/no active git-build/sole agent; full Windows4275/Ubuntu578 logs; source/test-order/fixture/barrier/callback static review. No cause guessed. JSON/diff/secrets/public-content checked before checkpoint.",
+      "publication": "NOT_RUN no justified fix; no push, new CI or rerun under current instruction",
+      "checkpoint": "Local HEAD docs-only continuation via git log -1; not published, preserves all prior changes",
+      "readiness_change": 0,
+      "next": "Separate test-only diagnostic stage: log bounded boolean/count/state before and after both Execute calls, name both original invariants without weakening them; no raw settings/arguments/credentials. Diagnostic CI requires separate authorization under current instruction allowing new CI only with justified fix."
     }
   },
   "prepared_owned_stdin_publication": {
@@ -14405,15 +14502,158 @@
     ],
     "test_contract": "Actual ShowDialog/modal heartbeat/held real private read; production Refresh and revoke post-action buttons with fixture transport only; original private request/access bytes; explicit same-window Stop Retry/new owner reopen; no duplicates/late state/row publication; all fixture actual tasks joined5s/barrier5s/modal15s. Old API6/UI8/all old methods unchanged.",
     "local_checks": "PASS manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0; transport/consumption/core/existing tests preserved",
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN repeated12/new full regressions;641 PASS not inherited",
+    "windows_compilation": "PASS production exact642; UI fixture compilation NOT_RUN",
+    "windows_native": "NOT_RUN UI12/API6/UI8/full relay suite; execution stopped at earlier Desktop command-availability assertion",
     "remaining_production_paths": [
       "Direct pending checks in create/reissue uncertainty branches and recovery request.Name read",
       "ConfirmConsumed after create/reissue/recover using separate saved consumption API8, not integrated",
       "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, bounded separate slices"
     ],
     "readiness_change": 0,
-    "publication": "TODO guarded existing PR88 one automatic CI; uploads OFF/release ineligible",
-    "next": "Read SAME new exact-source CI full final logs, repeated12/API6/UI8 and all old mandatory suites. Stop after checkpoint; no next production path in this stage."
+    "publication": "PASS guarded non-force existing PR88 expected-head update, fetched parent exact641/full tree equal reviewed freeze; one automatic CI642 pull_request attempt1 raw exact-source count1",
+    "next": "Separate test-only diagnostic stage: log bounded boolean/count/state before and after both Execute calls, name both original invariants without weakening them; no raw settings/arguments/credentials. Diagnostic CI requires separate authorization under current instruction allowing new CI only with justified fix.",
+    "published_sha": "6f8a41e67709dae2a9794885e7e975918401f765",
+    "merge_ref": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "tree": "553612d55db87d0f3dadfe971d6a545c0e7944a1",
+    "local_freeze": "9c6a66f41e7ae2972408081b1464a22f5767ac80",
+    "ci_run_id": 39911077389,
+    "ci_run_number": 642,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": {
+        "id": 120273983681,
+        "status": "in_progress",
+        "conclusion": null
+      },
+      "ubuntu": {
+        "id": 120273983952,
+        "status": "in_progress",
+        "conclusion": null
+      }
+    }
+  },
+  "ci642_final": {
+    "source": "6f8a41e67709dae2a9794885e7e975918401f765",
+    "tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "run_id": 39911077389,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389",
+    "status": "completed",
+    "conclusion": "failure",
+    "verification": "Full final Windows4275 and Ubuntu578 lines independently inspected; exact checkout/build identity verified",
+    "failure": {
+      "file": "tests/DesktopStartupTests.cs",
+      "line": 150,
+      "scenario": "CommandAvailabilityWorkflow: Execute(connect), Execute(codex-on) while CLI waits for gated SOCKS",
+      "time_utc": "06:35:29.6307562",
+      "message": "dispatcher rejects stale plain Connect and duplicate alias without replacing pending route",
+      "assert": "context.PendingRouteCount == 1 && proxy.CurrentPid == pid",
+      "named_invariants": {
+        "pendingRouteCountExactlyOne": "UNKNOWN no actual count logged",
+        "originalFixturePidRetained": "UNKNOWN no before/after PID equality logged"
+      },
+      "stack": [
+        "DesktopTests.Check(Boolean,String)",
+        "DesktopTests.CommandAvailabilityWorkflow(SettingsService)",
+        "DesktopTests.Main(String[])"
+      ],
+      "root_cause": "UNPROVEN: log identifies only composite invariant failure; no count/PID split or lifecycle state. No code/test/infrastructure cause proven, no runtime/security fix justified."
+    },
+    "ssh_policy": "NOT_RUN Main calls CommandAvailabilityWorkflow at118 before SshAuthPolicyWorkflow at162; no native policy/ACL markers. Cannot infer recurrence or resolution of CI640 permissions.",
+    "production_compilation": "PASS exact merge Build OK",
+    "desktop_compilation": "PASS exact merge reached native execution",
+    "desktop_suite": "FAIL composite route-count/PID assertion",
+    "ui12": "NOT_RUN",
+    "api6": "NOT_RUN",
+    "initial_ui8": "NOT_RUN",
+    "instance30": "NOT_RUN",
+    "prior_relay_suites": "NOT_RUN snapshot/dispatcher/ownership/cleanup/repair/list/recover/fresh/HTTPS/export/chooser/Portable; relay step SKIPPED",
+    "actual_pass_summaries": [
+      "2026-10-23T06:22:48.5803271Z Repair native null-string interop tests PASS: 1",
+      "2026-10-23T06:23:02.6813820Z Repair runtime copy tests PASS: 1",
+      "2026-10-23T06:23:11.3750994Z Repair committed cleanup tests PASS: 1",
+      "2026-10-23T06:23:13.5256086Z Repair runtime rollback tests PASS: 1",
+      "2026-10-23T06:23:25.5426184Z Repair owned self-check tests PASS: 1",
+      "2026-10-23T06:23:38.8804364Z Repair durable recovery tests PASS: 1; refusal cases: 9",
+      "2026-10-23T06:23:38.8823933Z Repair payload preflight tests PASS: 4",
+      "2026-10-23T06:24:01.1870585Z Vault read tests PASS: 165",
+      "2026-10-23T06:24:01.4259063Z Vault daily policy tests PASS: 134",
+      "2026-10-23T06:24:03.0373529Z PASS: VaultDailyRecordTests (325 checks)",
+      "2026-10-23T06:24:03.3913476Z PASS: VaultDailyFileTests (110 checks)",
+      "2026-10-23T06:24:03.6859346Z PASS: VaultDailyJournalTests (211 checks)",
+      "2026-10-23T06:24:06.9457037Z PASS: VaultDailyStoreTests (151 checks)",
+      "2026-10-23T06:24:09.4055855Z PASS: VaultDailyRecoveryTests (274 checks)",
+      "2026-10-23T06:24:49.9927338Z Vault open service tests PASS: 112",
+      "2026-10-23T06:24:54.4734630Z PASS: VaultDailyExpiryTests (130 checks)",
+      "2026-10-23T06:25:20.7010314Z Vault daily restart tests PASS: 237",
+      "2026-10-23T06:30:29.2710537Z SOCKS recovery tests PASS: 51",
+      "2026-10-23T06:30:31.5370262Z Bounded log tests PASS: 43",
+      "2026-10-23T06:30:33.9335130Z Log helper tests PASS: 9",
+      "2026-10-23T06:30:37.8613428Z Rescue measurement tests PASS: 26",
+      "2026-10-23T06:30:41.9807782Z Rescue helper tests PASS: 8",
+      "2026-10-23T06:31:00.4465757Z Home firewall tests PASS: 21",
+      "2026-10-23T06:31:02.7822906Z Diagnostic report tests PASS: 32",
+      "2026-10-23T06:31:06.5321072Z Diagnostic helper tests PASS: 2",
+      "2026-10-23T06:31:06.8986040Z Backup retention tests PASS: 29",
+      "2026-10-23T06:31:09.4786232Z Backup updater tests PASS: retention parity, archived DPAPI/ownership composition, plaintext exclusion, current",
+      "2026-10-23T06:31:10.5980565Z Backup integrity tests PASS: 82",
+      "2026-10-23T06:31:10.7361945Z Backup integrity tests PASS: real protected-file junctions refused; installed helper retains exact DPAPI admin and",
+      "2026-10-23T06:31:18.7303703Z Installed update transport tests PASS: 74",
+      "2026-10-23T06:31:18.7731335Z Installed transport adapter tests PASS: 3",
+      "2026-10-23T06:32:24.2667671Z Updater progress tests PASS: 134",
+      "2026-10-23T06:32:26.8346593Z Install window tests PASS: 145",
+      "2026-10-23T06:32:32.3539006Z Update check tests PASS: 72",
+      "2026-10-23T06:32:47.2843616Z Codex shortcut ownership checks PASS: 67",
+      "2026-10-23T06:32:56.6500378Z Settings initial-load preservation checks PASS: 93",
+      "2026-10-23T06:34:09.2546563Z Updater owned-handoff checks PASS: 23"
+    ],
+    "ubuntu": "PASS exact final operation16/QR13/isolated provisioning; job120273983952 success",
+    "pack": "SKIPPED",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "next": "Separate test-only diagnostic stage: log bounded boolean/count/state before and after both Execute calls, name both original invariants without weakening them; no raw settings/arguments/credentials. Diagnostic CI requires separate authorization under current instruction allowing new CI only with justified fix."
+  },
+  "ci642_command_availability_diagnosis": {
+    "status": "PARTIAL",
+    "phase": "ONE bounded CI642 investigation complete; no proven fix; STOP without push/new CI",
+    "published_sha": "6f8a41e67709dae2a9794885e7e975918401f765",
+    "tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "ci_run_id": 39911077389,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "baseline_checkpoint": "b645744846bdf27c5c00201107cb5c3c8c25932e",
+    "finding": "Composite PendingRouteCount1 && originalFixturePidRetained assert failed at DesktopStartupTests.cs150; individual actual values and cause unknown",
+    "scope": "Only final-log investigation +3 documentation files; no runtime/test/workflow changes, no security settings or SSH/network operations",
+    "local_checks": "PASS inventory45 clean worktrees/locks0/no active git-build/sole agent; full Windows4275/Ubuntu578 logs; source/test-order/fixture/barrier/callback static review. No cause guessed. JSON/diff/secrets/public-content checked before checkpoint.",
+    "publication": "NOT_RUN no justified fix; no push, new CI or rerun under current instruction",
+    "checkpoint": "Local HEAD docs-only continuation via git log -1; not published, preserves all prior changes",
+    "readiness_change": 0,
+    "next": "Inspect SAME new diagnostic CI full final logs/tested merge: count-one/PID-same/liveness/lifecycle snapshots; no cause declared unless proven. Also note actual executed SSH policy/UI12/API6/UI8/Instance/prior regressions. No duplicate CI or next feature.",
+    "authorization_update": "Diagnostic CI explicitly authorized in next owner message; no runtime/security fix justified yet"
+  },
+  "ci642_command_availability_instrumentation": {
+    "status": "PARTIAL",
+    "phase": "ONE authorized test-only diagnostic for CI642 composite command availability",
+    "baseline_source": "6f8a41e67709dae2a9794885e7e975918401f765",
+    "baseline_tested_merge": "709e070d10138ffa330a0def5c21d61e0bf3e235",
+    "baseline_checkpoint": "b8f4a52e4fedbca2232316b71d7387f02ac890f0",
+    "local_code_sha": "4fe4e87df3d61a7d391efe07f3c944eafb6cefcf",
+    "authorization": "Owner explicitly authorized test-only evidence collection plus exactly one automatic diagnostic CI; previous diagnostic-CI permission blocker resolved, runtime cause still unproven",
+    "scope": "Only DesktopStartupTests.cs instrumentation plus3 docs. Original connect then codex-on order, original nullable PID equality/count==1 conjunction, one combined Check, timeout/coverage/fixture cleanup preserved. No runtime/security/network changes.",
+    "invariants": [
+      "pending-route-count-one: observed PendingRouteCount == 1",
+      "original-fixture-pid-retained: observed CurrentPid == captured nullable PID, original equality semantics unchanged"
+    ],
+    "evidence": "Three nonblocking metadata snapshots before-connect/after-connect/after-alias: count,pidPresent,pidSame,connecting,stopping,requested,expectedWaitingLifecycle. Capture final original operands before logging. Separate own fixture process liveness known/value and capturedPidPresent/releaseExists booleans. All violated names collected; failure-only StackTrace(false) filtered to DesktopTests method names max6. No raw PID/path/arguments/settings/exception text/secrets. Sequential observations, not atomic lifecycle proof.",
+    "hypothesis": "CurrentPid Monitor.TryEnter may return null on busy gate while process lives; source contract observed but CI642 root cause NOT PROVEN; no runtime/test-contract fix inferred",
+    "local_checks": "PASS manual/static/signatures/AST syntax1/C#5/diff/public321/0/secretPII0; original old bodies and assert count/order/timeout retained; one temporary review checker false-positive Wait matched WaitingLifecycle, corrected token-level check and rerun PASS before publication",
+    "windows_compilation": "NOT_RUN new diagnostic candidate",
+    "windows_native": "NOT_RUN both invariant diagnostics/UI12/API6/UI8/full regressions on new SHA",
+    "readiness_change": 0,
+    "publication": "TODO fresh expected-head non-force PR88 update; exactly one automatic diagnostic CI, uploads OFF/release ineligible",
+    "next": "Inspect SAME new diagnostic CI full final logs/tested merge: count-one/PID-same/liveness/lifecycle snapshots; no cause declared unless proven. Also note actual executed SSH policy/UI12/API6/UI8/Instance/prior regressions. No duplicate CI or next feature."
   }
 }

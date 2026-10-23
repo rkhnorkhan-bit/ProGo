@@ -8,7 +8,91 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: повторные invitation pending-read поверх CI641
+## Текущий этап: разрешённая test-only диагностика CI642 count/PID
+
+PR88/source `6f8a41e67709dae2a9794885e7e975918401f765`, local checkpoint
+`b8f4a52e4fedbca2232316b71d7387f02ac890f0` сверены;46 прежних worktrees clean/locks0,
+Git/build processes0/root sole agent, иной писатель не обнаружен. Exact-source CI collection содержит
+только completed FAILURE642/attempt1, дубликатов/активных CI на baseline нет. Отдельная ветка
+work/progo-ci642-command-diagnostic-20261023; прежняя работа не меняется/не откатывается.
+CI642 source/merge/failure evidence сохранены в ci642_final; причина code/test/infra всё ещё не доказана.
+Владелец отдельно разрешил test-only instrumentation и ОДИН automatic diagnostic CI; предыдущий
+permission blocker снят, но guessed runtime fix по-прежнему запрещён.
+
+Code local `4fe4e87df3d61a7d391efe07f3c944eafb6cefcf`: ONLY DesktopStartupTests.cs49add/2delete.
+Именованы оба исходных условия: pending-route-count-one (count==1), original-fixture-pid-retained
+(CurrentPid==captured nullable pid). Исходный conjunction/nullable equality и один combined Check
+сохранены; ничего не исключается. Оба operand snapshot фиксируются в original count→PID порядке
+до диагностического вывода. Original calls connect→codex-on не меняются; добавлены nonblocking
+metadata samples до connect/после connect/после alias. count/pidPresent/pidSame/connecting/stopping/
+requested/expectedWaitingLifecycle — только int/boolean. Own captured fixture liveness измеряется
+отдельно: aliveKnown/alive, capturedPidPresent/releaseExists. При ошибке чтения liveness UNKNOWN,
+не dead и не PASS. Sequential snapshots не выдаются за атомарный lifecycle.
+CurrentPid использует Monitor.TryEnter и может дать null при занятости gate: это source contract,
+но НЕ доказанная причина642. Runtime/getters/route admission/process ownership не меняются.
+
+Collect violated names для обоих условий; failure-only safe stack: StackTrace(false), только имена
+методов DesktopTests, максимум6. Никаких PID/путей/args/settings/raw exception/credentials/journal/
+секретов в новых logs. Нет новых ожиданий/таймаутов/процессов; только readonly query собственного
+captured fixture process, без kill/ACL/network. Original test steps/assert count/coverage/timeout/
+release gate и finally fixture cleanup неизменны. Прежние API6/UI8/UI12/runtime tests не трогаются.
+
+PASS local manual/static/signatures/AST syntax1/C#5/diff/public321/0/secretsPII0. Temporary review
+checker false-positive Wait matched WaitingLifecycle; исправлен token check, повторно PASS до push.
+Windows/.NET Framework/PowerShell отсутствуют: new compilation/native diagnostics/UI12/API6/UI8/
+Instance/full suites NOT_RUN. CI642 compilation production/Desktop PASS, full Desktop FAIL;
+SSH policy/ACL и relay suites NOT_RUN642, Ubuntu PASS — не переносятся на новый SHA.
+Publication TODO: fresh guarded expected-head non-force PR88, один automatic diagnostic CI;
+public PR uploads OFF/release/prune ineligible, workflows/VERSION unchanged. Save source/run/checkpoint
+и STOP без ожидания полного CI/второго этапа. Следующий шаг — ТОТ ЖЕ diagnostic CI full logs/exact
+merge, именованные count/PID/liveness/lifecycle facts и фактически выполненные остальные suites.
+Если отказ не воспроизводится, причина642 остаётся unproven, не объявлять runtime fix или полный UI12 PASS.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: concrete command availability invariant evidence и новая Windows проверка UI12.
+
+## История этапа: CI642 investigation — причина пока не доказана, STOP
+
+PR88/source `6f8a41e67709dae2a9794885e7e975918401f765` и checkpoint
+`b645744846bdf27c5c00201107cb5c3c8c25932e` сверены;45 worktrees чистые, locks0,
+активных git/build процессов нет, root единственный агент/других писателей не обнаружено.
+Полные финальные [CI642](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389)
+Windows4275/Ubuntu578 строк прочитаны самостоятельно; checkout/build identity exact tested merge
+`709e070d10138ffa330a0def5c21d61e0bf3e235`. Safe evidence в JSON ci642_final.
+
+FAIL06:35:29.6307562UTC: tests/DesktopStartupTests.cs:150, CommandAvailabilityWorkflow.
+После real CLI toggle и gated SOCKS ожидания вызываются Execute(connect), Execute(codex-on).
+Составной assert: PendingRouteCount==1 && proxy.CurrentPid==captured pid. Message: dispatcher
+rejects stale plain Connect and duplicate alias without replacing pending route.
+Safe stack: DesktopTests.Check(Boolean,String)→CommandAvailabilityWorkflow(SettingsService)→Main(String[]).
+Предыдущий UI availability assert passed06:35:29.5311042UTC. Actual count/old-new PID equality/
+lifecycle state не напечатаны: неизвестно, нарушен первый/второй/оба инварианта. Первопричина
+code/test/runner НЕ ДОКАЗАНА. Оригинальный fixture ждёт own release-file; исходный barrier и
+route callbacks просмотрены, но нет evidence его состояния/child exit/late route completion.
+Нельзя объявить race/fixture/инфраструктуру установленной причиной или чинить runtime наугад.
+
+Это НЕ подтверждённое повторение permissions CI640. CommandAvailabilityWorkflow вызывается Main:118,
+SSH policy только Main:162; execution до policy НЕ дошло. Policy и сохранённый failure-only ACL block
+NOT_RUN, никаких ACL flags из этого запуска нет. Историческая причина CI640 остаётся невыясненной.
+PASS exact642: production Build OK/Desktop compilation; ранее завершённые repair/vault/SOCKS51,
+logging/diagnostics/backups/update suites приведены в JSON ci642_final. Полный Desktop FAIL.
+Instance30/API6/initialUI8/repeatedUI12 и snapshot/dispatcher/ownership/cleanup/repair/list/recover/
+fresh/HTTPS/export/chooser/Portable suites NOT_RUN; relay step SKIPPED, их fixture compilation NOT_RUN.
+Ubuntu operation16/QR13/isolated provisioning PASS по full final logs. Pack/uploads/prune SKIPPED.
+Результаты641 не переносятся на642.
+
+Изменены ТОЛЬКО3 документа. Никаких code/test/timeout/assert/coverage/workflow/security/SSH/network
+изменений. No push/new CI/rerun: команда разрешает новый CI только при обоснованном исправлении,
+а доказанного исправления пока нет. Сохранены все предыдущие production changes/diagnostics.
+Local docs checkpoint — HEAD(git log -1), не опубликован; PR HEAD остаётся6f8a41e.
+Следующий ограниченный шаг — отдельный test-only диагностический этап: именованные ОБА исходных
+инварианта, безопасные actual pending count/PID-present/PID-equal/connecting/stopping flags до и
+после каждого Execute, без settings/args/credentials. Assert semantics/order/timeout/coverage прежние.
+Для diagnostic CI нужно отдельное разрешение в силу текущего ограничения «CI только при обоснованном
+исправлении». До него dependent fix BLOCKED, не guessed fix и не blind rerun. Других этапов нет.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: неразделённый route-count/PID invariant и невыполненные invitation UI12.
+
+## История этапа: повторные invitation pending-read поверх CI641
 
 PR88 HEAD/source `589a6364d42f2fbbcdbbfe4bd80396c27a26f41f`, local checkpoint
 `70f0d4db5d645244145a58b2f6f1165016af2654` сверены.45 прежних worktrees чистые/locks0,
@@ -48,10 +132,19 @@ recovery request.Name/transport core/workflows/VERSION unchanged; никакой
 PASS local manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0. Windows/.NET Framework/
 PowerShell недоступны: новая compilation/repeated12/full regression NOT_RUN, SUCCESS641 не переносится.
 
-Publication TODO: fresh expected-head non-force PR88 update; ровно один automatic CI, no duplicates.
-PR uploads OFF/release/prune ineligible; workflows unchanged. Save source/run/checkpoint и STOP,
-не ждать весь CI и не начинать второй этап. Следующий шаг — ТОТ ЖЕ новый CI full logs/exact merge:
-repeated12/API6/UI8/selection/reconciliation +все mandatory old suites.
+Publication PASS: source `6f8a41e67709dae2a9794885e7e975918401f765`, existing PR88 integration/approved-plan-31-20261011,
+fresh expected-head non-force update. Fetched parent exact641/full tree `553612d55db87d0f3dadfe971d6a545c0e7944a1`
+равен reviewed freeze `9c6a66f41e7ae2972408081b1464a22f5767ac80`. Public diff6files730add/88delete:
+2 runtime+1 existing test204add/36delete +3docs526add/52delete; остальные files unchanged.
+Merge ref `709e070d10138ffa330a0def5c21d61e0bf3e235` пока НЕ final tested merge: нужны checkout/build logs.
+Один automatic [CI642/39911077389](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39911077389),
+pull_request/attempt1/raw exact-source count1, in_progress/conclusion null, updated06:22:27UTC;
+Windows120273983681/Ubuntu120273983952 in_progress. New compilation/repeated12/API6/UI8/full suites
+NOT_RUN, SUCCESS641 не переносится. PR uploads OFF/release/prune ineligible; completion skips ещё
+не наблюдались. Postpublication3-doc checkpoint local HEAD(git log -1), НЕ pushed во избежание
+второго CI; full checkpoint в PR88 body. STOP без полного ожидания/второго этапа.
+Следующий шаг — ТОТ ЖЕ CI642 full logs/exact tested merge: repeated12/API6/UI8/selection/
+reconciliation и все mandatory old suites; historical CI640 ACL cause unresolved.
 Остаток production invitation UI I/O:1) direct create/reissue uncertainty и recovery request.Name;
 2) ConfirmConsumed create/reissue/recover (saved consumption API8 separately);3) invite/revoke/reissue/
 recover-invite owned transport binding. CI640 ACL cause remains unresolved historical finding.
