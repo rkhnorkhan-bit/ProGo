@@ -110,6 +110,7 @@ namespace ProGo
                     ProofAndStorage();
                     OwnedConfirmation();
                     OwnedHttpsRecovery(unrelated);
+                    OwnedFreshHttps(unrelated);
                     check(threadFailure == null && !unrelated.HasExited, "HTTPS recovery settles without a UI exception or touching an unrelated native process");
                     check(Directory.GetDirectories(HomeVpnPrivateFiles.Root, "admin-*").Length == 0 && Directory.GetFiles(HomeVpnPrivateFiles.Root, "share-request.dat.*.new").Length == 0,
                         "HTTPS recovery cleans owned private work and atomic journal temporaries");
@@ -282,6 +283,176 @@ namespace ProGo
                                     "owned HTTPS preserves journal draft credentials exact queries and unrelated resources without share mutation or replay: " + mode);
                             } catch (Exception error) { WriteSafeFailure(error); throw; }
                             check(true, "owned production HTTPS recovery PASS: " + mode); return true;
+                        }, () => closing);
+                    } finally {
+                        release.Set(); if (held != null) held.Dispose(); if (copyWindow != null) copyWindow.Dispose(); if (form != null) form.Dispose(); Kill(); service.Dispose(); var cleanup = service.StopAsync();
+                        var watch = Stopwatch.StartNew();
+                        while (!cleanup.IsCompleted || operation != null && !operation.IsCompleted || form != null && (!form.Work.IsCompleted || !form.InitializationWork.IsCompleted || !form.PendingReadWork.IsCompleted)) {
+                            if (watch.ElapsedMilliseconds > 5000) throw new TimeoutException("Owned HTTPS fixture cleanup join deadline"); Application.DoEvents(); Thread.Sleep(1);
+                        }
+                        if (!cleanup.GetAwaiter().GetResult()) throw new Exception("Owned HTTPS fixture retained local cleanup"); if (operation != null) OwnedOutcome(operation); Directory.Delete(sibling, true);
+                    }
+                }
+            }
+            File.Delete(PendingPath);
+        }
+        private static async Task HeldFreshHttpsCopy(Form owner, Action<HomeVpnPreparationForm> publish, Action<CancellationToken> read)
+        {
+            using (var wait = new HomeVpnPreparationForm(ct => Task.Run(() => read(ct)), false)) {
+                publish(wait); wait.ShowDialog(owner); await wait.Completion;
+            }
+        }
+        private static void OwnedFreshHttps(Process unrelated)
+        {
+            foreach (string mode in new[] { "default-refusal", "copy-fault", "cancel-retry", "stop-copy", "dispose-copy", "owner-dispose", "cancel-command", "cleanup-lock", "result", "stop-result" }) {
+                Reset(mode == "result" || mode == "cancel-retry" || mode == "cleanup-lock" || mode == "stop-result" ? "complete" : mode == "cancel-command" ? "hold" : "running");
+                byte[] journal = null; string requestId = null;
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim()) {
+                    service.UseToken(token, Owner); var before = Snapshot();
+                    string sibling = Path.Combine(HomeVpnPrivateFiles.Root, "admin-unrelated-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(sibling); File.WriteAllText(Path.Combine(sibling, "keep"), "unrelated");
+                    var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root); string coreWork = null;
+                    HomeProfileConfigureForm form = null; HomeVpnPreparationForm copyWindow = null; FileStream held = null;
+                    Task<string> operation = null, cancelled = null; Task<bool> stop = null; Exception original = null;
+                    int phase = 0, turns = 0, copyCount = 0, worker = 0, retained = 0, verified = 0, closedPublications = 0, ui = Thread.CurrentThread.ManagedThreadId;
+                    bool helperRead = false, closing = mode == "owner-dispose", liveDraftAtDisposal = false;
+                    int draftChanges = 0, closedDraftChanges = -1;
+                    try {
+                        if (mode == "default-refusal") { service.RetainAdminCleanup(() => retained++); service.Owner.KeyFile = At("absent-owned-https-key"); }
+                        form = HomeProfileShare.CreateConfigureForm(service); HomeVpnFixtureFiles.ConfigureReady(form);
+                        var address = Controls(form).OfType<TextBox>().Single(); address.Text = "qr.example.org";
+                        address.TextChanged += delegate { Interlocked.Increment(ref draftChanges); };
+                        var recover = Button(form, "Настроить HTTPS на VPS"); var dispatcher = form.UiDispatcher;
+                        // A positive SSH result reaches the real confirmation
+                        // boundary, then stops before any HTTPS or local save.
+                        form.VerifyRecoveryOrigin = (origin, access, cancellation) => {
+                            Interlocked.Increment(ref verified); check(origin == Origin, "fresh HTTPS keeps original domain at the HTTPS boundary");
+                            throw new HomeProfileHttpCancelledException("Owned HTTPS fixture stops before external verification or saving");
+                        };
+                        if (mode != "default-refusal") form.PrepareShare = (owner, window, actualUi, origin, report) => {
+                            check(window == form && actualUi == dispatcher && Thread.CurrentThread.ManagedThreadId == ui, "production fresh HTTPS binding retains explicit configure dialog UI");
+                            check(origin == Origin, "fresh HTTPS freezes original domain before owned preparation"); address.Text = "edited.example.org";
+                            operation = service.ShareOwnedAsync(owner, window, actualUi, origin, report, (exe, args) => {
+                                check(exe == "scp.exe" && args.Contains(" -P 22 ") && Thread.CurrentThread.ManagedThreadId == ui, "fresh HTTPS setup copy uses original SSH parameters on actual UI owner");
+                                int current = ++copyCount; if (current != 1) return Task.FromResult(0);
+                                return HeldFreshHttpsCopy(window, value => copyWindow = value, ct => {
+                                    Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId);
+                                    coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
+                                    string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single(); helperRead = File.ReadAllText(helper).Length != 0;
+                                    if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned HTTPS copy fixture deadline"); ct.ThrowIfCancellationRequested(); if (mode == "copy-fault") throw new IOException("Fresh HTTPS fixture copy failure");
+                                });
+                            }, Application.ExecutablePath);
+                            return mode == "stop-result" ? StopAfterOwnedResult(operation, () => stop = service.StopAsync()) : operation;
+                        };
+                        HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                            if (phase == 0) {
+                                check(form.Modal && recover.Enabled && recover.Visible && !Button(form, "Проверить прежнюю настройку HTTPS").Visible && !File.Exists(PendingPath), "fresh HTTPS setup uses existing default ShowDialog button with mutation gate: " + mode);
+                                recover.PerformClick(); phase = 1; return false;
+                            }
+                            if (mode == "default-refusal") {
+                                if (!form.Work.IsCompleted || !address.Enabled) return false;
+                                check(StatusLabel(form).Text.Contains("Очистка прежней команды") && copyCount == 0 && Calls().Length == 0 && !File.Exists(PendingPath), "default fresh HTTPS binding refuses retained cleanup before key I/O or SSH");
+                                if (stop == null) { stop = service.StopAsync(); return false; } if (!stop.IsCompleted) return false;
+                                check(stop.GetAwaiter().GetResult() && retained == 1 && !ShareLeaseHeld() && Same(before) && !unrelated.HasExited, "default fresh HTTPS refusal preserves absent request and protected credentials");
+                                check(true, "owned production fresh HTTPS PASS: " + mode); return true;
+                            }
+                            if (phase == 1) {
+                                if (!entered.IsSet) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; } if (++turns < 3) return false;
+                                check(helperRead && worker != ui && service.IsAdminWorking && !operation.IsCompleted && !recover.Enabled && copyWindow.Owner == form && ShareLeaseHeld()
+                                    && !File.Exists(PendingPath), "fresh HTTPS helper work retains actual modal heartbeat single lease and original request: " + mode);
+                                recover.PerformClick(); check(copyCount == 1, "fresh HTTPS refuses duplicate UI admission: " + mode);
+                                if (mode == "cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
+                                if (mode == "stop-copy" || mode == "dispose-copy" || closing) {
+                                    var watch = Stopwatch.StartNew(); if (mode == "dispose-copy" || closing) service.Dispose(); stop = service.StopAsync();
+                                    if (closing) {
+                                        // The editable draft belongs to the live native control, not its destroyed handle.
+                                        liveDraftAtDisposal = !form.IsDisposed && !address.IsDisposed && form.IsHandleCreated && address.IsHandleCreated
+                                            && address.Text == "edited.example.org";
+                                        check(liveDraftAtDisposal, "fresh HTTPS preserves the edited draft at the last live disposal boundary");
+                                        form.Dispose(); closedPublications = dispatcher.PublicationCount;
+                                        closedDraftChanges = Volatile.Read(ref draftChanges);
+                                    }
+                                    check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "fresh HTTPS Stop Dispose promptly retains actual accepted copy");
+                                }
+                                turns = 0; phase = 2; return false;
+                            }
+                            if (phase == 2) { if (++turns < 3) return false; check(!operation.IsCompleted && (stop == null || !stop.IsCompleted), "fresh HTTPS copy cannot be discarded by Cancel or Stop"); release.Set(); phase = 3; return false; }
+                            if (phase == 3 && mode == "cancel-command") {
+                                if (!File.Exists(At("child"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                requestId = HomeVpnShareRecovery.Pending().RequestId; journal = File.ReadAllBytes(PendingPath);
+                                check(requestId == Json.Deserialize<HomeVpnShareRequest>(File.ReadAllText(At("receipt"))).RequestId, "fresh HTTPS request is durable before its real native command");
+                                stop = service.StopAsync(); check(!stop.IsCompleted && service.IsAdminWorking && ShareLeaseHeld(), "fresh HTTPS native share and lease remain retained until physical cancel settles");
+                                var wait = form.OwnedForms.OfType<HomeVpnPreparationForm>().Single(); var cancel = (Button)Field(wait, "cancel");
+                                check(wait.Modal && wait.Owner == form && wait.Text == "Ожидание SSH: настройка HTTPS" && !wait.Completion.IsCompleted
+                                    && wait.CancelButton == cancel && ((Label)Field(wait, "status")).AccessibleName == "Ход настройки или проверки HTTPS",
+                                    "fresh HTTPS dispatch uses the actual cancellable ShareCommand dialog and retains its physical native task");
+                                cancel.PerformClick(); phase = 4; return false;
+                            }
+                            if (phase == 3 || phase == 4) {
+                                if (!operation.IsCompleted || !form.Work.IsCompleted || (stop != null && !stop.IsCompleted)) return false;
+                                if (File.Exists(PendingPath) && journal == null) { requestId = HomeVpnShareRecovery.Pending().RequestId; journal = File.ReadAllBytes(PendingPath); }
+                                var failure = OwnedOutcome(operation);
+                                if (mode == "cleanup-lock") { original = failure; check(failure is HomeVpnSharePendingException && service.HasPendingAdminCleanup && Directory.Exists(coreWork), "fresh HTTPS cleanup failure retains exact directory and original typed outcome"); stop = service.StopAsync(); phase = 5; return false; }
+                                if (mode == "cancel-retry" && cancelled == null) {
+                                    cancelled = operation; original = failure;
+                                    check(failure is HomeVpnPreparationCancelledException && form.Modal && form.Visible && recover.Enabled && Calls().Length == 0 && !File.Exists(PendingPath) && !ShareLeaseHeld(), "fresh HTTPS Cancel keeps ShowDialog open and enables explicit Retry without new request");
+                                    address.Text = "qr.example.org"; recover.PerformClick(); phase = 4; return false;
+                                }
+                                check(mode == "result" || mode == "stop-result" || mode == "cancel-retry" ? failure == null && operation.GetAwaiter().GetResult() == Origin
+                                    : mode == "cancel-command" ? failure is HomeVpnSharePendingException
+                                    : mode == "copy-fault" ? failure is IOException : failure is HomeVpnPreparationCancelledException,
+                                    "fresh HTTPS preserves actual pending cancelled or original result outcome: " + mode);
+                                if (cancelled != null) check(Object.ReferenceEquals(original, OwnedOutcome(cancelled)) && copyCount == 2, "old cancelled HTTPS task cannot overwrite explicit Retry outcome");
+                                if (stop != null) check(stop.GetAwaiter().GetResult(), "fresh HTTPS Stop drains actual body lease and cleanup: " + mode);
+                                if (closing) check(dispatcher.PublicationCount == closedPublications, "disposed HTTPS owner receives no late UI publication");
+                                check(verified == (mode == "result" || mode == "cancel-retry" ? 1 : 0), "Stop after accepted SSH result prevents later HTTPS verification save and consumption without rewriting task success: " + mode); phase = 7;
+                            }
+                            if (phase == 5) {
+                                if (!stop.IsCompleted) return false;
+                                check(!stop.GetAwaiter().GetResult() && service.HasPendingAdminCleanup, "locked fresh HTTPS cleanup keeps honest failed Stop");
+                                check(OwnedOutcome(service.ShareOwnedAsync(Owner, form, dispatcher, Origin, delegate { })) is HomeVpnLocalCleanupException && copyCount == 1 && Calls().Length == 1, "retained HTTPS cleanup refuses new copy or query without replay");
+                                held.Dispose(); held = null; stop = service.StopAsync(); phase = 6; return false;
+                            }
+                            if (phase == 6) { if (!stop.IsCompleted) return false; check(stop.GetAwaiter().GetResult() && Object.ReferenceEquals(original, OwnedOutcome(operation)), "fresh HTTPS unlock retries only exact cleanup and retains original failure"); phase = 7; }
+                            if (phase != 7) return false;
+                            var expected = mode == "result" || mode == "stop-result" || mode == "cancel-retry" || mode == "cancel-command" || mode == "cleanup-lock" ? new[] { "share" } : new string[0];
+                            // Diagnose every original predicate, in order, at the same settled boundary.
+                            // A false result or evaluation error remains a failure; none becomes a skip.
+                            var violations = new List<string>(); string[] observedCalls = null;
+                            RecordOwnedInvariant("queries-exact", () => { observedCalls = Calls(); return observedCalls.SequenceEqual(expected); }, violations);
+                            RecordOwnedInvariant("request-id-unchanged", () => requestId == null ? !File.Exists(PendingPath) : HomeVpnShareRecovery.Pending().RequestId == requestId
+                                && requestId == Json.Deserialize<HomeVpnShareRequest>(File.ReadAllText(At("receipt"))).RequestId, violations);
+                            RecordOwnedInvariant("journal-bytes-unchanged", () => journal == null ? !File.Exists(PendingPath) : journal.SequenceEqual(File.ReadAllBytes(PendingPath)), violations);
+                            RecordOwnedInvariant("private-inputs-unchanged", () => Same(before), violations);
+                            RecordOwnedInvariant("draft-unchanged", () => closing
+                                ? liveDraftAtDisposal && form.IsDisposed && address.IsDisposed && !form.IsHandleCreated && !address.IsHandleCreated
+                                    && Volatile.Read(ref draftChanges) == closedDraftChanges && dispatcher.PublicationCount == closedPublications
+                                : address.Text == "edited.example.org", violations);
+                            RecordOwnedInvariant("dialog-not-success", () => form.DialogResult != DialogResult.OK, violations);
+                            RecordOwnedInvariant("share-lease-released", () => !ShareLeaseHeld(), violations);
+                            RecordOwnedInvariant("service-resources-released", () => !service.HasOwnedResources, violations);
+                            RecordOwnedInvariant("core-directory-removed", () => !Directory.Exists(coreWork), violations);
+                            RecordOwnedInvariant("sibling-unchanged", () => File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated", violations);
+                            RecordOwnedInvariant("relay-stopped", () => !relay.IsRunning, violations);
+                            RecordOwnedInvariant("unrelated-process-alive", () => !unrelated.HasExited, violations);
+                            RecordOwnedInvariant("owned-process-exited", () => !File.Exists(At("pid")) || Gone(Id("pid")), violations);
+                            RecordOwnedInvariant("owned-child-exited", () => !File.Exists(At("child")) || Gone(Id("child")), violations);
+                            Console.WriteLine("Fresh HTTPS fixture state: mode=" + mode + "; phase=" + phase + "; violations=" + violations.Count
+                                + "; calls=" + (observedCalls == null ? -1 : observedCalls.Length) + "; expectedCalls=" + expected.Length
+                                + "; copies=" + copyCount + "; verified=" + verified + "; formDisposed=" + form.IsDisposed + "; addressDisposed=" + address.IsDisposed
+                                + "; formHandle=" + form.IsHandleCreated + "; addressHandle=" + address.IsHandleCreated + "; dialogResult=" + form.DialogResult
+                                + "; operation=" + (operation == null ? "none" : operation.Status.ToString()) + "; stop=" + (stop == null ? "none" : stop.Status.ToString())
+                                + "; publications=" + dispatcher.PublicationCount + "; closedPublications=" + closedPublications
+                                + "; liveDraftAtDisposal=" + liveDraftAtDisposal + "; draftChanges=" + Volatile.Read(ref draftChanges) + "; closedDraftChanges=" + closedDraftChanges);
+                            if (violations.Count != 0) Console.WriteLine("HTTPS fixture violated invariants: " + String.Join(",", violations));
+                            try {
+                                check(violations.Count == 0,
+                                    "fresh HTTPS preserves journal draft credentials exact queries and unrelated resources without share mutation or replay: " + mode);
+                            } catch (Exception error) { WriteSafeFailure(error); throw; }
+                            check(true, "owned production fresh HTTPS PASS: " + mode); return true;
                         }, () => closing);
                     } finally {
                         release.Set(); if (held != null) held.Dispose(); if (copyWindow != null) copyWindow.Dispose(); if (form != null) form.Dispose(); Kill(); service.Dispose(); var cleanup = service.StopAsync();

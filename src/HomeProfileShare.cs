@@ -26,6 +26,7 @@ namespace ProGo
         internal Task Work = Task.FromResult(0);
         internal HomeProfileUiDispatcher UiDispatcher;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, Action<string>, Task<string>> ReadShareResult;
+        internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> PrepareShare;
         internal Func<string, HomeVpnAccess, CancellationToken, Task> VerifyRecoveryOrigin;
         internal int UiPublications { get { return UiDispatcher == null ? 0 : UiDispatcher.PublicationCount; } }
     }
@@ -126,10 +127,11 @@ namespace ProGo
             HomeProfileConfigureForm dialog = null;
             dialog = CreateConfigureForm(service, (owner, action, label, id, progress) => action == "recover-share"
                 ? dialog.ReadShareResult(owner, dialog, dialog.UiDispatcher, progress)
-                : HomeVpnService.AdminAsync(owner, action, label, id, progress),
+                : dialog.PrepareShare(owner, dialog, dialog.UiDispatcher, id, progress),
                 (origin, access, token) => dialog.VerifyRecoveryOrigin(origin, access, token),
                 (access, origin, token) => service.SetShareOriginAsync(access, origin, token));
             dialog.ReadShareResult = (owner, window, dispatcher, progress) => service.RecoverShareOwnedAsync(owner, window, dispatcher, progress);
+            dialog.PrepareShare = (owner, window, dispatcher, origin, progress) => service.ShareOwnedAsync(owner, window, dispatcher, origin, progress);
             dialog.VerifyRecoveryOrigin = (origin, access, token) => VerifyAsync(origin, access, token);
             return dialog;
         }
@@ -210,7 +212,7 @@ namespace ProGo
                     {
                         var access = service.Access;
                         var stopScope = service.StopWork;
-                        Func<bool> recoveryScope = () => mode != 2 || !service.StartsPaused && !service.IsStopping && Object.ReferenceEquals(service.StopWork, stopScope);
+                        Func<bool> recoveryScope = () => mode == 0 || !service.StartsPaused && !service.IsStopping && Object.ReferenceEquals(service.StopWork, stopScope);
                         var currentOwner = service.Owner;
                         var owner = currentOwner == null ? null : new HomeVpnOwner { Host = currentOwner.Host, Port = currentOwner.Port, Login = currentOwner.Login, KeyFile = currentOwner.KeyFile };
                         string origin = mode == 2 ? null : Origin(address.Text); // Capture controls before any await.

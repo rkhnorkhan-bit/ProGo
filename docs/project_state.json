@@ -3929,36 +3929,35 @@
     }
   ],
   "ci_candidate": {
-    "source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
-    "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
-    "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
-    "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
-    "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
-    "run_id": 39892894242,
-    "run_number": 637,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+    "source": "b69e7008bc889d88623669058e95197822b09f1e",
+    "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+    "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
+    "run_id": 39896043639,
+    "run_number": 638,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
     "status": "completed",
-    "conclusion": "failure",
-    "run_updated_at": "2026-10-23T03:29:36Z",
+    "conclusion": "success",
+    "run_updated_at": "2026-10-23T04:07:31Z",
     "jobs": {
       "windows": {
-        "id": 120216525306,
+        "id": 120226632093,
         "status": "completed",
-        "conclusion": "failure"
+        "conclusion": "success"
       },
       "ubuntu": {
-        "id": 120216524993,
+        "id": 120226631811,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Both full final logs read; exact checkout/build identity5aa6cbe. All14 predicates on owner-dispose observed: only draft-unchanged false after native disposal; safe stack confirms Check/OwnedHttpsRecovery callback, then ModalWizardCase/Run/Main.",
-    "windows_compilation": "PASS exact637 source/merge, Repository hygiene and build SUCCESS",
-    "windows_native": "PARTIAL Test-ProGo/Desktop5294/Instance30 receipt guards/Maintenance126/Shutdown47/UpdaterPackage5 PASS; export modal11/chooser3/repair8/list10 PASS. HTTPS recovery11:5PASS/owner-dispose FAIL/5NOT_RUN; later snapshot/dispatcher/ownership/cleanup/recover/fresh NOT_RUN.",
-    "pack": "SKIPPED",
-    "artifact_uploads": "SKIPPED uploads/prune; no artifacts",
-    "owner_pc": "NOT_RUN",
-    "failure": "Only draft-unchanged false; test erroneously observes native TextBox.Text after both controls disposed/handles gone.13 other conditions true; not evidence of production or infrastructure fault."
+    "verification": "Both complete final logs read, exact checkout/build identitybd8646c; all per-case HTTPS11/owner-dispose/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10 verified from markers, not metadata only",
+    "windows_compilation": "PASS exact638 source/merge",
+    "windows_native": "PASS complete scoped mandatory suites: Desktop5294/Instance30, HTTPS recovery11 including corrected owner-dispose live boundary/no late text or publications; snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/repair8/list10/export11/chooser3; HomeVPN2803/Portable91. Relay Python reported28 incl2SKIPPED; do not treat skipped as executed.",
+    "pack": "PASS runner-only archive, SHA2562bf8ec967e7bed08f527a41807ddb7f418d6e1815f40cfafd1108d3f56602f92",
+    "artifact_uploads": "SKIPPED all uploads/prune, no downloadable artifact or owner installation",
+    "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5494,46 +5493,46 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Only proven CI637 disposed native draft test-contract correction prepared; no runtime changes",
-    "recovery_checkpoint": "118b14aeabb21b78eebef260f8811c477ae857d3",
-    "base_source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
-    "base_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
-    "local_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
-    "local_development_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
-    "published_sha": "e0a8185ae3deb66e14872735170b64d1f414acf6",
-    "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "phase": "ONE existing new HTTPS setup production owned-worker path prepared on final-log-verified638; no invitation or second stage",
+    "recovery_checkpoint": "f75c5a0ba00b2f7aa9e495419ec48823f8acfd86",
+    "base_source": "b69e7008bc889d88623669058e95197822b09f1e",
+    "base_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "local_sha": "414cb610621a91ebd09b71d2ae6126e130bd813e",
+    "local_development_sha": "414cb610621a91ebd09b71d2ae6126e130bd813e",
+    "published_sha": "b69e7008bc889d88623669058e95197822b09f1e",
+    "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
     "baseline_only": true,
-    "ci_run_id": 39892894242,
+    "ci_run_id": 39896043639,
     "ci_status": "completed",
-    "ci_conclusion": "failure",
-    "windows_compilation": "NOT_RUN corrected test-contract candidate",
-    "windows_native": "NOT_RUN corrected owner-dispose/recovery11/full candidate",
-    "next": "Record exact source/merge/run/checkpoint and STOP. Next SAME CI final log must prove live boundary draft, post-disposal text/publication counters and14 invariants, complete recovery11 and previously not-run regressions. No second feature or deadline/assert weakening.",
+    "ci_conclusion": "success",
+    "windows_compilation": "NOT_RUN new fresh HTTPS candidate",
+    "windows_native": "NOT_RUN new fresh HTTPS10/new full regression",
+    "next": "Record exact source/merge/run/checkpoint and STOP without full wait. Next SAME CI final logs: fresh HTTPS10 plus existing recovery11/owner-dispose and all prior mandatory suites. After proof a separate existing recover-invite owned path can be considered; do not start it here.",
     "readiness_change": 0,
-    "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
-    "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
-    "ci_run_number": 637,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+    "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+    "ci_run_number": 638,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
     "ci_jobs": {
       "windows": {
-        "id": 120216525306,
+        "id": 120226632093,
         "status": "completed",
-        "conclusion": "failure"
+        "conclusion": "success"
       },
       "ubuntu": {
-        "id": 120216524993,
+        "id": 120226631811,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "publication": "TODO guarded expected-head non-force PR88 update and one automatic CI; uploads OFF/release excluded",
-    "public_diff": "Only tests/HomeVpnShareRecoveryTests.cs OwnedHttpsRecovery17add/4delete plus3 checkpoint docs; runtime and other tests/scripts/workflows/VERSION unchanged637",
-    "workflow_preflight": "PASS public repository/PR uploads OFF, release/prune ineligible; no workflow/VERSION changes",
-    "checkpoint": "Publish once after final checks, record exact new source/run plus local docs-only checkpoint; no duplicate CI",
-    "branch": "work/progo-ci637-draft-lifetime-20261023",
-    "worktree": "ProGo-ci637-draft-lifetime",
-    "blocker": "Windows proof of corrected native lifetime contract and complete recovery11/prior regressions",
-    "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c"
+    "publication": "TODO scanned guarded existing PR88 expected-head non-force push; one automatic CI; uploads OFF/release excluded",
+    "public_diff": "3 source/test files222add/2delete plus3 checkpoint docs; existing recovery/core/other routes unchanged",
+    "workflow_preflight": "PASS public PR uploads OFF; release/prune ineligible; workflows/VERSION unchanged",
+    "checkpoint": "Prepare one guarded checking source then local docs-only exact checkpoint; no duplicate CI",
+    "branch": "work/progo-fresh-https-on638-20261023",
+    "worktree": "ProGo-fresh-https-on638",
+    "blocker": "Exact Windows compiler/native proof for fresh HTTPS10; fullR09/invitation/owner acceptance remain open",
+    "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5626,7 +5625,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact637 sourcee0a8185/merge5aa6cbe full final logs read. Test-ProGo/Instance30/export11/chooser3/repair8/list10 PASS. Diagnostic14 succeeds at its narrow purpose: only draft-unchanged false after both native controls disposed/handles gone;13 other invariants true, publications5/5, calls0/0. Test-contract corrected to last live draft plus actual disposal/no late TextChanged/publications, no runtime change. New candidate Windows compilation/native NOT_RUN, recovery11 on637 only5PASS/1FAIL/5NOT_RUN. Weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "Exact638 sourceb69e700/mergebd8646c full logs independently read: owner-dispose/HTTPS11/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/full HomeVPN2803/Portable91 PASS; runner pack PASS but uploads skipped, owner PC NOT_RUN. New separate existing fresh HTTPS share owned-worker/button/Stop-scope candidate code414cb61 with10 real-modal/native-fixture cases; new compiler/native NOT_RUN. No new full weighted gate closed; weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -11336,6 +11335,261 @@
           }
         }
       }
+    },
+    "before_ci638_publication": {
+      "ci_candidate": {
+        "source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+        "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
+        "run_id": 39892894242,
+        "run_number": 637,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_updated_at": "2026-10-23T03:29:36Z",
+        "jobs": {
+          "windows": {
+            "id": 120216525306,
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          "ubuntu": {
+            "id": 120216524993,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        },
+        "verification": "Both full final logs read; exact checkout/build identity5aa6cbe. All14 predicates on owner-dispose observed: only draft-unchanged false after native disposal; safe stack confirms Check/OwnedHttpsRecovery callback, then ModalWizardCase/Run/Main.",
+        "windows_compilation": "PASS exact637 source/merge, Repository hygiene and build SUCCESS",
+        "windows_native": "PARTIAL Test-ProGo/Desktop5294/Instance30 receipt guards/Maintenance126/Shutdown47/UpdaterPackage5 PASS; export modal11/chooser3/repair8/list10 PASS. HTTPS recovery11:5PASS/owner-dispose FAIL/5NOT_RUN; later snapshot/dispatcher/ownership/cleanup/recover/fresh NOT_RUN.",
+        "pack": "SKIPPED",
+        "artifact_uploads": "SKIPPED uploads/prune; no artifacts",
+        "owner_pc": "NOT_RUN",
+        "failure": "Only draft-unchanged false; test erroneously observes native TextBox.Text after both controls disposed/handles gone.13 other conditions true; not evidence of production or infrastructure fault."
+      },
+      "active_work": {
+        "phase": "Only proven CI637 disposed native draft test-contract correction prepared; no runtime changes",
+        "recovery_checkpoint": "118b14aeabb21b78eebef260f8811c477ae857d3",
+        "base_source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "base_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "local_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
+        "local_development_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
+        "published_sha": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "baseline_only": true,
+        "ci_run_id": 39892894242,
+        "ci_status": "completed",
+        "ci_conclusion": "failure",
+        "windows_compilation": "NOT_RUN corrected test-contract candidate",
+        "windows_native": "NOT_RUN corrected owner-dispose/recovery11/full candidate",
+        "next": "Record exact source/merge/run/checkpoint and STOP. Next SAME CI final log must prove live boundary draft, post-disposal text/publication counters and14 invariants, complete recovery11 and previously not-run regressions. No second feature or deadline/assert weakening.",
+        "readiness_change": 0,
+        "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+        "ci_run_number": 637,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+        "ci_jobs": {
+          "windows": {
+            "id": 120216525306,
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          "ubuntu": {
+            "id": 120216524993,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        },
+        "publication": "TODO guarded expected-head non-force PR88 update and one automatic CI; uploads OFF/release excluded",
+        "public_diff": "Only tests/HomeVpnShareRecoveryTests.cs OwnedHttpsRecovery17add/4delete plus3 checkpoint docs; runtime and other tests/scripts/workflows/VERSION unchanged637",
+        "workflow_preflight": "PASS public repository/PR uploads OFF, release/prune ineligible; no workflow/VERSION changes",
+        "checkpoint": "Publish once after final checks, record exact new source/run plus local docs-only checkpoint; no duplicate CI",
+        "branch": "work/progo-ci637-draft-lifetime-20261023",
+        "worktree": "ProGo-ci637-draft-lifetime",
+        "blocker": "Windows proof of corrected native lifetime contract and complete recovery11/prior regressions",
+        "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c"
+      }
+    },
+    "before_fresh_https_on638": {
+      "ci_candidate": {
+        "source": "b69e7008bc889d88623669058e95197822b09f1e",
+        "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "tested_merge": null,
+        "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+        "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
+        "run_id": 39896043639,
+        "run_number": 638,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T03:38:02Z",
+        "jobs": {
+          "windows": {
+            "id": 120226632093,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120226631811,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Fresh published PR HEAD verified; fetched exact637 parent and full tree equal reviewed freeze. Sole pull_request attempt1/raw exact-source runs total_count1. New merge ref not yet verified checkout/build identity.",
+        "windows_compilation": "NOT_RUN corrected test-contract candidate pending exact638 log",
+        "windows_native": "NOT_RUN corrected live/disposed draft regression/owner-dispose/recovery11/full run; no new PASS",
+        "pack": "NOT_RUN pending",
+        "artifact_uploads": "OFF public PR guards, completion steps not yet checked",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "phase": "Only proven CI637 draft lifetime test-contract correction published; sole CI638 in_progress; STOP after checkpoint",
+        "recovery_checkpoint": "118b14aeabb21b78eebef260f8811c477ae857d3",
+        "base_source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "base_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "local_sha": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
+        "local_development_sha": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
+        "published_sha": "b69e7008bc889d88623669058e95197822b09f1e",
+        "tested_merge": null,
+        "baseline_only": false,
+        "ci_run_id": 39896043639,
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "windows_compilation": "NOT_RUN corrected test-contract candidate",
+        "windows_native": "NOT_RUN corrected owner-dispose/recovery11/full candidate",
+        "next": "Inspect SAME CI638 final logs/exact tested merge: live edited draft before Dispose, late TextChanged/publication counters and14 named invariants, complete recovery11 and prior regressions. No duplicate CI, no second feature; STOP without full wait.",
+        "readiness_change": 0,
+        "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+        "ci_run_number": 638,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+        "ci_jobs": {
+          "windows": {
+            "id": 120226632093,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120226631811,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "publication": "PASS fresh expected-head non-force existing PR88 integration/approved-plan-31-20261011 update; source parent exact637/full fetched tree equal reviewed freeze; one automatic638/pull_request/attempt1/raw exact-source count1",
+        "public_diff": "4 files588add/65delete:1 test method17add/4delete plus3 docs571add/61delete; runtime/other tests/scripts/workflows/VERSION unchanged637",
+        "workflow_preflight": "PASS public PR uploads OFF; release/prune ineligible; workflows/VERSION unchanged",
+        "checkpoint": "Post-publication3-doc checkpoint local HEAD via git log -1, intentionally NOT pushed to avoid a second CI; full checkpoint also in PR88 body",
+        "branch": "work/progo-ci637-draft-lifetime-20261023",
+        "worktree": "ProGo-ci637-draft-lifetime",
+        "blocker": "Windows proof of corrected native lifetime contract and complete recovery11/prior regressions",
+        "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814"
+      },
+      "ci637_draft_lifetime_fix": {
+        "status": "PARTIAL",
+        "recovery_checkpoint": "118b14aeabb21b78eebef260f8811c477ae857d3",
+        "base_source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "base_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "base_ci": 39892894242,
+        "code_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
+        "scope": "Only tests/HomeVpnShareRecoveryTests.cs OwnedHttpsRecovery17add/4delete plus3 checkpoint docs; runtime and other tests/scripts/workflows/VERSION unchanged637",
+        "root_cause": "Test-contract error: only draft-unchanged false after both native form/TextBox disposal with handles absent;13 other invariants true, no UI publication after disposal. A destroyed control's Text is not the live draft guarantee. Fixture must validate last live draft then disposal/no late modification/publication; runtime fault/infrastructure failure not evidenced.",
+        "contract": "Draft text is validated while form/TextBox and their native handles are live immediately before explicit disposal. After physical operation/Stop settle, draft invariant requires that captured assertion, actual disposed controls/no handles, unchanged post-disposal TextChanged count and dispatcher publications. Live-window branch still compares original address.Text. No lifetime requirement to preserve native text after destroyed HWND.",
+        "regression": "Existing real owner-dispose ShowDialog/held physical copy now asserts edited draft at last live boundary; real TextChanged subscription detects late setters after disposal, counter snapshot after framework teardown; final named draft invariant and zero-violation aggregate remain required. All13 other expressions, all14 names/order, prior no-late-publication check, phase/transport/cleanup/deadlines retained.",
+        "local": "PASS AST14/13-identical predicates, corrected live vs disposed branches, reverse diff/scenario/cleanup/deadline/helper preservation, syntax1/C#5, diff/public321/0/secretPII0; not Windows compiler proof",
+        "windows_compilation": "NOT_RUN corrected candidate, no local .NET Framework/PowerShell",
+        "windows_native": "NOT_RUN owner-dispose/regression/recovery11/full run on corrected candidate; no new PASS",
+        "publication": "PASS fresh expected-head non-force existing PR88 integration/approved-plan-31-20261011 update; source parent exact637/full fetched tree equal reviewed freeze; one automatic638/pull_request/attempt1/raw exact-source count1",
+        "next": "Inspect SAME CI638 final logs/exact tested merge: live edited draft before Dispose, late TextChanged/publication counters and14 named invariants, complete recovery11 and prior regressions. No duplicate CI, no second feature; STOP without full wait.",
+        "readiness_change": 0,
+        "published_sha": "b69e7008bc889d88623669058e95197822b09f1e",
+        "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "tested_merge": null,
+        "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+        "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
+        "ci_run_id": 39896043639,
+        "ci_run_number": 638,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120226632093,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120226631811,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        }
+      },
+      "https_recovery_owned_integration_on633": {
+        "status": "PARTIAL",
+        "recovery_checkpoint": "65c0c497d72a3c110623c31b100f6351c0148326",
+        "base_source": "3a212e47d18ad51a8037ed3944477dbba987a701",
+        "base_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
+        "base_ci": 39879011054,
+        "code_sha": "4f10ec66e08359dd75fe3e85e06f0bed8a279482",
+        "branch": "work/progo-https-recovery-on633-20261023",
+        "worktree": "ProGo-https-recovery-on633",
+        "code_paths": [
+          "src/HomeVpnService.cs",
+          "src/HomeProfileShare.cs",
+          "tests/HomeVpnShareRecoveryTests.cs"
+        ],
+        "production_slice": "Existing Проверить прежнюю настройку HTTPS default configure action calls RecoverShareOwnedAsync with actual configure owner/dispatcher; fresh share and invitation unchanged",
+        "implementation": "Owner metadata frozen before scheduling; key validation/DPAPI Load/helpers/status/result/cleanup retained by worker. Both native query/copy startups use explicit configure dispatcher, exact cleanup retained, late progress suppressed",
+        "lease_contract": "Existing core single share family lease spans Load/two read-only queries/result and cleanup; no wrapper reacquire/public Stop self-await. Accepted physical Task drains honestly; next transport checks Stop identity",
+        "continuation_scope": "Only mode2 recover-share adds Stop identity to post-SSH and existing verification/save/consumption admission gates. Accepted SSH success remains success on its actual worker Task; changed Stop scope prevents later HTTPS/save/consumption",
+        "native_modes": [
+          "default-refusal",
+          "status-pending",
+          "cancel-retry",
+          "stop-copy",
+          "dispose-copy",
+          "owner-dispose",
+          "cancel-command",
+          "cleanup-lock",
+          "result",
+          "stop-result-copy",
+          "stop-result"
+        ],
+        "criteria": [
+          "Actual default configure binding refuses retained cleanup before key I/O or native startup",
+          "ShowDialog button/helper/sharing I/O keeps heartbeat, single lease/admission and original journal/draft",
+          "Cancel→Retry leaves modal open and original task result intact, with unchanged request ID and no mutation replay",
+          "Stop/Dispose drains real copy/native tree, refuses next query, including result after second copy; closed owner gets no late UI publication",
+          "Locked exact cleanup gives honest Stop false then unlock explicit retry true, original typed failure unchanged, no copy/query replay",
+          "Real native status/result output returns original origin; fixture aborts before real HTTPS/save, no target acceptance claimed",
+          "Stop after accepted successful SSH result preserves Task success while preventing later HTTPS verification/save/request consumption"
+        ],
+        "dependencies": "PASS exact633 includes share receipt core/single lease/owned confirmation, dispatcher, native wait/job ownership and compiled harness. No new feature or incomplete fresh share/invitation dependency required",
+        "static": "PASS manual diff/review, syntax3/C#5 await-scope, diff --check, public321/0/added secretPII0; not compiler/native proof",
+        "preservation": "PASS all74 old service methods unchanged;20/22 HomeProfileShare methods unchanged except default factory and common configure mode2 scope;33/34 old HTTPS test methods unchanged except Run call. All other blobs unchanged633 including fresh/recover/list/repair/ownership/cleanup/export UI/EOF/BOM/snapshot/dispatcher/receipt/HTTPS verification+confirmation/invitation/harness/scripts/workflows/VERSION",
+        "fixture_cleanup": "Existing native fixture validates original ID/no secret arguments/no share mutation. Held I/O5s/modal watchdog15s/finally actual joins5s; native300s unchanged. Finally releases barrier/lock, disposes own forms, joins Work/initial/pending/actual operation/Stop and kills only its recorded own fixture pid/child; protected inputs/sibling/unrelated process checked before teardown",
+        "windows_compilation": "FAIL final Windows log: CS1501 HomeVpnService.cs(1166,36), WaitForShareAsync has5 required parameters but call supplies4; accompanying CS1660 at(1165,25)",
+        "windows_native": "NOT_RUN recovery11; CI634 compile failed before tests",
+        "publication": "PASS scanned6-file frozen tree published to existing PR88 by expected-head non-force update; fetched parent/tree verified, exactly one automatic CI634, no rerun/dispatch",
+        "remaining": "Exact Windows HTTPS recovery11 proof; fresh HTTPS share/invitation migration/fullR09, final package delivery/owner acceptance remain open",
+        "next": "Only fix missing timeout argument; no fresh-share or invitation stage until exact new CI proof",
+        "readiness_change": 0,
+        "published_sha": "763c730dc5e4d505fac35d592024911d744c2f91",
+        "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+        "tree": "b8755d64da13dfab57f19fdaa9f737ad7f116d0d",
+        "local_freeze_sha": "52f72318de967f0e83c26675f7478e698ac8cdcb",
+        "ci_run_id": 39883511908,
+        "ci_run_number": 634,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
+        "ci_status": "completed",
+        "ci_conclusion": "failure",
+        "ci_jobs": {
+          "windows": 120186199123,
+          "ubuntu": 120186198956
+        }
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -12376,11 +12630,11 @@
     "static": "PASS manual diff/review, syntax3/C#5 await-scope, diff --check, public321/0/added secretPII0; not compiler/native proof",
     "preservation": "PASS all74 old service methods unchanged;20/22 HomeProfileShare methods unchanged except default factory and common configure mode2 scope;33/34 old HTTPS test methods unchanged except Run call. All other blobs unchanged633 including fresh/recover/list/repair/ownership/cleanup/export UI/EOF/BOM/snapshot/dispatcher/receipt/HTTPS verification+confirmation/invitation/harness/scripts/workflows/VERSION",
     "fixture_cleanup": "Existing native fixture validates original ID/no secret arguments/no share mutation. Held I/O5s/modal watchdog15s/finally actual joins5s; native300s unchanged. Finally releases barrier/lock, disposes own forms, joins Work/initial/pending/actual operation/Stop and kills only its recorded own fixture pid/child; protected inputs/sibling/unrelated process checked before teardown",
-    "windows_compilation": "FAIL final Windows log: CS1501 HomeVpnService.cs(1166,36), WaitForShareAsync has5 required parameters but call supplies4; accompanying CS1660 at(1165,25)",
-    "windows_native": "NOT_RUN recovery11; CI634 compile failed before tests",
+    "windows_compilation": "PASS exact638 sourceb69e7008bc889d88623669058e95197822b09f1e/tested mergebd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "windows_native": "PASS all11 actual owned HTTPS recovery modes incl CancelRetry/Stop/Dispose/locked cleanup/result-boundary, verified final638 log; prior634/637 failures retained in historical fields",
     "publication": "PASS scanned6-file frozen tree published to existing PR88 by expected-head non-force update; fetched parent/tree verified, exactly one automatic CI634, no rerun/dispatch",
-    "remaining": "Exact Windows HTTPS recovery11 proof; fresh HTTPS share/invitation migration/fullR09, final package delivery/owner acceptance remain open",
-    "next": "Only fix missing timeout argument; no fresh-share or invitation stage until exact new CI proof",
+    "remaining": "Existing recovery slice proven; separate fresh HTTPS share candidate is current phase. Invitation migration/fullR09/package delivery/owner acceptance remain open",
+    "next": "No recover-share repeat. Verify current fresh HTTPS10 candidate on its own exact CI before separate invitation recovery worker",
     "readiness_change": 0,
     "published_sha": "763c730dc5e4d505fac35d592024911d744c2f91",
     "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
@@ -12394,7 +12648,10 @@
     "ci_jobs": {
       "windows": 120186199123,
       "ubuntu": 120186198956
-    }
+    },
+    "verified_source": "b69e7008bc889d88623669058e95197822b09f1e",
+    "verified_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "verified_run": 39896043639
   },
   "ci634_failure": {
     "source": "763c730dc5e4d505fac35d592024911d744c2f91",
@@ -12950,7 +13207,7 @@
     "root_cause": "Test-contract error: only draft-unchanged false after both native form/TextBox disposal with handles absent;13 other invariants true, no UI publication after disposal. A destroyed control's Text is not the live draft guarantee. Fixture must validate last live draft then disposal/no late modification/publication; runtime fault/infrastructure failure not evidenced."
   },
   "ci637_draft_lifetime_fix": {
-    "status": "PARTIAL",
+    "status": "PASS",
     "recovery_checkpoint": "118b14aeabb21b78eebef260f8811c477ae857d3",
     "base_source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
     "base_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
@@ -12961,10 +13218,247 @@
     "contract": "Draft text is validated while form/TextBox and their native handles are live immediately before explicit disposal. After physical operation/Stop settle, draft invariant requires that captured assertion, actual disposed controls/no handles, unchanged post-disposal TextChanged count and dispatcher publications. Live-window branch still compares original address.Text. No lifetime requirement to preserve native text after destroyed HWND.",
     "regression": "Existing real owner-dispose ShowDialog/held physical copy now asserts edited draft at last live boundary; real TextChanged subscription detects late setters after disposal, counter snapshot after framework teardown; final named draft invariant and zero-violation aggregate remain required. All13 other expressions, all14 names/order, prior no-late-publication check, phase/transport/cleanup/deadlines retained.",
     "local": "PASS AST14/13-identical predicates, corrected live vs disposed branches, reverse diff/scenario/cleanup/deadline/helper preservation, syntax1/C#5, diff/public321/0/secretPII0; not Windows compiler proof",
-    "windows_compilation": "NOT_RUN corrected candidate, no local .NET Framework/PowerShell",
-    "windows_native": "NOT_RUN owner-dispose/regression/recovery11/full run on corrected candidate; no new PASS",
-    "publication": "TODO guarded expected-head non-force PR88 update and one automatic CI; uploads OFF/release excluded",
-    "next": "Record exact source/merge/run/checkpoint and STOP. Next SAME CI final log must prove live boundary draft, post-disposal text/publication counters and14 invariants, complete recovery11 and previously not-run regressions. No second feature or deadline/assert weakening.",
+    "windows_compilation": "PASS exact638",
+    "windows_native": "PASS corrected owner-dispose/HTTPS recovery11 and full prior regression exact638",
+    "publication": "PASS fresh expected-head non-force existing PR88 integration/approved-plan-31-20261011 update; source parent exact637/full fetched tree equal reviewed freeze; one automatic638/pull_request/attempt1/raw exact-source count1",
+    "next": "No draft lifetime repeat. Current separate stage is new HTTPS share owned preparation; target owner acceptance still NOT_RUN",
+    "readiness_change": 0,
+    "published_sha": "b69e7008bc889d88623669058e95197822b09f1e",
+    "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+    "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
+    "ci_run_id": 39896043639,
+    "ci_run_number": 638,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_jobs": {
+      "windows": {
+        "id": 120226632093,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "ubuntu": {
+        "id": 120226631811,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "criterion": "Narrow corrected native fixture contract only: live-boundary draft True, both controls disposed/handles absent, TextChanged0/0/publications5/5/all14 invariants0 violations and owner-dispose/HTTPS11 PASS exact638"
+  },
+  "ci638_final": {
+    "source": "b69e7008bc889d88623669058e95197822b09f1e",
+    "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "run_id": 39896043639,
+    "run_number": 638,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+    "status": "completed",
+    "conclusion": "success",
+    "run_updated_at": "2026-10-23T04:07:31Z",
+    "windows_job": 120226632093,
+    "ubuntu_job": 120226631811,
+    "full_logs": {
+      "windows_lines": 12105,
+      "ubuntu_lines": 578,
+      "verification": "Both complete final decoded logs independently retrieved and examined; exact checkout/build identity/required per-case markers cross-checked"
+    },
+    "markers": {
+      "snapshot12": [
+        "2026-10-23T04:05:03.6996664Z PASS: caller releases family lease only after actual snapshot settles: setup",
+        "2026-10-23T04:05:03.8256373Z PASS: caller releases family lease only after actual snapshot settles: invite",
+        "2026-10-23T04:05:03.9524882Z PASS: caller releases family lease only after actual snapshot settles: share",
+        "2026-10-23T04:05:04.0908571Z PASS: caller releases family lease only after actual snapshot settles: empty",
+        "2026-10-23T04:05:04.2051713Z PASS: caller releases family lease only after actual snapshot settles: missing-setup",
+        "2026-10-23T04:05:04.3437747Z PASS: caller releases family lease only after actual snapshot settles: missing-invite",
+        "2026-10-23T04:05:04.4545903Z PASS: caller releases family lease only after actual snapshot settles: missing-share",
+        "2026-10-23T04:05:04.5656037Z PASS: caller releases family lease only after actual snapshot settles: pending-invite",
+        "2026-10-23T04:05:04.6921462Z PASS: caller releases family lease only after actual snapshot settles: pending-share",
+        "2026-10-23T04:05:04.7988411Z PASS: caller releases family lease only after actual snapshot settles: cancel",
+        "2026-10-23T04:05:04.9014179Z PASS: caller releases family lease only after actual snapshot settles: corrupt",
+        "2026-10-23T04:05:05.0282805Z PASS: caller releases family lease only after actual snapshot settles: missing-key"
+      ],
+      "dispatcher5": [
+        "2026-10-23T04:05:05.2856655Z PASS: settled transport performs no late UI dispatch or duplicate action: ready",
+        "2026-10-23T04:05:05.3472146Z PASS: closed dispatcher refuses a new transport before startup without a late callback or file I/O",
+        "2026-10-23T04:05:05.5984515Z PASS: settled transport performs no late UI dispatch or duplicate action: during-dispose",
+        "2026-10-23T04:05:05.8676997Z PASS: settled transport performs no late UI dispatch or duplicate action: file-fault",
+        "2026-10-23T04:05:06.1210527Z PASS: settled transport performs no late UI dispatch or duplicate action: worker-only"
+      ],
+      "ownership8": [
+        "2026-10-23T04:05:06.2637281Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: complete",
+        "2026-10-23T04:05:06.3899917Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: stop",
+        "2026-10-23T04:05:06.5088155Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: dispose",
+        "2026-10-23T04:05:06.6753608Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: lock",
+        "2026-10-23T04:05:06.8016759Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: typed",
+        "2026-10-23T04:05:06.9601300Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-stop",
+        "2026-10-23T04:05:07.0865552Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-dispose",
+        "2026-10-23T04:05:07.2449226Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: multiple"
+      ],
+      "cleanup4": [
+        "2026-10-23T04:05:07.4030087Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: complete",
+        "2026-10-23T04:05:09.5537400Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: list-lock",
+        "2026-10-23T04:05:11.7057198Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: preparation-lock",
+        "2026-10-23T04:05:13.8354839Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: dispose-lock"
+      ],
+      "recover10": [
+        "2026-10-23T04:05:14.1013404Z PASS: owned production setup recovery PASS: default-refusal",
+        "2026-10-23T04:05:15.1331836Z PASS: owned production setup recovery PASS: status-pending",
+        "2026-10-23T04:05:16.2252901Z PASS: owned production setup recovery PASS: cancel-retry",
+        "2026-10-23T04:05:16.6460512Z PASS: owned production setup recovery PASS: stop-copy",
+        "2026-10-23T04:05:17.0738215Z PASS: owned production setup recovery PASS: dispose-copy",
+        "2026-10-23T04:05:17.4887187Z PASS: owned production setup recovery PASS: owner-dispose",
+        "2026-10-23T04:05:18.5415058Z PASS: owned production setup recovery PASS: stop-between",
+        "2026-10-23T04:05:19.6479224Z PASS: owned production setup recovery PASS: cancel-command",
+        "2026-10-23T04:05:22.7367802Z PASS: owned production setup recovery PASS: cleanup-lock",
+        "2026-10-23T04:05:24.4211555Z PASS: owned production setup recovery PASS: result"
+      ],
+      "fresh10": [
+        "2026-10-23T04:05:24.7124412Z PASS: owned production fresh setup PASS: default-refusal",
+        "2026-10-23T04:05:25.1569206Z PASS: owned production fresh setup PASS: copy-fault",
+        "2026-10-23T04:05:26.3667588Z PASS: owned production fresh setup PASS: cancel-retry",
+        "2026-10-23T04:05:26.8270472Z PASS: owned production fresh setup PASS: stop-copy",
+        "2026-10-23T04:05:27.2920037Z PASS: owned production fresh setup PASS: dispose-copy",
+        "2026-10-23T04:05:27.7401098Z PASS: owned production fresh setup PASS: owner-dispose",
+        "2026-10-23T04:05:28.9396742Z PASS: owned production fresh setup PASS: cancel-command",
+        "2026-10-23T04:05:32.1475858Z PASS: owned production fresh setup PASS: cleanup-lock",
+        "2026-10-23T04:05:33.2879281Z PASS: owned production fresh setup PASS: result",
+        "2026-10-23T04:05:34.3678713Z PASS: owned production fresh setup PASS: pending-race"
+      ],
+      "https11": [
+        "2026-10-23T04:04:40.1296201Z PASS: owned production HTTPS recovery PASS: default-refusal",
+        "2026-10-23T04:04:41.1249680Z PASS: owned production HTTPS recovery PASS: status-pending",
+        "2026-10-23T04:04:42.1630763Z PASS: owned production HTTPS recovery PASS: cancel-retry",
+        "2026-10-23T04:04:42.5069587Z PASS: owned production HTTPS recovery PASS: stop-copy",
+        "2026-10-23T04:04:42.8560259Z PASS: owned production HTTPS recovery PASS: dispose-copy",
+        "2026-10-23T04:04:43.2043989Z PASS: owned production HTTPS recovery PASS: owner-dispose",
+        "2026-10-23T04:04:44.2641488Z PASS: owned production HTTPS recovery PASS: cancel-command",
+        "2026-10-23T04:04:47.2748967Z PASS: owned production HTTPS recovery PASS: cleanup-lock",
+        "2026-10-23T04:04:48.9024357Z PASS: owned production HTTPS recovery PASS: result",
+        "2026-10-23T04:04:49.9067743Z PASS: owned production HTTPS recovery PASS: stop-result-copy",
+        "2026-10-23T04:04:51.5593960Z PASS: owned production HTTPS recovery PASS: stop-result"
+      ],
+      "repair8": [
+        "2026-10-23T04:03:24.6133337Z PASS: owned production repair slice PASS: default-refusal",
+        "2026-10-23T04:03:25.8544551Z PASS: owned production repair slice PASS: complete",
+        "2026-10-23T04:03:27.1733063Z PASS: owned production repair slice PASS: cancel-retry",
+        "2026-10-23T04:03:27.7409943Z PASS: owned production repair slice PASS: stop-copy",
+        "2026-10-23T04:03:28.3079082Z PASS: owned production repair slice PASS: dispose-copy",
+        "2026-10-23T04:03:28.8451985Z PASS: owned production repair slice PASS: owner-dispose",
+        "2026-10-23T04:03:30.1734277Z PASS: owned production repair slice PASS: stop-command",
+        "2026-10-23T04:03:33.4288922Z PASS: owned production repair slice PASS: cleanup-lock"
+      ],
+      "list10": [
+        "2026-10-23T04:02:32.0092397Z PASS: owned production list slice PASS: default-refusal",
+        "2026-10-23T04:02:33.2488391Z PASS: owned production list slice PASS: complete",
+        "2026-10-23T04:02:34.5989422Z PASS: owned production list slice PASS: cancel-retry",
+        "2026-10-23T04:02:35.1399978Z PASS: owned production list slice PASS: stop-copy",
+        "2026-10-23T04:02:35.6672512Z PASS: owned production list slice PASS: dispose-copy",
+        "2026-10-23T04:02:36.1777064Z PASS: owned production list slice PASS: owner-dispose",
+        "2026-10-23T04:02:37.4422759Z PASS: owned production list slice PASS: stop-command",
+        "2026-10-23T04:02:40.6614782Z PASS: owned production list slice PASS: cleanup-lock",
+        "2026-10-23T04:02:42.6197198Z PASS: owned production list slice PASS: refresh-cancel-retry",
+        "2026-10-23T04:02:43.8780626Z PASS: owned production list slice PASS: refresh-dispose"
+      ],
+      "export11": [
+        "2026-10-23T04:00:27.7931138Z PASS: modal export preserves protected settings and cannot start a late relay: save",
+        "2026-10-23T04:00:28.2100576Z PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry",
+        "2026-10-23T04:00:28.7184588Z PASS: modal export preserves protected settings and cannot start a late relay: close",
+        "2026-10-23T04:00:29.1717439Z PASS: modal export preserves protected settings and cannot start a late relay: dispose",
+        "2026-10-23T04:00:29.6157894Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel",
+        "2026-10-23T04:00:30.0574024Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-close",
+        "2026-10-23T04:00:30.4859061Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose",
+        "2026-10-23T04:00:30.9136312Z PASS: modal export preserves protected settings and cannot start a late relay: global-stop",
+        "2026-10-23T04:00:31.3476417Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop",
+        "2026-10-23T04:00:31.7693355Z PASS: modal export preserves protected settings and cannot start a late relay: existing-retry",
+        "2026-10-23T04:00:32.2565780Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change"
+      ],
+      "chooser3": [
+        "2026-10-23T03:50:38.6818205Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel",
+        "2026-10-23T03:50:44.2341366Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing",
+        "2026-10-23T03:50:45.1153281Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: error"
+      ]
+    },
+    "owner_dispose": [
+      "2026-10-23T04:04:43.0648501Z PASS: owned HTTPS preserves the edited draft at the last live disposal boundary",
+      "2026-10-23T04:04:43.2040636Z HTTPS fixture state: mode=owner-dispose; phase=7; violations=0; calls=0; expectedCalls=0; copies=1; verified=0; formDisposed=True; addressDisposed=True; formHandle=False; addressHandle=False; dialogResult=None; operation=Faulted; stop=RanToCompletion; publications=5; closedPublications=5; liveDraftAtDisposal=True; draftChanges=0; closedDraftChanges=0",
+      "2026-10-23T04:04:43.2043989Z PASS: owned production HTTPS recovery PASS: owner-dispose"
+    ],
+    "summaries": [
+      "2026-10-23T03:57:02.4542115Z Desktop tests PASS: 5294",
+      "2026-10-23T03:57:10.3161177Z Instance tests PASS: 30",
+      "2026-10-23T03:59:47.5088060Z Maintenance tests PASS: 126",
+      "2026-10-23T04:00:15.0118498Z Shutdown tests PASS: 47",
+      "2026-10-23T04:00:16.8009851Z Updater package tests PASS: 5",
+      "2026-10-23T04:00:16.8017852Z ProGo tests PASS.",
+      "2026-10-23T04:05:39.6713313Z Home VPN PASS: 2803 checks.",
+      "2026-10-23T04:07:22.3657103Z Portable Home VPN tests PASS: 91",
+      "2026-10-23T04:07:24.3818337Z Ran 28 tests in 1.707s",
+      "2026-10-23T04:07:24.3818619Z OK (skipped=2)"
+    ],
+    "ubuntu": [
+      "2026-10-23T03:38:04.1236965Z Ran 16 tests in 0.248s",
+      "2026-10-23T03:38:04.1238491Z OK",
+      "2026-10-23T03:38:14.2294194Z Ran 13 tests in 0.880s",
+      "2026-10-23T03:38:14.2294687Z OK",
+      "2026-10-23T03:39:56.8268165Z PASS: arbitrary port forwarding is denied",
+      "2026-10-23T03:40:12.0197346Z PASS: real HTTPS reaches the isolated profile service",
+      "2026-10-23T03:40:14.1337644Z PASS: repeated QR setup preserves existing Caddy site and single import",
+      "2026-10-23T03:40:14.1382587Z PASS: restart discards short-lived profile sessions"
+    ],
+    "pack": {
+      "status": "PASS",
+      "sha256": "2bf8ec967e7bed08f527a41807ddb7f418d6e1815f40cfafd1108d3f56602f92",
+      "delivery": "Runner-only package; uploads/prune SKIPPED, artifacts absent, not installed or accepted on owner PC"
+    },
+    "owner_pc": "NOT_RUN",
+    "readiness_change": 0
+  },
+  "fresh_https_owned_integration_on638": {
+    "status": "PARTIAL",
+    "recovery_checkpoint": "f75c5a0ba00b2f7aa9e495419ec48823f8acfd86",
+    "base_source": "b69e7008bc889d88623669058e95197822b09f1e",
+    "base_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+    "base_ci": 39896043639,
+    "code_sha": "414cb610621a91ebd09b71d2ae6126e130bd813e",
+    "files": [
+      "src/HomeVpnService.cs",
+      "src/HomeProfileShare.cs",
+      "tests/HomeVpnShareRecoveryTests.cs"
+    ],
+    "production_path": "Existing default Настроить HTTPS на VPS button -> PrepareShare explicit configure window/dispatcher -> ShareOwnedAsync -> existing AdminAsync share receipt core; no new UI or server protocol",
+    "implementation": "Frozen owner and origin, retained RunAdminOwned task; worker owns key/DPAPI/helper/staging/registration/result/cleanup. Native copy/ShareCommand startup only on explicit UI dispatcher. Existing single family lease, no wrapper reacquire or Stop self-await. Post-copy Stop identity check refuses registration/SSH after accepted copy settles; next command admission checks owner. Mode1 now uses existing post-SSH verification/save/consumption Stop scope too.",
+    "native_modes": [
+      "default-refusal",
+      "copy-fault",
+      "cancel-retry",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock",
+      "result",
+      "stop-result"
+    ],
+    "criteria": [
+      "Real default binding refuses retained cleanup before key I/O or request/SSH",
+      "Actual ShowDialog/held real helper copy stays responsive, single admission and family lease, no premature request",
+      "Cancel before registration allows explicit Retry only after physical settlement, old task cannot overwrite fresh success",
+      "Stop/Dispose drains physical copy without request/SSH; dead owner receives no late dispatcher/text updates",
+      "Actual native command sees matching durable request before launch; cancellation retains exact original request and no replay",
+      "Exact locked cleanup yields honest Stop false; unlock explicit Stop retries only deletion, original typed failure preserved",
+      "Success reaches real confirmation boundary but fixture stops before external HTTPS/save; Stop after result preserves Task success and refuses later verification/save/consume",
+      "Protected input bytes/sibling/unrelated process retained; own child/work/lease cleaned in finally"
+    ],
+    "dependencies": "PASS exact638 recovery/confirmation/core lease/owned cleanup/dispatcher APIs; no invitation or other incomplete block required",
+    "signature_review": "PASS all used project call arities; ShareOwnedAsync5required7total, AdminAsync8 copy2/command3 delegates, CopyAsync3 or4, WaitForShareAsync5 required including unchanged TimeoutMs, dispatch4/scope2. Static only, not C# compilation.",
+    "static": "PASS manual review/AST preservation/syntax3/C#5/diff/public321/0/secretPII0; all old service methods byte-identical, only2 existing configure methods and Run binding changed; new3 service methods+2 fixture methods. Original HTTPS recovery11 body and safe14 instrumentation unchanged.",
+    "fixture": "Uses actual ShowDialog, native own child executable, real private helper reads/DPAPI receipt/job/locked cleanup. Only SCP/native executable/external HTTPS boundary substituted; no live VPS/HTTPS call. HeldIO5s/modal15s/final joins5s, existing native300s unchanged. Counter guards preserve corrected live draft lifetime.",
+    "windows_compilation": "NOT_RUN new candidate, local .NET Framework/PowerShell unavailable",
+    "windows_native": "NOT_RUN fresh HTTPS10/new full regression; no CI638 PASS inherited",
+    "publication": "TODO scanned guarded existing PR88 expected-head non-force push; one automatic CI; uploads OFF/release excluded",
+    "remaining": "Exact Windows fresh HTTPS10/native proof; invitation owned worker/consumption bindings/fullR09/package delivery and owner acceptance open",
+    "next": "Record exact source/merge/run/checkpoint and STOP without full wait. Next SAME CI final logs: fresh HTTPS10 plus existing recovery11/owner-dispose and all prior mandatory suites. After proof a separate existing recover-invite owned path can be considered; do not start it here.",
     "readiness_change": 0
   }
 }

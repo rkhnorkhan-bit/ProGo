@@ -1,4 +1,33 @@
-## Текущий кандидат: CI637 draft lifetime test-contract fix; Windows NOT_RUN
+## Текущий кандидат: fresh HTTPS owned production10 на CI638; Windows NOT_RUN
+
+Checkpoint `f75c5a0ba00b2f7aa9e495419ec48823f8acfd86`; PR88 source
+`b69e7008bc889d88623669058e95197822b09f1e` / exact tested merge
+`bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015`, no other writer/dirty work found.
+[CI638](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639) full final Windows/Ubuntu logs read.
+PASS owner-dispose/HTTPS11/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/
+repair8/list10/export11/chooser3/HomeVPN2803/Portable91. Python relay reported28 incl2SKIPPED.
+Pack PASS runner-only ZIP SHA2562bf8ec967e7bed08f527a41807ddb7f418d6e1815f40cfafd1108d3f56602f92;
+uploads/prune SKIPPED, no public artifacts/owner install. All exact per-case evidence in JSON ci638_final.
+
+Code `414cb610621a91ebd09b71d2ae6126e130bd813e`:2 runtime files+1 existing test222add/2delete +3 docs.
+Existing new HTTPS button now uses retained ShareOwnedAsync and explicit configure UI/dispatcher,
+frozen owner/origin, core single lease/receipt, owned cleanup. Stop after copy refuses registration/SSH;
+mode1 post-result scope prevents later HTTPS/save/consumption after Stop, preserving actual Task outcome.
+No new feature/protocol/invitation changes. Existing recovery11 test body/core/other routes preserved.
+New10 real ShowDialog/default binding cases: default-refusal/copy-fault/cancel-retry/stop-copy/
+dispose-copy/owner-dispose/cancel-command/cleanup-lock/result/stop-result. Prove heartbeat/admission,
+no premature request, exact native-observed ID/journal/private bytes, cancellation/drain/no replay,
+real locked cleanup retry, corrected live/disposed draft and no late publication. Local native executable
+only; fixture stops at real confirmation boundary before external HTTPS/save. Own-resource finally joins.
+PASS static review/AST/syntax3/C#5/signature arities including WaitForShare5+timeout/diff/public321/0/
+secretPII0; no Windows compiler proof. New compilation/native/fresh HTTPS10 NOT_RUN, not638 SUCCESS.
+Same5s/15s/300s deadlines, no coverage/assert relaxation or duplicate lease/Stop self-await.
+One guarded existing PR88 update +one automatic CI TODO; uploads OFF/release/prune ineligible.
+Save IDs/checkpoint and STOP without full wait/second stage. Next SAME new CI final exact logs:
+fresh HTTPS10/recovery11/owner-dispose and prior full suites; invitation worker is a separate future slice.
+Weights58–80/22 +0 unchanged, no fullR09 or owner acceptance claim/system/deployment action.
+
+## История: CI637 draft lifetime test-contract fix; Windows NOT_RUN
 
 Checkpoint `118b14aeabb21b78eebef260f8811c477ae857d3`, source
 `e0a8185ae3deb66e14872735170b64d1f414acf6` / exact tested merge
@@ -25,9 +54,18 @@ after framework teardown; live-window branch retains exact old address.Text comp
 All14 named invariants/13 other expressions/aggregate0/old late-publication check preserved,
 no phase/coverage/cleanup/timeout weakening. Safe boolean/count output only, runtime unchanged.
 PASS local AST/reverse-diff/syntax1/C#5/diff/public321/0/secretsPII0; new compiler/native NOT_RUN.
-One guarded PR88 publication + one automatic CI TODO; uploads OFF/release/prune ineligible.
-Save exact source/merge/tree/run/checkpoint and STOP without full wait. Next SAME new CI final
-logs: actual live/disposed draft guarantee and full recovery11/prior suites; no second feature.
+Publication PASS source `b69e7008bc889d88623669058e95197822b09f1e`, existing PR88 integration branch;
+merge ref `bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015` not yet verified checkout/build identity.
+Freeze `bbf4d53850640efcd2b7877f1d8a0d58c7a07814`, tree `5641ec9975c979b371690ad1ee2b56156284acd3`;
+fetched exact637 parent/full tree equal reviewed freeze, expected-head non-force guard checked.
+Public diff4files588add/65delete=1 test method17add/4delete+3docs571add/61delete; runtime unchanged.
+Sole automatic [CI638/39896043639](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639), pull_request/attempt1,
+raw exact-source runs total_count1. In_progress/conclusion null; updated_at2026-10-23T03:38:02Z;
+Windows120226632093/Ubuntu120226631811 in_progress. New compilation/native/owner-dispose/recovery11
+NOT_RUN. Uploads OFF/release/prune ineligible; completion steps not yet verified. Post-publication
+docs checkpoint local HEAD via git log -1, NOT pushed to avoid second CI; exact checkpoint in PR88 body.
+STOP without full wait/second feature. Next SAME638 final logs/exact tested merge: real live draft
+and disposed owner/no late TextChanged/publication guarantees, all14 invariants/full recovery11/prior suites.
 Weights58–80/22 +0 unchanged; no system/deployment/credential/binary actions.
 
 ## История: разрешённая test-only14-invariant диагностика; Windows NOT_RUN

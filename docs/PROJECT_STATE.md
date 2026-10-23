@@ -8,7 +8,63 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: только исправление draft lifetime test-contract CI637
+## Текущий этап: новая настройка HTTPS через owned worker поверх CI638
+
+Checkpoint `f75c5a0ba00b2f7aa9e495419ec48823f8acfd86`/HEAD/PR88 сверены; source
+`b69e7008bc889d88623669058e95197822b09f1e`, exact tested merge/build identity
+`bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015`. Worktree чистые до начала, root единственный агент,
+Git/build/lock операций нет. Сохранена отдельная work/progo-fresh-https-on638-20261023 и прежние ветки.
+
+[CI638/39896043639](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639) completed SUCCESS:
+оба полных финальных log самостоятельно прочитаны, Windows120226632093(12105 строк),
+Ubuntu120226631811(578 строк). Exact per-case evidence в JSON ci638_final, metadata не заменяют logs.
+PASS Instance30; owner-dispose/liveDraftAtDisposal=True/violations0/TextChanged0:0/publications5:5;
+все HTTPS recovery11; snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10; repair8/list10;
+export modal11/chooser3; Desktop5294/HomeVPN2803/Portable91 и mandatory suites. Relay Python
+reported28 incl2SKIPPED, skipped не выдаются за выполненные. Ubuntu operation16/QR13/provisioning PASS.
+Pack PASS, runner-only ZIP SHA2562bf8ec967e7bed08f527a41807ddb7f418d6e1815f40cfafd1108d3f56602f92;
+uploads/prune SKIPPED, артефактов/передачи/установки/owner acceptance нет. Draft contract и recovery11
+повторно не реализуются; свежий PASS относится только к точному638 source/merge.
+
+Выбран следующий незавершённый пользовательский путь: существующая «Настроить HTTPS на VPS».
+По реестру recovery уже owned, а fresh share оставался static Admin/ActiveForm. Независимые
+зависимости core share receipt/owned confirmation/lease/worker/dispatcher/cleanup доказаны638;
+invitation/UI overhaul/новый серверный протокол не нужны. Code `414cb610621a91ebd09b71d2ae6126e130bd813e`:
+только2 runtime files и1 existing test file222add/2delete +3 docs. Default button вызывает
+ShareOwnedAsync с явными configure window/dispatcher, frozen owner/origin. Worker сохраняет
+existing single family lease через key/helper/DPAPI/registration/result/cleanup. Native startup
+только через UI owner. Stop после удержанного copy ждёт physical task и отказывает registration/
+SSH; принятый request сохраняется при отмене native command. Mode1 использует existing Stop scope
+на последующих HTTPS verification/save/consumption boundaries, как уже проверенный recovery mode2.
+Не добавлены кнопки/серверные функции; static injected overloads и core receipt protocol прежние.
+
+Fresh HTTPS10: default-refusal/copy-fault/cancel-retry/stop-copy/dispose-copy/owner-dispose/
+cancel-command/cleanup-lock/result/stop-result. Реальный ShowDialog/default button, живой heartbeat,
+held helper read и native fixture command; single lease/admission; до registration request отсутствует;
+Cancel→Retry без старого результата; оригинальный durable request ID соответствует тому, что увидел
+native child, journal/private bytes сохраняются; exact locked cleanup Stop false→unlock true без
+повтора SSH. Result доходит до реальной confirmation boundary, fixture останавливается до внешнего
+HTTPS/save; Stop после accepted result сохраняет Task success, но не допускает verification/consume.
+Явные owner/dispatcher, исправленный live/disposed draft и finally own child/barrier/lock/work joins.
+Не используются реальные VPS/сеть/credentials; только собственные временные fixture ресурсы.
+Old recovery11 body, safe14 instrumentation, setup/list/repair/export UI/EOF/ownership/cleanup сохранены.
+
+PASS local: review/AST syntax3/C#5/scope preservation/diff/public321/0/secretPII0. Перед push отдельно
+проверены сигнатуры всех project calls: ShareOwned5..7, Admin8 с copy2/command3, Copy3..4,
+WaitForShare5 обязательных с прежним TimeoutMs, dispatch4/scope2; ошибка missing-timeout CI634 не повторена.
+Это static, не compiler proof. Локально .NET Framework/PowerShell нет: новая compilation/fresh HTTPS10/
+full regression NOT_RUN;638 SUCCESS не переносится. Нет wrapper lease reacquire/public Stop self-await.
+HeldIO5s/modal15s/final joins5s/native300s прежние, asserts/coverage не отключались.
+
+Публикация TODO: final review/static/secrets/public/workflow + fresh expected-head non-force PR88 push,
+один automatic CI. Public uploads OFF, release/prune ineligible; workflows/VERSION неизменны.
+Сохранить source/merge/tree/run/checkpoint и STOP без полного ожидания/второго этапа.
+Следующий шаг — ТОТ ЖЕ новый CI: fresh HTTPS10 + recovery11/owner-dispose и прежние обязательные suites.
+После proof отдельно рассмотреть существующий recover-invite owned path; здесь он не реализуется.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: веса/620 anchors прежние;
+fullR09/остальные invitation bindings/package delivery/owner acceptance открыты.
+
+## История: исправление draft lifetime test-contract CI637
 
 Checkpoint `118b14aeabb21b78eebef260f8811c477ae857d3`/HEAD/PR88 сверены; public source
 `e0a8185ae3deb66e14872735170b64d1f414acf6`, tested merge/build identity
@@ -53,11 +109,21 @@ no-late-publication assert сохранён. Не менялись scenario phas
 PASS local review/AST14+13 parity/reverse-diff scenario and helper preservation/syntax1/C#5/
 diff/public321source/0release/secretPII0. Локально нет .NET Framework/PowerShell/Windows UI:
 новая compilation/native owner-dispose/recovery11/full regression NOT_RUN, не PASS.
-Публикация TODO: final checks + fresh expected-head non-force existing PR88 update, ровно один
-automatic CI с реальным test-contract исправлением. Public PR uploads OFF, release/prune
-ineligible; workflows/VERSION неизменны. Сохранить source/merge/tree/run/checkpoint и STOP,
-не ждать весь CI/не начинать функцию. Следующий шаг — ТОТ ЖЕ новый CI: live draft boundary,
-late text/publication counters,14 invariants, actual complete recovery11 и прежние регрессии.
+Публикация PASS: source `b69e7008bc889d88623669058e95197822b09f1e` в existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force guard на точном637.
+Merge ref `bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015` пока не подтверждён checkout/build identity нового CI.
+Freeze `bbf4d53850640efcd2b7877f1d8a0d58c7a07814`, tree `5641ec9975c979b371690ad1ee2b56156284acd3`;
+fetched parent точный637/full tree equal freeze. Public diff4files588add/65delete:
+1 test method17add/4delete +3 docs571add/61delete. Runtime/прочие tests/scripts/workflows/VERSION прежние.
+Один automatic [CI638/39896043639](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639),
+pull_request/attempt1/raw exact-head runs total_count1; run in_progress/conclusion null,
+updated_at2026-10-23T03:38:02Z. Windows120226632093/Ubuntu120226631811 in_progress.
+Новая compilation/native/live-disposed draft regression/owner-dispose/recovery11 NOT_RUN.
+Public PR uploads OFF/release/prune ineligible; completion steps ещё не проверены.
+Post-publication docs-only checkpoint — локальный HEAD (git log -1), не push, чтобы не создавать
+второй CI; full checkpoint также в PR88 body. STOP без полного ожидания/новой функции.
+Следующий шаг — ТОТ ЖЕ CI638/exact tested merge: live draft boundary, late TextChanged/publication
+counters,14 invariants, actual complete recovery11 и прежние регрессии. Старый637 FAIL сохранён.
 Веса/620 anchors прежние: Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0.
 VPS/сеть/ключи/credentials/личный deployment/установка/релизы/бинарные uploads не затрагивались.
 

@@ -1143,6 +1143,53 @@ namespace ProGo
             }
         }
 
+        // New HTTPS setup uses the existing receipt core once, on the retained worker.
+        // Stop during copy must drain that task before refusing registration/SSH.
+        internal Task<string> ShareOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
+            HomeProfileUiDispatcher dispatcher, string origin, Action<string> progress,
+            Func<string, string, Task> copy = null, string commandExecutable = null)
+        {
+            if (window == null) throw new ArgumentNullException("window");
+            if (dispatcher == null) throw new ArgumentNullException("dispatcher");
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            var stop = StopWork; int reporting = 1;
+            return RunAdminOwnedAsync(async delegate {
+                try {
+                    RequireFreshShareScope(stop, false);
+                    return await AdminAsync(frozen, "share", null, origin,
+                        text => dispatcher.Post(delegate { if (Volatile.Read(ref reporting) != 0) progress(text); }),
+                        async (executable, arguments) => {
+                            await DispatchFreshShareTransportAsync(stop, dispatcher, delegate {
+                                return copy == null ? HomeVpnPreparationForm.CopyAsync(window, executable, arguments) : copy(executable, arguments);
+                            }, false).ConfigureAwait(false);
+                            RequireFreshShareScope(stop, false);
+                        },
+                        (executable, arguments, output) => DispatchFreshShareTransportAsync(stop, dispatcher, delegate {
+                            return HomeVpnPreparationForm.WaitForShareAsync(window, commandExecutable ?? executable, arguments, output, HomeVpnPreparationProcess.TimeoutMs);
+                        }, true), RetainAdminCleanup).ConfigureAwait(false);
+                } finally { Volatile.Write(ref reporting, 0); }
+            });
+        }
+        private async Task DispatchFreshShareTransportAsync(Task<bool> stop, HomeProfileUiDispatcher dispatcher, Func<Task> start, bool recovery)
+        {
+            bool admitted = false;
+            try {
+                await DispatchAdminTransportAsync(dispatcher, delegate {
+                    RequireFreshShareScope(stop, recovery); admitted = true; return start();
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) {
+                if (!admitted) throw new HomeVpnPreparationCancelledException(recovery);
+                throw;
+            }
+        }
+        private void RequireFreshShareScope(Task<bool> stop, bool recovery)
+        {
+            lock (lifecycleGate) {
+                if (disposed || startsPaused || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted)
+                    throw new HomeVpnPreparationCancelledException(recovery);
+            }
+        }
+
         // Existing HTTPS request recovery only. Core owns the one share family
         // lease through both queries/result and cleanup; never acquire it twice
         // or await public Stop from this retained body.
