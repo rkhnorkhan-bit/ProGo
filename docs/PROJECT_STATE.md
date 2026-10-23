@@ -8,7 +8,60 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: разрешённая диагностика14 инвариантов CI636, Windows NOT_RUN
+## Текущий этап: только исправление draft lifetime test-contract CI637
+
+Checkpoint `118b14aeabb21b78eebef260f8811c477ae857d3`/HEAD/PR88 сверены; public source
+`e0a8185ae3deb66e14872735170b64d1f414acf6`, tested merge/build identity
+`5aa6cbe43e07dc25d491b94a91f747b41f28e5aa`. Worktree чистые до начала, root единственный
+доступный агент; Git/build/lock операций нет. Отдельная ветка work/progo-ci637-draft-lifetime-20261023,
+прежние ветки/checkpoint сохранены. Весь runtime/other tests/scripts/workflows/VERSION равны637.
+
+Оба полных финальных log [CI637/39892894242](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242)
+самостоятельно прочитаны: Windows120216525306(11089 строк) FAILURE только relay step,
+Repository hygiene and build SUCCESS; Ubuntu120216524993(578 строк) SUCCESS с operation16/QR13/
+isolated provisioning PASS. Overall FAILURE, pack/uploads/prune SKIPPED. Test-ProGo/Desktop5294/
+Instance30(receipt guards)/Maintenance126/Shutdown47/UpdaterPackage5 PASS, export modal11/chooser3/
+repair8/list10 PASS. HTTPS recovery11:5PASS(default-refusal/status-pending/cancel-retry/stop-copy/
+dispose-copy), owner-dispose FAIL,5NOT_RUN(cancel-command/cleanup-lock/result/stop-result-copy/stop-result).
+Поздние snapshot12/dispatcher5/ownership8/cleanup4/setup recover10/fresh10, HomeProfileHttp,
+portable/Python relay transport NOT_RUN из-за порядка вызовов harness; старые PASS не наследуются.
+
+Доказанная причина: в owner-dispose единственный violated invariant — draft-unchanged=False,
+остальные13=True. Exact03:29:31UTC state: phase7/violations1/calls0/expected0/copies1/verified0,
+formDisposed=True/addressDisposed=True/formHandle=False/addressHandle=False/DialogResult=None,
+operation=Faulted/stop=RanToCompletion/publications5/closedPublications5. Safe stack:
+HomeVpnWizardTests.Check IL12 → OwnedHttpsRecovery callback IL4968; затем ModalWizardCase IL155 →
+OwnedHttpsRecovery IL1159 → Run IL1101 → Main IL1861. Wrapper Test-HomeVpnRelay.ps1:19.
+Полные14 outcomes/state/timestamps сохранены в JSON ci637_final; C# stack теперь наблюдаемый,
+не source inference. Это test-contract failure, не compilation/Instance/runtime transport или
+доказанный infrastructure fault. Исходный assert требует Text у native TextBox уже после его
+Dispose/уничтожения handles; это не гарантия сохранности живого пользовательского draft.
+
+Code `139e2eb4b4182d73d1807833fdc87096a97f2dcd`: только OwnedHttpsRecovery одного test file,
+17add/4delete +3 docs. Перед Dispose на реальном ShowDialog проверяются живые controls/handles
+и неизменный edited draft. После завершения physical operation/Stop тот же draft invariant
+требует успешной live-проверки, действительного Dispose/отсутствия handles, неизменного счётчика
+реального TextChanged после teardown и dispatcher publications. Счётчик фиксируется после
+Dispose, поэтому framework teardown не считается поздним worker update. Для открытых окон
+исходное address.Text сравнение буквально прежнее. Это не closing||PASS и не исключение условия:
+draft проверен в допустимый срок жизни, после него запрещены поздние записи/публикации.
+Все14 имён/порядок и13 иных выражений прежние; aggregate требует0 нарушений, прежний отдельный
+no-late-publication assert сохранён. Не менялись scenario phases/physical waits/cleanup/deadlines.
+Реальная owner-dispose regression дополнена live-boundary assert и late TextChanged guard;
+добавлены только safe boolean/count state, текст/credentials/journal/paths/argv не выводятся.
+
+PASS local review/AST14+13 parity/reverse-diff scenario and helper preservation/syntax1/C#5/
+diff/public321source/0release/secretPII0. Локально нет .NET Framework/PowerShell/Windows UI:
+новая compilation/native owner-dispose/recovery11/full regression NOT_RUN, не PASS.
+Публикация TODO: final checks + fresh expected-head non-force existing PR88 update, ровно один
+automatic CI с реальным test-contract исправлением. Public PR uploads OFF, release/prune
+ineligible; workflows/VERSION неизменны. Сохранить source/merge/tree/run/checkpoint и STOP,
+не ждать весь CI/не начинать функцию. Следующий шаг — ТОТ ЖЕ новый CI: live draft boundary,
+late text/publication counters,14 invariants, actual complete recovery11 и прежние регрессии.
+Веса/620 anchors прежние: Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0.
+VPS/сеть/ключи/credentials/личный deployment/установка/релизы/бинарные uploads не затрагивались.
+
+## История: разрешённая диагностика14 инвариантов CI636, Windows NOT_RUN
 
 Владелец отдельно разрешил test-only instrumentation и один automatic diagnostic CI.
 Проверены checkpoint `1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3`, public PR88 OPEN/DRAFT source
@@ -39,12 +92,22 @@ deadline/method blocks с нормализацией LF/CRLF, syntax2/C#5 await-
 NOT_RUN; owner-dispose/recovery11 не объявляются PASS. Runtime/прочие tests/scripts/workflows/
 VERSION равны636. Scope2tests+3docs, новые функции/credentials/system/deployment actions отсутствуют.
 
-Публикация TODO: финальные review/static/public/secrets, fresh expected-head non-force PR88 update,
-один automatic diagnostic CI. Workflow public PR uploads OFF, release/prune ineligible,
-workflows/VERSION не менялись. После публикации записать source/merge/tree/run/checkpoint и STOP,
-не ждать весь CI/не запускать второй. Следующий этап — финальный log ТОГО ЖЕ diagnostic CI:
-прочитать14 outcomes/state/stack, установить failed invariant и только затем классифицировать
-runtime/test/infrastructure причину. Пока причина BLOCKED и runtime не меняется.
+Публикация PASS: source `e0a8185ae3deb66e14872735170b64d1f414acf6` в существующей PR88 ветке
+integration/approved-plan-31-20261011; fresh expected-head non-force guard на точном636.
+Merge ref `5aa6cbe43e07dc25d491b94a91f747b41f28e5aa` пока не подтверждён checkout/build identity нового CI.
+Freeze `fe007d3b47d6b43db571ac63e44162c05fa8e02c`, tree `ba3c18754f4989129c4b5aea419cad27e83cc077`;
+fetched parent точный636/full tree equal freeze. Public diff5files750add/60delete:
+2 test files58add/5delete +3 docs692add/55delete, runtime/other tests/scripts/workflows/VERSION прежние.
+Один automatic diagnostic [CI637/39892894242](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242),
+pull_request/attempt1/raw exact-head runs total_count1. Run in_progress/conclusion null,
+updated_at2026-10-23T03:03:05Z; Windows120216525306/Ubuntu120216524993 in_progress.
+New Windows compilation/14-invariant diagnostic/native/recovery11 NOT_RUN. Owner-dispose не PASS.
+Workflow public PR uploads OFF, release/prune ineligible; completion upload/prune ещё не проверены.
+Post-publication docs-only checkpoint — локальный HEAD (git log -1), не push, чтобы не создавать
+второй CI; точный checkpoint также в PR88 body. STOP без полного ожидания/второй функции.
+Следующий этап — финальный log ТОГО ЖЕ CI637/exact tested merge: прочитать14 outcomes/all violations/
+count/state/safe stack, установить failed invariant и только затем классифицировать runtime/test/
+infrastructure причину. Старый636 FAIL сохранён; пока причина BLOCKED и runtime не меняется.
 Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0, веса/620 anchors прежние.
 
 ## История: CI636 relay-step diagnosis, причина BLOCKED

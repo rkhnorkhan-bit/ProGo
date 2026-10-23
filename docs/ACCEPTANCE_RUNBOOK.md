@@ -1,4 +1,36 @@
-## Текущий кандидат: разрешённая test-only14-invariant диагностика; Windows NOT_RUN
+## Текущий кандидат: CI637 draft lifetime test-contract fix; Windows NOT_RUN
+
+Checkpoint `118b14aeabb21b78eebef260f8811c477ae857d3`, source
+`e0a8185ae3deb66e14872735170b64d1f414acf6` / exact tested merge
+`5aa6cbe43e07dc25d491b94a91f747b41f28e5aa`, PR88 OPEN/DRAFT, no other writer observed.
+[CI637](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242) both full final logs read.
+Repository step SUCCESS/Desktop5294/Instance30/Maintenance126/Shutdown47/UpdaterPackage5;
+export11/chooser3/repair8/list10 PASS. Ubuntu operation16/QR13/provisioning PASS.
+Overall FAILURE: HTTPS recovery11 only5PASS/owner-dispose FAIL/5NOT_RUN. Later snapshot12/
+dispatcher5/ownership8/cleanup4/recover10/fresh10/portable/Python relay transport NOT_RUN;
+pack/uploads/prune SKIPPED. No whole CI green or inherited native PASS.
+
+Only draft-unchanged=False,13 others True; owner-dispose state violations1/calls0/expected0/
+copies1/verified0, both disposed/no handles, operation Faulted/Stop RanToCompletion, publications5/5.
+Safe actual stack Check IL12/OwnedHttpsRecovery callback IL4968; then ModalWizardCase155/
+OwnedHttpsRecovery1159/Run1101/Main1861. Wrapper Test-HomeVpnRelay.ps1:19.
+Root cause is a test lifetime contract: reading native Text after destroying TextBox is not
+preservation of a live editable draft. Exact14 outcomes/timestamps in JSON ci637_final.
+
+Code `139e2eb4b4182d73d1807833fdc87096a97f2dcd`: one test method17add/4delete plus3 docs.
+Corrected regression requires actual live controls/handles and unchanged draft immediately
+before real owner Dispose. After physical operation/Stop, require actual destruction/no handles,
+successful live assertion, no subsequent TextChanged or dispatcher publication. Snapshot counter
+after framework teardown; live-window branch retains exact old address.Text comparison.
+All14 named invariants/13 other expressions/aggregate0/old late-publication check preserved,
+no phase/coverage/cleanup/timeout weakening. Safe boolean/count output only, runtime unchanged.
+PASS local AST/reverse-diff/syntax1/C#5/diff/public321/0/secretsPII0; new compiler/native NOT_RUN.
+One guarded PR88 publication + one automatic CI TODO; uploads OFF/release/prune ineligible.
+Save exact source/merge/tree/run/checkpoint and STOP without full wait. Next SAME new CI final
+logs: actual live/disposed draft guarantee and full recovery11/prior suites; no second feature.
+Weights58–80/22 +0 unchanged; no system/deployment/credential/binary actions.
+
+## История: разрешённая test-only14-invariant диагностика; Windows NOT_RUN
 
 Owner explicitly authorized instrumentation and one automatic diagnostic CI, not a blind rerun.
 Checkpoint `1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3`, PR88 baseline source
@@ -15,9 +47,19 @@ PASS static AST14 parity/scenario preservation/syntax2/C#5/diff/public321/0/secr
 Local parity-script LF/CRLF mismatch corrected, no product change. New Windows compilation/native
 NOT_RUN; owner-dispose/recovery11 NOT PASS. Runtime/other tests/scripts/workflows/VERSION exact636.
 
-One guarded expected-head PR88 publication TODO, one automatic diagnostic CI only; uploads OFF,
-release/prune ineligible. Save exact source/merge/tree/run/checkpoint and STOP without full wait.
-Next SAME CI final logs: identify all violated invariants/state/safe stack before any runtime fix.
+Publication PASS source `e0a8185ae3deb66e14872735170b64d1f414acf6`, existing PR88 integration branch;
+merge ref `5aa6cbe43e07dc25d491b94a91f747b41f28e5aa` not yet verified checkout/build identity.
+Freeze `fe007d3b47d6b43db571ac63e44162c05fa8e02c`, tree `ba3c18754f4989129c4b5aea419cad27e83cc077`;
+fetched exact636 parent/full tree equal reviewed freeze, expected-head non-force guard checked.
+Public diff5files750add/60delete=2 tests58add/5delete+3 docs692add/55delete; runtime unchanged.
+Sole automatic diagnostic [CI637/39892894242](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242),
+pull_request/attempt1/raw exact-head runs total_count1. In_progress/conclusion null,
+updated_at2026-10-23T03:03:05Z; Windows120216525306/Ubuntu120216524993 in_progress.
+New Windows compilation/diagnostic/native/recovery11 NOT_RUN; owner-dispose not PASS.
+Uploads OFF/release/prune ineligible; completion steps not yet verified. Local post-publication
+docs checkpoint is HEAD via git log -1, NOT pushed to avoid second CI; exact checkpoint in PR88 body.
+STOP without full wait/second feature. Next SAME637 final logs/exact tested merge: identify all
+violated invariants/count/state/safe stack before runtime fix; previous636 FAIL remains history.
 Weights58–80/22 +0 unchanged. No external system/deployment/credential/binary action.
 
 ## История: CI636 completed FAILURE; root cause BLOCKED

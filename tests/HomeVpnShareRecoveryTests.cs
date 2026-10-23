@@ -150,11 +150,13 @@ namespace ProGo
                     HomeProfileConfigureForm form = null; HomeVpnPreparationForm copyWindow = null; FileStream held = null;
                     Task<string> operation = null, cancelled = null; Task<bool> stop = null; Exception original = null;
                     int phase = 0, turns = 0, copyCount = 0, worker = 0, retained = 0, verified = 0, closedPublications = 0, ui = Thread.CurrentThread.ManagedThreadId;
-                    bool helperRead = false, closing = mode == "owner-dispose";
+                    bool helperRead = false, closing = mode == "owner-dispose", liveDraftAtDisposal = false;
+                    int draftChanges = 0, closedDraftChanges = -1;
                     try {
                         if (mode == "default-refusal") { service.RetainAdminCleanup(() => retained++); service.Owner.KeyFile = At("absent-owned-https-key"); }
                         form = HomeProfileShare.CreateConfigureForm(service); HomeVpnFixtureFiles.ConfigureReady(form);
                         var address = Controls(form).OfType<TextBox>().Single(); address.Text = "edited.example.org";
+                        address.TextChanged += delegate { Interlocked.Increment(ref draftChanges); };
                         var recover = Button(form, "Проверить прежнюю настройку HTTPS"); var dispatcher = form.UiDispatcher;
                         // A positive SSH result reaches the real confirmation
                         // boundary, then stops before any HTTPS or local save.
@@ -197,7 +199,14 @@ namespace ProGo
                                 if (mode == "cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
                                 if (mode == "stop-copy" || mode == "dispose-copy" || closing || mode == "stop-result-copy") {
                                     var watch = Stopwatch.StartNew(); if (mode == "dispose-copy" || closing) service.Dispose(); stop = service.StopAsync();
-                                    if (closing) { form.Dispose(); closedPublications = dispatcher.PublicationCount; }
+                                    if (closing) {
+                                        // The editable draft belongs to the live native control, not its destroyed handle.
+                                        liveDraftAtDisposal = !form.IsDisposed && !address.IsDisposed && form.IsHandleCreated && address.IsHandleCreated
+                                            && address.Text == "edited.example.org";
+                                        check(liveDraftAtDisposal, "owned HTTPS preserves the edited draft at the last live disposal boundary");
+                                        form.Dispose(); closedPublications = dispatcher.PublicationCount;
+                                        closedDraftChanges = Volatile.Read(ref draftChanges);
+                                    }
                                     check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "owned HTTPS Stop Dispose promptly retains actual accepted copy");
                                 }
                                 turns = 0; phase = 2; return false;
@@ -247,7 +256,10 @@ namespace ProGo
                             RecordOwnedInvariant("request-id-unchanged", () => HomeVpnShareRecovery.Pending().RequestId == request.RequestId, violations);
                             RecordOwnedInvariant("journal-bytes-unchanged", () => journal.SequenceEqual(File.ReadAllBytes(PendingPath)), violations);
                             RecordOwnedInvariant("private-inputs-unchanged", () => Same(before), violations);
-                            RecordOwnedInvariant("draft-unchanged", () => address.Text == "edited.example.org", violations);
+                            RecordOwnedInvariant("draft-unchanged", () => closing
+                                ? liveDraftAtDisposal && form.IsDisposed && address.IsDisposed && !form.IsHandleCreated && !address.IsHandleCreated
+                                    && Volatile.Read(ref draftChanges) == closedDraftChanges && dispatcher.PublicationCount == closedPublications
+                                : address.Text == "edited.example.org", violations);
                             RecordOwnedInvariant("dialog-not-success", () => form.DialogResult != DialogResult.OK, violations);
                             RecordOwnedInvariant("share-lease-released", () => !ShareLeaseHeld(), violations);
                             RecordOwnedInvariant("service-resources-released", () => !service.HasOwnedResources, violations);
@@ -262,7 +274,8 @@ namespace ProGo
                                 + "; copies=" + copyCount + "; verified=" + verified + "; formDisposed=" + form.IsDisposed + "; addressDisposed=" + address.IsDisposed
                                 + "; formHandle=" + form.IsHandleCreated + "; addressHandle=" + address.IsHandleCreated + "; dialogResult=" + form.DialogResult
                                 + "; operation=" + (operation == null ? "none" : operation.Status.ToString()) + "; stop=" + (stop == null ? "none" : stop.Status.ToString())
-                                + "; publications=" + dispatcher.PublicationCount + "; closedPublications=" + closedPublications);
+                                + "; publications=" + dispatcher.PublicationCount + "; closedPublications=" + closedPublications
+                                + "; liveDraftAtDisposal=" + liveDraftAtDisposal + "; draftChanges=" + Volatile.Read(ref draftChanges) + "; closedDraftChanges=" + closedDraftChanges);
                             if (violations.Count != 0) Console.WriteLine("HTTPS fixture violated invariants: " + String.Join(",", violations));
                             try {
                                 check(violations.Count == 0,

@@ -3929,37 +3929,36 @@
     }
   ],
   "ci_candidate": {
-    "source": "cffa667469498a0245857f0406246c9da3638ddd",
-    "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
-    "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
-    "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
-    "local_freeze": "8e414b821b9328e2f16238010961079704dd2387",
-    "run_id": 39888080167,
-    "run_number": 636,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+    "source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+    "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+    "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
+    "run_id": 39892894242,
+    "run_number": 637,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
     "status": "completed",
     "conclusion": "failure",
+    "run_updated_at": "2026-10-23T03:29:36Z",
     "jobs": {
       "windows": {
-        "id": 120200902870,
+        "id": 120216525306,
         "status": "completed",
         "conclusion": "failure"
       },
       "ubuntu": {
-        "id": 120200903120,
+        "id": 120216524993,
         "status": "completed",
-        "conclusion": "success",
-        "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+        "conclusion": "success"
       }
     },
-    "run_updated_at": "2026-10-23T02:36:06Z",
-    "verification": "Both full final logs independently retrieved/examined. Checkout and build identity exact fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d. Overall636 FAILURE, not green.",
-    "windows_compilation": "PASS exact636 build and changed Instance fixture compilation; Repository hygiene and build SUCCESS",
-    "windows_native": "PARTIAL: Desktop5294 Instance30(new receipt regressions) Maintenance126 Shutdown47 UpdaterPackage5 PASS; export modal11 chooser3 repair8 list10 PASS. HTTPS recovery11:5 PASS/owner-dispose FAIL/5 NOT_RUN. Later setup snapshot12 dispatcher5 ownership8 cleanup4 recover10 fresh10 NOT_RUN due harness order.",
+    "verification": "Both full final logs read; exact checkout/build identity5aa6cbe. All14 predicates on owner-dispose observed: only draft-unchanged false after native disposal; safe stack confirms Check/OwnedHttpsRecovery callback, then ModalWizardCase/Run/Main.",
+    "windows_compilation": "PASS exact637 source/merge, Repository hygiene and build SUCCESS",
+    "windows_native": "PARTIAL Test-ProGo/Desktop5294/Instance30 receipt guards/Maintenance126/Shutdown47/UpdaterPackage5 PASS; export modal11/chooser3/repair8/list10 PASS. HTTPS recovery11:5PASS/owner-dispose FAIL/5NOT_RUN; later snapshot/dispatcher/ownership/cleanup/recover/fresh NOT_RUN.",
     "pack": "SKIPPED",
     "artifact_uploads": "SKIPPED uploads/prune; no artifacts",
     "owner_pc": "NOT_RUN",
-    "failure": "Home VPN owned HTTPS owner-dispose composite preservation assert243-246;14 subconditions share one label. Exact failed subcondition/root cause not proven. No C# frames logged; wrapper Test-HomeVpnRelay.ps1:19."
+    "failure": "Only draft-unchanged false; test erroneously observes native TextBox.Text after both controls disposed/handles gone.13 other conditions true; not evidence of production or infrastructure fault."
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5495,46 +5494,46 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Authorized test-only CI63614-invariant diagnostic candidate; runtime unchanged and root cause still unproven",
-    "recovery_checkpoint": "1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3",
-    "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
-    "base_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
-    "local_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
-    "local_development_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
-    "published_sha": "cffa667469498a0245857f0406246c9da3638ddd",
-    "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "phase": "Only proven CI637 disposed native draft test-contract correction prepared; no runtime changes",
+    "recovery_checkpoint": "118b14aeabb21b78eebef260f8811c477ae857d3",
+    "base_source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+    "base_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "local_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
+    "local_development_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
+    "published_sha": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+    "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
     "baseline_only": true,
-    "ci_run_id": 39888080167,
+    "ci_run_id": 39892894242,
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "NOT_RUN new instrumentation candidate",
-    "windows_native": "NOT_RUN new instrumentation candidate; owner-dispose not PASS",
-    "next": "Record exact source/merge/run/checkpoint, STOP without full wait. Next same diagnostic CI final log: identify every violated invariant from names/booleans/state and safe frames, then classify cause; do not change runtime or start another feature beforehand.",
+    "windows_compilation": "NOT_RUN corrected test-contract candidate",
+    "windows_native": "NOT_RUN corrected owner-dispose/recovery11/full candidate",
+    "next": "Record exact source/merge/run/checkpoint and STOP. Next SAME CI final log must prove live boundary draft, post-disposal text/publication counters and14 invariants, complete recovery11 and previously not-run regressions. No second feature or deadline/assert weakening.",
     "readiness_change": 0,
-    "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
-    "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
-    "ci_run_number": 636,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+    "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+    "ci_run_number": 637,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
     "ci_jobs": {
       "windows": {
-        "id": 120200902870,
+        "id": 120216525306,
         "status": "completed",
         "conclusion": "failure"
       },
       "ubuntu": {
-        "id": 120200903120,
+        "id": 120216524993,
         "status": "completed",
-        "conclusion": "success",
-        "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+        "conclusion": "success"
       }
     },
-    "publication": "TODO one expected-head non-force update existing PR88 and one automatic diagnostic CI; uploads OFF/release ineligible",
-    "public_diff": "Prepared only2 test files plus3 state docs; runtime/other tests/scripts/workflows/VERSION exact636",
-    "workflow_preflight": "PASS public PR upload guards false; prune/release not eligible; workflows/scripts/VERSION unchanged",
-    "checkpoint": "Record publication source/run and local docs-only HEAD after guarded push; no duplicate CI",
-    "branch": "work/progo-ci636-invariants-20261023",
-    "worktree": "ProGo-ci636-invariants",
-    "blocker": "Await authorized diagnostic Windows evidence for exact failed invariant; no runtime correction claimed"
+    "publication": "TODO guarded expected-head non-force PR88 update and one automatic CI; uploads OFF/release excluded",
+    "public_diff": "Only tests/HomeVpnShareRecoveryTests.cs OwnedHttpsRecovery17add/4delete plus3 checkpoint docs; runtime and other tests/scripts/workflows/VERSION unchanged637",
+    "workflow_preflight": "PASS public repository/PR uploads OFF, release/prune ineligible; no workflow/VERSION changes",
+    "checkpoint": "Publish once after final checks, record exact new source/run plus local docs-only checkpoint; no duplicate CI",
+    "branch": "work/progo-ci637-draft-lifetime-20261023",
+    "worktree": "ProGo-ci637-draft-lifetime",
+    "blocker": "Windows proof of corrected native lifetime contract and complete recovery11/prior regressions",
+    "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5627,7 +5626,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact636 sourcecffa667/mergefa58ba1: Repository/Test-ProGo PASS including Instance30 receipt guards; overall FAIL HTTPS owner-dispose composite. HTTPS recovery11 only5PASS/1FAIL/5NOT_RUN. Owner authorized14 named predicates + safe stack/count/state instrumentation and one diagnostic CI. New compilation/native NOT_RUN, no runtime changes or root-cause claim. Fixed weights/620 anchors unchanged,58-80/22 +0; no whole weighted acceptance closed.",
+    "candidate_note": "Exact637 sourcee0a8185/merge5aa6cbe full final logs read. Test-ProGo/Instance30/export11/chooser3/repair8/list10 PASS. Diagnostic14 succeeds at its narrow purpose: only draft-unchanged false after both native controls disposed/handles gone;13 other invariants true, publications5/5, calls0/0. Test-contract corrected to last live draft plus actual disposal/no late TextChanged/publications, no runtime change. New candidate Windows compilation/native NOT_RUN, recovery11 on637 only5PASS/1FAIL/5NOT_RUN. Weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -11124,6 +11123,219 @@
         "worktree": "ProGo-ci636-relay-diagnosis",
         "blocker": "No failed boolean or native C# stack in log; Windows .NET Framework runtime unavailable locally. Cannot safely distinguish runtime/fixture root cause or justify infrastructure rerun."
       }
+    },
+    "before_ci637_publication": {
+      "ci_candidate": {
+        "source": "cffa667469498a0245857f0406246c9da3638ddd",
+        "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+        "local_freeze": "8e414b821b9328e2f16238010961079704dd2387",
+        "run_id": 39888080167,
+        "run_number": 636,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+        "status": "completed",
+        "conclusion": "failure",
+        "jobs": {
+          "windows": {
+            "id": 120200902870,
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          "ubuntu": {
+            "id": 120200903120,
+            "status": "completed",
+            "conclusion": "success",
+            "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+          }
+        },
+        "run_updated_at": "2026-10-23T02:36:06Z",
+        "verification": "Both full final logs independently retrieved/examined. Checkout and build identity exact fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d. Overall636 FAILURE, not green.",
+        "windows_compilation": "PASS exact636 build and changed Instance fixture compilation; Repository hygiene and build SUCCESS",
+        "windows_native": "PARTIAL: Desktop5294 Instance30(new receipt regressions) Maintenance126 Shutdown47 UpdaterPackage5 PASS; export modal11 chooser3 repair8 list10 PASS. HTTPS recovery11:5 PASS/owner-dispose FAIL/5 NOT_RUN. Later setup snapshot12 dispatcher5 ownership8 cleanup4 recover10 fresh10 NOT_RUN due harness order.",
+        "pack": "SKIPPED",
+        "artifact_uploads": "SKIPPED uploads/prune; no artifacts",
+        "owner_pc": "NOT_RUN",
+        "failure": "Home VPN owned HTTPS owner-dispose composite preservation assert243-246;14 subconditions share one label. Exact failed subcondition/root cause not proven. No C# frames logged; wrapper Test-HomeVpnRelay.ps1:19."
+      },
+      "active_work": {
+        "phase": "Authorized test-only CI63614-invariant diagnostic candidate; runtime unchanged and root cause still unproven",
+        "recovery_checkpoint": "1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3",
+        "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
+        "base_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "local_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
+        "local_development_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
+        "published_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+        "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "baseline_only": true,
+        "ci_run_id": 39888080167,
+        "ci_status": "completed",
+        "ci_conclusion": "failure",
+        "windows_compilation": "NOT_RUN new instrumentation candidate",
+        "windows_native": "NOT_RUN new instrumentation candidate; owner-dispose not PASS",
+        "next": "Record exact source/merge/run/checkpoint, STOP without full wait. Next same diagnostic CI final log: identify every violated invariant from names/booleans/state and safe frames, then classify cause; do not change runtime or start another feature beforehand.",
+        "readiness_change": 0,
+        "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+        "ci_run_number": 636,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+        "ci_jobs": {
+          "windows": {
+            "id": 120200902870,
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          "ubuntu": {
+            "id": 120200903120,
+            "status": "completed",
+            "conclusion": "success",
+            "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+          }
+        },
+        "publication": "TODO one expected-head non-force update existing PR88 and one automatic diagnostic CI; uploads OFF/release ineligible",
+        "public_diff": "Prepared only2 test files plus3 state docs; runtime/other tests/scripts/workflows/VERSION exact636",
+        "workflow_preflight": "PASS public PR upload guards false; prune/release not eligible; workflows/scripts/VERSION unchanged",
+        "checkpoint": "Record publication source/run and local docs-only HEAD after guarded push; no duplicate CI",
+        "branch": "work/progo-ci636-invariants-20261023",
+        "worktree": "ProGo-ci636-invariants",
+        "blocker": "Await authorized diagnostic Windows evidence for exact failed invariant; no runtime correction claimed"
+      }
+    },
+    "before_ci637_draft_fix": {
+      "ci_candidate": {
+        "source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "tested_merge": null,
+        "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+        "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
+        "run_id": 39892894242,
+        "run_number": 637,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T03:03:05Z",
+        "jobs": {
+          "windows": {
+            "id": 120216525306,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120216524993,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Published HEAD/parent/full tree verified; sole automatic pull_request attempt1/raw exact-head runs total_count1. Merge ref not yet verified checkout/build identity; no final log/new native proof.",
+        "windows_compilation": "NOT_RUN new test-only diagnostic candidate pending exact637 log",
+        "windows_native": "NOT_RUN14-invariant diagnostic/native/recovery11; owner-dispose not PASS",
+        "pack": "NOT_RUN pending",
+        "artifact_uploads": "OFF public PR guards, completion upload/prune not yet verified",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "phase": "Authorized test-only14-invariant instrumentation published; sole diagnostic CI637 in_progress; STOP after checkpoint",
+        "recovery_checkpoint": "1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3",
+        "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
+        "base_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "local_sha": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
+        "local_development_sha": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
+        "published_sha": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "tested_merge": null,
+        "baseline_only": false,
+        "ci_run_id": 39892894242,
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "windows_compilation": "NOT_RUN new instrumentation candidate",
+        "windows_native": "NOT_RUN new instrumentation candidate; owner-dispose not PASS",
+        "next": "Inspect SAME CI637 final log/exact tested merge:14 named invariants and all violations/count/state/safe stack. Classify precise cause before any runtime correction. No duplicate CI/rerun, no second feature; STOP without full wait.",
+        "readiness_change": 0,
+        "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+        "ci_run_number": 637,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+        "ci_jobs": {
+          "windows": {
+            "id": 120216525306,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120216524993,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "publication": "PASS expected-head non-force update existing PR88 integration/approved-plan-31-20261011; parent exact636/full fetched tree equal reviewed freeze; sole automatic diagnostic637/attempt1/raw exact-head count1",
+        "public_diff": "5 files750add/60delete:2 test files58add/5delete plus3 docs692add/55delete; runtime/other tests/scripts/workflows/VERSION unchanged636",
+        "workflow_preflight": "PASS public repository/PR uploads OFF, release/prune ineligible; no workflow/VERSION changes",
+        "checkpoint": "Post-publication docs-only commit is local HEAD via git log -1, NOT pushed to avoid second CI; exact checkpoint also in PR88 body",
+        "branch": "work/progo-ci636-invariants-20261023",
+        "worktree": "ProGo-ci636-invariants",
+        "blocker": "Await authorized diagnostic Windows evidence for exact failed invariant; no runtime correction claimed",
+        "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c"
+      },
+      "ci636_invariant_instrumentation": {
+        "status": "PARTIAL",
+        "authorization": "Owner explicitly authorized test-only instrumentation and one automatic diagnostic CI; not a blind rerun",
+        "recovery_checkpoint": "1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3",
+        "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
+        "base_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "code_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
+        "files": [
+          "tests/HomeVpnShareRecoveryTests.cs",
+          "tests/HomeVpnWizardTests.cs",
+          "docs/PROJECT_STATE.md",
+          "docs/ACCEPTANCE_RUNBOOK.md",
+          "docs/project_state.json"
+        ],
+        "invariant_names": [
+          "queries-exact",
+          "request-id-unchanged",
+          "journal-bytes-unchanged",
+          "private-inputs-unchanged",
+          "draft-unchanged",
+          "dialog-not-success",
+          "share-lease-released",
+          "service-resources-released",
+          "core-directory-removed",
+          "sibling-unchanged",
+          "relay-stopped",
+          "unrelated-process-alive",
+          "owned-process-exited",
+          "owned-child-exited"
+        ],
+        "contract": "Evaluate all14 original predicates in original order at the same settled scenario boundary. Every false or evaluation exception records failure; aggregate check requires zero violations. Original expressions, scenario flow, all other asserts, deadlines and cleanup unchanged. Continuing evaluation after a failed predicate is diagnostic collection, not scenario continuation.",
+        "safe_output": "Fixed invariant names and boolean/count/state only. No address text, request ID, journal/private input bytes, file paths, command arguments or exception message/Data/ToString. Stack prints exception type and method identities/IL offsets; before modal rethrow plus native harness catch. Stdout avoids PowerShell Stop on native stderr truncating safe frames; exit1 preserved.",
+        "local_checks": "PASS AST parity14, exact scenario/cleanup/deadline/other methods preservation, C# syntax2/C#5 await-scope, diff/public321/0/secretPII0. Review script initially compared raw LF/CRLF in Wizard; normalized line endings, then exact parity passed. This was a local verification-script mismatch, not a production failure.",
+        "windows_compilation": "NOT_RUN diagnostic candidate; no local .NET Framework/PowerShell/Windows UI",
+        "windows_native": "NOT_RUN diagnostic candidate; owner-dispose/recovery11 not newly PASS",
+        "publication": "PASS expected-head non-force update existing PR88 integration/approved-plan-31-20261011; parent exact636/full fetched tree equal reviewed freeze; sole automatic diagnostic637/attempt1/raw exact-head count1",
+        "next": "Inspect SAME CI637 final log/exact tested merge:14 named invariants and all violations/count/state/safe stack. Classify precise cause before any runtime correction. No duplicate CI/rerun, no second feature; STOP without full wait.",
+        "readiness_change": 0,
+        "published_sha": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+        "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+        "tested_merge": null,
+        "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+        "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
+        "ci_run_id": 39892894242,
+        "ci_run_number": 637,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120216525306,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120216524993,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        }
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -12524,7 +12736,7 @@
     "readiness_change": 0
   },
   "ci636_invariant_instrumentation": {
-    "status": "PARTIAL",
+    "status": "PASS",
     "authorization": "Owner explicitly authorized test-only instrumentation and one automatic diagnostic CI; not a blind rerun",
     "recovery_checkpoint": "1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3",
     "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
@@ -12556,10 +12768,203 @@
     "contract": "Evaluate all14 original predicates in original order at the same settled scenario boundary. Every false or evaluation exception records failure; aggregate check requires zero violations. Original expressions, scenario flow, all other asserts, deadlines and cleanup unchanged. Continuing evaluation after a failed predicate is diagnostic collection, not scenario continuation.",
     "safe_output": "Fixed invariant names and boolean/count/state only. No address text, request ID, journal/private input bytes, file paths, command arguments or exception message/Data/ToString. Stack prints exception type and method identities/IL offsets; before modal rethrow plus native harness catch. Stdout avoids PowerShell Stop on native stderr truncating safe frames; exit1 preserved.",
     "local_checks": "PASS AST parity14, exact scenario/cleanup/deadline/other methods preservation, C# syntax2/C#5 await-scope, diff/public321/0/secretPII0. Review script initially compared raw LF/CRLF in Wizard; normalized line endings, then exact parity passed. This was a local verification-script mismatch, not a production failure.",
-    "windows_compilation": "NOT_RUN diagnostic candidate; no local .NET Framework/PowerShell/Windows UI",
-    "windows_native": "NOT_RUN diagnostic candidate; owner-dispose/recovery11 not newly PASS",
-    "publication": "TODO one expected-head non-force update existing PR88 and one automatic diagnostic CI; uploads OFF/release ineligible",
-    "next": "Record exact source/merge/run/checkpoint, STOP without full wait. Next same diagnostic CI final log: identify every violated invariant from names/booleans/state and safe frames, then classify cause; do not change runtime or start another feature beforehand.",
+    "windows_compilation": "PASS exact637",
+    "windows_native": "PASS narrow diagnostic output14; HTTPS owner-dispose FAIL, recovery11 only5PASS/1FAIL/5NOT_RUN",
+    "publication": "PASS expected-head non-force update existing PR88 integration/approved-plan-31-20261011; parent exact636/full fetched tree equal reviewed freeze; sole automatic diagnostic637/attempt1/raw exact-head count1",
+    "next": "Verify only draft lifetime test-contract correction on one exact new CI; no runtime changes justified",
+    "readiness_change": 0,
+    "published_sha": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+    "merge_ref": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "tree": "ba3c18754f4989129c4b5aea419cad27e83cc077",
+    "local_freeze": "fe007d3b47d6b43db571ac63e44162c05fa8e02c",
+    "ci_run_id": 39892894242,
+    "ci_run_number": 637,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": {
+        "id": 120216525306,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "ubuntu": {
+        "id": 120216524993,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "criterion": "Narrow diagnostic goal only: exact637 compiled and emitted all14 safe boolean outcomes/count/state/stack, identifying only draft-unchanged; whole recovery11 remains PARTIAL and CI637 FAILURE"
+  },
+  "ci637_final": {
+    "source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+    "tested_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "run_id": 39892894242,
+    "run_number": 637,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39892894242",
+    "status": "completed",
+    "conclusion": "failure",
+    "run_updated_at": "2026-10-23T03:29:36Z",
+    "windows_job": 120216525306,
+    "ubuntu_job": 120216524993,
+    "full_final_logs": {
+      "windows_lines": 11089,
+      "ubuntu_lines": 578,
+      "read": "Both final decoded job logs independently retrieved/examined; checkout/build identity and markers cross-checked"
+    },
+    "repository": [
+      "2026-10-23T03:21:16.4038899Z Desktop tests PASS: 5294",
+      "2026-10-23T03:21:17.3370794Z PASS: instance baseline never accepts an absent or disappearing receipt and waits for its published matching bytes",
+      "2026-10-23T03:21:17.3393382Z PASS: instance readiness still fails malformed receipts missing settings and unrelated I/O instead of treating them as startup readiness",
+      "2026-10-23T03:21:23.9462420Z Instance tests PASS: 30",
+      "2026-10-23T03:24:16.4560361Z Maintenance tests PASS: 126",
+      "2026-10-23T03:24:45.2089692Z Shutdown tests PASS: 47",
+      "2026-10-23T03:24:47.1071313Z Updater package tests PASS: 5",
+      "2026-10-23T03:24:47.1078559Z ProGo tests PASS."
+    ],
+    "export_modal11": [
+      "2026-10-23T03:24:58.3865256Z PASS: modal export preserves protected settings and cannot start a late relay: save",
+      "2026-10-23T03:24:58.7949530Z PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry",
+      "2026-10-23T03:24:59.2773887Z PASS: modal export preserves protected settings and cannot start a late relay: close",
+      "2026-10-23T03:24:59.7131898Z PASS: modal export preserves protected settings and cannot start a late relay: dispose",
+      "2026-10-23T03:25:00.1346706Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel",
+      "2026-10-23T03:25:00.6033448Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-close",
+      "2026-10-23T03:25:01.0282166Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose",
+      "2026-10-23T03:25:01.4474261Z PASS: modal export preserves protected settings and cannot start a late relay: global-stop",
+      "2026-10-23T03:25:01.8842259Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop",
+      "2026-10-23T03:25:02.3122204Z PASS: modal export preserves protected settings and cannot start a late relay: existing-retry",
+      "2026-10-23T03:25:02.8191250Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change"
+    ],
+    "profile_chooser3": [
+      "2026-10-23T03:15:34.8967249Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel",
+      "2026-10-23T03:15:40.3726474Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing",
+      "2026-10-23T03:15:41.1477851Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: error"
+    ],
+    "diagnostic_chooser3": [
+      "2026-10-23T03:15:28.0340516Z PASS: actual native save chooser cancels and cleans up its owned fixture",
+      "2026-10-23T03:15:33.4083529Z PASS: negative native chooser fixture returns explicit failure and confirms cleanup: missing",
+      "2026-10-23T03:15:34.0832331Z PASS: negative native chooser fixture returns explicit failure and confirms cleanup: error"
+    ],
+    "repair8": [
+      "2026-10-23T03:28:07.4730374Z PASS: owned production repair slice PASS: default-refusal",
+      "2026-10-23T03:28:08.7817111Z PASS: owned production repair slice PASS: complete",
+      "2026-10-23T03:28:10.1673555Z PASS: owned production repair slice PASS: cancel-retry",
+      "2026-10-23T03:28:10.7443121Z PASS: owned production repair slice PASS: stop-copy",
+      "2026-10-23T03:28:11.3253539Z PASS: owned production repair slice PASS: dispose-copy",
+      "2026-10-23T03:28:11.8763362Z PASS: owned production repair slice PASS: owner-dispose",
+      "2026-10-23T03:28:13.2786322Z PASS: owned production repair slice PASS: stop-command",
+      "2026-10-23T03:28:16.5596070Z PASS: owned production repair slice PASS: cleanup-lock"
+    ],
+    "list10": [
+      "2026-10-23T03:27:05.8620833Z PASS: owned production list slice PASS: default-refusal",
+      "2026-10-23T03:27:07.0681519Z PASS: owned production list slice PASS: complete",
+      "2026-10-23T03:27:08.3258475Z PASS: owned production list slice PASS: cancel-retry",
+      "2026-10-23T03:27:08.8266439Z PASS: owned production list slice PASS: stop-copy",
+      "2026-10-23T03:27:09.3310114Z PASS: owned production list slice PASS: dispose-copy",
+      "2026-10-23T03:27:09.8214524Z PASS: owned production list slice PASS: owner-dispose",
+      "2026-10-23T03:27:11.1137818Z PASS: owned production list slice PASS: stop-command",
+      "2026-10-23T03:27:14.2955616Z PASS: owned production list slice PASS: cleanup-lock",
+      "2026-10-23T03:27:16.2133391Z PASS: owned production list slice PASS: refresh-cancel-retry",
+      "2026-10-23T03:27:17.4326924Z PASS: owned production list slice PASS: refresh-dispose"
+    ],
+    "https_recovery11": {
+      "status": "PARTIAL",
+      "pass": [
+        "default-refusal",
+        "status-pending",
+        "cancel-retry",
+        "stop-copy",
+        "dispose-copy"
+      ],
+      "fail": [
+        "owner-dispose"
+      ],
+      "not_run": [
+        "cancel-command",
+        "cleanup-lock",
+        "result",
+        "stop-result-copy",
+        "stop-result"
+      ],
+      "evidence": [
+        "2026-10-23T03:29:28.1385394Z PASS: owned production HTTPS recovery PASS: default-refusal",
+        "2026-10-23T03:29:29.2254844Z PASS: owned production HTTPS recovery PASS: status-pending",
+        "2026-10-23T03:29:30.3166223Z PASS: owned production HTTPS recovery PASS: cancel-retry",
+        "2026-10-23T03:29:30.6743203Z PASS: owned production HTTPS recovery PASS: stop-copy",
+        "2026-10-23T03:29:31.1028502Z PASS: owned production HTTPS recovery PASS: dispose-copy"
+      ]
+    },
+    "other_not_run": [
+      "snapshot12",
+      "dispatcher5",
+      "ownership8",
+      "cleanup4",
+      "setup recover10",
+      "fresh10",
+      "HomeProfileHttp after share recovery",
+      "portable archive",
+      "Python relay transport",
+      "full Home VPN summary"
+    ],
+    "not_run_reason": "HomeVpnWizardTests.Main91 failed share recovery before later Main186 setup suite; no inherited PASS",
+    "ubuntu": [
+      "2026-10-23T03:03:06.7099514Z Ran 16 tests in 0.239s",
+      "2026-10-23T03:03:06.7099928Z OK",
+      "2026-10-23T03:03:14.2054558Z Ran 13 tests in 0.854s",
+      "2026-10-23T03:03:14.2055426Z OK",
+      "2026-10-23T03:04:08.6912659Z PASS: arbitrary port forwarding is denied",
+      "2026-10-23T03:04:23.3950603Z PASS: real HTTPS reaches the isolated profile service",
+      "2026-10-23T03:04:24.9336470Z PASS: repeated QR setup preserves existing Caddy site and single import",
+      "2026-10-23T03:04:24.9380805Z PASS: restart discards short-lived profile sessions"
+    ],
+    "pack": "SKIPPED",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "owner_dispose": [
+      "2026-10-23T03:29:31.4460946Z HTTPS fixture invariant: queries-exact=True",
+      "2026-10-23T03:29:31.4464435Z HTTPS fixture invariant: request-id-unchanged=True",
+      "2026-10-23T03:29:31.4465083Z HTTPS fixture invariant: journal-bytes-unchanged=True",
+      "2026-10-23T03:29:31.4482181Z HTTPS fixture invariant: private-inputs-unchanged=True",
+      "2026-10-23T03:29:31.4483303Z HTTPS fixture invariant: draft-unchanged=False",
+      "2026-10-23T03:29:31.4484063Z HTTPS fixture invariant: dialog-not-success=True",
+      "2026-10-23T03:29:31.4484580Z HTTPS fixture invariant: share-lease-released=True",
+      "2026-10-23T03:29:31.4492679Z HTTPS fixture invariant: service-resources-released=True",
+      "2026-10-23T03:29:31.4493289Z HTTPS fixture invariant: core-directory-removed=True",
+      "2026-10-23T03:29:31.4493851Z HTTPS fixture invariant: sibling-unchanged=True",
+      "2026-10-23T03:29:31.4494626Z HTTPS fixture invariant: relay-stopped=True",
+      "2026-10-23T03:29:31.4495147Z HTTPS fixture invariant: unrelated-process-alive=True",
+      "2026-10-23T03:29:31.4497689Z HTTPS fixture invariant: owned-process-exited=True",
+      "2026-10-23T03:29:31.4498221Z HTTPS fixture invariant: owned-child-exited=True",
+      "2026-10-23T03:29:31.4500092Z HTTPS fixture state: mode=owner-dispose; phase=7; violations=1; calls=0; expectedCalls=0; copies=1; verified=0; formDisposed=True; addressDisposed=True; formHandle=False; addressHandle=False; dialogResult=None; operation=Faulted; stop=RanToCompletion; publications=5; closedPublications=5",
+      "2026-10-23T03:29:31.4501979Z HTTPS fixture violated invariants: draft-unchanged",
+      "2026-10-23T03:29:31.4502529Z Home VPN safe failure: cause=0; type=System.Exception",
+      "2026-10-23T03:29:31.4503059Z   at ProGo.HomeVpnWizardTests.Check; il=12",
+      "2026-10-23T03:29:31.4503837Z   at ProGo.HomeVpnShareRecoveryTests+<>c__DisplayClass4a.<OwnedHttpsRecovery>b__26; il=4968",
+      "2026-10-23T03:29:31.4833269Z Home VPN safe failure: cause=0; type=System.Exception",
+      "2026-10-23T03:29:31.4834393Z   at ProGo.HomeVpnWaitingTests.ModalWizardCase; il=155",
+      "2026-10-23T03:29:31.4835188Z   at ProGo.HomeVpnShareRecoveryTests.OwnedHttpsRecovery; il=1159",
+      "2026-10-23T03:29:31.4835819Z   at ProGo.HomeVpnShareRecoveryTests.Run; il=1101",
+      "2026-10-23T03:29:31.4836295Z   at ProGo.HomeVpnWizardTests.Main; il=1861"
+    ],
+    "root_cause": "Test-contract error: only draft-unchanged false after both native form/TextBox disposal with handles absent;13 other invariants true, no UI publication after disposal. A destroyed control's Text is not the live draft guarantee. Fixture must validate last live draft then disposal/no late modification/publication; runtime fault/infrastructure failure not evidenced."
+  },
+  "ci637_draft_lifetime_fix": {
+    "status": "PARTIAL",
+    "recovery_checkpoint": "118b14aeabb21b78eebef260f8811c477ae857d3",
+    "base_source": "e0a8185ae3deb66e14872735170b64d1f414acf6",
+    "base_merge": "5aa6cbe43e07dc25d491b94a91f747b41f28e5aa",
+    "base_ci": 39892894242,
+    "code_sha": "139e2eb4b4182d73d1807833fdc87096a97f2dcd",
+    "scope": "Only tests/HomeVpnShareRecoveryTests.cs OwnedHttpsRecovery17add/4delete plus3 checkpoint docs; runtime and other tests/scripts/workflows/VERSION unchanged637",
+    "root_cause": "Test-contract error: only draft-unchanged false after both native form/TextBox disposal with handles absent;13 other invariants true, no UI publication after disposal. A destroyed control's Text is not the live draft guarantee. Fixture must validate last live draft then disposal/no late modification/publication; runtime fault/infrastructure failure not evidenced.",
+    "contract": "Draft text is validated while form/TextBox and their native handles are live immediately before explicit disposal. After physical operation/Stop settle, draft invariant requires that captured assertion, actual disposed controls/no handles, unchanged post-disposal TextChanged count and dispatcher publications. Live-window branch still compares original address.Text. No lifetime requirement to preserve native text after destroyed HWND.",
+    "regression": "Existing real owner-dispose ShowDialog/held physical copy now asserts edited draft at last live boundary; real TextChanged subscription detects late setters after disposal, counter snapshot after framework teardown; final named draft invariant and zero-violation aggregate remain required. All13 other expressions, all14 names/order, prior no-late-publication check, phase/transport/cleanup/deadlines retained.",
+    "local": "PASS AST14/13-identical predicates, corrected live vs disposed branches, reverse diff/scenario/cleanup/deadline/helper preservation, syntax1/C#5, diff/public321/0/secretPII0; not Windows compiler proof",
+    "windows_compilation": "NOT_RUN corrected candidate, no local .NET Framework/PowerShell",
+    "windows_native": "NOT_RUN owner-dispose/regression/recovery11/full run on corrected candidate; no new PASS",
+    "publication": "TODO guarded expected-head non-force PR88 update and one automatic CI; uploads OFF/release excluded",
+    "next": "Record exact source/merge/run/checkpoint and STOP. Next SAME CI final log must prove live boundary draft, post-disposal text/publication counters and14 invariants, complete recovery11 and previously not-run regressions. No second feature or deadline/assert weakening.",
     "readiness_change": 0
   }
 }
