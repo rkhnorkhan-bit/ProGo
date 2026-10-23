@@ -1,4 +1,54 @@
-## Текущий этап: CI640 native auth-policy — bounded test-only diagnosis
+## Текущий этап: повторные invitation pending-read поверх CI641
+
+PR88 HEAD/source `589a6364d42f2fbbcdbbfe4bd80396c27a26f41f`, local checkpoint
+`70f0d4db5d645244145a58b2f6f1165016af2654` сверены.45 прежних worktrees чистые/locks0,
+root единственный агент; active Git/build processes0 по /proc (ps unavailable). Отдельная ветка
+work/progo-invitation-refresh-on641-20261023; сохранены все прежние ветки и checkpoints.
+Полные финальные [CI641](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278)
+Windows12520/Ubuntu578 строк самостоятельно прочитаны: exact checkout/build tested merge
+`517b65079be6d6645f132e313b2acf551cbb887c`. JSON ci641_final хранит exact per-case markers.
+PASS SSH policy61/role canary4/all3 native policy targets/API6/initial UI8/reopen, Desktop5298/
+Instance30/Maintenance126/Shutdown47/HomeVPN3079/Portable91; snapshot12/dispatcher5/ownership8/
+cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3.
+Python reported28 incl2SKIPPED; Ubuntu operation16/QR13/isolated provisioning PASS по final logs.
+Pack PASS runner-only; uploads/prune SKIPPED, ни передачи пакета, ни owner installation/acceptance.
+CI640 permissions refusal НЕ воспроизвёлся: failure-only ACL block NOT_RUN. Конкретный файл/ACL/
+principal и первопричина остаются НЕВЫЯСНЕННЫМИ; runtime/ACL fix не объявляется, diagnostics сохранены.
+
+Один выбранный production slice: повторные pending reads после существующих операций и Refresh.
+Code local `83db3a07889501395e4c288d38e9b725f36996d3`:2 runtime+1 existing test,204add/36delete.
+Shared initial/repeated reader использует НЕИЗМЕНЁННЫЙ readonly API/RunAdminOwnedAsync; explicit
+Friends owner/dispatcher. Logical ActionWork и physical PendingReadWork сохраняют владение. Original
+operation Stop scope захватывается ДО transport и проверяется before/after private read/publication;
+поздний list response после Stop не допускает fresh read/rows. Busy/action gate держится до settlement.
+Один pending snapshot/version на action: Refresh не дублирует I/O в post-action path. Cancel Close/
+Dispose удерживает реальную работу; explicit Close после settlement, Stop Retry/new owner reopen без
+старого результата. Ошибка/отмена не изобретают empty и не снимают pending/reconciliation gate.
+Refresh до accepted snapshot не меняет rows; сохраняет выбранный ID/search/draft. Старый safety
+контракт uncertain mutation reconciliation по-прежнему очищает destructive selection, требуя явный
+новый выбор (старый reissue test не изменён/не ослаблен). Другие Replace callers сохраняют прежний default.
+
+Новые12 actual ShowDialog cases: refresh-empty/pending/corrupt/locked, post-complete/failure/pending,
+close-retry/dispose/stop-retry/service-dispose/stale-scope. Real private bytes/held read5s/modal15s/
+cleanup joins5s; native UI heartbeat, no parallel admission/duplicate I/O, Stop scope, unchanged request,
+selection/search/draft and no late disposed status. Post-action route использует существующий revoke;
+только transport delegate заменён fixture, реальные VPS/credentials/network не вызываются.
+Old API6/UI8 и все прежние test method bodies сохранены точно. Consumption/direct uncertainty reads/
+recovery request.Name/transport core/workflows/VERSION unchanged; никакой новой функции/протокола.
+PASS local manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0. Windows/.NET Framework/
+PowerShell недоступны: новая compilation/repeated12/full regression NOT_RUN, SUCCESS641 не переносится.
+
+Publication TODO: fresh expected-head non-force PR88 update; ровно один automatic CI, no duplicates.
+PR uploads OFF/release/prune ineligible; workflows unchanged. Save source/run/checkpoint и STOP,
+не ждать весь CI и не начинать второй этап. Следующий шаг — ТОТ ЖЕ новый CI full logs/exact merge:
+repeated12/API6/UI8/selection/reconciliation +все mandatory old suites.
+Остаток production invitation UI I/O:1) direct create/reissue uncertainty и recovery request.Name;
+2) ConfirmConsumed create/reissue/recover (saved consumption API8 separately);3) invite/revoke/reissue/
+recover-invite owned transport binding. CI640 ACL cause remains unresolved historical finding.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 — нет нового полного weighted gate;
+главный блокер: exact Windows proof нового repeated12, затем remaining UI I/O и owner acceptance.
+
+## История этапа: CI640 native auth-policy — bounded test-only diagnosis
 
 HEAD PR88/source `fcc6e70b69ef591997f26a5b7fd5e12be5f7720b`, local checkpoint
 `ce474ce730dc3787a512fbe89f3d76e04bf901ff`; все прежние worktrees чистые, Git locks0,
@@ -32,8 +82,17 @@ Reads не меняют ACL/fixture bytes; runtime/server/workflow/test-runner u
 
 PASS local static/manual/signatures/AST C#5/diff/public321/0/secretsPII0. Windows/.NET Framework/
 PowerShell недоступны: новая compiler/native диагностика/роль canary4/API6/UI8/full suites NOT_RUN.
-Publication TODO: guarded exact-head existing PR88, ровно один automatic CI; uploads OFF/release/
-prune ineligible, no workflow edits. После save exact source/run/checkpoint STOP, не ждать весь CI.
+Publication PASS: source `589a6364d42f2fbbcdbbfe4bd80396c27a26f41f`, guarded non-force expected-head existing PR88 branch
+integration/approved-plan-31-20261011. Fetched parent exact640/full tree `e939ae31e3eb6c5796448d79267ea997e1ca0bf1`
+равен reviewed freeze `598f406abe6391c080c8c2077828d27800503996`. Public diff4files435add/67delete:
+1 test56add/1delete+3docs379add/66delete; runtime/workflows/VERSION/other tests byte-identical640.
+Merge ref `517b65079be6d6645f132e313b2acf551cbb887c` пока НЕ final tested merge (нужны checkout/build logs).
+Один automatic [CI641/39907256278](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278),
+pull_request/attempt1/raw exact-source count1; in_progress/conclusion null, updated05:42:45UTC;
+Windows120261940053/Ubuntu120261939848 in_progress. Новые compiler/native/canary4/API6/UI8/full suites
+NOT_RUN. PR uploads OFF/release/prune ineligible, completion skips ещё не наблюдались.
+Postpublication3-doc checkpoint local HEAD(git log -1), НЕ pushed во избежание второго CI;
+точный checkpoint в PR88 body. STOP без ожидания полного CI/следующего этапа.
 Следующий шаг — ТОТ ЖЕ diagnostic CI: full logs/checkout/build identity, failure role+ACL facts;
 при случайном PASS oracle причина ACL остаётся недоказанной. Проверить реально выполненные API6/UI8
 и regressions без переноса PASS. Ни второй этап, ни runtime fix в этом проходе.

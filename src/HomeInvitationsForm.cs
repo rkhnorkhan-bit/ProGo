@@ -20,19 +20,24 @@ namespace ProGo
         private readonly Button close = new Button { AutoSize = true, Text = "Закрыть", MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel };
         private readonly Label status = new Label { AutoSize = true, MaximumSize = new Size(740, 0), AccessibleName = "Результат операции с доступом" };
         private readonly Func<string, string, string, Task<string>> admin;
+        private readonly HomeVpnService pendingService;
+        private readonly Action beforePendingRead;
+        private Task<bool> operationStop;
+        private int pendingReadVersion;
+        internal Task ActionWork { get; private set; }
         private volatile bool working;
         private bool needsRefresh;
         private bool pendingAdmin, pendingUnreadable;
         internal Func<string, bool> Confirm;
         internal Action<string> ShowToken;
         private CancellationTokenSource initialPendingCancellation;
-        private bool initialPendingRead, closeAfterInitial;
+        private bool pendingReadActive, closeAfterPending;
         internal Task InitializationWork { get; private set; }
         internal Task PendingReadWork { get; private set; }
 
         internal HomeInvitationsForm(HomeVpnInvitation[] items, Func<string, string, string, Task<string>> admin, ClipboardService clipboard, HomeVpnService service = null, Action beforePendingRead = null)
         {
-            this.admin = admin;
+            this.admin = admin; pendingService = service; this.beforePendingRead = beforePendingRead;
             Text = "Доступ друзей"; ClientSize = new Size(800, 760); StartPosition = FormStartPosition.CenterParent;
             var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
             list = new HomeInvitationList(items) { Width = 740, Height = 365 };
@@ -70,9 +75,9 @@ namespace ProGo
             FormClosing += delegate(object sender, FormClosingEventArgs e) {
                 if (!working) return;
                 e.Cancel = true;
-                if (initialPendingRead) {
-                    DialogResult = DialogResult.None; closeAfterInitial = true;
-                    CancelInitialPending();
+                if (pendingReadActive) {
+                    DialogResult = DialogResult.None; closeAfterPending = true;
+                    CancelPendingRead();
                 }
             };
             refresh.Click += async delegate { await RunAsync(RefreshAsync); };
@@ -111,18 +116,18 @@ namespace ProGo
                         ? "Старый доступ отозван; выдача замены не подтверждена. " + HomeVpnAdminRecovery.PendingMessage : result.Message);
                 });
             };
-            InitializationWork = PendingReadWork = Task.FromResult(0);
+            InitializationWork = PendingReadWork = ActionWork = Task.FromResult(0);
             if (service == null) { // Legacy injected callers keep their synchronous contract.
                 RefreshPending(); SetPendingStatus();
             } else {
-                pendingAdmin = pendingUnreadable = working = initialPendingRead = true;
+                pendingAdmin = pendingUnreadable = working = pendingReadActive = true;
                 close.DialogResult = DialogResult.None;
                 status.Text = "Читаем сохранённый запрос выдачи… Можно закрыть окно.";
-                InitializationWork = InitializePendingAsync(service, beforePendingRead);
+                InitializationWork = InitializePendingAsync();
             }
             UpdateActions(); UiTheme.ConfigureKeyboardOrder(this);
         }
-        private void CancelInitialPending() {
+        private void CancelPendingRead() {
             var source = initialPendingCancellation;
             if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
         }
@@ -131,40 +136,51 @@ namespace ProGo
                 ? "Запрос прежней выдачи недоступен. Новые изменения доступа заблокированы; существующие записи сохранены."
                 : HomeVpnAdminRecovery.PendingMessage;
         }
-        private async Task InitializePendingAsync(HomeVpnService service, Action beforeRead) {
+        private async Task InitializePendingAsync() {
+            try {
+                if (await ownerUi.Await(RefreshPendingAsync(pendingService.StopWork))) SetPendingStatus();
+            } catch (OperationCanceledException) { }
+            finally { FinishAction(); }
+        }
+        private async Task<bool> RefreshPendingAsync(Task<bool> stop) {
+            ++pendingReadVersion;
+            if (pendingService == null) { RefreshPending(); return true; }
             var source = new CancellationTokenSource(); initialPendingCancellation = source;
-            var stop = service.StopWork; HomeVpnAdminPendingState state = null;
+            HomeVpnAdminPendingState state = null;
+            pendingReadActive = true; close.DialogResult = DialogResult.None; UpdateActions();
             Action checkScope = delegate {
                 source.Token.ThrowIfCancellationRequested();
-                if (service.StartsPaused || service.IsStopping || !Object.ReferenceEquals(stop, service.StopWork))
+                if (pendingService.StartsPaused || pendingService.IsStopping || !Object.ReferenceEquals(stop, pendingService.StopWork))
                     throw new OperationCanceledException();
             };
             try {
-                // Retain the actual read through service Stop, even after this UI is disposed.
-                PendingReadWork = service.RunAdminOwnedAsync(async delegate {
+                checkScope();
+                // Each actual read remains owned through Stop; no transport, consume or family lease.
+                PendingReadWork = pendingService.RunAdminOwnedAsync(async delegate {
                     state = await HomeVpnAdminRecovery.ReadPendingStateAsync(source.Token, delegate {
-                        if (beforeRead != null) beforeRead(); checkScope();
+                        if (beforePendingRead != null) beforePendingRead(); checkScope();
                     }).ConfigureAwait(false);
                     checkScope(); return null;
                 });
                 await ownerUi.Await(PendingReadWork);
                 checkScope();
-                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
-                    pendingAdmin = state.Pending; pendingUnreadable = state.Unreadable; SetPendingStatus();
-                }
+                if (ownerUi.Closed || IsDisposed || Disposing) return false;
+                pendingAdmin = state.Pending; pendingUnreadable = state.Unreadable; return true;
             } catch (Exception) {
-                // No empty-state publication after cancellation, failed admission or unreadable storage.
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                     pendingAdmin = pendingUnreadable = true;
-                    status.Text = "Чтение запроса не завершено. Изменения доступа заблокированы; закройте и откройте окно повторно.";
+                    status.Text = "Чтение запроса не завершено. Изменения доступа заблокированы; повторите обновление списка или откройте окно заново.";
                 }
+                return false;
             } finally {
                 initialPendingCancellation = null; source.Dispose();
-                working = initialPendingRead = false;
-                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
-                    close.DialogResult = DialogResult.Cancel; UpdateActions();
-                    if (closeAfterInitial) Close();
-                }
+            }
+        }
+        private void FinishAction() {
+            working = pendingReadActive = false;
+            if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                close.DialogResult = DialogResult.Cancel; UpdateActions();
+                if (closeAfterPending) Close();
             }
         }
         private static string Identity(HomeVpnInvitation item) {
@@ -172,7 +188,7 @@ namespace ProGo
         }
         private void UpdateActions() {
             list.Enabled = name.Enabled = !working;
-            refresh.Enabled = !working; close.Enabled = !working || initialPendingRead;
+            refresh.Enabled = !working; close.Enabled = !working || pendingReadActive;
             create.Enabled = !working && !needsRefresh && !pendingAdmin;
             revoke.Enabled = !working && !needsRefresh && !pendingAdmin && list.Selected != null;
             recover.Enabled = !working && pendingAdmin && !pendingUnreadable; recover.Visible = pendingAdmin;
@@ -187,14 +203,24 @@ namespace ProGo
             catch (HomeVpnAdminPendingException) { pendingAdmin = pendingUnreadable = true; }
         }
         private void RequireRefresh(string message) { needsRefresh = true; status.Text = message; }
-        private async Task RunAsync(Func<Task> action) {
-            if (working || ownerUi.Closed || IsDisposed || Disposing) return;
+        private Task RunAsync(Func<Task> action) {
+            if (working || ownerUi.Closed || IsDisposed || Disposing) return Task.FromResult(0);
+            ActionWork = RunActionAsync(action); return ActionWork;
+        }
+        private async Task RunActionAsync(Func<Task> action) {
             working = true; status.Text = "Выполнение операции с доступом…"; UpdateActions();
-            try { await ownerUi.Await(action()); }
-            catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
-            catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }
-            catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Операция не завершена. Обновите список перед следующим изменением доступа. Подробности SSH доступны в его окне."); }
-            finally { working = false; if (!ownerUi.Closed && !IsDisposed && !Disposing) { RefreshPending(); UpdateActions(); } }
+            operationStop = pendingService == null ? null : pendingService.StopWork;
+            int before = pendingReadVersion;
+            try {
+                try { await ownerUi.Await(action()); }
+                catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
+                catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }
+                catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Операция не завершена. Обновите список перед следующим изменением доступа. Подробности SSH доступны в его окне."); }
+                // Refresh already took one snapshot before publishing rows. Never repeat that I/O.
+                if (!ownerUi.Closed && !IsDisposed && !Disposing && pendingReadVersion == before)
+                    await ownerUi.Await(RefreshPendingAsync(operationStop));
+            } catch (OperationCanceledException) { }
+            finally { FinishAction(); }
         }
         private async Task RefreshAsync() {
             status.Text = "Получение списка с VPS…";
@@ -202,7 +228,10 @@ namespace ProGo
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(await ownerUi.Await(admin("list", null, null)));
                 if (items == null) throw new InvalidOperationException();
                 if (ownerUi.Closed || IsDisposed || Disposing) return;
-                RefreshPending(); list.Replace(items); needsRefresh = pendingAdmin;
+                if (!await ownerUi.Await(RefreshPendingAsync(operationStop))) return;
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                // Keep the established reconciliation contract: uncertain mutations require a fresh explicit selection.
+                list.Replace(items, !needsRefresh); needsRefresh = pendingAdmin;
                 status.Text = "Список обновлён. Проверьте дату и полный ID: одинаковое имя не означает тот же доступ. При потерянном ответе выдачи отзовите ненужные новые записи перед созданием ещё одного токена.";
                 if (pendingAdmin) status.Text = "Список обновлён. Сохранённый запрос выдачи ещё не завершён: этот список не разрешает новую выдачу. Проверьте прежний запрос.";
             } catch (HomeVpnListCancelledException ex) {
@@ -248,7 +277,7 @@ namespace ProGo
         protected override void Dispose(bool disposing)
         {
             if (disposing) {
-                CancelInitialPending();
+                CancelPendingRead();
                 ownerUi.Dispose();
             }
             base.Dispose(disposing);

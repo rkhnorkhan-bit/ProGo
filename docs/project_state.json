@@ -3929,33 +3929,33 @@
     }
   ],
   "ci_candidate": {
-    "source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
-    "merge_ref": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
-    "tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
-    "tree": "9d83e9a490da70528cbaa9a426749fce5be00c5d",
-    "local_freeze": "3600e2cf5b480c0864901aa0bd291f7fe3299421",
-    "run_id": 39904249694,
-    "run_number": 640,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694",
+    "source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+    "merge_ref": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "tree": "e939ae31e3eb6c5796448d79267ea997e1ca0bf1",
+    "local_freeze": "598f406abe6391c080c8c2077828d27800503996",
+    "run_id": 39907256278,
+    "run_number": 641,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278",
     "status": "completed",
-    "conclusion": "failure",
-    "run_updated_at": "2026-10-23T05:10:04Z",
+    "conclusion": "success",
+    "run_updated_at": "2026-10-23T05:42:45Z",
     "jobs": {
       "windows": {
-        "id": 120252436528,
+        "id": 120261940053,
         "status": "completed",
-        "conclusion": "failure"
+        "conclusion": "success"
       },
       "ubuntu": {
-        "id": 120252436238,
+        "id": 120261939848,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Full final Windows7755 and Ubuntu578 lines independently inspected; exact checkout and build identity verified",
-    "windows_compilation": "PASS production and Desktop compiler; relay test compilation NOT_RUN",
-    "windows_native": "FAIL Desktop AuthPolicyNative/policy.disabled; API6/UI8/Instance30/relay regression NOT_RUN",
-    "pack": "SKIPPED",
+    "verification": "Full final Windows12520/Ubuntu578 lines independently inspected, checkout/build identity verified; no metadata-only PASS",
+    "windows_compilation": "PASS exact641 production/Desktop/relay",
+    "windows_native": "PASS exact641 SSH policy61/canary4/API6/UI8/Instance30/full prior regressions; CI640 ACL cause unresolved",
+    "pack": "PASS runner-only ZIP SHA2564d1fcc5f1d312993f7c08bba19bcc190cba288ff2c983714481b4675e33a3986",
     "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
   },
@@ -5494,21 +5494,40 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "baseline_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
-    "baseline_tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
-    "baseline_checkpoint": "ce474ce730dc3787a512fbe89f3d76e04bf901ff",
-    "local_code_sha": "e40dc17cc709a3194f158a45f0ce52cf31e6cc09",
-    "scope": "Test-only diagnostic instrumentation + docs, no runtime changes; retain original native oracle assert/7000ms/order/fixture bytes/cleanup",
-    "reason": "Proven native Bad owner or permissions refusal exit255; actual file and offending ACL unknown. No guessed ACL/runtime fix or infrastructure rerun. One diagnostic CI to reveal exact role and readonly ownership/ACL count facts.",
-    "safe_diagnostic": "Failure only: config/include/identity named booleans; ACL role config/include/identity/directory, owner-current/system/admin flags, protected/rule/inherited/deny/other-allow/other-write counts, typed read error flags and HResult. No native stderr, path, SID, SDDL, exception.Message, config, credential or journal content. Pure role classifier canary4 added. No ACL writes.",
-    "local_checks": "PASS static/signatures/manual review/C#5 syntax1/diff/public321/0/secretPII0; exact old native assert/timeout/order and other methods preserved",
-    "windows_compilation": "NOT_RUN new diagnostic candidate",
-    "windows_native": "NOT_RUN new diagnostic and invitation API6/UI8/full suites",
-    "publication": "TODO guarded existing PR88 exactly one automatic diagnostic CI",
+    "baseline_source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+    "baseline_tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "baseline_checkpoint": "70f0d4db5d645244145a58b2f6f1165016af2654",
+    "local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
+    "scope": "ONLY repeated pending-read after operations and Refresh via existing readonly async API/owned worker. No consumption/transport expansion.",
+    "implementation": "Shared initial/repeated owned reader; action captures original StopWork before transport; checks scope before/after read and publication; one pending snapshot/version per action; working gate until actual settlement; owner CTS Close/Dispose; explicit ActionWork/PendingReadWork retained; confirmed Refresh preserves ID/search/draft except established uncertain-mutation reconciliation deliberately requires fresh selection.",
+    "native_cases": [
+      "refresh-empty",
+      "refresh-pending",
+      "refresh-corrupt",
+      "refresh-locked",
+      "post-complete",
+      "post-failure",
+      "post-pending",
+      "close-retry",
+      "dispose",
+      "stop-retry",
+      "service-dispose",
+      "stale-scope"
+    ],
+    "test_contract": "Actual ShowDialog/modal heartbeat/held real private read; production Refresh and revoke post-action buttons with fixture transport only; original private request/access bytes; explicit same-window Stop Retry/new owner reopen; no duplicates/late state/row publication; all fixture actual tasks joined5s/barrier5s/modal15s. Old API6/UI8/all old methods unchanged.",
+    "local_checks": "PASS manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0; transport/consumption/core/existing tests preserved",
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN repeated12/new full regressions;641 PASS not inherited",
+    "remaining_production_paths": [
+      "Direct pending checks in create/reissue uncertainty branches and recovery request.Name read",
+      "ConfirmConsumed after create/reissue/recover using separate saved consumption API8, not integrated",
+      "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, bounded separate slices"
+    ],
     "readiness_change": 0,
-    "next": "Read SAME diagnostic CI final logs for native policy role/ACL facts. Only after proven root cause choose minimal repair; if oracle passes, no ACL cause proven. API6/UI8/previous regressions require their exact executed markers; no second stage here.",
-    "phase": "ONE bounded CI640 test-only diagnostics ready for publication",
-    "checkpoint": "local HEAD docs freeze then postpublication checkpoint"
+    "publication": "TODO guarded existing PR88 one automatic CI; uploads OFF/release ineligible",
+    "next": "Read SAME new exact-source CI full final logs, repeated12/API6/UI8 and all old mandatory suites. Stop after checkpoint; no next production path in this stage.",
+    "phase": "ONE repeated invitation pending-read production slice ready for guarded publication",
+    "checkpoint": "local HEAD docs freeze then postpublication local checkpoint"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5601,7 +5620,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI640 exactfcc6e70/45a69d3 failed Desktop native policy.disabled owner/permissions refusal. Production/Desktop compilation PASS; API6/UI8/Instance30/relay prior suites NOT_RUN. Test-only diagnostic candidate no guessed runtime/ACL fix; weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "Exact641589a636/517b650 full final logs verified SSH policy61/API6/UI8/Instance30/prior suites, runner-only pack/no uploads. CI640 ACL refusal did not reproduce, cause unresolved. New repeated pending12 candidate compiler/native NOT_RUN. No full weighted gate closed; weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9729,20 +9748,21 @@
     "native_cases": 6,
     "implementation": "Readonly Pending/Unreadable advisory snapshot; actual HasPending/Pending DPAPI validation on worker, cancellation before/after, corrupt/locked stays pending+unreadable, no token/journal/lease returned or modified; actual family admission authoritative",
     "static": "PASS manual status/cancel/lease/byte-preservation/cleanup/syntax2/C#5/diff/public321/0/secretPII0; new real ShowDialog avoids modeless fixture after earlier terminal message loop;3s entry+heartbeat/5s settlement+cleanup, original Pump default15s unchanged",
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN API6/initial8 on new exact source",
+    "windows_compilation": "NOT_RUN new repeated-read candidate",
+    "windows_native": "NOT_RUN repeated12/new full regression",
     "excluded_ci": [
       620,
       621,
       622,
       623
     ],
-    "actual_invitation_ui": "Initial production constructor now connected to existing API through owned service+explicit window; repeated/post-operation/direct recovery-name reads and consumption remain legacy",
-    "next": "Inspect SAME CI640 final full logs/checkout/build identity; API6 and initial UI8 plus retry reopening, full HTTPS/recovery/Instance/snapshot/dispatcher/ownership/cleanup/setup/list/repair/export/chooser regression. No duplicate CI; no next feature until exact proof.",
+    "actual_invitation_ui": "Initial and repeated post-action/Refresh reads connected to existing async owned API; direct create/reissue uncertainty/recovery request.Name and consumption remain legacy",
+    "next": "Read SAME new exact-source CI full final logs, repeated12/API6/UI8 and all old mandatory suites. Stop after checkpoint; no next production path in this stage.",
     "readiness_change": 0,
-    "integration_local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699",
+    "integration_local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
     "integration_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
-    "integration_ci_run_id": 39904249694
+    "integration_ci_run_id": 39904249694,
+    "baseline_windows": "PASS exact641 API6/UI8; repeated12 new candidate compiler/native NOT_RUN"
   },
   "ci623_failure": {
     "source": "e84792499b2949602691c349c369d62a533fb444",
@@ -11829,6 +11849,102 @@
         "artifact_uploads": "OFF public PR workflow; completion steps not yet verified",
         "owner_pc": "NOT_RUN"
       }
+    },
+    "before_repeated_invitation_on641": {
+      "active_work": {
+        "status": "PARTIAL",
+        "baseline_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+        "baseline_tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+        "baseline_checkpoint": "ce474ce730dc3787a512fbe89f3d76e04bf901ff",
+        "local_code_sha": "e40dc17cc709a3194f158a45f0ce52cf31e6cc09",
+        "scope": "Test-only diagnostic instrumentation + docs, no runtime changes; retain original native oracle assert/7000ms/order/fixture bytes/cleanup",
+        "reason": "Proven native Bad owner or permissions refusal exit255; actual file and offending ACL unknown. No guessed ACL/runtime fix or infrastructure rerun. One diagnostic CI to reveal exact role and readonly ownership/ACL count facts.",
+        "safe_diagnostic": "Failure only: config/include/identity named booleans; ACL role config/include/identity/directory, owner-current/system/admin flags, protected/rule/inherited/deny/other-allow/other-write counts, typed read error flags and HResult. No native stderr, path, SID, SDDL, exception.Message, config, credential or journal content. Pure role classifier canary4 added. No ACL writes.",
+        "local_checks": "PASS static/signatures/manual review/C#5 syntax1/diff/public321/0/secretPII0; exact old native assert/timeout/order and other methods preserved",
+        "windows_compilation": "NOT_RUN new diagnostic candidate",
+        "windows_native": "NOT_RUN new diagnostic and invitation API6/UI8/full suites",
+        "publication": "PASS non-force expected-head PR88 update, fetched exact640 parent/full tree equal reviewed freeze; one automatic diagnostic CI641 pull_request attempt1 raw exact-source count1",
+        "readiness_change": 0,
+        "next": "Inspect SAME CI641 full final logs/tested merge: diagnostic canary4, native policy roles and readonly ACL facts, actual executed API6/UI8/Instance/full relay regressions. No guessed fix or duplicate CI. If oracle passes, exact ACL cause remains unproven.",
+        "phase": "ONE CI640 test-only diagnostic published; sole CI641 in_progress; STOP after checkpoint",
+        "checkpoint": "Postpublication docs-only local HEAD via git log -1, intentionally NOT pushed to avoid second CI; exact checkpoint in PR88 body",
+        "published_sha": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+        "merge_ref": "517b65079be6d6645f132e313b2acf551cbb887c",
+        "tested_merge": null,
+        "tree": "e939ae31e3eb6c5796448d79267ea997e1ca0bf1",
+        "local_freeze": "598f406abe6391c080c8c2077828d27800503996",
+        "ci_run_id": 39907256278,
+        "ci_run_number": 641,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120261940053,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120261939848,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "public_diff": "4 files435add/67delete:1 test file56add/1delete plus3 docs379add/66delete; runtime/workflows/VERSION/other tests byte-identical to640"
+      },
+      "ci_candidate": {
+        "source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+        "merge_ref": "517b65079be6d6645f132e313b2acf551cbb887c",
+        "tested_merge": null,
+        "tree": "e939ae31e3eb6c5796448d79267ea997e1ca0bf1",
+        "local_freeze": "598f406abe6391c080c8c2077828d27800503996",
+        "run_id": 39907256278,
+        "run_number": 641,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T05:42:45Z",
+        "jobs": {
+          "windows": {
+            "id": 120261940053,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120261939848,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Guarded expected-head non-force PR88 update; fetched exact640 parent and full reviewed tree; raw exact-source runs total_count1 pull_request attempt1. Merge ref not yet verified final checkout/build identity.",
+        "windows_compilation": "NOT_RUN new test-only candidate",
+        "windows_native": "NOT_RUN native policy role/ACL diagnostics/canary4/API6/UI8/full suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR workflow; completion skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      },
+      "reconstructed_invitation_pending_state": {
+        "source": "d500df68629d8af7533e4eca2993284c3675161a",
+        "original_missing_source": "9859dce6318878186a4b4068cff57ecf5bc26666",
+        "status": "PARTIAL",
+        "native_cases": 6,
+        "implementation": "Readonly Pending/Unreadable advisory snapshot; actual HasPending/Pending DPAPI validation on worker, cancellation before/after, corrupt/locked stays pending+unreadable, no token/journal/lease returned or modified; actual family admission authoritative",
+        "static": "PASS manual status/cancel/lease/byte-preservation/cleanup/syntax2/C#5/diff/public321/0/secretPII0; new real ShowDialog avoids modeless fixture after earlier terminal message loop;3s entry+heartbeat/5s settlement+cleanup, original Pump default15s unchanged",
+        "windows_compilation": "NOT_RUN new candidate",
+        "windows_native": "NOT_RUN API6/initial8 on new exact source",
+        "excluded_ci": [
+          620,
+          621,
+          622,
+          623
+        ],
+        "actual_invitation_ui": "Initial production constructor now connected to existing API through owned service+explicit window; repeated/post-operation/direct recovery-name reads and consumption remain legacy",
+        "next": "Inspect SAME CI640 final full logs/checkout/build identity; API6 and initial UI8 plus retry reopening, full HTTPS/recovery/Instance/snapshot/dispatcher/ownership/cleanup/setup/list/repair/export/chooser regression. No duplicate CI; no next feature until exact proof.",
+        "readiness_change": 0,
+        "integration_local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699",
+        "integration_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+        "integration_ci_run_id": 39904249694
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -11897,7 +12013,7 @@
       624
     ],
     "actual_invitation_ui": "UNCONNECTED; legacy synchronous ConfirmConsumed remains until separate owned view binding; no fullR09 PASS",
-    "next": "Freeze pending-state6+consumption8 independently and verify exact nativeAPI14 before invitation view binding",
+    "next": "Separate future saved consumption API8 integration/proof and owned view handoff; existing readonly API6/initial UI8 verified exact641, repeated12 current candidate NOT_RUN; no consumption changes here",
     "readiness_change": 0
   },
   "ci624_failure": {
@@ -13910,8 +14026,8 @@
       "service-dispose"
     ],
     "api_native_cases": 6,
-    "windows_compilation": "PASS production; invitation fixture compiler NOT_RUN",
-    "windows_native": "NOT_RUN API6/UI8/full relay regression; earlier Desktop native refusal",
+    "windows_compilation": "PASS exact641",
+    "windows_native": "PASS exact641 API6/UI8; no full R09/owner acceptance PASS",
     "local_checks": "PASS manual review + AST syntax5/C#5 scope; saved API/API6 exact; preserved old test methods/timeouts/asserts and export/EOF/HTTPS/runtime core; constructor/API signatures checked; public321/0; added secret/PII0; diff check",
     "remaining_production_paths": [
       "Friends post-operation and refresh pending-state reads in RunAsync/RefreshAsync (same saved API, separate owned UI binding)",
@@ -13943,7 +14059,10 @@
         "status": "in_progress",
         "conclusion": null
       }
-    }
+    },
+    "verification_source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+    "verification_tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "verification_run_id": 39907256278
   },
   "ci640_final": {
     "source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
@@ -14054,10 +14173,247 @@
     "reason": "Proven native Bad owner or permissions refusal exit255; actual file and offending ACL unknown. No guessed ACL/runtime fix or infrastructure rerun. One diagnostic CI to reveal exact role and readonly ownership/ACL count facts.",
     "safe_diagnostic": "Failure only: config/include/identity named booleans; ACL role config/include/identity/directory, owner-current/system/admin flags, protected/rule/inherited/deny/other-allow/other-write counts, typed read error flags and HResult. No native stderr, path, SID, SDDL, exception.Message, config, credential or journal content. Pure role classifier canary4 added. No ACL writes.",
     "local_checks": "PASS static/signatures/manual review/C#5 syntax1/diff/public321/0/secretPII0; exact old native assert/timeout/order and other methods preserved",
-    "windows_compilation": "NOT_RUN new diagnostic candidate",
-    "windows_native": "NOT_RUN new diagnostic and invitation API6/UI8/full suites",
-    "publication": "TODO guarded existing PR88 exactly one automatic diagnostic CI",
+    "windows_compilation": "PASS exact641",
+    "windows_native": "PASS role-canary4/SSH policy61/API6/UI8/full old suites; failure-only ACL diagnostic NOT_RUN, refusal not reproduced",
+    "publication": "PASS non-force expected-head PR88 update, fetched exact640 parent/full tree equal reviewed freeze; one automatic diagnostic CI641 pull_request attempt1 raw exact-source count1",
     "readiness_change": 0,
-    "next": "Read SAME diagnostic CI final logs for native policy role/ACL facts. Only after proven root cause choose minimal repair; if oracle passes, no ACL cause proven. API6/UI8/previous regressions require their exact executed markers; no second stage here."
+    "next": "Retain failure-only safe diagnostics. Do not assert ACL/runtime repair; current exact641 proof permits next bounded invitation UI migration.",
+    "published_sha": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+    "merge_ref": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "tree": "e939ae31e3eb6c5796448d79267ea997e1ca0bf1",
+    "local_freeze": "598f406abe6391c080c8c2077828d27800503996",
+    "ci_run_id": 39907256278,
+    "ci_run_number": 641,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_jobs": {
+      "windows": {
+        "id": 120261940053,
+        "status": "in_progress",
+        "conclusion": null
+      },
+      "ubuntu": {
+        "id": 120261939848,
+        "status": "in_progress",
+        "conclusion": null
+      }
+    },
+    "root_cause": "UNRESOLVED: all three native policy cases passed without permission refusal; failure-only ACL block not executed. No runtime/ACL fix claimed; safe diagnostics retained."
+  },
+  "ci641_final": {
+    "source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+    "tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "run_id": 39907256278,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39907256278",
+    "status": "completed",
+    "conclusion": "success",
+    "verification": "Full final Windows12520/Ubuntu578 lines independently inspected, checkout/build identity verified; no metadata-only PASS",
+    "case_markers": {
+      "api6": [
+        "2026-10-23T06:06:58.1096599Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: empty",
+        "2026-10-23T06:06:58.2936121Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: pending",
+        "2026-10-23T06:06:58.4991079Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: completed",
+        "2026-10-23T06:06:58.6575810Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: corrupt",
+        "2026-10-23T06:06:58.8474705Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: locked",
+        "2026-10-23T06:06:59.0372366Z PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: cancel"
+      ],
+      "ui8": [
+        "2026-10-23T06:06:59.2912823Z PASS: invitation initial pending UI PASS: empty",
+        "2026-10-23T06:06:59.5617768Z PASS: invitation initial pending UI PASS: pending",
+        "2026-10-23T06:06:59.8286389Z PASS: invitation initial pending UI PASS: corrupt",
+        "2026-10-23T06:07:00.1138291Z PASS: invitation initial pending UI PASS: locked",
+        "2026-10-23T06:07:00.3981831Z PASS: invitation initial pending UI PASS: close-retry",
+        "2026-10-23T06:07:00.7628853Z PASS: invitation initial pending UI PASS: dispose",
+        "2026-10-23T06:07:01.0467669Z PASS: invitation initial pending UI PASS: stop",
+        "2026-10-23T06:07:01.3321772Z PASS: invitation initial pending UI PASS: service-dispose"
+      ],
+      "freshHTTPS10": [
+        "2026-10-23T06:08:55.9746698Z PASS: owned production fresh HTTPS PASS: default-refusal",
+        "2026-10-23T06:08:56.3149557Z PASS: owned production fresh HTTPS PASS: copy-fault",
+        "2026-10-23T06:08:57.4213810Z PASS: owned production fresh HTTPS PASS: cancel-retry",
+        "2026-10-23T06:08:57.7679556Z PASS: owned production fresh HTTPS PASS: stop-copy",
+        "2026-10-23T06:08:58.1160217Z PASS: owned production fresh HTTPS PASS: dispose-copy",
+        "2026-10-23T06:08:58.4807969Z PASS: owned production fresh HTTPS PASS: owner-dispose",
+        "2026-10-23T06:08:59.6396422Z PASS: owned production fresh HTTPS PASS: cancel-command",
+        "2026-10-23T06:09:02.7617716Z PASS: owned production fresh HTTPS PASS: cleanup-lock",
+        "2026-10-23T06:09:03.8043911Z PASS: owned production fresh HTTPS PASS: result",
+        "2026-10-23T06:09:04.8417802Z PASS: owned production fresh HTTPS PASS: stop-result"
+      ],
+      "recovery11": [
+        "2026-10-23T06:08:43.7383522Z PASS: owned production HTTPS recovery PASS: default-refusal",
+        "2026-10-23T06:08:44.8333877Z PASS: owned production HTTPS recovery PASS: status-pending",
+        "2026-10-23T06:08:45.9257478Z PASS: owned production HTTPS recovery PASS: cancel-retry",
+        "2026-10-23T06:08:46.2710908Z PASS: owned production HTTPS recovery PASS: stop-copy",
+        "2026-10-23T06:08:46.6206490Z PASS: owned production HTTPS recovery PASS: dispose-copy",
+        "2026-10-23T06:08:46.9991986Z PASS: owned production HTTPS recovery PASS: owner-dispose",
+        "2026-10-23T06:08:48.1932209Z PASS: owned production HTTPS recovery PASS: cancel-command",
+        "2026-10-23T06:08:51.2742532Z PASS: owned production HTTPS recovery PASS: cleanup-lock",
+        "2026-10-23T06:08:52.9753596Z PASS: owned production HTTPS recovery PASS: result",
+        "2026-10-23T06:08:54.0180099Z PASS: owned production HTTPS recovery PASS: stop-result-copy",
+        "2026-10-23T06:08:55.8193632Z PASS: owned production HTTPS recovery PASS: stop-result"
+      ],
+      "snapshot12": [
+        "2026-10-23T06:09:17.3215494Z PASS: caller releases family lease only after actual snapshot settles: setup",
+        "2026-10-23T06:09:17.4436821Z PASS: caller releases family lease only after actual snapshot settles: invite",
+        "2026-10-23T06:09:17.5425744Z PASS: caller releases family lease only after actual snapshot settles: share",
+        "2026-10-23T06:09:17.6841478Z PASS: caller releases family lease only after actual snapshot settles: empty",
+        "2026-10-23T06:09:17.8105016Z PASS: caller releases family lease only after actual snapshot settles: missing-setup",
+        "2026-10-23T06:09:17.9373593Z PASS: caller releases family lease only after actual snapshot settles: missing-invite",
+        "2026-10-23T06:09:18.0425700Z PASS: caller releases family lease only after actual snapshot settles: missing-share",
+        "2026-10-23T06:09:18.1749048Z PASS: caller releases family lease only after actual snapshot settles: pending-invite",
+        "2026-10-23T06:09:18.2939886Z PASS: caller releases family lease only after actual snapshot settles: pending-share",
+        "2026-10-23T06:09:18.3967126Z PASS: caller releases family lease only after actual snapshot settles: cancel",
+        "2026-10-23T06:09:18.5232330Z PASS: caller releases family lease only after actual snapshot settles: corrupt",
+        "2026-10-23T06:09:18.6494858Z PASS: caller releases family lease only after actual snapshot settles: missing-key"
+      ],
+      "dispatcher5": [
+        "2026-10-23T06:09:18.9066888Z PASS: settled transport performs no late UI dispatch or duplicate action: ready",
+        "2026-10-23T06:09:18.9683690Z PASS: closed dispatcher refuses a new transport before startup without a late callback or file I/O",
+        "2026-10-23T06:09:19.2349436Z PASS: settled transport performs no late UI dispatch or duplicate action: during-dispose",
+        "2026-10-23T06:09:19.5038701Z PASS: settled transport performs no late UI dispatch or duplicate action: file-fault",
+        "2026-10-23T06:09:19.7572315Z PASS: settled transport performs no late UI dispatch or duplicate action: worker-only"
+      ],
+      "ownership8": [
+        "2026-10-23T06:09:19.8846980Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: complete",
+        "2026-10-23T06:09:19.9956656Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: stop",
+        "2026-10-23T06:09:20.1533107Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: dispose",
+        "2026-10-23T06:09:20.2920477Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: lock",
+        "2026-10-23T06:09:20.4542763Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: typed",
+        "2026-10-23T06:09:20.5805958Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-stop",
+        "2026-10-23T06:09:20.7311465Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-dispose",
+        "2026-10-23T06:09:20.8972728Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: multiple"
+      ],
+      "cleanup4": [
+        "2026-10-23T06:09:21.0706490Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: complete",
+        "2026-10-23T06:09:23.2237386Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: list-lock",
+        "2026-10-23T06:09:25.3918091Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: preparation-lock",
+        "2026-10-23T06:09:27.5408044Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: dispose-lock"
+      ],
+      "recover10": [
+        "2026-10-23T06:09:27.8109511Z PASS: owned production setup recovery PASS: default-refusal",
+        "2026-10-23T06:09:28.9180591Z PASS: owned production setup recovery PASS: status-pending",
+        "2026-10-23T06:09:30.0825669Z PASS: owned production setup recovery PASS: cancel-retry",
+        "2026-10-23T06:09:30.5217654Z PASS: owned production setup recovery PASS: stop-copy",
+        "2026-10-23T06:09:30.9563254Z PASS: owned production setup recovery PASS: dispose-copy",
+        "2026-10-23T06:09:31.4265409Z PASS: owned production setup recovery PASS: owner-dispose",
+        "2026-10-23T06:09:32.5765452Z PASS: owned production setup recovery PASS: stop-between",
+        "2026-10-23T06:09:33.7748874Z PASS: owned production setup recovery PASS: cancel-command",
+        "2026-10-23T06:09:36.9071831Z PASS: owned production setup recovery PASS: cleanup-lock",
+        "2026-10-23T06:09:38.7282451Z PASS: owned production setup recovery PASS: result"
+      ],
+      "fresh10": [
+        "2026-10-23T06:09:39.0493443Z PASS: owned production fresh setup PASS: default-refusal",
+        "2026-10-23T06:09:39.5345496Z PASS: owned production fresh setup PASS: copy-fault",
+        "2026-10-23T06:09:40.8026332Z PASS: owned production fresh setup PASS: cancel-retry",
+        "2026-10-23T06:09:41.2643471Z PASS: owned production fresh setup PASS: stop-copy",
+        "2026-10-23T06:09:41.7377425Z PASS: owned production fresh setup PASS: dispose-copy",
+        "2026-10-23T06:09:42.2195395Z PASS: owned production fresh setup PASS: owner-dispose",
+        "2026-10-23T06:09:43.5262132Z PASS: owned production fresh setup PASS: cancel-command",
+        "2026-10-23T06:09:46.7939773Z PASS: owned production fresh setup PASS: cleanup-lock",
+        "2026-10-23T06:09:48.0335085Z PASS: owned production fresh setup PASS: result",
+        "2026-10-23T06:09:49.2157572Z PASS: owned production fresh setup PASS: pending-race"
+      ],
+      "repair8": [
+        "2026-10-23T06:07:24.6910225Z PASS: owned production repair slice PASS: default-refusal",
+        "2026-10-23T06:07:25.9690394Z PASS: owned production repair slice PASS: complete",
+        "2026-10-23T06:07:27.3466501Z PASS: owned production repair slice PASS: cancel-retry",
+        "2026-10-23T06:07:27.9124692Z PASS: owned production repair slice PASS: stop-copy",
+        "2026-10-23T06:07:28.4895681Z PASS: owned production repair slice PASS: dispose-copy",
+        "2026-10-23T06:07:29.0330436Z PASS: owned production repair slice PASS: owner-dispose",
+        "2026-10-23T06:07:30.4183292Z PASS: owned production repair slice PASS: stop-command",
+        "2026-10-23T06:07:33.7412279Z PASS: owned production repair slice PASS: cleanup-lock"
+      ],
+      "list10": [
+        "2026-10-23T06:06:26.6202995Z PASS: owned production list slice PASS: default-refusal",
+        "2026-10-23T06:06:27.9253253Z PASS: owned production list slice PASS: complete",
+        "2026-10-23T06:06:29.3052151Z PASS: owned production list slice PASS: cancel-retry",
+        "2026-10-23T06:06:29.8476397Z PASS: owned production list slice PASS: stop-copy",
+        "2026-10-23T06:06:30.3950167Z PASS: owned production list slice PASS: dispose-copy",
+        "2026-10-23T06:06:30.9143770Z PASS: owned production list slice PASS: owner-dispose",
+        "2026-10-23T06:06:32.2745441Z PASS: owned production list slice PASS: stop-command",
+        "2026-10-23T06:06:35.5205288Z PASS: owned production list slice PASS: cleanup-lock",
+        "2026-10-23T06:06:37.5529250Z PASS: owned production list slice PASS: refresh-cancel-retry",
+        "2026-10-23T06:06:38.8915453Z PASS: owned production list slice PASS: refresh-dispose"
+      ],
+      "export11": [
+        "2026-10-23T06:04:21.0509759Z PASS: modal export preserves protected settings and cannot start a late relay: save",
+        "2026-10-23T06:04:21.4776651Z PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry",
+        "2026-10-23T06:04:21.9931959Z PASS: modal export preserves protected settings and cannot start a late relay: close",
+        "2026-10-23T06:04:22.4598387Z PASS: modal export preserves protected settings and cannot start a late relay: dispose",
+        "2026-10-23T06:04:22.8869717Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel",
+        "2026-10-23T06:04:23.3493095Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-close",
+        "2026-10-23T06:04:23.7902002Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose",
+        "2026-10-23T06:04:24.2175926Z PASS: modal export preserves protected settings and cannot start a late relay: global-stop",
+        "2026-10-23T06:04:24.6615636Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop",
+        "2026-10-23T06:04:25.1052749Z PASS: modal export preserves protected settings and cannot start a late relay: existing-retry",
+        "2026-10-23T06:04:25.6086465Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change"
+      ],
+      "chooser3": [
+        "2026-10-23T05:54:54.9453602Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel",
+        "2026-10-23T05:55:00.4369257Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing",
+        "2026-10-23T05:55:01.2468764Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: error"
+      ]
+    },
+    "summaries": [
+      "2026-10-23T05:59:47.8057021Z PASS: native policy diagnostic emits role flags only: config",
+      "2026-10-23T05:59:47.8058370Z PASS: native policy diagnostic emits role flags only: include",
+      "2026-10-23T05:59:47.8060138Z PASS: native policy diagnostic emits role flags only: identity",
+      "2026-10-23T05:59:47.8061842Z PASS: native policy diagnostic emits role flags only: unknown",
+      "2026-10-23T05:59:47.8814790Z Native auth policy observation: fixture=policy.disabled; resolved=True; policy=Disabled; identities=1; confirmedPaths=0",
+      "2026-10-23T05:59:47.9807490Z Native auth policy observation: fixture=policy.excluded; resolved=True; policy=Excluded; identities=1; confirmedPaths=0",
+      "2026-10-23T05:59:48.0769908Z Native auth policy observation: fixture=policy.allowed; resolved=True; policy=AllowedByClient; identities=1; confirmedPaths=1",
+      "2026-10-23T05:59:48.1703365Z SSH public-key policy checks PASS: 61",
+      "2026-10-23T06:00:51.8231454Z Desktop tests PASS: 5298",
+      "2026-10-23T06:00:59.5627228Z Instance tests PASS: 30",
+      "2026-10-23T06:03:38.8541294Z Maintenance tests PASS: 126",
+      "2026-10-23T06:04:07.6284167Z Shutdown tests PASS: 47",
+      "2026-10-23T06:09:54.5990695Z Home VPN PASS: 3079 checks.",
+      "2026-10-23T06:11:36.9864167Z Portable Home VPN tests PASS: 91",
+      "2026-10-23T06:11:39.0027921Z Ran 28 tests in 1.674s",
+      "2026-10-23T06:11:39.0028331Z OK (skipped=2)"
+    ],
+    "ci640_cause": "UNRESOLVED: all three native policy cases passed without permission refusal; failure-only ACL block not executed. No runtime/ACL fix claimed; safe diagnostics retained.",
+    "pack": "PASS runner-only ZIP SHA2564d1fcc5f1d312993f7c08bba19bcc190cba288ff2c983714481b4675e33a3986",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "owner_pc": "NOT_RUN",
+    "ubuntu": "PASS operation16/QR13/isolated provisioning final logs"
+  },
+  "invitation_repeated_pending_on641": {
+    "status": "PARTIAL",
+    "baseline_source": "589a6364d42f2fbbcdbbfe4bd80396c27a26f41f",
+    "baseline_tested_merge": "517b65079be6d6645f132e313b2acf551cbb887c",
+    "baseline_checkpoint": "70f0d4db5d645244145a58b2f6f1165016af2654",
+    "local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
+    "scope": "ONLY repeated pending-read after operations and Refresh via existing readonly async API/owned worker. No consumption/transport expansion.",
+    "implementation": "Shared initial/repeated owned reader; action captures original StopWork before transport; checks scope before/after read and publication; one pending snapshot/version per action; working gate until actual settlement; owner CTS Close/Dispose; explicit ActionWork/PendingReadWork retained; confirmed Refresh preserves ID/search/draft except established uncertain-mutation reconciliation deliberately requires fresh selection.",
+    "native_cases": [
+      "refresh-empty",
+      "refresh-pending",
+      "refresh-corrupt",
+      "refresh-locked",
+      "post-complete",
+      "post-failure",
+      "post-pending",
+      "close-retry",
+      "dispose",
+      "stop-retry",
+      "service-dispose",
+      "stale-scope"
+    ],
+    "test_contract": "Actual ShowDialog/modal heartbeat/held real private read; production Refresh and revoke post-action buttons with fixture transport only; original private request/access bytes; explicit same-window Stop Retry/new owner reopen; no duplicates/late state/row publication; all fixture actual tasks joined5s/barrier5s/modal15s. Old API6/UI8/all old methods unchanged.",
+    "local_checks": "PASS manual/static/AST syntax3/C#5/signatures/diff/public321/0/secretsPII0; transport/consumption/core/existing tests preserved",
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN repeated12/new full regressions;641 PASS not inherited",
+    "remaining_production_paths": [
+      "Direct pending checks in create/reissue uncertainty branches and recovery request.Name read",
+      "ConfirmConsumed after create/reissue/recover using separate saved consumption API8, not integrated",
+      "Existing invite/revoke/reissue/recover-invite transport binding to owned worker, bounded separate slices"
+    ],
+    "readiness_change": 0,
+    "publication": "TODO guarded existing PR88 one automatic CI; uploads OFF/release ineligible",
+    "next": "Read SAME new exact-source CI full final logs, repeated12/API6/UI8 and all old mandatory suites. Stop after checkpoint; no next production path in this stage."
   }
 }

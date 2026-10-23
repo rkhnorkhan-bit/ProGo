@@ -106,6 +106,7 @@ namespace ProGo
                 Environment.SetEnvironmentVariable(FixtureVariable, folder);
                 PendingStateWorker();
                 InitialPendingUi(clipboard);
+                RepeatedPendingUi(clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "deadline" }) NativeWait(route, previous);
                 LostResponseAndReopen(token, clipboard, previous);
                 ReissueBoundary(token); FrozenOwner(); DefaultHandoff(clipboard); LateDisposedUi(clipboard); ReissueHandoffMessage(token, clipboard); StatusAndStorage(token);
@@ -275,6 +276,139 @@ namespace ProGo
                                 retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted, 5000);
                                 retry.InitializationWork.GetAwaiter().GetResult(); service.Dispose(); var cleanup = service.StopAsync();
                                 Pump(() => cleanup.IsCompleted, 5000); check(cleanup.GetAwaiter().GetResult(), "retry fixture cleanup joins actual owned read");
+                            }
+                        }
+                    }
+                }
+            } finally { if (original == null) File.Delete(PendingPath); else File.WriteAllBytes(PendingPath, original); }
+        }
+        private static void RepeatedPendingUi(ClipboardService clipboard)
+        {
+            byte[] original = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+            try {
+                foreach (string mode in new[] { "refresh-empty", "refresh-pending", "refresh-corrupt", "refresh-locked", "post-complete", "post-failure", "post-pending", "close-retry", "dispose", "stop-retry", "service-dispose", "stale-scope" }) {
+                    File.Delete(PendingPath);
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        HomeInvitationsForm form = null; FileStream held = null; Task<bool> stop = null; Task first = null;
+                        var delayedList = new TaskCompletionSource<string>();
+                        int reads = 0, calls = 0, phase = 0, turns = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, changes = 0, closedChanges = 0;
+                        bool closing = mode == "close-retry", disposing = mode == "dispose", post = mode.StartsWith("post-");
+                        var row = new HomeVpnInvitation { Id = new string('d', 24), Name = "Fixture friend" };
+                        string rows = Json.Serialize(new[] { new HomeVpnInvitation { Id = row.Id, Name = row.Name } });
+                        Dictionary<string, byte[]> before = null;
+                        try {
+                            form = new HomeInvitationsForm(new[] { row }, (action, label, id) => {
+                                ++calls; check(action == (post ? "revoke" : "list"), "repeated read preserves selected existing transport: " + mode);
+                                if (post) { check(id == row.Id, "post-action read cannot redirect the selected ID: " + mode); if (mode == "post-failure") throw new InvalidOperationException(); return Task.FromResult("Access revoked."); }
+                                return mode == "stale-scope" && calls == 1 ? delayedList.Task : Task.FromResult(rows);
+                            }, clipboard, service, delegate {
+                                int n = Interlocked.Increment(ref reads); if (n != 2) return;
+                                worker = Thread.CurrentThread.ManagedThreadId; entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Repeated invitation read fixture deadline");
+                            });
+                            form.Confirm = value => true;
+                            ((Label)Field(form, "status")).TextChanged += delegate { ++changes; };
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    if (!form.InitializationWork.IsCompleted) return false; form.InitializationWork.GetAwaiter().GetResult();
+                                    check(reads == 1 && calls == 0, "initial read settles before the real repeated UI route: " + mode);
+                                    var view = (HomeInvitationList)Field(form, "list"); ((TextBox)Field(view, "search")).Text = "Fixture";
+                                    ((ListBox)Field(view, "list")).SelectedIndex = 0; ((TextBox)Field(form, "name")).Text = "Preserved draft";
+                                    if (mode == "refresh-pending" || mode == "refresh-locked" || mode == "post-pending") HomeVpnAdminRecovery.Register(Owner, "Fixture friend", null);
+                                    if (mode == "refresh-corrupt") File.WriteAllBytes(PendingPath, new byte[] { 1, 2, 3 });
+                                    before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                                    if (mode == "refresh-locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None);
+                                    ((Button)Field(form, post ? "revoke" : "refresh")).PerformClick(); first = form.ActionWork;
+                                    if (mode == "stale-scope") { stop = service.StopAsync(); phase = 5; return false; }
+                                    phase = 1; return false;
+                                }
+                                if (phase == 5) {
+                                    if (!stop.IsCompleted) return false; check(stop.GetAwaiter().GetResult(), "Stop settles before late list response");
+                                    delayedList.SetResult(rows); phase = 6; return false;
+                                }
+                                if (phase == 6) {
+                                    if (!first.IsCompleted) return false; first.GetAwaiter().GetResult();
+                                    check(reads == 1 && !entered.IsSet && (bool)Field(form, "pendingAdmin") && (bool)Field(form, "pendingUnreadable"),
+                                        "old transport Stop scope refuses a fresh pending read and cannot publish late rows");
+                                    phase = 4;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    check(form.Modal && form.Visible && worker != ui && reads == 2 && calls == 1 && !first.IsCompleted
+                                        && !form.PendingReadWork.IsCompleted && service.IsAdminWorking,
+                                        "repeated actual private read retains responsive modal UI and service owner: " + mode);
+                                    foreach (string button in new[] { "create", "revoke", "reissue", "refresh", "recover" })
+                                        check(!((Button)Field(form, button)).Enabled, "repeated read retains mutation and duplicate gate: " + mode + "/" + button);
+                                    ((Button)Field(form, "refresh")).PerformClick(); check(calls == 1 && reads == 2, "held pending read cannot admit parallel refresh: " + mode);
+                                    var watch = Stopwatch.StartNew();
+                                    if (closing) form.Close(); if (disposing) { form.Dispose(); closedChanges = changes; }
+                                    if (mode == "service-dispose") service.Dispose();
+                                    if (mode == "stop-retry" || mode == "service-dispose") stop = service.StopAsync();
+                                    check(watch.ElapsedMilliseconds < 500 && !first.IsCompleted && !form.PendingReadWork.IsCompleted
+                                        && (!closing || !form.IsDisposed) && (stop == null || !stop.IsCompleted),
+                                        "repeated read close Dispose Stop return promptly and retain actual work: " + mode);
+                                    turns = 0; phase = 2; return false;
+                                }
+                                if (phase == 2) {
+                                    if (++turns < 3) return false;
+                                    check(!first.IsCompleted && (stop == null || !stop.IsCompleted), "cancel cannot discard physical repeated read: " + mode);
+                                    release.Set(); phase = 3; return false;
+                                }
+                                if (phase == 3) {
+                                    if (!first.IsCompleted || (stop != null && !stop.IsCompleted)) return false; first.GetAwaiter().GetResult();
+                                    if (stop != null) check(stop.GetAwaiter().GetResult(), "Stop drains actual repeated read: " + mode);
+                                    bool cancelled = closing || disposing || stop != null;
+                                    if (!closing && !disposing) {
+                                        bool pending = cancelled || mode == "refresh-pending" || mode == "refresh-corrupt" || mode == "refresh-locked" || mode == "post-pending";
+                                        bool unreadable = cancelled || mode == "refresh-corrupt" || mode == "refresh-locked";
+                                        check((bool)Field(form, "pendingAdmin") == pending && (bool)Field(form, "pendingUnreadable") == unreadable,
+                                            "repeated read preserves unreadable/cancelled gating rather than guessing empty: " + mode);
+                                        check(((Button)Field(form, "create")).Enabled == (!pending && mode != "post-failure"), "only admitted snapshot and reconciliation release mutations: " + mode);
+                                    }
+                                    if (disposing) check(changes == closedChanges, "disposed repeated read cannot publish a late status");
+                                    check(reads == 2 && calls == 1 && !service.IsAdminWorking, "each action or Refresh performs exactly one pending read: " + mode);
+                                    if (mode == "stop-retry") {
+                                        ((Button)Field(form, "refresh")).PerformClick(); phase = 4; return false;
+                                    }
+                                    phase = 4;
+                                }
+                                if (!form.ActionWork.IsCompleted) return false; form.ActionWork.GetAwaiter().GetResult();
+                                if (mode == "stop-retry") check(reads == 3 && calls == 2 && !((bool)Field(form, "pendingAdmin")) && ((Button)Field(form, "create")).Enabled
+                                    && first.IsCompleted, "explicit same-window Retry publishes new snapshot without old cancelled overwrite");
+                                if (!closing && !disposing) {
+                                    var view = (HomeInvitationList)Field(form, "list");
+                                    check(view.Selected != null && view.Selected.Id == row.Id && ((TextBox)Field(view, "search")).Text == "Fixture"
+                                        && ((TextBox)Field(form, "name")).Text == "Preserved draft", "refresh/pending settlement preserves selected ID search and draft: " + mode);
+                                }
+                                if (held != null) { held.Dispose(); held = null; }
+                                check(before.Count == Directory.GetFiles(HomeVpnPrivateFiles.Root).Length && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                                    "repeated read never consumes or rewrites protected request/access files: " + mode);
+                                check(true, "invitation repeated pending UI PASS: " + mode); return true;
+                            }, () => closing || disposing);
+                        } finally {
+                            release.Set(); delayedList.TrySetResult(rows); if (held != null) held.Dispose(); if (form != null) form.Dispose();
+                            if (form != null) { Pump(() => form.InitializationWork.IsCompleted && form.ActionWork.IsCompleted && form.PendingReadWork.IsCompleted, 5000); form.InitializationWork.GetAwaiter().GetResult(); form.ActionWork.GetAwaiter().GetResult(); }
+                            service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                            check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "repeated invitation fixture joins logical physical and cleanup work: " + mode);
+                        }
+                        if (mode == "close-retry") {
+                            using (var retryRelay = new Ikev2RelayService())
+                            using (var retryService = new HomeVpnService(retryRelay, Application.ExecutablePath, 0, 0, 0))
+                            using (var retry = new HomeInvitationsForm(new[] { row }, (action, label, id) => { throw new Exception("Reopen does not invoke Admin"); }, clipboard, retryService)) {
+                                try {
+                                    HomeVpnWaitingTests.ModalWizardCase(retry, delegate {
+                                        if (!retry.InitializationWork.IsCompleted) return false; retry.InitializationWork.GetAwaiter().GetResult();
+                                        check(!((bool)Field(retry, "pendingAdmin")) && !((bool)Field(retry, "pendingUnreadable")) && ((Button)Field(retry, "create")).Enabled,
+                                            "close then reopen performs actual new read without cancelled old gate overwrite"); return true;
+                                    }, () => false);
+                                } finally {
+                                    retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted, 5000); retry.InitializationWork.GetAwaiter().GetResult();
+                                    retryService.Dispose(); var cleanup = retryService.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                                    check(cleanup.GetAwaiter().GetResult(), "repeated close Retry fixture joins actual cleanup");
+                                }
                             }
                         }
                     }
