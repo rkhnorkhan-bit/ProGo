@@ -1,4 +1,59 @@
-## Текущий кандидат: CI635 instance receipt readiness fix; Windows NOT_RUN
+## Текущий кандидат: разрешённая test-only14-invariant диагностика; Windows NOT_RUN
+
+Owner explicitly authorized instrumentation and one automatic diagnostic CI, not a blind rerun.
+Checkpoint `1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3`, PR88 baseline source
+`cffa667469498a0245857f0406246c9da3638ddd` / tested merge `fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d`,
+CI636 FAILURE preserved: Instance30 PASS, HTTPS recovery11 only5PASS/1FAIL(owner-dispose)/5NOT_RUN.
+Code `3ae2766fbe2d4436f192e705a17f27188a07db92`:2 test files58add/5delete, plus3 docs.
+All14 original predicates are named and evaluated in original order at the same settled boundary;
+false/evaluation exceptions remain failures, collected before original aggregate assertion.
+No predicate/coverage/deadline/phase/cleanup change, including post-Dispose draft read.
+Safe output only fixed names and booleans/counts/task/disposal states; no address text, request IDs,
+credential/journal bytes, paths/argv or exception messages/Data/ToString. Safe type/method/IL stack
+is emitted before modal rethrow and native harness catch via stdout; original exit1 retained.
+PASS static AST14 parity/scenario preservation/syntax2/C#5/diff/public321/0/secretPII0, not compiler proof.
+Local parity-script LF/CRLF mismatch corrected, no product change. New Windows compilation/native
+NOT_RUN; owner-dispose/recovery11 NOT PASS. Runtime/other tests/scripts/workflows/VERSION exact636.
+
+One guarded expected-head PR88 publication TODO, one automatic diagnostic CI only; uploads OFF,
+release/prune ineligible. Save exact source/merge/tree/run/checkpoint and STOP without full wait.
+Next SAME CI final logs: identify all violated invariants/state/safe stack before any runtime fix.
+Weights58–80/22 +0 unchanged. No external system/deployment/credential/binary action.
+
+## История: CI636 completed FAILURE; root cause BLOCKED
+
+Recovery checkpoint `d136325336c9ff43bfc2e94f91c3ce2ede37778b`, unchanged published source
+`cffa667469498a0245857f0406246c9da3638ddd`, tested merge/build identity
+`fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d`. PR88 OPEN/DRAFT, no concurrent writer observed.
+[CI636/39888080167](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167) final Windows/Ubuntu
+logs independently read. Windows120200902870 FAILURE only late relay step; repository step SUCCESS.
+PASS Test-ProGo/Desktop5294/Instance30(new actual receipt absence/negative guards)/Maintenance126/
+Shutdown47/UpdaterPackage5, modal export11 and chooser3, repair8 and list10. Ubuntu120200903120
+PASS full operation16/QR13/provisioning logs. No overall CI green; pack/uploads/prune SKIPPED.
+HTTPS recovery11:5PASS(default-refusal/status-pending/cancel-retry/stop-copy/dispose-copy),
+owner-dispose FAIL,5NOT_RUN(cancel-command/cleanup-lock/result/stop-result-copy/stop-result).
+Later snapshot12/dispatcher5/ownership8/cleanup4/setup recover10/fresh10 NOT_RUN because their
+Main186 invocation follows failing share-recovery Main91; historic earlier PASS not inherited.
+HomeProfileHttp/portable/Python relay transport/full HomeVPN also NOT_RUN.
+
+Failure02:36:01.6054070UTC: composite preservation assert tests/HomeVpnShareRecoveryTests.cs243–246,
+OwnedHttpsRecovery owner-dispose. Observed stack only Test-HomeVpnRelay.ps1:19 char32;
+HomeVpnWizardTests.Main190 prints exception type/message, not C# frames.14 independent predicates
+share one label, so failed predicate and runtime/test root cause NOT proven. Prior typed cancellation,
+Stop/drain/cleanup/no-late-publication/no-verification boundaries PASS. Suspected post-Dispose
+address.Text observation is a hypothesis, not proof; no conditional bypass or timeout/assert weakening.
+All14 predicates and final timestamp evidence retained in JSON ci636_relay_diagnosis.
+
+Only3 local checkpoint docs changed; runtime/tests/scripts/workflows/VERSION exact636.
+No push/new CI/rerun/PR mutation: current authorization requires a real fix before publication.
+Next bounded diagnostic stage: capture separately labelled safe booleans plus full exception stack
+while preserving every invariant/deadline, run exact owner-dispose on Windows .NET Framework.
+Local Windows environment unavailable; a diagnostic CI requires separate authorization before
+running because no proven correction exists yet. Then fix only proven cause. Local checkpoint
+is HEAD via git log -1, intentionally not published. No next feature/system/deployment operation.
+Weights58–80/22 +0 unchanged; narrow Instance PASS does not close whole weighted acceptance.
+
+## История: CI635 instance receipt readiness fix; Windows NOT_RUN
 
 Checkpoint `3768dc1ff4f9dd346234f188bf4dc4e45ae38f12`. Source `18585ce3df454d3280048db4b62fc7dfc1777d19` /
 tested merge `ceb83663d58a7158227001868d013723bed70225`, [CI635](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364)
@@ -20,10 +75,21 @@ finally only. Runtime/scripts/workflows/other tests/signature fix/recovery11 unc
 PASS local review/syntax1/await-scope/diff/public321/0/secretPII0/method preservation, not
 Windows compiler/native proof. Changed fixture compiler/native/recovery11/full NOT_RUN.
 
-One expected-head guarded PR88 update → one new automatic CI, no blind rerun. Uploads OFF/
-release excluded. Save IDs/checkpoint and STOP. Next same new CI/exact merge: receipt tests,
-full Instance suite and actual recovery11/prior regression. Persistent missing receipt must
-FAIL existing deadline, then diagnose primary. No next feature or deadline/assert relaxation.
+Publication PASS source `cffa667469498a0245857f0406246c9da3638ddd` existing PR88 integration branch;
+merge ref `fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d` is not yet verified checkout/build identity.
+Freeze `8e414b821b9328e2f16238010961079704dd2387`, tree `b4da8abfda0d27954c339addd5db33589e7def3d`;
+fetched exact635 parent/full tree equal freeze, expected-head non-force update checked.
+Public diff4files355add/43delete, only fixture38add/1delete +3 docs. Sole automatic
+[CI636/39888080167](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167), attempt1,
+raw exact-head runs total_count1. Run in_progress/conclusion null; updated_at2026-10-23T02:10:14Z.
+Windows120200902870 build in_progress; Ubuntu120200903120 completed SUCCESS metadata only,
+full final log not read here. Changed fixture compilation/native/complete Instance/recovery11
+NOT_RUN. Uploads OFF/release excluded; completion upload/prune not yet verified. Local
+post-publication docs checkpoint is HEAD via git log -1, NOT pushed to avoid a second CI;
+exact checkpoint also in PR88 body. STOP without full CI wait/next function. Next SAME636
+final logs/exact tested merge: receipt regressions, full Instance and actual recovery11/prior
+checks. Persistent missing receipt must FAIL original deadline, then diagnose primary;
+no deadline/assert relaxation. CI635 observed stack limits/producer uncertainty retained.
 Weights58–80/22 +0 unchanged, fullR09/owner acceptance open; no VPS/network/key/install/
 binary upload/release/personal deployment actions.
 

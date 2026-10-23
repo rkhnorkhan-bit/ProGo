@@ -8,7 +8,104 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: только fixture baseline failure CI635
+## Текущий этап: разрешённая диагностика14 инвариантов CI636, Windows NOT_RUN
+
+Владелец отдельно разрешил test-only instrumentation и один automatic diagnostic CI.
+Проверены checkpoint `1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3`, public PR88 OPEN/DRAFT source
+`cffa667469498a0245857f0406246c9da3638ddd` / tested636 merge `fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d`.
+Другого доступного писателя/Git/build/lock операций нет; прежние worktree/checkpoint сохранены.
+Отдельная ветка work/progo-ci636-invariants-20261023. CI636 completed FAILURE остаётся baseline,
+не результатом нового кандидата. Его Instance30/receipt guards PASS; HTTPS recovery11 только5PASS/
+1FAIL(owner-dispose)/5NOT_RUN. Поздние snapshot/dispatcher/ownership/cleanup/recover/fresh NOT_RUN.
+
+Code `3ae2766fbe2d4436f192e705a17f27188a07db92`: только2 test files,58add/5delete.
+HomeVpnShareRecoveryTests.OwnedHttpsRecovery заменяет один compound assert14 именованными
+проверками тех же выражений в том же порядке и на той же phase7 boundary. False и исключение
+оценки записываются как нарушение; aggregate assert требует0 нарушений. Остальные проверки,
+сценарии, порядок фаз, physical joins, cleanup, реальные file/process operations и deadlines прежние.
+После первого false собираются остальные нарушения, но сценарий не получает false PASS.
+Draft predicate после Dispose оставлен буквально, гипотеза не исправляется и не обходится.
+Вывод: имена/booleans; counts calls/expected/copies/verified/violations/publications; state
+phase/task/Stop/DialogResult/IsDisposed/IsHandleCreated. Нет текста address, request IDs,
+credentials/journal/private bytes, filenames/paths/argv, Exception.Message/Data/ToString.
+Safe stack: только exception type, method identities и IL offsets, до modal rethrow и в
+HomeVpnWizardTests.Main catch; stdout не даёт PowerShell Stop на stderr обрезать frames.
+Nonzero exit и исходный aggregate FAIL сохранены, все нарушенные условия видны по именам.
+
+PASS local: AST parity всех14 выражений/порядка, побайтовая проверка остальных scenario/cleanup/
+deadline/method blocks с нормализацией LF/CRLF, syntax2/C#5 await-scope, diff/public321/0/secretPII0.
+Первый локальный parity-script сравнил Wizard без LF/CRLF normalization; исправлена только
+проверка, затем PASS. Это не C# compiler/native proof. Windows compilation/diagnostic native
+NOT_RUN; owner-dispose/recovery11 не объявляются PASS. Runtime/прочие tests/scripts/workflows/
+VERSION равны636. Scope2tests+3docs, новые функции/credentials/system/deployment actions отсутствуют.
+
+Публикация TODO: финальные review/static/public/secrets, fresh expected-head non-force PR88 update,
+один automatic diagnostic CI. Workflow public PR uploads OFF, release/prune ineligible,
+workflows/VERSION не менялись. После публикации записать source/merge/tree/run/checkpoint и STOP,
+не ждать весь CI/не запускать второй. Следующий этап — финальный log ТОГО ЖЕ diagnostic CI:
+прочитать14 outcomes/state/stack, установить failed invariant и только затем классифицировать
+runtime/test/infrastructure причину. Пока причина BLOCKED и runtime не меняется.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0, веса/620 anchors прежние.
+
+## История: CI636 relay-step diagnosis, причина BLOCKED
+
+Восстановлено из `d136325336c9ff43bfc2e94f91c3ce2ede37778b`; HEAD/PR88 сверены самостоятельно.
+PR88 OPEN/DRAFT, source `cffa667469498a0245857f0406246c9da3638ddd`, exact checkout и build identity
+`0.2.2+fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d` подтверждены финальным Windows log.
+Доступные worktree чистые до начала; root — единственный агент; Git/build/lock операций
+не найдено. Inventory codex PID относится к вызову текущего read-only инструмента.
+Прежние ветки и checkpoint сохранены, отдельная docs-only ветка work/progo-ci636-relay-diagnosis-20261023.
+Runtime/tests/scripts/workflows/VERSION побайтово равны опубликованному source636.
+
+[CI636/39888080167](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167) completed FAILURE,
+updated_at2026-10-23T02:36:06Z. Самостоятельно получены и исследованы оба полных финальных job logs:
+Windows120200902870 —11006 строк, Ubuntu120200903120 —578 строк. Repository hygiene and build SUCCESS,
+поздний IKEv2 relay integration tests on .NET Framework FAILURE. Pack/uploads/prune SKIPPED, артефактов нет.
+
+Подтверждённые узкие результаты точного636, не общий SUCCESS:
+
+| Проверка | Статус | Доказательство |
+| --- | --- | --- |
+| Test-ProGo.ps1 | PASS | Финальный marker02:31:31UTC; Desktop5294, Instance30, Maintenance126, Shutdown47, UpdaterPackage5 |
+| CI635 fixture absence fix | PASS | Instance30 и real missing/disappearing receipt + malformed/settings/foreign I/O guards02:28:19–26UTC |
+| Export modal11 / profile chooser3 | PASS | Все11 protected-settings assertions и cancel/missing/error chooser markers; diagnostic chooser3 тоже PASS |
+| Repair8 / read-only list10 | PASS | По8/10 финальных owned production slice PASS markers |
+| HTTPS recovery11 | PARTIAL |5 PASS: default-refusal, status-pending, cancel-retry, stop-copy, dispose-copy; owner-dispose FAIL;5 остальных NOT_RUN |
+| Snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10 | NOT_RUN | Вызов HomeVpnSetupRecoveryTests.Run находится после упавшего HomeVpnShareRecoveryTests.Run; прежние PASS остаются историей |
+| Ubuntu | PASS | Полный log: operation16 и QR13 OK, isolated provisioning/revocation/HTTPS/restart markers PASS |
+| Portable archive/Python relay transport/full Home VPN | NOT_RUN | Harness завершился до этих вызовов; название failing step не доказывает сбой UDP relay |
+
+Fatal02:36:01.6054070UTC: `Home VPN test failed: Exception: owned HTTPS preserves journal draft credentials
+exact queries and unrelated resources without share mutation or replay: owner-dispose`.
+Assert — tests/HomeVpnShareRecoveryTests.cs:243–246, OwnedHttpsRecovery; наблюдаемый wrapper stack
+scripts/Test-HomeVpnRelay.ps1:19 char32. C# stack отсутствует: HomeVpnWizardTests.Main190 печатает только
+тип/message. Source trace (вывод из кода, не stack из лога): Main91 → ShareRecoveryTests.Run112 →
+OwnedHttpsRecovery → ModalWizardCase timer → compound check243–246.
+До него PASS: typed cancellation, physical Stop/body/lease/cleanup, no late dispatcher publication,
+no later verification/save/consumption. Новый FAIL не повторяет compilation или Instance defect.
+
+Корневая причина НЕ ДОКАЗАНА:14 boolean predicates объединены одной меткой. Нет значений,
+позволяющих отличить query/journal/private bytes/draft/DialogResult/lease/service work/directory/
+sibling/relay/unrelated process/owned PID/child. Test assertion failure подтверждён;
+runtime defect, fixture defect и infrastructure fault по этому логу не разделяются однозначно.
+Гипотеза: address.Text читается после form.Dispose на200; проверка живого draft после уничтожения
+TextBox может быть некорректна. Это не установлено на точном .NET Framework и не объявляется причиной;
+условие не удалено, не заменено на closing||PASS, assert/coverage/timeouts не изменены.
+
+Сохранены подробные timestamp markers и14 predicates в JSON ci636_relay_diagnosis.
+Изменены только3 документа, код и тесты НЕ изменены. Новый CI/rerun/push/PR mutation НЕ выполнялись:
+владелец разрешил новую публикацию только при реальном исправлении, доказанного исправления пока нет.
+Локально .NET Framework/PowerShell/Windows UI недоступны. Минимальный следующий отдельный этап:
+сохранить все14 исходных invariants и deadlines, получить раздельные обезличенные boolean outcomes
+и полный C# exception stack в том же owner-dispose на Windows .NET Framework. Для отдельного
+diagnostic CI нужно отдельное разрешение; текущую границу не обходим. После доказательства —
+исправить только выявленный контракт. Не запускать другую функцию/слепой повтор.
+Локальный docs-only checkpoint — HEAD через git log -1; source636/прежний checkpoint сохранены.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: веса/620 anchors неизменны,
+узкий Instance PASS не закрывает новый полный взвешенный критерий/приёмку. VPS/сеть/ключи/
+credentials/личный deployment/установка/релизы/бинарные uploads не затрагивались.
+
+## История: fixture baseline failure CI635
 
 Checkpoint `3768dc1ff4f9dd346234f188bf4dc4e45ae38f12`/локальный HEAD сверены. PR88 OPEN/DRAFT на source
 `18585ce3df454d3280048db4b62fc7dfc1777d19`, tested merge `ceb83663d58a7158227001868d013723bed70225`. Другого доступного
@@ -51,12 +148,24 @@ secretPII0/method preservation. Все runtime/другие tests/harness/script
 signature fix/recovery11/ownership/cleanup/export UI/EOF сохранены. Assertions/deadlines/
 coverage не отключены; sampler допускает только ожидание, не ложную готовность.
 
-Публикация TODO: финальные diff/secret/public/workflow checks, fresh expected-head non-force
-update existing PR88; один новый automatic CI с конкретной regression, no blind rerun.
-Записать source/merge/tree/run/checkpoint и STOP без полного ожидания/другой функции.
-Следующий шаг — тот же новый CI/exact merge: native absence/fatal-guard regressions,
-complete Instance suite, actual recovery11 и прежние проверки. Если receipt так и не
-публикуется, сохранить timeout FAIL и исследовать primary, не ослаблять ожидание/assert.
+Публикация PASS: source `cffa667469498a0245857f0406246c9da3638ddd` в существующей PR88 ветке
+integration/approved-plan-31-20261011; fresh expected-head non-force update проверен.
+Merge ref `fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d` пока не подтверждён checkout/build identity нового CI.
+Freeze `8e414b821b9328e2f16238010961079704dd2387`, tree `b4da8abfda0d27954c339addd5db33589e7def3d`;
+fetched parent точный635/full tree equal freeze. Public diff4files355add/43delete:
+один fixture38add/1delete +3 docs. Runtime/workflows/scripts/VERSION неизменны.
+Один automatic [CI636/39888080167](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167),
+attempt1/raw exact-head runs total_count1; status in_progress/conclusion null,
+run.updated_at2026-10-23T02:10:14Z. Windows120200902870 build in_progress;
+Ubuntu120200903120 completed SUCCESS по jobs metadata, final log здесь не прочитан.
+Новая fixture compilation/native/complete Instance/recovery11/full regression NOT_RUN.
+Upload guards OFF/release excluded; completion upload/prune ещё не проверены.
+Post-publication docs-only checkpoint — локальный HEAD (git log -1), не публикуется,
+чтобы не создавать второй CI; точные source/freeze/checkpoint также в PR88 body.
+STOP без полного ожидания/следующей функции. Следующий шаг — тот же CI636/exact tested
+merge: native absence/fatal-guard regressions, complete Instance suite, actual recovery11
+и прежние проверки. Если receipt не публикуется, сохранить timeout FAIL и исследовать
+primary, не ослаблять ожидание/assert. CI635 failure и отсутствие его C# frames сохранены.
 Uploads OFF/release excluded; main merge/релизы/бинарные uploads/установка/VPS/сеть/ключи/
 credentials/личный deployment не выполнялись. Реализация58–80/100 · Проверенная готовность22/100
 · Изменение+0: фиксированные веса/620 anchors прежние. Главный блокер — точный Windows proof

@@ -3831,7 +3831,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+  "candidate_source": "cffa667469498a0245857f0406246c9da3638ddd",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3929,34 +3929,37 @@
     }
   ],
   "ci_candidate": {
-    "source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
-    "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
-    "run_id": 39884480364,
-    "run_number": 635,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364",
+    "source": "cffa667469498a0245857f0406246c9da3638ddd",
+    "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+    "local_freeze": "8e414b821b9328e2f16238010961079704dd2387",
+    "run_id": 39888080167,
+    "run_number": 636,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
     "status": "completed",
     "conclusion": "failure",
     "jobs": {
-      "windows": 120189329732,
-      "ubuntu": 120189329558
+      "windows": {
+        "id": 120200902870,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "ubuntu": {
+        "id": 120200903120,
+        "status": "completed",
+        "conclusion": "success",
+        "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+      }
     },
-    "run_updated_at": "2026-10-23T01:50:28Z",
-    "verification": "Final Windows log independently read. Exact build identity0.2.2+ceb83663d58a7158227001868d013723bed70225; no CS1501/CS1660, Desktop5294 PASS. Ubuntu SUCCESS metadata only in this fix stage, not full final-log verification",
-    "windows_compilation": "PASS runtime build and Desktop/Instance harness compilation; prior CI634 call-signature defect resolved on exact635",
-    "failure": "InstanceTests.exe FileNotFoundException for proxy-environment-backup.json, fatal log at01:50:23Z after clean owner disposal PASS, before actual repeated primary launch PASS",
-    "observed_stack": [
-      "scripts/Test-ProGo.ps1:649 invocation of InstanceTests.exe; NativeCommandError",
-      "C# stack frames absent in captured Actions log"
-    ],
-    "source_trace_inference": "Main startup Wait253-259 -> TryCaptureProxyBaseline receipt open97 or verification107 -> ReadProxySnapshot FileStream85. Which of97/107 threw is not distinguishable from captured log",
-    "root_cause": "Fixture sampler treats missing own receipt as fatal FileNotFound rather than not-ready during bounded startup sampling. AppliedPort and both receipt reads are separate observations. Exact underlying producer timing/transience in that run not proven, no production bug claim",
-    "desktop": "PASS5294",
-    "instance": "FAIL startup settled ownership baseline; complete Instance suite not PASS",
-    "recovery11_executed": 0,
-    "windows_native": "NOT_RUN recovery11 and later full regression; no recovery11 PASS markers, later HomeVpnRelay step SKIPPED",
+    "run_updated_at": "2026-10-23T02:36:06Z",
+    "verification": "Both full final logs independently retrieved/examined. Checkout and build identity exact fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d. Overall636 FAILURE, not green.",
+    "windows_compilation": "PASS exact636 build and changed Instance fixture compilation; Repository hygiene and build SUCCESS",
+    "windows_native": "PARTIAL: Desktop5294 Instance30(new receipt regressions) Maintenance126 Shutdown47 UpdaterPackage5 PASS; export modal11 chooser3 repair8 list10 PASS. HTTPS recovery11:5 PASS/owner-dispose FAIL/5 NOT_RUN. Later setup snapshot12 dispatcher5 ownership8 cleanup4 recover10 fresh10 NOT_RUN due harness order.",
     "pack": "SKIPPED",
-    "artifact_uploads": "SKIPPED uploads/prune; no binary publication",
-    "owner_pc": "NOT_RUN"
+    "artifact_uploads": "SKIPPED uploads/prune; no artifacts",
+    "owner_pc": "NOT_RUN",
+    "failure": "Home VPN owned HTTPS owner-dispose composite preservation assert243-246;14 subconditions share one label. Exact failed subcondition/root cause not proven. No C# frames logged; wrapper Test-HomeVpnRelay.ps1:19."
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5492,22 +5495,46 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "Only proven CI635 fixture baseline absence defect fixed locally; no new functions",
-    "recovery_checkpoint": "3768dc1ff4f9dd346234f188bf4dc4e45ae38f12",
-    "base_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
-    "base_merge": "ceb83663d58a7158227001868d013723bed70225",
-    "local_sha": "37a1c38f3d1e0c292a5fe61c281322fa0a4add44",
-    "local_development_sha": "37a1c38f3d1e0c292a5fe61c281322fa0a4add44",
-    "published_sha": "18585ce3df454d3280048db4b62fc7dfc1777d19",
-    "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
+    "phase": "Authorized test-only CI63614-invariant diagnostic candidate; runtime unchanged and root cause still unproven",
+    "recovery_checkpoint": "1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3",
+    "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
+    "base_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "local_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
+    "local_development_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
+    "published_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+    "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
     "baseline_only": true,
-    "ci_run_id": 39884480364,
+    "ci_run_id": 39888080167,
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "NOT_RUN changed fixture candidate; runtime identical to compiled635",
-    "windows_native": "NOT_RUN receipt regressions/recovery11/full regression",
-    "next": "One scanned expected-head guarded publication, record new source/merge/run/checkpoint, STOP without waiting full CI or next feature",
-    "readiness_change": 0
+    "windows_compilation": "NOT_RUN new instrumentation candidate",
+    "windows_native": "NOT_RUN new instrumentation candidate; owner-dispose not PASS",
+    "next": "Record exact source/merge/run/checkpoint, STOP without full wait. Next same diagnostic CI final log: identify every violated invariant from names/booleans/state and safe frames, then classify cause; do not change runtime or start another feature beforehand.",
+    "readiness_change": 0,
+    "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+    "ci_run_number": 636,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+    "ci_jobs": {
+      "windows": {
+        "id": 120200902870,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "ubuntu": {
+        "id": 120200903120,
+        "status": "completed",
+        "conclusion": "success",
+        "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+      }
+    },
+    "publication": "TODO one expected-head non-force update existing PR88 and one automatic diagnostic CI; uploads OFF/release ineligible",
+    "public_diff": "Prepared only2 test files plus3 state docs; runtime/other tests/scripts/workflows/VERSION exact636",
+    "workflow_preflight": "PASS public PR upload guards false; prune/release not eligible; workflows/scripts/VERSION unchanged",
+    "checkpoint": "Record publication source/run and local docs-only HEAD after guarded push; no duplicate CI",
+    "branch": "work/progo-ci636-invariants-20261023",
+    "worktree": "ProGo-ci636-invariants",
+    "blocker": "Await authorized diagnostic Windows evidence for exact failed invariant; no runtime correction claimed"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5600,7 +5627,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact635 source18585ce/mergeceb8366 runtime compilation PASS and Desktop5294 PASS from final Windows log; signature fix resolved. New failure is missing own startup receipt in InstanceTests sampler, C# frame97/107 indistinguishable from log. Recovery11 executed0/NOT_RUN. Minimal fixture-only correction and real-file regression prepared; new compiler/native NOT_RUN until exact CI. Fixed v1.0 weights/620 score anchors unchanged, no full weighted gate/owner acceptance closed.",
+    "candidate_note": "Exact636 sourcecffa667/mergefa58ba1: Repository/Test-ProGo PASS including Instance30 receipt guards; overall FAIL HTTPS owner-dispose composite. HTTPS recovery11 only5PASS/1FAIL/5NOT_RUN. Owner authorized14 named predicates + safe stack/count/state instrumentation and one diagnostic CI. New compilation/native NOT_RUN, no runtime changes or root-cause claim. Fixed weights/620 anchors unchanged,58-80/22 +0; no whole weighted acceptance closed.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -10936,6 +10963,167 @@
         "checkpoint_note": "Post-publication docs-only checkpoint local branch HEAD (git log -1), not pushed to avoid second CI; frozen published docs retain pre-publication state, exact publication IDs/checkpoint also in PR88 body"
       },
       "candidate_source": "18585ce3df454d3280048db4b62fc7dfc1777d19"
+    },
+    "before_ci636_relay_diagnosis": {
+      "ci_candidate": {
+        "source": "cffa667469498a0245857f0406246c9da3638ddd",
+        "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "tested_merge": null,
+        "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+        "local_freeze": "8e414b821b9328e2f16238010961079704dd2387",
+        "run_id": 39888080167,
+        "run_number": 636,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": {
+          "windows": {
+            "id": 120200902870,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120200903120,
+            "status": "completed",
+            "conclusion": "success",
+            "evidence": "GitHub jobs metadata only; full final Ubuntu log not read in this stage"
+          }
+        },
+        "run_updated_at": "2026-10-23T02:10:14Z",
+        "verification": "Fresh PR HEAD and sole exact-source automatic run verified; merge ref is not yet verified checkout/build identity. No final Windows log or new native proof.",
+        "windows_compilation": "NOT_RUN changed fixture pending exact CI636 log",
+        "windows_native": "NOT_RUN receipt regressions/complete Instance/recovery11/full regression pending exact CI636 log",
+        "pack": "NOT_RUN pending",
+        "artifact_uploads": "OFF public PR guards; completion steps not yet verified",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "phase": "Only CI635 fixture baseline absence correction published; sole CI636 running; STOP after checkpoint",
+        "recovery_checkpoint": "3768dc1ff4f9dd346234f188bf4dc4e45ae38f12",
+        "base_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+        "base_merge": "ceb83663d58a7158227001868d013723bed70225",
+        "local_sha": "8e414b821b9328e2f16238010961079704dd2387",
+        "local_development_sha": "8e414b821b9328e2f16238010961079704dd2387",
+        "published_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+        "tested_merge": null,
+        "baseline_only": false,
+        "ci_run_id": 39888080167,
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "windows_compilation": "NOT_RUN changed fixture candidate; runtime identical to compiled635",
+        "windows_native": "NOT_RUN receipt regressions/recovery11/full regression",
+        "next": "Inspect SAME CI636 final logs/exact tested merge: complete Instance suite and real receipt regressions, actual recovery11 and prior regressions. No duplicate CI or new feature; persistent receipt absence remains timeout FAIL, then diagnose primary.",
+        "readiness_change": 0,
+        "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+        "ci_run_number": 636,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+        "ci_jobs": {
+          "windows": {
+            "id": 120200902870,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120200903120,
+            "status": "completed",
+            "conclusion": "success",
+            "evidence": "GitHub jobs metadata only; full final Ubuntu log not read in this stage"
+          }
+        },
+        "publication": "PASS expected-head non-force update existing PR88 integration/approved-plan-31-20261011; exact parent18585ce, fetched full tree equal local freeze, raw exact-head runs total_count1/attempt1",
+        "public_diff": "4 files355add/43delete: tests/InstanceTests.cs38add/1delete plus3 checkpoint docs; runtime unchanged",
+        "workflow_preflight": "PASS public PR upload guards false; prune/release not eligible; workflows/scripts/VERSION unchanged",
+        "checkpoint": "Post-publication docs-only commit is local HEAD via git log -1, intentionally NOT pushed to avoid a second CI; source/freeze/checkpoint also recorded in PR88 body"
+      },
+      "ci635_instance_baseline_fix": {
+        "status": "PARTIAL",
+        "recovery_checkpoint": "3768dc1ff4f9dd346234f188bf4dc4e45ae38f12",
+        "base_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+        "base_merge": "ceb83663d58a7158227001868d013723bed70225",
+        "base_ci": 39884480364,
+        "code_sha": "37a1c38f3d1e0c292a5fe61c281322fa0a4add44",
+        "branch": "work/progo-ci635-baseline-readiness-20261023",
+        "worktree": "ProGo-ci635-baseline-readiness",
+        "scope": "tests/InstanceTests.cs only plus3 checkpoint docs, runtime unchanged",
+        "contract": "TryCaptureProxyBaseline may return true only after matching validated settings and receipt survive both reads; a missing OWN receipt at receipt/receipt-verification stage means false/null outputs/code0, never PASS. Existing Wait10s still fails permanent absence",
+        "fix": "Catch only FileNotFoundException with exact backupPath filename at two receipt stages. Missing settings/foreign file/malformed receipt and other I/O still propagate; 32/33 sharing behavior unchanged",
+        "regression": "Real temporary file absence before first read; delete between read and verification via fixture-only optional hook; repeated absence never ready; publish matching receipt then acquire exact bytes. Malformed receipt/missing settings/foreign FileNotFound stay fatal; old port/pending/lock/atomic replacement checks retained",
+        "local": "PASS full manual diff/review, syntax1/C#5 await-scope, diff/public321/0/secretPII0; method preservation Wait/Main/ReadProxySnapshot and all other methods unchanged. No C# compiler/native runtime locally",
+        "preservation": "Only TryCaptureProxyBaseline and ProxyBaselineNativeReadiness changed; every runtime/other test/script/workflow/VERSION blob equals635, including prior timeout fix/recovery11/ownership/cleanup/UI/EOF",
+        "windows_compilation": "NOT_RUN changed fixture on corrected candidate",
+        "windows_native": "NOT_RUN new receipt regressions/recovery11/full regression",
+        "publication": "PASS guarded existing PR88 update; fetched parent and full tree checked; one automatic CI636, no blind rerun. No binary/release/system changes.",
+        "next": "Inspect SAME CI636 final logs/exact tested merge: complete Instance suite and real receipt regressions, actual recovery11 and prior regressions. No duplicate CI or new feature; persistent receipt absence remains timeout FAIL, then diagnose primary.",
+        "readiness_change": 0,
+        "published_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+        "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "tested_merge": null,
+        "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+        "local_freeze": "8e414b821b9328e2f16238010961079704dd2387",
+        "ci_run_id": 39888080167,
+        "ci_run_number": 636,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120200902870,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120200903120,
+            "status": "completed",
+            "conclusion": "success",
+            "evidence": "GitHub jobs metadata only; full final Ubuntu log not read in this stage"
+          }
+        }
+      }
+    },
+    "before_ci636_invariant_instrumentation": {
+      "active_work": {
+        "phase": "CI636 final-log diagnosis only; exact relay-step owner-dispose assertion isolated, root cause BLOCKED; no speculative correction",
+        "recovery_checkpoint": "d136325336c9ff43bfc2e94f91c3ce2ede37778b",
+        "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
+        "base_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "local_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+        "local_development_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+        "published_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+        "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "baseline_only": false,
+        "ci_run_id": 39888080167,
+        "ci_status": "completed",
+        "ci_conclusion": "failure",
+        "windows_compilation": "PASS exact636 build and changed Instance fixture compilation; Repository hygiene and build SUCCESS",
+        "windows_native": "PARTIAL: Desktop5294 Instance30(new receipt regressions) Maintenance126 Shutdown47 UpdaterPackage5 PASS; export modal11 chooser3 repair8 list10 PASS. HTTPS recovery11:5 PASS/owner-dispose FAIL/5 NOT_RUN. Later setup snapshot12 dispatcher5 ownership8 cleanup4 recover10 fresh10 NOT_RUN due harness order.",
+        "next": "Small diagnostic stage: preserve all14 original invariants and deadlines; obtain separately labelled boolean outcomes and full native exception stack on exact Windows .NET Framework. Requires independently authorized diagnostic run because current user permits new automatic CI only for a real fix. Then correct only the proven failed contract.",
+        "readiness_change": 0,
+        "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+        "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+        "ci_run_number": 636,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+        "ci_jobs": {
+          "windows": {
+            "id": 120200902870,
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          "ubuntu": {
+            "id": 120200903120,
+            "status": "completed",
+            "conclusion": "success",
+            "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+          }
+        },
+        "publication": "NOT_RUN in this diagnosis stage: no proven cause/fix, no push/new CI/rerun; existing public PR88 HEAD remains exact636 source",
+        "public_diff": "NONE this stage; local docs-only changes preserve previous checkpoint. Runtime/tests/scripts/workflows/VERSION unchanged636.",
+        "workflow_preflight": "PASS public PR upload guards false; prune/release not eligible; workflows/scripts/VERSION unchanged",
+        "checkpoint": "Local docs-only HEAD via git log -1; no publication/new CI. Previous source and checkpoint preserved.",
+        "branch": "work/progo-ci636-relay-diagnosis-20261023",
+        "worktree": "ProGo-ci636-relay-diagnosis",
+        "blocker": "No failed boolean or native C# stack in log; Windows .NET Framework runtime unavailable locally. Cannot safely distinguish runtime/fixture root cause or justify infrastructure rerun."
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -12080,7 +12268,7 @@
     "owner_pc": "NOT_RUN"
   },
   "ci635_instance_baseline_fix": {
-    "status": "PARTIAL",
+    "status": "PASS",
     "recovery_checkpoint": "3768dc1ff4f9dd346234f188bf4dc4e45ae38f12",
     "base_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
     "base_merge": "ceb83663d58a7158227001868d013723bed70225",
@@ -12094,10 +12282,284 @@
     "regression": "Real temporary file absence before first read; delete between read and verification via fixture-only optional hook; repeated absence never ready; publish matching receipt then acquire exact bytes. Malformed receipt/missing settings/foreign FileNotFound stay fatal; old port/pending/lock/atomic replacement checks retained",
     "local": "PASS full manual diff/review, syntax1/C#5 await-scope, diff/public321/0/secretPII0; method preservation Wait/Main/ReadProxySnapshot and all other methods unchanged. No C# compiler/native runtime locally",
     "preservation": "Only TryCaptureProxyBaseline and ProxyBaselineNativeReadiness changed; every runtime/other test/script/workflow/VERSION blob equals635, including prior timeout fix/recovery11/ownership/cleanup/UI/EOF",
-    "windows_compilation": "NOT_RUN changed fixture on corrected candidate",
-    "windows_native": "NOT_RUN new receipt regressions/recovery11/full regression",
-    "publication": "TODO one expected-head non-force PR88 update; one new automatic CI, no blind rerun",
-    "next": "Inspect SAME new CI final logs/exact merge: native missing/disappearing/fatal-guard tests, complete Instance suite, recovery11 and earlier regression. If receipt never publishes, retain timeout FAIL and diagnose primary; no deadline/assert relaxation",
+    "windows_compilation": "PASS exact636 source/merge; changed fixture compiled and executed",
+    "windows_native": "PASS receipt absence/disappearance/negative guards and Instance30. HTTPS recovery11 separate PARTIAL5/FAIL1/NOT_RUN5; whole CI636 FAILURE.",
+    "publication": "PASS guarded existing PR88 update; fetched parent and full tree checked; one automatic CI636, no blind rerun. No binary/release/system changes.",
+    "next": "Small diagnostic stage: preserve all14 original invariants and deadlines; obtain separately labelled boolean outcomes and full native exception stack on exact Windows .NET Framework. Requires independently authorized diagnostic run because current user permits new automatic CI only for a real fix. Then correct only the proven failed contract.",
+    "readiness_change": 0,
+    "published_sha": "cffa667469498a0245857f0406246c9da3638ddd",
+    "merge_ref": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "tree": "b4da8abfda0d27954c339addd5db33589e7def3d",
+    "local_freeze": "8e414b821b9328e2f16238010961079704dd2387",
+    "ci_run_id": 39888080167,
+    "ci_run_number": 636,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": {
+        "id": 120200902870,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "ubuntu": {
+        "id": 120200903120,
+        "status": "completed",
+        "conclusion": "success",
+        "evidence": "Final log read: operation16, QR13, isolated provisioning PASS"
+      }
+    },
+    "criterion": "Narrow fixture correction only: real receipt absence/disappearance/negative guards plus complete Instance30, exact636; does not close full HTTPS/project acceptance"
+  },
+  "ci636_relay_diagnosis": {
+    "status": "BLOCKED",
+    "criterion": "Identify exact failed invariant before correcting runtime or fixture; no speculative correction or blind rerun",
+    "source": "cffa667469498a0245857f0406246c9da3638ddd",
+    "tested_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "recovery_checkpoint": "d136325336c9ff43bfc2e94f91c3ce2ede37778b",
+    "run_id": 39888080167,
+    "run_number": 636,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39888080167",
+    "status_ci": "completed",
+    "conclusion_ci": "failure",
+    "run_updated_at": "2026-10-23T02:36:06Z",
+    "logs": {
+      "windows": {
+        "job_id": 120200902870,
+        "lines": 11006,
+        "read": "Final full decoded job log independently retrieved and examined; summary markers/failure tail cross-checked against source"
+      },
+      "ubuntu": {
+        "job_id": 120200903120,
+        "lines": 578,
+        "read": "Final full decoded job log independently retrieved and examined;16 operation tests,13 QR tests and isolated provisioning PASS markers read"
+      }
+    },
+    "build_identity": [
+      "2026-10-23T02:10:23.6034680Z Build identity: 0.2.2+fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d"
+    ],
+    "repository_step": "PASS Test-ProGo.ps1 including Desktop5294, Instance30/new receipt regressions, Maintenance126, Shutdown47, UpdaterPackage5; step SUCCESS",
+    "instance_evidence": [
+      "2026-10-23T02:28:19.5106962Z PASS: instance baseline reader permits real atomic receipt replacement while its old snapshot remains immutable",
+      "2026-10-23T02:28:19.5154385Z PASS: instance readiness rejects wrong port pending corrections and a native writer lock before accepting its released complete receipt",
+      "2026-10-23T02:28:19.5192634Z PASS: instance baseline never accepts an absent or disappearing receipt and waits for its published matching bytes",
+      "2026-10-23T02:28:19.5211122Z PASS: instance readiness still fails malformed receipts missing settings and unrelated I/O instead of treating them as startup readiness",
+      "2026-10-23T02:28:26.2065594Z Instance tests PASS: 30"
+    ],
+    "repository_summary_evidence": [
+      "2026-10-23T02:28:18.6271160Z Desktop tests PASS: 5294",
+      "2026-10-23T02:31:01.8386128Z Maintenance tests PASS: 126",
+      "2026-10-23T02:31:29.4549639Z Shutdown tests PASS: 47",
+      "2026-10-23T02:31:31.2296156Z Updater package tests PASS: 5",
+      "2026-10-23T02:31:31.2303484Z ProGo tests PASS."
+    ],
+    "export_modal11": {
+      "status": "PASS",
+      "evidence": [
+        "2026-10-23T02:31:42.3696412Z PASS: modal export preserves protected settings and cannot start a late relay: save",
+        "2026-10-23T02:31:42.7910536Z PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry",
+        "2026-10-23T02:31:43.2773544Z PASS: modal export preserves protected settings and cannot start a late relay: close",
+        "2026-10-23T02:31:43.7109218Z PASS: modal export preserves protected settings and cannot start a late relay: dispose",
+        "2026-10-23T02:31:44.1395205Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel",
+        "2026-10-23T02:31:44.5669318Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-close",
+        "2026-10-23T02:31:45.0118809Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose",
+        "2026-10-23T02:31:45.4396170Z PASS: modal export preserves protected settings and cannot start a late relay: global-stop",
+        "2026-10-23T02:31:45.8522292Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop",
+        "2026-10-23T02:31:46.2799921Z PASS: modal export preserves protected settings and cannot start a late relay: existing-retry",
+        "2026-10-23T02:31:46.7747466Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change"
+      ]
+    },
+    "profile_chooser3": {
+      "status": "PASS",
+      "evidence": [
+        "2026-10-23T02:22:19.5870507Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel",
+        "2026-10-23T02:22:25.1074563Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing",
+        "2026-10-23T02:22:25.9326322Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: error"
+      ]
+    },
+    "diagnostic_chooser3": {
+      "status": "PASS",
+      "evidence": [
+        "2026-10-23T02:22:12.6413103Z PASS: actual native save chooser cancels and cleans up its owned fixture",
+        "2026-10-23T02:22:18.0314959Z PASS: negative native chooser fixture returns explicit failure and confirms cleanup: missing",
+        "2026-10-23T02:22:18.7442090Z PASS: negative native chooser fixture returns explicit failure and confirms cleanup: error"
+      ]
+    },
+    "repair8": {
+      "status": "PASS",
+      "evidence": [
+        "2026-10-23T02:34:40.9412006Z PASS: owned production repair slice PASS: default-refusal",
+        "2026-10-23T02:34:42.1808277Z PASS: owned production repair slice PASS: complete",
+        "2026-10-23T02:34:43.5189070Z PASS: owned production repair slice PASS: cancel-retry",
+        "2026-10-23T02:34:44.0854791Z PASS: owned production repair slice PASS: stop-copy",
+        "2026-10-23T02:34:44.6283897Z PASS: owned production repair slice PASS: dispose-copy",
+        "2026-10-23T02:34:45.1581595Z PASS: owned production repair slice PASS: owner-dispose",
+        "2026-10-23T02:34:46.4974238Z PASS: owned production repair slice PASS: stop-command",
+        "2026-10-23T02:34:49.7995314Z PASS: owned production repair slice PASS: cleanup-lock"
+      ]
+    },
+    "list10": {
+      "status": "PASS",
+      "evidence": [
+        "2026-10-23T02:33:47.4202818Z PASS: owned production list slice PASS: default-refusal",
+        "2026-10-23T02:33:48.6801933Z PASS: owned production list slice PASS: complete",
+        "2026-10-23T02:33:50.0561948Z PASS: owned production list slice PASS: cancel-retry",
+        "2026-10-23T02:33:50.5916373Z PASS: owned production list slice PASS: stop-copy",
+        "2026-10-23T02:33:51.1266772Z PASS: owned production list slice PASS: dispose-copy",
+        "2026-10-23T02:33:51.6456751Z PASS: owned production list slice PASS: owner-dispose",
+        "2026-10-23T02:33:52.9360634Z PASS: owned production list slice PASS: stop-command",
+        "2026-10-23T02:33:56.1500580Z PASS: owned production list slice PASS: cleanup-lock",
+        "2026-10-23T02:33:58.1556029Z PASS: owned production list slice PASS: refresh-cancel-retry",
+        "2026-10-23T02:33:59.4349027Z PASS: owned production list slice PASS: refresh-dispose"
+      ]
+    },
+    "https_recovery11": {
+      "status": "PARTIAL",
+      "passed": [
+        "default-refusal",
+        "status-pending",
+        "cancel-retry",
+        "stop-copy",
+        "dispose-copy"
+      ],
+      "failed": [
+        "owner-dispose"
+      ],
+      "not_run": [
+        "cancel-command",
+        "cleanup-lock",
+        "result",
+        "stop-result-copy",
+        "stop-result"
+      ],
+      "evidence": [
+        "2026-10-23T02:35:58.3377167Z PASS: owned production HTTPS recovery PASS: default-refusal",
+        "2026-10-23T02:35:59.3723815Z PASS: owned production HTTPS recovery PASS: status-pending",
+        "2026-10-23T02:36:00.4698843Z PASS: owned production HTTPS recovery PASS: cancel-retry",
+        "2026-10-23T02:36:00.8270287Z PASS: owned production HTTPS recovery PASS: stop-copy",
+        "2026-10-23T02:36:01.1914835Z PASS: owned production HTTPS recovery PASS: dispose-copy"
+      ]
+    },
+    "prior_slices_not_run": {
+      "status": "NOT_RUN",
+      "slices": [
+        "Admin snapshot12",
+        "Admin dispatcher5",
+        "ownership8",
+        "cleanup4",
+        "setup recover10",
+        "fresh10"
+      ],
+      "reason": "HomeVpnWizardTests.Main invokes HomeVpnShareRecoveryTests.Run at91 before HomeVpnSetupRecoveryTests.Run at186; failure at first prevents the latter. Source methods and corresponding final markers cross-checked; no PASS inherited from earlier CI"
+    },
+    "failure": {
+      "time_utc": "2026-10-23T02:36:01.6054070Z",
+      "step": "IKEv2 relay integration tests on .NET Framework",
+      "scenario": "HTTPS recovery owner-dispose while real helper copy is held",
+      "error": "Home VPN test failed: Exception: owned HTTPS preserves journal draft credentials exact queries and unrelated resources without share mutation or replay: owner-dispose",
+      "source": "tests/HomeVpnShareRecoveryTests.cs OwnedHttpsRecovery243-246",
+      "observed_stack": "scripts/Test-HomeVpnRelay.ps1:19 char32, wrapper throws after WizardHarness exit1. No C# frames in log; HomeVpnWizardTests.Main190 prints type/message only",
+      "source_trace_inference": "HomeVpnWizardTests.Main91 -> HomeVpnShareRecoveryTests.Run112 -> OwnedHttpsRecovery -> ModalWizardCase timer -> compound check243-246; source trace, not observed C# stack",
+      "prior_passes": [
+        "2026-10-23T02:36:01.5682493Z PASS: owned HTTPS preserves actual pending cancelled or original result outcome: owner-dispose",
+        "2026-10-23T02:36:01.5683604Z PASS: owned HTTPS Stop drains actual body lease and cleanup: owner-dispose",
+        "2026-10-23T02:36:01.5684326Z PASS: disposed HTTPS owner receives no late UI publication",
+        "2026-10-23T02:36:01.5685333Z PASS: Stop after accepted SSH result prevents later HTTPS verification save and consumption without rewriting task success: owner-dispose"
+      ],
+      "classification": "Test assertion failure proven; production transport/infrastructure defect NOT proven. Step name does not mean native UDP relay failed: Portable harness/Python relay transport discovery were not reached",
+      "root_cause": "UNPROVEN:14 boolean predicates share one label; neither failed subcondition nor C# stack is logged",
+      "predicates": [
+        "exact query sequence",
+        "same pending RequestId",
+        "identical protected journal bytes",
+        "identical private input bytes",
+        "address.Text equals edited draft",
+        "DialogResult is not OK",
+        "share family lease released",
+        "no service owned resources",
+        "owned core directory removed",
+        "unrelated sibling intact",
+        "relay not running",
+        "unrelated process alive",
+        "owned pid absent/exited",
+        "owned child absent/exited"
+      ],
+      "hypothesis": "Fixture reads address.Text after form.Dispose at200; disposed TextBox state may not be a valid live draft observation. Exact .NET Framework behavior and failing predicate NOT proven; no rewrite or conditional bypass applied"
+    },
+    "later": {
+      "status": "NOT_RUN",
+      "checks": [
+        "remaining HTTPS recovery5",
+        "HomeProfileHttp tests called after failing share recovery",
+        "setup snapshot/dispatcher/ownership/cleanup/recover/fresh slices at end of wizard",
+        "Home VPN final summary",
+        "portable archive harness",
+        "Python relay transport suite"
+      ],
+      "pack": "SKIPPED",
+      "uploads": "SKIPPED",
+      "prune": "SKIPPED"
+    },
+    "ubuntu": {
+      "status": "PASS",
+      "evidence": [
+        "2026-10-23T02:10:10.7672840Z Ran 16 tests in 0.226s",
+        "2026-10-23T02:10:10.7673814Z OK",
+        "2026-10-23T02:10:17.4829346Z Ran 13 tests in 0.874s",
+        "2026-10-23T02:10:17.4829814Z OK",
+        "2026-10-23T02:11:06.8277137Z PASS: arbitrary port forwarding is denied",
+        "2026-10-23T02:11:08.0982767Z PASS: revocation closes active friend tunnel",
+        "2026-10-23T02:11:15.1658918Z PASS: operation recovery never prints token, password or private key",
+        "2026-10-23T02:11:22.0598585Z PASS: real HTTPS reaches the isolated profile service",
+        "2026-10-23T02:11:23.9896627Z PASS: repeated QR setup preserves existing Caddy site and single import",
+        "2026-10-23T02:11:23.9932271Z PASS: restart discards short-lived profile sessions"
+      ]
+    },
+    "action": {
+      "code_changes": "NONE; all runtime/tests/scripts/workflows/VERSION exact636",
+      "publication": "NOT_RUN no proven cause/fix; no push/PR mutation/new CI/rerun",
+      "next": "Small diagnostic stage: preserve all14 original invariants and deadlines; obtain separately labelled boolean outcomes and full native exception stack on exact Windows .NET Framework. Requires independently authorized diagnostic run because current user permits new automatic CI only for a real fix. Then correct only the proven failed contract."
+    },
+    "readiness_change": 0
+  },
+  "ci636_invariant_instrumentation": {
+    "status": "PARTIAL",
+    "authorization": "Owner explicitly authorized test-only instrumentation and one automatic diagnostic CI; not a blind rerun",
+    "recovery_checkpoint": "1c005ecd6772e8f2c1e7d5f95ed9e4410a6e6fc3",
+    "base_source": "cffa667469498a0245857f0406246c9da3638ddd",
+    "base_merge": "fa58ba1bcef1e0e8ef8e450f14f37751b7f5b85d",
+    "code_sha": "3ae2766fbe2d4436f192e705a17f27188a07db92",
+    "files": [
+      "tests/HomeVpnShareRecoveryTests.cs",
+      "tests/HomeVpnWizardTests.cs",
+      "docs/PROJECT_STATE.md",
+      "docs/ACCEPTANCE_RUNBOOK.md",
+      "docs/project_state.json"
+    ],
+    "invariant_names": [
+      "queries-exact",
+      "request-id-unchanged",
+      "journal-bytes-unchanged",
+      "private-inputs-unchanged",
+      "draft-unchanged",
+      "dialog-not-success",
+      "share-lease-released",
+      "service-resources-released",
+      "core-directory-removed",
+      "sibling-unchanged",
+      "relay-stopped",
+      "unrelated-process-alive",
+      "owned-process-exited",
+      "owned-child-exited"
+    ],
+    "contract": "Evaluate all14 original predicates in original order at the same settled scenario boundary. Every false or evaluation exception records failure; aggregate check requires zero violations. Original expressions, scenario flow, all other asserts, deadlines and cleanup unchanged. Continuing evaluation after a failed predicate is diagnostic collection, not scenario continuation.",
+    "safe_output": "Fixed invariant names and boolean/count/state only. No address text, request ID, journal/private input bytes, file paths, command arguments or exception message/Data/ToString. Stack prints exception type and method identities/IL offsets; before modal rethrow plus native harness catch. Stdout avoids PowerShell Stop on native stderr truncating safe frames; exit1 preserved.",
+    "local_checks": "PASS AST parity14, exact scenario/cleanup/deadline/other methods preservation, C# syntax2/C#5 await-scope, diff/public321/0/secretPII0. Review script initially compared raw LF/CRLF in Wizard; normalized line endings, then exact parity passed. This was a local verification-script mismatch, not a production failure.",
+    "windows_compilation": "NOT_RUN diagnostic candidate; no local .NET Framework/PowerShell/Windows UI",
+    "windows_native": "NOT_RUN diagnostic candidate; owner-dispose/recovery11 not newly PASS",
+    "publication": "TODO one expected-head non-force update existing PR88 and one automatic diagnostic CI; uploads OFF/release ineligible",
+    "next": "Record exact source/merge/run/checkpoint, STOP without full wait. Next same diagnostic CI final log: identify every violated invariant from names/booleans/state and safe frames, then classify cause; do not change runtime or start another feature beforehand.",
     "readiness_change": 0
   }
 }

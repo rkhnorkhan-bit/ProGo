@@ -187,7 +187,7 @@ namespace ProGo
                 }
                 Console.WriteLine("Home VPN PASS: " + passed + " checks."); return 0;
             }
-            catch (Exception ex) { Console.Error.WriteLine("Home VPN test failed: " + ex.GetType().Name + ": " + ex.Message); return 1; }
+            catch (Exception ex) { HomeVpnShareRecoveryTests.WriteSafeFailure(ex); return 1; }
         }
         private static void InvitationChecks(ClipboardService clipboard, string work)
         {

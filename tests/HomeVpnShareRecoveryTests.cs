@@ -240,10 +240,34 @@ namespace ProGo
                             if (phase != 7) return false;
                             var expected = mode == "result" || mode == "stop-result" ? new[] { "status", "result" }
                                 : mode == "status-pending" || mode == "cancel-retry" || mode == "cancel-command" || mode == "cleanup-lock" || mode == "stop-result-copy" ? new[] { "status" } : new string[0];
-                            check(Calls().SequenceEqual(expected) && HomeVpnShareRecovery.Pending().RequestId == request.RequestId && journal.SequenceEqual(File.ReadAllBytes(PendingPath)) && Same(before)
-                                && address.Text == "edited.example.org" && form.DialogResult != DialogResult.OK && !ShareLeaseHeld() && !service.HasOwnedResources && !Directory.Exists(coreWork)
-                                && File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated" && !relay.IsRunning && !unrelated.HasExited && (!File.Exists(At("pid")) || Gone(Id("pid"))) && (!File.Exists(At("child")) || Gone(Id("child"))),
-                                "owned HTTPS preserves journal draft credentials exact queries and unrelated resources without share mutation or replay: " + mode);
+                            // Diagnose every original predicate, in order, at the same settled boundary.
+                            // A false result or evaluation error remains a failure; none becomes a skip.
+                            var violations = new List<string>(); string[] observedCalls = null;
+                            RecordOwnedInvariant("queries-exact", () => { observedCalls = Calls(); return observedCalls.SequenceEqual(expected); }, violations);
+                            RecordOwnedInvariant("request-id-unchanged", () => HomeVpnShareRecovery.Pending().RequestId == request.RequestId, violations);
+                            RecordOwnedInvariant("journal-bytes-unchanged", () => journal.SequenceEqual(File.ReadAllBytes(PendingPath)), violations);
+                            RecordOwnedInvariant("private-inputs-unchanged", () => Same(before), violations);
+                            RecordOwnedInvariant("draft-unchanged", () => address.Text == "edited.example.org", violations);
+                            RecordOwnedInvariant("dialog-not-success", () => form.DialogResult != DialogResult.OK, violations);
+                            RecordOwnedInvariant("share-lease-released", () => !ShareLeaseHeld(), violations);
+                            RecordOwnedInvariant("service-resources-released", () => !service.HasOwnedResources, violations);
+                            RecordOwnedInvariant("core-directory-removed", () => !Directory.Exists(coreWork), violations);
+                            RecordOwnedInvariant("sibling-unchanged", () => File.ReadAllText(Path.Combine(sibling, "keep")) == "unrelated", violations);
+                            RecordOwnedInvariant("relay-stopped", () => !relay.IsRunning, violations);
+                            RecordOwnedInvariant("unrelated-process-alive", () => !unrelated.HasExited, violations);
+                            RecordOwnedInvariant("owned-process-exited", () => !File.Exists(At("pid")) || Gone(Id("pid")), violations);
+                            RecordOwnedInvariant("owned-child-exited", () => !File.Exists(At("child")) || Gone(Id("child")), violations);
+                            Console.WriteLine("HTTPS fixture state: mode=" + mode + "; phase=" + phase + "; violations=" + violations.Count
+                                + "; calls=" + (observedCalls == null ? -1 : observedCalls.Length) + "; expectedCalls=" + expected.Length
+                                + "; copies=" + copyCount + "; verified=" + verified + "; formDisposed=" + form.IsDisposed + "; addressDisposed=" + address.IsDisposed
+                                + "; formHandle=" + form.IsHandleCreated + "; addressHandle=" + address.IsHandleCreated + "; dialogResult=" + form.DialogResult
+                                + "; operation=" + (operation == null ? "none" : operation.Status.ToString()) + "; stop=" + (stop == null ? "none" : stop.Status.ToString())
+                                + "; publications=" + dispatcher.PublicationCount + "; closedPublications=" + closedPublications);
+                            if (violations.Count != 0) Console.WriteLine("HTTPS fixture violated invariants: " + String.Join(",", violations));
+                            try {
+                                check(violations.Count == 0,
+                                    "owned HTTPS preserves journal draft credentials exact queries and unrelated resources without share mutation or replay: " + mode);
+                            } catch (Exception error) { WriteSafeFailure(error); throw; }
                             check(true, "owned production HTTPS recovery PASS: " + mode); return true;
                         }, () => closing);
                     } finally {
@@ -257,6 +281,35 @@ namespace ProGo
                 }
             }
             File.Delete(PendingPath);
+        }
+        private static void RecordOwnedInvariant(string name, Func<bool> evaluate, List<string> violations)
+        {
+            bool passed = false;
+            try { passed = evaluate(); }
+            catch (Exception error) {
+                if (error is OutOfMemoryException) throw;
+                Console.WriteLine("HTTPS fixture invariant evaluation error: " + name);
+                WriteSafeFailure(error);
+            }
+            Console.WriteLine("HTTPS fixture invariant: " + name + "=" + passed);
+            if (!passed) violations.Add(name);
+        }
+        // Exception messages, Data, file paths, arguments and object values may contain secrets.
+        // Emit only exception types and method identities/IL offsets, including inner causes.
+        // Use stdout so PowerShell Stop on native stderr cannot truncate these safe frames.
+        internal static void WriteSafeFailure(Exception error)
+        {
+            for (int cause = 0; error != null && cause < 8; cause++, error = error.InnerException) {
+                Console.WriteLine("Home VPN safe failure: cause=" + cause + "; type=" + error.GetType().FullName);
+                var frames = new StackTrace(error, false).GetFrames();
+                if (frames == null) continue;
+                for (int index = 0; index < frames.Length && index < 64; index++) {
+                    var method = frames[index].GetMethod();
+                    if (method == null) continue;
+                    Console.WriteLine("  at " + (method.DeclaringType == null ? "<global>" : method.DeclaringType.FullName)
+                        + "." + method.Name + "; il=" + frames[index].GetILOffset());
+                }
+            }
         }
         private static void Backup(Dictionary<string, byte[]> result, string path) { result[path] = File.Exists(path) ? File.ReadAllBytes(path) : null; }
         private static Dictionary<string, byte[]> Snapshot() { var result = new Dictionary<string, byte[]>(); foreach (string path in inputs) Backup(result, path); return result; }
