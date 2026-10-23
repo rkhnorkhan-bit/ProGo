@@ -1163,7 +1163,7 @@ namespace ProGo
                             return copy == null ? HomeVpnPreparationForm.CopyAsync(window, executable, arguments, true) : copy(executable, arguments);
                         }),
                         (executable, arguments, output) => DispatchShareRecoveryTransportAsync(stop, dispatcher, delegate {
-                            return HomeVpnPreparationForm.WaitForShareAsync(window, commandExecutable ?? executable, arguments, output);
+                            return HomeVpnPreparationForm.WaitForShareAsync(window, commandExecutable ?? executable, arguments, output, HomeVpnPreparationProcess.TimeoutMs);
                         }), RetainAdminCleanup).ConfigureAwait(false);
                 } finally { Volatile.Write(ref reporting, 0); }
             });

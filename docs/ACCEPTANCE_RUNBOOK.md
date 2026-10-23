@@ -1,4 +1,27 @@
-## Текущий кандидат: HTTPS recover-share owned-worker11; Windows NOT_RUN
+## Текущий кандидат: CI634 share wait signature fix; Windows NOT_RUN
+
+Checkpoint `f959ebc0fcee4eadae30a4e000649b0879d90523`. Bad source `763c730dc5e4d505fac35d592024911d744c2f91` /
+checkout merge `5a0f6d56cf62b7c06f0e6ab862094519e47c239a`, [CI634](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908)
+completed FAILURE. Final Windows120186199123 log самостоятельно прочитан: CS1501 at1166/36
+(WaitForShareAsync4args вместо5) и accompanying CS1660 at1165/25. Build failed before native
+tests; recovery11 NOT_RUN, pack/later checks/uploads/prune SKIPPED. Ubuntu120186198956
+completed SUCCESS metadata only в этом fix этапе, не полная проверка его финальных логов.
+
+Code `e9b5f6c9de00549d304dbf0d63cb2549028e835b`: передан обязательный fifth TimeoutMs, прежние300000.
+Только одна runtime строка + existing cancel-command regression purpose/owner/modal/native
+Task/CancelButton assertion; всего2 source/test +3 docs. Checks/timeouts/workflow не ослаблены.
+PASS local review/syntax2/await-scope/diff/public321/0/secretPII0 и targeted arity old4 reject/
+fixed5 accept/removed-timeout mutation reject. Это не compiler/native proof. All other
+tracked blobs/прежние contracts preserved. Исправленная compilation/recovery11/full regression
+NOT_RUN; прежние633 PASS не наследуются. Требовать exact new source/merge на Test-ProGo.ps1
+и Test-HomeVpnRelay.ps1, отсутствие CS1501/CS1660, actual recovery11 и прежние регрессии.
+
+One guarded existing PR88 update → one new automatic CI, no old-source rerun. Uploads OFF/
+release excluded. Save run/source/merge/checkpoint, STOP without full wait or next feature.
+Next inspect SAME new run final logs. Веса58–80/22 +0 прежние; fullR09/owner acceptance open.
+No main merge/release/binaries/install/VPS/network/keys/credentials/personal deployment actions.
+
+## История: кандидат HTTPS recover-share owned-worker11; Windows NOT_RUN
 
 Checkpoint `65c0c497d72a3c110623c31b100f6351c0148326` сохранён. Проверенная база source
 `3a212e47d18ad51a8037ed3944477dbba987a701` / tested merge `99c1737906e67ddaf8303856d24ee71dca7eea7d`,
@@ -31,9 +54,18 @@ New Windows compilation/native11/full regression NOT_RUN until completed exact l
 
 Local PASS review/syntax3/C#5 await-scope/diff/public321/0/secretPII0/method preservation;
 not compiler/native proof. Prior methods/EOF/BOM/export/core receipt/harness/workflows
-preserved. One guarded PR88 update → one automatic CI, uploads OFF/release excluded.
-Save source/merge/tree/run/checkpoint and STOP without waiting full CI/second stage.
-Next final logs of SAME run, then separate fresh-share worker preparation; not started.
+preserved. Publication PASS in existing PR88: source `763c730dc5e4d505fac35d592024911d744c2f91`,
+merge ref `5a0f6d56cf62b7c06f0e6ab862094519e47c239a` (build identity634 NOT_RUN),
+freeze `52f72318de967f0e83c26675f7478e698ac8cdcb`, tree `b8755d64da13dfab57f19fdaa9f737ad7f116d0d`.
+Fetched parent/tree verified; expected HEAD updated without force. Diff6files791add/63delete.
+Sole automatic [CI634/39883511908](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908),
+attempt1/raw exact-head runs total_count1. Run.updated_at2026-10-23T01:21:24Z in_progress,
+Windows120186199123/Ubuntu120186198956 in_progress/conclusion null. New compiler/native11/
+full regression NOT_RUN, SUCCESS633 not inherited. Upload guards OFF/release excluded;
+completion upload/prune not yet checked. Post-publication3-doc checkpoint local HEAD
+(git log -1), not push, publication IDs/checkpoint also in PR body. STOP without waiting
+or second stage. Next final logs of SAME CI634/exact merge, then separate fresh-share
+worker preparation after proof; not started.
 Weights58–80/22 +0 unchanged. FullR09/remaining Admin/owner acceptance open; no main merge/
 release/binaries/install/VPS/network/credentials/personal deployment actions.
 

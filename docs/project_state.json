@@ -3831,7 +3831,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "3a212e47d18ad51a8037ed3944477dbba987a701",
+  "candidate_source": "763c730dc5e4d505fac35d592024911d744c2f91",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3929,133 +3929,24 @@
     }
   ],
   "ci_candidate": {
-    "source": "3a212e47d18ad51a8037ed3944477dbba987a701",
-    "tested_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
-    "tree": "3a8a19954bb1b76431c8977015568e2d508717c5",
-    "run_id": 39879011054,
-    "run_number": 633,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39879011054",
+    "source": "763c730dc5e4d505fac35d592024911d744c2f91",
+    "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+    "run_id": 39883511908,
+    "run_number": 634,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
     "status": "completed",
-    "conclusion": "success",
-    "run_updated_at": "2026-10-23T01:04:47Z",
+    "conclusion": "failure",
     "jobs": {
-      "windows": 120171576507,
-      "ubuntu": 120171576142
+      "windows": 120186199123,
+      "ubuntu": 120186198956
     },
-    "verification": "Independently retrieved BOTH completed final job logs; checkout/build identity and every fresh10/prior-regression mode PASS marker checked, not metadata-only",
-    "windows_compilation": "PASS exact build identity0.2.2+99c1737906e67ddaf8303856d24ee71dca7eea7d",
-    "windows_native": "PASS fresh10/recovery10/list10/repair8/ownership8/cleanup4/snapshot12/dispatcher5/export modal11+chooser3 and full suite markers; Desktop5294/HomeVPN2674/Portable91",
-    "mode_lists": {
-      "fresh": [
-        "default-refusal",
-        "copy-fault",
-        "cancel-retry",
-        "stop-copy",
-        "dispose-copy",
-        "owner-dispose",
-        "cancel-command",
-        "cleanup-lock",
-        "result",
-        "pending-race"
-      ],
-      "recovery": [
-        "default-refusal",
-        "status-pending",
-        "cancel-retry",
-        "stop-copy",
-        "dispose-copy",
-        "owner-dispose",
-        "stop-between",
-        "cancel-command",
-        "cleanup-lock",
-        "result"
-      ],
-      "list": [
-        "default-refusal",
-        "complete",
-        "cancel-retry",
-        "stop-copy",
-        "dispose-copy",
-        "owner-dispose",
-        "stop-command",
-        "cleanup-lock",
-        "refresh-cancel-retry",
-        "refresh-dispose"
-      ],
-      "repair": [
-        "default-refusal",
-        "complete",
-        "cancel-retry",
-        "stop-copy",
-        "dispose-copy",
-        "owner-dispose",
-        "stop-command",
-        "cleanup-lock"
-      ],
-      "ownership": [
-        "complete",
-        "stop",
-        "dispose",
-        "lock",
-        "typed",
-        "queued-stop",
-        "queued-dispose",
-        "multiple"
-      ],
-      "cleanup": [
-        "complete",
-        "list-lock",
-        "preparation-lock",
-        "dispose-lock"
-      ],
-      "snapshot": [
-        "setup",
-        "invite",
-        "share",
-        "empty",
-        "missing-setup",
-        "missing-invite",
-        "missing-share",
-        "pending-invite",
-        "pending-share",
-        "cancel",
-        "corrupt",
-        "missing-key"
-      ],
-      "dispatcher": [
-        "ready",
-        "during-dispose",
-        "file-fault",
-        "worker-only",
-        "before-dispose"
-      ],
-      "export": [
-        "save",
-        "cancel-retry",
-        "close",
-        "dispose",
-        "accepted-cancel",
-        "accepted-close",
-        "accepted-dispose",
-        "global-stop",
-        "accepted-global-stop",
-        "existing-retry",
-        "accepted-access-change"
-      ],
-      "chooser": [
-        "cancel",
-        "missing",
-        "error"
-      ]
-    },
-    "windows_python": "28 run:26 PASS/2 SKIP, SKIP not counted PASS",
-    "ubuntu": "16+13 unit OK; isolated actual VPN/HTTPS/invitation smoke PASS",
-    "pack": "SUCCESS runner-only; bytes not retrieved/delivered/installed",
-    "runner_zip_sha256": "787009f9a9eaf5e3e84b94d23f2e38580105298d736562fa99113388519696f4",
-    "artifact_uploads": "SKIPPED all four uploads and prune; artifacts API empty",
-    "package_delivery": "NOT_RUN",
-    "owner_pc": "NOT_RUN",
-    "excludes": "New HTTPS recover-share owned production11; fresh share/invitation migration/fullR09 and target owner acceptance"
+    "windows_compilation": "FAIL final Windows log: CS1501 HomeVpnService.cs(1166,36), WaitForShareAsync has5 required parameters but call supplies4; accompanying CS1660 at(1165,25)",
+    "verification": "Exact checkout merge read from final Windows job log; compiler fails before build identity/native tests. Ubuntu completed SUCCESS checked through jobs metadata only, not full log review in this fix stage",
+    "root_cause": "RecoverShareOwnedAsync omitted required timeoutMs argument. Four-argument WaitForShareAsync does not exist; overload binding also emits CS1660",
+    "windows_native": "NOT_RUN HTTPS recovery11 and all later native regression; build failed first",
+    "pack": "SKIPPED",
+    "artifact_uploads": "SKIPPED all uploads/prune; no binary publication",
+    "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5591,22 +5482,21 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "ONE limited existing HTTPS recover-share production slice prepared on final-log-verified633; fresh share and invitation excluded",
-    "recovery_checkpoint": "65c0c497d72a3c110623c31b100f6351c0148326",
-    "base_source": "3a212e47d18ad51a8037ed3944477dbba987a701",
-    "base_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
-    "local_sha": "4f10ec66e08359dd75fe3e85e06f0bed8a279482",
-    "local_development_sha": "4f10ec66e08359dd75fe3e85e06f0bed8a279482",
-    "published_sha": "3a212e47d18ad51a8037ed3944477dbba987a701",
-    "tested_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
+    "phase": "CI634 compile failure only: required share wait timeout argument fixed locally; next functions stopped",
+    "recovery_checkpoint": "f959ebc0fcee4eadae30a4e000649b0879d90523",
+    "base_source": "763c730dc5e4d505fac35d592024911d744c2f91",
+    "base_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+    "local_sha": "e9b5f6c9de00549d304dbf0d63cb2549028e835b",
+    "local_development_sha": "e9b5f6c9de00549d304dbf0d63cb2549028e835b",
+    "published_sha": "763c730dc5e4d505fac35d592024911d744c2f91",
+    "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
     "baseline_only": true,
-    "ci_run_id": 39879011054,
+    "ci_run_id": 39883511908,
     "ci_status": "completed",
-    "ci_conclusion": "success",
-    "windows_compilation": "NOT_RUN new HTTPS recovery slice; Linux has no .NET Framework/PowerShell",
-    "windows_native": "NOT_RUN HTTPS recovery11 and exact full regression; SUCCESS633 belongs only to baseline",
-    "scope": "Only2 runtime files,1 existing test file,3 checkpoint docs; existing recover-share action and its Stop continuation gate only",
-    "next": "Final scan and expected-head guarded update existing PR88; record new source/merge/one automatic CI and STOP without waiting or second stage",
+    "ci_conclusion": "failure",
+    "windows_compilation": "NOT_RUN corrected candidate; base634 compile FAIL",
+    "windows_native": "NOT_RUN recovery11 and new exact full regression",
+    "next": "Publish scanned minimal signature fix once with fresh expected HEAD, record one automatic CI/run/source/checkpoint and STOP without full wait or other function",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -5700,7 +5590,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact633 source3a212e4/merge99c1737 independently verified through final Windows/Ubuntu logs: fresh10 and prior regression PASS. New HTTPS recover-share production11 compiler/native NOT_RUN until own exact CI. Same v1.0 weights/620 credited anchors/scores; no full weighted gate/target acceptance closed; external personal deployment unchanged/uncredited.",
+    "candidate_note": "Exact634 source763c730/merge5a0f6d5 compile FAIL independently read in final Windows log: missing fifth WaitForShareAsync timeout argument, CS1501/CS1660. Recovery11 NOT_RUN, Ubuntu metadata SUCCESS is separate. Minimal corrected code e9b5f6c compiler/native NOT_RUN pending own exact CI. Same v1.0 weights/620 credited anchors/scores; no full weighted gate/target acceptance closed.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -10735,6 +10625,212 @@
         "checkpoint_note": "Post-publication docs-only checkpoint is local branch HEAD (git log -1), not pushed to avoid second CI; published source carries frozen pre-publication docs. Exact source/run/checkpoint also in PR88 body"
       },
       "candidate_source": "3a212e47d18ad51a8037ed3944477dbba987a701"
+    },
+    "before_https633_publication": {
+      "ci_candidate": {
+        "source": "3a212e47d18ad51a8037ed3944477dbba987a701",
+        "tested_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
+        "tree": "3a8a19954bb1b76431c8977015568e2d508717c5",
+        "run_id": 39879011054,
+        "run_number": 633,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39879011054",
+        "status": "completed",
+        "conclusion": "success",
+        "run_updated_at": "2026-10-23T01:04:47Z",
+        "jobs": {
+          "windows": 120171576507,
+          "ubuntu": 120171576142
+        },
+        "verification": "Independently retrieved BOTH completed final job logs; checkout/build identity and every fresh10/prior-regression mode PASS marker checked, not metadata-only",
+        "windows_compilation": "PASS exact build identity0.2.2+99c1737906e67ddaf8303856d24ee71dca7eea7d",
+        "windows_native": "PASS fresh10/recovery10/list10/repair8/ownership8/cleanup4/snapshot12/dispatcher5/export modal11+chooser3 and full suite markers; Desktop5294/HomeVPN2674/Portable91",
+        "mode_lists": {
+          "fresh": [
+            "default-refusal",
+            "copy-fault",
+            "cancel-retry",
+            "stop-copy",
+            "dispose-copy",
+            "owner-dispose",
+            "cancel-command",
+            "cleanup-lock",
+            "result",
+            "pending-race"
+          ],
+          "recovery": [
+            "default-refusal",
+            "status-pending",
+            "cancel-retry",
+            "stop-copy",
+            "dispose-copy",
+            "owner-dispose",
+            "stop-between",
+            "cancel-command",
+            "cleanup-lock",
+            "result"
+          ],
+          "list": [
+            "default-refusal",
+            "complete",
+            "cancel-retry",
+            "stop-copy",
+            "dispose-copy",
+            "owner-dispose",
+            "stop-command",
+            "cleanup-lock",
+            "refresh-cancel-retry",
+            "refresh-dispose"
+          ],
+          "repair": [
+            "default-refusal",
+            "complete",
+            "cancel-retry",
+            "stop-copy",
+            "dispose-copy",
+            "owner-dispose",
+            "stop-command",
+            "cleanup-lock"
+          ],
+          "ownership": [
+            "complete",
+            "stop",
+            "dispose",
+            "lock",
+            "typed",
+            "queued-stop",
+            "queued-dispose",
+            "multiple"
+          ],
+          "cleanup": [
+            "complete",
+            "list-lock",
+            "preparation-lock",
+            "dispose-lock"
+          ],
+          "snapshot": [
+            "setup",
+            "invite",
+            "share",
+            "empty",
+            "missing-setup",
+            "missing-invite",
+            "missing-share",
+            "pending-invite",
+            "pending-share",
+            "cancel",
+            "corrupt",
+            "missing-key"
+          ],
+          "dispatcher": [
+            "ready",
+            "during-dispose",
+            "file-fault",
+            "worker-only",
+            "before-dispose"
+          ],
+          "export": [
+            "save",
+            "cancel-retry",
+            "close",
+            "dispose",
+            "accepted-cancel",
+            "accepted-close",
+            "accepted-dispose",
+            "global-stop",
+            "accepted-global-stop",
+            "existing-retry",
+            "accepted-access-change"
+          ],
+          "chooser": [
+            "cancel",
+            "missing",
+            "error"
+          ]
+        },
+        "windows_python": "28 run:26 PASS/2 SKIP, SKIP not counted PASS",
+        "ubuntu": "16+13 unit OK; isolated actual VPN/HTTPS/invitation smoke PASS",
+        "pack": "SUCCESS runner-only; bytes not retrieved/delivered/installed",
+        "runner_zip_sha256": "787009f9a9eaf5e3e84b94d23f2e38580105298d736562fa99113388519696f4",
+        "artifact_uploads": "SKIPPED all four uploads and prune; artifacts API empty",
+        "package_delivery": "NOT_RUN",
+        "owner_pc": "NOT_RUN",
+        "excludes": "New HTTPS recover-share owned production11; fresh share/invitation migration/fullR09 and target owner acceptance"
+      },
+      "active_work": {
+        "phase": "ONE limited existing HTTPS recover-share production slice prepared on final-log-verified633; fresh share and invitation excluded",
+        "recovery_checkpoint": "65c0c497d72a3c110623c31b100f6351c0148326",
+        "base_source": "3a212e47d18ad51a8037ed3944477dbba987a701",
+        "base_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
+        "local_sha": "4f10ec66e08359dd75fe3e85e06f0bed8a279482",
+        "local_development_sha": "4f10ec66e08359dd75fe3e85e06f0bed8a279482",
+        "published_sha": "3a212e47d18ad51a8037ed3944477dbba987a701",
+        "tested_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
+        "baseline_only": true,
+        "ci_run_id": 39879011054,
+        "ci_status": "completed",
+        "ci_conclusion": "success",
+        "windows_compilation": "NOT_RUN new HTTPS recovery slice; Linux has no .NET Framework/PowerShell",
+        "windows_native": "NOT_RUN HTTPS recovery11 and exact full regression; SUCCESS633 belongs only to baseline",
+        "scope": "Only2 runtime files,1 existing test file,3 checkpoint docs; existing recover-share action and its Stop continuation gate only",
+        "next": "Final scan and expected-head guarded update existing PR88; record new source/merge/one automatic CI and STOP without waiting or second stage",
+        "readiness_change": 0
+      },
+      "candidate_source": "3a212e47d18ad51a8037ed3944477dbba987a701"
+    },
+    "before_ci634_signature_fix": {
+      "ci_candidate": {
+        "source": "763c730dc5e4d505fac35d592024911d744c2f91",
+        "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+        "tree": "b8755d64da13dfab57f19fdaa9f737ad7f116d0d",
+        "local_freeze_sha": "52f72318de967f0e83c26675f7478e698ac8cdcb",
+        "run_id": 39883511908,
+        "run_number": 634,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T01:21:24Z",
+        "jobs": {
+          "windows": 120186199123,
+          "ubuntu": 120186198956
+        },
+        "verification": "One automatic pull_request run attempt1, raw exact-head runs total_count1; actual PR source/merge checked, fetched parent exact633 and full public tree identical to local freeze. Final CI634 logs not yet read; no wait/rerun in this stage",
+        "windows_compilation": "NOT_RUN pending exact634 evidence",
+        "windows_native": "NOT_RUN new HTTPS recovery11 and exact full regression; SUCCESS633 baseline only",
+        "artifact_uploads": "Public PR upload guards OFF; completion upload/prune not yet checked; no binary publication initiated",
+        "package_delivery": "NOT_RUN",
+        "owner_pc": "NOT_RUN",
+        "next": "Inspect SAME run39883511908 final logs/exact tested merge HTTPS recovery11/fresh10/recovery10/list10/repair8/ownership8/cleanup4/API17/export14/full regression. No duplicate CI/second stage in this pass"
+      },
+      "active_work": {
+        "phase": "ONE limited existing HTTPS recover-share production slice published in PR88; sole CI634 in_progress; STOP after checkpoint",
+        "recovery_checkpoint": "65c0c497d72a3c110623c31b100f6351c0148326",
+        "base_source": "3a212e47d18ad51a8037ed3944477dbba987a701",
+        "base_merge": "99c1737906e67ddaf8303856d24ee71dca7eea7d",
+        "local_sha": "52f72318de967f0e83c26675f7478e698ac8cdcb",
+        "local_development_sha": "52f72318de967f0e83c26675f7478e698ac8cdcb",
+        "published_sha": "763c730dc5e4d505fac35d592024911d744c2f91",
+        "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+        "baseline_only": false,
+        "ci_run_id": 39883511908,
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "windows_compilation": "NOT_RUN pending exact634 evidence",
+        "windows_native": "NOT_RUN HTTPS recovery11 and exact full regression; baseline633 SUCCESS not inherited",
+        "scope": "Only2 runtime files,1 existing test file,3 checkpoint docs; existing recover-share action and its Stop continuation gate only",
+        "next": "STOP. Next inspect SAME CI634 final logs/exact merge/HTTPS recovery11 plus prior regression; only after proof separate fresh-share owned preparation, not started here",
+        "readiness_change": 0,
+        "tree": "b8755d64da13dfab57f19fdaa9f737ad7f116d0d",
+        "ci_run_number": 634,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
+        "ci_jobs": {
+          "windows": 120186199123,
+          "ubuntu": 120186198956
+        },
+        "publication": "PASS expected-head non-force existing branch update from exact3a212e4; fetched parent/tree checked; exactly one automatic PR run634 attempt1, no dispatch/retry",
+        "workflow_preflight": "PASS repository public, unchanged workflows: integration branch excluded from push trigger, PR once, public artifact upload guards OFF, release main/VERSION/manual only, prune push-main only",
+        "checkpoint_note": "Post-publication docs-only checkpoint is local branch HEAD (git log -1), not pushed to avoid second CI; published source contains frozen pre-publication docs; exact publication IDs and checkpoint also in PR88 body"
+      },
+      "candidate_source": "763c730dc5e4d505fac35d592024911d744c2f91"
     }
   },
   "prepared_owned_stdin_publication": {
@@ -11775,11 +11871,64 @@
     "static": "PASS manual diff/review, syntax3/C#5 await-scope, diff --check, public321/0/added secretPII0; not compiler/native proof",
     "preservation": "PASS all74 old service methods unchanged;20/22 HomeProfileShare methods unchanged except default factory and common configure mode2 scope;33/34 old HTTPS test methods unchanged except Run call. All other blobs unchanged633 including fresh/recover/list/repair/ownership/cleanup/export UI/EOF/BOM/snapshot/dispatcher/receipt/HTTPS verification+confirmation/invitation/harness/scripts/workflows/VERSION",
     "fixture_cleanup": "Existing native fixture validates original ID/no secret arguments/no share mutation. Held I/O5s/modal watchdog15s/finally actual joins5s; native300s unchanged. Finally releases barrier/lock, disposes own forms, joins Work/initial/pending/actual operation/Stop and kills only its recorded own fixture pid/child; protected inputs/sibling/unrelated process checked before teardown",
-    "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN",
-    "publication": "TODO one guarded PR88 update after final source/public/workflow checks",
+    "windows_compilation": "FAIL final Windows log: CS1501 HomeVpnService.cs(1166,36), WaitForShareAsync has5 required parameters but call supplies4; accompanying CS1660 at(1165,25)",
+    "windows_native": "NOT_RUN recovery11; CI634 compile failed before tests",
+    "publication": "PASS scanned6-file frozen tree published to existing PR88 by expected-head non-force update; fetched parent/tree verified, exactly one automatic CI634, no rerun/dispatch",
     "remaining": "Exact Windows HTTPS recovery11 proof; fresh HTTPS share/invitation migration/fullR09, final package delivery/owner acceptance remain open",
-    "next": "Inspect SAME new automatic CI exact tested merge and HTTPS recovery11/fresh10/recovery10/list10/repair8/ownership8/cleanup4/API17/export14/full regression; then separate fresh-share owned preparation slice, not in this pass",
+    "next": "Only fix missing timeout argument; no fresh-share or invitation stage until exact new CI proof",
+    "readiness_change": 0,
+    "published_sha": "763c730dc5e4d505fac35d592024911d744c2f91",
+    "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+    "tree": "b8755d64da13dfab57f19fdaa9f737ad7f116d0d",
+    "local_freeze_sha": "52f72318de967f0e83c26675f7478e698ac8cdcb",
+    "ci_run_id": 39883511908,
+    "ci_run_number": 634,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": 120186199123,
+      "ubuntu": 120186198956
+    }
+  },
+  "ci634_failure": {
+    "source": "763c730dc5e4d505fac35d592024911d744c2f91",
+    "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+    "run_id": 39883511908,
+    "run_number": 634,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": {
+      "windows": 120186199123,
+      "ubuntu": 120186198956
+    },
+    "windows_compilation": "FAIL final Windows log: CS1501 HomeVpnService.cs(1166,36), WaitForShareAsync has5 required parameters but call supplies4; accompanying CS1660 at(1165,25)",
+    "verification": "Exact checkout merge read from final Windows job log; compiler fails before build identity/native tests. Ubuntu completed SUCCESS checked through jobs metadata only, not full log review in this fix stage",
+    "root_cause": "RecoverShareOwnedAsync omitted required timeoutMs argument. Four-argument WaitForShareAsync does not exist; overload binding also emits CS1660",
+    "windows_native": "NOT_RUN HTTPS recovery11 and all later native regression; build failed first",
+    "pack": "SKIPPED",
+    "artifact_uploads": "SKIPPED all uploads/prune; no binary publication",
+    "owner_pc": "NOT_RUN"
+  },
+  "ci634_share_wait_signature_fix": {
+    "status": "PARTIAL",
+    "recovery_checkpoint": "f959ebc0fcee4eadae30a4e000649b0879d90523",
+    "base_source": "763c730dc5e4d505fac35d592024911d744c2f91",
+    "base_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+    "base_ci": 39883511908,
+    "code_sha": "e9b5f6c9de00549d304dbf0d63cb2549028e835b",
+    "branch": "work/progo-ci634-wait-signature-20261023",
+    "worktree": "ProGo-ci634-wait-signature",
+    "scope": "Only one runtime call line in HomeVpnService.cs plus existing cancel-command assertion in HomeVpnShareRecoveryTests.cs,3 checkpoint docs. No other function/stage",
+    "fix": "Pass required fifth argument HomeVpnPreparationProcess.TimeoutMs (existing300000) to WaitForShareAsync; do not change timeout/overloads/workflow/checks",
+    "regression": "Existing recovery11 cancel-command additionally asserts actual modal ShareCommand purpose, explicit owner/CancelButton, retained uncompleted native Task. Original cancellation/ID/cleanup assertions remain",
+    "local": "PASS syntax2/C#5 await-scope/full diff/public321/0/secretPII0; targeted AST arity rejects exact bad634 call1166/4, accepts fixed5, rejects removed-timeout mutation; declaration5 required/300000 unchanged. Static only, not compiler proof",
+    "preservation": "PASS76/77 old service and38/39 old HTTPS test methods unchanged except exact two intended methods; every other tracked blob unchanged634, including confirmation/UI/setup/recover/list/repair/export/EOF/ownership/cleanup/snapshot/dispatcher/invitation/harness/scripts/workflows/VERSION",
+    "windows_compilation": "NOT_RUN corrected candidate",
+    "windows_native": "NOT_RUN recovery11 and exact full regression",
+    "publication": "TODO expected-head non-force existing PR88 update and one new automatic CI; no blind rerun",
+    "next": "Inspect same new CI exact merge: compile CS1501/CS1660 absent, recovery11 and prior regression executed. No next feature stage in this pass",
     "readiness_change": 0
   }
 }

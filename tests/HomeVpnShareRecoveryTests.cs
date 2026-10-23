@@ -206,7 +206,11 @@ namespace ProGo
                             if (phase == 3 && mode == "cancel-command") {
                                 if (!File.Exists(At("child"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
                                 stop = service.StopAsync(); check(!stop.IsCompleted && service.IsAdminWorking && ShareLeaseHeld(), "owned HTTPS native status and lease remain retained until physical cancel settles");
-                                ((Button)Field(form.OwnedForms.OfType<HomeVpnPreparationForm>().Single(), "cancel")).PerformClick(); phase = 4; return false;
+                                var wait = form.OwnedForms.OfType<HomeVpnPreparationForm>().Single(); var cancel = (Button)Field(wait, "cancel");
+                                check(wait.Modal && wait.Owner == form && wait.Text == "Ожидание SSH: настройка HTTPS" && !wait.Completion.IsCompleted
+                                    && wait.CancelButton == cancel && ((Label)Field(wait, "status")).AccessibleName == "Ход настройки или проверки HTTPS",
+                                    "owned HTTPS dispatch uses the actual cancellable ShareCommand dialog and retains its physical native task");
+                                cancel.PerformClick(); phase = 4; return false;
                             }
                             if (phase == 3 || phase == 4) {
                                 if (!operation.IsCompleted || !form.Work.IsCompleted || (stop != null && !stop.IsCompleted)) return false;

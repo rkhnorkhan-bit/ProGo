@@ -8,7 +8,52 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: существующий HTTPS recover-share → owned worker на CI633
+## Текущий этап: только исправление compile failure CI634
+
+Checkpoint `f959ebc0fcee4eadae30a4e000649b0879d90523`/локальный HEAD сверены. PR88 OPEN/DRAFT на source
+`763c730dc5e4d505fac35d592024911d744c2f91`, checkout merge `5a0f6d56cf62b7c06f0e6ab862094519e47c239a`.
+Все доступные worktree чистые; другого доступного исполнителя/Git/build/lock операций нет.
+Временные PID read-only inventory завершились сами, процессы не завершались принудительно.
+Сохранена отдельная ветка work/progo-ci634-wait-signature-20261023/worktree ProGo-ci634-wait-signature.
+
+[CI634/39883511908](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908): final
+Windows120186199123 log прочитан самостоятельно. Repository hygiene and build FAILURE:
+HomeVpnService.cs(1166,36) CS1501: No overload for method WaitForShareAsync takes4 arguments;
+(1165,25) CS1660: Cannot convert lambda expression to type string because it is not a delegate type.
+Причина — RecoverShareOwnedAsync пропустил обязательный timeoutMs. Объявление WaitForShareAsync
+требует5 аргументов. Это compile defect предыдущего изменения, не infrastructure flake.
+Exact checkout merge подтверждён; build identity/native tests не выполнены. Recovery11
+NOT_RUN, не PASS. Поздние Windows checks/pack/uploads/prune SKIPPED. Ubuntu120186198956
+completed SUCCESS проверен через jobs metadata; финальные строки его логов в этом fix этапе
+не перечитывались и не выдаются за полную проверку. Overall634 completed FAILURE.
+
+Code `e9b5f6c9de00549d304dbf0d63cb2549028e835b`: одна runtime строка передаёт пятый аргумент
+HomeVpnPreparationProcess.TimeoutMs, прежние300000. Регрессия: существующий cancel-command
+дополнительно проверяет фактический modal ShareCommand window/owner/CancelButton и незавершённый
+physical native Task перед отменой. Старые typed cancellation/journal ID/cleanup asserts сохранены.
+Только HomeVpnService/HomeVpnShareRecoveryTests:6add/2delete +3 docs. Другие функции остановлены;
+timeout/overloads/workflows/checks/протоколы не менялись, rerun старого SHA не выполнялся.
+
+PASS local: full diff/review, syntax2/C#5 await-scope, diff --check/public321/0/secretPII0.
+Targeted AST arity check воспроизводит bad634 call1166/4, принимает fixed5 и отклоняет
+removed-timeout mutation; declaration5 required/constant300000 unchanged. Это static,
+не C# compilation.76/77 old service и38/39 old HTTPS test methods неизменны кроме точных
+двух методов; каждый другой tracked blob равен634: configure/confirmation/fresh/recover/
+list/repair/export UI/EOF/ownership/cleanup/snapshot/dispatcher/invitation/harness/scripts/
+workflows/VERSION. Локально нет .NET Framework/PowerShell. Исправленная Windows compilation/
+native recovery11/full regression NOT_RUN, старый633 PASS на этот код не переносится.
+
+Публикация TODO: final secret/public/workflow checks и fresh expected-head non-force update
+existing PR88; ровно один новый automatic CI с обоснованным исправлением, без blind rerun.
+После публикации записать source/merge/tree/run/checkpoint и STOP без полного ожидания CI.
+Следующий шаг — тот же новый run: compilation без CS1501/CS1660, recovery11 и прежние
+регрессии; никакой новой функции сейчас. Uploads OFF/release excluded. Main merge/release/
+бинарные uploads/установка/VPS/network/keys/credentials/личный deployment не выполнялись.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: фиксированные веса и620
+anchors прежние. Главный блокер — compile/native proof исправленного кандидата, fullR09/
+реальная приёмка остаются открыты.
+
+## История: этап существующий HTTPS recover-share → owned worker на CI633
 
 Checkpoint `65c0c497d72a3c110623c31b100f6351c0148326` прочитан, локальный HEAD ему соответствовал.
 PR88 OPEN/DRAFT на source `3a212e47d18ad51a8037ed3944477dbba987a701`, tested merge `99c1737906e67ddaf8303856d24ee71dca7eea7d`.
@@ -68,12 +113,27 @@ cleanup/export UI/EOF/BOM/snapshot/dispatcher/receipt/HTTPS verification+confirm
 invitation/harness/scripts/workflows/VERSION. Локально нет PowerShell/.NET Framework.
 FullR09, fresh share/остальные invitation routes и реальная приёмка открыты.
 
-Публикация TODO: final source/secret/public/workflow checks, guarded non-force update
-existing PR88 по свежему expected HEAD; один automatic PR CI на новом source, uploads OFF/
-release excluded. После публикации записать source/merge/tree/run и checkpoint, STOP без
-ожидания всего CI/второго этапа. Следующая точка — финальные логи того же нового CI и
-exact tested merge: HTTPS recovery11 + fresh10/recovery10/list10/repair8/ownership8/cleanup4/
-API17/export14/full regression; затем отдельный fresh-share owned preparation срез.
+Публикация PASS: source `763c730dc5e4d505fac35d592024911d744c2f91` в существующей PR88 ветке
+integration/approved-plan-31-20261011, actual merge ref `5a0f6d56cf62b7c06f0e6ab862094519e47c239a`.
+Freeze `52f72318de967f0e83c26675f7478e698ac8cdcb`, tree `b8755d64da13dfab57f19fdaa9f737ad7f116d0d`;
+fetched parent точный633, public full tree равен freeze. Expected-head non-force update
+после fresh HEAD/diff/secret/public/workflow проверок. Public diff6files791add/63delete:
+2 runtime +1 existing test +3 docs. PR88 OPEN/DRAFT, main не изменён.
+
+Единственный automatic [CI634/39883511908](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908),
+source `763c730dc5e4d505fac35d592024911d744c2f91`, attempt1/raw exact-head runs total_count1.
+Последнее наблюдение run.updated_at2026-10-23T01:21:24Z: in_progress/conclusion null;
+Windows120186199123/Ubuntu120186198956 in_progress. Новые Windows compilation/native11/
+точная полная регрессия NOT_RUN до completed финальных логов; merge ref ещё не proof
+build identity634. Upload guards OFF/release excluded, completion uploads/prune ещё не
+проверен. Релиз/бинарные uploads/установка/VPS/credentials/network не выполнялись.
+
+Post-publication docs-only checkpoint только локальный HEAD этой ветки (git log -1),
+не push во избежание второго CI; опубликованный source содержит frozen pre-publication
+docs, актуальные source/run/checkpoint также в PR88 body. STOP без ожидания/второго этапа.
+Следующая точка — финальные логи ЭТОГО ЖЕ39883511908/exact tested merge: HTTPS recovery11
++ fresh10/recovery10/list10/repair8/ownership8/cleanup4/API17/export14/full regression;
+после proof отдельный fresh-share owned preparation срез, сейчас не начат.
 Main merge/release/бинарные uploads/установка/VPS/credentials/network/личный deployment не выполнялись.
 Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: полный взвешенный критерий
 не закрыт; фиксированные веса/620 anchors прежние. Главный блокер — Windows proof нового11,
