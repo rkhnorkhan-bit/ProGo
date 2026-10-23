@@ -8,7 +8,78 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: fresh setup preparation → owned worker на CI632
+## Текущий этап: существующий HTTPS recover-share → owned worker на CI633
+
+Checkpoint `65c0c497d72a3c110623c31b100f6351c0148326` прочитан, локальный HEAD ему соответствовал.
+PR88 OPEN/DRAFT на source `3a212e47d18ad51a8037ed3944477dbba987a701`, tested merge `99c1737906e67ddaf8303856d24ee71dca7eea7d`.
+[CI633/39879011054](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39879011054) проверен
+самостоятельно по финальным логам обоих completed SUCCESS jobs Windows120171576507/
+Ubuntu120171576142, не только переданным metadata. Checkout/build identity0.2.2+99c1737906e67ddaf8303856d24ee71dca7eea7d.
+Fresh10 default-refusal/copy-fault/cancel-retry/stop-copy/dispose-copy/owner-dispose/
+cancel-command/cleanup-lock/result/pending-race — explicit PASS. Recovery10/list10/repair8/
+ownership8/cleanup4/snapshot12/dispatcher5/export modal11/chooser3 — PASS; Desktop5294/
+HomeVPN2674/Portable91, ProGo tests PASS. Windows Python26 PASS/2 SKIP, SKIP не PASS;
+Ubuntu16+13 unit OK/isolated actual VPN/HTTPS/invitation smoke PASS. Pack SUCCESS только
+runner, uploads/prune SKIPPED, artifacts API empty. ZIP digest в JSON, байты не получены/
+не переданы/не установлены. Этот SUCCESS не подтверждает новый HTTPS recovery код.
+Все доступные worktree чистые, незавершённых Git/build/lock операций и другого доступного
+исполнителя нет. Временные codex/bash/python PID первого read-only inventory завершились;
+они не завершались принудительно. Старые ветки/checkpoint сохранены, отдельный worktree.
+
+Выбран один небольшой production путь: существующее «Проверить прежнюю настройку HTTPS».
+Причина: core share receipt/owned confirmation/dispatcher уже есть, SSH preparation ещё
+legacy; его можно перенести отдельно от fresh share и invitation. Code `4f10ec66e08359dd75fe3e85e06f0bed8a279482`,
+ветка work/progo-https-recovery-on633-20261023 / worktree ProGo-https-recovery-on633 от633.
+Только HomeVpnService/HomeProfileShare/HomeVpnShareRecoveryTests:197add/3delete +3 docs.
+
+Default configure factory направляет только recover-share через RecoverShareOwnedAsync,
+с фактическим configure owner/dispatcher. Owner metadata копируются до scheduling;
+selected-key validation/DPAPI Load/helpers/status/result/cleanup принадлежат retained worker.
+Single share family lease остаётся в прежнем core до результата и cleanup; wrapper не
+захватывает его повторно и не ждёт public Stop. Каждый следующий native startup проверяет
+Stop identity, принятый физический Task дренируется до исхода/локальной отмены. Точный
+cleanup retained до explicit retry, поздний progress завершённого тела подавлен.
+Только mode2 recovery проверяет Stop scope после SSH и при существующих admission gates
+verification/save/consumption. Принятый успешный SSH Task остаётся успешным, сменившийся
+Stop запрещает последующую HTTPS-проверку/запись/снятие запроса. Fresh share и invitation,
+публичный продуктовый scope и веса не меняются; протокол исходного ID/status/result прежний.
+
+Новые HTTPS recovery11: default-refusal/status-pending/cancel-retry/stop-copy/dispose-copy/
+owner-dispose/cancel-command/cleanup-lock/result/stop-result-copy/stop-result. Фактические
+default/modal кнопка, DPAPI/core lease/helper/sharing/native subprocess tree; заменены
+только copy transport/SSH executable и внешний HTTPS verification boundary. Fixture
+проверяет исходный ID/отсутствие token в argv/отсутствие новой share команды. UI heartbeat/
+single admission, Cancel→Retry без закрытия ShowDialog/замены старого Task, Stop/Dispose/
+owner loss, отказ result после второго copy, locked Stop false→unlock true без replay,
+typed original error, journal/draft/credentials/sibling/чужой процесс сохранены.
+Positive native status/result возвращает исходный origin; test verification явно отменяется
+до HTTPS/записи. Stop после принятого SSH success оставляет результат worker и не вызывает
+даже test verification/save/consumption. Это не настоящая интеграция VPS/HTTPS/приёмка ПК.
+Bounded held5s/modal15s/finally join5s, native300s unchanged. Finally release/unlock/dispose
+own windows, join Work/initial/pending/operation/Stop, cleanup только своих fixture pid/child.
+Существующие test fixture/harness/scripts/timeout policy не менялись, вызов группы до
+прежних final cleanup asserts; Windows compilation/native11/full regression NOT_RUN.
+
+PASS local: full manual diff/review, syntax3/C#5 await-scope (не compilation), diff --check,
+public321/0/added secretPII0. Все74 baseline service methods неизменны;20/22 Share methods
+кроме default factory/common configure recovery scope и33/34 old HTTPS test methods кроме
+Run неизменны. Все другие tracked blobs равны633: fresh/recover/list/repair/ownership/
+cleanup/export UI/EOF/BOM/snapshot/dispatcher/receipt/HTTPS verification+confirmation/
+invitation/harness/scripts/workflows/VERSION. Локально нет PowerShell/.NET Framework.
+FullR09, fresh share/остальные invitation routes и реальная приёмка открыты.
+
+Публикация TODO: final source/secret/public/workflow checks, guarded non-force update
+existing PR88 по свежему expected HEAD; один automatic PR CI на новом source, uploads OFF/
+release excluded. После публикации записать source/merge/tree/run и checkpoint, STOP без
+ожидания всего CI/второго этапа. Следующая точка — финальные логи того же нового CI и
+exact tested merge: HTTPS recovery11 + fresh10/recovery10/list10/repair8/ownership8/cleanup4/
+API17/export14/full regression; затем отдельный fresh-share owned preparation срез.
+Main merge/release/бинарные uploads/установка/VPS/credentials/network/личный deployment не выполнялись.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: полный взвешенный критерий
+не закрыт; фиксированные веса/620 anchors прежние. Главный блокер — Windows proof нового11,
+remaining Admin/fullR09/owner acceptance открыты.
+
+## История: этап fresh setup preparation → owned worker на CI632
 
 Checkpoint `c1e8b509eb0dff03175a737dce806472bffb53b0` прочитан, локальный HEAD ему соответствовал.
 Актуальный PR88 OPEN/DRAFT на source `5d5fed17998f77c1e1225127501f3f32ec4c0557`, tested merge `e52e4dfb1702d09ce7d8ec3a123bafc70d4ef370`.
@@ -66,10 +137,25 @@ HTTPS/invitation/harness/scripts/workflows/VERSION. Проверка method pres
 не менялись. Windows compilation/native fresh10/full regression NOT_RUN: Linux без .NET
 Framework/PowerShell. Full R09, остальные Admin-маршруты и реальная приёмка открыты.
 
-Публикация TODO: final diff/secret/public/workflow scan, guarded update existing PR88 по
-ожидаемому актуальному HEAD, один automatic PR CI на новом source. Uploads OFF/release
-excluded. После публикации сохранить source/merge/tree/run/checkpoint и STOP, без полного
-ожидания CI и без второго этапа. Следующая точка — финальные логи того же нового run:
+Публикация PASS: source `3a212e47d18ad51a8037ed3944477dbba987a701` в существующей PR88 ветке
+integration/approved-plan-31-20261011, actual merge ref `99c1737906e67ddaf8303856d24ee71dca7eea7d`.
+Freeze `c482b97121d840ebe8d14e7d889ea9597c84f873`, tree `3a8a19954bb1b76431c8977015568e2d508717c5`;
+fetched parent точный632, full tree равен freeze. Expected-head non-force ref update
+выполнен после fresh HEAD/diff/secret/public/workflow проверок. Public diff6 файлов:
+2 runtime +1 existing test +3 docs,806add/68delete. PR88 OPEN/DRAFT, main не изменён.
+
+Единственный automatic [CI633/39879011054](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39879011054),
+source `3a212e47d18ad51a8037ed3944477dbba987a701`, attempt1/raw exact-head runs total_count1.
+Последнее наблюдение run.updated_at2026-10-23T00:35:26Z: in_progress/conclusion null;
+Windows120171576507 и Ubuntu120171576142 in_progress. Новые Windows compilation/fresh10/
+точная полная регрессия NOT_RUN до completed логов; merge ref ещё не доказанный build
+identity633. Public upload guards OFF/release excluded, completion uploads/prune пока
+не проверен. Релиз/бинарные uploads/установка/VPS/credentials/network не выполнялись.
+
+Post-publication docs-only checkpoint только локальный HEAD этой ветки (git log -1),
+не push во избежание второго CI; опубликованный source содержит frozen pre-publication
+docs, актуальные publication IDs/checkpoint также в PR88 body. STOP без ожидания CI и
+без второго этапа. Следующая точка — финальные логи ЭТОГО ЖЕ39879011054 и exact tested merge:
 fresh10 + recovery10/list10/repair8/ownership8/cleanup4/API17/export14/full regression.
 Main merge/release/бинарники/установка/VPS/credentials/network и личный deployment не выполнялись.
 Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: фиксированные веса и620

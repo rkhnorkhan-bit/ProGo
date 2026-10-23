@@ -1143,6 +1143,51 @@ namespace ProGo
             }
         }
 
+        // Existing HTTPS request recovery only. Core owns the one share family
+        // lease through both queries/result and cleanup; never acquire it twice
+        // or await public Stop from this retained body.
+        internal Task<string> RecoverShareOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
+            HomeProfileUiDispatcher dispatcher, Action<string> progress,
+            Func<string, string, Task> copy = null, string commandExecutable = null)
+        {
+            if (window == null) throw new ArgumentNullException("window");
+            if (dispatcher == null) throw new ArgumentNullException("dispatcher");
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            var stop = StopWork; int reporting = 1;
+            return RunAdminOwnedAsync(async delegate {
+                try {
+                    RequireShareRecoveryScope(stop);
+                    return await AdminAsync(frozen, "recover-share", null, null,
+                        text => dispatcher.Post(delegate { if (Volatile.Read(ref reporting) != 0) progress(text); }),
+                        (executable, arguments) => DispatchShareRecoveryTransportAsync(stop, dispatcher, delegate {
+                            return copy == null ? HomeVpnPreparationForm.CopyAsync(window, executable, arguments, true) : copy(executable, arguments);
+                        }),
+                        (executable, arguments, output) => DispatchShareRecoveryTransportAsync(stop, dispatcher, delegate {
+                            return HomeVpnPreparationForm.WaitForShareAsync(window, commandExecutable ?? executable, arguments, output);
+                        }), RetainAdminCleanup).ConfigureAwait(false);
+                } finally { Volatile.Write(ref reporting, 0); }
+            });
+        }
+        private async Task DispatchShareRecoveryTransportAsync(Task<bool> stop, HomeProfileUiDispatcher dispatcher, Func<Task> start)
+        {
+            bool admitted = false;
+            try {
+                await DispatchAdminTransportAsync(dispatcher, delegate {
+                    RequireShareRecoveryScope(stop); admitted = true; return start();
+                }).ConfigureAwait(false);
+            } catch (OperationCanceledException) {
+                if (!admitted) throw new HomeVpnPreparationCancelledException(true);
+                throw;
+            }
+        }
+        private void RequireShareRecoveryScope(Task<bool> stop)
+        {
+            lock (lifecycleGate) {
+                if (disposed || startsPaused || !Object.ReferenceEquals(stopWork, stop) || !stopWork.IsCompleted)
+                    throw new HomeVpnPreparationCancelledException(true);
+            }
+        }
+
         internal static async Task<string> AdminAsync(HomeVpnOwner owner, string action, string label, string identifier, Action<string> progress)
         {
             return await AdminAsync(owner, action, label, identifier, progress,

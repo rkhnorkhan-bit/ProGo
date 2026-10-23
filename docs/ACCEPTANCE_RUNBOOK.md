@@ -1,4 +1,43 @@
-## Текущий кандидат: fresh setup owned-worker10; Windows NOT_RUN
+## Текущий кандидат: HTTPS recover-share owned-worker11; Windows NOT_RUN
+
+Checkpoint `65c0c497d72a3c110623c31b100f6351c0148326` сохранён. Проверенная база source
+`3a212e47d18ad51a8037ed3944477dbba987a701` / tested merge `99c1737906e67ddaf8303856d24ee71dca7eea7d`,
+[CI633 SUCCESS](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39879011054): final BOTH
+job logs independently checked, checkout/build identity/fresh10/recovery10/list10/repair8/
+ownership8/cleanup4/snapshot12/dispatcher5/export modal11/chooser3 PASS; Desktop5294/HomeVPN2674/
+Portable91. Windows Python26 PASS/2 SKIP; Ubuntu16+13 unit OK/isolated smoke PASS. Pack
+SUCCESS runner-only, uploads/prune SKIPPED, artifacts API empty, no delivery/install.
+Older pending633 sections below are dated history; new HTTPS recovery not covered by633.
+
+Code `4f10ec66e08359dd75fe3e85e06f0bed8a279482`: existing configure recovery button → RecoverShareOwnedAsync
+→ retained worker → explicit configure owner copy/status/result → exact cleanup. Only2
+runtime +1 existing test +3 docs. Existing single share lease/core ID/status/result,
+no wrapper reacquire/public Stop self-await. New mode2 continuation scope prevents HTTPS/
+save/consumption after Stop while preserving an accepted SSH Task's actual success.
+Fresh share/installation and invitation routes unchanged; no new product feature.
+
+Minimum exact new source/merge Windows run: scripts/Test-ProGo.ps1 + Test-HomeVpnRelay.ps1.
+Require11 new explicit PASS: default-refusal, status-pending, cancel-retry, stop-copy,
+dispose-copy, owner-dispose, cancel-command, cleanup-lock, result, stop-result-copy,
+stop-result. Actual default/modal binding/real DPAPI/helper/native tree and responsive UI;
+Cancel→Retry preserves journal/draft/Task, Stop drains actual copy/query and refuses next
+result, owner loss has no late UI, locked Stop false→unlock true without replay, protected
+bytes/sibling/unrelated process unchanged. Result reaches test HTTPS boundary with original
+origin then cancels before external HTTPS/save. Stop after successful result must leave
+API success but prevent verification/save/consumption. No VPS or real target acceptance.
+Held5s/modal15s/finally join5s, original native300s unchanged, own-resource cleanup only.
+Require fresh10/recovery10/list10/repair8/ownership8/cleanup4/API17/export14/full regression.
+New Windows compilation/native11/full regression NOT_RUN until completed exact logs.
+
+Local PASS review/syntax3/C#5 await-scope/diff/public321/0/secretPII0/method preservation;
+not compiler/native proof. Prior methods/EOF/BOM/export/core receipt/harness/workflows
+preserved. One guarded PR88 update → one automatic CI, uploads OFF/release excluded.
+Save source/merge/tree/run/checkpoint and STOP without waiting full CI/second stage.
+Next final logs of SAME run, then separate fresh-share worker preparation; not started.
+Weights58–80/22 +0 unchanged. FullR09/remaining Admin/owner acceptance open; no main merge/
+release/binaries/install/VPS/network/credentials/personal deployment actions.
+
+## История: кандидат fresh setup owned-worker10; Windows NOT_RUN
 
 Checkpoint `c1e8b509eb0dff03175a737dce806472bffb53b0` сохранён. Проверенная база source
 `5d5fed17998f77c1e1225127501f3f32ec4c0557` / tested merge `e52e4dfb1702d09ce7d8ec3a123bafc70d4ef370`,
@@ -32,9 +71,18 @@ New Windows compilation/native fresh10/full regression NOT_RUN until completed e
 
 Local PASS manual review/syntax3/C#5 await-scope/diff/public321/0/secretPII0/AST preservation;
 not compiler/native proof. All71 service and41 wizard methods and existing recovery code
-unchanged, all other blobs/EOF/BOM/workflows/harness preserved. One guarded PR88 update →
-one automatic PR CI, uploads OFF/release excluded. Save source/merge/tree/run and STOP
-without waiting full CI or next code stage. Next check that same run, weights58–80/22 +0.
+unchanged, all other blobs/EOF/BOM/workflows/harness preserved. Publication PASS in existing
+PR88: source `3a212e47d18ad51a8037ed3944477dbba987a701`, merge ref `99c1737906e67ddaf8303856d24ee71dca7eea7d`
+(build identity633 NOT_RUN), freeze `c482b97121d840ebe8d14e7d889ea9597c84f873`,
+tree `3a8a19954bb1b76431c8977015568e2d508717c5`. Fetched public parent/tree verified, expected HEAD
+updated without force. Diff6files806add/68delete. Sole automatic
+[CI633/39879011054](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39879011054), attempt1/raw head runs total_count1.
+Run.updated_at2026-10-23T00:35:26Z in_progress, Windows120171576507/Ubuntu120171576142
+in_progress/conclusion null. New compiler/native fresh10/full regression NOT_RUN; SUCCESS632
+not inherited. Upload guards OFF/release excluded, completion upload/prune not yet checked.
+Post-publication3-doc checkpoint local HEAD (git log -1), not push; latest IDs in PR body.
+STOP without waiting or next code stage. Next final logs of SAME CI633 and exact merge,
+fresh10 plus prior regression; weights58–80/22 +0 unchanged.
 FullR09/remaining Admin/owner acceptance open; merge/release/binaries/install/VPS/credentials/
 network and personal deployment excluded.
 
