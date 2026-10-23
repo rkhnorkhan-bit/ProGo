@@ -3929,31 +3929,31 @@
     }
   ],
   "ci_candidate": {
-    "source": "928257553a47fc001b2cdaac25817f95d3b6c95c",
-    "merge_ref": "80995cb75743dfff071bdb40330e30eee843aa41",
-    "tested_merge": "80995cb75743dfff071bdb40330e30eee843aa41",
-    "tree": "fabbbf7d87567a2f93ccf8373418369df0ecd256",
-    "local_freeze": "ca64712d86d9e3967065af4f6f27f1ef07696026",
-    "run_id": 40000989219,
-    "run_number": 649,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40000989219",
+    "source": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+    "merge_ref": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "tested_merge": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "tree": "80550ef5c5c3cc7663bc840bfa308391abfe011b",
+    "local_freeze": "2d758528a3d4059c61888366d525b09faa60beac",
+    "run_id": 40006198834,
+    "run_number": 650,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40006198834",
     "status": "completed",
     "conclusion": "success",
     "jobs": {
       "windows": {
-        "id": 120576687161,
+        "id": 120594618104,
         "status": "completed",
         "conclusion": "success"
       },
       "ubuntu": {
-        "id": 120576687526,
+        "id": 120594618663,
         "status": "completed",
         "conclusion": "success"
       }
     },
     "verification": "Both full final logs independently read; both checkout/Windows build identity exact merge; actual per-case markers enumerated, not metadata-only proof.",
-    "windows_compilation": "PASS exact649",
-    "windows_native": "PASS exact649 ConsumptionWorker8/Recover name9/Reissue8/Create8/API6/UI8/UI12/all enumerated previous suites",
+    "windows_compilation": "PASS exact650",
+    "windows_native": "PASS exact650 Recover consumption8/API8/Recover name9/Reissue8/Create8/API6/UI8/UI12/all old per-case suites",
     "pack": "PASS runner-only",
     "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
@@ -5493,13 +5493,13 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE RecoverAsync handoff consumption UI binding",
-    "baseline_source": "928257553a47fc001b2cdaac25817f95d3b6c95c",
-    "baseline_tested_merge": "80995cb75743dfff071bdb40330e30eee843aa41",
-    "baseline_checkpoint": "c7abd1580cb9c75dadedda60d60541ce10fe146c",
-    "local_code_sha": "0ec361c0b0bd0e83560f979806716b6c0a0f4f27",
-    "scope": "ONLY RecoverAsync ConfirmConsumed handoff moved to existing ConfirmConsumedAsync retained by existing RunAdminOwnedAsync. Create/Reissue remain synchronous, API8/service/dispatcher/transport untouched.",
-    "implementation": "Explicit Friends owner, original Stop scope and volatile caller admission without worker access to controls. Close/Escape cancels pending consumption, keeps modal until physical settlement; Dispose cancels and owns settlement. Actual accepted delete stays successful; no late success publication after owner loss/Stop/close. Retained public ConsumptionWork and original family lease. No new external action, no Stop self-await.",
+    "phase": "ONE CreateAsync handoff consumption UI binding",
+    "baseline_source": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+    "baseline_tested_merge": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "baseline_checkpoint": "052309cabb2ff229930ae605011644c16a608621",
+    "local_code_sha": "85cb6f347b7321dc73d4ed0ab5eacc63d4b4727b",
+    "scope": "ONLY CreateAsync handoff sync ConfirmConsumed replaced by existing ConsumeRecoveredAsync retained helper/ConfirmConsumedAsync. Shared helper, Recover, Reissue, API8, service/transport unchanged.",
+    "implementation": "Reuse proven owner/Stop scope/cancellation/retained ConsumptionWork with guards after handoff/settlement. Missing confirmation or accepted delete after cancellation gates explicit reconciliation. Existing generic uncertainty read/post-action refresh unchanged; never automatic invite/consume replay.",
     "native_cases": [
       "complete",
       "close-retry",
@@ -5510,17 +5510,16 @@
       "changed-request",
       "changed-result"
     ],
-    "test_contract": "Actual ShowDialog/default Recover and retained real request/result/DPAPI+delete. Hold existing API consume boundary5s; modal15s/cleanup joins5s. Heartbeat/reentry/no duplicate recovery or consumption, protected bytes/newer request preserved, original recovery ID. Cancel Close→reopen explicit Retry; Stop/lock→Refresh→Recover once; Dispose no late status; accepted delete once. Callback-only transport, no live VPS proof. All old test bodies and deadlines unchanged.",
+    "test_contract": "Actual ShowDialog/default Create. Single fixture invite registers real accepted request/result, exact returned token/ID/frozen name. Existing API consume boundary held5s, modal15s/joins5s. One invite total; cancel/lock Retry only recover-invite same ID, no second issuance. Close reopen Retry/Stop Refresh Retry/Dispose/no late status, changed receipt bytes retained, private bytes/draft preserved. Stop after accepted delete keeps successful task and no recreation. Fixture transport callback-only, no real VPS proof. All old test bodies/deadlines unchanged.",
     "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0; AST/compiler unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new UI binding candidate",
-    "windows_native": "NOT_RUN Recover consumption8 and full old suites;649 SUCCESS only baseline",
+    "windows_compilation": "NOT_RUN new Create candidate",
+    "windows_native": "NOT_RUN Create consumption8/full regressions;650 PASS only baseline",
+    "publication": "TODO fresh expected-head guarded PR88 ONE automatic CI; public uploads OFF/release ineligible",
     "remaining_production_paths": [
-      "Create handoff consumption binding",
-      "Reissue Complete handoff consumption binding",
+      "Reissue Complete consumption handoff binding",
       "Existing invite/revoke/reissue/recover-invite owned transport, separate bounded stages"
     ],
-    "publication": "TODO guarded existing PR88 ONE automatic CI; public uploads OFF/release ineligible",
-    "next": "Read SAME new exact-source CI final logs/tested merge/Recover consumption8/API8 and all old suites. No duplicate/wait/second stage; only afterwards one remaining Create or Reissue binding.",
+    "next": "Read SAME new CI full final logs/exact source+tested merge/Create consumption8/Recover8/API8 and all old suites. Only after proof separate Reissue consumption; no second stage now.",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -5614,7 +5613,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI649 source9282575/merge80995cb full final logs API8 and all old suites PASS; pack runner-only/uploads skipped. Recover handoff consumption8 new UI candidate Windows NOT_RUN; no transport change. Weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "CI650 source5b4ed7e/merge32e6df1 full logs Recover consumption8/API8/all old suites PASS; pack runner-only/uploads skipped. New Create consumption8 candidate Windows NOT_RUN. Reissue/transport unchanged. Weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9750,8 +9749,8 @@
       622,
       623
     ],
-    "actual_invitation_ui": "Read paths/API8 verified649. New Recover handoff consumption binding candidate native NOT_RUN; Create/Reissue consumption and owned transport remain separate.",
-    "next": "Read SAME new exact-source CI final logs/tested merge/Recover consumption8/API8 and all old suites. No duplicate/wait/second stage; only afterwards one remaining Create or Reissue binding.",
+    "actual_invitation_ui": "Reader/API8/Recover consumption verified650. Create handoff consumption candidate native NOT_RUN. Reissue handoff and owned transport remain separate.",
+    "next": "Read SAME new CI full final logs/exact source+tested merge/Create consumption8/Recover8/API8 and all old suites. Only after proof separate Reissue consumption; no second stage now.",
     "readiness_change": 0,
     "integration_local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
     "integration_source": "6f8a41e67709dae2a9794885e7e975918401f765",
@@ -12743,6 +12742,98 @@
         "verification": "PASS expected-head non-force existing PR88 update; fetched exact648 parent/full tree equal reviewed freeze. ONE automatic pull_request attempt1/exact-source count1. Final checkout/build identity not yet verified.",
         "windows_compilation": "NOT_RUN new API integration",
         "windows_native": "NOT_RUN consumption8/full old suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR guards; final skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      }
+    },
+    "before_create_consumption_on650": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE Recover handoff owned consumption UI candidate published; sole CI650 in_progress; STOP after checkpoint",
+        "baseline_source": "928257553a47fc001b2cdaac25817f95d3b6c95c",
+        "baseline_tested_merge": "80995cb75743dfff071bdb40330e30eee843aa41",
+        "baseline_checkpoint": "c7abd1580cb9c75dadedda60d60541ce10fe146c",
+        "local_code_sha": "0ec361c0b0bd0e83560f979806716b6c0a0f4f27",
+        "scope": "ONLY RecoverAsync ConfirmConsumed handoff moved to existing ConfirmConsumedAsync retained by existing RunAdminOwnedAsync. Create/Reissue remain synchronous, API8/service/dispatcher/transport untouched.",
+        "implementation": "Explicit Friends owner, original Stop scope and volatile caller admission without worker access to controls. Close/Escape cancels pending consumption, keeps modal until physical settlement; Dispose cancels and owns settlement. Actual accepted delete stays successful; no late success publication after owner loss/Stop/close. Retained public ConsumptionWork and original family lease. No new external action, no Stop self-await.",
+        "native_cases": [
+          "complete",
+          "close-retry",
+          "dispose",
+          "stop-retry",
+          "service-dispose",
+          "locked",
+          "changed-request",
+          "changed-result"
+        ],
+        "test_contract": "Actual ShowDialog/default Recover and retained real request/result/DPAPI+delete. Hold existing API consume boundary5s; modal15s/cleanup joins5s. Heartbeat/reentry/no duplicate recovery or consumption, protected bytes/newer request preserved, original recovery ID. Cancel Close→reopen explicit Retry; Stop/lock→Refresh→Recover once; Dispose no late status; accepted delete once. Callback-only transport, no live VPS proof. All old test bodies and deadlines unchanged.",
+        "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0; AST/compiler unavailable NOT_RUN.",
+        "windows_compilation": "NOT_RUN new UI binding candidate",
+        "windows_native": "NOT_RUN Recover consumption8 and full old suites;649 SUCCESS only baseline",
+        "remaining_production_paths": [
+          "Create handoff consumption binding",
+          "Reissue Complete handoff consumption binding",
+          "Existing invite/revoke/reissue/recover-invite owned transport, separate bounded stages"
+        ],
+        "publication": "PASS fresh expected-head non-force PR88; fetched exact649 parent and full tree equal reviewed freeze. ONE automatic CI650 pull_request attempt1/exact-source count1.",
+        "next": "Read SAME CI650 full final logs/source/tested merge/Recover consumption8/API8 and all old suites. No rerun/duplicate/second stage. Only afterwards one separate Create or Reissue consumption handoff binding.",
+        "readiness_change": 0,
+        "published_sha": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+        "merge_ref": "32e6df175b2e295e591794686f23af56fb3f17eb",
+        "tested_merge": null,
+        "tree": "80550ef5c5c3cc7663bc840bfa308391abfe011b",
+        "local_freeze": "2d758528a3d4059c61888366d525b09faa60beac",
+        "ci_run_id": 40006198834,
+        "ci_run_number": 650,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40006198834",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120594618104,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120594618663,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid second CI",
+        "public_diff": "5files717add/60delete:1 runtime48add/8delete +1 existing test123add/0delete +3docs546add/52delete; Create/Reissue/API8/service/dispatcher/transport/scripts/workflows/VERSION unchanged"
+      },
+      "ci_candidate": {
+        "source": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+        "merge_ref": "32e6df175b2e295e591794686f23af56fb3f17eb",
+        "tested_merge": null,
+        "tree": "80550ef5c5c3cc7663bc840bfa308391abfe011b",
+        "local_freeze": "2d758528a3d4059c61888366d525b09faa60beac",
+        "run_id": 40006198834,
+        "run_number": 650,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40006198834",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": {
+          "windows": {
+            "id": 120594618104,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120594618663,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "PASS fresh expected-head non-force PR88 update; fetched exact649 parent/full tree equal reviewed freeze. ONE automatic pull_request attempt1/exact-source count1. Final checkout/build identity not yet verified.",
+        "windows_compilation": "NOT_RUN new Recover consumption UI candidate",
+        "windows_native": "NOT_RUN Recover consumption8/API8/full old suites",
         "pack": "NOT_RUN",
         "artifact_uploads": "OFF public PR guards; final skips not yet observed",
         "owner_pc": "NOT_RUN"
@@ -16675,8 +16766,8 @@
     ],
     "test_contract": "Unchanged saved8 actual ShowDialog/real DPAPI/delete-sharing/cancellation/race cases. Original heartbeat3s/barrier5s/settlement5s/modal15s and cleanup/asserts/coverage preserved, lease released only after settlement; protected byte checks. No real VPS.",
     "local_checks": "PASS manual review/signatures/exact saved parity/all old bodies preservation/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler/native Windows unavailable NOT_RUN.",
-    "windows_compilation": "PASS exact649",
-    "windows_native": "PASS exact649 ConsumptionWorker8 and prior suites",
+    "windows_compilation": "PASS exact650",
+    "windows_native": "PASS exact650 ConsumptionWorker8/all old suites",
     "publication": "PASS fresh expected-head non-force existing PR88; fetched parent exact648 and full tree equal reviewed freeze. ONE automatic CI649 pull_request attempt1/exact-source count1.",
     "remaining_production_paths": [
       "UI consumption bindings create/reissue/recover with original owned scope, Cancel/Retry/Stop/Dispose and accepted-request lifecycle tests",
@@ -16706,9 +16797,9 @@
         "conclusion": "success"
       }
     },
-    "verification_source": "928257553a47fc001b2cdaac25817f95d3b6c95c",
-    "verification_tested_merge": "80995cb75743dfff071bdb40330e30eee843aa41",
-    "verification_run_id": 40000989219
+    "verification_source": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+    "verification_tested_merge": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "verification_run_id": 40006198834
   },
   "ci649_final": {
     "source": "928257553a47fc001b2cdaac25817f95d3b6c95c",
@@ -16964,15 +17055,314 @@
     ],
     "test_contract": "Actual ShowDialog/default Recover and retained real request/result/DPAPI+delete. Hold existing API consume boundary5s; modal15s/cleanup joins5s. Heartbeat/reentry/no duplicate recovery or consumption, protected bytes/newer request preserved, original recovery ID. Cancel Close→reopen explicit Retry; Stop/lock→Refresh→Recover once; Dispose no late status; accepted delete once. Callback-only transport, no live VPS proof. All old test bodies and deadlines unchanged.",
     "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0; AST/compiler unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new UI binding candidate",
-    "windows_native": "NOT_RUN Recover consumption8 and full old suites;649 SUCCESS only baseline",
+    "windows_compilation": "PASS exact650",
+    "windows_native": "PASS exact650 Recover consumption8 and prior suites",
     "remaining_production_paths": [
       "Create handoff consumption binding",
       "Reissue Complete handoff consumption binding",
       "Existing invite/revoke/reissue/recover-invite owned transport, separate bounded stages"
     ],
-    "publication": "TODO guarded existing PR88 ONE automatic CI; public uploads OFF/release ineligible",
-    "next": "Read SAME new exact-source CI final logs/tested merge/Recover consumption8/API8 and all old suites. No duplicate/wait/second stage; only afterwards one remaining Create or Reissue binding.",
+    "publication": "PASS fresh expected-head non-force PR88; fetched exact649 parent and full tree equal reviewed freeze. ONE automatic CI650 pull_request attempt1/exact-source count1.",
+    "next": "Recover binding proven650; no change here. Current new candidate only Create binding.",
+    "readiness_change": 0,
+    "published_sha": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+    "merge_ref": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "tested_merge": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "tree": "80550ef5c5c3cc7663bc840bfa308391abfe011b",
+    "local_freeze": "2d758528a3d4059c61888366d525b09faa60beac",
+    "ci_run_id": 40006198834,
+    "ci_run_number": 650,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40006198834",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_jobs": {
+      "windows": {
+        "id": 120594618104,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "ubuntu": {
+        "id": 120594618663,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "verification_source": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+    "verification_tested_merge": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "verification_run_id": 40006198834
+  },
+  "ci650_final": {
+    "source": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+    "tested_merge": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "run_id": 40006198834,
+    "run_number": 650,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40006198834",
+    "status": "completed",
+    "conclusion": "success",
+    "verification": "Both full final logs independently read; both checkout/Windows build identity exact merge; actual per-case markers enumerated, not metadata-only proof.",
+    "line_counts": {
+      "windows": 13422,
+      "ubuntu": 578
+    },
+    "suites": {
+      "recoverConsumption8": [
+        "PASS: invitation Recover consumption UI PASS: complete",
+        "PASS: invitation Recover consumption UI PASS: close-retry",
+        "PASS: invitation Recover consumption UI PASS: dispose",
+        "PASS: invitation Recover consumption UI PASS: stop-retry",
+        "PASS: invitation Recover consumption UI PASS: service-dispose",
+        "PASS: invitation Recover consumption UI PASS: locked",
+        "PASS: invitation Recover consumption UI PASS: changed-request",
+        "PASS: invitation Recover consumption UI PASS: changed-result"
+      ],
+      "consumption8": [
+        "PASS: consumption releases its family lease only after actual read/delete settles: complete",
+        "PASS: consumption releases its family lease only after actual read/delete settles: cancel-read",
+        "PASS: consumption releases its family lease only after actual read/delete settles: cancel-consume",
+        "PASS: consumption releases its family lease only after actual read/delete settles: refused",
+        "PASS: consumption releases its family lease only after actual read/delete settles: locked",
+        "PASS: consumption releases its family lease only after actual read/delete settles: changed-request",
+        "PASS: consumption releases its family lease only after actual read/delete settles: changed-result",
+        "PASS: consumption releases its family lease only after actual read/delete settles: missing"
+      ],
+      "recoverName9": [
+        "PASS: invitation Recover name UI PASS: complete",
+        "PASS: invitation Recover name UI PASS: missing",
+        "PASS: invitation Recover name UI PASS: corrupt",
+        "PASS: invitation Recover name UI PASS: locked",
+        "PASS: invitation Recover name UI PASS: close-retry",
+        "PASS: invitation Recover name UI PASS: dispose",
+        "PASS: invitation Recover name UI PASS: stop-retry",
+        "PASS: invitation Recover name UI PASS: service-dispose",
+        "PASS: invitation Recover name UI PASS: stop-result"
+      ],
+      "reissue8": [
+        "PASS: invitation Reissue uncertainty UI PASS: empty",
+        "PASS: invitation Reissue uncertainty UI PASS: pending",
+        "PASS: invitation Reissue uncertainty UI PASS: corrupt",
+        "PASS: invitation Reissue uncertainty UI PASS: locked",
+        "PASS: invitation Reissue uncertainty UI PASS: close-retry",
+        "PASS: invitation Reissue uncertainty UI PASS: dispose",
+        "PASS: invitation Reissue uncertainty UI PASS: stop-retry",
+        "PASS: invitation Reissue uncertainty UI PASS: service-dispose"
+      ],
+      "create8": [
+        "PASS: invitation Create uncertainty UI PASS: empty",
+        "PASS: invitation Create uncertainty UI PASS: pending",
+        "PASS: invitation Create uncertainty UI PASS: corrupt",
+        "PASS: invitation Create uncertainty UI PASS: locked",
+        "PASS: invitation Create uncertainty UI PASS: close-retry",
+        "PASS: invitation Create uncertainty UI PASS: dispose",
+        "PASS: invitation Create uncertainty UI PASS: stop-retry",
+        "PASS: invitation Create uncertainty UI PASS: service-dispose"
+      ],
+      "API6": [
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: empty",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: pending",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: completed",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: corrupt",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: locked",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: cancel"
+      ],
+      "UI8": [
+        "PASS: invitation initial pending UI PASS: empty",
+        "PASS: invitation initial pending UI PASS: pending",
+        "PASS: invitation initial pending UI PASS: corrupt",
+        "PASS: invitation initial pending UI PASS: locked",
+        "PASS: invitation initial pending UI PASS: close-retry",
+        "PASS: invitation initial pending UI PASS: dispose",
+        "PASS: invitation initial pending UI PASS: stop",
+        "PASS: invitation initial pending UI PASS: service-dispose"
+      ],
+      "UI12": [
+        "PASS: invitation repeated pending UI PASS: refresh-empty",
+        "PASS: invitation repeated pending UI PASS: refresh-pending",
+        "PASS: invitation repeated pending UI PASS: refresh-corrupt",
+        "PASS: invitation repeated pending UI PASS: refresh-locked",
+        "PASS: invitation repeated pending UI PASS: post-complete",
+        "PASS: invitation repeated pending UI PASS: post-failure",
+        "PASS: invitation repeated pending UI PASS: post-pending",
+        "PASS: invitation repeated pending UI PASS: close-retry",
+        "PASS: invitation repeated pending UI PASS: dispose",
+        "PASS: invitation repeated pending UI PASS: stop-retry",
+        "PASS: invitation repeated pending UI PASS: service-dispose",
+        "PASS: invitation repeated pending UI PASS: stale-scope"
+      ],
+      "snapshot12": [
+        "PASS: caller releases family lease only after actual snapshot settles: setup",
+        "PASS: caller releases family lease only after actual snapshot settles: invite",
+        "PASS: caller releases family lease only after actual snapshot settles: share",
+        "PASS: caller releases family lease only after actual snapshot settles: empty",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-setup",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-invite",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-share",
+        "PASS: caller releases family lease only after actual snapshot settles: pending-invite",
+        "PASS: caller releases family lease only after actual snapshot settles: pending-share",
+        "PASS: caller releases family lease only after actual snapshot settles: cancel",
+        "PASS: caller releases family lease only after actual snapshot settles: corrupt",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-key"
+      ],
+      "dispatcher5": [
+        "PASS: settled transport performs no late UI dispatch or duplicate action: ready",
+        "PASS: closed dispatcher refuses a new transport before startup without a late callback or file I/O",
+        "PASS: settled transport performs no late UI dispatch or duplicate action: during-dispose",
+        "PASS: settled transport performs no late UI dispatch or duplicate action: file-fault",
+        "PASS: settled transport performs no late UI dispatch or duplicate action: worker-only"
+      ],
+      "ownership8": [
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: complete",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: stop",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: dispose",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: lock",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: typed",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-stop",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-dispose",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: multiple"
+      ],
+      "cleanup4": [
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: complete",
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: list-lock",
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: preparation-lock",
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: dispose-lock"
+      ],
+      "repair8": [
+        "PASS: owned production repair slice PASS: default-refusal",
+        "PASS: owned production repair slice PASS: complete",
+        "PASS: owned production repair slice PASS: cancel-retry",
+        "PASS: owned production repair slice PASS: stop-copy",
+        "PASS: owned production repair slice PASS: dispose-copy",
+        "PASS: owned production repair slice PASS: owner-dispose",
+        "PASS: owned production repair slice PASS: stop-command",
+        "PASS: owned production repair slice PASS: cleanup-lock"
+      ],
+      "list10": [
+        "PASS: owned production list slice PASS: default-refusal",
+        "PASS: owned production list slice PASS: complete",
+        "PASS: owned production list slice PASS: cancel-retry",
+        "PASS: owned production list slice PASS: stop-copy",
+        "PASS: owned production list slice PASS: dispose-copy",
+        "PASS: owned production list slice PASS: owner-dispose",
+        "PASS: owned production list slice PASS: stop-command",
+        "PASS: owned production list slice PASS: cleanup-lock",
+        "PASS: owned production list slice PASS: refresh-cancel-retry",
+        "PASS: owned production list slice PASS: refresh-dispose"
+      ],
+      "recover10": [
+        "PASS: owned production setup recovery PASS: default-refusal",
+        "PASS: owned production setup recovery PASS: status-pending",
+        "PASS: owned production setup recovery PASS: cancel-retry",
+        "PASS: owned production setup recovery PASS: stop-copy",
+        "PASS: owned production setup recovery PASS: dispose-copy",
+        "PASS: owned production setup recovery PASS: owner-dispose",
+        "PASS: owned production setup recovery PASS: stop-between",
+        "PASS: owned production setup recovery PASS: cancel-command",
+        "PASS: owned production setup recovery PASS: cleanup-lock",
+        "PASS: owned production setup recovery PASS: result"
+      ],
+      "fresh10": [
+        "PASS: owned production fresh setup PASS: default-refusal",
+        "PASS: owned production fresh setup PASS: copy-fault",
+        "PASS: owned production fresh setup PASS: cancel-retry",
+        "PASS: owned production fresh setup PASS: stop-copy",
+        "PASS: owned production fresh setup PASS: dispose-copy",
+        "PASS: owned production fresh setup PASS: owner-dispose",
+        "PASS: owned production fresh setup PASS: cancel-command",
+        "PASS: owned production fresh setup PASS: cleanup-lock",
+        "PASS: owned production fresh setup PASS: result",
+        "PASS: owned production fresh setup PASS: pending-race"
+      ],
+      "https11": [
+        "PASS: owned production HTTPS recovery PASS: default-refusal",
+        "PASS: owned production HTTPS recovery PASS: status-pending",
+        "PASS: owned production HTTPS recovery PASS: cancel-retry",
+        "PASS: owned production HTTPS recovery PASS: stop-copy",
+        "PASS: owned production HTTPS recovery PASS: dispose-copy",
+        "PASS: owned production HTTPS recovery PASS: owner-dispose",
+        "PASS: owned production HTTPS recovery PASS: cancel-command",
+        "PASS: owned production HTTPS recovery PASS: cleanup-lock",
+        "PASS: owned production HTTPS recovery PASS: result",
+        "PASS: owned production HTTPS recovery PASS: stop-result-copy",
+        "PASS: owned production HTTPS recovery PASS: stop-result"
+      ],
+      "freshHTTPS10": [
+        "PASS: owned production fresh HTTPS PASS: default-refusal",
+        "PASS: owned production fresh HTTPS PASS: copy-fault",
+        "PASS: owned production fresh HTTPS PASS: cancel-retry",
+        "PASS: owned production fresh HTTPS PASS: stop-copy",
+        "PASS: owned production fresh HTTPS PASS: dispose-copy",
+        "PASS: owned production fresh HTTPS PASS: owner-dispose",
+        "PASS: owned production fresh HTTPS PASS: cancel-command",
+        "PASS: owned production fresh HTTPS PASS: cleanup-lock",
+        "PASS: owned production fresh HTTPS PASS: result",
+        "PASS: owned production fresh HTTPS PASS: stop-result"
+      ],
+      "export11": [
+        "PASS: modal export preserves protected settings and cannot start a late relay: save",
+        "PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry",
+        "PASS: modal export preserves protected settings and cannot start a late relay: close",
+        "PASS: modal export preserves protected settings and cannot start a late relay: dispose",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-close",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose",
+        "PASS: modal export preserves protected settings and cannot start a late relay: global-stop",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop",
+        "PASS: modal export preserves protected settings and cannot start a late relay: existing-retry",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change"
+      ],
+      "chooser3": [
+        "PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel",
+        "PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing",
+        "PASS: actual profile native chooser owns bounded cancel/failure cleanup: error"
+      ]
+    },
+    "summaries": {
+      "desktop": 5298,
+      "instance": 30,
+      "maintenance": 126,
+      "shutdown": 47,
+      "home_vpn": 3943,
+      "portable": 91,
+      "ssh_policy": 61,
+      "python_reported": 28,
+      "python_skipped": 2,
+      "ubuntu_operation": 16,
+      "ubuntu_qr": 13
+    },
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "owner_pc": "NOT_RUN",
+    "historical_flakes": "CI640 permissions/CI642 startup causes not proven fixed; diagnostics retained."
+  },
+  "invitation_create_consumption_on650": {
+    "status": "PARTIAL",
+    "phase": "ONE CreateAsync handoff consumption UI binding",
+    "baseline_source": "5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec",
+    "baseline_tested_merge": "32e6df175b2e295e591794686f23af56fb3f17eb",
+    "baseline_checkpoint": "052309cabb2ff229930ae605011644c16a608621",
+    "local_code_sha": "85cb6f347b7321dc73d4ed0ab5eacc63d4b4727b",
+    "scope": "ONLY CreateAsync handoff sync ConfirmConsumed replaced by existing ConsumeRecoveredAsync retained helper/ConfirmConsumedAsync. Shared helper, Recover, Reissue, API8, service/transport unchanged.",
+    "implementation": "Reuse proven owner/Stop scope/cancellation/retained ConsumptionWork with guards after handoff/settlement. Missing confirmation or accepted delete after cancellation gates explicit reconciliation. Existing generic uncertainty read/post-action refresh unchanged; never automatic invite/consume replay.",
+    "native_cases": [
+      "complete",
+      "close-retry",
+      "dispose",
+      "stop-retry",
+      "service-dispose",
+      "locked",
+      "changed-request",
+      "changed-result"
+    ],
+    "test_contract": "Actual ShowDialog/default Create. Single fixture invite registers real accepted request/result, exact returned token/ID/frozen name. Existing API consume boundary held5s, modal15s/joins5s. One invite total; cancel/lock Retry only recover-invite same ID, no second issuance. Close reopen Retry/Stop Refresh Retry/Dispose/no late status, changed receipt bytes retained, private bytes/draft preserved. Stop after accepted delete keeps successful task and no recreation. Fixture transport callback-only, no real VPS proof. All old test bodies/deadlines unchanged.",
+    "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0; AST/compiler unavailable NOT_RUN.",
+    "windows_compilation": "NOT_RUN new Create candidate",
+    "windows_native": "NOT_RUN Create consumption8/full regressions;650 PASS only baseline",
+    "publication": "TODO fresh expected-head guarded PR88 ONE automatic CI; public uploads OFF/release ineligible",
+    "remaining_production_paths": [
+      "Reissue Complete consumption handoff binding",
+      "Existing invite/revoke/reissue/recover-invite owned transport, separate bounded stages"
+    ],
+    "next": "Read SAME new CI full final logs/exact source+tested merge/Create consumption8/Recover8/API8 and all old suites. Only after proof separate Reissue consumption; no second stage now.",
     "readiness_change": 0
   }
 }

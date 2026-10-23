@@ -1,4 +1,44 @@
-## Текущий этап: Recover handoff owned consumption поверх CI649
+## Текущий этап: Create handoff owned consumption поверх CI650
+
+PR88 OPEN/DRAFT/source `5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec` и checkpoint
+`052309cabb2ff229930ae605011644c16a608621` сверены. До изменений55 worktrees clean/locks0,
+root sole active agent; isolated work/progo-create-consume-on650-20261023 сохраняет прежнюю работу.
+Полные [CI650](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40006198834) Windows13422/Ubuntu578
+строк самостоятельно прочитаны. Оба checkout/Windows build identity: exact tested merge
+`32e6df175b2e295e591794686f23af56fb3f17eb`. JSON ci650_final — actual per-case evidence.
+PASS Recover consumption8/API8/Recover name9/Reissue8/Create8/API6/UI8/UI12/snapshot12/dispatcher5/
+ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3.
+Desktop5298/Instance30/Maintenance126/Shutdown47/HomeVPN3943/Portable91/SSH policy61;
+Python reported28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS. Pack runner-only PASS,
+uploads/prune SKIPPED. Owner PC NOT_RUN; historic640/642 causes not proven fixed/diagnostics retained.
+
+ТОЛЬКО CreateAsync handoff: local code `85cb6f347b7321dc73d4ed0ab5eacc63d4b4727b`,1 runtime+1 test153add/1delete.
+Existing ConsumeRecoveredAsync (имя существующего helper сохранено) переиспользуется без изменений,
+включая original Stop scope/explicit owner/CTS/volatile admission/retained ConsumptionWork/API8 lease.
+Guard после handoff и settlement запрещает late UI/I/O. Неподтверждённое завершение остаётся gated;
+принятое delete после отмены не выдаётся за новый запрос. Existing uncertainty/post-action read unchanged.
+Shared helper/Recover/Reissue/API8/service/dispatcher/transport/scripts/workflows/VERSION byte-identical.
+Не меняем product flow/новых функций нет; Repeat проходит через уже готовый Recover, никогда invite.
+
+Create consumption8: complete,close-retry,dispose,stop-retry,service-dispose,locked,changed-request,
+changed-result. Actual ShowDialog/default Create; один fixture invite создаёт real protected accepted
+request/result; frozen name/returned ID/token verified. Held existing consume boundary5s/modal15s/
+joins5s; heartbeat/reentry/cleanup/private bytes/newer receipt preservation, no late status. Cancel Close→
+reopen Retry и Stop/lock→Refresh→Recover используют тот же recovery ID при issues==1. После accepted
+actual delete последующий Stop сохраняет успешный Task/absence без повторов. Transport callback-only,
+не live VPS proof. Все прежние test bodies/API8/Recover8 и их asserts/timeouts/coverage exact.
+
+PASS local review/signatures/C#5 await scopes/structural isolation/lexical delimiters/diff/JSON/
+public321source0release/added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh нет:
+new compilation/Create consumption8/full relevant regression NOT_RUN. SUCCESS650 не переносится.
+Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
+release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного CI wait/второго этапа.
+Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/Create consumption8/Recover8/API8/all prior suites.
+Остаток: Reissue Complete consumption; invite/revoke/reissue/recover-invite owned transport (отдельно).
+FullR09/owner PC acceptance open. Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: Windows proof нового Create UI slice, затем Reissue/transport/owner acceptance.
+
+## История этапа: Recover handoff owned consumption поверх CI649
 
 PR88 OPEN/DRAFT/source `928257553a47fc001b2cdaac25817f95d3b6c95c` и checkpoint
 `c7abd1580cb9c75dadedda60d60541ce10fe146c` сверены. До изменений54 worktrees clean/locks0,
@@ -35,9 +75,19 @@ Transport callback-only fixture не выдаётся за реальный SSH/
 PASS local review/signatures/C#5 await scopes/structural isolation/lexical delimiters/diff/JSON/
 public321source0release/added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh нет:
 new compilation/Recover consumption8/full relevant regression NOT_RUN. SUCCESS649 не наследуется.
-Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
-release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного CI wait/второго этапа.
-Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/Recover consumption8/API8/all prior suites.
+Publication PASS: source `5b4ed7e910dc0fdc7a6ac0ce203b0ceeda858fec`, existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched exact649 parent,
+full tree `80550ef5c5c3cc7663bc840bfa308391abfe011b` равен reviewed freeze
+`2d758528a3d4059c61888366d525b09faa60beac`. Public diff5files717add/60delete:
+1 runtime48add/8delete +1 existing test123add/0delete +3docs546add/52delete.
+Merge ref `32e6df175b2e295e591794686f23af56fb3f17eb` пока НЕ final tested merge (NOT_RUN).
+ONE automatic [CI650/40006198834](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40006198834):
+exact-source count1/pull_request/attempt1, in_progress/conclusion null.
+Windows120594618104/Ubuntu120594618663 in_progress (metadata, новые suites NOT_RUN).
+Public uploads OFF/release+prune ineligible/workflows unchanged; final skips not yet checked.
+Postpublication3-doc local checkpoint intentionally NOT pushed, чтобы не запускать второй CI;
+полный SHA в git log -1/PR88 body. STOP без полного wait/второго этапа.
+Далее ТОТ ЖЕ CI650 final logs/exact source+tested merge/Recover consumption8/API8/all prior suites.
 Остаток измерим: Create consumption; Reissue Complete consumption; invite/revoke/reissue/recover-invite
 owned transport (отдельные bounded slices). FullR09/owner PC acceptance open.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;

@@ -270,7 +270,13 @@ namespace ProGo
                 var access = HomeVpnAccess.Parse(token);
                 list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label });
                 status.Text = "Токен создан. Передайте его другу до закрытия окна токена.";
-                ShowToken(token); HomeVpnAdminRecovery.ConfirmConsumed(token);
+                ShowToken(token);
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                bool consumed = await ownerUi.Await(ConsumeRecoveredAsync(token));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!consumed) RequireRefresh("Завершение выдачи не подтверждено. Проверьте сохранённый запрос без нового приглашения.");
+                else if (closeAfterPending || !RecoveryConsumptionScope(operationStop))
+                    RequireRefresh("Запрос выдачи уже завершён. Продолжение отменено; обновите список явно.");
             } catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
             catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }
             catch { unconfirmed = true; }
