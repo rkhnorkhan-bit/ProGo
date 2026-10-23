@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -15,7 +17,7 @@ namespace ProGo
             string root = Path.Combine(work, "auth-policy-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
             try {
                 File.WriteAllText(Path.Combine(root, "ssh-add.exe"), ""); File.WriteAllText(Path.Combine(root, "ssh-keygen.exe"), "");
-                AuthPolicyValues(); AuthPolicyScope(root); AuthPolicyNative(root); AuthPolicyForm();
+                AuthPolicyValues(); AuthPolicyScope(root); AuthPolicyDiagnosticContract(); AuthPolicyNative(root); AuthPolicyForm();
             } finally { Directory.Delete(root, true); }
             Console.WriteLine("SSH public-key policy checks PASS: " + (passed - before));
         }
@@ -110,6 +112,52 @@ namespace ProGo
             Check(!new SshAgentInventoryResult(SshAgentInventoryState.Available, 0, 1).ToDisplay().Contains("совпадение с ключом профиля не проверено"),
                 "global inventory display does not contradict a separately completed selected-identity match");
         }
+        // Test-only, readonly diagnostic allowlist. Never print native stderr, paths, SIDs or SDDL.
+        private static string AuthPolicyFailureRoles(string error, string config, string include, string identity)
+        {
+            string normalized = (error ?? "").Replace('\\', '/');
+            Func<string, bool> names = path => !String.IsNullOrEmpty(path) && normalized.IndexOf(path.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase) >= 0;
+            return "configNamed=" + names(config) + "; includeNamed=" + names(include) + "; identityNamed=" + names(identity) +
+                "; badOwnerPermissions=" + normalized.Contains("Bad owner or permissions") +
+                "; badPermissionsBanner=" + normalized.Contains("BAD PERMISSIONS") + "; permissionDenied=" + normalized.Contains("Permission denied");
+        }
+        private static string AuthPolicyAclFacts(string path, bool directory = false)
+        {
+            try {
+                var acl = directory ? (FileSystemSecurity)Directory.GetAccessControl(path, AccessControlSections.Owner | AccessControlSections.Access)
+                    : File.GetAccessControl(path, AccessControlSections.Owner | AccessControlSections.Access);
+                var owner = (SecurityIdentifier)acl.GetOwner(typeof(SecurityIdentifier));
+                using (var current = WindowsIdentity.GetCurrent()) {
+                    var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+                    var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                    int rules = 0, inherited = 0, denied = 0, otherAllow = 0, otherWrite = 0;
+                    FileSystemRights writes = FileSystemRights.Write | FileSystemRights.DeleteSubdirectoriesAndFiles | FileSystemRights.Delete |
+                        FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
+                    foreach (FileSystemAccessRule rule in acl.GetAccessRules(true, true, typeof(SecurityIdentifier))) {
+                        ++rules; if (rule.IsInherited) ++inherited;
+                        if (rule.AccessControlType == AccessControlType.Deny) { ++denied; continue; }
+                        bool trusted = rule.IdentityReference.Equals(current.User) || rule.IdentityReference.Equals(system) || rule.IdentityReference.Equals(admins);
+                        if (!trusted) { ++otherAllow; if ((rule.FileSystemRights & writes) != 0) ++otherWrite; }
+                    }
+                    return "read=True; ownerCurrent=" + owner.Equals(current.User) + "; ownerSystem=" + owner.Equals(system) +
+                        "; ownerAdmins=" + owner.Equals(admins) + "; protected=" + acl.AreAccessRulesProtected +
+                        "; rules=" + rules + "; inherited=" + inherited + "; denied=" + denied + "; otherAllow=" + otherAllow + "; otherWrite=" + otherWrite;
+                }
+            } catch (Exception ex) {
+                return "read=False; unauthorized=" + (ex is UnauthorizedAccessException) + "; io=" + (ex is IOException) + "; hresult=0x" + ex.HResult.ToString("X8");
+            }
+        }
+        private static void AuthPolicyDiagnosticContract()
+        {
+            const string config = "fixture/config", include = "fixture/policy-include", identity = "fixture/locked identity";
+            foreach (string role in new[] { "config", "include", "identity", "unknown" }) {
+                string path = role == "config" ? config : role == "include" ? include : role == "identity" ? identity : "PRIVATE_DIAGNOSTIC_CANARY";
+                string facts = AuthPolicyFailureRoles("Bad owner or permissions on " + path.Replace('/', '\\') + "; PRIVATE_DIAGNOSTIC_CANARY", config, include, identity);
+                Check(facts.Contains("configNamed=" + (role == "config")) && facts.Contains("includeNamed=" + (role == "include")) &&
+                    facts.Contains("identityNamed=" + (role == "identity")) && facts.Contains("badOwnerPermissions=True") &&
+                    !facts.Contains("PRIVATE_") && !facts.Contains("fixture/"), "native policy diagnostic emits role flags only: " + role);
+            }
+        }
         private static void AuthPolicyNative(string root)
         {
             string identity = Path.Combine(root, "locked identity"), include = Path.Combine(root, "policy-include"), config = Path.Combine(root, "config");
@@ -128,6 +176,13 @@ namespace ProGo
                         "; truncated=" + oracle.Truncated + "; stdoutChars=" + (oracle.Output ?? "").Length + "; stderrChars=" + (oracle.Error ?? "").Length +
                         "; permissionsHint=" + (oracle.Error ?? "").Contains("Bad owner or permissions") +
                         "; configHint=" + (oracle.Error ?? "").Contains("Bad configuration");
+                    if (oracle.ExitCode != 0 || oracle.Truncated) {
+                        Console.WriteLine("Auth policy native failure roles: " + AuthPolicyFailureRoles(oracle.Error, config, include, identity));
+                        Console.WriteLine("Auth policy fixture ACL: role=config; " + AuthPolicyAclFacts(config));
+                        Console.WriteLine("Auth policy fixture ACL: role=include; " + AuthPolicyAclFacts(include));
+                        Console.WriteLine("Auth policy fixture ACL: role=identity; " + AuthPolicyAclFacts(identity));
+                        Console.WriteLine("Auth policy fixture ACL: role=directory; " + AuthPolicyAclFacts(root, true));
+                    }
                     Check(oracle.ExitCode == 0 && !oracle.Truncated, "native fixture-only policy oracle resolves Include and first-value precedence: " + target + facts);
                     var result = SshProfileDiagnostics.CheckConfiguration(selected, CancellationToken.None, OpenSshClient.Executable, 7000, config);
                     var expected = target == "policy.disabled" ? SshPublicKeyPolicyState.Disabled : target == "policy.excluded" ? SshPublicKeyPolicyState.Excluded : SshPublicKeyPolicyState.AllowedByClient;

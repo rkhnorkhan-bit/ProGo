@@ -8,7 +8,49 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: initial invitation pending UI поверх CI639
+## Текущий этап: CI640 native auth-policy — bounded test-only diagnosis
+
+HEAD PR88/source `fcc6e70b69ef591997f26a5b7fd5e12be5f7720b`, local checkpoint
+`ce474ce730dc3787a512fbe89f3d76e04bf901ff`; все прежние worktrees чистые, Git locks0,
+других git/build операций/агентов/писателей не обнаружено. Отдельная work/progo-ci640-auth-diagnostic-20261023.
+Полные финальные [CI640](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694)
+Windows7755/Ubuntu578 строк самостоятельно прочитаны. Checkout/build identity exact tested merge
+`45a69d39a2e7c7378f50e1202a60d863da5859f2`. JSON ci640_final хранит safe evidence/summary.
+
+FAIL05:26:07.9541087UTC: tests/DesktopSshAuthPolicyTests.cs:131, AuthPolicyNative/policy.disabled,
+original oracle assert ExitCode0&&!Truncated. exit255/0x000000FF/truncatedFalse/stdoutChars0/
+stderrChars330/permissionsHintTrue/configHintFalse; stack DesktopTests.Check→AuthPolicyNative→
+SshAuthPolicyWorkflow→Main. Production Build OK и Desktop compilation PASS; причина НЕ compilation.
+Доказан native OpenSSH отказ «Bad owner or permissions» при чтении fixture config tree. КАКОЙ файл/
+principal/rule — НЕ доказано; совпадение с новым invitation runtime, runner drift или inherited ACL —
+гипотезы. Не изменяем runtime/ACL по предположению и не делаем blind rerun.
+
+Фактически PASS SSH start66/startup62/inventory67/keymatching52/signing55/preparation76/signingUI50;
+остальные ранее завершённые suites перечислены в ci640_final. Полный Desktop FAIL.
+Instance30/API6/UI8/HTTPS recovery11/freshHTTPS10/snapshot/dispatcher/ownership/cleanup/repair/list/
+recover/fresh/export/chooser/Portable — NOT_RUN на640, relay step SKIPPED. Production compilation
+не означает compilation invitation fixture: она NOT_RUN. Ubuntu operation16/QR13/isolated provisioning
+PASS по финальному логу. Pack/uploads/prune SKIPPED; прежний SUCCESS639 не переносится.
+
+Code local `e40dc17cc709a3194f158a45f0ce52cf31e6cc09`: только DesktopSshAuthPolicyTests,
+56add/1delete. При native failure до ПРЕЖНЕГО assert печатаются allowlisted role booleans и
+readonly ACL flags/counts для собственных config/include/locked identity/directory. No raw stderr,
+paths/SID/SDDL/names/credentials/journal/config contents; exception только typed flags/HResult.
+Original three targets/order/7000ms/assert/cleanup unchanged, additional pure role canary4.
+Reads не меняют ACL/fixture bytes; runtime/server/workflow/test-runner unchanged. Запуск диагностический,
+чтобы определить конкретный file+ACL invariant; не считается исправлением первопричины.
+
+PASS local static/manual/signatures/AST C#5/diff/public321/0/secretsPII0. Windows/.NET Framework/
+PowerShell недоступны: новая compiler/native диагностика/роль canary4/API6/UI8/full suites NOT_RUN.
+Publication TODO: guarded exact-head existing PR88, ровно один automatic CI; uploads OFF/release/
+prune ineligible, no workflow edits. После save exact source/run/checkpoint STOP, не ждать весь CI.
+Следующий шаг — ТОТ ЖЕ diagnostic CI: full logs/checkout/build identity, failure role+ACL facts;
+при случайном PASS oracle причина ACL остаётся недоказанной. Проверить реально выполненные API6/UI8
+и regressions без переноса PASS. Ни второй этап, ни runtime fix в этом проходе.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: exact native refusal root cause и новая Windows проверка invitation, затем owner acceptance.
+
+## История этапа: initial invitation pending UI поверх CI639
 
 Baseline source `b935fde9770bfcec83913e19d929a9558e4c76e2`, checkpoint
 `c3348452409b168a48925e9e4423d667df8f56da`; PR88 head сверён, чужих dirty/lock/build
@@ -40,10 +82,18 @@ PASS local manual/AST syntax5/C#5/signatures/diff/public321/0/secretsPII0; old A
 проверены на точное сохранение. .NET Framework/PowerShell/Windows отсутствуют: compilation/new native
 API6/UI8/full regression NOT_RUN. SUCCESS639 относится ТОЛЬКО к baseline, не новому коду.
 
-Publication TODO: fresh non-force expected-head PR88 update; один automatic CI. Workflows/VERSION
-прежние, PR uploads OFF/release и prune ineligible; ни binaries, ни credentials/VPS не затрагиваются.
-После публикации сохранить exact source/run/checkpoint и STOP без ожидания/второго этапа.
-Следующий шаг: финальные логи ТОГО ЖЕ нового CI, проверка API6/UI8 и обязательных регрессий.
+Publication PASS: source `fcc6e70b69ef591997f26a5b7fd5e12be5f7720b`, existing PR88 integration/approved-plan-31-20261011,
+fresh expected-head non-force update. Parent exact639; fetched full tree `9d83e9a490da70528cbaa9a426749fce5be00c5d`
+равен reviewed freeze `3600e2cf5b480c0864901aa0bd291f7fe3299421`. Public diff8files822add/82delete:
+3 runtime+2 existing test251add/10delete,3 docs571add/72delete; worktree clean before postpub docs.
+Merge ref `45a69d39a2e7c7378f50e1202a60d863da5859f2` пока НЕ tested merge: нужна checkout/build identity финальных logs.
+Один automatic [CI640/39904249694](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694),
+raw exact-source total_count1/pull_request/attempt1; in_progress/conclusion null, updated05:10:04UTC.
+Windows120252436528/Ubuntu120252436238 in_progress; new compilation/API6/UI8/full regression NOT_RUN.
+Workflows/VERSION прежние, PR uploads OFF/release и prune ineligible; completion skip ещё не проверен.
+Postpublication docs-only checkpoint local HEAD (git log -1), НЕ pushed чтобы не создавать второй CI;
+full checkpoint также PR88 body. STOP без ожидания/второго этапа. Следующий шаг — ТОТ ЖЕ CI640:
+финальные full logs/exact tested merge, API6/UI8/reopen и все mandatory прежние regression.
 Остаток production UI I/O invitation (не полный новый scope проекта):
 1. Повторный pending-state в RunAsync/RefreshAsync.
 2. Pending checks при uncertainty create/reissue и recovery request.Name.

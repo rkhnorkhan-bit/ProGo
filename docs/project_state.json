@@ -3929,34 +3929,34 @@
     }
   ],
   "ci_candidate": {
-    "source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
-    "merge_ref": "0b6e71eb6794c03801949a83645917353e76b84e",
-    "tested_merge": "0b6e71eb6794c03801949a83645917353e76b84e",
-    "tree": "6cbea066716dd4ce92e58c71521b798b00248523",
-    "local_freeze": "62b192a144a923a4383a67812494633f3e0fcff5",
-    "run_id": 39900231280,
-    "run_number": 639,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280",
+    "source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+    "merge_ref": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+    "tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+    "tree": "9d83e9a490da70528cbaa9a426749fce5be00c5d",
+    "local_freeze": "3600e2cf5b480c0864901aa0bd291f7fe3299421",
+    "run_id": 39904249694,
+    "run_number": 640,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694",
     "status": "completed",
-    "conclusion": "success",
-    "run_updated_at": "2026-10-23T04:25:25Z",
+    "conclusion": "failure",
+    "run_updated_at": "2026-10-23T05:10:04Z",
     "jobs": {
       "windows": {
-        "id": 120239881809,
+        "id": 120252436528,
         "status": "completed",
-        "conclusion": "success"
+        "conclusion": "failure"
       },
       "ubuntu": {
-        "id": 120239882025,
+        "id": 120252436238,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Full final Windows12366/Ubuntu578 lines independently read; exact checkout/build identity verified; metadata alone not used",
-    "windows_compilation": "PASS exact639",
-    "windows_native": "PASS exact639 freshHTTPS10/HTTPS recovery11/Instance30/full prior regression; invitation initial/API6 NOT_RUN",
-    "pack": "PASS runner-only",
-    "artifact_uploads": "SKIPPED; no artifacts or owner transfer",
+    "verification": "Full final Windows7755 and Ubuntu578 lines independently inspected; exact checkout and build identity verified",
+    "windows_compilation": "PASS production and Desktop compiler; relay test compilation NOT_RUN",
+    "windows_native": "FAIL Desktop AuthPolicyNative/policy.disabled; API6/UI8/Instance30/relay regression NOT_RUN",
+    "pack": "SKIPPED",
+    "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
@@ -5494,38 +5494,21 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "baseline_source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
-    "baseline_tested_merge": "0b6e71eb6794c03801949a83645917353e76b84e",
-    "baseline_checkpoint": "c3348452409b168a48925e9e4423d667df8f56da",
-    "local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699",
-    "saved_api_source": "d500df68629d8af7533e4eca2993284c3675161a",
-    "scope": "ONLY initial Friends pending-state read: default wizard supplies explicit Friends UI owner and service; existing readonly API/API6 transferred unchanged; no consumption/repeated reads/mutation worker migration",
-    "ownership": "Initial actual task retained by RunAdminOwnedAsync/Stop, owner dispatcher, CTS close/dispose and before/after scope checks; conservative mutation gate; close defers until actual read settles; reopen retries no stale publication; no family reacquire, writes or external actions",
-    "native_cases": [
-      "empty",
-      "pending",
-      "corrupt",
-      "locked",
-      "close-retry",
-      "dispose",
-      "stop",
-      "service-dispose"
-    ],
-    "api_native_cases": 6,
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN new initial8/API6 and full regression;639 success not inherited",
-    "local_checks": "PASS manual review + AST syntax5/C#5 scope; saved API/API6 exact; preserved old test methods/timeouts/asserts and export/EOF/HTTPS/runtime core; constructor/API signatures checked; public321/0; added secret/PII0; diff check",
-    "remaining_production_paths": [
-      "Friends post-operation and refresh pending-state reads in RunAsync/RefreshAsync (same saved API, separate owned UI binding)",
-      "Friends reissue/create uncertainty pending checks and recovery request-name read (preserve exactly-once and durable identity)",
-      "Token handoff ConfirmConsumed after create/reissue/recover; saved consumption API8 e8fbd2a not integrated",
-      "Friends invite/revoke/reissue/recover-invite mutation/recovery transport still legacy Admin; migrate bounded owned slices, no new protocol"
-    ],
+    "baseline_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+    "baseline_tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+    "baseline_checkpoint": "ce474ce730dc3787a512fbe89f3d76e04bf901ff",
+    "local_code_sha": "e40dc17cc709a3194f158a45f0ce52cf31e6cc09",
+    "scope": "Test-only diagnostic instrumentation + docs, no runtime changes; retain original native oracle assert/7000ms/order/fixture bytes/cleanup",
+    "reason": "Proven native Bad owner or permissions refusal exit255; actual file and offending ACL unknown. No guessed ACL/runtime fix or infrastructure rerun. One diagnostic CI to reveal exact role and readonly ownership/ACL count facts.",
+    "safe_diagnostic": "Failure only: config/include/identity named booleans; ACL role config/include/identity/directory, owner-current/system/admin flags, protected/rule/inherited/deny/other-allow/other-write counts, typed read error flags and HResult. No native stderr, path, SID, SDDL, exception.Message, config, credential or journal content. Pure role classifier canary4 added. No ACL writes.",
+    "local_checks": "PASS static/signatures/manual review/C#5 syntax1/diff/public321/0/secretPII0; exact old native assert/timeout/order and other methods preserved",
+    "windows_compilation": "NOT_RUN new diagnostic candidate",
+    "windows_native": "NOT_RUN new diagnostic and invitation API6/UI8/full suites",
+    "publication": "TODO guarded existing PR88 exactly one automatic diagnostic CI",
     "readiness_change": 0,
-    "publication": "TODO fresh guarded existing PR88 update, exactly one automatic CI; no binary uploads/release",
-    "next": "Read same new exact-source CI final logs for compilation, initial8/API6 and full regression; no duplicate run or second stage",
-    "phase": "ONE initial invitation pending UI slice prepared for guarded publication; exact new native NOT_RUN",
-    "checkpoint": "Local HEAD docs commit; will preserve source/run/checkpoint after publication"
+    "next": "Read SAME diagnostic CI final logs for native policy role/ACL facts. Only after proven root cause choose minimal repair; if oracle passes, no ACL cause proven. API6/UI8/previous regressions require their exact executed markers; no second stage here.",
+    "phase": "ONE bounded CI640 test-only diagnostics ready for publication",
+    "checkpoint": "local HEAD docs freeze then postpublication checkpoint"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5618,7 +5601,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact639 b935fde/0b6e71e full final logs verified fresh HTTPS10/recovery11/Instance30/prior suites; pack runner-only uploads skipped. New initial invitation pending API6/UI8 source candidate native/compiler NOT_RUN. No new full weighted gate; weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "CI640 exactfcc6e70/45a69d3 failed Desktop native policy.disabled owner/permissions refusal. Production/Desktop compilation PASS; API6/UI8/Instance30/relay prior suites NOT_RUN. Test-only diagnostic candidate no guessed runtime/ACL fix; weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9755,9 +9738,11 @@
       623
     ],
     "actual_invitation_ui": "Initial production constructor now connected to existing API through owned service+explicit window; repeated/post-operation/direct recovery-name reads and consumption remain legacy",
-    "next": "Read same new exact-source CI final logs for compilation, initial8/API6 and full regression; no duplicate run or second stage",
+    "next": "Inspect SAME CI640 final full logs/checkout/build identity; API6 and initial UI8 plus retry reopening, full HTTPS/recovery/Instance/snapshot/dispatcher/ownership/cleanup/setup/list/repair/export/chooser regression. No duplicate CI; no next feature until exact proof.",
     "readiness_change": 0,
-    "integration_local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699"
+    "integration_local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699",
+    "integration_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+    "integration_ci_run_id": 39904249694
   },
   "ci623_failure": {
     "source": "e84792499b2949602691c349c369d62a533fb444",
@@ -11752,6 +11737,97 @@
         "actual_invitation_ui": "UNCONNECTED sync RefreshPending/HasPending/Pending and ConfirmConsumed remain; consumption-worker patch never applied before409 and still TODO",
         "next": "Fresh exact API6 proof and owned initial/repeated invitation snapshot binding; consumption worker separate with its own exact request/result guards",
         "readiness_change": 0
+      }
+    },
+    "before_ci640_auth_diagnostic": {
+      "active_work": {
+        "status": "PARTIAL",
+        "baseline_source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+        "baseline_tested_merge": "0b6e71eb6794c03801949a83645917353e76b84e",
+        "baseline_checkpoint": "c3348452409b168a48925e9e4423d667df8f56da",
+        "local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699",
+        "saved_api_source": "d500df68629d8af7533e4eca2993284c3675161a",
+        "scope": "ONLY initial Friends pending-state read: default wizard supplies explicit Friends UI owner and service; existing readonly API/API6 transferred unchanged; no consumption/repeated reads/mutation worker migration",
+        "ownership": "Initial actual task retained by RunAdminOwnedAsync/Stop, owner dispatcher, CTS close/dispose and before/after scope checks; conservative mutation gate; close defers until actual read settles; reopen retries no stale publication; no family reacquire, writes or external actions",
+        "native_cases": [
+          "empty",
+          "pending",
+          "corrupt",
+          "locked",
+          "close-retry",
+          "dispose",
+          "stop",
+          "service-dispose"
+        ],
+        "api_native_cases": 6,
+        "windows_compilation": "NOT_RUN new candidate",
+        "windows_native": "NOT_RUN new initial8/API6 and full regression;639 success not inherited",
+        "local_checks": "PASS manual review + AST syntax5/C#5 scope; saved API/API6 exact; preserved old test methods/timeouts/asserts and export/EOF/HTTPS/runtime core; constructor/API signatures checked; public321/0; added secret/PII0; diff check",
+        "remaining_production_paths": [
+          "Friends post-operation and refresh pending-state reads in RunAsync/RefreshAsync (same saved API, separate owned UI binding)",
+          "Friends reissue/create uncertainty pending checks and recovery request-name read (preserve exactly-once and durable identity)",
+          "Token handoff ConfirmConsumed after create/reissue/recover; saved consumption API8 e8fbd2a not integrated",
+          "Friends invite/revoke/reissue/recover-invite mutation/recovery transport still legacy Admin; migrate bounded owned slices, no new protocol"
+        ],
+        "readiness_change": 0,
+        "publication": "PASS guarded non-force exact639 existing PR88 update, fetched exact parent/full tree equal freeze, one automatic CI640 attempt1 exact-source raw count1",
+        "next": "Inspect SAME CI640 final full logs/checkout/build identity; API6 and initial UI8 plus retry reopening, full HTTPS/recovery/Instance/snapshot/dispatcher/ownership/cleanup/setup/list/repair/export/chooser regression. No duplicate CI; no next feature until exact proof.",
+        "phase": "ONE initial invitation pending UI slice published; sole CI640 in_progress; STOP after checkpoint",
+        "checkpoint": "Postpublication docs-only local HEAD via git log -1, intentionally not pushed to avoid duplicate CI; full checkpoint also PR88 body",
+        "published_sha": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+        "merge_ref": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+        "tested_merge": null,
+        "tree": "9d83e9a490da70528cbaa9a426749fce5be00c5d",
+        "local_freeze": "3600e2cf5b480c0864901aa0bd291f7fe3299421",
+        "ci_run_id": 39904249694,
+        "ci_run_number": 640,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120252436528,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120252436238,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "public_diff": "8 files822add/82delete:3 runtime+2 existing test251add/10delete plus3 docs571add/72delete; core receipt/consumption/other runtime/workflows/VERSION unchanged"
+      },
+      "ci_candidate": {
+        "source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+        "merge_ref": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+        "tested_merge": null,
+        "tree": "9d83e9a490da70528cbaa9a426749fce5be00c5d",
+        "local_freeze": "3600e2cf5b480c0864901aa0bd291f7fe3299421",
+        "run_id": 39904249694,
+        "run_number": 640,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T05:10:04Z",
+        "jobs": {
+          "windows": {
+            "id": 120252436528,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120252436238,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Fresh expected-head non-force existing PR88 update; fetched parent exact639/full tree equal reviewed freeze; raw exact-source runs total_count1 pull_request attempt1; merge ref not yet verified by final checkout/build logs",
+        "windows_compilation": "NOT_RUN new compilation step in_progress",
+        "windows_native": "NOT_RUN API6/initial invitation UI8/full regressions,639 PASS not inherited",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR workflow; completion steps not yet verified",
+        "owner_pc": "NOT_RUN"
       }
     }
   },
@@ -13834,8 +13910,8 @@
       "service-dispose"
     ],
     "api_native_cases": 6,
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN new initial8/API6 and full regression;639 success not inherited",
+    "windows_compilation": "PASS production; invitation fixture compiler NOT_RUN",
+    "windows_native": "NOT_RUN API6/UI8/full relay regression; earlier Desktop native refusal",
     "local_checks": "PASS manual review + AST syntax5/C#5 scope; saved API/API6 exact; preserved old test methods/timeouts/asserts and export/EOF/HTTPS/runtime core; constructor/API signatures checked; public321/0; added secret/PII0; diff check",
     "remaining_production_paths": [
       "Friends post-operation and refresh pending-state reads in RunAsync/RefreshAsync (same saved API, separate owned UI binding)",
@@ -13844,7 +13920,144 @@
       "Friends invite/revoke/reissue/recover-invite mutation/recovery transport still legacy Admin; migrate bounded owned slices, no new protocol"
     ],
     "readiness_change": 0,
-    "publication": "TODO fresh guarded existing PR88 update, exactly one automatic CI; no binary uploads/release",
-    "next": "Read same new exact-source CI final logs for compilation, initial8/API6 and full regression; no duplicate run or second stage"
+    "publication": "PASS guarded non-force exact639 existing PR88 update, fetched exact parent/full tree equal freeze, one automatic CI640 attempt1 exact-source raw count1",
+    "next": "Read SAME next diagnostic CI full log; retain invitation NOT_RUN until its actual tests execute",
+    "published_sha": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+    "merge_ref": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+    "tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+    "tree": "9d83e9a490da70528cbaa9a426749fce5be00c5d",
+    "local_freeze": "3600e2cf5b480c0864901aa0bd291f7fe3299421",
+    "ci_run_id": 39904249694,
+    "ci_run_number": 640,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": {
+        "id": 120252436528,
+        "status": "in_progress",
+        "conclusion": null
+      },
+      "ubuntu": {
+        "id": 120252436238,
+        "status": "in_progress",
+        "conclusion": null
+      }
+    }
+  },
+  "ci640_final": {
+    "source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+    "tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+    "run_id": 39904249694,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39904249694",
+    "status": "completed",
+    "conclusion": "failure",
+    "verification": "Full final Windows7755 and Ubuntu578 lines independently inspected; exact checkout and build identity verified",
+    "failure": {
+      "file": "tests/DesktopSshAuthPolicyTests.cs",
+      "line": 131,
+      "scenario": "AuthPolicyNative/policy.disabled",
+      "time_utc": "05:26:07.9541087",
+      "exit": 255,
+      "hex": "0x000000FF",
+      "truncated": false,
+      "stdoutChars": 0,
+      "stderrChars": 330,
+      "permissionsHint": true,
+      "configHint": false,
+      "stack": [
+        "DesktopTests.Check",
+        "DesktopTests.AuthPolicyNative",
+        "DesktopTests.SshAuthPolicyWorkflow",
+        "DesktopTests.Main"
+      ],
+      "proven": "Native ssh -G refuses fixture config traversal with Bad owner or permissions; actual failing file/principal/rule not exposed by current log",
+      "not_proven": "Which config/include/identity file or ACL rule caused refusal; no evidence linking invitation runtime to failure, no infrastructure-only conclusion"
+    },
+    "production_compilation": "PASS Build OK exact merge",
+    "desktop_compilation": "PASS reached Desktop native execution",
+    "desktop_suite": "FAIL policy.disabled native oracle; no full Desktop PASS",
+    "api6": "NOT_RUN relay step skipped",
+    "ui8": "NOT_RUN relay step skipped",
+    "instance30": "NOT_RUN no final PASS marker, Test-ProGo stopped before Instance suite",
+    "prior_relay_suites": "NOT_RUN snapshot/dispatcher/ownership/cleanup/repair/list/recover/fresh/HTTPS11/freshHTTPS10/export/chooser and Portable; do not inherit639",
+    "actual_ssh_pass_summaries": [
+      "2026-10-23T05:25:35.0064087Z SSH-agent start checks PASS: 66",
+      "2026-10-23T05:25:46.4873127Z SSH-agent startup checks PASS: 62",
+      "2026-10-23T05:25:46.6704010Z SSH-agent inventory checks PASS: 67",
+      "2026-10-23T05:25:47.2853167Z SSH profile key matching checks PASS: 52",
+      "2026-10-23T05:25:50.8785874Z SSH selected-key signing checks PASS: 55",
+      "2026-10-23T05:26:04.4185750Z SSH advisory authentication preparation checks PASS: 76",
+      "2026-10-23T05:26:07.9052122Z SSH selected-key signing UI checks PASS: 50"
+    ],
+    "other_pass_summaries": [
+      "2026-10-23T05:10:18.6849864Z Repair native null-string interop tests PASS: 1",
+      "2026-10-23T05:10:27.8120100Z Repair runtime copy tests PASS: 1",
+      "2026-10-23T05:10:35.6560317Z Repair committed cleanup tests PASS: 1",
+      "2026-10-23T05:10:37.5259109Z Repair runtime rollback tests PASS: 1",
+      "2026-10-23T05:10:48.9485414Z Repair owned self-check tests PASS: 1",
+      "2026-10-23T05:11:00.4190608Z Repair durable recovery tests PASS: 1; refusal cases: 9",
+      "2026-10-23T05:11:00.4210697Z Repair payload preflight tests PASS: 4",
+      "2026-10-23T05:11:19.9136218Z Vault read tests PASS: 165",
+      "2026-10-23T05:11:20.1365300Z Vault daily policy tests PASS: 134",
+      "2026-10-23T05:11:21.3610559Z PASS: VaultDailyRecordTests (325 checks)",
+      "2026-10-23T05:11:21.6975611Z PASS: VaultDailyFileTests (110 checks)",
+      "2026-10-23T05:11:21.9802726Z PASS: VaultDailyJournalTests (211 checks)",
+      "2026-10-23T05:11:25.4229404Z PASS: VaultDailyStoreTests (151 checks)",
+      "2026-10-23T05:11:27.9251221Z PASS: VaultDailyRecoveryTests (274 checks)",
+      "2026-10-23T05:12:05.3241861Z Vault open service tests PASS: 112",
+      "2026-10-23T05:12:10.0365134Z PASS: VaultDailyExpiryTests (130 checks)",
+      "2026-10-23T05:12:32.1518019Z Vault daily restart tests PASS: 237",
+      "2026-10-23T05:17:40.4716048Z SOCKS recovery tests PASS: 51",
+      "2026-10-23T05:17:42.4075835Z Bounded log tests PASS: 43",
+      "2026-10-23T05:17:44.0194973Z Log helper tests PASS: 9",
+      "2026-10-23T05:17:48.0089082Z Rescue measurement tests PASS: 26",
+      "2026-10-23T05:17:52.2225778Z Rescue helper tests PASS: 8",
+      "2026-10-23T05:18:22.7820314Z Home firewall tests PASS: 21",
+      "2026-10-23T05:18:23.9011750Z Diagnostic report tests PASS: 32",
+      "2026-10-23T05:18:25.4483381Z Diagnostic helper tests PASS: 2",
+      "2026-10-23T05:18:25.7413866Z Backup retention tests PASS: 29",
+      "2026-10-23T05:18:27.4090645Z Backup updater tests PASS: retention parity, archived DPAPI/ownership composition, plaintext exclusion, current",
+      "2026-10-23T05:18:28.3223072Z Backup integrity tests PASS: 82",
+      "2026-10-23T05:18:28.4488607Z Backup integrity tests PASS: real protected-file junctions refused; installed helper retains exact DPAPI admin and",
+      "2026-10-23T05:18:36.8737132Z Installed update transport tests PASS: 74",
+      "2026-10-23T05:18:36.9168830Z Installed transport adapter tests PASS: 3",
+      "2026-10-23T05:19:40.5261562Z Updater progress tests PASS: 134",
+      "2026-10-23T05:19:41.7939163Z Install window tests PASS: 145",
+      "2026-10-23T05:19:46.2152086Z Update check tests PASS: 72",
+      "2026-10-23T05:20:00.5637496Z Codex shortcut ownership checks PASS: 67",
+      "2026-10-23T05:20:07.7158034Z Settings initial-load preservation checks PASS: 93",
+      "2026-10-23T05:21:14.2526847Z Updater owned-handoff checks PASS: 23"
+    ],
+    "ubuntu": {
+      "job": 120252436238,
+      "conclusion": "success",
+      "summary": [
+        "2026-10-23T05:10:06.3059960Z Ran 16 tests in 0.246s",
+        "2026-10-23T05:10:06.3060520Z OK",
+        "2026-10-23T05:10:12.8525746Z Ran 13 tests in 0.836s",
+        "2026-10-23T05:10:12.8526444Z OK"
+      ],
+      "isolated_provision": "PASS final logs through repeated QR setup and restart session discard"
+    },
+    "pack": "SKIPPED",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED"
+  },
+  "ci640_auth_policy_diagnostic": {
+    "status": "PARTIAL",
+    "baseline_source": "fcc6e70b69ef591997f26a5b7fd5e12be5f7720b",
+    "baseline_tested_merge": "45a69d39a2e7c7378f50e1202a60d863da5859f2",
+    "baseline_checkpoint": "ce474ce730dc3787a512fbe89f3d76e04bf901ff",
+    "local_code_sha": "e40dc17cc709a3194f158a45f0ce52cf31e6cc09",
+    "scope": "Test-only diagnostic instrumentation + docs, no runtime changes; retain original native oracle assert/7000ms/order/fixture bytes/cleanup",
+    "reason": "Proven native Bad owner or permissions refusal exit255; actual file and offending ACL unknown. No guessed ACL/runtime fix or infrastructure rerun. One diagnostic CI to reveal exact role and readonly ownership/ACL count facts.",
+    "safe_diagnostic": "Failure only: config/include/identity named booleans; ACL role config/include/identity/directory, owner-current/system/admin flags, protected/rule/inherited/deny/other-allow/other-write counts, typed read error flags and HResult. No native stderr, path, SID, SDDL, exception.Message, config, credential or journal content. Pure role classifier canary4 added. No ACL writes.",
+    "local_checks": "PASS static/signatures/manual review/C#5 syntax1/diff/public321/0/secretPII0; exact old native assert/timeout/order and other methods preserved",
+    "windows_compilation": "NOT_RUN new diagnostic candidate",
+    "windows_native": "NOT_RUN new diagnostic and invitation API6/UI8/full suites",
+    "publication": "TODO guarded existing PR88 exactly one automatic diagnostic CI",
+    "readiness_change": 0,
+    "next": "Read SAME diagnostic CI final logs for native policy role/ACL facts. Only after proven root cause choose minimal repair; if oracle passes, no ACL cause proven. API6/UI8/previous regressions require their exact executed markers; no second stage here."
   }
 }
