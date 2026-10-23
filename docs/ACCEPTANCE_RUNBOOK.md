@@ -1,4 +1,49 @@
-## Текущий этап: saved ConfirmConsumedAsync API8 integration поверх CI648
+## Текущий этап: Recover handoff owned consumption поверх CI649
+
+PR88 OPEN/DRAFT/source `928257553a47fc001b2cdaac25817f95d3b6c95c` и checkpoint
+`c7abd1580cb9c75dadedda60d60541ce10fe146c` сверены. До изменений54 worktrees clean/locks0,
+root sole active agent; isolated work/progo-recover-consume-on649-20261023 сохраняет все прежние ветки.
+Полные [CI649](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40000989219) Windows13267/Ubuntu578
+строк самостоятельно прочитаны. Оба checkout/Windows build identity: exact tested merge
+`80995cb75743dfff071bdb40330e30eee843aa41`. JSON ci649_final содержит actual per-case evidence.
+PASS ConsumptionWorker8 (complete,cancel-read,cancel-consume,refused,locked,changed-request,
+changed-result,missing), Recover name9/Reissue8/Create8/API6/UI8/UI12/snapshot12/dispatcher5/ownership8/
+cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3.
+Desktop5298/Instance30/Maintenance126/Shutdown47/HomeVPN3794/Portable91/SSH policy61;
+Python reported28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS. Pack runner-only PASS,
+uploads/prune SKIPPED. Owner PC NOT_RUN; historic640/642 causes not proven fixed/diagnostics retained.
+
+Выбран один UI handoff — RecoverAsync, существующий read-only recovery без новой выдачи.
+Local code `0ec361c0b0bd0e83560f979806716b6c0a0f4f27`:1 runtime+1 existing test171add/8delete.
+Только этот ConfirmConsumed заменён на await existing API8 в existing RunAdminOwnedAsync;
+ConsumptionWork удерживается до actual settlement. Исходный Stop scope/volatile admission и CTS
+проверяют допуск, worker не читает UI controls. Close/Escape отменяет до delete и ждёт фактический
+результат, не закрывает ShowDialog неожиданно; Dispose отменяет без late UI. Stop удерживает worker,
+тот не ждёт Stop. Принятое physical delete остаётся успешным; late close/Stop не публикует success
+и не воссоздаёт request. Остаток требует explicit Refresh/recovery, никогда blind issue/consume replay.
+Create/Reissue API call sites, API8/core/service/dispatcher/transport/scripts/workflows/VERSION exact.
+Проверка owner после ShowToken предотвращает запуск I/O из уже закрытого handoff callback.
+
+Восемь новых actual modal modes: complete,close-retry,dispose,stop-retry,service-dispose,locked,
+changed-request,changed-result. Real protected accepted request/result и original recovery ID; actual
+API consume barrier5s/modal15s/joins5s. Lease/ownership, heartbeat/reentry, exact private bytes/newer
+record retention, one accepted deletion, no late status. Close→reopen Retry и Stop/lock→Refresh→Recover
+используют только прежний recovery без issuing/revoke; original API8 и все старые tests byte-identical.
+Transport callback-only fixture не выдаётся за реальный SSH/VPS тест. Только fixture-owned resources
+закрываются, actual Tasks/lease/cleanup join. Исходные asserts/timeouts/coverage не ослаблены.
+
+PASS local review/signatures/C#5 await scopes/structural isolation/lexical delimiters/diff/JSON/
+public321source0release/added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh нет:
+new compilation/Recover consumption8/full relevant regression NOT_RUN. SUCCESS649 не наследуется.
+Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
+release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного CI wait/второго этапа.
+Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/Recover consumption8/API8/all prior suites.
+Остаток измерим: Create consumption; Reissue Complete consumption; invite/revoke/reissue/recover-invite
+owned transport (отдельные bounded slices). FullR09/owner PC acceptance open.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: Windows proof нового UI slice, затем два handoff binding/transport/owner acceptance.
+
+## История этапа: saved ConfirmConsumedAsync API8 integration поверх CI648
 
 Владелец явно разрешил prerequisite API+8 из e8fbd2a отдельным этапом, без UI binding/transport.
 PR88 OPEN/DRAFT/source `8e58d70c785227837f2a9063fe4a0688500481b6` и local checkpoint
@@ -30,9 +75,20 @@ settlement5s/modal15s/final cleanup/asserts/coverage без изменений. 
 PASS local review/signatures/dependency+parity/lexical delimiters/diff/JSON/public321source0release/
 added secretsPII0. Lexical не AST/compiler; dotnet/csc/mcs/pwsh/Windows недоступны: compiler/API8/native/
 полные релевантные регрессии NOT_RUN на новом candidate. SUCCESS648 не переносится.
-Publication TODO: fresh expected-head guarded non-force PR88, ONE automatic CI. Public uploads OFF,
-release/prune ineligible/workflows unchanged. Save source/run/checkpoint и STOP без полного wait/второго этапа.
-Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/eight modes/все prior suites.
+Publication PASS: source `928257553a47fc001b2cdaac25817f95d3b6c95c`, existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched parent exact648,
+full tree `fabbbf7d87567a2f93ccf8373418369df0ecd256` равен reviewed freeze
+`ca64712d86d9e3967065af4f6f27f1ef07696026`. Public diff5files837add/81delete:
+1 runtime28add/0delete +1 existing test74add/0delete +3docs735add/81delete.
+Merge ref `80995cb75743dfff071bdb40330e30eee843aa41` пока НЕ final tested merge (NOT_RUN).
+ONE automatic [CI649/40000989219](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40000989219):
+exact-source count1/pull_request/attempt1, run queued/conclusion null at latest run metadata check.
+Jobs snapshot: Windows120576687161 queued; Ubuntu120576687526 in_progress. Это metadata,
+new compiler/API8/full regression NOT_RUN, никакого наследования SUCCESS648.
+Public uploads OFF/release+prune ineligible/workflows unchanged; final skips not yet observed.
+Postpublication3-doc local checkpoint intentionally NOT pushed, чтобы не запускать второй CI;
+полный SHA в git log -1/PR88 body. STOP без полного ожидания/второго этапа.
+Далее ТОТ ЖЕ CI649 final logs/exact source+tested merge/ConsumptionWorker8/все prior suites.
 После proof — отдельный один UI consumption handoff binding; transport remains separate.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
 главный блокер: новый Windows compiler/API8 proof, затем UI binding/transport/owner acceptance.

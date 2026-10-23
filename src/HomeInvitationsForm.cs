@@ -35,6 +35,11 @@ namespace ProGo
         private bool pendingReadActive, closeAfterPending;
         internal Task InitializationWork { get; private set; }
         internal Task PendingReadWork { get; private set; }
+        internal Task ConsumptionWork { get; private set; }
+        internal Action<string> BeforeConsumeIo;
+        private CancellationTokenSource consumptionCancellation;
+        private volatile bool consumptionAllowed;
+        private bool consumptionActive;
 
         internal HomeInvitationsForm(HomeVpnInvitation[] items, Func<string, string, string, Task<string>> admin, ClipboardService clipboard, HomeVpnService service = null, Action beforePendingRead = null)
         {
@@ -76,9 +81,9 @@ namespace ProGo
             FormClosing += delegate(object sender, FormClosingEventArgs e) {
                 if (!working) return;
                 e.Cancel = true;
-                if (pendingReadActive) {
+                if (pendingReadActive || consumptionActive) {
                     DialogResult = DialogResult.None; closeAfterPending = true;
-                    CancelPendingRead();
+                    CancelPendingRead(); CancelConsumption();
                 }
             };
             refresh.Click += async delegate { await RunAsync(RefreshAsync); };
@@ -124,7 +129,7 @@ namespace ProGo
                     } else RequireRefresh(result.Message);
                 });
             };
-            InitializationWork = PendingReadWork = ActionWork = Task.FromResult(0);
+            InitializationWork = PendingReadWork = ActionWork = ConsumptionWork = Task.FromResult(0);
             if (service == null) { // Legacy injected callers keep their synchronous contract.
                 RefreshPending(); SetPendingStatus();
             } else {
@@ -185,7 +190,7 @@ namespace ProGo
             }
         }
         private void FinishAction() {
-            working = pendingReadActive = false;
+            working = pendingReadActive = consumptionActive = false;
             if (!ownerUi.Closed && !IsDisposed && !Disposing) {
                 close.DialogResult = DialogResult.Cancel; UpdateActions();
                 if (closeAfterPending) Close();
@@ -196,7 +201,7 @@ namespace ProGo
         }
         private void UpdateActions() {
             list.Enabled = name.Enabled = !working;
-            refresh.Enabled = !working; close.Enabled = !working || pendingReadActive;
+            refresh.Enabled = !working; close.Enabled = !working || pendingReadActive || consumptionActive;
             create.Enabled = !working && !needsRefresh && !pendingAdmin;
             revoke.Enabled = !working && !needsRefresh && !pendingAdmin && list.Selected != null;
             recover.Enabled = !working && pendingAdmin && !pendingUnreadable; recover.Visible = pendingAdmin;
@@ -295,21 +300,56 @@ namespace ProGo
                     RequireRefresh("Проверка прежней выдачи остановлена. Запрос сохранён; повторите проверку явно."); return;
                 }
                 list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label }); ShowToken(token);
-                HomeVpnAdminRecovery.ConfirmConsumed(token); needsRefresh = true;
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                bool consumed = await ownerUi.Await(ConsumeRecoveredAsync(token));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                needsRefresh = true;
+                if (!consumed) { RequireRefresh("Завершение прежней выдачи не подтверждено. Повторите проверку сохранённого запроса."); return; }
+                if (closeAfterPending || !RecoveryConsumptionScope(operationStop)) {
+                    RequireRefresh("Прежний запрос уже завершён. Продолжение отменено; обновите список явно."); return;
+                }
                 status.Text = "Прежний токен получен без новой выдачи. Обновите список перед следующим изменением доступа.";
                 // The pre-dispatch name snapshot predates handoff; keep the former post-consumption flag refresh.
                 await ownerUi.Await(RefreshPendingAsync(operationStop));
             } catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
             catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Результат прежней выдачи не получен. Запрос сохранён; новый доступ и повторный отзыв не запрашивались."); }
         }
+        private bool RecoveryConsumptionScope(Task<bool> stop) {
+            return pendingService == null || (!pendingService.StartsPaused && !pendingService.IsStopping
+                && Object.ReferenceEquals(stop, pendingService.StopWork));
+        }
+        private void CancelConsumption() {
+            consumptionAllowed = false;
+            var source = consumptionCancellation;
+            if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
+        }
+        private async Task<bool> ConsumeRecoveredAsync(string token) {
+            var stop = operationStop;
+            using (var source = new CancellationTokenSource()) {
+                consumptionCancellation = source; consumptionAllowed = true; consumptionActive = true;
+                close.DialogResult = DialogResult.None; UpdateActions();
+                bool consumed = false;
+                Func<Task<string>> start = async delegate {
+                    consumed = await HomeVpnAdminRecovery.ConfirmConsumedAsync(token, source.Token,
+                        () => consumptionAllowed && !source.IsCancellationRequested && RecoveryConsumptionScope(stop), BeforeConsumeIo).ConfigureAwait(false);
+                    return null;
+                };
+                try {
+                    ConsumptionWork = pendingService == null ? start() : pendingService.RunAdminOwnedAsync(start);
+                    await ownerUi.Await(ConsumptionWork);
+                    // Accepted physical delete remains successful even if cancellation arrives afterwards.
+                    return consumed;
+                } finally { consumptionAllowed = false; consumptionCancellation = null; }
+            }
+        }
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            ownerUi.Close(); base.OnFormClosed(e);
+            CancelConsumption(); ownerUi.Close(); base.OnFormClosed(e);
         }
         protected override void Dispose(bool disposing)
         {
             if (disposing) {
-                CancelPendingRead();
+                CancelPendingRead(); CancelConsumption();
                 ownerUi.Dispose();
             }
             base.Dispose(disposing);
