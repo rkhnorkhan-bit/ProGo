@@ -753,8 +753,20 @@ namespace ProGo
                 check(((Label)Field(friends, "status")).Text.StartsWith("Получение списка отменено"), "Friends exposes a clear explicit-refresh retry after list cancellation");
                 if (route == "button") Shot(friends, work, "vps-list-refresh-cancelled");
                 ListMode("complete", false); refresh.PerformClick(); Pump(() => refresh.Enabled);
-                check(copies == 2 && ListCalls() == 2 && create.Enabled && !(bool)Field(friends, "needsRefresh") && view.Selected == null
-                    && rows.Items.Count == 2 && name.Text == "Сохранённый черновик" && ListPrivateUnchanged(before),
+                // Snapshot all eight ORIGINAL conditions in their original order before diagnostic output.
+                int retryCopies = copies, retryCalls = ListCalls();
+                bool retryCreate = create.Enabled, retryGate = (bool)Field(friends, "needsRefresh"), retrySelectionEmpty = view.Selected == null;
+                int retryRows = rows.Items.Count;
+                bool retryDraft = name.Text == "Сохранённый черновик", retryPrivate = ListPrivateUnchanged(before);
+                var names = new[] { "copy-calls-two", "list-calls-two", "create-enabled", "reconciliation-cleared", "selection-empty", "row-count-two", "draft-preserved", "private-bytes-preserved" };
+                var conditions = new[] { retryCopies == 2, retryCalls == 2, retryCreate, !retryGate, retrySelectionEmpty, retryRows == 2, retryDraft, retryPrivate };
+                string violated = String.Join(";", names.Where((value, index) => !conditions[index]));
+                Console.WriteLine("List Refresh retry facts: route=" + route + "; gated=" + gated + "; copies=" + retryCopies + "; calls=" + retryCalls +
+                    "; createEnabled=" + retryCreate + "; needsRefresh=" + retryGate + "; selectionEmpty=" + retrySelectionEmpty +
+                    "; selectedOriginalId=" + (view.Selected != null && view.Selected.Id == first.Id) + "; rows=" + retryRows +
+                    "; draftSame=" + retryDraft + "; privateUnchanged=" + retryPrivate + "; violated=" + violated);
+                foreach (int index in Enumerable.Range(0, names.Length)) Console.WriteLine("List Refresh retry invariant: " + names[index] + "=" + conditions[index]);
+                check(conditions.All(value => value),
                     "one explicit successful Refresh clears reconciliation without choosing/reissuing an identity or losing draft");
                 friends.Close();
             }

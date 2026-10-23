@@ -1,4 +1,51 @@
-## Текущий этап: разрешённая test-only диагностика CI642 count/PID
+## Текущий этап: CI643 Refresh retry — test-only восемь инвариантов
+
+HEAD PR88/source `ff8e6e25e7f5b4d58606faf1aff5e290c15d393a` и checkpoint
+`9d17c59c5098c351cc40274a5e8f5dd581ff3db1` сверены;47 прежних worktrees clean/locks0,
+активных Git/build процессов нет/root единственный агент, иной писатель не обнаружен. Отдельная
+work/progo-ci643-refresh-diagnostic-20261023 сохраняет все прежние ветки/изменения.
+Самостоятельно прочитаны полные [CI643](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39914345110)
+Windows10356/Ubuntu578 строк: checkout/build identity exact tested merge
+`f99df0878e1c8a0ffa08363ed52a12d162967852`. Exact evidence/markers в JSON ci643_final.
+
+Startup diagnostics: capturedPidPresent/aliveKnown/alive=True, releaseExists=False. Before/after
+connect/after alias:count1/pidPresentTrue/pidSameTrue/connectingTrue/stoppingFalse/requestedTrue/
+expectedWaitingLifecycleTrue; оба исходных invariant=True, violations пусто. CI642 отказ НЕ
+воспроизвёлся; его причина не установлена, runtime/test-contract fix не объявляется. Safe diagnostics
+и гипотеза opportunistic CurrentPid null на busy gate сохранены. SSH policy61 PASS643, но причина
+исторического permissions CI640 также остаётся невыясненной.
+PASS643 Desktop5298/Instance30/Maintenance126/Shutdown47/export modal11/chooser3/owned list10.
+Production/Desktop/relay fixture compilation PASS. API6/initialUI8/repeatedUI12 НЕ выполнялись:
+HomeVpnPreparationTests.Run(Main88) упал ДО HomeVpnAdminRecoveryTests.Run(Main89). Поздние snapshot/
+dispatcher/ownership/cleanup/repair/recover/fresh/HTTPS suites NOT_RUN643; aggregate HomeVPN/Portable
+не достигнуты. Ubuntu operation16/QR13/isolated provisioning PASS, pack/uploads/prune SKIPPED.
+
+Новый FAIL07:19:05.0395862UTC: tests/HomeVpnPreparationTests.cs:756–758, ListRefreshWaiting/button,
+финальный составной assert после cancellation PASS/explicit retry. Safe stack: HomeVpnWizardTests.Check
+il12→ListRefreshWaiting il1250→ListWaiting il351→PreparationTests.Run il656→WizardTests.Main il1794.
+Ожидаются copies2/listCalls2/create enabled/needsRefresh false/selection empty/rows2/draft same/private
+unchanged. Actual conjunct facts не выведены. Статическое противоречие: обычный non-gated Refresh
+теперь сохраняет selected ID по требованию владельца; legacy assert всё ещё ждёт selection empty.
+Это НЕ доказательство, что только этот conjunct нарушен; не меняем runtime или ожидание наугад.
+В разрешённом объёме выбран ОДИН targeted diagnostic CI, а не повтор без новых данных.
+
+Code local `9cc2fd762ed00ee66d15bfd5dbfab3496bc84735`: ONLY HomeVpnPreparationTests.cs14add/2delete.
+Все восемь исходных условий именованы и snapshot-ятся в прежнем порядке ДО output; сохранены
+один combined assert/selection-empty/таймауты/coverage/последовательность сценария/fixture cleanup.
+Выводятся counts/boolean и все violated names; selectedOriginalId — только boolean сравнения,
+не ID. No raw name/path/args/settings/credentials/journal/private bytes. Существующий safe stack
+сохранён. Никаких runtime/new features/security/VPS/network/credential действий.
+PASS local review/static/signatures/AST syntax1/C#5/diff/public321/0/secretsPII0. Windows/.NET Framework/
+PowerShell недоступны: новый compiler/native8-invariant diagnostics/API6/UI8/UI12/full regression NOT_RUN.
+Publication TODO: fresh non-force expected-head PR88 update, ровно один automatic diagnostic CI;
+PR uploads OFF/release/prune ineligible, workflows/VERSION unchanged. Save source/run/checkpoint и STOP,
+не ждать весь CI и не начинать второй этап. Следующий шаг — ТОТ ЖЕ diagnostic CI full final logs/exact
+merge, все8 named conditions; затем отдельно минимальный доказанный fix с сохранением ordinary selection
+и исходного gated reconciliation safety. Не объявлять UI12 PASS до реального выполнения.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: concrete Refresh retry invariant и недостигнутые invitation API6/UI8/UI12.
+
+## История этапа: разрешённая test-only диагностика CI642 count/PID
 
 PR88/source `6f8a41e67709dae2a9794885e7e975918401f765`, local checkpoint
 `b8f4a52e4fedbca2232316b71d7387f02ac890f0` сверены;46 прежних worktrees clean/locks0,
@@ -32,10 +79,19 @@ checker false-positive Wait matched WaitingLifecycle; исправлен token c
 Windows/.NET Framework/PowerShell отсутствуют: new compilation/native diagnostics/UI12/API6/UI8/
 Instance/full suites NOT_RUN. CI642 compilation production/Desktop PASS, full Desktop FAIL;
 SSH policy/ACL и relay suites NOT_RUN642, Ubuntu PASS — не переносятся на новый SHA.
-Publication TODO: fresh guarded expected-head non-force PR88, один automatic diagnostic CI;
-public PR uploads OFF/release/prune ineligible, workflows/VERSION unchanged. Save source/run/checkpoint
-и STOP без ожидания полного CI/второго этапа. Следующий шаг — ТОТ ЖЕ diagnostic CI full logs/exact
-merge, именованные count/PID/liveness/lifecycle facts и фактически выполненные остальные suites.
+Publication PASS: source `ff8e6e25e7f5b4d58606faf1aff5e290c15d393a`, existing PR88 integration/approved-plan-31-20261011,
+fresh expected-head non-force update. Fetched parent exact642/full tree `b7f61ef2e0a70ae30635c6f23e385d523df13b73`
+равен reviewed freeze `36edeb58ed1e268db5c330bf09fe9aaa855753ab`. Public diff4files543add/70delete:
+1 test49add/2delete +3 docs494add/68delete; runtime/other tests/workflows/VERSION unchanged.
+Merge ref `f99df0878e1c8a0ffa08363ed52a12d162967852` пока НЕ final tested merge (нужны checkout/build logs).
+Один automatic diagnostic [CI643/39914345110](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39914345110),
+pull_request/attempt1/raw exact-source count1; in_progress/conclusion null, updated06:54:11UTC;
+Windows120284369071/Ubuntu120284368749 in_progress. New compilation/native invariant diagnostics/
+UI12/API6/UI8/full suites NOT_RUN. PR uploads OFF/release/prune ineligible; completion skips пока
+не наблюдались. Postpublication3-doc checkpoint local HEAD(git log -1), НЕ pushed для исключения
+второго CI; full checkpoint в PR88 body. STOP без полного ожидания/второго этапа.
+Следующий шаг — ТОТ ЖЕ CI643 full final logs/exact merge, именованные count/PID/liveness/lifecycle
+facts и фактически выполненные suites. Нет runtime fix; причина642 пока не доказана.
 Если отказ не воспроизводится, причина642 остаётся unproven, не объявлять runtime fix или полный UI12 PASS.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
 главный блокер: concrete command availability invariant evidence и новая Windows проверка UI12.
