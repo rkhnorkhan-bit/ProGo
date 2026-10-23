@@ -8,7 +8,50 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: доказанное исправление selection test-contract CI644
+## Текущий этап: Create invitation uncertainty read поверх CI645
+
+HEAD PR88/source `7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1` и checkpoint
+`42f4dd2260032ccb23ef8bd1526ba05517fa535c` сверены;49 прежних worktrees clean/locks0,
+Git/build processes0/root sole agent/другого писателя нет. Изолированная
+work/progo-invite-uncertainty-on645-20261023 сохраняет прежние ветки/исправления.
+Самостоятельно прочитаны полные [CI645](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39978779254)
+Windows12768/Ubuntu578 строк; exact checkout/build tested merge
+`20ed439869dbfbaf536693c639c8951d2a13dbbb`. Per-case evidence в JSON ci645_final.
+PASS button exact original ID/escape+close gated clear/all7 other conditions, same-name missing-ID
+no selection/destructive buttons disabled/no dispatch. API6/UI8/UI12 фактически PASS. Также PASS
+snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS11/freshHTTPS10/
+export11/chooser3; Desktop5298/Instance30/Maintenance126/Shutdown47/HomeVPN3295/Portable91/policy61.
+Python reported28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS. Pack PASS runner-only,
+uploads/prune SKIPPED; передачи/установки/owner acceptance нет. Старые причины640/642 не объявляются
+исправленными, diagnostics сохранены. Selection/API/worker уже готовы, повторно не реализуются.
+
+Выбран один ближайший остаток по реестру: синхронный HasPending в generic Create uncertainty UI.
+Code local `3dd85ed8d5816355ced59ac98a94de439629450e`:1 runtime+1 existing test124add/2delete.
+CreateAsync после неподтверждённого ответа ждёт existing RefreshPendingAsync/RunAdminOwnedAsync,
+original operation Stop scope/explicit Friends owner. No new API/feature. Empty snapshot не разрешает
+новую выдачу: прежний needsRefresh сохраняется до явного read-only Refresh. Unknown/unreadable остаются
+blocked; нет raw exception detail и выдуманного подтверждения pending. Version gate исключает второй
+post-action read. Cancel/Close/Dispose сохраняет actual ownership, Stop запрещает поздний результат.
+Typed cancellation/pending catch, success/handoff/ConfirmConsumed, Reissue/Recover/transport неизменны.
+
+Новые8 actual ShowDialog cases empty/pending/corrupt/locked/close-retry/dispose/stop-retry/service-dispose:
+реальный DPAPI/private-state worker под barrier5s, modal15s/final joins5s. Fixture own request моделирует
+retained request перед потерянным ответом, transport delegate только бросает safe canary exception.
+Один mutation intent/no automatic replay/no handoff/no consume/no duplicate read; exact private bytes,
+draft, UI heartbeat/admission, Stop Retry via read-only Refresh и reopen retained pending. Все старые
+API6/UI8/UI12/selection и прочие test bodies byte-identical; никаких реальных VPS/credentials/network.
+PASS local manual/static/signatures/lexical delimiter/diff/JSON/public321/0/secretsPII0. AST parser
+недоступен (NOT_RUN), lexical не выдаётся за AST/compiler. Windows/.NET Framework/PowerShell нет:
+new compilation/uncertainty8/full regression NOT_RUN, SUCCESS645 относится только к exact baseline.
+Publication TODO: fresh expected-head non-force PR88, ровно один automatic CI; workflows/VERSION
+unchanged, public uploads OFF/release/prune ineligible. Save source/run/checkpoint и STOP без полного
+ожидания/второго этапа. Далее ТОТ ЖЕ новый CI full logs/exact merge: uncertainty8/API6/UI8/UI12/
+selection/все mandatory suites. Остаток: reissue HasPending; recovery request.Name; consumption API8
+bindings; invite/revoke/reissue/recover-invite owned transport. Не закрывать fullR09/приёмку ПК.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: Windows proof нового Create uncertainty slice, затем названные remaining routes.
+
+## История этапа: доказанное исправление selection test-contract CI644
 
 PR88/source `b5af631eb2285a05a12485b4a45acc565c705f48`, checkpoint
 `4ec09012d4d2c2b4904a63525d56348f8159acfe` сверены; все worktrees clean/locks0,
@@ -42,10 +85,19 @@ SKIPPED. Исторические причины permissions640/startup642 не 
 PASS local manual structural review/signatures/diff/JSON/public321/0/secretsPII0. Временный AST parser
 недоступен: AST NOT_RUN, не выдаётся за compilation. .NET Framework/Windows unavailable: новый
 compiler/native exact-ID/gated-clear/missing-ID/full regression NOT_RUN; старые PASS не переносятся.
-Publication TODO: guarded fresh expected-head non-force PR88, ровно один automatic CI для доказанного
-исправления; workflows/VERSION unchanged, PR uploads OFF/release/prune ineligible. Save source/run/
-checkpoint и STOP без полного ожидания/второго этапа. Далее ТОТ ЖЕ CI full final logs/exact merge:
-button/escape/close, missing-ID safety, API6/UI8/UI12 и все mandatory suites.
+Publication PASS: source `7ce8d202a7ddd15b7f7733fbc493a3d27b5e59c1`, existing PR88 integration/approved-plan-31-20261011,
+fresh expected-head non-force update. Fetched parent exact644/full tree `9b352d5f9c01305e9e8f5fb63d2e2b672c2be25a`
+равен reviewed freeze `756d0a75c9e4d4605c22a5fd264e8d12872f0aa5`. Public diff4files345add/59delete:
+1 test25add/4delete +3docs320add/55delete; runtime/other methods/workflows/VERSION unchanged.
+Merge ref `20ed439869dbfbaf536693c639c8951d2a13dbbb` пока НЕ final tested merge: нужны checkout/build logs.
+Один automatic [CI645/39978779254](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39978779254),
+pull_request/attempt1/raw exact-source count1; in_progress/conclusion null, updated15:30:04UTC;
+Windows120500269788/Ubuntu120500270121 in_progress. New compilation/exact-ID/gated-clear/missing-ID/
+API6/UI8/UI12/full suites NOT_RUN. PR uploads OFF/release/prune ineligible; completion skips ещё
+не наблюдались. Postpublication3-doc checkpoint local HEAD(git log -1), НЕ pushed для исключения
+второго CI; exact checkpoint в PR88 body. STOP без полного ожидания/второго этапа.
+Далее ТОТ ЖЕ CI645 full final logs/exact merge: button/escape/close, missing-ID/no-dispatch safety,
+API6/UI8/UI12 и все mandatory suites. Written regression не объявляется выполненной.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
 главный блокер: Windows proof corrected selection/missing-ID и недостигнутые invitation suites.
 

@@ -243,6 +243,7 @@ namespace ProGo
             } catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Не удалось обновить список. Изменения доступа заблокированы: повторите «Обновить список» после восстановления SSH."); }
         }
         private async Task CreateAsync() {
+            bool unconfirmed = false;
             status.Text = "Создание отдельного токена…";
             try {
                 var label = name.Text;
@@ -254,8 +255,15 @@ namespace ProGo
                 ShowToken(token); HomeVpnAdminRecovery.ConfirmConsumed(token);
             } catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
             catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }
-            catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(HomeVpnAdminRecovery.HasPending() ? HomeVpnAdminRecovery.PendingMessage
-                : "Ответ выдачи не получен или не прошёл проверку. VPS мог создать приглашение. Обновите список и проверьте новые ID; отзовите ненужные записи. Не повторяйте создание вслепую."); }
+            catch { unconfirmed = true; }
+            if (unconfirmed && !ownerUi.Closed && !IsDisposed && !Disposing) {
+                // Preserve the issuing action's Stop scope and await its actual readonly work before publishing guidance.
+                bool known = await ownerUi.Await(RefreshPendingAsync(operationStop));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!known) { RequireRefresh(status.Text); return; }
+                if (pendingAdmin) { SetPendingStatus(); RequireRefresh(status.Text); }
+                else RequireRefresh("Ответ выдачи не получен или не прошёл проверку. VPS мог создать приглашение. Обновите список и проверьте новые ID; отзовите ненужные записи. Не повторяйте создание вслепую.");
+            }
         }
         private async Task RecoverAsync() {
             status.Text = "Проверка прежней выдачи без нового приглашения…";

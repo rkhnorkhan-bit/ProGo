@@ -107,6 +107,7 @@ namespace ProGo
                 PendingStateWorker();
                 InitialPendingUi(clipboard);
                 RepeatedPendingUi(clipboard);
+                CreateUncertaintyUi(clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "deadline" }) NativeWait(route, previous);
                 LostResponseAndReopen(token, clipboard, previous);
                 ReissueBoundary(token); FrozenOwner(); DefaultHandoff(clipboard); LateDisposedUi(clipboard); ReissueHandoffMessage(token, clipboard); StatusAndStorage(token);
@@ -409,6 +410,119 @@ namespace ProGo
                                     retryService.Dispose(); var cleanup = retryService.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
                                     check(cleanup.GetAwaiter().GetResult(), "repeated close Retry fixture joins actual cleanup");
                                 }
+                            }
+                        }
+                    }
+                }
+            } finally { if (original == null) File.Delete(PendingPath); else File.WriteAllBytes(PendingPath, original); }
+        }
+        private static void CreateUncertaintyUi(ClipboardService clipboard)
+        {
+            byte[] original = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+            try {
+                foreach (string mode in new[] { "empty", "pending", "corrupt", "locked", "close-retry", "dispose", "stop-retry", "service-dispose" }) {
+                    File.Delete(PendingPath);
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        HomeInvitationsForm form = null; FileStream held = null; Task first = null; Task<bool> stop = null;
+                        Dictionary<string, byte[]> before = null;
+                        int reads = 0, mutations = 0, queries = 0, handoffs = 0, phase = 0, turns = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, updates = 0, closedUpdates = 0;
+                        bool closing = mode == "close-retry", disposing = mode == "dispose", pending = mode != "empty" && mode != "stop-retry";
+                        try {
+                            form = new HomeInvitationsForm(new HomeVpnInvitation[0], (action, label, id) => {
+                                if (action == "list") { ++queries; return Task.FromResult("[]"); }
+                                ++mutations; check(action == "invite" && label == "Fixture friend" && id == null, "uncertain Create retains its exact original intent: " + mode);
+                                throw new IOException("PRIVATE_UNCERTAINTY_CANARY");
+                            }, clipboard, service, delegate {
+                                if (Interlocked.Increment(ref reads) != 2) return;
+                                worker = Thread.CurrentThread.ManagedThreadId; entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Uncertain invitation pending read fixture deadline");
+                            });
+                            form.ShowToken = value => { ++handoffs; throw new Exception("Unconfirmed Create cannot hand off a token"); };
+                            ((Label)Field(form, "status")).TextChanged += delegate { ++updates; };
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    if (!form.InitializationWork.IsCompleted) return false; form.InitializationWork.GetAwaiter().GetResult();
+                                    ((TextBox)Field(form, "name")).Text = "Fixture friend";
+                                    // Own fixture state models a request retained before the lost native response; no real mutation occurs.
+                                    if (pending && mode != "corrupt") HomeVpnAdminRecovery.Register(Owner, "Fixture friend", null);
+                                    if (mode == "corrupt") File.WriteAllBytes(PendingPath, new byte[] { 1, 2, 3 });
+                                    before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                                    if (mode == "locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None);
+                                    ((Button)Field(form, "create")).PerformClick(); first = form.ActionWork; phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    check(form.Modal && form.Visible && worker != ui && reads == 2 && mutations == 1 && queries == 0 && handoffs == 0
+                                        && !first.IsCompleted && !form.PendingReadWork.IsCompleted && service.IsAdminWorking,
+                                        "uncertain Create awaits one actual pending read on responsive explicit modal owner: " + mode);
+                                    foreach (string button in new[] { "create", "revoke", "reissue", "refresh", "recover" })
+                                        check(!((Button)Field(form, button)).Enabled, "uncertainty read retains admission gate: " + mode + "/" + button);
+                                    ((Button)Field(form, "create")).PerformClick(); check(mutations == 1, "uncertain held Create cannot repeat issuing action: " + mode);
+                                    var watch = Stopwatch.StartNew();
+                                    if (closing) form.Close(); if (disposing) { form.Dispose(); closedUpdates = updates; }
+                                    if (mode == "service-dispose") service.Dispose();
+                                    if (mode == "stop-retry" || mode == "service-dispose") stop = service.StopAsync();
+                                    check(watch.ElapsedMilliseconds < 500 && !first.IsCompleted && !form.PendingReadWork.IsCompleted
+                                        && (!closing || !form.IsDisposed) && (stop == null || !stop.IsCompleted),
+                                        "uncertain read Close Stop Dispose return promptly without abandoning real work: " + mode);
+                                    turns = 0; phase = 2; return false;
+                                }
+                                if (phase == 2) {
+                                    if (++turns < 3) return false;
+                                    check(!first.IsCompleted && (stop == null || !stop.IsCompleted), "uncertainty cancellation retains its held read: " + mode);
+                                    release.Set(); phase = 3; return false;
+                                }
+                                if (phase == 3) {
+                                    if (!first.IsCompleted || (stop != null && !stop.IsCompleted)) return false; first.GetAwaiter().GetResult();
+                                    if (stop != null) check(stop.GetAwaiter().GetResult(), "Stop joins uncertain Create pending read: " + mode);
+                                    if (!closing && !disposing) {
+                                        check((bool)Field(form, "needsRefresh") && !((Button)Field(form, "create")).Enabled,
+                                            "lost Create response never permits blind reissue even when pending snapshot is empty: " + mode);
+                                        check((bool)Field(form, "pendingAdmin") == (pending || stop != null)
+                                            && (bool)Field(form, "pendingUnreadable") == (mode == "corrupt" || mode == "locked" || stop != null),
+                                            "uncertainty snapshot separates retained unreadable and cancelled requests: " + mode);
+                                        check(!((Label)Field(form, "status")).Text.Contains("PRIVATE_UNCERTAINTY_CANARY") && ((TextBox)Field(form, "name")).Text == "Fixture friend",
+                                            "uncertainty guidance preserves draft without raw transport detail: " + mode);
+                                    }
+                                    if (disposing) check(updates == closedUpdates, "disposed uncertainty owner receives no late status");
+                                    check(reads == 2 && mutations == 1 && handoffs == 0 && !service.IsAdminWorking,
+                                        "uncertain Create performs exactly one snapshot without post-action duplicate or token consumption: " + mode);
+                                    if (mode == "stop-retry") { ((Button)Field(form, "refresh")).PerformClick(); phase = 4; return false; }
+                                    phase = 4;
+                                }
+                                if (!form.ActionWork.IsCompleted) return false; form.ActionWork.GetAwaiter().GetResult();
+                                if (mode == "stop-retry") check(queries == 1 && reads == 3 && mutations == 1 && !((bool)Field(form, "pendingAdmin"))
+                                    && !((bool)Field(form, "needsRefresh")) && ((Button)Field(form, "create")).Enabled,
+                                    "explicit read-only Retry after Stop reconciles without automatic Create replay or stale gate overwrite");
+                                if (held != null) { held.Dispose(); held = null; }
+                                check(before.Count == Directory.GetFiles(HomeVpnPrivateFiles.Root).Length && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                                    "uncertainty read preserves exact protected request identity/result/access bytes: " + mode);
+                                check(true, "invitation Create uncertainty UI PASS: " + mode); return true;
+                            }, () => closing || disposing);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); if (form != null) form.Dispose();
+                            if (form != null) { Pump(() => form.InitializationWork.IsCompleted && form.ActionWork.IsCompleted && form.PendingReadWork.IsCompleted, 5000); form.InitializationWork.GetAwaiter().GetResult(); form.ActionWork.GetAwaiter().GetResult(); }
+                            service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                            check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "uncertainty fixture joins actual body and cleanup: " + mode);
+                        }
+                    }
+                    if (mode == "close-retry") {
+                        using (var retryRelay = new Ikev2RelayService())
+                        using (var retryService = new HomeVpnService(retryRelay, Application.ExecutablePath, 0, 0, 0))
+                        using (var retry = new HomeInvitationsForm(new HomeVpnInvitation[0], (action, label, id) => { throw new Exception("Reopen must not repeat Create"); }, clipboard, retryService)) {
+                            try {
+                                HomeVpnWaitingTests.ModalWizardCase(retry, delegate {
+                                    if (!retry.InitializationWork.IsCompleted) return false; retry.InitializationWork.GetAwaiter().GetResult();
+                                    check((bool)Field(retry, "pendingAdmin") && !(bool)Field(retry, "pendingUnreadable") && ((Button)Field(retry, "recover")).Enabled
+                                        && !((Button)Field(retry, "create")).Enabled, "closed uncertain Create reopens exact retained request without replay or stale empty publication"); return true;
+                                }, () => false);
+                            } finally {
+                                retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted, 5000); retry.InitializationWork.GetAwaiter().GetResult();
+                                retryService.Dispose(); var cleanup = retryService.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                                check(cleanup.GetAwaiter().GetResult(), "uncertain Create reopen fixture joins actual cleanup");
                             }
                         }
                     }
