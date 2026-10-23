@@ -8,7 +8,61 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: только исправление compile failure CI634
+## Текущий этап: только fixture baseline failure CI635
+
+Checkpoint `3768dc1ff4f9dd346234f188bf4dc4e45ae38f12`/локальный HEAD сверены. PR88 OPEN/DRAFT на source
+`18585ce3df454d3280048db4b62fc7dfc1777d19`, tested merge `ceb83663d58a7158227001868d013723bed70225`. Другого доступного
+писателя/Git/build/lock операций нет, worktree чистые до начала; временные inventory PID
+завершились без принудительной остановки. Отдельная ветка work/progo-ci635-baseline-readiness-20261023,
+worktree ProGo-ci635-baseline-readiness, прежние изменения/ветки сохранены.
+
+[CI635/39884480364](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364) completed
+FAILURE, final Windows120189329732 log прочитан самостоятельно. Runtime compilation PASS:
+build identity0.2.2+ceb83663d58a7158227001868d013723bed70225, прежние CS1501/CS1660 отсутствуют, Desktop5294 PASS;
+InstanceHarness компилировался и начал native сценарии. Старый compilation defect исправлен.
+Новый fatal01:50:23UTC — InstanceTests.exe FileNotFoundException: proxy-environment-backup.json.
+Observed stack: Test-ProGo.ps1:649, NativeCommandError; C# frames в Actions log отсутствуют.
+Последний PASS — clean owner disposal releases mutex; actual repeated primary launch PASS
+ещё отсутствует. Source inference: Main Wait253–259 → TryCaptureProxyBaseline read97 или
+verification107 → ReadProxySnapshot FileStream85. Какое из97/107 сработало, лог не различает;
+это не выдаётся за прочитанный C# stack. До HTTPS recovery11 не дошло:0/11, все NOT_RUN,
+нет PASS markers, HomeVpnRelay/later checks/pack/uploads/prune SKIPPED. Ubuntu120189329558
+SUCCESS metadata only в этом fix этапе, не полная проверка его строк.
+
+Подтверждён дефект sampler: AppliedPort и receipt reads не являются атомарным readiness,
+а отсутствие собственного receipt немедленно обрывает existing bounded Wait. Точная
+producer timing/transience в том CI не доказана; production defect/исчезновение по вине
+нового HTTPS кода не утверждаются. Code `37a1c38f3d1e0c292a5fe61c281322fa0a4add44` меняет только InstanceTests.cs:
+38add/1delete +3 docs. FileNotFound только для exact backupPath на receipt/verification
+стадиях даёт false/null outputs/code0, никогда PASS. Wait10s/30ms polling неизменён;
+постоянное отсутствие обязано завершиться прежним timeout FAIL. Missing settings, foreign
+FileNotFound, malformed receipt и прочие I/O остаются fatal, lock32/33 contract прежний.
+
+Регрессии на реальных own temporary files: отсутствует до чтения; удалён между чтением
+и verification через optional fixture-only hook; несколько absent probes не готовы;
+после публикации matching receipt захватываются точные обе копии. Negative guards:
+malformed receipt/missing settings/foreign filename не проглатываются. Прежние wrong-port/
+pending-correction/native-lock/atomic replacement asserts и полный Main не изменены.
+Finally удаляет только свой временный root; новые тесты не меняют сеть/registry/credentials.
+Windows compilation changed fixture/native regressions/recovery11/full regression NOT_RUN:
+локально нет .NET Framework/PowerShell. Runtime tree идентичен успешно compiled635, это
+не подтверждает изменённый fixture. PASS local review/syntax1/await-scope/diff/public321/0/
+secretPII0/method preservation. Все runtime/другие tests/harness/scripts/workflows/VERSION,
+signature fix/recovery11/ownership/cleanup/export UI/EOF сохранены. Assertions/deadlines/
+coverage не отключены; sampler допускает только ожидание, не ложную готовность.
+
+Публикация TODO: финальные diff/secret/public/workflow checks, fresh expected-head non-force
+update existing PR88; один новый automatic CI с конкретной regression, no blind rerun.
+Записать source/merge/tree/run/checkpoint и STOP без полного ожидания/другой функции.
+Следующий шаг — тот же новый CI/exact merge: native absence/fatal-guard regressions,
+complete Instance suite, actual recovery11 и прежние проверки. Если receipt так и не
+публикуется, сохранить timeout FAIL и исследовать primary, не ослаблять ожидание/assert.
+Uploads OFF/release excluded; main merge/релизы/бинарные uploads/установка/VPS/сеть/ключи/
+credentials/личный deployment не выполнялись. Реализация58–80/100 · Проверенная готовность22/100
+· Изменение+0: фиксированные веса/620 anchors прежние. Главный блокер — точный Windows proof
+исправленного fixture и ещё не выполненные recovery11/fullR09/приёмка.
+
+## История: этап только исправление compile failure CI634
 
 Checkpoint `f959ebc0fcee4eadae30a4e000649b0879d90523`/локальный HEAD сверены. PR88 OPEN/DRAFT на source
 `763c730dc5e4d505fac35d592024911d744c2f91`, checkout merge `5a0f6d56cf62b7c06f0e6ab862094519e47c239a`.
@@ -43,12 +97,26 @@ list/repair/export UI/EOF/ownership/cleanup/snapshot/dispatcher/invitation/harne
 workflows/VERSION. Локально нет .NET Framework/PowerShell. Исправленная Windows compilation/
 native recovery11/full regression NOT_RUN, старый633 PASS на этот код не переносится.
 
-Публикация TODO: final secret/public/workflow checks и fresh expected-head non-force update
-existing PR88; ровно один новый automatic CI с обоснованным исправлением, без blind rerun.
-После публикации записать source/merge/tree/run/checkpoint и STOP без полного ожидания CI.
-Следующий шаг — тот же новый run: compilation без CS1501/CS1660, recovery11 и прежние
-регрессии; никакой новой функции сейчас. Uploads OFF/release excluded. Main merge/release/
-бинарные uploads/установка/VPS/network/keys/credentials/личный deployment не выполнялись.
+Публикация PASS: source `18585ce3df454d3280048db4b62fc7dfc1777d19` в существующей PR88 ветке
+integration/approved-plan-31-20261011, actual merge ref `ceb83663d58a7158227001868d013723bed70225`.
+Freeze `58c3da75984d49e9e0bd620e0aaf1c5ea6b8ba6f`, tree `e319a5161ed816dcb7e306e3b2603739329d95dd`;
+fetched parent точный634/full tree equal freeze. Expected-head non-force update проверен.
+Public diff5files403add/158delete:1 runtime line + existing regression +3 docs. PR OPEN/DRAFT,
+main не изменён. CI634 повторно не запускался: есть конкретное signature исправление.
+
+Единственный новый automatic [CI635/39884480364](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364),
+source `18585ce3df454d3280048db4b62fc7dfc1777d19`, attempt1/raw exact-head runs total_count1.
+Последнее наблюдение run.updated_at2026-10-23T01:31:36Z in_progress/conclusion null;
+Windows120189329732/Ubuntu120189329558 in_progress. Исправленная Windows compilation/
+recovery11/full regression NOT_RUN, merge ref ещё не proof build identity635. Upload guards
+OFF/release excluded; completion upload/prune пока не проверен. Старый634 compile FAIL
+сохранён отдельно, recovery11 не PASS. Релиз/бинарные uploads/установка/VPS/сеть/ключи не выполнялись.
+
+Post-publication docs-only checkpoint локальный HEAD этой ветки (git log -1), не push во
+избежание второго CI. Published source contains frozen pre-publication docs, актуальные
+source/run/checkpoint также в PR88 body. STOP без полного ожидания CI/другой функции.
+Следующий шаг — финальные логи ЭТОГО ЖЕ39884480364/exact merge: compiler без CS1501/CS1660,
+actual recovery11 и прежние регрессии. Main merge/release/credentials/личный deployment не выполнялись.
 Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: фиксированные веса и620
 anchors прежние. Главный блокер — compile/native proof исправленного кандидата, fullR09/
 реальная приёмка остаются открыты.

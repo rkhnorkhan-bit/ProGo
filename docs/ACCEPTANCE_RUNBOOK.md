@@ -1,4 +1,33 @@
-## Текущий кандидат: CI634 share wait signature fix; Windows NOT_RUN
+## Текущий кандидат: CI635 instance receipt readiness fix; Windows NOT_RUN
+
+Checkpoint `3768dc1ff4f9dd346234f188bf4dc4e45ae38f12`. Source `18585ce3df454d3280048db4b62fc7dfc1777d19` /
+tested merge `ceb83663d58a7158227001868d013723bed70225`, [CI635](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364)
+completed FAILURE. Final Windows120189329732 log independently read: build identity/runtime
+compile PASS, prior CS1501/CS1660 gone, Desktop5294 PASS. New fatal FileNotFoundException for
+proxy-environment-backup.json during actual primary startup baseline. Observed frame only
+Test-ProGo.ps1:649/NativeCommandError; C# frames absent. Source-inferred chain Wait253–259 →
+sampler97 or107 → FileStream85, exact read cannot be distinguished. Recovery11 executed0,
+NOT_RUN; later HomeVpnRelay/pack/uploads/prune SKIPPED. Ubuntu120189329558 SUCCESS metadata
+only here; do not present metadata as final-log proof. Production timing/transience unknown.
+
+Code `37a1c38f3d1e0c292a5fe61c281322fa0a4add44`: only InstanceTests sampler + real-file regressions,
+38add/1delete +3 docs. Missing exact own receipt at its two read stages returns false/null,
+never PASS. Same Wait10s/30ms and all Main assertions; permanent absence still timeout FAIL.
+Missing settings/foreign file/malformed receipt/other I/O remain errors, lock32/33 unchanged.
+Regressions: absent before/during read, repeated absence, then matching publication; fatal
+guards and old wrong-port/pending/locked/atomic replacement checks retained. Own temp root
+finally only. Runtime/scripts/workflows/other tests/signature fix/recovery11 unchanged635.
+PASS local review/syntax1/await-scope/diff/public321/0/secretPII0/method preservation, not
+Windows compiler/native proof. Changed fixture compiler/native/recovery11/full NOT_RUN.
+
+One expected-head guarded PR88 update → one new automatic CI, no blind rerun. Uploads OFF/
+release excluded. Save IDs/checkpoint and STOP. Next same new CI/exact merge: receipt tests,
+full Instance suite and actual recovery11/prior regression. Persistent missing receipt must
+FAIL existing deadline, then diagnose primary. No next feature or deadline/assert relaxation.
+Weights58–80/22 +0 unchanged, fullR09/owner acceptance open; no VPS/network/key/install/
+binary upload/release/personal deployment actions.
+
+## История: кандидат CI634 share wait signature fix; Windows NOT_RUN
 
 Checkpoint `f959ebc0fcee4eadae30a4e000649b0879d90523`. Bad source `763c730dc5e4d505fac35d592024911d744c2f91` /
 checkout merge `5a0f6d56cf62b7c06f0e6ab862094519e47c239a`, [CI634](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908)
@@ -16,9 +45,18 @@ tracked blobs/прежние contracts preserved. Исправленная compi
 NOT_RUN; прежние633 PASS не наследуются. Требовать exact new source/merge на Test-ProGo.ps1
 и Test-HomeVpnRelay.ps1, отсутствие CS1501/CS1660, actual recovery11 и прежние регрессии.
 
-One guarded existing PR88 update → one new automatic CI, no old-source rerun. Uploads OFF/
-release excluded. Save run/source/merge/checkpoint, STOP without full wait or next feature.
-Next inspect SAME new run final logs. Веса58–80/22 +0 прежние; fullR09/owner acceptance open.
+Publication PASS existing PR88: source `18585ce3df454d3280048db4b62fc7dfc1777d19`,
+merge ref `ceb83663d58a7158227001868d013723bed70225` (build identity635 NOT_RUN),
+freeze `58c3da75984d49e9e0bd620e0aaf1c5ea6b8ba6f`, tree `e319a5161ed816dcb7e306e3b2603739329d95dd`.
+Fetched parent/tree checked, expected-head non-force update, diff5files403add/158delete.
+Sole new automatic [CI635/39884480364](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364),
+attempt1/raw exact-head runs total_count1; no CI634 rerun. Run.updated_at2026-10-23T01:31:36Z
+in_progress, Windows120189329732/Ubuntu120189329558 in_progress/conclusion null. Corrected
+compiler/recovery11/full regression NOT_RUN; CI634 compile FAIL retained. Upload guards
+OFF/release excluded; completion upload/prune not yet checked. Post-publication docs-only
+checkpoint local HEAD (git log -1), not push; IDs/checkpoint also in PR body. STOP without
+full wait/next function. Next SAME CI635 exact merge and final compiler/recovery11/prior
+regression logs. Веса58–80/22 +0 прежние; fullR09/owner acceptance open.
 No main merge/release/binaries/install/VPS/network/keys/credentials/personal deployment actions.
 
 ## История: кандидат HTTPS recover-share owned-worker11; Windows NOT_RUN

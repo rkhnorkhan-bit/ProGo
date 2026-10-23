@@ -86,7 +86,7 @@ namespace ProGo
             using (var reader = new StreamReader(input, Encoding.UTF8, true)) return reader.ReadToEnd();
         }
         private static bool TryCaptureProxyBaseline(string settingsPath, string backupPath, int expectedPort,
-            out string settingsText, out string backupText, out int sharingCode)
+            out string settingsText, out string backupText, out int sharingCode, Action beforeReceiptVerification = null)
         {
             settingsText = backupText = null; sharingCode = 0;
             string stage = "settings";
@@ -104,8 +104,18 @@ namespace ProGo
                 stage = "settings verification";
                 if (ReadProxySnapshot(settingsPath) != settings) return false;
                 stage = "receipt verification";
+                if (beforeReceiptVerification != null) beforeReceiptVerification();
                 if (ReadProxySnapshot(backupPath) != backup) return false;
                 settingsText = settings; backupText = backup; return true;
+            } catch (FileNotFoundException ex) {
+                // AppliedPort is only a preliminary observation, not an atomic
+                // readiness receipt. Keep waiting within the existing deadline
+                // if our receipt is not yet published or disappears on recheck.
+                // Missing settings or a different file remain real failures.
+                if ((stage != "receipt" && stage != "receipt verification") || ex.FileName == null ||
+                    !String.Equals(Path.GetFullPath(ex.FileName), Path.GetFullPath(backupPath), StringComparison.OrdinalIgnoreCase)) throw;
+                Console.WriteLine("INFO: instance baseline " + stage + " waits for its ownership receipt.");
+                return false;
             } catch (IOException ex) {
                 int code = ex.HResult & 0xffff;
                 if (code != 32 && code != 33) throw;
@@ -158,6 +168,33 @@ namespace ProGo
                     "released settled proxy receipt");
                 Check(wrongPortRejected && pendingRejected && locked && sharing == 0 && capturedSettings == settingsBytes && capturedBackup == newReceipt,
                     "instance readiness rejects wrong port pending corrections and a native writer lock before accepting its released complete receipt");
+                File.Delete(backupPath);
+                bool missingBefore = !TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing) &&
+                    capturedSettings == null && capturedBackup == null && sharing == 0;
+                File.WriteAllText(backupPath, newReceipt);
+                bool missingDuring = !TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing,
+                    () => File.Delete(backupPath)) && capturedSettings == null && capturedBackup == null && sharing == 0;
+                bool stillMissing = Enumerable.Range(0, 3).All(attempt =>
+                    !TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing) &&
+                    capturedSettings == null && capturedBackup == null && sharing == 0);
+                File.WriteAllText(backupPath, newReceipt);
+                Wait(() => TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing),
+                    "published complete proxy receipt after absence");
+                Check(missingBefore && missingDuring && stillMissing && capturedSettings == settingsBytes && capturedBackup == newReceipt && sharing == 0,
+                    "instance baseline never accepts an absent or disappearing receipt and waits for its published matching bytes");
+                File.WriteAllText(backupPath, "{}"); bool invalidFailed = false, foreignMissingFailed = false, settingsMissingFailed = false;
+                try { TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing); }
+                catch (IOException ex) { invalidFailed = !(ex is FileNotFoundException); }
+                File.WriteAllText(backupPath, newReceipt);
+                try { TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing,
+                    () => { throw new FileNotFoundException("Unrelated fixture file", Path.Combine(root, "unrelated.json")); }); }
+                catch (FileNotFoundException) { foreignMissingFailed = true; }
+                string heldSettings = settingsPath + ".held"; File.Move(settingsPath, heldSettings);
+                try { TryCaptureProxyBaseline(settingsPath, backupPath, 1887, out capturedSettings, out capturedBackup, out sharing); }
+                catch (FileNotFoundException) { settingsMissingFailed = true; }
+                finally { File.Move(heldSettings, settingsPath); }
+                Check(invalidFailed && foreignMissingFailed && settingsMissingFailed,
+                    "instance readiness still fails malformed receipts missing settings and unrelated I/O instead of treating them as startup readiness");
             } finally { Directory.Delete(root, true); }
         }
         private static void Stop(Process process)

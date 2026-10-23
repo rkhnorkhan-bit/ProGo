@@ -3831,7 +3831,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "763c730dc5e4d505fac35d592024911d744c2f91",
+  "candidate_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3929,23 +3929,33 @@
     }
   ],
   "ci_candidate": {
-    "source": "763c730dc5e4d505fac35d592024911d744c2f91",
-    "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
-    "run_id": 39883511908,
-    "run_number": 634,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
+    "source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+    "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
+    "run_id": 39884480364,
+    "run_number": 635,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364",
     "status": "completed",
     "conclusion": "failure",
     "jobs": {
-      "windows": 120186199123,
-      "ubuntu": 120186198956
+      "windows": 120189329732,
+      "ubuntu": 120189329558
     },
-    "windows_compilation": "FAIL final Windows log: CS1501 HomeVpnService.cs(1166,36), WaitForShareAsync has5 required parameters but call supplies4; accompanying CS1660 at(1165,25)",
-    "verification": "Exact checkout merge read from final Windows job log; compiler fails before build identity/native tests. Ubuntu completed SUCCESS checked through jobs metadata only, not full log review in this fix stage",
-    "root_cause": "RecoverShareOwnedAsync omitted required timeoutMs argument. Four-argument WaitForShareAsync does not exist; overload binding also emits CS1660",
-    "windows_native": "NOT_RUN HTTPS recovery11 and all later native regression; build failed first",
+    "run_updated_at": "2026-10-23T01:50:28Z",
+    "verification": "Final Windows log independently read. Exact build identity0.2.2+ceb83663d58a7158227001868d013723bed70225; no CS1501/CS1660, Desktop5294 PASS. Ubuntu SUCCESS metadata only in this fix stage, not full final-log verification",
+    "windows_compilation": "PASS runtime build and Desktop/Instance harness compilation; prior CI634 call-signature defect resolved on exact635",
+    "failure": "InstanceTests.exe FileNotFoundException for proxy-environment-backup.json, fatal log at01:50:23Z after clean owner disposal PASS, before actual repeated primary launch PASS",
+    "observed_stack": [
+      "scripts/Test-ProGo.ps1:649 invocation of InstanceTests.exe; NativeCommandError",
+      "C# stack frames absent in captured Actions log"
+    ],
+    "source_trace_inference": "Main startup Wait253-259 -> TryCaptureProxyBaseline receipt open97 or verification107 -> ReadProxySnapshot FileStream85. Which of97/107 threw is not distinguishable from captured log",
+    "root_cause": "Fixture sampler treats missing own receipt as fatal FileNotFound rather than not-ready during bounded startup sampling. AppliedPort and both receipt reads are separate observations. Exact underlying producer timing/transience in that run not proven, no production bug claim",
+    "desktop": "PASS5294",
+    "instance": "FAIL startup settled ownership baseline; complete Instance suite not PASS",
+    "recovery11_executed": 0,
+    "windows_native": "NOT_RUN recovery11 and later full regression; no recovery11 PASS markers, later HomeVpnRelay step SKIPPED",
     "pack": "SKIPPED",
-    "artifact_uploads": "SKIPPED all uploads/prune; no binary publication",
+    "artifact_uploads": "SKIPPED uploads/prune; no binary publication",
     "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
@@ -5482,21 +5492,21 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "CI634 compile failure only: required share wait timeout argument fixed locally; next functions stopped",
-    "recovery_checkpoint": "f959ebc0fcee4eadae30a4e000649b0879d90523",
-    "base_source": "763c730dc5e4d505fac35d592024911d744c2f91",
-    "base_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
-    "local_sha": "e9b5f6c9de00549d304dbf0d63cb2549028e835b",
-    "local_development_sha": "e9b5f6c9de00549d304dbf0d63cb2549028e835b",
-    "published_sha": "763c730dc5e4d505fac35d592024911d744c2f91",
-    "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+    "phase": "Only proven CI635 fixture baseline absence defect fixed locally; no new functions",
+    "recovery_checkpoint": "3768dc1ff4f9dd346234f188bf4dc4e45ae38f12",
+    "base_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+    "base_merge": "ceb83663d58a7158227001868d013723bed70225",
+    "local_sha": "37a1c38f3d1e0c292a5fe61c281322fa0a4add44",
+    "local_development_sha": "37a1c38f3d1e0c292a5fe61c281322fa0a4add44",
+    "published_sha": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+    "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
     "baseline_only": true,
-    "ci_run_id": 39883511908,
+    "ci_run_id": 39884480364,
     "ci_status": "completed",
     "ci_conclusion": "failure",
-    "windows_compilation": "NOT_RUN corrected candidate; base634 compile FAIL",
-    "windows_native": "NOT_RUN recovery11 and new exact full regression",
-    "next": "Publish scanned minimal signature fix once with fresh expected HEAD, record one automatic CI/run/source/checkpoint and STOP without full wait or other function",
+    "windows_compilation": "NOT_RUN changed fixture candidate; runtime identical to compiled635",
+    "windows_native": "NOT_RUN receipt regressions/recovery11/full regression",
+    "next": "One scanned expected-head guarded publication, record new source/merge/run/checkpoint, STOP without waiting full CI or next feature",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -5590,7 +5600,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact634 source763c730/merge5a0f6d5 compile FAIL independently read in final Windows log: missing fifth WaitForShareAsync timeout argument, CS1501/CS1660. Recovery11 NOT_RUN, Ubuntu metadata SUCCESS is separate. Minimal corrected code e9b5f6c compiler/native NOT_RUN pending own exact CI. Same v1.0 weights/620 credited anchors/scores; no full weighted gate/target acceptance closed.",
+    "candidate_note": "Exact635 source18585ce/mergeceb8366 runtime compilation PASS and Desktop5294 PASS from final Windows log; signature fix resolved. New failure is missing own startup receipt in InstanceTests sampler, C# frame97/107 indistinguishable from log. Recovery11 executed0/NOT_RUN. Minimal fixture-only correction and real-file regression prepared; new compiler/native NOT_RUN until exact CI. Fixed v1.0 weights/620 score anchors unchanged, no full weighted gate/owner acceptance closed.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -10831,6 +10841,101 @@
         "checkpoint_note": "Post-publication docs-only checkpoint is local branch HEAD (git log -1), not pushed to avoid second CI; published source contains frozen pre-publication docs; exact publication IDs and checkpoint also in PR88 body"
       },
       "candidate_source": "763c730dc5e4d505fac35d592024911d744c2f91"
+    },
+    "before_ci634_fix_publication": {
+      "ci_candidate": {
+        "source": "763c730dc5e4d505fac35d592024911d744c2f91",
+        "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+        "run_id": 39883511908,
+        "run_number": 634,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39883511908",
+        "status": "completed",
+        "conclusion": "failure",
+        "jobs": {
+          "windows": 120186199123,
+          "ubuntu": 120186198956
+        },
+        "windows_compilation": "FAIL final Windows log: CS1501 HomeVpnService.cs(1166,36), WaitForShareAsync has5 required parameters but call supplies4; accompanying CS1660 at(1165,25)",
+        "verification": "Exact checkout merge read from final Windows job log; compiler fails before build identity/native tests. Ubuntu completed SUCCESS checked through jobs metadata only, not full log review in this fix stage",
+        "root_cause": "RecoverShareOwnedAsync omitted required timeoutMs argument. Four-argument WaitForShareAsync does not exist; overload binding also emits CS1660",
+        "windows_native": "NOT_RUN HTTPS recovery11 and all later native regression; build failed first",
+        "pack": "SKIPPED",
+        "artifact_uploads": "SKIPPED all uploads/prune; no binary publication",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "phase": "CI634 compile failure only: required share wait timeout argument fixed locally; next functions stopped",
+        "recovery_checkpoint": "f959ebc0fcee4eadae30a4e000649b0879d90523",
+        "base_source": "763c730dc5e4d505fac35d592024911d744c2f91",
+        "base_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+        "local_sha": "e9b5f6c9de00549d304dbf0d63cb2549028e835b",
+        "local_development_sha": "e9b5f6c9de00549d304dbf0d63cb2549028e835b",
+        "published_sha": "763c730dc5e4d505fac35d592024911d744c2f91",
+        "tested_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+        "baseline_only": true,
+        "ci_run_id": 39883511908,
+        "ci_status": "completed",
+        "ci_conclusion": "failure",
+        "windows_compilation": "NOT_RUN corrected candidate; base634 compile FAIL",
+        "windows_native": "NOT_RUN recovery11 and new exact full regression",
+        "next": "Publish scanned minimal signature fix once with fresh expected HEAD, record one automatic CI/run/source/checkpoint and STOP without full wait or other function",
+        "readiness_change": 0
+      },
+      "candidate_source": "763c730dc5e4d505fac35d592024911d744c2f91"
+    },
+    "before_ci635_baseline_fix": {
+      "ci_candidate": {
+        "source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+        "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
+        "tree": "e319a5161ed816dcb7e306e3b2603739329d95dd",
+        "local_freeze_sha": "58c3da75984d49e9e0bd620e0aaf1c5ea6b8ba6f",
+        "run_id": 39884480364,
+        "run_number": 635,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T01:31:36Z",
+        "jobs": {
+          "windows": 120189329732,
+          "ubuntu": 120189329558
+        },
+        "verification": "One automatic pull_request run attempt1/raw exact-head runs total_count1; actual PR source/merge checked. Fetched parent exact634 and full tree equal local freeze. Final635 logs not yet read; no blind rerun/wait",
+        "windows_compilation": "NOT_RUN corrected candidate pending exact635 evidence",
+        "windows_native": "NOT_RUN recovery11 and exact full regression; CI634 compile FAIL, not PASS",
+        "artifact_uploads": "Public PR upload guards OFF; completion uploads/prune not yet checked, no binary publication",
+        "package_delivery": "NOT_RUN",
+        "owner_pc": "NOT_RUN",
+        "next": "Inspect SAME run39884480364 final logs/exact merge: CS1501/CS1660 absent, recovery11 and prior regression actually executed; no other feature stage"
+      },
+      "active_work": {
+        "phase": "Only CI634 compile defect fixed and published; one automatic CI635 in_progress; STOP after checkpoint",
+        "recovery_checkpoint": "f959ebc0fcee4eadae30a4e000649b0879d90523",
+        "base_source": "763c730dc5e4d505fac35d592024911d744c2f91",
+        "base_merge": "5a0f6d56cf62b7c06f0e6ab862094519e47c239a",
+        "local_sha": "58c3da75984d49e9e0bd620e0aaf1c5ea6b8ba6f",
+        "local_development_sha": "58c3da75984d49e9e0bd620e0aaf1c5ea6b8ba6f",
+        "published_sha": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+        "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
+        "baseline_only": false,
+        "ci_run_id": 39884480364,
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "windows_compilation": "NOT_RUN corrected source pending exact635 evidence",
+        "windows_native": "NOT_RUN recovery11 and exact full regression",
+        "next": "STOP. Next final logs of SAME CI635/exact merge and compilation/recovery11/prior regression proof; no fresh-share or other feature in this pass",
+        "readiness_change": 0,
+        "tree": "e319a5161ed816dcb7e306e3b2603739329d95dd",
+        "ci_run_number": 635,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364",
+        "ci_jobs": {
+          "windows": 120189329732,
+          "ubuntu": 120189329558
+        },
+        "publication": "PASS expected-head non-force existing PR88 ref update from exact763c730; fetched parent/tree equal freeze. Exactly one new automatic CI635 attempt1, no CI634 rerun/dispatch",
+        "workflow_preflight": "PASS public repository/unchanged workflow, integration push excluded, one PR run; artifact uploads OFF, release main/VERSION/manual only and prune push-main only",
+        "checkpoint_note": "Post-publication docs-only checkpoint local branch HEAD (git log -1), not pushed to avoid second CI; frozen published docs retain pre-publication state, exact publication IDs/checkpoint also in PR88 body"
+      },
+      "candidate_source": "18585ce3df454d3280048db4b62fc7dfc1777d19"
     }
   },
   "prepared_owned_stdin_publication": {
@@ -11925,10 +12030,74 @@
     "regression": "Existing recovery11 cancel-command additionally asserts actual modal ShareCommand purpose, explicit owner/CancelButton, retained uncompleted native Task. Original cancellation/ID/cleanup assertions remain",
     "local": "PASS syntax2/C#5 await-scope/full diff/public321/0/secretPII0; targeted AST arity rejects exact bad634 call1166/4, accepts fixed5, rejects removed-timeout mutation; declaration5 required/300000 unchanged. Static only, not compiler proof",
     "preservation": "PASS76/77 old service and38/39 old HTTPS test methods unchanged except exact two intended methods; every other tracked blob unchanged634, including confirmation/UI/setup/recover/list/repair/export/EOF/ownership/cleanup/snapshot/dispatcher/invitation/harness/scripts/workflows/VERSION",
-    "windows_compilation": "NOT_RUN corrected candidate",
-    "windows_native": "NOT_RUN recovery11 and exact full regression",
-    "publication": "TODO expected-head non-force existing PR88 update and one new automatic CI; no blind rerun",
-    "next": "Inspect same new CI exact merge: compile CS1501/CS1660 absent, recovery11 and prior regression executed. No next feature stage in this pass",
+    "windows_compilation": "PASS exact635 source18585ce3df454d3280048db4b62fc7dfc1777d19/mergeceb83663d58a7158227001868d013723bed70225; prior CS1501/CS1660 absent",
+    "windows_native": "NOT_RUN recovery11; new unrelated InstanceTests baseline failure stops before its execution",
+    "publication": "PASS scanned5-file tree published by expected-head non-force existing PR88 update; fetched parent/tree checked; exactly one automatic CI635, no CI634 rerun/dispatch",
+    "next": "Signature defect resolved; fix only proven instance fixture readiness failure next, no repeat signature change",
+    "readiness_change": 0,
+    "published_sha": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+    "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
+    "tree": "e319a5161ed816dcb7e306e3b2603739329d95dd",
+    "local_freeze_sha": "58c3da75984d49e9e0bd620e0aaf1c5ea6b8ba6f",
+    "ci_run_id": 39884480364,
+    "ci_run_number": 635,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": 120189329732,
+      "ubuntu": 120189329558
+    }
+  },
+  "ci635_failure": {
+    "source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+    "tested_merge": "ceb83663d58a7158227001868d013723bed70225",
+    "run_id": 39884480364,
+    "run_number": 635,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39884480364",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": {
+      "windows": 120189329732,
+      "ubuntu": 120189329558
+    },
+    "run_updated_at": "2026-10-23T01:50:28Z",
+    "verification": "Final Windows log independently read. Exact build identity0.2.2+ceb83663d58a7158227001868d013723bed70225; no CS1501/CS1660, Desktop5294 PASS. Ubuntu SUCCESS metadata only in this fix stage, not full final-log verification",
+    "windows_compilation": "PASS runtime build and Desktop/Instance harness compilation; prior CI634 call-signature defect resolved on exact635",
+    "failure": "InstanceTests.exe FileNotFoundException for proxy-environment-backup.json, fatal log at01:50:23Z after clean owner disposal PASS, before actual repeated primary launch PASS",
+    "observed_stack": [
+      "scripts/Test-ProGo.ps1:649 invocation of InstanceTests.exe; NativeCommandError",
+      "C# stack frames absent in captured Actions log"
+    ],
+    "source_trace_inference": "Main startup Wait253-259 -> TryCaptureProxyBaseline receipt open97 or verification107 -> ReadProxySnapshot FileStream85. Which of97/107 threw is not distinguishable from captured log",
+    "root_cause": "Fixture sampler treats missing own receipt as fatal FileNotFound rather than not-ready during bounded startup sampling. AppliedPort and both receipt reads are separate observations. Exact underlying producer timing/transience in that run not proven, no production bug claim",
+    "desktop": "PASS5294",
+    "instance": "FAIL startup settled ownership baseline; complete Instance suite not PASS",
+    "recovery11_executed": 0,
+    "windows_native": "NOT_RUN recovery11 and later full regression; no recovery11 PASS markers, later HomeVpnRelay step SKIPPED",
+    "pack": "SKIPPED",
+    "artifact_uploads": "SKIPPED uploads/prune; no binary publication",
+    "owner_pc": "NOT_RUN"
+  },
+  "ci635_instance_baseline_fix": {
+    "status": "PARTIAL",
+    "recovery_checkpoint": "3768dc1ff4f9dd346234f188bf4dc4e45ae38f12",
+    "base_source": "18585ce3df454d3280048db4b62fc7dfc1777d19",
+    "base_merge": "ceb83663d58a7158227001868d013723bed70225",
+    "base_ci": 39884480364,
+    "code_sha": "37a1c38f3d1e0c292a5fe61c281322fa0a4add44",
+    "branch": "work/progo-ci635-baseline-readiness-20261023",
+    "worktree": "ProGo-ci635-baseline-readiness",
+    "scope": "tests/InstanceTests.cs only plus3 checkpoint docs, runtime unchanged",
+    "contract": "TryCaptureProxyBaseline may return true only after matching validated settings and receipt survive both reads; a missing OWN receipt at receipt/receipt-verification stage means false/null outputs/code0, never PASS. Existing Wait10s still fails permanent absence",
+    "fix": "Catch only FileNotFoundException with exact backupPath filename at two receipt stages. Missing settings/foreign file/malformed receipt and other I/O still propagate; 32/33 sharing behavior unchanged",
+    "regression": "Real temporary file absence before first read; delete between read and verification via fixture-only optional hook; repeated absence never ready; publish matching receipt then acquire exact bytes. Malformed receipt/missing settings/foreign FileNotFound stay fatal; old port/pending/lock/atomic replacement checks retained",
+    "local": "PASS full manual diff/review, syntax1/C#5 await-scope, diff/public321/0/secretPII0; method preservation Wait/Main/ReadProxySnapshot and all other methods unchanged. No C# compiler/native runtime locally",
+    "preservation": "Only TryCaptureProxyBaseline and ProxyBaselineNativeReadiness changed; every runtime/other test/script/workflow/VERSION blob equals635, including prior timeout fix/recovery11/ownership/cleanup/UI/EOF",
+    "windows_compilation": "NOT_RUN changed fixture on corrected candidate",
+    "windows_native": "NOT_RUN new receipt regressions/recovery11/full regression",
+    "publication": "TODO one expected-head non-force PR88 update; one new automatic CI, no blind rerun",
+    "next": "Inspect SAME new CI final logs/exact merge: native missing/disappearing/fatal-guard tests, complete Instance suite, recovery11 and earlier regression. If receipt never publishes, retain timeout FAIL and diagnose primary; no deadline/assert relaxation",
     "readiness_change": 0
   }
 }
