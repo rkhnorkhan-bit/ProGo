@@ -105,6 +105,7 @@ namespace ProGo
                 HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", Json.Serialize(Owner));
                 Environment.SetEnvironmentVariable(FixtureVariable, folder);
                 PendingStateWorker();
+                ConsumptionWorker();
                 InitialPendingUi(clipboard);
                 RepeatedPendingUi(clipboard);
                 CreateUncertaintyUi(clipboard);
@@ -797,6 +798,79 @@ namespace ProGo
                                 }, () => false);
                             } finally { retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted, 5000);
                                 retryService.Dispose(); var cleanup = retryService.StopAsync(); Pump(() => cleanup.IsCompleted, 5000); check(cleanup.GetAwaiter().GetResult(), "recovery name reopen joins cleanup"); }
+                        }
+                    }
+                }
+            } finally { if (original == null) File.Delete(PendingPath); else File.WriteAllBytes(PendingPath, original); }
+        }
+        private static void ConsumptionWorker()
+        {
+            byte[] original = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+            try {
+                foreach (string mode in new[] { "complete", "cancel-read", "cancel-consume", "refused", "locked", "changed-request", "changed-result", "missing" }) {
+                    File.Delete(PendingPath);
+                    if (mode != "missing") { var request = HomeVpnAdminRecovery.Register(Owner, "My iPhone", null); HomeVpnAdminRecovery.RetainResult(Owner, request, response); }
+                    byte[] expectedJournal = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+                    var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).Where(path => path != PendingPath).ToDictionary(path => path, File.ReadAllBytes);
+                    using (var form = new Form())
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var cancellation = new CancellationTokenSource()) {
+                        FileStream held = null; Task<bool> operation = null; int ui = Thread.CurrentThread.ManagedThreadId, worker = 0, phase = 0, turns = 0, allowed = 1, admissions = 0;
+                        var phaseWatch = new Stopwatch();
+                        try {
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    check(form.Modal, "invitation consumption worker runs under actual ShowDialog: " + mode);
+                                    phaseWatch.Restart(); var watch = Stopwatch.StartNew();
+                                    operation = HomeVpnAdminRecovery.ConfirmConsumedAsync(response, cancellation.Token,
+                                        () => { Interlocked.Increment(ref admissions); return Volatile.Read(ref allowed) != 0; }, stage => {
+                                            if (stage != (mode == "cancel-read" || mode == "missing" ? "read" : "consume")) return;
+                                            Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                            if (!release.Wait(5000)) throw new TimeoutException("Invitation consumption fixture deadline");
+                                        });
+                                    check(watch.ElapsedMilliseconds < 500, "invitation consumption publishes owned work before real receipt read/delete: " + mode);
+                                    phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) {
+                                        if (phaseWatch.ElapsedMilliseconds >= 3000) throw new TimeoutException("Invitation consumption heartbeat deadline: " + mode + "; task=" + operation.Status);
+                                        return false;
+                                    }
+                                    check(worker != ui && !operation.IsCompleted && admissions == 0 && Failure(HomeVpnAdminRecovery.AcquireAsync()) is HomeVpnAdminPendingException,
+                                        "held consumption retains its actual family lease and responsive modal before memory admission: " + mode);
+                                    if (mode == "cancel-read" || mode == "cancel-consume") cancellation.Cancel();
+                                    if (mode == "refused") Interlocked.Exchange(ref allowed, 0);
+                                    if (mode == "locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    if (mode == "changed-request" || mode == "changed-result") {
+                                        var changed = HomeVpnAdminRecovery.Pending();
+                                        if (mode == "changed-request") changed.RequestId = Guid.NewGuid().ToString("N");
+                                        else changed.Result = ChangeToken(response, "InviteId", new string('d', 24));
+                                        HomeVpnPrivateFiles.Save(HomeVpnAdminRecovery.StorageName, Json.Serialize(changed)); expectedJournal = File.ReadAllBytes(PendingPath);
+                                    }
+                                    release.Set(); phaseWatch.Restart(); phase = 2; return false;
+                                }
+                                if (!operation.IsCompleted) {
+                                    if (phaseWatch.ElapsedMilliseconds >= 5000) throw new TimeoutException("Invitation consumption settlement deadline: " + mode + "; task=" + operation.Status);
+                                    return false;
+                                }
+                                bool consumed = false; Exception failure = null; try { consumed = operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                                if (held != null) { held.Dispose(); held = null; }
+                                if (mode == "complete") check(failure == null && consumed && !File.Exists(PendingPath) && admissions == 1, "accepted invitation consumption deletes its actual matching protected receipt once");
+                                else if (mode == "missing") check(failure == null && !consumed && !File.Exists(PendingPath) && admissions == 0, "missing receipt returns explicit no-op without inventing a consumed request");
+                                else {
+                                    check((mode.StartsWith("cancel-", StringComparison.Ordinal) || mode == "refused" ? failure is OperationCanceledException : failure is HomeVpnAdminPendingException)
+                                        && !consumed && expectedJournal.SequenceEqual(File.ReadAllBytes(PendingPath)) && admissions == (mode == "locked" || mode == "refused" ? 1 : 0),
+                                        "cancel/refusal/real delete lock/changed request or result preserves the actual previous or newer receipt: " + mode);
+                                }
+                                var after = Directory.GetFiles(HomeVpnPrivateFiles.Root).Where(path => path != PendingPath).ToArray();
+                                check(before.Count == after.Length && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))), "consumption preserves access/owner/other protected file set and bytes: " + mode);
+                                using (var released = HomeVpnAdminRecovery.AcquireAsync().GetAwaiter().GetResult()) check(released != null, "consumption releases its family lease only after actual read/delete settles: " + mode);
+                                return true;
+                            }, () => false);
+                        } finally {
+                            cancellation.Cancel(); release.Set(); if (held != null) held.Dispose(); form.Dispose();
+                            if (operation != null) { Pump(() => operation.IsCompleted, 5000); try { operation.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch (HomeVpnAdminPendingException) { } }
                         }
                     }
                 }

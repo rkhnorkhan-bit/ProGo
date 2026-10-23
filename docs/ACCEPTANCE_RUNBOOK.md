@@ -1,4 +1,75 @@
-## Текущий этап: Recover request.Name owned read поверх CI647
+## Текущий этап: saved ConfirmConsumedAsync API8 integration поверх CI648
+
+Владелец явно разрешил prerequisite API+8 из e8fbd2a отдельным этапом, без UI binding/transport.
+PR88 OPEN/DRAFT/source `8e58d70c785227837f2a9063fe4a0688500481b6` и local checkpoint
+`db90130869750904985d4c8d12199776287c0571` сверены. До изменений53 worktrees clean/locks0,
+root sole active agent; новая isolated work/progo-consumption-api-on648-20261023 сохраняет старые ветки.
+[CI648](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39995378692) повторно metadata completed SUCCESS/source exact;
+финальные logs/per-case proof уже прочитаны на checkpoint db90130: tested merge
+`f332d1cac3d549feac2a436c9cc4e2cb8bb32523`, JSON ci648_final. Не выдаём повторный metadata check
+за новое чтение logs. Recover name9/Reissue8/Create8/API6/UI8/UI12/старые suites PASS только648;
+HomeVPN3746/Desktop5298/Instance30, pack runner-only/uploads+prune SKIPPED; owner PC NOT_RUN.
+
+Из сохранённого `e8fbd2ae6dad919b95c2b92ed34bda3005aa52d6` перенесены только
+ConfirmConsumedAsync28 lines и ConsumptionWorker73 lines+Run call1. Local code `1ed593dfaa53df912c14a4546fabc07f77fb6791`,
+2files102add/0delete. Обе добавленные method bodies byte-identical saved commit; all old methods exact.
+Никаких родителей saved branch, старой версии reader или всего файла поверх новых исправлений.
+Dependencies уже есть: family lease/validated Pending10 fields/Json/File.Delete/imports и fixture helpers;
+existing Test-HomeVpnRelay compiler list включает этот source/test. Других зависимостей не требуется.
+UI/HomeVpnService/transport/scripts/workflows/VERSION неизменны. Никакого production binding сейчас.
+
+Worker держит lease через actual read/recheck/delete, exact token/full10-field equality, cancel и
+caller admission до удаления; принятое delete не превращается в cancelled задним числом. Missing false;
+отказ/отмена/смена request/result/delete lock сохраняют receipt. Caller обязан удерживать Task и передать
+thread-safe admission callback; UI Cancel/Retry/Stop/Dispose ownership подключается отдельным этапом.
+Не объявляем существующий UI I/O закрытым только из-за наличия worker.
+
+Ровно saved8 tests: complete,cancel-read,cancel-consume,refused,locked,changed-request,changed-result,missing.
+Actual ShowDialog/DPAPI+delete sharing/lease/admission/request bytes. Исходные heartbeat3s/barrier5s/
+settlement5s/modal15s/final cleanup/asserts/coverage без изменений. Существующие regression bodies exact.
+PASS local review/signatures/dependency+parity/lexical delimiters/diff/JSON/public321source0release/
+added secretsPII0. Lexical не AST/compiler; dotnet/csc/mcs/pwsh/Windows недоступны: compiler/API8/native/
+полные релевантные регрессии NOT_RUN на новом candidate. SUCCESS648 не переносится.
+Publication TODO: fresh expected-head guarded non-force PR88, ONE automatic CI. Public uploads OFF,
+release/prune ineligible/workflows unchanged. Save source/run/checkpoint и STOP без полного wait/второго этапа.
+Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/eight modes/все prior suites.
+После proof — отдельный один UI consumption handoff binding; transport remains separate.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: новый Windows compiler/API8 proof, затем UI binding/transport/owner acceptance.
+
+## История этапа: consumption binding BLOCKED — API сохранён, но не интегрирован
+
+PR88 OPEN/DRAFT/source `8e58d70c785227837f2a9063fe4a0688500481b6`, checkpoint
+`fdcd976c8639162b17f1da7e8ac98b7e55747e5a` сверены;52 worktrees clean/locks0,
+root sole active agent. Полные [CI648](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39995378692)
+Windows13219/Ubuntu578 строк прочитаны самостоятельно. Оба checkout/Windows build identity:
+exact tested merge `f332d1cac3d549feac2a436c9cc4e2cb8bb32523`. JSON ci648_final — per-case evidence.
+PASS Recover name9/Reissue8/Create8/API6/UI8/UI12/snapshot12/dispatcher5/ownership8/cleanup4/
+repair8/list10/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3.
+Desktop5298/Instance30/Maintenance126/Shutdown47/HomeVPN3746/Portable91/SSH policy61;
+Python reported28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS. Pack PASS runner-only,
+uploads/prune SKIPPED. Owner PC acceptance NOT_RUN. Исторические640/642 причины не объявлены fixed.
+
+Доказанная зависимость: в exact source648 src/HomeVpnAdminRecovery.cs есть только синхронный
+ConfirmConsumed(string token); ConfirmConsumedAsync ОТСУТСТВУЕТ. Существующий согласованный worker
+и ConsumptionWorker8 сохранены в local `e8fbd2ae6dad919b95c2b92ed34bda3005aa52d6`:
+2 files102add/0delete (API28 + tests74). Коммит не является ancestor source648.
+Предыдущая фраза current plan «existing API8» не различала saved implementation и integration;
+она НЕ подтверждала, что API интегрирован или прошёл Windows. Теперь это явно исправлено в реестре.
+Все3 UI call sites (Reissue Complete/CreateAsync/RecoverAsync) по-прежнему synchronous.
+Saved API compiler/native8 на текущем интегрированном source NOT_RUN, не PASS от CI648.
+
+Запрошенный binding к уже существующему в PR API невозможен без отдельного prerequisite:
+сначала включить сохранённый worker+8 tests. Не расширяем binding-only этап молча, не восстанавливаем
+API/cherry-pick/runtime по предположению. Никаких source/test правок, push или нового CI; это не rerun.
+Изолированная ветка work/progo-consumption-dependency-on648-20261023 хранит только3 документа состояния.
+PASS evidence/symbol/ancestry review/JSON/diff/public-content/added secrets check; runtime new NOT_RUN.
+Следующее необходимое решение владельца: явно включить saved e8fbd2a API+8 regressions как prerequisite
+следующего ограниченного этапа, затем небольшой UI handoff binding с lifecycle tests. Transport excluded.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: consumption API8 сохранён локально, но отсутствует в PR88; scope prerequisite не включён.
+
+## История этапа: Recover request.Name owned read поверх CI647
 
 PR88 OPEN/DRAFT/source `b22713891873999d83b807670a7b7a9037d8a9ad` и checkpoint
 `de03011751d66a1f7fe30133b32ea1e2ea55dbf8` сверены. До изменений51 worktrees clean/locks0,
@@ -33,9 +104,20 @@ Finally release/join actual body/own window+stream/service cleanup; old timeout/
 PASS local review/structural preservation/signatures/C#5 await scopes/lexical delimiters/diff/JSON/
 public-content321source0release/added secretsPII0. Lexical не AST/compiler; dotnet/pwsh/Windows нет,
 new compilation/Recover name9/full suites NOT_RUN. SUCCESS647 не переносится на candidate.
-Publication TODO: fresh expected-head guarded non-force existing PR88, one automatic CI.
-Workflows/VERSION unchanged, public uploads OFF/release/prune ineligible. Save source/run/checkpoint;
-STOP без полного CI wait/второго этапа. Далее ТОТ ЖЕ CI final logs/exact merge/Recover name9/old suites.
+Publication PASS: source `8e58d70c785227837f2a9063fe4a0688500481b6` в existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched exact647 parent,
+full tree `3545c5547a3b80e1f208e69a074a68c78e666319` равен reviewed freeze
+`60b73dff923d0d56af7d1e8f454f18bffc669f7f`. Public diff6files699add/75delete:
+2 runtime32add/12delete +1 existing test135add/0delete +3docs532add/63delete.
+Merge ref `f332d1cac3d549feac2a436c9cc4e2cb8bb32523` пока НЕ final tested merge (NOT_RUN).
+Один automatic [CI648/39995378692](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39995378692):
+exact-source count1/pull_request/attempt1, in_progress/conclusion null.
+Windows120557429765 Repository hygiene and build in_progress; Ubuntu120557429408 provisioning
+in_progress (metadata, новые suites NOT_RUN). SUCCESS647 не переносится на candidate.
+Workflows/VERSION unchanged, public uploads OFF/release/prune ineligible; final skips not yet checked.
+Post-publication3-doc local checkpoint намеренно НЕ pushed, чтобы не создавать второй CI;
+полный SHA в git log -1/PR88 body. STOP без полного wait/второго этапа.
+Далее ТОТ ЖЕ CI648 full final logs/exact source+tested merge/Recover name9/old suites.
 Остаток: ConfirmConsumed create/reissue/recover bindings existing API8; invite/revoke/reissue/
 recover-invite owned transport (раздельные bounded stages). FullR09/owner PC acceptance open.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;

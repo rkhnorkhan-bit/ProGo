@@ -184,6 +184,34 @@ namespace ProGo
                 catch { throw new HomeVpnAdminPendingException("Токен показан, но завершение запроса не удалось сохранить. Запрос остаётся для проверки; новая выдача заблокирована."); }
             }
         }
+        internal static Task<bool> ConfirmConsumedAsync(string token, CancellationToken cancellation, Func<bool> canConsume, Action<string> beforeIo = null)
+        {
+            if (canConsume == null) throw new ArgumentNullException("canConsume");
+            string expectedToken = (token ?? "").Trim();
+            return Task.Run(async delegate {
+                cancellation.ThrowIfCancellationRequested();
+                using (var lease = await AcquireAsync().ConfigureAwait(false)) {
+                    if (beforeIo != null) beforeIo("read"); cancellation.ThrowIfCancellationRequested();
+                    var request = Pending(); if (request == null) return false;
+                    if (request.Result == null || request.Result != expectedToken) throw new HomeVpnAdminPendingException(PendingMessage);
+                    string expected = Json.Serialize(request); // All ten validated fields, including the exact result.
+                    if (beforeIo != null) beforeIo("consume"); cancellation.ThrowIfCancellationRequested();
+                    var current = Pending();
+                    if (current == null || Json.Serialize(current) != expected)
+                        throw new HomeVpnAdminPendingException("Сохранённый запрос или его результат изменился. Прежнее завершение не применено; повторите проверку текущего запроса.");
+                    cancellation.ThrowIfCancellationRequested();
+                    if (!canConsume()) throw new OperationCanceledException("Завершение выдачи отменено до изменения запроса.");
+                    cancellation.ThrowIfCancellationRequested();
+                    try { File.Delete(PathFor()); }
+                    catch (Exception ex) {
+                        if (ex is OutOfMemoryException) throw;
+                        throw new HomeVpnAdminPendingException("Токен показан, но завершение запроса не удалось сохранить. Запрос остаётся для проверки; новая выдача заблокирована.");
+                    }
+                    // No late cancellation overrides an accepted physical delete.
+                    return true;
+                }
+            });
+        }
         private static bool Timestamp(object value, bool optional)
         {
             if (value == null) return optional; var text = value as string; DateTimeOffset parsed;
