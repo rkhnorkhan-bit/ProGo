@@ -8,7 +8,52 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: новая настройка HTTPS через owned worker поверх CI638
+## Текущий этап: initial invitation pending UI поверх CI639
+
+Baseline source `b935fde9770bfcec83913e19d929a9558e4c76e2`, checkpoint
+`c3348452409b168a48925e9e4423d667df8f56da`; PR88 head сверён, чужих dirty/lock/build
+операций и активных писателей не обнаружено. Изолированная ветка сохраняет все прежние worktrees.
+CI639 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280 completed SUCCESS:
+самостоятельно прочитаны полные Windows12366/Ubuntu578 строк; tested merge/build identity
+`0b6e71eb6794c03801949a83645917353e76b84e`. Exact per-case markers в JSON ci639_final.
+PASS fresh HTTPS10, recovery11 (owner-dispose violations0/liveDraftTrue/late publications0),
+Instance30, snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/repair8/list10/export11/chooser3;
+Desktop5294/Maintenance126/Shutdown47/HomeVPN2929/Portable91. Python reported28 incl2SKIPPED.
+Pack PASS runner-only, uploads/prune SKIPPED; передачи/установки/owner acceptance нет.
+
+Выбор: первичное локальное чтение pending-state при открытии существующего «Доступ друзей».
+Сохранённый API и API6 перенесены БЕЗ переписывания из `d500df68629d8af7533e4eca2993284c3675161a`;
+в public baseline они отсутствовали. Consumption `e8fbd2a` не переносится. Code local
+`ce02533755992e0f66fcb4a0aff06c081ef6c699`: 3 runtime+2 existing test files251add/10delete.
+Wizard передаёт explicit Friends owner/service. Actual readonly work принадлежит RunAdminOwnedAsync,
+Stop удерживает I/O до settlement, CTS Close/Dispose и old Stop scope запрещают поздний результат.
+До validated state изменения заблокированы. Явное закрытие отменяет чтение и ждёт реальную работу
+асинхронно; CancelButton не завершает ShowDialog раньше. Reopen делает новый read, без позднего
+cancelled результата. Снимок advisory, настоящая family admission прежняя; нет новых функций/записи/
+потребления request. Legacy injected 3arg constructor совместим; production factory всегда supplies service.
+
+Тесты: перенесённые API6 +8 actual ShowDialog cases empty/pending/corrupt/locked/close-retry/
+dispose/stop/service-dispose; последующий reopen проверяет реальный retry. Held I/O5s/modal15s/
+cleanup joins5s, real private bytes, no Admin calls, explicit owner, mutation gate, heartbeat и no duplicate.
+Existing owned-list fixture ждёт InitializationWork перед Refresh (2 lines); прежние asserts не ослаблены.
+PASS local manual/AST syntax5/C#5/signatures/diff/public321/0/secretsPII0; old API6 и existing test bodies
+проверены на точное сохранение. .NET Framework/PowerShell/Windows отсутствуют: compilation/new native
+API6/UI8/full regression NOT_RUN. SUCCESS639 относится ТОЛЬКО к baseline, не новому коду.
+
+Publication TODO: fresh non-force expected-head PR88 update; один automatic CI. Workflows/VERSION
+прежние, PR uploads OFF/release и prune ineligible; ни binaries, ни credentials/VPS не затрагиваются.
+После публикации сохранить exact source/run/checkpoint и STOP без ожидания/второго этапа.
+Следующий шаг: финальные логи ТОГО ЖЕ нового CI, проверка API6/UI8 и обязательных регрессий.
+Остаток production UI I/O invitation (не полный новый scope проекта):
+1. Повторный pending-state в RunAsync/RefreshAsync.
+2. Pending checks при uncertainty create/reissue и recovery request.Name.
+3. ConfirmConsumed после create/reissue/recover (saved API8 отдельно).
+4. Invite/revoke/reissue/recover-invite transport через owned worker вместо legacy Admin.
+Чужие setup/HTTPS/list/repair/export/EOF/ownership/cleanup routes не повторяются.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 — новый native NOT_RUN;
+главный блокер: точная Windows проверка кандидата, затем незавершённые UI I/O paths и приёмка ПК.
+
+## История: новая настройка HTTPS через owned worker поверх CI638
 
 Checkpoint `f75c5a0ba00b2f7aa9e495419ec48823f8acfd86`/HEAD/PR88 сверены; source
 `b69e7008bc889d88623669058e95197822b09f1e`, exact tested merge/build identity
@@ -56,10 +101,21 @@ WaitForShare5 обязательных с прежним TimeoutMs, dispatch4/sc
 full regression NOT_RUN;638 SUCCESS не переносится. Нет wrapper lease reacquire/public Stop self-await.
 HeldIO5s/modal15s/final joins5s/native300s прежние, asserts/coverage не отключались.
 
-Публикация TODO: final review/static/secrets/public/workflow + fresh expected-head non-force PR88 push,
-один automatic CI. Public uploads OFF, release/prune ineligible; workflows/VERSION неизменны.
-Сохранить source/merge/tree/run/checkpoint и STOP без полного ожидания/второго этапа.
-Следующий шаг — ТОТ ЖЕ новый CI: fresh HTTPS10 + recovery11/owner-dispose и прежние обязательные suites.
+Публикация PASS: source `b935fde9770bfcec83913e19d929a9558e4c76e2` existing PR88 ветка
+integration/approved-plan-31-20261011; fresh expected-head non-force guard на точном638.
+Merge ref `0b6e71eb6794c03801949a83645917353e76b84e` пока не подтверждён checkout/build identity нового CI.
+Freeze `62b192a144a923a4383a67812494633f3e0fcff5`, tree `6cbea066716dd4ce92e58c71521b798b00248523`;
+fetched parent exact638/full tree equal freeze. Public diff6files889add/71delete:
+2 runtime+1 existing test222add/2delete +3 docs667add/69delete; прочие routes/core/workflows/VERSION прежние.
+Один automatic [CI639/39900231280](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280),
+pull_request/attempt1/raw exact-source runs total_count1; run in_progress/conclusion null,
+updated_at2026-10-23T04:25:25Z; Windows120239881809/Ubuntu120239882025 in_progress.
+Новая compilation/fresh HTTPS10/full regression NOT_RUN; SUCCESS638 не переносится.
+Public uploads OFF/release/prune ineligible; completion upload/prune ещё не проверены.
+Post-publication docs-only checkpoint — локальный HEAD (git log -1), не push, чтобы не создавать
+второй CI; full checkpoint также в PR88 body. STOP без полного ожидания/второго этапа.
+Следующий шаг — ТОТ ЖЕ CI639/exact tested merge: compiler/signatures, fresh HTTPS10 + recovery11/
+owner-dispose/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/export/chooser/full suites.
 После proof отдельно рассмотреть существующий recover-invite owned path; здесь он не реализуется.
 Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0: веса/620 anchors прежние;
 fullR09/остальные invitation bindings/package delivery/owner acceptance открыты.

@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -24,8 +25,12 @@ namespace ProGo
         private bool pendingAdmin, pendingUnreadable;
         internal Func<string, bool> Confirm;
         internal Action<string> ShowToken;
+        private CancellationTokenSource initialPendingCancellation;
+        private bool initialPendingRead, closeAfterInitial;
+        internal Task InitializationWork { get; private set; }
+        internal Task PendingReadWork { get; private set; }
 
-        internal HomeInvitationsForm(HomeVpnInvitation[] items, Func<string, string, string, Task<string>> admin, ClipboardService clipboard)
+        internal HomeInvitationsForm(HomeVpnInvitation[] items, Func<string, string, string, Task<string>> admin, ClipboardService clipboard, HomeVpnService service = null, Action beforePendingRead = null)
         {
             this.admin = admin;
             Text = "Доступ друзей"; ClientSize = new Size(800, 760); StartPosition = FormStartPosition.CenterParent;
@@ -62,7 +67,14 @@ namespace ProGo
                 }
             };
             list.SelectionChanged += delegate { UpdateActions(); };
-            FormClosing += delegate(object sender, FormClosingEventArgs e) { if (working) e.Cancel = true; };
+            FormClosing += delegate(object sender, FormClosingEventArgs e) {
+                if (!working) return;
+                e.Cancel = true;
+                if (initialPendingRead) {
+                    DialogResult = DialogResult.None; closeAfterInitial = true;
+                    CancelInitialPending();
+                }
+            };
             refresh.Click += async delegate { await RunAsync(RefreshAsync); };
             recover.Click += async delegate { await RunAsync(RecoverAsync); };
             create.Click += async delegate { await RunAsync(CreateAsync); };
@@ -99,17 +111,68 @@ namespace ProGo
                         ? "Старый доступ отозван; выдача замены не подтверждена. " + HomeVpnAdminRecovery.PendingMessage : result.Message);
                 });
             };
-            RefreshPending();
-            if (pendingAdmin) status.Text = pendingUnreadable ? "Запрос прежней выдачи недоступен. Новые изменения доступа заблокированы; существующие записи сохранены."
-                : HomeVpnAdminRecovery.PendingMessage;
+            InitializationWork = PendingReadWork = Task.FromResult(0);
+            if (service == null) { // Legacy injected callers keep their synchronous contract.
+                RefreshPending(); SetPendingStatus();
+            } else {
+                pendingAdmin = pendingUnreadable = working = initialPendingRead = true;
+                close.DialogResult = DialogResult.None;
+                status.Text = "Читаем сохранённый запрос выдачи… Можно закрыть окно.";
+                InitializationWork = InitializePendingAsync(service, beforePendingRead);
+            }
             UpdateActions(); UiTheme.ConfigureKeyboardOrder(this);
+        }
+        private void CancelInitialPending() {
+            var source = initialPendingCancellation;
+            if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
+        }
+        private void SetPendingStatus() {
+            status.Text = !pendingAdmin ? "" : pendingUnreadable
+                ? "Запрос прежней выдачи недоступен. Новые изменения доступа заблокированы; существующие записи сохранены."
+                : HomeVpnAdminRecovery.PendingMessage;
+        }
+        private async Task InitializePendingAsync(HomeVpnService service, Action beforeRead) {
+            var source = new CancellationTokenSource(); initialPendingCancellation = source;
+            var stop = service.StopWork; HomeVpnAdminPendingState state = null;
+            Action checkScope = delegate {
+                source.Token.ThrowIfCancellationRequested();
+                if (service.StartsPaused || service.IsStopping || !Object.ReferenceEquals(stop, service.StopWork))
+                    throw new OperationCanceledException();
+            };
+            try {
+                // Retain the actual read through service Stop, even after this UI is disposed.
+                PendingReadWork = service.RunAdminOwnedAsync(async delegate {
+                    state = await HomeVpnAdminRecovery.ReadPendingStateAsync(source.Token, delegate {
+                        if (beforeRead != null) beforeRead(); checkScope();
+                    }).ConfigureAwait(false);
+                    checkScope(); return null;
+                });
+                await ownerUi.Await(PendingReadWork);
+                checkScope();
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                    pendingAdmin = state.Pending; pendingUnreadable = state.Unreadable; SetPendingStatus();
+                }
+            } catch (Exception) {
+                // No empty-state publication after cancellation, failed admission or unreadable storage.
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                    pendingAdmin = pendingUnreadable = true;
+                    status.Text = "Чтение запроса не завершено. Изменения доступа заблокированы; закройте и откройте окно повторно.";
+                }
+            } finally {
+                initialPendingCancellation = null; source.Dispose();
+                working = initialPendingRead = false;
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                    close.DialogResult = DialogResult.Cancel; UpdateActions();
+                    if (closeAfterInitial) Close();
+                }
+            }
         }
         private static string Identity(HomeVpnInvitation item) {
             return "Доступ «" + item.Name + "»\r\nID: " + item.Id + "\r\nСоздан: " + item.CreatedText;
         }
         private void UpdateActions() {
             list.Enabled = name.Enabled = !working;
-            refresh.Enabled = close.Enabled = !working;
+            refresh.Enabled = !working; close.Enabled = !working || initialPendingRead;
             create.Enabled = !working && !needsRefresh && !pendingAdmin;
             revoke.Enabled = !working && !needsRefresh && !pendingAdmin && list.Selected != null;
             recover.Enabled = !working && pendingAdmin && !pendingUnreadable; recover.Visible = pendingAdmin;
@@ -184,7 +247,10 @@ namespace ProGo
         }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) ownerUi.Dispose();
+            if (disposing) {
+                CancelInitialPending();
+                ownerUi.Dispose();
+            }
             base.Dispose(disposing);
         }
 

@@ -1,3 +1,50 @@
+## Текущий кандидат: initial invitation pending UI поверх CI639
+
+Baseline source `b935fde9770bfcec83913e19d929a9558e4c76e2`, checkpoint
+`c3348452409b168a48925e9e4423d667df8f56da`; PR88 head сверён, чужих dirty/lock/build
+операций и активных писателей не обнаружено. Изолированная ветка сохраняет все прежние worktrees.
+CI639 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280 completed SUCCESS:
+самостоятельно прочитаны полные Windows12366/Ubuntu578 строк; tested merge/build identity
+`0b6e71eb6794c03801949a83645917353e76b84e`. Exact per-case markers в JSON ci639_final.
+PASS fresh HTTPS10, recovery11 (owner-dispose violations0/liveDraftTrue/late publications0),
+Instance30, snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/repair8/list10/export11/chooser3;
+Desktop5294/Maintenance126/Shutdown47/HomeVPN2929/Portable91. Python reported28 incl2SKIPPED.
+Pack PASS runner-only, uploads/prune SKIPPED; передачи/установки/owner acceptance нет.
+
+Выбор: первичное локальное чтение pending-state при открытии существующего «Доступ друзей».
+Сохранённый API и API6 перенесены БЕЗ переписывания из `d500df68629d8af7533e4eca2993284c3675161a`;
+в public baseline они отсутствовали. Consumption `e8fbd2a` не переносится. Code local
+`ce02533755992e0f66fcb4a0aff06c081ef6c699`: 3 runtime+2 existing test files251add/10delete.
+Wizard передаёт explicit Friends owner/service. Actual readonly work принадлежит RunAdminOwnedAsync,
+Stop удерживает I/O до settlement, CTS Close/Dispose и old Stop scope запрещают поздний результат.
+До validated state изменения заблокированы. Явное закрытие отменяет чтение и ждёт реальную работу
+асинхронно; CancelButton не завершает ShowDialog раньше. Reopen делает новый read, без позднего
+cancelled результата. Снимок advisory, настоящая family admission прежняя; нет новых функций/записи/
+потребления request. Legacy injected 3arg constructor совместим; production factory всегда supplies service.
+
+Тесты: перенесённые API6 +8 actual ShowDialog cases empty/pending/corrupt/locked/close-retry/
+dispose/stop/service-dispose; последующий reopen проверяет реальный retry. Held I/O5s/modal15s/
+cleanup joins5s, real private bytes, no Admin calls, explicit owner, mutation gate, heartbeat и no duplicate.
+Existing owned-list fixture ждёт InitializationWork перед Refresh (2 lines); прежние asserts не ослаблены.
+PASS local manual/AST syntax5/C#5/signatures/diff/public321/0/secretsPII0; old API6 и existing test bodies
+проверены на точное сохранение. .NET Framework/PowerShell/Windows отсутствуют: compilation/new native
+API6/UI8/full regression NOT_RUN. SUCCESS639 относится ТОЛЬКО к baseline, не новому коду.
+
+Publication TODO: fresh non-force expected-head PR88 update; один automatic CI. Workflows/VERSION
+прежние, PR uploads OFF/release и prune ineligible; ни binaries, ни credentials/VPS не затрагиваются.
+После публикации сохранить exact source/run/checkpoint и STOP без ожидания/второго этапа.
+Следующий шаг: финальные логи ТОГО ЖЕ нового CI, проверка API6/UI8 и обязательных регрессий.
+Остаток production UI I/O invitation (не полный новый scope проекта):
+1. Повторный pending-state в RunAsync/RefreshAsync.
+2. Pending checks при uncertainty create/reissue и recovery request.Name.
+3. ConfirmConsumed после create/reissue/recover (saved API8 отдельно).
+4. Invite/revoke/reissue/recover-invite transport через owned worker вместо legacy Admin.
+Чужие setup/HTTPS/list/repair/export/EOF/ownership/cleanup routes не повторяются.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 — новый native NOT_RUN;
+главный блокер: точная Windows проверка кандидата, затем незавершённые UI I/O paths и приёмка ПК.
+
+## История предыдущего кандидата
+
 ## Текущий кандидат: fresh HTTPS owned production10 на CI638; Windows NOT_RUN
 
 Checkpoint `f75c5a0ba00b2f7aa9e495419ec48823f8acfd86`; PR88 source
@@ -22,9 +69,19 @@ only; fixture stops at real confirmation boundary before external HTTPS/save. Ow
 PASS static review/AST/syntax3/C#5/signature arities including WaitForShare5+timeout/diff/public321/0/
 secretPII0; no Windows compiler proof. New compilation/native/fresh HTTPS10 NOT_RUN, not638 SUCCESS.
 Same5s/15s/300s deadlines, no coverage/assert relaxation or duplicate lease/Stop self-await.
-One guarded existing PR88 update +one automatic CI TODO; uploads OFF/release/prune ineligible.
-Save IDs/checkpoint and STOP without full wait/second stage. Next SAME new CI final exact logs:
-fresh HTTPS10/recovery11/owner-dispose and prior full suites; invitation worker is a separate future slice.
+Publication PASS source `b935fde9770bfcec83913e19d929a9558e4c76e2`, existing PR88 integration branch;
+merge ref `0b6e71eb6794c03801949a83645917353e76b84e` not yet verified checkout/build identity.
+Freeze `62b192a144a923a4383a67812494633f3e0fcff5`, tree `6cbea066716dd4ce92e58c71521b798b00248523`;
+fetched exact638 parent/full tree equal reviewed freeze, expected-head non-force guard checked.
+Public diff6files889add/71delete=2 runtime+1 test222add/2delete+3docs667add/69delete; other routes preserved.
+Sole automatic [CI639/39900231280](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280), pull_request/attempt1,
+raw exact-source runs total_count1. In_progress/conclusion null, updated_at2026-10-23T04:25:25Z;
+Windows120239881809/Ubuntu120239882025 in_progress. New compiler/native fresh HTTPS10/full NOT_RUN.
+Uploads OFF/release/prune ineligible; completion not yet verified. Local post-publication docs checkpoint
+is HEAD via git log -1, NOT pushed to avoid second CI; exact checkpoint in PR88 body. STOP without full
+wait/second stage. Next SAME639 final exact logs: compiler/signatures, fresh HTTPS10/recovery11/
+owner-dispose/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/export/chooser/full suites.
+Invitation worker remains separate future scope, not started here.
 Weights58–80/22 +0 unchanged, no fullR09 or owner acceptance claim/system/deployment action.
 
 ## История: CI637 draft lifetime test-contract fix; Windows NOT_RUN

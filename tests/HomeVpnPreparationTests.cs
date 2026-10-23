@@ -393,6 +393,8 @@ namespace ProGo
                             if (phase == 10) {
                                 friends = wizard.OwnedForms.OfType<HomeInvitationsForm>().FirstOrDefault();
                                 if (friends == null) { if (operation.IsCompleted && ListFailure(operation) != null) operation.GetAwaiter().GetResult(); return false; }
+                                if (!friends.InitializationWork.IsCompleted) return false;
+                                friends.InitializationWork.GetAwaiter().GetResult();
                                 target = friends; start = (Button)Field(friends, "refresh");
                                 var view = (HomeInvitationList)Field(friends, "list");
                                 ((TextBox)Field(view, "search")).Text = "Друг"; ((ListBox)Field(view, "list")).SelectedIndex = 0; selected = view.Selected;

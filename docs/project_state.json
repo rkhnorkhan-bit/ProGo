@@ -3929,34 +3929,34 @@
     }
   ],
   "ci_candidate": {
-    "source": "b69e7008bc889d88623669058e95197822b09f1e",
-    "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
-    "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
-    "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
-    "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
-    "run_id": 39896043639,
-    "run_number": 638,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+    "source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+    "merge_ref": "0b6e71eb6794c03801949a83645917353e76b84e",
+    "tested_merge": "0b6e71eb6794c03801949a83645917353e76b84e",
+    "tree": "6cbea066716dd4ce92e58c71521b798b00248523",
+    "local_freeze": "62b192a144a923a4383a67812494633f3e0fcff5",
+    "run_id": 39900231280,
+    "run_number": 639,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280",
     "status": "completed",
     "conclusion": "success",
-    "run_updated_at": "2026-10-23T04:07:31Z",
+    "run_updated_at": "2026-10-23T04:25:25Z",
     "jobs": {
       "windows": {
-        "id": 120226632093,
+        "id": 120239881809,
         "status": "completed",
         "conclusion": "success"
       },
       "ubuntu": {
-        "id": 120226631811,
+        "id": 120239882025,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Both complete final logs read, exact checkout/build identitybd8646c; all per-case HTTPS11/owner-dispose/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10 verified from markers, not metadata only",
-    "windows_compilation": "PASS exact638 source/merge",
-    "windows_native": "PASS complete scoped mandatory suites: Desktop5294/Instance30, HTTPS recovery11 including corrected owner-dispose live boundary/no late text or publications; snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/repair8/list10/export11/chooser3; HomeVPN2803/Portable91. Relay Python reported28 incl2SKIPPED; do not treat skipped as executed.",
-    "pack": "PASS runner-only archive, SHA2562bf8ec967e7bed08f527a41807ddb7f418d6e1815f40cfafd1108d3f56602f92",
-    "artifact_uploads": "SKIPPED all uploads/prune, no downloadable artifact or owner installation",
+    "verification": "Full final Windows12366/Ubuntu578 lines independently read; exact checkout/build identity verified; metadata alone not used",
+    "windows_compilation": "PASS exact639",
+    "windows_native": "PASS exact639 freshHTTPS10/HTTPS recovery11/Instance30/full prior regression; invitation initial/API6 NOT_RUN",
+    "pack": "PASS runner-only",
+    "artifact_uploads": "SKIPPED; no artifacts or owner transfer",
     "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
@@ -5493,46 +5493,39 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "phase": "ONE existing new HTTPS setup production owned-worker path prepared on final-log-verified638; no invitation or second stage",
-    "recovery_checkpoint": "f75c5a0ba00b2f7aa9e495419ec48823f8acfd86",
-    "base_source": "b69e7008bc889d88623669058e95197822b09f1e",
-    "base_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
-    "local_sha": "414cb610621a91ebd09b71d2ae6126e130bd813e",
-    "local_development_sha": "414cb610621a91ebd09b71d2ae6126e130bd813e",
-    "published_sha": "b69e7008bc889d88623669058e95197822b09f1e",
-    "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
-    "baseline_only": true,
-    "ci_run_id": 39896043639,
-    "ci_status": "completed",
-    "ci_conclusion": "success",
-    "windows_compilation": "NOT_RUN new fresh HTTPS candidate",
-    "windows_native": "NOT_RUN new fresh HTTPS10/new full regression",
-    "next": "Record exact source/merge/run/checkpoint and STOP without full wait. Next SAME CI final logs: fresh HTTPS10 plus existing recovery11/owner-dispose and all prior mandatory suites. After proof a separate existing recover-invite owned path can be considered; do not start it here.",
+    "status": "PARTIAL",
+    "baseline_source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+    "baseline_tested_merge": "0b6e71eb6794c03801949a83645917353e76b84e",
+    "baseline_checkpoint": "c3348452409b168a48925e9e4423d667df8f56da",
+    "local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699",
+    "saved_api_source": "d500df68629d8af7533e4eca2993284c3675161a",
+    "scope": "ONLY initial Friends pending-state read: default wizard supplies explicit Friends UI owner and service; existing readonly API/API6 transferred unchanged; no consumption/repeated reads/mutation worker migration",
+    "ownership": "Initial actual task retained by RunAdminOwnedAsync/Stop, owner dispatcher, CTS close/dispose and before/after scope checks; conservative mutation gate; close defers until actual read settles; reopen retries no stale publication; no family reacquire, writes or external actions",
+    "native_cases": [
+      "empty",
+      "pending",
+      "corrupt",
+      "locked",
+      "close-retry",
+      "dispose",
+      "stop",
+      "service-dispose"
+    ],
+    "api_native_cases": 6,
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN new initial8/API6 and full regression;639 success not inherited",
+    "local_checks": "PASS manual review + AST syntax5/C#5 scope; saved API/API6 exact; preserved old test methods/timeouts/asserts and export/EOF/HTTPS/runtime core; constructor/API signatures checked; public321/0; added secret/PII0; diff check",
+    "remaining_production_paths": [
+      "Friends post-operation and refresh pending-state reads in RunAsync/RefreshAsync (same saved API, separate owned UI binding)",
+      "Friends reissue/create uncertainty pending checks and recovery request-name read (preserve exactly-once and durable identity)",
+      "Token handoff ConfirmConsumed after create/reissue/recover; saved consumption API8 e8fbd2a not integrated",
+      "Friends invite/revoke/reissue/recover-invite mutation/recovery transport still legacy Admin; migrate bounded owned slices, no new protocol"
+    ],
     "readiness_change": 0,
-    "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
-    "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
-    "ci_run_number": 638,
-    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
-    "ci_jobs": {
-      "windows": {
-        "id": 120226632093,
-        "status": "completed",
-        "conclusion": "success"
-      },
-      "ubuntu": {
-        "id": 120226631811,
-        "status": "completed",
-        "conclusion": "success"
-      }
-    },
-    "publication": "TODO scanned guarded existing PR88 expected-head non-force push; one automatic CI; uploads OFF/release excluded",
-    "public_diff": "3 source/test files222add/2delete plus3 checkpoint docs; existing recovery/core/other routes unchanged",
-    "workflow_preflight": "PASS public PR uploads OFF; release/prune ineligible; workflows/VERSION unchanged",
-    "checkpoint": "Prepare one guarded checking source then local docs-only exact checkpoint; no duplicate CI",
-    "branch": "work/progo-fresh-https-on638-20261023",
-    "worktree": "ProGo-fresh-https-on638",
-    "blocker": "Exact Windows compiler/native proof for fresh HTTPS10; fullR09/invitation/owner acceptance remain open",
-    "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814"
+    "publication": "TODO fresh guarded existing PR88 update, exactly one automatic CI; no binary uploads/release",
+    "next": "Read same new exact-source CI final logs for compilation, initial8/API6 and full regression; no duplicate run or second stage",
+    "phase": "ONE initial invitation pending UI slice prepared for guarded publication; exact new native NOT_RUN",
+    "checkpoint": "Local HEAD docs commit; will preserve source/run/checkpoint after publication"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5625,7 +5618,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Exact638 sourceb69e700/mergebd8646c full logs independently read: owner-dispose/HTTPS11/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/full HomeVPN2803/Portable91 PASS; runner pack PASS but uploads skipped, owner PC NOT_RUN. New separate existing fresh HTTPS share owned-worker/button/Stop-scope candidate code414cb61 with10 real-modal/native-fixture cases; new compiler/native NOT_RUN. No new full weighted gate closed; weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "Exact639 b935fde/0b6e71e full final logs verified fresh HTTPS10/recovery11/Instance30/prior suites; pack runner-only uploads skipped. New initial invitation pending API6/UI8 source candidate native/compiler NOT_RUN. No new full weighted gate; weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9753,17 +9746,18 @@
     "native_cases": 6,
     "implementation": "Readonly Pending/Unreadable advisory snapshot; actual HasPending/Pending DPAPI validation on worker, cancellation before/after, corrupt/locked stays pending+unreadable, no token/journal/lease returned or modified; actual family admission authoritative",
     "static": "PASS manual status/cancel/lease/byte-preservation/cleanup/syntax2/C#5/diff/public321/0/secretPII0; new real ShowDialog avoids modeless fixture after earlier terminal message loop;3s entry+heartbeat/5s settlement+cleanup, original Pump default15s unchanged",
-    "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN",
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN API6/initial8 on new exact source",
     "excluded_ci": [
       620,
       621,
       622,
       623
     ],
-    "actual_invitation_ui": "UNCONNECTED sync RefreshPending/HasPending/Pending and ConfirmConsumed remain; consumption-worker patch never applied before409 and still TODO",
-    "next": "Fresh exact API6 proof and owned initial/repeated invitation snapshot binding; consumption worker separate with its own exact request/result guards",
-    "readiness_change": 0
+    "actual_invitation_ui": "Initial production constructor now connected to existing API through owned service+explicit window; repeated/post-operation/direct recovery-name reads and consumption remain legacy",
+    "next": "Read same new exact-source CI final logs for compilation, initial8/API6 and full regression; no duplicate run or second stage",
+    "readiness_change": 0,
+    "integration_local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699"
   },
   "ci623_failure": {
     "source": "e84792499b2949602691c349c369d62a533fb444",
@@ -11589,6 +11583,175 @@
           "windows": 120186199123,
           "ubuntu": 120186198956
         }
+      }
+    },
+    "before_ci639_publication": {
+      "ci_candidate": {
+        "source": "b69e7008bc889d88623669058e95197822b09f1e",
+        "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+        "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814",
+        "run_id": 39896043639,
+        "run_number": 638,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+        "status": "completed",
+        "conclusion": "success",
+        "run_updated_at": "2026-10-23T04:07:31Z",
+        "jobs": {
+          "windows": {
+            "id": 120226632093,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          "ubuntu": {
+            "id": 120226631811,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        },
+        "verification": "Both complete final logs read, exact checkout/build identitybd8646c; all per-case HTTPS11/owner-dispose/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10 verified from markers, not metadata only",
+        "windows_compilation": "PASS exact638 source/merge",
+        "windows_native": "PASS complete scoped mandatory suites: Desktop5294/Instance30, HTTPS recovery11 including corrected owner-dispose live boundary/no late text or publications; snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/repair8/list10/export11/chooser3; HomeVPN2803/Portable91. Relay Python reported28 incl2SKIPPED; do not treat skipped as executed.",
+        "pack": "PASS runner-only archive, SHA2562bf8ec967e7bed08f527a41807ddb7f418d6e1815f40cfafd1108d3f56602f92",
+        "artifact_uploads": "SKIPPED all uploads/prune, no downloadable artifact or owner installation",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "phase": "ONE existing new HTTPS setup production owned-worker path prepared on final-log-verified638; no invitation or second stage",
+        "recovery_checkpoint": "f75c5a0ba00b2f7aa9e495419ec48823f8acfd86",
+        "base_source": "b69e7008bc889d88623669058e95197822b09f1e",
+        "base_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "local_sha": "414cb610621a91ebd09b71d2ae6126e130bd813e",
+        "local_development_sha": "414cb610621a91ebd09b71d2ae6126e130bd813e",
+        "published_sha": "b69e7008bc889d88623669058e95197822b09f1e",
+        "tested_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "baseline_only": true,
+        "ci_run_id": 39896043639,
+        "ci_status": "completed",
+        "ci_conclusion": "success",
+        "windows_compilation": "NOT_RUN new fresh HTTPS candidate",
+        "windows_native": "NOT_RUN new fresh HTTPS10/new full regression",
+        "next": "Record exact source/merge/run/checkpoint and STOP without full wait. Next SAME CI final logs: fresh HTTPS10 plus existing recovery11/owner-dispose and all prior mandatory suites. After proof a separate existing recover-invite owned path can be considered; do not start it here.",
+        "readiness_change": 0,
+        "merge_ref": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "tree": "5641ec9975c979b371690ad1ee2b56156284acd3",
+        "ci_run_number": 638,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39896043639",
+        "ci_jobs": {
+          "windows": {
+            "id": 120226632093,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          "ubuntu": {
+            "id": 120226631811,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        },
+        "publication": "TODO scanned guarded existing PR88 expected-head non-force push; one automatic CI; uploads OFF/release excluded",
+        "public_diff": "3 source/test files222add/2delete plus3 checkpoint docs; existing recovery/core/other routes unchanged",
+        "workflow_preflight": "PASS public PR uploads OFF; release/prune ineligible; workflows/VERSION unchanged",
+        "checkpoint": "Prepare one guarded checking source then local docs-only exact checkpoint; no duplicate CI",
+        "branch": "work/progo-fresh-https-on638-20261023",
+        "worktree": "ProGo-fresh-https-on638",
+        "blocker": "Exact Windows compiler/native proof for fresh HTTPS10; fullR09/invitation/owner acceptance remain open",
+        "local_freeze": "bbf4d53850640efcd2b7877f1d8a0d58c7a07814"
+      }
+    },
+    "before_initial_invitation_on639": {
+      "active_work": {
+        "phase": "ONE existing fresh HTTPS owned production path published; sole CI639 in_progress; STOP after checkpoint",
+        "recovery_checkpoint": "f75c5a0ba00b2f7aa9e495419ec48823f8acfd86",
+        "base_source": "b69e7008bc889d88623669058e95197822b09f1e",
+        "base_merge": "bd8646ce3bb15b2aebeed68b2b6d5ffdd3aad015",
+        "local_sha": "62b192a144a923a4383a67812494633f3e0fcff5",
+        "local_development_sha": "62b192a144a923a4383a67812494633f3e0fcff5",
+        "published_sha": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+        "tested_merge": null,
+        "baseline_only": false,
+        "ci_run_id": 39900231280,
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "windows_compilation": "NOT_RUN new fresh HTTPS candidate",
+        "windows_native": "NOT_RUN new fresh HTTPS10/new full regression",
+        "next": "Inspect SAME CI639 final logs/exact tested merge: compiler/signatures, fresh HTTPS10 plus existing recovery11/owner-dispose/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/export/chooser and full mandatory suites. No duplicate CI or second feature; STOP without full wait. After proof separate invitation recovery worker remains future scope.",
+        "readiness_change": 0,
+        "merge_ref": "0b6e71eb6794c03801949a83645917353e76b84e",
+        "tree": "6cbea066716dd4ce92e58c71521b798b00248523",
+        "ci_run_number": 639,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280",
+        "ci_jobs": {
+          "windows": {
+            "id": 120239881809,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120239882025,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "publication": "PASS fresh expected-head non-force existing PR88 integration/approved-plan-31-20261011 update, fetched parent exact638/full tree equal reviewed freeze; one automatic CI639/pull_request/attempt1/raw exact-head count1",
+        "public_diff": "6 files889add/71delete:2 runtime files+1 existing test222add/2delete plus3 checkpoint docs667add/69delete; other routes/core/workflows/VERSION preserved",
+        "workflow_preflight": "PASS public PR uploads OFF, release/prune ineligible, workflows/VERSION unchanged",
+        "checkpoint": "Post-publication3-doc checkpoint local HEAD via git log -1, intentionally NOT pushed to avoid second CI; exact checkpoint also in PR88 body",
+        "branch": "work/progo-fresh-https-on638-20261023",
+        "worktree": "ProGo-fresh-https-on638",
+        "blocker": "Exact Windows compiler/native proof for fresh HTTPS10; fullR09/invitation/owner acceptance remain open",
+        "local_freeze": "62b192a144a923a4383a67812494633f3e0fcff5"
+      },
+      "ci_candidate": {
+        "source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+        "merge_ref": "0b6e71eb6794c03801949a83645917353e76b84e",
+        "tested_merge": null,
+        "tree": "6cbea066716dd4ce92e58c71521b798b00248523",
+        "local_freeze": "62b192a144a923a4383a67812494633f3e0fcff5",
+        "run_id": 39900231280,
+        "run_number": 639,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_updated_at": "2026-10-23T04:25:25Z",
+        "jobs": {
+          "windows": {
+            "id": 120239881809,
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120239882025,
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "Fresh PR HEAD/parent/full fetched tree verified; exact638 parent, reviewed freeze equal remote tree; sole automatic pull_request attempt1/raw exact-source runs total_count1. Merge ref not yet verified checkout/build identity.",
+        "windows_compilation": "NOT_RUN new fresh HTTPS candidate pending exact639 log",
+        "windows_native": "NOT_RUN fresh HTTPS10/new full regression, old638 PASS not inherited",
+        "pack": "NOT_RUN pending",
+        "artifact_uploads": "OFF public PR guards, completion steps not yet verified",
+        "owner_pc": "NOT_RUN"
+      },
+      "reconstructed_invitation_pending_state": {
+        "source": "d500df68629d8af7533e4eca2993284c3675161a",
+        "original_missing_source": "9859dce6318878186a4b4068cff57ecf5bc26666",
+        "status": "PARTIAL",
+        "native_cases": 6,
+        "implementation": "Readonly Pending/Unreadable advisory snapshot; actual HasPending/Pending DPAPI validation on worker, cancellation before/after, corrupt/locked stays pending+unreadable, no token/journal/lease returned or modified; actual family admission authoritative",
+        "static": "PASS manual status/cancel/lease/byte-preservation/cleanup/syntax2/C#5/diff/public321/0/secretPII0; new real ShowDialog avoids modeless fixture after earlier terminal message loop;3s entry+heartbeat/5s settlement+cleanup, original Pump default15s unchanged",
+        "windows_compilation": "NOT_RUN",
+        "windows_native": "NOT_RUN",
+        "excluded_ci": [
+          620,
+          621,
+          622,
+          623
+        ],
+        "actual_invitation_ui": "UNCONNECTED sync RefreshPending/HasPending/Pending and ConfirmConsumed remain; consumption-worker patch never applied before409 and still TODO",
+        "next": "Fresh exact API6 proof and owned initial/repeated invitation snapshot binding; consumption worker separate with its own exact request/result guards",
+        "readiness_change": 0
       }
     }
   },
@@ -13456,9 +13619,232 @@
     "fixture": "Uses actual ShowDialog, native own child executable, real private helper reads/DPAPI receipt/job/locked cleanup. Only SCP/native executable/external HTTPS boundary substituted; no live VPS/HTTPS call. HeldIO5s/modal15s/final joins5s, existing native300s unchanged. Counter guards preserve corrected live draft lifetime.",
     "windows_compilation": "NOT_RUN new candidate, local .NET Framework/PowerShell unavailable",
     "windows_native": "NOT_RUN fresh HTTPS10/new full regression; no CI638 PASS inherited",
-    "publication": "TODO scanned guarded existing PR88 expected-head non-force push; one automatic CI; uploads OFF/release excluded",
+    "publication": "PASS fresh expected-head non-force existing PR88 integration/approved-plan-31-20261011 update, fetched parent exact638/full tree equal reviewed freeze; one automatic CI639/pull_request/attempt1/raw exact-head count1",
     "remaining": "Exact Windows fresh HTTPS10/native proof; invitation owned worker/consumption bindings/fullR09/package delivery and owner acceptance open",
-    "next": "Record exact source/merge/run/checkpoint and STOP without full wait. Next SAME CI final logs: fresh HTTPS10 plus existing recovery11/owner-dispose and all prior mandatory suites. After proof a separate existing recover-invite owned path can be considered; do not start it here.",
-    "readiness_change": 0
+    "next": "Inspect SAME CI639 final logs/exact tested merge: compiler/signatures, fresh HTTPS10 plus existing recovery11/owner-dispose/Instance30/snapshot12/dispatcher5/ownership8/cleanup4/recover10/fresh10/export/chooser and full mandatory suites. No duplicate CI or second feature; STOP without full wait. After proof separate invitation recovery worker remains future scope.",
+    "readiness_change": 0,
+    "published_sha": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+    "merge_ref": "0b6e71eb6794c03801949a83645917353e76b84e",
+    "tested_merge": null,
+    "tree": "6cbea066716dd4ce92e58c71521b798b00248523",
+    "local_freeze": "62b192a144a923a4383a67812494633f3e0fcff5",
+    "ci_run_id": 39900231280,
+    "ci_run_number": 639,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280",
+    "ci_status": "in_progress",
+    "ci_conclusion": null,
+    "ci_jobs": {
+      "windows": {
+        "id": 120239881809,
+        "status": "in_progress",
+        "conclusion": null
+      },
+      "ubuntu": {
+        "id": 120239882025,
+        "status": "in_progress",
+        "conclusion": null
+      }
+    }
+  },
+  "ci639_final": {
+    "source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+    "tested_merge": "0b6e71eb6794c03801949a83645917353e76b84e",
+    "run_id": 39900231280,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39900231280",
+    "status": "completed",
+    "conclusion": "success",
+    "verification": "Full final Windows12366/Ubuntu578 lines independently read; exact checkout/build identity verified; metadata alone not used",
+    "case_counts": {
+      "fresh_https10": 10,
+      "https_recovery11": 11,
+      "snapshot12": 12,
+      "dispatcher5": 5,
+      "ownership8": 8,
+      "cleanup4": 4,
+      "recover10": 10,
+      "fresh10": 10,
+      "repair8": 8,
+      "list10": 10,
+      "export11": 11,
+      "chooser3": 3
+    },
+    "case_markers": {
+      "fresh_https10": [
+        "2026-10-23T04:52:44.7408186Z PASS: owned production fresh HTTPS PASS: default-refusal",
+        "2026-10-23T04:52:45.1085664Z PASS: owned production fresh HTTPS PASS: copy-fault",
+        "2026-10-23T04:52:46.3096970Z PASS: owned production fresh HTTPS PASS: cancel-retry",
+        "2026-10-23T04:52:46.6665860Z PASS: owned production fresh HTTPS PASS: stop-copy",
+        "2026-10-23T04:52:47.0262138Z PASS: owned production fresh HTTPS PASS: dispose-copy",
+        "2026-10-23T04:52:47.4096500Z PASS: owned production fresh HTTPS PASS: owner-dispose",
+        "2026-10-23T04:52:48.6615193Z PASS: owned production fresh HTTPS PASS: cancel-command",
+        "2026-10-23T04:52:51.8449922Z PASS: owned production fresh HTTPS PASS: cleanup-lock",
+        "2026-10-23T04:52:52.9137444Z PASS: owned production fresh HTTPS PASS: result",
+        "2026-10-23T04:52:54.0520345Z PASS: owned production fresh HTTPS PASS: stop-result"
+      ],
+      "https_recovery11": [
+        "2026-10-23T04:52:31.9573082Z PASS: owned production HTTPS recovery PASS: default-refusal",
+        "2026-10-23T04:52:33.1021332Z PASS: owned production HTTPS recovery PASS: status-pending",
+        "2026-10-23T04:52:34.2446677Z PASS: owned production HTTPS recovery PASS: cancel-retry",
+        "2026-10-23T04:52:34.6405576Z PASS: owned production HTTPS recovery PASS: stop-copy",
+        "2026-10-23T04:52:34.9934602Z PASS: owned production HTTPS recovery PASS: dispose-copy",
+        "2026-10-23T04:52:35.3689135Z PASS: owned production HTTPS recovery PASS: owner-dispose",
+        "2026-10-23T04:52:36.5793495Z PASS: owned production HTTPS recovery PASS: cancel-command",
+        "2026-10-23T04:52:39.7725857Z PASS: owned production HTTPS recovery PASS: cleanup-lock",
+        "2026-10-23T04:52:41.6418475Z PASS: owned production HTTPS recovery PASS: result",
+        "2026-10-23T04:52:42.7648387Z PASS: owned production HTTPS recovery PASS: stop-result-copy",
+        "2026-10-23T04:52:44.5766849Z PASS: owned production HTTPS recovery PASS: stop-result"
+      ],
+      "snapshot12": [
+        "2026-10-23T04:53:06.9061050Z PASS: caller releases family lease only after actual snapshot settles: setup",
+        "2026-10-23T04:53:07.0166459Z PASS: caller releases family lease only after actual snapshot settles: invite",
+        "2026-10-23T04:53:07.1434105Z PASS: caller releases family lease only after actual snapshot settles: share",
+        "2026-10-23T04:53:07.2734833Z PASS: caller releases family lease only after actual snapshot settles: empty",
+        "2026-10-23T04:53:07.3981166Z PASS: caller releases family lease only after actual snapshot settles: missing-setup",
+        "2026-10-23T04:53:07.5230987Z PASS: caller releases family lease only after actual snapshot settles: missing-invite",
+        "2026-10-23T04:53:07.6497563Z PASS: caller releases family lease only after actual snapshot settles: missing-share",
+        "2026-10-23T04:53:07.7770433Z PASS: caller releases family lease only after actual snapshot settles: pending-invite",
+        "2026-10-23T04:53:07.9042207Z PASS: caller releases family lease only after actual snapshot settles: pending-share",
+        "2026-10-23T04:53:08.0467565Z PASS: caller releases family lease only after actual snapshot settles: cancel",
+        "2026-10-23T04:53:08.1524860Z PASS: caller releases family lease only after actual snapshot settles: corrupt",
+        "2026-10-23T04:53:08.2521163Z PASS: caller releases family lease only after actual snapshot settles: missing-key"
+      ],
+      "dispatcher5": [
+        "2026-10-23T04:53:08.5053201Z PASS: settled transport performs no late UI dispatch or duplicate action: ready",
+        "2026-10-23T04:53:08.5747333Z PASS: closed dispatcher refuses a new transport before startup without a late callback or file I/O",
+        "2026-10-23T04:53:08.8652529Z PASS: settled transport performs no late UI dispatch or duplicate action: during-dispose",
+        "2026-10-23T04:53:09.1402601Z PASS: settled transport performs no late UI dispatch or duplicate action: file-fault",
+        "2026-10-23T04:53:09.3974588Z PASS: settled transport performs no late UI dispatch or duplicate action: worker-only"
+      ],
+      "ownership8": [
+        "2026-10-23T04:53:09.5171151Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: complete",
+        "2026-10-23T04:53:09.6627517Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: stop",
+        "2026-10-23T04:53:09.7898703Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: dispose",
+        "2026-10-23T04:53:09.9088992Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: lock",
+        "2026-10-23T04:53:10.0717200Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: typed",
+        "2026-10-23T04:53:10.1986964Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-stop",
+        "2026-10-23T04:53:10.3283522Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-dispose",
+        "2026-10-23T04:53:10.4833903Z PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: multiple"
+      ],
+      "cleanup4": [
+        "2026-10-23T04:53:10.6455175Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: complete",
+        "2026-10-23T04:53:12.8167574Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: list-lock",
+        "2026-10-23T04:53:14.9731662Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: preparation-lock",
+        "2026-10-23T04:53:17.1404951Z PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: dispose-lock"
+      ],
+      "recover10": [
+        "2026-10-23T04:53:17.4460226Z PASS: owned production setup recovery PASS: default-refusal",
+        "2026-10-23T04:53:18.6140333Z PASS: owned production setup recovery PASS: status-pending",
+        "2026-10-23T04:53:19.8263868Z PASS: owned production setup recovery PASS: cancel-retry",
+        "2026-10-23T04:53:20.2742875Z PASS: owned production setup recovery PASS: stop-copy",
+        "2026-10-23T04:53:20.7320828Z PASS: owned production setup recovery PASS: dispose-copy",
+        "2026-10-23T04:53:21.1761955Z PASS: owned production setup recovery PASS: owner-dispose",
+        "2026-10-23T04:53:22.3078657Z PASS: owned production setup recovery PASS: stop-between",
+        "2026-10-23T04:53:23.5892672Z PASS: owned production setup recovery PASS: cancel-command",
+        "2026-10-23T04:53:29.8669723Z PASS: owned production setup recovery PASS: cleanup-lock",
+        "2026-10-23T04:53:31.6601234Z PASS: owned production setup recovery PASS: result"
+      ],
+      "fresh10": [
+        "2026-10-23T04:53:31.9678828Z PASS: owned production fresh setup PASS: default-refusal",
+        "2026-10-23T04:53:32.4034563Z PASS: owned production fresh setup PASS: copy-fault",
+        "2026-10-23T04:53:33.6097878Z PASS: owned production fresh setup PASS: cancel-retry",
+        "2026-10-23T04:53:34.0596252Z PASS: owned production fresh setup PASS: stop-copy",
+        "2026-10-23T04:53:34.5370304Z PASS: owned production fresh setup PASS: dispose-copy",
+        "2026-10-23T04:53:34.9798305Z PASS: owned production fresh setup PASS: owner-dispose",
+        "2026-10-23T04:53:36.2113896Z PASS: owned production fresh setup PASS: cancel-command",
+        "2026-10-23T04:53:39.4164776Z PASS: owned production fresh setup PASS: cleanup-lock",
+        "2026-10-23T04:53:40.5951613Z PASS: owned production fresh setup PASS: result",
+        "2026-10-23T04:53:41.8509953Z PASS: owned production fresh setup PASS: pending-race"
+      ],
+      "repair8": [
+        "2026-10-23T04:51:08.0387999Z PASS: owned production repair slice PASS: default-refusal",
+        "2026-10-23T04:51:09.4441355Z PASS: owned production repair slice PASS: complete",
+        "2026-10-23T04:51:10.9156456Z PASS: owned production repair slice PASS: cancel-retry",
+        "2026-10-23T04:51:11.5431599Z PASS: owned production repair slice PASS: stop-copy",
+        "2026-10-23T04:51:12.1575583Z PASS: owned production repair slice PASS: dispose-copy",
+        "2026-10-23T04:51:12.7719353Z PASS: owned production repair slice PASS: owner-dispose",
+        "2026-10-23T04:51:14.2649703Z PASS: owned production repair slice PASS: stop-command",
+        "2026-10-23T04:51:17.6680372Z PASS: owned production repair slice PASS: cleanup-lock"
+      ],
+      "list10": [
+        "2026-10-23T04:50:09.0200287Z PASS: owned production list slice PASS: default-refusal",
+        "2026-10-23T04:50:11.0842804Z PASS: owned production list slice PASS: complete",
+        "2026-10-23T04:50:12.9614535Z PASS: owned production list slice PASS: cancel-retry",
+        "2026-10-23T04:50:13.5646643Z PASS: owned production list slice PASS: stop-copy",
+        "2026-10-23T04:50:14.1225987Z PASS: owned production list slice PASS: dispose-copy",
+        "2026-10-23T04:50:14.6805644Z PASS: owned production list slice PASS: owner-dispose",
+        "2026-10-23T04:50:16.1626401Z PASS: owned production list slice PASS: stop-command",
+        "2026-10-23T04:50:19.4817815Z PASS: owned production list slice PASS: cleanup-lock",
+        "2026-10-23T04:50:21.6468493Z PASS: owned production list slice PASS: refresh-cancel-retry",
+        "2026-10-23T04:50:23.0670422Z PASS: owned production list slice PASS: refresh-dispose"
+      ],
+      "export11": [
+        "2026-10-23T04:47:54.1165785Z PASS: modal export preserves protected settings and cannot start a late relay: save",
+        "2026-10-23T04:47:54.5729811Z PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry",
+        "2026-10-23T04:47:55.1116615Z PASS: modal export preserves protected settings and cannot start a late relay: close",
+        "2026-10-23T04:47:55.5718176Z PASS: modal export preserves protected settings and cannot start a late relay: dispose",
+        "2026-10-23T04:47:56.0121333Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel",
+        "2026-10-23T04:47:56.4537763Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-close",
+        "2026-10-23T04:47:56.9044480Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose",
+        "2026-10-23T04:47:57.3655702Z PASS: modal export preserves protected settings and cannot start a late relay: global-stop",
+        "2026-10-23T04:47:57.8254095Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop",
+        "2026-10-23T04:47:58.3008861Z PASS: modal export preserves protected settings and cannot start a late relay: existing-retry",
+        "2026-10-23T04:47:58.8404991Z PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change"
+      ],
+      "chooser3": [
+        "2026-10-23T04:38:00.4931386Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel",
+        "2026-10-23T04:38:05.9978938Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing",
+        "2026-10-23T04:38:06.8556823Z PASS: actual profile native chooser owns bounded cancel/failure cleanup: error"
+      ]
+    },
+    "summary_lines": [
+      "2026-10-23T04:44:06.9874987Z Desktop tests PASS: 5294",
+      "2026-10-23T04:44:14.7896888Z Instance tests PASS: 30",
+      "2026-10-23T04:47:11.0365853Z Maintenance tests PASS: 126",
+      "2026-10-23T04:47:40.4086445Z Shutdown tests PASS: 47",
+      "2026-10-23T04:52:35.3686772Z HTTPS fixture state: mode=owner-dispose; phase=7; violations=0; calls=0; expectedCalls=0; copies=1; verified=0; formDisposed=True; addressDisposed=True; formHandle=False; addressHandle=False; dialogResult=None; operation=Faulted; stop=RanToCompletion; publications=5; closedPublications=5; liveDraftAtDisposal=True; draftChanges=0; closedDraftChanges=0",
+      "2026-10-23T04:52:47.4092433Z Fresh HTTPS fixture state: mode=owner-dispose; phase=7; violations=0; calls=0; expectedCalls=0; copies=1; verified=0; formDisposed=True; addressDisposed=True; formHandle=False; addressHandle=False; dialogResult=None; operation=Faulted; stop=RanToCompletion; publications=5; closedPublications=5; liveDraftAtDisposal=True; draftChanges=1; closedDraftChanges=1",
+      "2026-10-23T04:53:47.2170625Z Home VPN PASS: 2929 checks.",
+      "2026-10-23T04:55:29.8386851Z Portable Home VPN tests PASS: 91",
+      "2026-10-23T04:55:31.8715732Z Ran 28 tests in 1.711s",
+      "2026-10-23T04:55:31.8716002Z OK (skipped=2)",
+      "2026-10-23T04:55:34.8496856Z Candidate ZIP SHA256: e1b9b4defc377b52dfdef417a93b51e02e294a49e03770f8829a5598421fdd07"
+    ],
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "owner_pc": "NOT_RUN"
+  },
+  "invitation_initial_pending_on639": {
+    "status": "PARTIAL",
+    "baseline_source": "b935fde9770bfcec83913e19d929a9558e4c76e2",
+    "baseline_tested_merge": "0b6e71eb6794c03801949a83645917353e76b84e",
+    "baseline_checkpoint": "c3348452409b168a48925e9e4423d667df8f56da",
+    "local_code_sha": "ce02533755992e0f66fcb4a0aff06c081ef6c699",
+    "saved_api_source": "d500df68629d8af7533e4eca2993284c3675161a",
+    "scope": "ONLY initial Friends pending-state read: default wizard supplies explicit Friends UI owner and service; existing readonly API/API6 transferred unchanged; no consumption/repeated reads/mutation worker migration",
+    "ownership": "Initial actual task retained by RunAdminOwnedAsync/Stop, owner dispatcher, CTS close/dispose and before/after scope checks; conservative mutation gate; close defers until actual read settles; reopen retries no stale publication; no family reacquire, writes or external actions",
+    "native_cases": [
+      "empty",
+      "pending",
+      "corrupt",
+      "locked",
+      "close-retry",
+      "dispose",
+      "stop",
+      "service-dispose"
+    ],
+    "api_native_cases": 6,
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN new initial8/API6 and full regression;639 success not inherited",
+    "local_checks": "PASS manual review + AST syntax5/C#5 scope; saved API/API6 exact; preserved old test methods/timeouts/asserts and export/EOF/HTTPS/runtime core; constructor/API signatures checked; public321/0; added secret/PII0; diff check",
+    "remaining_production_paths": [
+      "Friends post-operation and refresh pending-state reads in RunAsync/RefreshAsync (same saved API, separate owned UI binding)",
+      "Friends reissue/create uncertainty pending checks and recovery request-name read (preserve exactly-once and durable identity)",
+      "Token handoff ConfirmConsumed after create/reissue/recover; saved consumption API8 e8fbd2a not integrated",
+      "Friends invite/revoke/reissue/recover-invite mutation/recovery transport still legacy Admin; migrate bounded owned slices, no new protocol"
+    ],
+    "readiness_change": 0,
+    "publication": "TODO fresh guarded existing PR88 update, exactly one automatic CI; no binary uploads/release",
+    "next": "Read same new exact-source CI final logs for compilation, initial8/API6 and full regression; no duplicate run or second stage"
   }
 }

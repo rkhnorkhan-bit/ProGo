@@ -16,6 +16,12 @@ namespace ProGo
         internal HomeVpnAdminPendingException(string message) : base(message) { }
     }
 
+    internal sealed class HomeVpnAdminPendingState
+    {
+        internal readonly bool Pending, Unreadable;
+        internal HomeVpnAdminPendingState(bool pending, bool unreadable) { Pending = pending; Unreadable = unreadable; }
+    }
+
     internal sealed class HomeVpnAdminRequest
     {
         public int Version { get; set; }
@@ -70,6 +76,18 @@ namespace ProGo
         {
             try { CheckRoot(); return Exists(PathFor()); }
             catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeVpnAdminPendingException("Сохранённый запрос выдачи недоступен. Новые приглашения заблокированы; существующий доступ сохранён."); }
+        }
+        // Advisory UI snapshot only; command admission still uses the real
+        // family guard. No journal/token/lease is returned or modified here.
+        internal static Task<HomeVpnAdminPendingState> ReadPendingStateAsync(CancellationToken cancellation, Action beforeRead = null)
+        {
+            return Task.Run(delegate {
+                cancellation.ThrowIfCancellationRequested(); if (beforeRead != null) beforeRead(); cancellation.ThrowIfCancellationRequested();
+                bool pending = false, unreadable = false;
+                try { pending = HasPending(); if (pending) pending = Pending() != null; }
+                catch (HomeVpnAdminPendingException) { pending = unreadable = true; }
+                cancellation.ThrowIfCancellationRequested(); return new HomeVpnAdminPendingState(pending, unreadable);
+            });
         }
         internal static HomeVpnAdminRequest Pending()
         {

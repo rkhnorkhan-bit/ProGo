@@ -104,6 +104,8 @@ namespace ProGo
                 File.Delete(Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnSetupRecovery.StorageName + ".dat"));
                 HomeVpnPrivateFiles.Save("access", token); HomeVpnPrivateFiles.Save("owner", Json.Serialize(Owner));
                 Environment.SetEnvironmentVariable(FixtureVariable, folder);
+                PendingStateWorker();
+                InitialPendingUi(clipboard);
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "deadline" }) NativeWait(route, previous);
                 LostResponseAndReopen(token, clipboard, previous);
                 ReissueBoundary(token); FrozenOwner(); DefaultHandoff(clipboard); LateDisposedUi(clipboard); ReissueHandoffMessage(token, clipboard); StatusAndStorage(token);
@@ -126,9 +128,162 @@ namespace ProGo
                 form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size)); bitmap.Save(Path.Combine(Path.GetDirectoryName(folder), name + ".png"));
             }
         }
-        private static void Pump(Func<bool> ready)
+        private static void PendingStateWorker()
         {
-            var watch = Stopwatch.StartNew(); while (!ready()) { Application.DoEvents(); Thread.Sleep(10); if (watch.ElapsedMilliseconds > 15000) throw new Exception("Admin recovery fixture timeout"); } Application.DoEvents();
+            byte[] original = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+            try {
+                foreach (string mode in new[] { "empty", "pending", "completed", "corrupt", "locked", "cancel" }) {
+                    File.Delete(PendingPath);
+                    if (mode != "empty" && mode != "corrupt") {
+                        var request = HomeVpnAdminRecovery.Register(Owner, "My iPhone", null);
+                        if (mode == "completed") HomeVpnAdminRecovery.RetainResult(Owner, request, response);
+                    }
+                    if (mode == "corrupt") File.WriteAllBytes(PendingPath, new byte[] { 1, 2, 3 });
+                    var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                    using (var form = new Form())
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim())
+                    using (var cancellation = new CancellationTokenSource())
+                    using (var lease = HomeVpnAdminRecovery.AcquireAsync().GetAwaiter().GetResult()) {
+                        FileStream held = null; Task<HomeVpnAdminPendingState> operation = null; int ui = Thread.CurrentThread.ManagedThreadId, worker = 0, phase = 0, turns = 0;
+                        var phaseWatch = new Stopwatch();
+                        try {
+                            if (mode == "locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None);
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    check(form.Modal, "invitation pending-state read uses actual native modal loop: " + mode);
+                                    var watch = Stopwatch.StartNew(); phaseWatch.Restart();
+                                    operation = HomeVpnAdminRecovery.ReadPendingStateAsync(cancellation.Token, delegate {
+                                        Interlocked.Exchange(ref worker, Thread.CurrentThread.ManagedThreadId); entered.Set();
+                                        if (!release.Wait(5000)) throw new TimeoutException("Invitation pending-state fixture deadline");
+                                    });
+                                    check(watch.ElapsedMilliseconds < 500, "pending-state API returns owned work before actual private status/DPAPI read: " + mode);
+                                    phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (!entered.IsSet || ++turns < 3) {
+                                        if (phaseWatch.ElapsedMilliseconds >= 3000) throw new TimeoutException("Invitation pending-state heartbeat deadline: " + mode + "; task=" + operation.Status);
+                                        return false;
+                                    }
+                                    check(worker != ui && !operation.IsCompleted && form.Visible && form.Modal,
+                                        "held read-only pending snapshot keeps modal heartbeat and does not take the caller's family lease: " + mode);
+                                    if (mode == "cancel") cancellation.Cancel(); release.Set(); phaseWatch.Restart(); phase = 2; return false;
+                                }
+                                if (!operation.IsCompleted) {
+                                    if (phaseWatch.ElapsedMilliseconds >= 5000) throw new TimeoutException("Invitation pending-state settlement deadline: " + mode + "; task=" + operation.Status);
+                                    return false;
+                                }
+                                HomeVpnAdminPendingState state = null; Exception failure = null; try { state = operation.GetAwaiter().GetResult(); } catch (Exception ex) { failure = ex; }
+                                if (held != null) { held.Dispose(); held = null; }
+                                check(mode == "cancel" ? failure is OperationCanceledException && state == null
+                                    : failure == null && state != null && state.Pending == (mode != "empty") && state.Unreadable == (mode == "corrupt" || mode == "locked"),
+                                    "pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: " + mode);
+                                check(before.Count == Directory.GetFiles(HomeVpnPrivateFiles.Root).Length && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                                    "status snapshot preserves actual encrypted request/result/access bytes and creates or consumes no private file: " + mode);
+                                return true;
+                            }, () => false);
+                        } finally {
+                            cancellation.Cancel(); release.Set(); if (held != null) held.Dispose(); form.Dispose();
+                            if (operation != null) { Pump(() => operation.IsCompleted, 5000); try { operation.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } }
+                        }
+                    }
+                }
+            } finally { if (original == null) File.Delete(PendingPath); else File.WriteAllBytes(PendingPath, original); }
+        }
+        private static void InitialPendingUi(ClipboardService clipboard)
+        {
+            byte[] original = File.Exists(PendingPath) ? File.ReadAllBytes(PendingPath) : null;
+            try {
+                foreach (string mode in new[] { "empty", "pending", "corrupt", "locked", "close-retry", "dispose", "stop", "service-dispose" }) {
+                    File.Delete(PendingPath);
+                    if (mode != "empty" && mode != "corrupt") HomeVpnAdminRecovery.Register(Owner, "Fixture friend", null);
+                    if (mode == "corrupt") File.WriteAllBytes(PendingPath, new byte[] { 1, 2, 3 });
+                    var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                    using (var relay = new Ikev2RelayService())
+                    using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                    using (var entered = new ManualResetEventSlim())
+                    using (var release = new ManualResetEventSlim()) {
+                        FileStream held = null; HomeInvitationsForm form = null; Task<bool> stop = null;
+                        int reads = 0, calls = 0, phase = 0, turns = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId;
+                        bool closing = mode == "close-retry", disposing = mode == "dispose";
+                        try {
+                            if (mode == "locked") held = File.Open(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None);
+                            form = new HomeInvitationsForm(new HomeVpnInvitation[0], (action, label, id) => {
+                                ++calls; throw new Exception("Initial pending read must not invoke Admin");
+                            }, clipboard, service, delegate {
+                                Interlocked.Increment(ref reads); worker = Thread.CurrentThread.ManagedThreadId; entered.Set();
+                                if (!release.Wait(5000)) throw new TimeoutException("Initial invitation read fixture deadline");
+                            });
+                            HomeVpnWaitingTests.ModalWizardCase(form, delegate {
+                                if (phase == 0) {
+                                    if (!entered.IsSet || ++turns < 3) return false;
+                                    check(form.Modal && form.Visible && worker != ui && reads == 1 && calls == 0
+                                        && !form.InitializationWork.IsCompleted && !form.PendingReadWork.IsCompleted && service.IsAdminWorking,
+                                        "initial invitation read has one actual worker and a responsive modal owner: " + mode);
+                                    foreach (string button in new[] { "create", "revoke", "reissue", "refresh", "recover" })
+                                        check(!((Button)Field(form, button)).Enabled, "pending read blocks premature action: " + mode + "/" + button);
+                                    check(((Button)Field(form, "close")).Enabled, "initial read permits explicit close: " + mode);
+                                    var watch = Stopwatch.StartNew();
+                                    if (closing) form.Close();
+                                    if (disposing) form.Dispose();
+                                    if (mode == "service-dispose") service.Dispose();
+                                    if (mode == "stop" || mode == "service-dispose") stop = service.StopAsync();
+                                    check(watch.ElapsedMilliseconds < 500 && !form.PendingReadWork.IsCompleted
+                                        && (!closing || !form.IsDisposed) && (stop == null || !stop.IsCompleted),
+                                        "close Dispose and Stop retain actual blocked read without blocking UI: " + mode);
+                                    turns = 0; phase = 1; return false;
+                                }
+                                if (phase == 1) {
+                                    if (++turns < 3) return false;
+                                    check(!form.PendingReadWork.IsCompleted && (stop == null || !stop.IsCompleted), "cancel cannot abandon held invitation read: " + mode);
+                                    release.Set(); phase = 2; return false;
+                                }
+                                if (!form.InitializationWork.IsCompleted || (stop != null && !stop.IsCompleted)) return false;
+                                form.InitializationWork.GetAwaiter().GetResult();
+                                if (stop != null) check(stop.GetAwaiter().GetResult(), "Stop settles actual pending read: " + mode);
+                                bool cancelled = closing || disposing || stop != null;
+                                if (!disposing && !closing) {
+                                    check((bool)Field(form, "pendingAdmin") == (cancelled || mode != "empty")
+                                        && (bool)Field(form, "pendingUnreadable") == (cancelled || mode == "corrupt" || mode == "locked"),
+                                        "initial pending UI publishes only admitted state; cancellation never invents empty: " + mode);
+                                    check(((Button)Field(form, "create")).Enabled == (mode == "empty"), "mutations require a proven empty snapshot: " + mode);
+                                }
+                                check(reads == 1 && calls == 0 && !service.IsAdminWorking, "settled initial read releases ownership without duplicate action: " + mode);
+                                check(true, "invitation initial pending UI PASS: " + mode); return true;
+                            }, () => closing || disposing);
+                        } finally {
+                            release.Set(); if (held != null) held.Dispose(); if (form != null) form.Dispose();
+                            if (form != null) { Pump(() => form.InitializationWork.IsCompleted && form.PendingReadWork.IsCompleted, 5000); form.InitializationWork.GetAwaiter().GetResult(); }
+                            service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                            check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "initial invitation fixture joins its actual work and cleanup: " + mode);
+                        }
+                    }
+                    check(before.Count == Directory.GetFiles(HomeVpnPrivateFiles.Root).Length && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))),
+                        "initial UI read preserves protected request and private files: " + mode);
+                    if (mode == "close-retry") {
+                        using (var relay = new Ikev2RelayService())
+                        using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                        using (var retry = new HomeInvitationsForm(new HomeVpnInvitation[0], (action, label, id) => { throw new Exception("Retry must not invoke Admin"); }, clipboard, service)) {
+                            try {
+                                HomeVpnWaitingTests.ModalWizardCase(retry, delegate {
+                                    if (!retry.InitializationWork.IsCompleted) return false;
+                                    retry.InitializationWork.GetAwaiter().GetResult();
+                                    check((bool)Field(retry, "pendingAdmin") && !(bool)Field(retry, "pendingUnreadable") && ((Button)Field(retry, "recover")).Enabled,
+                                        "close then reopen retries actual pending read without stale cancelled publication"); return true;
+                                }, () => false);
+                            } finally {
+                                retry.Dispose(); Pump(() => retry.InitializationWork.IsCompleted, 5000);
+                                retry.InitializationWork.GetAwaiter().GetResult(); service.Dispose(); var cleanup = service.StopAsync();
+                                Pump(() => cleanup.IsCompleted, 5000); check(cleanup.GetAwaiter().GetResult(), "retry fixture cleanup joins actual owned read");
+                            }
+                        }
+                    }
+                }
+            } finally { if (original == null) File.Delete(PendingPath); else File.WriteAllBytes(PendingPath, original); }
+        }
+        private static void Pump(Func<bool> ready, int timeout = 15000)
+        {
+            var watch = Stopwatch.StartNew(); while (!ready()) { Application.DoEvents(); Thread.Sleep(10); if (watch.ElapsedMilliseconds > timeout) throw new Exception("Admin recovery fixture timeout"); } Application.DoEvents();
         }
         private static Exception Failure(Task task)
         {

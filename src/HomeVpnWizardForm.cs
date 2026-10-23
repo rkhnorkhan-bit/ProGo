@@ -735,7 +735,7 @@ namespace ProGo
                 if (service.IsStopping || service.StartsPaused || !Object.ReferenceEquals(service.StopWork, stop)) throw new HomeVpnListCancelledException();
                 var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(response);
                 using (var dialog = new HomeInvitationsForm(items,
-                    (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard))
+                    (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard, service))
                 using (var listUi = new HomeProfileUiDispatcher(dialog)) {
                     readOnlyListOwner = dialog; readOnlyListUi = listUi;
                     try { dialog.ShowDialog(this); }
