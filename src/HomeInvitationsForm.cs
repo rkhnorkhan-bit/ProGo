@@ -28,6 +28,7 @@ namespace ProGo
         private volatile bool working;
         private bool needsRefresh;
         private bool pendingAdmin, pendingUnreadable;
+        private string pendingRequestName;
         internal Func<string, bool> Confirm;
         internal Action<string> ShowToken;
         private CancellationTokenSource initialPendingCancellation;
@@ -172,10 +173,10 @@ namespace ProGo
                 await ownerUi.Await(PendingReadWork);
                 checkScope();
                 if (ownerUi.Closed || IsDisposed || Disposing) return false;
-                pendingAdmin = state.Pending; pendingUnreadable = state.Unreadable; return true;
+                pendingAdmin = state.Pending; pendingUnreadable = state.Unreadable; pendingRequestName = state.Name; return true;
             } catch (Exception) {
                 if (!ownerUi.Closed && !IsDisposed && !Disposing) {
-                    pendingAdmin = pendingUnreadable = true;
+                    pendingAdmin = pendingUnreadable = true; pendingRequestName = null;
                     status.Text = "Чтение запроса не завершено. Изменения доступа заблокированы; повторите обновление списка или откройте окно заново.";
                 }
                 return false;
@@ -206,7 +207,12 @@ namespace ProGo
             reissue.Enabled = !working && !needsRefresh && !pendingAdmin && list.Selected != null;
         }
         private void RefreshPending() {
-            try { pendingAdmin = HomeVpnAdminRecovery.HasPending(); pendingUnreadable = pendingAdmin && HomeVpnAdminRecovery.Pending() == null; }
+            pendingRequestName = null;
+            try {
+                pendingAdmin = HomeVpnAdminRecovery.HasPending();
+                var request = pendingAdmin ? HomeVpnAdminRecovery.Pending() : null;
+                pendingUnreadable = pendingAdmin && request == null; pendingRequestName = request == null ? null : request.Name;
+            }
             catch (HomeVpnAdminPendingException) { pendingAdmin = pendingUnreadable = true; }
         }
         private void RequireRefresh(string message) { needsRefresh = true; status.Text = message; }
@@ -275,13 +281,24 @@ namespace ProGo
         private async Task RecoverAsync() {
             status.Text = "Проверка прежней выдачи без нового приглашения…";
             try {
-                var request = HomeVpnAdminRecovery.Pending();
-                if (request == null) throw new HomeVpnAdminPendingException("Сохранённый запрос выдачи отсутствует. Новая выдача не запускалась.");
+                if (!await ownerUi.Await(RefreshPendingAsync(operationStop))) {
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(status.Text);
+                    return;
+                }
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!pendingAdmin) throw new HomeVpnAdminPendingException("Сохранённый запрос выдачи отсутствует. Новая выдача не запускалась.");
+                if (pendingUnreadable || pendingRequestName == null) { SetPendingStatus(); RequireRefresh(status.Text); return; }
+                var label = pendingRequestName;
                 var token = await ownerUi.Await(admin("recover-invite", null, null)); var access = HomeVpnAccess.Parse(token);
                 if (ownerUi.Closed || IsDisposed || Disposing) return;
-                list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = request.Name }); ShowToken(token);
+                if (pendingService != null && (pendingService.StartsPaused || pendingService.IsStopping || !Object.ReferenceEquals(operationStop, pendingService.StopWork))) {
+                    RequireRefresh("Проверка прежней выдачи остановлена. Запрос сохранён; повторите проверку явно."); return;
+                }
+                list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label }); ShowToken(token);
                 HomeVpnAdminRecovery.ConfirmConsumed(token); needsRefresh = true;
                 status.Text = "Прежний токен получен без новой выдачи. Обновите список перед следующим изменением доступа.";
+                // The pre-dispatch name snapshot predates handoff; keep the former post-consumption flag refresh.
+                await ownerUi.Await(RefreshPendingAsync(operationStop));
             } catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
             catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Результат прежней выдачи не получен. Запрос сохранён; новый доступ и повторный отзыв не запрашивались."); }
         }

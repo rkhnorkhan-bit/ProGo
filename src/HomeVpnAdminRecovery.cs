@@ -19,7 +19,8 @@ namespace ProGo
     internal sealed class HomeVpnAdminPendingState
     {
         internal readonly bool Pending, Unreadable;
-        internal HomeVpnAdminPendingState(bool pending, bool unreadable) { Pending = pending; Unreadable = unreadable; }
+        internal readonly string Name;
+        internal HomeVpnAdminPendingState(bool pending, bool unreadable, string name = null) { Pending = pending; Unreadable = unreadable; Name = name; }
     }
 
     internal sealed class HomeVpnAdminRequest
@@ -78,15 +79,17 @@ namespace ProGo
             catch (Exception ex) { if (ex is OutOfMemoryException) throw; throw new HomeVpnAdminPendingException("Сохранённый запрос выдачи недоступен. Новые приглашения заблокированы; существующий доступ сохранён."); }
         }
         // Advisory UI snapshot only; command admission still uses the real
-        // family guard. No journal/token/lease is returned or modified here.
+        // family guard. Only the display name accompanies flags; no journal/token/lease is returned or modified here.
         internal static Task<HomeVpnAdminPendingState> ReadPendingStateAsync(CancellationToken cancellation, Action beforeRead = null)
         {
             return Task.Run(delegate {
                 cancellation.ThrowIfCancellationRequested(); if (beforeRead != null) beforeRead(); cancellation.ThrowIfCancellationRequested();
-                bool pending = false, unreadable = false;
-                try { pending = HasPending(); if (pending) pending = Pending() != null; }
-                catch (HomeVpnAdminPendingException) { pending = unreadable = true; }
-                cancellation.ThrowIfCancellationRequested(); return new HomeVpnAdminPendingState(pending, unreadable);
+                bool pending = false, unreadable = false; string name = null;
+                try {
+                    pending = HasPending();
+                    if (pending) { var request = Pending(); pending = request != null; if (request != null) name = request.Name; }
+                } catch (HomeVpnAdminPendingException) { pending = unreadable = true; }
+                cancellation.ThrowIfCancellationRequested(); return new HomeVpnAdminPendingState(pending, unreadable, name);
             });
         }
         internal static HomeVpnAdminRequest Pending()

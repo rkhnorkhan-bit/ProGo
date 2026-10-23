@@ -8,7 +8,50 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: Reissue uncertainty owned pending-read поверх CI646
+## Текущий этап: Recover request.Name owned read поверх CI647
+
+PR88 OPEN/DRAFT/source `b22713891873999d83b807670a7b7a9037d8a9ad` и checkpoint
+`de03011751d66a1f7fe30133b32ea1e2ea55dbf8` сверены. До изменений51 worktrees clean/locks0,
+root sole active agent; изолированная work/progo-recover-name-on647-20261023 сохраняет всю работу.
+Полные [CI647](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39990260979) Windows13063/Ubuntu578
+строк самостоятельно прочитаны; оба checkout/Windows build identity: tested merge
+`8ea08e14c9f41a3b2670f65a523c297898ffa3a5`. JSON ci647_final содержит per-case evidence.
+PASS Reissue8/Create8/API6/UI8/UI12, snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/
+recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3. Desktop5298/Instance30/
+Maintenance126/Shutdown47/HomeVPN3590/Portable91/SSH policy61. Python reported28 incl2SKIPPED;
+Ubuntu operation16/QR13/provisioning PASS. Pack runner-only PASS; uploads/prune SKIPPED.
+Исторические permissions640/startup642 причины не объявляются исправленными; diagnostics сохранены.
+
+ТОЛЬКО Recover request.Name UI read через existing reader: local code `95178d4fbde191b3f216847aa3fa7b82427da9e8`,
+2 runtime+1 existing test167add/12delete. Advisory pending-state получает только readonly Name,
+без полного request/token/credentials/journal/lease. Recover ждёт existing RefreshPendingAsync/
+RunAdminOwnedAsync с original Stop identity/явным owner, затем фиксирует label до recovery API.
+Missing/unreadable/cancelled не запускает recovery. Перед handoff проверяется прежний Stop scope.
+Подтверждённый handoff сохраняет прежнее post-consumption flag refresh: pre-read его не заменяет.
+Legacy no-service fixtures сохраняют прежнее синхронное чтение, запоминая только имя без лишнего I/O.
+Core Pending/admission/recovery ID/consumption/transport byte-identical; Create/Reissue и все прежние
+тела тестов сохранены. Новых функций/внешних действий нет.
+
+Recover name9: complete,missing,corrupt,locked,close-retry,dispose,stop-retry,service-dispose,stop-result.
+Actual ShowDialog/default Recover + real private-state reader под barrier5s/modal15s/joins5s.
+Явный original name/returned ID, distinct draft/selection, original protected request ID и bytes;
+UI heartbeat/reentry gate/no late UI/handoff после Stop, Cancel→reopen и Stop→explicit Refresh→Recover.
+Ноль invite/revoke/reissue, ровно один explicit recovery; тестовый handoff намеренно прерывается до
+неизменённого consumption boundary. Stop-result callback-only, не доказательство owned transport.
+Finally release/join actual body/own window+stream/service cleanup; old timeout/assert/coverage unchanged.
+
+PASS local review/structural preservation/signatures/C#5 await scopes/lexical delimiters/diff/JSON/
+public-content321source0release/added secretsPII0. Lexical не AST/compiler; dotnet/pwsh/Windows нет,
+new compilation/Recover name9/full suites NOT_RUN. SUCCESS647 не переносится на candidate.
+Publication TODO: fresh expected-head guarded non-force existing PR88, one automatic CI.
+Workflows/VERSION unchanged, public uploads OFF/release/prune ineligible. Save source/run/checkpoint;
+STOP без полного CI wait/второго этапа. Далее ТОТ ЖЕ CI final logs/exact merge/Recover name9/old suites.
+Остаток: ConfirmConsumed create/reissue/recover bindings existing API8; invite/revoke/reissue/
+recover-invite owned transport (раздельные bounded stages). FullR09/owner PC acceptance open.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
+главный блокер: Windows proof нового slice, затем consumption/transport UI I/O.
+
+## История этапа: Reissue uncertainty owned pending-read поверх CI646
 
 Сверены PR88 OPEN/DRAFT, source `1a0b9ab4a3f75775bb712f418a780fb9f754c40f`, checkpoint
 `b0b7a093e0b991b72bfc1a9cb89f2a0c0d61b82f`. До изменений51 worktrees clean/locks0,
@@ -43,9 +86,20 @@ PASS local review/structural isolation/signatures/C#5 await scopes/lexical delim
 public-content321source0release/added secretsPII0. Lexical не AST/compiler.
 Windows/.NET Framework/PowerShell недоступны: новая compilation/Reissue uncertainty8/full suites
 NOT_RUN; SUCCESS646 не переносится на candidate.
-Publication TODO: fresh expected-head guarded non-force existing PR88, ровно один automatic CI.
-Workflows/VERSION неизменны, public uploads OFF, release/prune ineligible. После сохранения source/run/
-checkpoint STOP без полного ожидания/второго этапа. Следующий шаг — ТОТ ЖЕ CI final logs/exact merge.
+Publication PASS: source `b22713891873999d83b807670a7b7a9037d8a9ad`, existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched parent exact646,
+full tree `4a286e00c54379c9c786f014871de67668699d63` равен reviewed freeze
+`9bb54f7866d95a8d40a4fda388309d9b9daf7a36`. Public diff5files658add/63delete:
+1 runtime9add/2delete +1 existing test138add/0delete +3docs511add/61delete.
+Merge ref `8ea08e14c9f41a3b2670f65a523c297898ffa3a5` пока НЕ final tested merge (NOT_RUN).
+Один automatic [CI647/39990260979](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/39990260979):
+exact-source count1/pull_request/attempt1, in_progress/conclusion null.
+Windows120539905497 Repository hygiene and build in_progress; Ubuntu120539905804 provisioning
+in_progress (metadata, новые suites NOT_RUN). Не переносить646 SUCCESS.
+Workflows/VERSION неизменны, public uploads OFF/release/prune ineligible; финальные skips пока не проверены.
+Локальный postpublication3-doc checkpoint намеренно НЕ pushed, чтобы не создавать второй CI;
+его полный SHA в git log -1/PR88. STOP без полного ожидания/второго этапа.
+Следующий шаг — ТОТ ЖЕ CI647 full final logs/exact source+tested merge/Reissue8/все прежние suites.
 Оставшиеся production paths: RecoverAsync Pending request.Name; ConfirmConsumed bindings existing API8;
 invite/revoke/reissue/recover-invite owned transport (отдельные ограниченные этапы). FullR09/owner ПК open.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0;
