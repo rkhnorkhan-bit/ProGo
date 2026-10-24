@@ -117,6 +117,35 @@ namespace ProGo
             catch (InvalidOperationException) { return false; }
             catch (Exception) { return null; } // No exception message/native detail; failed observation is UNKNOWN.
         }
+        // CurrentPid is a nonblocking observation: capture the successful value IN the wait,
+        // never re-read it after PumpUntil's final DoEvents can let the gate become busy.
+        private static int? CaptureCommandAvailabilityAdmission(Func<int?> read, Action<Func<bool>> wait)
+        {
+            int? admitted = null;
+            wait(delegate {
+                var observed = read();
+                if (!observed.HasValue) return false;
+                admitted = observed;
+                return true;
+            });
+            if (!admitted.HasValue) throw new InvalidOperationException("No fixture process admission was observed.");
+            return admitted;
+        }
+        private static void CommandAvailabilityAdmissionRegression()
+        {
+            int reads = 0;
+            Func<int?> snapshot = delegate { reads++; return reads == 2 ? (int?)4321 : null; };
+            var admitted = CaptureCommandAvailabilityAdmission(snapshot, delegate(Func<bool> ready) {
+                Check(!ready(), "command admission does not accept an absent process snapshot");
+                Check(ready(), "command admission captures the actual successful observation");
+                Check(!snapshot().HasValue, "command fixture simulates a later unavailable nonblocking snapshot before wait returns");
+            });
+            Check(admitted == 4321 && reads == 3, "command fixture retains original admission without a later PID re-read or substitution");
+            bool refused = false;
+            try { CaptureCommandAvailabilityAdmission(delegate { return null; }, delegate(Func<bool> ready) { }); }
+            catch (InvalidOperationException) { refused = true; }
+            Check(refused, "command fixture cannot manufacture admission when the wait observed no owned process");
+        }
         private static void CommandAvailabilityWorkflow(SettingsService settings)
         {
             var source = new[] { AppCommand.StartCli };
@@ -141,6 +170,7 @@ namespace ProGo
             Check(!AppCommands.CanExecute(AppCommand.Phone, savingPhone) &&
                 new[] { AppCommand.Connect, AppCommand.StopDesktop, AppCommand.StopPhone, AppCommand.StopAll, AppCommand.Settings }.All(c => AppCommands.CanExecute(c, savingPhone)),
                 "owned phone address save blocks a competing wizard while independent desktop commands and explicit stop remain available");
+            CommandAvailabilityAdmissionRegression();
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
             PhoneInitializationAvailabilityWorkflow(settings);
             var original = settings.Current.Clone();
@@ -164,11 +194,12 @@ namespace ProGo
                     context.RequestShowStatus(); var main = (MainWindow)Field(context, "mainWindow");
                     var tray = (NotifyIcon)Field(context, "tray");
                     var menu = MenuItems(tray.ContextMenuStrip.Items).Where(i => i.Tag is AppCommand).ToDictionary(i => (AppCommand)i.Tag);
-                    ((Button)Field(main, "cliToggle")).PerformClick(); PumpUntil(() => proxy.CurrentPid.HasValue);
+                    ((Button)Field(main, "cliToggle")).PerformClick();
+                    var pid = CaptureCommandAvailabilityAdmission(() => proxy.CurrentPid, PumpUntil);
+                    Check(pid.HasValue && CommandAvailabilityFixtureAlive(pid) == true, "command fixture freezes a real live owned admission before any tested dispatcher action");
                     Check(!menu[AppCommand.StartCli].Enabled && !menu[AppCommand.Connect].Enabled && menu[AppCommand.EnableWindows].Enabled && menu[AppCommand.StopCli].Enabled &&
                         !((Button)Field(main, "cliToggle")).Enabled && !((Button)Field(main, "connect")).Enabled,
                         "dashboard and tray agree while CLI waits for explicitly gated SOCKS");
-                    var pid = proxy.CurrentPid;
                     var beforeConnect = CommandAvailabilityObservation.Capture(context, proxy, pid);
                     Call(context, "Execute", "connect");
                     var afterConnect = CommandAvailabilityObservation.Capture(context, proxy, pid);
