@@ -16,8 +16,11 @@ $stage = $null; $held = $null; $workOwned = $false
 try {
     New-Item -ItemType Directory -Path $work | Out-Null; $workOwned = $true
     $flags = [Reflection.BindingFlags]'Instance,NonPublic'
-    Check-LegacyEvidence ([Runtime.InteropServices.Marshal]::SizeOf([ProGo.ApplicationShortcuts].GetNestedType('LegacyDisposition', [Reflection.BindingFlags]::NonPublic)) -eq 1 -and
-        [Runtime.InteropServices.Marshal]::SizeOf([ProGo.ApplicationShortcuts].GetNestedType('LegacyFileInfo', [Reflection.BindingFlags]::NonPublic)) -eq 52) 'native disposition/file identity layout matches documented ABI'
+    # Windows PowerShell 5.1 must select SizeOf(Type), not marshal the RuntimeType object.
+    $sizeOfType = [Runtime.InteropServices.Marshal].GetMethod('SizeOf', [type[]]@([type]))
+    Check-LegacyEvidence ($null -ne $sizeOfType -and $sizeOfType.GetParameters()[0].ParameterType -eq [type]) 'exact SizeOf(Type) overload is available'
+    Check-LegacyEvidence ($sizeOfType.Invoke($null, [object[]]@([ProGo.ApplicationShortcuts].GetNestedType('LegacyDisposition', [Reflection.BindingFlags]::NonPublic))) -eq 1 -and
+        $sizeOfType.Invoke($null, [object[]]@([ProGo.ApplicationShortcuts].GetNestedType('LegacyFileInfo', [Reflection.BindingFlags]::NonPublic))) -eq 52) 'native disposition/file identity layout matches documented ABI'
     $observe = [ProGo.ApplicationShortcuts].GetMethod('ObserveLegacy', $flags)
     $delete = [ProGo.ApplicationShortcuts].GetMethod('DeleteLegacyOwned', $flags)
     foreach ($scenario in @('absent', 'removed', 'skipped-owned', 'skipped-custom', 'foreign-target', 'malformed', 'locked-retry', 'changed-admission', 'replaced-identical', 'appeared', 'replacement-changed', 'other-identity', 'other-location')) {
