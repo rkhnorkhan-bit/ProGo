@@ -1,4 +1,46 @@
-## Текущий этап: Reissue Complete owned consumption поверх CI651
+## Текущий этап: CI652 native success fixture correction — test-only
+
+PR88 OPEN/DRAFT/source `099ba265daefabce5758d25c88e15798ca71bd50` и checkpoint
+`6440c454be8f84af99b222b3146d4e4535e900bf` сверены;57 worktrees clean/locks0/root sole active agent.
+Новая isolated work/progo-ci652-fixture-fix-20261024 сохраняет всю работу без reset/rollback.
+Полные final Windows/Ubuntu [CI652](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329) logs самостоятельно прочитаны;
+checkout/build identity exact tested merge `91eeafc6584992bced555f6142561171e2db1ecf`.
+Windows FAILURE на tests/HomeInvitationReissueTests.cs исходные102–103:
+«native success selects replacement and restores actions». Safe stack Check IL12 → Native IL841 →
+Run IL1500 → HomeVpnWizardTests.Main IL1748; wrapper Test-HomeVpnRelay.ps1:19.
+Предыдущий PASS shown token/old row revoked/sibling not revoked/3 rows подтверждён.
+Лог НЕ разделяет selected-ID и reissue.Enabled: отдельные значения UNKNOWN, не выдумываем их.
+Compilation/Repository/Desktop5298/SSH policy61/Instance30/Maintenance126/Shutdown47/UpdaterPackage5
+PASS exact652. New Reissue consumption8/Create8/Recover8/API8 и последующие HomeVPN suites NOT_RUN
+(0 markers), не наследуют651 PASS. Ubuntu operation16/QR13/provisioning PASS. Pack/uploads/prune SKIPPED.
+
+Доказанное несовпадение fixture: callback-only success возвращает токен без request/result и ждёт
+только shown!=null. Старый sync ConfirmConsumed при missing request возвращался; async API возвращает
+false, а production UI правильно оставляет gating. Показ токена также не означает completion async action.
+Нет доказанного runtime/infrastructure defect; production не меняется и gating не ослабляется.
+
+Local code `1d25c59a4ae1abef0a41383523a1778d33c240b0`: один fixture first Native success,61add/27delete (включая indentation).
+Сохраняет fixture access, создаёт production Register/RetainResult с исходным ID/именем/exact token,
+проверяет durable RequestId/SourceInviteId/Name/Result до inviteGate.SetResult. Сохраняет прежний
+shown/old revoke/sibling/3rows assert. Затем bounded PumpUntil actual ConsumptionWork+ActionWork
+completion и GetResult до ИСХОДНОГО joint assert exact replacement ID+restored actions.
+Дополнительно actual receipt absence/success task/exact one revoke+invite/unchanged neighbour ID.
+Finally cancels own gates/disposes own window/joins actual tasks and restores prior fixture file bytes.
+Все исходные assertions unchanged ignoring indentation; later scenarios/helper bodies/PumpUntil5s exact.
+Никакого ожидания по asserted UI value, расширения timeout, удаления coverage или blind rerun.
+
+PASS local review/structural preservation/signatures/lexical delimiters/diff/JSON/public321source0release/
+added secretsPII0. Lexical не AST/compiler; dotnet/csc/mcs/pwsh/Windows отсутствуют:
+new compilation/corrected native/Reissue consumption8/full relevant regression NOT_RUN.
+Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI для реального test fix.
+Public uploads OFF/release+prune ineligible/workflows unchanged. Save source/run/checkpoint и STOP,
+без полного CI wait/новой функции/второго этапа. Далее ТОТ ЖЕ CI exact final logs/merge/corrected native
+success/actual consumption/restored actions/Reissue8/Create8/Recover8/API8/all prior suites.
+Личный/technical-production/commercial остаток сохранён в delivery_gates_after_reissue_consumption;
+ни один gate не закрывается fixture-кодом или старым PASS. Реализация:58–80/100 · Проверенная
+готовность:22/100 · Изменение:+0; главный блокер: новое точное Windows proof corrected fixture/suites.
+
+## История этапа: Reissue Complete owned consumption поверх CI651
 
 PR88 OPEN/DRAFT/source `23a924705fcc7ab11de123163c94f92de10c2a45` и checkpoint
 `d0871a0c4392547f18b855df33fb7477a26a9141` сверены. До изменений56 worktrees clean/locks0,
@@ -30,9 +72,19 @@ proof. Все старые bodies/asserts/timeouts/coverage сохранены, 
 PASS local review/signatures/C#5 await scopes/structural isolation/lexical delimiters/diff/JSON/
 public321source0release/added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh нет:
 new compilation/Reissue consumption8/full regressions NOT_RUN. SUCCESS651 не переносится.
-Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
-release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного CI wait/второго этапа.
-Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/Reissue8/Create8/Recover8/API8/all suites.
+Publication PASS: source `099ba265daefabce5758d25c88e15798ca71bd50`, existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched exact651 parent,
+full tree `e48f1249c54114829ca9d7ab2e47f23c8a9350ed` равен reviewed freeze
+`75b29a39fd54b53dd30e3e8efe211d020f74c3d3`. Public diff5files826add/42delete:
+1 runtime7add/1delete +1 existing test157add/0delete +3docs662add/41delete.
+Merge ref `91eeafc6584992bced555f6142561171e2db1ecf` пока НЕ final tested merge (NOT_RUN).
+ONE automatic [CI652/40041549329](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329):
+exact-source count1/pull_request/attempt1, in_progress/conclusion null.
+Windows120713543137/Ubuntu120713543452 in_progress metadata; new suites NOT_RUN.
+Public uploads OFF/release+prune ineligible/workflows unchanged; final skips not yet checked.
+Postpublication3-doc local checkpoint intentionally NOT pushed, чтобы не запускать второй CI;
+полный SHA в git log -1/PR88 body. STOP без полного wait/второго этапа.
+Далее ТОТ ЖЕ CI652 final logs/exact source+tested merge/Reissue consumption8/Create8/Recover8/API8/all suites.
 
 ### Проверяемый остаток: личный кандидат, technical production, полный коммерческий объём
 

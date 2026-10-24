@@ -3929,32 +3929,32 @@
     }
   ],
   "ci_candidate": {
-    "source": "23a924705fcc7ab11de123163c94f92de10c2a45",
-    "merge_ref": "153be0f9e5ea74aa6cdae54177ebc1670221de83",
-    "tested_merge": "153be0f9e5ea74aa6cdae54177ebc1670221de83",
-    "tree": "38a535e3be126fca5a153a45e3389ff26aae3947",
-    "local_freeze": "57eb7b7b420d4941655ec9da21b1d64353d30919",
-    "run_id": 40011476143,
-    "run_number": 651,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40011476143",
+    "source": "099ba265daefabce5758d25c88e15798ca71bd50",
+    "merge_ref": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "tree": "e48f1249c54114829ca9d7ab2e47f23c8a9350ed",
+    "local_freeze": "75b29a39fd54b53dd30e3e8efe211d020f74c3d3",
+    "run_id": 40041549329,
+    "run_number": 652,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
     "status": "completed",
-    "conclusion": "success",
+    "conclusion": "failure",
     "jobs": {
       "windows": {
-        "id": 120612656982,
+        "id": 120713543137,
         "status": "completed",
-        "conclusion": "success"
+        "conclusion": "failure"
       },
       "ubuntu": {
-        "id": 120612656538,
+        "id": 120713543452,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Both full final logs independently read; both checkout/Windows build identity exact merge; actual per-case markers enumerated, not metadata-only proof.",
-    "windows_compilation": "PASS exact651",
-    "windows_native": "PASS exact651 Create8/Recover8/API8 and all prior actual suites",
-    "pack": "PASS runner-only",
+    "verification": "Both full final logs independently read; exact checkout/build identity; failure method/IL mapped to original native joint assert. Logs do not distinguish selected-ID vs button predicate.",
+    "windows_compilation": "PASS exact652 before native failure",
+    "windows_native": "FAIL early HomeInvitationReissueTests.Native joint assert; new Reissue consumption8 and subsequent API8/HomeVPN suites NOT_RUN",
+    "pack": "SKIPPED",
     "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
   },
@@ -5493,35 +5493,21 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE Reissue Complete handoff consumption UI binding",
-    "baseline_source": "23a924705fcc7ab11de123163c94f92de10c2a45",
-    "baseline_tested_merge": "153be0f9e5ea74aa6cdae54177ebc1670221de83",
-    "baseline_checkpoint": "d0871a0c4392547f18b855df33fb7477a26a9141",
-    "local_code_sha": "4c3a84b6801f7f8a2a7efccd1aff091d518ad385",
-    "scope": "ONLY Reissue Complete sync ConfirmConsumed replaced with await existing ConsumeRecoveredAsync/ConfirmConsumedAsync. Create/Recover/shared helper/core reissue/uncertainty/API8/service/transport unchanged.",
-    "implementation": "Existing explicit owner/original Stop scope/CTS/retained worker/family lease. Guards after handoff/settlement; unknown or accepted-after-cancel remains gated. No automatic revoke/invite/delete replay, accepted delete not recancelled.",
-    "native_cases": [
-      "complete",
-      "close-retry",
-      "dispose",
-      "stop-retry",
-      "service-dispose",
-      "locked",
-      "changed-request",
-      "changed-result"
-    ],
-    "test_contract": "Actual ShowDialog/default Reissue and existing core. Exactly one frozen-ID revoke acknowledgement then one invite with same label+SourceInviteId; same-name sibling unchanged and old access remains revoked. Real protected accepted request/result;5s consume barrier/modal15s/joins5s. Cancel Close/reopen Retry and Stop/lock Refresh/Recover use original recovery ID with no second revoke/invite; changed request/result preserved, no late status, private bytes/draft, successful delete stable after Stop. Callback-only transport, no live VPS proof. All old tests exact.",
-    "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new Reissue candidate",
-    "windows_native": "NOT_RUN Reissue consumption8/full regressions;651 PASS only baseline",
-    "publication": "TODO fresh expected-head guarded PR88 ONE automatic CI; public uploads OFF/release ineligible",
-    "remaining_production_paths": [
-      "Existing invite owned transport binding",
-      "Existing revoke owned transport binding",
-      "Existing reissue orchestration through owned transport without duplicate family lease",
-      "Existing recover-invite owned transport binding"
-    ],
-    "next": "Read SAME new exact-source CI final logs/merge/Reissue consumption8/Create8/Recover8/API8/all prior suites. Only after proof choose one existing owned transport path, no second stage now.",
+    "phase": "ONE CI652 test-contract fixture correction only; no runtime fix",
+    "baseline_source": "099ba265daefabce5758d25c88e15798ca71bd50",
+    "baseline_tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "baseline_checkpoint": "6440c454be8f84af99b222b3146d4e4535e900bf",
+    "local_code_sha": "1d25c59a4ae1abef0a41383523a1778d33c240b0",
+    "scope": "Only first successful Native scenario in tests/HomeInvitationReissueTests.cs; production gating/runtime/all other tests untouched.",
+    "proven_cause": "Fixture returns token without durable request/result and waits only shown!=null. Sync ConfirmConsumed missing-request returned; async API returns false/missing and owner action must settle before restored-actions assertion. Fixture mismatch proven from source; no runtime defect inferred.",
+    "limits": "No separate selected-ID or reissue.Enabled values logged; joint failure not assigned to an unobserved predicate. No runtime/infrastructure defect inferred.",
+    "correction": "Save fixture access, Register real original-ID/name request, RetainResult exact token before completing inviteGate, verify retained RequestId/SourceInviteId/Name/Result. Preserve prior shown assertion, then await ConsumptionWork+ActionWork actual completion and observe faults before unchanged exact ID+restored-actions assertion. Verify real receipt deleted, one revoke/invite, neighbour ID preserved.",
+    "cleanup": "Cancel own pending gates, dispose own form, bounded join own ActionWork/ConsumptionWork/PendingReadWork; finally restore prior access/request bytes. Later scenarios/helpers and original PumpUntil5s unchanged. No wait for asserted UI value and no timeout/assert/coverage weakening.",
+    "local_checks": "PASS one-fixture structural isolation/all original assertions retained/later scenarios+helpers exact/manual signatures/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
+    "windows_compilation": "NOT_RUN new fixture correction",
+    "windows_native": "NOT_RUN corrected native success/Reissue consumption8/full relevant regression; old CI652 remains FAILURE",
+    "publication": "TODO guarded existing PR88 ONE automatic CI for real fixture fix; no rerun of old SHA, public uploads OFF/release ineligible",
+    "next": "Read SAME new CI final logs/exact source+tested merge: corrected native success/accepted consumption+actions, Reissue consumption8/Create8/Recover8/API8 and all prior suites. No new feature/second stage or duplicate CI.",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -5615,7 +5601,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI651 exact23a9247/153be0f full final logs Create8/Recover8/API8/all prior suites PASS. Reissue consumption8 new candidate Windows NOT_RUN; transport unchanged. Weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "CI652 exact099ba26/91eeafc Windows FAILURE at old native fixture joint assert; compilation/Desktop5298/SSH61/Instance30/Maintenance126/Shutdown47 PASS, subsequent Reissue consumption8/HomeVPN suites NOT_RUN. Only test-contract fix candidate new Windows NOT_RUN. Weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -12931,6 +12917,99 @@
         "artifact_uploads": "OFF public PR guard; final skips not yet observed",
         "owner_pc": "NOT_RUN"
       }
+    },
+    "before_ci652_fixture_fix": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE Reissue Complete consumption UI candidate published; sole CI652 in_progress; STOP after checkpoint",
+        "baseline_source": "23a924705fcc7ab11de123163c94f92de10c2a45",
+        "baseline_tested_merge": "153be0f9e5ea74aa6cdae54177ebc1670221de83",
+        "baseline_checkpoint": "d0871a0c4392547f18b855df33fb7477a26a9141",
+        "local_code_sha": "4c3a84b6801f7f8a2a7efccd1aff091d518ad385",
+        "scope": "ONLY Reissue Complete sync ConfirmConsumed replaced with await existing ConsumeRecoveredAsync/ConfirmConsumedAsync. Create/Recover/shared helper/core reissue/uncertainty/API8/service/transport unchanged.",
+        "implementation": "Existing explicit owner/original Stop scope/CTS/retained worker/family lease. Guards after handoff/settlement; unknown or accepted-after-cancel remains gated. No automatic revoke/invite/delete replay, accepted delete not recancelled.",
+        "native_cases": [
+          "complete",
+          "close-retry",
+          "dispose",
+          "stop-retry",
+          "service-dispose",
+          "locked",
+          "changed-request",
+          "changed-result"
+        ],
+        "test_contract": "Actual ShowDialog/default Reissue and existing core. Exactly one frozen-ID revoke acknowledgement then one invite with same label+SourceInviteId; same-name sibling unchanged and old access remains revoked. Real protected accepted request/result;5s consume barrier/modal15s/joins5s. Cancel Close/reopen Retry and Stop/lock Refresh/Recover use original recovery ID with no second revoke/invite; changed request/result preserved, no late status, private bytes/draft, successful delete stable after Stop. Callback-only transport, no live VPS proof. All old tests exact.",
+        "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
+        "windows_compilation": "NOT_RUN new Reissue candidate",
+        "windows_native": "NOT_RUN Reissue consumption8/full regressions;651 PASS only baseline",
+        "publication": "PASS fresh expected-head non-force PR88; fetched exact651 parent/full tree equal reviewed freeze. ONE automatic CI652 pull_request attempt1/exact-source count1.",
+        "remaining_production_paths": [
+          "Existing invite owned transport binding",
+          "Existing revoke owned transport binding",
+          "Existing reissue orchestration through owned transport without duplicate family lease",
+          "Existing recover-invite owned transport binding"
+        ],
+        "next": "Read SAME CI652 full final logs/exact source+tested merge/Reissue consumption8/Create8/Recover8/API8/all old suites. No duplicate/rerun/second stage. Only after proof one bounded existing owned transport path; delivery gates explicit.",
+        "readiness_change": 0,
+        "published_sha": "099ba265daefabce5758d25c88e15798ca71bd50",
+        "merge_ref": "91eeafc6584992bced555f6142561171e2db1ecf",
+        "tested_merge": null,
+        "tree": "e48f1249c54114829ca9d7ab2e47f23c8a9350ed",
+        "local_freeze": "75b29a39fd54b53dd30e3e8efe211d020f74c3d3",
+        "ci_run_id": 40041549329,
+        "ci_run_number": 652,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120713543137,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120713543452,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid second CI",
+        "public_diff": "5files826add/42delete:1 runtime7add/1delete +1 existing test157add/0delete +3docs662add/41delete; shared helper/Create/Recover/core/API8/service/dispatcher/transport/scripts/workflows/VERSION unchanged"
+      },
+      "ci_candidate": {
+        "source": "099ba265daefabce5758d25c88e15798ca71bd50",
+        "merge_ref": "91eeafc6584992bced555f6142561171e2db1ecf",
+        "tested_merge": null,
+        "tree": "e48f1249c54114829ca9d7ab2e47f23c8a9350ed",
+        "local_freeze": "75b29a39fd54b53dd30e3e8efe211d020f74c3d3",
+        "run_id": 40041549329,
+        "run_number": 652,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": {
+          "windows": {
+            "id": 120713543137,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120713543452,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "PASS fresh expected-head non-force PR88 update; fetched exact651 parent/full tree equal reviewed freeze. ONE automatic pull_request attempt1/exact-source count1. Final checkout/build identity not yet verified.",
+        "windows_compilation": "NOT_RUN new Reissue consumption UI candidate",
+        "windows_native": "NOT_RUN Reissue consumption8/Create8/Recover8/API8/full old suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR guard; final skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -17757,17 +17836,42 @@
     ],
     "test_contract": "Actual ShowDialog/default Reissue and existing core. Exactly one frozen-ID revoke acknowledgement then one invite with same label+SourceInviteId; same-name sibling unchanged and old access remains revoked. Real protected accepted request/result;5s consume barrier/modal15s/joins5s. Cancel Close/reopen Retry and Stop/lock Refresh/Recover use original recovery ID with no second revoke/invite; changed request/result preserved, no late status, private bytes/draft, successful delete stable after Stop. Callback-only transport, no live VPS proof. All old tests exact.",
     "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new Reissue candidate",
-    "windows_native": "NOT_RUN Reissue consumption8/full regressions;651 PASS only baseline",
-    "publication": "TODO fresh expected-head guarded PR88 ONE automatic CI; public uploads OFF/release ineligible",
+    "windows_compilation": "PASS exact652",
+    "windows_native": "NOT_RUN Reissue consumption8; CI652 stopped in older callback-only native success fixture",
+    "publication": "PASS fresh expected-head non-force PR88; fetched exact651 parent/full tree equal reviewed freeze. ONE automatic CI652 pull_request attempt1/exact-source count1.",
     "remaining_production_paths": [
       "Existing invite owned transport binding",
       "Existing revoke owned transport binding",
       "Existing reissue orchestration through owned transport without duplicate family lease",
       "Existing recover-invite owned transport binding"
     ],
-    "next": "Read SAME new exact-source CI final logs/merge/Reissue consumption8/Create8/Recover8/API8/all prior suites. Only after proof choose one existing owned transport path, no second stage now.",
-    "readiness_change": 0
+    "next": "Check exact corrected fixture CI before any new feature/transport slice.",
+    "readiness_change": 0,
+    "published_sha": "099ba265daefabce5758d25c88e15798ca71bd50",
+    "merge_ref": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "tree": "e48f1249c54114829ca9d7ab2e47f23c8a9350ed",
+    "local_freeze": "75b29a39fd54b53dd30e3e8efe211d020f74c3d3",
+    "ci_run_id": 40041549329,
+    "ci_run_number": 652,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": {
+      "windows": {
+        "id": 120713543137,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "ubuntu": {
+        "id": 120713543452,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "verification_source": "099ba265daefabce5758d25c88e15798ca71bd50",
+    "verification_tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "verification_run_id": 40041549329
   },
   "delivery_gates_after_reissue_consumption": {
     "basis": "Existing approved31/55 retained. This is delivery-gate separation, no requirement removal, new feature, altered weights or implied acceptance. Old requirement rows remain historical/scoped; current gates here require final exact SHA evidence.",
@@ -17775,7 +17879,11 @@
       {
         "id": "PC-01",
         "status": "NOT_RUN",
-        "criterion": "New exact SHA CI: Reissue consumption8 + Create8/Recover8/API8 and all mandatory suites PASS; final tested merge/source mapped."
+        "criterion": "Corrected new exact-source CI must pass native success after actual consumption, Reissue consumption8 and all prior suites. CI652 failed earlier fixture; no production gate accepted.",
+        "source": "099ba265daefabce5758d25c88e15798ca71bd50",
+        "run_id": 40041549329,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
+        "last_failure_run": 40041549329
       },
       {
         "id": "PC-02",
@@ -17829,5 +17937,93 @@
       "status": "PARTIAL",
       "requirement": "F30 email/account/billing plus remaining approved commercial obligations stay in full plan; not silently removed or declared complete by personal/technical candidate. Sandbox/webhook verification, duplicates/refunds/paid→activation retry/session revocation and approved commercial security/operational acceptance still needed."
     }
+  },
+  "ci652_final": {
+    "source": "099ba265daefabce5758d25c88e15798ca71bd50",
+    "tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "run_id": 40041549329,
+    "run_number": 652,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
+    "status": "completed",
+    "conclusion": "failure",
+    "verification": "Both full final logs independently read; exact checkout/build identity; failure method/IL mapped to original native joint assert. Logs do not distinguish selected-ID vs button predicate.",
+    "jobs": {
+      "windows": {
+        "id": 120713543137,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "ubuntu": {
+        "id": 120713543452,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "failure": {
+      "file": "tests/HomeInvitationReissueTests.cs",
+      "symbol": "Native",
+      "baseline_lines": "102–103",
+      "assert": "native success selects replacement and restores actions",
+      "safe_stack": [
+        "Home VPN safe failure: cause=0; type=System.Exception",
+        "at ProGo.HomeVpnWizardTests.Check; il=12",
+        "at ProGo.HomeInvitationReissueTests.Native; il=841",
+        "at ProGo.HomeInvitationReissueTests.Run; il=1500",
+        "at ProGo.HomeVpnWizardTests.Main; il=1748",
+        "Home VPN wizard tests failed",
+        "At D:\\a\\ProGo\\ProGo\\scripts\\Test-HomeVpnRelay.ps1:19 char:32",
+        "+     if ($LASTEXITCODE -ne 0) { throw 'Home VPN wizard tests failed' }"
+      ],
+      "previous_pass": "native success marks only old selection revoked and presents new token",
+      "per_predicate_values": "UNKNOWN, not logged",
+      "root_cause": "Fixture returns token without durable request/result and waits only shown!=null. Sync ConfirmConsumed missing-request returned; async API returns false/missing and owner action must settle before restored-actions assertion. Fixture mismatch proven from source; no runtime defect inferred."
+    },
+    "pass": {
+      "windows_compilation": "PASS exact652",
+      "desktop": 5298,
+      "ssh_policy": 61,
+      "instance": 30,
+      "maintenance": 126,
+      "shutdown": 47,
+      "updater_package": 5,
+      "ubuntu_operation": 16,
+      "ubuntu_qr": 13,
+      "ubuntu_provisioning": "PASS"
+    },
+    "later_suites": {
+      "actual_markers": {
+        "reissueConsumption8": 0,
+        "createConsumption8": 0,
+        "recoverConsumption8": 0,
+        "consumptionAPI8": 0,
+        "snapshot12": 0
+      },
+      "reissue_consumption8": "NOT_RUN",
+      "create_recover_consumption_and_API8": "NOT_RUN",
+      "remaining_home_vpn_suites": "NOT_RUN after early native failure"
+    },
+    "pack": "SKIPPED",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "owner_pc": "NOT_RUN"
+  },
+  "ci652_native_fixture_correction": {
+    "status": "PARTIAL",
+    "phase": "ONE CI652 test-contract fixture correction only; no runtime fix",
+    "baseline_source": "099ba265daefabce5758d25c88e15798ca71bd50",
+    "baseline_tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
+    "baseline_checkpoint": "6440c454be8f84af99b222b3146d4e4535e900bf",
+    "local_code_sha": "1d25c59a4ae1abef0a41383523a1778d33c240b0",
+    "scope": "Only first successful Native scenario in tests/HomeInvitationReissueTests.cs; production gating/runtime/all other tests untouched.",
+    "proven_cause": "Fixture returns token without durable request/result and waits only shown!=null. Sync ConfirmConsumed missing-request returned; async API returns false/missing and owner action must settle before restored-actions assertion. Fixture mismatch proven from source; no runtime defect inferred.",
+    "limits": "No separate selected-ID or reissue.Enabled values logged; joint failure not assigned to an unobserved predicate. No runtime/infrastructure defect inferred.",
+    "correction": "Save fixture access, Register real original-ID/name request, RetainResult exact token before completing inviteGate, verify retained RequestId/SourceInviteId/Name/Result. Preserve prior shown assertion, then await ConsumptionWork+ActionWork actual completion and observe faults before unchanged exact ID+restored-actions assertion. Verify real receipt deleted, one revoke/invite, neighbour ID preserved.",
+    "cleanup": "Cancel own pending gates, dispose own form, bounded join own ActionWork/ConsumptionWork/PendingReadWork; finally restore prior access/request bytes. Later scenarios/helpers and original PumpUntil5s unchanged. No wait for asserted UI value and no timeout/assert/coverage weakening.",
+    "local_checks": "PASS one-fixture structural isolation/all original assertions retained/later scenarios+helpers exact/manual signatures/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
+    "windows_compilation": "NOT_RUN new fixture correction",
+    "windows_native": "NOT_RUN corrected native success/Reissue consumption8/full relevant regression; old CI652 remains FAILURE",
+    "publication": "TODO guarded existing PR88 ONE automatic CI for real fixture fix; no rerun of old SHA, public uploads OFF/release ineligible",
+    "next": "Read SAME new CI final logs/exact source+tested merge: corrected native success/accepted consumption+actions, Reissue consumption8/Create8/Recover8/API8 and all prior suites. No new feature/second stage or duplicate CI.",
+    "readiness_change": 0
   }
 }

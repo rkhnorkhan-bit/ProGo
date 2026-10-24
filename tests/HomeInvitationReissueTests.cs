@@ -75,33 +75,67 @@ namespace ProGo
             var calls = new List<string>(); var revokeGate = new TaskCompletionSource<string>();
             var inviteGate = new TaskCompletionSource<string>(); string shown = null, confirmation = null;
             var items = Items();
-            using (var form = new HomeInvitationsForm(items, (a,n,i) => {
-                calls.Add(a + ":" + (a == "revoke" ? i : n)); return a == "revoke" ? revokeGate.Task : inviteGate.Task;
-            }, clipboard)) {
-                form.ShowToken = value => shown = value;
-                form.Confirm = value => { confirmation = value; return false; };
-                form.Show(); Application.DoEvents();
-                var list = Controls(form).OfType<ListBox>().Single();
-                var reissue = Button(form, "Перевыпустить потерянный токен");
-                check(!reissue.Enabled, "native reissue requires explicit selected friend");
-                list.SelectedIndex = 0; reissue.PerformClick();
-                check(calls.Count == 0 && confirmation.Contains(OldId) && confirmation.Contains("старый доступ не восстановится"),
-                    "cancelled native confirmation makes no call and explains identity and irreversibility");
-                form.Confirm = value => true;
-                Controls(form).OfType<TextBox>().Single(t => t.AccessibleName == "Имя нового приглашения").Text = "Другой";
-                reissue.PerformClick(); Application.DoEvents();
-                check(!reissue.Enabled && !list.Enabled && Controls(form).OfType<Button>().All(b => !b.Enabled),
-                    "native pending reissue freezes selection and all competing actions");
-                form.Close(); check(!form.IsDisposed, "closing cannot discard a pending reissue result");
-                revokeGate.SetResult("Access revoked."); PumpUntil(() => calls.Count == 2);
-                check(calls[1] == "invite:Друг" && shown == null && Labels(form).Contains("Шаг 2 из 2"),
-                    "native second stage retains selected name and does not show premature success");
-                inviteGate.SetResult(token); PumpUntil(() => shown != null);
-                check(shown == token && items[0].Revoked && !items[1].Revoked && list.Items.Count == 3,
-                    "native success marks only old selection revoked and presents new token");
-                check(((HomeVpnInvitation)list.SelectedItem).Id == HomeVpnAccess.Parse(token).InviteId && reissue.Enabled,
-                    "native success selects replacement and restores actions");
-                Shot(form, work, "friends-reissue-success.png"); form.Close();
+            string accessPath = Path.Combine(HomeVpnPrivateFiles.Root, "access.dat");
+            string requestPath = Path.Combine(HomeVpnPrivateFiles.Root, HomeVpnAdminRecovery.StorageName + ".dat");
+            byte[] originalAccess = File.Exists(accessPath) ? File.ReadAllBytes(accessPath) : null;
+            byte[] originalRequest = File.Exists(requestPath) ? File.ReadAllBytes(requestPath) : null;
+            HomeInvitationsForm successForm = null;
+            try {
+                check(originalRequest == null, "native success fixture starts without an unrelated accepted request");
+                HomeVpnPrivateFiles.Save("access", token);
+                using (var form = new HomeInvitationsForm(items, (a,n,i) => {
+                    calls.Add(a + ":" + (a == "revoke" ? i : n)); return a == "revoke" ? revokeGate.Task : inviteGate.Task;
+                }, clipboard)) {
+                    successForm = form;
+                    form.ShowToken = value => shown = value;
+                    form.Confirm = value => { confirmation = value; return false; };
+                    form.Show(); Application.DoEvents();
+                    var list = Controls(form).OfType<ListBox>().Single();
+                    var reissue = Button(form, "Перевыпустить потерянный токен");
+                    check(!reissue.Enabled, "native reissue requires explicit selected friend");
+                    list.SelectedIndex = 0; reissue.PerformClick();
+                    check(calls.Count == 0 && confirmation.Contains(OldId) && confirmation.Contains("старый доступ не восстановится"),
+                        "cancelled native confirmation makes no call and explains identity and irreversibility");
+                    form.Confirm = value => true;
+                    Controls(form).OfType<TextBox>().Single(t => t.AccessibleName == "Имя нового приглашения").Text = "Другой";
+                    reissue.PerformClick(); Application.DoEvents();
+                    check(!reissue.Enabled && !list.Enabled && Controls(form).OfType<Button>().All(b => !b.Enabled),
+                        "native pending reissue freezes selection and all competing actions");
+                    form.Close(); check(!form.IsDisposed, "closing cannot discard a pending reissue result");
+                    revokeGate.SetResult("Access revoked."); PumpUntil(() => calls.Count == 2);
+                    check(calls[1] == "invite:Друг" && shown == null && Labels(form).Contains("Шаг 2 из 2"),
+                        "native second stage retains selected name and does not show premature success");
+                    var fixtureAccess = HomeVpnAccess.Parse(token);
+                    var owner = new HomeVpnOwner { Host = fixtureAccess.Host, Port = fixtureAccess.Port, Login = "root", KeyFile = "" };
+                    var request = HomeVpnAdminRecovery.Register(owner, "Друг", OldId);
+                    HomeVpnAdminRecovery.RetainResult(owner, request, token);
+                    var retained = HomeVpnAdminRecovery.Pending();
+                    check(retained != null && retained.RequestId == request.RequestId && retained.SourceInviteId == OldId
+                        && retained.Name == "Друг" && retained.Result == token, "native success fixture retains exact accepted replacement request and receipt before handoff");
+                    inviteGate.SetResult(token); PumpUntil(() => shown != null);
+                    check(shown == token && items[0].Revoked && !items[1].Revoked && list.Items.Count == 3,
+                        "native success marks only old selection revoked and presents new token");
+                    // Showing the token precedes async receipt consumption; wait for work, never for the asserted UI value.
+                    PumpUntil(() => form.ConsumptionWork.IsCompleted && form.ActionWork.IsCompleted);
+                    form.ConsumptionWork.GetAwaiter().GetResult(); form.ActionWork.GetAwaiter().GetResult();
+                    check(((HomeVpnInvitation)list.SelectedItem).Id == HomeVpnAccess.Parse(token).InviteId && reissue.Enabled,
+                        "native success selects replacement and restores actions");
+                    check(!File.Exists(requestPath) && form.ConsumptionWork.Status == TaskStatus.RanToCompletion
+                        && calls.SequenceEqual(new[] { "revoke:" + OldId, "invite:Друг" }) && items[1].Id == OtherId,
+                        "native successful consumption removes its accepted receipt once without another revoke/invite or changed neighbour");
+                    Shot(form, work, "friends-reissue-success.png"); form.Close();
+                }
+            } finally {
+                revokeGate.TrySetCanceled(); inviteGate.TrySetCanceled();
+                try {
+                    if (successForm != null) {
+                        successForm.Dispose();
+                        PumpUntil(() => successForm.ActionWork.IsCompleted && successForm.ConsumptionWork.IsCompleted && successForm.PendingReadWork.IsCompleted);
+                    }
+                } finally {
+                    if (originalAccess == null) File.Delete(accessPath); else File.WriteAllBytes(accessPath, originalAccess);
+                    if (originalRequest == null) File.Delete(requestPath); else File.WriteAllBytes(requestPath, originalRequest);
+                }
             }
             calls.Clear(); bool failList = true;
             using (var form = new HomeInvitationsForm(Items(), (a,n,i) => {
