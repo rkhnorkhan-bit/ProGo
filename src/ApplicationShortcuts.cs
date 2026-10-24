@@ -115,17 +115,73 @@ namespace ProGo
             public string InstallIdentity { get; private set; }
             public string LocationIdentity { get; private set; }
             public string Disposition { get; private set; }
+            public MenuInstallEvidence Menu { get; private set; }
             public bool BeforeExists { get; private set; }
             public string BeforeHash { get; private set; }
             public bool Exists { get; private set; }
             public string Hash { get; private set; }
-            internal StartupInstallEvidence(string install, string path, byte[] before, byte[] after, bool created)
+            internal StartupInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, MenuInstallEvidence menuEvidence)
             {
-                InstallIdentity = Identity(install); LocationIdentity = Identity(path);
+                InstallIdentity = Identity(install); LocationIdentity = Identity(path); Menu = menuEvidence;
                 Disposition = created ? "created" : "preserved";
                 BeforeExists = before != null; BeforeHash = Digest(before);
                 Exists = after != null; Hash = Digest(after);
             }
+        }
+
+        public sealed class MenuInstallEvidence
+        {
+            public int Schema { get { return 1; } }
+            public string InstallIdentity { get; private set; }
+            public string LocationIdentity { get; private set; }
+            public string Disposition { get; private set; }
+            public bool Requested { get; private set; }
+            public bool BeforeExists { get; private set; }
+            public string BeforeHash { get; private set; }
+            public bool Exists { get; private set; }
+            public string Hash { get; private set; }
+            internal MenuInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, bool requested)
+            {
+                InstallIdentity = Identity(install); LocationIdentity = Identity(path);
+                Disposition = created ? "created" : "preserved"; Requested = requested;
+                BeforeExists = before != null; BeforeHash = Digest(before);
+                Exists = after != null; Hash = Digest(after);
+            }
+        }
+
+        private byte[] ReadMenuBytes()
+        {
+            string path = Path.Combine(menu, "ProGo.lnk");
+            CheckLocation(path);
+            try {
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    if (stream.Length > 65536) throw new IOException("Menu shortcut is too large.");
+                    byte[] bytes = new byte[(int)stream.Length];
+                    int offset = 0, read;
+                    while (offset < bytes.Length && (read = stream.Read(bytes, offset, bytes.Length - offset)) > 0) offset += read;
+                    if (offset != bytes.Length) throw new IOException("Menu shortcut could not be read completely.");
+                    return bytes;
+                }
+            } catch (FileNotFoundException) { return null; }
+            catch (DirectoryNotFoundException) { return null; }
+        }
+
+        // Primary Menu evidence only. Legacy migration evidence is a separate prerequisite.
+        public bool VerifyMenuInstallEvidence(MenuInstallEvidence evidence)
+        {
+            try {
+                string path = Path.Combine(menu, "ProGo.lnk");
+                if (evidence == null || evidence.Schema != 1 || evidence.InstallIdentity != Identity(root) ||
+                    evidence.LocationIdentity != Identity(path)) return false;
+                if (evidence.Disposition == "preserved") {
+                    if (evidence.BeforeExists != evidence.Exists || evidence.BeforeHash != evidence.Hash) return false;
+                } else if (evidence.Disposition == "created") {
+                    if (!evidence.Requested || evidence.BeforeExists || evidence.BeforeHash != null || !evidence.Exists) return false;
+                } else return false;
+                if (evidence.Requested && (!evidence.Exists || !Matches(path, "--show"))) return false;
+                byte[] current = ReadMenuBytes();
+                return evidence.Exists == (current != null) && evidence.Hash == Digest(current);
+            } catch { return false; }
         }
 
         private static string Digest(byte[] bytes)
@@ -158,7 +214,7 @@ namespace ProGo
         public StartupInstallEvidence InstallWithStartupEvidence(bool wasInstalled, bool noStartup, bool noStartMenu)
         {
             var evidence = InstallCore(wasInstalled, noStartup, noStartMenu, true);
-            if (!VerifyStartupInstallEvidence(evidence)) throw new IOException("Startup completion evidence changed.");
+            if (!VerifyStartupInstallEvidence(evidence) || !VerifyMenuInstallEvidence(evidence.Menu)) throw new IOException("Startup completion evidence changed.");
             return evidence;
         }
 
@@ -166,8 +222,10 @@ namespace ProGo
         {
             if (!File.Exists(executable)) throw new IOException("Installed executable is missing.");
             byte[] before = captureStartup ? ReadStartupBytes() : null;
+            byte[] menuBefore = captureStartup ? ReadMenuBytes() : null;
+            byte[] menuCreated = null;
             if (!noStartMenu) {
-                EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
+                menuCreated = EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
                 MigrateMenu();
             }
             // Existing links (including disabled/customized ones) are never
@@ -179,7 +237,12 @@ namespace ProGo
             if (created == null ? !Equal(before, after) :
                 (before != null || !Equal(created, after) || !Matches(startup, "") || !Equal(after, ReadStartupBytes())))
                 throw new IOException("Startup completion could not be verified. Current state was preserved.");
-            return new StartupInstallEvidence(root, startup, before, after, created != null);
+            byte[] menuAfter = ReadMenuBytes();
+            if (menuCreated == null ? !Equal(menuBefore, menuAfter) :
+                (menuBefore != null || !Equal(menuCreated, menuAfter)))
+                throw new IOException("Menu completion could not be verified. Current state was preserved.");
+            var menuEvidence = new MenuInstallEvidence(root, Path.Combine(menu, "ProGo.lnk"), menuBefore, menuAfter, menuCreated != null, !noStartMenu);
+            return new StartupInstallEvidence(root, startup, before, after, created != null, menuEvidence);
         }
 
         public bool MigrateMenu()

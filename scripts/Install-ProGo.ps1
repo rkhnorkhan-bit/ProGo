@@ -423,6 +423,10 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$Co
         $StartupEvidence.InstallIdentity -cne (Get-ProGoInstallerIdentity $Backup.InstallDirectory))) {
         throw 'Installer startup evidence identity is invalid.'
     }
+    if ($RequireStartupEvidence -and ($null -eq $StartupEvidence.Menu -or $StartupEvidence.Menu.Schema -ne 1 -or
+        $StartupEvidence.Menu.InstallIdentity -cne (Get-ProGoInstallerIdentity $Backup.InstallDirectory))) {
+        throw 'Installer menu evidence identity is invalid.'
+    }
     $text = ([pscustomobject]@{ Schema = 1; Phase = 'installed'; Identity = (Get-ProGoInstallerIdentity $Backup.InstallDirectory);
         Journal = [IO.Path]::GetFileName($Backup.Journal.Directory); Snapshot = $(if ($null -eq $Backup.Directory) { $null } else { [IO.Path]::GetFileName($Backup.Directory) });
         Inventory = $Backup.Journal.Inventory; Records = $proofs;
