@@ -2756,10 +2756,19 @@
           "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance"
         ],
         "installer_ownership_slice": {
-          "status": "NOT_RUN",
+          "status": "PASS",
           "code_commit": "bf06449e403ae01380fdc93c01c8a1065e8b1148",
-          "windows_tests": "NOT_RUN InstallerMaintenance8 pending new CI",
-          "scope": "ownership only, not complete transaction/rollback"
+          "windows_tests": "PASS InstallerMaintenance8 exact CI664; bounded ownership only",
+          "scope": "ownership only, not complete transaction/rollback",
+          "source": "921b3f726ad9b4e833b475442ad8fb1a871f9a91",
+          "ci_run_id": 40093766505,
+          "tested_merge": "d3a0e78a849f16106d6e5d3b3fea219695d1e82a"
+        },
+        "installer_staging_slice": {
+          "status": "NOT_RUN",
+          "code_commit": "142b0c5a25c0d1411371b4789f6b8a7c2f225658",
+          "windows_tests": "NOT_RUN stage8/maintenance9 pending exact new CI",
+          "scope": "verified local byte staging only; backup/self-check/rollback still open"
         }
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
@@ -3972,16 +3981,17 @@
     }
   ],
   "ci_candidate": {
-    "source": "44d76b2347cebd23c627003e231de86c261e97e1",
-    "tested_merge": "86d483cd84da1e3220273a6102f017609e5eaf20",
-    "run_id": 40091168500,
-    "run_number": 663,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40091168500",
+    "source": "921b3f726ad9b4e833b475442ad8fb1a871f9a91",
+    "tested_merge": "d3a0e78a849f16106d6e5d3b3fea219695d1e82a",
+    "run_id": 40093766505,
+    "run_number": 664,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40093766505",
     "status": "completed",
     "conclusion": "success",
-    "scope": "test-only diagnostic, not runtime fix",
-    "windows_compilation": "PASS exact CI663 merge",
-    "windows_native": "PASS exact CI663 suites incl InstallPayload9",
+    "scope": "F23-R02 ownership only; not full installer transaction/PGA04",
+    "windows_compilation": "PASS exact CI664 merge",
+    "windows_native": "PASS exact CI664 suites",
+    "installer_maintenance8": "PASS all eight",
     "install_payload9": "PASS all nine",
     "pack": "PASS runner-only",
     "artifact_uploads": "SKIPPED",
@@ -5523,17 +5533,17 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE F23-R02 installer shared maintenance admission/release",
-    "baseline_source": "44d76b2347cebd23c627003e231de86c261e97e1",
-    "baseline_checkpoint": "531af3bfabb5a9c3eabcda3b825faa29381014f4",
-    "local_development_sha": "bf06449e403ae01380fdc93c01c8a1065e8b1148",
+    "phase": "ONE F23-R02 frozen verified installer staging",
+    "baseline_source": "921b3f726ad9b4e833b475442ad8fb1a871f9a91",
+    "baseline_checkpoint": "55f62b87f9e2a267b13466c04b7dc74a521399df",
+    "local_development_sha": "142b0c5a25c0d1411371b4789f6b8a7c2f225658",
     "published_sha": null,
-    "ci_status": "NOT_RUN before publication",
-    "scope": "existing installer Enter->owned Stop->copies/shortcuts->finally Dispose->optional Launch; no standalone transaction completion claim",
-    "criterion": "F23-R02 installer uses common owner and refuses writes before admission/confirmed shutdown",
-    "tests": "InstallerMaintenance8 mocked/isolated; Windows NOT_RUN locally; local static/docs3/public/JSON/diff PASS",
-    "remaining": "verified staging/backup/retention, self-check/rollback/recovery, updater fallback fixed paths, PGA04 opt-in UI/executor, package/target gates",
-    "next": "Same new exact CI final logs; no second slice",
+    "ci_status": "NOT_RUN before guarded publication",
+    "scope": "freeze declared local inventory hashes; owned staged copy verification; install reads stage; scoped cleanup; no backup/rollback in this slice",
+    "criterion": "No installed writes before matching complete staged runtime; changed/missing/corrupt payload refuses without fallback",
+    "tests": "InstallerStage8 + Maintenance9 (original8 retained) + existing Payload9; Windows NOT_RUN locally",
+    "next": "Same new exact CI final logs; then one bounded verified backup-before-overwrite prerequisite",
+    "remaining": "verified backup/retention, installed self-check/rollback/recovery, updater fallback fixed paths, PGA04 opt-in, package/target gates",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -8175,6 +8185,26 @@
             "conclusion": "success"
           }
         ]
+      }
+    },
+    {
+      "checkpoint": "before_ci664",
+      "ci_candidate": {
+        "source": "44d76b2347cebd23c627003e231de86c261e97e1",
+        "tested_merge": "86d483cd84da1e3220273a6102f017609e5eaf20",
+        "run_id": 40091168500,
+        "run_number": 663,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40091168500",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "test-only diagnostic, not runtime fix",
+        "windows_compilation": "PASS exact CI663 merge",
+        "windows_native": "PASS exact CI663 suites incl InstallPayload9",
+        "install_payload9": "PASS all nine",
+        "pack": "PASS runner-only",
+        "artifact_uploads": "SKIPPED",
+        "owner_pc": "NOT_RUN",
+        "prune": "SKIPPED"
       }
     }
   ],
@@ -14220,6 +14250,30 @@
         "ci_conclusion": null,
         "windows_parser": "NOT_RUN final result pending",
         "windows_startup_diagnostics": "NOT_RUN final result pending"
+      }
+    },
+    "before_f23_installer_staging": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE F23-R02 installer shared maintenance admission/release",
+        "baseline_source": "44d76b2347cebd23c627003e231de86c261e97e1",
+        "baseline_checkpoint": "531af3bfabb5a9c3eabcda3b825faa29381014f4",
+        "local_development_sha": "bf06449e403ae01380fdc93c01c8a1065e8b1148",
+        "published_sha": "921b3f726ad9b4e833b475442ad8fb1a871f9a91",
+        "ci_status": "in_progress",
+        "scope": "existing installer Enter->owned Stop->copies/shortcuts->finally Dispose->optional Launch; no standalone transaction completion claim",
+        "criterion": "F23-R02 installer uses common owner and refuses writes before admission/confirmed shutdown",
+        "tests": "InstallerMaintenance8 mocked/isolated; Windows NOT_RUN locally; local static/docs3/public/JSON/diff PASS",
+        "remaining": "verified staging/backup/retention, self-check/rollback/recovery, updater fallback fixed paths, PGA04 opt-in UI/executor, package/target gates",
+        "next": "Same CI664 final logs/exact tested merge/InstallerMaintenance8 + retained InstallPayload9 + relevant regressions. No second slice this turn.",
+        "readiness_change": 0,
+        "published_tree": "756d89ebf2f6210b6ee1ab4f44d68bad27db0eeb",
+        "reviewed_freeze": "54fe903deb7d1aab86fe05f94d4f48209d71a072",
+        "ci_run_id": 40093766505,
+        "ci_run_number": 664,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40093766505",
+        "ci_conclusion": null,
+        "windows_tests": "NOT_RUN final logs pending: InstallerMaintenance8/InstallPayload9/old regressions"
       }
     }
   },
@@ -20734,13 +20788,51 @@
     "baseline_source": "44d76b2347cebd23c627003e231de86c261e97e1",
     "baseline_checkpoint": "531af3bfabb5a9c3eabcda3b825faa29381014f4",
     "local_development_sha": "bf06449e403ae01380fdc93c01c8a1065e8b1148",
-    "published_sha": null,
-    "ci_status": "NOT_RUN before publication",
+    "published_sha": "921b3f726ad9b4e833b475442ad8fb1a871f9a91",
+    "ci_status": "completed",
     "scope": "existing installer Enter->owned Stop->copies/shortcuts->finally Dispose->optional Launch; no standalone transaction completion claim",
     "criterion": "F23-R02 installer uses common owner and refuses writes before admission/confirmed shutdown",
     "tests": "InstallerMaintenance8 mocked/isolated; Windows NOT_RUN locally; local static/docs3/public/JSON/diff PASS",
     "remaining": "verified staging/backup/retention, self-check/rollback/recovery, updater fallback fixed paths, PGA04 opt-in UI/executor, package/target gates",
-    "next": "Same new exact CI final logs; no second slice",
+    "next": "bounded frozen staging prerequisite; no full transaction acceptance",
+    "readiness_change": 0,
+    "published_tree": "756d89ebf2f6210b6ee1ab4f44d68bad27db0eeb",
+    "reviewed_freeze": "54fe903deb7d1aab86fe05f94d4f48209d71a072",
+    "ci_run_id": 40093766505,
+    "ci_run_number": 664,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40093766505",
+    "ci_conclusion": "success",
+    "windows_tests": "PASS InstallerMaintenance8 exact source921b3f7/merged3a0e78"
+  },
+  "ci664_final": {
+    "source": "921b3f726ad9b4e833b475442ad8fb1a871f9a91",
+    "tested_merge": "d3a0e78a849f16106d6e5d3b3fea219695d1e82a",
+    "run_id": 40093766505,
+    "windows_job": 120871649632,
+    "ubuntu_job": 120871649424,
+    "status": "completed",
+    "conclusion": "success",
+    "full_final_logs": "PASS independently read Windows15409/Ubuntu",
+    "installer_maintenance8": "PASS all eight",
+    "install_payload9": "PASS all nine",
+    "suites": "Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91 and prior owned/repair/update suites PASS",
+    "pack": "PASS runner-only; uploads/prune SKIPPED",
+    "ci662_incident": "root UNKNOWN; non-reproduction not a fix; safe diagnostics retained",
+    "owner_pc": "NOT_RUN"
+  },
+  "f23_installer_staging": {
+    "status": "PARTIAL",
+    "phase": "ONE F23-R02 frozen verified installer staging",
+    "baseline_source": "921b3f726ad9b4e833b475442ad8fb1a871f9a91",
+    "baseline_checkpoint": "55f62b87f9e2a267b13466c04b7dc74a521399df",
+    "local_development_sha": "142b0c5a25c0d1411371b4789f6b8a7c2f225658",
+    "published_sha": null,
+    "ci_status": "NOT_RUN before guarded publication",
+    "scope": "freeze declared local inventory hashes; owned staged copy verification; install reads stage; scoped cleanup; no backup/rollback in this slice",
+    "criterion": "No installed writes before matching complete staged runtime; changed/missing/corrupt payload refuses without fallback",
+    "tests": "InstallerStage8 + Maintenance9 (original8 retained) + existing Payload9; Windows NOT_RUN locally",
+    "next": "Same new exact CI final logs; then one bounded verified backup-before-overwrite prerequisite",
+    "remaining": "verified backup/retention, installed self-check/rollback/recovery, updater fallback fixed paths, PGA04 opt-in, package/target gates",
     "readiness_change": 0
   }
 }

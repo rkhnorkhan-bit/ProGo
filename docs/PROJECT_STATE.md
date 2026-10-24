@@ -8,7 +8,47 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: F23-R02 installer shared maintenance ownership
+## Текущий этап: F23-R02 frozen verified staging before runtime writes
+
+PR88 OPEN/DRAFT source `921b3f726ad9b4e833b475442ad8fb1a871f9a91`, checkpoint
+`55f62b87f9e2a267b13466c04b7dc74a521399df`, clean/idle/root-only active writer verified.
+Full CI664 Windows15409-line and Ubuntu final logs independently read; tested merge
+`d3a0e78a849f16106d6e5d3b3fea219695d1e82a`, both jobs completed SUCCESS. InstallerMaintenance8 and
+InstallPayload9 all PASS, Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/
+Portable91/repair/updater transport/progress/package5 and prior owned suites PASS. Pack runner-only,
+uploads/prune SKIPPED. CI662 timeout root cause UNKNOWN; later non-reproduction not a fix; diagnostic retained.
+
+Code `142b0c5a25c0d1411371b4789f6b8a7c2f225658`: one F23 staging prerequisite only. Read-only preflight freezes SHA256 of declared runtime
+inventory, preserving EXE/version metadata checks. After existing Enter/owned Stop, stage creates one GUID
+child under OS temp; copies only declared files, verifies each copied hash against frozen preflight, repeats
+completeness/EXE-version/hash checks. Installer source variables bind to verified stage before any installed
+runtime/user-directory writes. Unlisted payload extras cannot enter staged home-vpn tree. Changed/missing/
+corrupt/incomplete stage fails before installed writes; no build/download fallback. Original source-build
+branch, target program/data paths and shared maintenance adapters unchanged. This proves local byte-copy
+identity, NOT publisher authenticity/signature, hostile concurrent-writer hardening or whole release identity.
+
+Cleanup validates direct temp-child GUID scope and refuses redirected paths; scans no links and deletes
+only own leaves/empty directories (no recursive-follow deletion). New-stage failure cleans its own resources;
+main finally cleans stage then releases maintenance in nested finally even if cleanup fails. No deletion of
+source/foreign dirs or user settings/keys. Cleanup failure still propagates; durable cleanup recovery belongs
+to later transaction work. No real service/ACL/IPC/network actions run locally or in new tests.
+
+InstallerStage8: exact identity/all hashes; declared-only inventory; stage independent of later source edits
+and successful own cleanup; preflight source-changed; source-missing; corrupt-copy; copy-error; foreign
+cleanup refusal preserves unrelated sentinel. InstallerMaintenance original8 assertions retained plus ninth
+stage-changed integration verifies actual production main refuses before runtime copy, releases owner and
+preserves synthetic user bytes. Tests use new GUID temp dirs and mock maintenance/shortcuts/launch; no
+real installation. Existing payload9 unchanged. Stage test wired once, no workflow/test timeout changes.
+
+PASS local static/review/signatures/old-branch+helper+workflow+SSH diagnostic parity, docs3, JSON/diff,
+public-content/secrets. Windows parser/InstallerStage8/Maintenance9/Payload9 and regressions NOT_RUN for
+new source pending one automatic CI. No inherited CI664 PASS. F23 still PARTIAL, not complete installer.
+Next same new CI final exact merge/logs/suites; then separately verified backup-before-overwrite/retention,
+installed self-check/rollback/recovery, updater fallback fixed paths and PGA04 OFF/default explicit consent.
+Privatecandidate BLOCKED_TRANSFER unchanged; no retry/delivery/install/build-only/private transfer/live
+security action. Fixed readiness58–80/22,+0. STOP after this bounded publication/checkpoint, no second stage.
+
+## История этапа: F23-R02 installer shared maintenance ownership
 
 PR88 OPEN/DRAFT source `44d76b2347cebd23c627003e231de86c261e97e1`, local checkpoint
 `531af3bfabb5a9c3eabcda3b825faa29381014f4`, clean/idle/root-only active writer verified.
@@ -47,6 +87,18 @@ InstallPayload9 and maintenance/repair/update regressions; then ONE separately s
 backup-before-write prerequisite, self-check/rollback remain later. Privatecandidate BLOCKED_TRANSFER
 unchanged; no retry/delivery/build-only export/install/live/security action. Fixed scores58–80/22,+0.
 Stop after one guarded source publication, one automatic CI and local checkpoint; do not wait final CI.
+
+Publication checkpoint: source `921b3f726ad9b4e833b475442ad8fb1a871f9a91`, parent
+`44d76b2347cebd23c627003e231de86c261e97e1`, tree `756d89ebf2f6210b6ee1ab4f44d68bad27db0eeb`
+verified after fetch equals reviewed freeze `54fe903deb7d1aab86fe05f94d4f48209d71a072`.
+One expected-HEAD guarded non-force PR88 update; ONE automatic
+[CI664/40093766505](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40093766505), exact-source count1,
+event pull_request/attempt1/in_progress/conclusion null at checkpoint. New Windows parser/native
+InstallerMaintenance8/InstallPayload9/regressions final NOT_RUN; CI663 not inherited. Workflows unchanged,
+public upload guards4 retained; no release/upload/manual CI triggered. Local docs-only checkpoint not
+pushed (no second CI); full SHA via git log -1/PR88 body. Next same CI664 final logs/exact tested merge,
+then one separately scoped verified staging/backup prerequisite. CI662 root cause UNKNOWN/diagnostics
+retained. Privatecandidate BLOCKED_TRANSFER; no retry/install/live action. STOP after this slice.
 
 ## История этапа: CI662 owned exit0 startup — evidence-only test diagnostics
 

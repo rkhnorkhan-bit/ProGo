@@ -5,6 +5,11 @@ $tokens = $null; $errors = $null
 $installer = Join-Path $Root 'scripts\Install-ProGo.ps1'
 $ast = [Management.Automation.Language.Parser]::ParseFile($installer, [ref]$tokens, [ref]$errors)
 if ($errors.Count) { throw 'Installer does not parse.' }
+# Load pure preflight/staging helpers only; Enter/Stop remain mocked below.
+foreach ($function in $ast.FindAll({ param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+    $node.Name -notin @('Enter-ProGoInstallerMaintenance', 'Stop-ProGoInstallerApplication')
+}, $false)) { . ([scriptblock]::Create($function.Extent.Text)) }
 $boundary = @($ast.EndBlock.Statements | Where-Object {
     $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -eq '$InstallDir'
 })
@@ -32,6 +37,7 @@ function Initialize-ProGoShortcuts {
     if ($FixtureState.Mode -eq 'shortcut-fail') { throw 'fixture-shortcut-fail' }
 }
 '@ | Set-Content -LiteralPath (Join-Path $PayloadScripts 'Shortcuts-ProGo.ps1') -Encoding UTF8
+    $Payload = Get-ProGoInstallPayload -Directory $ReleaseDir
     $Exe = Join-Path $ReleaseDir 'ProGo.exe'
     $VersionFile = Join-Path $ReleaseDir 'VERSION'
     $NoStartup = $false; $NoStartMenuShortcut = $false
@@ -79,15 +85,23 @@ function Initialize-ProGoShortcuts {
             if ($Object -like 'Install OK:*') { $FixtureState.SuccessMessage = $true }
         }
         $Launch = $Mode -eq 'launch' -or $Mode -eq 'launch-fail'
+        $savedVersion = [IO.File]::ReadAllBytes($VersionFile)
+        if ($Mode -eq 'stage-changed') { [IO.File]::WriteAllText($VersionFile, '999.998.997') }
         $caught = $false
         try { & $body } catch {
-            if (-not $_.Exception.Message.Contains('fixture-' + $Mode)) { throw }
+            if ($Mode -eq 'stage-changed') {
+                if (-not $_.Exception.Message.Contains('Installer payload changed or stage copy is corrupt.')) { throw }
+            } elseif (-not $_.Exception.Message.Contains('fixture-' + $Mode)) { throw }
             $caught = $true
         }
+        [IO.File]::WriteAllBytes($VersionFile, $savedVersion)
         Check-InstallerOwner (-not $FixtureState.LeaseHeld) ($Mode + ' releases ownership')
         Check-InstallerOwner (([Convert]::ToBase64String($before)) -ceq ([Convert]::ToBase64String([IO.File]::ReadAllBytes($data)))) ($Mode + ' preserves user bytes')
         if ($Mode -eq 'busy') {
             Check-InstallerOwner ($caught -and $FixtureState.Disposes -eq 0 -and $FixtureState.Copies -eq 0 -and $FixtureState.Events.Count -eq 1) 'busy refuses all writes'
+        } elseif ($Mode -eq 'stage-changed') {
+            Check-InstallerOwner ($caught -and $FixtureState.Disposes -eq 1 -and $FixtureState.Copies -eq 0 -and
+                ($FixtureState.Events -join ',') -eq 'enter,stop,dispose') 'failed staging releases without runtime writes'
         } elseif ($Mode -eq 'stop-fail' -or $Mode -eq 'retry-stop') {
             Check-InstallerOwner ($caught -and $FixtureState.Disposes -eq 1 -and $FixtureState.Copies -eq 0 -and ($FixtureState.Events -join ',') -eq 'enter,stop,dispose') 'stop refusal releases without writes'
             if ($Mode -eq 'retry-stop') {
@@ -107,8 +121,8 @@ function Initialize-ProGoShortcuts {
         Check-InstallerOwner ($FixtureState.SuccessMessage -eq ($Mode -in @('complete', 'launch', 'launch-fail'))) ($Mode + ' never reports install success before admitted copies/shortcuts')
         Microsoft.PowerShell.Utility\Write-Host ('PASS: installer maintenance ' + $Mode)
     }
-    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop')) { Run-InstallerOwnerCase $mode }
-    Write-Host 'Installer maintenance tests PASS: 8'
+    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop', 'stage-changed')) { Run-InstallerOwnerCase $mode }
+    Write-Host 'Installer maintenance tests PASS: 9'
 } finally {
     $env:LOCALAPPDATA = $oldLocal
     if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }

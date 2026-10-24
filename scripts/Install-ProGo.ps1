@@ -48,12 +48,89 @@ function Get-ProGoInstallPayload {
     if ($assembly.Name -ne 'ProGo' -or $assembly.Version.ToString(3) -ne $version) {
         throw 'Installer payload executable/version mismatch.'
     }
+    $hashes = @{}
+    foreach ($name in $required) {
+        $hashes[$name] = (Get-FileHash -LiteralPath (Join-Path $payload $name) -Algorithm SHA256).Hash
+    }
     return [pscustomobject]@{
         Directory = $payload
         ScriptsDirectory = (Join-Path $payload 'scripts')
         Executable = $exe
         VersionFile = (Join-Path $payload 'VERSION')
         Version = $version
+        Files = @($required)
+        Hashes = $hashes
+    }
+}
+# Staging admits only the preflight inventory, never arbitrary payload extras.
+function Assert-ProGoInstallerStagePath([string]$RootDirectory, [string]$Relative) {
+    $rootPath = [IO.Path]::GetFullPath($RootDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    $path = [IO.Path]::GetFullPath((Join-Path $rootPath $Relative))
+    if (-not $path.StartsWith($rootPath + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Installer stage path escaped its root.'
+    }
+    for ($probe = $path; $probe.Length -ge $rootPath.Length; $probe = [IO.Path]::GetDirectoryName($probe)) {
+        if (Test-Path -LiteralPath $probe) {
+            if (([IO.File]::GetAttributes($probe) -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw 'Installer stage refuses redirected paths.'
+            }
+        }
+        if ($probe.TrimEnd([IO.Path]::DirectorySeparatorChar) -eq $rootPath) { break }
+    }
+    return $path
+}
+function Copy-ProGoInstallerStageFile([string]$Source, [string]$Destination) {
+    [IO.File]::Copy($Source, $Destination, $false)
+}
+function Remove-ProGoInstallerStage($Stage) {
+    $rootPath = [IO.Path]::GetFullPath($Stage.Directory)
+    $parent = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    if ([IO.Path]::GetDirectoryName($rootPath) -ne $parent -or
+        [IO.Path]::GetFileName($rootPath) -notmatch '^ProGo-install-stage-[0-9a-f]{32}$') {
+        throw 'Installer stage cleanup scope is invalid.'
+    }
+    if (-not [IO.Directory]::Exists($rootPath)) { return }
+    if (([IO.File]::GetAttributes($rootPath) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Installer stage root is redirected.' }
+    $pending = New-Object 'System.Collections.Generic.Stack[string]'
+    $directories = New-Object 'System.Collections.Generic.List[string]'
+    $files = New-Object 'System.Collections.Generic.List[string]'
+    $pending.Push($rootPath)
+    while ($pending.Count -gt 0) {
+        $directory = $pending.Pop(); $directories.Add($directory)
+        foreach ($entry in [IO.Directory]::GetFileSystemEntries($directory)) {
+            $relative = $entry.Substring($rootPath.Length + 1)
+            [void](Assert-ProGoInstallerStagePath $rootPath $relative)
+            if ([IO.Directory]::Exists($entry)) { $pending.Push($entry) } else { $files.Add($entry) }
+        }
+    }
+    # No recursive deletion that could follow a redirected directory.
+    foreach ($file in $files) { [IO.File]::Delete($file) }
+    for ($index = $directories.Count - 1; $index -ge 0; $index--) { [IO.Directory]::Delete($directories[$index], $false) }
+}
+function New-ProGoInstallerStage($Payload) {
+    $directory = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-install-stage-' + [Guid]::NewGuid().ToString('N'))
+    $stage = [pscustomobject]@{ Directory = $directory; Payload = $null }
+    $created = $false
+    try {
+        New-Item -ItemType Directory -Path $directory -ErrorAction Stop | Out-Null
+        $created = $true
+        foreach ($relative in $Payload.Files) {
+            $source = Assert-ProGoInstallerStagePath $Payload.Directory $relative
+            $destination = Assert-ProGoInstallerStagePath $directory $relative
+            [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
+            Copy-ProGoInstallerStageFile $source $destination
+            if ((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash -cne $Payload.Hashes[$relative]) {
+                throw 'Installer payload changed or stage copy is corrupt.'
+            }
+        }
+        $stage.Payload = Get-ProGoInstallPayload -Directory $directory
+        foreach ($relative in $Payload.Files) {
+            if ($stage.Payload.Hashes[$relative] -cne $Payload.Hashes[$relative]) { throw 'Installer stage verification mismatch.' }
+        }
+        return $stage
+    } catch {
+        if ($created) { Remove-ProGoInstallerStage $stage }
+        throw
     }
 }
 # Use the same owned maintenance protocol as update/restore/uninstall. These
@@ -79,9 +156,15 @@ $PayloadScripts = $Payload.ScriptsDirectory
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 $InstallMaintenance = $null
+$InstallStage = $null
 try {
     $InstallMaintenance = Enter-ProGoInstallerMaintenance
     Stop-ProGoInstallerApplication -InstallDirectory $InstallDir
+    $InstallStage = New-ProGoInstallerStage $Payload
+    $ReleaseDir = $InstallStage.Payload.Directory
+    $Exe = $InstallStage.Payload.Executable
+    $VersionFile = $InstallStage.Payload.VersionFile
+    $PayloadScripts = $InstallStage.Payload.ScriptsDirectory
     . (Join-Path $PayloadScripts "Shortcuts-ProGo.ps1")
     $WasInstalled = Test-ProGoExistingInstallation -InstallDirectory $InstallDir
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
@@ -131,7 +214,11 @@ try {
     Write-Host "Vault/settings/logs are preserved in %LOCALAPPDATA%\ProGo."
 
 } finally {
-    if ($null -ne $InstallMaintenance) { $InstallMaintenance.Dispose() }
+    try {
+        if ($null -ne $InstallStage) { Remove-ProGoInstallerStage $InstallStage }
+    } finally {
+        if ($null -ne $InstallMaintenance) { $InstallMaintenance.Dispose() }
+    }
 }
 
 if ($Launch) {
