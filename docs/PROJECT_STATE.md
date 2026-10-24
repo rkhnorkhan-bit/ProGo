@@ -8,7 +8,47 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: CI662 owned exit0 startup — evidence-only test diagnostics
+## Текущий этап: F23-R02 installer shared maintenance ownership
+
+PR88 OPEN/DRAFT source `44d76b2347cebd23c627003e231de86c261e97e1`, local checkpoint
+`531af3bfabb5a9c3eabcda3b825faa29381014f4`, clean/idle/root-only active writer verified.
+Full CI663 Windows15400-line log independently read; source44d76b2 tested merge
+`86d483cd84da1e3220273a6102f017609e5eaf20`, both jobs completed SUCCESS. InstallPayload9 all PASS;
+Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/UpdaterPackage5/HomeVPN4816/Portable91,
+repair/transport/progress/install-window/update-check and prior owned Admin/invitation regressions PASS.
+Python exit0 stdout/stderr RanToCompletion, body/importBootstrap/encodings/os/site/cleanup=True,
+deadlineExceeded=False. CI662 timeout NOT reproduced, underlying cause UNKNOWN, NOT a runtime fix;
+incident and safe startup diagnostics retained unchanged. Pack runner-only SUCCESS, uploads/prune SKIPPED.
+No owner target or delivered installer acceptance.
+
+Code `bf06449e403ae01380fdc93c01c8a1065e8b1148`: one existing production installer path only. After explicit local prebuilt payload preflight
+(or unchanged source build), Enter uses existing MaintenanceOperation.Enter(), then existing
+StopApplication(string) verifies owned shutdown/proxy cleanup. No user writes/copies/shortcut actions
+before admission; owner retained through all existing copy/shortcut/status statements and disposed in
+finally on success/failure. Launch remains after owner release. No new kernel/security policy API or
+changes to existing maintenance implementation. No new service/elevation/ACL/network/credential logic.
+Payload resolver/default-source branch and all original write operations preserved; no build/download
+fallback for invalid explicit payload. This is ownership only, NOT staging/backup/atomic install/self-check/
+rollback/recovery acceptance. Partial file-copy failure remains next existing F23 work, not hidden success.
+
+InstallerMaintenanceTests8 executes actual main installer AST statements after the existing preflight
+boundary, scoped GUID temp runtime/data dirs; maintenance Enter/Stop/Dispose, shortcuts and launch mocked.
+Cases complete/busy/stop-fail/copy-fail/shortcut-fail/launch/launch-fail/retry-stop require exact ownership,
+refusal-before-copy, release on errors, new retry owner, release-before-launch, unchanged synthetic user
+bytes and success only after admitted copies/shortcuts. No real installation, IPC, mutex/ACL, service,
+shortcuts, process launch or profile changes. Fixture path status output suppressed; only case names emitted.
+One test invocation appended to existing Test-ProGo; new tests/native NOT_RUN locally (no Windows/pwsh).
+PASS local review/static/call-signature/original-body+resolver+workflow parity, docs3, JSON/diff,
+public-content/secrets. CI663 old PASS does not cover new owner slice.
+
+PGA04 remains TODO/OFF by default, requires future explicit install-time consent before any protected
+Automatic/Start/elevation. Full F23 still PARTIAL. Next SAME new CI exact final logs/InstallerMaintenance8,
+InstallPayload9 and maintenance/repair/update regressions; then ONE separately scoped verified staging/
+backup-before-write prerequisite, self-check/rollback remain later. Privatecandidate BLOCKED_TRANSFER
+unchanged; no retry/delivery/build-only export/install/live/security action. Fixed scores58–80/22,+0.
+Stop after one guarded source publication, one automatic CI and local checkpoint; do not wait final CI.
+
+## История этапа: CI662 owned exit0 startup — evidence-only test diagnostics
 
 HEAD PR88 source `db3adc280d500b97487a7991f25c1206248eb5b6`, checkpoint
 `7dc91de4f2c83240869757e664f596631ec231c8`, clean/idle/root only active agent independently verified.
@@ -52,6 +92,17 @@ no-output/no-body condition, not blind rerun. If failure does not recur, keep ro
 Private candidate BLOCKED_TRANSFER unchanged; no transfer retry/build/install/live/security/network action.
 Next ONLY same new exact-SHA CI final startup facts and actual suite boundary; no second feature/slice.
 Fixed readiness implementation58–80/100, verified22/100,+0. Publication/checkpoint details below.
+
+Publication/checkpoint: source `44d76b2347cebd23c627003e231de86c261e97e1`, parent
+`db3adc280d500b97487a7991f25c1206248eb5b6`, tree `7ae59dc018b6d89337d76ded99df734eb8fd3a0a`
+verified after fetch; equals local reviewed freeze `88d0e3f9d94b10cb31a957e7ff657c84bfd19d64`.
+One expected-HEAD non-force PR88 source update; ONE automatic
+[diagnostic CI663/40091168500](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40091168500), source count1,
+event pull_request/attempt1/in_progress/conclusion null at checkpoint. Final new Windows parser/startup
+facts/InstallerPayload9/old native suites NOT_RUN pending same run logs. No CI result inherited and no
+runtime fix claimed. Privatecandidate BLOCKED_TRANSFER. Local docs-only checkpoint intentionally not
+pushed/no second CI, full SHA via git log -1/PR88 body. Next ONLY final same CI663 startup facts and
+actual suite boundary; if transient PASS, CI662 root cause remains unresolved. Stop, no second stage.
 
 ## История этапа: F23-R01 — explicit prebuilt payload preflight, PGA04 prerequisite
 
