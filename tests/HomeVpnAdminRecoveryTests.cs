@@ -1529,7 +1529,7 @@ namespace ProGo
                                     stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Stop Dispose retain physical revoke copy without blocking UI: " + mode);
                                 }
                                 if (mode == "accepted-request") {
-                                    var earlier = HomeVpnAdminRecovery.Register(Owner, "Earlier accepted");
+                                    var earlier = HomeVpnAdminRecovery.Register(Owner, "Earlier accepted", null);
                                     HomeVpnAdminRecovery.RetainResult(Owner, earlier, response);
                                     acceptedId = earlier.RequestId; acceptedReceipt = File.ReadAllBytes(PendingPath);
                                 }

@@ -3929,15 +3929,12 @@
     }
   ],
   "ci_candidate": {
-    "source": "4022f598ca795554f5f97b1d09af884addf8866e",
+    "source": "cdfafeea073648c540bbb5254e5b2bafac5f1d2e",
     "tested_merge": null,
-    "status": "NOT_RUN local revoke candidate",
-    "baseline_verified": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+    "status": "NOT_RUN local correction",
     "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN revoke10/full suites",
-    "pack": "NOT_RUN",
-    "artifact_uploads": "OFF; public guard unchanged",
-    "owner_pc": "NOT_RUN"
+    "windows_native": "NOT_RUN revoke10/Home VPN suites",
+    "artifact_uploads": "OFF public guard unchanged"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5474,36 +5471,18 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE standalone selected-ID revoke owned transport candidate",
-    "baseline_source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
-    "baseline_tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
-    "baseline_checkpoint": "edf65d3458629fc5de5c25bbc562a4a50862e078",
-    "local_code_sha": "4022f598ca795554f5f97b1d09af884addf8866e",
-    "scope": "Only standalone Friends revoke button via production BindSelectedRevoke; generic Admin delegate and Reissue internal revoke remain exact baseline. No invite/recover/protocol/core/workflow change.",
-    "implementation": "RevokeAdminOwnedAsync freezes endpoint and selected ID, retains worker/helper/output/cleanup; explicit Friends dispatcher for native Copy and WaitForOwner. Post-copy Stop guard refuses new SSH; started outcome drains unchanged; late progress suppressed. Existing core revoke has no issuance request/family reacquire; no receipt invented.",
-    "native_cases": [
-      "default-refusal",
-      "complete",
-      "cancel-retry",
-      "stop-copy",
-      "dispose-copy",
-      "owner-dispose",
-      "cancel-command",
-      "cleanup-lock",
-      "stop-accepted",
-      "accepted-request"
-    ],
-    "test_contract": "Actual ShowDialog/production BindSelectedRevoke; real helper staging, native process+child and private output. Fixture SSH only, no live resources. Exact ID and same-name sibling, one accepted revoke/no replay, pre-SSH Retry only, uncertain result gated, accepted outcome after Stop retained, existing accepted invitation request/result/ID byte-exact, cleanup lock false Stop then exact delete-only Retry. Existing 5s hold/join and 15s modal deadlines; no old assertions/timeouts changed.",
-    "local_checks": "PASS static/manual signatures/strict old code+test parity/lexical delimiters (not compiler)/diff/JSON/public321source0release/added secretPII0. No independent agent spawned.",
-    "windows_compilation": "NOT_RUN new revoke candidate; no Windows/.NET/pwsh available",
-    "windows_native": "NOT_RUN owned revoke10 and new full regression; CI654 PASS only baseline",
-    "publication": "TODO one fresh-head non-force update existing PR88; one automatic CI; public uploads OFF.",
-    "remaining_production_paths": [
-      "Reissue orchestration + SourceID invite (including existing internal revoke dependency)",
-      "recover-invite transport"
-    ],
-    "next": "Read SAME new CI final exact-source/tested-merge/revoke10/prior suites; no rerun, second stage or full wait.",
-    "readiness_change": "+0; fixed weights and original gates unchanged; implementation58-80/verified22."
+    "phase": "ONE CI655 test-only signature correction",
+    "baseline_source": "3e9971f696e2225472119c8f899170ee0ef8ec79",
+    "baseline_tested_merge": "4cf6b66911c91e6b66e9b86387578865054872f7",
+    "baseline_checkpoint": "74fbc11e69f298a8c237dd5c28aba8f1d419fbf4",
+    "local_code_sha": "cdfafeea073648c540bbb5254e5b2bafac5f1d2e",
+    "scope": "One fixture line: Register(Owner, Earlier accepted, null). No runtime/API/assert/timeout/coverage change.",
+    "local_checks": "PASS exact one-line parity; all13 fixture Register arity3; new revoke signatures manual; static/diff/JSON/public321source0release/added secretsPII scan. No Windows/.NET/pwsh available.",
+    "windows_compilation": "NOT_RUN corrected candidate",
+    "windows_native": "NOT_RUN revoke10 and Home VPN suites on new candidate",
+    "publication": "TODO one guarded source push, one automatic CI only",
+    "next": "Read SAME new CI final logs and exact source/tested merge; confirm harness compilation/revoke10/all relevant suites. No second stage or blind rerun.",
+    "readiness_change": "+0 fixed58-80/22"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5596,7 +5575,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI654 exact b72d53e/2170a3c invite8+all prior suites full logs PASS. New standalone revoke owned transport local candidate NOT_RUN. Two other transport paths plus full Windows/delivery/owner PC/production gates remain. Fixed58-80/22 +0.",
+    "candidate_note": "CI655 Home VPN harness FAIL CS1501; revoke10/Home VPN NOT_RUN. Test-only source=null correction candidate needs exact new CI. Runtime unchanged; fixed58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -13228,6 +13207,100 @@
         "integration_ci_run_id": 39911077389,
         "baseline_windows": "PASS exact641 API6/UI8; repeated12 new candidate compiler/native NOT_RUN"
       }
+    },
+    "before_ci655_fixture_signature": {
+      "ci_candidate": {
+        "source": "3e9971f696e2225472119c8f899170ee0ef8ec79",
+        "tested_merge": null,
+        "merge_ref": "4cf6b66911c91e6b66e9b86387578865054872f7",
+        "run_id": 40052376202,
+        "run_number": 655,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40052376202",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 120747624392,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120747624578,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "event": "pull_request",
+        "attempt": 1,
+        "exact_source_run_count": 1,
+        "evidence": "Metadata only; new final compiler/native log proof NOT_RUN. Merge ref is not final tested merge evidence.",
+        "windows_compilation": "NOT_RUN new revoke candidate; build in_progress at checkpoint",
+        "windows_native": "NOT_RUN revoke10/all prior suites on new candidate",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public guard; final skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      },
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE standalone revoke source published, sole CI655 in_progress; STOP after checkpoint",
+        "baseline_source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+        "baseline_tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
+        "baseline_checkpoint": "edf65d3458629fc5de5c25bbc562a4a50862e078",
+        "local_code_sha": "4022f598ca795554f5f97b1d09af884addf8866e",
+        "scope": "Only standalone Friends revoke button via production BindSelectedRevoke; generic Admin delegate and Reissue internal revoke remain exact baseline. No invite/recover/protocol/core/workflow change.",
+        "implementation": "RevokeAdminOwnedAsync freezes endpoint and selected ID, retains worker/helper/output/cleanup; explicit Friends dispatcher for native Copy and WaitForOwner. Post-copy Stop guard refuses new SSH; started outcome drains unchanged; late progress suppressed. Existing core revoke has no issuance request/family reacquire; no receipt invented.",
+        "native_cases": [
+          "default-refusal",
+          "complete",
+          "cancel-retry",
+          "stop-copy",
+          "dispose-copy",
+          "owner-dispose",
+          "cancel-command",
+          "cleanup-lock",
+          "stop-accepted",
+          "accepted-request"
+        ],
+        "test_contract": "Actual ShowDialog/production BindSelectedRevoke; real helper staging, native process+child and private output. Fixture SSH only, no live resources. Exact ID and same-name sibling, one accepted revoke/no replay, pre-SSH Retry only, uncertain result gated, accepted outcome after Stop retained, existing accepted invitation request/result/ID byte-exact, cleanup lock false Stop then exact delete-only Retry. Existing 5s hold/join and 15s modal deadlines; no old assertions/timeouts changed.",
+        "local_checks": "PASS static/manual signatures/old runtime+test parity/lexical delimiters (not compiler)/diff/JSON/public321source0release/added secretPII0/Python invitation metadata2. Windows NOT_RUN.",
+        "windows_compilation": "NOT_RUN new revoke candidate; no Windows/.NET/pwsh available",
+        "windows_native": "NOT_RUN owned revoke10 and new full regression; CI654 PASS only baseline",
+        "publication": "PASS one fresh expected-head guarded non-force PR88 source push; exact fetched parent and tree match reviewed freeze; one automatic CI655/40052376202 pull_request attempt1, exact-source count1.",
+        "remaining_production_paths": [
+          "Reissue orchestration + SourceID invite (including existing internal revoke dependency)",
+          "recover-invite transport"
+        ],
+        "next": "Read SAME CI655/40052376202 full final logs, exact source/tested merge, revoke10 and all prior suites. No duplicate, rerun, full CI wait or second stage. Only after proof consider one bounded Reissue orchestration/SourceID invite slice.",
+        "readiness_change": "+0; fixed weights and original gates unchanged; implementation58-80/verified22.",
+        "published_sha": "3e9971f696e2225472119c8f899170ee0ef8ec79",
+        "tree": "3276e7cbbfcae1efdb68ce3c4dada381207d7215",
+        "local_freeze": "e33640d1e14c9ca3eaa83eaa43f86071ce331b14",
+        "merge_ref": "4cf6b66911c91e6b66e9b86387578865054872f7",
+        "tested_merge": null,
+        "ci_run_id": 40052376202,
+        "ci_run_number": 655,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40052376202",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": [
+          {
+            "id": 120747624392,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120747624578,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1 and full SHA in PR88 body; not pushed to avoid second automatic CI.",
+        "public_diff": "7files629add/71delete:3 runtime36add/1delete +1 test178add/1delete +3docs415add/69delete; all previous methods/test bodies/scripts/workflows/VERSION preserved."
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -18097,8 +18170,8 @@
       {
         "id": "PC-01",
         "status": "NOT_RUN",
-        "criterion": "New exact source/merge revoke10 and all mandatory prior suites required; baseline CI654 PASS separately.",
-        "source": "4022f598ca795554f5f97b1d09af884addf8866e",
+        "criterion": "Corrected harness must compile; revoke10 and prior suites require exact new CI. CI655 native NOT_RUN.",
+        "source": "cdfafeea073648c540bbb5254e5b2bafac5f1d2e",
         "run_id": null,
         "ci_url": null,
         "last_failure_run": 40041549329
@@ -18658,15 +18731,84 @@
       "accepted-request"
     ],
     "test_contract": "Actual ShowDialog/production BindSelectedRevoke; real helper staging, native process+child and private output. Fixture SSH only, no live resources. Exact ID and same-name sibling, one accepted revoke/no replay, pre-SSH Retry only, uncertain result gated, accepted outcome after Stop retained, existing accepted invitation request/result/ID byte-exact, cleanup lock false Stop then exact delete-only Retry. Existing 5s hold/join and 15s modal deadlines; no old assertions/timeouts changed.",
-    "local_checks": "PASS static/manual signatures/strict old code+test parity/lexical delimiters (not compiler)/diff/JSON/public321source0release/added secretPII0. No independent agent spawned.",
-    "windows_compilation": "NOT_RUN new revoke candidate; no Windows/.NET/pwsh available",
-    "windows_native": "NOT_RUN owned revoke10 and new full regression; CI654 PASS only baseline",
-    "publication": "TODO one fresh-head non-force update existing PR88; one automatic CI; public uploads OFF.",
+    "local_checks": "PASS static/manual signatures/old runtime+test parity/lexical delimiters (not compiler)/diff/JSON/public321source0release/added secretPII0/Python invitation metadata2. Windows NOT_RUN.",
+    "windows_compilation": "FAIL CS1501 Home VPN test harness",
+    "windows_native": "NOT_RUN revoke10 and Home VPN suites",
+    "publication": "PASS one fresh expected-head guarded non-force PR88 source push; exact fetched parent and tree match reviewed freeze; one automatic CI655/40052376202 pull_request attempt1, exact-source count1.",
     "remaining_production_paths": [
       "Reissue orchestration + SourceID invite (including existing internal revoke dependency)",
       "recover-invite transport"
     ],
-    "next": "Read SAME new CI final exact-source/tested-merge/revoke10/prior suites; no rerun, second stage or full wait.",
-    "readiness_change": "+0; fixed weights and original gates unchanged; implementation58-80/verified22."
+    "next": "Minimal fixture arity correction candidate; no runtime fix or PASS inferred.",
+    "readiness_change": "+0; fixed weights and original gates unchanged; implementation58-80/verified22.",
+    "published_sha": "3e9971f696e2225472119c8f899170ee0ef8ec79",
+    "tree": "3276e7cbbfcae1efdb68ce3c4dada381207d7215",
+    "local_freeze": "e33640d1e14c9ca3eaa83eaa43f86071ce331b14",
+    "merge_ref": "4cf6b66911c91e6b66e9b86387578865054872f7",
+    "tested_merge": "4cf6b66911c91e6b66e9b86387578865054872f7",
+    "ci_run_id": 40052376202,
+    "ci_run_number": 655,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40052376202",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": [
+      {
+        "id": 120747624392,
+        "name": "windows-build",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "id": 120747624578,
+        "name": "vpn-server-test",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "checkpoint": "Postpublication3-doc local HEAD via git log -1 and full SHA in PR88 body; not pushed to avoid second automatic CI.",
+    "public_diff": "7files629add/71delete:3 runtime36add/1delete +1 test178add/1delete +3docs415add/69delete; all previous methods/test bodies/scripts/workflows/VERSION preserved.",
+    "verification": {
+      "source": "3e9971f696e2225472119c8f899170ee0ef8ec79",
+      "tested_merge": "4cf6b66911c91e6b66e9b86387578865054872f7",
+      "run_id": 40052376202,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40052376202",
+      "status": "FAIL",
+      "windows_job": 120747624392,
+      "ubuntu_job": 120747624578,
+      "ubuntu_status": "SUCCESS metadata",
+      "error": "tests/HomeVpnAdminRecoveryTests.cs(1532,51): error CS1501: No overload for method Register takes 2 arguments",
+      "cause": "Fixture omitted required source; existing Register(owner,name,source) has no optional source. Ordinary invite requires null. API/runtime unchanged.",
+      "windows_pass": "Desktop5298/Instance30/Maintenance126/Shutdown47/UpdaterPackage5 and earlier repository test markers; SSH policy61",
+      "windows_not_run": "Home VPN harness compile failed; revoke10 and Home VPN suites NOT_RUN; relay/public-content/pack/uploads/prune SKIPPED."
+    }
+  },
+  "ci655_final": {
+    "source": "3e9971f696e2225472119c8f899170ee0ef8ec79",
+    "tested_merge": "4cf6b66911c91e6b66e9b86387578865054872f7",
+    "run_id": 40052376202,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40052376202",
+    "status": "FAIL",
+    "windows_job": 120747624392,
+    "ubuntu_job": 120747624578,
+    "ubuntu_status": "SUCCESS metadata",
+    "error": "tests/HomeVpnAdminRecoveryTests.cs(1532,51): error CS1501: No overload for method Register takes 2 arguments",
+    "cause": "Fixture omitted required source; existing Register(owner,name,source) has no optional source. Ordinary invite requires null. API/runtime unchanged.",
+    "windows_pass": "Desktop5298/Instance30/Maintenance126/Shutdown47/UpdaterPackage5 and earlier repository test markers; SSH policy61",
+    "windows_not_run": "Home VPN harness compile failed; revoke10 and Home VPN suites NOT_RUN; relay/public-content/pack/uploads/prune SKIPPED."
+  },
+  "ci655_fixture_signature_correction": {
+    "status": "PARTIAL",
+    "phase": "ONE CI655 test-only signature correction",
+    "baseline_source": "3e9971f696e2225472119c8f899170ee0ef8ec79",
+    "baseline_tested_merge": "4cf6b66911c91e6b66e9b86387578865054872f7",
+    "baseline_checkpoint": "74fbc11e69f298a8c237dd5c28aba8f1d419fbf4",
+    "local_code_sha": "cdfafeea073648c540bbb5254e5b2bafac5f1d2e",
+    "scope": "One fixture line: Register(Owner, Earlier accepted, null). No runtime/API/assert/timeout/coverage change.",
+    "local_checks": "PASS exact one-line parity; all13 fixture Register arity3; new revoke signatures manual; static/diff/JSON/public321source0release/added secretsPII scan. No Windows/.NET/pwsh available.",
+    "windows_compilation": "NOT_RUN corrected candidate",
+    "windows_native": "NOT_RUN revoke10 and Home VPN suites on new candidate",
+    "publication": "TODO one guarded source push, one automatic CI only",
+    "next": "Read SAME new CI final logs and exact source/tested merge; confirm harness compilation/revoke10/all relevant suites. No second stage or blind rerun.",
+    "readiness_change": "+0 fixed58-80/22"
   }
 }

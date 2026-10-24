@@ -8,7 +8,32 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: standalone selected-ID revoke owned transport поверх CI654
+## Текущий этап: CI655 — минимальная fixture signature correction
+
+PR88 OPEN/DRAFT exact source `3e9971f696e2225472119c8f899170ee0ef8ec79`, checkpoint `74fbc11e69f298a8c237dd5c28aba8f1d419fbf4`
+сверены.60 worktrees clean/locks0 до нового isolated worktree; root sole active agent; git/build operations0.
+Полный Windows log [CI655](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40052376202)
+прочитан самостоятельно: exact checkout/build tested merge `4cf6b66911c91e6b66e9b86387578865054872f7`.
+FAIL: `HomeVpnAdminRecoveryTests.cs(1532,51): CS1501: No overload for method 'Register' takes 2 arguments`.
+Existing `Register(HomeVpnOwner owner, string name, string source)` source не optional; source=null
+означает обычное invite без исходного ID. Fixture ранее забыл третий аргумент. Это test compilation defect,
+не runtime/API bug. Desktop5298/SSH policy61/Instance30/Maintenance126/Shutdown47/UpdaterPackage5
+PASS exact655; revoke10 и ВСЕ Home VPN suites NOT_RUN из-за несобранного harness. Relay/public-content/
+pack/uploads/prune SKIPPED. Ubuntu job SUCCESS metadata; не выдаём metadata за проверку его строк лога.
+
+Local code `cdfafeea073648c540bbb5254e5b2bafac5f1d2e`: ровно одна строка fixture получает explicit null source.
+Runtime/API/все assertions/timeouts/coverage/порядок теста unchanged. Все13 Register calls fixture имеют
+arity3; manual new revoke7/Admin8/WaitForOwner5/Bind2/modal3/ctor5 signatures проверены с declarations.
+PASS static review/exact one-line parity/diff/JSON/public321source0release/added secretsPII checks.
+Windows/.NET/pwsh отсутствуют: corrected compilation/revoke10/Home VPN NOT_RUN; старый PASS не переносится.
+Publication TODO: one fresh-head guarded existing PR88 source push, one automatic new CI; no blind rerun.
+Public workflow upload guards4 unchanged; release/prune ineligible. Save source/run/checkpoint and STOP.
+Next: SAME new CI final logs/exact source+tested merge/harness compile/revoke10/all relevant regressions.
+Остаток transport/delivery/личной и production приёмки ниже сохранён; новую функцию здесь не начинаем.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: exact corrected
+Windows harness/revoke10 proof; no install/release/uploads/live VPS/network/ACL/credential actions.
+
+## История этапа: standalone selected-ID revoke owned transport поверх CI654
 
 Сверены PR88 OPEN/DRAFT exact source `b72d53e1475410736d2bdd338d13c75e6d9a8c81`, checkpoint `edf65d3458629fc5de5c25bbc562a4a50862e078`;
 59 прежних worktrees clean/locks0, только новый work/progo-revoke-owned-on654-20261024 изменяется,
@@ -42,9 +67,17 @@ Fixture replaces only copy/SSH executable; no live action. Old tests/asserts/tim
 15s modal deadline and finally cleanup. New native/compiler checks NOT_RUN locally (no Windows/.NET/pwsh).
 PASS local review/manual signatures/lexical (not compiler)/strict old-method+test parity/diff/JSON/
 public321source0release/added secretsPII0. SUCCESS654 applies only its exact baseline.
-Publication TODO: one fresh-head guarded non-force existing PR88 push and ONE automatic CI;
-workflow guards unchanged/public uploads OFF/release+prune ineligible. Save source/run/checkpoint;
-STOP without full wait or second stage. Next: SAME new CI final exact source/merge/revoke10/all old suites.
+Publication PASS: one fresh-head non-force existing PR88 source `3e9971f696e2225472119c8f899170ee0ef8ec79`,
+parent exact654 and fetched tree `3276e7cbbfcae1efdb68ce3c4dada381207d7215` equal reviewed freeze
+`e33640d1e14c9ca3eaa83eaa43f86071ce331b14`. Public diff7files629add/71delete:3 runtime36add/1delete,
+1 test178add/1delete,3docs415add/69delete. Local Python invitation metadata2 PASS.
+ONE automatic [CI655/40052376202](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40052376202): exact-source count1,
+pull_request attempt1,in_progress/conclusion null. Windows120747624392 Repository/build in_progress;
+Ubuntu120747624578 in_progress. Merge ref `4cf6b66911c91e6b66e9b86387578865054872f7` is NOT final tested merge proof;
+new Windows compilation/revoke10/all old native suites NOT_RUN until actual final logs.
+Public uploads OFF/final skips not yet observed; no release/binary upload/install/live resource action.
+Postpublication3-doc local checkpoint intentionally NOT pushed; full SHA via git log -1/PR88 body.
+STOP without full wait/second stage; next SAME CI655 final exact source/merge/revoke10/all old suites.
 
 До личного кандидата: exact revoke proof; затем2 bounded transport пути Reissue orchestration+SourceID
 invite и recover-invite; финальная Windows F31-R09/R10/R11 проверка UI/selected-key/agent/SSH→SOCKS5→HTTP,
