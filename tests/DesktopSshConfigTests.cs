@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -39,6 +41,7 @@ namespace ProGo
         }
         private static SshProfileDiagnosticResult ConfigMatchesNative(string file, string target, string host, string user, string port, out string[] identities)
         {
+            CheckConfigAuthorityTree(Path.GetDirectoryName(file), Path.GetDirectoryName(file));
             // Independent argv and output extraction: no production configuration
             // parser, profile argument builder, owner config or agent is involved.
             var oracle = DiagnosticProcess.Run(OpenSshClient.Executable, "-G -F " + ConfigQuoted(file) + " -o CanonicalizeHostname=no " + target, 7000, CancellationToken.None);
@@ -55,9 +58,77 @@ namespace ProGo
             Check(actual.ConfigPath == file && String.IsNullOrEmpty(actual.AgentState) && String.IsNullOrEmpty(actual.AgentKeys), "configuration-only diagnostics use the explicit file and do not inventory an agent: " + target);
             identities = OracleIdentities(oracle.Output); return actual;
         }
+        // Authorized test-only ACL creation is confined to a fresh fixture on Windows CI.
+        // No owner setters, existing files, ancestor ACLs, user SSH files or runtime policy changes.
+        private static void CheckConfigAuthorityFixturePath(string root, string path)
+        {
+            string parent = Path.GetFullPath(work).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string fullRoot = Path.GetFullPath(root), full = Path.GetFullPath(path);
+            Check(String.Equals(Path.GetDirectoryName(fullRoot) + Path.DirectorySeparatorChar, parent, StringComparison.OrdinalIgnoreCase)
+                && System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(fullRoot), @"\Assh-config-authority-[0-9a-f]{32}\z")
+                && (String.Equals(full, fullRoot, StringComparison.OrdinalIgnoreCase)
+                    || full.StartsWith(fullRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)), "config authority fixture path stays within its exact new GUID directory");
+            for (string current = full; !String.IsNullOrEmpty(current); current = Path.GetDirectoryName(current)) {
+                try { Check((File.GetAttributes(current) & FileAttributes.ReparsePoint) == 0, "config authority fixture path and ancestors have no reparse points"); }
+                catch (FileNotFoundException) { }
+                catch (DirectoryNotFoundException) { }
+            }
+        }
+        private static void CreateConfigAuthorityFixture(string root)
+        {
+            CheckConfigAuthorityFixturePath(root, root);
+            Check(!Directory.Exists(root) && !File.Exists(root), "config authority fixture refuses pre-existing resources");
+            bool isolatedCi = Environment.OSVersion.Platform == PlatformID.Win32NT
+                && Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true"
+                && Environment.GetEnvironmentVariable("RUNNER_OS") == "Windows";
+            if (!isolatedCi) { Directory.CreateDirectory(root); return; } // Preserve local behavior; no local ACL mutation authorized.
+            using (var current = WindowsIdentity.GetCurrent()) {
+                var security = new DirectorySecurity(); security.SetAccessRuleProtection(true, false);
+                foreach (var sid in new[] { current.User, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+                    new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null) }.Distinct())
+                    security.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.FullControl,
+                        InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+                Directory.CreateDirectory(root, security); // Security descriptor applies only while creating this new directory.
+            }
+            try { CheckConfigAuthorityFixturePath(root, root); CheckConfigAuthorityFixtureAcl(root, true); }
+            catch { DeleteConfigAuthorityFixture(root, root); throw; }
+        }
+        private static void CheckConfigAuthorityFixtureAcl(string path, bool directory)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true" || Environment.GetEnvironmentVariable("RUNNER_OS") != "Windows") return;
+            var acl = directory ? (FileSystemSecurity)Directory.GetAccessControl(path, AccessControlSections.Access)
+                : File.GetAccessControl(path, AccessControlSections.Access);
+            using (var current = WindowsIdentity.GetCurrent()) {
+                var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+                var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToArray();
+                Check((!directory || acl.AreAccessRulesProtected) && rules.Length > 0
+                    && rules.All(rule => rule.AccessControlType == AccessControlType.Allow
+                        && (rule.IdentityReference.Equals(current.User) || rule.IdentityReference.Equals(system) || rule.IdentityReference.Equals(admins)))
+                    && rules.Any(rule => rule.IdentityReference.Equals(current.User) && (rule.FileSystemRights & FileSystemRights.FullControl) == FileSystemRights.FullControl),
+                    "new config authority fixture ACL permits only test-user SYSTEM Administrators with usable test-user access");
+            }
+        }
+        private static void DeleteConfigAuthorityFixture(string root, string path)
+        {
+            CheckConfigAuthorityFixturePath(root, path); // Fail closed; never traverse links or scan siblings.
+            if (Directory.Exists(path)) {
+                foreach (string entry in Directory.GetFileSystemEntries(path)) DeleteConfigAuthorityFixture(root, entry);
+                CheckConfigAuthorityFixturePath(root, path); Directory.Delete(path, false);
+            } else if (File.Exists(path)) { CheckConfigAuthorityFixturePath(root, path); File.Delete(path); }
+        }
+        private static void CheckConfigAuthorityTree(string root, string path)
+        {
+            CheckConfigAuthorityFixturePath(root, path);
+            bool directory = Directory.Exists(path);
+            if (!directory || String.Equals(root, path, StringComparison.OrdinalIgnoreCase))
+                CheckConfigAuthorityFixtureAcl(path, directory);
+            if (directory) foreach (string entry in Directory.GetFileSystemEntries(path)) CheckConfigAuthorityTree(root, entry);
+        }
         private static void SshConfigAuthority()
         {
-            string root = Path.Combine(work, "ssh-config-authority-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
+            string root = Path.GetFullPath(Path.Combine(work, "ssh-config-authority-" + Guid.NewGuid().ToString("N")));
+            CreateConfigAuthorityFixture(root);
             try {
                 string parts = Path.Combine(root, "parts"); Directory.CreateDirectory(parts);
                 File.WriteAllText(Path.Combine(parts, "00-first.conf"), "Host fixture.dotted\n HostName 127.0.0.11\n User first_user\n Port 2201\nHost fixture-*\n User wildcard_user\n Port 2202\nHost fixture-* !fixture-closed\n HostName 127.0.0.12\nMatch originalhost match-only\n HostName 127.0.0.13\n User match_user\n Port 2203\nHost *\n", new UTF8Encoding(false));
@@ -78,7 +149,7 @@ namespace ProGo
                 File.WriteAllText(file, "Include " + leaf + "\nHost *\n CanonicalizeHostname no\n HostName 127.0.0.21\n User relative_user\n Port 2211\n IdentityFile none\n IdentityAgent none\n", new UTF8Encoding(false));
                 string[] relativeIdentities; ConfigMatchesNative(file, "relative.test", "127.0.0.21", "relative_user", "2211", out relativeIdentities);
                 SshIdentitySafety(root);
-            } finally { Directory.Delete(root, true); }
+            } finally { DeleteConfigAuthorityFixture(root, root); }
         }
         private static void SshIdentitySafety(string root)
         {

@@ -3929,11 +3929,11 @@
     }
   ],
   "ci_candidate": {
-    "source": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
+    "source": "bc17e7de62bbbdbca051e4075d91eb774acf7577",
     "tested_merge": null,
-    "status": "NOT_RUN local Reissue transport candidate",
+    "status": "NOT_RUN local authorized fixture candidate",
     "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN new Reissue10/full suites",
+    "windows_native": "NOT_RUN ConfigAuthority/Reissue10/Home VPN",
     "artifact_uploads": "OFF public guard unchanged"
   },
   "signing_microtask": {
@@ -5471,34 +5471,20 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE Reissue/source-ID invite owned production transport candidate",
-    "baseline_source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
-    "baseline_tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
-    "baseline_checkpoint": "12e045c15a7aae94b09baf0f733c8e0b1b6c30c3",
-    "local_code_sha": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
-    "scope": "Only selected Reissue button routes revoke+source-ID invite through existing owned helpers. Fresh invite/standalone revoke/recover/core/ACL fixture unchanged. No new protocol or feature.",
-    "implementation": "Separate ReissueAdmin binding freezes original ID/owner/StopWork at revoke admission; both native operations own actual Friends Form/dispatcher. Existing RevokeAdminOwned reused; replacement-only ReissueInviteAdminOwned owns core lease/helper/DPAPI source-bound request/result/cleanup. Post-copy guard refuses SSH after Stop. Binding rejects source mismatch or changed Stop scope between steps. Complete result after changed scope retains accepted request but refuses late token handoff. Existing Reissue orchestration and consumption unchanged.",
-    "native_cases": [
-      "default-refusal",
-      "complete",
-      "cancel-refresh",
-      "stop-copy",
-      "dispose-copy",
-      "owner-dispose",
-      "cancel-command",
-      "cleanup-lock",
-      "stop-between",
-      "stop-result"
-    ],
-    "test_contract": "Actual ShowDialog/production binding/default Reissue orchestration and core helper/native fixture processes. Only copy and SSH executable fixture seams. Exact original source ID/name despite edited draft, same-name sibling unchanged, exactly one revoke/invite. Cancel->explicit Refresh is read-only, requires fresh selection/no automatic retry of acknowledged revoke. Stop between steps refuses invite, Stop after accepted result retains request/source/recovery ID without handoff. Cleanup lock false Stop then exact deletion retry no replay. Original modal15s/copy+join5s and every old assertion/timeout preserved.",
-    "local_checks": "PASS static/manual signatures/strict old method and test parity/lexical(not compiler)/diff/JSON/public321source0release/secretsPII scan. No Windows/.NET/pwsh.",
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN new owned Reissue10/full suites",
-    "publication": "TODO one guarded existing PR88 source push and one automatic CI; public uploads OFF/guards4 unchanged",
-    "remaining_production_paths": [
-      "recover-invite owned transport"
-    ],
-    "next": "Read SAME new CI final exact-source/tested-merge/Reissue10 and all prior suites. Only after proof one bounded recover-invite transport stage; no second stage now.",
+    "phase": "ONE authorized CI659 SshConfigAuthority fixture isolation fix",
+    "baseline_source": "18bb98df3cf3c660c1ce7be675a87ac76f499ff8",
+    "baseline_tested_merge": "708237b20221f63fb65266eff02120ecd2adf48c",
+    "baseline_checkpoint": "db95d3e68ba3d42a03fc270887ca6e7029f5fd33",
+    "local_code_sha": "bc17e7de62bbbdbca051e4075d91eb774acf7577",
+    "scope": "Only tests/DesktopSshConfigTests.cs73add/2delete plus3docs. No runtime/other fixtures/Reissue/recover changes.",
+    "authorization": "Explicit owner approval: create only NEW GUID SshConfigAuthority temporary directory in isolated Windows CI with protected inheritable ACL test-user/SYSTEM/Administrators; new synthetic children inherit. No existing/ancestor/owner/system/.ssh/SSH policy mutation.",
+    "implementation": "Create-only Directory.CreateDirectory(root,DirectorySecurity), GITHUB_ACTIONS=true/RUNNER_OS=Windows/Win32NT gate. Exact direct work-child GUID, refuses preexisting path/reparse ancestors or subtree links. Readonly trusted ACL validation before original native oracle; nonrecursive deletes only owned subtree, fail closed on reparse. Post-create validation failure cleanup same boundary. Existing local behavior no ACL changes. No SetOwner/SetAccessControl or privilege changes.",
+    "original_guarantees": "Same native ssh-G argv, original config contents/assertions/coverage/7000ms and expansion1500ms limits untouched; all other fixtures including auth-policy and post-Stop/Refresh byte-exact.",
+    "local_checks": "PASS review/static/manual Framework signatures/lexical(not compiler)/strict parity/diff/JSON/secrets/public321source0release. Windows/.NET/pwsh unavailable.",
+    "windows_compilation": "NOT_RUN new fixture candidate",
+    "windows_native": "NOT_RUN new SshConfigAuthority/Reissue10/Home VPN/full suites",
+    "publication": "TODO one expected-head guarded PR88 source push and one automatic CI; public uploads OFF/guards4 unchanged",
+    "next": "Read SAME new CI full final exact-source/tested-merge/native config authority/Reissue10/Home VPN/prior regressions; no full wait/rerun/second stage/recover-invite.",
     "readiness_change": "+0 fixed58-80/22"
   },
   "f31_launch_revision_microtask": {
@@ -5592,7 +5578,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI658 exact469c4fe/da6ac3c full logs policy214/revoke10/HomeVPN4562/all suites PASS. Reissue owned source-ID transport local candidate NOT_RUN. Recover-invite transport plus Windows/dev/delivery/production gates remain; fixed58-80/22 +0.",
+    "candidate_note": "CI659 exact18bb98d/708237b FAIL native SshConfigAuthority Include permissions. Authorized NEW temporary GUID protected inheritable ACL test-only candidate; Reissue10/Home VPN NOT_RUN. No other security/runtime/fixture changes. Fixed58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -13666,6 +13652,96 @@
         "pack": "NOT_RUN",
         "artifact_uploads": "OFF public guard/final skips not yet observed"
       }
+    },
+    "before_ci659_config_authority_acl": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE Reissue/source-ID owned transport published; sole CI659 in_progress; STOP",
+        "baseline_source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+        "baseline_tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+        "baseline_checkpoint": "12e045c15a7aae94b09baf0f733c8e0b1b6c30c3",
+        "local_code_sha": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
+        "scope": "Only selected Reissue button routes revoke+source-ID invite through existing owned helpers. Fresh invite/standalone revoke/recover/core/ACL fixture unchanged. No new protocol or feature.",
+        "implementation": "Separate ReissueAdmin binding freezes original ID/owner/StopWork at revoke admission; both native operations own actual Friends Form/dispatcher. Existing RevokeAdminOwned reused; replacement-only ReissueInviteAdminOwned owns core lease/helper/DPAPI source-bound request/result/cleanup. Post-copy guard refuses SSH after Stop. Binding rejects source mismatch or changed Stop scope between steps. Complete result after changed scope retains accepted request but refuses late token handoff. Existing Reissue orchestration and consumption unchanged.",
+        "native_cases": [
+          "default-refusal",
+          "complete",
+          "cancel-refresh",
+          "stop-copy",
+          "dispose-copy",
+          "owner-dispose",
+          "cancel-command",
+          "cleanup-lock",
+          "stop-between",
+          "stop-result"
+        ],
+        "test_contract": "Actual ShowDialog/production binding/default Reissue orchestration and core helper/native fixture processes. Only copy and SSH executable fixture seams. Exact original source ID/name despite edited draft, same-name sibling unchanged, exactly one revoke/invite. Cancel->explicit Refresh is read-only, requires fresh selection/no automatic retry of acknowledged revoke. Stop between steps refuses invite, Stop after accepted result retains request/source/recovery ID without handoff. Cleanup lock false Stop then exact deletion retry no replay. Original modal15s/copy+join5s and every old assertion/timeout preserved.",
+        "local_checks": "PASS static/manual signatures/strict old method and test parity/lexical(not compiler)/diff/JSON/public321source0release/secretsPII scan. No Windows/.NET/pwsh.",
+        "windows_compilation": "NOT_RUN new candidate",
+        "windows_native": "NOT_RUN new owned Reissue10/full suites",
+        "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact parent/tree equals reviewed freeze; ONE automatic CI659 pull_request attempt1/exact-source count1; public repo/guards4 rechecked.",
+        "remaining_production_paths": [
+          "recover-invite owned transport"
+        ],
+        "next": "Read SAME CI65940080724882 full final logs/exact source/tested merge/Reissue10/all prior suites. Only after proof one bounded recover-invite owned transport path; no full wait/second stage/rerun.",
+        "readiness_change": "+0 fixed58-80/22",
+        "published_sha": "18bb98df3cf3c660c1ce7be675a87ac76f499ff8",
+        "tree": "c481e0bf45cf8dc4c6949313c284f24061695185",
+        "local_freeze": "a21428357abf74188730a384bcbee1c63d4d513e",
+        "merge_ref": "708237b20221f63fb65266eff02120ecd2adf48c",
+        "tested_merge": null,
+        "ci_run_id": 40080724882,
+        "ci_run_number": 659,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40080724882",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": [
+          {
+            "id": 120833528529,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120833528779,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid duplicate CI."
+      },
+      "ci_candidate": {
+        "source": "18bb98df3cf3c660c1ce7be675a87ac76f499ff8",
+        "tested_merge": null,
+        "merge_ref": "708237b20221f63fb65266eff02120ecd2adf48c",
+        "run_id": 40080724882,
+        "run_number": 659,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40080724882",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 120833528529,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120833528779,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "exact_source_run_count": 1,
+        "event": "pull_request",
+        "attempt": 1,
+        "windows_compilation": "NOT_RUN new Reissue candidate",
+        "windows_native": "NOT_RUN owned Reissue10/full suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public guard/final skips not observed"
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -18535,8 +18611,8 @@
       {
         "id": "PC-01",
         "status": "NOT_RUN",
-        "criterion": "New exact source/merge Reissue10/all prior suites proof required; CI658 separate baseline PASS.",
-        "source": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
+        "criterion": "New exact CI must verify config oracle, Reissue10/Home VPN/all required suites; CI659 failed earlier, not a Reissue test result.",
+        "source": "bc17e7de62bbbdbca051e4075d91eb774acf7577",
         "run_id": null,
         "ci_url": null,
         "last_failure_run": 40041549329
@@ -19451,12 +19527,83 @@
     "test_contract": "Actual ShowDialog/production binding/default Reissue orchestration and core helper/native fixture processes. Only copy and SSH executable fixture seams. Exact original source ID/name despite edited draft, same-name sibling unchanged, exactly one revoke/invite. Cancel->explicit Refresh is read-only, requires fresh selection/no automatic retry of acknowledged revoke. Stop between steps refuses invite, Stop after accepted result retains request/source/recovery ID without handoff. Cleanup lock false Stop then exact deletion retry no replay. Original modal15s/copy+join5s and every old assertion/timeout preserved.",
     "local_checks": "PASS static/manual signatures/strict old method and test parity/lexical(not compiler)/diff/JSON/public321source0release/secretsPII scan. No Windows/.NET/pwsh.",
     "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN new owned Reissue10/full suites",
-    "publication": "TODO one guarded existing PR88 source push and one automatic CI; public uploads OFF/guards4 unchanged",
+    "windows_native": "NOT_RUN Reissue10/Home VPN; CI659 failed earlier at SshConfigAuthority",
+    "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact parent/tree equals reviewed freeze; ONE automatic CI659 pull_request attempt1/exact-source count1; public repo/guards4 rechecked.",
     "remaining_production_paths": [
       "recover-invite owned transport"
     ],
-    "next": "Read SAME new CI final exact-source/tested-merge/Reissue10 and all prior suites. Only after proof one bounded recover-invite transport stage; no second stage now.",
+    "next": "Authorized SshConfigAuthority fixture-only ACL candidate first; Reissue source frozen unchanged.",
+    "readiness_change": "+0 fixed58-80/22",
+    "published_sha": "18bb98df3cf3c660c1ce7be675a87ac76f499ff8",
+    "tree": "c481e0bf45cf8dc4c6949313c284f24061695185",
+    "local_freeze": "a21428357abf74188730a384bcbee1c63d4d513e",
+    "merge_ref": "708237b20221f63fb65266eff02120ecd2adf48c",
+    "tested_merge": "708237b20221f63fb65266eff02120ecd2adf48c",
+    "ci_run_id": 40080724882,
+    "ci_run_number": 659,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40080724882",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": [
+      {
+        "id": 120833528529,
+        "name": "vpn-server-test",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 120833528779,
+        "name": "windows-build",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ],
+    "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid duplicate CI.",
+    "verification": {
+      "source": "18bb98df3cf3c660c1ce7be675a87ac76f499ff8",
+      "tested_merge": "708237b20221f63fb65266eff02120ecd2adf48c",
+      "run_id": 40080724882,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40080724882",
+      "windows_job": 120833528779,
+      "windows_status": "FAIL",
+      "ubuntu_job": 120833528529,
+      "ubuntu_status": "SUCCESS metadata only",
+      "error": "SshConfigAuthority -> ConfigMatchesNative fixture.dotted; native ssh-G exit255, Bad permissions on fixture Include parts/00-first.conf for Authenticated Users.",
+      "safe_stack": "Check -> ConfigMatchesNative -> SshConfigAuthority -> Main",
+      "evidence": "Full Windows final log independently read; exact checkout/build identity. New fixture default inherited ACL prevented native configuration oracle from resolving. No runtime bug established.",
+      "not_run": "Reissue10/all Home VPN suites and subsequent relay/pack NOT_RUN or SKIPPED; no previous PASS inherited."
+    }
+  },
+  "ci659_final": {
+    "source": "18bb98df3cf3c660c1ce7be675a87ac76f499ff8",
+    "tested_merge": "708237b20221f63fb65266eff02120ecd2adf48c",
+    "run_id": 40080724882,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40080724882",
+    "windows_job": 120833528779,
+    "windows_status": "FAIL",
+    "ubuntu_job": 120833528529,
+    "ubuntu_status": "SUCCESS metadata only",
+    "error": "SshConfigAuthority -> ConfigMatchesNative fixture.dotted; native ssh-G exit255, Bad permissions on fixture Include parts/00-first.conf for Authenticated Users.",
+    "safe_stack": "Check -> ConfigMatchesNative -> SshConfigAuthority -> Main",
+    "evidence": "Full Windows final log independently read; exact checkout/build identity. New fixture default inherited ACL prevented native configuration oracle from resolving. No runtime bug established.",
+    "not_run": "Reissue10/all Home VPN suites and subsequent relay/pack NOT_RUN or SKIPPED; no previous PASS inherited."
+  },
+  "ci659_config_authority_acl": {
+    "status": "PARTIAL",
+    "phase": "ONE authorized CI659 SshConfigAuthority fixture isolation fix",
+    "baseline_source": "18bb98df3cf3c660c1ce7be675a87ac76f499ff8",
+    "baseline_tested_merge": "708237b20221f63fb65266eff02120ecd2adf48c",
+    "baseline_checkpoint": "db95d3e68ba3d42a03fc270887ca6e7029f5fd33",
+    "local_code_sha": "bc17e7de62bbbdbca051e4075d91eb774acf7577",
+    "scope": "Only tests/DesktopSshConfigTests.cs73add/2delete plus3docs. No runtime/other fixtures/Reissue/recover changes.",
+    "authorization": "Explicit owner approval: create only NEW GUID SshConfigAuthority temporary directory in isolated Windows CI with protected inheritable ACL test-user/SYSTEM/Administrators; new synthetic children inherit. No existing/ancestor/owner/system/.ssh/SSH policy mutation.",
+    "implementation": "Create-only Directory.CreateDirectory(root,DirectorySecurity), GITHUB_ACTIONS=true/RUNNER_OS=Windows/Win32NT gate. Exact direct work-child GUID, refuses preexisting path/reparse ancestors or subtree links. Readonly trusted ACL validation before original native oracle; nonrecursive deletes only owned subtree, fail closed on reparse. Post-create validation failure cleanup same boundary. Existing local behavior no ACL changes. No SetOwner/SetAccessControl or privilege changes.",
+    "original_guarantees": "Same native ssh-G argv, original config contents/assertions/coverage/7000ms and expansion1500ms limits untouched; all other fixtures including auth-policy and post-Stop/Refresh byte-exact.",
+    "local_checks": "PASS review/static/manual Framework signatures/lexical(not compiler)/strict parity/diff/JSON/secrets/public321source0release. Windows/.NET/pwsh unavailable.",
+    "windows_compilation": "NOT_RUN new fixture candidate",
+    "windows_native": "NOT_RUN new SshConfigAuthority/Reissue10/Home VPN/full suites",
+    "publication": "TODO one expected-head guarded PR88 source push and one automatic CI; public uploads OFF/guards4 unchanged",
+    "next": "Read SAME new CI full final exact-source/tested-merge/native config authority/Reissue10/Home VPN/prior regressions; no full wait/rerun/second stage/recover-invite.",
     "readiness_change": "+0 fixed58-80/22"
   }
 }

@@ -8,7 +8,37 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: Reissue/source-ID invite owned transport поверх CI658
+## Текущий этап: CI659 — authorized SshConfigAuthority fixture-only ACL fix
+
+PR88 OPEN/DRAFT exact source `18bb98df3cf3c660c1ce7be675a87ac76f499ff8`, checkpoint `db95d3e68ba3d42a03fc270887ca6e7029f5fd33`
+сверены;64 prior worktrees clean/locks0/root sole active agent. New isolated worktree retains all changes.
+Full Windows [CI659](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40080724882) final log independently
+read; exact tested merge `708237b20221f63fb65266eff02120ecd2adf48c`. Windows120833528779 FAILURE; Ubuntu120833528529 SUCCESS metadata.
+ConfigMatchesNative→SshConfigAuthority fixture.dotted fails native ssh-G exit255; Bad permissions for
+Authenticated Users on synthetic Include [fixture]/parts/00-first.conf. Safe stack Check→ConfigMatchesNative→
+SshConfigAuthority→Main. Existing default inherited fixture directory rights caused native refusal;
+no runtime defect proven. Reissue10/Home VPN NOT_RUN; old PASS not inherited. Subsequent relay/pack SKIPPED.
+
+Owner explicitly authorized only NEW GUID SshConfigAuthority temporary root at creation on isolated
+Windows CI with protected inheritable ACL test-user/SYSTEM/Administrators. Local code `bc17e7de62bbbdbca051e4075d91eb774acf7577`:
+only DesktopSshConfigTests.cs73add/2delete +3docs. No SetOwner/SetAccessControl, no existing/ancestor/
+system/.ssh/SSH-policy/network changes. New synthetic parts/config/identity files inherit allowed roles.
+Exact direct work-child ssh-config-authority-GUID path, no preexisting resource; reject all reparse ancestors/
+entries. Readonly tree/ACL verification before original oracle; original same ssh-G args/config contents/
+asserts/coverage/7000ms/1500ms unchanged. Cleanup walks only owned subtree, rechecks path, uses nonrecursive
+child deletes, refuses links/fails closed. Failed post-create validation uses same cleanup. Existing local
+behavior no ACL changes. Auth-policy/other fixtures/post-Stop Refresh/Reissue/runtime byte-exact.
+
+PASS local review/static/strict parity/manual Framework signatures/lexical(not compiler)/diff/JSON/secretsPII/
+public321source0release. Windows compile/native config oracle/Reissue10/Home VPN/full suites NOT_RUN locally;
+no Windows/.NET/pwsh. Other hypothetical native fixture risks outside scope; no speculative changes.
+Publication TODO: ONE expected-HEAD guarded existing PR88 push, ONE automatic CI, guards4/public uploads OFF,
+release ineligible unchanged. Save checkpoint; STOP no full wait/rerun/second stage/recover-invite.
+Next SAME new CI exact final logs/merge/native config authority/Reissue10/Home VPN/all required regressions.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: exact new
+Windows native oracle/Reissue proof. Full delivery/personal/production gates retained separately.
+
+## История этапа: Reissue/source-ID invite owned transport поверх CI658
 
 PR88 OPEN/DRAFT/source `469c4fe332a9241cce3820aca7d3fc1d9c30806f`, checkpoint `12e045c15a7aae94b09baf0f733c8e0b1b6c30c3` сверены;
 63 prior worktrees clean/locks0/root sole active agent. Isolated worktree сохраняет checkpoints/изменения.
@@ -40,8 +70,15 @@ exact owner then delete-only Retry after unlock; Stop between steps no invite; S
 late token. Hold/join5s/modal15s unchanged; all original methods/tests/asserts/timeout coverage preserved.
 PASS local review/static/manual signatures/lexical(not compiler)/strict parity/diff/JSON/secrets/public321source0release.
 New Windows compilation/Reissue10/full suites NOT_RUN locally (no Windows/.NET/pwsh); CI658 not inherited.
-Publication TODO: one guarded source push existing PR88, ONE automatic CI, guards4/uploads OFF/release
-ineligible unchanged. Save checkpoint; STOP no full wait/second stage. Next SAME new CI final logs/merge/tests.
+Publication PASS: source `18bb98df3cf3c660c1ce7be675a87ac76f499ff8` one expected-head guarded non-force existing PR88 update;
+fetched exact658 parent/tree `c481e0bf45cf8dc4c6949313c284f24061695185` equals reviewed freeze
+`a21428357abf74188730a384bcbee1c63d4d513e`. Diff7files:3 runtime54add/3delete,
+1 test161add/0delete +3docs. ONE automatic [CI659/40080724882](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40080724882),
+exact-source count1/pull_request/attempt1,in_progress/conclusion null; Windows120833528779/Ubuntu120833528529
+in_progress metadata. Merge ref `708237b20221f63fb65266eff02120ecd2adf48c` is NOT final tested merge proof;
+new compilation/Reissue10/full relevant suites NOT_RUN. Public repo/guards4 rechecked/uploads OFF,
+final skips not observed/release ineligible. Docs-only local checkpoint intentionally not pushed/full SHA
+via git log -1/PR88 body. STOP; next SAME CI659 exact final logs/merge/tests, no full wait/rerun/second stage.
 
 Remaining: verify this candidate, then ONE recover-invite owned transport path. Personal candidate also
 needs whole Windows F31-R09/R10/R11/selected-key-agent/SSH→SOCKS5→HTTP/Cancel recovery/latency-resource
