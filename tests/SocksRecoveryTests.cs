@@ -82,10 +82,101 @@ internal static class SocksRecoveryTests
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
     }
 
+    private static string ioScenario;
+    private static int? lastDisposedChild;
+    private static bool disposedStillOwned, disposedStartupPending, disposedStopPending;
+    private static void SafeFixtureIo(string operation, IOException error)
+    {
+        Console.WriteLine("SOCKS_FIXTURE_IO operation=" + operation + "; scenario=" + ioScenario + "; type=" + error.GetType().Name +
+            "; hresult=" + error.HResult + "; disposedStillOwned=" + disposedStillOwned +
+            "; startupPending=" + disposedStartupPending + "; stopPending=" + disposedStopPending);
+        var frames = new StackTrace(error, false).GetFrames() ?? new StackFrame[0];
+        Console.WriteLine("SOCKS_FIXTURE_STACK frames=" + frames.Length + "; capped=" + (frames.Length > 32));
+        foreach (var frame in frames.Take(32)) {
+            var method = frame.GetMethod();
+            Console.WriteLine("SOCKS_FIXTURE_STACK method=" + (method == null ? "unknown" :
+                (method.DeclaringType == null ? "unknown" : method.DeclaringType.FullName) + "." + method.Name) + "; il=" + frame.GetILOffset());
+        }
+    }
+    private static bool FixtureTaskPending(ProxyService proxy, string name)
+    {
+        var field = typeof(ProxyService).GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var task = field == null ? null : field.GetValue(proxy) as Task;
+        return task != null && !task.IsCompleted;
+    }
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct LockProcess { internal int Pid; internal System.Runtime.InteropServices.ComTypes.FILETIME Start; }
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private struct LockInfo {
+        internal LockProcess Process;
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValTStr, SizeConst = 256)] internal string App;
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValTStr, SizeConst = 64)] internal string Service;
+        internal int Type; internal uint Status, Session;
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)] internal bool Restartable;
+    }
+    [System.Runtime.InteropServices.DllImport("rstrtmgr.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int RmStartSession(out uint session, int flags, StringBuilder key);
+    [System.Runtime.InteropServices.DllImport("rstrtmgr.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int RmRegisterResources(uint session, uint files, string[] paths, uint apps, IntPtr processes, uint services, string[] names);
+    [System.Runtime.InteropServices.DllImport("rstrtmgr.dll")]
+    private static extern int RmGetList(uint session, out uint needed, ref uint count, [System.Runtime.InteropServices.In, System.Runtime.InteropServices.Out] LockInfo[] owners, ref uint reasons);
+    [System.Runtime.InteropServices.DllImport("rstrtmgr.dll")]
+    private static extern int RmEndSession(uint session);
+    private static void PendingLockOwnerFacts(string folder)
+    {
+        uint session = 0; bool started = false;
+        try {
+            string parent = Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar);
+            if (!String.Equals(Path.GetDirectoryName(folder), parent, StringComparison.OrdinalIgnoreCase) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(folder), "^progo-fallback-[a-f0-9]{32}$") ||
+                (File.GetAttributes(folder) & FileAttributes.ReparsePoint) != 0) {
+                Console.WriteLine("SOCKS_FIXTURE_LOCK scoped=False"); return;
+            }
+            var pending = Directory.GetFiles(folder, "*.json.pending").Take(17).ToArray();
+            Console.WriteLine("SOCKS_FIXTURE_LOCK pendingCount=" + Math.Min(pending.Length, 16) + "; countCapped=" + (pending.Length > 16));
+            if (pending.Length == 0) return;
+            string path = pending[0];
+            var match = System.Text.RegularExpressions.Regex.Match(Path.GetFileName(path), "^([0-9]+)-[a-f0-9]{32}\\.json\\.pending$");
+            int writer;
+            if (!match.Success || !Int32.TryParse(match.Groups[1].Value, out writer) ||
+                (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0) { Console.WriteLine("SOCKS_FIXTURE_LOCK leafScoped=False"); return; }
+            bool claimedWriterAlive = false;
+            try { using (var child = Process.GetProcessById(writer)) claimedWriterAlive = !child.HasExited; } catch { }
+            Console.WriteLine("SOCKS_FIXTURE_LOCK leafScoped=True; claimedWriterAlive=" + claimedWriterAlive +
+                "; claimedMatchesDisposedChild=" + (lastDisposedChild.HasValue && lastDisposedChild.Value == writer));
+            if (RmStartSession(out session, 0, new StringBuilder(33)) != 0) { Console.WriteLine("SOCKS_FIXTURE_LOCK queryStarted=False"); return; }
+            started = true;
+            // Register ONLY this synthetic owned file; never request shutdown/restart.
+            if (RmRegisterResources(session, 1, new[] { path }, 0, IntPtr.Zero, 0, null) != 0) { Console.WriteLine("SOCKS_FIXTURE_LOCK registered=False"); return; }
+            uint needed, count = 0, reasons = 0;
+            int code = RmGetList(session, out needed, ref count, null, ref reasons);
+            if (code == 0 && needed == 0) { Console.WriteLine("SOCKS_FIXTURE_LOCK ownersRead=True; ownerCount=0"); return; }
+            if (code != 234 || needed > 16) { Console.WriteLine("SOCKS_FIXTURE_LOCK ownersRead=False; bounded=True"); return; }
+            var owners = new LockInfo[needed]; count = needed;
+            if (RmGetList(session, out needed, ref count, owners, ref reasons) != 0) { Console.WriteLine("SOCKS_FIXTURE_LOCK ownersRead=False; noRetry=True"); return; }
+            int self; using (var current = Process.GetCurrentProcess()) self = current.Id;
+            int sameWriter = 0, knownChild = 0, selfOwners = 0, sameExecutable = 0, unreadable = 0;
+            foreach (var owner in owners.Take((int)count)) {
+                if (owner.Process.Pid == writer) sameWriter++;
+                if (owner.Process.Pid == self) selfOwners++;
+                if (lastDisposedChild.HasValue && owner.Process.Pid == lastDisposedChild.Value) knownChild++;
+                try { using (var process = Process.GetProcessById(owner.Process.Pid)) {
+                    long stamp = ((long)(uint)owner.Process.Start.dwHighDateTime << 32) | (uint)owner.Process.Start.dwLowDateTime;
+                    if (process.StartTime.ToFileTime() == stamp && String.Equals(process.MainModule.FileName, Executable, StringComparison.OrdinalIgnoreCase)) sameExecutable++;
+                } } catch { unreadable++; }
+            }
+            Console.WriteLine("SOCKS_FIXTURE_LOCK ownersRead=True; ownerCount=" + count + "; claimedWriterOwners=" + sameWriter +
+                "; disposedChildOwners=" + knownChild + "; currentTestOwners=" + selfOwners + "; sameFixtureExecutableOwners=" + sameExecutable + "; unreadableRoles=" + unreadable);
+        } catch { Console.WriteLine("SOCKS_FIXTURE_LOCK probeFailed=True; noRawError=True"); }
+        finally { if (started) RmEndSession(session); }
+    }
+
     private static void Test(string name, Action action)
     {
         int before = assertions;
-        action(); passed++; Console.WriteLine("PASS: " + name + " (" + (assertions - before) + " assertions)");
+        ioScenario = action.Method.Name;
+        try { action(); } catch (IOException ex) { SafeFixtureIo("scenario", ex); throw; }
+        passed++; Console.WriteLine("PASS: " + name + " (" + (assertions - before) + " assertions)");
     }
 
     private static void Assert(bool condition, string message)
@@ -139,7 +230,13 @@ internal static class SocksRecoveryTests
             }
             Tick(0);
         }
-        public void Dispose() { Proxy.Dispose(); }
+        public void Dispose() {
+            lastDisposedChild = Proxy.CurrentPid;
+            Proxy.Dispose();
+            disposedStillOwned = Proxy.HasOwnedProcess;
+            disposedStartupPending = FixtureTaskPending(Proxy, "startupTask");
+            disposedStopPending = FixtureTaskPending(Proxy, "stopTask");
+        }
     }
 
     // These fixtures exercise real native child/SOCKS lifecycle and controlled
@@ -723,7 +820,8 @@ internal static class SocksRecoveryTests
         public void Dispose()
         {
             for (int i = 0; i < names.Length; i++) Environment.SetEnvironmentVariable(names[i], previous[i]);
-            Directory.Delete(Folder, true);
+            try { Directory.Delete(Folder, true); }
+            catch (IOException ex) { SafeFixtureIo("capture-directory-delete", ex); PendingLockOwnerFacts(Folder); throw; }
         }
     }
 
