@@ -2718,7 +2718,14 @@
         "criterion": "Пользователь устанавливает готовый проверенный продукт без Build-ProGo или самостоятельной сборки исходников. [SSH-agent](SSH_AGENT_AUTOSTART_SPEC.md): отдельная необязательная настройка Automatic+Start, OFF по умолчанию, только по явному выбору пользователя; отсутствие службы/прав/policy объясняется, uninstall сохраняет общую службу и её настройки.",
         "historical_candidate_notes": [
           "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance"
-        ]
+        ],
+        "prebuilt_payload_slice": {
+          "code_commit": "2dc5310f4b26600f30e2727bc69fb84bcff700d3",
+          "status": "NOT_RUN",
+          "local_review": "PASS static only",
+          "windows_tests": "NOT_RUN; 9 new tests",
+          "scope": "partial prerequisite only, no full standalone installer acceptance"
+        }
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
       "package": "NOT_RUN: final setup absent",
@@ -3576,14 +3583,14 @@
       "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R09)",
       "implementation": "Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService",
       "history": "Открытый дефект",
-      "status": "FAIL",
+      "status": "PARTIAL",
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Exact620 async wizard import/receipt/initial snapshot native PASS; profile export/Admin/invitation UI private I/O remain open. Later unpublished helpers absent in recovered filesystem. Whole R09 FAIL.",
+        "candidate": "Current exact CI661 dev coverage reconciled in docs/CI661_F31_EVIDENCE_MATRIX.md; older missing UI/harness strings are history, not current defects.",
         "historical_scoped_pass": false,
         "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
-        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
+        "fresh_source_audit": "Superseded historical FAIL atd0f9a690; current isolated dev evidence PASS exact CI6612b068cf/77904df, no new source audit defect identified; layer scope in criterion matrix.",
         "local_import_guard": "PASS narrow exact606 guard under real locked old session; current staged service extensions NOT_RUN",
         "local_read_primitive": "PASS narrow published606 coherent read preparation, cancel/conflict/mandatory lock/default cases; staged metadata warnings and initialization integration NOT_RUN",
         "historical_candidate_notes": [
@@ -3610,14 +3617,23 @@
           "windows_native": "NOT_RUN",
           "ci_excluded": 613
         },
-        "ci620_recovery": "Exact12d5/merge7853 full CI620 SUCCESS scoped modal11+5/receipt7/signing55/UI50/prep76/native direct+agent IO4; all later unpublished code missing; target NOT_RUN"
+        "ci620_recovery": "Exact12d5/merge7853 full CI620 SUCCESS scoped modal11+5/receipt7/signing55/UI50/prep76/native direct+agent IO4; all later unpublished code missing; target NOT_RUN",
+        "ci661_current": {
+          "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+          "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+          "run_id": 40085290372,
+          "matrix": "docs/CI661_F31_EVIDENCE_MATRIX.md",
+          "dev": "PASS existing isolated criteria; R11 installer PGA04 separately TODO/BLOCKED",
+          "target": "NOT_RUN",
+          "package": "NOT_RUN available private package/standalone installer"
+        }
       },
-      "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT at exact2b068cf; merge-to-main NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
-      "remaining": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
+      "remaining": "Package/integration/owner target acceptance NOT_RUN; see criterion-level CI661 matrix. No duplicate dev harness required.",
       "dependencies": [],
-      "next_step": "Exact native check frozen addressd651 with real modal read/write cases, then owned share persistence/recovery and token pair workers preserving scope/request boundaries"
+      "next_step": "Pinned private build-only candidate plan; available isolated Windows + approved private persistent output; then separate installer/target gates."
     },
     {
       "id": "F31-R10",
@@ -3631,7 +3647,7 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Exact611 full SUCCESS sourced896/mergef0bf: shared store9+9/service7+9/receipt worker8 API PASS and all regressions incl direct+owned-agent real SSH chain. Actual configure UI9faa/importAPI99ad/wizard setup probes NOT_RUN, full R09/R10/R11 and target criteria open.",
+        "candidate": "Current exact CI661 dev coverage reconciled in docs/CI661_F31_EVIDENCE_MATRIX.md; older missing UI/harness strings are history, not current defects.",
         "historical_scoped_pass": false,
         "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
         "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
@@ -3639,14 +3655,23 @@
           "CI598 source37f02/merge16bf1 scoped native PASS13 phone cases/full-stop identity/actual four-flow drain; target-PC/emergency process interruption and R09 import caller not accepted",
           "Exact608 full Windows build/regressions SUCCESS; full criterion status/remaining and target NOT_RUN remain separate. Phone parent read tests Show(); address writes/modal fix excluded",
           "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open."
-        ]
+        ],
+        "ci661_current": {
+          "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+          "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+          "run_id": 40085290372,
+          "matrix": "docs/CI661_F31_EVIDENCE_MATRIX.md",
+          "dev": "PASS existing isolated criteria; R11 installer PGA04 separately TODO/BLOCKED",
+          "target": "NOT_RUN",
+          "package": "NOT_RUN available private package/standalone installer"
+        }
       },
-      "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT at exact2b068cf; merge-to-main NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
-      "remaining": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
+      "remaining": "Package/integration/owner target acceptance NOT_RUN; see criterion-level CI661 matrix. No duplicate dev harness required.",
       "dependencies": [],
-      "next_step": "Retain scoped native evidence; finish dependent R09 import and target/hardware scenarios before full acceptance"
+      "next_step": "Pinned private build-only candidate plan; available isolated Windows + approved private persistent output; then separate installer/target gates."
     },
     {
       "id": "F31-R11",
@@ -3660,7 +3685,7 @@
       "verification": {
         "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
         "baseline_ci": 582,
-        "candidate": "Exact620 common selected-key direct/agent startup/recovery +owned child latency/CPU/RAM/IO4 native PASS; full R08/R09/R10/R11 and owner/performance target gates remain open.",
+        "candidate": "Current exact CI661 dev coverage reconciled in docs/CI661_F31_EVIDENCE_MATRIX.md; older missing UI/harness strings are history, not current defects.",
         "historical_scoped_pass": false,
         "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
         "selected_identity_signing": "CI592 exact source/merge: signing55, UI50, actual agent LIST/SIGN preparation+server auth+recovery PASS; owner agent/encrypted key/VPS not accepted",
@@ -3688,12 +3713,21 @@
           "excludes": "physical disk/app/UI/agent/server totals, slowhardware/owner-PC/final performance acceptance",
           "readiness_change": 0
         },
-        "ci620_recovery": "Exact12d5/merge7853 full CI620 SUCCESS scoped modal11+5/receipt7/signing55/UI50/prep76/native direct+agent IO4; all later unpublished code missing; target NOT_RUN"
+        "ci620_recovery": "Exact12d5/merge7853 full CI620 SUCCESS scoped modal11+5/receipt7/signing55/UI50/prep76/native direct+agent IO4; all later unpublished code missing; target NOT_RUN",
+        "ci661_current": {
+          "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+          "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+          "run_id": 40085290372,
+          "matrix": "docs/CI661_F31_EVIDENCE_MATRIX.md",
+          "dev": "PASS existing isolated criteria; R11 installer PGA04 separately TODO/BLOCKED",
+          "target": "NOT_RUN",
+          "package": "NOT_RUN available private package/standalone installer"
+        }
       },
-      "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT at exact2b068cf; merge-to-main NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
-      "remaining": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
+      "remaining": "Package/integration/owner target acceptance NOT_RUN; see criterion-level CI661 matrix. PGA04 installer opt-in OFF remains F23 package-code gate. No duplicate dev harness required.",
       "dependencies": [
         "selected-key readiness",
         "startup ordering",
@@ -3704,7 +3738,7 @@
         "F31-R09",
         "F31-R10"
       ],
-      "next_step": "Complete R08/R09 and final native latency/CPU/RAM/I/O/owner acceptance; preserve already integrated selected-key start/recovery path"
+      "next_step": "Pinned private build-only candidate plan; available isolated Windows + approved private persistent output; then separate installer/target gates."
     },
     {
       "id": "F31-R12",
@@ -3929,12 +3963,20 @@
     }
   ],
   "ci_candidate": {
-    "source": "f28e6a4ebc3a9e13c18807b2a3964966cb79628d",
-    "tested_merge": null,
-    "status": "NOT_RUN local last transport candidate",
-    "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN new recover-invite10/full suites",
-    "artifact_uploads": "OFF public guard unchanged"
+    "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+    "run_id": 40085290372,
+    "run_number": 661,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+    "status": "completed",
+    "conclusion": "success",
+    "windows_compilation": "PASS exact tested merge",
+    "windows_native": "PASS recover-invite10/prior suites; criterion scope in matrix",
+    "pack": "PASS runner-only; ZIP unavailable/artifacts0",
+    "artifact_uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "observed_runner_zip_sha256": "a8a3ac56a7cadb711a3901aaa4c728cd5b4fb32456c0142b8481b12c8b9602b3",
+    "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5471,34 +5513,23 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE final bounded recover-invite owned transport candidate",
-    "baseline_source": "ff2ccb0e2b74f9dc3eb86a981536bced6cd2c194",
-    "baseline_tested_merge": "f72193fb2d755edbfe8027457d5ea0154521246d",
-    "baseline_checkpoint": "66d6fd4089fed302d49858f99f6af3951408e913",
-    "local_code_sha": "f28e6a4ebc3a9e13c18807b2a3964966cb79628d",
-    "scope": "Only existing recover-invite default wizard Admin route with null label/id; original invalid payload validation retained. Two runtime additions +existing test file; fresh invite/standalone revoke/Reissue/UI/core/ACL fixtures unchanged.",
-    "implementation": "RecoverInviteAdminOwnedAsync freezes endpoint, retains worker for existing core Load/status/result/RetainResult/cleanup with same family lease. Existing recovery scope dispatcher reused for every copy/command, no outer lease/Stop self-await. Explicit Friends Form+dispatcher; recovery copy and native WaitForAdmin with original timeout/typed pending cancellation. No request ID/source/name from caller, no Register/invite/revoke; original journal supplies exact IDs. Existing UI late Stop/owner/consumption guards preserved.",
-    "native_cases": [
-      "default-refusal",
-      "complete",
-      "cancel-retry",
-      "stop-copy",
-      "dispose-copy",
-      "owner-dispose",
-      "cancel-command",
-      "cleanup-lock",
-      "stop-after-status",
-      "stop-result"
+    "phase": "ONE F23-R01 explicit prebuilt installer preflight; prerequisite to PGA04",
+    "baseline_source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "baseline_checkpoint": "6e96a7ab8fc4f87e2c8933e05d7c5ee8ed387e7f",
+    "local_development_sha": "2dc5310f4b26600f30e2727bc69fb84bcff700d3",
+    "published_sha": null,
+    "ci_run_id": null,
+    "ci_status": "NOT_RUN before guarded publication",
+    "criterion": "Explicit local prebuilt payload completeness/version validation before user writes; no build/network fallback on rejection",
+    "code_paths": [
+      "scripts/Install-ProGo.ps1:Get-ProGoInstallPayload",
+      "scripts/Install-ProGo.ps1:PayloadDirectory branch"
     ],
-    "test_contract": "Actual ShowDialog/default Recover/Admin route and real core helper/DPAPI/native process+child. Existing accepted request/source ID/result frozen before scenario. Request bytes exact on cancellation before result; only validated RetainResult may rewrite DPAPI envelope, IDs/value stay exact. Copy Cancel->explicit Retry uses same status/result, never invite/revoke. Stop before transport/status->result refuses new read; native cancellation no cached-token fallback; owner disposal no late UI; Stop after verified result no handoff; cleanup lock false Stop then exact delete-only retry. Protected access/owner bytes unchanged. Modal15s/copy5s/join5s and all previous assertions/timeouts unchanged.",
-    "local_checks": "PASS static/manual signatures/strict original methods/test bodies parity/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh.",
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN owned recover-invite10/full suites",
-    "publication": "TODO one expected-head guarded PR88 source push and one automatic CI; public guards4/uploads OFF unchanged",
-    "remaining_production_paths": [],
-    "pending_verification": "Last transport binding is a candidate, not accepted: exact new recover-invite10 and full regression CI plus whole UI I/O performance/device/delivery gates remain.",
-    "next": "Read SAME new CI full final exact-source/tested-merge/recover-invite10/all prior suites. No full wait/rerun/second stage. Then separately scoped final Windows/dev gates, not a feature expansion.",
-    "readiness_change": "+0 fixed58-80/22"
+    "tests": "tests/InstallPayloadTests.ps1:9; Windows NOT_RUN; local docs3/public/static/diff/JSON PASS",
+    "protected_actions": "None implemented or executed. PGA04 remains OFF by default, explicit install-time consent required before future elevation/Automatic/Start.",
+    "remaining": "F23 maintenance/staging/authenticity/hash/self-check/rollback; updater/fallback fixed paths; PGA04 explicit opt-in UI/executor; target gates",
+    "next": "Same exact new CI logs/InstallerPayload9 and existing relevant regressions only; no second slice this turn",
+    "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5591,7 +5622,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI660 exactff2ccb0/f72193f full logs config native/policy214/Desktop6388/Reissue10/HomeVPN4686 PASS. Last recover-invite owned binding candidate NOT_RUN; final Windows/dev/personal/package/production gates remain. Fixed58-80/22 +0.",
+    "candidate_note": "CI661 exact2b068cf/77904df all suites PASS; current F31 dev matrix reconciled, no duplicate harness needed. Runner ZIP hash observed but artifacts0/unavailable; private build-only/installer/PGA04/target/production/commercial gates remain. Fixed58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -13831,6 +13862,254 @@
         "pack": "NOT_RUN",
         "artifact_uploads": "OFF public guard/final skips not observed"
       }
+    },
+    "before_ci661_final_matrix": {
+      "ci_candidate": {
+        "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+        "tested_merge": null,
+        "merge_ref": "77904dff703f65002d306bf5acc84a2f15df98ab",
+        "run_id": 40085290372,
+        "run_number": 661,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 120846867200,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120846867400,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "exact_source_run_count": 1,
+        "event": "pull_request",
+        "attempt": 1,
+        "windows_compilation": "NOT_RUN new recover-invite candidate",
+        "windows_native": "NOT_RUN new recover-invite10/full suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public guard/final skips not observed"
+      },
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "Last bounded recover-invite owned transport source published; sole CI661 in_progress; STOP",
+        "baseline_source": "ff2ccb0e2b74f9dc3eb86a981536bced6cd2c194",
+        "baseline_tested_merge": "f72193fb2d755edbfe8027457d5ea0154521246d",
+        "baseline_checkpoint": "66d6fd4089fed302d49858f99f6af3951408e913",
+        "local_code_sha": "f28e6a4ebc3a9e13c18807b2a3964966cb79628d",
+        "scope": "Only existing recover-invite default wizard Admin route with null label/id; original invalid payload validation retained. Two runtime additions +existing test file; fresh invite/standalone revoke/Reissue/UI/core/ACL fixtures unchanged.",
+        "implementation": "RecoverInviteAdminOwnedAsync freezes endpoint, retains worker for existing core Load/status/result/RetainResult/cleanup with same family lease. Existing recovery scope dispatcher reused for every copy/command, no outer lease/Stop self-await. Explicit Friends Form+dispatcher; recovery copy and native WaitForAdmin with original timeout/typed pending cancellation. No request ID/source/name from caller, no Register/invite/revoke; original journal supplies exact IDs. Existing UI late Stop/owner/consumption guards preserved.",
+        "native_cases": [
+          "default-refusal",
+          "complete",
+          "cancel-retry",
+          "stop-copy",
+          "dispose-copy",
+          "owner-dispose",
+          "cancel-command",
+          "cleanup-lock",
+          "stop-after-status",
+          "stop-result"
+        ],
+        "test_contract": "Actual ShowDialog/default Recover/Admin route and real core helper/DPAPI/native process+child. Existing accepted request/source ID/result frozen before scenario. Request bytes exact on cancellation before result; only validated RetainResult may rewrite DPAPI envelope, IDs/value stay exact. Copy Cancel->explicit Retry uses same status/result, never invite/revoke. Stop before transport/status->result refuses new read; native cancellation no cached-token fallback; owner disposal no late UI; Stop after verified result no handoff; cleanup lock false Stop then exact delete-only retry. Protected access/owner bytes unchanged. Modal15s/copy5s/join5s and all previous assertions/timeouts unchanged.",
+        "local_checks": "PASS static/manual signatures/strict original methods/test bodies parity/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh.",
+        "windows_compilation": "NOT_RUN new candidate",
+        "windows_native": "NOT_RUN owned recover-invite10/full suites",
+        "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact660 parent/tree equals reviewed freeze; ONE automatic CI661 pull_request attempt1/exact-source count1; public repo and guards4 rechecked.",
+        "remaining_production_paths": [],
+        "pending_verification": "Last transport binding is a candidate, not accepted: exact new recover-invite10 and full regression CI plus whole UI I/O performance/device/delivery gates remain.",
+        "next": "Read SAME CI66140085290372 full final logs/exact source/tested merge/recover-invite10/all prior suites; no full wait/rerun/second stage. Then separately scoped final Windows/dev/delivery gates.",
+        "readiness_change": "+0 fixed58-80/22",
+        "published_sha": "2b068cf909e761c27b9594bec91d78b582fce68d",
+        "tree": "665084a4fe9ba6dfc4d3e0dc07b70b1511fd47cf",
+        "local_freeze": "3867bd07494e3b4bfc73edf98c138dffddf68dbe",
+        "merge_ref": "77904dff703f65002d306bf5acc84a2f15df98ab",
+        "tested_merge": null,
+        "ci_run_id": 40085290372,
+        "ci_run_number": 661,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": [
+          {
+            "id": 120846867200,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120846867400,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid duplicate CI."
+      }
+    },
+    "ci661_previous_F31-R09": {
+      "id": "F31-R09",
+      "parent": "F31",
+      "phase": "До",
+      "requirement": "HomeVPN private I/O, DPAPI и session preparation в worker",
+      "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R09)",
+      "implementation": "Program; ProxyService; SshAgent*; SshProfile*; UpdateAwareTrayApplicationContext; HomeVpnService",
+      "history": "Открытый дефект",
+      "status": "FAIL",
+      "verification": {
+        "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
+        "baseline_ci": 582,
+        "candidate": "Exact620 async wizard import/receipt/initial snapshot native PASS; profile export/Admin/invitation UI private I/O remain open. Later unpublished helpers absent in recovered filesystem. Whole R09 FAIL.",
+        "historical_scoped_pass": false,
+        "criterion": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
+        "local_import_guard": "PASS narrow exact606 guard under real locked old session; current staged service extensions NOT_RUN",
+        "local_read_primitive": "PASS narrow published606 coherent read preparation, cancel/conflict/mandatory lock/default cases; staged metadata warnings and initialization integration NOT_RUN",
+        "historical_candidate_notes": [
+          "Exact605 existing session prepare/owned Stop/cleanup PASS; live constructor/getter/writes remain sync. Local primitive/guard6353 and optional init APIad3 C#5/native NOT_RUN; init optional metadata availability regression must be fixed before UI switch",
+          "Exact608 code wires Program background constructor and actual configure/QR read helpers. Native configure click read/cancel/retry/close/dispose uses Show() parent, imported-data background ctor/memory getter PASS. Full Program GUI startup and wizard QR→VPS owner integration NOT_RUN; modal fix/address418/cf29/882 untested. Token/share/recovery writes sync; whole R09 FAIL",
+          "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open.",
+          "Exact617 sourcef255e8ad7339af4481e0590c31c7db32ab959bfe /merge7f72092c47f68617f9fec6bf1b7c2dc273c9f426 fullSUCCESS pair9/import9/receipt7 APIs and regressions. Actual published importer still sync; staged async wizard/export/admin helpers Windows NOT_RUN; whole R09 FAIL."
+        ],
+        "current_read_primitive_guard": {
+          "source": "bf1c1e5cff7151b4d0f11d8831a7e3b7a2e0f1dc",
+          "tested_merge": "cd20daf85da786d42244e7ce17fc83726b81fbcc",
+          "run_id": 39724309390,
+          "read_anchor": "2026-10-22T05:08:39.9645891Z actual protected access, owner, home and matching server share form one prepared state",
+          "guard_anchor": "2026-10-22T05:09:30.2421268Z failed real cleanup refuses token import before DPAPI or active identity changes",
+          "status": "PASS narrow only; primitive not live startup"
+        },
+        "historical_local_import_guard": "Sourcea75df7b +fixture7cc8159: refuse import before any DPAPI/identity change when actual old cleanup false; native NOT_RUN; excluded598/b342",
+        "historical_local_read_primitive": "5017167/8863ea9 HomeVpnStoredState worker +actual native vectors written; source/syntax only PASS, compiler/native NOT_RUN; production constructor/UI still synchronous, no full criterion credit",
+        "local_wizard_setup_snapshot": {
+          "source": "a0e34136ca5cce469e39a2a870542c090f40ea99",
+          "implementation": "PARTIAL owned worker/cached UI source",
+          "static": "PASS",
+          "windows_compilation": "NOT_RUN",
+          "windows_native": "NOT_RUN",
+          "ci_excluded": 613
+        },
+        "ci620_recovery": "Exact12d5/merge7853 full CI620 SUCCESS scoped modal11+5/receipt7/signing55/UI50/prep76/native direct+agent IO4; all later unpublished code missing; target NOT_RUN"
+      },
+      "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
+      "package": "NOT_RUN: final setup absent",
+      "target": "NOT_RUN",
+      "remaining": "ShareOrigin/save, token/home-address, ACL/secret files выполняются в worker с зафиксированными входными данными операции; отмена/смена доступа запрещают позднее сохранение.",
+      "dependencies": [],
+      "next_step": "Exact native check frozen addressd651 with real modal read/write cases, then owned share persistence/recovery and token pair workers preserving scope/request boundaries"
+    },
+    "ci661_previous_F31-R10": {
+      "id": "F31-R10",
+      "parent": "F31",
+      "phase": "До",
+      "requirement": "Асинхронные phone Stop/cleanup",
+      "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R10)",
+      "implementation": "Published owned async service+relay Start/Stop/Dispose, actual wizard/tray/StopAll and sealed bounded shutdown;13 new native cases and real transport drain PASS exact598",
+      "history": "Открытый дефект",
+      "status": "PARTIAL",
+      "verification": {
+        "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
+        "baseline_ci": 582,
+        "candidate": "Exact611 full SUCCESS sourced896/mergef0bf: shared store9+9/service7+9/receipt worker8 API PASS and all regressions incl direct+owned-agent real SSH chain. Actual configure UI9faa/importAPI99ad/wizard setup probes NOT_RUN, full R09/R10/R11 and target criteria open.",
+        "historical_scoped_pass": false,
+        "criterion": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
+        "fresh_source_audit": "FAIL source contract atd0f9a690; evidence docs/RESIDUAL_RECHECK_20261021.md; runtime/owner latency NOT_RUN",
+        "historical_candidate_notes": [
+          "CI598 source37f02/merge16bf1 scoped native PASS13 phone cases/full-stop identity/actual four-flow drain; target-PC/emergency process interruption and R09 import caller not accepted",
+          "Exact608 full Windows build/regressions SUCCESS; full criterion status/remaining and target NOT_RUN remain separate. Phone parent read tests Show(); address writes/modal fix excluded",
+          "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open."
+        ]
+      },
+      "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
+      "package": "NOT_RUN: final setup absent",
+      "target": "NOT_RUN",
+      "remaining": "Неполная очистка видима, ownership/retry сохранены, Dispose/удаление session не блокируют UI. Готовый desktop Stop/F09 shutdown повторно не переделываются.",
+      "dependencies": [],
+      "next_step": "Retain scoped native evidence; finish dependent R09 import and target/hardware scenarios before full acceptance"
+    },
+    "ci661_previous_F31-R11": {
+      "id": "F31-R11",
+      "parent": "F31",
+      "phase": "До",
+      "requirement": "Подготовка SSH-agent и итоговая dev приёмка F31",
+      "source": "docs/REMAINING_SUBTASKS_8.md (строка F31-R11)",
+      "implementation": "Published shared StartSingleTunnel preparation/epoch/revision admission source7964a99ac4f6adf0d1d9034c855e989f60211c0a (local lifecycle c0f5610); independent safe error guidance local83cf660ea51674cafa905c60835bd071477acd5b",
+      "history": "Dev PENDING",
+      "status": "PARTIAL",
+      "verification": {
+        "baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
+        "baseline_ci": 582,
+        "candidate": "Exact620 common selected-key direct/agent startup/recovery +owned child latency/CPU/RAM/IO4 native PASS; full R08/R09/R10/R11 and owner/performance target gates remain open.",
+        "historical_scoped_pass": false,
+        "criterion": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
+        "selected_identity_signing": "CI592 exact source/merge: signing55, UI50, actual agent LIST/SIGN preparation+server auth+recovery PASS; owner agent/encrypted key/VPS not accepted",
+        "historical_candidate_notes": [
+          "Exact605 full CI SUCCESS signing55/UI50/prep72 +actual direct/owned-agent preparation→SSH→SOCKS→HTTP→crash→fresh recovery PASS; R08/R09/owner/performance criteria still open",
+          "Exact608 signing55/UI50/prep72 +actual direct/owned-agent OpenSSH→SOCKS→HTTP→crash→fresh preparation PASS. Common start/recovery already integrated; R08/R09/performance/owner acceptance open",
+          "Exact610 full SUCCESS source04ca974519bfffdb70a1706066ebaef7ed26bf6b/mergec506814d33c4ef39f5cb946c41121a70850ff851: home store9/service-save7/read-modal3/write-modal7 PASS; selected-key signing55/UI50/prep72 and real direct+owned-agent native chain PASS. Root shareAPI/configureUI/Stop560 NOT_RUN; token importer/receipt UI and target/final performance acceptance still open.",
+          "Exact611 full SUCCESS sourced896/mergef0bf: shared store9+9/service7+9/receipt worker8 API PASS and all regressions incl direct+owned-agent real SSH chain. Actual configure UI9faa/importAPI99ad/wizard setup probes NOT_RUN, full R09/R10/R11 and target criteria open."
+        ],
+        "local_process_io_metrics": {
+          "source": "f9f27896d5830dc75e7d9ba526f105446514456a",
+          "paths": 1,
+          "added_lines": 29,
+          "deleted_lines": 2,
+          "implementation": "test-only real tracked SSH child GetProcessIoCounters six totals, child_lifetime scope at direct/agent startup/recovery; unavailable collection NOT_RUN plus failed assertion outside catch",
+          "static": "PASS manual official Win32 API/layout/scope, syntax/diff/public321/0/secretsPII0",
+          "sources": [
+            "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessiocounters",
+            "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-io_counters"
+          ],
+          "windows_compilation": "NOT_RUN",
+          "windows_native": "NOT_RUN",
+          "measurements": "NOT_RUN no invented numbers",
+          "excluded_ci": 616,
+          "excludes": "physical disk/app/UI/agent/server totals, slowhardware/owner-PC/final performance acceptance",
+          "readiness_change": 0
+        },
+        "ci620_recovery": "Exact12d5/merge7853 full CI620 SUCCESS scoped modal11+5/receipt7/signing55/UI50/prep76/native direct+agent IO4; all later unpublished code missing; target NOT_RUN"
+      },
+      "integration": "PR88 OPEN/DRAFT unmerged, exact611 sourced896/mergef0bf full SUCCESS only; later UI/import excluded, target NOT_RUN",
+      "package": "NOT_RUN: final setup absent",
+      "target": "NOT_RUN",
+      "remaining": "До установщика реализовать и проверить [PGA-02–09](SSH_AGENT_AUTOSTART_SPEC.md): асинхронные ограниченные операции без дублей, запуск службы в имеющихся правах без повторного UAC, нужный ключ выбранного профиля и безопасный interactive ssh-add, классификацию ошибок/повторы и доступный UI. Агент не обязателен для других рабочих методов аутентификации; пароли не сохраняются. Дополнительно native slow disk/network/process fixtures и отчёт latency/CPU/RAM/I/O на итоговом commit с отдельными PASS/FAIL/NOT_CHECKED. Микрошаг02A не закрывает этот критерий.",
+      "dependencies": [
+        "selected-key readiness",
+        "startup ordering",
+        "F31-R05",
+        "F31-R06",
+        "F31-R07",
+        "F31-R08",
+        "F31-R09",
+        "F31-R10"
+      ],
+      "next_step": "Complete R08/R09 and final native latency/CPU/RAM/I/O/owner acceptance; preserve already integrated selected-key start/recovery path"
+    },
+    "before_f23_prebuilt_payload": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE CI661 final-evidence reconciliation + exact private candidate plan; no code/CI/binaries",
+        "baseline_source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+        "published_sha": "2b068cf909e761c27b9594bec91d78b582fce68d",
+        "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+        "baseline_checkpoint": "a89f0b0d628c6a0939ec0d65a6e563ec22111fb1",
+        "ci_run_id": 40085290372,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+        "ci_status": "completed",
+        "ci_conclusion": "success",
+        "matrix": "docs/CI661_F31_EVIDENCE_MATRIX.md",
+        "scope": "Docs-only; full logs/source criteria/code fixture boundary reviewed; previous harness not rerun. No newly proven code/test defect in current isolated F31 scope.",
+        "remaining_production_paths": [],
+        "protected_dependency": "Available isolated Windows build-only environment and approved private nonpublic persistent output; none accessible here. No workflow/upload modification. PGA04 and standalone installer remain separate package-code gates, real security actions require explicit install opt-in.",
+        "next": "ONE build/package-only pinned tested merge, new hash/manifest/content/launch smoke in private Windows output; preserve exact CI661 harness evidence, no duplicate full CI. No binary publication/transfer/install now.",
+        "checkpoint": "Local docs-only HEAD via git log -1/PR88 body; not source-pushed to avoid needless CI.",
+        "readiness_change": "+0 fixed58-80/22; no whole requirement or target/package acceptance promoted."
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -18699,27 +18978,29 @@
     "personal_candidate": [
       {
         "id": "PC-01",
-        "status": "NOT_RUN",
-        "criterion": "Last recover-invite binding candidate needs exact new source/merge/recover-invite10/all prior suites. CI660 separate baseline PASS.",
-        "source": "f28e6a4ebc3a9e13c18807b2a3964966cb79628d",
-        "run_id": null,
-        "ci_url": null,
+        "status": "PASS",
+        "criterion": "CI661 full exact-source/merge recover-invite10/all suites final logs independently verified; only this CI criterion PASS.",
+        "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+        "run_id": 40085290372,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
         "last_failure_run": 40041549329
       },
       {
         "id": "PC-02",
-        "status": "PARTIAL",
-        "criterion": "Fresh invite/revoke/Reissue proven CI660; final recover-invite binding implemented as candidate, native NOT_RUN. Whole F31-R09/R10/R11 still require final Windows UI lifecycle/performance/key-agent and acceptance gates."
+        "status": "PASS",
+        "criterion": "Existing invite/revoke/Reissue/recover-invite owned bindings all covered by exact CI661 isolated tests; no implementation residual in this transport slice. Not whole F31/package/target PASS."
       },
       {
         "id": "PC-03",
-        "status": "NOT_RUN",
-        "criterion": "Final Windows dev acceptance F31-R09/R10/R11: modal UI ownership/cancel/retry, selected-key/agent/auth failure/host-key, slow disk/network/process fixtures and measured latency/CPU/RAM/I/O on exact SHA."
+        "status": "PARTIAL",
+        "criterion": "Existing isolated F31 dev/actual SSH performance report covered in CI661. Target/whole product acceptance remains NOT_RUN; no repeat harness requested.",
+        "ci661_evidence": "docs/CI661_F31_EVIDENCE_MATRIX.md"
       },
       {
         "id": "PC-04",
         "status": "BLOCKED",
-        "criterion": "Prepare pinned private checking package after successful exact build, version/source/SHA256 plus install/check/rollback steps; runner ZIP is not delivery. Owner must approve a private transfer route; public artifact uploads forbidden."
+        "criterion": "Prepare pinned private checking package after successful exact build, version/source/SHA256 plus install/check/rollback steps; runner ZIP is not delivery. Owner must approve a private transfer route; public artifact uploads forbidden.",
+        "gap_scope": "Available isolated Windows build-only environment with approved nonpublic persistent output; no binary transferred in this stage; public workflow unchanged."
       },
       {
         "id": "PC-05",
@@ -19743,7 +20024,7 @@
     "limits": "Runner only; owner PC/install/live acceptance NOT_RUN; no whole F31/production criterion closure."
   },
   "invitation_recover_transport_on660": {
-    "status": "PARTIAL",
+    "status": "PASS bounded dev only",
     "phase": "ONE final bounded recover-invite owned transport candidate",
     "baseline_source": "ff2ccb0e2b74f9dc3eb86a981536bced6cd2c194",
     "baseline_tested_merge": "f72193fb2d755edbfe8027457d5ea0154521246d",
@@ -19765,12 +20046,471 @@
     ],
     "test_contract": "Actual ShowDialog/default Recover/Admin route and real core helper/DPAPI/native process+child. Existing accepted request/source ID/result frozen before scenario. Request bytes exact on cancellation before result; only validated RetainResult may rewrite DPAPI envelope, IDs/value stay exact. Copy Cancel->explicit Retry uses same status/result, never invite/revoke. Stop before transport/status->result refuses new read; native cancellation no cached-token fallback; owner disposal no late UI; Stop after verified result no handoff; cleanup lock false Stop then exact delete-only retry. Protected access/owner bytes unchanged. Modal15s/copy5s/join5s and all previous assertions/timeouts unchanged.",
     "local_checks": "PASS static/manual signatures/strict original methods/test bodies parity/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh.",
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN owned recover-invite10/full suites",
-    "publication": "TODO one expected-head guarded PR88 source push and one automatic CI; public guards4/uploads OFF unchanged",
+    "windows_compilation": "PASS exact CI661 source/merge",
+    "windows_native": "PASS recover-invite10 and all prior suites CI661",
+    "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact660 parent/tree equals reviewed freeze; ONE automatic CI661 pull_request attempt1/exact-source count1; public repo and guards4 rechecked.",
     "remaining_production_paths": [],
     "pending_verification": "Last transport binding is a candidate, not accepted: exact new recover-invite10 and full regression CI plus whole UI I/O performance/device/delivery gates remain.",
-    "next": "Read SAME new CI full final exact-source/tested-merge/recover-invite10/all prior suites. No full wait/rerun/second stage. Then separately scoped final Windows/dev gates, not a feature expansion.",
-    "readiness_change": "+0 fixed58-80/22"
+    "next": "No transport implementation residual; package/delivery/installer/target gates in CI661 evidence matrix.",
+    "readiness_change": "+0 fixed58-80/22",
+    "published_sha": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "tree": "665084a4fe9ba6dfc4d3e0dc07b70b1511fd47cf",
+    "local_freeze": "3867bd07494e3b4bfc73edf98c138dffddf68dbe",
+    "merge_ref": "77904dff703f65002d306bf5acc84a2f15df98ab",
+    "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+    "ci_run_id": 40085290372,
+    "ci_run_number": 661,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_jobs": [
+      {
+        "id": 120846867200,
+        "name": "vpn-server-test",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 120846867400,
+        "name": "windows-build",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ],
+    "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid duplicate CI.",
+    "verification": {
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "run_id": 40085290372,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+      "windows_lines": 15385,
+      "ubuntu_lines": 578,
+      "metrics": [
+        {
+          "time_utc": "2026-10-24T10:32:00.7810062Z",
+          "mode": "direct",
+          "phase": "startup",
+          "elapsed_ms": "1937",
+          "preparation_ms": "23",
+          "ssh_cpu_ms": "15.625",
+          "ssh_working_set_bytes": "11452416",
+          "ssh_peak_working_set_bytes": "11530240",
+          "ssh_io_scope": "child_lifetime",
+          "ssh_io_read_operations": "16",
+          "ssh_io_write_operations": "0",
+          "ssh_io_other_operations": "224",
+          "ssh_io_read_bytes": "7256",
+          "ssh_io_write_bytes": "0",
+          "ssh_io_other_bytes": "8395"
+        },
+        {
+          "time_utc": "2026-10-24T10:32:02.7216586Z",
+          "mode": "direct",
+          "phase": "recovery",
+          "elapsed_ms": "1935",
+          "preparation_ms": "23,23",
+          "ssh_cpu_ms": "15.625",
+          "ssh_working_set_bytes": "11427840",
+          "ssh_peak_working_set_bytes": "11501568",
+          "ssh_io_scope": "child_lifetime",
+          "ssh_io_read_operations": "16",
+          "ssh_io_write_operations": "0",
+          "ssh_io_other_operations": "226",
+          "ssh_io_read_bytes": "7256",
+          "ssh_io_write_bytes": "0",
+          "ssh_io_other_bytes": "8447"
+        },
+        {
+          "time_utc": "2026-10-24T10:32:05.4906715Z",
+          "mode": "agent",
+          "phase": "startup",
+          "elapsed_ms": "1980",
+          "preparation_ms": "67",
+          "ssh_cpu_ms": "15.625",
+          "ssh_working_set_bytes": "11362304",
+          "ssh_peak_working_set_bytes": "11436032",
+          "ssh_io_scope": "child_lifetime",
+          "ssh_io_read_operations": "14",
+          "ssh_io_write_operations": "6",
+          "ssh_io_other_operations": "207",
+          "ssh_io_read_bytes": "3644",
+          "ssh_io_write_bytes": "1319",
+          "ssh_io_other_bytes": "9031"
+        },
+        {
+          "time_utc": "2026-10-24T10:32:07.4851667Z",
+          "mode": "agent",
+          "phase": "recovery",
+          "elapsed_ms": "1990",
+          "preparation_ms": "67,67",
+          "ssh_cpu_ms": "31.25",
+          "ssh_working_set_bytes": "11354112",
+          "ssh_peak_working_set_bytes": "11423744",
+          "ssh_io_scope": "child_lifetime",
+          "ssh_io_read_operations": "14",
+          "ssh_io_write_operations": "6",
+          "ssh_io_other_operations": "207",
+          "ssh_io_read_bytes": "3644",
+          "ssh_io_write_bytes": "1319",
+          "ssh_io_other_bytes": "9031"
+        }
+      ],
+      "recover10": [
+        "default-refusal",
+        "complete",
+        "cancel-retry",
+        "stop-copy",
+        "dispose-copy",
+        "owner-dispose",
+        "cancel-command",
+        "cleanup-lock",
+        "stop-after-status",
+        "stop-result"
+      ],
+      "zip_sha256": "a8a3ac56a7cadb711a3901aaa4c728cd5b4fb32456c0142b8481b12c8b9602b3",
+      "artifacts": 0,
+      "status": "SUCCESS",
+      "windows_job": 120846867400,
+      "ubuntu_job": 120846867200,
+      "scope": "Full final logs independently read; pack runner-only success/uploads+prune skipped/artifacts0; matrix criterion scoped, no whole F31/target PASS."
+    }
+  },
+  "ci661_final": {
+    "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+    "run_id": 40085290372,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+    "windows_lines": 15385,
+    "ubuntu_lines": 578,
+    "metrics": [
+      {
+        "time_utc": "2026-10-24T10:32:00.7810062Z",
+        "mode": "direct",
+        "phase": "startup",
+        "elapsed_ms": "1937",
+        "preparation_ms": "23",
+        "ssh_cpu_ms": "15.625",
+        "ssh_working_set_bytes": "11452416",
+        "ssh_peak_working_set_bytes": "11530240",
+        "ssh_io_scope": "child_lifetime",
+        "ssh_io_read_operations": "16",
+        "ssh_io_write_operations": "0",
+        "ssh_io_other_operations": "224",
+        "ssh_io_read_bytes": "7256",
+        "ssh_io_write_bytes": "0",
+        "ssh_io_other_bytes": "8395"
+      },
+      {
+        "time_utc": "2026-10-24T10:32:02.7216586Z",
+        "mode": "direct",
+        "phase": "recovery",
+        "elapsed_ms": "1935",
+        "preparation_ms": "23,23",
+        "ssh_cpu_ms": "15.625",
+        "ssh_working_set_bytes": "11427840",
+        "ssh_peak_working_set_bytes": "11501568",
+        "ssh_io_scope": "child_lifetime",
+        "ssh_io_read_operations": "16",
+        "ssh_io_write_operations": "0",
+        "ssh_io_other_operations": "226",
+        "ssh_io_read_bytes": "7256",
+        "ssh_io_write_bytes": "0",
+        "ssh_io_other_bytes": "8447"
+      },
+      {
+        "time_utc": "2026-10-24T10:32:05.4906715Z",
+        "mode": "agent",
+        "phase": "startup",
+        "elapsed_ms": "1980",
+        "preparation_ms": "67",
+        "ssh_cpu_ms": "15.625",
+        "ssh_working_set_bytes": "11362304",
+        "ssh_peak_working_set_bytes": "11436032",
+        "ssh_io_scope": "child_lifetime",
+        "ssh_io_read_operations": "14",
+        "ssh_io_write_operations": "6",
+        "ssh_io_other_operations": "207",
+        "ssh_io_read_bytes": "3644",
+        "ssh_io_write_bytes": "1319",
+        "ssh_io_other_bytes": "9031"
+      },
+      {
+        "time_utc": "2026-10-24T10:32:07.4851667Z",
+        "mode": "agent",
+        "phase": "recovery",
+        "elapsed_ms": "1990",
+        "preparation_ms": "67,67",
+        "ssh_cpu_ms": "31.25",
+        "ssh_working_set_bytes": "11354112",
+        "ssh_peak_working_set_bytes": "11423744",
+        "ssh_io_scope": "child_lifetime",
+        "ssh_io_read_operations": "14",
+        "ssh_io_write_operations": "6",
+        "ssh_io_other_operations": "207",
+        "ssh_io_read_bytes": "3644",
+        "ssh_io_write_bytes": "1319",
+        "ssh_io_other_bytes": "9031"
+      }
+    ],
+    "recover10": [
+      "default-refusal",
+      "complete",
+      "cancel-retry",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock",
+      "stop-after-status",
+      "stop-result"
+    ],
+    "zip_sha256": "a8a3ac56a7cadb711a3901aaa4c728cd5b4fb32456c0142b8481b12c8b9602b3",
+    "artifacts": 0,
+    "status": "SUCCESS",
+    "windows_job": 120846867400,
+    "ubuntu_job": 120846867200,
+    "scope": "Full final logs independently read; pack runner-only success/uploads+prune skipped/artifacts0; matrix criterion scoped, no whole F31/target PASS."
+  },
+  "ci661_evidence_reconciliation": {
+    "status": "PARTIAL",
+    "phase": "ONE CI661 final-evidence reconciliation + exact private candidate plan; no code/CI/binaries",
+    "baseline_source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "published_sha": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+    "baseline_checkpoint": "a89f0b0d628c6a0939ec0d65a6e563ec22111fb1",
+    "ci_run_id": 40085290372,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "matrix": "docs/CI661_F31_EVIDENCE_MATRIX.md",
+    "scope": "Docs-only; full logs/source criteria/code fixture boundary reviewed; previous harness not rerun. No newly proven code/test defect in current isolated F31 scope.",
+    "remaining_production_paths": [],
+    "protected_dependency": "Available isolated Windows build-only environment and approved private nonpublic persistent output; none accessible here. No workflow/upload modification. PGA04 and standalone installer remain separate package-code gates, real security actions require explicit install opt-in.",
+    "next": "ONE build/package-only pinned tested merge, new hash/manifest/content/launch smoke in private Windows output; preserve exact CI661 harness evidence, no duplicate full CI. No binary publication/transfer/install now.",
+    "checkpoint": "Local docs-only HEAD via git log -1/PR88 body; not source-pushed to avoid needless CI.",
+    "readiness_change": "+0 fixed58-80/22; no whole requirement or target/package acceptance promoted."
+  },
+  "ci661_criterion_matrix": [
+    {
+      "criterion": "F31-R09 · ShareOrigin/home-address save",
+      "status": "PASS",
+      "evidence": "HomeVpnWaitingTests; HomeVpnShareRecoveryTests:10:36:35 owned address write;10:41:19 frozen health+POST; HTTPS recovery11/fresh10",
+      "boundary": "Real protected files/DPAPI, worker gates and loopback HTTP; not live VPS",
+      "gap": "Owner-PC storage/performance/HTTPS acceptance NOT_RUN; no new dev harness needed",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R09 · token/owner/session preparation",
+      "status": "PASS",
+      "evidence": "HomeVpnWaitingTests; HomeVpnSetupRecoveryTests: pair/import/receipt worker and real modal import/initial snapshot; HomeVPN4816",
+      "boundary": "Actual private-file I/O/DPAPI, test-owned session/process, frozen identity",
+      "gap": "Target install/profile/data migration NOT_RUN; old620 missing UI note superseded",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R09 · ACL/secret/helper I/O off UI",
+      "status": "PASS",
+      "evidence": "Admin snapshot12/dispatcher5; owned repair8/list10/setup recover10/fresh10/invite8/revoke10/Reissue10/recover-invite10",
+      "boundary": "Actual helper staging/read/delete and owned worker; SSH executable/copy seams for Admin; no live mutation",
+      "gap": "No pending transport implementation after CI661; actual VPS acceptance NOT_RUN",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R09 · no late save after cancel/scope change",
+      "status": "PASS",
+      "evidence": "HomeVpnShareRecoveryTests10:41:04–19 Stop refuses later save/consume; configure close10:41:23; import/pair/consumption regressions",
+      "boundary": "Real journals and held worker I/O, explicit UI owner/lost-context scenarios",
+      "gap": "Owner-PC interruption acceptance NOT_RUN; no stale sync-UI FAIL demonstrated on current source",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R10 · visible incomplete cleanup + retained owner",
+      "status": "PASS",
+      "evidence": "ownership8/cleanup4;10:38:25–26 real locked helper heartbeat; transport cleanup-lock cases incl new recover",
+      "boundary": "NTFS locked files + physical task/cleanup ownership; false Stop until unlock, delete-only retry",
+      "gap": "Target antivirus/locks acceptance NOT_RUN; do not repeat known cleanup harness",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R10 · nonblocking Stop/Dispose/session deletion",
+      "status": "PASS",
+      "evidence": "HomeVpnWaitingTests/OwnerWaitingTests/AdminRecoveryTests; Stop-copy/dispose/owner-dispose; Shutdown47/Maintenance126",
+      "boundary": "Actual task/process trees and modal pump; only owned children stopped",
+      "gap": "Target shutdown/update acceptance NOT_RUN; old desktop Stop/F09 not reopened",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R11 · bounded/shared async operation admission",
+      "status": "PASS",
+      "evidence": "DesktopSshAgentProbeTests/StartTests/StartupTests/InventoryTests; AuthenticationPreparationBudgetAndFreshness",
+      "boundary": "Unit/native-boundary held SCM fixtures, real UI heartbeat/deadline/shared slots",
+      "gap": "Real service lifecycle on owner machine NOT_RUN; no SCM changes made here",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R11/PGA scenarios1,5 · selected key/alias ready",
+      "status": "PASS",
+      "evidence": "DesktopSshKeyMatchingTests/KeyReadinessTests; SshAuthenticationPreparationTests native + real tunnel; policy214",
+      "boundary": "Actual ssh-G/keygen/signing and test-owned agent endpoint; correct identity authenticated",
+      "gap": "Actual owner profiles/encrypted keys/agent account and alias environment NOT_RUN",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R11 scenarios2,3 · service start existing rights/no UAC",
+      "status": "PASS",
+      "evidence": "DesktopSshAgentStartTests/StartupTests/StartUi tests;10:32:20 eligibility/denied/unavailable/held-call UI",
+      "boundary": "SCM adapter outcomes injected; actual start tested with invalid handle, not successful real service mutation",
+      "gap": "Owner service allowed/denied scenario needs separate opt-in/approved Windows test; no pretend live start PASS",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS dev contract; live NOT_RUN"
+    },
+    {
+      "criterion": "F31-R11 scenario4 · encrypted-key interactive add",
+      "status": "PASS",
+      "evidence": "DesktopSshInteractiveKeyAddTests10:32:15 actual ssh-add unlocks selected encrypted fixture key, one console entry; key-add UI cases",
+      "boundary": "Real ssh-add + encrypted synthetic key + isolated endpoint; production passphrase not read or stored",
+      "gap": "Owner encrypted key/console/desktop integration NOT_RUN",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R11 scenarios6,7 · missing key/unsafe ACL/errors",
+      "status": "PASS",
+      "evidence": "DesktopSshAuthPolicyTests/ConfigTests/KeyReadinessTests; SSH error diagnostic tests",
+      "boundary": "Actual native Include/locked-key cases plus controlled error-output classification; no production ACL repair",
+      "gap": "Actual owner key/changed host-key refusal NOT_RUN; security approval needed for any live security mutation",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS dev classification"
+    },
+    {
+      "criterion": "F31-R11 scenario8 · agent optional/direct auth",
+      "status": "PASS",
+      "evidence": "SshAuthenticationPreparationTests.AuthenticationPreparationRealTunnelCase direct startup/recovery10:32:00–02",
+      "boundary": "Actual owned SSH authentication→SOCKS5→HTTP without default agent dependency",
+      "gap": "Owner direct-auth/network NOT_RUN",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated integration"
+    },
+    {
+      "criterion": "F31-R11 scenario9 · backoff/recovery/cancel",
+      "status": "PASS",
+      "evidence": "Same test direct/agent recovery after interrupt only owned SSH child; DesktopRouteDiagnostic partial SOCKS deadline/cancel",
+      "boundary": "Real loopback SSH/socket/process recovery and controlled slow network peers",
+      "gap": "External network/drop/idle and authorized VPS acceptance NOT_RUN under F19/F22",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated integration"
+    },
+    {
+      "criterion": "F31-R11 scenario10 · app close/owned-only cleanup",
+      "status": "PASS",
+      "evidence": "Shutdown47/Maintenance126, native context ownership/Cancel Retry/Stop Dispose tests; fixture server cleanup deadline",
+      "boundary": "Owned processes/modal UI tasks; unrelated process survival asserted",
+      "gap": "Installed target shutdown/terminal/agent sessions NOT_RUN",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R11 · slow disk/process/modal Cancel Retry",
+      "status": "PASS",
+      "evidence": "HomeVpnWaitingTests/AdminRecoveryTests; export modal11/chooser3; actual NTFS locks, held filesystem calls, native Copy/Wait children",
+      "boundary": "Real locked file/process boundaries plus explicit held fixture gates, not a physical slow-HDD benchmark",
+      "gap": "Actual HDD/AV/environment responsiveness belongs owner acceptance, NOT_RUN; no new harness required",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS isolated dev"
+    },
+    {
+      "criterion": "F31-R11 · latency/CPU/RAM/process-I/O report",
+      "status": "PASS",
+      "evidence": "SshAuthenticationPreparationTests.AuthenticationFixtureMetrics; four COMBINED_SSH_METRICS rows below",
+      "boundary": "Actual exact owned SSH child lifetime GetProcessIoCounters/CPU/working set; startup/recovery elapsed and prep",
+      "gap": "Not physical disk totals or whole-app aggregate; not owner HDD acceptance; no new thresholds invented",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS measured isolated scope"
+    },
+    {
+      "criterion": "F31-R11/PGA08 · accessible actions and fresh result",
+      "status": "PASS",
+      "evidence": "DesktopSshKeyReadinessUiTests/key-add/service-start UI; keyboard Tab/ShiftTab/explicit actions/heartbeat and stale evidence guards",
+      "boundary": "Actual WinForms controls + controlled service states; policy UI native",
+      "gap": "Final installed DPI/screen-reader/owner desktop acceptance separate F16/F17 gates, NOT_RUN",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "PASS automated native UI; target NOT_RUN"
+    },
+    {
+      "criterion": "PGA04 + scenario11 · installer opt-in/upgrade/uninstall",
+      "status": "BLOCKED",
+      "evidence": "APPROVED_PLAN_31 + SSH_AGENT_AUTOSTART_SPEC PGA04 explicitly not implemented; Install-ProGo.ps1 has no agent opt-in",
+      "boundary": "Existing installer is a source/build script; no standalone signed installer proof",
+      "gap": "F23 installer opt-in OFF default and preservation workflow still need separate bounded implementation/tests; not repaired by rerunning F31 harness",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "TODO/BLOCKED package-code gate"
+    },
+    {
+      "criterion": "F31 target transfer + full acceptance",
+      "status": "NOT_RUN",
+      "evidence": "Portable91 explicitly NOT_CHECKED other Windows account/PC; CI uploaded artifacts0",
+      "boundary": "Runner only; isolated own files/processes",
+      "gap": "Owner PC/VPS/other-user/phone scenario and final install/update acceptance remain mandatory",
+      "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+      "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+      "status_detail": "NOT_RUN"
+    }
+  ],
+  "f23_prebuilt_payload_prerequisite": {
+    "status": "PARTIAL",
+    "phase": "ONE F23-R01 explicit prebuilt installer preflight; prerequisite to PGA04",
+    "baseline_source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "baseline_checkpoint": "6e96a7ab8fc4f87e2c8933e05d7c5ee8ed387e7f",
+    "local_development_sha": "2dc5310f4b26600f30e2727bc69fb84bcff700d3",
+    "published_sha": null,
+    "ci_run_id": null,
+    "ci_status": "NOT_RUN before guarded publication",
+    "criterion": "Explicit local prebuilt payload completeness/version validation before user writes; no build/network fallback on rejection",
+    "code_paths": [
+      "scripts/Install-ProGo.ps1:Get-ProGoInstallPayload",
+      "scripts/Install-ProGo.ps1:PayloadDirectory branch"
+    ],
+    "tests": "tests/InstallPayloadTests.ps1:9; Windows NOT_RUN; local docs3/public/static/diff/JSON PASS",
+    "protected_actions": "None implemented or executed. PGA04 remains OFF by default, explicit install-time consent required before future elevation/Automatic/Start.",
+    "remaining": "F23 maintenance/staging/authenticity/hash/self-check/rollback; updater/fallback fixed paths; PGA04 explicit opt-in UI/executor; target gates",
+    "next": "Same exact new CI logs/InstallerPayload9 and existing relevant regressions only; no second slice this turn",
+    "readiness_change": 0
+  },
+  "private_candidate_transfer": {
+    "status": "BLOCKED",
+    "reason_code": "BLOCKED_TRANSFER",
+    "evidence": "Owner reports Windows supported Library downloadfailed including one bounded retry",
+    "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+    "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+    "exports": "Source archive and exact original objects preserved privately; no public identifiers",
+    "build": "NOT_RUN",
+    "install": "NOT_RUN",
+    "retry": "No further retries or network/proxy/credentials changes authorized"
   }
 }

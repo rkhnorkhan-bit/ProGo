@@ -655,4 +655,5 @@ if ($LASTEXITCODE -ne 0) { Fail 'Shutdown harness build failed' }
 & $ShutdownHarness $Exe (Join-Path $Root 'release\scripts')
 if ($LASTEXITCODE -ne 0) { Fail 'Shutdown tests failed' }
 & (Join-Path $Root 'tests\UpdatePackageTests.ps1')
+& (Join-Path $Root 'tests\InstallPayloadTests.ps1')
 Write-Host "ProGo tests PASS."

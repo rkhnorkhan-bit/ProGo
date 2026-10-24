@@ -1,28 +1,75 @@
 param(
     [switch]$NoStartup,
     [switch]$NoStartMenuShortcut,
-    [switch]$Launch
+    [switch]$Launch,
+    [ValidateNotNullOrEmpty()][string]$PayloadDirectory
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $PSScriptRoot
-$BuildScript = Join-Path $PSScriptRoot "Build-ProGo.ps1"
-& $BuildScript
+# An explicit prebuilt payload never falls back to compilation or network access.
+# Read-only preflight shared by the source installer and an explicit prebuilt payload.
+# No compilation, download, installation, service, elevation or settings changes here.
+function Get-ProGoInstallPayload {
+    param([Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$Directory)
 
-$ReleaseDir = Join-Path $Root "release"
-$Exe = Join-Path $ReleaseDir "ProGo.exe"
-$VersionFile = Join-Path $ReleaseDir "VERSION"
-if (-not (Test-Path $Exe)) {
-    throw "ProGo.exe not found after build."
+    $payload = [IO.Path]::GetFullPath($Directory)
+    $required = @('ProGo.exe', 'VERSION', 'ProGo.ico', 'README.md', 'README.ru.md', 'LICENSE.md')
+    $scriptFiles = @(
+        'Install-ProGo.ps1', 'Uninstall-ProGo.ps1',
+        'Update-ProGo.ps1', 'Update-ProGo.Core.ps1', 'Restore-ProGoBackup.ps1',
+        'Show-ProGo.ps1', 'Start-ProGo.ps1', 'Repair-ProGo.ps1',
+        'Enable-HomeVpnFirewall.ps1', 'Maintenance-ProGo.ps1',
+        'BackupRetention-ProGo.ps1', 'BackupIntegrity-ProGo.ps1', 'Log-ProGo.ps1',
+        'Diagnostics-ProGo.ps1', 'Measure-RescueProGo.ps1', 'Shortcuts-ProGo.ps1',
+        'Firewall-ProGo.ps1', 'ApplicationShortcuts.cs', 'MaintenanceOperation.cs',
+        'InstalledUpdateTransport.cs', 'UpdateInstallSession.cs', 'BackupRetention.cs',
+        'BackupIntegrity.cs', 'BoundedLog.cs', 'RescueMeasurement.cs',
+        'DiagnosticReport.cs', 'DiagnosticPreview.cs', 'UiTheme.cs', 'BrandIcon.cs',
+        'home-vpn/HOME_IKEV2.md', 'home-vpn/server/ikev2_relay.py',
+        'home-vpn/server/install-ikev2-relay.sh', 'home-vpn/server/make_home_profile.py',
+        'home-vpn/server/home_vpn_setup.py', 'home-vpn/server/profile_share_setup.py',
+        'home-vpn/server/profile_share.py', 'home-vpn/server/qrcodegen.py',
+        'home-vpn/server/QR_LICENSE.txt'
+    )
+    foreach ($name in $scriptFiles) { $required += ('scripts/' + $name) }
+    foreach ($name in $required) {
+        if (-not (Test-Path -LiteralPath (Join-Path $payload $name) -PathType Leaf)) {
+            throw "Incomplete local installer payload: $name"
+        }
+    }
+    $version = (Get-Content -LiteralPath (Join-Path $payload 'VERSION') -Raw).Trim()
+    if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid installer payload version.' }
+    $exe = Join-Path $payload 'ProGo.exe'
+    # GetAssemblyName reads metadata; it does not launch the application or run its code.
+    $assembly = [Reflection.AssemblyName]::GetAssemblyName($exe)
+    if ($assembly.Name -ne 'ProGo' -or $assembly.Version.ToString(3) -ne $version) {
+        throw 'Installer payload executable/version mismatch.'
+    }
+    return [pscustomobject]@{
+        Directory = $payload
+        ScriptsDirectory = (Join-Path $payload 'scripts')
+        Executable = $exe
+        VersionFile = (Join-Path $payload 'VERSION')
+        Version = $version
+    }
 }
-if (-not (Test-Path $VersionFile)) {
-    throw "VERSION not found after build."
+if ($PSBoundParameters.ContainsKey('PayloadDirectory')) {
+    $Payload = Get-ProGoInstallPayload -Directory $PayloadDirectory
+} else {
+    $BuildScript = Join-Path $PSScriptRoot "Build-ProGo.ps1"
+    & $BuildScript
+    $Payload = Get-ProGoInstallPayload -Directory (Join-Path $Root 'release')
 }
+$ReleaseDir = $Payload.Directory
+$Exe = $Payload.Executable
+$VersionFile = $Payload.VersionFile
+$PayloadScripts = $Payload.ScriptsDirectory
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
-. (Join-Path $PSScriptRoot "Shortcuts-ProGo.ps1")
+. (Join-Path $PayloadScripts "Shortcuts-ProGo.ps1")
 $WasInstalled = Test-ProGoExistingInstallation -InstallDirectory $InstallDir
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $InstallDir "backups") -Force | Out-Null
@@ -38,7 +85,7 @@ $InstalledScripts = Join-Path $InstallDir "scripts"
 New-Item -ItemType Directory -Path $InstalledScripts -Force | Out-Null
 # Install-FromGitHub.ps1 is only for first-time bootstrap. It is intentionally not deployed into the installed runtime app.
 foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
-    $scriptPath = Join-Path $PSScriptRoot $scriptName
+    $scriptPath = Join-Path $PayloadScripts $scriptName
     if (Test-Path $scriptPath) {
         Copy-Item $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
     }

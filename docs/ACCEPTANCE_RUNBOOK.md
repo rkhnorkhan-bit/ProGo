@@ -1,4 +1,69 @@
-## Текущий этап: final bounded recover-invite owned transport поверх CI660
+## Текущий этап: F23-R01 — explicit prebuilt payload preflight, PGA04 prerequisite
+
+Baseline PR88 source `2b068cf909e761c27b9594bec91d78b582fce68d`, local checkpoint
+`6e96a7ab8fc4f87e2c8933e05d7c5ee8ed387e7f`, clean worktree/idle/no other active agent verified.
+Code commit `2dc5310f4b26600f30e2727bc69fb84bcff700d3`. One bounded existing installer path only: explicit `-PayloadDirectory`
+resolves a complete local prebuilt runtime before touching the fixed user install/data directory.
+No compilation/download fallback for an explicit invalid payload. Original no-parameter source-build
+entry point retained. Read-only resolver checks all runtime/helper/server leaves, semver and EXE metadata
+name/version. Script copies come from the same resolved payload, not a mixed bootstrap directory.
+This is completeness/version preflight, NOT cryptographic authenticity/verified installer/TOCTOU protection
+or full F23 PASS. No new runtime helper dependency; repair journal/owned paths unchanged.
+
+PGA04 remains TODO: separate install-time choice OFF by default; only fresh explicit consent may request
+elevation for Automatic+Start. No option, elevation, service discovery/mutation/ACL/owner/security action
+implemented in this slice. Update/uninstall/shared service preservation unchanged. Dependencies F23-R01
+standalone prebuilt entry → F23-R02 maintenance/staging/verified backup+self-check/rollback → F23-R06
+same version/commit updater and fallback with fixed paths/launch → F23-R07 target acceptance remain open.
+
+Nine `InstallPayloadTests.ps1` cases: valid local payload; actual installer prefix skips build; incomplete
+explicit payload refuses without fallback; invalid version; EXE/version mismatch; invalid EXE metadata;
+missing server resource; absent explicit payload no fallback; exact payload-byte preservation. Test runs
+real installer prefix only before `$InstallDir` assignment, isolated GUID temp resources/finally cleanup,
+never actual install/launch/service/security. Wired once into existing Test-ProGo; no workflow changes.
+PASS local static/call-signature/resource-source review, old runtime/workflow canonical blob parity,
+public-content and docs3/Python tests, diff/JSON/secrets. Windows parser/compiler/InstallerPayload9 and
+relevant native regressions NOT_RUN pending one automatic new exact-SHA CI; CI661 PASS not inherited.
+
+Private candidate remains BLOCKED_TRANSFER: supported Windows Library download failed including one
+bounded retry (owner evidence). No transfer retry/network/proxy/credential workaround. Source/exact-object
+exports retained; no build/install executed. Do not publish personal transfer IDs in public source.
+Weights unchanged, implementation58–80/100, verified22/100,+0. Next SAME new CI exact logs, InstallerPayload9
+and relevant installer/repair/update regressions. Then one separately scoped F23 maintenance/verified-staging
+prerequisite; PGA04 protected action executor/consent UI not silently added. STOP after source publication
+and checkpoint; do not wait full CI or start another slice.
+
+## История этапа: CI661 final evidence matrix + shortest private candidate plan
+
+PR88 OPEN/DRAFT source `2b068cf909e761c27b9594bec91d78b582fce68d`, checkpoint `a89f0b0d628c6a0939ec0d65a6e563ec22111fb1` сверены;
+66 worktrees clean/locks0/root sole active agent. Full final CI661 logs independently read: tested merge
+`77904dff703f65002d306bf5acc84a2f15df98ab`, both jobs SUCCESS. Recover-invite10 PASS; Desktop6388/policy214/Instance30/
+HomeVPN4816/prior suites PASS. Four actual owned SSH direct/agent startup/recovery latency+CPU/RAM/
+process-I/O records already collected and real loopback SSH→SOCKS5→HTTP passed. No repeated harness.
+
+Canonical [criterion→existing evidence→exact gap matrix](CI661_F31_EVIDENCE_MATRIX.md) maps original
+F31-R09/R10/R11 and all11 agent scenarios. R09/R10 current isolated dev criterion evidence PASS;
+old missing Admin/invitation/performance notes superseded, retained as history. Whole requirements remain
+PARTIAL (integration/package/owner target NOT_RUN). R11 additionally has existing PGA04 installer opt-in
+code gate, tied to F23; not a reason to repeat the same SSH harness. SCM-start unit fixtures are not live
+successful service mutation. Real isolated ssh-add/encrypted key/agent protocol are not owner-key acceptance.
+Counter scope is owned SSH child lifetime, not physical disk or whole-app totals; no new threshold invented.
+
+CI ZIP runner-only641099bytes observed SHA256 `a8a3ac56a7cadb711a3901aaa4c728cd5b4fb32456c0142b8481b12c8b9602b3`;
+uploads/prune SKIPPED, artifacts API0. ZIP not available/delivered/installed. Exact plan uses VERSION0.2.2,
+source `2b068cf909e761c27b9594bec91d78b582fce68d`, tested build identity0.2.2+77904dff703f65002d306bf5acc84a2f15df98ab;
+next shortest step build-only pinned merge on available isolated Windows with approved private persistent
+output, fresh actual ZIP hash/manifest/content/launch smoke. Do not reuse runner hash for a rebuild.
+No accessible Windows/private output here; protected delivery dependency declared, no workflow changes.
+Install/check/rollback protocol and personal/technical-production/full-commercial residual in matrix.
+Existing source install script is not a standalone prebuilt installer; F23/PGA04 remains package-code work.
+
+PASS local evidence review/criterion mapping/JSON/diff/public-content; docs-only, no code/test/workflow edits,
+no source push/new CI/binary build/transfer/install/live/network/security action. Checkpoint local HEAD via
+git log -1/PR88 body. STOP after this one evidence stage. Next1 bounded private build-only/package step
+when isolated Windows/private output exists; no new functionality or duplicate CI. Fixed readiness58–80/22,+0.
+
+## История этапа: final bounded recover-invite owned transport поверх CI660
 
 PR88 OPEN/DRAFT exact source `ff2ccb0e2b74f9dc3eb86a981536bced6cd2c194`, checkpoint `66d6fd4089fed302d49858f99f6af3951408e913` сверены;
 65 prior worktrees clean/locks0/root sole active agent. Isolated worktree preserves all checkpoints.
@@ -29,8 +94,15 @@ verified result preserves request/no handoff. Cleanup lock retains owner, false 
 retry no replay. Protected owner/access bytes unchanged. Original15s modal/5s copy+join deadlines/all old tests
 unchanged. PASS local review/static/signatures/parity/lexical(not compiler)/diff/JSON/secrets/public321source0release.
 New Windows compiler/recover-invite10/full suites NOT_RUN locally; no Windows/.NET/pwsh. CI660 not inherited.
-Publication TODO: ONE expected-head guarded existing PR88 source push, ONE automatic CI; public guards4/
-uploads OFF/release ineligible unchanged. Save checkpoint; STOP no full wait/second stage. Next SAME new CI.
+Publication PASS: source `2b068cf909e761c27b9594bec91d78b582fce68d` one expected-head guarded non-force existing PR88 update;
+fetched exact660 parent/tree `665084a4fe9ba6dfc4d3e0dc07b70b1511fd47cf` equals reviewed freeze
+`3867bd07494e3b4bfc73edf98c138dffddf68dbe`. Diff6files:2 runtime28add/0delete,
+1 test151add/0delete +3docs. ONE automatic [CI661/40085290372](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372),
+exact-source count1/pull_request/attempt1,in_progress/conclusion null; Windows/Ubuntu in_progress metadata.
+Merge ref `77904dff703f65002d306bf5acc84a2f15df98ab` is NOT final tested merge proof; new compilation/recover-invite10/
+full relevant suites NOT_RUN. Public repo/guards4 rechecked/uploads OFF/final skips not observed/release
+ineligible. Docs-only local checkpoint intentionally not pushed/full SHA via git log -1/PR88 body. STOP;
+next SAME CI661 exact final logs/merge/recover-invite10/all prior suites; no full wait/rerun/second stage.
 
 Concrete remaining gates to personal candidate: (1) exact final recover-invite10/full CI proof; (2) whole
 Windows F31-R09/R10/R11 latency/CPU/RAM/I/O + slow disk/process/network cancellation/close recovery,
