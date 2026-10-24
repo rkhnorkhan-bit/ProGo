@@ -26,6 +26,7 @@ try {
         $backup = New-ProGoInstallerBackup $payload $install
         $stage = New-ProGoInstallerStage $payload
         $writes = New-Object 'System.Collections.Generic.List[object]'
+        $rollbackFixture = @{ Scenario = $mode; PartialFaults = 0 }
         function Write-ProGoInstallerRuntimeBytes($Source, $Target) {
             $probe = $null; $exclusive = $false
             try { $probe = [IO.File]::Open($Target.Name, [IO.FileMode]::Open, [IO.FileAccess]::Write, [IO.FileShare]::ReadWrite) }
@@ -33,8 +34,10 @@ try {
             finally { if ($null -ne $probe) { $probe.Dispose() } }
             Check-InstallerRollback $exclusive 'target is exclusively owned while recording partial bytes'
             $Target.SetLength(0)
-            if ($mode -eq 'partial') {
+            # The owned setter has its own FileMode $mode; do not resolve it as the scenario.
+            if ($rollbackFixture.Scenario -eq 'partial') {
                 $Target.WriteByte(42)
+                $rollbackFixture.PartialFaults++
                 throw 'synthetic partial write failure'
             }
             $Source.CopyTo($Target); $Target.Flush($true)
@@ -52,6 +55,11 @@ try {
         }
         Check-InstallerRollback ($writeFailed -eq ($mode -eq 'partial') -and $writes.Count -eq 1 -and
             $writes[0].OwnedHash -ceq (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash) 'real written/partial bytes retained in admission'
+        if ($mode -eq 'partial') {
+            $actualPartial = [IO.File]::ReadAllBytes($target)
+            Check-InstallerRollback ($rollbackFixture.PartialFaults -eq 1 -and $actualPartial.Length -eq 1 -and
+                $actualPartial[0] -eq 42) 'one actual partial byte and one injected exception before rollback'
+        }
         if ($mode -eq 'snapshot-corrupt') { [IO.File]::WriteAllText((Join-Path $backup.Directory 'ProGo.exe'), 'damaged snapshot') }
         if ($mode -eq 'foreign-change') { [IO.File]::WriteAllText($target, 'externally changed runtime') }
         if ($mode -eq 'unadmitted') { [IO.File]::WriteAllText((Join-Path $install 'VERSION'), 'foreign new leaf') }
