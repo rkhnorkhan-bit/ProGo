@@ -29,6 +29,7 @@ namespace ProGo
         private bool needsRefresh;
         private bool pendingAdmin, pendingUnreadable;
         private string pendingRequestName;
+        internal Func<string, Task<string>> RevokeSelected;
         internal Func<string, bool> Confirm;
         internal Action<string> ShowToken;
         private CancellationTokenSource initialPendingCancellation;
@@ -44,6 +45,7 @@ namespace ProGo
         internal HomeInvitationsForm(HomeVpnInvitation[] items, Func<string, string, string, Task<string>> admin, ClipboardService clipboard, HomeVpnService service = null, Action beforePendingRead = null)
         {
             this.admin = admin; pendingService = service; this.beforePendingRead = beforePendingRead;
+            RevokeSelected = id => admin("revoke", null, id);
             Text = "Доступ друзей"; ClientSize = new Size(800, 760); StartPosition = FormStartPosition.CenterParent;
             var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
             list = new HomeInvitationList(items) { Width = 740, Height = 365 };
@@ -95,7 +97,7 @@ namespace ProGo
                 if (!Confirm(Identity(selected) + "\r\nОтозвать этот доступ? Его соединения будут закрыты.")) return;
                 await RunAsync(async delegate {
                     try {
-                        if (await ownerUi.Await(admin("revoke", null, selected.Id)) != "Access revoked.") throw new InvalidOperationException();
+                        if (await ownerUi.Await(RevokeSelected(selected.Id)) != "Access revoked.") throw new InvalidOperationException();
                         if (ownerUi.Closed || IsDisposed || Disposing) return;
                         selected.Revoked = true; list.RefreshSelection(); status.Text = "Выбранный доступ отозван."; }
                     catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }

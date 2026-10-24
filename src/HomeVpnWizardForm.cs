@@ -68,6 +68,7 @@ namespace ProGo
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> ReadSetupResult;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> PrepareSetup;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> IssueInvitation;
+        internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> RevokeInvitation;
         private Form readOnlyListOwner;
         private HomeProfileUiDispatcher readOnlyListUi;
 
@@ -78,6 +79,7 @@ namespace ProGo
             ReadSetupResult = (owner, window, dispatcher, label, report) => service.RecoverSetupOwnedAsync(owner, window, dispatcher, label, report);
             PrepareSetup = (owner, window, dispatcher, label, report) => service.SetupOwnedAsync(owner, window, dispatcher, label, report);
             IssueInvitation = (owner, window, dispatcher, label, report) => service.InviteAdminOwnedAsync(owner, window, dispatcher, label, report);
+            RevokeInvitation = (owner, window, dispatcher, id, report) => service.RevokeAdminOwnedAsync(owner, window, dispatcher, id, report);
             Admin = (owner, action, label, identifier, report) => action == "repair"
                 ? service.RepairAdminOwnedAsync(owner, this, httpDispatcher, report)
                 : action == "list" ? ReadAdminList(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, report)
@@ -728,6 +730,8 @@ namespace ProGo
             });
             return profileExportWork;
         }
+        internal void BindSelectedRevoke(HomeInvitationsForm dialog, HomeProfileUiDispatcher dispatcher)
+        { dialog.RevokeSelected = id => RevokeInvitation(service.Owner, dialog, dispatcher, id, delegate { }); }
         private async Task ManageInvitations()
         {
             await RunStep(async delegate
@@ -741,6 +745,7 @@ namespace ProGo
                     (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard, service))
                 using (var listUi = new HomeProfileUiDispatcher(dialog)) {
                     readOnlyListOwner = dialog; readOnlyListUi = listUi;
+                    BindSelectedRevoke(dialog, listUi);
                     try { dialog.ShowDialog(this); }
                     finally { readOnlyListOwner = null; readOnlyListUi = null; }
                 }

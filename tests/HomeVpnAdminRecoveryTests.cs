@@ -39,11 +39,34 @@ namespace ProGo
             string kind = command.Contains("home_vpn_setup.py invite ") ? "invite"
                 : command.Contains("home_vpn_setup.py operation-status ") ? "status"
                 : command.Contains("home_vpn_setup.py operation-result ") ? "result"
-                : command.Contains("home_vpn_setup.py list ") ? "list" : null;
+                : command.Contains("home_vpn_setup.py list ") ? "list"
+                : command.Contains("home_vpn_setup.py revoke ") ? "revoke" : null;
             if (kind == null || !args.Contains("-T") || !args.Contains("root@vpn.example.org")) throw new Exception("Unexpected production SSH dispatch in admin fixture");
             File.AppendAllText(Path.Combine(path, "calls"), kind + "\n");
             File.AppendAllText(Path.Combine(path, "argv"), Json.Serialize(args) + "\n");
             HomeVpnFixtureFiles.Publish(Path.Combine(path, "pid"), Process.GetCurrentProcess().Id.ToString());
+            if (kind == "revoke") {
+                string expected = File.ReadAllText(Path.Combine(path, "revoke-id"));
+                var selected = Regex.Matches(command, @"--id ([0-9a-f]{24})");
+                if (selected.Count != 1 || selected[0].Groups[1].Value != expected || command.Contains("--request-id")
+                    || !command.Contains("trap 'rm -rf -- /tmp/") || File.Exists(Path.Combine(path, "revoke-accepted")))
+                    throw new Exception("Revoke fixture expected one exact selected ID, remote cleanup and no replay");
+                File.WriteAllText(Path.Combine(path, "revoke-accepted"), expected);
+                string revokeMode = File.ReadAllText(Path.Combine(path, "mode"));
+                if (revokeMode == "revoke-hold") {
+                    using (var descendant = Process.Start(new ProcessStartInfo(Application.ExecutablePath,
+                        "admin-recovery-child " + HomeVpnService.Argument(path)) { UseShellExecute = false, CreateNoWindow = true })) {
+                        var deadline = Stopwatch.StartNew();
+                        while (!File.Exists(Path.Combine(path, "child"))) { Thread.Sleep(10); if (deadline.ElapsedMilliseconds > 5000) throw new Exception("Revoke child startup deadline"); }
+                        Thread.Sleep(60000);
+                    }
+                }
+                if (revokeMode == "revoke-stop-accepted") {
+                    var deadline = Stopwatch.StartNew();
+                    while (!File.Exists(Path.Combine(path, "revoke-release"))) { Thread.Sleep(10); if (deadline.ElapsedMilliseconds > 5000) throw new Exception("Accepted revoke release deadline"); }
+                }
+                Console.WriteLine("Access revoked."); return true;
+            }
             var request = HomeVpnAdminRecovery.Pending();
             if (kind != "list") {
                 var ids = Regex.Matches(command, @"--request-id ([0-9a-f]{32})").Cast<Match>().Select(match => match.Groups[1].Value).ToArray();
@@ -115,6 +138,7 @@ namespace ProGo
                 CreateConsumptionUi(clipboard);
                 ReissueConsumptionUi(clipboard);
                 OwnedInvite(clipboard, token);
+                OwnedRevoke(clipboard, token);
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "deadline" }) NativeWait(route, previous);
                 LostResponseAndReopen(token, clipboard, previous);
                 ReissueBoundary(token); FrozenOwner(); DefaultHandoff(clipboard); LateDisposedUi(clipboard); ReissueHandoffMessage(token, clipboard); StatusAndStorage(token);
@@ -1428,6 +1452,159 @@ namespace ProGo
                         try { if (friends != null) Pump(() => friends.InitializationWork.IsCompleted && friends.ActionWork.IsCompleted && friends.PendingReadWork.IsCompleted, 5000); }
                         finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
                             check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "owned invite fixture joins actual work/cleanup: " + mode); }
+                    }
+                }
+            }
+        }
+        private static void OwnedRevoke(ClipboardService clipboard, string token)
+        {
+            foreach (string mode in new[] { "default-refusal", "complete", "cancel-retry", "stop-copy", "dispose-copy", "owner-dispose", "cancel-command", "cleanup-lock", "stop-accepted", "accepted-request" }) {
+                Reset(mode == "cancel-command" ? "revoke-hold" : mode == "stop-accepted" ? "revoke-stop-accepted" : "revoke-complete");
+                var selected = new HomeVpnInvitation { Id = new string('a', 24), Name = "Same friend" };
+                var sibling = new HomeVpnInvitation { Id = new string('b', 24), Name = selected.Name };
+                File.WriteAllText(At("revoke-id"), selected.Id);
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim()) {
+                    service.UseToken(token, Owner);
+                    var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).ToDictionary(path => path, File.ReadAllBytes);
+                    var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root);
+                    HomeVpnWizardForm wizard = null; HomeInvitationsForm friends = null; HomeProfileUiDispatcher dispatcher = null; HomeVpnPreparationForm copyWindow = null;
+                    Task<string> operation = null; Task<bool> stop = null; FileStream held = null;
+                    int phase = 0, turns = 0, attempts = 0, confirmations = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, changes = 0, closedChanges = 0;
+                    byte[] acceptedReceipt = null; string acceptedId = null;
+                    string coreWork = null; bool closing = mode == "owner-dispose";
+                    try {
+                        if (mode == "default-refusal") service.Owner.KeyFile = At("missing-owned-revoke-key");
+                        wizard = new HomeVpnWizardForm(service, clipboard);
+                        friends = new HomeInvitationsForm(new[] { selected, sibling }, (action, label, id) => {
+                            throw new Exception("Standalone revoke cannot use legacy Admin, invite, reissue or recovery transport");
+                        }, clipboard, service);
+                        dispatcher = new HomeProfileUiDispatcher(friends);
+                        wizard.BindSelectedRevoke(friends, dispatcher); // The production ManageInvitations binding.
+                        friends.Confirm = value => { ++confirmations; return true; };
+                        var rows = (HomeInvitationList)Field(friends, "list"); var nativeRows = (ListBox)Field(rows, "list");
+                        ((Label)Field(friends, "status")).TextChanged += delegate { ++changes; };
+                        if (mode != "default-refusal") wizard.RevokeInvitation = (owner, window, actualUi, id, report) => {
+                            check(window == friends && actualUi == dispatcher && id == selected.Id && Thread.CurrentThread.ManagedThreadId == ui,
+                                "production standalone revoke freezes exact selected ID and explicit Friends UI: " + mode);
+                            operation = service.RevokeAdminOwnedAsync(owner, window, actualUi, id, report, (exe, args) => {
+                                check(exe == "scp.exe" && args.Contains(" -P 22 ") && Thread.CurrentThread.ManagedThreadId == ui, "revoke copy starts only on explicit UI");
+                                if (++attempts != 1) return Task.FromResult(0);
+                                return HeldInviteCopy(window, value => copyWindow = value, ct => {
+                                    worker = Thread.CurrentThread.ManagedThreadId;
+                                    coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
+                                    string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single();
+                                    check(File.ReadAllText(helper).Length != 0 && !File.Exists(At("revoke-accepted")), "revoke helper I/O belongs to retained worker before SSH");
+                                    if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned revoke copy deadline"); ct.ThrowIfCancellationRequested();
+                                });
+                            }, Application.ExecutablePath); return operation;
+                        };
+                        HomeVpnWaitingTests.ModalWizardCase(friends, delegate {
+                            if (phase == 0) {
+                                if (!friends.InitializationWork.IsCompleted) return false; friends.InitializationWork.GetAwaiter().GetResult();
+                                nativeRows.SelectedItem = selected; check(rows.Selected != null && rows.Selected.Id == selected.Id, "fixture explicitly selects original exact ID");
+                                ((Button)Field(friends, "revoke")).PerformClick(); phase = 1; return false;
+                            }
+                            if (mode == "default-refusal") {
+                                if (!friends.ActionWork.IsCompleted) return false; friends.ActionWork.GetAwaiter().GetResult();
+                                check(confirmations == 1 && attempts == 0 && Calls().Length == 0 && !selected.Revoked && !sibling.Revoked && !service.IsAdminWorking
+                                    && !((Label)Field(friends, "status")).Text.Contains("missing-owned-revoke-key"), "default revoke binding refuses missing key before transport without leaking paths");
+                                check(true, "owned production revoke slice PASS: " + mode); return true;
+                            }
+                            if (phase == 1) {
+                                if (!entered.IsSet || ++turns < 3) { if (operation != null && operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                check(friends.Modal && worker != ui && !operation.IsCompleted && service.IsAdminWorking && copyWindow.Owner == friends
+                                    && Calls().Length == 0 && !selected.Revoked && !sibling.Revoked && rows.Selected.Id == selected.Id,
+                                    "revoke retains physical copy with responsive modal and exact untouched selection: " + mode);
+                                foreach (string button in new[] { "create", "revoke", "reissue", "refresh", "recover" })
+                                    check(!((Button)Field(friends, button)).Enabled, "held revoke gates competing mutation or read: " + button);
+                                ((Button)Field(friends, "revoke")).PerformClick(); check(confirmations == 1 && attempts == 1, "held revoke cannot replay confirmation or transport");
+                                if (mode == "cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
+                                if (mode == "stop-copy" || mode == "dispose-copy" || closing) {
+                                    var watch = Stopwatch.StartNew(); if (mode == "dispose-copy") service.Dispose();
+                                    if (closing) { friends.Dispose(); closedChanges = changes; }
+                                    stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Stop Dispose retain physical revoke copy without blocking UI: " + mode);
+                                }
+                                if (mode == "accepted-request") {
+                                    var earlier = HomeVpnAdminRecovery.Register(Owner, "Earlier accepted");
+                                    HomeVpnAdminRecovery.RetainResult(Owner, earlier, response);
+                                    acceptedId = earlier.RequestId; acceptedReceipt = File.ReadAllBytes(PendingPath);
+                                }
+                                turns = 0; phase = 2; return false;
+                            }
+                            if (phase == 2) {
+                                if (++turns < 3) return false;
+                                check(!operation.IsCompleted && (stop == null || !stop.IsCompleted), "cancelled revoke copy remains owned until physical settlement: " + mode);
+                                release.Set(); phase = 3; return false;
+                            }
+                            if (phase == 3 && mode == "cancel-command") {
+                                if (!File.Exists(At("child"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                var wait = friends.OwnedForms.OfType<HomeVpnPreparationForm>().Single();
+                                check(wait.Owner == friends && File.ReadAllText(At("revoke-accepted")) == selected.Id, "native revoke wait retains explicit owner and accepted exact ID");
+                                ((Button)Field(wait, "cancel")).PerformClick(); stop = service.StopAsync(); phase = 4; return false;
+                            }
+                            if (phase == 3 && mode == "stop-accepted") {
+                                if (!File.Exists(At("revoke-accepted"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                stop = service.StopAsync(); check(!stop.IsCompleted && !operation.IsCompleted, "Stop retains already accepted revoke until exact response and cleanup");
+                                File.WriteAllText(At("revoke-release"), "release"); phase = 4; return false;
+                            }
+                            if (phase == 3) phase = 4;
+                            if (phase == 4) {
+                                if (!friends.ActionWork.IsCompleted || (stop != null && !stop.IsCompleted)) return false; friends.ActionWork.GetAwaiter().GetResult();
+                                if (stop != null) check(stop.GetAwaiter().GetResult(), "Stop joins revoke work before reporting settlement: " + mode);
+                                bool accepted = mode == "complete" || mode == "cleanup-lock" || mode == "cancel-command" || mode == "stop-accepted" || mode == "accepted-request";
+                                check(Calls().Length == (accepted ? 1 : 0) && (accepted ? Calls()[0] == "revoke" && File.ReadAllText(At("revoke-accepted")) == selected.Id : !File.Exists(At("revoke-accepted"))),
+                                    "one accepted exact revoke or no SSH; never invite or automatic replay: " + mode);
+                                check(!sibling.Revoked && (closing || rows.Selected.Id == selected.Id), "same-name neighbor and exact selected ID survive every revoke outcome: " + mode);
+                                if (closing) check(changes == closedChanges, "disposed revoke owner receives no late status");
+                                if (mode == "cancel-retry") {
+                                    check(((Button)Field(friends, "revoke")).Enabled && !selected.Revoked && operation.IsFaulted
+                                        && operation.Exception.GetBaseException() is HomeVpnPreparationCancelledException, "pre-SSH Cancel permits explicit Retry with no accepted revoke");
+                                    ((Button)Field(friends, "revoke")).PerformClick(); phase = 5; return false;
+                                }
+                                phase = 5;
+                            }
+                            if (phase == 5) {
+                                if (!friends.ActionWork.IsCompleted) return false; friends.ActionWork.GetAwaiter().GetResult();
+                                if (mode == "complete" || mode == "cancel-retry" || mode == "stop-accepted" || mode == "accepted-request")
+                                    check(operation.Status == TaskStatus.RanToCompletion && operation.Result == "Access revoked." && selected.Revoked && !sibling.Revoked
+                                        && rows.Selected.Id == selected.Id && Calls().SequenceEqual(new[] { "revoke" }) && attempts == (mode == "cancel-retry" ? 2 : 1),
+                                        "confirmed revoke preserves accepted outcome even after Stop; explicit preparation Retry submits once: " + mode);
+                                if (mode == "complete" || mode == "cancel-retry" || mode == "stop-accepted")
+                                    check(!(bool)Field(friends, "needsRefresh") && ((Button)Field(friends, "revoke")).Enabled, "confirmed revoke restores actions with exact selected ID");
+                                if (mode == "accepted-request") check((bool)Field(friends, "pendingAdmin") && !((Button)Field(friends, "revoke")).Enabled, "unrelated accepted invitation retains its existing pending gate");
+                                if (mode == "cancel-command" || mode == "cleanup-lock") {
+                                    check(!selected.Revoked && !sibling.Revoked && (bool)Field(friends, "needsRefresh") && !((Button)Field(friends, "revoke")).Enabled,
+                                        "uncertain accepted revoke stays gated until explicit reconciliation without claiming success: " + mode);
+                                    ((Button)Field(friends, "revoke")).PerformClick(); check(confirmations == 1 && Calls().Length == 1, "uncertain revoke cannot blindly repeat accepted command");
+                                }
+                                if (mode == "cancel-command") check(Gone(Id("pid")) && Gone(Id("child")), "revoke cancellation settles only its actual native process tree");
+                                if (mode == "cleanup-lock") {
+                                    check(operation.IsFaulted && service.HasOwnedResources && Directory.Exists(coreWork), "failed accepted revoke cleanup retains exact work ownership");
+                                    stop = service.StopAsync(); phase = 6; return false;
+                                }
+                                phase = 7;
+                            }
+                            if (phase == 6) {
+                                if (!stop.IsCompleted) return false;
+                                check(!stop.GetAwaiter().GetResult() && service.HasOwnedResources, "locked revoke cleanup cannot claim successful Stop");
+                                held.Dispose(); held = null; stop = service.StopAsync(); phase = 7; return false;
+                            }
+                            if (stop != null && !stop.IsCompleted) return false;
+                            if (mode == "cleanup-lock") check(stop.GetAwaiter().GetResult() && !Directory.Exists(coreWork) && Calls().SequenceEqual(new[] { "revoke" }), "cleanup Retry deletes only exact owned directory without replaying accepted revoke");
+                            check(!service.IsAdminWorking && (acceptedReceipt == null ? !File.Exists(PendingPath) : File.ReadAllBytes(PendingPath).SequenceEqual(acceptedReceipt)
+                                && HomeVpnAdminRecovery.Pending().RequestId == acceptedId && HomeVpnAdminRecovery.Pending().Result == response) && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))), "revoke preserves access/owner bytes without creating or consuming an invitation request: " + mode);
+                            check(true, "owned production revoke slice PASS: " + mode); return true;
+                        }, () => closing);
+                    } finally {
+                        release.Set(); File.WriteAllText(At("revoke-release"), "release"); if (held != null) held.Dispose();
+                        if (friends != null) friends.Dispose(); if (dispatcher != null) dispatcher.Dispose(); if (wizard != null) wizard.Dispose();
+                        try { if (friends != null) Pump(() => friends.InitializationWork.IsCompleted && friends.ActionWork.IsCompleted && friends.PendingReadWork.IsCompleted, 5000); }
+                        finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                            check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "revoke fixture joins only its owned work and cleanup: " + mode); }
                     }
                 }
             }

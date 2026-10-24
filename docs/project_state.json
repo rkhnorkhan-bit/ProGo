@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_moscow_date": "2026-10-22",
+  "updated_moscow_date": "2026-10-24",
   "authority": "Current active_work, ci_candidate, current_readiness and per-requirement current evidence are canonical; active_work.tree is published candidate tree, local_development_tree is its separate local code SHA tree; prior checkpoint fields and dated reports are preserved history",
   "audit_baseline": "7861ea919eed24c5fe9964fc35a23d3958ba5a9d",
   "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
@@ -3929,33 +3929,14 @@
     }
   ],
   "ci_candidate": {
-    "source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
-    "merge_ref": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
-    "tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
-    "tree": "812ca99f700ab309d04d2b19a9b02451dcc23451",
-    "local_freeze": "44e834ffaf20fe61561184f90c5e0bd83887b5ea",
-    "run_id": 40045109182,
-    "run_number": 653,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
-    "status": "completed",
-    "conclusion": "success",
-    "jobs": {
-      "windows": {
-        "id": 120724941594,
-        "status": "completed",
-        "conclusion": "success"
-      },
-      "ubuntu": {
-        "id": 120724941809,
-        "status": "completed",
-        "conclusion": "success"
-      }
-    },
-    "verification": "Both full final logs independently read; exact checkout/build identity and actual fixed native/previous suites per-case markers confirmed.",
-    "windows_compilation": "PASS exact653",
-    "windows_native": "PASS exact653 fixed native receipt/actions and Reissue consumption8/Create8/Recover8/API8/all actual prior suites",
-    "pack": "PASS runner-only",
-    "artifact_uploads": "SKIPPED",
+    "source": "4022f598ca795554f5f97b1d09af884addf8866e",
+    "tested_merge": null,
+    "status": "NOT_RUN local revoke candidate",
+    "baseline_verified": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+    "windows_compilation": "NOT_RUN",
+    "windows_native": "NOT_RUN revoke10/full suites",
+    "pack": "NOT_RUN",
+    "artifact_uploads": "OFF; public guard unchanged",
     "owner_pc": "NOT_RUN"
   },
   "signing_microtask": {
@@ -5493,13 +5474,13 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE fresh Create→invite owned transport production slice",
-    "baseline_source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
-    "baseline_tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
-    "baseline_checkpoint": "2c7ae7e96f11fd9051b5e93bd2f4191bb8ac9b16",
-    "local_code_sha": "3a37deaf77772688de44f05a50c4ae0951c4ee84",
-    "scope": "ONLY default Admin action invite with identifier null. Reissue source-ID invite, revoke, recover-invite unchanged. Existing core receipt/family lease/command/cleanup/protocol, consumption/UI readers unchanged.",
-    "implementation": "InviteAdminOwnedAsync freezes owner metadata/label then reserves existing RunAdminOwnedAsync. Core helper/key/DPAPI/request/result/cleanup run on worker with its single family lease. Existing scope/dispatcher (repair-named generic fresh guard) admits native Copy/WaitForAdmin only on explicit Friends owner, post-copy Stop gate refuses registration/SSH, progress disabled after settlement. Create checks original Stop identity before late handoff. No public Stop self-await/reacquire/replay.",
+    "phase": "ONE standalone selected-ID revoke owned transport candidate",
+    "baseline_source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+    "baseline_tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
+    "baseline_checkpoint": "edf65d3458629fc5de5c25bbc562a4a50862e078",
+    "local_code_sha": "4022f598ca795554f5f97b1d09af884addf8866e",
+    "scope": "Only standalone Friends revoke button via production BindSelectedRevoke; generic Admin delegate and Reissue internal revoke remain exact baseline. No invite/recover/protocol/core/workflow change.",
+    "implementation": "RevokeAdminOwnedAsync freezes endpoint and selected ID, retains worker/helper/output/cleanup; explicit Friends dispatcher for native Copy and WaitForOwner. Post-copy Stop guard refuses new SSH; started outcome drains unchanged; late progress suppressed. Existing core revoke has no issuance request/family reacquire; no receipt invented.",
     "native_cases": [
       "default-refusal",
       "complete",
@@ -5508,21 +5489,21 @@
       "dispose-copy",
       "owner-dispose",
       "cancel-command",
-      "cleanup-lock"
+      "cleanup-lock",
+      "stop-accepted",
+      "accepted-request"
     ],
-    "test_contract": "Actual ShowDialog/default Create→wizard Admin fresh-invite route. Same owner slots as ManageInvitations; default binding refuses missing fixture key, other cases replace only copy/native executable through service API seam. Real helper staging, DPAPI receipt, real native fixture SSH compound invocation/child, original ID/name/result, modal heartbeat/single admission, Cancel Retry once, Stop/Dispose drain before registration, owner Dispose no late UI, native cancellation preserves request/process cleanup, locked staging false Stop→unlock cleanup Retry no replay.5s copy barrier/15s modal/5s joins unchanged. No live VPS. All prior methods/tests exact except scoped routing and Create late scope guard.",
-    "local_checks": "PASS manual review/signatures/strict scope/all prior methods+test bodies parity/lexical/diff/JSON/public321source0release/secretsPII0. Windows/.NET Framework/pwsh unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new invite transport candidate",
-    "windows_native": "NOT_RUN owned invite8/full relevant regressions;653 success only baseline",
-    "publication": "TODO guarded existing PR88 ONE automatic CI; public uploads OFF/release ineligible",
+    "test_contract": "Actual ShowDialog/production BindSelectedRevoke; real helper staging, native process+child and private output. Fixture SSH only, no live resources. Exact ID and same-name sibling, one accepted revoke/no replay, pre-SSH Retry only, uncertain result gated, accepted outcome after Stop retained, existing accepted invitation request/result/ID byte-exact, cleanup lock false Stop then exact delete-only Retry. Existing 5s hold/join and 15s modal deadlines; no old assertions/timeouts changed.",
+    "local_checks": "PASS static/manual signatures/strict old code+test parity/lexical delimiters (not compiler)/diff/JSON/public321source0release/added secretPII0. No independent agent spawned.",
+    "windows_compilation": "NOT_RUN new revoke candidate; no Windows/.NET/pwsh available",
+    "windows_native": "NOT_RUN owned revoke10 and new full regression; CI654 PASS only baseline",
+    "publication": "TODO one fresh-head non-force update existing PR88; one automatic CI; public uploads OFF.",
     "remaining_production_paths": [
-      "Fresh invite candidate needs exact new Windows proof before acceptance",
-      "Revoke owned transport binding",
-      "Reissue orchestration/source-ID invite owned transport binding",
-      "Recover-invite owned transport binding"
+      "Reissue orchestration + SourceID invite (including existing internal revoke dependency)",
+      "recover-invite transport"
     ],
-    "next": "Read SAME new CI full final logs/exact source+tested merge/owned invite8 and all prior suites. Only after proof choose next bounded transport path; no second stage now.",
-    "readiness_change": 0
+    "next": "Read SAME new CI final exact-source/tested-merge/revoke10/prior suites; no rerun, second stage or full wait.",
+    "readiness_change": "+0; fixed weights and original gates unchanged; implementation58-80/verified22."
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5615,7 +5596,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI653 exactaad854a/e8f2536 full logs fixed native/Reissue8/Create8/Recover8/API8/all prior suites PASS. Fresh Create invite owned transport candidate Windows NOT_RUN. Remaining3 transport paths and delivery gates unchanged, no full F31 closure. Weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "CI654 exact b72d53e/2170a3c invite8+all prior suites full logs PASS. New standalone revoke owned transport local candidate NOT_RUN. Two other transport paths plus full Windows/delivery/owner PC/production gates remain. Fixed58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9752,12 +9733,40 @@
       623
     ],
     "actual_invitation_ui": "Read and all three consumption paths verified653; fresh invite transport new candidate NOT_RUN. Revoke/Reissue/recover-invite still legacy transport, not closed.",
-    "next": "Read SAME new CI full final logs/exact source+tested merge/owned invite8 and all prior suites. Only after proof choose next bounded transport path; no second stage now.",
+    "next": "Read SAME new CI final exact-source/tested-merge/revoke10/prior suites; no rerun, second stage or full wait.",
     "readiness_change": 0,
     "integration_local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
     "integration_source": "6f8a41e67709dae2a9794885e7e975918401f765",
     "integration_ci_run_id": 39911077389,
-    "baseline_windows": "PASS exact641 API6/UI8; repeated12 new candidate compiler/native NOT_RUN"
+    "baseline_windows": "PASS exact641 API6/UI8; repeated12 new candidate compiler/native NOT_RUN",
+    "fresh_invite_transport_verification": {
+      "source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+      "tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
+      "run_id": 40048609754,
+      "windows_lines": 13850,
+      "ubuntu_lines": 578,
+      "invite8": [
+        "default-refusal",
+        "complete",
+        "cancel-retry",
+        "stop-copy",
+        "dispose-copy",
+        "owner-dispose",
+        "cancel-command",
+        "cleanup-lock"
+      ],
+      "status": "SUCCESS",
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754",
+      "evidence": "Full final Windows and Ubuntu logs independently read; exact checkout/build identity verified. Both jobs SUCCESS; pack runner-only SUCCESS; uploads/prune SKIPPED. No owner PC acceptance.",
+      "windows_job": 120735950255,
+      "ubuntu_job": 120735950098,
+      "suites": "invite8; Reissue/Create/Recover consumption8, API8, Recover name9, Reissue/Create uncertainty8, API6/UI8/UI12; snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/fresh HTTPS10/export11/chooser3; Home VPN4371/Desktop5298/SSH policy61/Instance30/Maintenance126/Shutdown47/Portable91. Python28 incl2 SKIPPED; Ubuntu operation16/QR13/provisioning PASS."
+    },
+    "standalone_revoke_transport": "PARTIAL local candidate; Windows compilation/revoke10 NOT_RUN",
+    "remaining_transport_paths": [
+      "Reissue orchestration + SourceID invite (including existing internal revoke dependency)",
+      "recover-invite transport"
+    ]
   },
   "ci623_failure": {
     "source": "e84792499b2949602691c349c369d62a533fb444",
@@ -13102,6 +13111,122 @@
         "pack": "NOT_RUN",
         "artifact_uploads": "OFF public PR guard; final skips not yet observed",
         "owner_pc": "NOT_RUN"
+      }
+    },
+    "before_revoke_owned_on654": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE fresh Create→invite owned transport candidate published; sole CI654 in_progress; STOP after checkpoint",
+        "baseline_source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+        "baseline_tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+        "baseline_checkpoint": "2c7ae7e96f11fd9051b5e93bd2f4191bb8ac9b16",
+        "local_code_sha": "3a37deaf77772688de44f05a50c4ae0951c4ee84",
+        "scope": "ONLY default Admin action invite with identifier null. Reissue source-ID invite, revoke, recover-invite unchanged. Existing core receipt/family lease/command/cleanup/protocol, consumption/UI readers unchanged.",
+        "implementation": "InviteAdminOwnedAsync freezes owner metadata/label then reserves existing RunAdminOwnedAsync. Core helper/key/DPAPI/request/result/cleanup run on worker with its single family lease. Existing scope/dispatcher (repair-named generic fresh guard) admits native Copy/WaitForAdmin only on explicit Friends owner, post-copy Stop gate refuses registration/SSH, progress disabled after settlement. Create checks original Stop identity before late handoff. No public Stop self-await/reacquire/replay.",
+        "native_cases": [
+          "default-refusal",
+          "complete",
+          "cancel-retry",
+          "stop-copy",
+          "dispose-copy",
+          "owner-dispose",
+          "cancel-command",
+          "cleanup-lock"
+        ],
+        "test_contract": "Actual ShowDialog/default Create→wizard Admin fresh-invite route. Same owner slots as ManageInvitations; default binding refuses missing fixture key, other cases replace only copy/native executable through service API seam. Real helper staging, DPAPI receipt, real native fixture SSH compound invocation/child, original ID/name/result, modal heartbeat/single admission, Cancel Retry once, Stop/Dispose drain before registration, owner Dispose no late UI, native cancellation preserves request/process cleanup, locked staging false Stop→unlock cleanup Retry no replay.5s copy barrier/15s modal/5s joins unchanged. No live VPS. All prior methods/tests exact except scoped routing and Create late scope guard.",
+        "local_checks": "PASS manual review/signatures/strict scope/all prior methods+test bodies parity/lexical/diff/JSON/public321source0release/secretsPII0. Windows/.NET Framework/pwsh unavailable NOT_RUN.",
+        "windows_compilation": "NOT_RUN new invite transport candidate",
+        "windows_native": "NOT_RUN owned invite8/full relevant regressions;653 success only baseline",
+        "publication": "PASS fresh expected-head non-force PR88; fetched exact653 parent/full tree equal reviewed freeze. ONE automatic CI654 pull_request attempt1/exact-source count1.",
+        "remaining_production_paths": [
+          "Fresh invite candidate needs exact new Windows proof before acceptance",
+          "Revoke owned transport binding",
+          "Reissue orchestration/source-ID invite owned transport binding",
+          "Recover-invite owned transport binding"
+        ],
+        "next": "Read SAME CI654 full final logs/exact source+tested merge/owned invite8/all prior suites. No duplicate/rerun/full wait/second stage. Only after proof one bounded revoke/Reissue/recover-invite transport slice.",
+        "readiness_change": 0,
+        "published_sha": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+        "merge_ref": "2170a3caef25e2722171911b6233bee1c06201e2",
+        "tested_merge": null,
+        "tree": "29693ea9ad0d892768f186e34ddabf973ba19adb",
+        "local_freeze": "1428a1a33dfef016d631399bb59265054decedf2",
+        "ci_run_id": 40048609754,
+        "ci_run_number": 654,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "ubuntu": {
+            "id": 120735950098,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "windows": {
+            "id": 120735950255,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid second CI",
+        "public_diff": "7files771add/58delete:3 runtime32add/0delete +1 existing test136add/0delete +3docs603add/58delete; prior methods/core/other tests/scripts/workflows/VERSION exact653"
+      },
+      "ci_candidate": {
+        "source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+        "merge_ref": "2170a3caef25e2722171911b6233bee1c06201e2",
+        "tested_merge": null,
+        "tree": "29693ea9ad0d892768f186e34ddabf973ba19adb",
+        "local_freeze": "1428a1a33dfef016d631399bb59265054decedf2",
+        "run_id": 40048609754,
+        "run_number": 654,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": {
+          "ubuntu": {
+            "id": 120735950098,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "windows": {
+            "id": 120735950255,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "PASS fresh expected-head non-force PR88 update; fetched exact653 parent/full tree equal reviewed freeze. ONE automatic pull_request attempt1/exact-source count1. Final checkout/build identity not yet verified.",
+        "windows_compilation": "NOT_RUN new fresh invite transport candidate",
+        "windows_native": "NOT_RUN owned invite8/all prior suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR guard; final skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      },
+      "reconstructed_invitation_pending_state": {
+        "source": "d500df68629d8af7533e4eca2993284c3675161a",
+        "original_missing_source": "9859dce6318878186a4b4068cff57ecf5bc26666",
+        "status": "PARTIAL",
+        "native_cases": 6,
+        "implementation": "Readonly Pending/Unreadable advisory snapshot; actual HasPending/Pending DPAPI validation on worker, cancellation before/after, corrupt/locked stays pending+unreadable, no token/journal/lease returned or modified; actual family admission authoritative",
+        "static": "PASS manual status/cancel/lease/byte-preservation/cleanup/syntax2/C#5/diff/public321/0/secretPII0; new real ShowDialog avoids modeless fixture after earlier terminal message loop;3s entry+heartbeat/5s settlement+cleanup, original Pump default15s unchanged",
+        "windows_compilation": "NOT_RUN new repeated-read candidate",
+        "windows_native": "NOT_RUN repeated12/new full regression",
+        "excluded_ci": [
+          620,
+          621,
+          622,
+          623
+        ],
+        "actual_invitation_ui": "Read and all three consumption paths verified653; fresh invite transport new candidate NOT_RUN. Revoke/Reissue/recover-invite still legacy transport, not closed.",
+        "next": "Read SAME new CI full final logs/exact source+tested merge/owned invite8 and all prior suites. Only after proof choose next bounded transport path; no second stage now.",
+        "readiness_change": 0,
+        "integration_local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
+        "integration_source": "6f8a41e67709dae2a9794885e7e975918401f765",
+        "integration_ci_run_id": 39911077389,
+        "baseline_windows": "PASS exact641 API6/UI8; repeated12 new candidate compiler/native NOT_RUN"
       }
     }
   },
@@ -17972,16 +18097,16 @@
       {
         "id": "PC-01",
         "status": "NOT_RUN",
-        "criterion": "New exact-source CI owned invite8 and all mandatory prior suites/merge-source identity required; no old PASS inheritance.",
-        "source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
-        "run_id": 40045109182,
-        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
+        "criterion": "New exact source/merge revoke10 and all mandatory prior suites required; baseline CI654 PASS separately.",
+        "source": "4022f598ca795554f5f97b1d09af884addf8866e",
+        "run_id": null,
+        "ci_url": null,
         "last_failure_run": 40041549329
       },
       {
         "id": "PC-02",
         "status": "TODO",
-        "criterion": "Fresh invite owned transport candidate awaiting exact Windows proof; revoke/reissue/source-ID invite/recover-invite bindings remain TODO. Close original-ID/scope/lease/no replay/Cancel Retry Stop Dispose cleanup for whole F31-R09/R10."
+        "criterion": "Fresh invite verified CI654; standalone revoke candidate needs exact Windows proof. Reissue orchestration/SourceID invite and recover-invite transport remain TODO; whole F31-R09/R10 not closed."
       },
       {
         "id": "PC-03",
@@ -18409,7 +18534,7 @@
     "historical_flakes": "CI640 permissions/CI642 startup not proven fixed, diagnostics retained."
   },
   "invitation_fresh_transport_on653": {
-    "status": "PARTIAL",
+    "status": "PASS bounded dev slice only",
     "phase": "ONE fresh Create→invite owned transport production slice",
     "baseline_source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
     "baseline_tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
@@ -18429,16 +18554,119 @@
     ],
     "test_contract": "Actual ShowDialog/default Create→wizard Admin fresh-invite route. Same owner slots as ManageInvitations; default binding refuses missing fixture key, other cases replace only copy/native executable through service API seam. Real helper staging, DPAPI receipt, real native fixture SSH compound invocation/child, original ID/name/result, modal heartbeat/single admission, Cancel Retry once, Stop/Dispose drain before registration, owner Dispose no late UI, native cancellation preserves request/process cleanup, locked staging false Stop→unlock cleanup Retry no replay.5s copy barrier/15s modal/5s joins unchanged. No live VPS. All prior methods/tests exact except scoped routing and Create late scope guard.",
     "local_checks": "PASS manual review/signatures/strict scope/all prior methods+test bodies parity/lexical/diff/JSON/public321source0release/secretsPII0. Windows/.NET Framework/pwsh unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new invite transport candidate",
-    "windows_native": "NOT_RUN owned invite8/full relevant regressions;653 success only baseline",
-    "publication": "TODO guarded existing PR88 ONE automatic CI; public uploads OFF/release ineligible",
+    "windows_compilation": "PASS CI654 exact source/merge",
+    "windows_native": "PASS CI654 invite8 and prior suites, full final logs",
+    "publication": "PASS fresh expected-head non-force PR88; fetched exact653 parent/full tree equal reviewed freeze. ONE automatic CI654 pull_request attempt1/exact-source count1.",
     "remaining_production_paths": [
       "Fresh invite candidate needs exact new Windows proof before acceptance",
       "Revoke owned transport binding",
       "Reissue orchestration/source-ID invite owned transport binding",
       "Recover-invite owned transport binding"
     ],
-    "next": "Read SAME new CI full final logs/exact source+tested merge/owned invite8 and all prior suites. Only after proof choose next bounded transport path; no second stage now.",
-    "readiness_change": 0
+    "next": "Fresh invite slice verified; standalone revoke is separate candidate. Remaining Reissue/source-ID invite and recover-invite transport not closed.",
+    "readiness_change": 0,
+    "published_sha": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+    "merge_ref": "2170a3caef25e2722171911b6233bee1c06201e2",
+    "tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
+    "tree": "29693ea9ad0d892768f186e34ddabf973ba19adb",
+    "local_freeze": "1428a1a33dfef016d631399bb59265054decedf2",
+    "ci_run_id": 40048609754,
+    "ci_run_number": 654,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_jobs": {
+      "ubuntu": {
+        "id": 120735950098,
+        "name": "vpn-server-test",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "windows": {
+        "id": 120735950255,
+        "name": "windows-build",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "verification": {
+      "source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+      "tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
+      "run_id": 40048609754,
+      "windows_lines": 13850,
+      "ubuntu_lines": 578,
+      "invite8": [
+        "default-refusal",
+        "complete",
+        "cancel-retry",
+        "stop-copy",
+        "dispose-copy",
+        "owner-dispose",
+        "cancel-command",
+        "cleanup-lock"
+      ],
+      "status": "SUCCESS",
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754",
+      "evidence": "Full final Windows and Ubuntu logs independently read; exact checkout/build identity verified. Both jobs SUCCESS; pack runner-only SUCCESS; uploads/prune SKIPPED. No owner PC acceptance.",
+      "windows_job": 120735950255,
+      "ubuntu_job": 120735950098,
+      "suites": "invite8; Reissue/Create/Recover consumption8, API8, Recover name9, Reissue/Create uncertainty8, API6/UI8/UI12; snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/fresh HTTPS10/export11/chooser3; Home VPN4371/Desktop5298/SSH policy61/Instance30/Maintenance126/Shutdown47/Portable91. Python28 incl2 SKIPPED; Ubuntu operation16/QR13/provisioning PASS."
+    }
+  },
+  "ci654_final": {
+    "source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+    "tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
+    "run_id": 40048609754,
+    "windows_lines": 13850,
+    "ubuntu_lines": 578,
+    "invite8": [
+      "default-refusal",
+      "complete",
+      "cancel-retry",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock"
+    ],
+    "status": "SUCCESS",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754",
+    "evidence": "Full final Windows and Ubuntu logs independently read; exact checkout/build identity verified. Both jobs SUCCESS; pack runner-only SUCCESS; uploads/prune SKIPPED. No owner PC acceptance.",
+    "windows_job": 120735950255,
+    "ubuntu_job": 120735950098,
+    "suites": "invite8; Reissue/Create/Recover consumption8, API8, Recover name9, Reissue/Create uncertainty8, API6/UI8/UI12; snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/fresh HTTPS10/export11/chooser3; Home VPN4371/Desktop5298/SSH policy61/Instance30/Maintenance126/Shutdown47/Portable91. Python28 incl2 SKIPPED; Ubuntu operation16/QR13/provisioning PASS."
+  },
+  "invitation_revoke_transport_on654": {
+    "status": "PARTIAL",
+    "phase": "ONE standalone selected-ID revoke owned transport candidate",
+    "baseline_source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
+    "baseline_tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
+    "baseline_checkpoint": "edf65d3458629fc5de5c25bbc562a4a50862e078",
+    "local_code_sha": "4022f598ca795554f5f97b1d09af884addf8866e",
+    "scope": "Only standalone Friends revoke button via production BindSelectedRevoke; generic Admin delegate and Reissue internal revoke remain exact baseline. No invite/recover/protocol/core/workflow change.",
+    "implementation": "RevokeAdminOwnedAsync freezes endpoint and selected ID, retains worker/helper/output/cleanup; explicit Friends dispatcher for native Copy and WaitForOwner. Post-copy Stop guard refuses new SSH; started outcome drains unchanged; late progress suppressed. Existing core revoke has no issuance request/family reacquire; no receipt invented.",
+    "native_cases": [
+      "default-refusal",
+      "complete",
+      "cancel-retry",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock",
+      "stop-accepted",
+      "accepted-request"
+    ],
+    "test_contract": "Actual ShowDialog/production BindSelectedRevoke; real helper staging, native process+child and private output. Fixture SSH only, no live resources. Exact ID and same-name sibling, one accepted revoke/no replay, pre-SSH Retry only, uncertain result gated, accepted outcome after Stop retained, existing accepted invitation request/result/ID byte-exact, cleanup lock false Stop then exact delete-only Retry. Existing 5s hold/join and 15s modal deadlines; no old assertions/timeouts changed.",
+    "local_checks": "PASS static/manual signatures/strict old code+test parity/lexical delimiters (not compiler)/diff/JSON/public321source0release/added secretPII0. No independent agent spawned.",
+    "windows_compilation": "NOT_RUN new revoke candidate; no Windows/.NET/pwsh available",
+    "windows_native": "NOT_RUN owned revoke10 and new full regression; CI654 PASS only baseline",
+    "publication": "TODO one fresh-head non-force update existing PR88; one automatic CI; public uploads OFF.",
+    "remaining_production_paths": [
+      "Reissue orchestration + SourceID invite (including existing internal revoke dependency)",
+      "recover-invite transport"
+    ],
+    "next": "Read SAME new CI final exact-source/tested-merge/revoke10/prior suites; no rerun, second stage or full wait.",
+    "readiness_change": "+0; fixed weights and original gates unchanged; implementation58-80/verified22."
   }
 }

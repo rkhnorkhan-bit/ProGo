@@ -8,7 +8,56 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: fresh Create invite owned transport поверх CI653
+## Текущий этап: standalone selected-ID revoke owned transport поверх CI654
+
+Сверены PR88 OPEN/DRAFT exact source `b72d53e1475410736d2bdd338d13c75e6d9a8c81`, checkpoint `edf65d3458629fc5de5c25bbc562a4a50862e078`;
+59 прежних worktrees clean/locks0, только новый work/progo-revoke-owned-on654-20261024 изменяется,
+root sole active agent. Никакие изменения не удалены/откачены; действующих git/build операций нет.
+Полные final Windows13850/Ubuntu578 logs [CI654](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754)
+прочитаны самостоятельно: checkout/build exact tested merge `2170a3caef25e2722171911b6233bee1c06201e2`.
+Invite8 и все прежние suites PASS: consumption Reissue8/Create8/Recover8/API8, Recover name9,
+uncertainty Create8/Reissue8, API6/UI8/UI12, snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/
+recover10/fresh10/HTTPS recovery11/fresh HTTPS10/export11/chooser3. Home VPN4371/Desktop5298/
+SSH policy61/Instance30/Maintenance126/Shutdown47/Portable91. Оба jobs SUCCESS; pack только runner,
+uploads/prune SKIPPED. Python28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS.
+Исторические причины640/642 не объявлены исправленными; диагностика сохранена.
+
+Local code `4022f598ca795554f5f97b1d09af884addf8866e`:3 runtime36add/1delete +1 test178add/1delete.
+Выбран ТОЛЬКО отдельный revoke button Friends→BindSelectedRevoke→RevokeAdminOwnedAsync.
+Generic Admin/Reissue internal revoke/SourceID invite/recover-invite и core unchanged; dependencies ready.
+Frozen exact ID+owner, retained worker owns helper/key/output/cleanup, explicit Friends owner/dispatcher
+for Copy/WaitForOwner; same old 5-minute timeout. Post-copy Stop refuses SSH before admission;
+accepted command drains actual outcome; late progress suppressed. No new receipt/protocol/family lease:
+existing revoke does not issue/consume invitation request. Uncertain accepted outcome keeps existing
+Refresh gate; no auto replay. Scope does not close whole F31-R09/R10/R11.
+
+Owned revoke10: default-refusal/complete/cancel-retry/stop-copy/dispose-copy/owner-dispose/cancel-command/
+cleanup-lock/stop-accepted/accepted-request. Real ShowDialog through production binding, exact selected ID,
+same-name sibling untouched, single confirmation/admission, heartbeat, native owned process+child,
+private output/actual helper staging. Pre-SSH Cancel→explicit Retry submits one revoke; Stop/Dispose
+retain held work; no late disposed status; accepted-but-cancelled SSH remains unconfirmed/gated;
+accepted response after Stop still marks exact access revoked. Locked cleanup retains owner, false Stop→
+unlock delete-only Retry no replay. Existing accepted invitation request/result/recovery ID bytes preserved.
+Fixture replaces only copy/SSH executable; no live action. Old tests/asserts/timeouts exact; 5s hold/join,
+15s modal deadline and finally cleanup. New native/compiler checks NOT_RUN locally (no Windows/.NET/pwsh).
+PASS local review/manual signatures/lexical (not compiler)/strict old-method+test parity/diff/JSON/
+public321source0release/added secretsPII0. SUCCESS654 applies only its exact baseline.
+Publication TODO: one fresh-head guarded non-force existing PR88 push and ONE automatic CI;
+workflow guards unchanged/public uploads OFF/release+prune ineligible. Save source/run/checkpoint;
+STOP without full wait or second stage. Next: SAME new CI final exact source/merge/revoke10/all old suites.
+
+До личного кандидата: exact revoke proof; затем2 bounded transport пути Reissue orchestration+SourceID
+invite и recover-invite; финальная Windows F31-R09/R10/R11 проверка UI/selected-key/agent/SSH→SOCKS5→HTTP,
+Cancel/Retry/recovery/latency+CPU/RAM/I/O; pinned private package version/SHA/SHA256 и install/check/rollback;
+отдельно разрешённая передача/установка/приёмка на ПК владельца. Pack на runner не равен доставке.
+До technical production дополнительно F23 installer/updater/fallback с сохранением путей/данных и
+clean-update/offline/cancel/hash/self-check/rollback, другой user/PC/approved VPS, F27 signing/timestamp/
+Defender+Kaspersky и разрешённая final integration/release/live acceptance. Safety approvals остаются
+BLOCKED по соответствующим gates. Полный F30 commercial scope сохранён отдельно и не удалён.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: new exact Windows
+revoke proof, затем2 transport и delivery/owner acceptance gates; веса не менялись.
+
+## История этапа: fresh Create invite owned transport поверх CI653
 
 PR88 OPEN/DRAFT/source `aad854a0a6a6570f5776e38c5e5bae005928972a` и checkpoint
 `2c7ae7e96f11fd9051b5e93bd2f4191bb8ac9b16` сверены;58 worktrees clean/locks0/root sole active agent.
@@ -46,9 +95,19 @@ asserts/timeouts preserved; no live VPS/credential/network/system action. Consum
 PASS local review/signatures/strict scope/parity/lexical delimiters/diff/JSON/public321source0release/
 added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh unavailable:
 new compilation/owned invite8/full relevant regressions NOT_RUN. SUCCESS653 не переносится.
-Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
-release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного wait/второго этапа.
-Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/owned invite8/all prior suites.
+Publication PASS: source `b72d53e1475410736d2bdd338d13c75e6d9a8c81`, existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched exact653 parent,
+full tree `29693ea9ad0d892768f186e34ddabf973ba19adb` равен reviewed freeze
+`1428a1a33dfef016d631399bb59265054decedf2`. Public diff7files771add/58delete:
+3 runtime32add/0delete +1 existing test136add/0delete +3docs603add/58delete.
+Merge ref `2170a3caef25e2722171911b6233bee1c06201e2` пока НЕ final tested merge (NOT_RUN).
+ONE automatic [CI654/40048609754](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40048609754):
+exact-source count1/pull_request/attempt1, in_progress/conclusion null.
+Windows120735950255/Ubuntu120735950098 in_progress metadata; new compiler/invite8/full suites NOT_RUN.
+Public uploads OFF/release+prune ineligible/workflows unchanged; final skips not yet checked.
+Postpublication3-doc local checkpoint intentionally NOT pushed, чтобы не запускать второй CI;
+полный SHA в git log -1/PR88 body. STOP без полного wait/новой функции/второго этапа.
+Далее ТОТ ЖЕ CI654 exact final logs/merge/owned invite8/all prior suites.
 
 Остаток до личного кандидата: подтвердить этот invite candidate; затем3 bounded transport пути
 revoke/Reissue orchestration+SourceID invite/recover-invite; итоговая Windows F31-R09/R10/R11 dev приёмка
