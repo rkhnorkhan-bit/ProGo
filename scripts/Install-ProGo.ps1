@@ -271,14 +271,88 @@ function Get-ProGoInstallerStreamHash($Stream) {
 function Write-ProGoInstallerRuntimeBytes($Source, $Target) {
     $Target.SetLength(0); $Source.CopyTo($Target); $Target.Flush($true)
 }
+# Append-only session intent, persisted before even creating a new runtime leaf.
+# A persisted intent is NOT proof of post-crash ownership of partial runtime bytes.
+function Write-ProGoInstallerJournalBytes($Stream, [byte[]]$Bytes) {
+    $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
+}
+function New-ProGoInstallerJournal($Backup) {
+    Assert-ProGoInstallerBackup $Backup
+    $parent = Assert-ProGoInstallerStagePath $Backup.InstallDirectory 'backups'
+    [IO.Directory]::CreateDirectory($parent) | Out-Null
+    $directory = Join-Path $parent ('installer-journal-' + [Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $directory -ErrorAction Stop | Out-Null
+    $inventory = [pscustomobject]@{ Schema = 1; SnapshotHash = $Backup.ManifestHash; Files = $Backup.Entries }
+    return [pscustomobject]@{ Directory = $directory; InstallDirectory = $Backup.InstallDirectory;
+        Inventory = ($inventory | ConvertTo-Json -Depth 6 -Compress);
+        Records = (New-Object 'System.Collections.Generic.List[object]') }
+}
+function Assert-ProGoInstallerJournal($Journal, $Backup) {
+    $parent = Assert-ProGoInstallerStagePath $Backup.InstallDirectory 'backups'
+    if ($Journal.InstallDirectory -cne $Backup.InstallDirectory -or
+        [IO.Path]::GetDirectoryName($Journal.Directory) -cne $parent -or
+        [IO.Path]::GetFileName($Journal.Directory) -notmatch '^installer-journal-[a-f0-9]{32}$') {
+        throw 'Installer journal scope is invalid.'
+    }
+    [void](Assert-ProGoInstallerStagePath $parent ([IO.Path]::GetFileName($Journal.Directory)))
+    if (-not [IO.Directory]::Exists($Journal.Directory)) { throw 'Installer journal is missing.' }
+    $inventory = [pscustomobject]@{ Schema = 1; SnapshotHash = $Backup.ManifestHash; Files = $Backup.Entries }
+    if ($Journal.Inventory -cne ($inventory | ConvertTo-Json -Depth 6 -Compress)) { throw 'Installer journal inventory is invalid.' }
+    $files = @(Get-ChildItem -LiteralPath $Journal.Directory -Force)
+    if ($files.Count -ne $Journal.Records.Count) { throw 'Installer journal contains unknown records.' }
+    foreach ($saved in $Journal.Records) {
+        $path = Assert-ProGoInstallerStagePath $Journal.Directory $saved.Name
+        if (-not [IO.File]::Exists($path) -or [IO.File]::ReadAllText($path) -cne $saved.Text) {
+            throw 'Installer journal record is not verified.'
+        }
+    }
+}
+function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
+    if ($null -eq $Backup.PSObject.Properties['Journal']) {
+        $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)
+    }
+    $journal = $Backup.Journal
+    Assert-ProGoInstallerJournal $journal $Backup
+    $expected = @($Backup.Entries | Where-Object { $_.Relative -ceq $Entry.Relative })
+    if ($expected.Count -ne 1 -or ($Entry | ConvertTo-Json -Compress) -cne ($expected[0] | ConvertTo-Json -Compress)) {
+        throw 'Installer journal admission is outside inventory.'
+    }
+    $name = ('admit-{0:D6}.json' -f $journal.Records.Count)
+    $path = Assert-ProGoInstallerStagePath $journal.Directory $name
+    $text = ([pscustomobject]@{ Schema = 1; Phase = 'admitted'; Sequence = $journal.Records.Count;
+        Inventory = $journal.Inventory; Entry = $Entry } | ConvertTo-Json -Depth 8 -Compress)
+    $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
+    $stream = $null
+    try {
+        $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite,
+            [IO.FileShare]::Read, 4096, [IO.FileOptions]::WriteThrough)
+        Write-ProGoInstallerJournalBytes $stream $bytes
+        $stream.Flush($true)
+        # Exact same handle readback, not a separate pathname or mocked success flag.
+        $stream.Position = 0
+        $read = New-Object byte[] $bytes.Length
+        $offset = 0
+        while ($offset -lt $read.Length) {
+            $count = $stream.Read($read, $offset, $read.Length - $offset)
+            if ($count -eq 0) { throw 'Installer journal admission readback is incomplete.' }
+            $offset += $count
+        }
+        if ($stream.Length -ne $bytes.Length -or [Convert]::ToBase64String($read) -cne [Convert]::ToBase64String($bytes)) {
+            throw 'Installer journal admission readback is invalid.'
+        }
+        $journal.Records.Add([pscustomobject]@{ Name = $name; Text = $text })
+        return $stream
+    } catch { if ($null -ne $stream) { $stream.Dispose() }; throw }
+}
 function Set-ProGoInstallerRuntimeFile($Stage, $Backup, $Entry, $Writes) {
     if (@($Writes | Where-Object { $_.Relative -eq $Entry.Relative }).Count -ne 0) { throw 'Installer runtime write was already admitted.' }
     $source = Assert-ProGoInstallerStagePath $Stage.Directory $Entry.Relative
     $target = Assert-ProGoInstallerStagePath $Backup.InstallDirectory $Entry.Relative
-    $runtimeSourceStream = $null; $runtimeTargetStream = $null; $record = $null
+    $runtimeSourceStream = $null; $runtimeTargetStream = $null; $record = $null; $admission = $null
     try {
         $runtimeSourceStream = [IO.File]::Open($source, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
         if ((Get-ProGoInstallerStreamHash $runtimeSourceStream) -cne $Entry.NewHash) { throw 'Installer staged runtime changed before write.' }
+        $admission = Open-ProGoInstallerJournalAdmission $Backup $Entry
         [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target)) | Out-Null
         $mode = if ($Entry.Exists) { [IO.FileMode]::Open } else { [IO.FileMode]::CreateNew }
         $runtimeTargetStream = [IO.File]::Open($target, $mode, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
@@ -293,8 +367,11 @@ function Set-ProGoInstallerRuntimeFile($Stage, $Backup, $Entry, $Writes) {
                 $record.OwnedHash = Get-ProGoInstallerStreamHash $runtimeTargetStream
             }
         } finally {
-            if ($null -ne $runtimeTargetStream) { $runtimeTargetStream.Dispose() }
-            if ($null -ne $runtimeSourceStream) { $runtimeSourceStream.Dispose() }
+            try { if ($null -ne $runtimeTargetStream) { $runtimeTargetStream.Dispose() } }
+            finally {
+                try { if ($null -ne $runtimeSourceStream) { $runtimeSourceStream.Dispose() } }
+                finally { if ($null -ne $admission) { $admission.Dispose() } }
+            }
         }
     }
     if ($record.OwnedHash -cne $Entry.NewHash) { throw 'Installer runtime bytes are not verified.' }
