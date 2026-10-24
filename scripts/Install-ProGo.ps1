@@ -305,21 +305,24 @@ function Assert-ProGoInstallerSnapshotMaterial($Backup) {
         if ((Get-FileHash -LiteralPath $path).Hash -cne $entry.Hash) { throw 'Installer terminal snapshot bytes are invalid.' }
     }
 }
-function Test-ProGoInstallerInstalledOutcome([string]$Directory, [string]$InstallDirectory, [string]$OutcomeLeaf = 'installed.json') {
+function Test-ProGoInstallerTerminalOutcome([string]$Directory, [string]$InstallDirectory, [string]$OutcomeLeaf, [ValidateSet('installed', 'rolled-back')][string]$Phase) {
     try {
         if ([IO.Path]::GetFileName($Directory) -cnotmatch '^installer-journal-[a-f0-9]{32}$' -or -not [IO.Directory]::Exists($Directory)) { return $false }
+        $validLeaves = if ($Phase -ceq 'installed') { @('installed.json', 'outcome.pending.json') } else { @('rolled-back.json', 'rollback.pending.json') }
         if ([IO.Path]::GetDirectoryName($Directory) -cne (Assert-ProGoInstallerStagePath $InstallDirectory 'backups') -or
-            $OutcomeLeaf -notin @('installed.json', 'outcome.pending.json')) { return $false }
+            $OutcomeLeaf -notin $validLeaves) { return $false }
         $outcomePath = Assert-ProGoInstallerStagePath $Directory $OutcomeLeaf
         $outcome = Read-ProGoInstallerJson $outcomePath
-        if ($outcome.Schema -ne 1 -or $outcome.Phase -cne 'installed' -or
+        if ($outcome.Schema -ne 1 -or $outcome.Phase -cne $Phase -or
             $outcome.Identity -cne (Get-ProGoInstallerIdentity $InstallDirectory) -or
             $outcome.Journal -cne [IO.Path]::GetFileName($Directory)) { return $false }
         $inventory = $outcome.Inventory | ConvertFrom-Json -ErrorAction Stop
         if ($inventory.Schema -ne 1) { return $false }
         $allowed = @(Get-ProGoInstallerPayloadNames | Where-Object { $_ -notin @('README.md', 'README.ru.md', 'LICENSE.md') })
         $entries = @($inventory.Files); $records = @($outcome.Records)
-        if ($entries.Count -ne $allowed.Count -or $records.Count -ne $entries.Count -or
+        if ($entries.Count -ne $allowed.Count -or
+            ($Phase -ceq 'installed' -and $records.Count -ne $entries.Count) -or
+            ($Phase -ceq 'rolled-back' -and ($records.Count -lt 1 -or $records.Count -gt $entries.Count)) -or
             @(Get-ChildItem -LiteralPath $Directory -Force).Count -ne ($records.Count + 1)) { return $false }
         $seen = @{}; $admitted = @{}
         foreach ($entry in $entries) {
@@ -348,8 +351,60 @@ function Test-ProGoInstallerInstalledOutcome([string]$Directory, [string]$Instal
                 ($record.Entry | ConvertTo-Json -Compress) -cne ($seen[$record.Entry.Relative] | ConvertTo-Json -Compress)) { return $false }
             $admitted[$record.Entry.Relative] = $true
         }
+        if ($Phase -ceq 'rolled-back') {
+            if ($outcome.RuntimeState -cne 'original-verified' -or @($outcome.Ownership).Count -ne $records.Count) { return $false }
+            $owners = @{}
+            foreach ($owned in $outcome.Ownership) {
+                if (-not $admitted.ContainsKey($owned.Relative) -or $owners.ContainsKey($owned.Relative) -or
+                    $owned.OwnedHash -cnotmatch '^[A-F0-9]{64}$') { return $false }
+                $owners[$owned.Relative] = $true
+            }
+        }
         return $true
     } catch { return $false }
+}
+function Test-ProGoInstallerInstalledOutcome([string]$Directory, [string]$InstallDirectory, [string]$OutcomeLeaf = 'installed.json') {
+    return (Test-ProGoInstallerTerminalOutcome $Directory $InstallDirectory $OutcomeLeaf 'installed')
+}
+function Test-ProGoInstallerRollbackOutcome([string]$Directory, [string]$InstallDirectory, [string]$OutcomeLeaf = 'rolled-back.json') {
+    return (Test-ProGoInstallerTerminalOutcome $Directory $InstallDirectory $OutcomeLeaf 'rolled-back')
+}
+function Complete-ProGoInstallerRollbackOutcome($Backup, $Writes) {
+    Assert-ProGoInstallerJournal $Backup.Journal $Backup
+    Assert-ProGoInstallerSnapshotMaterial $Backup
+    Assert-ProGoInstallerRuntime $Backup -Original
+    if ($Writes.Count -lt 1 -or $Writes.Count -ne $Backup.Journal.Records.Count -or $Writes.Count -gt $Backup.Entries.Count) {
+        throw 'Installer rollback terminal ownership is incomplete.'
+    }
+    $owners = @{}
+    foreach ($owned in $Writes) {
+        if ($owners.ContainsKey($owned.Relative) -or $owned.OwnedHash -cnotmatch '^[A-F0-9]{64}$' -or
+            @($Backup.Entries | Where-Object { $_.Relative -ceq $owned.Relative }).Count -ne 1) { throw 'Installer rollback terminal ownership is invalid.' }
+        $owners[$owned.Relative] = $true
+    }
+    $proofs = @($Backup.Journal.Records | ForEach-Object {
+        [pscustomobject]@{ Name = $_.Name; Hash = (Get-FileHash -LiteralPath (Assert-ProGoInstallerStagePath $Backup.Journal.Directory $_.Name)).Hash }
+    })
+    $text = ([pscustomobject]@{ Schema = 1; Phase = 'rolled-back'; RuntimeState = 'original-verified';
+        Identity = (Get-ProGoInstallerIdentity $Backup.InstallDirectory); Journal = [IO.Path]::GetFileName($Backup.Journal.Directory);
+        Snapshot = $(if ($null -eq $Backup.Directory) { $null } else { [IO.Path]::GetFileName($Backup.Directory) });
+        Inventory = $Backup.Journal.Inventory; Records = $proofs; Ownership = @($Writes | ForEach-Object {
+            [pscustomobject]@{ Relative = $_.Relative; OwnedHash = $_.OwnedHash }
+        }) } | ConvertTo-Json -Depth 8 -Compress)
+    $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
+    $path = Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'rollback.pending.json'
+    $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 4096, [IO.FileOptions]::WriteThrough)
+    try {
+        Write-ProGoInstallerRollbackOutcomeBytes $stream $bytes
+        $stream.Flush($true); $stream.Position = 0
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false)), $false, 4096, $true)
+        try { if ($reader.ReadToEnd() -cne $text) { throw 'Installer rollback outcome readback is invalid.' } } finally { $reader.Dispose() }
+    } finally { $stream.Dispose() }
+    if (-not (Test-ProGoInstallerRollbackOutcome $Backup.Journal.Directory $Backup.InstallDirectory 'rollback.pending.json')) { throw 'Installer rollback terminal is not verified.' }
+    [IO.File]::Move($path, (Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'rolled-back.json'))
+}
+function Write-ProGoInstallerRollbackOutcomeBytes($Stream, [byte[]]$Bytes) {
+    $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
 function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes) {
     Assert-ProGoInstallerJournal $Backup.Journal $Backup
@@ -393,6 +448,7 @@ function Assert-ProGoInstallerNoPendingJournal([string]$InstallDirectory) {
         # Includes malformed names, files and empty/unknown records: none authorize a write.
         [void](Assert-ProGoInstallerStagePath $parent $item.Name)
         if (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) { continue }
+        if (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory) { continue }
         throw 'Installer pending journal requires verified recovery before a new installation.'
     }
 }
@@ -644,9 +700,15 @@ try {
             $priorVerified = $true
         } catch { $rollbackErrorType = $_.Exception.GetType().Name }
     }
+    # Terminal evidence may fail independently; never replace the original install error.
+    $rollbackTerminalVerified = $false
+    if ($priorVerified -and $InstallWrites.Count -gt 0) {
+        try { Complete-ProGoInstallerRollbackOutcome $InstallBackup $InstallWrites; $rollbackTerminalVerified = $true }
+        catch { $rollbackTerminalVerified = $false }
+    }
     Write-Host ('Installer failure: priorRuntimeVerified=' + $priorVerified +
         '; rollbackAttempted=' + $rollbackAttempted + '; rollbackVerified=' + ($rollbackAttempted -and $priorVerified) +
-        '; rollbackErrorType=' + $rollbackErrorType + '; backupRetained=' + ($null -ne $InstallBackup -and $null -ne $InstallBackup.Directory))
+        '; rollbackTerminalVerified=' + $rollbackTerminalVerified + '; rollbackErrorType=' + $rollbackErrorType + '; backupRetained=' + ($null -ne $InstallBackup -and $null -ne $InstallBackup.Directory))
     throw $installFailure
 } finally {
     try {
