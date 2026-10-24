@@ -130,7 +130,7 @@ foreach ($required in @("/win32icon", "VERSION", "Update-ProGo.Core.ps1", "Resto
 }
 
 $installScriptText = Get-Content -Encoding UTF8 -Raw -Path (Join-Path $PSScriptRoot "Install-ProGo.ps1")
-foreach ($required in @('Copy-Item $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "Initialize-ProGoShortcuts", "bootstrap", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
+foreach ($required in @('Copy-ProGoInstallerRuntime $VersionFile', "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Repair-ProGo.ps1", "Start-ProGo.ps1", "NoStartMenuShortcut", "Initialize-ProGoShortcuts", "bootstrap", "MaintenanceOperation.cs", "Maintenance-ProGo.ps1")) {
     if (-not $installScriptText.Contains($required) -and $installScriptText -notmatch [regex]::Escape($required)) {
         Fail "installer marker missing: $required"
     }
@@ -713,4 +713,5 @@ if ($LASTEXITCODE -ne 0) { Fail 'Shutdown tests failed' }
 & (Join-Path $Root 'tests\InstallerStageTests.ps1')
 & (Join-Path $Root 'tests\InstallerBackupTests.ps1')
 & (Join-Path $Root 'tests\InstallerSelfCheckTests.ps1')
+& (Join-Path $Root 'tests\InstallerRollbackTests.ps1')
 Write-Host "ProGo tests PASS."

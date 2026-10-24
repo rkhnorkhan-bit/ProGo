@@ -1,4 +1,51 @@
-## Текущий этап: F23 installed runtime self-check and truthful outcome prerequisite
+## Текущий этап: F23 verified in-process owned runtime rollback
+
+PR88 OPEN/DRAFT source `5690e559fbaaab452cf74f5b8c8cd0ce841568ad`, checkpoint
+`27888f88dea6e95d618085e291d249f747142fa3`, clean/idle/root-only active writer verified.
+Full CI667 Windows15442-line/Ubuntu578 final logs independently read; tested merge
+`fe740a532c973a9058431d0a12d6f47955ca9449`, both jobs completed SUCCESS. SelfCheck9/Maintenance13/
+Backup8/Stage8/Payload9 all PASS; Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/
+Portable91 and previous owned transport/repair/update suites PASS. Pack runner-only, uploads/prune SKIPPED.
+CI662 root UNKNOWN; non-reproduction not a fix, diagnostic retained. Owner target/transfer NOT_RUN.
+
+Code `502f4054e67f9b6c2be4e396475b86315fb3ad34`: one connected rollback slice, current process only. Existing runtime-copy destinations and
+inventory preserved, but calls route through owned leaf admission. Source stream verified against frozen
+staged hash; target exclusively opened and old bytes/absence rechecked, then admission recorded. Full or
+partial write hash captured through that same held handle before Dispose. No arbitrary folder copy or
+untracked runtime entry admitted; only same declared home-vpn descendants. This ownership prerequisite is
+needed to distinguish own partial bytes from a subsequently changed external file. Hygiene marker updated
+to require equivalent controlled copy, not removed. Snapshot/stage/self-check/Enter/Stop guards unchanged.
+
+On installation failure, verify whole saved snapshot+manifest before restore, reverse only admitted runtime
+writes, require current bytes match captured own hash (or already exact old bytes); changed ownership
+refused. Old existing leaf copied from verified snapshot and rehashed; originally absent own leaf removed.
+Final whole old-byte/absence proof required for rollbackVerified=True. Confirmed snapshot retained on every
+outcome. Original installation error always rethrown, even after verified rollback: no Install OK or Launch.
+Failure diagnostics fixed booleans/type only, no raw paths/content. Stage cleanup/release remain nested
+finally after rollback. Only runtime leaves restored; personal settings/vault/key refs and unrelated paths
+never in inventory. No directory/shortcut rollback claimed, no protection against every hostile external
+path race claimed. Durable journal/recovery and complete auxiliary-state/retention integration remain open.
+
+Rollback8: exact old restore; actual partial-write exception; restore-copy error; silently wrong restored
+bytes; corrupted snapshot refuses before mutation; external changed runtime untouched; unadmitted leaf
+preserved and full restore proof fails; fresh own leaf removal. Uses real fixture streams/hashes/exclusive
+sharing and simulated stream/restore failures, no live processes/security changes. Maintenance original13
+scenarios retained plus rollback-fail/snapshot-corrupt (15). Injection now occurs inside stream write rather
+than broad Copy-Item mock. For self-check-fail/partial-copy, old prior=False expectation changes only because
+rollback actually restores exact original bytes/absence, now explicitly asserted. Bad-restore still fails
+ownership proof; rollback-fail never claims success. Original installation exceptions preserved. Existing
+SelfCheck9/Backup8/Stage8/Payload9 unchanged; all data under own new GUID temp fixtures, no real install/IPC/
+service/ACL/network/credential changes.
+
+PASS local static/review/signatures, same prior guards/timeout and original destination parity, docs3,
+JSON/diff/public-content/secrets. Windows parser/Rollback8/Maintenance15/prior suites NOT_RUN for new source
+until ONE automatic CI; old CI667 PASS not inherited. F23 PARTIAL, fixed readiness58–80/22,+0. Next SAME new
+CI exact final logs/merge/suites, then ONE bounded durable recovery journal/admission-before-write slice;
+retention mandatory next, plus auxiliary-state transaction/fallback/PGA04 opt-in/package/target gates.
+Privatecandidate BLOCKED_TRANSFER unchanged; no retry/delivery/install/release/uploads/live actions.
+STOP after one guarded source publication/checkpoint, no full CI wait or second stage.
+
+## История этапа: F23 installed runtime self-check and truthful outcome prerequisite
 
 PR88 OPEN/DRAFT source `eb4afad106794b192f265ba9d90c4d52584455d9`, checkpoint
 `31e0bc49adbf6081e678e7fc52a886bff5afd66f`, clean/idle/root-only active writer independently verified.
@@ -41,6 +88,19 @@ using retained snapshot/old-byte+absence proof, never false restored success. Du
 retention, updater/fallback, PGA04 OFF/default opt-in and package/target gates remain mandatory.
 Privatecandidate BLOCKED_TRANSFER unchanged; no retry/delivery/install/release/uploads/live actions.
 STOP after one guarded source publication/checkpoint, no full CI wait or second stage.
+
+Publication checkpoint: exact source `5690e559fbaaab452cf74f5b8c8cd0ce841568ad`, parent
+`eb4afad106794b192f265ba9d90c4d52584455d9`, tree `75100833c4b02c4763498d1d6f40fa01e7cc31b4`
+verified after fetch equals reviewed local freeze `81457ff34fbb63966b935949c790b255cb79958b`.
+One expected-HEAD guarded non-force PR88 source update; ONE automatic
+[CI667/40102772473](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40102772473), exact source count1,
+event pull_request/attempt1/in_progress/conclusion null on last observed metadata. New Windows parser/
+SelfCheck9/Maintenance13/Backup8/Stage8/Payload9 and native regressions NOT_RUN pending same run final
+logs. CI666 PASS covers only old sourceeb4afad/merge8dcf2ca. Four public upload guards/workflows unchanged,
+release ineligible, no manual CI or uploads. Docs-only local checkpoint intentionally not pushed/no second
+CI; full SHA via git log -1/PR88 body. Next same CI667 final exact logs/merge/suites; then ONE bounded
+verified rollback mutation slice. Durable journal/recovery and retention remain mandatory. CI662 UNKNOWN/
+diagnostics retained; BLOCKED_TRANSFER no delivery retries/install/live actions. STOP, no second stage.
 
 ## История этапа: F23-R02 verified runtime backup before overwrite
 

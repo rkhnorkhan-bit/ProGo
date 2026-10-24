@@ -258,6 +258,102 @@ function Confirm-ProGoInstallerSelfCheck($Backup, $Stage) {
     [void](Assert-ProGoInstallerStagePath $Stage.Directory 'self-check-data')
     Assert-ProGoInstallerRuntime $Backup
 }
+# Each write keeps an exclusive target handle through partial-byte hashing.
+function Get-ProGoInstallerStreamHash($Stream) {
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    try {
+        $Stream.Position = 0
+        $hash = [BitConverter]::ToString($algorithm.ComputeHash($Stream)).Replace('-', '')
+        $Stream.Position = 0
+        return $hash
+    } finally { $algorithm.Dispose() }
+}
+function Write-ProGoInstallerRuntimeBytes($Source, $Target) {
+    $Target.SetLength(0); $Source.CopyTo($Target); $Target.Flush($true)
+}
+function Set-ProGoInstallerRuntimeFile($Stage, $Backup, $Entry, $Writes) {
+    if (@($Writes | Where-Object { $_.Relative -eq $Entry.Relative }).Count -ne 0) { throw 'Installer runtime write was already admitted.' }
+    $source = Assert-ProGoInstallerStagePath $Stage.Directory $Entry.Relative
+    $target = Assert-ProGoInstallerStagePath $Backup.InstallDirectory $Entry.Relative
+    $runtimeSourceStream = $null; $runtimeTargetStream = $null; $record = $null
+    try {
+        $runtimeSourceStream = [IO.File]::Open($source, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ((Get-ProGoInstallerStreamHash $runtimeSourceStream) -cne $Entry.NewHash) { throw 'Installer staged runtime changed before write.' }
+        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target)) | Out-Null
+        $mode = if ($Entry.Exists) { [IO.FileMode]::Open } else { [IO.FileMode]::CreateNew }
+        $runtimeTargetStream = [IO.File]::Open($target, $mode, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+        if ($Entry.Exists -and (Get-ProGoInstallerStreamHash $runtimeTargetStream) -cne $Entry.Hash) { throw 'Installer runtime changed before owned write.' }
+        $record = [pscustomobject]@{ Relative = $Entry.Relative; OwnedHash = $null }
+        $Writes.Add($record)
+        Write-ProGoInstallerRuntimeBytes $runtimeSourceStream $runtimeTargetStream
+    } finally {
+        try {
+            if ($null -ne $runtimeTargetStream -and $null -ne $record) {
+                $runtimeTargetStream.Flush()
+                $record.OwnedHash = Get-ProGoInstallerStreamHash $runtimeTargetStream
+            }
+        } finally {
+            if ($null -ne $runtimeTargetStream) { $runtimeTargetStream.Dispose() }
+            if ($null -ne $runtimeSourceStream) { $runtimeSourceStream.Dispose() }
+        }
+    }
+    if ($record.OwnedHash -cne $Entry.NewHash) { throw 'Installer runtime bytes are not verified.' }
+}
+# Retain existing file/folder call sites, but admit only the frozen runtime leaves.
+function Copy-ProGoInstallerRuntime($Path, $Destination, [switch]$Force, [switch]$Recurse) {
+    $sourcePath = [IO.Path]::GetFullPath($Path); $destinationPath = [IO.Path]::GetFullPath($Destination)
+    $matched = 0
+    if ($Recurse -and ($sourcePath -ne (Assert-ProGoInstallerStagePath $InstallStage.Directory 'scripts/home-vpn') -or
+        $destinationPath -ne (Assert-ProGoInstallerStagePath $InstallBackup.InstallDirectory 'scripts'))) { throw 'Installer runtime folder scope is invalid.' }
+    foreach ($entry in $InstallBackup.Entries) {
+        $source = Assert-ProGoInstallerStagePath $InstallStage.Directory $entry.Relative
+        if ($Recurse) { if (-not $entry.Relative.StartsWith('scripts/home-vpn/', [StringComparison]::Ordinal)) { continue } }
+        elseif ($source -ne $sourcePath) { continue }
+        if (-not $Recurse -and (Assert-ProGoInstallerStagePath $InstallBackup.InstallDirectory $entry.Relative) -ne $destinationPath) { throw 'Installer runtime destination is invalid.' }
+        Set-ProGoInstallerRuntimeFile $InstallStage $InstallBackup $entry $InstallWrites
+        $matched++
+    }
+    if ($matched -eq 0) { throw 'Installer runtime source is outside its inventory.' }
+}
+function Copy-ProGoInstallerRestoreFile([string]$Source, [string]$Destination) {
+    [IO.File]::Copy($Source, $Destination, $true)
+}
+function Restore-ProGoInstallerRuntime($Backup, $Writes) {
+    # Validate all recovery material before changing even one admitted runtime leaf.
+    if ($null -ne $Backup.Directory) {
+        Assert-ProGoInstallerBackupScope $Backup
+        $manifest = Assert-ProGoInstallerStagePath $Backup.Directory 'installer-snapshot.json'
+        if ((Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash -cne $Backup.ManifestHash) { throw 'Installer rollback manifest is not verified.' }
+    }
+    foreach ($entry in $Backup.Entries) {
+        if (-not $entry.Exists) { continue }
+        if ($null -eq $Backup.Directory) { throw 'Installer rollback snapshot is missing.' }
+        $saved = Assert-ProGoInstallerStagePath $Backup.Directory $entry.Relative
+        if ((Get-FileHash -LiteralPath $saved -Algorithm SHA256).Hash -cne $entry.Hash) { throw 'Installer rollback snapshot bytes are not verified.' }
+    }
+    $seen = @{}
+    foreach ($record in $Writes) {
+        if ($seen.ContainsKey($record.Relative) -or @($Backup.Entries | Where-Object { $_.Relative -ceq $record.Relative }).Count -ne 1) { throw 'Installer rollback admission is invalid.' }
+        $seen[$record.Relative] = $true
+    }
+    for ($index = $Writes.Count - 1; $index -ge 0; $index--) {
+        $record = $Writes[$index]
+        $entry = @($Backup.Entries | Where-Object { $_.Relative -ceq $record.Relative })[0]
+        $target = Assert-ProGoInstallerStagePath $Backup.InstallDirectory $entry.Relative
+        if (-not (Test-Path -LiteralPath $target)) {
+            if (-not $entry.Exists) { continue }
+            throw 'Installer rollback lost runtime ownership.'
+        }
+        $current = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
+        if ($entry.Exists -and $current -ceq $entry.Hash) { continue }
+        if ($null -eq $record.OwnedHash -or $current -cne $record.OwnedHash) { throw 'Installer rollback refuses changed runtime ownership.' }
+        if ($entry.Exists) {
+            Copy-ProGoInstallerRestoreFile (Assert-ProGoInstallerStagePath $Backup.Directory $entry.Relative) $target
+            if ((Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash -cne $entry.Hash) { throw 'Installer restored bytes are not verified.' }
+        } else { [IO.File]::Delete($target) }
+    }
+    Assert-ProGoInstallerRuntime $Backup -Original
+}
 # Use the same owned maintenance protocol as update/restore/uninstall. These
 # narrow adapters also let fixture tests replace OS/IPC operations completely.
 function Enter-ProGoInstallerMaintenance {
@@ -283,6 +379,7 @@ $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 $InstallMaintenance = $null
 $InstallStage = $null
 $InstallBackup = $null
+$InstallWrites = New-Object 'System.Collections.Generic.List[object]'
 try {
     $InstallMaintenance = Enter-ProGoInstallerMaintenance
     Stop-ProGoInstallerApplication -InstallDirectory $InstallDir
@@ -298,12 +395,12 @@ try {
     $WasInstalled = Test-ProGoExistingInstallation -InstallDirectory $InstallDir
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $InstallDir "backups") -Force | Out-Null
-    Copy-Item $Exe -Destination (Join-Path $InstallDir "ProGo.exe") -Force
-    Copy-Item $VersionFile -Destination (Join-Path $InstallDir "VERSION") -Force
+    Copy-ProGoInstallerRuntime $Exe -Destination (Join-Path $InstallDir "ProGo.exe") -Force
+    Copy-ProGoInstallerRuntime $VersionFile -Destination (Join-Path $InstallDir "VERSION") -Force
 
     $Icon = Join-Path $ReleaseDir "ProGo.ico"
     if (Test-Path $Icon) {
-        Copy-Item $Icon -Destination (Join-Path $InstallDir "ProGo.ico") -Force
+        Copy-ProGoInstallerRuntime $Icon -Destination (Join-Path $InstallDir "ProGo.ico") -Force
     }
 
     $InstalledScripts = Join-Path $InstallDir "scripts"
@@ -312,36 +409,45 @@ try {
     foreach ($scriptName in @("Install-ProGo.ps1", "Uninstall-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
         $scriptPath = Join-Path $PayloadScripts $scriptName
         if (Test-Path $scriptPath) {
-            Copy-Item $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
+            Copy-ProGoInstallerRuntime $scriptPath -Destination (Join-Path $InstalledScripts $scriptName) -Force
         }
     }
 
-    Copy-Item (Join-Path $ReleaseDir "scripts\ApplicationShortcuts.cs") -Destination (Join-Path $InstalledScripts "ApplicationShortcuts.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\MaintenanceOperation.cs") -Destination (Join-Path $InstalledScripts "MaintenanceOperation.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\InstalledUpdateTransport.cs") -Destination (Join-Path $InstalledScripts "InstalledUpdateTransport.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\UpdateInstallSession.cs") -Destination (Join-Path $InstalledScripts "UpdateInstallSession.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\BackupRetention.cs") -Destination (Join-Path $InstalledScripts "BackupRetention.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\BackupIntegrity.cs") -Destination (Join-Path $InstalledScripts "BackupIntegrity.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\BoundedLog.cs") -Destination (Join-Path $InstalledScripts "BoundedLog.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\RescueMeasurement.cs") -Destination (Join-Path $InstalledScripts "RescueMeasurement.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\DiagnosticReport.cs") -Destination (Join-Path $InstalledScripts "DiagnosticReport.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\DiagnosticPreview.cs") -Destination (Join-Path $InstalledScripts "DiagnosticPreview.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\UiTheme.cs") -Destination (Join-Path $InstalledScripts "UiTheme.cs") -Force
-    Copy-Item (Join-Path $ReleaseDir "scripts\BrandIcon.cs") -Destination (Join-Path $InstalledScripts "BrandIcon.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\ApplicationShortcuts.cs") -Destination (Join-Path $InstalledScripts "ApplicationShortcuts.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\MaintenanceOperation.cs") -Destination (Join-Path $InstalledScripts "MaintenanceOperation.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\InstalledUpdateTransport.cs") -Destination (Join-Path $InstalledScripts "InstalledUpdateTransport.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\UpdateInstallSession.cs") -Destination (Join-Path $InstalledScripts "UpdateInstallSession.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\BackupRetention.cs") -Destination (Join-Path $InstalledScripts "BackupRetention.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\BackupIntegrity.cs") -Destination (Join-Path $InstalledScripts "BackupIntegrity.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\BoundedLog.cs") -Destination (Join-Path $InstalledScripts "BoundedLog.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\RescueMeasurement.cs") -Destination (Join-Path $InstalledScripts "RescueMeasurement.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\DiagnosticReport.cs") -Destination (Join-Path $InstalledScripts "DiagnosticReport.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\DiagnosticPreview.cs") -Destination (Join-Path $InstalledScripts "DiagnosticPreview.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\UiTheme.cs") -Destination (Join-Path $InstalledScripts "UiTheme.cs") -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\BrandIcon.cs") -Destination (Join-Path $InstalledScripts "BrandIcon.cs") -Force
 
-    Copy-Item (Join-Path $ReleaseDir "scripts\home-vpn") -Destination $InstalledScripts -Recurse -Force
+    Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\home-vpn") -Destination $InstalledScripts -Recurse -Force
 
     Confirm-ProGoInstallerSelfCheck $InstallBackup $InstallStage
     Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut)
 
 } catch {
-    $priorVerified = $false
+    $installFailure = $_
+    $priorVerified = $false; $rollbackAttempted = $false; $rollbackErrorType = 'none'
     if ($null -ne $InstallBackup) {
-        try { Assert-ProGoInstallerRuntime $InstallBackup -Original; $priorVerified = $true } catch { }
+        try {
+            if ($InstallWrites.Count -gt 0) {
+                $rollbackAttempted = $true
+                Restore-ProGoInstallerRuntime $InstallBackup $InstallWrites
+            }
+            Assert-ProGoInstallerRuntime $InstallBackup -Original
+            $priorVerified = $true
+        } catch { $rollbackErrorType = $_.Exception.GetType().Name }
     }
     Write-Host ('Installer failure: priorRuntimeVerified=' + $priorVerified +
-        '; rollbackAttempted=False; backupRetained=' + ($null -ne $InstallBackup -and $null -ne $InstallBackup.Directory))
-    throw
+        '; rollbackAttempted=' + $rollbackAttempted + '; rollbackVerified=' + ($rollbackAttempted -and $priorVerified) +
+        '; rollbackErrorType=' + $rollbackErrorType + '; backupRetained=' + ($null -ne $InstallBackup -and $null -ne $InstallBackup.Directory))
+    throw $installFailure
 } finally {
     try {
         if ($null -ne $InstallStage) { Remove-ProGoInstallerStage $InstallStage }
