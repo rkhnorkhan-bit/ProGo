@@ -2723,8 +2723,10 @@
           "code_commit": "2dc5310f4b26600f30e2727bc69fb84bcff700d3",
           "status": "NOT_RUN",
           "local_review": "PASS static only",
-          "windows_tests": "NOT_RUN; 9 new tests",
-          "scope": "partial prerequisite only, no full standalone installer acceptance"
+          "windows_tests": "NOT_RUN 0/9; CI662 failed before invocation",
+          "scope": "partial prerequisite only, no full standalone installer acceptance",
+          "source": "db3adc280d500b97487a7991f25c1206248eb5b6",
+          "ci_run_id": 40089851914
         }
       },
       "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
@@ -3963,20 +3965,35 @@
     }
   ],
   "ci_candidate": {
-    "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
-    "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
-    "run_id": 40085290372,
-    "run_number": 661,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+    "source": "db3adc280d500b97487a7991f25c1206248eb5b6",
+    "tested_merge": "06ae505a9e49082e74e8d09d50b361d28799b15a",
+    "observed_merge_ref": "06ae505a9e49082e74e8d09d50b361d28799b15a",
+    "merge_scope": "Observed PR merge ref only; NOT final tested-merge evidence",
+    "run_id": 40089851914,
+    "run_number": 662,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40089851914",
     "status": "completed",
-    "conclusion": "success",
-    "windows_compilation": "PASS exact tested merge",
-    "windows_native": "PASS recover-invite10/prior suites; criterion scope in matrix",
-    "pack": "PASS runner-only; ZIP unavailable/artifacts0",
+    "conclusion": "failure",
+    "windows_compilation": "PASS production/Desktop harness only; NOT entire job",
+    "windows_native": "FAIL exit0 launcher; subsequent native/InstallPayload9 NOT_RUN",
+    "pack": "SKIPPED",
     "artifact_uploads": "SKIPPED",
-    "prune": "SKIPPED",
-    "observed_runner_zip_sha256": "a8a3ac56a7cadb711a3901aaa4c728cd5b4fb32456c0142b8481b12c8b9602b3",
-    "owner_pc": "NOT_RUN"
+    "owner_pc": "NOT_RUN",
+    "scope": "New InstallerPayload9 pending; old CI661 not inherited",
+    "jobs": [
+      {
+        "id": 120860130674,
+        "name": "windows-build",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 120860130505,
+        "name": "vpn-server-test",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ]
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5513,22 +5530,16 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE F23-R01 explicit prebuilt installer preflight; prerequisite to PGA04",
-    "baseline_source": "2b068cf909e761c27b9594bec91d78b582fce68d",
-    "baseline_checkpoint": "6e96a7ab8fc4f87e2c8933e05d7c5ee8ed387e7f",
-    "local_development_sha": "2dc5310f4b26600f30e2727bc69fb84bcff700d3",
+    "phase": "ONE CI662 test-only owned Python startup diagnostics; no runtime fix",
+    "baseline_source": "db3adc280d500b97487a7991f25c1206248eb5b6",
+    "baseline_checkpoint": "7dc91de4f2c83240869757e664f596631ec231c8",
+    "local_development_sha": "ecee68e50b814561cd9f0bda039c94d1922edee7",
     "published_sha": null,
-    "ci_run_id": null,
     "ci_status": "NOT_RUN before guarded publication",
-    "criterion": "Explicit local prebuilt payload completeness/version validation before user writes; no build/network fallback on rejection",
-    "code_paths": [
-      "scripts/Install-ProGo.ps1:Get-ProGoInstallPayload",
-      "scripts/Install-ProGo.ps1:PayloadDirectory branch"
-    ],
-    "tests": "tests/InstallPayloadTests.ps1:9; Windows NOT_RUN; local docs3/public/static/diff/JSON PASS",
-    "protected_actions": "None implemented or executed. PGA04 remains OFF by default, explicit install-time consent required before future elevation/Automatic/Start.",
-    "remaining": "F23 maintenance/staging/authenticity/hash/self-check/rollback; updater/fallback fixed paths; PGA04 explicit opt-in UI/executor; target gates",
-    "next": "Same exact new CI logs/InstallerPayload9 and existing relevant regressions only; no second slice this turn",
+    "scope": "scripts/Test-ProGo.ps1 diagnostic only + documents",
+    "underlying_cause": "UNRESOLVED; loader/site/interpreter phase not observed by prior trace",
+    "acceptance": "One diagnostic CI collects only safe named phase/count/lifecycle facts under original argv/body/budgets; no timeout/coverage/assert relaxation",
+    "next": "Same new exact CI final logs; do not start second stage or claim root-cause fix on transient PASS",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -8118,6 +8129,25 @@
       "ubuntu": "SUCCESS",
       "scope": "only startup diagnostic plus3 evidence docs on exact618 tree",
       "excludes": "all local export/admin extensions"
+    },
+    {
+      "checkpoint": "before_ci662",
+      "ci_candidate": {
+        "source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+        "tested_merge": "77904dff703f65002d306bf5acc84a2f15df98ab",
+        "run_id": 40085290372,
+        "run_number": 661,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40085290372",
+        "status": "completed",
+        "conclusion": "success",
+        "windows_compilation": "PASS exact tested merge",
+        "windows_native": "PASS recover-invite10/prior suites; criterion scope in matrix",
+        "pack": "PASS runner-only; ZIP unavailable/artifacts0",
+        "artifact_uploads": "SKIPPED",
+        "prune": "SKIPPED",
+        "observed_runner_zip_sha256": "a8a3ac56a7cadb711a3901aaa4c728cd5b4fb32456c0142b8481b12c8b9602b3",
+        "owner_pc": "NOT_RUN"
+      }
     }
   ],
   "connection_recovery_20261022": {
@@ -14109,6 +14139,35 @@
         "next": "ONE build/package-only pinned tested merge, new hash/manifest/content/launch smoke in private Windows output; preserve exact CI661 harness evidence, no duplicate full CI. No binary publication/transfer/install now.",
         "checkpoint": "Local docs-only HEAD via git log -1/PR88 body; not source-pushed to avoid needless CI.",
         "readiness_change": "+0 fixed58-80/22; no whole requirement or target/package acceptance promoted."
+      }
+    },
+    "before_ci662_startup_diagnostic": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE F23-R01 explicit prebuilt installer preflight; prerequisite to PGA04",
+        "baseline_source": "2b068cf909e761c27b9594bec91d78b582fce68d",
+        "baseline_checkpoint": "6e96a7ab8fc4f87e2c8933e05d7c5ee8ed387e7f",
+        "local_development_sha": "2dc5310f4b26600f30e2727bc69fb84bcff700d3",
+        "published_sha": "db3adc280d500b97487a7991f25c1206248eb5b6",
+        "ci_run_id": 40089851914,
+        "ci_status": "in_progress",
+        "criterion": "Explicit local prebuilt payload completeness/version validation before user writes; no build/network fallback on rejection",
+        "code_paths": [
+          "scripts/Install-ProGo.ps1:Get-ProGoInstallPayload",
+          "scripts/Install-ProGo.ps1:PayloadDirectory branch"
+        ],
+        "tests": "tests/InstallPayloadTests.ps1:9; Windows NOT_RUN; local docs3/public/static/diff/JSON PASS",
+        "protected_actions": "None implemented or executed. PGA04 remains OFF by default, explicit install-time consent required before future elevation/Automatic/Start.",
+        "remaining": "F23 maintenance/staging/authenticity/hash/self-check/rollback; updater/fallback fixed paths; PGA04 explicit opt-in UI/executor; target gates",
+        "next": "Check same CI662 final logs and exact tested merge; InstallerPayload9 and relevant old suites. No rerun/second stage.",
+        "readiness_change": 0,
+        "reviewed_local_freeze": "48a7504c25472a15b6e7fe04ab25f3304df507d4",
+        "published_tree": "e2ad18032af355ec3c300dfc7308a3d4afd2c79d",
+        "ci_run_number": 662,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40089851914",
+        "ci_conclusion": null,
+        "windows_compilation": "NOT_RUN final result pending",
+        "windows_native": "NOT_RUN final result pending"
       }
     }
   },
@@ -20488,9 +20547,9 @@
     "baseline_source": "2b068cf909e761c27b9594bec91d78b582fce68d",
     "baseline_checkpoint": "6e96a7ab8fc4f87e2c8933e05d7c5ee8ed387e7f",
     "local_development_sha": "2dc5310f4b26600f30e2727bc69fb84bcff700d3",
-    "published_sha": null,
-    "ci_run_id": null,
-    "ci_status": "NOT_RUN before guarded publication",
+    "published_sha": "db3adc280d500b97487a7991f25c1206248eb5b6",
+    "ci_run_id": 40089851914,
+    "ci_status": "completed",
     "criterion": "Explicit local prebuilt payload completeness/version validation before user writes; no build/network fallback on rejection",
     "code_paths": [
       "scripts/Install-ProGo.ps1:Get-ProGoInstallPayload",
@@ -20499,8 +20558,15 @@
     "tests": "tests/InstallPayloadTests.ps1:9; Windows NOT_RUN; local docs3/public/static/diff/JSON PASS",
     "protected_actions": "None implemented or executed. PGA04 remains OFF by default, explicit install-time consent required before future elevation/Automatic/Start.",
     "remaining": "F23 maintenance/staging/authenticity/hash/self-check/rollback; updater/fallback fixed paths; PGA04 explicit opt-in UI/executor; target gates",
-    "next": "Same exact new CI logs/InstallerPayload9 and existing relevant regressions only; no second slice this turn",
-    "readiness_change": 0
+    "next": "Blocked on diagnostic CI owned Python startup; do not blame or change resolver without evidence",
+    "readiness_change": 0,
+    "reviewed_local_freeze": "48a7504c25472a15b6e7fe04ab25f3304df507d4",
+    "published_tree": "e2ad18032af355ec3c300dfc7308a3d4afd2c79d",
+    "ci_run_number": 662,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40089851914",
+    "ci_conclusion": "failure",
+    "windows_compilation": "PASS general build; resolver tests not reached",
+    "windows_native": "NOT_RUN InstallerPayload9 0/9"
   },
   "private_candidate_transfer": {
     "status": "BLOCKED",
@@ -20512,5 +20578,68 @@
     "build": "NOT_RUN",
     "install": "NOT_RUN",
     "retry": "No further retries or network/proxy/credentials changes authorized"
+  },
+  "ci662_final": {
+    "source": "db3adc280d500b97487a7991f25c1206248eb5b6",
+    "tested_merge": "06ae505a9e49082e74e8d09d50b361d28799b15a",
+    "run_id": 40089851914,
+    "windows_job": 120860130674,
+    "ubuntu_job": 120860130505,
+    "windows": "FAIL",
+    "ubuntu": "PASS metadata terminal SUCCESS",
+    "full_windows_log": "PASS independently read 2782 lines",
+    "failure": "Owned SSH fixture exit0-regression exceeded 5000 ms; native validation NOT_RUN",
+    "evidence": {
+      "start_ms": 110,
+      "elapsed_ms": 5137,
+      "exited": false,
+      "cpu_ms": 0,
+      "ram_bytes": 5984256,
+      "stdout_task": "WaitingForActivation",
+      "stderr_task": "WaitingForActivation",
+      "probe_error_type": "none",
+      "body_marker_observed": false
+    },
+    "proven_cause": "Owned Python did not finish within original deadline; underlying cause NOT established",
+    "not_proven": [
+      "infrastructure",
+      "runtime code defect",
+      "new installer resolver defect"
+    ],
+    "passed": [
+      "production/Desktop compilation",
+      "Repair preflight4/null1/copy1/cleanup1/rollback1/self-check1/recovery1+refusal9",
+      "vault165/134/112/237",
+      "SOCKS recovery51",
+      "log43/helper9",
+      "Rescue26/helper8",
+      "firewall21/shortcuts47",
+      "diagnostic32/helper2",
+      "retention29/integrity82",
+      "transport74/adapter3",
+      "updater-progress134/install-window145/update-check72"
+    ],
+    "not_run": [
+      "InstallPayload9 all0/9",
+      "remaining launcher regressions/deps/contracts",
+      "Desktop/native SSH/policy/Instance/Maintenance/Shutdown/updater-package",
+      "HomeVPN/Portable/relay",
+      "final public release content/pack"
+    ],
+    "uploads": "SKIPPED"
+  },
+  "ci662_startup_diagnostics": {
+    "status": "PARTIAL",
+    "phase": "ONE CI662 test-only owned Python startup diagnostics; no runtime fix",
+    "baseline_source": "db3adc280d500b97487a7991f25c1206248eb5b6",
+    "baseline_checkpoint": "7dc91de4f2c83240869757e664f596631ec231c8",
+    "local_development_sha": "ecee68e50b814561cd9f0bda039c94d1922edee7",
+    "published_sha": null,
+    "ci_status": "NOT_RUN before guarded publication",
+    "scope": "scripts/Test-ProGo.ps1 diagnostic only + documents",
+    "underlying_cause": "UNRESOLVED; loader/site/interpreter phase not observed by prior trace",
+    "acceptance": "One diagnostic CI collects only safe named phase/count/lifecycle facts under original argv/body/budgets; no timeout/coverage/assert relaxation",
+    "next": "Same new exact CI final logs; do not start second stage or claim root-cause fix on transient PASS",
+    "readiness_change": 0
   }
 }

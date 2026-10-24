@@ -8,7 +8,52 @@
 
 CI582 независимо проверен через jobs и Windows log: Windows/Ubuntu SUCCESS, source `b02b0e9606fb57518ed18d17de42e5f82fca8fa8`, merge `cf2e19691057c143b4f66d93c0041e2e1c5681a8`. На базе `7861ea9` только четыре Markdown-файла поверх tested source; runtime/tests/scripts/server/workflows/VERSION идентичны. Новые изменения требуют нового CI.
 
-## Текущий этап: F23-R01 — explicit prebuilt payload preflight, PGA04 prerequisite
+## Текущий этап: CI662 owned exit0 startup — evidence-only test diagnostics
+
+HEAD PR88 source `db3adc280d500b97487a7991f25c1206248eb5b6`, checkpoint
+`7dc91de4f2c83240869757e664f596631ec231c8`, clean/idle/root only active agent independently verified.
+Full final Windows2782-line log CI662/40089851914/job120860130674 independently read; tested merge
+`06ae505a9e49082e74e8d09d50b361d28799b15a` and build identity0.2.2+same merge confirmed.
+Both jobs completed: Windows FAILURE Repository hygiene/build; Ubuntu SUCCESS (metadata independently checked).
+
+FAIL at scripts/Test-ProGo.ps1:615 exit0-regression → Invoke-IsolatedSshFixtureTool → Fail line8:
+owned Python -c import sys/print body marker/sys.exit(0), UseShellExecute=false, redirected stdin/stdout/stderr;
+stdin explicitly closed before STARTED. startMs110/pythonClass hostedtoolcache. At deadline elapsed5137,
+exited=False, stdout/stderr WaitingForActivation, CPU0ms, RAM5984256bytes, probeErrorType=none. Original
+5000ms exceeded; owned child killed/joined/read streams/disposed, timeout remains FAIL. No body marker in
+final log. This proves no successful completion within budget; does NOT prove loader/site/runner/code root
+cause or installer resolver defect. No infrastructure diagnosis or runtime fix guessed.
+
+Actual CI662 PASS: production build and Desktop harness compilation; Repair preflight4/null interop1/
+runtime copy1/cleanup1/rollback1/owned self-check1/durable recovery1+refusal9; vault read165/daily134/open112/
+restart237; SOCKS recovery51; bounded log43/helper9; Rescue26/helper8; home firewall21; shortcuts47;
+diagnostic32/helper2; backup retention29/updater parity/integrity82; installed transport74/adapter3;
+updater progress134/install window145/update check72. These old isolated suites apply only to exact CI662 merge.
+NOT_RUN: InstallPayload9 ALL0/9 (invocation after Shutdown at script end never reached); exit17/stdin-EOF/
+expected-timeout/fixture dependencies/contracts; Desktop/native policy/real SSH suites; Instance/Maintenance/
+Shutdown/updater-package; subsequent HomeVPN/Portable/relay suites, final public-release check and pack.
+Do not inherit CI661 or call whole Windows CI PASS.
+
+Code `ecee68e50b814561cd9f0bda039c94d1922edee7`: ONLY test-only scripts/Test-ProGo.ps1 instrumentation. Original -c argv/body, normal site,
+stdin EOF ownership, concurrent reads, 5000ms/negative200ms/cleanup5000ms/read3000ms budgets and all exit
+asserts retained. Only exit0 child gets PYTHONVERBOSE=1 in ProcessStartInfo environment; no global env or
+-S/-I/-E changes. Trace may affect timing; diagnostic success alone does not establish a fix. Safe summary
+shows bodyEntered, importBootstrap, encodingsReady, osReady, siteReady, pthVisits, startupBanner,
+cleanupEntered, tracebackPresent, stdout/stderr lengths, input closure, argv shape, owned lifecycle and
+post-cleanup exit/task state. Static logical callsite only, not a claimed native stack. No raw trace/path/
+argv/environment emitted or persisted for this child. Trace stored only in its existing in-memory readers;
+owned output files contain fixed safe summary. Two synthetic phase/redaction checks precede launch.
+
+PASS local: isolated Linux Python same-body+child-only verbose phase extraction smoke (NOT Windows),
+static original vector/budget/assert and production/resolver/InstallPayload9/workflow parity, diff, docs3,
+JSON/public-content/secrets. PowerShell parser/two formatter checks/native startup/new InstallerPayload9
+NOT_RUN locally. Single diagnostic CI justified to distinguish last observed Python startup phase from
+no-output/no-body condition, not blind rerun. If failure does not recur, keep root cause unresolved.
+Private candidate BLOCKED_TRANSFER unchanged; no transfer retry/build/install/live/security/network action.
+Next ONLY same new exact-SHA CI final startup facts and actual suite boundary; no second feature/slice.
+Fixed readiness implementation58–80/100, verified22/100,+0. Publication/checkpoint details below.
+
+## История этапа: F23-R01 — explicit prebuilt payload preflight, PGA04 prerequisite
 
 Baseline PR88 source `2b068cf909e761c27b9594bec91d78b582fce68d`, local checkpoint
 `6e96a7ab8fc4f87e2c8933e05d7c5ee8ed387e7f`, clean worktree/idle/no other active agent verified.
@@ -42,6 +87,17 @@ Weights unchanged, implementation58–80/100, verified22/100,+0. Next SAME new C
 and relevant installer/repair/update regressions. Then one separately scoped F23 maintenance/verified-staging
 prerequisite; PGA04 protected action executor/consent UI not silently added. STOP after source publication
 and checkpoint; do not wait full CI or start another slice.
+
+Publication verified: exact source `db3adc280d500b97487a7991f25c1206248eb5b6`, parent
+`2b068cf909e761c27b9594bec91d78b582fce68d`, tree `e2ad18032af355ec3c300dfc7308a3d4afd2c79d`
+equals reviewed local freeze `48a7504c25472a15b6e7fe04ab25f3304df507d4`. One expected-HEAD non-force
+PR88 source update; one automatic [CI662/40089851914](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40089851914),
+exact source count1/event pull_request/attempt1, in_progress/conclusion null at checkpoint. No final
+compilation/InstallerPayload9/regression result yet; all new Windows tests NOT_RUN. CI661 covers only old
+source2b068cf/merge77904df. Public repository upload guards4 unchanged; no release path eligible. Source
+publication only, no transfer retry/binary delivery/install/service action. Local post-publication checkpoint
+not pushed (no second CI); obtain full checkpoint SHA with git log -1. Next check SAME run final logs,
+exact tested merge, InstallerPayload9 + existing installer/repair/update/native regressions. Stop here.
 
 ## История этапа: CI661 final evidence matrix + shortest private candidate plan
 

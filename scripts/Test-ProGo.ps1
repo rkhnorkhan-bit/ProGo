@@ -539,6 +539,32 @@ if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
 $FixtureDeps = Join-Path $Root 'build\ssh-fixture-deps'
 $FixturePython = (Get-Command python -ErrorAction Stop).Source
 $FixtureRequirements = Join-Path $Root 'tests\ssh-fixture-requirements.txt'
+# Only fixed booleans/counts leave the exit0 startup diagnostic. CPython verbose
+# output can contain local paths; never print or persist that raw trace.
+function Get-IsolatedSshFixtureStartupFacts($OutputText, $ErrorText) {
+    return ('bodyEntered=' + $OutputText.Contains('PROGO_FIXTURE_EXIT0_ENTERED') +
+        '; stdoutChars=' + $OutputText.Length + '; stderrChars=' + $ErrorText.Length +
+        '; importBootstrap=' + [bool]($ErrorText -match "(?m)^import '_frozen_importlib_external'") +
+        '; encodingsReady=' + [bool]($ErrorText -match "(?m)^import 'encodings'") +
+        '; osReady=' + [bool]($ErrorText -match "(?m)^import 'os'") +
+        '; siteReady=' + [bool]($ErrorText -match "(?m)^import 'site'") +
+        '; pthVisits=' + [regex]::Matches($ErrorText, '(?m)^Processing .pth file:').Count +
+        '; startupBanner=' + [bool]($ErrorText -match '(?m)^Python [0-9]+\.[0-9]+\.') +
+        '; cleanupEntered=' + [bool]($ErrorText -match '(?m)^# (clear |cleanup\[)') +
+        '; tracebackPresent=' + $ErrorText.Contains('Traceback (most recent call last):'))
+}
+# Redaction regression uses synthetic text only; no process or host path inspection.
+$StartupFactsProbe = Get-IsolatedSshFixtureStartupFacts 'PROGO_FIXTURE_EXIT0_ENTERED' "import 'encodings'`nimport 'site'`nProcessing .pth file: PRIVATE_DIAGNOSTIC_SENTINEL`n"
+if ($StartupFactsProbe.Contains('PRIVATE_DIAGNOSTIC_SENTINEL') -or
+    -not $StartupFactsProbe.Contains('bodyEntered=True') -or
+    -not $StartupFactsProbe.Contains('encodingsReady=True') -or
+    -not $StartupFactsProbe.Contains('siteReady=True') -or
+    -not $StartupFactsProbe.Contains('pthVisits=1')) { Fail 'SSH fixture startup diagnostic failed its redaction/phase contract' }
+$StartupFactsEmpty = Get-IsolatedSshFixtureStartupFacts '' ''
+if (-not $StartupFactsEmpty.Contains('bodyEntered=False') -or
+    -not $StartupFactsEmpty.Contains('stderrChars=0') -or
+    -not $StartupFactsEmpty.Contains('siteReady=False')) { Fail 'SSH fixture startup diagnostic mislabeled an empty trace' }
+Write-Host 'SSH fixture startup facts synthetic/redaction tests PASS: 2'
 function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureOut = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stdout.txt')
     $FixtureError = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stderr.txt')
@@ -553,6 +579,12 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureTool.StartInfo.RedirectStandardOutput = $true
     $FixtureTool.StartInfo.RedirectStandardError = $true
     $FixtureTool.StartInfo.RedirectStandardInput = $true
+    # Test-only tracing for this one child, preserving argv, body, stdin policy and
+    # normal site initialization. No -S/-I/-E flags or global environment changes.
+    $FixtureStartupDiagnostic = ($Label -eq 'exit0-regression')
+    if ($FixtureStartupDiagnostic) { $FixtureTool.StartInfo.EnvironmentVariables['PYTHONVERBOSE'] = '1' }
+    $FixtureInputClosed = $false
+    $FixtureDeadlineExceeded = $false
     $FixtureStarted = $false
     $FixtureOutRead = $null
     $FixtureErrorRead = $null
@@ -564,10 +596,19 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
         # These fixture tools are noninteractive. Own and close their input;
         # never inherit a CI host pipe with another outstanding reader.
         $FixtureTool.StandardInput.Close()
+        $FixtureInputClosed = $true
         Write-Host ('SSH_FIXTURE_STARTED label=' + $Label + '; pid=' + $FixtureTool.Id + '; startMs=' + $FixtureLaunchWatch.ElapsedMilliseconds + '; pythonClass=' + $FixturePythonClass)
         $FixtureOutRead = $FixtureTool.StandardOutput.ReadToEndAsync()
         $FixtureErrorRead = $FixtureTool.StandardError.ReadToEndAsync()
+        if ($FixtureStartupDiagnostic) {
+            Write-Host ('SSH_FIXTURE_INPUT label=exit0-regression; stdinClosed=' + $FixtureInputClosed +
+                '; argc=' + $ToolArguments.Count + '; commandOptionC=' + ($ToolArguments[0] -ceq '-c') +
+                '; shellDisabled=' + (-not $FixtureTool.StartInfo.UseShellExecute) +
+                '; inputRedirected=' + $FixtureTool.StartInfo.RedirectStandardInput +
+                '; verboseChildOnly=True; lifecycle=owned-started; stack=Invoke-IsolatedSshFixtureTool>exit0-regression')
+        }
         if (-not $FixtureTool.WaitForExit($BudgetMs)) {
+            $FixtureDeadlineExceeded = $true
             # Safe owned-process facts only; never print arguments/environment
             # or turn a process that exits at the deadline into a successful test.
             $FixtureCpuMs = 'unavailable'; $FixtureRamBytes = 'unavailable'; $FixtureProbeError = 'none'
@@ -593,13 +634,25 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
             # streams concurrently and retain actual nonzero/timeout failures.
             if ($null -ne $FixtureOutRead) {
                 if (-not $FixtureOutRead.Wait(3000)) { Fail ('Owned SSH fixture ' + $Label + ' stdout did not settle') }
-                [System.IO.File]::WriteAllText($FixtureOut, $FixtureOutRead.Result)
-                Write-Host $FixtureOutRead.Result
+                if (-not $FixtureStartupDiagnostic) {
+                    [System.IO.File]::WriteAllText($FixtureOut, $FixtureOutRead.Result)
+                    Write-Host $FixtureOutRead.Result
+                }
             }
             if ($null -ne $FixtureErrorRead) {
                 if (-not $FixtureErrorRead.Wait(3000)) { Fail ('Owned SSH fixture ' + $Label + ' stderr did not settle') }
-                [System.IO.File]::WriteAllText($FixtureError, $FixtureErrorRead.Result)
-                Write-Host $FixtureErrorRead.Result
+                if ($FixtureStartupDiagnostic) {
+                    $FixtureSafeFacts = Get-IsolatedSshFixtureStartupFacts $FixtureOutRead.Result $FixtureErrorRead.Result
+                    Write-Host ('SSH_FIXTURE_STARTUP label=exit0-regression; deadlineExceeded=' + $FixtureDeadlineExceeded +
+                        '; stdinClosed=' + $FixtureInputClosed + '; cleanupExited=' + $FixtureTool.HasExited +
+                        '; stdoutTask=' + $FixtureOutRead.Status + '; stderrTask=' + $FixtureErrorRead.Status +
+                        '; ' + $FixtureSafeFacts + '; stack=Invoke-IsolatedSshFixtureTool>exit0-regression')
+                    [System.IO.File]::WriteAllText($FixtureOut, $FixtureSafeFacts)
+                    [System.IO.File]::WriteAllText($FixtureError, $FixtureSafeFacts)
+                } else {
+                    [System.IO.File]::WriteAllText($FixtureError, $FixtureErrorRead.Result)
+                    Write-Host $FixtureErrorRead.Result
+                }
             }
         } finally { $FixtureTool.Dispose() }
     }
