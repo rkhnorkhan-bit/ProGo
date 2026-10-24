@@ -5,6 +5,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Security.Cryptography;
 using System.Threading;
+using Microsoft.Win32.SafeHandles;
 
 namespace ProGo
 {
@@ -116,13 +117,14 @@ namespace ProGo
             public string LocationIdentity { get; private set; }
             public string Disposition { get; private set; }
             public MenuInstallEvidence Menu { get; private set; }
+            public LegacyInstallEvidence Legacy { get; private set; }
             public bool BeforeExists { get; private set; }
             public string BeforeHash { get; private set; }
             public bool Exists { get; private set; }
             public string Hash { get; private set; }
-            internal StartupInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, MenuInstallEvidence menuEvidence)
+            internal StartupInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, MenuInstallEvidence menuEvidence, LegacyInstallEvidence legacyEvidence)
             {
-                InstallIdentity = Identity(install); LocationIdentity = Identity(path); Menu = menuEvidence;
+                InstallIdentity = Identity(install); LocationIdentity = Identity(path); Menu = menuEvidence; Legacy = legacyEvidence;
                 Disposition = created ? "created" : "preserved";
                 BeforeExists = before != null; BeforeHash = Digest(before);
                 Exists = after != null; Hash = Digest(after);
@@ -184,6 +186,148 @@ namespace ProGo
             } catch { return false; }
         }
 
+        public sealed class LegacyInstallEvidence
+        {
+            public int Schema { get { return 1; } }
+            public string InstallIdentity { get; private set; }
+            public string LocationIdentity { get; private set; }
+            public string Disposition { get; private set; }
+            public bool Requested { get; private set; }
+            public bool BeforeExists { get; private set; }
+            public string BeforeHash { get; private set; }
+            public string OriginIdentity { get; private set; }
+            public bool BeforeMatched { get; private set; }
+            public bool Exists { get; private set; }
+            public string Hash { get; private set; }
+            public string OwnedHash { get; private set; }
+            public string ReplacementHash { get; private set; }
+            internal LegacyInstallEvidence(string install, string path, LegacyObservation before, LegacyObservation after, bool requested, bool removed, string replacementHash)
+            {
+                InstallIdentity = Identity(install); LocationIdentity = Identity(path);
+                Disposition = removed ? "removed" : "preserved"; Requested = requested;
+                BeforeExists = before.Bytes != null; BeforeHash = Digest(before.Bytes);
+                OriginIdentity = before.Origin; BeforeMatched = before.Matched;
+                Exists = after.Bytes != null; Hash = Digest(after.Bytes);
+                OwnedHash = removed ? BeforeHash : null; ReplacementHash = replacementHash;
+            }
+        }
+
+        internal sealed class LegacyObservation
+        {
+            internal byte[] Bytes;
+            internal string Origin;
+            internal bool Matched;
+        }
+
+        private static byte[] ReadLegacyEvidenceBytes(FileStream stream)
+        {
+            if (stream.Length > 65536) throw new IOException("Legacy shortcut is too large.");
+            byte[] bytes = new byte[(int)stream.Length];
+            int offset = 0, read;
+            while (offset < bytes.Length && (read = stream.Read(bytes, offset, bytes.Length - offset)) > 0) offset += read;
+            if (offset != bytes.Length) throw new IOException("Legacy shortcut could not be read completely.");
+            return bytes;
+        }
+
+        private static string LegacyOrigin(SafeFileHandle handle)
+        {
+            LegacyFileInfo info;
+            if (!GetFileInformationByHandle(handle, out info) || (info.Attributes & 0x410) != 0)
+                throw new IOException("Legacy file identity is unavailable or linked.");
+            string value = info.Volume.ToString("X8") + info.IndexHigh.ToString("X8") + info.IndexLow.ToString("X8") +
+                info.Creation.dwHighDateTime.ToString("X8") + info.Creation.dwLowDateTime.ToString("X8");
+            return Digest(Encoding.UTF8.GetBytes(value));
+        }
+
+        private LegacyObservation ObserveLegacy(bool match)
+        {
+            string path = Path.Combine(menu, "ProGo Status.lnk"); CheckLocation(path);
+            try {
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var observation = new LegacyObservation { Bytes = ReadLegacyEvidenceBytes(stream), Origin = LegacyOrigin(stream.SafeFileHandle) };
+                    // The read witness denies changes while the original native semantic oracle reads.
+                    observation.Matched = match && Matches(path, "--show");
+                    return observation;
+                }
+            } catch (FileNotFoundException) { return new LegacyObservation(); }
+            catch (DirectoryNotFoundException) { return new LegacyObservation(); }
+        }
+
+        // DELETE access is used only for this existing file handle, never a path-based delete.
+        private void DeleteLegacyOwned(byte[] expected, string origin)
+        {
+            string path = Path.Combine(menu, "ProGo Status.lnk"); CheckLocation(path);
+            using (var handle = OpenLegacyForDisposition(path, 0x80010000u, 1, IntPtr.Zero, 3, 0x00200080u, IntPtr.Zero)) {
+                if (handle.IsInvalid) throw new IOException("Legacy deletion ownership could not be acquired.");
+                using (var stream = new FileStream(handle, FileAccess.Read)) {
+                    if (LegacyOrigin(handle) != origin || !Equal(expected, ReadLegacyEvidenceBytes(stream)))
+                        throw new IOException("Legacy shortcut changed before deletion admission. It was preserved.");
+                    var disposition = new LegacyDisposition { DeleteFile = 1 };
+                    if (!SetFileInformationByHandle(handle, 4, ref disposition, 1))
+                        throw new IOException("Owned legacy deletion was not accepted.");
+                }
+            }
+        }
+
+        private LegacyInstallEvidence MigrateLegacyWithEvidence(bool requested)
+        {
+            string path = Path.Combine(menu, "ProGo Status.lnk");
+            var before = ObserveLegacy(requested); bool removed = false; string replacement = null;
+            if (requested && before.Matched) {
+                string primary = Path.Combine(menu, "ProGo.lnk"); CheckLocation(primary);
+                // Existing install already ensured primary; pin its verified bytes until legacy deletion settles.
+                using (var stream = new FileStream(primary, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    byte[] bytes = ReadLegacyEvidenceBytes(stream);
+                    if (!Matches(primary, "--show")) throw new IOException("Main shortcut could not be verified.");
+                    replacement = Digest(bytes);
+                    DeleteLegacyOwned(before.Bytes, before.Origin);
+                    removed = true;
+                }
+            }
+            var after = ObserveLegacy(false);
+            if (removed ? after.Bytes != null : (!Equal(before.Bytes, after.Bytes) || before.Origin != after.Origin))
+                throw new IOException("Legacy completion changed. Current state was preserved.");
+            return new LegacyInstallEvidence(root, path, before, after, requested, removed, replacement);
+        }
+
+        public bool VerifyLegacyInstallEvidence(LegacyInstallEvidence evidence)
+        {
+            try {
+                if (evidence == null || evidence.Schema != 1 || evidence.InstallIdentity != Identity(root) ||
+                    evidence.LocationIdentity != Identity(Path.Combine(menu, "ProGo Status.lnk"))) return false;
+                if (evidence.Disposition == "removed") {
+                    if (!evidence.Requested || !evidence.BeforeMatched || !evidence.BeforeExists || evidence.Exists || evidence.Hash != null ||
+                        evidence.OriginIdentity == null || evidence.OriginIdentity.Length != 64 || evidence.BeforeHash == null ||
+                        evidence.OwnedHash != evidence.BeforeHash || evidence.ReplacementHash == null ||
+                        evidence.ReplacementHash != Digest(ReadMenuBytes()) || !Matches(Path.Combine(menu, "ProGo.lnk"), "--show")) return false;
+                } else if (evidence.Disposition == "preserved") {
+                    if (evidence.OwnedHash != null || evidence.ReplacementHash != null || evidence.BeforeExists != evidence.Exists ||
+                        evidence.BeforeHash != evidence.Hash) return false;
+                } else return false;
+                var current = ObserveLegacy(false);
+                return evidence.Exists == (current.Bytes != null) && evidence.Hash == Digest(current.Bytes) &&
+                    (evidence.Disposition == "removed" || evidence.OriginIdentity == current.Origin);
+            } catch { return false; }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LegacyFileInfo
+        {
+            internal uint Attributes;
+            internal System.Runtime.InteropServices.ComTypes.FILETIME Creation, Access, Write;
+            internal uint Volume, SizeHigh, SizeLow, Links, IndexHigh, IndexLow;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LegacyDisposition { internal byte DeleteFile; }
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
+        private static extern SafeFileHandle OpenLegacyForDisposition(string path, uint access, uint share, IntPtr security, uint creation, uint flags, IntPtr template);
+        [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetFileInformationByHandle(SafeFileHandle handle, out LegacyFileInfo info);
+        [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetFileInformationByHandle(SafeFileHandle handle, int kind, ref LegacyDisposition info, uint size);
+
         private static string Digest(byte[] bytes)
         {
             if (bytes == null) return null;
@@ -214,7 +358,7 @@ namespace ProGo
         public StartupInstallEvidence InstallWithStartupEvidence(bool wasInstalled, bool noStartup, bool noStartMenu)
         {
             var evidence = InstallCore(wasInstalled, noStartup, noStartMenu, true);
-            if (!VerifyStartupInstallEvidence(evidence) || !VerifyMenuInstallEvidence(evidence.Menu)) throw new IOException("Startup completion evidence changed.");
+            if (!VerifyStartupInstallEvidence(evidence) || !VerifyMenuInstallEvidence(evidence.Menu) || !VerifyLegacyInstallEvidence(evidence.Legacy)) throw new IOException("Startup completion evidence changed.");
             return evidence;
         }
 
@@ -226,8 +370,9 @@ namespace ProGo
             byte[] menuCreated = null;
             if (!noStartMenu) {
                 menuCreated = EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
-                MigrateMenu();
+                if (!captureStartup) MigrateMenu();
             }
+            var legacyEvidence = captureStartup ? MigrateLegacyWithEvidence(!noStartMenu) : null;
             // Existing links (including disabled/customized ones) are never
             // refreshed: preserve Windows' StartupApproved state and user edits.
             byte[] created = null;
@@ -242,7 +387,7 @@ namespace ProGo
                 (menuBefore != null || !Equal(menuCreated, menuAfter)))
                 throw new IOException("Menu completion could not be verified. Current state was preserved.");
             var menuEvidence = new MenuInstallEvidence(root, Path.Combine(menu, "ProGo.lnk"), menuBefore, menuAfter, menuCreated != null, !noStartMenu);
-            return new StartupInstallEvidence(root, startup, before, after, created != null, menuEvidence);
+            return new StartupInstallEvidence(root, startup, before, after, created != null, menuEvidence, legacyEvidence);
         }
 
         public bool MigrateMenu()

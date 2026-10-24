@@ -36,7 +36,7 @@ function Initialize-ProGoShortcuts {
     $FixtureState.Events.Add('shortcuts')
     if ($FixtureState.Mode -eq 'shortcut-fail') { throw 'fixture-shortcut-fail' }
     # Synthetic auxiliary adapter result; no Windows known folder or shortcut is touched.
-    if ($CaptureStartupEvidence) { return [pscustomobject]@{ Schema = 1; InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory); Disposition = 'preserved'; Exists = $false; Hash = $null; Menu = [pscustomobject]@{ Schema = 1; InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory) } } }
+    if ($CaptureStartupEvidence) { return [pscustomobject]@{ Schema = 1; InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory); Disposition = 'preserved'; Exists = $false; Hash = $null; Menu = [pscustomobject]@{ Schema = 1; InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory) }; Legacy = [pscustomobject]@{ Schema = 1; InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory) } } }
 }
 '@ | Set-Content -LiteralPath (Join-Path $PayloadScripts 'Shortcuts-ProGo.ps1') -Encoding UTF8
     $Payload = Get-ProGoInstallPayload -Directory $ReleaseDir
