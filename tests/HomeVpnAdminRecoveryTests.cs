@@ -1472,13 +1472,18 @@ namespace ProGo
                     var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root);
                     HomeVpnWizardForm wizard = null; HomeInvitationsForm friends = null; HomeProfileUiDispatcher dispatcher = null; HomeVpnPreparationForm copyWindow = null;
                     Task<string> operation = null; Task<bool> stop = null; FileStream held = null;
-                    int phase = 0, turns = 0, attempts = 0, confirmations = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, changes = 0, closedChanges = 0;
+                    int phase = 0, turns = 0, attempts = 0, confirmations = 0, refreshes = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, changes = 0, closedChanges = 0;
                     byte[] acceptedReceipt = null; string acceptedId = null;
                     string coreWork = null; bool closing = mode == "owner-dispose";
                     try {
                         if (mode == "default-refusal") service.Owner.KeyFile = At("missing-owned-revoke-key");
                         wizard = new HomeVpnWizardForm(service, clipboard);
                         friends = new HomeInvitationsForm(new[] { selected, sibling }, (action, label, id) => {
+                            if (mode == "stop-accepted" && action == "list" && label == null && id == null) {
+                                ++refreshes;
+                                check(stop != null && stop.IsCompleted && stop.Result && Calls().SequenceEqual(new[] { "revoke" }), "post-Stop Refresh reads only after accepted revoke settled");
+                                return Task.FromResult(Json.Serialize(new[] { selected, sibling }));
+                            }
                             throw new Exception("Standalone revoke cannot use legacy Admin, invite, reissue or recovery transport");
                         }, clipboard, service);
                         dispatcher = new HomeProfileUiDispatcher(friends);
@@ -1573,8 +1578,19 @@ namespace ProGo
                                     check(operation.Status == TaskStatus.RanToCompletion && operation.Result == "Access revoked." && selected.Revoked && !sibling.Revoked
                                         && rows.Selected.Id == selected.Id && Calls().SequenceEqual(new[] { "revoke" }) && attempts == (mode == "cancel-retry" ? 2 : 1),
                                         "confirmed revoke preserves accepted outcome even after Stop; explicit preparation Retry submits once: " + mode);
-                                if (mode == "complete" || mode == "cancel-retry" || mode == "stop-accepted")
+                                if (mode == "complete" || mode == "cancel-retry")
                                     check(!(bool)Field(friends, "needsRefresh") && ((Button)Field(friends, "revoke")).Enabled, "confirmed revoke restores actions with exact selected ID");
+                                if (mode == "stop-accepted") {
+                                    check(!Object.ReferenceEquals(Field(friends, "operationStop"), service.StopWork)
+                                        && (bool)Field(friends, "pendingAdmin") && (bool)Field(friends, "pendingUnreadable")
+                                        && !((Button)Field(friends, "revoke")).Enabled && !((Button)Field(friends, "create")).Enabled
+                                        && !((Button)Field(friends, "reissue")).Enabled && !((Button)Field(friends, "recover")).Enabled,
+                                        "changed Stop scope refuses stale pending publication and gates all mutations despite confirmed revoke");
+                                    ((Button)Field(friends, "revoke")).PerformClick();
+                                    check(confirmations == 1 && refreshes == 0 && Calls().SequenceEqual(new[] { "revoke" }), "post-Stop gate never replays accepted revoke");
+                                    check(((Button)Field(friends, "refresh")).Enabled, "post-Stop reconciliation remains explicitly available");
+                                    ((Button)Field(friends, "refresh")).PerformClick(); phase = 8; return false;
+                                }
                                 if (mode == "accepted-request") check((bool)Field(friends, "pendingAdmin") && !((Button)Field(friends, "revoke")).Enabled, "unrelated accepted invitation retains its existing pending gate");
                                 if (mode == "cancel-command" || mode == "cleanup-lock") {
                                     check(!selected.Revoked && !sibling.Revoked && (bool)Field(friends, "needsRefresh") && !((Button)Field(friends, "revoke")).Enabled,
@@ -1592,6 +1608,16 @@ namespace ProGo
                                 if (!stop.IsCompleted) return false;
                                 check(!stop.GetAwaiter().GetResult() && service.HasOwnedResources, "locked revoke cleanup cannot claim successful Stop");
                                 held.Dispose(); held = null; stop = service.StopAsync(); phase = 7; return false;
+                            }
+                            if (phase == 8) {
+                                if (!friends.ActionWork.IsCompleted) return false; friends.ActionWork.GetAwaiter().GetResult();
+                                check(Object.ReferenceEquals(Field(friends, "operationStop"), service.StopWork) && refreshes == 1
+                                    && !(bool)Field(friends, "pendingAdmin") && !(bool)Field(friends, "pendingUnreadable")
+                                    && !(bool)Field(friends, "needsRefresh") && ((Button)Field(friends, "revoke")).Enabled
+                                    && rows.Selected != null && rows.Selected.Id == selected.Id && rows.Selected.Revoked && !sibling.Revoked
+                                    && confirmations == 1 && Calls().SequenceEqual(new[] { "revoke" }) && operation.Result == "Access revoked.",
+                                    "explicit current-scope Refresh restores actions and exact selected revoked ID without replay or neighbor mutation");
+                                phase = 7;
                             }
                             if (stop != null && !stop.IsCompleted) return false;
                             if (mode == "cleanup-lock") check(stop.GetAwaiter().GetResult() && !Directory.Exists(coreWork) && Calls().SequenceEqual(new[] { "revoke" }), "cleanup Retry deletes only exact owned directory without replaying accepted revoke");

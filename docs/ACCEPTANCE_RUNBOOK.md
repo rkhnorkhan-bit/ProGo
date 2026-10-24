@@ -1,4 +1,32 @@
-## Текущий этап: CI655 — минимальная fixture signature correction
+## Текущий этап: CI656 — post-Stop test-contract correction
+
+PR88 OPEN/DRAFT source `3d3136be67f68f74eea2d27d161f8ec0b56ec5b9`, checkpoint `a5750bdfd922bfd41f43dc700c820493cdbc9c21` сверены;
+61 worktrees clean/locks0 перед новым isolated worktree; root sole active agent, build/git operations0.
+Full Windows [CI656](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40068891553) log самостоятельно прочитан;
+exact tested merge `7652b5f42b78aab12b6c18cbb676596e51df170a`. CS1501 устранён/harness compiled. First8 revoke scenarios PASS.
+stop-accepted: accepted result, exact selected ID/untouched sibling/one revoke/completed Stop PASS;
+затем FAIL «confirmed revoke restores actions with exact selected ID». Safe stack ModalWizardCase il155 →
+OwnedRevoke il1225 → Run il637. Separate needsRefresh/Enabled values UNKNOWN (not logged).
+Пройденные list10/initial8/repeated12/uncertainty8x2/Recover name9/consumption8x3/invite8 PASS;
+accepted-request и последующие Home VPN suites NOT_RUN. Whole CI/Home VPN не PASS.
+
+Причина доказана контрактом: StopAsync заменяет StopWork; action хранит старый operationStop.
+RefreshPendingAsync.checkScope отвергает смену reference, catch устанавливает pendingAdmin/pendingUnreadable;
+UpdateActions блокирует изменения. Нельзя включать revoke на основании stale pending snapshot даже после
+подтверждённого revoke. Accepted outcome остаётся сохранённым; Stop не откатывает его. Старый fixture
+ошибочно объединял обычный success и success после Stop. Runtime/API unchanged.
+Local code `d02f0adc7a3bce0e50fac6af04819e21cee7d5eb`: только OwnedRevoke28add/2delete. Complete/cancel-retry original assert сохранён.
+Для stop-accepted проверяются stale scope и все mutation gates/no replay; затем явный Refresh читает
+existing list callback в новом scope и доказывает исходную гарантию restoration: pending clear, actions
+restored, exact selected revoked ID/sibling preserved, one revoke. Общие original outcome/ID/cleanup/bytes
+assertions unchanged; modal15s/hold+join5s unchanged; новых функций/transport нет.
+PASS local review/static/manual signatures/diff/JSON/secretPII/public321source0release. Windows compilation/
+revised revoke10/full suites NOT_RUN locally: no Windows/.NET/pwsh. Score fixed58–80/22 +0.
+Publication TODO: one guarded source push and one automatic CI; public guards4 unchanged/release ineligible.
+Save checkpoint and STOP; next SAME new CI exact final logs/merge/revoke10/prior+remaining suites.
+Delivery/personal/production gates сохранены ниже; installation/live resources/security/release blocked.
+
+## История этапа: CI655 — минимальная fixture signature correction
 
 PR88 OPEN/DRAFT exact source `3e9971f696e2225472119c8f899170ee0ef8ec79`, checkpoint `74fbc11e69f298a8c237dd5c28aba8f1d419fbf4`
 сверены.60 worktrees clean/locks0 до нового isolated worktree; root sole active agent; git/build operations0.
@@ -16,9 +44,16 @@ Runtime/API/все assertions/timeouts/coverage/порядок теста unchan
 arity3; manual new revoke7/Admin8/WaitForOwner5/Bind2/modal3/ctor5 signatures проверены с declarations.
 PASS static review/exact one-line parity/diff/JSON/public321source0release/added secretsPII checks.
 Windows/.NET/pwsh отсутствуют: corrected compilation/revoke10/Home VPN NOT_RUN; старый PASS не переносится.
-Publication TODO: one fresh-head guarded existing PR88 source push, one automatic new CI; no blind rerun.
-Public workflow upload guards4 unchanged; release/prune ineligible. Save source/run/checkpoint and STOP.
-Next: SAME new CI final logs/exact source+tested merge/harness compile/revoke10/all relevant regressions.
+Publication PASS: source `3d3136be67f68f74eea2d27d161f8ec0b56ec5b9`, one fresh expected-head non-force PR88 update.
+Fetched exact655 parent/full tree `ced06d2049266e3e5d839e1ff052a027c9c63086` equals reviewed freeze
+`7b3ecf05dafe59c1ddab524f29dbd9a20857cff8`. Diff: one fixture line plus3 state documents;
+all runtime/API/asserts/timeouts/coverage exact baseline. ONE automatic [CI656/40068891553](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40068891553),
+exact-source count1/pull_request/attempt1, in_progress/conclusion null. Windows120797848377/Ubuntu120797848558
+in_progress. Merge ref `7652b5f42b78aab12b6c18cbb676596e51df170a` is NOT final tested merge proof.
+Corrected Windows compilation/revoke10/Home VPN suites NOT_RUN until actual final logs.
+Public guards4 unchanged/uploads OFF/final skips not yet observed; release/prune ineligible.
+Postpublication docs-only checkpoint not pushed to avoid second CI; full SHA via git log -1/PR88 body.
+STOP; next SAME CI656 final logs/exact source+tested merge/harness compile/revoke10/relevant regressions.
 Остаток transport/delivery/личной и production приёмки ниже сохранён; новую функцию здесь не начинаем.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: exact corrected
 Windows harness/revoke10 proof; no install/release/uploads/live VPS/network/ACL/credential actions.
