@@ -12,10 +12,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 # An explicit prebuilt payload never falls back to compilation or network access.
 # Read-only preflight shared by the source installer and an explicit prebuilt payload.
 # No compilation, download, installation, service, elevation or settings changes here.
-function Get-ProGoInstallPayload {
-    param([Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$Directory)
-
-    $payload = [IO.Path]::GetFullPath($Directory)
+function Get-ProGoInstallerPayloadNames {
     $required = @('ProGo.exe', 'VERSION', 'ProGo.ico', 'README.md', 'README.ru.md', 'LICENSE.md')
     $scriptFiles = @(
         'Install-ProGo.ps1', 'Uninstall-ProGo.ps1',
@@ -35,6 +32,13 @@ function Get-ProGoInstallPayload {
         'home-vpn/server/QR_LICENSE.txt'
     )
     foreach ($name in $scriptFiles) { $required += ('scripts/' + $name) }
+    return $required
+}
+function Get-ProGoInstallPayload {
+    param([Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$Directory)
+
+    $payload = [IO.Path]::GetFullPath($Directory)
+    $required = @(Get-ProGoInstallerPayloadNames)
     foreach ($name in $required) {
         if (-not (Test-Path -LiteralPath (Join-Path $payload $name) -PathType Leaf)) {
             throw "Incomplete local installer payload: $name"
@@ -276,6 +280,108 @@ function Write-ProGoInstallerRuntimeBytes($Source, $Target) {
 function Write-ProGoInstallerJournalBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
+# Terminal state is evidence of a completed install, never authorization to restore.
+function Read-ProGoInstallerJson([string]$Path) {
+    if (-not [IO.File]::Exists($Path) -or (Get-Item -LiteralPath $Path).Length -gt 1048576) { throw 'Installer outcome file is missing or oversized.' }
+    return ([IO.File]::ReadAllText($Path) | ConvertFrom-Json -ErrorAction Stop)
+}
+function Get-ProGoInstallerIdentity([string]$InstallDirectory) {
+    $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes([IO.Path]::GetFullPath($InstallDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar).ToUpperInvariant())
+    $hash = [Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($hash.ComputeHash($bytes)).Replace('-', '') } finally { $hash.Dispose() }
+}
+function Assert-ProGoInstallerSnapshotMaterial($Backup) {
+    if ($null -ne $Backup.Directory) {
+        Assert-ProGoInstallerBackupScope $Backup
+        $manifest = Assert-ProGoInstallerStagePath $Backup.Directory 'installer-snapshot.json'
+        if ((Get-FileHash -LiteralPath $manifest).Hash -cne $Backup.ManifestHash) { throw 'Installer terminal snapshot identity is invalid.' }
+        $saved = Read-ProGoInstallerJson $manifest
+        if ($saved.Schema -ne 1 -or ($saved.Files | ConvertTo-Json -Depth 6 -Compress) -cne ($Backup.Entries | ConvertTo-Json -Depth 6 -Compress)) { throw 'Installer terminal snapshot inventory is invalid.' }
+    }
+    foreach ($entry in $Backup.Entries) {
+        if (-not $entry.Exists) { continue }
+        if ($null -eq $Backup.Directory) { throw 'Installer terminal snapshot is missing.' }
+        $path = Assert-ProGoInstallerStagePath $Backup.Directory $entry.Relative
+        if ((Get-FileHash -LiteralPath $path).Hash -cne $entry.Hash) { throw 'Installer terminal snapshot bytes are invalid.' }
+    }
+}
+function Test-ProGoInstallerInstalledOutcome([string]$Directory, [string]$InstallDirectory, [string]$OutcomeLeaf = 'installed.json') {
+    try {
+        if ([IO.Path]::GetFileName($Directory) -cnotmatch '^installer-journal-[a-f0-9]{32}$' -or -not [IO.Directory]::Exists($Directory)) { return $false }
+        if ([IO.Path]::GetDirectoryName($Directory) -cne (Assert-ProGoInstallerStagePath $InstallDirectory 'backups') -or
+            $OutcomeLeaf -notin @('installed.json', 'outcome.pending.json')) { return $false }
+        $outcomePath = Assert-ProGoInstallerStagePath $Directory $OutcomeLeaf
+        $outcome = Read-ProGoInstallerJson $outcomePath
+        if ($outcome.Schema -ne 1 -or $outcome.Phase -cne 'installed' -or
+            $outcome.Identity -cne (Get-ProGoInstallerIdentity $InstallDirectory) -or
+            $outcome.Journal -cne [IO.Path]::GetFileName($Directory)) { return $false }
+        $inventory = $outcome.Inventory | ConvertFrom-Json -ErrorAction Stop
+        if ($inventory.Schema -ne 1) { return $false }
+        $allowed = @(Get-ProGoInstallerPayloadNames | Where-Object { $_ -notin @('README.md', 'README.ru.md', 'LICENSE.md') })
+        $entries = @($inventory.Files); $records = @($outcome.Records)
+        if ($entries.Count -ne $allowed.Count -or $records.Count -ne $entries.Count -or
+            @(Get-ChildItem -LiteralPath $Directory -Force).Count -ne ($records.Count + 1)) { return $false }
+        $seen = @{}; $admitted = @{}
+        foreach ($entry in $entries) {
+            if ($entry.Relative -cnotin $allowed -or $seen.ContainsKey($entry.Relative) -or
+                $entry.Exists -isnot [bool] -or $entry.NewHash -cnotmatch '^[A-F0-9]{64}$') { return $false }
+            if (($entry.Exists -and $entry.Hash -cnotmatch '^[A-F0-9]{64}$') -or (-not $entry.Exists -and $null -ne $entry.Hash)) { return $false }
+            $seen[$entry.Relative] = $entry
+        }
+        $snapshot = $null
+        if ($null -ne $outcome.Snapshot) {
+            if ($outcome.Snapshot -cnotmatch '^installer-[a-f0-9]{32}$') { return $false }
+            $snapshot = Assert-ProGoInstallerStagePath (Join-Path $InstallDirectory 'backups') $outcome.Snapshot
+        }
+        if ($null -eq $snapshot -and $null -ne $inventory.SnapshotHash) { return $false }
+        $backup = [pscustomobject]@{ InstallDirectory = $InstallDirectory; Directory = $snapshot; ManifestHash = $inventory.SnapshotHash; Entries = $entries }
+        Assert-ProGoInstallerSnapshotMaterial $backup
+        for ($index = 0; $index -lt $records.Count; $index++) {
+            $proof = $records[$index]; $name = ('admit-{0:D6}.json' -f $index)
+            if ($proof.Name -cne $name -or $proof.Hash -cnotmatch '^[A-F0-9]{64}$') { return $false }
+            $path = Assert-ProGoInstallerStagePath $Directory $name
+            if ((Get-FileHash -LiteralPath $path).Hash -cne $proof.Hash) { return $false }
+            $record = Read-ProGoInstallerJson $path
+            if ($record.Schema -ne 1 -or $record.Phase -cne 'admitted' -or $record.Sequence -ne $index -or
+                $record.Inventory -cne $outcome.Inventory -or -not $seen.ContainsKey($record.Entry.Relative) -or
+                $admitted.ContainsKey($record.Entry.Relative) -or
+                ($record.Entry | ConvertTo-Json -Compress) -cne ($seen[$record.Entry.Relative] | ConvertTo-Json -Compress)) { return $false }
+            $admitted[$record.Entry.Relative] = $true
+        }
+        return $true
+    } catch { return $false }
+}
+function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes) {
+    Assert-ProGoInstallerJournal $Backup.Journal $Backup
+    Assert-ProGoInstallerSnapshotMaterial $Backup
+    Assert-ProGoInstallerRuntime $Backup
+    if ($Writes.Count -ne $Backup.Entries.Count -or $Backup.Journal.Records.Count -ne $Writes.Count) { throw 'Installer terminal ownership is incomplete.' }
+    foreach ($entry in $Backup.Entries) {
+        $owned = @($Writes | Where-Object { $_.Relative -ceq $entry.Relative })
+        if ($owned.Count -ne 1 -or $owned[0].OwnedHash -cne $entry.NewHash) { throw 'Installer terminal owned bytes are invalid.' }
+    }
+    $proofs = @($Backup.Journal.Records | ForEach-Object {
+        [pscustomobject]@{ Name = $_.Name; Hash = (Get-FileHash -LiteralPath (Assert-ProGoInstallerStagePath $Backup.Journal.Directory $_.Name)).Hash }
+    })
+    $text = ([pscustomobject]@{ Schema = 1; Phase = 'installed'; Identity = (Get-ProGoInstallerIdentity $Backup.InstallDirectory);
+        Journal = [IO.Path]::GetFileName($Backup.Journal.Directory); Snapshot = $(if ($null -eq $Backup.Directory) { $null } else { [IO.Path]::GetFileName($Backup.Directory) });
+        Inventory = $Backup.Journal.Inventory; Records = $proofs } | ConvertTo-Json -Depth 8 -Compress)
+    $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
+    $path = Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'outcome.pending.json'
+    $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 4096, [IO.FileOptions]::WriteThrough)
+    try {
+        Write-ProGoInstallerOutcomeBytes $stream $bytes
+        $stream.Flush($true); $stream.Position = 0
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false)), $false, 4096, $true)
+        try { if ($reader.ReadToEnd() -cne $text) { throw 'Installer terminal outcome readback is invalid.' } } finally { $reader.Dispose() }
+    } finally { $stream.Dispose() }
+    if (-not (Test-ProGoInstallerInstalledOutcome $Backup.Journal.Directory $Backup.InstallDirectory 'outcome.pending.json')) { throw 'Installer terminal outcome is not verified.' }
+    # Atomic publication is the terminal boundary; no fallible post-publish validation.
+    [IO.File]::Move($path, (Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'installed.json'))
+}
+function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
+    $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
+}
 # An intent is not a terminal outcome or post-crash ownership proof.
 # Until durable terminal outcomes exist, every previous installer journal is pending.
 function Assert-ProGoInstallerNoPendingJournal([string]$InstallDirectory) {
@@ -286,6 +392,7 @@ function Assert-ProGoInstallerNoPendingJournal([string]$InstallDirectory) {
         if (-not $item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase)) { continue }
         # Includes malformed names, files and empty/unknown records: none authorize a write.
         [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        if (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) { continue }
         throw 'Installer pending journal requires verified recovery before a new installation.'
     }
 }
@@ -522,6 +629,7 @@ try {
 
     Confirm-ProGoInstallerSelfCheck $InstallBackup $InstallStage
     Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut)
+    Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites
 
 } catch {
     $installFailure = $_

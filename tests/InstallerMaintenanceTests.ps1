@@ -49,7 +49,7 @@ function Initialize-ProGoShortcuts {
         [IO.File]::WriteAllText($data, 'synthetic-user-data-unchanged')
         $before = [IO.File]::ReadAllBytes($data)
         $oldRuntime = Join-Path $case 'ProGo\ProGo.exe'
-        if ($Mode -in @('backup-fail', 'self-check-fail', 'bad-restore', 'rollback-fail', 'snapshot-corrupt')) { [IO.File]::WriteAllText($oldRuntime, 'synthetic prior runtime') }
+        if ($Mode -in @('backup-fail', 'self-check-fail', 'bad-restore', 'rollback-fail', 'snapshot-corrupt', 'terminal-fail', 'terminal-after-write-fail')) { [IO.File]::WriteAllText($oldRuntime, 'synthetic prior runtime') }
         $FixtureState = @{ Mode = $Mode; LeaseHeld = $false; Stopped = $false; Disposes = 0; Copies = 0; CopyFaults = 0; SuccessMessage = $false; SelfChecks = 0; PriorVerified = $null; RollbackVerified = $null; Events = (New-Object 'System.Collections.Generic.List[string]') }
         function Enter-ProGoInstallerMaintenance {
             $FixtureState.Events.Add('enter')
@@ -107,6 +107,11 @@ function Initialize-ProGoShortcuts {
             if ($Mode -eq 'rollback-fail') { [IO.File]::WriteAllText($Destination, 'synthetic wrong restored bytes'); return }
             [IO.File]::Copy($Source, $Destination, $true)
         }
+        function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
+            if ($FixtureState.Mode -eq 'terminal-fail') { throw 'fixture-terminal-fail' }
+            $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
+            if ($FixtureState.Mode -eq 'terminal-after-write-fail') { throw 'fixture-terminal-after-write-fail' }
+        }
         function Start-Process {
             param($FilePath, $WorkingDirectory, $ArgumentList)
             if ($FixtureState.LeaseHeld -or $FixtureState.Disposes -ne 1) { throw 'Launch preceded release.' }
@@ -154,7 +159,7 @@ function Initialize-ProGoShortcuts {
             }
         } else {
             Check-InstallerOwner ($FixtureState.Disposes -eq 1 -and $FixtureState.Events[0] -eq 'enter' -and $FixtureState.Events[1] -eq 'stop' -and $FixtureState.Copies -gt 0) 'copy lifecycle ordering'
-            Check-InstallerOwner ($caught -eq ($Mode -in @('copy-fail', 'shortcut-fail', 'launch-fail', 'self-check-fail', 'partial-copy', 'bad-restore', 'rollback-fail', 'snapshot-corrupt'))) ($Mode + ' propagates failure')
+            Check-InstallerOwner ($caught -eq ($Mode -in @('copy-fail', 'shortcut-fail', 'launch-fail', 'self-check-fail', 'partial-copy', 'bad-restore', 'rollback-fail', 'snapshot-corrupt', 'terminal-fail', 'terminal-after-write-fail'))) ($Mode + ' propagates failure')
             if ($Mode -eq 'launch' -or $Mode -eq 'launch-fail') {
                 Check-InstallerOwner ($FixtureState.Events[$FixtureState.Events.Count - 2] -eq 'dispose' -and $FixtureState.Events[$FixtureState.Events.Count - 1] -eq 'launch') 'launch after release'
             } else { Check-InstallerOwner ($FixtureState.Events[$FixtureState.Events.Count - 1] -eq 'dispose') 'final release' }
@@ -173,11 +178,16 @@ function Initialize-ProGoShortcuts {
             } else { Check-InstallerOwner ($FixtureState.SelfChecks -eq 1) 'one owned self-check attempt' }
             if ($Mode -eq 'bad-restore') { Check-InstallerOwner ([IO.File]::ReadAllText($oldRuntime) -ceq 'synthetic failed restoration') 'changed ownership left untouched' }
         }
+        if ($Mode -in @('terminal-fail', 'terminal-after-write-fail')) {
+            Check-InstallerOwner ($caught -and $FixtureState.PriorVerified -eq $true -and $FixtureState.RollbackVerified -eq $true -and
+                [IO.File]::ReadAllText($oldRuntime) -ceq 'synthetic prior runtime' -and -not $FixtureState.Events.Contains('launch')) 'terminal persistence failure rolls back exactly and blocks Launch'
+            Check-InstallerOwner (@(Get-ChildItem -LiteralPath (Join-Path $case 'ProGo\backups') -Recurse -Filter 'installed.json').Count -eq 0) 'terminal failure never publishes installed outcome'
+        }
         Check-InstallerOwner ($FixtureState.SuccessMessage -eq ($Mode -in @('complete', 'launch', 'launch-fail'))) ($Mode + ' never reports install success before admitted copies/shortcuts')
         Microsoft.PowerShell.Utility\Write-Host ('PASS: installer maintenance ' + $Mode)
     }
-    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop', 'stage-changed', 'backup-fail', 'self-check-fail', 'partial-copy', 'bad-restore', 'rollback-fail', 'snapshot-corrupt')) { Run-InstallerOwnerCase $mode }
-    Write-Host 'Installer maintenance tests PASS: 15'
+    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop', 'stage-changed', 'backup-fail', 'self-check-fail', 'partial-copy', 'bad-restore', 'rollback-fail', 'snapshot-corrupt', 'terminal-fail', 'terminal-after-write-fail')) { Run-InstallerOwnerCase $mode }
+    Write-Host 'Installer maintenance tests PASS: 17'
 } finally {
     $env:LOCALAPPDATA = $oldLocal
     if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }

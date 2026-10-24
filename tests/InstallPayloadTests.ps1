@@ -9,6 +9,11 @@ $resolver = @($ast.FindAll({ param($node)
     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-ProGoInstallPayload'
 }, $false))
 if ($resolver.Count -ne 1) { throw 'Installer resolver is ambiguous.' }
+$inventoryNames = @($ast.FindAll({ param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-ProGoInstallerPayloadNames'
+}, $false))
+if ($inventoryNames.Count -ne 1) { throw 'Installer inventory helper is ambiguous.' }
+. ([scriptblock]::Create($inventoryNames[0].Extent.Text))
 . ([scriptblock]::Create($resolver[0].Extent.Text))
 $work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-install-payload-' + [Guid]::NewGuid().ToString('N'))
 function Check-Payload($Condition, $Name) {
