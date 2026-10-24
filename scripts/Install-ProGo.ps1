@@ -406,7 +406,7 @@ function Complete-ProGoInstallerRollbackOutcome($Backup, $Writes) {
 function Write-ProGoInstallerRollbackOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
-function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes) {
+function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$CompletedPhases = @()) {
     Assert-ProGoInstallerJournal $Backup.Journal $Backup
     Assert-ProGoInstallerSnapshotMaterial $Backup
     Assert-ProGoInstallerRuntime $Backup
@@ -420,7 +420,10 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes) {
     })
     $text = ([pscustomobject]@{ Schema = 1; Phase = 'installed'; Identity = (Get-ProGoInstallerIdentity $Backup.InstallDirectory);
         Journal = [IO.Path]::GetFileName($Backup.Journal.Directory); Snapshot = $(if ($null -eq $Backup.Directory) { $null } else { [IO.Path]::GetFileName($Backup.Directory) });
-        Inventory = $Backup.Journal.Inventory; Records = $proofs } | ConvertTo-Json -Depth 8 -Compress)
+        Inventory = $Backup.Journal.Inventory; Records = $proofs;
+        Completion = [pscustomobject]@{ Schema = 1; Phases = @($CompletedPhases); Ownership = @($Writes | ForEach-Object {
+            [pscustomobject]@{ Relative = $_.Relative; OwnedHash = $_.OwnedHash }
+        }) } } | ConvertTo-Json -Depth 8 -Compress)
     $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
     $path = Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'outcome.pending.json'
     $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 4096, [IO.FileOptions]::WriteThrough)
@@ -431,8 +434,36 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes) {
         try { if ($reader.ReadToEnd() -cne $text) { throw 'Installer terminal outcome readback is invalid.' } } finally { $reader.Dispose() }
     } finally { $stream.Dispose() }
     if (-not (Test-ProGoInstallerInstalledOutcome $Backup.Journal.Directory $Backup.InstallDirectory 'outcome.pending.json')) { throw 'Installer terminal outcome is not verified.' }
+    if ($CompletedPhases.Count -gt 0 -and -not (Test-ProGoInstallerPendingInstalledProof $Backup.Journal.Directory $Backup.InstallDirectory)) { throw 'Installer completion phase proof is not verified.' }
     # Atomic publication is the terminal boundary; no fallible post-publish validation.
     [IO.File]::Move($path, (Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'installed.json'))
+}
+# Read-only prerequisite, NOT authorization to rename pending metadata or restore runtime.
+function Test-ProGoInstallerPendingInstalledProof([string]$Directory, [string]$InstallDirectory) {
+    try {
+        if (-not (Test-ProGoInstallerInstalledOutcome $Directory $InstallDirectory 'outcome.pending.json')) { return $false }
+        $saved = Read-ProGoInstallerJson (Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json')
+        $completion = $saved.Completion
+        if ($completion.Schema -ne 1 -or @($completion.Phases).Count -ne 2 -or
+            $completion.Phases[0] -cne 'self-check' -or $completion.Phases[1] -cne 'shortcuts') { return $false }
+        $inventory = $saved.Inventory | ConvertFrom-Json -ErrorAction Stop
+        $entries = @($inventory.Files); $owners = @($completion.Ownership)
+        if ($owners.Count -ne $entries.Count) { return $false }
+        $seen = @{}
+        foreach ($owner in $owners) {
+            $entry = @($entries | Where-Object { $_.Relative -ceq $owner.Relative })
+            if ($seen.ContainsKey($owner.Relative) -or $entry.Count -ne 1 -or $owner.OwnedHash -cne $entry[0].NewHash) { return $false }
+            $seen[$owner.Relative] = $true
+        }
+        $snapshot = if ($null -eq $saved.Snapshot) { $null } else {
+            Assert-ProGoInstallerStagePath (Assert-ProGoInstallerStagePath $InstallDirectory 'backups') $saved.Snapshot
+        }
+        $backup = [pscustomobject]@{ InstallDirectory = $InstallDirectory; Directory = $snapshot;
+            ManifestHash = $inventory.SnapshotHash; Entries = $entries }
+        Assert-ProGoInstallerSnapshotMaterial $backup
+        Assert-ProGoInstallerRuntime $backup
+        return $true
+    } catch { return $false }
 }
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
@@ -722,7 +753,7 @@ try {
 
     Confirm-ProGoInstallerSelfCheck $InstallBackup $InstallStage
     Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut)
-    Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites
+    Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites -CompletedPhases @('self-check', 'shortcuts')
 
 } catch {
     $installFailure = $_
