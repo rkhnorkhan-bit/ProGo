@@ -17,13 +17,20 @@ Shape:
   "SshProfile": "my-vps",
   "AutoStartSocks": false,
   "AutoRestartSocks": true,
-  "AutoApplyProxy": false,
+  "AutoCliProxy": false,
   "ClipboardClearSeconds": 30,
   "TestEndpoint": "https://api.openai.com/v1/models"
 }
 ```
 
 Do not store SSH passwords, private keys, API keys, or production secrets in settings.
+
+`AutoCliProxy` is the single automatic option for terminals and ordinary Codex
+launches. When this field is absent, load migrates the old `AutoApplyProxy` and
+`AutoCodexProxy` fields using logical OR. When it is present, its explicit value
+wins over either legacy field. Save writes only `AutoCliProxy`; the legacy fields
+are not retained, so a saved off cannot become on again after reloading. Clone
+retains the canonical value. Windows proxy automation is independent.
 
 `AutoRestartSocks` defaults to `true` when omitted by an older settings file.
 An explicit `false` is preserved. Recovery only follows a SOCKS start requested

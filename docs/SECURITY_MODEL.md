@@ -37,20 +37,26 @@ Logs may contain startup, shutdown, proxy lifecycle, PID, port, route status, va
 
 Logs must not contain PINs, secrets, API keys, tokens, Authorization headers, decrypted vault data, or clipboard values.
 
-## Current decoy-style behavior
+## Current PIN and daily alternate data policy
 
-When the vault cannot be decrypted with the entered PIN, the UI opens a stable local sample dataset for that PIN instead of showing a PIN error. This is a usability and disclosure-reduction mechanism, not a proven cryptographic plausible-deniability design.
+The approved F09 contract is defined in [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md#f09--настоящий-и-временный-ложный-pin).
+One permanent four-digit PIN opens the real vault. The first correctly formatted
+incorrect PIN of the local Windows day becomes that day's only alternate PIN.
+Repeating it opens the same separately persisted alternate data; other incorrect
+PINs show «Неверный пин-код». Opening the real vault does not reset the daily PIN.
+The daily state survives restart and expires at the local day boundary, locking
+an open session and removing expired alternate data before another open.
 
-This behavior must not be disclosed through UI, tooltip, or logs.
+Real and daily data use separate atomic storage. Background I/O and KDF failures
+must not appear as successful opening or saving. A MAC mismatch in an otherwise
+valid real envelope cannot reliably distinguish an incorrect PIN from tampering.
+No PIN, vault contents or daily-session identity is written to logs. This is not
+a proven cryptographic plausible-deniability design.
 
-## Future duress vault design
-
-A stronger future design would use two independent credentials:
-
-- real credential -> real encrypted vault;
-- duress credential -> independent encrypted vault.
-
-That change requires separate approval because it changes credential semantics and vault format.
+The earlier sample-for-every-incorrect-PIN behavior and proposed two permanent
+credentials are historical descriptions, superseded by the approved daily policy.
+They are not implementation instructions. Code/CI/package/device acceptance remain
+separate in [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## SSH boundaries
 

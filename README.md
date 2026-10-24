@@ -1,6 +1,6 @@
-# ProGo 0.2.1
+# ProGo 0.2.2
 
-A lightweight native Windows app for SSH proxy connections, a home-entry iPhone VPN,
+A lightweight native Windows app for SSH proxy connections, a home-entry iPhone/Android VPN,
 and an encrypted local vault. Russian interface, no telemetry, no vendor-operated backend.
 
 **[Инструкция на русском](https://github.com/rkhnorkhan-bit/ProGo/blob/main/README.ru.md)** ·
@@ -13,19 +13,19 @@ connections, application ports, vault preferences and diagnostics. All applicati
 native dark theme, keyboard controls and multi-resolution icon. Windows native security
 and file dialogs retain their standard appearance. No embedded browser or VM is required.
 
-## Four independent automatic options
+## Three automatic options
 
 | Option in Settings | Behavior |
 | --- | --- |
 | Восстанавливать подключение при обрыве | Recovers an owned SSH/SOCKS connection after failure. Manual stop cancels retries. Applies to the home VPN channel too. |
-| Включать прокси для командной строки | Applies proxy environment variables for newly launched terminals when the connection is ready. |
+| Включать прокси для терминалов и Codex | Applies one shared current-user proxy environment for newly opened terminals and normal Codex launches when the connection is ready. No special shortcut is required. |
 | Включать прокси для приложений Windows | Applies current-user Windows HTTP/HTTPS proxy settings when ready. |
-| Включать прокси для обычного запуска Codex | Prepares current-user HTTP proxy variables for normal Codex launches. No special shortcut is required. |
 
 Unchecked means manual control; adjacent buttons remain available. Unchecking does not
 silently undo a manually active feature. Manual off suppresses pending automation for
 that session. The next launch or an explicit preference off/on re-arms it. Existing
-preferences migrate; new Windows/Codex automation defaults to off. CLI installation
+preferences migrate: either old terminal or Codex switch enables the unified option.
+An explicit new off remains off. New installations default to manual CLI control. CLI installation
 itself is separate. **Подключаться к серверу при запуске ProGo** remains a separate setting.
 
 Proxy-aware Windows apps and terminal programs use a shared loopback HTTP endpoint, which
@@ -46,10 +46,11 @@ Restart already open terminals and Codex after changing it.
 
 ## Home VPN
 
-Open **iPhone через домашний ПК…**. Choose an existing VPS token or add an Ubuntu VPS
+Open **VPN для телефона…**. Choose an existing VPS token or add an Ubuntu VPS
 with SSH. The wizard provisions the VPN service, shows router forwarding rules,
 offers a temporary QR link for iPhone and Android strongSwan profiles, and reports
-transport counters. QR delivery needs a dedicated HTTPS domain on the VPS, configured
+transport counters. Confirm installation manually; packet counters do not prove
+phone authorization or internet. Verify the mobile-data route and VPS exit IP. QR delivery needs a dedicated HTTPS domain on the VPS, configured
 once by its owner. File export remains available. Owners can issue and revoke separate
 invitations. The **Исправить выход VPN в интернет** action repairs the known conflict
 with the older ProGo IPv4 forwarding policy. [Setup and limits](https://github.com/rkhnorkhan-bit/ProGo/blob/main/docs/HOME_IKEV2.md).
@@ -57,6 +58,19 @@ with the older ProGo IPv4 forwarding policy. [Setup and limits](https://github.c
 0.2.0 fixes iOS rejecting profiles with `Invalid DH group (0)`. Export a new profile
 from the wizard and reinstall it; the server does not require reprovisioning.
 The home route remains experimental and must be verified with the actual phone/provider.
+
+Profile delivery currently uses QR, a copied temporary link, or an iPhone file.
+ProGo does not send email, collect payments, or enforce subscription expiry and
+traffic quotas. Router forwarding is configured manually. The
+future email, access-management and billing stages require separate product
+decisions before implementation.
+
+## Help
+
+**Помощь** on the dashboard or **Помощь и журналы → Открыть помощь…** in the tray
+opens connection, Codex/terminals, ports, phone, restore and antivirus topics.
+**Открыть Codex CLI с прокси** is an optional scoped launch; ordinary `codex` works
+after **Запустить CLI** and a full restart of existing terminals/IDE processes.
 
 ## Updates and antivirus
 
@@ -66,14 +80,32 @@ digest before extraction. Archive paths and staging are checked before replaceme
 backup and rollback are retained. Settings, vault data and VPN credentials are preserved.
 The first upgrade from an older release still uses that release's package validation.
 
+Backup restoration defaults to program files. Replacing `settings.json` and
+`vault.enc.json` requires a separate choice and confirmation. Current VPN access and
+proxy ownership journals are preserved in every restore scope and failed-update
+rollback. Persistent encrypted VPN files and previous proxy snapshots are also
+archived, with no automatic import. Windows DPAPI is tied to the user account;
+this is not a portable VPN export for another PC. Each copy's `manifest.txt`
+lists its actual composition and restoration limits.
+
+For a separate portable Home VPN archive, use **Резервные копии → Экспорт VPN
+на другой ПК…** and set an independent password of at least 16 Unicode characters
+(at most 1024 UTF-8 bytes). **Импорт защищённого VPN…** first shows the verified
+composition and pending requests; a separate import action writes a clean installation
+without replacing existing VPN data or activating a connection. Restart ProGo to load
+the imported access, then choose the owner's SSH key locally. This preserves the original
+VPS; configure a different VPS through the wizard with new access. External `.ssh` keys,
+vault and Windows proxy journals are excluded. Export copies access and does not revoke
+the original. See [portable VPN details](docs/F22_PORTABLE_HOME_STAGE.md); cross-user/PC
+verification remains pending.
+
 The updater no longer downloads/evaluates PowerShell text in memory or compiles
 remote source as a fallback. It respects execution policy. Missing digests and failed
 validation cancel the update rather than weakening checks. No antivirus exclusions,
 security disabling or detection-evasion behavior is included.
 
 The executable is currently **unsigned**. SHA-256 is an integrity check, not an
-Authenticode publisher signature or antivirus approval. Use **Помощь и журналы →
-Антивирус и обновления…** to reach logs, the official release, and Kaspersky OpenTIP.
+Authenticode publisher signature or antivirus approval. Use **Помощь и журналы → Открыть помощь… → Антивирус** to reach logs, the official release, and Kaspersky OpenTIP.
 Record the exact detection name before assuming a false positive.
 
 If an older updater is blocked, use the official release via a browser after resolving

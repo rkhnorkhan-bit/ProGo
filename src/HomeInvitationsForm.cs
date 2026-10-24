@@ -1,0 +1,376 @@
+using System;
+using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web.Script.Serialization;
+using System.Windows.Forms;
+
+namespace ProGo
+{
+    internal sealed class HomeInvitationsForm : ProGoForm
+    {
+        private readonly OwnerUiDispatcher ownerUi = new OwnerUiDispatcher();
+        private readonly HomeInvitationList list;
+        private readonly TextBox name = new TextBox { Width = 740, Text = "Друг", MaxLength = 80, AccessibleName = "Имя нового приглашения" };
+        private readonly Button create = new Button { AutoSize = true, Text = "Создать отдельный токен" };
+        private readonly Button revoke = new Button { AutoSize = true, Text = "Отозвать выбранный доступ" };
+        private readonly Button reissue = new Button { AutoSize = true, Text = "Перевыпустить потерянный токен" };
+        private readonly Button refresh = new Button { AutoSize = true, Text = "Обновить список" };
+        private readonly Button recover = new Button { AutoSize = true, Text = "Проверить прежнюю выдачу" };
+        private readonly Button close = new Button { AutoSize = true, Text = "Закрыть", MinimumSize = new Size(230, 38), DialogResult = DialogResult.Cancel };
+        private readonly Label status = new Label { AutoSize = true, MaximumSize = new Size(740, 0), AccessibleName = "Результат операции с доступом" };
+        private readonly Func<string, string, string, Task<string>> admin;
+        private readonly HomeVpnService pendingService;
+        private readonly Action beforePendingRead;
+        private Task<bool> operationStop;
+        private int pendingReadVersion;
+        internal Task ActionWork { get; private set; }
+        private volatile bool working;
+        private bool needsRefresh;
+        private bool pendingAdmin, pendingUnreadable;
+        private string pendingRequestName;
+        internal Func<string, Task<string>> RevokeSelected;
+        internal Func<string, string, string, Task<string>> ReissueAdmin;
+        internal Func<string, bool> Confirm;
+        internal Action<string> ShowToken;
+        private CancellationTokenSource initialPendingCancellation;
+        private bool pendingReadActive, closeAfterPending;
+        internal Task InitializationWork { get; private set; }
+        internal Task PendingReadWork { get; private set; }
+        internal Task ConsumptionWork { get; private set; }
+        internal Action<string> BeforeConsumeIo;
+        private CancellationTokenSource consumptionCancellation;
+        private volatile bool consumptionAllowed;
+        private bool consumptionActive;
+
+        internal HomeInvitationsForm(HomeVpnInvitation[] items, Func<string, string, string, Task<string>> admin, ClipboardService clipboard, HomeVpnService service = null, Action beforePendingRead = null)
+        {
+            this.admin = admin; pendingService = service; this.beforePendingRead = beforePendingRead;
+            RevokeSelected = id => admin("revoke", null, id); ReissueAdmin = admin;
+            Text = "Доступ друзей"; ClientSize = new Size(800, 760); StartPosition = FormStartPosition.CenterParent;
+            var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+            list = new HomeInvitationList(items) { Width = 740, Height = 365 };
+            panel.Controls.Add(list);
+            panel.Controls.Add(new Label { AutoSize = true, Text = "Имя для нового приглашения (перевыпуск сохраняет имя выбранного друга)" });
+            name.AccessibleDescription = "Имя для отдельного нового приглашения. Перевыпуск сохраняет имя выбранного друга, а не этот текст.";
+            create.AccessibleDescription = "Создаёт отдельное приглашение на VPS и показывает новый личный токен. Другие доступы сохраняются.";
+            reissue.AccessibleDescription = "После подтверждения отзывает выбранный ID и выдаёт новый токен с тем же именем. Старый доступ не восстанавливается при ошибке выдачи.";
+            refresh.AccessibleDescription = "Получает текущий список с VPS. Не снимает блокировку сохранённого запроса выдачи. Не создаёт и не отзывает приглашения.";
+            recover.AccessibleDescription = "Проверяет сохранённый запрос выдачи и получает тот же токен. Не создаёт новый доступ, не повторяет отзыв и не восстанавливает отозванный токен.";
+            close.AccessibleDescription = "Закрывает окно без изменения доступа друзей. Пока операция выполняется, закрытие недоступно.";
+            status.AccessibleDescription = status.Text; status.TextChanged += delegate { status.AccessibleDescription = status.Text; };
+            close.Click += delegate { Close(); }; CancelButton = close;
+            panel.Controls.Add(name); panel.Controls.Add(create); panel.Controls.Add(revoke); panel.Controls.Add(reissue); panel.Controls.Add(refresh); panel.Controls.Add(recover);
+            foreach (Control input in new Control[] { list, name, create, revoke, reissue, refresh, recover }) {
+                var target = input; target.Enter += delegate { panel.ScrollControlIntoView(target); };
+            }
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false, FlowDirection = FlowDirection.TopDown,
+                Padding = new Padding(16, 0, 16, 12), Margin = Padding.Empty };
+            footer.Controls.Add(status); footer.Controls.Add(close); layout.Controls.Add(panel, 0, 0); layout.Controls.Add(footer, 0, 1); Controls.Add(layout);
+            Confirm = text => MessageBox.Show(this, text, "Изменение доступа", MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            ShowToken = token => {
+                using (var dialog = HomeInvitationList.TokenDialog(token, clipboard)) {
+                    bool intentional = false;
+                    dialog.FormClosing += delegate(object sender, FormClosingEventArgs e) { if (!e.Cancel && e.CloseReason == CloseReason.UserClosing) intentional = true; };
+                    dialog.ShowDialog(this);
+                    if (!intentional) throw new HomeVpnAdminPendingException("Передача токена не завершена. Запрос сохранён; можно проверить прежнюю выдачу без нового доступа.");
+                }
+            };
+            list.SelectionChanged += delegate { UpdateActions(); };
+            FormClosing += delegate(object sender, FormClosingEventArgs e) {
+                if (!working) return;
+                e.Cancel = true;
+                if (pendingReadActive || consumptionActive) {
+                    DialogResult = DialogResult.None; closeAfterPending = true;
+                    CancelPendingRead(); CancelConsumption();
+                }
+            };
+            refresh.Click += async delegate { await RunAsync(RefreshAsync); };
+            recover.Click += async delegate { await RunAsync(RecoverAsync); };
+            create.Click += async delegate { await RunAsync(CreateAsync); };
+            revoke.Click += async delegate {
+                var selected = list.Selected;
+                if (selected == null || needsRefresh || pendingAdmin || working) return;
+                if (!Confirm(Identity(selected) + "\r\nОтозвать этот доступ? Его соединения будут закрыты.")) return;
+                await RunAsync(async delegate {
+                    try {
+                        if (await ownerUi.Await(RevokeSelected(selected.Id)) != "Access revoked.") throw new InvalidOperationException();
+                        if (ownerUi.Closed || IsDisposed || Disposing) return;
+                        selected.Revoked = true; list.RefreshSelection(); status.Text = "Выбранный доступ отозван."; }
+                    catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }
+                    catch (HomeVpnOwnerUnconfirmedException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message + " Обновите список и выберите тот же ID для явного повторного отзыва; запись «Отозван» ещё не подтверждает завершение всех его действий."); }
+                    catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Завершение отзыва не подтверждено. Обновите список. Если статус уже «Отозван», выберите запись и нажмите «Повторить отзыв», чтобы завершить операцию без выдачи нового токена."); }
+                });
+            };
+            reissue.Click += async delegate {
+                var selected = list.Selected;
+                if (selected == null || needsRefresh || pendingAdmin || working) return;
+                // Snapshot identity before awaiting. The editable new-invitation name
+                // must never redirect a selected friend's reissue.
+                var id = selected.Id; var label = selected.Name;
+                if (!Confirm(Identity(selected) + "\r\nСтарый токен перестанет работать; соединения этого доступа будут закрыты. Затем будет создан новый токен с тем же именем. Другу потребуется заменить токен в ProGo и заново установить профиль телефона. Остальные приглашения не изменятся.\r\nЕсли выдача не завершится, старый доступ не восстановится. Продолжить?")) return;
+                await RunAsync(async delegate {
+                    var result = await ownerUi.Await(HomeInvitationReissue.RunAsync(id, label, ReissueAdmin, value => ownerUi.PostUpdate(delegate { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = value; })));
+                    if (ownerUi.Closed || IsDisposed || Disposing) return;
+                    status.Text = result.Message;
+                    if (result.State != InvitationReissueState.RevokeUnconfirmed) selected.Revoked = true;
+                    list.RefreshSelection();
+                    if (result.State == InvitationReissueState.Complete) {
+                        if (!RecoveryConsumptionScope(operationStop)) { RequireRefresh(HomeVpnAdminRecovery.PendingMessage); return; }
+                        list.Add(result.Replacement); ShowToken(result.Token);
+                        if (ownerUi.Closed || IsDisposed || Disposing) return;
+                        bool consumed = await ownerUi.Await(ConsumeRecoveredAsync(result.Token));
+                        if (ownerUi.Closed || IsDisposed || Disposing) return;
+                        if (!consumed) RequireRefresh("Завершение перевыпуска не подтверждено. Проверьте сохранённый запрос без нового отзыва или приглашения.");
+                        else if (closeAfterPending || !RecoveryConsumptionScope(operationStop))
+                            RequireRefresh("Запрос перевыпуска уже завершён. Продолжение отменено; обновите список явно.");
+                    } else if (result.State == InvitationReissueState.IssueUnconfirmed) {
+                        bool known = await ownerUi.Await(RefreshPendingAsync(operationStop));
+                        if (ownerUi.Closed || IsDisposed || Disposing) return;
+                        if (!known) RequireRefresh("Старый доступ отозван; выдача замены не подтверждена. " + status.Text);
+                        else if (pendingAdmin) {
+                            SetPendingStatus();
+                            RequireRefresh("Старый доступ отозван; выдача замены не подтверждена. " + status.Text);
+                        } else RequireRefresh(result.Message);
+                    } else RequireRefresh(result.Message);
+                });
+            };
+            InitializationWork = PendingReadWork = ActionWork = ConsumptionWork = Task.FromResult(0);
+            if (service == null) { // Legacy injected callers keep their synchronous contract.
+                RefreshPending(); SetPendingStatus();
+            } else {
+                pendingAdmin = pendingUnreadable = working = pendingReadActive = true;
+                close.DialogResult = DialogResult.None;
+                status.Text = "Читаем сохранённый запрос выдачи… Можно закрыть окно.";
+                InitializationWork = InitializePendingAsync();
+            }
+            UpdateActions(); UiTheme.ConfigureKeyboardOrder(this);
+        }
+        private void CancelPendingRead() {
+            var source = initialPendingCancellation;
+            if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
+        }
+        private void SetPendingStatus() {
+            status.Text = !pendingAdmin ? "" : pendingUnreadable
+                ? "Запрос прежней выдачи недоступен. Новые изменения доступа заблокированы; существующие записи сохранены."
+                : HomeVpnAdminRecovery.PendingMessage;
+        }
+        private async Task InitializePendingAsync() {
+            try {
+                if (await ownerUi.Await(RefreshPendingAsync(pendingService.StopWork))) SetPendingStatus();
+            } catch (OperationCanceledException) { }
+            finally { FinishAction(); }
+        }
+        private async Task<bool> RefreshPendingAsync(Task<bool> stop) {
+            ++pendingReadVersion;
+            if (pendingService == null) { RefreshPending(); return true; }
+            var source = new CancellationTokenSource(); initialPendingCancellation = source;
+            HomeVpnAdminPendingState state = null;
+            pendingReadActive = true; close.DialogResult = DialogResult.None; UpdateActions();
+            Action checkScope = delegate {
+                source.Token.ThrowIfCancellationRequested();
+                if (pendingService.StartsPaused || pendingService.IsStopping || !Object.ReferenceEquals(stop, pendingService.StopWork))
+                    throw new OperationCanceledException();
+            };
+            try {
+                checkScope();
+                // Each actual read remains owned through Stop; no transport, consume or family lease.
+                PendingReadWork = pendingService.RunAdminOwnedAsync(async delegate {
+                    state = await HomeVpnAdminRecovery.ReadPendingStateAsync(source.Token, delegate {
+                        if (beforePendingRead != null) beforePendingRead(); checkScope();
+                    }).ConfigureAwait(false);
+                    checkScope(); return null;
+                });
+                await ownerUi.Await(PendingReadWork);
+                checkScope();
+                if (ownerUi.Closed || IsDisposed || Disposing) return false;
+                pendingAdmin = state.Pending; pendingUnreadable = state.Unreadable; pendingRequestName = state.Name; return true;
+            } catch (Exception) {
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                    pendingAdmin = pendingUnreadable = true; pendingRequestName = null;
+                    status.Text = "Чтение запроса не завершено. Изменения доступа заблокированы; повторите обновление списка или откройте окно заново.";
+                }
+                return false;
+            } finally {
+                initialPendingCancellation = null; source.Dispose();
+            }
+        }
+        private void FinishAction() {
+            working = pendingReadActive = consumptionActive = false;
+            if (!ownerUi.Closed && !IsDisposed && !Disposing) {
+                close.DialogResult = DialogResult.Cancel; UpdateActions();
+                if (closeAfterPending) Close();
+            }
+        }
+        private static string Identity(HomeVpnInvitation item) {
+            return "Доступ «" + item.Name + "»\r\nID: " + item.Id + "\r\nСоздан: " + item.CreatedText;
+        }
+        private void UpdateActions() {
+            list.Enabled = name.Enabled = !working;
+            refresh.Enabled = !working; close.Enabled = !working || pendingReadActive || consumptionActive;
+            create.Enabled = !working && !needsRefresh && !pendingAdmin;
+            revoke.Enabled = !working && !needsRefresh && !pendingAdmin && list.Selected != null;
+            recover.Enabled = !working && pendingAdmin && !pendingUnreadable; recover.Visible = pendingAdmin;
+            revoke.Text = list.Selected != null && list.Selected.Revoked ? "Повторить отзыв" : "Отозвать выбранный доступ";
+            revoke.AccessibleDescription = list.Selected != null && list.Selected.Revoked
+                ? "После подтверждения повторно завершает отзыв выбранного ID на VPS. Новый токен не создаётся."
+                : "После подтверждения отзывает выбранный ID на VPS и закрывает соединения этого приглашения. Другие доступы сохраняются.";
+            reissue.Enabled = !working && !needsRefresh && !pendingAdmin && list.Selected != null;
+        }
+        private void RefreshPending() {
+            pendingRequestName = null;
+            try {
+                pendingAdmin = HomeVpnAdminRecovery.HasPending();
+                var request = pendingAdmin ? HomeVpnAdminRecovery.Pending() : null;
+                pendingUnreadable = pendingAdmin && request == null; pendingRequestName = request == null ? null : request.Name;
+            }
+            catch (HomeVpnAdminPendingException) { pendingAdmin = pendingUnreadable = true; }
+        }
+        private void RequireRefresh(string message) { needsRefresh = true; status.Text = message; }
+        private Task RunAsync(Func<Task> action) {
+            if (working || ownerUi.Closed || IsDisposed || Disposing) return Task.FromResult(0);
+            ActionWork = RunActionAsync(action); return ActionWork;
+        }
+        private async Task RunActionAsync(Func<Task> action) {
+            working = true; status.Text = "Выполнение операции с доступом…"; UpdateActions();
+            operationStop = pendingService == null ? null : pendingService.StopWork;
+            int before = pendingReadVersion;
+            try {
+                try { await ownerUi.Await(action()); }
+                catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
+                catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }
+                catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Операция не завершена. Обновите список перед следующим изменением доступа. Подробности SSH доступны в его окне."); }
+                // Refresh already took one snapshot before publishing rows. Never repeat that I/O.
+                if (!ownerUi.Closed && !IsDisposed && !Disposing && pendingReadVersion == before)
+                    await ownerUi.Await(RefreshPendingAsync(operationStop));
+            } catch (OperationCanceledException) { }
+            finally { FinishAction(); }
+        }
+        private async Task RefreshAsync() {
+            status.Text = "Получение списка с VPS…";
+            try {
+                var items = new JavaScriptSerializer().Deserialize<HomeVpnInvitation[]>(await ownerUi.Await(admin("list", null, null)));
+                if (items == null) throw new InvalidOperationException();
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!await ownerUi.Await(RefreshPendingAsync(operationStop))) return;
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                // Keep the established reconciliation contract: uncertain mutations require a fresh explicit selection.
+                list.Replace(items, !needsRefresh); needsRefresh = pendingAdmin;
+                status.Text = "Список обновлён. Проверьте дату и полный ID: одинаковое имя не означает тот же доступ. При потерянном ответе выдачи отзовите ненужные новые записи перед созданием ещё одного токена.";
+                if (pendingAdmin) status.Text = "Список обновлён. Сохранённый запрос выдачи ещё не завершён: этот список не разрешает новую выдачу. Проверьте прежний запрос.";
+            } catch (HomeVpnListCancelledException ex) {
+                // Cancellation of a read-only query adds no new uncertainty and
+                // must not clear an existing mutation/reconciliation gate.
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message;
+            } catch (HomeVpnLocalCleanupException ex) {
+                if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message);
+            } catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Не удалось обновить список. Изменения доступа заблокированы: повторите «Обновить список» после восстановления SSH."); }
+        }
+        private async Task CreateAsync() {
+            bool unconfirmed = false;
+            status.Text = "Создание отдельного токена…";
+            try {
+                var label = name.Text;
+                var token = await ownerUi.Await(admin("invite", label, null));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!RecoveryConsumptionScope(operationStop)) { RequireRefresh(HomeVpnAdminRecovery.PendingMessage); return; }
+                var access = HomeVpnAccess.Parse(token);
+                list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label });
+                status.Text = "Токен создан. Передайте его другу до закрытия окна токена.";
+                ShowToken(token);
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                bool consumed = await ownerUi.Await(ConsumeRecoveredAsync(token));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!consumed) RequireRefresh("Завершение выдачи не подтверждено. Проверьте сохранённый запрос без нового приглашения.");
+                else if (closeAfterPending || !RecoveryConsumptionScope(operationStop))
+                    RequireRefresh("Запрос выдачи уже завершён. Продолжение отменено; обновите список явно.");
+            } catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
+            catch (HomeVpnPreparationCancelledException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = ex.Message; }
+            catch { unconfirmed = true; }
+            if (unconfirmed && !ownerUi.Closed && !IsDisposed && !Disposing) {
+                // Preserve the issuing action's Stop scope and await its actual readonly work before publishing guidance.
+                bool known = await ownerUi.Await(RefreshPendingAsync(operationStop));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!known) { RequireRefresh(status.Text); return; }
+                if (pendingAdmin) { SetPendingStatus(); RequireRefresh(status.Text); }
+                else RequireRefresh("Ответ выдачи не получен или не прошёл проверку. VPS мог создать приглашение. Обновите список и проверьте новые ID; отзовите ненужные записи. Не повторяйте создание вслепую.");
+            }
+        }
+        private async Task RecoverAsync() {
+            status.Text = "Проверка прежней выдачи без нового приглашения…";
+            try {
+                if (!await ownerUi.Await(RefreshPendingAsync(operationStop))) {
+                    if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(status.Text);
+                    return;
+                }
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!pendingAdmin) throw new HomeVpnAdminPendingException("Сохранённый запрос выдачи отсутствует. Новая выдача не запускалась.");
+                if (pendingUnreadable || pendingRequestName == null) { SetPendingStatus(); RequireRefresh(status.Text); return; }
+                var label = pendingRequestName;
+                var token = await ownerUi.Await(admin("recover-invite", null, null)); var access = HomeVpnAccess.Parse(token);
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (pendingService != null && (pendingService.StartsPaused || pendingService.IsStopping || !Object.ReferenceEquals(operationStop, pendingService.StopWork))) {
+                    RequireRefresh("Проверка прежней выдачи остановлена. Запрос сохранён; повторите проверку явно."); return;
+                }
+                list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label }); ShowToken(token);
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                bool consumed = await ownerUi.Await(ConsumeRecoveredAsync(token));
+                if (ownerUi.Closed || IsDisposed || Disposing) return;
+                needsRefresh = true;
+                if (!consumed) { RequireRefresh("Завершение прежней выдачи не подтверждено. Повторите проверку сохранённого запроса."); return; }
+                if (closeAfterPending || !RecoveryConsumptionScope(operationStop)) {
+                    RequireRefresh("Прежний запрос уже завершён. Продолжение отменено; обновите список явно."); return;
+                }
+                status.Text = "Прежний токен получен без новой выдачи. Обновите список перед следующим изменением доступа.";
+                // The pre-dispatch name snapshot predates handoff; keep the former post-consumption flag refresh.
+                await ownerUi.Await(RefreshPendingAsync(operationStop));
+            } catch (HomeVpnAdminPendingException ex) { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh(ex.Message); }
+            catch { if (!ownerUi.Closed && !IsDisposed && !Disposing) RequireRefresh("Результат прежней выдачи не получен. Запрос сохранён; новый доступ и повторный отзыв не запрашивались."); }
+        }
+        private bool RecoveryConsumptionScope(Task<bool> stop) {
+            return pendingService == null || (!pendingService.StartsPaused && !pendingService.IsStopping
+                && Object.ReferenceEquals(stop, pendingService.StopWork));
+        }
+        private void CancelConsumption() {
+            consumptionAllowed = false;
+            var source = consumptionCancellation;
+            if (source != null) try { source.Cancel(); } catch (ObjectDisposedException) { }
+        }
+        private async Task<bool> ConsumeRecoveredAsync(string token) {
+            var stop = operationStop;
+            using (var source = new CancellationTokenSource()) {
+                consumptionCancellation = source; consumptionAllowed = true; consumptionActive = true;
+                close.DialogResult = DialogResult.None; UpdateActions();
+                bool consumed = false;
+                Func<Task<string>> start = async delegate {
+                    consumed = await HomeVpnAdminRecovery.ConfirmConsumedAsync(token, source.Token,
+                        () => consumptionAllowed && !source.IsCancellationRequested && RecoveryConsumptionScope(stop), BeforeConsumeIo).ConfigureAwait(false);
+                    return null;
+                };
+                try {
+                    ConsumptionWork = pendingService == null ? start() : pendingService.RunAdminOwnedAsync(start);
+                    await ownerUi.Await(ConsumptionWork);
+                    // Accepted physical delete remains successful even if cancellation arrives afterwards.
+                    return consumed;
+                } finally { consumptionAllowed = false; consumptionCancellation = null; }
+            }
+        }
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            CancelConsumption(); ownerUi.Close(); base.OnFormClosed(e);
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) {
+                CancelPendingRead(); CancelConsumption();
+                ownerUi.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+    }
+}

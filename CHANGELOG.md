@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased — audit stages F02, F01 and F03a
+
+- Keep one application instance per Windows user. Repeat launches request the
+  existing dashboard instead of starting another tray/service owner.
+- Queue window activation during startup, restore a minimized dashboard and
+  recover the lifetime mutex after a crashed process.
+- Verify normal/show/script/concurrent launches against the compiled Windows
+  executable; update/restore handoff locking remains the separate F03b substage.
+
+- Merge terminal and ordinary Codex automation into one **Включать прокси для
+  терминалов и Codex** option. Keep **Запустить CLI** as the direct compatible action
+  and scoped Codex launch/shortcut as additional choices.
+- Migrate the two old switches using OR. Save only the unified setting and respect
+  its explicit off on later loads. Remove duplicated Codex on/off controls.
+- Verify all legacy combinations, actual manual command aliases and cancellation,
+  and ordinary CLI startup with a local fixture without a special shortcut.
+
+- Automatic proxy setup remains pending until application succeeds. Temporary
+  failures retry after 5, 15 and 45 seconds; repeated failures pause after four
+  attempts instead of looping forever.
+- Access-denied and invalid-argument errors pause immediately with corrective
+  guidance. The dashboard shows waiting, retry and paused states; tray warnings
+  appear on the first failure and when attempts are paused, not on every tick.
+- Manual off, unchecked automation and successful manual application cancel the
+  pending task. Explicitly switching automation off/on re-arms it.
+- Regression checks cover a real occupied loopback port, a configuration-write
+  fault, eventual success, bounded delays, manual cancellation and reentrancy.
+
+
 ## 0.2.2 — Phone setup by QR and VPN forwarding repair
 
 - Restored **Запустить CLI** as a direct dashboard/tray action. Codex automatic/manual setup now applies the current-user HTTP proxy environment for ordinary launches; a scoped shortcut is optional. Existing terminal/IDE processes need one restart to inherit the environment.

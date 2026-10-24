@@ -1,6 +1,13 @@
 name: ProGo CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: 'Explicitly approve uploading CI files (public for a public repository)'
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [ main, develop, "feature/**" ]
   pull_request:
@@ -10,12 +17,20 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: progo-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   vpn-server-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+      - name: Verify private operation recovery
+        # The isolated fixture exercises the real root-only owner entry point.
+        # Its server effects are replaced; only temporary receipt files are written.
+        run: sudo python3 -m unittest discover -s tests -p 'test_home_vpn_operations.py' -v
       - name: Decode QR independently and verify share endpoints
         run: |
           python3 -m venv /tmp/progo-qr-test
@@ -26,6 +41,7 @@ jobs:
 
   windows-build:
     runs-on: windows-latest
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,8 +72,10 @@ jobs:
           python .\scripts\check_public_content.py --release .\release
           if ($LASTEXITCODE -ne 0) { throw 'Public content check failed' }
 
+      # Public candidates need a separately approved delivery method. Build,
+      # tests, content checks and packaging still run without uploading files.
       - name: Upload wizard screenshots
-        if: always()
+        if: always() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-wizard-screenshots
@@ -73,9 +91,11 @@ jobs:
           if (Test-Path ProGo-release.zip) { Remove-Item ProGo-release.zip -Force }
           Compress-Archive -Path .\release\* -DestinationPath .\ProGo-release.zip -Force
           Get-Item .\ProGo-release.zip | Format-List FullName,Length
+          $candidateDigest = (Get-FileHash -LiteralPath .\ProGo-release.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host ("Candidate ZIP SHA256: " + $candidateDigest)
 
       - name: Upload diagnostics
-        if: always()
+        if: always() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-ci-diagnostics
@@ -83,7 +103,7 @@ jobs:
           retention-days: 7
 
       - name: Upload release folder
-        if: success()
+        if: success() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-release
@@ -91,7 +111,7 @@ jobs:
           retention-days: 3
 
       - name: Upload release package
-        if: success()
+        if: success() && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))
         uses: actions/upload-artifact@v4
         with:
           name: ProGo-release-zip

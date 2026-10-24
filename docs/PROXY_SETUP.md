@@ -2,24 +2,41 @@
 
 ## Connection
 
-In **Настройки → Подключение**, add an SSH alias from the standard OpenSSH config
-or a target such as `user@vpn.example.org`. Connect from the main window. A live
-SOCKS listener means the tunnel is ready; route diagnostics verify actual reachability.
+In **Настройки → Подключение → Добавить**, choose **По адресу сервера**.
+Enter the VPS IP/domain (without `https://`, login or port), SSH login, SSH port
+(default 22), and optionally select a private key file. Leave the key field empty
+to use standard Windows OpenSSH keys/agent. ProGo stores only the file path;
+it does not upload the private key or save an SSH password.
+
+Use **Первый вход** to open a visible SSH console with these same settings.
+Verify the host fingerprint independently before accepting it. An encrypted key
+must be unlocked through your SSH agent for unattended use. A password login
+alone does not authorize a key for background connections.
+
+Existing connections remain in **Из SSH config (для опытных)** mode. The alias
+(e.g. `my-vps`) or legacy `user@vpn.example.org` retains OpenSSH resolution; ProGo
+does not rewrite the SSH config. **Проверить** uses `ssh.exe -G` with the same
+server/login/port/key as the tunnel, and reports the resolved SSH port.
+
+Connect from the main window. SOCKS readiness and a verified internet response
+are separate states. Changing the selected server, login, SSH port or key restarts
+an active desktop tunnel and discards stale readiness; renaming it does not.
+The SSH port is independent of the SOCKS and local HTTP proxy ports.
 
 ## Automatic and manual controls
 
-**Настройки → Автоматика** exposes recovery, terminal environment, Windows proxy,
-and normal Codex launch as independent startup options. Codex and terminal setup use
-the same user proxy environment; manual off cancels both pending environment actions. Startup actions wait for SOCKS
-readiness and run once. Manual off cancels an outstanding action for the session;
-it is not undone on the next timer tick. Unchecking disables future automatic work;
-use the adjacent button to disable a currently active feature. New Windows and Codex
-options default to false. Existing recovery and environment preferences are retained.
+**Настройки → Автоматика** exposes recovery, one shared terminal/Codex environment,
+and Windows proxy options. Normal Codex launch and terminals use the same current-user
+proxy environment. Startup actions wait for SOCKS readiness. Manual off cancels pending
+work for that session; the next launch or explicit preference off/on re-arms it.
+Unchecking disables future automatic work; use the adjacent button to disable an
+already active feature. New installations default to manual CLI/Windows control.
+Either legacy terminal/Codex switch enables the unified option; explicit new off wins.
 
 Recovery checks the owned SSH process and SOCKS handshake every five seconds,
 uses a 20-second startup grace period, and retries with capped exponential backoff.
 It never adopts or kills a process belonging to someone else. Manual stop cancels
-retries. Automatic recovery also applies to the independent iPhone tunnel.
+retries. Automatic recovery also applies to the independent phone tunnel.
 
 ## Application port
 
@@ -41,7 +58,7 @@ The bridge remains loopback-only. SSH, SOCKS, router and IKEv2 ports are indepen
 
 ## Command line
 
-**Запустить CLI** on the dashboard, or **Прокси для приложений → Запустить CLI (Codex и терминалы)** applies the selected port.
+**Запустить CLI** on the dashboard, or **Прокси для приложений → Запустить CLI (терминалы и Codex)** applies the selected port.
 For example, when the dashboard shows port 1881:
 
 ```text
@@ -64,18 +81,36 @@ automation alone does not change those values. Disconnect/exit restores owned se
 
 **Запустить CLI** starts the HTTP bridge and applies its actual port to the current
 Windows user's environment. Run `codex` normally afterwards. The automatic setting
-**Включать прокси для обычного запуска Codex** and **Codex — включить прокси** use
+**Включать прокси для терминалов и Codex** and the legacy terminal/Codex aliases use
 the same environment setup. No special shortcut is required.
 
 Completely close and reopen an already running terminal, IDE or Codex app once so it
 inherits the updated environment. Opening another tab in an existing terminal may
-reuse its old environment. **Открыть Codex через ProGo** remains a convenient direct
+reuse its old environment. **Открыть Codex CLI с прокси** remains a convenient direct
 launch with an explicit process environment. Codex installation is separate.
 
 The scoped Start Menu shortcut is optional under **Дополнительно: ярлык Codex**.
 Creating/removing it does not enable/disable the shared user proxy environment.
 Manual CLI/Codex off restores only ProGo-owned user values; it cannot change the
-environment of processes that are already running. Windows system proxy is separate.
+environment of processes that are already running. Completely restart old terminals
+and Codex after turning it off; a new tab in an existing terminal may retain its
+old environment. Windows system proxy is separate.
+
+The HTTP bridge is shared by Windows, the CLI user environment, windows opened
+explicitly through ProGo, and the optional owned Codex shortcut. Turning off CLI
+releases its listening port when it is the last consumer. While another consumer
+remains, the dashboard names it and the service stays available. Closing the last
+tracked scoped window releases the port within the UI timer interval (about one
+second). An owned shortcut retains the endpoint until **Удалить отдельный ярлык**.
+Windows opened separately through that shortcut are not tracked individually.
+
+**Отключить прокси на ПК** is the explicit full desktop stop: it restores owned
+Windows/CLI settings, stops the shared listener and SSH tunnel, and ends scoped
+windows' access through that endpoint. It does not kill those windows. Reopen them
+through ProGo to reconnect. **Остановить все подключения** also stops the phone
+relay. Failed owned-settings cleanup retains the service and its retry journal.
+These actions do not turn off the saved automatic preferences; their pending
+automatic setup is cancelled for the current session as before.
 
 ## Windows applications
 
@@ -92,4 +127,87 @@ only while the applied proxy still belongs to ProGo. Other apps' later proxy cha
 are not overwritten on exit. Machine-wide WinHTTP is not modified.
 
 Apps that ignore system settings can connect directly; this feature is not a full
-Windows VPN. The [iPhone wizard](HOME_IKEV2.md) is a separate native IKEv2 route.
+Windows VPN. The [phone wizard](HOME_IKEV2.md) is a separate native IKEv2 route.
+
+## Restoring Windows settings
+
+**Windows — выключить** restores only values still owned by ProGo. Later changes
+to the endpoint, bypass list or PAC are preserved. If another application replaced
+the proxy endpoint, its associated Windows flags are preserved as well.
+
+If a registry field or recovery-journal write fails, ProGo reports incomplete
+cleanup and keeps the journal for retry. Manual desktop stop and normal Quit keep
+the local service running on that failure. Correct the reported write/access
+problem, then retry **Windows — выключить** or desktop stop. A successful retry
+does not revisit fields already preserved as external changes.
+Uninstall requests this cleanup from the running app before removing files or
+shortcuts. If cleanup is refused or cannot be confirmed, removal is cancelled.
+Update/restore also require successful cleanup before replacing files. If a crash
+left a recovery journal, reopen ProGo and retry Windows/CLI off before maintenance.
+Older running builds without cleanup IPC must be closed through their own Quit
+command; uninstall does not force-kill them. A failed updater handoff after
+successful cleanup leaves the app open; reconnect manually if needed.
+
+## Backup retention
+
+App and updater share one manifest-aware policy: keep all manual and unknown
+folders, ten latest known automatic backups, the latest baseline and pre-update,
+and the backup currently being created. Legacy folders with missing or ambiguous
+metadata are preserved. Automatic cleanup never infers deletion eligibility
+from a folder name. Generated timestamped names determine newest-first order.
+
+**Удалить старые автоматические копии…** shows every candidate path before an
+explicit confirmation. Cancel keeps all copies. A changed manifest or junction
+is skipped during revalidation; newly eligible folders wait for the next review.
+
+### Проверка резервной копии перед восстановлением
+
+Новые копии содержат список файлов с контрольными суммами SHA-256. ProGo проверяет
+его до остановки приложения и отклоняет неполную или повреждённую копию. Старые
+копии без контрольных сумм сохраняются, но новый механизм восстановления их не
+применяет: после обновления создайте новую копию через «Создать копию сейчас».
+Контрольные суммы проверяют целостность, а не доверие к источнику копии.
+
+### Что восстановить из копии
+
+После выбора копии укажите состав:
+
+- **Программа** — версия ProGo и служебные файлы; текущие настройки и хранилище сохранятся. Этот вариант выбран по умолчанию.
+- **Настройки и хранилище** — только имеющиеся в копии пользовательские данные; версия ProGo сохраняется.
+- **Программа, настройки и хранилище** — оба набора.
+
+Для замены пользовательских данных поставьте отдельную галочку. Если изменить
+выбранный состав, согласие нужно дать заново. Отсутствующие в копии данные и
+журналы сохраняются. В окне указан точный список заменяемых файлов.
+Нажмите «Проверить и подготовить копию»: подготовка идёт в фоне, её можно отменить.
+ProGo остановится только после подготовки и финального подтверждения.
+
+После остановки ProGo восстановление сначала сохранит проверенную защитную копию
+текущей программы, настроек и хранилища в подпапке `backups` с пометкой
+`pre-restore`. Затем заменит только выбранный состав, проверит файлы и выполнит
+самопроверку программы. При ошибке вернёт прежний состав; защитная копия останется.
+Если вернуть файлы мешает другой процесс, окно сообщит об этом. Не запускайте
+ProGo до восстановления; пути защитной копии и сохранённой рабочей папки указаны
+в `progo-restore.log`. Принудительное завершение восстановления и выключение ПК
+не входят в автоматический откат при обычных ошибках.
+
+## Saving preferences and manual commands
+
+In Settings, edited fields and automatic-action checkboxes take effect after
+**Сохранить**. Buttons under **Ручное управление · применяется сразу** use the saved
+connection and application-proxy settings. The displayed saved values help compare
+them with pending edits. **Отменить изменения** discards pending edits; it does not
+undo commands already applied. Use the corresponding manual Off command to undo
+an enabled mode. Closing Settings does not close the shared connection.
+
+**Подобрать свободный** schedules a one-time choice for Save. Before saving, press
+**Отменить подбор** to keep the entered port and selected automatic/manual mode.
+Neither selection nor cancellation changes the current port by itself.
+
+Before Save, ProGo checks the SOCKS address (IP/domain without scheme, login or
+port), port ranges and complete HTTP/HTTPS test URL without credentials. A field
+error selects its page and focuses the field. A file-write error stays on the
+current page and appears above Save/Cancel; correct the access/lock condition and
+retry without reopening the form. Validation checks syntax, not server or
+internet availability. Invalid fields from older settings must be corrected when
+explicitly saving; loading those settings does not rewrite their format.

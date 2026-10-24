@@ -54,6 +54,23 @@ def issues(path, release=False):
                 break
 
 
+def version_issues(root):
+    """Both instructions follow VERSION; assembly metadata already uses that file."""
+    version_path = root / 'VERSION'
+    if not version_path.is_file():
+        return [('VERSION', 'missing version source')]
+    version = version_path.read_text(encoding='utf-8-sig').strip()
+    if not re.fullmatch(r'\d+\.\d+\.\d+', version):
+        return [('VERSION', 'invalid version source')]
+    failures = []
+    for name in ('README.md', 'README.ru.md'):
+        path = root / name
+        lines = path.read_text(encoding='utf-8-sig').splitlines() if path.is_file() else []
+        if not lines or lines[0] != '# ProGo ' + version:
+            failures.append((name, 'heading must match VERSION'))
+    return failures
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--release', type=pathlib.Path)
@@ -63,7 +80,7 @@ def main():
         sources.extend(p for p in (ROOT / folder).rglob('*')
                        if p.is_file() and p.suffix in TEXT_SUFFIXES
                        and not {'__pycache__', 'bin', 'obj'}.intersection(p.parts))
-    failures = []
+    failures = version_issues(ROOT)
     for path in sources:
         failures.extend((path.relative_to(ROOT), issue) for issue in set(issues(path)))
     release_files = []
@@ -71,6 +88,7 @@ def main():
         if not args.release.is_dir():
             parser.error('Release directory is missing')
         release_files = [p for p in args.release.rglob('*') if p.is_file()]
+        failures.extend(version_issues(args.release))
         for path in release_files:
             failures.extend((path.relative_to(args.release), issue)
                             for issue in set(issues(path, release=True)))
