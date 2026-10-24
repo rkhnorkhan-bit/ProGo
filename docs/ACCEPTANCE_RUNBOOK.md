@@ -1,4 +1,72 @@
-## Текущий этап: CI656 — post-Stop test-contract correction
+## Текущий этап: CI657 — authorized new temporary auth-policy fixture ACL
+
+Owner явно согласовал только new temporary auth-policy fixture ACL в isolated Windows CI.
+PR88 OPEN/DRAFT exact source `127f266ddfabf0050eda4831693f14b382dc4f9b`, checkpoint `017578ec55a78ea72bd8a17f57cd8f7f313a4557`
+сверены;62 prior worktrees clean/locks0/root sole active agent. Новый isolated worktree сохраняет checkpoint.
+Full Windows CI657 exact tested merge `48817acd0ef74879d16e7042b4eb0e79313fd32d` повторно прочитан:
+policy.disabled exit255, includeNamed=True, badOwnerPermissions=True, inherited otherWrite1 confirmed.
+Runtime cause не доказан; exact rejected ACE UNKNOWN. Revoke10/Home VPN в CI657 NOT_RUN.
+
+Local code `a81108a4ae461e9dbe49cdb949b426248aecbfee`: только DesktopSshAuthPolicyTests.cs65add/2delete +3docs.
+Fresh direct work child auth-policy-GUID path; refuses existing resource and every reparse ancestor/entry.
+Windows CI gate (GITHUB_ACTIONS/RUNNER_OS/Win32NT) creates new root with protected DirectorySecurity
+at creation; inheritable FullControl only current test-user/SYSTEM/Administrators. No SetOwner or
+SetAccessControl, no existing/ancestor/system/.ssh ACL changes. Local execution keeps original ACL behavior.
+Files created by original fixture inherit this allowlist; readonly checks root protected and file roles.
+Original fake-identity exclusive lock/native ssh-G Include precedence/auth policy assertions/7000ms timeout
+unchanged. Original policy tests and post-Stop/Refresh/exact-ID/no replay fixture byte-exact.
+Cleanup traverses only exact own GUID subtree, checks boundaries and reparse points before each action,
+uses nonrecursive deletes and fails closed on links; never scans siblings/changes parent. Validation failure
+immediately after creation invokes same own cleanup; normal/failed test finally cleans own resources.
+No raw paths/SIDs/ACL contents/configs/credentials emitted; existing safe diagnostics retained.
+
+PASS local review/static/strict original method+assert+timeout parity/Framework signatures/lexical (not compiler),
+diff/JSON/secretsPII/public321source0release. Windows compilation/ACL native/policy/revoke10/full suites
+NOT_RUN locally; no Windows/.NET/pwsh. No coverage reduction, assertion bypass or timeout increase.
+Publication TODO: one guarded existing PR88 source push, one automatic CI; public uploads OFF/guards4
+unchanged, release/prune ineligible. Save checkpoint; STOP no full wait or second stage.
+Next SAME new CI final logs/exact source+merge/ACL isolation/policy/revoke10/post-Stop Refresh/all suites.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: exact new
+Windows fixture/policy/revoke10 proof; delivery/target PC/production gates remain unchanged.
+
+## История этапа: CI657 — read-only OpenSSH fixture permissions diagnosis, BLOCKED
+
+PR88 OPEN/DRAFT exact source `127f266ddfabf0050eda4831693f14b382dc4f9b`, checkpoint
+`84e2c6165ea57ee3e9dd63a5bebe921c6b47c7ef` сверены;62 worktrees clean/locks0, root sole active agent,
+active git/build0. Полный Windows [CI657](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117)
+log самостоятельно прочитан: checkout/build exact tested merge `48817acd0ef74879d16e7042b4eb0e79313fd32d`.
+Windows120805683344 terminal FAILURE; Ubuntu120805683270 terminal SUCCESS metadata only.
+Это НЕ повтор post-Stop revoke assertion: DesktopTests.AuthPolicyNative policy.disabled упал раньше.
+Exit255/permissionsHint=True; roles configNamed=False/includeNamed=True/identityNamed=False,
+badOwnerPermissions=True/badPermissionsBanner=False/permissionDenied=False.
+Safe stack Check→AuthPolicyNative→SshAuthPolicyWorkflow→Main.
+File ACL facts config/include/identity: read=True,ownerCurrent=False,ownerSystem=False,ownerAdmins=True,
+protected=False,rules4/inherited4/denied0/otherAllow2/otherWrite1. Directory rules8/inherited8/otherAllow4/otherWrite2.
+Raw paths/SIDs/config contents/credentials не сохраняются и не публикуются.
+
+Confirmed: actual OpenSSH refuses fixture Include permissions before effective policy resolution.
+DesktopSshAuthPolicyTests.cs:17 creates default inherited directory; :163–168 WriteAllText creates files
+without explicit ACL. :170 intentionally locks fake identity; :174 runs native ssh -G -F against fixture,
+not a live host. Existing failure-role/ACL diagnostics already locate the failing Include.
+Official upstream contract: https://github.com/PowerShell/Win32-OpenSSH/wiki/Security-protection-of-various-files-in-win32-openssh
+requires protected client configuration. OwnerAdmins alone is not proof of bad ownership; exact rejected
+ACE/principal/installed-version branch UNKNOWN. No runtime bug proven; historical640 cause not declared fixed.
+Changing runtime/parser or bypassing native security would not repair this fixture contract.
+
+FAIL: AuthPolicyNative/SSH policy workflow/Desktop run. NOT_RUN: revised revoke10/post-Stop Refresh,
+all Home VPN suites and later relay/pack; старый PASS не переносится. No new code/tests/ACL/owner/SSH
+policy/system settings changes. All previous exact ID/no replay/Refresh/accepted outcome guarantees retained.
+BLOCKED: separate owner authorization for test-only protected ACL on newly created auth-policy temporary
+folder and its config/include/fake identity files in isolated Windows CI, current test-user/SYSTEM/Administrators
+only, locked-identity test preserved. No existing file owner/ancestor/system/.ssh ACL changes, global repair,
+security-policy changes or production fix. After approval: one bounded fixture isolation change and exact CI.
+Evidence is sufficient for approval request; no speculative instrumentation or blind rerun justified.
+No source push/new CI. Local3-doc checkpoint only; published source unchanged, full checkpoint SHA git log -1.
+PASS local read-only evidence review/JSON/diff/public-content; Windows reproduction here NOT_RUN.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: narrow temporary
+Windows fixture ACL authorization. STOP; no second stage, release/uploads/install/live VPS/network/access actions.
+
+## История этапа: CI656 — post-Stop test-contract correction
 
 PR88 OPEN/DRAFT source `3d3136be67f68f74eea2d27d161f8ec0b56ec5b9`, checkpoint `a5750bdfd922bfd41f43dc700c820493cdbc9c21` сверены;
 61 worktrees clean/locks0 перед новым isolated worktree; root sole active agent, build/git operations0.
@@ -22,8 +90,15 @@ restored, exact selected revoked ID/sibling preserved, one revoke. Общие or
 assertions unchanged; modal15s/hold+join5s unchanged; новых функций/transport нет.
 PASS local review/static/manual signatures/diff/JSON/secretPII/public321source0release. Windows compilation/
 revised revoke10/full suites NOT_RUN locally: no Windows/.NET/pwsh. Score fixed58–80/22 +0.
-Publication TODO: one guarded source push and one automatic CI; public guards4 unchanged/release ineligible.
-Save checkpoint and STOP; next SAME new CI exact final logs/merge/revoke10/prior+remaining suites.
+Publication PASS: source `127f266ddfabf0050eda4831693f14b382dc4f9b`, existing PR88 one expected-head guarded non-force update;
+fetched exact parent and tree `ed60f51a4834657f8bda44e9e9bdf4e5a4925915` match reviewed freeze
+`611b2500d105f1e62cdc609f638fd98f544b6c64`. Diff only1 test file28add/2delete +3 state documents.
+ONE automatic [CI657/40071488117](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117), exact-source count1/pull_request/attempt1,
+in_progress/conclusion null. Windows/Ubuntu jobs in_progress at metadata checkpoint.
+Merge ref `48817acd0ef74879d16e7042b4eb0e79313fd32d` is NOT final tested merge proof; new compilation/revoke10/full suites NOT_RUN.
+Public guards4 unchanged/uploads OFF/final skips not yet observed; no release or prohibited live actions.
+Docs-only local checkpoint intentionally not pushed; full SHA via git log -1/PR88 body. STOP;
+next SAME CI657 final exact-source/tested-merge/revised revoke10/prior+remaining suites, no rerun/second stage.
 Delivery/personal/production gates сохранены ниже; installation/live resources/security/release blocked.
 
 ## История этапа: CI655 — минимальная fixture signature correction

@@ -3929,12 +3929,12 @@
     }
   ],
   "ci_candidate": {
-    "source": "d02f0adc7a3bce0e50fac6af04819e21cee7d5eb",
+    "source": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
     "tested_merge": null,
-    "status": "NOT_RUN local candidate",
+    "status": "NOT_RUN local authorized test-only candidate",
     "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN revised revoke10",
-    "artifact_uploads": "OFF unchanged public guard"
+    "windows_native": "NOT_RUN SSH policy/revoke10/full suites",
+    "artifact_uploads": "OFF public guard unchanged"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5471,17 +5471,19 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE CI656 post-Stop fixture contract correction",
-    "baseline_source": "3d3136be67f68f74eea2d27d161f8ec0b56ec5b9",
-    "baseline_tested_merge": "7652b5f42b78aab12b6c18cbb676596e51df170a",
-    "baseline_checkpoint": "a5750bdfd922bfd41f43dc700c820493cdbc9c21",
-    "local_code_sha": "d02f0adc7a3bce0e50fac6af04819e21cee7d5eb",
-    "scope": "Test-only OwnedRevoke stop-accepted: expect stale-scope mutation gates; explicit existing Refresh proves original actions-restored guarantee under fresh scope. Complete/cancel-retry original assertion preserved. Runtime/API/timeout/all other tests unchanged.",
-    "local_checks": "PASS diff/static/manual signatures/strict runtime+prior test parity/JSON/secrets/public. New Refresh uses existing admin list callback, no transport addition; Modal15s/hold+join5s unchanged.",
+    "phase": "ONE authorized CI657 temporary auth-policy ACL creation fixture fix",
+    "baseline_source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+    "baseline_tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+    "baseline_checkpoint": "017578ec55a78ea72bd8a17f57cd8f7f313a4557",
+    "local_code_sha": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
+    "scope": "tests/DesktopSshAuthPolicyTests.cs only plus3docs; existing policy/asserts/7000 timeout/coverage/post-Stop fixture/runtime/API unchanged.",
+    "authorization": "Explicit current owner instruction permits protected ACL only new auth-policy fixture on isolated Windows CI. No owner, existing file ACL, ancestor/system/.ssh/security/network mutation authorized or implemented.",
+    "implementation": "Exact work child GUID path, no preexisting resource, path/ancestors/subtree reparse refusal. GITHUB_ACTIONS=true/RUNNER_OS=Windows/Win32NT gate: Directory.CreateDirectory(root,DirectorySecurity) applies protected ACL at creation; inheritable FullControl only current test-user/SYSTEM/Administrators. No SetOwner/SetAccessControl. Existing local behavior no ACL mutations. Read-only root+file ACL validation; original locked identity/native ssh-G assertions unchanged. Finally bounded own subtree traversal deletes children nonrecursively; refuses reparse; post-create validation error cleanup retains same boundary.",
+    "local_checks": "PASS manual review/strict original method+assert+timeout and all other tests parity/Framework signatures/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh available.",
     "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN revised revoke10/full remaining suites",
-    "publication": "TODO one guarded PR88 source push, one automatic CI",
-    "next": "Read SAME new CI final logs/exact source+merge/revoke10 and all previous suites; no full wait or second stage.",
+    "windows_native": "NOT_RUN authorized ACL fixture/native SSH policy/revoke10/full relevant suites",
+    "publication": "TODO one guarded source push and one automatic CI; guards4 unchanged public uploads OFF",
+    "next": "Read SAME new CI full final logs/exact source/tested merge; verify ACL isolation/native policy assertions/revoke10/post-Stop Refresh/all relevant suites; no blind rerun/full wait/second stage.",
     "readiness_change": "+0 fixed58-80/22"
   },
   "f31_launch_revision_microtask": {
@@ -5575,7 +5577,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI656 first8 revoke PASS, stop-accepted wrong post-Stop test expectation FAIL; accepted result retained. Test-only fresh-scope reconciliation correction candidate NOT_RUN; fixed58-80/22 +0.",
+    "candidate_note": "Owner approved isolated temporary auth-policy fixture ACL; source creation-only test fix candidate NOT_RUN. CI657 failure preserved; no runtime security change. Fixed58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -13374,6 +13376,206 @@
         ],
         "checkpoint": "Postpublication docs-only local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid second CI."
       }
+    },
+    "before_ci657_security_blocker": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "CI656 bounded test-contract fix published; sole CI657 in_progress; STOP",
+        "baseline_source": "3d3136be67f68f74eea2d27d161f8ec0b56ec5b9",
+        "baseline_tested_merge": "7652b5f42b78aab12b6c18cbb676596e51df170a",
+        "baseline_checkpoint": "a5750bdfd922bfd41f43dc700c820493cdbc9c21",
+        "local_code_sha": "d02f0adc7a3bce0e50fac6af04819e21cee7d5eb",
+        "scope": "Test-only OwnedRevoke stop-accepted: expect stale-scope mutation gates; explicit existing Refresh proves original actions-restored guarantee under fresh scope. Complete/cancel-retry original assertion preserved. Runtime/API/timeout/all other tests unchanged.",
+        "local_checks": "PASS diff/static/manual signatures/strict runtime+prior test parity/JSON/secrets/public. New Refresh uses existing admin list callback, no transport addition; Modal15s/hold+join5s unchanged.",
+        "windows_compilation": "NOT_RUN new candidate",
+        "windows_native": "NOT_RUN revised revoke10/full remaining suites",
+        "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact parent/full tree equals reviewed freeze; ONE automatic CI657 pull_request attempt1/exact-source count1",
+        "next": "Read SAME CI65740071488117 full final logs/exact source/tested merge/revised revoke10/all relevant prior and remaining suites; no full wait/rerun/second stage.",
+        "readiness_change": "+0 fixed58-80/22",
+        "published_sha": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+        "tree": "ed60f51a4834657f8bda44e9e9bdf4e5a4925915",
+        "local_freeze": "611b2500d105f1e62cdc609f638fd98f544b6c64",
+        "merge_ref": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+        "tested_merge": null,
+        "ci_run_id": 40071488117,
+        "ci_run_number": 657,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": [
+          {
+            "id": 120805683270,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120805683344,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "checkpoint": "Postpublication docs-only local HEAD via git log -1/full SHA in PR88 body; not pushed to avoid another CI"
+      },
+      "ci_candidate": {
+        "source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+        "tested_merge": null,
+        "merge_ref": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+        "run_id": 40071488117,
+        "run_number": 657,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 120805683270,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120805683344,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "exact_source_run_count": 1,
+        "event": "pull_request",
+        "attempt": 1,
+        "windows_compilation": "NOT_RUN new test-contract candidate",
+        "windows_native": "NOT_RUN revised revoke10/full remaining suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public guard; final skips not yet observed"
+      }
+    },
+    "before_ci657_authorized_fixture_acl": {
+      "active_work": {
+        "status": "BLOCKED",
+        "phase": "ONE CI657 read-only permissions diagnosis; STOP for owner security approval",
+        "baseline_source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+        "published_sha": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+        "baseline_tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+        "baseline_checkpoint": "84e2c6165ea57ee3e9dd63a5bebe921c6b47c7ef",
+        "scope": "Docs-only checkpoint; src/tests/workflows/scripts unchanged. Post-Stop exact-ID/no replay/Refresh fixture retained.",
+        "evidence": {
+          "source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+          "tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+          "run_id": 40071488117,
+          "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+          "windows_job": 120805683344,
+          "windows_status": "FAIL",
+          "ubuntu_job": 120805683270,
+          "ubuntu_status": "SUCCESS metadata only",
+          "failure": "DesktopTests.AuthPolicyNative, policy.disabled: exit255, permissionsHint=True. Safe stack Check -> AuthPolicyNative -> SshAuthPolicyWorkflow -> Main.",
+          "roles": {
+            "configNamed": false,
+            "includeNamed": true,
+            "identityNamed": false,
+            "badOwnerPermissions": true,
+            "badPermissionsBanner": false,
+            "permissionDenied": false
+          },
+          "files_acl": {
+            "read": true,
+            "ownerCurrent": false,
+            "ownerSystem": false,
+            "ownerAdmins": true,
+            "protected": false,
+            "rules": 4,
+            "inherited": 4,
+            "denied": 0,
+            "otherAllow": 2,
+            "otherWrite": 1
+          },
+          "directory_acl": {
+            "rules": 8,
+            "inherited": 8,
+            "otherAllow": 4,
+            "otherWrite": 2
+          },
+          "proven": "Native OpenSSH rejects fixture Include file permissions before resolving effective authentication policy. Fixture creates directory/files with default inherited ACL; it does not set ACL. This failure is unrelated to post-Stop revoke assertion.",
+          "not_proven": "Exact rejected ACE/principal or whether owner versus specific access rule triggered the exact installed OpenSSH check; no raw SIDs/paths/config contents exposed. No runtime bug established. No claim that historical CI640 cause is fully resolved.",
+          "not_run": "revoke10, all Home VPN suites, revised post-Stop/Refresh assertions, relay, pack; no old PASS inherited. Desktop/SSH policy workflow not PASS.",
+          "contract_source": "https://github.com/PowerShell/Win32-OpenSSH/wiki/Security-protection-of-various-files-in-win32-openssh",
+          "decision": "BLOCKED security approval. No code/test/ACL/owner/policy/network changes, no push/new CI/rerun."
+        },
+        "blocker": "Need explicit permission for test-only protected ACL creation restricted to a newly created auth-policy temporary directory and files on isolated Windows CI. No change to existing user/system SSH files, ancestors, owner, SSH policy, machine ACL or production runtime.",
+        "approval_request": "Authorize test-only protected ACL on its new temporary auth-policy directory/config/include/identity fixture files, allowing only current test-user/SYSTEM/Administrators; preserve locked-identity test. No existing file owner changes or global ACL repair. Implementation/review/exact one new CI only after authorization.",
+        "publication": "NONE: no new source push, no new CI, no blind rerun; source remains127f266. Local docs-only checkpoint full SHA via git log -1.",
+        "next": "Wait for narrow fixture security approval; then one minimal test-only fixture isolation change with existing assertions/timeout/coverage preserved. Do not proceed to transport functions.",
+        "readiness_change": "+0 fixed58-80/22"
+      },
+      "ci_candidate": {
+        "source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+        "tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+        "run_id": 40071488117,
+        "run_number": 657,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+        "status": "completed",
+        "conclusion": "failure",
+        "windows_compilation": "Application built; Desktop native policy failed before Home VPN harness stage; Home VPN harness compilation NOT_RUN in CI657",
+        "windows_native": "FAIL AuthPolicyNative permissions; revoke10/all Home VPN NOT_RUN",
+        "jobs": [
+          {
+            "id": 120805683344,
+            "name": "windows-build",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "id": 120805683270,
+            "name": "vpn-server-test",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "pack": "SKIPPED",
+        "artifact_uploads": "SKIPPED",
+        "evidence": {
+          "source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+          "tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+          "run_id": 40071488117,
+          "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+          "windows_job": 120805683344,
+          "windows_status": "FAIL",
+          "ubuntu_job": 120805683270,
+          "ubuntu_status": "SUCCESS metadata only",
+          "failure": "DesktopTests.AuthPolicyNative, policy.disabled: exit255, permissionsHint=True. Safe stack Check -> AuthPolicyNative -> SshAuthPolicyWorkflow -> Main.",
+          "roles": {
+            "configNamed": false,
+            "includeNamed": true,
+            "identityNamed": false,
+            "badOwnerPermissions": true,
+            "badPermissionsBanner": false,
+            "permissionDenied": false
+          },
+          "files_acl": {
+            "read": true,
+            "ownerCurrent": false,
+            "ownerSystem": false,
+            "ownerAdmins": true,
+            "protected": false,
+            "rules": 4,
+            "inherited": 4,
+            "denied": 0,
+            "otherAllow": 2,
+            "otherWrite": 1
+          },
+          "directory_acl": {
+            "rules": 8,
+            "inherited": 8,
+            "otherAllow": 4,
+            "otherWrite": 2
+          },
+          "proven": "Native OpenSSH rejects fixture Include file permissions before resolving effective authentication policy. Fixture creates directory/files with default inherited ACL; it does not set ACL. This failure is unrelated to post-Stop revoke assertion.",
+          "not_proven": "Exact rejected ACE/principal or whether owner versus specific access rule triggered the exact installed OpenSSH check; no raw SIDs/paths/config contents exposed. No runtime bug established. No claim that historical CI640 cause is fully resolved.",
+          "not_run": "revoke10, all Home VPN suites, revised post-Stop/Refresh assertions, relay, pack; no old PASS inherited. Desktop/SSH policy workflow not PASS.",
+          "contract_source": "https://github.com/PowerShell/Win32-OpenSSH/wiki/Security-protection-of-various-files-in-win32-openssh",
+          "decision": "BLOCKED security approval. No code/test/ACL/owner/policy/network changes, no push/new CI/rerun."
+        }
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -18243,8 +18445,8 @@
       {
         "id": "PC-01",
         "status": "NOT_RUN",
-        "criterion": "New exact source/merge revised revoke10 and remaining full suites required; CI656 only first8 and prior reached slices PASS.",
-        "source": "d02f0adc7a3bce0e50fac6af04819e21cee7d5eb",
+        "criterion": "Authorized test-only protected temporary ACL candidate requires exact new Windows SSH policy/revoke10/full regression proof; old CI657 FAIL retained.",
+        "source": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
         "run_id": null,
         "ci_url": null,
         "last_failure_run": 40041549329
@@ -18927,9 +19129,150 @@
     "scope": "Test-only OwnedRevoke stop-accepted: expect stale-scope mutation gates; explicit existing Refresh proves original actions-restored guarantee under fresh scope. Complete/cancel-retry original assertion preserved. Runtime/API/timeout/all other tests unchanged.",
     "local_checks": "PASS diff/static/manual signatures/strict runtime+prior test parity/JSON/secrets/public. New Refresh uses existing admin list callback, no transport addition; Modal15s/hold+join5s unchanged.",
     "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN revised revoke10/full remaining suites",
-    "publication": "TODO one guarded PR88 source push, one automatic CI",
-    "next": "Read SAME new CI final logs/exact source+merge/revoke10 and all previous suites; no full wait or second stage.",
+    "windows_native": "NOT_RUN revised revoke10/post-Stop Refresh; CI657 failed earlier at AuthPolicyNative",
+    "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact parent/full tree equals reviewed freeze; ONE automatic CI657 pull_request attempt1/exact-source count1",
+    "next": "CI657 security fixture blocker first; previous test contract retained unchanged.",
+    "readiness_change": "+0 fixed58-80/22",
+    "published_sha": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+    "tree": "ed60f51a4834657f8bda44e9e9bdf4e5a4925915",
+    "local_freeze": "611b2500d105f1e62cdc609f638fd98f544b6c64",
+    "merge_ref": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+    "tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+    "ci_run_id": 40071488117,
+    "ci_run_number": 657,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+    "ci_status": "completed",
+    "ci_conclusion": "failure",
+    "ci_jobs": [
+      {
+        "id": 120805683270,
+        "name": "vpn-server-test",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 120805683344,
+        "name": "windows-build",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ],
+    "checkpoint": "Postpublication docs-only local HEAD via git log -1/full SHA in PR88 body; not pushed to avoid another CI"
+  },
+  "ci657_final": {
+    "source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+    "tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+    "run_id": 40071488117,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+    "windows_job": 120805683344,
+    "windows_status": "FAIL",
+    "ubuntu_job": 120805683270,
+    "ubuntu_status": "SUCCESS metadata only",
+    "failure": "DesktopTests.AuthPolicyNative, policy.disabled: exit255, permissionsHint=True. Safe stack Check -> AuthPolicyNative -> SshAuthPolicyWorkflow -> Main.",
+    "roles": {
+      "configNamed": false,
+      "includeNamed": true,
+      "identityNamed": false,
+      "badOwnerPermissions": true,
+      "badPermissionsBanner": false,
+      "permissionDenied": false
+    },
+    "files_acl": {
+      "read": true,
+      "ownerCurrent": false,
+      "ownerSystem": false,
+      "ownerAdmins": true,
+      "protected": false,
+      "rules": 4,
+      "inherited": 4,
+      "denied": 0,
+      "otherAllow": 2,
+      "otherWrite": 1
+    },
+    "directory_acl": {
+      "rules": 8,
+      "inherited": 8,
+      "otherAllow": 4,
+      "otherWrite": 2
+    },
+    "proven": "Native OpenSSH rejects fixture Include file permissions before resolving effective authentication policy. Fixture creates directory/files with default inherited ACL; it does not set ACL. This failure is unrelated to post-Stop revoke assertion.",
+    "not_proven": "Exact rejected ACE/principal or whether owner versus specific access rule triggered the exact installed OpenSSH check; no raw SIDs/paths/config contents exposed. No runtime bug established. No claim that historical CI640 cause is fully resolved.",
+    "not_run": "revoke10, all Home VPN suites, revised post-Stop/Refresh assertions, relay, pack; no old PASS inherited. Desktop/SSH policy workflow not PASS.",
+    "contract_source": "https://github.com/PowerShell/Win32-OpenSSH/wiki/Security-protection-of-various-files-in-win32-openssh",
+    "decision": "BLOCKED security approval. No code/test/ACL/owner/policy/network changes, no push/new CI/rerun."
+  },
+  "ci657_security_diagnosis": {
+    "status": "PARTIAL",
+    "phase": "ONE CI657 read-only permissions diagnosis; STOP for owner security approval",
+    "baseline_source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+    "published_sha": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+    "baseline_tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+    "baseline_checkpoint": "84e2c6165ea57ee3e9dd63a5bebe921c6b47c7ef",
+    "scope": "Docs-only checkpoint; src/tests/workflows/scripts unchanged. Post-Stop exact-ID/no replay/Refresh fixture retained.",
+    "evidence": {
+      "source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+      "tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+      "run_id": 40071488117,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40071488117",
+      "windows_job": 120805683344,
+      "windows_status": "FAIL",
+      "ubuntu_job": 120805683270,
+      "ubuntu_status": "SUCCESS metadata only",
+      "failure": "DesktopTests.AuthPolicyNative, policy.disabled: exit255, permissionsHint=True. Safe stack Check -> AuthPolicyNative -> SshAuthPolicyWorkflow -> Main.",
+      "roles": {
+        "configNamed": false,
+        "includeNamed": true,
+        "identityNamed": false,
+        "badOwnerPermissions": true,
+        "badPermissionsBanner": false,
+        "permissionDenied": false
+      },
+      "files_acl": {
+        "read": true,
+        "ownerCurrent": false,
+        "ownerSystem": false,
+        "ownerAdmins": true,
+        "protected": false,
+        "rules": 4,
+        "inherited": 4,
+        "denied": 0,
+        "otherAllow": 2,
+        "otherWrite": 1
+      },
+      "directory_acl": {
+        "rules": 8,
+        "inherited": 8,
+        "otherAllow": 4,
+        "otherWrite": 2
+      },
+      "proven": "Native OpenSSH rejects fixture Include file permissions before resolving effective authentication policy. Fixture creates directory/files with default inherited ACL; it does not set ACL. This failure is unrelated to post-Stop revoke assertion.",
+      "not_proven": "Exact rejected ACE/principal or whether owner versus specific access rule triggered the exact installed OpenSSH check; no raw SIDs/paths/config contents exposed. No runtime bug established. No claim that historical CI640 cause is fully resolved.",
+      "not_run": "revoke10, all Home VPN suites, revised post-Stop/Refresh assertions, relay, pack; no old PASS inherited. Desktop/SSH policy workflow not PASS.",
+      "contract_source": "https://github.com/PowerShell/Win32-OpenSSH/wiki/Security-protection-of-various-files-in-win32-openssh",
+      "decision": "BLOCKED security approval. No code/test/ACL/owner/policy/network changes, no push/new CI/rerun."
+    },
+    "blocker": "Need explicit permission for test-only protected ACL creation restricted to a newly created auth-policy temporary directory and files on isolated Windows CI. No change to existing user/system SSH files, ancestors, owner, SSH policy, machine ACL or production runtime.",
+    "approval_request": "Authorize test-only protected ACL on its new temporary auth-policy directory/config/include/identity fixture files, allowing only current test-user/SYSTEM/Administrators; preserve locked-identity test. No existing file owner changes or global ACL repair. Implementation/review/exact one new CI only after authorization.",
+    "publication": "NONE: no new source push, no new CI, no blind rerun; source remains127f266. Local docs-only checkpoint full SHA via git log -1.",
+    "next": "Authorized test-only fixture candidate; actual new Windows proof NOT_RUN; historical diagnostics preserved.",
+    "readiness_change": "+0 fixed58-80/22",
+    "authorization": "Owner explicitly approved protected ACL creation ONLY new temporary auth-policy fixture in isolated Windows CI; current test-user/SYSTEM/Administrators; no existing file/owner/system/SSH policy changes."
+  },
+  "ci657_authorized_fixture_acl": {
+    "status": "PARTIAL",
+    "phase": "ONE authorized CI657 temporary auth-policy ACL creation fixture fix",
+    "baseline_source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+    "baseline_tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+    "baseline_checkpoint": "017578ec55a78ea72bd8a17f57cd8f7f313a4557",
+    "local_code_sha": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
+    "scope": "tests/DesktopSshAuthPolicyTests.cs only plus3docs; existing policy/asserts/7000 timeout/coverage/post-Stop fixture/runtime/API unchanged.",
+    "authorization": "Explicit current owner instruction permits protected ACL only new auth-policy fixture on isolated Windows CI. No owner, existing file ACL, ancestor/system/.ssh/security/network mutation authorized or implemented.",
+    "implementation": "Exact work child GUID path, no preexisting resource, path/ancestors/subtree reparse refusal. GITHUB_ACTIONS=true/RUNNER_OS=Windows/Win32NT gate: Directory.CreateDirectory(root,DirectorySecurity) applies protected ACL at creation; inheritable FullControl only current test-user/SYSTEM/Administrators. No SetOwner/SetAccessControl. Existing local behavior no ACL mutations. Read-only root+file ACL validation; original locked identity/native ssh-G assertions unchanged. Finally bounded own subtree traversal deletes children nonrecursively; refuses reparse; post-create validation error cleanup retains same boundary.",
+    "local_checks": "PASS manual review/strict original method+assert+timeout and all other tests parity/Framework signatures/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh available.",
+    "windows_compilation": "NOT_RUN new candidate",
+    "windows_native": "NOT_RUN authorized ACL fixture/native SSH policy/revoke10/full relevant suites",
+    "publication": "TODO one guarded source push and one automatic CI; guards4 unchanged public uploads OFF",
+    "next": "Read SAME new CI full final logs/exact source/tested merge; verify ACL isolation/native policy assertions/revoke10/post-Stop Refresh/all relevant suites; no blind rerun/full wait/second stage.",
     "readiness_change": "+0 fixed58-80/22"
   }
 }
