@@ -537,7 +537,8 @@ if ($LASTEXITCODE -ne 0) { Fail 'Update check tests failed' }
 if ($LASTEXITCODE -ne 0) { Fail 'Desktop harness build failed' }
 # Test-only loopback server dependencies never enter release or system Python.
 $FixtureDeps = Join-Path $Root 'build\ssh-fixture-deps'
-$FixturePython = (Get-Command python -ErrorAction Stop).Source
+$FixturePythonCommand = Get-Command python -ErrorAction Stop
+$FixturePython = $FixturePythonCommand.Source
 $FixtureRequirements = Join-Path $Root 'tests\ssh-fixture-requirements.txt'
 # Only fixed booleans/counts leave the exit0 startup diagnostic. CPython verbose
 # output can contain local paths; never print or persist that raw trace.
@@ -565,6 +566,46 @@ if (-not $StartupFactsEmpty.Contains('bodyEntered=False') -or
     -not $StartupFactsEmpty.Contains('stderrChars=0') -or
     -not $StartupFactsEmpty.Contains('siteReady=False')) { Fail 'SSH fixture startup diagnostic mislabeled an empty trace' }
 Write-Host 'SSH fixture startup facts synthetic/redaction tests PASS: 2'
+# Read-only deadline snapshot of this owned child only. No raw module paths,
+# command lines, environment values, thread IDs or native error messages escape.
+function Get-IsolatedSshFixtureLoaderFacts($OwnedProcess, $ExpectedExecutable) {
+    $mainMatches = $false; $mainRead = $false; $moduleRead = $false
+    $pythonLoaded = $false; $runtimeLoaded = $false; $moduleCount = 0; $moduleCapped = $false
+    $mainError = $false; $moduleError = $false
+    try {
+        $mainMatches = [string]::Equals($OwnedProcess.MainModule.FileName, $ExpectedExecutable, [StringComparison]::OrdinalIgnoreCase)
+        $mainRead = $true
+    } catch { $mainError = $true }
+    try {
+        foreach ($module in $OwnedProcess.Modules) {
+            if ($moduleCount -ge 128) { $moduleCapped = $true; break }
+            $moduleCount++
+            if ($module.ModuleName -match '^python[0-9]+(?:_d)?\.dll$') { $pythonLoaded = $true }
+            if ($module.ModuleName -match '^(?:vcruntime[0-9_]+|ucrtbase)\.dll$') { $runtimeLoaded = $true }
+        }
+        $moduleRead = $true
+    } catch { $moduleError = $true }
+    return ('mainRead=' + $mainRead + '; mainMatchesSelected=' + $mainMatches +
+        '; mainProbeError=' + $mainError + '; modulesRead=' + $moduleRead +
+        '; modulesProbeError=' + $moduleError + '; moduleCount=' + $moduleCount +
+        '; moduleCountCapped=' + $moduleCapped + '; pythonDllLoaded=' + $pythonLoaded +
+        '; cRuntimeLoaded=' + $runtimeLoaded)
+}
+# Synthetic redaction/role regression; no extra interpreter or host settings used.
+$LoaderSynthetic = [pscustomobject]@{
+    MainModule = [pscustomobject]@{ FileName = 'PRIVATE_LOADER_SENTINEL' }
+    Modules = @([pscustomobject]@{ ModuleName = 'python312.dll' },
+        [pscustomobject]@{ ModuleName = 'ucrtbase.dll' },
+        [pscustomobject]@{ ModuleName = 'PRIVATE_LOADER_SENTINEL' })
+}
+$LoaderProbe = Get-IsolatedSshFixtureLoaderFacts $LoaderSynthetic 'PRIVATE_LOADER_SENTINEL'
+if ($LoaderProbe.Contains('PRIVATE_LOADER_SENTINEL') -or -not $LoaderProbe.Contains('mainMatchesSelected=True') -or
+    -not $LoaderProbe.Contains('moduleCount=3;') -or -not $LoaderProbe.Contains('pythonDllLoaded=True') -or
+    -not $LoaderProbe.Contains('cRuntimeLoaded=True')) { Fail 'SSH fixture loader diagnostic redaction/role regression' }
+$LoaderEmpty = Get-IsolatedSshFixtureLoaderFacts ([pscustomobject]@{ MainModule = [pscustomobject]@{ FileName = 'other' }; Modules = @() }) 'expected'
+if (-not $LoaderEmpty.Contains('mainMatchesSelected=False') -or -not $LoaderEmpty.Contains('pythonDllLoaded=False') -or
+    -not $LoaderEmpty.Contains('moduleCount=0;')) { Fail 'SSH fixture loader diagnostic empty regression' }
+Write-Host 'SSH fixture loader facts synthetic/redaction tests PASS: 2'
 function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureOut = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stdout.txt')
     $FixtureError = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stderr.txt')
@@ -583,6 +624,18 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     # normal site initialization. No -S/-I/-E flags or global environment changes.
     $FixtureStartupDiagnostic = ($Label -eq 'exit0-regression')
     if ($FixtureStartupDiagnostic) { $FixtureTool.StartInfo.EnvironmentVariables['PYTHONVERBOSE'] = '1' }
+    if ($FixtureStartupDiagnostic) {
+        # Presence only: do not print environment values or read site/config contents.
+        Write-Host ('SSH_FIXTURE_SELECTION applicationCommand=' + ($FixturePythonCommand.CommandType -eq 'Application') +
+            '; executableExists=' + [IO.File]::Exists($FixturePython) +
+            '; executableNamedPython=' + ([IO.Path]::GetFileName($FixturePython) -ieq 'python.exe') +
+            '; pythonHomePresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONHOME') +
+            '; pythonPathPresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONPATH') +
+            '; pythonStartupPresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONSTARTUP') +
+            '; pythonUserBasePresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONUSERBASE') +
+            '; noUserSitePresent=' + $FixtureTool.StartInfo.EnvironmentVariables.ContainsKey('PYTHONNOUSERSITE') +
+            '; stack=Invoke-IsolatedSshFixtureTool>selection')
+    }
     $FixtureInputClosed = $false
     $FixtureDeadlineExceeded = $false
     $FixtureStarted = $false
@@ -615,6 +668,11 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
             try { $FixtureCpuMs = $FixtureTool.TotalProcessorTime.TotalMilliseconds; $FixtureRamBytes = $FixtureTool.WorkingSet64 }
             catch { $FixtureProbeError = $_.Exception.GetType().Name }
             Write-Host ('SSH_FIXTURE_DEADLINE label=' + $Label + '; elapsedMs=' + $FixtureLaunchWatch.ElapsedMilliseconds + '; exited=' + $FixtureTool.HasExited + '; stdoutTask=' + $FixtureOutRead.Status + '; stderrTask=' + $FixtureErrorRead.Status + '; cpuMs=' + $FixtureCpuMs + '; ramBytes=' + $FixtureRamBytes + '; probeErrorType=' + $FixtureProbeError)
+            if ($FixtureStartupDiagnostic) {
+                $FixtureLoaderFacts = Get-IsolatedSshFixtureLoaderFacts $FixtureTool $FixturePython
+                Write-Host ('SSH_FIXTURE_LOADER label=exit0-regression; phase=deadline-before-owned-kill; ' +
+                    $FixtureLoaderFacts + '; stack=Invoke-IsolatedSshFixtureTool>deadline')
+            }
             if (-not $FixtureTool.HasExited) {
                 try { $FixtureTool.Kill() } catch { if (-not $FixtureTool.HasExited) { throw } }
             }
