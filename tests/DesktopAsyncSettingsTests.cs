@@ -194,6 +194,48 @@ namespace ProGo
             }
         }
 
+        // Read only the IPv4 TCP owner table on this one failed 1s contract.
+        // No raw PID, addresses, process names, arguments or paths are emitted.
+        [System.Runtime.InteropServices.DllImport("iphlpapi.dll", SetLastError = false)]
+        private static extern uint GetExtendedTcpTable(IntPtr table, ref int size, bool order, int family, int tableClass, uint reserved);
+        private static void ColdStopListenerOwnerFacts(int port)
+        {
+            IntPtr buffer = IntPtr.Zero;
+            try {
+                int size = 0;
+                uint status = GetExtendedTcpTable(IntPtr.Zero, ref size, false, 2, 5, 0);
+                if (status != 122 || size < 4 || size > 1048576) {
+                    Console.WriteLine("COLD_STOP_OWNER tableRead=False; phase=size; bounded=True"); return;
+                }
+                buffer = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
+                status = GetExtendedTcpTable(buffer, ref size, false, 2, 5, 0);
+                if (status != 0) { Console.WriteLine("COLD_STOP_OWNER tableRead=False; phase=snapshot; noRetry=True"); return; }
+                int rows = System.Runtime.InteropServices.Marshal.ReadInt32(buffer);
+                if (rows < 0 || rows > 4096 || 4L + rows * 24L > size) {
+                    Console.WriteLine("COLD_STOP_OWNER tableRead=False; phase=rows; bounded=True"); return;
+                }
+                int self;
+                using (var current = System.Diagnostics.Process.GetCurrentProcess()) self = current.Id;
+                int ownListen = 0, otherListen = 0, loopback = 0, wildcard = 0, otherAddress = 0, nonListen = 0;
+                for (int i = 0; i < rows; i++) {
+                    IntPtr row = IntPtr.Add(buffer, 4 + i * 24);
+                    int localPort = System.Runtime.InteropServices.Marshal.ReadByte(row, 8) * 256 +
+                        System.Runtime.InteropServices.Marshal.ReadByte(row, 9);
+                    if (localPort != port) continue;
+                    if (System.Runtime.InteropServices.Marshal.ReadInt32(row, 0) != 2) { nonListen++; continue; }
+                    if (System.Runtime.InteropServices.Marshal.ReadInt32(row, 20) == self) ownListen++; else otherListen++;
+                    int address = System.Runtime.InteropServices.Marshal.ReadInt32(row, 4);
+                    if (address == 0x0100007f) loopback++; else if (address == 0) wildcard++; else otherAddress++;
+                }
+                Console.WriteLine("COLD_STOP_OWNER tableRead=True; ownProcessListeners=" + ownListen +
+                    "; otherProcessListeners=" + otherListen + "; loopbackListeners=" + loopback +
+                    "; wildcardListeners=" + wildcard + "; otherAddressListeners=" + otherAddress +
+                    "; nonListenRows=" + nonListen + "; stack=AsyncSettingsColdStartHeartbeat>owner-table");
+            } catch {
+                Console.WriteLine("COLD_STOP_OWNER tableRead=False; phase=exception; noRawError=True");
+            } finally { if (buffer != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(buffer); }
+        }
+
         private static void AsyncSettingsColdStartHeartbeat()
         {
             int armed = 0, workerThread = 0, activeWrites = 0;
@@ -246,7 +288,16 @@ namespace ProGo
                             Thread.Sleep(20);
                         }
                     }
-                    if (!rebound) AssertPortReleased(releasedPort, "queued desktop Stop releases the actual fallback endpoint within 1 s");
+                    if (!rebound) {
+                        Console.WriteLine("COLD_STOP_REBIND settingsSettled=" + operation.IsCompleted +
+                            "; stopSettled=" + fixture.Context.IntegrationWork.IsCompleted +
+                            "; settingsPending=" + fixture.Context.SettingsPending + "; bridgeRunning=" + fixture.Bridge.IsRunning +
+                            "; cleanupPending=" + fixture.Bridge.CleanupPending + "; configuredMatchesBridge=" +
+                            (releasedPort == fixture.Bridge.Port) + "; matchesOccupiedFixture=" + (releasedPort == occupied.Port) +
+                            "; stack=AsyncSettingsColdStartHeartbeat>exclusive-rebind-deadline");
+                        ColdStopListenerOwnerFacts(releasedPort);
+                        AssertPortReleased(releasedPort, "queued desktop Stop releases the actual fallback endpoint within 1 s");
+                    }
                     else Check(true, "queued desktop Stop releases the actual fallback endpoint within 1 s");
                 } finally { release.Set(); WaitAsyncSettings(operation); }
             }
