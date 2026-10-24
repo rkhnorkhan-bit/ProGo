@@ -439,6 +439,42 @@ function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
 }
 # An intent is not a terminal outcome or post-crash ownership proof.
 # Until durable terminal outcomes exist, every previous installer journal is pending.
+# Only finish metadata publication of an already-proven rollback. Never restore bytes.
+function Resolve-ProGoInstallerPendingRollback([string]$InstallDirectory) {
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    if (-not (Test-Path -LiteralPath $parent)) { return }
+    if (-not [IO.Directory]::Exists($parent)) { throw 'Installer journal parent is invalid.' }
+    $ready = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        if (-not $item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        if ((Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -or
+            (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { continue }
+        if (-not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory 'rollback.pending.json')) {
+            throw 'Installer pending journal requires verified recovery before a new installation.'
+        }
+        $pending = Assert-ProGoInstallerStagePath $item.FullName 'rollback.pending.json'
+        $saved = Read-ProGoInstallerJson $pending
+        $inventory = $saved.Inventory | ConvertFrom-Json -ErrorAction Stop
+        $snapshot = if ($null -eq $saved.Snapshot) { $null } else { Assert-ProGoInstallerStagePath $parent $saved.Snapshot }
+        $backup = [pscustomobject]@{ InstallDirectory = $InstallDirectory; Directory = $snapshot;
+            ManifestHash = $inventory.SnapshotHash; Entries = @($inventory.Files) }
+        # Recheck saved material and current OLD bytes/absence: intent cannot authorize recovery.
+        Assert-ProGoInstallerSnapshotMaterial $backup
+        Assert-ProGoInstallerRuntime $backup -Original
+        if (-not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory 'rollback.pending.json')) {
+            throw 'Installer pending rollback evidence changed.'
+        }
+        $ready.Add([pscustomobject]@{ Directory = $item.FullName; Pending = $pending; Backup = $backup })
+    }
+    if ($ready.Count -gt 1) { throw 'Installer multiple pending rollbacks require verified recovery.' }
+    foreach ($candidate in $ready) {
+        Assert-ProGoInstallerSnapshotMaterial $candidate.Backup
+        Assert-ProGoInstallerRuntime $candidate.Backup -Original
+        if (-not (Test-ProGoInstallerRollbackOutcome $candidate.Directory $InstallDirectory 'rollback.pending.json')) { throw 'Installer pending rollback evidence changed.' }
+        [IO.File]::Move($candidate.Pending, (Assert-ProGoInstallerStagePath $candidate.Directory 'rolled-back.json'))
+    }
+}
 function Assert-ProGoInstallerNoPendingJournal([string]$InstallDirectory) {
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if (-not (Test-Path -LiteralPath $parent)) { return }
@@ -636,6 +672,7 @@ $InstallBackup = $null
 $InstallWrites = New-Object 'System.Collections.Generic.List[object]'
 try {
     $InstallMaintenance = Enter-ProGoInstallerMaintenance
+    Resolve-ProGoInstallerPendingRollback $InstallDir
     Assert-ProGoInstallerNoPendingJournal $InstallDir
     Stop-ProGoInstallerApplication -InstallDirectory $InstallDir
     $InstallStage = New-ProGoInstallerStage $Payload
