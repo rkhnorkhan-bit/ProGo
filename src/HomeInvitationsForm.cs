@@ -30,6 +30,7 @@ namespace ProGo
         private bool pendingAdmin, pendingUnreadable;
         private string pendingRequestName;
         internal Func<string, Task<string>> RevokeSelected;
+        internal Func<string, string, string, Task<string>> ReissueAdmin;
         internal Func<string, bool> Confirm;
         internal Action<string> ShowToken;
         private CancellationTokenSource initialPendingCancellation;
@@ -45,7 +46,7 @@ namespace ProGo
         internal HomeInvitationsForm(HomeVpnInvitation[] items, Func<string, string, string, Task<string>> admin, ClipboardService clipboard, HomeVpnService service = null, Action beforePendingRead = null)
         {
             this.admin = admin; pendingService = service; this.beforePendingRead = beforePendingRead;
-            RevokeSelected = id => admin("revoke", null, id);
+            RevokeSelected = id => admin("revoke", null, id); ReissueAdmin = admin;
             Text = "Доступ друзей"; ClientSize = new Size(800, 760); StartPosition = FormStartPosition.CenterParent;
             var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
             list = new HomeInvitationList(items) { Width = 740, Height = 365 };
@@ -113,12 +114,13 @@ namespace ProGo
                 var id = selected.Id; var label = selected.Name;
                 if (!Confirm(Identity(selected) + "\r\nСтарый токен перестанет работать; соединения этого доступа будут закрыты. Затем будет создан новый токен с тем же именем. Другу потребуется заменить токен в ProGo и заново установить профиль телефона. Остальные приглашения не изменятся.\r\nЕсли выдача не завершится, старый доступ не восстановится. Продолжить?")) return;
                 await RunAsync(async delegate {
-                    var result = await ownerUi.Await(HomeInvitationReissue.RunAsync(id, label, admin, value => ownerUi.PostUpdate(delegate { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = value; })));
+                    var result = await ownerUi.Await(HomeInvitationReissue.RunAsync(id, label, ReissueAdmin, value => ownerUi.PostUpdate(delegate { if (!ownerUi.Closed && !IsDisposed && !Disposing) status.Text = value; })));
                     if (ownerUi.Closed || IsDisposed || Disposing) return;
                     status.Text = result.Message;
                     if (result.State != InvitationReissueState.RevokeUnconfirmed) selected.Revoked = true;
                     list.RefreshSelection();
                     if (result.State == InvitationReissueState.Complete) {
+                        if (!RecoveryConsumptionScope(operationStop)) { RequireRefresh(HomeVpnAdminRecovery.PendingMessage); return; }
                         list.Add(result.Replacement); ShowToken(result.Token);
                         if (ownerUi.Closed || IsDisposed || Disposing) return;
                         bool consumed = await ownerUi.Await(ConsumeRecoveredAsync(result.Token));

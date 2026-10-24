@@ -69,6 +69,7 @@ namespace ProGo
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> PrepareSetup;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> IssueInvitation;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> RevokeInvitation;
+        internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, string, Action<string>, Task<string>> ReissueInvitation;
         private Form readOnlyListOwner;
         private HomeProfileUiDispatcher readOnlyListUi;
 
@@ -80,6 +81,7 @@ namespace ProGo
             PrepareSetup = (owner, window, dispatcher, label, report) => service.SetupOwnedAsync(owner, window, dispatcher, label, report);
             IssueInvitation = (owner, window, dispatcher, label, report) => service.InviteAdminOwnedAsync(owner, window, dispatcher, label, report);
             RevokeInvitation = (owner, window, dispatcher, id, report) => service.RevokeAdminOwnedAsync(owner, window, dispatcher, id, report);
+            ReissueInvitation = (owner, window, dispatcher, label, source, report) => service.ReissueInviteAdminOwnedAsync(owner, window, dispatcher, label, source, report);
             Admin = (owner, action, label, identifier, report) => action == "repair"
                 ? service.RepairAdminOwnedAsync(owner, this, httpDispatcher, report)
                 : action == "list" ? ReadAdminList(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, report)
@@ -732,6 +734,23 @@ namespace ProGo
         }
         internal void BindSelectedRevoke(HomeInvitationsForm dialog, HomeProfileUiDispatcher dispatcher)
         { dialog.RevokeSelected = id => RevokeInvitation(service.Owner, dialog, dispatcher, id, delegate { }); }
+        internal void BindSelectedReissue(HomeInvitationsForm dialog, HomeProfileUiDispatcher dispatcher)
+        {
+            Task<bool> scope = null; HomeVpnOwner frozen = null; string source = null;
+            dialog.ReissueAdmin = (action, label, id) => {
+                if (action == "revoke") {
+                    scope = service.StopWork; source = id;
+                    var owner = service.Owner;
+                    frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+                }
+                if (dialog.IsDisposed || dialog.Disposing || service.StartsPaused || service.IsStopping
+                    || !Object.ReferenceEquals(scope, service.StopWork)) throw new HomeVpnPreparationCancelledException();
+                if (action == "revoke") return RevokeInvitation(frozen, dialog, dispatcher, id, delegate { });
+                if (action == "invite" && source != null && source == id)
+                    return ReissueInvitation(frozen, dialog, dispatcher, label, source, delegate { });
+                throw new InvalidOperationException("Перевыпуск использует только выбранный исходный доступ.");
+            };
+        }
         private async Task ManageInvitations()
         {
             await RunStep(async delegate
@@ -745,7 +764,7 @@ namespace ProGo
                     (action, label, id) => Admin(service.Owner, action, label, id, delegate { }), clipboard, service))
                 using (var listUi = new HomeProfileUiDispatcher(dialog)) {
                     readOnlyListOwner = dialog; readOnlyListUi = listUi;
-                    BindSelectedRevoke(dialog, listUi);
+                    BindSelectedRevoke(dialog, listUi); BindSelectedReissue(dialog, listUi);
                     try { dialog.ShowDialog(this); }
                     finally { readOnlyListOwner = null; readOnlyListUi = null; }
                 }

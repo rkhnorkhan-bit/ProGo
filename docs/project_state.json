@@ -3929,11 +3929,11 @@
     }
   ],
   "ci_candidate": {
-    "source": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
+    "source": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
     "tested_merge": null,
-    "status": "NOT_RUN local authorized test-only candidate",
+    "status": "NOT_RUN local Reissue transport candidate",
     "windows_compilation": "NOT_RUN",
-    "windows_native": "NOT_RUN SSH policy/revoke10/full suites",
+    "windows_native": "NOT_RUN new Reissue10/full suites",
     "artifact_uploads": "OFF public guard unchanged"
   },
   "signing_microtask": {
@@ -5471,19 +5471,34 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE authorized CI657 temporary auth-policy ACL creation fixture fix",
-    "baseline_source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
-    "baseline_tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
-    "baseline_checkpoint": "017578ec55a78ea72bd8a17f57cd8f7f313a4557",
-    "local_code_sha": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
-    "scope": "tests/DesktopSshAuthPolicyTests.cs only plus3docs; existing policy/asserts/7000 timeout/coverage/post-Stop fixture/runtime/API unchanged.",
-    "authorization": "Explicit current owner instruction permits protected ACL only new auth-policy fixture on isolated Windows CI. No owner, existing file ACL, ancestor/system/.ssh/security/network mutation authorized or implemented.",
-    "implementation": "Exact work child GUID path, no preexisting resource, path/ancestors/subtree reparse refusal. GITHUB_ACTIONS=true/RUNNER_OS=Windows/Win32NT gate: Directory.CreateDirectory(root,DirectorySecurity) applies protected ACL at creation; inheritable FullControl only current test-user/SYSTEM/Administrators. No SetOwner/SetAccessControl. Existing local behavior no ACL mutations. Read-only root+file ACL validation; original locked identity/native ssh-G assertions unchanged. Finally bounded own subtree traversal deletes children nonrecursively; refuses reparse; post-create validation error cleanup retains same boundary.",
-    "local_checks": "PASS manual review/strict original method+assert+timeout and all other tests parity/Framework signatures/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh available.",
+    "phase": "ONE Reissue/source-ID invite owned production transport candidate",
+    "baseline_source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+    "baseline_tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+    "baseline_checkpoint": "12e045c15a7aae94b09baf0f733c8e0b1b6c30c3",
+    "local_code_sha": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
+    "scope": "Only selected Reissue button routes revoke+source-ID invite through existing owned helpers. Fresh invite/standalone revoke/recover/core/ACL fixture unchanged. No new protocol or feature.",
+    "implementation": "Separate ReissueAdmin binding freezes original ID/owner/StopWork at revoke admission; both native operations own actual Friends Form/dispatcher. Existing RevokeAdminOwned reused; replacement-only ReissueInviteAdminOwned owns core lease/helper/DPAPI source-bound request/result/cleanup. Post-copy guard refuses SSH after Stop. Binding rejects source mismatch or changed Stop scope between steps. Complete result after changed scope retains accepted request but refuses late token handoff. Existing Reissue orchestration and consumption unchanged.",
+    "native_cases": [
+      "default-refusal",
+      "complete",
+      "cancel-refresh",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock",
+      "stop-between",
+      "stop-result"
+    ],
+    "test_contract": "Actual ShowDialog/production binding/default Reissue orchestration and core helper/native fixture processes. Only copy and SSH executable fixture seams. Exact original source ID/name despite edited draft, same-name sibling unchanged, exactly one revoke/invite. Cancel->explicit Refresh is read-only, requires fresh selection/no automatic retry of acknowledged revoke. Stop between steps refuses invite, Stop after accepted result retains request/source/recovery ID without handoff. Cleanup lock false Stop then exact deletion retry no replay. Original modal15s/copy+join5s and every old assertion/timeout preserved.",
+    "local_checks": "PASS static/manual signatures/strict old method and test parity/lexical(not compiler)/diff/JSON/public321source0release/secretsPII scan. No Windows/.NET/pwsh.",
     "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN authorized ACL fixture/native SSH policy/revoke10/full relevant suites",
-    "publication": "TODO one guarded source push and one automatic CI; guards4 unchanged public uploads OFF",
-    "next": "Read SAME new CI full final logs/exact source/tested merge; verify ACL isolation/native policy assertions/revoke10/post-Stop Refresh/all relevant suites; no blind rerun/full wait/second stage.",
+    "windows_native": "NOT_RUN new owned Reissue10/full suites",
+    "publication": "TODO one guarded existing PR88 source push and one automatic CI; public uploads OFF/guards4 unchanged",
+    "remaining_production_paths": [
+      "recover-invite owned transport"
+    ],
+    "next": "Read SAME new CI final exact-source/tested-merge/Reissue10 and all prior suites. Only after proof one bounded recover-invite transport stage; no second stage now.",
     "readiness_change": "+0 fixed58-80/22"
   },
   "f31_launch_revision_microtask": {
@@ -5577,7 +5592,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "Owner approved isolated temporary auth-policy fixture ACL; source creation-only test fix candidate NOT_RUN. CI657 failure preserved; no runtime security change. Fixed58-80/22 +0.",
+    "candidate_note": "CI658 exact469c4fe/da6ac3c full logs policy214/revoke10/HomeVPN4562/all suites PASS. Reissue owned source-ID transport local candidate NOT_RUN. Recover-invite transport plus Windows/dev/delivery/production gates remain; fixed58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -13576,6 +13591,81 @@
           "decision": "BLOCKED security approval. No code/test/ACL/owner/policy/network changes, no push/new CI/rerun."
         }
       }
+    },
+    "before_reissue_transport_on658": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "Authorized test-only ACL creation published; sole CI658 in_progress; STOP",
+        "baseline_source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
+        "baseline_tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
+        "baseline_checkpoint": "017578ec55a78ea72bd8a17f57cd8f7f313a4557",
+        "local_code_sha": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
+        "scope": "tests/DesktopSshAuthPolicyTests.cs only plus3docs; existing policy/asserts/7000 timeout/coverage/post-Stop fixture/runtime/API unchanged.",
+        "authorization": "Explicit current owner instruction permits protected ACL only new auth-policy fixture on isolated Windows CI. No owner, existing file ACL, ancestor/system/.ssh/security/network mutation authorized or implemented.",
+        "implementation": "Exact work child GUID path, no preexisting resource, path/ancestors/subtree reparse refusal. GITHUB_ACTIONS=true/RUNNER_OS=Windows/Win32NT gate: Directory.CreateDirectory(root,DirectorySecurity) applies protected ACL at creation; inheritable FullControl only current test-user/SYSTEM/Administrators. No SetOwner/SetAccessControl. Existing local behavior no ACL mutations. Read-only root+file ACL validation; original locked identity/native ssh-G assertions unchanged. Finally bounded own subtree traversal deletes children nonrecursively; refuses reparse; post-create validation error cleanup retains same boundary.",
+        "local_checks": "PASS manual review/strict original method+assert+timeout and all other tests parity/Framework signatures/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh available.",
+        "windows_compilation": "NOT_RUN new candidate",
+        "windows_native": "NOT_RUN authorized ACL fixture/native SSH policy/revoke10/full relevant suites",
+        "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact parent/full tree equals reviewed freeze; ONE automatic CI658 pull_request attempt1/exact-source count1. Public repo rechecked/guards4 unchanged.",
+        "next": "Read SAME CI65840077869891 full final logs/exact source/tested merge; prove new fixture ACL boundary/native policy/revoke10/post-Stop Refresh/all suites. No full wait/second stage/rerun.",
+        "readiness_change": "+0 fixed58-80/22",
+        "published_sha": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+        "tree": "57a6888e52b5d33562b8fb60024fa2cdc3554748",
+        "local_freeze": "27b00216d1711ad9e89967753f7c7d9b75368b02",
+        "merge_ref": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+        "tested_merge": null,
+        "ci_run_id": 40077869891,
+        "ci_run_number": 658,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": [
+          {
+            "id": 120825053207,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120825053332,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; not pushed to avoid second CI."
+      },
+      "ci_candidate": {
+        "source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+        "tested_merge": null,
+        "merge_ref": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+        "run_id": 40077869891,
+        "run_number": 658,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 120825053207,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "id": 120825053332,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        ],
+        "exact_source_run_count": 1,
+        "event": "pull_request",
+        "attempt": 1,
+        "windows_compilation": "NOT_RUN new ACL fixture candidate",
+        "windows_native": "NOT_RUN new ACL isolation/native SSH policy/revoke10/full suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public guard/final skips not yet observed"
+      }
     }
   },
   "prepared_owned_stdin_publication": {
@@ -18445,8 +18535,8 @@
       {
         "id": "PC-01",
         "status": "NOT_RUN",
-        "criterion": "Authorized test-only protected temporary ACL candidate requires exact new Windows SSH policy/revoke10/full regression proof; old CI657 FAIL retained.",
-        "source": "a81108a4ae461e9dbe49cdb949b426248aecbfee",
+        "criterion": "New exact source/merge Reissue10/all prior suites proof required; CI658 separate baseline PASS.",
+        "source": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
         "run_id": null,
         "ci_url": null,
         "last_failure_run": 40041549329
@@ -18454,7 +18544,7 @@
       {
         "id": "PC-02",
         "status": "TODO",
-        "criterion": "Fresh invite verified CI654; standalone revoke candidate needs exact Windows proof. Reissue orchestration/SourceID invite and recover-invite transport remain TODO; whole F31-R09/R10 not closed."
+        "criterion": "Fresh invite and standalone revoke verified CI658. New Reissue/source-ID transport candidate needs Windows proof; recover-invite owned transport remains TODO. Whole F31-R09/R10/R11 not closed."
       },
       {
         "id": "PC-03",
@@ -18985,7 +19075,7 @@
     "suites": "invite8; Reissue/Create/Recover consumption8, API8, Recover name9, Reissue/Create uncertainty8, API6/UI8/UI12; snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS recovery11/fresh HTTPS10/export11/chooser3; Home VPN4371/Desktop5298/SSH policy61/Instance30/Maintenance126/Shutdown47/Portable91. Python28 incl2 SKIPPED; Ubuntu operation16/QR13/provisioning PASS."
   },
   "invitation_revoke_transport_on654": {
-    "status": "PARTIAL",
+    "status": "PASS bounded dev criterion only",
     "phase": "ONE standalone selected-ID revoke owned transport candidate",
     "baseline_source": "b72d53e1475410736d2bdd338d13c75e6d9a8c81",
     "baseline_tested_merge": "2170a3caef25e2722171911b6233bee1c06201e2",
@@ -19007,14 +19097,14 @@
     ],
     "test_contract": "Actual ShowDialog/production BindSelectedRevoke; real helper staging, native process+child and private output. Fixture SSH only, no live resources. Exact ID and same-name sibling, one accepted revoke/no replay, pre-SSH Retry only, uncertain result gated, accepted outcome after Stop retained, existing accepted invitation request/result/ID byte-exact, cleanup lock false Stop then exact delete-only Retry. Existing 5s hold/join and 15s modal deadlines; no old assertions/timeouts changed.",
     "local_checks": "PASS static/manual signatures/old runtime+test parity/lexical delimiters (not compiler)/diff/JSON/public321source0release/added secretPII0/Python invitation metadata2. Windows NOT_RUN.",
-    "windows_compilation": "PASS CI656 harness",
-    "windows_native": "PARTIAL first8 PASS; stop-accepted FAIL test expectation, accepted-request/later suites NOT_RUN",
+    "windows_compilation": "PASS exact CI658 source/merge",
+    "windows_native": "PASS applicable bounded cases in exact CI658; whole delivery gates remain",
     "publication": "PASS one fresh expected-head guarded non-force PR88 source push; exact fetched parent and tree match reviewed freeze; one automatic CI655/40052376202 pull_request attempt1, exact-source count1.",
     "remaining_production_paths": [
       "Reissue orchestration + SourceID invite (including existing internal revoke dependency)",
       "recover-invite transport"
     ],
-    "next": "Minimal fixture arity correction candidate; no runtime fix or PASS inferred.",
+    "next": "Baseline verified CI658; Reissue source-ID owned transport is separate new candidate, then recover-invite remains.",
     "readiness_change": "+0; fixed weights and original gates unchanged; implementation58-80/verified22.",
     "published_sha": "3e9971f696e2225472119c8f899170ee0ef8ec79",
     "tree": "3276e7cbbfcae1efdb68ce3c4dada381207d7215",
@@ -19043,15 +19133,16 @@
     "checkpoint": "Postpublication3-doc local HEAD via git log -1 and full SHA in PR88 body; not pushed to avoid second automatic CI.",
     "public_diff": "7files629add/71delete:3 runtime36add/1delete +1 test178add/1delete +3docs415add/69delete; all previous methods/test bodies/scripts/workflows/VERSION preserved.",
     "verification": {
-      "source": "3d3136be67f68f74eea2d27d161f8ec0b56ec5b9",
-      "tested_merge": "7652b5f42b78aab12b6c18cbb676596e51df170a",
-      "run_id": 40068891553,
-      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40068891553",
-      "windows_status": "FAIL",
-      "error": "OwnedRevoke stop-accepted: confirmed revoke restores actions with exact selected ID; safe stack ModalWizardCase il155 -> OwnedRevoke il1225 -> Run il637",
-      "observed": "Harness compiled; CS1501 fixed. revoke first8 PASS; stop-accepted accepted result/exact selected ID/neighbor/one revoke/completed Stop PASS. needsRefresh and Enabled individual values not logged.",
-      "cause": "Proven test-contract mismatch: Stop replaces StopWork. Action keeps old operationStop; RefreshPendingAsync checkScope rejects reference mismatch and catch sets pendingAdmin=pendingUnreadable=true. UpdateActions must gate mutations. Accepted revoke is retained, not rolled back. Restore actions only after explicit fresh-scope Refresh.",
-      "other_pass": "list10/initial8/repeated12/uncertainty8x2/Recover name9/consumption8x3/invite8 reached PASS; later Home VPN suites NOT_RUN. No whole suite PASS inferred."
+      "source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+      "tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+      "run_id": 40077869891,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891",
+      "status": "SUCCESS",
+      "windows_job": 120825053332,
+      "ubuntu_job": 120825053207,
+      "full_logs": "Windows14194/Ubuntu578 lines independently read; exact checkout/build identity. Both jobs SUCCESS; pack runner-only SUCCESS; uploads/prune SKIPPED.",
+      "suites": "Native policy disabled/excluded/allowed effective fields PASS; policy214/Desktop5451/Instance30/HomeVPN4562/Portable91. revoke10 incl stale-scope and explicit Refresh exactID/no replay/sibling PASS; invite8/list10/initial8/repeated12/uncertainty8x2/name9/consumption8x3/API8/snapshot12/dispatcher5/ownership8/cleanup4/repair8/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3 PASS. Python28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS.",
+      "limits": "Runner result only; owner PC/install/live acceptance NOT_RUN; no whole F31 gate closed."
     }
   },
   "ci655_final": {
@@ -19120,7 +19211,7 @@
     "other_pass": "list10/initial8/repeated12/uncertainty8x2/Recover name9/consumption8x3/invite8 reached PASS; later Home VPN suites NOT_RUN. No whole suite PASS inferred."
   },
   "ci656_stop_contract_correction": {
-    "status": "PARTIAL",
+    "status": "PASS bounded dev criterion only",
     "phase": "ONE CI656 post-Stop fixture contract correction",
     "baseline_source": "3d3136be67f68f74eea2d27d161f8ec0b56ec5b9",
     "baseline_tested_merge": "7652b5f42b78aab12b6c18cbb676596e51df170a",
@@ -19128,10 +19219,10 @@
     "local_code_sha": "d02f0adc7a3bce0e50fac6af04819e21cee7d5eb",
     "scope": "Test-only OwnedRevoke stop-accepted: expect stale-scope mutation gates; explicit existing Refresh proves original actions-restored guarantee under fresh scope. Complete/cancel-retry original assertion preserved. Runtime/API/timeout/all other tests unchanged.",
     "local_checks": "PASS diff/static/manual signatures/strict runtime+prior test parity/JSON/secrets/public. New Refresh uses existing admin list callback, no transport addition; Modal15s/hold+join5s unchanged.",
-    "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN revised revoke10/post-Stop Refresh; CI657 failed earlier at AuthPolicyNative",
+    "windows_compilation": "PASS exact CI658 source/merge",
+    "windows_native": "PASS applicable bounded cases in exact CI658; whole delivery gates remain",
     "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact parent/full tree equals reviewed freeze; ONE automatic CI657 pull_request attempt1/exact-source count1",
-    "next": "CI657 security fixture blocker first; previous test contract retained unchanged.",
+    "next": "Baseline verified CI658; Reissue source-ID owned transport is separate new candidate, then recover-invite remains.",
     "readiness_change": "+0 fixed58-80/22",
     "published_sha": "127f266ddfabf0050eda4831693f14b382dc4f9b",
     "tree": "ed60f51a4834657f8bda44e9e9bdf4e5a4925915",
@@ -19157,7 +19248,19 @@
         "conclusion": null
       }
     ],
-    "checkpoint": "Postpublication docs-only local HEAD via git log -1/full SHA in PR88 body; not pushed to avoid another CI"
+    "checkpoint": "Postpublication docs-only local HEAD via git log -1/full SHA in PR88 body; not pushed to avoid another CI",
+    "verification": {
+      "source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+      "tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+      "run_id": 40077869891,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891",
+      "status": "SUCCESS",
+      "windows_job": 120825053332,
+      "ubuntu_job": 120825053207,
+      "full_logs": "Windows14194/Ubuntu578 lines independently read; exact checkout/build identity. Both jobs SUCCESS; pack runner-only SUCCESS; uploads/prune SKIPPED.",
+      "suites": "Native policy disabled/excluded/allowed effective fields PASS; policy214/Desktop5451/Instance30/HomeVPN4562/Portable91. revoke10 incl stale-scope and explicit Refresh exactID/no replay/sibling PASS; invite8/list10/initial8/repeated12/uncertainty8x2/name9/consumption8x3/API8/snapshot12/dispatcher5/ownership8/cleanup4/repair8/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3 PASS. Python28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS.",
+      "limits": "Runner result only; owner PC/install/live acceptance NOT_RUN; no whole F31 gate closed."
+    }
   },
   "ci657_final": {
     "source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
@@ -19259,7 +19362,7 @@
     "authorization": "Owner explicitly approved protected ACL creation ONLY new temporary auth-policy fixture in isolated Windows CI; current test-user/SYSTEM/Administrators; no existing file/owner/system/SSH policy changes."
   },
   "ci657_authorized_fixture_acl": {
-    "status": "PARTIAL",
+    "status": "PASS bounded dev criterion only",
     "phase": "ONE authorized CI657 temporary auth-policy ACL creation fixture fix",
     "baseline_source": "127f266ddfabf0050eda4831693f14b382dc4f9b",
     "baseline_tested_merge": "48817acd0ef74879d16e7042b4eb0e79313fd32d",
@@ -19269,10 +19372,91 @@
     "authorization": "Explicit current owner instruction permits protected ACL only new auth-policy fixture on isolated Windows CI. No owner, existing file ACL, ancestor/system/.ssh/security/network mutation authorized or implemented.",
     "implementation": "Exact work child GUID path, no preexisting resource, path/ancestors/subtree reparse refusal. GITHUB_ACTIONS=true/RUNNER_OS=Windows/Win32NT gate: Directory.CreateDirectory(root,DirectorySecurity) applies protected ACL at creation; inheritable FullControl only current test-user/SYSTEM/Administrators. No SetOwner/SetAccessControl. Existing local behavior no ACL mutations. Read-only root+file ACL validation; original locked identity/native ssh-G assertions unchanged. Finally bounded own subtree traversal deletes children nonrecursively; refuses reparse; post-create validation error cleanup retains same boundary.",
     "local_checks": "PASS manual review/strict original method+assert+timeout and all other tests parity/Framework signatures/lexical(not compiler)/diff/JSON/secretsPII/public321source0release. No Windows/.NET/pwsh available.",
+    "windows_compilation": "PASS exact CI658 source/merge",
+    "windows_native": "PASS applicable bounded cases in exact CI658; whole delivery gates remain",
+    "publication": "PASS one expected-head guarded non-force PR88 source push; fetched exact parent/full tree equals reviewed freeze; ONE automatic CI658 pull_request attempt1/exact-source count1. Public repo rechecked/guards4 unchanged.",
+    "next": "Baseline verified CI658; Reissue source-ID owned transport is separate new candidate, then recover-invite remains.",
+    "readiness_change": "+0 fixed58-80/22",
+    "published_sha": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+    "tree": "57a6888e52b5d33562b8fb60024fa2cdc3554748",
+    "local_freeze": "27b00216d1711ad9e89967753f7c7d9b75368b02",
+    "merge_ref": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+    "tested_merge": null,
+    "ci_run_id": 40077869891,
+    "ci_run_number": 658,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891",
+    "ci_status": "in_progress",
+    "ci_conclusion": null,
+    "ci_jobs": [
+      {
+        "id": 120825053207,
+        "name": "vpn-server-test",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 120825053332,
+        "name": "windows-build",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ],
+    "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; not pushed to avoid second CI.",
+    "verification": {
+      "source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+      "tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+      "run_id": 40077869891,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891",
+      "status": "SUCCESS",
+      "windows_job": 120825053332,
+      "ubuntu_job": 120825053207,
+      "full_logs": "Windows14194/Ubuntu578 lines independently read; exact checkout/build identity. Both jobs SUCCESS; pack runner-only SUCCESS; uploads/prune SKIPPED.",
+      "suites": "Native policy disabled/excluded/allowed effective fields PASS; policy214/Desktop5451/Instance30/HomeVPN4562/Portable91. revoke10 incl stale-scope and explicit Refresh exactID/no replay/sibling PASS; invite8/list10/initial8/repeated12/uncertainty8x2/name9/consumption8x3/API8/snapshot12/dispatcher5/ownership8/cleanup4/repair8/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3 PASS. Python28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS.",
+      "limits": "Runner result only; owner PC/install/live acceptance NOT_RUN; no whole F31 gate closed."
+    }
+  },
+  "ci658_final": {
+    "source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+    "tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+    "run_id": 40077869891,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891",
+    "status": "SUCCESS",
+    "windows_job": 120825053332,
+    "ubuntu_job": 120825053207,
+    "full_logs": "Windows14194/Ubuntu578 lines independently read; exact checkout/build identity. Both jobs SUCCESS; pack runner-only SUCCESS; uploads/prune SKIPPED.",
+    "suites": "Native policy disabled/excluded/allowed effective fields PASS; policy214/Desktop5451/Instance30/HomeVPN4562/Portable91. revoke10 incl stale-scope and explicit Refresh exactID/no replay/sibling PASS; invite8/list10/initial8/repeated12/uncertainty8x2/name9/consumption8x3/API8/snapshot12/dispatcher5/ownership8/cleanup4/repair8/recover10/fresh10/HTTPS recovery11/freshHTTPS10/export11/chooser3 PASS. Python28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS.",
+    "limits": "Runner result only; owner PC/install/live acceptance NOT_RUN; no whole F31 gate closed."
+  },
+  "invitation_reissue_transport_on658": {
+    "status": "PARTIAL",
+    "phase": "ONE Reissue/source-ID invite owned production transport candidate",
+    "baseline_source": "469c4fe332a9241cce3820aca7d3fc1d9c30806f",
+    "baseline_tested_merge": "da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d",
+    "baseline_checkpoint": "12e045c15a7aae94b09baf0f733c8e0b1b6c30c3",
+    "local_code_sha": "8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f",
+    "scope": "Only selected Reissue button routes revoke+source-ID invite through existing owned helpers. Fresh invite/standalone revoke/recover/core/ACL fixture unchanged. No new protocol or feature.",
+    "implementation": "Separate ReissueAdmin binding freezes original ID/owner/StopWork at revoke admission; both native operations own actual Friends Form/dispatcher. Existing RevokeAdminOwned reused; replacement-only ReissueInviteAdminOwned owns core lease/helper/DPAPI source-bound request/result/cleanup. Post-copy guard refuses SSH after Stop. Binding rejects source mismatch or changed Stop scope between steps. Complete result after changed scope retains accepted request but refuses late token handoff. Existing Reissue orchestration and consumption unchanged.",
+    "native_cases": [
+      "default-refusal",
+      "complete",
+      "cancel-refresh",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock",
+      "stop-between",
+      "stop-result"
+    ],
+    "test_contract": "Actual ShowDialog/production binding/default Reissue orchestration and core helper/native fixture processes. Only copy and SSH executable fixture seams. Exact original source ID/name despite edited draft, same-name sibling unchanged, exactly one revoke/invite. Cancel->explicit Refresh is read-only, requires fresh selection/no automatic retry of acknowledged revoke. Stop between steps refuses invite, Stop after accepted result retains request/source/recovery ID without handoff. Cleanup lock false Stop then exact deletion retry no replay. Original modal15s/copy+join5s and every old assertion/timeout preserved.",
+    "local_checks": "PASS static/manual signatures/strict old method and test parity/lexical(not compiler)/diff/JSON/public321source0release/secretsPII scan. No Windows/.NET/pwsh.",
     "windows_compilation": "NOT_RUN new candidate",
-    "windows_native": "NOT_RUN authorized ACL fixture/native SSH policy/revoke10/full relevant suites",
-    "publication": "TODO one guarded source push and one automatic CI; guards4 unchanged public uploads OFF",
-    "next": "Read SAME new CI full final logs/exact source/tested merge; verify ACL isolation/native policy assertions/revoke10/post-Stop Refresh/all relevant suites; no blind rerun/full wait/second stage.",
+    "windows_native": "NOT_RUN new owned Reissue10/full suites",
+    "publication": "TODO one guarded existing PR88 source push and one automatic CI; public uploads OFF/guards4 unchanged",
+    "remaining_production_paths": [
+      "recover-invite owned transport"
+    ],
+    "next": "Read SAME new CI final exact-source/tested-merge/Reissue10 and all prior suites. Only after proof one bounded recover-invite transport stage; no second stage now.",
     "readiness_change": "+0 fixed58-80/22"
   }
 }

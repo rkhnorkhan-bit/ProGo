@@ -1,4 +1,47 @@
-## Текущий этап: CI657 — authorized new temporary auth-policy fixture ACL
+## Текущий этап: Reissue/source-ID invite owned transport поверх CI658
+
+PR88 OPEN/DRAFT/source `469c4fe332a9241cce3820aca7d3fc1d9c30806f`, checkpoint `12e045c15a7aae94b09baf0f733c8e0b1b6c30c3` сверены;
+63 prior worktrees clean/locks0/root sole active agent. Isolated worktree сохраняет checkpoints/изменения.
+Полные Windows14194/Ubuntu578 logs [CI658](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891)
+прочитаны самостоятельно: exact tested merge `da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d`. Both jobs SUCCESS; native policy
+Disabled/Excluded/AllowedByClient effective-field assertions PASS, policy214/Desktop5451/Instance30/
+HomeVPN4562/Portable91. Revoke10 incl Stop stale gate+explicit Refresh/exact ID/no replay/sibling PASS.
+Invite8/list10/initial8/repeated12/uncertainty8x2/name9/consumption8x3/API8/snapshot12/dispatcher5/
+ownership8/cleanup4/repair8/recover10/fresh10/HTTPS11/freshHTTPS10/export11/chooser3 PASS. Python28
+incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS. Pack runner-only SUCCESS; uploads/prune SKIPPED.
+Это узкий dev PASS; owner PC/install/live acceptance NOT_RUN, historical failure evidence preserved.
+
+Local code `8dfbe6c9f3dbf5ffc82ad8043fe61f54f1fc258f`:3 runtime54add/3delete +1 test161add/0delete.
+Scope only selected Reissue→owned revoke dependency→source-ID invite. Existing owned revoke reused,
+fresh invite/standalone binding/recover/core/ACL tests untouched. Separate ReissueAdmin keeps old fixtures
+backward-compatible; production BindSelectedReissue freezes owner/source ID/StopWork. Source invite
+wrapper validates exact24hex ID, owns core family lease/helper/key/request/result/cleanup on worker;
+Copy/WaitForAdmin start on explicit Friends UI. Original native timeout unchanged. Post-copy Stop refuses
+new SSH; changed scope between acknowledged revoke and invite refuses second mutation. Accepted result
+after Stop keeps source-bound request/recovery ID and old-access revoked state, forbids late token handoff.
+No new request protocol/automatic revoke or invite retry; existing orchestration/consumption exact baseline.
+
+Owned Reissue10: default-refusal/complete/cancel-refresh/stop-copy/dispose-copy/owner-dispose/cancel-command/
+cleanup-lock/stop-between/stop-result. Real ShowDialog/production binding/native fixture children/DPAPI,
+exact source/name despite different draft/same-name sibling/one revoke+invite/no replay. Cancel preparation
+requires explicit read-only Refresh and fresh selection (not automatic Reissue retry). Stop retains I/O,
+owner disposal suppresses late UI; accepted native cancel retains recovery request; failed cleanup retains
+exact owner then delete-only Retry after unlock; Stop between steps no invite; Stop after accepted result no
+late token. Hold/join5s/modal15s unchanged; all original methods/tests/asserts/timeout coverage preserved.
+PASS local review/static/manual signatures/lexical(not compiler)/strict parity/diff/JSON/secrets/public321source0release.
+New Windows compilation/Reissue10/full suites NOT_RUN locally (no Windows/.NET/pwsh); CI658 not inherited.
+Publication TODO: one guarded source push existing PR88, ONE automatic CI, guards4/uploads OFF/release
+ineligible unchanged. Save checkpoint; STOP no full wait/second stage. Next SAME new CI final logs/merge/tests.
+
+Remaining: verify this candidate, then ONE recover-invite owned transport path. Personal candidate also
+needs whole Windows F31-R09/R10/R11/selected-key-agent/SSH→SOCKS5→HTTP/Cancel recovery/latency-resource
+acceptance, pinned private package version/SHA/SHA256 and approved delivery/owner PC install-check-rollback.
+Production additionally installer/updater/fallback/portability/signing/AV/final integration/release/live approvals;
+full commercial scope retained separately. No delivery/live/security/release actions authorized here.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: new exact
+Reissue10 Windows proof, then recover-invite and final delivery/acceptance gates. Fixed weights unchanged.
+
+## История этапа: CI657 — authorized new temporary auth-policy fixture ACL
 
 Owner явно согласовал только new temporary auth-policy fixture ACL в isolated Windows CI.
 PR88 OPEN/DRAFT exact source `127f266ddfabf0050eda4831693f14b382dc4f9b`, checkpoint `017578ec55a78ea72bd8a17f57cd8f7f313a4557`
@@ -23,9 +66,15 @@ No raw paths/SIDs/ACL contents/configs/credentials emitted; existing safe diagno
 PASS local review/static/strict original method+assert+timeout parity/Framework signatures/lexical (not compiler),
 diff/JSON/secretsPII/public321source0release. Windows compilation/ACL native/policy/revoke10/full suites
 NOT_RUN locally; no Windows/.NET/pwsh. No coverage reduction, assertion bypass or timeout increase.
-Publication TODO: one guarded existing PR88 source push, one automatic CI; public uploads OFF/guards4
-unchanged, release/prune ineligible. Save checkpoint; STOP no full wait or second stage.
-Next SAME new CI final logs/exact source+merge/ACL isolation/policy/revoke10/post-Stop Refresh/all suites.
+Publication PASS: source `469c4fe332a9241cce3820aca7d3fc1d9c30806f` one expected-head guarded non-force PR88 update;
+fetched exact parent/tree `57a6888e52b5d33562b8fb60024fa2cdc3554748` matches reviewed freeze
+`27b00216d1711ad9e89967753f7c7d9b75368b02`. Source diff one test file65add/2delete plus3docs only.
+ONE automatic [CI658/40077869891](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40077869891), exact-source count1/pull_request/attempt1,
+in_progress/conclusion null; Windows120825053332/Ubuntu120825053207 in_progress metadata.
+Merge ref `da6ac3c5d9d338b5ff0cb6e2f6241bfec951812d` is NOT final tested merge proof. New compilation/ACL/native policy/
+revoke10/full relevant suites NOT_RUN until actual final logs. Public repo rechecked/guards4 unchanged,
+uploads OFF/final skips not observed; release/prune ineligible. Docs-only local checkpoint intentionally
+not pushed/full SHA via git log -1/PR88 body. STOP; next SAME CI658 exact final logs/merge/all required tests.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: exact new
 Windows fixture/policy/revoke10 proof; delivery/target PC/production gates remain unchanged.
 
