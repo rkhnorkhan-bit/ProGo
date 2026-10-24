@@ -1,4 +1,48 @@
-## Текущий этап: F23-R02 verified runtime backup before overwrite
+## Текущий этап: F23 installed runtime self-check and truthful outcome prerequisite
+
+PR88 OPEN/DRAFT source `eb4afad106794b192f265ba9d90c4d52584455d9`, checkpoint
+`31e0bc49adbf6081e678e7fc52a886bff5afd66f`, clean/idle/root-only active writer independently verified.
+Full CI666 Windows15429-line/Ubuntu final logs independently read; tested merge
+`8dcf2ca3edb734ca2b6fc55d422f01671dc0e465`, both jobs completed SUCCESS. Backup8/Maintenance10/
+Stage8/Payload9 all PASS, Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/
+Portable91 and previous owned/repair/update suites PASS. Pack runner-only, uploads/prune SKIPPED.
+CI662 timeout root UNKNOWN, non-reproduction not a fix; safe diagnostic retained unchanged.
+
+Code `1b715ff3bd3a00eb88704849270482b4b3c10d4e`: one production self-check/proof prerequisite, NOT automatic rollback. After existing verified
+payload/stage/backup and runtime copies, read-only proof verifies every installed runtime hash against the
+accepted staged inventory, invokes existing MaintenanceOperation.RunOwnedSelfCheck(ProcessStartInfo,int)
+with the existing8000ms bound, exact installed EXE/--self-check, shell disabled and both LOCALAPPDATA/
+PROGO_SELF_CHECK_ROOT set to a new own stage child. Require exit0, actual isolated root confirmation and
+unchanged runtime hashes after check; then shortcuts. Shared ownership held until stage cleanup/finally
+Dispose. Install OK moved after successful cleanup/release; version captured before stage deletion, no
+reading deleted VERSION. Launch remains after verification/release. No native helper/API changes.
+
+Catch always rethrows original failure, retains verified backup, emits only booleans priorRuntimeVerified,
+rollbackAttempted=False and backupRetained. Prior-runtime proof checks exact old bytes and expected absent
+leaves, never trusts a restore callback. Refusal/untouched original differs from partial installation or
+incorrect restoration; no automatic restoration is performed or claimed. Self-check/partial-copy failure
+cannot report install success or launch. Entire rollback mutation and journal/retention remain explicit
+next work, not silently treated as PASS. Existing source/prebuilt fail-closed, stage/backup helpers and
+ownership adapters unchanged; original write operations preserved.
+
+InstallerSelfCheck9: complete installed identity/isolated context; exit error; missing data-root proof;
+runtime modified after check; partial copy refused before child; prior intact; bad restored bytes refused;
+fresh prior absence; mocked owned timeout. Maintenance original10 assertions retained plus3 actual-main
+fixture cases self-check-fail/partial-copy/bad-restore, checking no false success/late launch and honest
+prior proof. Bad-restore is a synthetic incorrect restore inside mock; real automatic rollback NOT_RUN/not
+implemented. All new native boundaries mocked, all files under new GUID temp fixtures; no real process,
+install, IPC/service/ACL/security/network or owner data changes. Existing Backup8/Stage8/Payload9 unchanged.
+
+PASS local static/review/signatures/unchanged old helper+workflow+SSH diagnostic parity, docs3, diff/JSON,
+public-content/secrets. Windows parser/SelfCheck9/Maintenance13/Backup8/Stage8/Payload9 and regressions
+NOT_RUN on new source pending ONE automatic CI; no inherited CI666 PASS. F23 PARTIAL, fixed58–80/22,+0.
+Next SAME new exact CI final logs/merge/suites; then ONE bounded verified runtime rollback mutation slice
+using retained snapshot/old-byte+absence proof, never false restored success. Durable recovery journal,
+retention, updater/fallback, PGA04 OFF/default opt-in and package/target gates remain mandatory.
+Privatecandidate BLOCKED_TRANSFER unchanged; no retry/delivery/install/release/uploads/live actions.
+STOP after one guarded source publication/checkpoint, no full CI wait or second stage.
+
+## История этапа: F23-R02 verified runtime backup before overwrite
 
 PR88 OPEN/DRAFT source `094620a2c5697749c882cea3a27dd16bfa4fc6a2`, checkpoint
 `b3cd93582066dca49fcadcfe9b31702fd34247de`, clean/idle/root-only active writer independently verified.
@@ -41,6 +85,19 @@ NOT_RUN on new source until one automatic CI. No inherited CI665 PASS. F23 still
 rollback/journal+retention slice; updater fallback/PGA04 consent/package/target acceptance remain open.
 Privatecandidate BLOCKED_TRANSFER unchanged; no retry/export/build-delivery/install/live/release/uploads.
 Stop after one guarded source publication/checkpoint; no full CI wait or second stage.
+
+Publication checkpoint: exact source `eb4afad106794b192f265ba9d90c4d52584455d9`, parent
+`094620a2c5697749c882cea3a27dd16bfa4fc6a2`, tree `3cf97d89734fa893f7c9f2e9640e4f91148a5c9a`
+verified after fetch equals reviewed local freeze `c59ccdac781b463a4cd85360d777d373467a9637`.
+One expected-HEAD guarded non-force PR88 update; ONE automatic
+[CI666/40099947611](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40099947611), exact source count1,
+event pull_request/attempt1, queued/conclusion null at last observed run metadata. New Windows parser/
+Backup8/Maintenance10/Stage8/Payload9 and native regressions NOT_RUN pending same run final logs.
+CI665 PASS is limited to old source094620a/merge41ffac4. Four public upload guards/workflows unchanged,
+release ineligible; source-only publication. Docs-only local checkpoint intentionally not pushed/no second
+CI; full SHA via git log -1/PR88 body. Next same CI666 final exact logs/merge/suites, then ONE separate
+installed self-check/verified rollback prerequisite. Journal/retention/fallback/PGA04 remain open. CI662
+root UNKNOWN/diagnostic retained; BLOCKED_TRANSFER no delivery retry/install/live action. STOP here.
 
 ## История этапа: F23-R02 frozen verified staging before runtime writes
 

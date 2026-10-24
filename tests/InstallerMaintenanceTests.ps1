@@ -49,8 +49,8 @@ function Initialize-ProGoShortcuts {
         [IO.File]::WriteAllText($data, 'synthetic-user-data-unchanged')
         $before = [IO.File]::ReadAllBytes($data)
         $oldRuntime = Join-Path $case 'ProGo\ProGo.exe'
-        if ($Mode -eq 'backup-fail') { [IO.File]::WriteAllText($oldRuntime, 'synthetic prior runtime') }
-        $FixtureState = @{ Mode = $Mode; LeaseHeld = $false; Stopped = $false; Disposes = 0; Copies = 0; SuccessMessage = $false; Events = (New-Object 'System.Collections.Generic.List[string]') }
+        if ($Mode -in @('backup-fail', 'self-check-fail', 'bad-restore')) { [IO.File]::WriteAllText($oldRuntime, 'synthetic prior runtime') }
+        $FixtureState = @{ Mode = $Mode; LeaseHeld = $false; Stopped = $false; Disposes = 0; Copies = 0; SuccessMessage = $false; SelfChecks = 0; PriorVerified = $null; Events = (New-Object 'System.Collections.Generic.List[string]') }
         function Enter-ProGoInstallerMaintenance {
             $FixtureState.Events.Add('enter')
             if ($Mode -eq 'busy') { throw 'fixture-busy' }
@@ -73,11 +73,22 @@ function Initialize-ProGoShortcuts {
             if ($Mode -eq 'backup-fail') { throw 'fixture-backup-fail' }
             [IO.File]::Copy($Source, $Destination, $false)
         }
+        function Invoke-ProGoInstallerSelfCheck($Info) {
+            if (-not $FixtureState.LeaseHeld -or -not $FixtureState.Stopped) { throw 'Self-check escaped maintenance.' }
+            $FixtureState.SelfChecks++; $FixtureState.Events.Add('self-check')
+            if ($Mode -eq 'bad-restore') { [IO.File]::WriteAllText($Info.FileName, 'synthetic failed restoration'); return 17 }
+            if ($Mode -eq 'self-check-fail') { return 17 }
+            [IO.Directory]::CreateDirectory($Info.EnvironmentVariables['PROGO_SELF_CHECK_ROOT']) | Out-Null
+            return 0
+        }
         function Copy-Item {
             param($Path, $Destination, [switch]$Force, [switch]$Recurse)
             if (-not $FixtureState.LeaseHeld -or -not $FixtureState.Stopped) { throw 'Copy escaped maintenance.' }
             $FixtureState.Copies++; $FixtureState.Events.Add('copy')
             if ($Mode -eq 'copy-fail') { throw 'fixture-copy-fail' }
+            if ($Mode -eq 'partial-copy' -and [IO.Path]::GetFileName($Destination) -eq 'ProGo.exe') {
+                [IO.File]::WriteAllText($Destination, 'synthetic incomplete write'); return
+            }
             Microsoft.PowerShell.Management\Copy-Item -LiteralPath $Path -Destination $Destination -Force:$Force -Recurse:$Recurse
         }
         function Start-Process {
@@ -90,13 +101,18 @@ function Initialize-ProGoShortcuts {
             # Existing installer status text contains its path. Capture only the
             # success boolean; never emit fixture/user temp paths into CI output.
             if ($Object -like 'Install OK:*') { $FixtureState.SuccessMessage = $true }
+            if ($Object -match 'priorRuntimeVerified=(True|False)') { $FixtureState.PriorVerified = $Matches[1] -eq 'True' }
         }
         $Launch = $Mode -eq 'launch' -or $Mode -eq 'launch-fail'
         $savedVersion = [IO.File]::ReadAllBytes($VersionFile)
         if ($Mode -eq 'stage-changed') { [IO.File]::WriteAllText($VersionFile, '999.998.997') }
         $caught = $false
         try { & $body } catch {
-            if ($Mode -eq 'stage-changed') {
+            if ($Mode -in @('self-check-fail', 'bad-restore')) {
+                if (-not $_.Exception.Message.Contains('Installed installer self-check failed.')) { throw }
+            } elseif ($Mode -eq 'partial-copy') {
+                if (-not $_.Exception.Message.Contains('Installer runtime bytes are not verified.')) { throw }
+            } elseif ($Mode -eq 'stage-changed') {
                 if (-not $_.Exception.Message.Contains('Installer payload changed or stage copy is corrupt.')) { throw }
             } elseif (-not $_.Exception.Message.Contains('fixture-' + $Mode)) { throw }
             $caught = $true
@@ -121,16 +137,21 @@ function Initialize-ProGoShortcuts {
             }
         } else {
             Check-InstallerOwner ($FixtureState.Disposes -eq 1 -and $FixtureState.Events[0] -eq 'enter' -and $FixtureState.Events[1] -eq 'stop' -and $FixtureState.Copies -gt 0) 'copy lifecycle ordering'
-            Check-InstallerOwner ($caught -eq ($Mode -in @('copy-fail', 'shortcut-fail', 'launch-fail'))) ($Mode + ' propagates failure')
+            Check-InstallerOwner ($caught -eq ($Mode -in @('copy-fail', 'shortcut-fail', 'launch-fail', 'self-check-fail', 'partial-copy', 'bad-restore'))) ($Mode + ' propagates failure')
             if ($Mode -eq 'launch' -or $Mode -eq 'launch-fail') {
                 Check-InstallerOwner ($FixtureState.Events[$FixtureState.Events.Count - 2] -eq 'dispose' -and $FixtureState.Events[$FixtureState.Events.Count - 1] -eq 'launch') 'launch after release'
             } else { Check-InstallerOwner ($FixtureState.Events[$FixtureState.Events.Count - 1] -eq 'dispose') 'final release' }
         }
+        if ($Mode -in @('self-check-fail', 'partial-copy', 'bad-restore')) {
+            Check-InstallerOwner ($FixtureState.PriorVerified -eq $false) 'changed or incorrectly restored runtime never verifies original snapshot'
+            if ($Mode -eq 'partial-copy') { Check-InstallerOwner ($FixtureState.SelfChecks -eq 0) 'partial copy refused before native self-check' }
+            else { Check-InstallerOwner ($FixtureState.SelfChecks -eq 1) 'one owned self-check attempt' }
+        }
         Check-InstallerOwner ($FixtureState.SuccessMessage -eq ($Mode -in @('complete', 'launch', 'launch-fail'))) ($Mode + ' never reports install success before admitted copies/shortcuts')
         Microsoft.PowerShell.Utility\Write-Host ('PASS: installer maintenance ' + $Mode)
     }
-    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop', 'stage-changed', 'backup-fail')) { Run-InstallerOwnerCase $mode }
-    Write-Host 'Installer maintenance tests PASS: 10'
+    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop', 'stage-changed', 'backup-fail', 'self-check-fail', 'partial-copy', 'bad-restore')) { Run-InstallerOwnerCase $mode }
+    Write-Host 'Installer maintenance tests PASS: 13'
 } finally {
     $env:LOCALAPPDATA = $oldLocal
     if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }

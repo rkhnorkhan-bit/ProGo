@@ -224,6 +224,40 @@ function New-ProGoInstallerBackup($Payload, [string]$InstallDirectory) {
         throw
     }
 }
+# Proof checks do not perform rollback. Original bytes/absence must actually
+# match before any caller may describe restoration as verified.
+function Assert-ProGoInstallerRuntime($Backup, [switch]$Original) {
+    foreach ($entry in $Backup.Entries) {
+        $target = Assert-ProGoInstallerStagePath $Backup.InstallDirectory $entry.Relative
+        if ($Original -and -not $entry.Exists) {
+            if (Test-Path -LiteralPath $target) { throw 'Installer prior runtime is not verified.' }
+            continue
+        }
+        $expected = if ($Original) { $entry.Hash } else { $entry.NewHash }
+        if (-not [IO.File]::Exists($target) -or (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash -cne $expected) {
+            throw 'Installer runtime bytes are not verified.'
+        }
+    }
+}
+function Invoke-ProGoInstallerSelfCheck($Info) {
+    return [ProGo.MaintenanceOperation]::RunOwnedSelfCheck($Info, 8000)
+}
+function Confirm-ProGoInstallerSelfCheck($Backup, $Stage) {
+    Assert-ProGoInstallerRuntime $Backup
+    $dataRoot = Assert-ProGoInstallerStagePath $Stage.Directory 'self-check-data'
+    if (Test-Path -LiteralPath $dataRoot) { throw 'Installer self-check root already exists.' }
+    $info = New-Object Diagnostics.ProcessStartInfo
+    $info.FileName = Join-Path $Backup.InstallDirectory 'ProGo.exe'
+    $info.Arguments = '--self-check'; $info.WorkingDirectory = $Backup.InstallDirectory
+    $info.UseShellExecute = $false; $info.CreateNoWindow = $true
+    $info.EnvironmentVariables['LOCALAPPDATA'] = $dataRoot
+    $info.EnvironmentVariables['PROGO_SELF_CHECK_ROOT'] = $dataRoot
+    $exit = Invoke-ProGoInstallerSelfCheck $info
+    if ($exit -ne 0) { throw 'Installed installer self-check failed.' }
+    if (-not [IO.Directory]::Exists($dataRoot)) { throw 'Installer self-check root was not confirmed.' }
+    [void](Assert-ProGoInstallerStagePath $Stage.Directory 'self-check-data')
+    Assert-ProGoInstallerRuntime $Backup
+}
 # Use the same owned maintenance protocol as update/restore/uninstall. These
 # narrow adapters also let fixture tests replace OS/IPC operations completely.
 function Enter-ProGoInstallerMaintenance {
@@ -248,6 +282,7 @@ $PayloadScripts = $Payload.ScriptsDirectory
 $InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
 $InstallMaintenance = $null
 $InstallStage = $null
+$InstallBackup = $null
 try {
     $InstallMaintenance = Enter-ProGoInstallerMaintenance
     Stop-ProGoInstallerApplication -InstallDirectory $InstallDir
@@ -258,6 +293,7 @@ try {
     $PayloadScripts = $InstallStage.Payload.ScriptsDirectory
     $InstallBackup = New-ProGoInstallerBackup $InstallStage.Payload $InstallDir
     Assert-ProGoInstallerBackup $InstallBackup
+    $InstalledVersion = $InstallStage.Payload.Version
     . (Join-Path $PayloadScripts "Shortcuts-ProGo.ps1")
     $WasInstalled = Test-ProGoExistingInstallation -InstallDirectory $InstallDir
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
@@ -295,17 +331,17 @@ try {
 
     Copy-Item (Join-Path $ReleaseDir "scripts\home-vpn") -Destination $InstalledScripts -Recurse -Force
 
+    Confirm-ProGoInstallerSelfCheck $InstallBackup $InstallStage
     Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut)
 
-    Write-Host "Install OK: $InstallDir"
-    Write-Host "Installed version: $((Get-Content -Raw -Path $VersionFile).Trim())"
-    Write-Host "Updater scripts: $InstalledScripts"
-    Write-Host "Visible launcher: $(Join-Path $InstalledScripts 'Show-ProGo.ps1')"
-    Write-Host "Start helper: $(Join-Path $InstalledScripts 'Start-ProGo.ps1')"
-    Write-Host "Repair helper: $(Join-Path $InstalledScripts 'Repair-ProGo.ps1')"
-    Write-Host "Backups folder: $(Join-Path $InstallDir 'backups')"
-    Write-Host "Vault/settings/logs are preserved in %LOCALAPPDATA%\ProGo."
-
+} catch {
+    $priorVerified = $false
+    if ($null -ne $InstallBackup) {
+        try { Assert-ProGoInstallerRuntime $InstallBackup -Original; $priorVerified = $true } catch { }
+    }
+    Write-Host ('Installer failure: priorRuntimeVerified=' + $priorVerified +
+        '; rollbackAttempted=False; backupRetained=' + ($null -ne $InstallBackup -and $null -ne $InstallBackup.Directory))
+    throw
 } finally {
     try {
         if ($null -ne $InstallStage) { Remove-ProGoInstallerStage $InstallStage }
@@ -313,6 +349,15 @@ try {
         if ($null -ne $InstallMaintenance) { $InstallMaintenance.Dispose() }
     }
 }
+
+Write-Host "Install OK: $InstallDir"
+Write-Host "Installed version: $InstalledVersion"
+Write-Host "Updater scripts: $InstalledScripts"
+Write-Host "Visible launcher: $(Join-Path $InstalledScripts 'Show-ProGo.ps1')"
+Write-Host "Start helper: $(Join-Path $InstalledScripts 'Start-ProGo.ps1')"
+Write-Host "Repair helper: $(Join-Path $InstalledScripts 'Repair-ProGo.ps1')"
+Write-Host "Backups folder: $(Join-Path $InstallDir 'backups')"
+Write-Host "Vault/settings/logs are preserved in %LOCALAPPDATA%\ProGo."
 
 if ($Launch) {
     Start-Process -FilePath (Join-Path $InstallDir "ProGo.exe") -WorkingDirectory $InstallDir -ArgumentList "--show" | Out-Null
