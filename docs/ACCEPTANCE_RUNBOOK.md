@@ -1,4 +1,48 @@
-## Текущий этап: F23-R02 frozen verified staging before runtime writes
+## Текущий этап: F23-R02 verified runtime backup before overwrite
+
+PR88 OPEN/DRAFT source `094620a2c5697749c882cea3a27dd16bfa4fc6a2`, checkpoint
+`b3cd93582066dca49fcadcfe9b31702fd34247de`, clean/idle/root-only active writer independently verified.
+Full CI665 Windows15419-line/Ubuntu final logs independently read; exact tested merge
+`41ffac4eeb1aef919b584f923cc7f628869d494d`, both jobs completed SUCCESS. Stage8/Maintenance9/Payload9
+all PASS, Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91,
+repair/updater/previous owned transport suites PASS. Pack runner-only, uploads/prune SKIPPED.
+CI662 timeout UNKNOWN; later non-reproduction does not prove a fix, safe diagnostic unchanged.
+
+Code `d96be642d202b189095930fd9d9d7798b5408683`: one existing installer prerequisite. After verified stage and owned Stop, before first runtime
+copy, snapshot only existing runtime inventory leaves which installer can replace (41 leaves; excludes
+three distributable docs not overwritten and all personal files). Hash old bytes, copy to new own
+backups/installer-GUID folder, write installer-snapshot.json with relative paths, old exists/hash and new
+staged hash/version; round-trip persisted inventory and verify digest, every copied byte and unchanged
+original/absent target admission. Repeat confirmation immediately before existing writes. Fresh install
+without overwritten leaves explicitly proves absence and does not fabricate a backup. No source/stage
+identity or target path change; no fallback on failed backup. Backup/manifest/IO errors refuse runtime writes.
+
+Verified snapshot retained on success and later copy failure for next rollback slice; no speculative
+rollback or deletion of confirmed recovery material. Only newly created unverified own GUID snapshot is
+cleaned on preparation error. Backup namespace, root and link checks precede cleanup; same existing no-follow
+leaf/empty-dir deletion body shared with stage cleanup after respective scope guards. Stage guard and
+original cleanup algorithm preserved, no recursive-follow delete. Personal settings/vault/keys not read,
+copied, changed or deleted; foreign backup dirs untouched. installer-snapshot.json is distinct from ordinary
+automatic-backup manifest; retention integration/recovery journal remain open, not claimed complete.
+This is local runtime byte snapshot/admission, NOT whole user-data backup, durable transaction recovery,
+publisher authenticity/immutable release UID or hostile concurrent-writer hardening.
+
+InstallerBackup8: complete prior bytes+persisted old/new identity; fresh absence; corrupt copy; copy error;
+old runtime changes during snapshot; tampered manifest; newly appeared leaf; foreign cleanup refusal.
+InstallerMaintenance original9 assertions retained plus tenth backup-fail integration: actual production
+main refuses all runtime copies, leaves old EXE/user sentinel unchanged, releases owner. Tests use only
+own new GUID temp roots, synthetic old runtime/user bytes and mocked maintenance/shortcuts/process
+boundaries. No real install/IPC/mutex/service/ACL/network actions. Existing Stage8/Payload9 unchanged.
+
+PASS local static/review/signatures, unchanged preflight/stage/Enter/Stop/body parity, docs3, JSON/diff,
+public-content/secrets. Windows parser/Backup8/Maintenance10/Stage8/Payload9 and relevant regressions
+NOT_RUN on new source until one automatic CI. No inherited CI665 PASS. F23 still PARTIAL, fixed scores
+58–80/22,+0. Next SAME new exact CI final logs/merge/suites, then separate installed self-check/verified
+rollback/journal+retention slice; updater fallback/PGA04 consent/package/target acceptance remain open.
+Privatecandidate BLOCKED_TRANSFER unchanged; no retry/export/build-delivery/install/live/release/uploads.
+Stop after one guarded source publication/checkpoint; no full CI wait or second stage.
+
+## История этапа: F23-R02 frozen verified staging before runtime writes
 
 PR88 OPEN/DRAFT source `921b3f726ad9b4e833b475442ad8fb1a871f9a91`, checkpoint
 `55f62b87f9e2a267b13466c04b7dc74a521399df`, clean/idle/root-only active writer verified.
@@ -37,6 +81,19 @@ Next same new CI final exact merge/logs/suites; then separately verified backup-
 installed self-check/rollback/recovery, updater fallback fixed paths and PGA04 OFF/default explicit consent.
 Privatecandidate BLOCKED_TRANSFER unchanged; no retry/delivery/install/build-only/private transfer/live
 security action. Fixed readiness58–80/22,+0. STOP after this bounded publication/checkpoint, no second stage.
+
+Publication checkpoint: exact source `094620a2c5697749c882cea3a27dd16bfa4fc6a2`, parent
+`921b3f726ad9b4e833b475442ad8fb1a871f9a91`, tree `e612ed1e55bda39d42ece3d644f7c382394b446b`
+verified after fetch, equals local reviewed freeze `9243801b4d620b96bd134818e05fc7775f73c05a`.
+One expected-HEAD non-force PR88 source update; ONE automatic
+[CI665/40096713452](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40096713452), exact source count1,
+event pull_request/attempt1, queued/conclusion null on last observed run metadata. New Windows parser/
+InstallerStage8/Maintenance9/Payload9/native regressions NOT_RUN pending same run final logs. CI664
+applies only to old source921b3f7/merged3a0e78. Four public upload guards/workflows unchanged, release
+ineligible. Docs-only checkpoint intentionally not pushed/no second CI; full SHA via git log -1/PR88 body.
+Next same CI665 final logs/exact tested merge; then separate verified backup-before-overwrite prerequisite.
+CI662 remains UNKNOWN, safe diagnostics retained; privatecandidate BLOCKED_TRANSFER, no retries/install/
+release/uploads/live actions. STOP, no second stage or full CI wait.
 
 ## История этапа: F23-R02 installer shared maintenance ownership
 

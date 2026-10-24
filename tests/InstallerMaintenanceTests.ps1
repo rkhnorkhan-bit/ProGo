@@ -48,6 +48,8 @@ function Initialize-ProGoShortcuts {
         $data = Join-Path $case 'ProGo\settings.json'
         [IO.File]::WriteAllText($data, 'synthetic-user-data-unchanged')
         $before = [IO.File]::ReadAllBytes($data)
+        $oldRuntime = Join-Path $case 'ProGo\ProGo.exe'
+        if ($Mode -eq 'backup-fail') { [IO.File]::WriteAllText($oldRuntime, 'synthetic prior runtime') }
         $FixtureState = @{ Mode = $Mode; LeaseHeld = $false; Stopped = $false; Disposes = 0; Copies = 0; SuccessMessage = $false; Events = (New-Object 'System.Collections.Generic.List[string]') }
         function Enter-ProGoInstallerMaintenance {
             $FixtureState.Events.Add('enter')
@@ -65,6 +67,11 @@ function Initialize-ProGoShortcuts {
             $FixtureState.Events.Add('stop')
             if ($Mode -eq 'stop-fail' -or $Mode -eq 'retry-stop') { throw ('fixture-' + $Mode) }
             $FixtureState.Stopped = $true
+        }
+        function Copy-ProGoInstallerBackupFile([string]$Source, [string]$Destination) {
+            if (-not $FixtureState.LeaseHeld -or -not $FixtureState.Stopped) { throw 'Backup escaped maintenance.' }
+            if ($Mode -eq 'backup-fail') { throw 'fixture-backup-fail' }
+            [IO.File]::Copy($Source, $Destination, $false)
         }
         function Copy-Item {
             param($Path, $Destination, [switch]$Force, [switch]$Recurse)
@@ -99,9 +106,10 @@ function Initialize-ProGoShortcuts {
         Check-InstallerOwner (([Convert]::ToBase64String($before)) -ceq ([Convert]::ToBase64String([IO.File]::ReadAllBytes($data)))) ($Mode + ' preserves user bytes')
         if ($Mode -eq 'busy') {
             Check-InstallerOwner ($caught -and $FixtureState.Disposes -eq 0 -and $FixtureState.Copies -eq 0 -and $FixtureState.Events.Count -eq 1) 'busy refuses all writes'
-        } elseif ($Mode -eq 'stage-changed') {
+        } elseif ($Mode -eq 'stage-changed' -or $Mode -eq 'backup-fail') {
             Check-InstallerOwner ($caught -and $FixtureState.Disposes -eq 1 -and $FixtureState.Copies -eq 0 -and
-                ($FixtureState.Events -join ',') -eq 'enter,stop,dispose') 'failed staging releases without runtime writes'
+                ($FixtureState.Events -join ',') -eq 'enter,stop,dispose') 'failed staging/backup releases without runtime writes'
+            if ($Mode -eq 'backup-fail') { Check-InstallerOwner ([IO.File]::ReadAllText($oldRuntime) -ceq 'synthetic prior runtime') 'unconfirmed backup never overwrites runtime' }
         } elseif ($Mode -eq 'stop-fail' -or $Mode -eq 'retry-stop') {
             Check-InstallerOwner ($caught -and $FixtureState.Disposes -eq 1 -and $FixtureState.Copies -eq 0 -and ($FixtureState.Events -join ',') -eq 'enter,stop,dispose') 'stop refusal releases without writes'
             if ($Mode -eq 'retry-stop') {
@@ -121,8 +129,8 @@ function Initialize-ProGoShortcuts {
         Check-InstallerOwner ($FixtureState.SuccessMessage -eq ($Mode -in @('complete', 'launch', 'launch-fail'))) ($Mode + ' never reports install success before admitted copies/shortcuts')
         Microsoft.PowerShell.Utility\Write-Host ('PASS: installer maintenance ' + $Mode)
     }
-    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop', 'stage-changed')) { Run-InstallerOwnerCase $mode }
-    Write-Host 'Installer maintenance tests PASS: 9'
+    foreach ($mode in @('complete', 'busy', 'stop-fail', 'copy-fail', 'shortcut-fail', 'launch', 'launch-fail', 'retry-stop', 'stage-changed', 'backup-fail')) { Run-InstallerOwnerCase $mode }
+    Write-Host 'Installer maintenance tests PASS: 10'
 } finally {
     $env:LOCALAPPDATA = $oldLocal
     if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }

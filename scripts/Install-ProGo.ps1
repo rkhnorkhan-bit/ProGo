@@ -82,15 +82,7 @@ function Assert-ProGoInstallerStagePath([string]$RootDirectory, [string]$Relativ
 function Copy-ProGoInstallerStageFile([string]$Source, [string]$Destination) {
     [IO.File]::Copy($Source, $Destination, $false)
 }
-function Remove-ProGoInstallerStage($Stage) {
-    $rootPath = [IO.Path]::GetFullPath($Stage.Directory)
-    $parent = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
-    if ([IO.Path]::GetDirectoryName($rootPath) -ne $parent -or
-        [IO.Path]::GetFileName($rootPath) -notmatch '^ProGo-install-stage-[0-9a-f]{32}$') {
-        throw 'Installer stage cleanup scope is invalid.'
-    }
-    if (-not [IO.Directory]::Exists($rootPath)) { return }
-    if (([IO.File]::GetAttributes($rootPath) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Installer stage root is redirected.' }
+function Remove-ProGoInstallerOwnedDirectory([string]$rootPath) {
     $pending = New-Object 'System.Collections.Generic.Stack[string]'
     $directories = New-Object 'System.Collections.Generic.List[string]'
     $files = New-Object 'System.Collections.Generic.List[string]'
@@ -106,6 +98,17 @@ function Remove-ProGoInstallerStage($Stage) {
     # No recursive deletion that could follow a redirected directory.
     foreach ($file in $files) { [IO.File]::Delete($file) }
     for ($index = $directories.Count - 1; $index -ge 0; $index--) { [IO.Directory]::Delete($directories[$index], $false) }
+}
+function Remove-ProGoInstallerStage($Stage) {
+    $rootPath = [IO.Path]::GetFullPath($Stage.Directory)
+    $parent = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    if ([IO.Path]::GetDirectoryName($rootPath) -ne $parent -or
+        [IO.Path]::GetFileName($rootPath) -notmatch '^ProGo-install-stage-[0-9a-f]{32}$') {
+        throw 'Installer stage cleanup scope is invalid.'
+    }
+    if (-not [IO.Directory]::Exists($rootPath)) { return }
+    if (([IO.File]::GetAttributes($rootPath) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Installer stage root is redirected.' }
+    Remove-ProGoInstallerOwnedDirectory $rootPath
 }
 function New-ProGoInstallerStage($Payload) {
     $directory = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-install-stage-' + [Guid]::NewGuid().ToString('N'))
@@ -130,6 +133,94 @@ function New-ProGoInstallerStage($Payload) {
         return $stage
     } catch {
         if ($created) { Remove-ProGoInstallerStage $stage }
+        throw
+    }
+}
+# Snapshot only runtime leaves which this installer can replace. Personal files
+# are neither read nor backed up here. Verified copies remain for future rollback.
+function Copy-ProGoInstallerBackupFile([string]$Source, [string]$Destination) {
+    [IO.File]::Copy($Source, $Destination, $false)
+}
+function Assert-ProGoInstallerBackupScope($Backup) {
+    $parent = Assert-ProGoInstallerStagePath $Backup.InstallDirectory 'backups'
+    if ([IO.Path]::GetDirectoryName($Backup.Directory) -ne $parent -or
+        [IO.Path]::GetFileName($Backup.Directory) -notmatch '^installer-[0-9a-f]{32}$') {
+        throw 'Installer backup scope is invalid.'
+    }
+    [void](Assert-ProGoInstallerStagePath $parent ([IO.Path]::GetFileName($Backup.Directory)))
+}
+function Remove-ProGoInstallerUnverifiedBackup($Backup) {
+    Assert-ProGoInstallerBackupScope $Backup
+    if ([IO.Directory]::Exists($Backup.Directory)) { Remove-ProGoInstallerOwnedDirectory $Backup.Directory }
+}
+function Assert-ProGoInstallerBackup($Backup) {
+    if ($null -ne $Backup.Directory) {
+        Assert-ProGoInstallerBackupScope $Backup
+        $manifest = Assert-ProGoInstallerStagePath $Backup.Directory 'installer-snapshot.json'
+        if ((Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash -cne $Backup.ManifestHash) {
+            throw 'Installer backup manifest verification failed.'
+        }
+    }
+    foreach ($entry in $Backup.Entries) {
+        $target = Assert-ProGoInstallerStagePath $Backup.InstallDirectory $entry.Relative
+        if ($entry.Exists) {
+            if ($null -eq $Backup.Directory) { throw 'Installer backup is required before overwrite.' }
+            $saved = Assert-ProGoInstallerStagePath $Backup.Directory $entry.Relative
+            if (-not [IO.File]::Exists($saved) -or (Get-FileHash -LiteralPath $saved -Algorithm SHA256).Hash -cne $entry.Hash) {
+                throw 'Installer backup bytes verification failed.'
+            }
+            if (-not [IO.File]::Exists($target) -or (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash -cne $entry.Hash) {
+                throw 'Installer runtime changed before overwrite admission.'
+            }
+        } elseif (Test-Path -LiteralPath $target) { throw 'Installer runtime appeared before overwrite admission.' }
+    }
+}
+function New-ProGoInstallerBackup($Payload, [string]$InstallDirectory) {
+    $entries = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($relative in $Payload.Files) {
+        # Build ships these docs but the existing installer never overwrites them.
+        if ($relative -in @('README.md', 'README.ru.md', 'LICENSE.md')) { continue }
+        $target = Assert-ProGoInstallerStagePath $InstallDirectory $relative
+        if ((Test-Path -LiteralPath $target) -and -not [IO.File]::Exists($target)) { throw 'Installer runtime leaf is not a file.' }
+        $exists = [IO.File]::Exists($target)
+        $hash = if ($exists) { (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash } else { $null }
+        $entries.Add([pscustomobject]@{ Relative = $relative; Exists = $exists; Hash = $hash; NewHash = $Payload.Hashes[$relative] })
+    }
+    $backup = [pscustomobject]@{ InstallDirectory = [IO.Path]::GetFullPath($InstallDirectory); Directory = $null; Entries = $entries.ToArray(); ManifestHash = $null }
+    $created = $false
+    try {
+        if (@($backup.Entries | Where-Object { $_.Exists }).Count -gt 0) {
+            $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+            [IO.Directory]::CreateDirectory($parent) | Out-Null
+            $backup.Directory = Join-Path $parent ('installer-' + [Guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $backup.Directory -ErrorAction Stop | Out-Null
+            $created = $true
+            foreach ($entry in $backup.Entries) {
+                if (-not $entry.Exists) { continue }
+                $source = Assert-ProGoInstallerStagePath $InstallDirectory $entry.Relative
+                $saved = Assert-ProGoInstallerStagePath $backup.Directory $entry.Relative
+                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($saved)) | Out-Null
+                Copy-ProGoInstallerBackupFile $source $saved
+            }
+            $manifest = [pscustomobject]@{ Schema = 1; NewVersion = $Payload.Version; Files = $backup.Entries }
+            $manifestPath = Join-Path $backup.Directory 'installer-snapshot.json'
+            [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
+            # Round trip verifies that the persisted inventory describes the snapshot.
+            $read = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+            if ($read.Schema -ne 1 -or $read.NewVersion -cne $Payload.Version -or @($read.Files).Count -ne $backup.Entries.Count) {
+                throw 'Installer backup inventory verification failed.'
+            }
+            for ($index = 0; $index -lt $backup.Entries.Count; $index++) {
+                $expected = $backup.Entries[$index]; $actual = $read.Files[$index]
+                if ($actual.Relative -cne $expected.Relative -or $actual.Exists -ne $expected.Exists -or
+                    $actual.Hash -cne $expected.Hash -or $actual.NewHash -cne $expected.NewHash) { throw 'Installer backup inventory verification failed.' }
+            }
+            $backup.ManifestHash = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash
+        }
+        Assert-ProGoInstallerBackup $backup
+        return $backup
+    } catch {
+        if ($created) { Remove-ProGoInstallerUnverifiedBackup $backup }
         throw
     }
 }
@@ -165,6 +256,8 @@ try {
     $Exe = $InstallStage.Payload.Executable
     $VersionFile = $InstallStage.Payload.VersionFile
     $PayloadScripts = $InstallStage.Payload.ScriptsDirectory
+    $InstallBackup = New-ProGoInstallerBackup $InstallStage.Payload $InstallDir
+    Assert-ProGoInstallerBackup $InstallBackup
     . (Join-Path $PayloadScripts "Shortcuts-ProGo.ps1")
     $WasInstalled = Test-ProGoExistingInstallation -InstallDirectory $InstallDir
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
