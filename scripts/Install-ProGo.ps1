@@ -406,7 +406,7 @@ function Complete-ProGoInstallerRollbackOutcome($Backup, $Writes) {
 function Write-ProGoInstallerRollbackOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
-function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$CompletedPhases = @()) {
+function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$CompletedPhases = @(), $StartupEvidence = $null, [switch]$RequireStartupEvidence) {
     Assert-ProGoInstallerJournal $Backup.Journal $Backup
     Assert-ProGoInstallerSnapshotMaterial $Backup
     Assert-ProGoInstallerRuntime $Backup
@@ -418,10 +418,15 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$Co
     $proofs = @($Backup.Journal.Records | ForEach-Object {
         [pscustomobject]@{ Name = $_.Name; Hash = (Get-FileHash -LiteralPath (Assert-ProGoInstallerStagePath $Backup.Journal.Directory $_.Name)).Hash }
     })
+    if ($RequireStartupEvidence -and $null -eq $StartupEvidence) { throw 'Installer startup completion evidence is missing.' }
+    if ($null -ne $StartupEvidence -and ($StartupEvidence.Schema -ne 1 -or
+        $StartupEvidence.InstallIdentity -cne (Get-ProGoInstallerIdentity $Backup.InstallDirectory))) {
+        throw 'Installer startup evidence identity is invalid.'
+    }
     $text = ([pscustomobject]@{ Schema = 1; Phase = 'installed'; Identity = (Get-ProGoInstallerIdentity $Backup.InstallDirectory);
         Journal = [IO.Path]::GetFileName($Backup.Journal.Directory); Snapshot = $(if ($null -eq $Backup.Directory) { $null } else { [IO.Path]::GetFileName($Backup.Directory) });
         Inventory = $Backup.Journal.Inventory; Records = $proofs;
-        Completion = [pscustomobject]@{ Schema = 1; Phases = @($CompletedPhases); Ownership = @($Writes | ForEach-Object {
+        Completion = [pscustomobject]@{ Schema = 1; Phases = @($CompletedPhases); Startup = $StartupEvidence; Ownership = @($Writes | ForEach-Object {
             [pscustomobject]@{ Relative = $_.Relative; OwnedHash = $_.OwnedHash }
         }) } } | ConvertTo-Json -Depth 8 -Compress)
     $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
@@ -752,8 +757,8 @@ try {
     Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\home-vpn") -Destination $InstalledScripts -Recurse -Force
 
     Confirm-ProGoInstallerSelfCheck $InstallBackup $InstallStage
-    Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut)
-    Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites -CompletedPhases @('self-check', 'shortcuts')
+    $InstallStartupEvidence = Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut) -CaptureStartupEvidence
+    Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites -CompletedPhases @('self-check', 'shortcuts') -StartupEvidence $InstallStartupEvidence -RequireStartupEvidence
 
 } catch {
     $installFailure = $_

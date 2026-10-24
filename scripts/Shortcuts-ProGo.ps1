@@ -19,8 +19,10 @@ function Test-ProGoExistingInstallation {
 function Initialize-ProGoShortcuts {
     param([string]$InstallDirectory, [bool]$WasInstalled, [bool]$NoStartup, [bool]$NoStartMenu,
         [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-        [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'))
+        [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+        [switch]$CaptureStartupEvidence)
     Import-ProGoShortcutType
     $shortcuts = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+    if ($CaptureStartupEvidence) { return $shortcuts.InstallWithStartupEvidence($WasInstalled, $NoStartup, $NoStartMenu) }
     $shortcuts.Install($WasInstalled, $NoStartup, $NoStartMenu)
 }

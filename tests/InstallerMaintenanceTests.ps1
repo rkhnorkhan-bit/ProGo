@@ -31,10 +31,12 @@ try {
     @'
 function Test-ProGoExistingInstallation { param($InstallDirectory) return $true }
 function Initialize-ProGoShortcuts {
-    param($InstallDirectory, $WasInstalled, $NoStartup, $NoStartMenu)
+    param($InstallDirectory, $WasInstalled, $NoStartup, $NoStartMenu, [switch]$CaptureStartupEvidence)
     if (-not $FixtureState.LeaseHeld -or -not $FixtureState.Stopped) { throw 'Shortcut escaped maintenance.' }
     $FixtureState.Events.Add('shortcuts')
     if ($FixtureState.Mode -eq 'shortcut-fail') { throw 'fixture-shortcut-fail' }
+    # Synthetic auxiliary adapter result; no Windows known folder or shortcut is touched.
+    if ($CaptureStartupEvidence) { return [pscustomobject]@{ Schema = 1; InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory); Disposition = 'preserved'; Exists = $false; Hash = $null } }
 }
 '@ | Set-Content -LiteralPath (Join-Path $PayloadScripts 'Shortcuts-ProGo.ps1') -Encoding UTF8
     $Payload = Get-ProGoInstallPayload -Directory $ReleaseDir

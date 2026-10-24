@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using System.Security.Cryptography;
 using System.Threading;
 
 namespace ProGo
@@ -107,16 +108,78 @@ namespace ProGo
             return true;
         }
 
+        // Durable receipt contains identity and hashes only, never shortcut bytes or user paths.
+        public sealed class StartupInstallEvidence
+        {
+            public int Schema { get { return 1; } }
+            public string InstallIdentity { get; private set; }
+            public string LocationIdentity { get; private set; }
+            public string Disposition { get; private set; }
+            public bool BeforeExists { get; private set; }
+            public string BeforeHash { get; private set; }
+            public bool Exists { get; private set; }
+            public string Hash { get; private set; }
+            internal StartupInstallEvidence(string install, string path, byte[] before, byte[] after, bool created)
+            {
+                InstallIdentity = Identity(install); LocationIdentity = Identity(path);
+                Disposition = created ? "created" : "preserved";
+                BeforeExists = before != null; BeforeHash = Digest(before);
+                Exists = after != null; Hash = Digest(after);
+            }
+        }
+
+        private static string Digest(byte[] bytes)
+        {
+            if (bytes == null) return null;
+            using (var hash = SHA256.Create()) return BitConverter.ToString(hash.ComputeHash(bytes)).Replace("-", "");
+        }
+        private static string Identity(string path)
+        { return Digest(Encoding.UTF8.GetBytes(Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar).ToUpperInvariant())); }
+
+        // Read-only verification against THIS caller's expected install and Startup location.
+        public bool VerifyStartupInstallEvidence(StartupInstallEvidence evidence)
+        {
+            try {
+                if (evidence == null || evidence.Schema != 1 || evidence.InstallIdentity != Identity(root) ||
+                    evidence.LocationIdentity != Identity(startup)) return false;
+                if (evidence.Disposition == "preserved") {
+                    if (evidence.BeforeExists != evidence.Exists || evidence.BeforeHash != evidence.Hash) return false;
+                } else if (evidence.Disposition == "created") {
+                    if (evidence.BeforeExists || evidence.BeforeHash != null || !evidence.Exists || !Matches(startup, "")) return false;
+                } else return false;
+                byte[] current = ReadStartupBytes();
+                return evidence.Exists == (current != null) && evidence.Hash == Digest(current);
+            } catch { return false; }
+        }
+
         public void Install(bool wasInstalled, bool noStartup, bool noStartMenu)
+        { InstallCore(wasInstalled, noStartup, noStartMenu, false); }
+
+        public StartupInstallEvidence InstallWithStartupEvidence(bool wasInstalled, bool noStartup, bool noStartMenu)
+        {
+            var evidence = InstallCore(wasInstalled, noStartup, noStartMenu, true);
+            if (!VerifyStartupInstallEvidence(evidence)) throw new IOException("Startup completion evidence changed.");
+            return evidence;
+        }
+
+        private StartupInstallEvidence InstallCore(bool wasInstalled, bool noStartup, bool noStartMenu, bool captureStartup)
         {
             if (!File.Exists(executable)) throw new IOException("Installed executable is missing.");
+            byte[] before = captureStartup ? ReadStartupBytes() : null;
             if (!noStartMenu) {
                 EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
                 MigrateMenu();
             }
             // Existing links (including disabled/customized ones) are never
             // refreshed: preserve Windows' StartupApproved state and user edits.
-            if (!wasInstalled && !noStartup) EnsureLink(startup, "");
+            byte[] created = null;
+            if (!wasInstalled && !noStartup) created = EnsureLink(startup, "");
+            if (!captureStartup) return null;
+            byte[] after = ReadStartupBytes();
+            if (created == null ? !Equal(before, after) :
+                (before != null || !Equal(created, after) || !Matches(startup, "") || !Equal(after, ReadStartupBytes())))
+                throw new IOException("Startup completion could not be verified. Current state was preserved.");
+            return new StartupInstallEvidence(root, startup, before, after, created != null);
         }
 
         public bool MigrateMenu()
