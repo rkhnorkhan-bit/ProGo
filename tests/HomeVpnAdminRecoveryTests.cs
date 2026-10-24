@@ -96,6 +96,15 @@ namespace ProGo
                 }
                 return true;
             }
+            if (kind == "status" && mode == "recover-hold") {
+                using (var descendant = Process.Start(new ProcessStartInfo(Application.ExecutablePath,
+                    "admin-recovery-child " + HomeVpnService.Argument(path)) { UseShellExecute = false, CreateNoWindow = true })) {
+                    var watch = Stopwatch.StartNew();
+                    while (!File.Exists(Path.Combine(path, "child"))) { Thread.Sleep(10); if (watch.ElapsedMilliseconds > 5000) throw new Exception("Admin fixture child did not start"); }
+                    Thread.Sleep(60000);
+                }
+                return true;
+            }
             Console.OutputEncoding = new UTF8Encoding(false);
             string token = File.ReadAllText(Path.Combine(path, "response-token"));
             if (command.Contains(token) || command.Contains(HomeVpnAccess.Parse(token).Password) || command.Contains(HomeVpnAccess.Parse(token).PrivateKey))
@@ -140,6 +149,7 @@ namespace ProGo
                 OwnedInvite(clipboard, token);
                 OwnedRevoke(clipboard, token);
                 OwnedReissue(clipboard, token);
+                OwnedRecoverInvite(clipboard, token);
                 foreach (string route in new[] { "button", "escape", "close", "dispose", "deadline" }) NativeWait(route, previous);
                 LostResponseAndReopen(token, clipboard, previous);
                 ReissueBoundary(token); FrozenOwner(); DefaultHandoff(clipboard); LateDisposedUi(clipboard); ReissueHandoffMessage(token, clipboard); StatusAndStorage(token);
@@ -1453,6 +1463,147 @@ namespace ProGo
                         try { if (friends != null) Pump(() => friends.InitializationWork.IsCompleted && friends.ActionWork.IsCompleted && friends.PendingReadWork.IsCompleted, 5000); }
                         finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
                             check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "owned invite fixture joins actual work/cleanup: " + mode); }
+                    }
+                }
+            }
+        }
+        private static void OwnedRecoverInvite(ClipboardService clipboard, string token)
+        {
+            foreach (string mode in new[] { "default-refusal", "complete", "cancel-retry", "stop-copy", "dispose-copy", "owner-dispose", "cancel-command", "cleanup-lock", "stop-after-status", "stop-result" }) {
+                Reset(mode == "cancel-command" ? "recover-hold" : "complete");
+                using (var relay = new Ikev2RelayService())
+                using (var service = new HomeVpnService(relay, Application.ExecutablePath, 0, 0, 0))
+                using (var entered = new ManualResetEventSlim())
+                using (var release = new ManualResetEventSlim()) {
+                    service.UseToken(token, Owner);
+                    var accepted = HomeVpnAdminRecovery.Register(Owner, "Retained friend", new string('a', 24));
+                    HomeVpnAdminRecovery.RetainResult(Owner, accepted, response); byte[] receiptBytes = File.ReadAllBytes(PendingPath);
+                    var before = Directory.GetFiles(HomeVpnPrivateFiles.Root).Where(path => path != PendingPath).ToDictionary(path => path, File.ReadAllBytes);
+                    var directories = Directory.GetDirectories(HomeVpnPrivateFiles.Root);
+                    HomeVpnWizardForm wizard = null; HomeInvitationsForm friends = null; HomeProfileUiDispatcher dispatcher = null; HomeVpnPreparationForm copyWindow = null;
+                    Task<string> operation = null; Task<bool> stop = null; FileStream held = null;
+                    int phase = 0, turns = 0, attempts = 0, handoffs = 0, worker = 0, ui = Thread.CurrentThread.ManagedThreadId, changes = 0, closedChanges = 0;
+                    string coreWork = null; bool closing = mode == "owner-dispose";
+                    try {
+                        if (mode == "default-refusal") service.Owner.KeyFile = At("missing-owned-invite-key");
+                        wizard = new HomeVpnWizardForm(service, clipboard);
+                        friends = new HomeInvitationsForm(new HomeVpnInvitation[0], (action, label, id) => wizard.Admin(service.Owner, action, label, id, delegate { }), clipboard, service);
+                        dispatcher = new HomeProfileUiDispatcher(friends);
+                        // Same owner slots as production ManageInvitations while its Friends modal is open.
+                        wizard.GetType().GetField("readOnlyListOwner", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(wizard, friends);
+                        wizard.GetType().GetField("readOnlyListUi", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(wizard, dispatcher);
+                        friends.ShowToken = value => { ++handoffs; check(value == response, "owned recover-invite handoff keeps exact retained result"); throw new HomeVpnAdminPendingException("Fixture retains accepted handoff"); };
+                        ((Label)Field(friends, "status")).TextChanged += delegate { ++changes; };
+                        if (mode != "default-refusal") wizard.ReadInvitationResult = async (owner, window, actualUi, report) => {
+                            check(window == friends && actualUi == dispatcher && Thread.CurrentThread.ManagedThreadId == ui,
+                                "default Admin recover-invite route keeps explicit Friends owner and no caller-supplied request fields: " + mode);
+                            operation = service.RecoverInviteAdminOwnedAsync(owner, window, actualUi, report, (exe, args) => {
+                                check(exe == "scp.exe" && args.Contains(" -P 22 ") && Thread.CurrentThread.ManagedThreadId == ui, "owned recover-invite copy starts only on its explicit UI");
+                                if (++attempts != 1) {
+                                    if (mode == "stop-after-status") stop = service.StopAsync();
+                                    return Task.FromResult(0);
+                                }
+                                return HeldInviteCopy(window, value => copyWindow = value, ct => {
+                                    worker = Thread.CurrentThread.ManagedThreadId;
+                                    coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
+                                    string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single();
+                                    check(File.ReadAllText(helper).Length != 0 && File.ReadAllBytes(PendingPath).SequenceEqual(receiptBytes), "owned recovery worker prepares actual helper without changing accepted request");
+                                    if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned invite copy deadline"); ct.ThrowIfCancellationRequested();
+                                });
+                            }, Application.ExecutablePath);
+                            var result = await operation;
+                            if (mode == "stop-result") { stop = service.StopAsync(); await stop; }
+                            return result;
+                        };
+                        HomeVpnWaitingTests.ModalWizardCase(friends, delegate {
+                            if (phase == 0) {
+                                if (!friends.InitializationWork.IsCompleted) return false; friends.InitializationWork.GetAwaiter().GetResult();
+                                ((TextBox)Field(friends, "name")).Text = "Unrelated draft";
+                                ((Button)Field(friends, "recover")).PerformClick(); phase = 1; return false;
+                            }
+                            if (mode == "default-refusal") {
+                                if (!friends.ActionWork.IsCompleted) return false; friends.ActionWork.GetAwaiter().GetResult();
+                                check(attempts == 0 && Calls().Length == 0 && File.ReadAllBytes(PendingPath).SequenceEqual(receiptBytes) && !service.IsAdminWorking
+                                    && !((Label)Field(friends, "status")).Text.Contains("missing-owned-invite-key"), "default owned recover-invite refuses missing key before SCP with original request intact without private path details");
+                                check(true, "owned production recover-invite slice PASS: " + mode); return true;
+                            }
+                            if (phase == 1) {
+                                if (!entered.IsSet || ++turns < 3) { if (operation != null && operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                check(friends.Modal && worker != ui && !operation.IsCompleted && service.IsAdminWorking && copyWindow.Owner == friends
+                                    && Calls().Length == 0 && File.ReadAllBytes(PendingPath).SequenceEqual(receiptBytes) && Failure(HomeVpnAdminRecovery.AcquireAsync()) is HomeVpnAdminPendingException,
+                                    "held recovery retains single family lease and modal heartbeat while preserving the original request: " + mode);
+                                ((Button)Field(friends, "recover")).PerformClick(); check(attempts == 1, "owned recover-invite cannot duplicate Recover while copy is held");
+                                if (mode == "cancel-retry") ((Button)Field(copyWindow, "cancel")).PerformClick();
+                                if (mode == "stop-copy" || mode == "dispose-copy" || closing) {
+                                    var watch = Stopwatch.StartNew(); if (mode == "dispose-copy") service.Dispose();
+                                    if (closing) { friends.Dispose(); closedChanges = changes; }
+                                    stop = service.StopAsync(); check(watch.ElapsedMilliseconds < 500 && !stop.IsCompleted, "Stop Dispose retain actual invite copy without blocking UI: " + mode);
+                                }
+                                turns = 0; phase = 2; return false;
+                            }
+                            if (phase == 2) {
+                                if (++turns < 3) return false;
+                                check(!operation.IsCompleted && (stop == null || !stop.IsCompleted), "copy cancellation cannot abandon physical invite body: " + mode);
+                                release.Set(); phase = 3; return false;
+                            }
+                            if (phase == 3 && mode == "cancel-command") {
+                                if (!File.Exists(At("child"))) { if (operation.IsCompleted) operation.GetAwaiter().GetResult(); return false; }
+                                var wait = friends.OwnedForms.OfType<HomeVpnPreparationForm>().Single();
+                                check(wait.Owner == friends && HomeVpnAdminRecovery.Pending().Name == "Retained friend", "real native invite wait has explicit owner and durable accepted ID");
+                                ((Button)Field(wait, "cancel")).PerformClick(); stop = service.StopAsync(); phase = 4; return false;
+                            }
+                            if (phase == 3) phase = 4;
+                            if (phase == 4) {
+                                if (!friends.ActionWork.IsCompleted || (stop != null && !stop.IsCompleted)) return false; friends.ActionWork.GetAwaiter().GetResult();
+                                if (stop != null) check(stop.GetAwaiter().GetResult(), "Stop joins invite physical work and cleanup: " + mode);
+                                bool read = mode == "complete" || mode == "cleanup-lock" || mode == "stop-result";
+                                var retained = HomeVpnAdminRecovery.Pending();
+                                check(retained.RequestId == accepted.RequestId && retained.Name == "Retained friend" && retained.SourceInviteId == accepted.SourceInviteId
+                                    && retained.Result == response, "owned recovery preserves original request/source ID and accepted result without new issuance: " + mode);
+                                if (read) check(Calls().SequenceEqual(new[] { "status", "result" }), "recovery queries only original status/result once: " + mode);
+                                else check(File.ReadAllBytes(PendingPath).SequenceEqual(receiptBytes) && handoffs == 0
+                                    && (mode == "cancel-command" || mode == "stop-after-status" ? Calls().SequenceEqual(new[] { "status" }) : Calls().Length == 0),
+                                    "cancelled or stopped recovery preserves byte-exact request without cached-token fallback or mutation: " + mode);
+                                if (closing) check(changes == closedChanges, "disposed Friends receives no late invite status");
+                                if (mode == "cancel-retry") {
+                                    check(((Button)Field(friends, "recover")).Enabled && operation.IsFaulted && operation.Exception.GetBaseException() is HomeVpnPreparationCancelledException,
+                                        "copy Cancel permits explicit recovery Retry with the same accepted request");
+                                    ((Button)Field(friends, "recover")).PerformClick(); phase = 5; return false;
+                                }
+                                phase = 5;
+                            }
+                            if (phase == 5) {
+                                if (!friends.ActionWork.IsCompleted) return false; friends.ActionWork.GetAwaiter().GetResult();
+                                if (mode == "cancel-retry") check(attempts == 3 && Calls().SequenceEqual(new[] { "status", "result" }) && handoffs == 1
+                                    && HomeVpnAdminRecovery.Pending().RequestId == accepted.RequestId && HomeVpnAdminRecovery.Pending().Result == response,
+                                    "explicit recovery Retry queries original request once without invite/revoke or stale overwrite");
+                                if (mode == "complete") check(handoffs == 1 && operation.Status == TaskStatus.RanToCompletion, "successful owned recovery publishes only verified original result");
+                                if (mode == "stop-result") check(handoffs == 0 && HomeVpnAdminRecovery.Pending().RequestId == accepted.RequestId && HomeVpnAdminRecovery.Pending().Result == response,
+                                    "Stop after verified recovery result preserves accepted request without late token handoff");
+                                if (mode == "cancel-command") check(handoffs == 0 && Gone(Id("pid")) && Gone(Id("child")), "native cancellation settles only its own process tree and never hands off/reissues");
+                                if (mode == "cleanup-lock") {
+                                    check(handoffs == 0 && operation.IsFaulted && service.HasOwnedResources && Directory.Exists(coreWork), "failed real invite cleanup retains exact owner and accepted receipt");
+                                    stop = service.StopAsync(); phase = 6; return false;
+                                }
+                                phase = 7;
+                            }
+                            if (phase == 6) {
+                                if (!stop.IsCompleted) return false;
+                                check(!stop.GetAwaiter().GetResult() && service.HasOwnedResources, "still locked invite cleanup cannot claim successful Stop");
+                                held.Dispose(); held = null; stop = service.StopAsync(); phase = 7; return false;
+                            }
+                            if (stop != null && !stop.IsCompleted) return false;
+                            if (mode == "cleanup-lock") check(stop.GetAwaiter().GetResult() && !Directory.Exists(coreWork) && Calls().Length == 2 && HomeVpnAdminRecovery.Pending().Result == response,
+                                "exact cleanup Retry removes only owned staging and never repeats accepted invitation");
+                            check(!service.IsAdminWorking && before.All(item => item.Value.SequenceEqual(File.ReadAllBytes(item.Key))), "owned recover-invite preserves protected access/owner bytes and settles physical work: " + mode);
+                            check(true, "owned production recover-invite slice PASS: " + mode); return true;
+                        }, () => closing);
+                    } finally {
+                        release.Set(); if (held != null) held.Dispose(); if (friends != null) friends.Dispose(); if (dispatcher != null) dispatcher.Dispose(); if (wizard != null) wizard.Dispose();
+                        try { if (friends != null) Pump(() => friends.InitializationWork.IsCompleted && friends.ActionWork.IsCompleted && friends.PendingReadWork.IsCompleted, 5000); }
+                        finally { service.Dispose(); var cleanup = service.StopAsync(); Pump(() => cleanup.IsCompleted, 5000);
+                            check(cleanup.GetAwaiter().GetResult() && !service.HasOwnedResources, "owned recover-invite fixture joins actual work/cleanup: " + mode); }
                     }
                 }
             }

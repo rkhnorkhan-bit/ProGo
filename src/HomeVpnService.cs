@@ -1133,6 +1133,31 @@ namespace ProGo
         // Existing recovery only: core owns its family lease from journal Load
         // through status/result/RetainResult and local cleanup. Never reacquire
         // that lease here, and never await public Stop from its retained body.
+        internal Task<string> RecoverInviteAdminOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
+            HomeProfileUiDispatcher dispatcher, Action<string> progress,
+            Func<string, string, Task> copy = null, string commandExecutable = null)
+        {
+            if (window == null) throw new ArgumentNullException("window");
+            if (dispatcher == null) throw new ArgumentNullException("dispatcher");
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            var stop = StopWork; int reporting = 1;
+            return RunAdminOwnedAsync(async delegate {
+                try {
+                    RequireSetupRecoveryScope(stop);
+                    return await AdminAsync(frozen, "recover-invite", null, null,
+                        text => dispatcher.Post(delegate { if (Volatile.Read(ref reporting) != 0) progress(text); }),
+                        (executable, arguments) => DispatchSetupRecoveryTransportAsync(stop, dispatcher, delegate {
+                            return copy == null ? HomeVpnPreparationForm.CopyAsync(window, executable, arguments, true) : copy(executable, arguments);
+                        }),
+                        (executable, arguments, output) => DispatchSetupRecoveryTransportAsync(stop, dispatcher, delegate {
+                            return HomeVpnPreparationForm.WaitForAdminAsync(window, commandExecutable ?? executable, arguments, output, HomeVpnPreparationProcess.TimeoutMs);
+                        }), RetainAdminCleanup).ConfigureAwait(false);
+                } finally { Volatile.Write(ref reporting, 0); }
+            });
+        }
+        // Existing recovery only: core owns its family lease from journal Load
+        // through status/result/RetainResult and local cleanup. Never reacquire
+        // that lease here, and never await public Stop from its retained body.
         internal Task<string> RecoverSetupOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
             HomeProfileUiDispatcher dispatcher, string label, Action<string> progress,
             Func<string, string, Task> copy = null, string commandExecutable = null)

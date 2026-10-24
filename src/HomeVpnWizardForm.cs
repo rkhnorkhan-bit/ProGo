@@ -70,6 +70,7 @@ namespace ProGo
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> IssueInvitation;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> RevokeInvitation;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, string, Action<string>, Task<string>> ReissueInvitation;
+        internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, Action<string>, Task<string>> ReadInvitationResult;
         private Form readOnlyListOwner;
         private HomeProfileUiDispatcher readOnlyListUi;
 
@@ -82,9 +83,11 @@ namespace ProGo
             IssueInvitation = (owner, window, dispatcher, label, report) => service.InviteAdminOwnedAsync(owner, window, dispatcher, label, report);
             RevokeInvitation = (owner, window, dispatcher, id, report) => service.RevokeAdminOwnedAsync(owner, window, dispatcher, id, report);
             ReissueInvitation = (owner, window, dispatcher, label, source, report) => service.ReissueInviteAdminOwnedAsync(owner, window, dispatcher, label, source, report);
+            ReadInvitationResult = (owner, window, dispatcher, report) => service.RecoverInviteAdminOwnedAsync(owner, window, dispatcher, report);
             Admin = (owner, action, label, identifier, report) => action == "repair"
                 ? service.RepairAdminOwnedAsync(owner, this, httpDispatcher, report)
                 : action == "list" ? ReadAdminList(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, report)
+                : action == "recover-invite" && label == null && identifier == null ? ReadInvitationResult(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, report)
                 : action == "recover-setup" ? ReadSetupResult(owner, this, httpDispatcher, label, report)
                 : action == "setup" ? PrepareSetup(owner, this, httpDispatcher, label, report)
                 : action == "invite" && identifier == null ? IssueInvitation(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, label, report)

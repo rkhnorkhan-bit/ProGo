@@ -1,4 +1,52 @@
-## Текущий этап: CI659 — authorized SshConfigAuthority fixture-only ACL fix
+## Текущий этап: final bounded recover-invite owned transport поверх CI660
+
+PR88 OPEN/DRAFT exact source `ff2ccb0e2b74f9dc3eb86a981536bced6cd2c194`, checkpoint `66d6fd4089fed302d49858f99f6af3951408e913` сверены;
+65 prior worktrees clean/locks0/root sole active agent. Isolated worktree preserves all checkpoints.
+Полные Windows15255/Ubuntu578 final logs [CI660](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40082601924)
+самостоятельно прочитаны; exact tested merge `f72193fb2d755edbfe8027457d5ea0154521246d`. Both jobs SUCCESS, native ConfigAuthority
+fixture.dotted/effective field PASS; policy214/Desktop6388/Instance30/Maintenance126/Shutdown47/
+UpdaterPackage5/HomeVPN4686/Portable91. Reissue10 incl stop-between/result, revoke10/invite8/initial8/
+repeated12/uncertainty8x2/name9/consumption8x3/API8/snapshot12/dispatcher5/ownership8/cleanup4/repair8/
+list10/recover10/fresh10/HTTPS11/freshHTTPS10/export11/chooser3 PASS. Python28 incl2SKIPPED; Ubuntu
+operation16/QR13/provisioning PASS. Pack runner-only SUCCESS; uploads/prune SKIPPED. Target PC NOT_RUN.
+
+Local code `f28e6a4ebc3a9e13c18807b2a3964966cb79628d`:2 runtime28add/0delete +1 test151add/0delete.
+Only recover-invite null-payload default Admin route uses RecoverInviteAdminOwnedAsync, same actual
+Friends owner/dispatcher slots as ManageInvitations. Invalid payload still reaches original validation.
+Existing retained worker owns key/helper/Load/status/result/RetainResult/cleanup; core single family lease
+unchanged/no outer reacquire/Stop self-await. Existing recovery dispatcher checks scope before every native
+copy/status/result; explicit UI recovery Copy and WaitForAdmin with original timeout. No caller-supplied
+request/source ID/name, no new request or invite/revoke. Original journal drives exact recovery.
+Fresh invite/standalone revoke/Reissue/Recover UI/core/protocol and agreed ACL fixtures byte-exact.
+
+Owned recover-invite10: default-refusal/complete/cancel-retry/stop-copy/dispose-copy/owner-dispose/
+cancel-command/cleanup-lock/stop-after-status/stop-result. Actual ShowDialog/default Admin/native fixture
+process+child/real helper/private DPAPI I/O. Accepted request/source/recovery ID/result retained. Bytes stay
+exact when cancelled before result; validated RetainResult may rewrite DPAPI envelope with same IDs/value.
+Copy Cancel→explicit Retry only status/result of same request; no invite/revoke ever. Stop blocks subsequent
+transport; no cached-token fallback after native cancellation; owner loss suppresses late UI; Stop after
+verified result preserves request/no handoff. Cleanup lock retains owner, false Stop→unlock exact delete-only
+retry no replay. Protected owner/access bytes unchanged. Original15s modal/5s copy+join deadlines/all old tests
+unchanged. PASS local review/static/signatures/parity/lexical(not compiler)/diff/JSON/secrets/public321source0release.
+New Windows compiler/recover-invite10/full suites NOT_RUN locally; no Windows/.NET/pwsh. CI660 not inherited.
+Publication TODO: ONE expected-head guarded existing PR88 source push, ONE automatic CI; public guards4/
+uploads OFF/release ineligible unchanged. Save checkpoint; STOP no full wait/second stage. Next SAME new CI.
+
+Concrete remaining gates to personal candidate: (1) exact final recover-invite10/full CI proof; (2) whole
+Windows F31-R09/R10/R11 latency/CPU/RAM/I/O + slow disk/process/network cancellation/close recovery,
+selected-key readiness/agent/password/host-key refusal and SSH→SOCKS5→HTTP; (3) pinned private checking
+package version/SHA/SHA256 with install/check/rollback and separately approved private delivery; (4) separately
+authorized owner PC install/launch/profile/data/key/agent/connection/Cancel/recovery/update/data-retention
+acceptance on approved resources. Runner pack is not delivered or installed software.
+Production additionally F23 standalone installer/updater+inapplicable-patch fallback/correct installer paths/
+identity/launch, clean install/update/offline/cancel/hash/self-check/rollback; F19/F22 portability another user/
+PC/approved VPS and disconnect/hostkey/idle/transfer; F27 signing/timestamp/Defender+Kaspersky; final integration/
+merge/release/live acceptance remain separate approval gates. Full F30 commercial scope retained separately.
+Last transport code binding is only a candidate, not whole F31 PASS or complete acceptance.
+Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: exact new recovery
+CI proof then final dev/delivery/target acceptance; fixed weights and all agreed requirements preserved.
+
+## История этапа: CI659 — authorized SshConfigAuthority fixture-only ACL fix
 
 PR88 OPEN/DRAFT exact source `18bb98df3cf3c660c1ce7be675a87ac76f499ff8`, checkpoint `db95d3e68ba3d42a03fc270887ca6e7029f5fd33`
 сверены;64 prior worktrees clean/locks0/root sole active agent. New isolated worktree retains all changes.
@@ -22,9 +70,15 @@ behavior no ACL changes. Auth-policy/other fixtures/post-Stop Refresh/Reissue/ru
 PASS local review/static/strict parity/manual Framework signatures/lexical(not compiler)/diff/JSON/secretsPII/
 public321source0release. Windows compile/native config oracle/Reissue10/Home VPN/full suites NOT_RUN locally;
 no Windows/.NET/pwsh. Other hypothetical native fixture risks outside scope; no speculative changes.
-Publication TODO: ONE expected-HEAD guarded existing PR88 push, ONE automatic CI, guards4/public uploads OFF,
-release ineligible unchanged. Save checkpoint; STOP no full wait/rerun/second stage/recover-invite.
-Next SAME new CI exact final logs/merge/native config authority/Reissue10/Home VPN/all required regressions.
+Publication PASS: source `ff2ccb0e2b74f9dc3eb86a981536bced6cd2c194` one expected-HEAD guarded non-force PR88 update;
+fetched exact659 parent/tree `ec14de392615a8bdfbeceb0bd7e7fe3626601fba` equals reviewed freeze
+`d7dafcf6fd38b8e336a5aae6a81cddce48edd600`. Diff one test file73add/2delete plus3docs.
+ONE automatic [CI660/40082601924](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40082601924), exact-source count1/pull_request/attempt1,
+in_progress/conclusion null. Merge ref `f72193fb2d755edbfe8027457d5ea0154521246d` is NOT final tested merge proof.
+New Windows compilation/native config oracle/Reissue10/Home VPN/full suites NOT_RUN; job metadata only.
+Public repo/guards4 rechecked/uploads OFF/final skips not observed/release ineligible unchanged.
+Postpublication3-doc local checkpoint intentionally not pushed/full SHA via git log -1/PR88 body. STOP;
+next SAME CI660 exact final logs/merge/native config oracle/Reissue10/Home VPN/all relevant regressions.
 Реализация:58–80/100 · Проверенная готовность:22/100 · Изменение:+0 · Главный блокер: exact new
 Windows native oracle/Reissue proof. Full delivery/personal/production gates retained separately.
 
