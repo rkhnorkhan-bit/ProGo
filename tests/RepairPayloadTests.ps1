@@ -45,6 +45,58 @@ function Assert-FixtureSnapshot($Expected, [string]$Message) {
     if ($Expected.Count -ne $actual.Count) { throw $Message }
     foreach ($path in $Expected.Keys) { if (-not $actual.ContainsKey($path) -or $actual[$path] -cne $Expected[$path]) { throw $Message } }
 }
+# Read-only evidence for only the complete positive repair. Never log captured output,
+# exception messages, paths, command lines, raw process IDs or journal contents.
+function Write-FixtureRepairProbe([string]$Checkpoint) {
+    try {
+    $known = $false; $exited = $false; $cpu = -1; $ram = -1
+    try { $exited = $child.HasExited; $known = $true; if (-not $exited) { $child.Refresh(); $cpu = $child.TotalProcessorTime.TotalMilliseconds; $ram = $child.WorkingSet64 } } catch { }
+    $phases = @(); $traceKnown = $false
+    $allowedPhases = @('wrapper-enter', 'probe-ready', 'script-enter', 'preflight-complete', 'helper-loaded', 'maintenance-acquired', 'snapshot-enter', 'snapshot-complete', 'copy-complete', 'runtime-verified', 'selfcheck-call', 'selfcheck-return', 'selfcheck-verified', 'commit-enter', 'commit-durable', 'catch-enter', 'rollback-return', 'transaction-cleanup-enter', 'cleanup-return', 'repair-return', 'wrapper-error', 'probe-cleanup-enter', 'probe-cleanup-return')
+    try {
+        if ([IO.File]::Exists($probeTrace)) {
+            $readerStream = New-Object IO.FileStream -ArgumentList @($probeTrace, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+            try {
+                if ($readerStream.Length -gt 8192) { throw 'oversized diagnostic' }
+                $reader = New-Object IO.StreamReader -ArgumentList @($readerStream, [Text.Encoding]::ASCII)
+                try { $records = $reader.ReadToEnd() -split "`n" } finally { $reader.Dispose() }
+                foreach ($record in $records) { if ($record -cmatch '^[a-z-]+:[0-9]+$' -and ($record -split ':')[0] -cin $allowedPhases) { $phases += $record } elseif ($record.Length -ne 0) { throw 'incomplete diagnostic record' } }
+                $traceKnown = $true
+            } finally { $readerStream.Dispose() }
+        }
+    } catch { $traceKnown = $false }
+    $journalPresent = [IO.File]::Exists((Join-Path $installed '.repair-state.json'))
+    $journalKnown = $false; $phase = 'unknown'; $entries = -1; $appliedCount = -1; $checkRoot = $false
+    try {
+        $journalFile = Join-Path $installed '.repair-state.json'
+        if ($journalPresent -and (Get-Item -LiteralPath $journalFile).Length -le 65536) {
+            $record = [IO.File]::ReadAllText($journalFile) | ConvertFrom-Json
+            if ($record.phase -cin @('preparing', 'prepared', 'applying', 'committed', 'rolled-back') -and @($record.entries).Count -le 41 -and @($record.applied).Count -le 41) {
+                $phase = $record.phase; $entries = @($record.entries).Count; $appliedCount = @($record.applied).Count; $journalKnown = $true
+            }
+        }
+        $stages = @(Get-ChildItem -LiteralPath $installed -Directory -Filter '.repair-stage-*' | Select-Object -First 8)
+        foreach ($stage in $stages) {
+            if ($stage.Name -cmatch '^\.repair-stage-[a-f0-9]{32}$' -and -not ($stage.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+                $checkRoot = $checkRoot -or [IO.Directory]::Exists((Join-Path $stage.FullName 'self-check-data'))
+            }
+        }
+    } catch { $journalKnown = $false }
+    [Console]::WriteLine('REPAIR_FIXTURE checkpoint=' + $Checkpoint + '; elapsedMs=' + $probeClock.ElapsedMilliseconds + '; startMs=' + $probeStartMs +
+        '; exitedKnown=' + $known + '; exited=' + $exited + '; stdout=' + $stdout.Status + '; stderr=' + $stderr.Status + '; cpuMs=' + $cpu + '; ramBytes=' + $ram +
+        '; traceKnown=' + $traceKnown + '; journalPresent=' + $journalPresent + '; journalKnown=' + $journalKnown + '; phase=' + $phase + '; entries=' + $entries + '; applied=' + $appliedCount + '; selfCheckRoot=' + $checkRoot)
+    [Console]::WriteLine('REPAIR_FIXTURE phases=' + ($phases -join ','))
+    if ($stdout.Status -eq [Threading.Tasks.TaskStatus]::RanToCompletion) {
+        [Console]::WriteLine('REPAIR_FIXTURE output selfCheckPass=' + $stdout.Result.Contains('Repair self-check PASS:') + '; repairVerified=' + $stdout.Result.Contains('Repair runtime restored and verified:'))
+        foreach ($line in ($stdout.Result -split "`n")) { if ($line.TrimEnd("`r") -cmatch '^REPAIR_PROBE_STACK [A-Za-z0-9_.<>,]*$') { [Console]::WriteLine($line.TrimEnd("`r")) } }
+    }
+    if ($Checkpoint -eq 'deadline') {
+        $stack = New-Object Diagnostics.StackTrace -ArgumentList @($false)
+        $methods = @($stack.GetFrames() | Select-Object -First 6 | ForEach-Object { $method = $_.GetMethod(); if ($null -ne $method -and $null -ne $method.DeclaringType) { (($method.DeclaringType.Name + '.' + $method.Name) -replace '[^A-Za-z0-9_.<>]', '') } })
+        [Console]::WriteLine('REPAIR_FIXTURE_STACK ' + ($methods -join ','))
+    }
+    } catch { [Console]::WriteLine('REPAIR_FIXTURE diagnostic-error-type=' + $_.Exception.GetType().Name) }
+}
 function Invoke-FixtureRepair([switch]$Recover, [string]$ExpectedFailure, [ValidateSet('applying', 'committed')][string]$ExpectedPhase = 'applying') {
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
@@ -150,10 +202,18 @@ try {
     $info.UseShellExecute = $false; $info.CreateNoWindow = $true
     $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
     $info.EnvironmentVariables['LOCALAPPDATA'] = $userRoot
+    $originalCompleteArguments = $info.Arguments
+    $probeTrace = Join-Path $work 'complete-repair.phases'
+    $info.Arguments = '-NoProfile -File "' + (Join-Path $PSScriptRoot 'RepairPhaseProbe.ps1') + '" -RepairScript "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -Payload "' + $payload + '" -FixtureRoot "' + $work + '"'
+    $probeClock = [Diagnostics.Stopwatch]::StartNew()
+    [Console]::WriteLine('REPAIR_FIXTURE checkpoint=start-enter')
     $child = [Diagnostics.Process]::Start($info)
+    $probeStartMs = $probeClock.ElapsedMilliseconds
+    [Console]::WriteLine('REPAIR_FIXTURE checkpoint=start-return; startMs=' + $probeStartMs)
     $stdout = $child.StandardOutput.ReadToEndAsync(); $stderr = $child.StandardError.ReadToEndAsync()
     try {
-        if (-not $child.WaitForExit(20000)) { throw 'Complete repair with bounded self-check exceeded its twenty-second limit' }
+        if (-not $child.WaitForExit(20000)) { Write-FixtureRepairProbe 'deadline'; throw 'Complete repair with bounded self-check exceeded its twenty-second limit' }
+        Write-FixtureRepairProbe 'process-exit'
         if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Complete repair output did not settle' }
         if ($child.ExitCode -ne 0 -or -not $stdout.Result.Contains('Repair runtime restored and verified:') -or -not $stdout.Result.Contains('Repair self-check PASS:')) {
             $safe = [regex]::Match($stderr.Result, '(?m)^PROGO_REPAIR_FAILURE Cause: [A-Za-z0-9]+; stage=[a-z-]+; script_line=\d+; hresult=-?\d+; native=-?\d+; check_exit=-?\d+')
@@ -169,7 +229,10 @@ try {
         try {
             if (-not $child.HasExited) { $child.Kill(); if (-not $child.WaitForExit(3000)) { throw 'Owned complete repair child cleanup failed' } }
             if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Owned complete repair output cleanup failed' }
-        } finally { $child.Dispose() }
+        } finally {
+            try { Write-FixtureRepairProbe 'cleanup-return' }
+            finally { $child.Dispose(); $info.Arguments = $originalCompleteArguments }
+        }
     }
     foreach ($source in $sourceFiles) {
         if (-not $source.FullName.StartsWith($payloadRoot + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'Runtime fixture source escaped its own payload root' }
