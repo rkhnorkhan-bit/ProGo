@@ -50,7 +50,7 @@ function Initialize-ProGoShortcuts {
         $before = [IO.File]::ReadAllBytes($data)
         $oldRuntime = Join-Path $case 'ProGo\ProGo.exe'
         if ($Mode -in @('backup-fail', 'self-check-fail', 'bad-restore', 'rollback-fail', 'snapshot-corrupt')) { [IO.File]::WriteAllText($oldRuntime, 'synthetic prior runtime') }
-        $FixtureState = @{ Mode = $Mode; LeaseHeld = $false; Stopped = $false; Disposes = 0; Copies = 0; SuccessMessage = $false; SelfChecks = 0; PriorVerified = $null; RollbackVerified = $null; Events = (New-Object 'System.Collections.Generic.List[string]') }
+        $FixtureState = @{ Mode = $Mode; LeaseHeld = $false; Stopped = $false; Disposes = 0; Copies = 0; CopyFaults = 0; SuccessMessage = $false; SelfChecks = 0; PriorVerified = $null; RollbackVerified = $null; Events = (New-Object 'System.Collections.Generic.List[string]') }
         function Enter-ProGoInstallerMaintenance {
             $FixtureState.Events.Add('enter')
             if ($Mode -eq 'busy') { throw 'fixture-busy' }
@@ -87,9 +87,16 @@ function Initialize-ProGoShortcuts {
         function Write-ProGoInstallerRuntimeBytes($Source, $Target) {
             if (-not $FixtureState.LeaseHeld -or -not $FixtureState.Stopped) { throw 'Copy escaped maintenance.' }
             $FixtureState.Copies++; $FixtureState.Events.Add('copy')
-            if ($Mode -eq 'copy-fail') { throw 'fixture-copy-fail' }
+            # Called from Set-ProGoInstallerRuntimeFile, whose local $mode is a
+            # FileMode. Read the scenario from fixture state, not dynamic scope.
+            if ($FixtureState.Mode -eq 'copy-fail') {
+                Check-InstallerOwner ($Source -is [IO.FileStream] -and $Target -is [IO.FileStream] -and
+                    $Source.CanRead -and $Target.CanWrite -and $InstallWrites.Count -eq 1) 'copy fault reaches admitted owned streams'
+                $FixtureState.CopyFaults++
+                throw 'fixture-copy-fail'
+            }
             $Target.SetLength(0)
-            if ($Mode -eq 'partial-copy' -and [IO.Path]::GetFileName($Target.Name) -eq 'ProGo.exe') {
+            if ($FixtureState.Mode -eq 'partial-copy' -and [IO.Path]::GetFileName($Target.Name) -eq 'ProGo.exe') {
                 $bytes = [Text.Encoding]::UTF8.GetBytes('synthetic incomplete write')
                 $Target.Write($bytes, 0, $bytes.Length); return
             }
@@ -151,6 +158,11 @@ function Initialize-ProGoShortcuts {
             if ($Mode -eq 'launch' -or $Mode -eq 'launch-fail') {
                 Check-InstallerOwner ($FixtureState.Events[$FixtureState.Events.Count - 2] -eq 'dispose' -and $FixtureState.Events[$FixtureState.Events.Count - 1] -eq 'launch') 'launch after release'
             } else { Check-InstallerOwner ($FixtureState.Events[$FixtureState.Events.Count - 1] -eq 'dispose') 'final release' }
+        }
+        if ($Mode -eq 'copy-fail') {
+            Check-InstallerOwner ($FixtureState.CopyFaults -eq 1 -and $FixtureState.Copies -eq 1 -and
+                $FixtureState.SelfChecks -eq 0 -and $FixtureState.PriorVerified -eq $true -and
+                $FixtureState.RollbackVerified -eq $true -and -not [IO.File]::Exists($oldRuntime)) 'copy fault propagates after verified owned cleanup without self-check'
         }
         if ($Mode -in @('self-check-fail', 'partial-copy', 'bad-restore', 'rollback-fail', 'snapshot-corrupt')) {
             $restored = $Mode -in @('self-check-fail', 'partial-copy')
