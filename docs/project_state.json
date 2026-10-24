@@ -3929,32 +3929,32 @@
     }
   ],
   "ci_candidate": {
-    "source": "099ba265daefabce5758d25c88e15798ca71bd50",
-    "merge_ref": "91eeafc6584992bced555f6142561171e2db1ecf",
-    "tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
-    "tree": "e48f1249c54114829ca9d7ab2e47f23c8a9350ed",
-    "local_freeze": "75b29a39fd54b53dd30e3e8efe211d020f74c3d3",
-    "run_id": 40041549329,
-    "run_number": 652,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
+    "source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+    "merge_ref": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "tree": "812ca99f700ab309d04d2b19a9b02451dcc23451",
+    "local_freeze": "44e834ffaf20fe61561184f90c5e0bd83887b5ea",
+    "run_id": 40045109182,
+    "run_number": 653,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
     "status": "completed",
-    "conclusion": "failure",
+    "conclusion": "success",
     "jobs": {
       "windows": {
-        "id": 120713543137,
+        "id": 120724941594,
         "status": "completed",
-        "conclusion": "failure"
+        "conclusion": "success"
       },
       "ubuntu": {
-        "id": 120713543452,
+        "id": 120724941809,
         "status": "completed",
         "conclusion": "success"
       }
     },
-    "verification": "Both full final logs independently read; exact checkout/build identity; failure method/IL mapped to original native joint assert. Logs do not distinguish selected-ID vs button predicate.",
-    "windows_compilation": "PASS exact652 before native failure",
-    "windows_native": "FAIL early HomeInvitationReissueTests.Native joint assert; new Reissue consumption8 and subsequent API8/HomeVPN suites NOT_RUN",
-    "pack": "SKIPPED",
+    "verification": "Both full final logs independently read; exact checkout/build identity and actual fixed native/previous suites per-case markers confirmed.",
+    "windows_compilation": "PASS exact653",
+    "windows_native": "PASS exact653 fixed native receipt/actions and Reissue consumption8/Create8/Recover8/API8/all actual prior suites",
+    "pack": "PASS runner-only",
     "artifact_uploads": "SKIPPED",
     "owner_pc": "NOT_RUN"
   },
@@ -5493,21 +5493,35 @@
   },
   "active_work": {
     "status": "PARTIAL",
-    "phase": "ONE CI652 test-contract fixture correction only; no runtime fix",
-    "baseline_source": "099ba265daefabce5758d25c88e15798ca71bd50",
-    "baseline_tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
-    "baseline_checkpoint": "6440c454be8f84af99b222b3146d4e4535e900bf",
-    "local_code_sha": "1d25c59a4ae1abef0a41383523a1778d33c240b0",
-    "scope": "Only first successful Native scenario in tests/HomeInvitationReissueTests.cs; production gating/runtime/all other tests untouched.",
-    "proven_cause": "Fixture returns token without durable request/result and waits only shown!=null. Sync ConfirmConsumed missing-request returned; async API returns false/missing and owner action must settle before restored-actions assertion. Fixture mismatch proven from source; no runtime defect inferred.",
-    "limits": "No separate selected-ID or reissue.Enabled values logged; joint failure not assigned to an unobserved predicate. No runtime/infrastructure defect inferred.",
-    "correction": "Save fixture access, Register real original-ID/name request, RetainResult exact token before completing inviteGate, verify retained RequestId/SourceInviteId/Name/Result. Preserve prior shown assertion, then await ConsumptionWork+ActionWork actual completion and observe faults before unchanged exact ID+restored-actions assertion. Verify real receipt deleted, one revoke/invite, neighbour ID preserved.",
-    "cleanup": "Cancel own pending gates, dispose own form, bounded join own ActionWork/ConsumptionWork/PendingReadWork; finally restore prior access/request bytes. Later scenarios/helpers and original PumpUntil5s unchanged. No wait for asserted UI value and no timeout/assert/coverage weakening.",
-    "local_checks": "PASS one-fixture structural isolation/all original assertions retained/later scenarios+helpers exact/manual signatures/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new fixture correction",
-    "windows_native": "NOT_RUN corrected native success/Reissue consumption8/full relevant regression; old CI652 remains FAILURE",
-    "publication": "TODO guarded existing PR88 ONE automatic CI for real fixture fix; no rerun of old SHA, public uploads OFF/release ineligible",
-    "next": "Read SAME new CI final logs/exact source+tested merge: corrected native success/accepted consumption+actions, Reissue consumption8/Create8/Recover8/API8 and all prior suites. No new feature/second stage or duplicate CI.",
+    "phase": "ONE fresh Create→invite owned transport production slice",
+    "baseline_source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+    "baseline_tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "baseline_checkpoint": "2c7ae7e96f11fd9051b5e93bd2f4191bb8ac9b16",
+    "local_code_sha": "3a37deaf77772688de44f05a50c4ae0951c4ee84",
+    "scope": "ONLY default Admin action invite with identifier null. Reissue source-ID invite, revoke, recover-invite unchanged. Existing core receipt/family lease/command/cleanup/protocol, consumption/UI readers unchanged.",
+    "implementation": "InviteAdminOwnedAsync freezes owner metadata/label then reserves existing RunAdminOwnedAsync. Core helper/key/DPAPI/request/result/cleanup run on worker with its single family lease. Existing scope/dispatcher (repair-named generic fresh guard) admits native Copy/WaitForAdmin only on explicit Friends owner, post-copy Stop gate refuses registration/SSH, progress disabled after settlement. Create checks original Stop identity before late handoff. No public Stop self-await/reacquire/replay.",
+    "native_cases": [
+      "default-refusal",
+      "complete",
+      "cancel-retry",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock"
+    ],
+    "test_contract": "Actual ShowDialog/default Create→wizard Admin fresh-invite route. Same owner slots as ManageInvitations; default binding refuses missing fixture key, other cases replace only copy/native executable through service API seam. Real helper staging, DPAPI receipt, real native fixture SSH compound invocation/child, original ID/name/result, modal heartbeat/single admission, Cancel Retry once, Stop/Dispose drain before registration, owner Dispose no late UI, native cancellation preserves request/process cleanup, locked staging false Stop→unlock cleanup Retry no replay.5s copy barrier/15s modal/5s joins unchanged. No live VPS. All prior methods/tests exact except scoped routing and Create late scope guard.",
+    "local_checks": "PASS manual review/signatures/strict scope/all prior methods+test bodies parity/lexical/diff/JSON/public321source0release/secretsPII0. Windows/.NET Framework/pwsh unavailable NOT_RUN.",
+    "windows_compilation": "NOT_RUN new invite transport candidate",
+    "windows_native": "NOT_RUN owned invite8/full relevant regressions;653 success only baseline",
+    "publication": "TODO guarded existing PR88 ONE automatic CI; public uploads OFF/release ineligible",
+    "remaining_production_paths": [
+      "Fresh invite candidate needs exact new Windows proof before acceptance",
+      "Revoke owned transport binding",
+      "Reissue orchestration/source-ID invite owned transport binding",
+      "Recover-invite owned transport binding"
+    ],
+    "next": "Read SAME new CI full final logs/exact source+tested merge/owned invite8 and all prior suites. Only after proof choose next bounded transport path; no second stage now.",
     "readiness_change": 0
   },
   "f31_launch_revision_microtask": {
@@ -5601,7 +5615,7 @@
     "A": 0,
     "reason": "Same28 existing weighted partial criteria matched exactly in completed620; no new full weighted gate, all weights/D/P/A unchanged",
     "local_lifecycle": "PASS narrow full611 shared address and receipt API; real configure UI/import/whole R09/R10/R11 still open",
-    "candidate_note": "CI652 exact099ba26/91eeafc Windows FAILURE at old native fixture joint assert; compilation/Desktop5298/SSH61/Instance30/Maintenance126/Shutdown47 PASS, subsequent Reissue consumption8/HomeVPN suites NOT_RUN. Only test-contract fix candidate new Windows NOT_RUN. Weights/620 anchors unchanged58-80/22 +0.",
+    "candidate_note": "CI653 exactaad854a/e8f2536 full logs fixed native/Reissue8/Create8/Recover8/API8/all prior suites PASS. Fresh Create invite owned transport candidate Windows NOT_RUN. Remaining3 transport paths and delivery gates unchanged, no full F31 closure. Weights/620 anchors unchanged58-80/22 +0.",
     "score_anchors": {
       "F01": "2026-10-22T12:31:15.9526021Z PASS: CLI migration preserves unrelated preferences 0",
       "F02": "2026-10-22T12:25:58.9647922Z PASS: automatic fallback advances through permanent and transient failures without retrying refused candidates (14 assertions)",
@@ -9737,8 +9751,8 @@
       622,
       623
     ],
-    "actual_invitation_ui": "Read/API8/Create+Recover consumption verified651. Reissue Complete consumption candidate NOT_RUN; four existing transport paths remain.",
-    "next": "Read SAME new exact-source CI final logs/merge/Reissue consumption8/Create8/Recover8/API8/all prior suites. Only after proof choose one existing owned transport path, no second stage now.",
+    "actual_invitation_ui": "Read and all three consumption paths verified653; fresh invite transport new candidate NOT_RUN. Revoke/Reissue/recover-invite still legacy transport, not closed.",
+    "next": "Read SAME new CI full final logs/exact source+tested merge/owned invite8 and all prior suites. Only after proof choose next bounded transport path; no second stage now.",
     "readiness_change": 0,
     "integration_local_code_sha": "83db3a07889501395e4c288d38e9b725f36996d3",
     "integration_source": "6f8a41e67709dae2a9794885e7e975918401f765",
@@ -13006,6 +13020,85 @@
         "verification": "PASS fresh expected-head non-force PR88 update; fetched exact651 parent/full tree equal reviewed freeze. ONE automatic pull_request attempt1/exact-source count1. Final checkout/build identity not yet verified.",
         "windows_compilation": "NOT_RUN new Reissue consumption UI candidate",
         "windows_native": "NOT_RUN Reissue consumption8/Create8/Recover8/API8/full old suites",
+        "pack": "NOT_RUN",
+        "artifact_uploads": "OFF public PR guard; final skips not yet observed",
+        "owner_pc": "NOT_RUN"
+      }
+    },
+    "before_invite_owned_on653": {
+      "active_work": {
+        "status": "PARTIAL",
+        "phase": "ONE CI652 native fixture correction published; sole CI653 in_progress; STOP after checkpoint",
+        "baseline_source": "099ba265daefabce5758d25c88e15798ca71bd50",
+        "baseline_tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
+        "baseline_checkpoint": "6440c454be8f84af99b222b3146d4e4535e900bf",
+        "local_code_sha": "1d25c59a4ae1abef0a41383523a1778d33c240b0",
+        "scope": "Only first successful Native scenario in tests/HomeInvitationReissueTests.cs; production gating/runtime/all other tests untouched.",
+        "proven_cause": "Fixture returns token without durable request/result and waits only shown!=null. Sync ConfirmConsumed missing-request returned; async API returns false/missing and owner action must settle before restored-actions assertion. Fixture mismatch proven from source; no runtime defect inferred.",
+        "limits": "No separate selected-ID or reissue.Enabled values logged; joint failure not assigned to an unobserved predicate. No runtime/infrastructure defect inferred.",
+        "correction": "Save fixture access, Register real original-ID/name request, RetainResult exact token before completing inviteGate, verify retained RequestId/SourceInviteId/Name/Result. Preserve prior shown assertion, then await ConsumptionWork+ActionWork actual completion and observe faults before unchanged exact ID+restored-actions assertion. Verify real receipt deleted, one revoke/invite, neighbour ID preserved.",
+        "cleanup": "Cancel own pending gates, dispose own form, bounded join own ActionWork/ConsumptionWork/PendingReadWork; finally restore prior access/request bytes. Later scenarios/helpers and original PumpUntil5s unchanged. No wait for asserted UI value and no timeout/assert/coverage weakening.",
+        "local_checks": "PASS one-fixture structural isolation/all original assertions retained/later scenarios+helpers exact/manual signatures/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
+        "windows_compilation": "NOT_RUN new fixture correction",
+        "windows_native": "NOT_RUN corrected native success/Reissue consumption8/full relevant regression; old CI652 remains FAILURE",
+        "publication": "PASS fresh expected-head non-force PR88; fetched exact652 parent/full tree equal reviewed freeze. ONE automatic CI653 pull_request attempt1/exact-source count1; no old-SHA rerun.",
+        "next": "Read SAME CI653 full final logs/exact source+tested merge/corrected native success+actual receipt consumption/restored actions/Reissue consumption8/Create8/Recover8/API8/all prior suites. No duplicate/rerun/new feature/second stage.",
+        "readiness_change": 0,
+        "published_sha": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+        "merge_ref": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+        "tested_merge": null,
+        "tree": "812ca99f700ab309d04d2b19a9b02451dcc23451",
+        "local_freeze": "44e834ffaf20fe61561184f90c5e0bd83887b5ea",
+        "ci_run_id": 40045109182,
+        "ci_run_number": 653,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
+        "ci_status": "in_progress",
+        "ci_conclusion": null,
+        "ci_jobs": {
+          "windows": {
+            "id": 120724941594,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120724941809,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "checkpoint": "Postpublication3-doc local HEAD via git log -1/full SHA in PR88 body; intentionally not pushed to avoid second CI",
+        "public_diff": "4files421add/87delete:1 test61add/27delete including reindent +3docs360add/60delete; all runtime/all other tests/scripts/workflows/VERSION exact652"
+      },
+      "ci_candidate": {
+        "source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+        "merge_ref": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+        "tested_merge": null,
+        "tree": "812ca99f700ab309d04d2b19a9b02451dcc23451",
+        "local_freeze": "44e834ffaf20fe61561184f90c5e0bd83887b5ea",
+        "run_id": 40045109182,
+        "run_number": 653,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
+        "status": "in_progress",
+        "conclusion": null,
+        "jobs": {
+          "windows": {
+            "id": 120724941594,
+            "name": "windows-build",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          "ubuntu": {
+            "id": 120724941809,
+            "name": "vpn-server-test",
+            "status": "in_progress",
+            "conclusion": null
+          }
+        },
+        "verification": "PASS fresh expected-head non-force PR88 update; fetched exact652 parent/full tree equal reviewed freeze. ONE automatic pull_request attempt1/exact-source count1. Final checkout/build identity not yet verified.",
+        "windows_compilation": "NOT_RUN new fixture correction",
+        "windows_native": "NOT_RUN corrected native success/Reissue consumption8/API8/full prior regression",
         "pack": "NOT_RUN",
         "artifact_uploads": "OFF public PR guard; final skips not yet observed",
         "owner_pc": "NOT_RUN"
@@ -17836,8 +17929,8 @@
     ],
     "test_contract": "Actual ShowDialog/default Reissue and existing core. Exactly one frozen-ID revoke acknowledgement then one invite with same label+SourceInviteId; same-name sibling unchanged and old access remains revoked. Real protected accepted request/result;5s consume barrier/modal15s/joins5s. Cancel Close/reopen Retry and Stop/lock Refresh/Recover use original recovery ID with no second revoke/invite; changed request/result preserved, no late status, private bytes/draft, successful delete stable after Stop. Callback-only transport, no live VPS proof. All old tests exact.",
     "local_checks": "PASS manual review/signatures/structural isolation/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
-    "windows_compilation": "PASS exact652",
-    "windows_native": "NOT_RUN Reissue consumption8; CI652 stopped in older callback-only native success fixture",
+    "windows_compilation": "PASS exact653",
+    "windows_native": "PASS exact653 Reissue consumption8; CI652 failure kept in history",
     "publication": "PASS fresh expected-head non-force PR88; fetched exact651 parent/full tree equal reviewed freeze. ONE automatic CI652 pull_request attempt1/exact-source count1.",
     "remaining_production_paths": [
       "Existing invite owned transport binding",
@@ -17869,9 +17962,9 @@
         "conclusion": "success"
       }
     },
-    "verification_source": "099ba265daefabce5758d25c88e15798ca71bd50",
-    "verification_tested_merge": "91eeafc6584992bced555f6142561171e2db1ecf",
-    "verification_run_id": 40041549329
+    "verification_source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+    "verification_tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "verification_run_id": 40045109182
   },
   "delivery_gates_after_reissue_consumption": {
     "basis": "Existing approved31/55 retained. This is delivery-gate separation, no requirement removal, new feature, altered weights or implied acceptance. Old requirement rows remain historical/scoped; current gates here require final exact SHA evidence.",
@@ -17879,16 +17972,16 @@
       {
         "id": "PC-01",
         "status": "NOT_RUN",
-        "criterion": "Corrected new exact-source CI must pass native success after actual consumption, Reissue consumption8 and all prior suites. CI652 failed earlier fixture; no production gate accepted.",
-        "source": "099ba265daefabce5758d25c88e15798ca71bd50",
-        "run_id": 40041549329,
-        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40041549329",
+        "criterion": "New exact-source CI owned invite8 and all mandatory prior suites/merge-source identity required; no old PASS inheritance.",
+        "source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+        "run_id": 40045109182,
+        "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
         "last_failure_run": 40041549329
       },
       {
         "id": "PC-02",
         "status": "TODO",
-        "criterion": "Close remaining four invitation owned transport paths invite/revoke/reissue/recover-invite under original ID/scope, lifecycle/Stop/Dispose/cleanup/no replay; integrate one bounded slice at a time. F31-R09/R10 remain open."
+        "criterion": "Fresh invite owned transport candidate awaiting exact Windows proof; revoke/reissue/source-ID invite/recover-invite bindings remain TODO. Close original-ID/scope/lease/no replay/Cancel Retry Stop Dispose cleanup for whole F31-R09/R10."
       },
       {
         "id": "PC-03",
@@ -18020,10 +18113,332 @@
     "correction": "Save fixture access, Register real original-ID/name request, RetainResult exact token before completing inviteGate, verify retained RequestId/SourceInviteId/Name/Result. Preserve prior shown assertion, then await ConsumptionWork+ActionWork actual completion and observe faults before unchanged exact ID+restored-actions assertion. Verify real receipt deleted, one revoke/invite, neighbour ID preserved.",
     "cleanup": "Cancel own pending gates, dispose own form, bounded join own ActionWork/ConsumptionWork/PendingReadWork; finally restore prior access/request bytes. Later scenarios/helpers and original PumpUntil5s unchanged. No wait for asserted UI value and no timeout/assert/coverage weakening.",
     "local_checks": "PASS one-fixture structural isolation/all original assertions retained/later scenarios+helpers exact/manual signatures/lexical delimiters/diff/JSON/public321source0release/secretsPII0. AST/compiler unavailable NOT_RUN.",
-    "windows_compilation": "NOT_RUN new fixture correction",
-    "windows_native": "NOT_RUN corrected native success/Reissue consumption8/full relevant regression; old CI652 remains FAILURE",
-    "publication": "TODO guarded existing PR88 ONE automatic CI for real fixture fix; no rerun of old SHA, public uploads OFF/release ineligible",
-    "next": "Read SAME new CI final logs/exact source+tested merge: corrected native success/accepted consumption+actions, Reissue consumption8/Create8/Recover8/API8 and all prior suites. No new feature/second stage or duplicate CI.",
+    "windows_compilation": "PASS exact653",
+    "windows_native": "PASS exact653 corrected native actual receipt deletion/exact replacement/actions and all prior suites",
+    "publication": "PASS fresh expected-head non-force PR88; fetched exact652 parent/full tree equal reviewed freeze. ONE automatic CI653 pull_request attempt1/exact-source count1; no old-SHA rerun.",
+    "next": "Fixture correction proven653; no repeat. New stage only fresh invite transport.",
+    "readiness_change": 0,
+    "published_sha": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+    "merge_ref": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "tree": "812ca99f700ab309d04d2b19a9b02451dcc23451",
+    "local_freeze": "44e834ffaf20fe61561184f90c5e0bd83887b5ea",
+    "ci_run_id": 40045109182,
+    "ci_run_number": 653,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_jobs": {
+      "windows": {
+        "id": 120724941594,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "ubuntu": {
+        "id": 120724941809,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "verification_source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+    "verification_tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "verification_run_id": 40045109182
+  },
+  "ci653_final": {
+    "source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+    "tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "run_id": 40045109182,
+    "run_number": 653,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182",
+    "status": "completed",
+    "conclusion": "success",
+    "verification": "Both full final logs independently read; exact checkout/build identity and actual fixed native/previous suites per-case markers confirmed.",
+    "line_counts": {
+      "windows": 13757,
+      "ubuntu": 578
+    },
+    "suites": {
+      "reissueConsumption8": [
+        "PASS: invitation Reissue consumption UI PASS: complete",
+        "PASS: invitation Reissue consumption UI PASS: close-retry",
+        "PASS: invitation Reissue consumption UI PASS: dispose",
+        "PASS: invitation Reissue consumption UI PASS: stop-retry",
+        "PASS: invitation Reissue consumption UI PASS: service-dispose",
+        "PASS: invitation Reissue consumption UI PASS: locked",
+        "PASS: invitation Reissue consumption UI PASS: changed-request",
+        "PASS: invitation Reissue consumption UI PASS: changed-result"
+      ],
+      "createConsumption8": [
+        "PASS: invitation Create consumption UI PASS: complete",
+        "PASS: invitation Create consumption UI PASS: close-retry",
+        "PASS: invitation Create consumption UI PASS: dispose",
+        "PASS: invitation Create consumption UI PASS: stop-retry",
+        "PASS: invitation Create consumption UI PASS: service-dispose",
+        "PASS: invitation Create consumption UI PASS: locked",
+        "PASS: invitation Create consumption UI PASS: changed-request",
+        "PASS: invitation Create consumption UI PASS: changed-result"
+      ],
+      "recoverConsumption8": [
+        "PASS: invitation Recover consumption UI PASS: complete",
+        "PASS: invitation Recover consumption UI PASS: close-retry",
+        "PASS: invitation Recover consumption UI PASS: dispose",
+        "PASS: invitation Recover consumption UI PASS: stop-retry",
+        "PASS: invitation Recover consumption UI PASS: service-dispose",
+        "PASS: invitation Recover consumption UI PASS: locked",
+        "PASS: invitation Recover consumption UI PASS: changed-request",
+        "PASS: invitation Recover consumption UI PASS: changed-result"
+      ],
+      "consumption8": [
+        "PASS: consumption releases its family lease only after actual read/delete settles: complete",
+        "PASS: consumption releases its family lease only after actual read/delete settles: cancel-read",
+        "PASS: consumption releases its family lease only after actual read/delete settles: cancel-consume",
+        "PASS: consumption releases its family lease only after actual read/delete settles: refused",
+        "PASS: consumption releases its family lease only after actual read/delete settles: locked",
+        "PASS: consumption releases its family lease only after actual read/delete settles: changed-request",
+        "PASS: consumption releases its family lease only after actual read/delete settles: changed-result",
+        "PASS: consumption releases its family lease only after actual read/delete settles: missing"
+      ],
+      "recoverName9": [
+        "PASS: invitation Recover name UI PASS: complete",
+        "PASS: invitation Recover name UI PASS: missing",
+        "PASS: invitation Recover name UI PASS: corrupt",
+        "PASS: invitation Recover name UI PASS: locked",
+        "PASS: invitation Recover name UI PASS: close-retry",
+        "PASS: invitation Recover name UI PASS: dispose",
+        "PASS: invitation Recover name UI PASS: stop-retry",
+        "PASS: invitation Recover name UI PASS: service-dispose",
+        "PASS: invitation Recover name UI PASS: stop-result"
+      ],
+      "reissue8": [
+        "PASS: invitation Reissue uncertainty UI PASS: empty",
+        "PASS: invitation Reissue uncertainty UI PASS: pending",
+        "PASS: invitation Reissue uncertainty UI PASS: corrupt",
+        "PASS: invitation Reissue uncertainty UI PASS: locked",
+        "PASS: invitation Reissue uncertainty UI PASS: close-retry",
+        "PASS: invitation Reissue uncertainty UI PASS: dispose",
+        "PASS: invitation Reissue uncertainty UI PASS: stop-retry",
+        "PASS: invitation Reissue uncertainty UI PASS: service-dispose"
+      ],
+      "create8": [
+        "PASS: invitation Create uncertainty UI PASS: empty",
+        "PASS: invitation Create uncertainty UI PASS: pending",
+        "PASS: invitation Create uncertainty UI PASS: corrupt",
+        "PASS: invitation Create uncertainty UI PASS: locked",
+        "PASS: invitation Create uncertainty UI PASS: close-retry",
+        "PASS: invitation Create uncertainty UI PASS: dispose",
+        "PASS: invitation Create uncertainty UI PASS: stop-retry",
+        "PASS: invitation Create uncertainty UI PASS: service-dispose"
+      ],
+      "API6": [
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: empty",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: pending",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: completed",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: corrupt",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: locked",
+        "PASS: pending snapshot distinguishes missing/pending/completed/unreadable/cancelled without inventing a safe empty state: cancel"
+      ],
+      "UI8": [
+        "PASS: invitation initial pending UI PASS: empty",
+        "PASS: invitation initial pending UI PASS: pending",
+        "PASS: invitation initial pending UI PASS: corrupt",
+        "PASS: invitation initial pending UI PASS: locked",
+        "PASS: invitation initial pending UI PASS: close-retry",
+        "PASS: invitation initial pending UI PASS: dispose",
+        "PASS: invitation initial pending UI PASS: stop",
+        "PASS: invitation initial pending UI PASS: service-dispose"
+      ],
+      "UI12": [
+        "PASS: invitation repeated pending UI PASS: refresh-empty",
+        "PASS: invitation repeated pending UI PASS: refresh-pending",
+        "PASS: invitation repeated pending UI PASS: refresh-corrupt",
+        "PASS: invitation repeated pending UI PASS: refresh-locked",
+        "PASS: invitation repeated pending UI PASS: post-complete",
+        "PASS: invitation repeated pending UI PASS: post-failure",
+        "PASS: invitation repeated pending UI PASS: post-pending",
+        "PASS: invitation repeated pending UI PASS: close-retry",
+        "PASS: invitation repeated pending UI PASS: dispose",
+        "PASS: invitation repeated pending UI PASS: stop-retry",
+        "PASS: invitation repeated pending UI PASS: service-dispose",
+        "PASS: invitation repeated pending UI PASS: stale-scope"
+      ],
+      "snapshot12": [
+        "PASS: caller releases family lease only after actual snapshot settles: setup",
+        "PASS: caller releases family lease only after actual snapshot settles: invite",
+        "PASS: caller releases family lease only after actual snapshot settles: share",
+        "PASS: caller releases family lease only after actual snapshot settles: empty",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-setup",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-invite",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-share",
+        "PASS: caller releases family lease only after actual snapshot settles: pending-invite",
+        "PASS: caller releases family lease only after actual snapshot settles: pending-share",
+        "PASS: caller releases family lease only after actual snapshot settles: cancel",
+        "PASS: caller releases family lease only after actual snapshot settles: corrupt",
+        "PASS: caller releases family lease only after actual snapshot settles: missing-key"
+      ],
+      "dispatcher5": [
+        "PASS: settled transport performs no late UI dispatch or duplicate action: ready",
+        "PASS: closed dispatcher refuses a new transport before startup without a late callback or file I/O",
+        "PASS: settled transport performs no late UI dispatch or duplicate action: during-dispose",
+        "PASS: settled transport performs no late UI dispatch or duplicate action: file-fault",
+        "PASS: settled transport performs no late UI dispatch or duplicate action: worker-only"
+      ],
+      "ownership8": [
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: complete",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: stop",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: dispose",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: lock",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: typed",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-stop",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: queued-dispose",
+        "PASS: settled Admin accounting leaves no pending work, late relay or altered protected bytes: multiple"
+      ],
+      "cleanup4": [
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: complete",
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: list-lock",
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: preparation-lock",
+        "PASS: Admin cleanup retry never repeats copy/SSH, changes protected files or deletes an unrelated sibling: dispose-lock"
+      ],
+      "repair8": [
+        "PASS: owned production repair slice PASS: default-refusal",
+        "PASS: owned production repair slice PASS: complete",
+        "PASS: owned production repair slice PASS: cancel-retry",
+        "PASS: owned production repair slice PASS: stop-copy",
+        "PASS: owned production repair slice PASS: dispose-copy",
+        "PASS: owned production repair slice PASS: owner-dispose",
+        "PASS: owned production repair slice PASS: stop-command",
+        "PASS: owned production repair slice PASS: cleanup-lock"
+      ],
+      "list10": [
+        "PASS: owned production list slice PASS: default-refusal",
+        "PASS: owned production list slice PASS: complete",
+        "PASS: owned production list slice PASS: cancel-retry",
+        "PASS: owned production list slice PASS: stop-copy",
+        "PASS: owned production list slice PASS: dispose-copy",
+        "PASS: owned production list slice PASS: owner-dispose",
+        "PASS: owned production list slice PASS: stop-command",
+        "PASS: owned production list slice PASS: cleanup-lock",
+        "PASS: owned production list slice PASS: refresh-cancel-retry",
+        "PASS: owned production list slice PASS: refresh-dispose"
+      ],
+      "recover10": [
+        "PASS: owned production setup recovery PASS: default-refusal",
+        "PASS: owned production setup recovery PASS: status-pending",
+        "PASS: owned production setup recovery PASS: cancel-retry",
+        "PASS: owned production setup recovery PASS: stop-copy",
+        "PASS: owned production setup recovery PASS: dispose-copy",
+        "PASS: owned production setup recovery PASS: owner-dispose",
+        "PASS: owned production setup recovery PASS: stop-between",
+        "PASS: owned production setup recovery PASS: cancel-command",
+        "PASS: owned production setup recovery PASS: cleanup-lock",
+        "PASS: owned production setup recovery PASS: result"
+      ],
+      "fresh10": [
+        "PASS: owned production fresh setup PASS: default-refusal",
+        "PASS: owned production fresh setup PASS: copy-fault",
+        "PASS: owned production fresh setup PASS: cancel-retry",
+        "PASS: owned production fresh setup PASS: stop-copy",
+        "PASS: owned production fresh setup PASS: dispose-copy",
+        "PASS: owned production fresh setup PASS: owner-dispose",
+        "PASS: owned production fresh setup PASS: cancel-command",
+        "PASS: owned production fresh setup PASS: cleanup-lock",
+        "PASS: owned production fresh setup PASS: result",
+        "PASS: owned production fresh setup PASS: pending-race"
+      ],
+      "https11": [
+        "PASS: owned production HTTPS recovery PASS: default-refusal",
+        "PASS: owned production HTTPS recovery PASS: status-pending",
+        "PASS: owned production HTTPS recovery PASS: cancel-retry",
+        "PASS: owned production HTTPS recovery PASS: stop-copy",
+        "PASS: owned production HTTPS recovery PASS: dispose-copy",
+        "PASS: owned production HTTPS recovery PASS: owner-dispose",
+        "PASS: owned production HTTPS recovery PASS: cancel-command",
+        "PASS: owned production HTTPS recovery PASS: cleanup-lock",
+        "PASS: owned production HTTPS recovery PASS: result",
+        "PASS: owned production HTTPS recovery PASS: stop-result-copy",
+        "PASS: owned production HTTPS recovery PASS: stop-result"
+      ],
+      "freshHTTPS10": [
+        "PASS: owned production fresh HTTPS PASS: default-refusal",
+        "PASS: owned production fresh HTTPS PASS: copy-fault",
+        "PASS: owned production fresh HTTPS PASS: cancel-retry",
+        "PASS: owned production fresh HTTPS PASS: stop-copy",
+        "PASS: owned production fresh HTTPS PASS: dispose-copy",
+        "PASS: owned production fresh HTTPS PASS: owner-dispose",
+        "PASS: owned production fresh HTTPS PASS: cancel-command",
+        "PASS: owned production fresh HTTPS PASS: cleanup-lock",
+        "PASS: owned production fresh HTTPS PASS: result",
+        "PASS: owned production fresh HTTPS PASS: stop-result"
+      ],
+      "export11": [
+        "PASS: modal export preserves protected settings and cannot start a late relay: save",
+        "PASS: modal export preserves protected settings and cannot start a late relay: cancel-retry",
+        "PASS: modal export preserves protected settings and cannot start a late relay: close",
+        "PASS: modal export preserves protected settings and cannot start a late relay: dispose",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-cancel",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-close",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-dispose",
+        "PASS: modal export preserves protected settings and cannot start a late relay: global-stop",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-global-stop",
+        "PASS: modal export preserves protected settings and cannot start a late relay: existing-retry",
+        "PASS: modal export preserves protected settings and cannot start a late relay: accepted-access-change"
+      ],
+      "chooser3": [
+        "PASS: actual profile native chooser owns bounded cancel/failure cleanup: cancel",
+        "PASS: actual profile native chooser owns bounded cancel/failure cleanup: missing",
+        "PASS: actual profile native chooser owns bounded cancel/failure cleanup: error"
+      ]
+    },
+    "fixed_native": "PASS exact replacement/actions after actual successful receipt deletion, single revoke/invite and neighbour ID; original conditions retained",
+    "summaries": {
+      "desktop": 5298,
+      "instance": 30,
+      "maintenance": 126,
+      "shutdown": 47,
+      "home_vpn": 4278,
+      "portable": 91,
+      "ssh_policy": 61,
+      "python_reported": 28,
+      "python_skipped": 2,
+      "ubuntu_operation": 16,
+      "ubuntu_qr": 13
+    },
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED",
+    "prune": "SKIPPED",
+    "owner_pc": "NOT_RUN",
+    "historical_flakes": "CI640 permissions/CI642 startup not proven fixed, diagnostics retained."
+  },
+  "invitation_fresh_transport_on653": {
+    "status": "PARTIAL",
+    "phase": "ONE fresh Create→invite owned transport production slice",
+    "baseline_source": "aad854a0a6a6570f5776e38c5e5bae005928972a",
+    "baseline_tested_merge": "e8f2536015c9bc36883058125f9bc9a6c21911d7",
+    "baseline_checkpoint": "2c7ae7e96f11fd9051b5e93bd2f4191bb8ac9b16",
+    "local_code_sha": "3a37deaf77772688de44f05a50c4ae0951c4ee84",
+    "scope": "ONLY default Admin action invite with identifier null. Reissue source-ID invite, revoke, recover-invite unchanged. Existing core receipt/family lease/command/cleanup/protocol, consumption/UI readers unchanged.",
+    "implementation": "InviteAdminOwnedAsync freezes owner metadata/label then reserves existing RunAdminOwnedAsync. Core helper/key/DPAPI/request/result/cleanup run on worker with its single family lease. Existing scope/dispatcher (repair-named generic fresh guard) admits native Copy/WaitForAdmin only on explicit Friends owner, post-copy Stop gate refuses registration/SSH, progress disabled after settlement. Create checks original Stop identity before late handoff. No public Stop self-await/reacquire/replay.",
+    "native_cases": [
+      "default-refusal",
+      "complete",
+      "cancel-retry",
+      "stop-copy",
+      "dispose-copy",
+      "owner-dispose",
+      "cancel-command",
+      "cleanup-lock"
+    ],
+    "test_contract": "Actual ShowDialog/default Create→wizard Admin fresh-invite route. Same owner slots as ManageInvitations; default binding refuses missing fixture key, other cases replace only copy/native executable through service API seam. Real helper staging, DPAPI receipt, real native fixture SSH compound invocation/child, original ID/name/result, modal heartbeat/single admission, Cancel Retry once, Stop/Dispose drain before registration, owner Dispose no late UI, native cancellation preserves request/process cleanup, locked staging false Stop→unlock cleanup Retry no replay.5s copy barrier/15s modal/5s joins unchanged. No live VPS. All prior methods/tests exact except scoped routing and Create late scope guard.",
+    "local_checks": "PASS manual review/signatures/strict scope/all prior methods+test bodies parity/lexical/diff/JSON/public321source0release/secretsPII0. Windows/.NET Framework/pwsh unavailable NOT_RUN.",
+    "windows_compilation": "NOT_RUN new invite transport candidate",
+    "windows_native": "NOT_RUN owned invite8/full relevant regressions;653 success only baseline",
+    "publication": "TODO guarded existing PR88 ONE automatic CI; public uploads OFF/release ineligible",
+    "remaining_production_paths": [
+      "Fresh invite candidate needs exact new Windows proof before acceptance",
+      "Revoke owned transport binding",
+      "Reissue orchestration/source-ID invite owned transport binding",
+      "Recover-invite owned transport binding"
+    ],
+    "next": "Read SAME new CI full final logs/exact source+tested merge/owned invite8 and all prior suites. Only after proof choose next bounded transport path; no second stage now.",
     "readiness_change": 0
   }
 }

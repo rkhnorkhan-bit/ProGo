@@ -67,6 +67,7 @@ namespace ProGo
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, Action<string>, Task<string>> ReadAdminList;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> ReadSetupResult;
         internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> PrepareSetup;
+        internal Func<HomeVpnOwner, Form, HomeProfileUiDispatcher, string, Action<string>, Task<string>> IssueInvitation;
         private Form readOnlyListOwner;
         private HomeProfileUiDispatcher readOnlyListUi;
 
@@ -76,11 +77,13 @@ namespace ProGo
             ReadAdminList = (owner, window, dispatcher, report) => service.ListAdminOwnedAsync(owner, window, dispatcher, report);
             ReadSetupResult = (owner, window, dispatcher, label, report) => service.RecoverSetupOwnedAsync(owner, window, dispatcher, label, report);
             PrepareSetup = (owner, window, dispatcher, label, report) => service.SetupOwnedAsync(owner, window, dispatcher, label, report);
+            IssueInvitation = (owner, window, dispatcher, label, report) => service.InviteAdminOwnedAsync(owner, window, dispatcher, label, report);
             Admin = (owner, action, label, identifier, report) => action == "repair"
                 ? service.RepairAdminOwnedAsync(owner, this, httpDispatcher, report)
                 : action == "list" ? ReadAdminList(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, report)
                 : action == "recover-setup" ? ReadSetupResult(owner, this, httpDispatcher, label, report)
                 : action == "setup" ? PrepareSetup(owner, this, httpDispatcher, label, report)
+                : action == "invite" && identifier == null ? IssueInvitation(owner, readOnlyListOwner ?? this, readOnlyListUi ?? httpDispatcher, label, report)
                 : HomeVpnService.AdminAsync(owner, action, label, identifier, report);
             Text = "VPN для телефона"; AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 10); StartPosition = FormStartPosition.CenterScreen;

@@ -273,6 +273,7 @@ namespace ProGo
                 var label = name.Text;
                 var token = await ownerUi.Await(admin("invite", label, null));
                 if (ownerUi.Closed || IsDisposed || Disposing) return;
+                if (!RecoveryConsumptionScope(operationStop)) { RequireRefresh(HomeVpnAdminRecovery.PendingMessage); return; }
                 var access = HomeVpnAccess.Parse(token);
                 list.Add(new HomeVpnInvitation { Id = access.InviteId, Name = label });
                 status.Text = "Токен создан. Передайте его другу до закрытия окна токена.";

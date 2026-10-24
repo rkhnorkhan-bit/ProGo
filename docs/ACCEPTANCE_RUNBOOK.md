@@ -1,4 +1,59 @@
-## Текущий этап: CI652 native success fixture correction — test-only
+## Текущий этап: fresh Create invite owned transport поверх CI653
+
+PR88 OPEN/DRAFT/source `aad854a0a6a6570f5776e38c5e5bae005928972a` и checkpoint
+`2c7ae7e96f11fd9051b5e93bd2f4191bb8ac9b16` сверены;58 worktrees clean/locks0/root sole active agent.
+Новая isolated work/progo-invite-owned-on653-20261024 сохраняет прежнюю работу. Полные final
+[CI653](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182) Windows13757/Ubuntu578 logs
+прочитаны самостоятельно: оба checkout/build identity exact merge `e8f2536015c9bc36883058125f9bc9a6c21911d7`.
+Corrected native exact replacement/actions/actual receipt deletion/one revoke+invite PASS. Also PASS
+Reissue consumption8/Create consumption8/Recover consumption8/API8/Recover name9/Reissue8/Create8/
+API6/UI8/UI12/snapshot12/dispatcher5/ownership8/cleanup4/repair8/list10/recover10/fresh10/HTTPS11/
+freshHTTPS10/export11/chooser3. Desktop5298/Instance30/Maintenance126/Shutdown47/HomeVPN4278/
+Portable91/SSH policy61. Python reported28 incl2SKIPPED; Ubuntu operation16/QR13/provisioning PASS.
+Pack runner-only PASS; uploads/prune SKIPPED; owner PC NOT_RUN. CI652 failure remains history,
+not a runtime gating relaxation. Historical640/642 causes not proven fixed/diagnostics retained.
+
+Выбран первый допустимый транспорт: fresh Create→invite, identifier null. Dependencies уже есть;
+local code `3a37deaf77772688de44f05a50c4ae0951c4ee84`:3 runtime+1 test168add/0delete.
+Default wizard Admin маршрутизирует ТОЛЬКО invite без SourceID в InviteAdminOwnedAsync, сохраняя
+реальный Friends owner/dispatcher из ManageInvitations. Reissue invite с ID, revoke/recover-invite unchanged.
+Wrapper freezes owner/label, reserves existing retained worker. Core owns single family lease/private
+key/helper/DPAPI registration/result/cleanup on worker; no outer reacquire/Stop self-await/protocol change.
+Existing repair-named generic fresh scope/transport guard reused unchanged. Native Copy/WaitForAdmin
+start crosses explicit UI only; accepted copy drains then Stop gate refuses registration/SSH. Late progress
+suppressed; Create original Stop guard prevents late token handoff while accepted request stays recoverable.
+
+Owned invite8: default-refusal,complete,cancel-retry,stop-copy,dispose-copy,owner-dispose,cancel-command,
+cleanup-lock. Actual ShowDialog/default Create→default wizard Admin routing with same Friends owner slots
+as production. Default binding refuses missing fixture key before transport; other cases replace only copy/
+SSH executable at existing core boundary. Actual helper staging/DPAPI/native process+child/compound
+request-ID command/receipt/result and cleanup are real. Hold copy5s/modal15s/final joins5s. Single admission/
+lease/heartbeat, explicit pre-request Cancel Retry issues once, Stop/Dispose drain before registration,
+owner Dispose no late status, accepted native cancellation preserves ID with no repeat, failed cleanup retains
+exact owner/receipt; false Stop while locked→unlock cleanup Retry with no SSH replay. Old tests/methods/
+asserts/timeouts preserved; no live VPS/credential/network/system action. Consumption and core unchanged.
+
+PASS local review/signatures/strict scope/parity/lexical delimiters/diff/JSON/public321source0release/
+added secretsPII0. Lexical не AST/compiler; Windows/.NET Framework/pwsh unavailable:
+new compilation/owned invite8/full relevant regressions NOT_RUN. SUCCESS653 не переносится.
+Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI. Public uploads OFF,
+release/prune ineligible/workflows unchanged. Save source/run/checkpoint; STOP без полного wait/второго этапа.
+Далее ТОТ ЖЕ новый CI final logs/exact source+tested merge/owned invite8/all prior suites.
+
+Остаток до личного кандидата: подтвердить этот invite candidate; затем3 bounded transport пути
+revoke/Reissue orchestration+SourceID invite/recover-invite; итоговая Windows F31-R09/R10/R11 dev приёмка
+и latency/CPU/RAM/I/O report; pinned version/SHA/SHA256 проверочный пакет/install-check-rollback steps
+и разрешённая приватная передача; отдельно разрешённая owner PC SSH→SOCKS5→HTTP/cancel/recovery/key/
+agent/profile/data-preservation acceptance. NOT_RUN/BLOCKED gates остаются в JSON delivery_gates.
+Technical production дополнительно: F23 standalone installer/updater+fallback fixed paths/identity,
+clean install/update/offline/hash/Cancel/self-check/rollback, portability другой user/PC/approved VPS,
+F27 signing/timestamp/Defender+Kaspersky, разрешённая финальная integration/merge/release/live acceptance.
+Полный F30 email/account/billing/commercial scope сохранён отдельно, не удалён и не объявлен готовым.
+Нужные внешние safety approvals/private transfer/signing/target install/live resources/merge-release остаются
+явными блокерами; ничего из этого не выполняется здесь. Реализация:58–80/100 · Проверенная готовность:
+22/100 · Изменение:+0; главный блокер: exact Windows fresh-invite proof, затем3 transport+delivery gates.
+
+## История этапа: CI652 native success fixture correction — test-only
 
 PR88 OPEN/DRAFT/source `099ba265daefabce5758d25c88e15798ca71bd50` и checkpoint
 `6440c454be8f84af99b222b3146d4e4535e900bf` сверены;57 worktrees clean/locks0/root sole active agent.
@@ -32,10 +87,20 @@ Finally cancels own gates/disposes own window/joins actual tasks and restores pr
 PASS local review/structural preservation/signatures/lexical delimiters/diff/JSON/public321source0release/
 added secretsPII0. Lexical не AST/compiler; dotnet/csc/mcs/pwsh/Windows отсутствуют:
 new compilation/corrected native/Reissue consumption8/full relevant regression NOT_RUN.
-Publication TODO: fresh expected-head guarded non-force PR88 ONE automatic CI для реального test fix.
-Public uploads OFF/release+prune ineligible/workflows unchanged. Save source/run/checkpoint и STOP,
-без полного CI wait/новой функции/второго этапа. Далее ТОТ ЖЕ CI exact final logs/merge/corrected native
-success/actual consumption/restored actions/Reissue8/Create8/Recover8/API8/all prior suites.
+Publication PASS: source `aad854a0a6a6570f5776e38c5e5bae005928972a`, existing PR88
+integration/approved-plan-31-20261011, fresh expected-head non-force update. Fetched exact652 parent,
+full tree `812ca99f700ab309d04d2b19a9b02451dcc23451` равен reviewed freeze
+`44e834ffaf20fe61561184f90c5e0bd83887b5ea`. Public diff4files421add/87delete:
+1 test61add/27delete including reindent +3docs360add/60delete; runtime/other tests exact652.
+Merge ref `e8f2536015c9bc36883058125f9bc9a6c21911d7` пока НЕ final tested merge (NOT_RUN).
+ONE automatic [CI653/40045109182](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40045109182):
+exact-source count1/pull_request/attempt1, in_progress/conclusion null; никакого old-SHA rerun.
+Windows120724941594/Ubuntu120724941809 in_progress metadata; new compiler/native NOT_RUN.
+Public uploads OFF/release+prune ineligible/workflows unchanged; final skips not yet observed.
+Postpublication3-doc local checkpoint intentionally NOT pushed, чтобы не запускать второй CI;
+полный SHA в git log -1/PR88 body. STOP без полного wait/новой функции/второго этапа.
+Далее ТОТ ЖЕ CI653 exact final logs/merge/corrected native success/actual consumption/restored actions/
+Reissue consumption8/Create8/Recover8/API8/all prior suites; CI652 остаётся FAILURE.
 Личный/technical-production/commercial остаток сохранён в delivery_gates_after_reissue_consumption;
 ни один gate не закрывается fixture-кодом или старым PASS. Реализация:58–80/100 · Проверенная
 готовность:22/100 · Изменение:+0; главный блокер: новое точное Windows proof corrected fixture/suites.

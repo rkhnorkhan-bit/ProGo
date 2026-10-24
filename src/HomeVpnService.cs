@@ -975,6 +975,34 @@ namespace ProGo
                 } finally { Volatile.Write(ref reporting, 0); } // Queued old progress cannot replace a later outcome.
             });
         }
+        // Fresh invitation only. The existing core owns its single family lease,
+        // durable ID/result and cleanup; native startup alone crosses to its owner.
+        internal Task<string> InviteAdminOwnedAsync(HomeVpnOwner owner, System.Windows.Forms.Form window,
+            HomeProfileUiDispatcher dispatcher, string label, Action<string> progress,
+            Func<string, string, Task> copy = null, string commandExecutable = null)
+        {
+            if (window == null) throw new ArgumentNullException("window");
+            if (dispatcher == null) throw new ArgumentNullException("dispatcher");
+            var frozen = owner == null ? null : new HomeVpnOwner { Host = owner.Host, Port = owner.Port, Login = owner.Login, KeyFile = owner.KeyFile };
+            var stop = StopWork; int reporting = 1;
+            return RunAdminOwnedAsync(async delegate {
+                try {
+                    RequireRepairScope(stop);
+                    return await AdminAsync(frozen, "invite", label, null,
+                        text => dispatcher.Post(delegate { if (Volatile.Read(ref reporting) != 0) progress(text); }),
+                        async (executable, arguments) => {
+                            await DispatchRepairTransportAsync(stop, dispatcher, delegate {
+                                return copy == null ? HomeVpnPreparationForm.CopyAsync(window, executable, arguments) : copy(executable, arguments);
+                            }).ConfigureAwait(false);
+                            // An accepted copy must settle before Stop can refuse registration/SSH.
+                            RequireRepairScope(stop);
+                        },
+                        (executable, arguments, output) => DispatchRepairTransportAsync(stop, dispatcher, delegate {
+                            return HomeVpnPreparationForm.WaitForAdminAsync(window, commandExecutable ?? executable, arguments, output, HomeVpnPreparationProcess.TimeoutMs);
+                        }), RetainAdminCleanup).ConfigureAwait(false);
+                } finally { Volatile.Write(ref reporting, 0); }
+            });
+        }
         private async Task DispatchRepairTransportAsync(Task<bool> stop, HomeProfileUiDispatcher dispatcher, Func<Task> start)
         {
             bool admitted = false;
