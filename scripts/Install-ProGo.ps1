@@ -276,7 +276,21 @@ function Write-ProGoInstallerRuntimeBytes($Source, $Target) {
 function Write-ProGoInstallerJournalBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
+# An intent is not a terminal outcome or post-crash ownership proof.
+# Until durable terminal outcomes exist, every previous installer journal is pending.
+function Assert-ProGoInstallerNoPendingJournal([string]$InstallDirectory) {
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    if (-not (Test-Path -LiteralPath $parent)) { return }
+    if (-not [IO.Directory]::Exists($parent)) { throw 'Installer journal parent is invalid.' }
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        if (-not $item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        # Includes malformed names, files and empty/unknown records: none authorize a write.
+        [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        throw 'Installer pending journal requires verified recovery before a new installation.'
+    }
+}
 function New-ProGoInstallerJournal($Backup) {
+    Assert-ProGoInstallerNoPendingJournal $Backup.InstallDirectory
     Assert-ProGoInstallerBackup $Backup
     $parent = Assert-ProGoInstallerStagePath $Backup.InstallDirectory 'backups'
     [IO.Directory]::CreateDirectory($parent) | Out-Null
@@ -459,6 +473,7 @@ $InstallBackup = $null
 $InstallWrites = New-Object 'System.Collections.Generic.List[object]'
 try {
     $InstallMaintenance = Enter-ProGoInstallerMaintenance
+    Assert-ProGoInstallerNoPendingJournal $InstallDir
     Stop-ProGoInstallerApplication -InstallDirectory $InstallDir
     $InstallStage = New-ProGoInstallerStage $Payload
     $ReleaseDir = $InstallStage.Payload.Directory
