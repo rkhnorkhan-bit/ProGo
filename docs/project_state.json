@@ -4021,11 +4021,12 @@
   ],
   "ci_candidate": {
     "source": "CURRENT_TREE",
-    "baseline_source": "f70cfd02b7b9cda550ae0d04f8de4c183c6eb87e",
-    "reviewed_local_code": "24ced07d44148dcc46b1cfb49be490060170dad0",
-    "status": "Await one automatic CI after guarded publication",
-    "Windows_Source18": "NOT_RUN",
-    "Installer31": "NOT_RUN",
+    "baseline_source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
+    "reviewed_local_code": "9d87fa4e64eb3f884d2e81ff799edbe85abcb197",
+    "status": "Await sole automatic CI after guarded publication",
+    "Foundation27": "NOT_RUN",
+    "Recovery4": "NOT_RUN",
+    "Source18": "NOT_RUN",
     "exact_SHA_aggregate": "NOT_RUN",
     "score_delta": 0
   },
@@ -5519,17 +5520,17 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "baseline_source": "f70cfd02b7b9cda550ae0d04f8de4c183c6eb87e",
-    "reviewed_local_code": "24ced07d44148dcc46b1cfb49be490060170dad0",
-    "prior_checkpoint": "02d130e51abb4268fb82946d22e5ce6ccc332dd7",
-    "stage": "F23 read-only in-memory original Legacy bytes capture/receipt binding only",
-    "status": "Local checks PASS; C# compile/native Windows source18/full31 NOT_RUN",
-    "next": "One automatic CI; SAME run all4 final logs before separate durable source capture integration",
+    "baseline_source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
+    "reviewed_local_code": "9d87fa4e64eb3f884d2e81ff799edbe85abcb197",
+    "prior_checkpoint": "02cdca5ef9be493897b93d63cecbd8ead121c333",
+    "stage": "CI708 isolated Installer Foundation27/Recovery4 capacity correction only",
+    "status": "Local16/static checks PASS; Windows split/new Source18/full31 NOT_RUN",
+    "next": "SAME one new CI all5 full final logs/exact merge/27+4/all31/Source18; no durable Legacy work before full PASS",
     "constraints": [
       "All approved31/nested55 scope retained",
-      "UNKNOWN incidents retained",
+      "UNKNOWN incidents/cancellation initiator retained",
       "BLOCKED_TRANSFER/no retry",
-      "No live install/services/network/ACL/security/credentials/VPS/release/uploads"
+      "No production/runtime/live/security/network/services/credentials/release/uploads actions"
     ],
     "score_delta": 0
   },
@@ -22989,7 +22990,7 @@
     "uploads_prune": "SKIPPED"
   },
   "f23_legacy_source_capture": {
-    "source": "CURRENT_TREE",
+    "source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
     "reviewed_local_code": "24ced07d44148dcc46b1cfb49be490060170dad0",
     "status": "PARTIAL native in-memory prerequisite only",
     "acceptance": "Owned exact original bytes retained under native read pin and linked to actual matching removed receipt; no write authority",
@@ -23000,6 +23001,51 @@
     "integration_restore_full_outcome": "NOT_IMPLEMENTED; no claim",
     "next": "SAME new exact-SHA CI then durable source publication/pinning before existing migration; snapshot/journal/independent trusted location bindings required",
     "remaining_scope": "All approved requirements and whole auxiliary recovery/runtime recovery/retention/PGA04/updater/package/owner/commercial retained",
+    "score_delta": 0,
+    "tree": "4099f8665abca63d024e319ebfd4e18b5b0f0a76",
+    "run_id": 40232984506,
+    "ci_status": "queued/null; new Windows not yet confirmed",
+    "ci708_status": "Source18 NOT_RUN, suite not started; original31 incomplete due cancelled Installer; no native PASS yet"
+  },
+  "ci708_final": {
+    "source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
+    "tested_merge": "0b948a5b31e1a9d05f83306ac1d626de56b74f27",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40232984506",
+    "conclusion": "cancelled",
+    "all_four_logs_independently_read": true,
+    "jobs": {
+      "installer": 121288486845,
+      "core": 121288487520,
+      "ubuntu": 121288487023,
+      "aggregate": 121298114383
+    },
+    "old29": "PASS",
+    "LegacyAdmission19": "first3 PASS; remaining16 unconfirmed",
+    "SourceCapture18": "NOT_RUN",
+    "whole31": "NOT_CONFIRMED",
+    "aggregate": "FAIL correctly",
+    "cause_initiator": "UNKNOWN; duration compatible with40m cap, not proven",
+    "annotations": "supported request rejected400 INVALID_ARGUMENT; no bypass",
+    "first27_elapsed_ms": 1577655,
+    "next2_elapsed_ms": 665866,
+    "before_Legacy_elapsed_ms": 2243521,
+    "candidate": "NOT_ACCEPTED"
+  },
+  "ci708_installer_split": {
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "9d87fa4e64eb3f884d2e81ff799edbe85abcb197",
+    "status": "Implemented CI-only capacity correction; Windows NOT_RUN",
+    "foundation": "first27 original suites, installer-tests",
+    "recovery": "final4 original suites incl Source18, installer-recovery-tests",
+    "required_partitions": [
+      "vpn-server-test",
+      "windows-build",
+      "installer-tests",
+      "installer-recovery-tests"
+    ],
+    "exact_sha": "all4 success required; aggregate always executes; no weakened gates",
+    "local_tests": "16 PASS + exact31-body/native/fixture/workflow parity/YAML/review/signatures/JSON/secrets/public-content/diff",
+    "cancellation_cause": "UNKNOWN",
     "score_delta": 0
   }
 }

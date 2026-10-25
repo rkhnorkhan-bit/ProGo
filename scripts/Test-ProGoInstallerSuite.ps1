@@ -1,7 +1,10 @@
+param([ValidateSet('All', 'Foundation', 'Recovery')][string]$Partition = 'All')
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $SuiteWatch = [Diagnostics.Stopwatch]::StartNew()
+# PARTITION Foundation BEGIN: original first27, ordered and unchanged.
+if ($Partition -in @('All', 'Foundation')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
 Write-Host 'INSTALLER_SUITE_START name=UpdatePackageTests.ps1'
 try {
@@ -164,6 +167,10 @@ try {
     & (Join-Path $Root 'tests\InstallerMenuMutationAdmissionTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerMenuMutationAdmissionTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+}
+# PARTITION Foundation END
+# PARTITION Recovery BEGIN: original final4, ordered and unchanged.
+if ($Partition -in @('All', 'Recovery')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
 Write-Host 'INSTALLER_SUITE_START name=InstallerMenuResultTests.ps1'
 try {
@@ -188,5 +195,8 @@ try {
     & (Join-Path $Root 'tests\InstallerLegacySourceCaptureTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacySourceCaptureTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+}
+# PARTITION Recovery END
 $SuiteWatch.Stop()
-Write-Host ('Installer partition PASS: 31 suites; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
+$SuiteCount = if ($Partition -eq 'Foundation') { 27 } elseif ($Partition -eq 'Recovery') { 4 } else { 31 }
+Write-Host ('Installer partition PASS: ' + $SuiteCount + ' suites; partition=' + $Partition + '; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)

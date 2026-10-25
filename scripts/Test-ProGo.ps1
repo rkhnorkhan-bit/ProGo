@@ -1,4 +1,6 @@
-﻿param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All')
+﻿param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All',
+    [ValidateSet('All', 'Foundation', 'Recovery')][string]$InstallerPartition = 'All')
+if ($Suite -ne 'Installer' -and $InstallerPartition -ne 'All') { throw 'Installer partition requires Installer suite.' }
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
@@ -276,8 +278,8 @@ if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
 if ($Suite -eq 'Installer') {
-    & (Join-Path $Root 'scripts\Test-ProGoInstallerSuite.ps1')
-    Write-Host 'ProGo Installer partition PASS.'
+    & (Join-Path $Root 'scripts\Test-ProGoInstallerSuite.ps1') -Partition $InstallerPartition
+    Write-Host ('ProGo Installer ' + $InstallerPartition + ' partition PASS.')
     return
 }
 & (Join-Path $Root 'tests\RepairPayloadTests.ps1') -Scripts $PSScriptRoot

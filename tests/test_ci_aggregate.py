@@ -1,6 +1,7 @@
 import copy
 import importlib.util
 import pathlib
+import re
 import unittest
 
 SPEC = importlib.util.spec_from_file_location(
@@ -9,7 +10,7 @@ GATE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GATE)
 
 
-PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests')
+PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-recovery-tests')
 
 
 class AggregateTests(unittest.TestCase):
@@ -83,6 +84,57 @@ class AggregateTests(unittest.TestCase):
         self.needs[PARTITIONS[0]]['outputs'] = []
         with self.assertRaises(ValueError):
             GATE.validate(self.needs, self.sha)
+
+
+# Frozen CI708 coverage contract: every original suite, once, same relative order.
+EXPECTED_INSTALLER_SUITES = ('UpdatePackageTests.ps1', 'InstallPayloadTests.ps1', 'InstallerMaintenanceTests.ps1', 'InstallerStageTests.ps1', 'InstallerBackupTests.ps1', 'InstallerSelfCheckTests.ps1', 'InstallerRollbackTests.ps1', 'InstallerJournalTests.ps1', 'InstallerRestartGateTests.ps1', 'InstallerOutcomeTests.ps1', 'InstallerRollbackOutcomeTests.ps1', 'InstallerOutcomeReconcileTests.ps1', 'InstallerPendingInstalledProofTests.ps1', 'InstallerStartupEvidenceTests.ps1', 'InstallerMenuEvidenceTests.ps1', 'InstallerLegacyEvidenceTests.ps1', 'InstallerAuxiliaryRevalidationTests.ps1', 'InstallerPendingPublicationTests.ps1', 'InstallerStartupRollbackAdmissionTests.ps1', 'InstallerOwnedStartupRollbackTests.ps1', 'InstallerStartupResultTests.ps1', 'InstallerStartupMutationAdmissionTests.ps1', 'InstallerStartupFailureTests.ps1', 'InstallerMenuPublicationTests.ps1', 'InstallerMenuRollbackAdmissionTests.ps1', 'InstallerOwnedMenuRollbackTests.ps1', 'InstallerMenuMutationAdmissionTests.ps1', 'InstallerMenuResultTests.ps1', 'InstallerMenuFailureTests.ps1', 'InstallerLegacyRollbackAdmissionTests.ps1', 'InstallerLegacySourceCaptureTests.ps1')
+
+def require_partition_layout(text):
+    found = re.findall(r"& \(Join-Path \$Root 'tests\\([^']+)'\)", text)
+    if tuple(found) != EXPECTED_INSTALLER_SUITES:
+        raise ValueError('Installer coverage/order differs')
+    for name, expected in (('Foundation', EXPECTED_INSTALLER_SUITES[:27]),
+                           ('Recovery', EXPECTED_INSTALLER_SUITES[27:])):
+        start = '# PARTITION ' + name + ' BEGIN:'
+        end = '# PARTITION ' + name + ' END'
+        if text.count(start) != 1 or text.count(end) != 1:
+            raise ValueError('Partition boundary missing or duplicated')
+        group = text.split(start, 1)[1].split(end, 1)[0]
+        if "if ($Partition -in @('All', '" + name + "')) {" not in group:
+            raise ValueError('Partition selector differs')
+        if tuple(re.findall(r"& \(Join-Path \$Root 'tests\\([^']+)'\)", group)) != expected:
+            raise ValueError('Partition coverage differs')
+    if "[ValidateSet('All', 'Foundation', 'Recovery')]" not in text:
+        raise ValueError('Unknown partition must be refused')
+
+
+class PartitionLayoutTests(unittest.TestCase):
+    def setUp(self):
+        self.root = pathlib.Path(__file__).resolve().parents[1]
+        self.text = (self.root / 'scripts' / 'Test-ProGoInstallerSuite.ps1').read_text(encoding='utf-8-sig')
+
+    def test_checked_in_partition_contract(self):
+        require_partition_layout(self.text)
+        workflow = (self.root / '.github' / 'workflows' / 'ci.yml').read_text()
+        self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Foundation'), 1)
+        self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Recovery'), 1)
+        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-recovery-tests]', workflow)
+        self.assertEqual(workflow.count('  installer-recovery-tests:\n'), 1)
+        self.assertIn("tests\\InstallerLegacySourceCaptureTests.ps1'", self.text)
+
+    def test_missing_suite_refused(self):
+        for name in EXPECTED_INSTALLER_SUITES:
+            with self.subTest(suite=name), self.assertRaises(ValueError):
+                require_partition_layout(self.text.replace("& (Join-Path $Root 'tests\\" + name + "')", '# removed', 1))
+
+    def test_duplicate_suite_refused(self):
+        with self.assertRaises(ValueError):
+            require_partition_layout(self.text + "\n& (Join-Path $Root 'tests\\InstallerLegacySourceCaptureTests.ps1')\n")
+
+    def test_wrong_partition_selector_refused(self):
+        for name in ('Foundation', 'Recovery'):
+            with self.subTest(partition=name), self.assertRaises(ValueError):
+                require_partition_layout(self.text.replace("@('All', '" + name + "')", "@('All', 'unknown')", 1))
 
 
 if __name__ == '__main__':
