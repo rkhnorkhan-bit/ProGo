@@ -152,5 +152,11 @@ try {
     & (Join-Path $Root 'tests\InstallerMenuRollbackAdmissionTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerMenuRollbackAdmissionTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
-Write-Host ('Installer partition PASS: 25 suites; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
+Write-Host ('Installer partition PASS: 26 suites; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
+$CaseWatch = [Diagnostics.Stopwatch]::StartNew()
+Write-Host 'INSTALLER_SUITE_START name=InstallerOwnedMenuRollbackTests.ps1'
+try {
+    & (Join-Path $Root 'tests\InstallerOwnedMenuRollbackTests.ps1')
+    Write-Host ('INSTALLER_SUITE_PASS name=InstallerOwnedMenuRollbackTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
+} finally { $CaseWatch.Stop() }
 $SuiteWatch.Stop()

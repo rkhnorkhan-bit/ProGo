@@ -1,3 +1,84 @@
+## CURRENT owned Menu rollback candidate; CI699 full PASS independently verified
+
+This candidate identity is CURRENT_TREE (`git rev-parse HEAD`); reviewed local code `6675944d3ffdb4cb4ab8d6260920e0d92be232c3`.
+Baseline published source `71d972a263701e03541566f7054211ed14d629ac`, tested merge
+`9b8ea528802fbb52525a85a2a63dcec03f99d35f`; prior local checkpoint
+`011cf8f8751c9085ef44052f48fb6c69bf4334fd` preserved clean. PR88 exact expected HEAD,
+open draft/unmerged, sole root writer, no active Git/compiler/PowerShell operations verified.
+
+CI699 complete logs independently retrieved/read: Core121192313083 (15410 lines),
+Installer121192313269 (622), Ubuntu121192313308 (607), aggregate121199407503 (167).
+[CI699](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40201119790) all4 SUCCESS;
+all3 tested_sha equal exact merge9b8ea528; strict complete aggregate PASS. Installer25 suites,
+Publication6 and FULL MenuAdmission32 PASS, including legacy-removed, post-startup,
+post-startup-replaced and unproved-startup-absence. Core Desktop6394/Instance30/Maintenance126/
+Shutdown47/HomeVPN4816/Portable91 PASS. Python40 reported:38 PASS,2 SKIP (not PASS).
+Public-content384source/44release PASS. Runner-only ZIP665241 bytes SHA256
+`d6bd9896deaa3b432c2fe1b5a859380565193a35a54e6cf13ddd853c9ec930a5`;
+pack SUCCESS, all uploads/prune SKIPPED. No delivery/install/owner acceptance. CI698 CANCELLED
+history retained; capacity split now exact-SHA verified, cancellation initiator still UNKNOWN.
+
+One bounded F23 slice: explicit owned Menu rollback after existing verified admission. No automatic
+error-handler binding, durable Menu mutation admission/outcome, Legacy rollback, retention or runtime
+recovery in this stage. See docs/F23_OWNED_MENU_ROLLBACK.md. Snapshot/runtime/admissions/auxiliary/
+identity/trusted locations revalidated under bounded pinned receipt; native operation rechecks FULL
+origin (volume/index/creation) and bytes on exact READ|DELETE handle, denies replacement/write,
+deletes only that handle, closes it, verifies actual Menu absence. Preserved/custom is no-op;
+external replacement/equal bytes without ownership/conflicts refuse. Cancellation before mutation
+propagates; accepted deletion settles before result, no cancellation-after-write false denial.
+No Path Delete, receipt refresh, replay, restore, terminal success, retry authorization or Launch.
+
+Code4files189add1del: two new methods, one new18-case real Windows fixture, one suite hook (26total).
+All existing test bodies, installer/error handler, Startup/Legacy functions, native interop/origin,
+workflow/deadlines/upload gates unchanged. New scenarios include legacy-removed and post-Startup
+settlement, unproved Startup absence refusal, exact native replacement with equal bytes AND copied
+creation time, lock/explicit Retry, cancellation, snapshot/runtime/trusted location guards via
+existing admission; receipt/link exclusive reopen and exact whole-case inventory/private-byte checks.
+
+Local PASS: exact reverse diff/review/signatures/parity, aggregate12, JSON/diff/public-content and
+added secrets/PII scan. NOT_RUN: local PowerShell5.1 parsing/C# compilation/new native18/full26/new
+complete exact-SHA aggregate (no local Windows/pwsh/compiler). No old PASS transferred to new tests.
+Expected-HEAD guarded publication will trigger ONE automatic CI; source/run confirmed afterward in
+local checkpoint and PR. Scores/weights unchanged delta0. UNKNOWN repair/sharing/Python/rebind/setup
+incidents and BLOCKED_TRANSFER/no retry retained. No live install/services/network/ACL/security/
+credentials/VPS/release/uploads. Next verify SAME new CI all4 jobs/full26/new18 before another stage;
+then separate durable Menu pre-mutation admission/crash settlement and scoped result/error integration.
+Legacy rollback/full auxiliary result/retention/runtime recovery and package acceptance remain open.
+
+## CURRENT published CI partition/strict aggregate / CI699 queued
+
+Published source `71d972a263701e03541566f7054211ed14d629ac`, tree
+`56642ec4684e66162fe404c92199e5fcb6a6f54c`, parent48f079c79fb9dbb012dcf08eb75219bb17289127.
+Reviewed local code7db31c9687dd53560fdd3521d8a4663ea6dc2138; final freeze74cd4348d15d2590c764bd10600107cf76a20ca3
+includes explicit UTF8 GITHUB_OUTPUT for Windows PowerShell5.1; exact canonical tree fetched/verified.
+Expected-HEAD guarded non-force PR88 update. ONE automatic pull_request
+[CI699](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40201119790), exact source71d972a,
+queued/null observed; no parallel rerun/dispatch/duplicate/full wait. Four jobs required: Ubuntu,
+windows-build Core+relay, installer-tests all25, ci-complete exact-SHA strict gate. Upload/pack/
+prune/events/permissions/concurrency unchanged, no binary transfer/public artifacts.
+
+Diff9files648add51del: six CI/test/evidence417add29del plus3 synchronized state docs231add22del.
+All original Core code and test bodies/deadlines/25 Installer invocations/order preserved; default
+All still full. No production/native/Menu mutation changes. New per-suite timing and strict result/
+SHA aggregate. Both Windows jobs keep40min; no test timeouts raised. Local aggregate12 +CLI2 PASS,
+YAML/static/review/signatures/parity/diff/secrets/public384/0/JSON PASS. Windows dispatch/parser/
+compilation/partitions25/native6/32/new full exact-SHA aggregate NOT_RUN. No partial-to-full PASS.
+
+Baseline CI698 independently CANCELLED not FAILURE: full Windows10491/Ubuntu578 mergec1de408f;
+Publication6 PASS, Menu29 PASS/final3 unconfirmed, later suites/pack NOT_RUN. Cancel cause UNKNOWN:
+annotations endpoint connector HTTP400;40m10s vs40min only consistent, not initiator proof. Serial
+capacity bottleneck independently measured Core1279s +incompleteInstaller1116s before late suites.
+Do not label cancelled run assertion failure or full32 PASS. CI697 origin capture cause proven;
+scoped fix6/29 passed at698, full32 acceptance remains pending.
+
+Next SAME699 full logs/exact tested merge and ALL4 jobs/aggregate. Verify actual Installer25/
+Publication6/full Menu32, Core/Desktop/Instance/Maintenance/Shutdown +relay/HomeVPN/Portable/Python/
+content/pack; no full success if any skip/fail/cancel/missingSHA. Complete gate/whole run required,
+not Core-only green. Branch protections not altered; pack runner-only not delivered/accepted.
+Only after evidence may separate owned Menu rollback stage begin. F23 residuals/UNKNOWN incidents/
+BLOCKED_TRANSFER/no retry retained; scores unchanged delta0. No live install/services/network/
+security/ACL/credentials/VPS/release/uploads. Local post-publication checkpoint only, no extra CI.
+
 ## CURRENT CI698 CANCELLED; minimal exact-SHA CI partition/aggregate candidate
 
 Containing source is THIS git tree (git rev-parse HEAD); reviewed local code

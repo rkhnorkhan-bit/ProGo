@@ -468,6 +468,34 @@ namespace ProGo
             catch { return false; }
         }
 
+        // Menu only: the caller retains the verified receipt and maintenance ownership.
+        // No Legacy restoration, durable terminal outcome, replay or path-based deletion.
+        public bool TryRollbackDurableMenu(System.Collections.IDictionary receipt, CancellationToken token)
+        {
+            try {
+                token.ThrowIfCancellationRequested();
+                var evidence = ReadDurableEvidence<MenuInstallEvidence>(receipt);
+                if (!VerifyDurableMenuRollbackEvidence(receipt)) return false;
+                if (evidence.Disposition == "preserved") return true;
+                string path = Path.Combine(menu, "ProGo.lnk");
+                CheckLocation(path);
+                using (var handle = OpenLegacyForDisposition(path, 0x80010000u, 1, IntPtr.Zero, 3, 0x00200080u, IntPtr.Zero)) {
+                    if (handle.IsInvalid) return false;
+                    using (var stream = new FileStream(handle, FileAccess.Read)) {
+                        // Full native origin (including creation), not bytes alone. Read/delete
+                        // share denies external replacement or writes until this handle settles.
+                        if (evidence.OriginIdentity != LegacyOrigin(handle) || evidence.Hash != Digest(ReadLegacyEvidenceBytes(stream))) return false;
+                        token.ThrowIfCancellationRequested();
+                        var disposition = new LegacyDisposition { DeleteFile = 1 };
+                        if (!SetFileInformationByHandle(handle, 4, ref disposition, 1)) return false;
+                    }
+                }
+                // A late cancellation must not discard the accepted physical result.
+                return ReadMenuBytes() == null;
+            } catch (OperationCanceledException) { throw; }
+            catch { return false; }
+        }
+
         public void Install(bool wasInstalled, bool noStartup, bool noStartMenu)
         { InstallCore(wasInstalled, noStartup, noStartMenu, false); }
 
