@@ -479,7 +479,7 @@ function Test-ProGoInstallerPendingInstalledProof([string]$Directory, [string]$I
     } catch { return $false }
 }
 function Test-ProGoInstallerAuxiliaryJournalScope([string]$Directory, [string]$InstallDirectory) {
-    Assert-ProGoInstallerNoAuxiliaryResult $InstallDirectory
+    Assert-ProGoInstallerNoAuxiliaryResult $InstallDirectory -AllowStartupAdmission
     if ([IO.Path]::GetFileName($Directory) -cnotmatch '^installer-journal-[a-f0-9]{32}$') { return $false }
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if ((Assert-ProGoInstallerStagePath $parent ([IO.Path]::GetFileName($Directory))) -cne $Directory) { return $false }
@@ -570,7 +570,7 @@ function Invoke-ProGoInstallerStartupRollback([string]$Directory, [string]$Insta
     [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
     [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
-    $stream = $null; $reader = $null
+    $stream = $null; $reader = $null; $mutation = $null
     try {
         $CancellationToken.ThrowIfCancellationRequested()
         if (-not (Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory)) { return $false }
@@ -588,18 +588,22 @@ function Invoke-ProGoInstallerStartupRollback([string]$Directory, [string]$Insta
         }
         $CancellationToken.ThrowIfCancellationRequested()
         $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        $mutation = Open-ProGoInstallerStartupMutationAdmission $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        $CancellationToken.ThrowIfCancellationRequested()
         return $manager.TryRollbackDurableStartup($map, $CancellationToken)
     } finally {
+        if ($null -ne $mutation) { $mutation.Dispose() }
         if ($null -ne $reader) { $reader.Dispose() }
         if ($null -ne $stream) { $stream.Dispose() }
     }
 }
 # Partial auxiliary evidence blocks automatic terminal reconciliation/new installation.
-function Assert-ProGoInstallerNoAuxiliaryResult([string]$InstallDirectory) {
+function Assert-ProGoInstallerNoAuxiliaryResult([string]$InstallDirectory, [switch]$AllowStartupAdmission) {
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if (-not (Test-Path -LiteralPath $parent)) { return }
     foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
-        if ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase)) {
+        if ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -or
+            (-not $AllowStartupAdmission -and $item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase))) {
             throw 'Installer auxiliary outcome requires verified completion before a new installation.'
         }
     }
@@ -677,6 +681,104 @@ function Test-ProGoInstallerStartupResult([string]$Directory, [string]$InstallDi
         $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
         return $reader.ReadToEnd() -ceq ($expected | ConvertTo-Json -Depth 5 -Compress)
     } catch { return $false } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+# Intent is descriptive durable evidence, never permission for automatic mutation.
+function Get-ProGoInstallerStartupMutationContext([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory) {
+    if (-not (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory)) { throw 'Installer mutation requires verified snapshot and runtime.' }
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    $suffix = [IO.Path]::GetFileName($Directory).Substring('installer-journal-'.Length)
+    $name = 'installer-startup-admission-' + $suffix + '.json'; $outcome = 'installer-startup-outcome-' + $suffix + '.json'
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        if (($item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $name) -or
+            ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $outcome)) { throw 'Installer auxiliary admissions conflict.' }
+        if ($item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase) -and $item.FullName -cne $Directory -and
+            -not (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -and
+            -not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { throw 'Installer pending journals conflict.' }
+    }
+    $stream = $null; $reader = $null
+    try {
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        $stream = New-Object IO.FileStream -ArgumentList @($pending, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { throw 'Installer mutation receipt size is invalid.' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        $receipt = $saved.Completion.Startup; $maps = @(); $parts = @($receipt, $receipt.Menu, $receipt.Legacy)
+        for ($index = 0; $index -lt 3; $index++) {
+            $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+            foreach ($property in $parts[$index].PSObject.Properties) {
+                if ($index -eq 0 -and $property.Name -cin @('Menu', 'Legacy')) { continue }
+                $map.Add($property.Name, $property.Value)
+            }
+            $maps += ,$map
+        }
+        Import-ProGoShortcutType
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        $before = $manager.VerifyDurableInstallEvidence($maps[0], $maps[1], $maps[2])
+        $after = $manager.VerifyDurableStartupOriginalResult($maps[0], $maps[1], $maps[2])
+        if ((-not $before -and -not $after) -or -not (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory)) { throw 'Installer Startup mutation state conflicts.' }
+        $state = if ($after) { 'original-observed' } else { 'not-applied' }
+        $outcomePath = Assert-ProGoInstallerStagePath $parent $outcome
+        if ([IO.File]::Exists($outcomePath) -and ($state -cne 'original-observed' -or
+            -not (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory))) { throw 'Installer Startup result conflicts.' }
+        $record = [pscustomobject]@{ Schema = 1; Phase = 'startup-mutation-admitted'; AutomaticMutationAllowed = $false;
+            Identity = (Get-ProGoInstallerIdentity $InstallDirectory); Journal = [IO.Path]::GetFileName($Directory);
+            ReceiptHash = (Get-FileHash -LiteralPath $pending).Hash; LocationIdentity = (Get-ProGoInstallerIdentity (Join-Path $StartupDirectory 'ProGo.lnk'));
+            Disposition = $receipt.Disposition; OriginIdentity = $receipt.OriginIdentity; Hash = $receipt.Hash;
+            BeforeExists = $receipt.BeforeExists; BeforeHash = $receipt.BeforeHash }
+        return [pscustomobject]@{ State = $state; Record = $record; Path = (Assert-ProGoInstallerStagePath $parent $name) }
+    } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+function Write-ProGoInstallerStartupAdmissionBytes($Stream, [byte[]]$Bytes) { $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true) }
+# Returns a pinned stream owned by the caller until physical native settlement.
+function Open-ProGoInstallerStartupMutationAdmission([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory) {
+    $context = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+    if ($context.State -cne 'not-applied' -and $context.Record.Disposition -cne 'preserved') { throw 'Installer Startup already changed; observe settlement without replay.' }
+    $text = $context.Record | ConvertTo-Json -Depth 5 -Compress
+    $stream = $null
+    try {
+        if ([IO.File]::Exists($context.Path)) {
+            $stream = New-Object IO.FileStream -ArgumentList @($context.Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        } else {
+            $stream = New-Object IO.FileStream -ArgumentList @($context.Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::Read, 4096, [IO.FileOptions]::WriteThrough)
+            Write-ProGoInstallerStartupAdmissionBytes $stream ((New-Object Text.UTF8Encoding($false)).GetBytes($text))
+            $stream.Flush($true); $stream.Position = 0
+        }
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { throw 'Installer Startup admission size is invalid.' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        try { if ($reader.ReadToEnd() -cne $text) { throw 'Installer Startup admission readback failed.' } } finally { $reader.Dispose() }
+        $again = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if (($again.Record | ConvertTo-Json -Depth 5 -Compress) -cne $text -or $again.State -cne $context.State) { throw 'Installer Startup admission changed.' }
+        $result = $stream; $stream = $null; return $result
+    } finally { if ($null -ne $stream) { $stream.Dispose() } }
+}
+# Read-only crash classification; never starts native rollback or restores bytes.
+function Get-ProGoInstallerStartupMutationState([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null
+    try {
+        $context = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        $stream = New-Object IO.FileStream -ArgumentList @($context.Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return 'blocked' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        if ($reader.ReadToEnd() -cne ($context.Record | ConvertTo-Json -Depth 5 -Compress)) { return 'blocked' }
+        $again = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($again.State -cne $context.State -or ($again.Record | ConvertTo-Json -Depth 5 -Compress) -cne ($context.Record | ConvertTo-Json -Depth 5 -Compress)) { return 'blocked' }
+        return $context.State
+    } catch { return 'blocked' } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+# Settlement may only persist a verified observation; intent grants no mutation authority.
+function Complete-ProGoInstallerStartupMutationSettlement([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    if ((Get-ProGoInstallerStartupMutationState $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory) -cne 'original-observed') { return $false }
+    if (-not (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) {
+        Complete-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+    }
+    return (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)
 }
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)

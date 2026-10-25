@@ -79,13 +79,24 @@ try {
         Check-OwnedStartup ($cancelled -eq ($scenario -in @('cancelled', 'native-cancel'))) 'Stop cancellation propagates distinctly with owned handles settled'
         if ($scenario -eq 'locked-retry') {
             Check-OwnedStartup (-not $result -and (Get-FileHash -LiteralPath $link).Hash -ceq $before[$link]) 'delete denial retains exact bytes before explicit retry'
+            $retryAdmission = Join-Path (Split-Path -Parent $journal) ('installer-startup-admission-' + (Split-Path -Leaf $journal).Substring('installer-journal-'.Length) + '.json')
+            $retryHash = (Get-FileHash -LiteralPath $retryAdmission).Hash
             $result = Invoke-ProGoInstallerStartupRollback $journal $install $programs $startup
+            Check-OwnedStartup ((Get-FileHash -LiteralPath $retryAdmission).Hash -ceq $retryHash) 'explicit retry reuses exact verified unapplied admission without rewriting it'
         }
         $expected = $scenario -in @('created', 'preserved-custom', 'preserved-absence', 'locked-retry')
         Check-OwnedStartup ($result -eq $expected) 'only proven exact owned creation or unchanged preserved state succeeds'
         if ($scenario -in @('created', 'locked-retry')) {
             Check-OwnedStartup (-not [IO.File]::Exists($link) -and -not [IO.Directory]::Exists($link)) 'successful owned rollback confirms real original absence'
             $before.Remove($link)
+        }
+        # Exactly one newly required durable admission is allowed, never arbitrary extras.
+        $mutationPath = Join-Path (Split-Path -Parent $journal) ('installer-startup-admission-' + (Split-Path -Leaf $journal).Substring('installer-journal-'.Length) + '.json')
+        if ([IO.File]::Exists($mutationPath)) {
+            $state = Get-ProGoInstallerStartupMutationState $journal $install $programs $startup
+            $expectedState = if ($scenario -eq 'delete-locked') { 'not-applied' } else { 'original-observed' }
+            Check-OwnedStartup ($state -ceq $expectedState) 'exact new durable admission independently validates its physical mutation state'
+            $before[$mutationPath] = (Get-FileHash -LiteralPath $mutationPath).Hash
         }
         # Opening receipt for exclusive write proves no reader/stream was abandoned.
         if ([IO.File]::Exists($link)) { $linkProbe = [IO.File]::Open($link, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None); $linkProbe.Dispose() }
