@@ -14,6 +14,9 @@ $boundary = @($ast.EndBlock.Statements | Where-Object {
 })
 if ($boundary.Count -ne 1) { throw 'Installer restart gate boundary is ambiguous.' }
 $body = [scriptblock]::Create((Get-Content -LiteralPath $installer -Raw).Substring($boundary[0].Extent.StartOffset))
+# This isolated body omits preflight; supply its trusted helper dependency explicitly.
+# Stop remains mocked before any payload/runtime installation.
+$Payload = [pscustomobject]@{ ScriptsDirectory = (Join-Path $Root 'scripts') }
 function Check-RestartGate($Condition, $Name) { if (-not $Condition) { throw ('Installer restart gate failed: ' + $Name) } }
 $work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-restart-tests-' + [Guid]::NewGuid().ToString('N'))
 $oldLocal = $env:LOCALAPPDATA

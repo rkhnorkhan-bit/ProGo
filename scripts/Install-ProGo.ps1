@@ -559,7 +559,7 @@ function Resolve-ProGoInstallerPendingInstalled([string]$InstallDirectory,
     # Trusted helper is supplied by the installer itself, never selected by a journal.
     if (-not [string]::IsNullOrEmpty($ShortcutScript)) { . $ShortcutScript }
     if (-not (Test-ProGoInstallerPendingAuxiliaryProof $candidate $InstallDirectory $ProgramsDirectory $StartupDirectory)) {
-        throw 'Installer pending completion requires verified auxiliary and runtime evidence.'
+        throw 'Installer pending journal requires verified recovery before a new installation.'
     }
     $pending = Assert-ProGoInstallerStagePath $candidate 'outcome.pending.json'
     $digest = (Get-FileHash -LiteralPath $pending).Hash
