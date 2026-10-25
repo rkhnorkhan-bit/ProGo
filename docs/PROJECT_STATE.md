@@ -1,3 +1,73 @@
+## CURRENT CI701 foreign-admission fixture fix; new exact Windows proof NOT_RUN
+
+Candidate source is CURRENT_TREE (`git rev-parse HEAD`); reviewed local code `23aaf423559b8c3b7daa97906d62e7a9bdfa5c5d`.
+Baseline published source `6116754d10f689db057c4719d644760be8019193`, tested merge
+`ba6d1cf978eb05bcf81042100080fb54e58b128f`; prior local checkpoint
+`2e55dc18e6270350ea127770bb9f62ae753c604e` preserved clean. PR88 independently verified exact
+HEAD/open draft/unmerged; sole root writer/no active Git/compiler/pwsh process. No operations repeated.
+
+[CI701](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40208853093) complete final logs read:
+Installer121215556129/665lines FAILURE, Core121215556250/15409 SUCCESS,
+Ubuntu121215556301/607 SUCCESS, aggregate121221499795/168 FAILURE. Exact tested mergeba6d1cf9
+in all4 logs. Aggregate correctly rejects installer failure even with all3 SHA outputs identical.
+Menu mutation19: first13 PASS, foreign-admission FAIL, last5 NOT_RUN (legacy-removed, post-startup,
+startup-result-changed, legacy-appeared, replace-after-persist). Old OwnedMenu18/Menu32/Publication6
+and earlier installer suites PASS. Core Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/
+Portable91 PASS, Python38 PASS/2 SKIP; Ubuntu prior suites PASS. Core pack runner-only667573bytes,
+SHA256 `05fb64d901b6f2340443ae1aa2877142c68d2d2e076f16abdaa5bc41269b5211`;
+all uploads/prune SKIPPED. Overall CI FAILURE: runner ZIP is not a globally green candidate;
+transfer/install/owner acceptance NOT_RUN. No old PASS transferred to changed fixture.
+
+Proven fixture selector defect at InstallerMenuMutationAdmissionTests.ps1:82: scalar scenario -eq
+an unintended six-element array instead of one foreign-admission name. The intended conflicting
+sibling is not injected. The production context scans/rejects any foreign installer-menu-admission
+prefix; absent conflict and valid own admission physically remain not-applied, matching the log.
+Production code/native/identity/origin/hash/replacement/gating unchanged. See CI701_FOREIGN_ADMISSION_FIX.md.
+
+Minimal test14add1del: exact scalar -ceq foreign-admission; assert physical marker presence ONLY in
+that scenario and absence in all18 neighbours. Original expected blocked/3 repeated read-only state
+checks preserved. Added explicit OpenMenuMutationAdmission conflict refusal and hashes proving own
+admission, foreign record and exact Menu bytes preserved; existing whole-case file/byte inventory
+and cleanup remain. Same19 names/order/all assertions/deadlines/coverage, same27 suites and strict
+aggregate/workflow/upload guards. No new features or later phase.
+
+Local PASS review/static/signatures/parity/exact reverse diff/neighbor selector scan,
+aggregate12, JSON/diff/secrets/public-content. Windows PowerShell/native19/full27/new complete CI
+NOT_RUN (no local Windows/pwsh). One guarded expected-HEAD push/automatic CI only after final checks;
+exact source/run preserved in post-publication checkpoint and PR. Next SAME new run all4/final logs/
+exact merge/full19+retained18/32/6/whole27; no new function before complete proof. UNKNOWN prior
+incidents/BLOCKED_TRANSFER/no retry and fixed scores/weights retained, delta0. No live shortcuts/
+install/services/network/ACL/security/credentials/VPS/release/uploads or delivery retry.
+
+## CURRENT published durable Menu admission / CI701 in progress
+
+Source `6116754d10f689db057c4719d644760be8019193`, tree `dd1654b41753755250d380b2869b6807b810ea61`, parent
+`3dccd1b7d13eb5c3d96af63444e29395a51f0576`; reviewed code4c4f5aefaf2a663cdea8e8499143f76b2bad34e7,
+final freeze6920d540cce03bbccdc39bec1e6f3c18cfd6ab9e. Expected-HEAD non-force PR88 update,
+fetched exact commit/parent/tree equality confirmed. Prior checkpointaf4f53b8 preserved clean.
+ONE automatic pull_request [CI701](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40208853093), run40208853093,
+observed in_progress/conclusion null, exact source6116754. No rerun/dispatch/duplicate/full wait.
+Exact new tested merge/final logs not yet read. Local post-publication checkpoint only, NOT pushed.
+
+Public diff10files585add16del: five code/test302add4del plusfive docs283add12del. Durable Menu
+CreateNew/WriteThrough/Flush/readback/reproof/pin before unchanged native deletion; read-only crash
+settlement; exact canonical post-Startup evidence; Legacy-removed observation; strict default pending
+gates. No automatic failure-handler/Menu terminal outcome/Legacy rollback/retention/runtime recovery.
+Early Installer summary moved after ALL27 suites. Old assertions/deadlines/aggregate/workflow kept.
+
+PASS local: review/static/signatures/parity, original native mutation/failure-handler exact reverse
+diff, reconstructed Startup canonical field order, existing18 assertions+26calls retained, JSON/diff/
+secrets/public388source0release, aggregate12. NOT_RUN on new source: PowerShell5.1 parser/C# compiler/
+WindowsMenuMutation19/retainedOwned18/full27/Core+Ubuntu/complete aggregate. CI700 baseline all4
+exact merge7419458f/Installer26/Owned18/Publication6/Menu32/previous suites PASS independently read;
+old success not inherited by new tests. Pack only runner/no delivery/PC acceptance.
+
+Next SAME CI701 final logs/exact tested merge, all4 jobs+strict aggregate/Installer27/new19/retained18/
+32/6 and Core regressions. Then one separate scoped durable Menu result/error-handler integration
+slice after proof; Legacy/full auxiliary outcome, retention/runtime recovery/PGA04/updater/final
+package gates remain open. UNKNOWN incidents and BLOCKED_TRANSFER/no retry retained; weights/scores
+unchanged delta0. No live shortcuts/install/services/network/ACL/security/credentials/VPS/release/uploads.
+
 ## CURRENT durable Menu admission/read-only settlement candidate; CI700 fully verified
 
 Containing source is CURRENT_TREE (`git rev-parse HEAD`); reviewed local code `4c4f5aefaf2a663cdea8e8499143f76b2bad34e7`.

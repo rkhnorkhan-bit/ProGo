@@ -79,7 +79,10 @@ try {
         if ($scenario -eq 'foreign-replaced') {
             $bytes = [IO.File]::ReadAllBytes($link); [IO.File]::Move($link,(Join-Path $case 'retained-original.lnk')); [IO.File]::WriteAllBytes($link,$bytes)
         }
-        if ($scenario -eq 'foreign-admission', 'legacy-removed', 'post-startup', 'startup-result-changed', 'legacy-appeared', 'replace-after-persist') { [IO.File]::WriteAllText((Join-Path (Split-Path -Parent $journal) 'installer-menu-admission-unknown.json'),'synthetic conflicting admission') }
+        $foreignPath = Join-Path (Split-Path -Parent $journal) 'installer-menu-admission-unknown.json'
+        $expectsForeignAdmission = $scenario -ceq 'foreign-admission'
+        if ($expectsForeignAdmission) { [IO.File]::WriteAllText($foreignPath,'synthetic conflicting admission') }
+        Check-MenuMutation ([IO.File]::Exists($foreignPath) -eq $expectsForeignAdmission) 'foreign admission injection exists exactly in its own scenario; neighbours have no marker'
         if ($scenario -eq 'foreign-runtime') { [IO.File]::WriteAllText((Join-Path $install 'ProGo.exe'),'synthetic external runtime') }
         if ($scenario -eq 'foreign-snapshot') { [IO.File]::WriteAllText((Join-Path $backup.Directory 'ProGo.exe'),'synthetic external snapshot') }
         if ($scenario -eq 'startup-result-changed') {
@@ -97,6 +100,16 @@ try {
             $retryFailed = $false
             try { [void](& $actualInvoke $journal $install $programs $startup) } catch { $retryFailed = $true }
             Check-MenuMutation $retryFailed 'explicit retry cannot overwrite corrupt admission or reach native mutation'
+        }
+        if ($expectsForeignAdmission) {
+            $conflictRefused = $false; $lease = $null
+            try { $lease = Open-ProGoInstallerMenuMutationAdmission $journal $install $programs $startup }
+            catch { $conflictRefused = $true }
+            finally { if ($null -ne $lease) { $lease.Dispose() } }
+            Check-MenuMutation $conflictRefused 'explicit mutation admission refuses the actual foreign sibling before any write'
+            Check-MenuMutation ((Get-FileHash -LiteralPath $foreignPath).Hash -ceq $before[$foreignPath] -and
+                (Get-FileHash -LiteralPath $mutationPath).Hash -ceq $before[$mutationPath] -and
+                (Get-FileHash -LiteralPath $link).Hash -ceq $originalHash) 'refusal preserves foreign record own admission and exact Menu bytes'
         }
         $afterRead = @(Get-ChildItem -LiteralPath $case -Recurse -File)
         Check-MenuMutation ($afterRead.Count -eq $before.Count) 'crash classification creates no resource'

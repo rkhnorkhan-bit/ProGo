@@ -4021,7 +4021,7 @@
   ],
   "ci_candidate": {
     "source": null,
-    "source_resolution": "CURRENT_TREE; exact publication/run in PR and local checkpoint",
+    "source_resolution": "CURRENT_TREE; exact source/run in PR and post-publication checkpoint",
     "status": "NOT_RUN before single guarded publication",
     "tested_merge": null,
     "required_jobs": [
@@ -4031,7 +4031,7 @@
       "ci-complete"
     ],
     "tests": {
-      "new_Windows19_retained18": "NOT_RUN",
+      "Windows_MenuMutation19": "NOT_RUN",
       "Installer27": "NOT_RUN",
       "full_exact_SHA_aggregate": "NOT_RUN"
     }
@@ -5526,13 +5526,13 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "4c4f5aefaf2a663cdea8e8499143f76b2bad34e7",
-    "baseline_source": "3dccd1b7d13eb5c3d96af63444e29395a51f0576",
-    "baseline_tested_merge": "7419458f258f77d10619b9aa920a5db0b1454a9f",
-    "prior_checkpoint": "af4f53b8d1bd46406bc031d9c66a09ab41f3c4b0",
-    "stage": "F23 durable Menu admission/read-only settlement only + final summary order",
-    "status": "PARTIAL; new Windows NOT_RUN",
-    "next": "Guarded single publication; SAME new CI exact merge/all4/full27/new19/retained18/32/6, then scoped durable Menu result/error integration",
+    "reviewed_local_code": "23aaf423559b8c3b7daa97906d62e7a9bdfa5c5d",
+    "baseline_source": "6116754d10f689db057c4719d644760be8019193",
+    "baseline_tested_merge": "ba6d1cf978eb05bcf81042100080fb54e58b128f",
+    "prior_checkpoint": "2e55dc18e6270350ea127770bb9f62ae753c604e",
+    "stage": "CI701 fixture foreign-admission selector fix only",
+    "status": "PARTIAL; changed Windows NOT_RUN",
+    "next": "Guarded single publication; SAME new CI final exact merge/all4/full19+retained18/32/6/Installer27 before any next function",
     "constraints": [
       "UNKNOWN incidents retained",
       "BLOCKED_TRANSFER/no retry",
@@ -22627,7 +22627,7 @@
   },
   "f23_menu_mutation_admission": {
     "status": "PARTIAL",
-    "source": "CURRENT_TREE",
+    "source": "6116754d10f689db057c4719d644760be8019193",
     "reviewed_local_code": "4c4f5aefaf2a663cdea8e8499143f76b2bad34e7",
     "criterion": "F23 durable pre-mutation admission and independently verified read-only crash settlement for Menu-only owned rollback",
     "production": "CreateNew/WriteThrough/Flush/readback/reproof/pinned admission before existing native call; readonly not-applied/original-observed/blocked; default installed/retry gates block Menu admission",
@@ -22642,6 +22642,91 @@
       "Legacy and full auxiliary outcome",
       "Retention/general runtime recovery/PGA04/updater/final package acceptance"
     ],
+    "score_delta": 0,
+    "last_baseline_verification": "CI701 exact source6116754 mergeba6d1cf9:13PASS/1FAIL/5NOT_RUN due fixture selector; new corrected full Windows19 NOT_RUN"
+  },
+  "ci701_final": {
+    "source": "6116754d10f689db057c4719d644760be8019193",
+    "tested_merge": "ba6d1cf978eb05bcf81042100080fb54e58b128f",
+    "run_id": 40208853093,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40208853093",
+    "status": "FAIL",
+    "full_logs_read": true,
+    "jobs": {
+      "Installer": {
+        "id": 121215556129,
+        "status": "FAIL",
+        "lines": 665
+      },
+      "Core": {
+        "id": 121215556250,
+        "status": "PASS",
+        "lines": 15409
+      },
+      "Ubuntu": {
+        "id": 121215556301,
+        "status": "PASS",
+        "lines": 607
+      },
+      "aggregate": {
+        "id": 121221499795,
+        "status": "FAIL",
+        "lines": 168
+      }
+    },
+    "MenuMutation19": {
+      "PASS": 13,
+      "FAIL": 1,
+      "NOT_RUN": 5,
+      "failing_case": "foreign-admission",
+      "expected": "blocked",
+      "observed": "not-applied",
+      "not_run_cases": [
+        "legacy-removed",
+        "post-startup",
+        "startup-result-changed",
+        "legacy-appeared",
+        "replace-after-persist"
+      ]
+    },
+    "scoped_PASS": [
+      "OwnedMenu18",
+      "Menu32",
+      "Publication6",
+      "prior installer suites",
+      "Desktop6394",
+      "Instance30",
+      "Maintenance126",
+      "Shutdown47",
+      "HomeVPN4816",
+      "Portable91",
+      "Python38",
+      "Ubuntu prior suites"
+    ],
+    "SKIPPED": [
+      "Python2",
+      "uploads",
+      "prune"
+    ],
+    "root_cause": "Fixture scalar -eq compared with unintended six-name array, so foreign sibling injection absent; production context correctly remains not-applied. No production runtime fix.",
+    "runner_zip": {
+      "bytes": 667573,
+      "sha256": "05fb64d901b6f2340443ae1aa2877142c68d2d2e076f16abdaa5bc41269b5211",
+      "globally_green_candidate": false,
+      "delivery_install_acceptance": "NOT_RUN"
+    }
+  },
+  "ci701_foreign_admission_fixture_fix": {
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "23aaf423559b8c3b7daa97906d62e7a9bdfa5c5d",
+    "status": "PARTIAL",
+    "criterion": "F23 foreign/unknown admission must remain blocked; actual conflicting fixture injection and explicit admission refusal verified",
+    "implementation": "Only exact fixture selector/injection guard and additive refusal/preservation assertions; production unchanged",
+    "tests": {
+      "local_review_static_signatures_parity_secrets_content_JSON_diff": "PASS",
+      "local_aggregate12": "PASS",
+      "Windows_native19_full27": "NOT_RUN"
+    },
     "score_delta": 0
   }
 }
