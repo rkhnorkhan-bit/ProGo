@@ -182,5 +182,11 @@ try {
     & (Join-Path $Root 'tests\InstallerLegacyRollbackAdmissionTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacyRollbackAdmissionTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+$CaseWatch = [Diagnostics.Stopwatch]::StartNew()
+Write-Host 'INSTALLER_SUITE_START name=InstallerLegacySourceCaptureTests.ps1'
+try {
+    & (Join-Path $Root 'tests\InstallerLegacySourceCaptureTests.ps1')
+    Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacySourceCaptureTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
+} finally { $CaseWatch.Stop() }
 $SuiteWatch.Stop()
-Write-Host ('Installer partition PASS: 30 suites; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
+Write-Host ('Installer partition PASS: 31 suites; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)

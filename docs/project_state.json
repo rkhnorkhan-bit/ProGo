@@ -4021,11 +4021,11 @@
   ],
   "ci_candidate": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "785b830e3fafc72215aad8604d6ef9cc6cc5d0cc",
-    "baseline_source": "2c1d1c8a109b7a0c0d0d43c70719830a7081f6f7",
-    "status": "Await sole automatic CI after guarded publication",
-    "Windows_Legacy19": "NOT_RUN",
-    "Installer30": "NOT_RUN",
+    "baseline_source": "f70cfd02b7b9cda550ae0d04f8de4c183c6eb87e",
+    "reviewed_local_code": "24ced07d44148dcc46b1cfb49be490060170dad0",
+    "status": "Await one automatic CI after guarded publication",
+    "Windows_Source18": "NOT_RUN",
+    "Installer31": "NOT_RUN",
     "exact_SHA_aggregate": "NOT_RUN",
     "score_delta": 0
   },
@@ -5519,17 +5519,17 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "785b830e3fafc72215aad8604d6ef9cc6cc5d0cc",
-    "baseline_source": "2c1d1c8a109b7a0c0d0d43c70719830a7081f6f7",
-    "prior_checkpoint": "1953371687acc051519441d1a73d15ec692d2a6a",
-    "stage": "CI706 fixture CLR String[] reflection boundary only",
-    "status": "Local checks PASS; actual CLR/native/new Windows19/full30 NOT_RUN",
-    "next": "SAME one new automatic CI all4 full logs; no Legacy bytes capture before full PASS",
+    "baseline_source": "f70cfd02b7b9cda550ae0d04f8de4c183c6eb87e",
+    "reviewed_local_code": "24ced07d44148dcc46b1cfb49be490060170dad0",
+    "prior_checkpoint": "02d130e51abb4268fb82946d22e5ce6ccc332dd7",
+    "stage": "F23 read-only in-memory original Legacy bytes capture/receipt binding only",
+    "status": "Local checks PASS; C# compile/native Windows source18/full31 NOT_RUN",
+    "next": "One automatic CI; SAME run all4 final logs before separate durable source capture integration",
     "constraints": [
-      "Entire approved scope retained",
+      "All approved31/nested55 scope retained",
       "UNKNOWN incidents retained",
       "BLOCKED_TRANSFER/no retry",
-      "No live actions/release/uploads/security/network/credentials/services"
+      "No live install/services/network/ACL/security/credentials/VPS/release/uploads"
     ],
     "score_delta": 0
   },
@@ -22923,7 +22923,8 @@
     "scope_preserved": "All approved31/nested55 requirements retained; no whole production acceptance",
     "score_delta": 0,
     "ci705_status": "prior29 PASS; absent-preserved PASS/custom-preserved ERROR/remaining17 NOT_RUN; real custom Shell Link fixture correction pending new Windows execution",
-    "ci706_status": "prior29 PASS; new1 PASS/1 ERROR/17 NOT_RUN; real COM fixture/native assertion not confirmed; explicit String[] type correction pending Windows"
+    "ci706_status": "prior29 PASS; new1 PASS/1 ERROR/17 NOT_RUN; real COM fixture/native assertion not confirmed; explicit String[] type correction pending Windows",
+    "ci707_status": "Legacy19/full30 PASS at mergebfc81c704; new source capture does not change false restore/source-available authority"
   },
   "ci705_final": {
     "source": "b4327947646753ec4b20eef29bc99786b2add322",
@@ -22967,5 +22968,38 @@
     "prior_COM_correction": "NOT_CONFIRMED",
     "runtime_fix": false,
     "candidate": "NOT_ACCEPTED"
+  },
+  "ci707_final": {
+    "source": "f70cfd02b7b9cda550ae0d04f8de4c183c6eb87e",
+    "tested_merge": "bfc81c704307e21fad34821dd94f90fe578d461e",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40229207274",
+    "conclusion": "success",
+    "full_four_logs_independently_read": true,
+    "jobs": {
+      "core": 121277090313,
+      "installer": 121277090381,
+      "ubuntu": 121277090432,
+      "aggregate": 121285221337
+    },
+    "Installer30": "PASS",
+    "Legacy19": "PASS",
+    "Core": "Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91 PASS; Python38 PASS/2 SKIP",
+    "previous_COM_type_fixture_fixes": "scoped native PASS, not whole production",
+    "delivery_PC_acceptance": "NOT_RUN",
+    "uploads_prune": "SKIPPED"
+  },
+  "f23_legacy_source_capture": {
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "24ced07d44148dcc46b1cfb49be490060170dad0",
+    "status": "PARTIAL native in-memory prerequisite only",
+    "acceptance": "Owned exact original bytes retained under native read pin and linked to actual matching removed receipt; no write authority",
+    "local_checks": "PASS static/review/signatures/parity/aggregate12/JSON/secrets/public-content/diff",
+    "Windows_Source18": "NOT_RUN",
+    "Installer31": "NOT_RUN",
+    "durable_source": "NOT_IMPLEMENTED in this bounded stage",
+    "integration_restore_full_outcome": "NOT_IMPLEMENTED; no claim",
+    "next": "SAME new exact-SHA CI then durable source publication/pinning before existing migration; snapshot/journal/independent trusted location bindings required",
+    "remaining_scope": "All approved requirements and whole auxiliary recovery/runtime recovery/retention/PGA04/updater/package/owner/commercial retained",
+    "score_delta": 0
   }
 }

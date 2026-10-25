@@ -217,6 +217,71 @@ namespace ProGo
             }
         }
 
+        // Capture-only prerequisite: no disk publication, restore authority or automatic integration.
+        public sealed class LegacyRollbackSource : IDisposable
+        {
+            internal readonly ApplicationShortcuts Owner;
+            private readonly object gate = new object();
+            private byte[] bytes;
+            public string InstallIdentity { get; private set; }
+            public string LocationIdentity { get; private set; }
+            public string OriginIdentity { get; private set; }
+            public string Hash { get; private set; }
+            internal LegacyRollbackSource(ApplicationShortcuts owner, byte[] original, string origin)
+            {
+                Owner = owner; bytes = (byte[])original.Clone(); OriginIdentity = origin;
+                InstallIdentity = Identity(owner.root);
+                LocationIdentity = Identity(Path.Combine(owner.menu, "ProGo Status.lnk"));
+                Hash = Digest(bytes);
+            }
+            internal byte[] CopyBytes()
+            {
+                lock (gate) { return bytes == null || Digest(bytes) != Hash ? null : (byte[])bytes.Clone(); }
+            }
+            public void Dispose()
+            {
+                lock (gate) { if (bytes != null) { Array.Clear(bytes, 0, bytes.Length); bytes = null; } }
+            }
+        }
+
+        public LegacyRollbackSource CaptureLegacyRollbackSource(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            string path = Path.Combine(menu, "ProGo Status.lnk"); CheckLocation(path);
+            try {
+                // Share.Read pins this exact object against write/delete/rename through the semantic oracle.
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    string origin = LegacyOrigin(stream.SafeFileHandle);
+                    byte[] bytes = ReadLegacyEvidenceBytes(stream);
+                    if (!Matches(path, "--show")) return null; // custom/foreign does not become owned
+                    token.ThrowIfCancellationRequested();
+                    stream.Position = 0;
+                    if (origin != LegacyOrigin(stream.SafeFileHandle) || !Equal(bytes, ReadLegacyEvidenceBytes(stream)))
+                        throw new IOException("Legacy capture changed during verification.");
+                    CheckLocation(path);
+                    using (var current = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                        if (origin != LegacyOrigin(current.SafeFileHandle) || !Equal(bytes, ReadLegacyEvidenceBytes(current)))
+                            throw new IOException("Legacy capture no longer identifies the current object.");
+                        token.ThrowIfCancellationRequested();
+                        return new LegacyRollbackSource(this, bytes, origin);
+                    }
+                }
+            } catch (FileNotFoundException) { return null; }
+            catch (DirectoryNotFoundException) { return null; }
+        }
+
+        // Observation only. Caller still needs durable source, snapshot and full installer context before restore.
+        public byte[] ReadVerifiedLegacyRollbackBytes(LegacyRollbackSource source, LegacyInstallEvidence receipt)
+        {
+            if (source == null || source.Owner != this || receipt == null ||
+                source.InstallIdentity != Identity(root) || source.LocationIdentity != Identity(Path.Combine(menu, "ProGo Status.lnk")) ||
+                receipt.Disposition != "removed" || receipt.InstallIdentity != source.InstallIdentity ||
+                receipt.LocationIdentity != source.LocationIdentity || receipt.OriginIdentity != source.OriginIdentity ||
+                receipt.BeforeHash != source.Hash || receipt.OwnedHash != source.Hash || !VerifyLegacyInstallEvidence(receipt)) return null;
+            byte[] bytes = source.CopyBytes();
+            return bytes != null && Digest(bytes) == source.Hash ? bytes : null;
+        }
+
         internal sealed class LegacyObservation
         {
             internal byte[] Bytes;
