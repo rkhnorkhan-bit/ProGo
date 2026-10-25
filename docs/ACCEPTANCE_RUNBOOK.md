@@ -1,3 +1,84 @@
+## CURRENT durable Menu result candidate; CI702 full PASS independently verified
+
+Source is CURRENT_TREE (`git rev-parse HEAD`), reviewed local code `e2b89907e5f246e730a511c0a18710e157636486`.
+Baseline source `d391473bb343439e868c3cd3561d03efbb5761a4`, exact tested merge/build
+`1788e602609781c4d1c95df46b11c8ddb804cf1e`; prior checkpoint
+`bd3f6d7d12acc76a83e8458764d4833a11144f23` clean/preserved. PR88 exact HEAD/open draft,
+unmerged; sole root/no other active writer or Git/build/pwsh operations independently checked.
+
+[CI702](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40211667574) complete final logs read:
+Installer121224005601/665lines, Core121224005781/15409, Ubuntu121224005785/607,
+aggregate121231234015/167; all4 SUCCESS, all3 tested_sha match exact merge1788e602. Actual
+Installer27/MenuMutation19 (including foreign-admission and all five previously NOT_RUN),
+OwnedMenu18/Menu32/Publication6/all prior installer suites PASS. Core Desktop6394/Instance30/
+Maintenance126/Shutdown47/HomeVPN4816/Portable91 PASS; Python38 PASS/2 SKIP (not PASS).
+Ubuntu aggregate12/operation16/profile13/provisioning PASS. Public-content389source/44release PASS.
+Runner ZIP667566bytes SHA256 `f14dbcdd4bea6c37335f5ca48b035f21608f648e701326eb8959425f10fe922f`;
+pack SUCCESS, all uploads/prune SKIPPED. Delivery/install/PC acceptance NOT_RUN. CI701 fixture
+selector correction is scoped Windows19 PASS at this exact baseline, not a runtime fix or new-source PASS.
+
+One bounded F23 stage: durable Menu-only result after strictly verified read-only original-observed
+settlement. NO failure-handler integration, Legacy rollback, retention or general runtime recovery.
+GetMenuResultProof pins exact admission, revalidates full context/identity/trusted locations/snapshot/
+runtime/current bytes-or-absence and canonical receipt binding, derives admission/receipt hashes.
+CreateNew/WriteThrough/Flush(true)/exact bounded UTF8 readback and repeat proof before completion;
+existing foreign/owned result never overwritten. Independent pinned result reader repeats physical
+proof, rejects false flags/changed external state. Stored Phase=menu-original-observed, FullRollback,
+InstallSucceeded and MutationAllowed=false, RuntimeState=new-verified. Metadata only: never native
+mutation/replay/recreation or authorization to Launch/retry. Default automatic pending/terminal gates
+block ANY Menu result; foreign result suffixes reject in Menu context. Old native identity/origin/
+bytes/admission-before-mutation and all previous regression bodies unchanged.
+
+Code3files196add2del: Menu result helpers/two conservative guards, new19-case fixture, 28th suite.
+New19: created/preserved custom/absence, not rolled back, foreign Startup/Menu, snapshot/runtime,
+persist fail/short write/conflict/tamper/missing origin, legacy-removed/post-startup, damaged admission,
+foreign outcome, external replacement during write and after publication. Existing valid result
+cannot be overwritten; result/admission/receipt exclusive reopen proves cleanup; all existing bytes/
+private/foreign resources preserved. All27 old calls/deadlines/aggregate/workflow/upload guards retained,
+final summary follows all28. Local review/static/signatures/parity/exact reverse diff/aggregate12/
+JSON/diff/secrets/public-content PASS; Windows PS5.1 parser/MenuResult19/full28/new complete exact-SHA
+CI NOT_RUN. No inherited PASS on new code. See F23_DURABLE_MENU_RESULT.md.
+
+One guarded expected-HEAD publication and automatic CI only; exact SHA/run afterward in PR/local
+checkpoint. Next SAME new run full logs/exact merge/all4/new19/whole28/retained19/18/32/6. Then
+separate Menu failure-handler integration, respecting original install error/no Launch/no full
+auxiliary rollback. Entire approved scope retained: Legacy/full auxiliary outcome, crash/runtime
+recovery/retention, PGA04 explicit opt-in OFF, installer/updater fallback and immutable payload,
+final F23 regression/package/owner acceptance, remaining F31/portability/UI/signing and full approved
+commercial F30 gates stay in registry. Menu completion is NOT production completion.
+UNKNOWN Python/rebind/sharing/repair/setup incidents and BLOCKED_TRANSFER/no retry retained; scores/
+weights unchanged delta0. No live shortcuts/install/services/network/ACL/security/credentials/VPS/
+release/uploads or binary transfer. No second functional stage in this pass.
+
+## CURRENT published CI701 fixture selector correction / CI702 in progress
+
+Source `d391473bb343439e868c3cd3561d03efbb5761a4`, tree `9872a8f21693fc8770c44186a77f1cca068116fc`, parent
+`6116754d10f689db057c4719d644760be8019193`; reviewed local code23aaf423559b8c3b7daa97906d62e7a9bdfa5c5d,
+freeze29817f962a444c4ca8cc5b64ddfd1b5750e6f1b3. Guarded expected-HEAD non-force PR88 update;
+fetched exact parent/tree equals reviewed freeze. Prior checkpoint2e55dc18 preserved clean.
+ONE automatic pull_request [CI702](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40211667574), run40211667574, exact source,
+observed in_progress/conclusion null. No rerun/dispatch/duplicate/full wait. New tested merge/final
+logs not yet read. Local post-publication checkpoint only, intentionally NOT pushed to avoid extra CI.
+
+Public diff5files284add11del: ONE fixture14add1del plus4 evidence/state documents270add10del.
+Fix exact scalar foreign-admission selector, physically assert marker only in that case, explicitly
+prove admission refusal and own/foreign/Menu byte preservation. Production/native/gates/identity/
+origin/bytes/replacement unchanged. All19 names/order/expected blocked/old asserts/timeouts/cleanup,
+all27 suites/strict aggregate/workflow/upload guards preserved. Full local review/static/signatures/
+parity/secrets/public389source0release/JSON/diff and aggregate12 PASS. New Windows19/full27/complete
+exact-SHA CI NOT_RUN. No runtime fix or new function claimed.
+
+CI701 all4 final logs independently read: exact mergeba6d1cf9, Installer19=13PASS/1FAIL/5NOT_RUN,
+Core+Ubuntu SUCCESS, aggregate correctly FAIL. Old Owned18/Menu32/Publication6 PASS, runner ZIP
+not a successful whole-CI candidate. Proven failing fixture did not inject actual foreign sibling
+because scalar -eq was incorrectly supplied an array of six names. Expected blocked preserved.
+
+Next SAME CI702 final logs/exact tested merge/all4/whole19 incl five formerly unreached cases,
+retained18/32/6/all27/Core/Ubuntu/strict aggregate before next function. UNKNOWN incidents and
+BLOCKED_TRANSFER/no retry preserved; scores/weights unchanged delta0. No live install/services/
+network/security/ACL/credentials/VPS/release/uploads or binary delivery. Original failure/noLaunch/
+private-file/ownership safeguards unchanged.
+
 ## CURRENT CI701 foreign-admission fixture fix; new exact Windows proof NOT_RUN
 
 Candidate source is CURRENT_TREE (`git rev-parse HEAD`); reviewed local code `23aaf423559b8c3b7daa97906d62e7a9bdfa5c5d`.

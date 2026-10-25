@@ -673,6 +673,7 @@ function Assert-ProGoInstallerNoAuxiliaryResult([string]$InstallDirectory, [swit
     if (-not (Test-Path -LiteralPath $parent)) { return }
     foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
         if ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -or
+            $item.Name.StartsWith('installer-menu-outcome', [StringComparison]::OrdinalIgnoreCase) -or
             (-not $AllowStartupAdmission -and ($item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase) -or
                 $item.Name.StartsWith('installer-menu-admission', [StringComparison]::OrdinalIgnoreCase)))) {
             throw 'Installer auxiliary outcome requires verified completion before a new installation.'
@@ -877,7 +878,8 @@ function Get-ProGoInstallerMenuMutationContext([string]$Directory, [string]$Inst
         [void](Assert-ProGoInstallerStagePath $parent $item.Name)
         if (($item.Name.StartsWith('installer-menu-admission', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $name) -or
             ($item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $startupAdmission) -or
-            ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $startupOutcome)) { throw 'Menu auxiliary metadata conflicts.' }
+            ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $startupOutcome) -or
+            ($item.Name.StartsWith('installer-menu-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne ('installer-menu-outcome-' + $suffix + '.json'))) { throw 'Menu auxiliary metadata conflicts.' }
         if ($item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase) -and $item.FullName -cne $Directory -and
             -not (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -and
             -not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { throw 'Menu pending journal conflicts.' }
@@ -977,6 +979,65 @@ function Get-ProGoInstallerMenuMutationState([string]$Directory, [string]$Instal
         if ($again.State -cne $context.State -or ($again.Record | ConvertTo-Json -Depth 5 -Compress) -cne ($context.Record | ConvertTo-Json -Depth 5 -Compress)) { return 'blocked' }
         return $context.State
     } catch { return 'blocked' } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+# Menu-only observed result. This is not a terminal install/rollback or mutation authority.
+function Get-ProGoInstallerMenuResultProof([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory) {
+    $context = Get-ProGoInstallerMenuMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+    if ($context.State -cne 'original-observed') { throw 'Menu original result is not observed.' }
+    $stream = $null; $reader = $null
+    try {
+        $stream = New-Object IO.FileStream -ArgumentList @($context.Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { throw 'Menu result admission size is invalid.' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream,(New-Object Text.UTF8Encoding($false,$true)),$true,4096,$true)
+        $text = $context.Record | ConvertTo-Json -Depth 5 -Compress
+        if ($reader.ReadToEnd() -cne $text) { throw 'Menu result admission is not verified.' }
+        $again = Get-ProGoInstallerMenuMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($again.State -cne 'original-observed' -or ($again.Record | ConvertTo-Json -Depth 5 -Compress) -cne $text) { throw 'Menu result evidence changed.' }
+        return [pscustomobject]@{ Schema = 1; Phase = 'menu-original-observed'; FullRollback = $false;
+            InstallSucceeded = $false; MutationAllowed = $false; RuntimeState = 'new-verified';
+            Identity = $context.Record.Identity; Journal = $context.Record.Journal;
+            ReceiptHash = $context.Record.ReceiptHash; AdmissionHash = (Get-FileHash -LiteralPath $context.Path).Hash;
+            LocationIdentity = $context.Record.LocationIdentity; OriginIdentity = $context.Record.OriginIdentity;
+            BeforeExists = $context.Record.BeforeExists; BeforeHash = $context.Record.BeforeHash;
+            StartupLocation = $context.Record.StartupLocation; StartupOriginal = $context.Record.StartupOriginal }
+    } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+function Write-ProGoInstallerMenuResultBytes($Stream, [byte[]]$Bytes) { $Stream.Write($Bytes,0,$Bytes.Length); $Stream.Flush($true) }
+function Complete-ProGoInstallerMenuResult([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $proof = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    $path = Assert-ProGoInstallerStagePath $parent ('installer-menu-outcome-' + $proof.Journal.Substring('installer-journal-'.Length) + '.json')
+    $text = $proof | ConvertTo-Json -Depth 5 -Compress
+    $stream = New-Object IO.FileStream -ArgumentList @($path,[IO.FileMode]::CreateNew,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None,4096,[IO.FileOptions]::WriteThrough)
+    try {
+        Write-ProGoInstallerMenuResultBytes $stream ((New-Object Text.UTF8Encoding($false)).GetBytes($text))
+        $stream.Flush($true); $stream.Position = 0
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream,(New-Object Text.UTF8Encoding($false,$true)),$false,4096,$true)
+        try { if ($reader.ReadToEnd() -cne $text) { throw 'Menu result readback failed.' } } finally { $reader.Dispose() }
+        $again = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if (($again | ConvertTo-Json -Depth 5 -Compress) -cne $text) { throw 'Menu result evidence changed during publication.' }
+    } finally { $stream.Dispose() }
+}
+# Independent bounded, pinned read plus physical revalidation; saved flags alone never suffice.
+function Test-ProGoInstallerMenuResult([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null
+    try {
+        $proof = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $path = Assert-ProGoInstallerStagePath $parent ('installer-menu-outcome-' + $proof.Journal.Substring('installer-journal-'.Length) + '.json')
+        $stream = New-Object IO.FileStream -ArgumentList @($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $false }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream,(New-Object Text.UTF8Encoding($false,$true)),$true,4096,$true)
+        $text = $proof | ConvertTo-Json -Depth 5 -Compress
+        if ($reader.ReadToEnd() -cne $text) { return $false }
+        $again = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        return ($again | ConvertTo-Json -Depth 5 -Compress) -ceq $text
+    } catch { return $false } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
 }
 # Failure-path adapter. Only the running maintenance owner may invoke mutation.
 # A restart intent alone never enters this path. No full auxiliary/runtime outcome is claimed.
