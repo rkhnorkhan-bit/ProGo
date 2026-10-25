@@ -611,7 +611,7 @@ function Invoke-ProGoInstallerMenuRollback([string]$Directory, [string]$InstallD
     [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
     [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
-    $stream = $null; $reader = $null
+    $stream = $null; $reader = $null; $mutation = $null
     try {
         $CancellationToken.ThrowIfCancellationRequested()
         $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
@@ -625,8 +625,11 @@ function Invoke-ProGoInstallerMenuRollback([string]$Directory, [string]$InstallD
         foreach ($property in $saved.Completion.Startup.Menu.PSObject.Properties) { $map.Add($property.Name, $property.Value) }
         $CancellationToken.ThrowIfCancellationRequested()
         $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        $mutation = Open-ProGoInstallerMenuMutationAdmission $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        $CancellationToken.ThrowIfCancellationRequested()
         return $manager.TryRollbackDurableMenu($map, $CancellationToken)
     } finally {
+        if ($null -ne $mutation) { $mutation.Dispose() }
         if ($null -ne $reader) { $reader.Dispose() }
         if ($null -ne $stream) { $stream.Dispose() }
     }
@@ -670,7 +673,8 @@ function Assert-ProGoInstallerNoAuxiliaryResult([string]$InstallDirectory, [swit
     if (-not (Test-Path -LiteralPath $parent)) { return }
     foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
         if ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -or
-            (-not $AllowStartupAdmission -and $item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase))) {
+            (-not $AllowStartupAdmission -and ($item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase) -or
+                $item.Name.StartsWith('installer-menu-admission', [StringComparison]::OrdinalIgnoreCase)))) {
             throw 'Installer auxiliary outcome requires verified completion before a new installation.'
         }
     }
@@ -759,7 +763,8 @@ function Get-ProGoInstallerStartupMutationContext([string]$Directory, [string]$I
     foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
         [void](Assert-ProGoInstallerStagePath $parent $item.Name)
         if (($item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $name) -or
-            ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $outcome)) { throw 'Installer auxiliary admissions conflict.' }
+            ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $outcome) -or
+            ($item.Name.StartsWith('installer-menu-admission', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne ('installer-menu-admission-' + $suffix + '.json'))) { throw 'Installer auxiliary admissions conflict.' }
         if ($item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase) -and $item.FullName -cne $Directory -and
             -not (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -and
             -not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { throw 'Installer pending journals conflict.' }
@@ -846,6 +851,132 @@ function Complete-ProGoInstallerStartupMutationSettlement([string]$Directory, [s
         Complete-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
     }
     return (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)
+}
+# Exact fixed-path metadata reader. No paths or mutation authority come from admission data.
+function Test-ProGoInstallerMenuRecord([string]$Path, $Expected) {
+    $stream = $null; $reader = $null
+    try {
+        $stream = New-Object IO.FileStream -ArgumentList @($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $false }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        return $reader.ReadToEnd() -ceq ($Expected | ConvertTo-Json -Depth 5 -Compress)
+    } catch { return $false } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+# Reconstruct all expected fields from independently checked receipt/runtime/locations, not intent.
+function Get-ProGoInstallerMenuMutationContext([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory) {
+    if (-not (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory)) { throw 'Menu mutation requires verified runtime and snapshot.' }
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    $journal = [IO.Path]::GetFileName($Directory)
+    if ($journal -cnotmatch '^installer-journal-[a-f0-9]{32}$' -or (Assert-ProGoInstallerStagePath $parent $journal) -cne $Directory) { throw 'Menu journal ownership is invalid.' }
+    $suffix = $journal.Substring('installer-journal-'.Length)
+    $name = 'installer-menu-admission-' + $suffix + '.json'
+    $startupAdmission = 'installer-startup-admission-' + $suffix + '.json'
+    $startupOutcome = 'installer-startup-outcome-' + $suffix + '.json'
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        if (($item.Name.StartsWith('installer-menu-admission', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $name) -or
+            ($item.Name.StartsWith('installer-startup-admission', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $startupAdmission) -or
+            ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $startupOutcome)) { throw 'Menu auxiliary metadata conflicts.' }
+        if ($item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase) -and $item.FullName -cne $Directory -and
+            -not (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -and
+            -not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { throw 'Menu pending journal conflicts.' }
+    }
+    $stream = $null; $reader = $null
+    try {
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        $stream = New-Object IO.FileStream -ArgumentList @($pending, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { throw 'Menu receipt size is invalid.' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        $receipt = $saved.Completion.Startup; $maps = @(); $parts = @($receipt, $receipt.Menu, $receipt.Legacy)
+        for ($index = 0; $index -lt 3; $index++) {
+            $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+            foreach ($property in $parts[$index].PSObject.Properties) {
+                if ($index -eq 0 -and $property.Name -cin @('Menu','Legacy')) { continue }
+                $map.Add($property.Name, $property.Value)
+            }
+            $maps += ,$map
+        }
+        Import-ProGoShortcutType
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        $before = $manager.VerifyDurableInstallEvidence($maps[0], $maps[1], $maps[2])
+        $startupOriginal = $false
+        $after = $manager.VerifyDurableMenuOriginalResult($maps[0], $maps[1], $maps[2], $false)
+        if (-not $before -and -not $after) {
+            $before = $manager.VerifyDurableStartupOriginalResult($maps[0], $maps[1], $maps[2])
+            $after = $manager.VerifyDurableMenuOriginalResult($maps[0], $maps[1], $maps[2], $true)
+            $startupOriginal = $true
+        }
+        if (-not $before -and -not $after) { throw 'Menu physical evidence conflicts.' }
+        # After Menu removal the old Startup verifier correctly refuses a missing primary. Validate
+        # its EXACT existing durable records against independently reconstructed fields instead.
+        $identity = Get-ProGoInstallerIdentity $InstallDirectory
+        $receiptHash = (Get-FileHash -LiteralPath $pending).Hash
+        $startupLocation = Get-ProGoInstallerIdentity (Join-Path $StartupDirectory 'ProGo.lnk')
+        $expectedAdmission = [pscustomobject]@{ Schema = 1; Phase = 'startup-mutation-admitted'; AutomaticMutationAllowed = $false;
+            Identity = $identity; Journal = $journal; ReceiptHash = $receiptHash; LocationIdentity = $startupLocation;
+            Disposition = $receipt.Disposition; OriginIdentity = $receipt.OriginIdentity; Hash = $receipt.Hash;
+            BeforeExists = $receipt.BeforeExists; BeforeHash = $receipt.BeforeHash }
+        $admissionPath = Assert-ProGoInstallerStagePath $parent $startupAdmission
+        $outcomePath = Assert-ProGoInstallerStagePath $parent $startupOutcome
+        if (($startupOriginal -or [IO.File]::Exists($admissionPath)) -and -not (Test-ProGoInstallerMenuRecord $admissionPath $expectedAdmission)) { throw 'Startup admission is not proven.' }
+        if ($startupOriginal) {
+            $expectedOutcome = [pscustomobject]@{ Schema = 1; Phase = 'startup-original-observed'; FullRollback = $false;
+                InstallSucceeded = $false; MutationAllowed = $false; RuntimeState = 'new-verified'; Identity = $identity; Journal = $journal;
+                ReceiptHash = $receiptHash; StartupLocation = $startupLocation; OriginIdentity = $receipt.OriginIdentity;
+                BeforeExists = $receipt.BeforeExists; BeforeHash = $receipt.BeforeHash }
+            if (-not (Test-ProGoInstallerMenuRecord $outcomePath $expectedOutcome)) { throw 'Startup settlement is not proven.' }
+        } elseif ([IO.File]::Exists($outcomePath)) { throw 'Startup outcome conflicts.' }
+        if ($before -and -not $manager.VerifyDurableMenuRollbackEvidence($maps[1])) { throw 'Menu origin is not proven.' }
+        if (-not (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory)) { throw 'Menu runtime evidence changed.' }
+        $record = [pscustomobject]@{ Schema = 1; Phase = 'menu-mutation-admitted'; AutomaticMutationAllowed = $false;
+            Identity = $identity; Journal = $journal; ReceiptHash = $receiptHash;
+            LocationIdentity = (Get-ProGoInstallerIdentity (Join-Path $ProgramsDirectory 'ProGo\ProGo.lnk'));
+            StartupLocation = $startupLocation; StartupOriginal = $startupOriginal;
+            Disposition = $receipt.Menu.Disposition; OriginIdentity = $receipt.Menu.OriginIdentity; Hash = $receipt.Menu.Hash;
+            BeforeExists = $receipt.Menu.BeforeExists; BeforeHash = $receipt.Menu.BeforeHash }
+        return [pscustomobject]@{ State = $(if ($after) { 'original-observed' } else { 'not-applied' }); Record = $record; Path = (Assert-ProGoInstallerStagePath $parent $name) }
+    } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+function Write-ProGoInstallerMenuAdmissionBytes($Stream, [byte[]]$Bytes) { $Stream.Write($Bytes,0,$Bytes.Length); $Stream.Flush($true) }
+# Explicit invocation only. Keep exact durable admission read-pinned through native settlement.
+function Open-ProGoInstallerMenuMutationAdmission([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory) {
+    $context = Get-ProGoInstallerMenuMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+    if ($context.State -cne 'not-applied' -and $context.Record.Disposition -cne 'preserved') { throw 'Menu already changed; observe without replay.' }
+    $text = $context.Record | ConvertTo-Json -Depth 5 -Compress; $stream = $null
+    try {
+        if ([IO.File]::Exists($context.Path)) {
+            $stream = New-Object IO.FileStream -ArgumentList @($context.Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        } else {
+            $stream = New-Object IO.FileStream -ArgumentList @($context.Path,[IO.FileMode]::CreateNew,[IO.FileAccess]::ReadWrite,[IO.FileShare]::Read,4096,[IO.FileOptions]::WriteThrough)
+            Write-ProGoInstallerMenuAdmissionBytes $stream ((New-Object Text.UTF8Encoding($false)).GetBytes($text))
+            $stream.Flush($true); $stream.Position = 0
+        }
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { throw 'Menu admission size is invalid.' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream,(New-Object Text.UTF8Encoding($false,$true)),$true,4096,$true)
+        try { if ($reader.ReadToEnd() -cne $text) { throw 'Menu admission readback failed.' } } finally { $reader.Dispose() }
+        $again = Get-ProGoInstallerMenuMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($again.State -cne $context.State -or ($again.Record | ConvertTo-Json -Depth 5 -Compress) -cne $text) { throw 'Menu admission evidence changed.' }
+        $result = $stream; $stream = $null; return $result
+    } finally { if ($null -ne $stream) { $stream.Dispose() } }
+}
+# Read-only crash settlement: observes actual results, never replays native mutation or writes outcomes.
+function Get-ProGoInstallerMenuMutationState([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null
+    try {
+        $context = Get-ProGoInstallerMenuMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        $stream = New-Object IO.FileStream -ArgumentList @($context.Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return 'blocked' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream,(New-Object Text.UTF8Encoding($false,$true)),$true,4096,$true)
+        if ($reader.ReadToEnd() -cne ($context.Record | ConvertTo-Json -Depth 5 -Compress)) { return 'blocked' }
+        $again = Get-ProGoInstallerMenuMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($again.State -cne $context.State -or ($again.Record | ConvertTo-Json -Depth 5 -Compress) -cne ($context.Record | ConvertTo-Json -Depth 5 -Compress)) { return 'blocked' }
+        return $context.State
+    } catch { return 'blocked' } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
 }
 # Failure-path adapter. Only the running maintenance owner may invoke mutation.
 # A restart intent alone never enters this path. No full auxiliary/runtime outcome is claimed.

@@ -99,6 +99,13 @@ try {
         if ($scenario -in @('created', 'locked-retry', 'legacy-removed', 'post-startup')) {
             Check-OwnedMenu (-not (Invoke-ProGoInstallerMenuRollback $journal $install $programs $startup)) 'explicit repeat refuses missing target without replay or false success'
         }
+        $mutationPath = Join-Path (Split-Path -Parent $journal) ('installer-menu-admission-' + (Split-Path -Leaf $journal).Substring('installer-journal-'.Length) + '.json')
+        if ([IO.File]::Exists($mutationPath)) {
+            $state = Get-ProGoInstallerMenuMutationState $journal $install $programs $startup
+            $expectedState = if ($scenario -eq 'delete-locked') { 'not-applied' } else { 'original-observed' }
+            Check-OwnedMenu ($state -ceq $expectedState) 'only exact new durable Menu admission is allowed and independently verifies'
+            $before[$mutationPath] = (Get-FileHash -LiteralPath $mutationPath).Hash
+        }
         # Opening receipt for exclusive write proves no reader/stream was abandoned.
         if ([IO.File]::Exists($link)) { $linkProbe = [IO.File]::Open($link, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None); $linkProbe.Dispose() }
         $probe = [IO.File]::Open($pending, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None); $probe.Dispose()

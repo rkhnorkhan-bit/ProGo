@@ -4021,7 +4021,7 @@
   ],
   "ci_candidate": {
     "source": null,
-    "source_resolution": "CURRENT_TREE; post-publication exact SHA/run in PR and local checkpoint",
+    "source_resolution": "CURRENT_TREE; exact publication/run in PR and local checkpoint",
     "status": "NOT_RUN before single guarded publication",
     "tested_merge": null,
     "required_jobs": [
@@ -4031,8 +4031,8 @@
       "ci-complete"
     ],
     "tests": {
-      "new_native18": "NOT_RUN",
-      "Installer26": "NOT_RUN",
+      "new_Windows19_retained18": "NOT_RUN",
+      "Installer27": "NOT_RUN",
       "full_exact_SHA_aggregate": "NOT_RUN"
     }
   },
@@ -5526,13 +5526,13 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "6675944d3ffdb4cb4ab8d6260920e0d92be232c3",
-    "baseline_source": "71d972a263701e03541566f7054211ed14d629ac",
-    "baseline_tested_merge": "9b8ea528802fbb52525a85a2a63dcec03f99d35f",
-    "prior_checkpoint": "011cf8f8751c9085ef44052f48fb6c69bf4334fd",
-    "stage": "F23 explicit owned Menu rollback only",
-    "status": "PARTIAL, new Windows NOT_RUN",
-    "next": "Guarded single publication; verify same new CI exact merge/full26/native18/all4; then separate durable Menu admission/settlement",
+    "reviewed_local_code": "4c4f5aefaf2a663cdea8e8499143f76b2bad34e7",
+    "baseline_source": "3dccd1b7d13eb5c3d96af63444e29395a51f0576",
+    "baseline_tested_merge": "7419458f258f77d10619b9aa920a5db0b1454a9f",
+    "prior_checkpoint": "af4f53b8d1bd46406bc031d9c66a09ab41f3c4b0",
+    "stage": "F23 durable Menu admission/read-only settlement only + final summary order",
+    "status": "PARTIAL; new Windows NOT_RUN",
+    "next": "Guarded single publication; SAME new CI exact merge/all4/full27/new19/retained18/32/6, then scoped durable Menu result/error integration",
     "constraints": [
       "UNKNOWN incidents retained",
       "BLOCKED_TRANSFER/no retry",
@@ -22557,14 +22557,14 @@
   },
   "f23_owned_menu_rollback": {
     "status": "PARTIAL",
-    "source": "CURRENT_TREE",
+    "source": "3dccd1b7d13eb5c3d96af63444e29395a51f0576",
     "reviewed_local_code": "6675944d3ffdb4cb4ab8d6260920e0d92be232c3",
     "criterion": "F23 verified rollback: exact owned Menu creation to original absence; preserved state untouched",
     "production": "Explicit bounded receipt-pinned Menu-only helper; native same-handle full origin/hash, delete disposition and observed absence; no automatic call/error integration/terminal/Launch/retry permission",
     "tests": {
       "static_review_signatures_parity": "PASS",
       "local_aggregate12": "PASS",
-      "Windows_parser_compilation_native18": "NOT_RUN",
+      "Windows_parser_compilation_native18": "PASS only baseline source3dccd1b merge7419458f CI700; changed durable binding new source NOT_RUN",
       "new_full26_and_exact_SHA_aggregate": "NOT_RUN"
     },
     "residual": [
@@ -22577,6 +22577,70 @@
       "No live actions",
       "No delivery retry",
       "No release/uploads"
+    ],
+    "score_delta": 0
+  },
+  "ci700_final": {
+    "status": "PASS",
+    "source": "3dccd1b7d13eb5c3d96af63444e29395a51f0576",
+    "tested_merge": "7419458f258f77d10619b9aa920a5db0b1454a9f",
+    "run_id": 40204997216,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40204997216",
+    "full_logs_read": true,
+    "jobs": {
+      "Core": 121203935615,
+      "Installer": 121203935657,
+      "Ubuntu": 121203935411,
+      "aggregate": 121211271493
+    },
+    "log_lines": [
+      15409,
+      643,
+      607,
+      167
+    ],
+    "tests": {
+      "Installer26": "PASS",
+      "OwnedMenu18": "PASS",
+      "Publication6": "PASS",
+      "Menu32": "PASS",
+      "Desktop6394": "PASS",
+      "Instance30": "PASS",
+      "Maintenance126": "PASS",
+      "Shutdown47": "PASS",
+      "HomeVPN4816": "PASS",
+      "Portable91": "PASS",
+      "Python38": "PASS",
+      "Python2": "SKIPPED",
+      "Ubuntu_aggregate12_operation16_profile13_provisioning": "PASS",
+      "public_content386_44": "PASS",
+      "strict_exact_SHA_aggregate": "PASS"
+    },
+    "runner_zip": {
+      "bytes": 665896,
+      "sha256": "abfaed7e79653b246fa4c107669a0f566cfbc44bba12573f715ad704bd508bac",
+      "pack": "PASS",
+      "uploads_prune": "SKIPPED",
+      "transfer_install_owner_acceptance": "NOT_RUN"
+    },
+    "reporting_incident": "Early26 summary before Owned18; actual suite return and aggregate PASS, not gate bypass; moved after all27 in next source"
+  },
+  "f23_menu_mutation_admission": {
+    "status": "PARTIAL",
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "4c4f5aefaf2a663cdea8e8499143f76b2bad34e7",
+    "criterion": "F23 durable pre-mutation admission and independently verified read-only crash settlement for Menu-only owned rollback",
+    "production": "CreateNew/WriteThrough/Flush/readback/reproof/pinned admission before existing native call; readonly not-applied/original-observed/blocked; default installed/retry gates block Menu admission",
+    "tests": {
+      "local_review_static_signatures_parity_secrets_content_JSON_diff": "PASS",
+      "local_aggregate12": "PASS",
+      "Windows_parser_compilation_native19_retained18": "NOT_RUN",
+      "Installer27_and_full_exact_SHA_aggregate": "NOT_RUN"
+    },
+    "residual": [
+      "Scoped durable Menu result/error-handler integration",
+      "Legacy and full auxiliary outcome",
+      "Retention/general runtime recovery/PGA04/updater/final package acceptance"
     ],
     "score_delta": 0
   }

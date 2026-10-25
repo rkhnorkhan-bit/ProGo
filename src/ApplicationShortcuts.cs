@@ -468,6 +468,34 @@ namespace ProGo
             catch { return false; }
         }
 
+        // Observation only. An absent object is never permission to recreate/delete anything.
+        // The caller separately verifies durable admission and (if needed) Startup settlement.
+        public bool VerifyDurableMenuOriginalResult(System.Collections.IDictionary startupReceipt,
+            System.Collections.IDictionary menuReceipt, System.Collections.IDictionary legacyReceipt, bool startupOriginal)
+        {
+            try {
+                var first = ReadDurableEvidence<StartupInstallEvidence>(startupReceipt);
+                var primary = ReadDurableEvidence<MenuInstallEvidence>(menuReceipt);
+                var legacy = ReadDurableEvidence<LegacyInstallEvidence>(legacyReceipt);
+                bool startupValid = startupOriginal
+                    ? first.Disposition == "created" && first.InstallIdentity == Identity(root) && first.LocationIdentity == Identity(startup) &&
+                        !first.BeforeExists && first.BeforeHash == null && first.Exists && first.Hash != null && first.OriginIdentity != null && ReadStartupBytes() == null
+                    : VerifyStartupInstallEvidence(first);
+                if (!startupValid) return false;
+                if (primary.Disposition == "preserved") return VerifyDurableMenuRollbackEvidence(menuReceipt) && VerifyLegacyInstallEvidence(legacy);
+                if (primary.Disposition != "created" || !primary.Requested || primary.InstallIdentity != Identity(root) ||
+                    primary.LocationIdentity != Identity(Path.Combine(menu, "ProGo.lnk")) || primary.BeforeExists || primary.BeforeHash != null ||
+                    !primary.Exists || primary.Hash == null || primary.OriginIdentity == null || ReadMenuBytes() != null) return false;
+                if (legacy.Disposition != "removed") return VerifyLegacyInstallEvidence(legacy);
+                // The primary has now been removed. Verify the original, receipt-linked Legacy
+                // absence; do not weaken the existing verifier that requires the live primary.
+                return legacy.InstallIdentity == Identity(root) && legacy.LocationIdentity == Identity(Path.Combine(menu, "ProGo Status.lnk")) &&
+                    legacy.Requested && legacy.BeforeMatched && legacy.BeforeExists && !legacy.Exists && legacy.Hash == null &&
+                    legacy.OriginIdentity != null && legacy.BeforeHash != null && legacy.OwnedHash == legacy.BeforeHash &&
+                    legacy.ReplacementHash == primary.Hash && ObserveLegacy(false).Bytes == null;
+            } catch { return false; }
+        }
+
         // Menu only: the caller retains the verified receipt and maintenance ownership.
         // No Legacy restoration, durable terminal outcome, replay or path-based deletion.
         public bool TryRollbackDurableMenu(System.Collections.IDictionary receipt, CancellationToken token)

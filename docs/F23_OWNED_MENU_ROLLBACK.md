@@ -1,3 +1,6 @@
+Historical scope: this document records the CI700 mutation slice. Current durable admission and
+read-only settlement extend it in F23_MENU_MUTATION_ADMISSION.md; full outcome/integration remain open.
+
 # F23 explicit owned Menu rollback — bounded mutation prerequisite
 
 Acceptance: an explicit caller holding installer maintenance may remove only its own created

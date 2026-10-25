@@ -1,3 +1,80 @@
+## CURRENT durable Menu admission/read-only settlement candidate; CI700 fully verified
+
+Containing source is CURRENT_TREE (`git rev-parse HEAD`); reviewed local code `4c4f5aefaf2a663cdea8e8499143f76b2bad34e7`.
+Baseline published source `3dccd1b7d13eb5c3d96af63444e29395a51f0576`, tested merge/build
+`7419458f258f77d10619b9aa920a5db0b1454a9f`; prior checkpoint
+`af4f53b8d1bd46406bc031d9c66a09ab41f3c4b0` clean/preserved. PR88 exact expected HEAD,
+open draft/unmerged, sole root writer/no active Git/build/pwsh operations independently verified.
+
+[CI700](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40204997216) complete logs read:
+Core121203935615/15409lines, Installer121203935657/643, Ubuntu121203935411/607,
+aggregate121211271493/167; all4 SUCCESS, all3 tested_sha exact merge7419458f. Installer26:
+OwnedMenu18/Publication6/Menu32 actual PASS including legacy-removed/post-startup/refusal. All prior
+installer suites PASS. Core Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91
+PASS; Python38 PASS/2 SKIP (not PASS). Ubuntu aggregate12/operation16/profile13/provisioning PASS.
+Public-content386source/44release PASS. Runner-only ZIP665896bytes SHA256
+`abfaed7e79653b246fa4c107669a0f566cfbc44bba12573f715ad704bd508bac`; pack SUCCESS,
+all uploads/prune SKIPPED. No transfer/install/PC acceptance. Early Installer26 summary was before
+OwnedMenu18, but actual later suite return and strict aggregate succeeded: reporting order defect,
+not a bypass. This candidate moves ONE final summary after all27 suites and Stopwatch.Stop.
+
+One bounded F23 slice: durable Menu admission before existing exact-handle native mutation,
+plus read-only restart settlement classification. No automatic failure-handler binding, Menu
+terminal outcome, Legacy rollback, retention or general runtime recovery. See
+F23_MENU_MUTATION_ADMISSION.md. CreateNew/WriteThrough/Flush(true)/strict bounded UTF8 exact readback,
+repeat physical/context proof, pin through native settlement/finally. Existing admission reused
+only by explicit caller after exact content/current ownership proof; corrupt/partial/conflicting
+records never rewritten. Intent does not authorize replay or restore. Read-only settlement returns
+not-applied/original-observed/blocked, independently rechecking snapshot/runtime/admissions,
+receipt/identity/trusted locations, native origin/bytes where present and exact absence where gone.
+Post-Startup requires exact canonical Startup admission AND observed-result records against
+independently checked receipt/locations, plus actual physical Startup absence. Legacy-removed
+requires original receipt linkage/owned origin/replacement hash and actual Legacy absence; no
+Legacy restoration is claimed. Default automatic terminal/new-install gates block any Menu admission.
+
+Code5files302add4del: native observation only, bounded Menu helpers/admission pin/strict default
+gates, reporting-order correction+new27th suite, new19-case isolated fixture, only7 additive
+OwnedMenu18 assertions/accounting lines. Existing native mutation/origin/publication, all old18
+assertions, all other tests, failure-handler, workflow/aggregate/deadlines/upload guards unchanged.
+New19 cases cover before/after crash, preserved, persistence/short write, tamper, missing/conflicting
+record, runtime/snapshot replacement, sharing denial, cancel-before/after persist, post-Startup,
+changed Startup result, legacy-removed/foreign Legacy and equal-byte replacement DURING persist.
+Repeated read-only classification/settlement creates no file and changes no byte; exact original
+resources and settings/vault/keys/foreign data preserved. No whole auxiliary rollback/success/Launch.
+
+Local review/static/signatures/parity/secrets/public-content/JSON/diff and aggregate12 PASS.
+PowerShell5.1 parser/C# compilation/Windows new19+retained18/full27/full exact-SHA aggregate NOT_RUN.
+Old CI700 PASS not inherited by new tests. ONE expected-HEAD guarded publication/automatic CI only;
+exact source/run added to PR/local checkpoint after observation. Scores/weights unchanged delta0.
+UNKNOWN incidents (Python/startup, rebind, receipt sharing, repair timeout, setup cancellation) and
+BLOCKED_TRANSFER/no retry retained. No live shortcuts/install/services/network/ACL/security/
+credentials/VPS/release/uploads. Next SAME new CI exact merge/all4/27/new19 before another stage;
+then separate scoped durable Menu result and failure-handler integration. Legacy/full auxiliary
+outcome, retention/runtime recovery/PGA04/updater/final package and owner acceptance remain open.
+
+## CURRENT published owned Menu rollback / CI700 in progress
+
+Published source `3dccd1b7d13eb5c3d96af63444e29395a51f0576`, tree `ac0e42b3346bab71b0fe59bc4ad584efc3b2d7ca`, parent
+`71d972a263701e03541566f7054211ed14d629ac`. Local code6675944d3ffdb4cb4ab8d6260920e0d92be232c3
+(exact code SHA below resolved by git; public tree equals reviewed freeze069996d0996aaff733986632c00fef61abcf4a20).
+Expected-HEAD non-force PR88 publication verified; fetched parent/tree exact, old worktrees retained.
+ONE automatic [CI700](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40204997216), run40204997216, pull_request, observed in_progress/null;
+no rerun/dispatch/duplicate/full wait. Exact new tested merge not yet read, no new Windows PASS.
+Public diff8files508add33del: native28 +installer27 +suite7/1 +new127-line18-case fixture,
+new50-line contract and3 synchronized state docs. All old test bodies/25 suite calls and workflow
+unchanged. Full review/static/signatures/parity/secrets/public386source0release/JSON/diff PASS;
+local aggregate12 PASS. Windows PowerShell/compiler/new native18/full26/Core+Ubuntu+aggregate
+NOT_RUN at this exact new source. CI699 baseline full25/Publication6/Menu32 and all4 jobs PASS
+independently verified, not transferred to new tests. No binary delivery/install/owner acceptance.
+
+Next SAME CI700 final logs/exact tested merge: all26 Installer/new18/retained32+6/Core/Ubuntu and
+strict aggregate required. Only after that a separate durable Menu pre-mutation admission/crash
+settlement slice; no automatic failure-handler integration/full auxiliary rollback/Launch in this
+stage. Legacy/full outcome/retention/runtime recovery/PGA04/package gates remain open. Original
+error/private files/preserved/custom/foreign objects and UNKNOWN incidents/BLOCKED_TRANSFER/no retry
+retained. Scores unchanged delta0. No release/uploads/install/live/security/network/VPS actions.
+Local post-publication checkpoint only; intentionally not pushed to avoid a second CI.
+
 ## CURRENT owned Menu rollback candidate; CI699 full PASS independently verified
 
 This candidate identity is CURRENT_TREE (`git rev-parse HEAD`); reviewed local code `6675944d3ffdb4cb4ab8d6260920e0d92be232c3`.
