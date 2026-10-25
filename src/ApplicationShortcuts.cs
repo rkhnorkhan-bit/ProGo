@@ -487,7 +487,7 @@ namespace ProGo
             string menuCreatedOrigin = null;
             if (!noStartMenu) {
                 menuCreated = captureStartup
-                    ? EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show", CancellationToken.None, handle => menuCreatedOrigin = LegacyOrigin(handle))
+                    ? EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show", CancellationToken.None, handle => menuCreatedOrigin = LegacyOrigin(handle), true)
                     : EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
                 if (!captureStartup) MigrateMenu();
             }
@@ -549,6 +549,9 @@ namespace ProGo
         { return EnsureLink(path, arguments, token, null); }
 
         private byte[] EnsureLink(string path, string arguments, CancellationToken token, Action<SafeFileHandle> witness)
+        { return EnsureLink(path, arguments, token, witness, false); }
+
+        private byte[] EnsureLink(string path, string arguments, CancellationToken token, Action<SafeFileHandle> witness, bool publishedWitness)
         {
             token.ThrowIfCancellationRequested();
             CheckLocation(path);
@@ -576,13 +579,46 @@ namespace ProGo
                 if (witness == null) File.Move(temporary, path);
                 else using (var stream = new FileStream(temporary, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete)) {
                     if (!Equal(bytes, ReadLegacyEvidenceBytes(stream))) throw new IOException("Created shortcut changed before publication.");
-                    witness(stream.SafeFileHandle);
+                    LegacyFileInfo before = new LegacyFileInfo();
+                    if (publishedWitness && (!GetFileInformationByHandle(stream.SafeFileHandle, out before) || (before.Attributes & 0x410) != 0))
+                        throw new IOException("Created shortcut identity is unavailable.");
+                    if (!publishedWitness) witness(stream.SafeFileHandle);
                     File.Move(temporary, path);
+                    if (publishedWitness) WitnessPublishedLink(path, bytes, stream, before, witness);
                 }
                 return bytes;
             } finally {
                 if (native != null) Marshal.FinalReleaseComObject(native);
                 if (File.Exists(temporary)) File.Delete(temporary);
+            }
+        }
+
+        // Keep the original object handle across rename; creation time may change at publication.
+        // Only this continuity check uses volume/index. The receipt origin still includes creation.
+        private void WitnessPublishedLink(string path, byte[] bytes, FileStream owned, LegacyFileInfo before, Action<SafeFileHandle> witness)
+        {
+            LegacyFileInfo after;
+            if (!GetFileInformationByHandle(owned.SafeFileHandle, out after) || (after.Attributes & 0x410) != 0 ||
+                before.Volume != after.Volume || before.IndexHigh != after.IndexHigh || before.IndexLow != after.IndexLow)
+                throw new IOException("Created shortcut object continuity changed.");
+            string origin = LegacyOrigin(owned.SafeFileHandle);
+            owned.Position = 0;
+            if (!Equal(bytes, ReadLegacyEvidenceBytes(owned))) throw new IOException("Created shortcut bytes changed.");
+            CheckLocation(path);
+            using (var published = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                if (origin != LegacyOrigin(published.SafeFileHandle) || !Equal(bytes, ReadLegacyEvidenceBytes(published)))
+                    throw new IOException("Published shortcut is not the created object.");
+                witness(owned.SafeFileHandle);
+                // A failed witness or changed evidence must never return an accepted receipt.
+                owned.Position = 0; published.Position = 0;
+                if (origin != LegacyOrigin(owned.SafeFileHandle) || origin != LegacyOrigin(published.SafeFileHandle) ||
+                    !Equal(bytes, ReadLegacyEvidenceBytes(owned)) || !Equal(bytes, ReadLegacyEvidenceBytes(published)))
+                    throw new IOException("Published shortcut witness changed.");
+                CheckLocation(path);
+                using (var current = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    if (origin != LegacyOrigin(current.SafeFileHandle) || !Equal(bytes, ReadLegacyEvidenceBytes(current)))
+                        throw new IOException("Published shortcut location changed.");
+                }
             }
         }
 

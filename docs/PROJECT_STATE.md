@@ -1,3 +1,72 @@
+## CURRENT CI697 proven Menu capture/publication-origin defect; minimal fix candidate
+
+Containing source is THIS git tree (git rev-parse HEAD); reviewed local code
+27cb4f79af3349096f19b82471f11339a8de8ae1. Baseline source8caf03239ce6d762aa49a044dad1a3270fd979de,
+checkpointcee55133dd6d988f4fd7ca655069481240d84fe1 clean; PR88 exact head/open draft/sole root writer/
+no active Git/build/PowerShell verified; older worktrees retained. Full CI697 Windows10478/Ubuntu578
+logs independently read, merge5c270df2b6a130a439db2fab5491c3bc235c13dd. Windows121167474515 FAILURE,
+Ubuntu121167474319 SUCCESS. Probe1call/bothReads/completed True, volume/index/bytesSame True,
+creation/originSame False,11ms. Actual legacy-removed other proof gates True/originSame and durableMenu
+False. Menu32:2PASS/1FAIL/29NOT_RUN; earlier installer/Startup15/14/13/14/25/Desktop6394/Instance30/
+Maintenance126/Shutdown47 PASS; later HomeVPN/Portable/relay/aggregate/pack NOT_RUN.
+
+Proven defect: existing Menu receipt callback captures full origin BEFORE native rename; the same
+owned object's creation time changes at publication. Correct strict full-origin verifier rejects that
+stale receipt. No hash-only or creation-removal workaround. Production uses the same EnsureLink as
+completed native reproduction; no OS-internal cause beyond observed transition assumed. Old Python/
+other incidents UNKNOWN, old PowerShell probe exact inner cause remains UNKNOWN, CLR probe now PASS
+only as diagnosis (not whole Menu32). See docs/CI697_MENU_PUBLICATION_ORIGIN_FIX.md.
+
+Minimal Menu-only opt-in: retain native original read handle across no-overwrite rename. Prove native
+volume/index continuity on SAME handle, exact expected bytes and no reparse/directory; compute FULL
+postpublication origin still including creation; pin independently supplied published path, compare
+full identity/bytes before invoking receipt witness. Recheck full identities/bytes/location afterward.
+External replacement (even identical bytes/copied creation), races, witness error/unknown results fail
+closed without receipt or replay/overwrite. Saved receipts never refreshed blindly. Existing four-arg
+witness/Startup/noncapture/Legacy/native deletion/failure/error/Stop/finally paths unchanged. No Menu
+rollback mutation, full auxiliary outcome/success/Launch or other feature.
+
+Code/test/evidence5files221add2del plus3 synchronized state documents. New Publication6 covers actual
+owned rename creation change, foreign identical/different bytes, partial bytes, exact original witness
+error, read-pin replacement race, cleanup. Only own temp file creation metadata set BEFORE open/rename
+for deterministic distinction; no live shortcut/permissions/system settings. Original Menu32 and ALL
+old assertions/scenarios/timeouts byte-identical. New harness hook before32; no gates bypassed.
+Local review/static/signatures/parity/diff/secrets/public380/0/JSON PASS. No local compiler/pwsh/
+Windows: new C#/PowerShell/native Publication6/Menu32/exact-source suites NOT_RUN; no old PASS inherited.
+
+One expected-head guarded PR88 source publication and ONE automatic CI; no parallel rerun/full wait.
+Public uploads OFF/release/prune ineligible, workflows unchanged. First next SAME new exact final logs/
+merge/Publication6/Menu32/prior reached regressions. Only after PASS consider owned Menu rollback in a
+separate stage. Durable Menu admission/result/error integration, Legacy/full auxiliary/partial receipt/
+retention/runtime recovery remain mandatory separate residuals. UNKNOWN unrelated incidents and
+BLOCKED_TRANSFER/no retry retained, weights/score delta0. No live install/services/network/security/
+ACL/credentials/VPS/release/uploads. Earlier current headings below superseded by this record.
+
+## CURRENT published test-only CLR probe / CI697 queued
+
+Published source `8caf03239ce6d762aa49a044dad1a3270fd979de`, tree
+`aadc0b7c1842a26e2aa03a12666674bd0b1e3de2`, parent4f75a48f356b2b49e823c5b38c1072f8b0453aeb.
+Local reviewed code5e9f6a37f603474ebd63b0cec43dd9bd462ea1f1, freezea1f9b7488fbd07ff3b639d1c70bbaab37e15beb8,
+canonical tree fetched/verified identical. Expected-HEAD non-force PR88 guarded publication.
+ONE automatic pull_request [CI697](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40192886465),
+exact source8caf032, queued/null observed. No parallel rerun/third attempt696/dispatch/duplicate/full wait.
+Uploads OFF/release/prune ineligible; workflows unchanged.
+
+Diff7files548add46del: test bridge/PS replacement/evidence doc3files172add22del; synchronized state
+and prior local Python incident4docs376add24del. STRICTLY test-only+docs; no production or native
+API change. All32/old asserts/expected/ordering/deadlines/cleanup exactly retained. Local review/
+static/signatures/parity/diff/secrets/public377/0/JSON PASS. New C# compilation/PowerShell/native
+bridge32/prior exact-source suites NOT_RUN. Independent CI696 attempt2 full10481/578 baseline:
+originSame=False/durableMenu=False, bytes and all other proof gates True; native component mechanism
+UNKNOWN. Old probe outer MethodInvocationException lacks inner boundary/root, NOT proven fixed yet.
+SSH passed attempt2: non-reproduction, NOT fix of pre-body startup incidents. No blind receipt refresh.
+
+Next SAME697 final full logs/exact tested merge, typed CLR before/after equality or exact phase/
+inner exception types. Only then minimal proven correction; no Menu mutation/next feature now.
+UNKNOWN incident ledger/BLOCKED_TRANSFER/no delivery retry preserved, scores unchanged delta0.
+No full auxiliary rollback/success/Launch authority. No live shortcut/install/service/network/
+security/ACL/credentials/VPS/release/uploads. This post-publication checkpoint local only, no push.
+
 ## CURRENT CI696 attempt2 origin mismatch; ONE test-only CLR probe replacement
 
 Containing source is THIS git tree (git rev-parse HEAD); reviewed local code

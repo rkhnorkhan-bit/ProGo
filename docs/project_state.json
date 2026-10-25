@@ -3905,11 +3905,11 @@
   ],
   "remote_visibility": {
     "observed": "public",
-    "pr88": "OPEN/DRAFT source4f75a48 expected-HEAD guard verified",
-    "push": "PASS non-force guard/tree parity",
+    "pr88": "OPEN/DRAFT source8caf032 guard verified",
+    "push": "PASS expected-head/non-force/canonical tree parity",
     "uploads": "automatic public PR uploads OFF; workflow unchanged",
     "artifacts": "BLOCKED_TRANSFER; no retry",
-    "ci": "CI696 in_progress/null observed, one automatic run"
+    "ci": "one automatic CI697 queued/null observed"
   },
   "local_regression": {
     "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
@@ -4021,15 +4021,15 @@
   ],
   "ci_candidate": {
     "source": null,
-    "source_resolution": "CURRENT_TREE; exact publication/CI in PR and post-publication local checkpoint",
-    "status": "NOT_RUN before guarded push",
+    "source_resolution": "CURRENT_TREE exact post-publication source/run in PR/local checkpoint",
+    "status": "NOT_RUN before guarded publication",
     "run_id": null,
     "tested_merge": null,
     "compilation": "NOT_RUN",
-    "menu_probe": "NOT_RUN",
+    "publication6": "NOT_RUN",
     "menu32": "NOT_RUN exact source",
     "prior_suites": "NOT_RUN exact source",
-    "scope": "test-only probe bridge, no production fix"
+    "scope": "minimal proven Menu capture/publication origin fix, no rollback mutation"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5476,7 +5476,7 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "CURRENT_TREE test-only CLR probe replacement; reviewed local code5e9f6a37; exact checkout identifies containing source",
+  "candidate_source_scope": "CURRENT_TREE minimal Menu publication origin fix; containing commit from git rev-parse HEAD; reviewed local code27cb4f79",
   "uncommitted_candidate": {
     "state": "No inherited uncommitted candidate; this local slice committed before guarded publication",
     "current": "CURRENT_TREE",
@@ -5522,13 +5522,13 @@
   "active_work": {
     "source": null,
     "source_resolution": "CURRENT_TREE git rev-parse HEAD",
-    "reviewed_local_code": "5e9f6a37f603474ebd63b0cec43dd9bd462ea1f1",
-    "baseline_source": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb",
-    "baseline_checkpoint": "2d25eeabf40153232c9211cb2a3319058ae19a1f",
-    "phase": "ONE test-only CLR probe replacement for CI696 attempt2",
+    "reviewed_local_code": "27cb4f79af3349096f19b82471f11339a8de8ae1",
+    "baseline_source": "8caf03239ce6d762aa49a044dad1a3270fd979de",
+    "baseline_checkpoint": "cee55133dd6d988f4fd7ca655069481240d84fe1",
+    "phase": "ONE proven Menu capture/publication origin fix",
     "status": "PARTIAL",
-    "cause": "origin mismatch proven, mechanism/old probe exception root UNKNOWN",
-    "next": "same new exact CI final probe component/phase evidence before proven correction; no Menu mutation",
+    "cause": "PROVEN creation changed on owned rename, prepublication origin stale",
+    "next": "same new exact CI final logs/Publication6/Menu32; no next mutation stage this pass",
     "private_candidate": "BLOCKED_TRANSFER/no retry",
     "score_change": 0
   },
@@ -5727,10 +5727,10 @@
     "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a"
   },
   "pending_publication": {
-    "status": "pending guarded source update",
+    "status": "pending guarded update",
     "source": "CURRENT_TREE",
-    "expected_head": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb",
-    "scope": "test-only probe +docs; one automatic CI, no parallel rerun"
+    "expected_head": "8caf03239ce6d762aa49a044dad1a3270fd979de",
+    "scope": "minimal proven capture fix +native regressions/state; one automatic CI"
   },
   "local_preparation_guidance": {
     "status": "PARTIAL",
@@ -22154,16 +22154,15 @@
     "fields": [
       "active_work",
       "ci_candidate",
-      "ci696_attempt1",
-      "ci696_attempt2",
-      "ci696_menu_probe_replacement",
+      "ci697_final",
+      "ci697_menu_publication_fix",
       "f23_menu_rollback_admission",
       "incident_ledger_current",
       "private_candidate_transfer",
       "current_readiness"
     ],
     "other_snapshots": "Historical evidence/requirements remain; current-labelled old fields/headings are superseded, not active plans",
-    "containing_source": "CURRENT_TREE; local code5e9f6a37; post-publication IDs local/PR",
+    "containing_source": "CURRENT_TREE; reviewed local code27cb4f79; exact published IDs post-publication local/PR",
     "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0"
   },
   "ci694_final": {
@@ -22200,7 +22199,7 @@
     "status": "PARTIAL",
     "implementation": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
     "criterion": "F23-R02 read-only Menu rollback classification with exact origin/hash/snapshot/identity/ownership/receipt/trusted locations",
-    "tests": "CI696 attempt2 source4f75a48:2PASS/legacy-removedFAIL/29NOT_RUN; new probe Windows NOT_RUN",
+    "tests": "CI697 source8caf032:2PASS/1FAIL/29NOT_RUN; capture fix Publication6/Menu32 NOT_RUN new tree",
     "local": "PASS review/static/signatures/parity/diff/secrets/public373/0/JSON",
     "evidence": "docs/F23_MENU_ROLLBACK_ADMISSION.md",
     "remaining": [
@@ -22381,6 +22380,66 @@
     "contract": "all32 original tests/assertions/timeouts unchanged, no receipt refresh or identity weakening",
     "tests": "Windows NOT_RUN",
     "evidence": "docs/CI696_MENU_PROBE_BRIDGE.md",
+    "score_change": 0,
+    "implementation": "8caf03239ce6d762aa49a044dad1a3270fd979de"
+  },
+  "ci697_final": {
+    "source": "8caf03239ce6d762aa49a044dad1a3270fd979de",
+    "tested_merge": "5c270df2b6a130a439db2fab5491c3bc235c13dd",
+    "run_id": 40192886465,
+    "status": "FAILURE",
+    "windows_job": 121167474515,
+    "windows_lines": 10478,
+    "ubuntu_job": 121167474319,
+    "ubuntu_lines": 578,
+    "ubuntu": "SUCCESS",
+    "probe": {
+      "completed": true,
+      "witnessCalls": 1,
+      "beforeRead": true,
+      "afterRead": true,
+      "originSame": false,
+      "volumeSame": true,
+      "indexSame": true,
+      "creationSame": false,
+      "bytesSame": true,
+      "elapsedMs": 11
+    },
+    "actual": "legacy-removed originSame/durableMenu False; bytes/other gates True",
+    "menu32": "2PASS/1FAIL/29NOT_RUN",
+    "earlier_pass": [
+      "earlier installer",
+      "StartupFailure15",
+      "Mutation14",
+      "Result13",
+      "Owned14",
+      "Admission25",
+      "Desktop6394",
+      "Instance30",
+      "Maintenance126",
+      "Shutdown47"
+    ],
+    "later": "HomeVPN/Portable/relay/aggregate/pack NOT_RUN",
+    "cause": "PROVEN pre-publication origin capture stale after owned rename creation-time change"
+  },
+  "ci697_menu_publication_fix": {
+    "status": "PARTIAL",
+    "reviewed_local_code": "27cb4f79af3349096f19b82471f11339a8de8ae1",
+    "implementation": "CURRENT_TREE",
+    "cause": "PROVEN capture-before-rename includes creation that changes on same owned object during rename",
+    "criterion": "full post-publication native origin bound to same retained handle/volume-index continuity/exact bytes/published read pin; no blind receipt refresh",
+    "tests": "Publication6/Menu32 Windows NOT_RUN exact tree; all original32 assertions retained",
+    "local": "PASS review/static/signatures/parity/diff/secrets/public380/0/JSON",
+    "evidence": "docs/CI697_MENU_PUBLICATION_ORIGIN_FIX.md",
+    "remaining": [
+      "exact CI proof",
+      "owned Menu rollback separate stage",
+      "durable Menu admission/result/error integration",
+      "Legacy/full auxiliary",
+      "partial pre-receipt evidence",
+      "retention",
+      "general runtime recovery"
+    ],
     "score_change": 0
   }
 }
