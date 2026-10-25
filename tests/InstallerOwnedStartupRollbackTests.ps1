@@ -1,0 +1,115 @@
+Set-StrictMode -Version 2.0
+$ErrorActionPreference = 'Stop'
+$Root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $Root 'scripts\Shortcuts-ProGo.ps1')
+Import-ProGoShortcutType
+$tokens = $null; $errors = $null
+$ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $Root 'scripts\Install-ProGo.ps1'), [ref]$tokens, [ref]$errors)
+if ($errors.Count) { throw 'Owned Startup rollback helpers do not parse.' }
+foreach ($function in $ast.FindAll({ param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+    $node.Name -notin @('Enter-ProGoInstallerMaintenance', 'Stop-ProGoInstallerApplication')
+}, $false)) { . ([scriptblock]::Create($function.Extent.Text)) }
+function Check-OwnedStartup($Condition, $Name) { if (-not $Condition) { throw ('Owned Startup rollback failed: ' + $Name) } }
+$work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-owned-startup-' + [Guid]::NewGuid().ToString('N'))
+$stage = $null; $held = $null; $cancel = $null; $owned = $false
+try {
+    New-Item -ItemType Directory -Path $work | Out-Null; $owned = $true
+    $payload = Get-ProGoInstallPayload -Directory (Join-Path $Root 'release')
+    $scenarios = @('created', 'preserved-custom', 'preserved-absence', 'changed', 'replaced-identical',
+        'missing-origin', 'delete-locked', 'locked-retry', 'cancelled', 'native-changed', 'native-replaced',
+        'native-cancel', 'foreign-runtime', 'wrong-location')
+    foreach ($scenario in $scenarios) {
+        $case = Join-Path $work $scenario; $install = Join-Path $case 'app'
+        $programs = Join-Path $case 'Programs'; $startup = Join-Path $case 'Startup'; $link = Join-Path $startup 'ProGo.lnk'
+        New-Item -ItemType Directory -Path $install, $programs, $startup | Out-Null
+        [IO.File]::WriteAllText((Join-Path $install 'ProGo.exe'), 'synthetic old executable')
+        foreach ($leaf in @('settings.json', 'vault.enc', 'key-reference.txt', 'foreign.txt')) { [IO.File]::WriteAllText((Join-Path $install $leaf), 'synthetic private bytes') }
+        if ($scenario -eq 'preserved-custom') { [IO.File]::WriteAllText($link, 'synthetic user customization') }
+        $backup = New-ProGoInstallerBackup $payload $install; $stage = New-ProGoInstallerStage $payload
+        $writes = New-Object 'System.Collections.Generic.List[object]'
+        foreach ($entry in $backup.Entries) { Set-ProGoInstallerRuntimeFile $stage $backup $entry $writes }
+        $receipt = Initialize-ProGoShortcuts -InstallDirectory $install -WasInstalled $false -NoStartup ($scenario.StartsWith('preserved-')) -NoStartMenu $false -ProgramsDirectory $programs -StartupDirectory $startup -CaptureStartupEvidence
+        Check-OwnedStartup ($scenario.StartsWith('preserved-') -or $receipt.OriginIdentity -cmatch '^[A-F0-9]{64}$') 'new creation receipt includes native object origin witness'
+        function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
+            $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
+            throw 'synthetic interruption after durable receipt'
+        }
+        $interrupted = $false
+        try { Complete-ProGoInstallerInstalledOutcome $backup $writes -CompletedPhases @('self-check', 'shortcuts') -StartupEvidence $receipt -RequireStartupEvidence }
+        catch { $interrupted = $_.Exception.Message.Contains('synthetic interruption after durable receipt') }
+        Check-OwnedStartup $interrupted 'actual writer leaves pending receipt before publication'
+        $journal = $backup.Journal.Directory; $pending = Join-Path $journal 'outcome.pending.json'
+        $saved = Get-Content -LiteralPath $pending -Raw | ConvertFrom-Json
+        $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+        foreach ($property in $saved.Completion.Startup.PSObject.Properties) {
+            if ($property.Name -cin @('Menu', 'Legacy')) { continue }
+            $map.Add($property.Name, $property.Value)
+        }
+        $manager = New-Object ProGo.ApplicationShortcuts($install, $programs, $startup)
+        if ($scenario.StartsWith('native-')) { Check-OwnedStartup ($null -ne (Get-ProGoInstallerStartupRollbackAdmission $journal $install $programs $startup)) 'native conflict fixture first has full verified admission' }
+        if ($scenario -in @('changed', 'native-changed')) { [IO.File]::WriteAllText($link, 'synthetic external edit') }
+        if ($scenario -in @('replaced-identical', 'native-replaced')) {
+            $bytes = [IO.File]::ReadAllBytes($link)
+            [IO.File]::Move($link, (Join-Path $case 'retained-original.lnk'))
+            [IO.File]::WriteAllBytes($link, $bytes)
+        }
+        if ($scenario -eq 'missing-origin') {
+            $saved.Completion.Startup.PSObject.Properties.Remove('OriginIdentity')
+            [IO.File]::WriteAllText($pending, ($saved | ConvertTo-Json -Depth 8 -Compress))
+        }
+        if ($scenario -eq 'foreign-runtime') { [IO.File]::WriteAllText((Join-Path $install 'ProGo.exe'), 'synthetic foreign runtime') }
+        $trustedStartup = if ($scenario -eq 'wrong-location') { Join-Path $case 'other-Startup' } else { $startup }
+        $before = @{}; foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $before[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
+        $cancel = New-Object Threading.CancellationTokenSource
+        if ($scenario -in @('cancelled', 'native-cancel')) { $cancel.Cancel() }
+        if ($scenario -in @('delete-locked', 'locked-retry')) { $held = [IO.File]::Open($link, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read) }
+        $result = $false; $cancelled = $false
+        try {
+            if ($scenario.StartsWith('native-')) { $result = $manager.TryRollbackDurableStartup($map, $cancel.Token) }
+            else { $result = Invoke-ProGoInstallerStartupRollback $journal $install $programs $trustedStartup $cancel.Token }
+        } catch {
+            $failure = $_.Exception; while ($null -ne $failure.InnerException) { $failure = $failure.InnerException }
+            if ($scenario -notin @('cancelled', 'native-cancel') -or $failure -isnot [OperationCanceledException]) { throw }
+            $cancelled = $true
+        } finally {
+            if ($null -ne $held) { $held.Dispose(); $held = $null }
+            $cancel.Dispose(); $cancel = $null
+        }
+        Check-OwnedStartup ($cancelled -eq ($scenario -in @('cancelled', 'native-cancel'))) 'Stop cancellation propagates distinctly with owned handles settled'
+        if ($scenario -eq 'locked-retry') {
+            Check-OwnedStartup (-not $result -and (Get-FileHash -LiteralPath $link).Hash -ceq $before[$link]) 'delete denial retains exact bytes before explicit retry'
+            $result = Invoke-ProGoInstallerStartupRollback $journal $install $programs $startup
+        }
+        $expected = $scenario -in @('created', 'preserved-custom', 'preserved-absence', 'locked-retry')
+        Check-OwnedStartup ($result -eq $expected) 'only proven exact owned creation or unchanged preserved state succeeds'
+        if ($scenario -in @('created', 'locked-retry')) {
+            Check-OwnedStartup (-not [IO.File]::Exists($link) -and -not [IO.Directory]::Exists($link)) 'successful owned rollback confirms real original absence'
+            $before.Remove($link)
+        }
+        # Opening receipt for exclusive write proves no reader/stream was abandoned.
+        if ([IO.File]::Exists($link)) { $linkProbe = [IO.File]::Open($link, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None); $linkProbe.Dispose() }
+        $probe = [IO.File]::Open($pending, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None); $probe.Dispose()
+        $blocked = $false; try { Assert-ProGoInstallerNoPendingJournal $install } catch { $blocked = $true }
+        Check-OwnedStartup $blocked 'Startup-only result does not publish full rollback or permit retry'
+        $after = @(Get-ChildItem -LiteralPath $case -Recurse -File)
+        Check-OwnedStartup ($after.Count -eq $before.Count) 'only exactly owned Startup leaf may disappear'
+        foreach ($file in $after) { Check-OwnedStartup ($before.ContainsKey($file.FullName) -and (Get-FileHash -LiteralPath $file.FullName).Hash -ceq $before[$file.FullName]) 'Menu Legacy runtime snapshot receipt private and foreign bytes preserved'
+        }
+        foreach ($leaf in @('settings.json', 'vault.enc', 'key-reference.txt', 'foreign.txt')) { Check-OwnedStartup ([IO.File]::ReadAllText((Join-Path $install $leaf)) -ceq 'synthetic private bytes') 'private and foreign data unchanged' }
+        Remove-ProGoInstallerStage $stage; $stage = $null
+        Write-Host ('PASS: installer owned Startup rollback ' + $scenario)
+    }
+    Write-Host ('Installer owned Startup rollback tests PASS: ' + $scenarios.Count)
+} finally {
+    if ($null -ne $held) { $held.Dispose() }
+    if ($null -ne $cancel) { $cancel.Dispose() }
+    if ($null -ne $stage) { Remove-ProGoInstallerStage $stage }
+    if ($owned -and [IO.Path]::GetFileName($work) -cmatch '^ProGo-owned-startup-[a-f0-9]{32}$' -and
+        [IO.Path]::GetDirectoryName($work) -ceq [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar) -and
+        (Test-Path -LiteralPath $work)) {
+        if ((Get-Item -LiteralPath $work -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Fixture cleanup refuses reparse root.' }
+        if (@(Get-ChildItem -LiteralPath $work -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }).Count) { throw 'Fixture cleanup refuses reparse descendants.' }
+        Remove-Item -LiteralPath $work -Recurse -Force
+    }
+}

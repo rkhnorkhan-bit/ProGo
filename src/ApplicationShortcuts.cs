@@ -117,16 +117,17 @@ namespace ProGo
             public string InstallIdentity { get; private set; }
             public string LocationIdentity { get; private set; }
             public string Disposition { get; private set; }
+            public string OriginIdentity { get; private set; }
             public MenuInstallEvidence Menu { get; private set; }
             public LegacyInstallEvidence Legacy { get; private set; }
             public bool BeforeExists { get; private set; }
             public string BeforeHash { get; private set; }
             public bool Exists { get; private set; }
             public string Hash { get; private set; }
-            internal StartupInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, MenuInstallEvidence menuEvidence, LegacyInstallEvidence legacyEvidence)
+            internal StartupInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, string origin, MenuInstallEvidence menuEvidence, LegacyInstallEvidence legacyEvidence)
             {
                 InstallIdentity = Identity(install); LocationIdentity = Identity(path); Menu = menuEvidence; Legacy = legacyEvidence;
-                Disposition = created ? "created" : "preserved";
+                Disposition = created ? "created" : "preserved"; OriginIdentity = origin;
                 BeforeExists = before != null; BeforeHash = Digest(before);
                 Exists = after != null; Hash = Digest(after);
             }
@@ -348,7 +349,11 @@ namespace ProGo
                 if (evidence.Disposition == "preserved") {
                     if (evidence.BeforeExists != evidence.Exists || evidence.BeforeHash != evidence.Hash) return false;
                 } else if (evidence.Disposition == "created") {
-                    if (evidence.BeforeExists || evidence.BeforeHash != null || !evidence.Exists || !Matches(startup, "")) return false;
+                    if (evidence.BeforeExists || evidence.BeforeHash != null || !evidence.Exists ||
+                        evidence.OriginIdentity == null || evidence.OriginIdentity.Length != 64 || !Matches(startup, "")) return false;
+                    CheckLocation(startup);
+                    using (var stream = new FileStream(startup, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        return evidence.OriginIdentity == LegacyOrigin(stream.SafeFileHandle) && evidence.Hash == Digest(ReadLegacyEvidenceBytes(stream));
                 } else return false;
                 byte[] current = ReadStartupBytes();
                 return evidence.Exists == (current != null) && evidence.Hash == Digest(current);
@@ -403,6 +408,30 @@ namespace ProGo
             } catch { return false; }
         }
 
+        // Startup only: final validation/deletion on one exact owned handle, no path-based delete.
+        public bool TryRollbackDurableStartup(System.Collections.IDictionary receipt, CancellationToken token)
+        {
+            try {
+                token.ThrowIfCancellationRequested();
+                var evidence = ReadDurableEvidence<StartupInstallEvidence>(receipt);
+                if (!VerifyStartupInstallEvidence(evidence)) return false;
+                if (evidence.Disposition == "preserved") return true;
+                CheckLocation(startup);
+                using (var handle = OpenLegacyForDisposition(startup, 0x80010000u, 1, IntPtr.Zero, 3, 0x00200080u, IntPtr.Zero)) {
+                    if (handle.IsInvalid) return false;
+                    using (var stream = new FileStream(handle, FileAccess.Read)) {
+                        if (evidence.OriginIdentity != LegacyOrigin(handle) || evidence.Hash != Digest(ReadLegacyEvidenceBytes(stream))) return false;
+                        token.ThrowIfCancellationRequested();
+                        var disposition = new LegacyDisposition { DeleteFile = 1 };
+                        if (!SetFileInformationByHandle(handle, 4, ref disposition, 1)) return false;
+                    }
+                }
+                // Cancellation after mutation cannot skip truthful settlement/result verification.
+                return ReadStartupBytes() == null;
+            } catch (OperationCanceledException) { throw; }
+            catch { return false; }
+        }
+
         public void Install(bool wasInstalled, bool noStartup, bool noStartMenu)
         { InstallCore(wasInstalled, noStartup, noStartMenu, false); }
 
@@ -427,7 +456,10 @@ namespace ProGo
             // Existing links (including disabled/customized ones) are never
             // refreshed: preserve Windows' StartupApproved state and user edits.
             byte[] created = null;
-            if (!wasInstalled && !noStartup) created = EnsureLink(startup, "");
+            string createdOrigin = null;
+            if (!wasInstalled && !noStartup) created = captureStartup
+                ? EnsureLink(startup, "", CancellationToken.None, handle => createdOrigin = LegacyOrigin(handle))
+                : EnsureLink(startup, "");
             if (!captureStartup) return null;
             byte[] after = ReadStartupBytes();
             if (created == null ? !Equal(before, after) :
@@ -438,7 +470,7 @@ namespace ProGo
                 (menuBefore != null || !Equal(menuCreated, menuAfter)))
                 throw new IOException("Menu completion could not be verified. Current state was preserved.");
             var menuEvidence = new MenuInstallEvidence(root, Path.Combine(menu, "ProGo.lnk"), menuBefore, menuAfter, menuCreated != null, !noStartMenu);
-            return new StartupInstallEvidence(root, startup, before, after, created != null, menuEvidence, legacyEvidence);
+            return new StartupInstallEvidence(root, startup, before, after, created != null, createdOrigin, menuEvidence, legacyEvidence);
         }
 
         public bool MigrateMenu()
@@ -475,6 +507,9 @@ namespace ProGo
         { return EnsureLink(path, arguments, CancellationToken.None); }
 
         private byte[] EnsureLink(string path, string arguments, CancellationToken token)
+        { return EnsureLink(path, arguments, token, null); }
+
+        private byte[] EnsureLink(string path, string arguments, CancellationToken token, Action<SafeFileHandle> witness)
         {
             token.ThrowIfCancellationRequested();
             CheckLocation(path);
@@ -499,7 +534,12 @@ namespace ProGo
                 byte[] bytes = File.ReadAllBytes(temporary);
                 // Do not overwrite a shortcut created concurrently.
                 token.ThrowIfCancellationRequested();
-                File.Move(temporary, path);
+                if (witness == null) File.Move(temporary, path);
+                else using (var stream = new FileStream(temporary, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete)) {
+                    if (!Equal(bytes, ReadLegacyEvidenceBytes(stream))) throw new IOException("Created shortcut changed before publication.");
+                    witness(stream.SafeFileHandle);
+                    File.Move(temporary, path);
+                }
                 return bytes;
             } finally {
                 if (native != null) Marshal.FinalReleaseComObject(native);

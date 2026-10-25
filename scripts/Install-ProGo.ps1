@@ -563,6 +563,36 @@ function Get-ProGoInstallerStartupRollbackAdmission([string]$Directory, [string]
         if ($null -ne $stream) { $stream.Dispose() }
     }
 }
+# Startup-only owned rollback operation. Caller holds maintenance and preserves original install error.
+# Does not publish a full auxiliary/runtime rollback outcome or authorize a retry.
+function Invoke-ProGoInstallerStartupRollback([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $stream = $null; $reader = $null
+    try {
+        $CancellationToken.ThrowIfCancellationRequested()
+        if (-not (Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory)) { return $false }
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        $stream = New-Object IO.FileStream -ArgumentList @($pending, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $false }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        $admission = Get-ProGoInstallerStartupRollbackAdmission $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($null -eq $admission -or $admission.ReceiptHash -cne (Get-FileHash -LiteralPath $pending).Hash) { return $false }
+        $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+        foreach ($property in $saved.Completion.Startup.PSObject.Properties) {
+            if ($property.Name -cin @('Menu', 'Legacy')) { continue }
+            $map.Add($property.Name, $property.Value)
+        }
+        $CancellationToken.ThrowIfCancellationRequested()
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        return $manager.TryRollbackDurableStartup($map, $CancellationToken)
+    } finally {
+        if ($null -ne $reader) { $reader.Dispose() }
+        if ($null -ne $stream) { $stream.Dispose() }
+    }
+}
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
