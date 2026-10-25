@@ -119,6 +119,13 @@ function Initialize-ProGoShortcuts {
             $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
             if ($FixtureState.Mode -eq 'rollback-terminal-after-write-fail') { throw 'synthetic rollback terminal persistence failure after flush' }
         }
+        # This suite mocks all shortcut effects with synthetic DTOs. Keep its original
+        # runtime-only rollback assertions; the separate StartupFailure suite exercises
+        # the real conservative auxiliary handler with native receipts and actual body.
+        function Invoke-ProGoInstallerFailureStartup($AuxiliaryStarted, $Backup, $InstallDirectory) {
+            if (-not $FixtureState.LeaseHeld) { throw 'Failure adapter escaped maintenance.' }
+            return 'not-started'
+        }
         function Start-Process {
             param($FilePath, $WorkingDirectory, $ArgumentList)
             if ($FixtureState.LeaseHeld -or $FixtureState.Disposes -ne 1) { throw 'Launch preceded release.' }

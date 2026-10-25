@@ -780,6 +780,29 @@ function Complete-ProGoInstallerStartupMutationSettlement([string]$Directory, [s
     }
     return (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)
 }
+# Failure-path adapter. Only the running maintenance owner may invoke mutation.
+# A restart intent alone never enters this path. No full auxiliary/runtime outcome is claimed.
+function Invoke-ProGoInstallerFailureStartup([bool]$AuxiliaryStarted, $Backup,
+    [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    if (-not $AuxiliaryStarted) { return 'not-started' }
+    try {
+        if ($null -eq $Backup -or $null -eq $Backup.Journal) { return 'blocked' }
+        $directory = $Backup.Journal.Directory
+        # No replay: an existing admission permits read-only settlement only, even if not-applied.
+        $context = Get-ProGoInstallerStartupMutationContext $directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ([IO.File]::Exists($context.Path)) {
+            if (Complete-ProGoInstallerStartupMutationSettlement $directory $InstallDirectory $ProgramsDirectory $StartupDirectory) { return 'startup-observed' }
+            return 'blocked'
+        }
+        # Fresh in-process failure only: full snapshot/runtime/receipt and exact origin are
+        # independently revalidated by the existing owned operation immediately before deletion.
+        if (-not (Invoke-ProGoInstallerStartupRollback $directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return 'blocked' }
+        if (Complete-ProGoInstallerStartupMutationSettlement $directory $InstallDirectory $ProgramsDirectory $StartupDirectory) { return 'startup-observed' }
+    } catch { return 'blocked' }
+    return 'blocked'
+}
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
@@ -1052,6 +1075,7 @@ $InstallMaintenance = $null
 $InstallStage = $null
 $InstallBackup = $null
 $InstallWrites = New-Object 'System.Collections.Generic.List[object]'
+$InstallAuxiliaryStarted = $false
 try {
     $InstallMaintenance = Enter-ProGoInstallerMaintenance
     Resolve-ProGoInstallerPendingInstalled $InstallDir -ShortcutScript (Join-Path $Payload.ScriptsDirectory 'Shortcuts-ProGo.ps1')
@@ -1104,13 +1128,17 @@ try {
     Copy-ProGoInstallerRuntime (Join-Path $ReleaseDir "scripts\home-vpn") -Destination $InstalledScripts -Recurse -Force
 
     Confirm-ProGoInstallerSelfCheck $InstallBackup $InstallStage
+    $InstallAuxiliaryStarted = $true
     $InstallStartupEvidence = Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut) -CaptureStartupEvidence
     Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites -CompletedPhases @('self-check', 'shortcuts') -StartupEvidence $InstallStartupEvidence -RequireStartupEvidence
 
 } catch {
     $installFailure = $_
     $priorVerified = $false; $rollbackAttempted = $false; $rollbackErrorType = 'none'
-    if ($null -ne $InstallBackup) {
+    # Set the conservative default before calling any fallible failure-path helper.
+    $startupFailureState = if ($InstallAuxiliaryStarted) { 'blocked' } else { 'not-started' }
+    try { $startupFailureState = Invoke-ProGoInstallerFailureStartup $InstallAuxiliaryStarted $InstallBackup $InstallDir } catch { }
+    if ($startupFailureState -ceq 'not-started' -and $null -ne $InstallBackup) {
         try {
             if ($InstallWrites.Count -gt 0) {
                 $rollbackAttempted = $true
@@ -1128,6 +1156,7 @@ try {
     }
     Write-Host ('Installer failure: priorRuntimeVerified=' + $priorVerified +
         '; rollbackAttempted=' + $rollbackAttempted + '; rollbackVerified=' + ($rollbackAttempted -and $priorVerified) +
+        '; startupFailureState=' + $startupFailureState + '; auxiliaryRollbackVerified=False' +
         '; rollbackTerminalVerified=' + $rollbackTerminalVerified + '; rollbackErrorType=' + $rollbackErrorType + '; backupRetained=' + ($null -ne $InstallBackup -and $null -ne $InstallBackup.Directory))
     throw $installFailure
 } finally {
