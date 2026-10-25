@@ -40,8 +40,15 @@ try {
             $customManager.Install($true,$true,$false); [IO.File]::Move($primary,$legacy)
             $matches = [ProGo.ApplicationShortcuts].GetMethod('Matches',[Reflection.BindingFlags]'Instance,NonPublic')
             $currentManager = New-Object ProGo.ApplicationShortcuts($install,$programs,$startup)
-            Check-LegacyAdmission ($matches.Invoke($customManager,@($legacy,'--show')) -and
-                -not $matches.Invoke($currentManager,@($legacy,'--show'))) 'real native custom link loads and belongs only to foreign fixture target'
+            # CLR String[] enforces unwrapped String elements for reflection's Object[] parameter.
+            [string[]]$matchArguments = @([string]$legacy,[string]'--show')
+            $parameters = $matches.GetParameters()
+            Check-LegacyAdmission ($matchArguments.GetType() -eq [string[]] -and $matchArguments.Length -eq 2 -and
+                $matchArguments.GetType().GetElementType() -eq [string] -and
+                $parameters.Length -eq 2 -and $parameters[0].ParameterType -eq [string] -and
+                $parameters[1].ParameterType -eq [string]) 'reflection arguments have exact CLR String element type and match both native oracle parameters'
+            Check-LegacyAdmission ($matches.Invoke($customManager,$matchArguments) -and
+                -not $matches.Invoke($currentManager,$matchArguments)) 'real native custom link loads and belongs only to foreign fixture target'
             $customHash = (Get-FileHash -LiteralPath $legacy).Hash
         }
         $backup = New-ProGoInstallerBackup $payload $install; $stage = New-ProGoInstallerStage $payload

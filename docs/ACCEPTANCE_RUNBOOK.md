@@ -1,3 +1,59 @@
+## CURRENT CI706 fixture reflection type correction; Windows verification pending
+
+Baseline source2c1d1c8a109b7a0c0d0d43c70719830a7081f6f7/tree58449213c2fcadba2513b52beb6f03ad0eebc915;
+checkpoint1953371687acc051519441d1a73d15ec692d2a6a clean/preserved. PR88 independently exact baseline/open/unmerged;
+sole root/no Git/compiler/PowerShell writer; no AGENTS found. New source CURRENT_TREE (git rev-parse HEAD),
+reviewed local code785b830e3fafc72215aad8604d6ef9cc6cc5d0cc. Old worktrees preserved.
+
+Full CI706 four logs independently read at exact tested merge ed297af988418b6d50d6c56d1a1ee8f0eafcdcf6:
+Installer121266462003 FAILURE (718lines), Core121266462158 SUCCESS (15409), Ubuntu121266462237 SUCCESS (607),
+aggregate121275705073 FAILURE (168), correctly rejects installer despite identical tested SHAs.
+Run https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40225698283 . Not timeout/cancellation.
+Prior29 installer suites PASS; Legacy19 absent-preserved PASS, custom-preserved ERROR, remaining17 NOT_RUN.
+At20:00:46 UTC InstallerLegacyRollbackAdmissionTests.ps1:43 Invoke ArgumentException: PSObject cannot convert to String.
+Matches native oracle assertion did not complete. Prior real-shortcut COM correction is NOT yet confirmed.
+Core Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91 PASS; Python38 PASS/2 SKIP.
+Ubuntu aggregate12/operation16/profile13/provisioning PASS. Pack runner-only/uploads/prune SKIPPED,
+no accepted global candidate/delivery/install/PC acceptance. No PASS inherited by new source.
+
+Proven fixture-only reflection boundary bug: untyped argument array supplied PSObject where CLR String was required;
+original log does not identify the failing element index. Both new Invoke calls now share an explicit System.String[] with String
+conversion; CLR array element type cannot hold PSObject. Before Invoke, assert runtime array type/count,
+element type String and both reflected parameter types String. Keep native assertion foreign target true/
+current target false and exact bytes/preserved evidence unchanged. No catch/retry/sleep/timeout change.
+All19 scenarios/all29 old suites/runtime/scripts/workflow unchanged. Existing local environment has no
+PowerShell/.NET compiler/runtime, so actual CLR type/native checks NOT_RUN locally, not simulated PASS.
+Local exact reverse diff/review/static/signatures/parity/aggregate12/JSON/secrets/public-content/diff PASS.
+See CI706_LEGACY_REFLECTION_TYPES.md. One expected-HEAD guarded push/one automatic CI only.
+
+Next SAME new CI all4 full final logs/exact merge/Legacy19/full30. Legacy original-bytes capture remains
+blocked until full CI PASS, separate stage only. All31/nested55 approved scope/weights preserved; delta0.
+UNKNOWN Python/rebind/sharing/repair/setup incidents and BLOCKED_TRANSFER/no retry remain open.
+No live install/shortcuts/services/network/security/ACL/credentials/VPS/release/uploads/transfer actions.
+
+Historical checkpoints below; old statuses apply only to their recorded observation.
+
+## CURRENT published CI705 fixture correction / sole automatic CI706
+
+Source `2c1d1c8a109b7a0c0d0d43c70719830a7081f6f7`, tree `58449213c2fcadba2513b52beb6f03ad0eebc915`,
+parent `b4327947646753ec4b20eef29bc99786b2add322`; local reviewed code c05b64105486b80a4603e40a6d02cc0b00fb3b88,
+freeze846678209a7c2146bbc827977c436b1ef3caae43. Remote tree equals reviewed local tree; fetched parent/tree verified.
+Expected-HEAD non-force PR88 update; original checkpoint106746d clean/preserved. Sole root/no competing writer.
+One automatic pull_request [CI706](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40225698283),
+run40225698283, observed in_progress/null. No rerun/dispatch/duplicate/full wait. New tested merge and final
+Windows Legacy19/Installer30/all4 aggregate NOT_RUN/unconfirmed; do not inherit CI705 Core or prior29 PASS.
+
+Test-only 17 additions/1 deletion replaces malformed plain text .lnk with real native foreign-target fixture
+for custom-preserved/same-bytes-replaced/legacy-changed. Native Matches preconditions plus exact preserved
+bytes/receipt assertions; all19 cases and every old assertion/suite/timeout retained. Runtime/scripts/workflow
+unchanged. Local review/static/signatures/parity/reverse diff/aggregate12/JSON/diff/secrets/public396source0release PASS.
+CI705 independently full-log verified FAILURE at e371086c, prior29 PASS, new1 PASS/1 ERROR/17 NOT_RUN;
+Core and Ubuntu SUCCESS; strict aggregate correctly FAILURE, no globally accepted candidate.
+Next SAME CI706 all4 final logs/exact merge/Legacy19/full30; only after full PASS consider separate verified
+Legacy source-bytes capture. No second stage. UNKNOWN incidents/BLOCKED_TRANSFER/full approved scope and
+weights unchanged, score_delta0. No live actions/release/uploads/delivery retry/install/security/network.
+This post-publication checkpoint changes state documents only and is local, NOT a second push/CI.
+
 ## CURRENT CI705 fixture-only COM correction; new Windows verification pending
 
 Baseline source b4327947646753ec4b20eef29bc99786b2add322, tree966ac450a99b4c785b9a2fc61021bea866d91718;

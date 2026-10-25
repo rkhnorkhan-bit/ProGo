@@ -4021,13 +4021,12 @@
   ],
   "ci_candidate": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "c05b64105486b80a4603e40a6d02cc0b00fb3b88",
-    "baseline_source": "b4327947646753ec4b20eef29bc99786b2add322",
-    "status": "Await one automatic CI after guarded publication",
+    "reviewed_local_code": "785b830e3fafc72215aad8604d6ef9cc6cc5d0cc",
+    "baseline_source": "2c1d1c8a109b7a0c0d0d43c70719830a7081f6f7",
+    "status": "Await sole automatic CI after guarded publication",
     "Windows_Legacy19": "NOT_RUN",
     "Installer30": "NOT_RUN",
     "exact_SHA_aggregate": "NOT_RUN",
-    "uploads": "NOT_AUTHORIZED",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,17 +5519,17 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "c05b64105486b80a4603e40a6d02cc0b00fb3b88",
-    "baseline_source": "b4327947646753ec4b20eef29bc99786b2add322",
-    "prior_checkpoint": "106746d5d18fc52ef05091650ca3e1d3a1a8dc22",
-    "stage": "CI705 real custom Shell Link fixture only",
-    "status": "Local checks PASS; new Windows19/full30 NOT_RUN",
-    "next": "One automatic CI; read SAME run all4 final logs before verified Legacy bytes capture",
+    "reviewed_local_code": "785b830e3fafc72215aad8604d6ef9cc6cc5d0cc",
+    "baseline_source": "2c1d1c8a109b7a0c0d0d43c70719830a7081f6f7",
+    "prior_checkpoint": "1953371687acc051519441d1a73d15ec692d2a6a",
+    "stage": "CI706 fixture CLR String[] reflection boundary only",
+    "status": "Local checks PASS; actual CLR/native/new Windows19/full30 NOT_RUN",
+    "next": "SAME one new automatic CI all4 full logs; no Legacy bytes capture before full PASS",
     "constraints": [
-      "Entire scope retained",
+      "Entire approved scope retained",
       "UNKNOWN incidents retained",
       "BLOCKED_TRANSFER/no retry",
-      "No live actions/security/network/credentials/services/release/uploads"
+      "No live actions/release/uploads/security/network/credentials/services"
     ],
     "score_delta": 0
   },
@@ -22923,7 +22922,8 @@
     ],
     "scope_preserved": "All approved31/nested55 requirements retained; no whole production acceptance",
     "score_delta": 0,
-    "ci705_status": "prior29 PASS; absent-preserved PASS/custom-preserved ERROR/remaining17 NOT_RUN; real custom Shell Link fixture correction pending new Windows execution"
+    "ci705_status": "prior29 PASS; absent-preserved PASS/custom-preserved ERROR/remaining17 NOT_RUN; real custom Shell Link fixture correction pending new Windows execution",
+    "ci706_status": "prior29 PASS; new1 PASS/1 ERROR/17 NOT_RUN; real COM fixture/native assertion not confirmed; explicit String[] type correction pending Windows"
   },
   "ci705_final": {
     "source": "b4327947646753ec4b20eef29bc99786b2add322",
@@ -22943,6 +22943,28 @@
       "custom-preserved": "ERROR COM E_FAIL during invalid plain-text .lnk fixture load",
       "remaining17": "NOT_RUN"
     },
+    "runtime_fix": false,
+    "candidate": "NOT_ACCEPTED"
+  },
+  "ci706_final": {
+    "source": "2c1d1c8a109b7a0c0d0d43c70719830a7081f6f7",
+    "tested_merge": "ed297af988418b6d50d6c56d1a1ee8f0eafcdcf6",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40225698283",
+    "conclusion": "failure",
+    "full_four_logs_independently_read": true,
+    "jobs": {
+      "installer": 121266462003,
+      "core": 121266462158,
+      "ubuntu": 121266462237,
+      "aggregate": 121275705073
+    },
+    "prior29": "PASS",
+    "Legacy19": {
+      "absent-preserved": "PASS",
+      "custom-preserved": "ERROR PSObject cannot convert to String at reflection Invoke",
+      "remaining17": "NOT_RUN"
+    },
+    "prior_COM_correction": "NOT_CONFIRMED",
     "runtime_fix": false,
     "candidate": "NOT_ACCEPTED"
   }
