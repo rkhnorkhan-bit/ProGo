@@ -783,4 +783,5 @@ if ($LASTEXITCODE -ne 0) { Fail 'Shutdown tests failed' }
 & (Join-Path $Root 'tests\InstallerLegacyEvidenceTests.ps1')
 & (Join-Path $Root 'tests\InstallerAuxiliaryRevalidationTests.ps1')
 & (Join-Path $Root 'tests\InstallerPendingPublicationTests.ps1')
+& (Join-Path $Root 'tests\InstallerStartupRollbackAdmissionTests.ps1')
 Write-Host "ProGo tests PASS."

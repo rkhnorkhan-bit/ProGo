@@ -529,6 +529,40 @@ function Test-ProGoInstallerPendingAuxiliaryProof([string]$Directory, [string]$I
         if ($null -ne $stream) { $stream.Dispose() }
     }
 }
+# Read-only Startup rollback prerequisite, not authority to mutate or publish rollback.
+# Caller must supply trusted locations independently and revalidate again at any future write.
+function Get-ProGoInstallerStartupRollbackAdmission([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null
+    try {
+        if (-not (Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory)) { return $null }
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        $stream = New-Object IO.FileStream -ArgumentList @($pending, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $null }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        if (-not (Test-ProGoInstallerPendingAuxiliaryProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return $null }
+        $receipt = $saved.Completion.Startup
+        # Existing verifier proves actual before/after presence and exact current bytes/target.
+        # Preserved/custom state never becomes owned merely because it was observed.
+        $kind = if ($receipt.Disposition -ceq 'created' -and -not $receipt.BeforeExists -and
+            $null -eq $receipt.BeforeHash -and $receipt.Exists) { 'created-from-absence' }
+            elseif ($receipt.Disposition -ceq 'preserved' -and $receipt.BeforeExists -eq $receipt.Exists -and
+                $receipt.BeforeHash -ceq $receipt.Hash) { 'preserve-only' } else { return $null }
+        $proof = [pscustomobject]@{ Schema = 1; Kind = $kind;
+            InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory);
+            LocationIdentity = (Get-ProGoInstallerIdentity (Join-Path $StartupDirectory 'ProGo.lnk'));
+            ReceiptHash = (Get-FileHash -LiteralPath $pending).Hash;
+            BeforeExists = $receipt.BeforeExists; BeforeHash = $receipt.BeforeHash;
+            Exists = $receipt.Exists; Hash = $receipt.Hash }
+        if (-not (Test-ProGoInstallerPendingAuxiliaryProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return $null }
+        return $proof
+    } catch { return $null } finally {
+        if ($null -ne $reader) { $reader.Dispose() }
+        if ($null -ne $stream) { $stream.Dispose() }
+    }
+}
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
