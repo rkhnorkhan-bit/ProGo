@@ -4031,8 +4031,8 @@
       "ci-complete"
     ],
     "tests": {
-      "Windows_MenuResult19": "NOT_RUN",
-      "Installer28": "NOT_RUN",
+      "Windows_MenuFailure19": "NOT_RUN",
+      "Installer29": "NOT_RUN",
       "full_exact_SHA_aggregate": "NOT_RUN"
     }
   },
@@ -5526,13 +5526,13 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "e2b89907e5f246e730a511c0a18710e157636486",
-    "baseline_source": "d391473bb343439e868c3cd3561d03efbb5761a4",
-    "baseline_tested_merge": "1788e602609781c4d1c95df46b11c8ddb804cf1e",
-    "prior_checkpoint": "bd3f6d7d12acc76a83e8458764d4833a11144f23",
-    "stage": "F23 durable Menu result only; no failure-handler integration",
+    "reviewed_local_code": "4ac32450e72522699a09e0c07906c408165859f7",
+    "baseline_source": "9b784cd4804bf1029088d1f5d48c97d6cf5cb749",
+    "baseline_tested_merge": "93d27c362804592b34ad04faf12ef053034360b8",
+    "prior_checkpoint": "bad64b6f911a54c7494fcf31225b06ef49d8e6c0",
+    "stage": "F23 Menu failure-handler integration only",
     "status": "PARTIAL; new Windows NOT_RUN",
-    "next": "Guarded single publication; SAME new CI exact merge/all4/MenuResult19/whole28/retained19/18/32/6 before separate Menu failure integration",
+    "next": "Guarded single publication; SAME new CI exact merge/all4/MenuFailure19/whole29/all old suites; then separate Legacy prerequisite",
     "constraints": [
       "Entire approved scope retained",
       "UNKNOWN incidents retained",
@@ -22778,7 +22778,7 @@
     }
   },
   "f23_durable_menu_result": {
-    "source": "CURRENT_TREE",
+    "source": "9b784cd4804bf1029088d1f5d48c97d6cf5cb749",
     "reviewed_local_code": "e2b89907e5f246e730a511c0a18710e157636486",
     "status": "PARTIAL",
     "criterion": "F23 durable scoped Menu original-result evidence, independently bound to exact admission/receipt/identity/locations and actual physical result",
@@ -22794,6 +22794,73 @@
       "Crash/runtime recovery/retention/PGA04/updater/final package acceptance"
     ],
     "scope_preserved": "All APPROVED_PLAN_31 / nested55 requirements retained; no whole production acceptance",
+    "score_delta": 0,
+    "baseline_verification": "CI703 exact source9b784cd / merge93d27c36 actual full Result19/Installer28 PASS; new failure-handler binding NOT_RUN"
+  },
+  "ci703_final": {
+    "source": "9b784cd4804bf1029088d1f5d48c97d6cf5cb749",
+    "tested_merge": "93d27c362804592b34ad04faf12ef053034360b8",
+    "run_id": 40214882554,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40214882554",
+    "status": "PASS",
+    "full_logs_read": true,
+    "jobs": {
+      "Installer": 121233748474,
+      "Core": 121233748509,
+      "Ubuntu": 121233748448,
+      "aggregate": 121241298416
+    },
+    "log_lines": [
+      687,
+      15409,
+      607,
+      167
+    ],
+    "tests": {
+      "Installer28": "PASS",
+      "MenuResult19": "PASS",
+      "MenuAdmission19": "PASS",
+      "Owned18": "PASS",
+      "Menu32": "PASS",
+      "Publication6": "PASS",
+      "Desktop6394": "PASS",
+      "Instance30": "PASS",
+      "Maintenance126": "PASS",
+      "Shutdown47": "PASS",
+      "HomeVPN4816": "PASS",
+      "Portable91": "PASS",
+      "Python38": "PASS",
+      "Python2": "SKIPPED",
+      "Ubuntu_aggregate12_operation16_profile13_provisioning": "PASS",
+      "strict_exact_SHA_aggregate": "PASS",
+      "public_content391_44": "PASS"
+    },
+    "runner_zip": {
+      "bytes": 668019,
+      "sha256": "345a6d0bd415d37742ea3c822a03f3970f3284f1d97e86dd85d031ef302b0ee1",
+      "pack": "PASS",
+      "uploads_prune": "SKIPPED",
+      "delivery_install_owner_acceptance": "NOT_RUN"
+    },
+    "installer_execution": "Full log shows about17:07-17:36 UTC / suites1765368ms; contradictory prior pending metadata is not a proven hang"
+  },
+  "f23_menu_failure_integration": {
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "4ac32450e72522699a09e0c07906c408165859f7",
+    "status": "PARTIAL",
+    "criterion": "F23 actual failure-handler invokes owned Menu rollback only after verified Startup settlement, with durable admission/result and no crash replay",
+    "implementation": "Ordered catch binding; fresh native API only after full Startup proof; any existing Menu intent selects readonly settlement; no overwrite of corrupt result; original error/no Launch/no full auxiliary rollback",
+    "tests": {
+      "local_review_static_signatures_parity_secrets_content_JSON_diff": "PASS",
+      "local_aggregate12": "PASS",
+      "Windows_MenuFailure19_Installer29": "NOT_RUN"
+    },
+    "residual": [
+      "Legacy rollback admission/owned operation/durable outcome dependencies",
+      "Complete auxiliary outcome and crash recovery",
+      "Runtime recovery/retention/PGA04/updater/final package/owner gates"
+    ],
+    "scope_preserved": "Entire APPROVED_PLAN_31/nested55 retained; no whole production acceptance",
     "score_delta": 0
   }
 }

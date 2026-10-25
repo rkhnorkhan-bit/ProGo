@@ -31,6 +31,8 @@ function Invoke-ProGoInstallerFailureStartup($AuxiliaryStarted, $Backup, $Instal
     }
     return (& $actualFailure $AuxiliaryStarted $Backup $InstallDirectory $programs $startup)
 }
+# This historical suite isolates Startup. Menu integration is exercised by its own real-path suite.
+function Invoke-ProGoInstallerFailureMenu { return 'blocked' }
 function Check-StartupFailure($Condition, $Name) { if (-not $Condition) { throw ('Installer Startup failure test failed: ' + $Name) } }
 $work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-startup-failure-' + [Guid]::NewGuid().ToString('N'))
 $InstallStage = $null

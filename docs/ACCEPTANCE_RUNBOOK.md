@@ -1,3 +1,88 @@
+## CURRENT Menu failure-handler integration candidate; CI703 fully verified
+
+Source is CURRENT_TREE (`git rev-parse HEAD`), reviewed local code `4ac32450e72522699a09e0c07906c408165859f7`.
+Baseline source `9b784cd4804bf1029088d1f5d48c97d6cf5cb749`, exact merge/build
+`93d27c362804592b34ad04faf12ef053034360b8`; prior checkpoint
+`bad64b6f911a54c7494fcf31225b06ef49d8e6c0` clean/preserved. PR88 exact HEAD/open draft/unmerged,
+sole root writer/no other Git/build/pwsh operations independently verified; old worktrees untouched.
+
+[CI703](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40214882554) complete logs independently
+read: Installer121233748474/687lines, Core121233748509/15409, Ubuntu121233748448/607,
+aggregate121241298416/167; all4 SUCCESS, all3 tested_sha exact merge93d27c36. Installer28:
+Result19/Admission19/Owned18/Menu32/Publication6 and prior installer suites PASS. Core Desktop6394/
+Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91 PASS; Python38 PASS/2 SKIP (not PASS).
+Ubuntu aggregate12/operation16/profile13/provisioning PASS. Public-content391source/44release PASS.
+Runner-only ZIP668019bytes SHA256 `345a6d0bd415d37742ea3c822a03f3970f3284f1d97e86dd85d031ef302b0ee1`;
+pack SUCCESS, uploads/prune SKIPPED. Delivery/install/PC acceptance NOT_RUN. Installer log proves
+real execution about17:07-17:36 UTC (1765368ms for suites); earlier pending metadata was contradictory,
+not proof of a hang. No new timeout incident or extra CI justified from that metadata.
+
+One bounded F23 production integration: existing installer catch invokes Menu failure adapter AFTER
+Startup failure settlement, inside retained maintenance ownership and before unchanged finally.
+Fresh Menu mutation requires actual verified Startup result plus current full Menu context and no
+existing Menu result/admission. Existing Menu admission ALWAYS chooses read-only settlement; not-
+applied, corrupt, conflicting or missing evidence blocks rather than replaying deletion. Accepted
+Menu deletion with missing result can publish only verified Menu-only observation; existing valid
+result is observed, corrupt/partial existing result is never rewritten. Original exception rethrown,
+no Install OK/Launch/full auxiliary rollback; runtime remains new-verified pending Legacy/full outcome.
+Legacy state is preserved, never restored or relabeled. See F23_MENU_FAILURE_INTEGRATION.md.
+
+Code4files250add2del: new helper/ordered catch invocation/scoped log, new19-case actual-body fixture,
+29th suite, two additive lines isolating new Menu dependency in historical Startup15. Every old
+Startup15 assertion still runs through real Startup path; new19 exercises real Menu adapter. Native
+origin/identity/hash/admission/result functions, old error/Stop/runtime restore/Launch/finally bodies,
+all other tests/workflow/aggregate/deadlines unchanged. New19 covers fresh/preserved/Legacy paths,
+missing/partial receipt, changed/replaced Menu, snapshot, persist failures, Startup refusal, lock,
+Stop refusal, and crash before deletion/after deletion/after result plus corrupt records. Exact API
+call counts and repeat file/byte inventory prove no replay; only exact new admission/result allowed.
+Owned GUID/parent/reparse guards, original error/private/foreign bytes, stage/lease/handle cleanup.
+
+Local review/static/signatures/parity/exact reverse diff/aggregate12/JSON/diff/secrets/public-content
+PASS. PowerShell5.1 parse/Windows MenuFailure19/full29/new complete exact-SHA aggregate NOT_RUN.
+CI703 PASS is not inherited by changed code. One expected-HEAD guarded push/automatic CI only;
+exact source/run preserved in post-publication checkpoint/PR. Next SAME new run all4/final logs/
+exact merge/new19/whole29/retainedResult19/Admission19/Owned18/Menu32/Publication6/Core before next stage.
+Then separate agreed Legacy rollback prerequisite; no Legacy mutation or full auxiliary outcome now.
+All approved31/nested55 scope retained: Legacy/full auxiliary/crash/runtime recovery/retention,
+PGA04 explicit opt-in OFF/installer-updater fallback/immutable identity/final F23 package-regression-
+owner acceptance, remaining F31/portability/UI/signing and approved commercial scope remain open.
+Menu integration alone is not production readiness. UNKNOWN incidents/BLOCKED_TRANSFER/no retry,
+fixed weights/scores delta0 retained. No live shortcuts/install/services/network/ACL/security/
+credentials/VPS/release/uploads/delivery retry or second functional stage.
+
+## CURRENT published durable Menu result / CI703 in progress
+
+Source `9b784cd4804bf1029088d1f5d48c97d6cf5cb749`, tree `69bf564ed5e3bc9d67fa1ea39f41bec608358620`, parent
+`d391473bb343439e868c3cd3561d03efbb5761a4`; reviewed codee2b8990/freeze444b4a6e3bbe6c4eab35a0f3c69c6b5ff0a6cdf9.
+Expected-HEAD non-force PR88 update, fetched exact commit/parent/tree equality verified. Prior local
+checkpointbd3f6d7d12acc76a83e8458764d4833a11144f23 preserved clean. ONE automatic pull_request
+[CI703](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40214882554), run40214882554, exact source9b784cd,
+observed in_progress/null. New exact tested merge/final logs not yet read. No rerun/dispatch/duplicate/
+full wait. Local post-publication checkpoint only, NOT pushed to avoid a second CI.
+
+Public diff7files483add14del: production helpers/two stricter Menu outcome guards +new19-case fixture/
+28th suite, four evidence/state docs. Durable Menu result only: exact bounded pinned admission,
+identity/receipt/admission-hash/physical reproof, CreateNew/WriteThrough/Flush/readback/reproof,
+independent result reader. False FullRollback/InstallSucceeded/MutationAllowed; no new native mutation,
+restore/replay, failure-handler integration or Launch/retry. Existing native/admission/failure-handler/
+all old tests/deadlines/27 calls/aggregate/workflow/upload guards unchanged. New test19 covers receipt/
+admission/conflict/tamper/partial/persistence and external changes during/after write, duplicate
+publication refusal and own handle cleanup; legacy-removed/post-Startup/private/foreign guards retained.
+
+Local review/static/signatures/parity/reverse diff/aggregate12/secrets/public391source0release/JSON/
+diff PASS. PowerShell5.1 parser/Windows MenuResult19/whole28/Core+Ubuntu/full exact-SHA aggregate
+NOT_RUN on this new source. CI702 baseline all4/whole27/MenuMutation19/Owned18/Menu32/Publication6/
+previous suites actual PASS independently verified at merge1788e602, not inherited by new code.
+Runner-only pack is not transfer/install/owner acceptance; no delivery performed.
+
+Next SAME CI703 final logs/exact tested merge/all4/MenuResult19/whole28/retained19/18/32/6/Core/
+Ubuntu/strict aggregate; then separate Menu failure-handler integration. Entire agreed scope retained:
+Legacy/full auxiliary outcome/crash/runtime recovery/retention/PGA04/standalone-updater fallback/
+immutable version and final F23 package/regression/owner gates; remaining F31/portability/UI/signing
+and full commercial requirements stay open in registry. Menu completion is not production readiness.
+UNKNOWN incidents/BLOCKED_TRANSFER/no retry and unchanged scores/weights delta0 preserved. No live
+shortcuts/install/services/network/ACL/security/credentials/VPS/release/uploads or second stage.
+
 ## CURRENT durable Menu result candidate; CI702 full PASS independently verified
 
 Source is CURRENT_TREE (`git rev-parse HEAD`), reviewed local code `e2b89907e5f246e730a511c0a18710e157636486`.

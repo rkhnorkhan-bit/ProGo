@@ -170,5 +170,11 @@ try {
     & (Join-Path $Root 'tests\InstallerMenuResultTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerMenuResultTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+$CaseWatch = [Diagnostics.Stopwatch]::StartNew()
+Write-Host 'INSTALLER_SUITE_START name=InstallerMenuFailureTests.ps1'
+try {
+    & (Join-Path $Root 'tests\InstallerMenuFailureTests.ps1')
+    Write-Host ('INSTALLER_SUITE_PASS name=InstallerMenuFailureTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
+} finally { $CaseWatch.Stop() }
 $SuiteWatch.Stop()
-Write-Host ('Installer partition PASS: 28 suites; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
+Write-Host ('Installer partition PASS: 29 suites; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
