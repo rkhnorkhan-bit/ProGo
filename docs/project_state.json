@@ -4021,11 +4021,12 @@
   ],
   "ci_candidate": {
     "source": "CURRENT_TREE",
-    "baseline_source": "a9b575079a5d006855d1dc7d8724caa3faa098d8",
-    "reviewed_local_code": "e8c7aade673b1b3afb0fb94b08a02c9a8e1fdd3c",
-    "status": "Await one automatic diagnostic CI",
-    "new_PowerShell_synthetic4": "NOT_RUN",
-    "new_exact_SHA_full_aggregate": "NOT_RUN",
+    "baseline_source": "4de597fba29d91fb8b8242c36f5b2a01d9681598",
+    "reviewed_local_code": "912003d80b0bfdafabd20d3fd63376622ec1af4c",
+    "status": "Await one automatic CI after guarded publication",
+    "Windows_Durable20": "NOT_RUN",
+    "Installer32": "NOT_RUN",
+    "exact_SHA_aggregate": "NOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5518,17 +5519,17 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "baseline_source": "a9b575079a5d006855d1dc7d8724caa3faa098d8",
-    "reviewed_local_code": "e8c7aade673b1b3afb0fb94b08a02c9a8e1fdd3c",
-    "prior_checkpoint": "25243409a1b78a68e502d4d2db3a09b91db74a48",
-    "stage": "CI709 deadline-only owned Python thread wait diagnostic",
-    "status": "Root UNKNOWN; local16/static checks PASS; new PS/native diagnostic NOT_RUN",
-    "next": "SAME one new CI all5 full logs; inspect thread wait facts on failure, preserve UNKNOWN on non-reproduction; no durable stage before whole PASS",
+    "baseline_source": "4de597fba29d91fb8b8242c36f5b2a01d9681598",
+    "reviewed_local_code": "912003d80b0bfdafabd20d3fd63376622ec1af4c",
+    "prior_checkpoint": "e970edf4583da98e632821440ce6f81c76d5f5e2",
+    "stage": "F23 native durable original Legacy source storage/evidence-linked read only",
+    "status": "Local checks PASS; C# compile/Windows Durable20/full32 NOT_RUN",
+    "next": "SAME one new CI all5 full logs/merge/27+5/Durable20/all32; then trusted journal reference/pre-delete integration, not restore yet",
     "constraints": [
-      "Entire approved31/nested55 scope retained",
+      "All approved31/nested55 scope retained",
       "UNKNOWN incidents retained",
       "BLOCKED_TRANSFER/no retry",
-      "No production/live/security/network/credentials/services/release/uploads changes"
+      "No live install/services/network/ACL/security/credentials/VPS/tunnel/release/uploads"
     ],
     "score_delta": 0
   },
@@ -23004,7 +23005,8 @@
     "run_id": 40232984506,
     "ci_status": "queued/null; new Windows not yet confirmed",
     "ci708_status": "Source18 NOT_RUN, suite not started; original31 incomplete due cancelled Installer; no native PASS yet",
-    "ci709_evidence": "Source18 actually PASS at mergef8f74738; native in-memory prerequisite scoped PASS only, no durable source/restore/full auxiliary recovery"
+    "ci709_evidence": "Source18 actually PASS at mergef8f74738; native in-memory prerequisite scoped PASS only, no durable source/restore/full auxiliary recovery",
+    "ci710_evidence": "Source18/Legacy19/full31 scoped PASS at merge19fe447; no whole F23/production claim"
   },
   "ci708_final": {
     "source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
@@ -23072,7 +23074,7 @@
     "cause": "UNKNOWN pre-body owned Python deadline, not proven common root with696/670"
   },
   "ci709_thread_diagnostic": {
-    "source": "CURRENT_TREE",
+    "source": "4de597fba29d91fb8b8242c36f5b2a01d9681598",
     "reviewed_local_code": "e8c7aade673b1b3afb0fb94b08a02c9a8e1fdd3c",
     "status": "Test-only discriminator, not runtime fix",
     "probe": "deadline-only owned child thread states/wait roles, cap32, fixed counts and error flags, no IDs/paths/secret values",
@@ -23080,6 +23082,42 @@
     "synthetic4": "NOT_RUN locally",
     "local_checks": "aggregate16/review/static/signatures/parity/reverse diff/JSON/secrets/public-content/diff PASS",
     "root": "UNKNOWN",
+    "score_delta": 0,
+    "tree": "89ad162396260778b7a08679b3cac8885adfcbef",
+    "run_id": 40238967166,
+    "ci_status": "queued/null; new diagnostic not yet executed",
+    "ci710_evidence": "synthetic4 PASS; exit0 completed without deadline, incident UNKNOWN not fixed; no actual failed deadline thread snapshot in CI710"
+  },
+  "ci710_final": {
+    "source": "4de597fba29d91fb8b8242c36f5b2a01d9681598",
+    "tested_merge": "19fe447889d9e62a8809bf372762d0b517328be1",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40238967166",
+    "conclusion": "success",
+    "all_five_logs_independently_read": true,
+    "jobs": {
+      "foundation": 121306465403,
+      "recovery": 121306465539,
+      "core": 121306465506,
+      "ubuntu": 121306465535,
+      "aggregate": 121312881008
+    },
+    "Foundation27": "PASS",
+    "Recovery4": "PASS incl Source18/Legacy19",
+    "Core": "diagnostic4/Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91 PASS; Python42 PASS/2 SKIP",
+    "startup_incident": "NON_REPRODUCTION; root UNKNOWN, not fixed",
+    "package": "runner only/no PC acceptance",
+    "uploads_prune": "SKIPPED"
+  },
+  "f23_legacy_durable_source": {
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "912003d80b0bfdafabd20d3fd63376622ec1af4c",
+    "status": "PARTIAL native durable source storage/receipt-linked read prerequisite only",
+    "acceptance": "CreateNew/WriteThrough/Flush/readback; pinned directories/original/source; independent writer-issued storage origin/document proof and exact canonical original bytes; refuse partial/foreign/mutation",
+    "snapshot_boundary": "trusted caller snapshot hash binding only; actual snapshot/journal validation and durable reference/pre-delete integration still mandatory next",
+    "restore_full_auxiliary_outcome": "NOT_IMPLEMENTED, no claim/authority",
+    "local_checks": "PASS review/static/signatures/parity/reverse diff/header size/aggregate16/JSON/secrets/public-content/diff",
+    "Windows_Durable20": "NOT_RUN",
+    "Installer32": "NOT_RUN",
     "score_delta": 0
   }
 }

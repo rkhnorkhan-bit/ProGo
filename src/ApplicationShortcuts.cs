@@ -282,6 +282,139 @@ namespace ProGo
             return bytes != null && Digest(bytes) == source.Hash ? bytes : null;
         }
 
+        // Immutable pointer to a verified new durable file; not restore or terminal authority.
+        public sealed class LegacyDurableSourceEvidence
+        {
+            public bool MutationAllowed { get { return false; } }
+            public bool FullRollback { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            public Guid Operation { get; private set; }
+            public string SnapshotHash { get; private set; }
+            public string InstallIdentity { get; private set; }
+            public string LocationIdentity { get; private set; }
+            public string OriginIdentity { get; private set; }
+            public string Hash { get; private set; }
+            public string StorageOrigin { get; private set; }
+            public string DocumentHash { get; private set; }
+            internal LegacyDurableSourceEvidence(LegacyRollbackSource source, Guid operation, string snapshot, string storage, byte[] document)
+            {
+                Operation = operation; SnapshotHash = snapshot; InstallIdentity = source.InstallIdentity;
+                LocationIdentity = source.LocationIdentity; OriginIdentity = source.OriginIdentity; Hash = source.Hash;
+                StorageOrigin = storage; DocumentHash = Digest(document);
+            }
+        }
+        private static bool LegacySourceHash(string value)
+        {
+            if (value == null || value.Length != 64) return false;
+            foreach (char c in value) if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'))) return false;
+            return true;
+        }
+        private static SafeFileHandle PinLegacySourceDirectory(string directory)
+        {
+            // Pin exact non-reparse directory against rename/delete while creating/opening the child.
+            var handle = OpenLegacyForDisposition(directory, 0, 1, IntPtr.Zero, 3, 0x02200000u, IntPtr.Zero);
+            LegacyFileInfo info;
+            if (handle.IsInvalid || !GetFileInformationByHandle(handle, out info) || (info.Attributes & 0x400) != 0 || (info.Attributes & 0x10) == 0) {
+                handle.Dispose(); throw new IOException("Legacy source directory is unavailable or redirected.");
+            }
+            return handle;
+        }
+        private string LegacySourcePath(Guid operation)
+        {
+            if (operation == Guid.Empty) throw new IOException("Legacy source operation is missing.");
+            return Path.Combine(root, "backups", "installer-legacy-source-" + operation.ToString("N") + ".bin");
+        }
+        private static byte[] LegacySourceDocument(Guid operation, string snapshot, string install, string location,
+            string origin, string hash, string storage, byte[] bytes)
+        {
+            if (!LegacySourceHash(snapshot) || !LegacySourceHash(install) || !LegacySourceHash(location) ||
+                !LegacySourceHash(origin) || !LegacySourceHash(hash) || !LegacySourceHash(storage) || bytes == null ||
+                bytes.Length < 1 || bytes.Length > 65536 || Digest(bytes) != hash) throw new IOException("Legacy source binding is invalid.");
+            byte[] header = Encoding.ASCII.GetBytes("PROGO-LEGACY-SOURCE-1\n" + operation.ToString("N") + "\n" + snapshot + "\n" +
+                install + "\n" + location + "\n" + origin + "\n" + hash + "\n" + storage + "\n" + bytes.Length.ToString("X8") + "\n");
+            var document = new byte[header.Length + bytes.Length];
+            Buffer.BlockCopy(header, 0, document, 0, header.Length); Buffer.BlockCopy(bytes, 0, document, header.Length, bytes.Length);
+            return document;
+        }
+        private static byte[] ReadLegacySourceDocument(FileStream stream)
+        {
+            if (stream.Length < 1 || stream.Length > 70000) throw new IOException("Legacy source document size is invalid.");
+            byte[] bytes = new byte[(int)stream.Length]; int offset = 0, read;
+            while (offset < bytes.Length && (read = stream.Read(bytes, offset, bytes.Length - offset)) > 0) offset += read;
+            if (offset != bytes.Length) throw new IOException("Legacy source document is incomplete.");
+            return bytes;
+        }
+        private void AssertLegacySourceOriginal(LegacyRollbackSource source, FileStream original, byte[] bytes)
+        {
+            original.Position = 0;
+            if (source.OriginIdentity != LegacyOrigin(original.SafeFileHandle) || !Equal(bytes, ReadLegacyEvidenceBytes(original)) ||
+                source.Hash != Digest(bytes) || !Matches(Path.Combine(menu, "ProGo Status.lnk"), "--show"))
+                throw new IOException("Legacy original no longer matches capture.");
+        }
+        public LegacyDurableSourceEvidence PersistLegacyRollbackSource(LegacyRollbackSource source, Guid operation,
+            string snapshotHash, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            if (source == null || source.Owner != this || !LegacySourceHash(snapshotHash)) throw new IOException("Legacy source context is invalid.");
+            string path = LegacySourcePath(operation), originalPath = Path.Combine(menu, "ProGo Status.lnk");
+            byte[] bytes = source.CopyBytes();
+            if (bytes == null) throw new IOException("Legacy source is disposed or changed.");
+            using (var rootPin = PinLegacySourceDirectory(root))
+            using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups")))
+            using (var menuPin = PinLegacySourceDirectory(menu)) {
+                CheckLocation(originalPath); CheckLocation(path);
+                using (var original = new FileStream(originalPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    AssertLegacySourceOriginal(source, original, bytes); token.ThrowIfCancellationRequested();
+                    // Never reuse an existing/partial/foreign destination, even when its bytes match.
+                    using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                        string storage = LegacyOrigin(stream.SafeFileHandle);
+                        byte[] document = LegacySourceDocument(operation, snapshotHash, source.InstallIdentity, source.LocationIdentity,
+                            source.OriginIdentity, source.Hash, storage, bytes);
+                        stream.Write(document, 0, document.Length); stream.Flush(true); stream.Position = 0;
+                        if (storage != LegacyOrigin(stream.SafeFileHandle) || !Equal(document, ReadLegacySourceDocument(stream)))
+                            throw new IOException("Durable Legacy source did not verify.");
+                        AssertLegacySourceOriginal(source, original, bytes); CheckLocation(path);
+                        using (var current = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                            if (storage != LegacyOrigin(current.SafeFileHandle) || !Equal(document, ReadLegacySourceDocument(current)))
+                                throw new IOException("Durable Legacy source publication changed.");
+                        }
+                        token.ThrowIfCancellationRequested();
+                        return new LegacyDurableSourceEvidence(source, operation, snapshotHash, storage, document);
+                    }
+                }
+            }
+        }
+        public byte[] ReadDurableLegacyRollbackBytes(LegacyDurableSourceEvidence proof, Guid operation,
+            string snapshotHash, LegacyInstallEvidence receipt)
+        {
+            try {
+                if (proof == null || receipt == null || operation == Guid.Empty || proof.Operation != operation ||
+                    !LegacySourceHash(snapshotHash) || proof.SnapshotHash != snapshotHash || proof.InstallIdentity != Identity(root) ||
+                    proof.LocationIdentity != Identity(Path.Combine(menu, "ProGo Status.lnk")) || receipt.Disposition != "removed" ||
+                    receipt.OriginIdentity != proof.OriginIdentity || receipt.BeforeHash != proof.Hash || receipt.OwnedHash != proof.Hash ||
+                    !VerifyLegacyInstallEvidence(receipt)) return null;
+                using (var rootPin = PinLegacySourceDirectory(root))
+                using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups")))
+                using (var menuPin = PinLegacySourceDirectory(menu)) {
+                    string path = LegacySourcePath(operation); CheckLocation(path);
+                    using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                        if (proof.StorageOrigin != LegacyOrigin(stream.SafeFileHandle)) return null;
+                        byte[] document = ReadLegacySourceDocument(stream);
+                        if (Digest(document) != proof.DocumentHash) return null;
+                        int headerLength = Encoding.ASCII.GetByteCount("PROGO-LEGACY-SOURCE-1\n") + 33 + 6 * 65 + 9;
+                        if (document.Length <= headerLength || document.Length - headerLength > 65536) return null;
+                        byte[] bytes = new byte[document.Length - headerLength];
+                        Buffer.BlockCopy(document, headerLength, bytes, 0, bytes.Length);
+                        byte[] expected = LegacySourceDocument(operation, snapshotHash, proof.InstallIdentity, proof.LocationIdentity,
+                            proof.OriginIdentity, proof.Hash, proof.StorageOrigin, bytes);
+                        if (!Equal(document, expected) || proof.StorageOrigin != LegacyOrigin(stream.SafeFileHandle) ||
+                            !VerifyLegacyInstallEvidence(receipt)) return null;
+                        return bytes;
+                    }
+                }
+            } catch { return null; }
+        }
+
         internal sealed class LegacyObservation
         {
             internal byte[] Bytes;

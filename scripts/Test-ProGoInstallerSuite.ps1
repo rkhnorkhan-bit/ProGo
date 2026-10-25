@@ -169,7 +169,7 @@ try {
 } finally { $CaseWatch.Stop() }
 }
 # PARTITION Foundation END
-# PARTITION Recovery BEGIN: original final4, ordered and unchanged.
+# PARTITION Recovery BEGIN: original final4 plus durable source prerequisite, ordered.
 if ($Partition -in @('All', 'Recovery')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
 Write-Host 'INSTALLER_SUITE_START name=InstallerMenuResultTests.ps1'
@@ -195,8 +195,14 @@ try {
     & (Join-Path $Root 'tests\InstallerLegacySourceCaptureTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacySourceCaptureTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+$CaseWatch = [Diagnostics.Stopwatch]::StartNew()
+Write-Host 'INSTALLER_SUITE_START name=InstallerLegacyDurableSourceTests.ps1'
+try {
+    & (Join-Path $Root 'tests\InstallerLegacyDurableSourceTests.ps1')
+    Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacyDurableSourceTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
+} finally { $CaseWatch.Stop() }
 }
 # PARTITION Recovery END
 $SuiteWatch.Stop()
-$SuiteCount = if ($Partition -eq 'Foundation') { 27 } elseif ($Partition -eq 'Recovery') { 4 } else { 31 }
+$SuiteCount = if ($Partition -eq 'Foundation') { 27 } elseif ($Partition -eq 'Recovery') { 5 } else { 32 }
 Write-Host ('Installer partition PASS: ' + $SuiteCount + ' suites; partition=' + $Partition + '; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
