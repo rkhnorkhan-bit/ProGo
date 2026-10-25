@@ -3,8 +3,8 @@
   "updated_moscow_date": "2026-10-24",
   "authority": "Current active_work, ci_candidate, current_readiness and per-requirement current evidence are canonical; active_work.tree is published candidate tree, local_development_tree is its separate local code SHA tree; prior checkpoint fields and dated reports are preserved history",
   "audit_baseline": "7861ea919eed24c5fe9964fc35a23d3958ba5a9d",
-  "tested_baseline_source": "b02b0e9606fb57518ed18d17de42e5f82fca8fa8",
-  "tested_baseline_merge": "cf2e19691057c143b4f66d93c0041e2e1c5681a8",
+  "tested_baseline_source": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
+  "tested_baseline_merge": "9e38b10d878348b2cfb2f495484e7ffa08b8193b",
   "main": "4bb336575bb1216d3047bd2b294aeecad9fdd65a",
   "fresh_candidate_verification": "Current published verification is exclusively ci_candidate; reconstructed local code uses exact source-specific NOT_RUN records. Superseded string preserved in historical_current_field_values.",
   "status_values": [
@@ -1712,14 +1712,15 @@
           "limitation": "Partial parent only, no full acceptance or child double credit"
         },
         "ci613_score_anchor": "2026-10-22T08:59:56.1345073Z Updater package tests PASS: 5",
-        "ci617_score_anchor": "2026-10-22T10:47:50.1592233Z Updater package tests PASS: 5"
+        "ci617_score_anchor": "2026-10-22T10:47:50.1592233Z Updater package tests PASS: 5",
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Перепроверить на итоговом SHA и пакете: Прогресс/Cancel/offline, скачивание, hash, fixed paths, self-check, rollback; выпуск совпадает с commit/tag.",
       "dependencies": [],
-      "next_step": "Пройти конкретный критерий на итоговом commit; закрыть связанные дефекты и дочерние ID."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F24",
@@ -2728,14 +2729,15 @@
           "source": "44d76b2347cebd23c627003e231de86c261e97e1",
           "ci_run_id": 40091168500,
           "tested_merge": "86d483cd84da1e3220273a6102f017609e5eaf20"
-        }
+        },
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Пользователь устанавливает готовый проверенный продукт без Build-ProGo или самостоятельной сборки исходников. [SSH-agent](SSH_AGENT_AUTOSTART_SPEC.md): отдельная необязательная настройка Automatic+Start, OFF по умолчанию, только по явному выбору пользователя; отсутствие службы/прав/policy объясняется, uninstall сохраняет общую службу и её настройки.",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F23-R02",
@@ -2794,18 +2796,21 @@
         "installer_rollback_slice": {
           "status": "NOT_RUN",
           "code_commit": "502f4054e67f9b6c2be4e396475b86315fb3ad34",
-          "windows_tests": "NOT_RUN Rollback8/Maintenance15 new exact CI pending",
-          "scope": "current-process runtime bytes only; journal/recovery/retention/auxiliary-state transaction open"
-        }
+          "windows_tests": "NOT_RUN Rollback8/Maintenance15 final CI668 pending",
+          "scope": "current-process runtime bytes only; journal/recovery/retention/auxiliary-state transaction open",
+          "source": "1bfc5a35ecad56605d385c02ff9cf85f39aa2532",
+          "ci_run_id": 40106066218
+        },
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Одно владение app/update/restore/install, проверенная копия/retention, staging, установленный self-check и rollback; параллельная запись исключена.",
       "dependencies": [
         "F23-R01"
       ],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F23-R03",
@@ -2824,9 +2829,10 @@
         "criterion": "Проверенная автоматическая загрузка пакета либо setup; полный installer запускается в новом окне с заранее зафиксированными существующими program/data paths, сохраняя данные и выборы.",
         "historical_candidate_notes": [
           "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance"
-        ]
+        ],
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Проверенная автоматическая загрузка пакета либо setup; полный installer запускается в новом окне с заранее зафиксированными существующими program/data paths, сохраняя данные и выборы.",
@@ -2836,7 +2842,7 @@
         "F23-R04",
         "F23-R05"
       ],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F23-R04",
@@ -2855,14 +2861,15 @@
         "criterion": "Отказ копирования/самотеста остаётся ошибкой; успех только после проверки восстановленного runtime. Подавление copy errors не превращает откат в завершённый.",
         "historical_candidate_notes": [
           "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance"
-        ]
+        ],
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Выполнить prepared Maintenance/BackupRetention native cases на точном новом SHA; source review не закрывает criterion.",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F23-R05",
@@ -2881,14 +2888,15 @@
         "criterion": "Привязать version/commit/tag/hash и устранить release UID gap; старый asset нельзя заменить другим payload той же версии. Новый формат UID заранее не предписывается.",
         "historical_candidate_notes": [
           "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance"
-        ]
+        ],
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Привязать version/commit/tag/hash и устранить release UID gap; старый asset нельзя заменить другим payload той же версии. Новый формат UID заранее не предписывается.",
       "dependencies": [],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F23-R06",
@@ -2907,9 +2915,10 @@
         "criterion": "Одна версия/commit, release notes, чистая установка и оба пути обновления, fixed paths, cancel/offline/hash failures, self-check, rollback/handoff. Это общий пакетный результат F23.",
         "historical_candidate_notes": [
           "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance"
-        ]
+        ],
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "Одна версия/commit, release notes, чистая установка и оба пути обновления, fixed paths, cancel/offline/hash failures, self-check, rollback/handoff. Это общий пакетный результат F23.",
@@ -2921,7 +2930,7 @@
         "F23-R05",
         "F31-R11"
       ],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F23-R07",
@@ -2940,16 +2949,17 @@
         "criterion": "После установки подтвердить сохранение реальных данных/путей/выборов; отменённое SSH-ожидание сохраняет исходный запрос, проверка результата не повторяет выдачу.",
         "historical_candidate_notes": [
           "NOT_RUN: uncommitted local candidate Windows compilation/native; CI586 covers only published source656b3d65 / merge7e204c76, not this diff or full ID acceptance"
-        ]
+        ],
+        "latest_scoped_evidence_index": "ci681_final historical bounded PASS; CI683 repair timeout UNKNOWN before PID/Desktop/installer; CI684 diagnostic NOT_RUN"
       },
-      "integration": "PR88 OPEN/DRAFT unmerged; source479addfd6f711831a12e1c7b49019a446f7970ce full CI608 SUCCESS at merge36f39fb080e0195cad40922793b298a5da500914; root address persistence/modal fix excluded; owner target NOT_RUN",
+      "integration": "PR88 OPEN/DRAFT unmerged, source2357a85691f17024a8a20381faa6a5051479c715, sole diagnostic CI684 in progress; package/owner NOT_RUN",
       "package": "NOT_RUN: final setup absent",
       "target": "NOT_RUN",
       "remaining": "После установки подтвердить сохранение реальных данных/путей/выборов; отменённое SSH-ожидание сохраняет исходный запрос, проверка результата не повторяет выдачу.",
       "dependencies": [
         "F23-R06"
       ],
-      "next_step": "Выполнить критерий; зафиксировать тесты и точный SHA."
+      "next_step": "Same CI684 exact final phase evidence, no functional stage before PASS"
     },
     {
       "id": "F27-R01",
@@ -3895,11 +3905,10 @@
   ],
   "remote_visibility": {
     "observed": "public",
-    "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
-    "push": "PASS expectedab6a→479a without force; full-tree mapping",
-    "ci": "CI608 full SUCCESS exact source479addfd6f711831a12e1c7b49019a446f7970ce / merge36f39fb080e0195cad40922793b298a5da500914",
-    "pr88": "OPEN/DRAFT, head479addfd6f711831a12e1c7b49019a446f7970ce; no main merge",
-    "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
+    "pr88": "OPEN/DRAFT baseline source1f6b0bb verified",
+    "push": "pending expected-HEAD guarded publication, no force",
+    "uploads": "automatic public PR uploads OFF; workflow unchanged",
+    "artifacts": "BLOCKED_TRANSFER; no retry"
   },
   "local_regression": {
     "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
@@ -3910,7 +3919,7 @@
     "scope": "server/HTTP/invitation/operation/doc regression; no real VPS/phone",
     "source_commit": "5c803be5534601233e0041202890cbd7c04cd575"
   },
-  "candidate_source": "cffa667469498a0245857f0406246c9da3638ddd",
+  "candidate_source": null,
   "remaining_acceptance": {
     "historical_unaccepted_subtasks": 49,
     "before_installer": 37,
@@ -3919,11 +3928,9 @@
     "fresh_candidate_code_package_target": "Published CI586 B/M scoped Windows SUCCESS and runner ZIP only; local candidate Windows compilation/native NOT_RUN; retrieved private package BLOCKED, integration/target acceptance NOT_RUN; no total product PASS"
   },
   "publication_scan": {
-    "source_range": "d0f9a690..656b3d65",
-    "added_lines": 336,
-    "changed_files": 6,
-    "findings": 0,
-    "independent_review": "PASS pre-publication stream-loader source review; later scoped runtime PASS67 recorded in CI586 B/M; no local diff runtime claim"
+    "scope": "this Menu admission and three synchronized documents",
+    "secret_private_data_findings": 0,
+    "local_checks": "review/static/signatures/parity/diff/JSON/public content; not Windows proof"
   },
   "publication_mapping": [
     {
@@ -4008,25 +4015,17 @@
     }
   ],
   "ci_candidate": {
-    "source": "5690e559fbaaab452cf74f5b8c8cd0ce841568ad",
-    "tested_merge": "fe740a532c973a9058431d0a12d6f47955ca9449",
-    "run_id": 40102772473,
-    "run_number": 667,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40102772473",
-    "status": "completed",
-    "conclusion": "success",
-    "scope": "installed owned self-check and truthful byte proof only; automatic rollback/journal/retention still open",
-    "windows_compilation": "PASS exact CI667 merge",
-    "windows_native": "PASS exact CI667 suites",
-    "installer_selfcheck9": "PASS",
-    "installer_maintenance13": "PASS",
-    "installer_backup8": "PASS",
-    "installer_stage8": "PASS",
-    "install_payload9": "PASS",
-    "pack": "PASS runner-only",
-    "artifact_uploads": "SKIPPED",
-    "owner_pc": "NOT_RUN",
-    "prune": "SKIPPED"
+    "source": null,
+    "source_resolution": "CURRENT_TREE containing this state; exact source and run recorded in PR/local post-publication checkpoint",
+    "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0",
+    "run_id": null,
+    "status": "NOT_RUN before single guarded publication",
+    "tested_merge": null,
+    "compilation": "NOT_RUN",
+    "menu_rollback_admission32": "NOT_RUN",
+    "prior_suites": "NOT_RUN exact new tree",
+    "baseline": "CI694 SUCCESS only source1f6b0bb / merge9e38b10",
+    "scope": "read-only Menu rollback admission, no Menu mutation/outcome"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5473,57 +5472,12 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "exact published wizard async import/snapshot/first-success retry and test metrics plus bounded fixture correction",
+  "candidate_source_scope": "CURRENT_TREE; resolve containing commit by git rev-parse HEAD/CI checkout, not old CI636 source",
   "uncommitted_candidate": {
-    "base_source": "656b3d65e03d540be859ee69635c492631093446",
-    "source_sha": "cd8c468b48f293fe809aea1d1ed75662a8e5a97f",
-    "state": "committed/published as exact tree mapping; no longer uncommitted; later local changes are separate",
-    "windows_compilation": "PASS only sourcee943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
-    "windows_native": "FAIL native chooser, other reached scenarios scoped PASS; tail NOT_RUN",
-    "ci": "CI587 completed FAILURE; not a full native PASS",
-    "scope": [
-      "async diagnostic report/preview and Context ownership",
-      "advisory SSH authentication preparation, not launch/recovery integration",
-      "REVIEW-01 modal Cancel -> Retry",
-      "REVIEW-02 bounded native SaveFileDialog fixture"
-    ],
-    "files": [
-      "src/DiagnosticPreview.cs",
-      "src/DiagnosticReport.cs",
-      "src/UpdateAwareTrayApplicationContext.cs",
-      "src/SshAuthenticationPreparation.cs",
-      "tests/DesktopDiagnosticTests.cs",
-      "tests/DesktopTests.cs",
-      "tests/DiagnosticPreviewTests.ps1",
-      "tests/DiagnosticReportTests.cs",
-      "tests/DesktopAsyncDiagnosticPreviewTests.cs",
-      "tests/DesktopDiagnosticContextTests.cs",
-      "tests/SshAuthenticationPreparationTests.cs",
-      "scripts/Test-ProGo.ps1",
-      "docs/ACCEPTANCE_RUNBOOK.md",
-      "docs/MICROTASK_SSH_AUTH_PREPARATION_SCOPE.md",
-      "docs/PROJECT_STATE.md",
-      "docs/project_state.json"
-    ],
-    "ci586_covers_this_diff": false,
-    "next_verification": {
-      "status": "NOT_RUN",
-      "source_sha": null,
-      "environment": "isolated Windows CI/dev runner; no owner PC/VPS actions",
-      "command": "powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\\scripts\\Test-ProGo.ps1",
-      "entrypoint_scope": "existing Windows script builds runtime and tests; Desktop harness has no narrow suite selector; no Ubuntu/full-workflow/package upload required for this block",
-      "required_suites": [
-        "DiagnosticReportTests",
-        "DiagnosticPreviewTests.ps1 fresh PowerShell/installed helper parity",
-        "DiagnosticPreviewWorkflow",
-        "AsyncDiagnosticPreviewWorkflow including four real ShowDialog Cancel/Retry and three native chooser modes",
-        "DiagnosticContextWorkflow",
-        "SshAuthenticationPreparationWorkflow and existing selected-key/agent/policy regressions",
-        "existing Desktop and shutdown/maintenance/instance ownership regressions"
-      ],
-      "acceptance": "All required native cases actually execute on exact new SHA; SKIP/NOT_RUN is not PASS; capture identity/logs and preserve failure; for long run save ID and inspect same run in next task"
-    },
-    "published_sha": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03"
+    "state": "No inherited uncommitted candidate; this local slice committed before guarded publication",
+    "current": "CURRENT_TREE",
+    "history": "superseded fields preserved in historical_top_level_snapshots",
+    "windows": "NOT_RUN exact new tree"
   },
   "review03_sync": {
     "status": "PASS",
@@ -5562,19 +5516,18 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
+    "source": null,
+    "source_resolution": "CURRENT_TREE git rev-parse HEAD; never CI667",
+    "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0",
+    "baseline_source": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
+    "baseline_checkpoint": "b87e37a487d95bfa32075b1d7922517c19c3f0c8",
+    "phase": "ONE read-only Menu rollback admission prerequisite",
     "status": "PARTIAL",
-    "phase": "ONE F23 current-process verified owned runtime rollback",
-    "baseline_source": "5690e559fbaaab452cf74f5b8c8cd0ce841568ad",
-    "baseline_checkpoint": "27888f88dea6e95d618085e291d249f747142fa3",
-    "local_development_sha": "502f4054e67f9b6c2be4e396475b86315fb3ad34",
-    "published_sha": null,
-    "ci_status": "NOT_RUN before publication",
-    "scope": "exclusive owned partial-byte admission; restore only admitted runtime after full snapshot validation; actual old-byte/absence proof; always rethrow install error",
-    "criterion": "No restoration claim without true old hashes/absence; changed/foreign/private files not overwritten; failed install/rollback never success/Launch",
-    "tests": "Rollback8 + Maintenance15 (original13 retained), SelfCheck9/Backup8/Stage8/Payload9 unchanged; Windows NOT_RUN locally",
-    "remaining": "durable recovery journal/admission-before-write, interrupted recovery, retention, auxiliary-state transaction, updater fallback, PGA04 opt-in, package/target gates",
-    "next": "Same new exact CI final logs; then one bounded durable journal slice",
-    "readiness_change": 0
+    "ci_status": "NOT_RUN awaiting one automatic CI on publication",
+    "next": "same new exact CI final full logs/MenuRollbackAdmission32; no second stage",
+    "remaining": "owned Menu operation and durable outcome; Legacy/full auxiliary/partial-receipt/retention/runtime recovery remain",
+    "private_candidate": "BLOCKED_TRANSFER/no retry",
+    "score_change": 0
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -5771,99 +5724,10 @@
     "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a"
   },
   "pending_publication": {
-    "local_sha": "3d3301a5f95ddfcb5ad60af5555a6de7ae1025b1",
-    "base_local": "a70943991c96907afd829f715bf4fa75a9ee6552",
-    "parent_remote": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
-    "base_tree": "ddb95e7ed68f1cf1ad3f27130575f2a4c923df97",
-    "tree": "daf59cf31a82ad253a9914f9b17fae8b6bf53034",
-    "changes": [
-      {
-        "status": "M",
-        "path": "docs/ACCEPTANCE_RUNBOOK.md",
-        "length": 21790
-      },
-      {
-        "status": "M",
-        "path": "docs/PROJECT_STATE.md",
-        "length": 163719
-      },
-      {
-        "status": "M",
-        "path": "docs/project_state.json",
-        "length": 211386
-      },
-      {
-        "status": "M",
-        "path": "scripts/Test-ProGo.ps1",
-        "length": 46696
-      },
-      {
-        "status": "M",
-        "path": "src/AppCommands.cs",
-        "length": 10836
-      },
-      {
-        "status": "M",
-        "path": "src/HomeVpnService.cs",
-        "length": 40409
-      },
-      {
-        "status": "M",
-        "path": "src/HomeVpnWizardForm.cs",
-        "length": 40216
-      },
-      {
-        "status": "M",
-        "path": "src/Ikev2RelayService.cs",
-        "length": 26013
-      },
-      {
-        "status": "M",
-        "path": "src/MainWindow.cs",
-        "length": 21801
-      },
-      {
-        "status": "M",
-        "path": "src/UpdateAwareTrayApplicationContext.cs",
-        "length": 133644
-      },
-      {
-        "status": "M",
-        "path": "tests/DesktopAsyncRestoreTests.cs",
-        "length": 64867
-      },
-      {
-        "status": "A",
-        "path": "tests/DesktopPhoneStopTests.cs",
-        "length": 10017
-      },
-      {
-        "status": "M",
-        "path": "tests/DesktopTests.cs",
-        "length": 60052
-      },
-      {
-        "status": "M",
-        "path": "tests/HomeVpnWaitingTests.cs",
-        "length": 38075
-      },
-      {
-        "status": "M",
-        "path": "tests/RelayHarness.cs",
-        "length": 1268
-      },
-      {
-        "status": "M",
-        "path": "tests/test_ikev2_relay.py",
-        "length": 12841
-      }
-    ],
-    "added_lines": 1835,
-    "secret_pii_findings": 0,
-    "workflows": "unchanged; PR public uploads OFF, release main/manual excluded",
-    "windows": "all phone/relay compilation/native NOT_RUN; not CI595",
-    "published_object": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
-    "ref_update": "PASS expected5f342→654551 without force; actual PR head confirmed; unique596"
+    "source": "CURRENT_TREE",
+    "branch": "integration/approved-plan-31-20261011",
+    "expected_head": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
+    "scope": "Menu admission + synchronized latest state; ONE automatic CI; no artifacts/release"
   },
   "local_preparation_guidance": {
     "status": "PARTIAL",
@@ -7898,6 +7762,194 @@
           "default startup/cache and async private writes/recovery remain open"
         ]
       }
+    },
+    {
+      "checkpoint": "b87e37a487d95bfa32075b1d7922517c19c3f0c8; superseded current pointers at Menu admission publication",
+      "fields": {
+        "candidate_source": "cffa667469498a0245857f0406246c9da3638ddd",
+        "ci_candidate": {
+          "source": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
+          "tree": "4d854c511760442882a6f52101fc3502817118b9",
+          "run_id": 40182233205,
+          "run_number": 694,
+          "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40182233205",
+          "status": "in_progress",
+          "conclusion": null,
+          "tested_merge": null,
+          "compilation": "NOT_RUN",
+          "startup_failure15": "NOT_RUN",
+          "prior_suites": "NOT_RUN exact source",
+          "scope": "Startup-only failure path integration; no full auxiliary rollback/Launch"
+        },
+        "active_work": {
+          "source": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
+          "baseline_checkpoint": "ec4cac4957b0f51e870bd20dc62fe27cadfa2774",
+          "next": "same CI694 full final logs/exact tested merge/StartupFailure15; no second stage this pass",
+          "private_candidate": "BLOCKED_TRANSFER/no retry",
+          "score_change": 0
+        },
+        "pending_publication": {
+          "local_sha": "3d3301a5f95ddfcb5ad60af5555a6de7ae1025b1",
+          "base_local": "a70943991c96907afd829f715bf4fa75a9ee6552",
+          "parent_remote": "5f3420d72e5f8c8ac282af6ca7ac57db1d89534c",
+          "base_tree": "ddb95e7ed68f1cf1ad3f27130575f2a4c923df97",
+          "tree": "daf59cf31a82ad253a9914f9b17fae8b6bf53034",
+          "changes": [
+            {
+              "status": "M",
+              "path": "docs/ACCEPTANCE_RUNBOOK.md",
+              "length": 21790
+            },
+            {
+              "status": "M",
+              "path": "docs/PROJECT_STATE.md",
+              "length": 163719
+            },
+            {
+              "status": "M",
+              "path": "docs/project_state.json",
+              "length": 211386
+            },
+            {
+              "status": "M",
+              "path": "scripts/Test-ProGo.ps1",
+              "length": 46696
+            },
+            {
+              "status": "M",
+              "path": "src/AppCommands.cs",
+              "length": 10836
+            },
+            {
+              "status": "M",
+              "path": "src/HomeVpnService.cs",
+              "length": 40409
+            },
+            {
+              "status": "M",
+              "path": "src/HomeVpnWizardForm.cs",
+              "length": 40216
+            },
+            {
+              "status": "M",
+              "path": "src/Ikev2RelayService.cs",
+              "length": 26013
+            },
+            {
+              "status": "M",
+              "path": "src/MainWindow.cs",
+              "length": 21801
+            },
+            {
+              "status": "M",
+              "path": "src/UpdateAwareTrayApplicationContext.cs",
+              "length": 133644
+            },
+            {
+              "status": "M",
+              "path": "tests/DesktopAsyncRestoreTests.cs",
+              "length": 64867
+            },
+            {
+              "status": "A",
+              "path": "tests/DesktopPhoneStopTests.cs",
+              "length": 10017
+            },
+            {
+              "status": "M",
+              "path": "tests/DesktopTests.cs",
+              "length": 60052
+            },
+            {
+              "status": "M",
+              "path": "tests/HomeVpnWaitingTests.cs",
+              "length": 38075
+            },
+            {
+              "status": "M",
+              "path": "tests/RelayHarness.cs",
+              "length": 1268
+            },
+            {
+              "status": "M",
+              "path": "tests/test_ikev2_relay.py",
+              "length": 12841
+            }
+          ],
+          "added_lines": 1835,
+          "secret_pii_findings": 0,
+          "workflows": "unchanged; PR public uploads OFF, release main/manual excluded",
+          "windows": "all phone/relay compilation/native NOT_RUN; not CI595",
+          "published_object": "654551f80feb485c1ca1f7889797d0cf362c0cf4",
+          "ref_update": "PASS expected5f342→654551 without force; actual PR head confirmed; unique596"
+        },
+        "uncommitted_candidate": {
+          "base_source": "656b3d65e03d540be859ee69635c492631093446",
+          "source_sha": "cd8c468b48f293fe809aea1d1ed75662a8e5a97f",
+          "state": "committed/published as exact tree mapping; no longer uncommitted; later local changes are separate",
+          "windows_compilation": "PASS only sourcee943ca348d17cbed3f4b5b4b9bca4e206ffb3d03",
+          "windows_native": "FAIL native chooser, other reached scenarios scoped PASS; tail NOT_RUN",
+          "ci": "CI587 completed FAILURE; not a full native PASS",
+          "scope": [
+            "async diagnostic report/preview and Context ownership",
+            "advisory SSH authentication preparation, not launch/recovery integration",
+            "REVIEW-01 modal Cancel -> Retry",
+            "REVIEW-02 bounded native SaveFileDialog fixture"
+          ],
+          "files": [
+            "src/DiagnosticPreview.cs",
+            "src/DiagnosticReport.cs",
+            "src/UpdateAwareTrayApplicationContext.cs",
+            "src/SshAuthenticationPreparation.cs",
+            "tests/DesktopDiagnosticTests.cs",
+            "tests/DesktopTests.cs",
+            "tests/DiagnosticPreviewTests.ps1",
+            "tests/DiagnosticReportTests.cs",
+            "tests/DesktopAsyncDiagnosticPreviewTests.cs",
+            "tests/DesktopDiagnosticContextTests.cs",
+            "tests/SshAuthenticationPreparationTests.cs",
+            "scripts/Test-ProGo.ps1",
+            "docs/ACCEPTANCE_RUNBOOK.md",
+            "docs/MICROTASK_SSH_AUTH_PREPARATION_SCOPE.md",
+            "docs/PROJECT_STATE.md",
+            "docs/project_state.json"
+          ],
+          "ci586_covers_this_diff": false,
+          "next_verification": {
+            "status": "NOT_RUN",
+            "source_sha": null,
+            "environment": "isolated Windows CI/dev runner; no owner PC/VPS actions",
+            "command": "powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\\scripts\\Test-ProGo.ps1",
+            "entrypoint_scope": "existing Windows script builds runtime and tests; Desktop harness has no narrow suite selector; no Ubuntu/full-workflow/package upload required for this block",
+            "required_suites": [
+              "DiagnosticReportTests",
+              "DiagnosticPreviewTests.ps1 fresh PowerShell/installed helper parity",
+              "DiagnosticPreviewWorkflow",
+              "AsyncDiagnosticPreviewWorkflow including four real ShowDialog Cancel/Retry and three native chooser modes",
+              "DiagnosticContextWorkflow",
+              "SshAuthenticationPreparationWorkflow and existing selected-key/agent/policy regressions",
+              "existing Desktop and shutdown/maintenance/instance ownership regressions"
+            ],
+            "acceptance": "All required native cases actually execute on exact new SHA; SKIP/NOT_RUN is not PASS; capture identity/logs and preserve failure; for long run save ID and inspect same run in next task"
+          },
+          "published_sha": "e943ca348d17cbed3f4b5b4b9bca4e206ffb3d03"
+        },
+        "publication_scan": {
+          "source_range": "d0f9a690..656b3d65",
+          "added_lines": 336,
+          "changed_files": 6,
+          "findings": 0,
+          "independent_review": "PASS pre-publication stream-loader source review; later scoped runtime PASS67 recorded in CI586 B/M; no local diff runtime claim"
+        },
+        "remote_visibility": {
+          "observed": "public",
+          "verified_by": "GitHub get_repo by full name and by URL, 2026-10-21",
+          "push": "PASS expectedab6a→479a without force; full-tree mapping",
+          "ci": "CI608 full SUCCESS exact source479addfd6f711831a12e1c7b49019a446f7970ce / merge36f39fb080e0195cad40922793b298a5da500914",
+          "pr88": "OPEN/DRAFT, head479addfd6f711831a12e1c7b49019a446f7970ce; no main merge",
+          "artifacts": "BLOCKED pending agreed delivery; public automatic uploads disabled; private/default opt-in only"
+        }
+      }
     }
   ],
   "latest_runner_package": {
@@ -8302,6 +8354,115 @@
         "owner_pc": "NOT_RUN",
         "prune": "SKIPPED"
       }
+    },
+    {
+      "checkpoint": "before_ci668",
+      "ci_candidate": {
+        "source": "5690e559fbaaab452cf74f5b8c8cd0ce841568ad",
+        "tested_merge": "fe740a532c973a9058431d0a12d6f47955ca9449",
+        "run_id": 40102772473,
+        "run_number": 667,
+        "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40102772473",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "installed owned self-check and truthful byte proof only; automatic rollback/journal/retention still open",
+        "windows_compilation": "PASS exact CI667 merge",
+        "windows_native": "PASS exact CI667 suites",
+        "installer_selfcheck9": "PASS",
+        "installer_maintenance13": "PASS",
+        "installer_backup8": "PASS",
+        "installer_stage8": "PASS",
+        "install_payload9": "PASS",
+        "pack": "PASS runner-only",
+        "artifact_uploads": "SKIPPED",
+        "owner_pc": "NOT_RUN",
+        "prune": "SKIPPED"
+      }
+    },
+    {
+      "source": "abdaa54c6593da016e37bdeeb00a2dbfeb2e4344",
+      "tree": "a50d105a9e872d584e0cb3d287df4a12088d5d8a",
+      "tested_merge": null,
+      "run_id": 40127796450,
+      "run_number": 678,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40127796450",
+      "status": "queued",
+      "conclusion": null,
+      "scope": "ONE saved pending rollback metadata publication after actual original proof; no runtime recovery",
+      "reconcile13": "NOT_RUN",
+      "windows_compilation": "NOT_RUN pending exact final logs",
+      "prior_suites": "NOT_RUN exact new source"
+    },
+    {
+      "source": "9819aaa632e59f0a439c639f0dae9acf3f17fd75",
+      "tree": "21732affee9676f0a2a7a8dbbe1b4e1e74d44fa7",
+      "tested_merge": null,
+      "run_id": 40130683445,
+      "run_number": 679,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40130683445",
+      "status": "in_progress",
+      "conclusion": null,
+      "scope": "installed completion proof prerequisite only; no pending promotion",
+      "pending_proof11": "NOT_RUN",
+      "windows_compilation": "NOT_RUN",
+      "prior_suites": "NOT_RUN exact source"
+    },
+    {
+      "source": "c7eb7c307ab7ce616a6feaed21b7aec7a5658d9f",
+      "tree": "52885025518b8ed032bd8c118987c308ecb5b671",
+      "tested_merge": null,
+      "run_id": 40133945222,
+      "run_number": 680,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40133945222",
+      "status": "in_progress",
+      "conclusion": null,
+      "scope": "Startup auxiliary evidence prerequisite only; no pending promotion",
+      "startup_evidence13": "NOT_RUN",
+      "windows_compilation": "NOT_RUN",
+      "prior_suites": "NOT_RUN exact source"
+    },
+    {
+      "source": "5f84ceb5f55d76a1f393e665de87053260b24aeb",
+      "tree": "ccb60a608c581cb83fdd24d935cf64eea5736970",
+      "tested_merge": null,
+      "run_id": 40136394776,
+      "run_number": 681,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40136394776",
+      "status": "in_progress",
+      "conclusion": null,
+      "scope": "primary Menu auxiliary proof only; legacy/pending publication OPEN",
+      "menu_evidence14": "NOT_RUN",
+      "windows_compilation": "NOT_RUN",
+      "prior_suites": "NOT_RUN exact source"
+    },
+    {
+      "source": "559a18adf35dfeeb23c16c7fc4880e2e0d41cd9a",
+      "tree": "9599223a942085ca68bca3dda00916cd73e480f8",
+      "tested_merge": null,
+      "run_id": 40139850722,
+      "run_number": 682,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40139850722",
+      "status": "in_progress",
+      "conclusion": null,
+      "scope": "installer legacy origin and owned deletion proof only; no pending-installed promotion",
+      "legacy_evidence14": "NOT_RUN",
+      "windows_compilation": "NOT_RUN",
+      "prior_suites": "NOT_RUN exact source"
+    },
+    {
+      "source": "d4903e818c4c95eadf914a5e077737854071b223",
+      "tree": "dbee8576d00770bc64a91066884f3c7b5f4c31f2",
+      "tested_merge": null,
+      "run_id": 40141050466,
+      "run_number": 683,
+      "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40141050466",
+      "status": "in_progress",
+      "conclusion": null,
+      "scope": "test-only expected PID capture from original successful bounded admission",
+      "command_admission_regression": "NOT_RUN Windows",
+      "windows_compilation": "NOT_RUN",
+      "legacy_evidence14": "NOT_RUN",
+      "prior_suites": "NOT_RUN exact source"
     }
   ],
   "connection_recovery_20261022": {
@@ -21113,13 +21274,939 @@
     "baseline_source": "5690e559fbaaab452cf74f5b8c8cd0ce841568ad",
     "baseline_checkpoint": "27888f88dea6e95d618085e291d249f747142fa3",
     "local_development_sha": "502f4054e67f9b6c2be4e396475b86315fb3ad34",
-    "published_sha": null,
-    "ci_status": "NOT_RUN before publication",
+    "published_sha": "1bfc5a35ecad56605d385c02ff9cf85f39aa2532",
+    "ci_status": "in_progress",
     "scope": "exclusive owned partial-byte admission; restore only admitted runtime after full snapshot validation; actual old-byte/absence proof; always rethrow install error",
     "criterion": "No restoration claim without true old hashes/absence; changed/foreign/private files not overwritten; failed install/rollback never success/Launch",
     "tests": "Rollback8 + Maintenance15 (original13 retained), SelfCheck9/Backup8/Stage8/Payload9 unchanged; Windows NOT_RUN locally",
     "remaining": "durable recovery journal/admission-before-write, interrupted recovery, retention, auxiliary-state transaction, updater fallback, PGA04 opt-in, package/target gates",
-    "next": "Same new exact CI final logs; then one bounded durable journal slice",
+    "next": "Same CI668 final exact logs/merge/suites; then one bounded durable journal/admission-before-write slice. No second stage this turn.",
+    "readiness_change": 0,
+    "published_tree": "bb1491182af4996c6f3bbf586cc3a41886c266e7",
+    "reviewed_freeze": "466155f10fd115598985726f2757aeaa902014c8",
+    "ci_run_id": 40106066218,
+    "ci_run_number": 668,
+    "ci_url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40106066218",
+    "ci_conclusion": null,
+    "windows_tests": "NOT_RUN final same CI668 logs pending: Rollback8/Maintenance15/SelfCheck9/Backup8/Stage8/Payload9/native regressions",
+    "current_evidence": "CI672 exact sourceefc4cc9/merge806d451 Rollback8/Maintenance15 PASS; new journal sourcef7ae8b2 CI673 pending, no inherited PASS."
+  },
+  "recovery_320c598": {
+    "status": "PASS",
+    "scope": "exact remote source recovery only; not test execution",
+    "source": "320c598521993220ae5c057301f2ebdc9a340d3d",
+    "source_tree": "e790435068a82c8d6cc2810198280726bff6efda",
+    "source_parent": "1bfc5a35ecad56605d385c02ff9cf85f39aa2532",
+    "last_observed_checkpoint": "30eb21604d109a11ea839644d9db099fa733809a",
+    "uncertain_prior_checkpoint": "not observed in restored snapshot; never ran versus lost UNKNOWN",
+    "original_worktree": "unchanged clean at last observed checkpoint",
+    "new_worktree": "ProGo-recovery-source320c598",
+    "branch": "work/progo-recovery-source320c598",
+    "published_diff": "two test/docs files, 48 additions/3 deletions; no runtime change",
+    "next": "same CI669 final logs in separate stage",
     "readiness_change": 0
+  },
+  "historical_ci_candidate_before_recovery_320c598": {
+    "source": "1bfc5a35ecad56605d385c02ff9cf85f39aa2532",
+    "tested_merge": null,
+    "run_id": 40106066218,
+    "run_number": 668,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40106066218",
+    "status": "in_progress",
+    "conclusion": null,
+    "scope": "current-process owned runtime rollback only; durable journal/recovery/retention and auxiliary state still open",
+    "windows_compilation": "NOT_RUN final result pending",
+    "windows_native": "NOT_RUN final result pending",
+    "installer_rollback8": "NOT_RUN final result pending",
+    "installer_maintenance15": "NOT_RUN final result pending",
+    "installer_selfcheck9": "NOT_RUN new exact SHA result pending",
+    "installer_backup8": "NOT_RUN new exact SHA result pending",
+    "installer_stage8": "NOT_RUN new exact SHA result pending",
+    "install_payload9": "NOT_RUN new exact SHA result pending",
+    "pack": "NOT_RUN",
+    "artifact_uploads": "Not authorized; four unchanged guards",
+    "owner_pc": "NOT_RUN"
+  },
+  "ci669_final": {
+    "source": "320c598521993220ae5c057301f2ebdc9a340d3d",
+    "tested_merge": "107014f558643c211775afe1700b682f052d4c9c",
+    "run_id": 40108281318,
+    "windows_job": 120914440601,
+    "windows_log_lines": 10115,
+    "windows": "FAIL",
+    "ubuntu": "PASS",
+    "maintenance15": "PASS",
+    "payload9_stage8_backup8_selfcheck9": "PASS",
+    "desktop6388_instance30_maintenance126_shutdown47": "PASS",
+    "rollback8": "FAIL partial admission; complete PASS only; remaining not PASS",
+    "relay_later": "NOT_RUN",
+    "cause": "separate fixture partial selector dynamically shadowed by owned setter FileMode.Open; no partial exception created"
+  },
+  "ci669_partial_correction": {
+    "status": "NOT_RUN",
+    "source": "9f08110db63dae3df7310b8d024bde5cd3935aa1",
+    "implementation": "fixture state Scenario instead of shadowed mode; original admission assertion retained, actual byte42 and one fault added",
+    "scope": "test-only plus evidence doc",
+    "local_checks": "PASS docs3/static/review/signatures/diff/JSON/secrets/public330",
+    "next": "CI670 final Windows logs"
+  },
+  "ci670_final": {
+    "source": "9f08110db63dae3df7310b8d024bde5cd3935aa1",
+    "tested_merge": "2be5c1e6d6d86f8b3c7a47a1dffd2bccc7676495",
+    "run_id": 40110064441,
+    "windows_job": 120919726226,
+    "windows_log_lines": 2788,
+    "windows": "FAIL",
+    "ubuntu": "PASS",
+    "failure": "Owned SSH fixture exit0-regression exceeded 5000 ms",
+    "cause": "UNKNOWN; no body/startup/stream bytes after drain; AV/loader/site not established",
+    "facts": {
+      "start_ms": 25,
+      "deadline_ms": 5044,
+      "cpu_ms": 15.625,
+      "ram_bytes": 6000640,
+      "stdin_closed": true,
+      "cleanup_exited": true,
+      "stdout_chars": 0,
+      "stderr_chars": 0,
+      "body_entered": false,
+      "site_ready": false,
+      "pth_visits": 0
+    },
+    "early_suites": "PASS logged Repair/updater/transport74/adapter3/progress134/install-window145/update-check72 and earlier",
+    "desktop_instance_maintenance_installer_rollback8_relay": "NOT_RUN"
+  },
+  "ci670_python_diagnostic": {
+    "status": "NOT_RUN",
+    "source": "cb7632a9dcd46c3f4fe23b9059ad81f306b5a9b7",
+    "criterion": "obtain missing executable/environment/loader role facts without changing 5s contract or claiming cause",
+    "details": "docs/CI670_PYTHON_STARTUP_DIAGNOSTIC.md",
+    "local_checks": "PASS docs3/static/review/signatures/diff/secrets/public331/JSON",
+    "root": "UNKNOWN"
+  },
+  "ci671_final": {
+    "source": "cb7632a9dcd46c3f4fe23b9059ad81f306b5a9b7",
+    "tested_merge": "366a0cca22c5743abf4418ba637619ff9721e4b7",
+    "run_id": 40111310628,
+    "windows_job": 120923441236,
+    "windows_log_lines": 3407,
+    "windows": "FAIL",
+    "ubuntu": "PASS",
+    "python_exit0": "PASS non-reproduction; CI662/670 root UNKNOWN",
+    "failure": "AsyncSettingsColdStartHeartbeat -> AssertPortReleased -> Occupy AddressAlreadyInUse after1s; loopback LISTEN owner unknown",
+    "pre_failure": "PASS queued Stop settles safely after cold publication; !SettingsPending && !Bridge.IsRunning",
+    "desktop": "FAIL not complete",
+    "instance_maintenance15_rollback8_relay": "NOT_RUN",
+    "root": "UNKNOWN; own retained listener versus external reuse not distinguished"
+  },
+  "ci671_owner_diagnostic": {
+    "status": "NOT_RUN",
+    "source": "efc4cc91c19baff6dfcbdc25ef666df13362a485",
+    "criterion": "distinguish test-process retained LISTEN from foreign socket after unchanged1s rebind",
+    "details": "docs/CI671_COLD_STOP_OWNER_DIAGNOSTIC.md",
+    "local_checks": "PASS docs3/static/review/signatures/unchanged asserts/diff/JSON/secrets/public332",
+    "root": "UNKNOWN"
+  },
+  "ci672_final": {
+    "source": "efc4cc91c19baff6dfcbdc25ef666df13362a485",
+    "tested_merge": "806d4512dd5355542806e1ad934f8c50e4181e45",
+    "run_id": 40112760540,
+    "windows_job": 120927737675,
+    "ubuntu_job": 120927737758,
+    "windows_log_lines": 15457,
+    "ubuntu_log_lines": 578,
+    "windows": "PASS",
+    "ubuntu": "PASS",
+    "rollback8": "PASS",
+    "maintenance15_payload9_stage8_backup8_selfcheck9": "PASS",
+    "desktop6388_policy214_instance30_maintenance126_shutdown47_homevpn4816_portable91": "PASS",
+    "prior_suites": "PASS exact final logs",
+    "pack": "PASS runner-only",
+    "uploads_prune": "SKIPPED",
+    "incidents": "CI662/670 Python and CI671 listener root UNKNOWN; diagnostics retained; non-reproduction not fix",
+    "owner_pc": "NOT_RUN"
+  },
+  "f23_installer_admission_journal": {
+    "status": "NOT_RUN",
+    "source": "f7ae8b2a03a9fea0141dc63118a273648b55bc2f",
+    "implementation": "own immutable CreateNew/WriteThrough intent + Flush(true)/same-handle readback pinned before runtime creation/write; unknown/invalid current journal fail closed",
+    "scope": "current-session only; intent not post-crash ownership proof",
+    "tests": "Journal8 + unchanged Maintenance15/Rollback8/prior regressions",
+    "local_checks": "PASS docs3/static/review/signatures/helper parity/order/budgets/diff/JSON/secrets/public334",
+    "mandatory_remaining": [
+      "restart pending journal discovery/validation before new admission",
+      "durable outcome/phase transitions and post-crash ownership",
+      "bounded interrupted recovery without replay/foreign overwrite",
+      "terminal-state/retention",
+      "auxiliary-state/shortcut rollback"
+    ],
+    "current_evidence": "CI673 sourcef7ae8b2/merge8202d37 Journal8 PASS; restart gate source44bcf31 CI674 pending, old PASS not inherited"
+  },
+  "ci673_final": {
+    "source": "f7ae8b2a03a9fea0141dc63118a273648b55bc2f",
+    "tested_merge": "8202d37e4687c29e3205893455c8cbab1a29b280",
+    "run_id": 40115153183,
+    "windows_job": 120934803351,
+    "ubuntu_job": 120934802966,
+    "windows_log_lines": 15466,
+    "ubuntu_log_lines": 578,
+    "windows": "PASS",
+    "ubuntu": "PASS",
+    "journal8": "PASS all8",
+    "rollback8_maintenance15_payload9_stage8_backup8_selfcheck9": "PASS",
+    "desktop6388_instance30_maintenance126_shutdown47_homevpn4816_portable91": "PASS",
+    "prior_suites": "PASS exact final logs",
+    "pack": "PASS runner-only",
+    "uploads_prune": "SKIPPED",
+    "incidents": "CI662/670 and CI671 roots UNKNOWN, diagnostics retained",
+    "owner_pc": "NOT_RUN"
+  },
+  "f23_installer_restart_gate": {
+    "status": "NOT_RUN",
+    "source": "44bcf31080c685701e9eb8598fa25df7c3d5b57a",
+    "implementation": "metadata-only pending namespace refusal under maintenance before Stop/stage/new journal; any prior intent pending until durable terminal proof exists",
+    "tests": "RestartGate8 actual production tail/mock Stop + prior suites unchanged",
+    "local_checks": "PASS docs3/static/review/signatures/order/parity/diff/JSON/secrets/public336",
+    "mandatory_remaining": [
+      "durable terminal/outcome schema and verified transition with snapshot/identity/ownership",
+      "terminal recognition and safe restart continuation",
+      "bounded interrupted recovery/no replay/foreign overwrite",
+      "retention",
+      "auxiliary-state/shortcut rollback"
+    ],
+    "next": "SAME CI674 final logs",
+    "current_evidence": "CI674 RestartGate8 PASS; new installed terminal recognition sourcea838d02 CI675 pending, old PASS not inherited"
+  },
+  "ci674_final": {
+    "source": "44bcf31080c685701e9eb8598fa25df7c3d5b57a",
+    "tested_merge": "99137658839fa18f6440df840db94470bf9792ac",
+    "run_id": 40117901265,
+    "windows_job": 120942960299,
+    "ubuntu_job": 120942960086,
+    "windows_log_lines": 15475,
+    "ubuntu_log_lines": 578,
+    "windows": "PASS",
+    "ubuntu": "PASS",
+    "restartgate8_journal8_rollback8_maintenance15_payload9_stage8_backup8_selfcheck9": "PASS",
+    "desktop6388_instance30_homevpn4816_portable91_prior_suites": "PASS",
+    "pack": "PASS runner-only",
+    "uploads_prune": "SKIPPED",
+    "incidents": "CI662/670 and CI671 roots UNKNOWN, diagnostics retained",
+    "owner_pc": "NOT_RUN"
+  },
+  "f23_installer_installed_outcome": {
+    "status": "PASS",
+    "source": "a838d021fc631ca40bb9ec521f5b4f6409b68f57",
+    "implementation": "full snapshot/runtime/own admission proof then pending Flush/readback/verify and atomic installed publication; strict historical terminal recognition permits repeat",
+    "tests": "Outcome10 + Maintenance17 (old15 unchanged plus2 persistence failures) + prior suites",
+    "local_checks": "PASS docs3/static/review/signatures/parity/order/diff/JSON/secrets/public338",
+    "mandatory_remaining": [
+      "durable rollback/failed terminal with verified phase transition",
+      "post-crash partial ownership proof and bounded interrupted recovery/no replay",
+      "retention preserving unresolved evidence",
+      "auxiliary-state/shortcut rollback",
+      "remaining F23/PGA04/updater fallback/package/owner gates"
+    ],
+    "verification": "CI675 exact sourcea838d021fc631ca40bb9ec521f5b4f6409b68f57/merge5342f65d48e99bc85440e8356cf8d9e60f20ca4a Outcome10/Maintenance17 PASS; bounded success path only"
+  },
+  "ci675_final": {
+    "source": "a838d021fc631ca40bb9ec521f5b4f6409b68f57",
+    "tested_merge": "5342f65d48e99bc85440e8356cf8d9e60f20ca4a",
+    "run_id": 40120509957,
+    "windows_job": 120950820808,
+    "ubuntu_job": 120950821010,
+    "windows_log_lines": 15488,
+    "ubuntu_log_lines": 578,
+    "windows": "PASS",
+    "ubuntu": "PASS",
+    "outcome10_maintenance17_restartgate8_journal8_rollback8_payload9_stage8_backup8_selfcheck9": "PASS",
+    "desktop6388_instance30_homevpn4816_portable91_prior_suites": "PASS",
+    "pack": "PASS runner-only",
+    "uploads_prune": "SKIPPED",
+    "incidents": "CI662/670/671 roots UNKNOWN, diagnostics retained",
+    "owner_pc": "NOT_RUN"
+  },
+  "f23_installer_rollback_outcome": {
+    "status": "PASS",
+    "source": "1fff0f05024d7249495b9594fef162074e5aa95a",
+    "implementation": "full verified actual old runtime + snapshot/identity/known owned admissions -> atomic rolled-back terminal; original install error/no Launch preserved",
+    "tests": "RollbackOutcome12 + Maintenance19 (old17 retained +2 failures) + unchanged Outcome10/prior suites",
+    "local_checks": "PASS docs3/static/review/signatures/parity/order/old error/diff/JSON/secrets/public340",
+    "mandatory_remaining": [
+      "unfinished terminal/outcome reconciliation with verified phase/identity/ownership",
+      "post-crash partial ownership proof and bounded interrupted recovery/no replay",
+      "retention preserving unresolved evidence",
+      "auxiliary-state/shortcut rollback",
+      "remaining F23/PGA04/fallback/package/owner gates"
+    ],
+    "current_evidence": "CI676 installer tests NOT_RUN due early SOCKS harness sharing failure; diagnostic source227d837 CI677 pending. Original source1fff code preserved, no PASS inherited.",
+    "verification": "CI677 exact source227d83774e82a101c2c2c67dee83a4120d1f2be6/mergeb6711df3c075c1fe6842be8c9922c4bc6e77d60f RollbackOutcome12/Maintenance19 PASS; bounded current-process path only"
+  },
+  "ci676_final": {
+    "source": "1fff0f05024d7249495b9594fef162074e5aa95a",
+    "tested_merge": "1eb3bac1d59e9e0e066fd7635e33264f5dfb5181",
+    "run_id": 40123483430,
+    "windows_job": 120959851985,
+    "ubuntu_job": 120959852104,
+    "windows_log_lines": 1953,
+    "ubuntu_log_lines": 578,
+    "windows": "FAIL",
+    "ubuntu": "PASS",
+    "failure": "SocksRecoveryTests.exe IOException synthetic json.pending sharing violation after PermanentErrorFallback18 PASS",
+    "next_scenario": "SshDiagnosticDistinctions",
+    "root": "UNKNOWN: exact managed operation and lock owner not logged; no installer/runtime leak link proven",
+    "socks_suite": "FAIL not completed",
+    "rollback_outcome12_maintenance19_desktop_instance_relay_later": "NOT_RUN",
+    "earlier": "PASS exact logged early repair/vault/SOCKS cases only"
+  },
+  "ci676_sharing_diagnostic": {
+    "status": "NOT_RUN",
+    "source": "227d83774e82a101c2c2c67dee83a4120d1f2be6",
+    "criterion": "identify exact pending-file sharing operation and actual lock-owner role with safe stack, not guess runtime/AV/fixture",
+    "details": "docs/CI676_SOCKS_PENDING_DIAGNOSTIC.md",
+    "local_checks": "PASS docs3/static/review/signatures/scenario-writer parity/asserts/budgets/diff/JSON/secrets/public341",
+    "root": "UNKNOWN"
+  },
+  "ci677_final": {
+    "source": "227d83774e82a101c2c2c67dee83a4120d1f2be6",
+    "tested_merge": "b6711df3c075c1fe6842be8c9922c4bc6e77d60f",
+    "run_id": 40124878568,
+    "windows_job": 120964057190,
+    "ubuntu_job": 120964057033,
+    "windows_log_lines": 15503,
+    "ubuntu_log_lines": 578,
+    "windows": "PASS",
+    "ubuntu": "PASS",
+    "socks51_rollbackoutcome12_maintenance19_outcome10_restartgate8_journal8_rollback8_payload9_stage8_backup8_selfcheck9": "PASS",
+    "desktop6388_instance30_homevpn4816_portable91_prior_suites": "PASS",
+    "pack": "PASS runner-only",
+    "uploads_prune": "SKIPPED",
+    "incidents": "CI676 sharing and prior CI662/670/671 roots UNKNOWN; diagnostics retained; non-reproduction not fix",
+    "owner_pc": "NOT_RUN"
+  },
+  "f23_installer_pending_rollback_reconcile": {
+    "status": "PASS",
+    "source": "abdaa54c6593da016e37bdeeb00a2dbfeb2e4344",
+    "implementation": "preflight all journals under maintenance; verify saved rollback proof+actual current old bytes/absence; one atomic metadata-only rename; unknown/conflicting/multiple/foreign blocked",
+    "tests": "Reconcile13 actual new installer tail + all unchanged previous suites",
+    "local_checks": "PASS docs3/static/review/signatures/parity/order/no-runtime-write/diff/JSON/secrets/public343",
+    "mandatory_remaining": [
+      "remaining unfinished installed/rollback outcome phases with independent proof",
+      "incomplete admission and post-crash partial ownership/bounded runtime recovery/no replay",
+      "retention protecting unresolved evidence",
+      "auxiliary-state/shortcut rollback",
+      "remaining F23/PGA04/fallback/package/owner gates"
+    ],
+    "verification": "CI678 exact abdaa54 / merge0922838486cb76ed71a8661244516a2727f118d7, Reconcile13 PASS; bounded metadata only"
+  },
+  "ci678_final": {
+    "source": "abdaa54c6593da016e37bdeeb00a2dbfeb2e4344",
+    "tested_merge": "0922838486cb76ed71a8661244516a2727f118d7",
+    "run_id": 40127796450,
+    "status": "completed",
+    "conclusion": "success",
+    "full_logs_read": {
+      "Windows": 15517,
+      "Ubuntu": 578
+    },
+    "scoped_suites": "Reconcile13 RollbackOutcome12 Maintenance19 Outcome10 RestartGate8 Journal8 Rollback8 Payload9 Stage8 Backup8 SelfCheck9 SOCKS51 Desktop6388 policy214 Instance30 Maintenance126 Shutdown47 HomeVPN4816 Portable91/prior PASS",
+    "pack": "runner-only",
+    "uploads": "SKIPPED",
+    "old_incidents": "UNKNOWN; not fixes"
+  },
+  "f23_installer_pending_installed_proof": {
+    "status": "PASS",
+    "implementation": "9819aaa632e59f0a439c639f0dae9acf3f17fd75",
+    "criterion": "durable phase/owned-byte proof prerequisite, no pending promotion",
+    "tests": "PendingProof11 Windows NOT_RUN",
+    "local": "review/signatures/parity/diff/secrets/public345 PASS; parser unavailable",
+    "remaining": "pending-installed publication auxiliary-completion dependency; runtime crash recovery; retention; auxiliary rollback; remaining F23/PGA04/fallback/owner gates",
+    "verification": "CI679 source9819aaa/merged994f31, PendingProof11 PASS; prerequisite only, not whole pending-installed"
+  },
+  "ci679_final": {
+    "source": "9819aaa632e59f0a439c639f0dae9acf3f17fd75",
+    "tested_merge": "d994f31fded7861f588f57a4c7b8b4da9ad3235c",
+    "run_id": 40130683445,
+    "status": "completed",
+    "conclusion": "success",
+    "full_logs_read": {
+      "Windows": 15529,
+      "Ubuntu": 578
+    },
+    "scoped_suites": "PendingProof11 Reconcile13 RollbackOutcome12 Maintenance19 Outcome10 RestartGate8 Journal8 Rollback8 Payload9 Stage8 Backup8 SelfCheck9 SOCKS51 Desktop6388 policy214 Instance30 Maintenance126 Shutdown47 HomeVPN4816 Portable91/prior PASS",
+    "pack": "runner-only",
+    "uploads": "SKIPPED",
+    "incidents": "UNKNOWN; no fix inferred"
+  },
+  "f23_installer_startup_completion_evidence": {
+    "status": "PASS",
+    "implementation": "c7eb7c307ab7ce616a6feaed21b7aec7a5658d9f",
+    "criterion": "actual Startup created/preserved result bound to identity/hash/ownership and durable outcome",
+    "tests": "StartupEvidence13 Windows/COM NOT_RUN",
+    "local": "review/parity/signatures/diff/secrets/public347 PASS; parser/compiler unavailable",
+    "remaining": "Start Menu/legacy evidence; durable trusted current auxiliary revalidation before pending-installed publication; runtime recovery; retention; auxiliary rollback; remaining F23/PGA04/fallback/owner gates",
+    "verification": "CI680 sourcec7eb7c3/mergefd5cf0f StartupEvidence13 PASS; Startup-only proof, not whole auxiliary acceptance"
+  },
+  "ci680_final": {
+    "source": "c7eb7c307ab7ce616a6feaed21b7aec7a5658d9f",
+    "tested_merge": "fd5cf0fcc063089ca302ca163aaa32cff4a09b5c",
+    "run_id": 40133945222,
+    "status": "completed",
+    "conclusion": "success",
+    "full_logs_read": {
+      "Windows": 15544,
+      "Ubuntu": 578
+    },
+    "scoped_suites": "StartupEvidence13 PendingProof11 Reconcile13 RollbackOutcome12 Maintenance19 Outcome10 RestartGate8 Journal8 Rollback8 Payload9 Stage8 Backup8 SelfCheck9 SOCKS51 Desktop6388 policy214 Instance30 Maintenance126 Shutdown47 HomeVPN4816 Portable91/prior PASS",
+    "pack": "runner-only",
+    "uploads": "SKIPPED",
+    "incidents": "UNKNOWN, not fixed"
+  },
+  "f23_installer_menu_completion_evidence": {
+    "status": "PASS",
+    "implementation": "5f84ceb5f55d76a1f393e665de87053260b24aeb",
+    "criterion": "actual primary Menu result creation/preservation hashes tied to identity/location and durable runtime proof",
+    "tests": "MenuEvidence14 Windows COM NOT_RUN",
+    "local": "review/parity/signatures/diff/secrets/public349 PASS; parser/compiler unavailable",
+    "next": "same681 final logs; then legacy result proof",
+    "remaining": "legacy; trusted durable auxiliary revalidation/pending-installed promotion; crash recovery/retention/aux rollback; original F23 gates",
+    "verification": "CI681 source5f84ceb/merge01191ad MenuEvidence14 PASS; primary proof only, not whole F23"
+  },
+  "f23_current_acceptance_index": {
+    "authority": [
+      "docs/APPROVED_PLAN_31.md",
+      "docs/REMAINING_SUBTASKS_8.md",
+      "docs/SSH_AGENT_AUTOSTART_SPEC.md"
+    ],
+    "evidence": "ci681_final prior bounded PASS; CI682 Desktop FAIL; CI683 earlier repair FAIL; diagnostic CI684 NOT_RUN; no gate upgrade",
+    "finite_existing_gates": [
+      "F23-R01",
+      "F23-R02",
+      "F23-R03",
+      "F23-R04",
+      "F23-R05",
+      "F23-R06",
+      "F23-R07"
+    ],
+    "matrix": "docs/F23_INSTALLER_MENU_COMPLETION_EVIDENCE.md",
+    "historical_tables": "older current_scoped/candidate fields are historical bounded evidence, not present full acceptance",
+    "engineering_zip": "BLOCKED_TRANSFER -> exact build/hash/content/smoke -> owner approval, separate from standalone",
+    "technical": "R01/R02/R04/R05 -> R03; R01-R05/F31-R11 -> R06 -> R07; full F23 not PASS",
+    "commercial": "same F23 + original full registry/F30/final release gates; not removed",
+    "weights": "unchanged; no score increase/percentage recalc"
+  },
+  "ci681_final": {
+    "source": "5f84ceb5f55d76a1f393e665de87053260b24aeb",
+    "tested_merge": "01191ad24b207ce4f6191a65d34545ca71439128",
+    "run_id": 40136394776,
+    "status": "completed",
+    "conclusion": "success",
+    "full_logs_read": {
+      "Windows": 15558,
+      "Ubuntu": 578
+    },
+    "scoped_suites": "MenuEvidence14 StartupEvidence13 PendingProof11 Reconcile13 RollbackOutcome12 Maintenance19 Outcome10 RestartGate8 Journal8 Rollback8 Payload9 Stage8 Backup8 SelfCheck9 SOCKS51 Desktop6388 policy214 Instance30 Maintenance126 Shutdown47 HomeVPN4816 Portable91/prior PASS",
+    "pack": "runner-only",
+    "uploads": "SKIPPED",
+    "incidents": "UNKNOWN, no fix inferred"
+  },
+  "f23_installer_legacy_completion_evidence": {
+    "status": "NOT_RUN",
+    "implementation": "559a18adf35dfeeb23c16c7fc4880e2e0d41cd9a",
+    "criterion": "actual legacy source origin/bytes plus owned-handle deletion/after absence/verified replacement; preserved custom is not owned",
+    "tests": "LegacyEvidence14 PASS CI685 tested merge69fc0c87dac0d43d71d1df0b698c990e50796ce8; new source regression NOT_RUN",
+    "local": "review/signatures/parity/ABI/diff/secrets/public351 PASS; no compiler/parser",
+    "next": "same682 full logs; then durable full auxiliary revalidation before pending publication",
+    "remaining": "pending-installed promotion after trusted current proof; runtime recovery/retention/aux rollback; original seven F23 acceptance gates"
+  },
+  "ci682_final": {
+    "source": "559a18adf35dfeeb23c16c7fc4880e2e0d41cd9a",
+    "tested_merge": "ba5b0470add2c8008bc9251825dc8ac10fc7e251",
+    "run_id": 40139850722,
+    "status": "completed",
+    "conclusion": "failure",
+    "full_logs_read": {
+      "Windows": 4293,
+      "Ubuntu": 578
+    },
+    "failure": "Desktop CommandAvailabilityWorkflow -> Main, expected captured PID null while all later actual PID snapshots present/count1/expected waiting",
+    "pass": "Ubuntu; SOCKS51 and logged earlier repair/vault/log/backup/updater scoped suites",
+    "not_run": "complete Desktop; SSH policy214; Instance; ALL installer incl LegacyEvidence14; relay; pack/uploads skipped",
+    "runtime_cause": "not proven; fixture discarded successful admission and recaptured nullable nonblocking snapshot"
+  },
+  "ci682_command_admission_fixture": {
+    "status": "NOT_RUN",
+    "implementation": "d4903e818c4c95eadf914a5e077737854071b223",
+    "contract": "capture same non-null owned live snapshot inside unchanged PumpUntil; no later expected PID substitution",
+    "proof": "CI682 expected PID null; original wait predicate success does not guarantee later CurrentPid value; exact null branch not measured",
+    "regression": "Windows NOT_RUN: CI683 failed earlier at repair; no fix PASS claimed",
+    "local": "review/parity/signatures/diff/secrets/public352 PASS; compiler/Windows unavailable",
+    "next": "same683 full final logs before functionality"
+  },
+  "ci683_final": {
+    "source": "d4903e818c4c95eadf914a5e077737854071b223",
+    "tested_merge": "477bddbfec21431bbd1049bbc7daf86473b1ead7",
+    "run_id": 40141050466,
+    "status": "completed",
+    "conclusion": "failure",
+    "full_logs_read": {
+      "Windows": 191,
+      "Ubuntu": 578
+    },
+    "pass": "EXE build, repair null interop1, four incomplete-payload refusals; Ubuntu",
+    "failure": "RepairPayloadTests.ps1 line156 WaitForExit20000 complete positive owned PowerShell root; inner phase UNKNOWN",
+    "not_run": "PID fixture regression/Desktop/SSH policy/Instance/ALL installer incl LegacyEvidence14/relay; pack/uploads skipped",
+    "cause": "UNKNOWN; no runner/AV/runtime attribution"
+  },
+  "ci683_repair_phase_diagnostic": {
+    "status": "NOT_RUN",
+    "implementation": "2357a85691f17024a8a20381faa6a5051479c715",
+    "criterion": "distinguish PowerShell/repair/copy/self-check/commit/cleanup/exit/drain without runtime modification",
+    "probe": "17 unique line anchors, fixed phases/ms; bounded own file/journal counts, root process/stream states; max6 safe managed methods",
+    "contract": "20s outer/8s self-check/3s output and cleanup/asserts unchanged; diagnostic source not fix",
+    "local": "review/parity/anchors/signatures/diff/secrets/public354 PASS, no Windows/PowerShell",
+    "next": "same684 full logs; preserve unresolved gap if native creation vs app init not distinguishable"
+  },
+  "incident_ledger_current": {
+    "python_startup": {
+      "status": "UNKNOWN",
+      "scope": "CI662/670, later PASS only non-reproduction; diagnostics retained"
+    },
+    "listener_release": {
+      "status": "UNKNOWN",
+      "scope": "CI671, later1s PASS not fix"
+    },
+    "receipt_busy": {
+      "status": "UNKNOWN",
+      "scope": "CI676, laterPASS not runtime fix; diagnostic retained"
+    },
+    "pid_double_read": {
+      "status": "PASS",
+      "scope": "Desktop6394 CI684 and CI685; fixture fix scoped, no broader unknown cause claim"
+    },
+    "repair_timeout": {
+      "status": "UNKNOWN",
+      "scope": "CI68320s not reproduced CI684/685; diagnostics preserved; not runtime fix"
+    },
+    "setup_recovery_cancel_retry": {
+      "status": "UNKNOWN",
+      "scope": "CI686 failure not reproduced CI687; diagnostic source not runtime fix"
+    }
+  },
+  "ci684_final": {
+    "source": "2357a85691f17024a8a20381faa6a5051479c715",
+    "tested_merge": "488061a811c1609f6bc8e4cc0a3eb6657e9837c8",
+    "run_id": 40142564635,
+    "windows": "FAILURE SizeOf RuntimeType fixture line19",
+    "ubuntu": "SUCCESS",
+    "pid_admission_fix": "PASS Desktop6394",
+    "repair": "PASS non-reproduction timeout UNKNOWN",
+    "legacy14": "NOT_RUN",
+    "relay": "NOT_RUN",
+    "pack": "SKIPPED",
+    "installer_through_menu14": "PASS"
+  },
+  "ci684_sizeof_fixture": {
+    "status": "PASS Windows CI685 LegacyEvidence14; exact ABI assertion executed",
+    "local": "PASS static/review/signature/parity/secrets/public355",
+    "next": "same CI685 final logs; no second functional stage",
+    "score_change": 0
+  },
+  "ci685_final": {
+    "source": "0b662b38bba5e799755f599ad5ab344a0ab067aa",
+    "tested_merge": "69fc0c87dac0d43d71d1df0b698c990e50796ce8",
+    "run_id": 40144623516,
+    "windows_job": 121023215009,
+    "ubuntu_job": 121023215090,
+    "full_logs_read": true,
+    "windows_lines": 15587,
+    "ubuntu_lines": 578,
+    "conclusion": "SUCCESS",
+    "legacy14": "PASS",
+    "prior_suites": "PASS scoped actual full logs",
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED"
+  },
+  "f23_auxiliary_receipt_revalidation": {
+    "status": "PARTIAL",
+    "implementation": "5a6a23d33e784d929a370dd4a0daded4dc64cd6b",
+    "criterion": "F23 auxiliary completion evidence revalidation prerequisite before pending-installed publication",
+    "evidence_doc": "docs/F23_AUXILIARY_RECEIPT_REVALIDATION.md",
+    "tests": "AuxiliaryRevalidation24 PASS CI686 tested merge54326758a24ca31f53d1898f9d3f07826213a7a8; new source regression NOT_RUN",
+    "local": "PASS review/static/signatures/parity/secrets/public357/0/diff",
+    "next": "publication implemented source1157480, exact new Windows proof pending",
+    "remaining": [
+      "publication final concurrency/identity/snapshot/runtime/auxiliary proof boundary",
+      "runtime crash recovery",
+      "retention",
+      "auxiliary rollback"
+    ],
+    "score_change": 0
+  },
+  "ci686_final": {
+    "source": "5a6a23d33e784d929a370dd4a0daded4dc64cd6b",
+    "tested_merge": "54326758a24ca31f53d1898f9d3f07826213a7a8",
+    "run_id": 40147067305,
+    "windows_job": 121030565409,
+    "ubuntu_job": 121030565619,
+    "windows": "FAILURE relay OwnedSetupRecovery cancel-retry",
+    "ubuntu": "SUCCESS",
+    "full_logs_read": true,
+    "log_lines": [
+      15227,
+      578
+    ],
+    "auxiliary24": "PASS",
+    "installer_suites": "PASS",
+    "desktop6394": "PASS",
+    "instance30": "PASS",
+    "owned_setup_recovery": "default-refusal/status-pending PASS; cancel-retry incomplete FAIL; later modes NOT_RUN",
+    "homevpn_suite": "NOT_RUN to completion",
+    "pack": "SKIPPED",
+    "uploads": "SKIPPED"
+  },
+  "ci686_setup_recovery_diagnostic": {
+    "status": "NOT_RUN Windows",
+    "source": "a9f8b8feb2cd74749a1503b71a71974441f96b86",
+    "criterion": "name all six existing cancellation/Retry/modal/call/lease conditions without weakening original assertion",
+    "evidence": "docs/CI686_SETUP_RECOVERY_CANCEL_DIAGNOSTIC.md",
+    "local": "PASS static/review/signatures/parity/secrets/public358/0",
+    "next": "same CI687 final logs; no blind rerun",
+    "score_change": 0
+  },
+  "ci687_final": {
+    "source": "a9f8b8feb2cd74749a1503b71a71974441f96b86",
+    "tested_merge": "774c0c6b5ee6d5d1f04fae6e08191d022219f346",
+    "run_id": 40149453845,
+    "windows_job": 121037696918,
+    "ubuntu_job": 121037697042,
+    "conclusion": "SUCCESS",
+    "full_logs_read": true,
+    "lines": [
+      15612,
+      578
+    ],
+    "auxiliary24": "PASS",
+    "setup_recovery_cancel_retry": "PASS non-reproduction CI686 cause UNKNOWN",
+    "installer_suites": "PASS",
+    "desktop6394": "PASS",
+    "instance30": "PASS",
+    "homevpn4816": "PASS",
+    "portable91": "PASS",
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED"
+  },
+  "f23_pending_installed_publication": {
+    "status": "PARTIAL",
+    "implementation": "115748057bcafcae22ead2dcdfa628c257450e39",
+    "criterion": "publish proven completed prior installation metadata under maintenance before next attempt",
+    "tests": "PendingPublication25 PASS CI689 tested mergee265a3914a8a3207fc822e64e5553ba6680b967e; new source regressions NOT_RUN",
+    "evidence": "docs/F23_PENDING_INSTALLED_PUBLICATION.md",
+    "local": "PASS review/static/signatures/parity/secrets/public360/0",
+    "remaining": [
+      "exact new CI Windows proof",
+      "auxiliary-state rollback",
+      "retention",
+      "runtime crash recovery"
+    ],
+    "score_change": 0
+  },
+  "ci688_final": {
+    "source": "115748057bcafcae22ead2dcdfa628c257450e39",
+    "tested_merge": "064e39188b4744a85cb93620db6efc67a8c9e1fd",
+    "run_id": 40152222091,
+    "windows_job": 121045939351,
+    "ubuntu_job": 121045939176,
+    "windows": "FAILURE first RestartGate no-parent composite",
+    "ubuntu": "SUCCESS",
+    "full_logs_read": true,
+    "lines": [
+      10156,
+      578
+    ],
+    "desktop6394": "PASS",
+    "instance30": "PASS",
+    "installer_through_journal8": "PASS",
+    "restart_gate8": "FAIL first scenario; individual values not logged",
+    "pending_publication25": "NOT_RUN",
+    "relay": "NOT_RUN",
+    "pack": "SKIPPED",
+    "uploads": "SKIPPED"
+  },
+  "ci688_restart_gate_fix": {
+    "status": "PASS Windows RestartGate8 CI689; no full F23 upgrade",
+    "source": "94bda3a9f25d3b41dc2e308381324c8e7b85f20f",
+    "cause": "code-proven missing preflight Payload in isolated body fixture; generic refusal wording incompatible with original gate contract",
+    "individual_ci_values": "NOT_LOGGED; counters not claimed measured",
+    "tests": "all original8 assertions unchanged",
+    "evidence": "docs/CI688_RESTART_GATE_FIXTURE.md",
+    "local": "PASS review/static/signatures/parity/secrets/public361/0",
+    "score_change": 0
+  },
+  "ci689_final": {
+    "source": "94bda3a9f25d3b41dc2e308381324c8e7b85f20f",
+    "tested_merge": "e265a3914a8a3207fc822e64e5553ba6680b967e",
+    "run_id": 40153849502,
+    "windows_job": 121050843108,
+    "ubuntu_job": 121050842903,
+    "conclusion": "SUCCESS",
+    "full_logs_read": true,
+    "lines": [
+      15689,
+      578
+    ],
+    "restart_gate8": "PASS",
+    "pending_publication25": "PASS",
+    "auxiliary24": "PASS",
+    "prior_installer_suites": "PASS",
+    "desktop6394": "PASS",
+    "instance30": "PASS",
+    "homevpn4817": "PASS",
+    "portable91": "PASS",
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED"
+  },
+  "f23_startup_rollback_admission": {
+    "status": "PARTIAL",
+    "implementation": "dfff6e8cf3ce18739c3335ad5d8c8fd2814c8d9a",
+    "criterion": "F23-R02 auxiliary rollback prerequisite, Startup classification from strict current receipt/snapshot/identity/ownership proof",
+    "tests": "StartupRollbackAdmission25 PASS CI690 tested merge0c9d485bfe6836489f8aaff3c6f22f2441d4ff3f; new origin/operation regression NOT_RUN",
+    "evidence": "docs/F23_STARTUP_ROLLBACK_ADMISSION.md",
+    "local": "PASS review/static/signatures/parity/secrets/public363/0",
+    "remaining": [
+      "actual Startup mutation-boundary owned verification/deletion/real-absence result",
+      "durable auxiliary rollback outcome",
+      "partial failure pre-change evidence",
+      "Menu/Legacy rollback",
+      "retention",
+      "general runtime crash recovery"
+    ],
+    "score_change": 0
+  },
+  "ci690_final": {
+    "source": "dfff6e8cf3ce18739c3335ad5d8c8fd2814c8d9a",
+    "tested_merge": "0c9d485bfe6836489f8aaff3c6f22f2441d4ff3f",
+    "run_id": 40169562897,
+    "windows_job": 121097471819,
+    "ubuntu_job": 121097471982,
+    "conclusion": "SUCCESS",
+    "full_logs_read": true,
+    "lines": [
+      15714,
+      578
+    ],
+    "startup_admission25": "PASS",
+    "pending_publication25": "PASS",
+    "auxiliary24": "PASS",
+    "prior_installer_suites": "PASS",
+    "desktop6394": "PASS",
+    "instance30": "PASS",
+    "homevpn4816": "PASS",
+    "portable91": "PASS",
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED"
+  },
+  "f23_owned_startup_rollback": {
+    "status": "PARTIAL",
+    "implementation": "330bd6dd31a35f01690a52dae4371a2e1538ac17",
+    "criterion": "F23-R02 owned Startup rollback actual exact object/bytes/absence; preserved state no-op",
+    "tests": "OwnedStartupRollback14 PASS CI691 tested merge7c0cce30dc5711e51dd674a17c36875c8aa2fef6; new observer/guard regressions NOT_RUN",
+    "evidence": "docs/F23_OWNED_STARTUP_ROLLBACK.md",
+    "local": "PASS review/static/signatures/parity/secrets/public365/0",
+    "remaining": [
+      "durable auxiliary mutation/outcome",
+      "error-handler integration preserving original error/no Launch",
+      "partial failure/crash settlement",
+      "Menu/Legacy rollback",
+      "retention",
+      "general runtime crash recovery"
+    ],
+    "score_change": 0
+  },
+  "ci691_final": {
+    "source": "330bd6dd31a35f01690a52dae4371a2e1538ac17",
+    "tested_merge": "7c0cce30dc5711e51dd674a17c36875c8aa2fef6",
+    "run_id": 40172465991,
+    "windows_job": 121106022295,
+    "ubuntu_job": 121106022414,
+    "conclusion": "SUCCESS",
+    "full_logs_read": true,
+    "lines": [
+      15729,
+      578
+    ],
+    "owned_startup14": "PASS",
+    "startup_admission25": "PASS",
+    "pending_publication25": "PASS",
+    "auxiliary24": "PASS",
+    "prior_installer_suites": "PASS",
+    "desktop6394": "PASS",
+    "instance30": "PASS",
+    "homevpn4816": "PASS",
+    "portable91": "PASS",
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED"
+  },
+  "f23_durable_startup_result": {
+    "status": "PARTIAL",
+    "implementation": "cf11c72d2f3dabebf2dfcae1b506447a758b0680",
+    "criterion": "F23-R02 truthful durable auxiliary observed-result prerequisite, not full outcome",
+    "tests": "StartupResult13 PASS CI692 tested merge2efbc5a4dee89d1687e0caffebd1b8d462b085f8; new admission/guard regressions NOT_RUN",
+    "evidence": "docs/F23_DURABLE_STARTUP_RESULT.md",
+    "local": "PASS review/static/signatures/parity/secrets/public367/0",
+    "remaining": [
+      "durable pre-mutation auxiliary admission/crash settlement",
+      "complete auxiliary outcome and original error-handler integration",
+      "partial pre-receipt evidence",
+      "Menu/Legacy rollback",
+      "retention",
+      "general runtime recovery"
+    ],
+    "score_change": 0
+  },
+  "ci692_final": {
+    "source": "cf11c72d2f3dabebf2dfcae1b506447a758b0680",
+    "tested_merge": "2efbc5a4dee89d1687e0caffebd1b8d462b085f8",
+    "run_id": 40175778792,
+    "windows_job": 121116027788,
+    "ubuntu_job": 121116028001,
+    "conclusion": "SUCCESS",
+    "full_logs_read": true,
+    "lines": [
+      15743,
+      578
+    ],
+    "startup_result13": "PASS",
+    "owned_startup14": "PASS",
+    "startup_admission25": "PASS",
+    "prior_installer_suites": "PASS",
+    "desktop6394": "PASS",
+    "instance30": "PASS",
+    "homevpn4816": "PASS",
+    "portable91": "PASS",
+    "pack": "PASS runner only",
+    "uploads": "SKIPPED"
+  },
+  "f23_startup_mutation_admission": {
+    "status": "PARTIAL",
+    "implementation": "ddefeef9531b06c646e1c1b01edd8400a7377cf8",
+    "criterion": "F23-R02 durable admission before Startup mutation and verified non-replaying crash-state classification",
+    "tests": "PASS CI693 exact source ddefeef9531b06c646e1c1b01edd8400a7377cf8 / tested merge7a3b592645d089c46d4f340cb98aeddbf98e55c1; new failure15 NOT_RUN",
+    "evidence": "docs/F23_STARTUP_MUTATION_ADMISSION.md",
+    "local": "PASS review/static/signatures/parity/secrets/public369/0",
+    "remaining": [
+      "full auxiliary rollback/outcome",
+      "partial pre-receipt failure evidence",
+      "Menu/Legacy rollback",
+      "retention",
+      "general runtime recovery"
+    ],
+    "score_change": 0
+  },
+  "ci693_final": {
+    "source": "ddefeef9531b06c646e1c1b01edd8400a7377cf8",
+    "tested_merge": "7a3b592645d089c46d4f340cb98aeddbf98e55c1",
+    "run_id": 40178557146,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40178557146",
+    "status": "SUCCESS",
+    "full_logs": {
+      "windows_job": 121124460682,
+      "windows_lines": 15758,
+      "ubuntu_job": 121124460486,
+      "ubuntu_lines": 578
+    },
+    "actual_pass": [
+      "StartupMutationAdmission14",
+      "StartupResult13",
+      "OwnedStartupRollback14",
+      "StartupRollbackAdmission25",
+      "previous installer suites",
+      "Desktop6394",
+      "Instance30",
+      "HomeVPN4816",
+      "Portable91"
+    ],
+    "pack": "runner-only SUCCESS",
+    "uploads_prune": "SKIPPED",
+    "owner_acceptance": "NOT_RUN"
+  },
+  "f23_startup_failure_integration": {
+    "status": "PARTIAL",
+    "implementation": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
+    "criterion": "F23-R02 actual failure path joins existing durable admission/owned Startup rollback/observation without no-replay or full-terminal overclaim",
+    "tests": "PASS CI694 source1f6b0bb / tested merge9e38b10, actual StartupFailure15; new Menu32 NOT_RUN",
+    "local": "PASS review/static/signatures/parity/diff/secrets/public371/0/JSON",
+    "evidence": "docs/F23_STARTUP_FAILURE_INTEGRATION.md",
+    "remaining": [
+      "Menu rollback admission/owned operation",
+      "Legacy rollback",
+      "complete auxiliary outcome",
+      "partial pre-receipt failure evidence",
+      "retention",
+      "general runtime recovery"
+    ],
+    "score_change": 0
+  },
+  "current_state_authority": {
+    "fields": [
+      "active_work",
+      "ci_candidate",
+      "ci694_final",
+      "f23_menu_rollback_admission",
+      "private_candidate_transfer",
+      "incident_ledger_current",
+      "current_readiness"
+    ],
+    "other_snapshots": "Historical evidence/requirements remain; current-labelled old fields/headings are superseded, not active plans",
+    "containing_source": "git rev-parse HEAD; immutable commit cannot embed own SHA",
+    "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0"
+  },
+  "ci694_final": {
+    "source": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
+    "tested_merge": "9e38b10d878348b2cfb2f495484e7ffa08b8193b",
+    "run_id": 40182233205,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40182233205",
+    "status": "SUCCESS",
+    "full_logs": {
+      "windows_job": 121135512445,
+      "windows_lines": 15799,
+      "ubuntu_job": 121135512306,
+      "ubuntu_lines": 578
+    },
+    "actual_pass": [
+      "StartupFailure15",
+      "StartupMutationAdmission14",
+      "StartupResult13",
+      "OwnedStartupRollback14",
+      "StartupRollbackAdmission25",
+      "previous installer suites",
+      "Desktop6394",
+      "Instance30",
+      "Maintenance126",
+      "Shutdown47",
+      "HomeVPN4816",
+      "Portable91"
+    ],
+    "pack": "runner-only SUCCESS",
+    "uploads_prune": "SKIPPED",
+    "owner_acceptance": "NOT_RUN"
+  },
+  "f23_menu_rollback_admission": {
+    "status": "PARTIAL",
+    "implementation": "CURRENT_TREE; reviewed local code255cc4ba095ebcb41d1e42d587f5592092687cb0",
+    "criterion": "F23-R02 read-only Menu rollback classification with exact origin/hash/snapshot/identity/ownership/receipt/trusted locations",
+    "tests": "MenuRollbackAdmission32 Windows NOT_RUN; all prior tests unchanged",
+    "local": "PASS review/static/signatures/parity/diff/secrets/public373/0/JSON",
+    "evidence": "docs/F23_MENU_ROLLBACK_ADMISSION.md",
+    "remaining": [
+      "owned Menu rollback",
+      "durable Menu admission/result/error integration",
+      "Legacy rollback",
+      "complete auxiliary outcome",
+      "partial pre-receipt evidence",
+      "retention",
+      "general runtime recovery"
+    ],
+    "score_change": 0
   }
 }

@@ -564,6 +564,46 @@ function Get-ProGoInstallerStartupRollbackAdmission([string]$Directory, [string]
         if ($null -ne $stream) { $stream.Dispose() }
     }
 }
+# Observational Menu prerequisite only: never a deletion target, mutation lease or terminal outcome.
+function Get-ProGoInstallerMenuRollbackAdmission([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null
+    try {
+        $context = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        # Permit either fully verified original auxiliary completion or already-proven Startup
+        # settlement. Missing Startup is not enough: its exact admission AND result must verify.
+        $startupSettled = (Get-ProGoInstallerStartupMutationState $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory) -ceq 'original-observed' -and
+            (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)
+        if (-not $startupSettled -and -not (Test-ProGoInstallerPendingAuxiliaryProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return $null }
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        $stream = New-Object IO.FileStream -ArgumentList @($pending, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $null }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        $receipt = $saved.Completion.Startup.Menu
+        $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+        foreach ($property in $receipt.PSObject.Properties) { $map.Add($property.Name, $property.Value) }
+        Import-ProGoShortcutType
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        if (-not $manager.VerifyDurableMenuRollbackEvidence($map)) { return $null }
+        $kind = if ($receipt.Disposition -ceq 'created' -and -not $receipt.BeforeExists -and $null -eq $receipt.BeforeHash -and $receipt.Exists) { 'created-from-absence' }
+            elseif ($receipt.Disposition -ceq 'preserved' -and $receipt.BeforeExists -eq $receipt.Exists -and $receipt.BeforeHash -ceq $receipt.Hash) { 'preserve-only' } else { return $null }
+        $proof = [pscustomobject]@{ Schema = 1; Kind = $kind; MutationAllowed = $false;
+            InstallIdentity = (Get-ProGoInstallerIdentity $InstallDirectory);
+            LocationIdentity = (Get-ProGoInstallerIdentity (Join-Path $ProgramsDirectory 'ProGo\ProGo.lnk'));
+            ReceiptHash = (Get-FileHash -LiteralPath $pending).Hash; OriginIdentity = $receipt.OriginIdentity;
+            BeforeExists = $receipt.BeforeExists; BeforeHash = $receipt.BeforeHash; Exists = $receipt.Exists; Hash = $receipt.Hash }
+        $again = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if (($again.Record | ConvertTo-Json -Depth 5 -Compress) -cne ($context.Record | ConvertTo-Json -Depth 5 -Compress) -or $again.State -cne $context.State -or
+            -not $manager.VerifyDurableMenuRollbackEvidence($map) -or (Get-FileHash -LiteralPath $pending).Hash -cne $proof.ReceiptHash) { return $null }
+        if ($startupSettled) {
+            if ((Get-ProGoInstallerStartupMutationState $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory) -cne 'original-observed' -or
+                -not (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return $null }
+        } elseif (-not (Test-ProGoInstallerPendingAuxiliaryProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return $null }
+        return $proof
+    } catch { return $null } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
 # Startup-only owned rollback operation. Caller holds maintenance and preserves original install error.
 # Does not publish a full auxiliary/runtime rollback outcome or authorize a retry.
 function Invoke-ProGoInstallerStartupRollback([string]$Directory, [string]$InstallDirectory,

@@ -1,3 +1,1335 @@
+## CURRENT F23 read-only Menu rollback admission; publication candidate
+
+Authoritative current slice is THIS git tree; resolve its containing source with `git rev-parse HEAD`.
+Reviewed local code `255cc4ba095ebcb41d1e42d587f5592092687cb0` precedes this state-only commit.
+Baseline published source `1f6b0bb7a9f73b1326fcceece1af80657035f8b3`; local recovery checkpoint
+`b87e37a487d95bfa32075b1d7922517c19c3f0c8` verified clean. PR88 exact HEAD/open draft,
+sole root writer/no active Git/build/PowerShell checked; all old copies retained.
+CI694 full Windows15799/Ubuntu578 logs independently checked: SUCCESS tested merge
+9e38b10d878348b2cfb2f495484e7ffa08b8193b. StartupFailure15/MutationAdmission14/Result13/
+OwnedStartup14/Admission25/all prior installer/Desktop6394/Instance30/Maintenance126/Shutdown47/
+HomeVPN4816/Portable91 PASS. Pack runner-only; uploads/prune SKIPPED, no owner acceptance.
+
+State publication correction: source1f6b0bb still contained the old CI667 active_work because
+subsequent state snapshots had been committed locally only. This source now includes the latest
+local history and current authoritative fields. Old tables, candidate strings, pending-publication
+records and current-labelled older headings are HISTORY, not current claims; requirements and
+incident details preserved. Immutable source cannot contain its own SHA, so current-tree resolution
+is explicit; exact published source/run/checkpoint follow in PR metadata and local checkpoint.
+No score increase, no removal of approved requirements, no inherited CI success for the new code.
+
+Minimal missing guarantee: Menu bytes/hash do not prove object origin after an identical replacement.
+The existing capture-enabled EnsureLink now records native origin via its existing pinned witness.
+No new creation/deletion operation; non-capture install/legacy/Startup/failure paths unchanged.
+Read-only Menu verifier/classifier pins bounded receipt and rechecks snapshot/current runtime/full
+admissions/identity/ownership/receipt/independent trusted locations plus actual native Menu origin/
+bytes. Accept full auxiliary prestate OR proven Startup admission+durable observation; mere absence
+is not proof. Result created-from-absence/preserve-only, MutationAllowed=False, no target path.
+Incomplete/unknown/foreign/conflicting/changed state refuses without mutation or new journal.
+Old receipts without Menu origin remain ineligible; historical terminal readers unchanged.
+See docs/F23_MENU_ROLLBACK_ADMISSION.md for acceptance and exact scope.
+
+Runtime/test/doc slice5files256add4delete plus3 synchronized state documents. MenuRollbackAdmission32:
+three fresh reads per case, full inventory/every-byte preservation, exact ownership vs identical-byte
+replacement, missing/null/wrong origin, post-Startup proof and unproved absence, receipt/snapshot/
+runtime/conflict/trusted-location errors; readers exclusively reopen, guarded own cleanup. Existing
+assertions/test bodies/deadlines/native mutation APIs/failure/error/no Launch/Stop/finally unchanged.
+Local review/static/signatures/parity/diff/secrets/public373source0release/JSON PASS. No local
+PowerShell/compiler/Windows: new parser/C# compilation/native32/exact-source regressions NOT_RUN.
+
+Pending one expected-HEAD guarded PR88 source publication and ONE automatic CI, no rerun/dispatch.
+Public uploads OFF/release/prune ineligible; no workflow edits or binary delivery. First next step:
+read SAME new CI final logs/exact source/merge/MenuRollbackAdmission32 and actually reached suites.
+After PASS, owned Menu rollback with fresh exact origin/byte/handle validation, then durable Menu
+admission/result/error integration. Legacy/full auxiliary outcome, partial pre-receipt evidence,
+retention/general runtime recovery remain separate mandatory dependencies. No full rollback,
+installation success, automatic mutation/retry or Launch authority granted here.
+Old setup-cancel/repair/sharing/Python/rebind incidents UNKNOWN; scoped PID/Marshal fixes preserved.
+Private candidate BLOCKED_TRANSFER/no retry. No live shortcut/install/service/network/ACL/security/
+credentials/VPS/release/uploads. Fixed weights/credited score unchanged, delta0.
+
+## F23 Startup-only production failure integration; CI694 in progress
+
+Published source `1f6b0bb7a9f73b1326fcceece1af80657035f8b3`, tree
+`4d854c511760442882a6f52101fc3502817118b9`, parent ddefeef9531b06c646e1c1b01edd8400a7377cf8.
+Reviewed local code88b76d55bdf2ccc6ff4fe0f2c40e312688dd93dd canonical tree identical after fetch.
+Baseline checkpointec4cac4957b0f51e870bd20dc62fe27cadfa2774 clean; PR88 exact HEAD/open draft,
+sole root writer/no Git/build/PowerShell process checked, all older worktrees retained.
+Full CI693 Windows15758/Ubuntu578 logs independently checked: SUCCESS exact tested merge
+7a3b592645d089c46d4f340cb98aeddbf98e55c1. MutationAdmission14/Result13/OwnedStartup14/Admission25,
+previous installer/Desktop6394/Instance30/HomeVPN4816/Portable91 PASS. Pack runner-only;
+uploads/prune SKIPPED. No whole F23/production/owner acceptance inferred.
+
+Actual installer failure path now marks auxiliary entry before Initialize-ProGoShortcuts. The
+maintenance-owned catch calls existing full context/admission, owned native rollback and durable
+observation. Existing admission permits ONLY read-only settlement (including not-applied: no replay).
+Missing/partial receipt, changed bytes/origin/snapshot/runtime/ownership/conflict/persistence error
+remains blocked. startup-observed is only a verified partial result; no full auxiliary outcome.
+After auxiliary entry retain current runtime/snapshot: Menu/Legacy rollback remains open and full
+runtime terminal would be dishonest; before entry original runtime rollback stays unchanged.
+Original exception rethrown, no Install OK/Launch, stage/maintenance finally unchanged. Status
+reports auxiliaryRollbackVerified=False. See docs/F23_STARTUP_FAILURE_INTEGRATION.md.
+
+Diff5files253add1delete: installer helper/entry/catch/status, one harness hook, new real-body
+StartupFailure15, explicit auxiliary mock for historical Maintenance19 synthetic shortcut adapter,
+evidence doc. ALL original Maintenance19 assertions/scenarios retained byte-for-byte. That mock
+covers runtime-only branches, not the real auxiliary integration: the new suite uses actual body,
+real runtime/journal/snapshot/native shortcut/receipt/rollback/settlement in own temp directories.
+15 cases created/custom/absence, missing/partial receipt, changed/identical replacement/Menu/snapshot,
+admission/result persistence, existing unapplied admission/no replay, existing observed result,
+locked deletion, Stop refusal. Exact original error/private bytes/untouched Menu Legacy snapshot/
+truthful state/current runtime/no full terminal/no Launch/finally/handle cleanup are asserted.
+No assertions/deadlines weakened; native/helpers/workflows and all prior fixtures otherwise unchanged.
+Local review/static/signatures/parity/diff/secrets/public371source0release/JSON PASS. No local
+PowerShell/compiler/Windows: new parser/compilation/native15 and exact-source regressions NOT_RUN.
+
+Expected-HEAD non-force guarded publication into existing PR88. Public upload guards OFF; release/
+prune ineligible. ONE automatic [CI694](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40182233205),
+exact source1f6b0bb7a9f73b1326fcceece1af80657035f8b3, pull_request, in_progress/null observed.
+No dispatch/rerun/duplicate/full wait; local state checkpoint not pushed to avoid another CI.
+Next SAME694 full final logs/exact tested merge/StartupFailure15 and actually reached prior suites.
+After PASS, smallest Menu rollback admission dependency, before its owned operation/full auxiliary
+outcome; partial pre-receipt failure evidence, Legacy rollback, retention and general runtime
+recovery remain mandatory separate residuals. No full rollback/success/retry/Launch permission.
+UNKNOWN setup cancel/repair/sharing/Python/rebind incidents retained, prior scoped fixture fixes
+unchanged. Private candidate BLOCKED_TRANSFER/no retry. No live shortcut/install/service/network/
+ACL/security/credentials/VPS/release/uploads. Fixed weights unchanged; score change0.
+Historical current-labelled sections below are superseded by this checkpoint.
+
+## F23 Startup durable pre-mutation admission/read-only crash settlement; CI693 queued
+
+Published source `ddefeef9531b06c646e1c1b01edd8400a7377cf8`, tree `087119a9510c142ed93acf5e3676e927bf239657`, parent
+cf11c72d2f3dabebf2dfcae1b506447a758b0680. Reviewed local code9057c9f1d6a2d620706931bb9569d4ee77247aae
+identical canonical tree fetched/verified. Baseline checkpointe52e471884deefe0195b9ac955e0f8944842fedf
+clean; PR88 HEAD/sole root writer/no Git/build operation checked; old worktrees retained.
+Full CI692 Windows15743/Ubuntu578 lines independently read: both SUCCESS, tested merge
+2efbc5a4dee89d1687e0caffebd1b8d462b085f8. StartupResult13/OwnedStartup14/Admission25 and
+previous installer/Desktop6394/Instance30/HomeVPN4816/Portable91 PASS. Pack runner-only,
+uploads/prune SKIPPED. No whole F23/production/owner-PC acceptance inferred.
+
+One bounded prerequisite in existing owned Startup operation: before native mutation persist exact
+identity/journal/receipt/location/origin/hash/original-presence admission using CreateNew/WriteThrough/
+Flush(true)/bounded readback, revalidate snapshot/current runtime/admissions/auxiliary ownership and
+actual prestate. Pin admission stream against changes through physical settlement, finally close.
+Native operation unchanged. Valid exact not-applied record can be reused only on explicit invocation,
+never overwritten. Cancellation/persist failure/short/tampered/foreign/conflict blocks mutation.
+Read-only crash state recomputes physical proof twice and validates pinned exact durable record:
+not-applied, original-observed or blocked. No automatic delete/restore/replay from intent. Settlement
+only records/reuses existing verified Startup-only observation after original-observed; no full
+rollback/success/Launch or new attempt permission. Automatic reconcilers/new-journal gate block
+admission prefixes; read-only preflight inspection is not mutation authority. See
+ docs/F23_STARTUP_MUTATION_ADMISSION.md for acceptance and limits.
+
+Diff5files282add4delete: installer admission/context/state/settlement and explicit operation guard,
+harness hook, new StartupMutationAdmission14, existing OwnedStartup14 adds2 asserts/exact new file
+accounting, evidence doc. Existing original assertions all retained; expected inventory includes only
+one known independently validated admission, explicit retry same hash. New tests before/after crash,
+preserved, persistence/short/tamper/replacement/runtime/snapshot/missing/conflict/cancellation/lock;
+3 read-only inspections byte-identical, no replay and only actual result settles, own resources closed.
+No timeout/coverage weakening. Native/error/Stop/finally code parity retained except pinned admission
+lifecycle. Local static/review/signatures/parity/diff/secrets/public369/0 PASS. No local PowerShell/
+compiler/Windows: new parser/compilation/native14/regressions NOT_RUN. No old PASS copied to new code.
+
+Expected-HEAD guarded non-force PR88 source publication; upload guards OFF/release/prune ineligible.
+ONE automatic [CI693](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40178557146), exact sourceddefeef9531b06c646e1c1b01edd8400a7377cf8, count1,
+queued/null observed. No manual dispatch/rerun/duplicate/full wait; local docs checkpoint not pushed.
+Next SAME693 final full logs/exact merge/StartupMutationAdmission14 and previous suites if reached.
+After PASS, smallest complete Startup auxiliary outcome/error-handler integration dependency,
+without merging Menu/Legacy rollback, retention or general runtime recovery. Partial pre-receipt
+failure/crash evidence remains separate mandatory work. Original install error/no Launch and
+settings/vault/keys/foreign resources unchanged. CI686/repair20s/sharing/Python/rebind UNKNOWN with
+diagnostics; previous PID/Marshal/restart fixture fixes scoped PASS. BLOCKED_TRANSFER/no retry.
+No live shortcuts/install/services/network/ACL/security/credentials/VPS/release/uploads. Fixed
+weights unchanged/score change0. Historical current-labelled sections below superseded here.
+
+## F23 durable Startup-only observed result prerequisite; CI692 in progress
+
+Published source `cf11c72d2f3dabebf2dfcae1b506447a758b0680`, tree `fd7ba080f649b27384fc5cc53683462671c416eb`, parent
+330bd6dd31a35f01690a52dae4371a2e1538ac17. Reviewed local codef59c88b90caa41877250030387e26d88a85c9716
+identical canonical tree fetched/verified. Baseline checkpoint6ea3a0477b146d2408c3c6cab1f98a4a36a5fb3e
+clean; PR88 exact HEAD/sole root writer/no Git/build operations verified; old worktrees retained.
+Full CI691 Windows15729/Ubuntu578 logs independently read: both SUCCESS, tested merge
+7c0cce30dc5711e51dd674a17c36875c8aa2fef6. OwnedStartup14/Admission25/Publication25/Auxiliary24
+and prior installer/Desktop6394/Instance30/HomeVPN4816/Portable91 PASS. Pack runner-only,
+uploads/prune SKIPPED. No full F23/production/owner-PC acceptance inferred.
+
+One bounded durable outcome prerequisite: persist startup-original-observed only after real original
+Startup state verification and unchanged Menu/Legacy at independent trusted locations plus current
+new runtime/snapshot/identity/ownership/admissions proof. Exact receipt pinned/bounded and result
+bound by receipt hash/install/location/origin. This observation does not claim who removed the link.
+CreateNew own deterministic sidecar under verified backups, WriteThrough/Flush(true)/exact readback/
+repeat physical proof; independent bounded reader recomputes actual proof. FullRollback=false,
+InstallSucceeded=false, MutationAllowed=false, RuntimeState=new-verified. No flags/file existence
+alone can satisfy reader. Incomplete/conflict/tampered/external state fail closed, no overwrite.
+Any auxiliary partial artifact conservatively blocks installed/rollback automatic reconciliation,
+auxiliary preflight and new-journal/no-pending gate. No intent authorizes automatic mutation.
+See docs/F23_DURABLE_STARTUP_RESULT.md for acceptance/exact boundary.
+
+Diff5files277add0delete: installer proof/writer/reader/4 guards, native readonly observer, harness,
+StartupResult13, evidence doc. Old owned Startup implementation and existing helpers/asserts/timeouts/
+error/Launch/Stop/finally unchanged except conservative guards. Tests actual existing rollback only
+as setup in own temporary roots, result successes/refusals/persist/short/conflict/tamper/external
+changes; exact receipt/identity/false full flags/all old bytes preserved/no implicit publication/
+stream cleanup. Local review/static/signatures/parity/diff/secrets/public367/0 PASS. No local
+PowerShell/compiler/Windows: parser/compilation/native13/exact regressions NOT_RUN. No old PASS
+transferred to new code. Before any artifact exists, failed observational preflight does not erase
+a legitimate prior installed proof; new writer never publishes it.
+
+Expected-HEAD guarded non-force PR88 source update; public uploads OFF/release/prune ineligible.
+ONE automatic [CI692](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40175778792), exact sourcecf11c72d2f3dabebf2dfcae1b506447a758b0680, count1,
+in_progress/null observed. No dispatch/rerun/duplicate/full wait. Local docs checkpoint not pushed.
+Next SAME692 final full logs/exact merge/StartupResult13/prior suites only if actually reached.
+After PASS, smallest durable auxiliary pre-mutation admission/crash settlement prerequisite before
+complete auxiliary outcome/error-handler integration. Partial pre-receipt failure remains blocked;
+Menu/Legacy rollback, retention/general runtime recovery remain mandatory separate work.
+Original error/no Launch and settings/vault/keys/foreign resources untouched. CI686/repair20s/sharing/
+Python/rebind UNKNOWN with diagnostics; earlier PID/Marshal/restart fixture fixes scoped PASS.
+BLOCKED_TRANSFER/no delivery retry. No live shortcuts/install/services/network/ACL/security/credentials/
+VPS/release/uploads. Fixed weights unchanged/score change0. Older current-labelled sections superseded.
+
+## F23 owned Startup rollback operation; CI691 in progress
+
+Published source `330bd6dd31a35f01690a52dae4371a2e1538ac17`, tree `38faea0d0bced96965d61c825e151b291709dac5`, parent
+dfff6e8cf3ce18739c3335ad5d8c8fd2814c8d9a. Local reviewed code8e848eda4be253d5ce566c05351f41f524b9ba76
+identical canonical tree fetched/verified. Baseline checkpoint19f4d856495cd0e9bd6ff1f1ed7d796339746acb
+clean, PR88 head/sole root writer/no Git/build operation verified; old worktrees retained.
+Full CI690 Windows15714/Ubuntu578 logs independently read: both SUCCESS, tested merge
+0c9d485bfe6836489f8aaff3c6f22f2441d4ff3f. StartupAdmission25/Publication25/Auxiliary24 and
+all prior installer/Desktop6394/Instance30/HomeVPN4816/Portable91 PASS. Pack runner-only,
+uploads/prune SKIPPED. No full F23/production/owner-PC acceptance inferred.
+
+One narrow owned operation Invoke-ProGoInstallerStartupRollback: same bounded pinned receipt,
+strict snapshot/identity/ownership/runtime/admissions and independent trusted auxiliary locations.
+Startup receipt now includes native OriginIdentity captured from created temporary object's handle
+before same object's no-overwrite move; destination verification checks actual origin/hash.
+Old incomplete receipts cannot authorize deletion. Existing non-capture shortcut paths retain
+original behavior; settings StartupChange and Legacy native deletion unchanged.
+Created-from-absence deletion uses one exact READ+DELETE handle with OPEN_REPARSE_POINT/share READ,
+verifies actual native origin/hash on that handle before FileDispositionInfo, then verifies real
+absence after all handles close. No path-based File.Delete. Preserved/custom verified/no-op.
+Changed/replaced/linked/denied evidence refuses; cancellation before mutation propagates, result
+settlement after mutation not abandoned. Caller owns maintenance; current general error handler
+not wired until durable auxiliary outcome dependencies complete. No complete rollback published.
+See docs/F23_OWNED_STARTUP_ROLLBACK.md for exact acceptance and limits.
+
+Diff5files260add6delete: ApplicationShortcuts origin/native operation, installer wrapper, harness,
+OwnedStartupRollback14, evidence doc. Tests actual receipts/owned runtime/native only new temp
+fixtures: created, preserved custom/absence, changed/identical replacement, missing origin, locked/
+explicit retry, cancelled, native changed/replaced/cancelled after full admission, foreign runtime,
+wrong trusted location. Exact bytes/absence, non-Startup full inventory, unresolved gate, exclusive
+reopen proves cleanup; finally closes own lock/token/stage and guards reparse cleanup.
+No assertions/timeouts weakened. Installer error/Stop/finally/Launch and previous tests unchanged;
+Legacy/settings path parity and signatures/native handle order reviewed. Local static/review/
+signatures/parity/diff/secrets/public365/0 PASS. No local PowerShell/compiler/Windows: new compilation/
+parser/native14/exact regression NOT_RUN. No old PASS transferred onto new operation.
+
+Expected-HEAD guarded non-force PR88 publication; upload guards OFF/release/prune ineligible.
+ONE automatic [CI691](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40172465991), exact source330bd6dd31a35f01690a52dae4371a2e1538ac17, count1,
+in_progress/null observed. No manual dispatch/rerun/duplicate/full wait; local docs checkpoint
+not pushed. Next SAME691 final full logs/exact merge/OwnedStartupRollback14 and previous suites.
+After PASS, minimal durable auxiliary mutation/outcome evidence before full error-handler integration;
+partial pre-receipt failure/crash settlement, Menu/Legacy rollback, retention/general runtime recovery
+remain mandatory separate work. Settings/vault/keys/foreign resources preserved.
+CI686/repair20s/sharing/Python/rebind UNKNOWN with diagnostics; PID/Marshal/restart fixtures scoped PASS.
+BLOCKED_TRANSFER/no delivery retry. No live shortcut/install/services/network/ACL/security/credentials/
+VPS/release/uploads. Fixed weights unchanged/score change0. Old entries below historical superseded.
+
+## F23-R02 Startup rollback admission prerequisite; CI690 queued
+
+Published source `dfff6e8cf3ce18739c3335ad5d8c8fd2814c8d9a`, tree `e8ff7333d6a23e1ed0b6878d04b5a597265e2583`, parent
+94bda3a9f25d3b41dc2e308381324c8e7b85f20f. Local reviewed code11b0f68091dd8f2b23161904ac7ff55c2fca5891
+identical canonical tree fetched/verified. Baseline checkpoint872396ae1672dad542db33dc7f09d96bd11b08d4
+clean, PR88 exact head/sole root writer/no Git/build operation verified; old worktrees retained.
+Full CI689 Windows15689/Ubuntu578 lines independently read: both SUCCESS, tested merge
+e265a3914a8a3207fc822e64e5553ba6680b967e. RestartGate8/PendingPublication25/Auxiliary24,
+all prior installer suites/Desktop6394/Instance30/HomeVPN4817/Portable91 PASS. Pack runner-only,
+uploads/prune SKIPPED. No whole F23, production or owner-PC acceptance inferred.
+
+One bounded existing F23-R02 auxiliary rollback prerequisite: read-only Startup admission classifies
+created-from-absence vs preserve-only after two strict auxiliary/runtime/snapshot/identity/ownership/
+admission verifications. Trusted expected locations supplied independently, never by journal fields.
+Exact pending receipt pinned read-only1..1048576 bytes through classification; finally closes both
+reader/stream. Result contains schema/kind[private-root]/location identity/receipt hash/before-current presence/
+hashes only. Missing/unknown/conflicting/changed evidence returns null without mutation.
+Existing/custom/preserved Startup is never claimed owned. No deletion/restoration/rollback publication
+or wiring to current error handler yet; it is a prerequisite, not an implemented auxiliary rollback.
+See docs/F23_STARTUP_ROLLBACK_ADMISSION.md for acceptance and observational limits.
+
+Diff4files212add0delete: installer admission helper, harness hook, StartupRollbackAdmission25, evidence.
+Four accepted fixture states include actual absence and custom preservation;21 refusals retain all
+existing proof guards; exact bindings/old-current bytes/receipt digest/no path or private bytes in
+result, no gate bypass/full file inventory/private and foreign bytes unchanged. All old code/tests/
+assertions/timeouts and Stop/finally/cleanup/original error/no Launch unchanged by static parity.
+Local review/static/signatures/parity/secrets/public363/0/diff PASS; no local PowerShell/compiler/
+Windows: new parser/compilation/admission25/native/regressions NOT_RUN. No old PASS applied to new code.
+
+Expected-HEAD guarded non-force PR88 source update; upload guards OFF, release/prune ineligible.
+ONE automatic [CI690](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40169562897), exact sourcedfff6e8cf3ce18739c3335ad5d8c8fd2814c8d9a, pull_request count1,
+queued/null last observed. No dispatch/rerun/duplicate/full wait. Local docs checkpoint not pushed.
+Next SAME690 final full logs/exact merge/StartupRollbackAdmission25 and actual prior suites.
+After PASS, separate smallest actual Startup owned rollback slice: revalidate at mutation boundary,
+only created-from-absence may be removed, preserve-only no-op, verify real absence and durable outcome.
+Partial auxiliary failure before complete receipt still needs durable pre-change evidence; Menu/
+Legacy rollback, retention/general runtime crash recovery remain mandatory separate work.
+CI686 recovery/repair20s/sharing/Python/rebind causes UNKNOWN, diagnostic sources not runtime fixes.
+PID/Marshal/restart fixture fixes scoped verified PASS. BLOCKED_TRANSFER/no delivery retry.
+No live shortcuts/install/services/network/ACL/security/credentials/VPS/release/uploads.
+Fixed weights unchanged/score change0. Historical current-labelled sections below superseded here.
+
+## CI688 restart fixture dependency/refusal compatibility fix; CI689 in progress
+
+Published source `94bda3a9f25d3b41dc2e308381324c8e7b85f20f`, tree `c5c4b8032a8e3bd4e432d40de97c32932f03639e`, parent
+115748057bcafcae22ead2dcdfa628c257450e39. Local reviewed code5e35bf6f108927f9ff2ef26af09dc60303f7b002
+identical canonical tree fetched/verified. Baseline checkpoint784c836be2eccc51bec39779629575e100d82900
+clean; PR88 exact source/sole root writer/no Git/build operation checked; older worktrees retained.
+
+Full CI688 Windows10156/Ubuntu578 lines independently read: Windows121045939351 FAILURE
+Repository hygiene/build, Ubuntu121045939176 SUCCESS. Tested merge
+064e39188b4744a85cb93620db6efc67a8c9e1fd. Desktop6394/Instance30/Maintenance126/Shutdown47,
+Payload9/Maintenance19/Stage8/Backup8/SelfCheck9/Rollback8/Journal8 and earlier logged suites PASS.
+RestartGate8 first no-parent fails composite reason/Stops/Disposes/Launches/Success, individual
+values NOT logged. All later outcome/auxiliary/PendingPublication25/relay NOT_RUN; pack/uploads SKIPPED.
+
+Code-derived cause: isolated fixture invokes body starting InstallDir, omitting preflight; neither
+fixture nor caller initializes Payload. New call evaluates Payload.ScriptsDirectory before resolver,
+StrictMode throws before Stop. Actual production preflight defines Payload; existing finally still
+releases assigned maintenance. Do not mislabel inferred counters as measured CI values.
+Minimal fixture sets only trusted ScriptsDirectory; no live install. Subsequent pending cases have a
+second deterministic compatibility mismatch: new resolver generic refusal text differed from old
+restart gate contract. Restore original refusal wording only; throw conditions/proof/gate unchanged.
+See docs/CI688_RESTART_GATE_FIXTURE.md. Other body fixture preflight dependencies inspected.
+
+Diff3files47add1delete: fixture3lines, installer one refusal string, evidence doc43lines.
+All8 original assertions/messages/scenarios/private-byte/no journal bypass/Stop/Dispose/Launch
+checks and cleanup preserved. All production logic except that one refusal text byte-parity;
+no timeout/coverage weakening. Local review/static/signatures/parity/secrets/public361/0/diff PASS.
+No local Windows/PowerShell/compiler: new compilation/RestartGate8/PendingPublication25/regressions NOT_RUN.
+Expected-HEAD guarded non-force PR88 source publication; upload guards OFF, release/prune ineligible.
+ONE automatic [CI689](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40153849502), exact source94bda3a9f25d3b41dc2e308381324c8e7b85f20f, count1,
+in_progress/null last observed. No dispatch/rerun/duplicate/full wait; local docs checkpoint not pushed.
+
+Next SAME689 full final logs/exact tested merge/RestartGate8 then PendingPublication25 and prior suites
+only if reached. No next functionality before PASS. F23 publication remains pending exact Windows proof.
+Old repair20s/sharing/Python/rebind/CI686 causes UNKNOWN and diagnostics retained; PID/Marshal scoped
+verified PASS. BLOCKED_TRANSFER/no delivery retry. No live install/services/network/ACL/security/
+credentials/release/uploads. Fixed weights unchanged/score change0. Historical entries below superseded.
+
+## F23 pending-installed publication; exact new Windows proof pending
+
+Published source `115748057bcafcae22ead2dcdfa628c257450e39`, tree `12a122a9c8787ad890a440dd558e640aed681114`, parent
+a9f8b8feb2cd74749a1503b71a71974441f96b86. Reviewed local code55100972bd24051f8e1967942c5e23c81aff1c07
+identical tree fetched/verified. Baseline checkpoint5636103cdfe8dbb7b610b43e4c4fafffcdf1b773
+clean; PR88 expected head/sole root writer/no Git/build operation verified, old worktrees retained.
+Full CI687 Windows15612/Ubuntu578 logs independently read, both SUCCESS; tested merge
+774c0c6b5ee6d5d1f04fae6e08191d022219f346. Auxiliary24, setup recovery cancel-retry,
+all previous installer suites, Desktop6394/Instance30/HomeVPN4816/Portable91 PASS.
+Pack runner-only/uploads/prune SKIPPED. CI686 not reproduced, causal root UNKNOWN, diagnostic
+source not runtime fix. No whole F23/production/owner-PC acceptance inferred.
+
+One bounded production path: Resolve-ProGoInstallerPendingInstalled under existing maintenance
+ownership before Stop/new writes. Scan all journal candidates, fail closed unknown/multiple/
+conflicting; verified rollback-pending keeps existing separate resolver. Strict auxiliary reader
+twice verifies snapshot/current runtime/admissions/identity/ownership and actual Startup/Menu/
+Legacy against independent platform locations; pending hash unchanged required. Only atomic
+same-directory File.Move metadata rename, no overwrite of installed.json. Rename denial propagates,
+no Launch. No intent-driven runtime recovery or auxiliary mutation. See
+ docs/F23_PENDING_INSTALLED_PUBLICATION.md for acceptance and concurrency observation limits.
+
+Diff4files228add0delete: installer resolver/hook, harness hook, PendingPublication25, evidence doc.
+Tests run actual installer body and resolver with own fixture locations and maintenance/Stop mocks;
+positive exact rename/terminal/gate/idempotence, all refusal/private/external bytes, Dispose once/no
+Launch; native publication-locked case first proves valid auxiliary receipt then requires IOException.
+Old production/tests/guards/timeouts preserved by parity. Local review/static/signatures/parity/
+secrets/public360/0/diff PASS. No local PowerShell/compiler/Windows: parser/compilation/new25/native
+and exact new regressions NOT_RUN. Source push guarded expected-head/non-force; upload guards OFF,
+release/prune ineligible. No manual CI/rerun/duplicate/full wait. ONE automatic [CI688](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40152222091), exact source115748057bcafcae22ead2dcdfa628c257450e39,
+pull_request count1, in_progress/null observed. Local docs checkpoint not pushed, avoiding second CI.
+
+Next SAME automatic run exact final logs/PendingPublication25 and prior suites if actually reached.
+After PASS, choose smallest existing F23 auxiliary rollback prerequisite (failure/ownership proof)
+from registry; retention/runtime crash recovery remain separate mandatory slices, not in this pass.
+Stop/finally/settings/vault/keys/external changes unchanged. BLOCKED_TRANSFER/no delivery retry.
+Repair20s/sharing/Python/rebind and CI686 incidents UNKNOWN; PID/Marshal fixes scoped verified PASS.
+Fixed weights unchanged/score change0. Historical current-labelled entries below superseded here.
+
+## CI686 owned recovery Cancel/Retry UNKNOWN; one test-only diagnostic CI687
+
+Published source `a9f8b8feb2cd74749a1503b71a71974441f96b86`, tree `cafcbd8f58356dc18a3b7543aaa22f4d34d90d6c`, parent
+5a6a23d33e784d929a370dd4a0daded4dc64cd6b. Local reviewed code1e0283c3004ab5a96d473b8f3995cf8c1e9313db
+identical canonical tree fetched/verified. Baseline checkpoint65b596d01ed4f05018fd768ceb0a5538eacd633f
+clean, PR88 exact HEAD/sole root writer/no Git/build process verified; old worktrees preserved.
+
+Full CI686 Windows15227/Ubuntu578 lines independently read. Windows121030565409 FAILURE relay,
+Repository hygiene/build SUCCESS; Ubuntu121030565619 SUCCESS. Tested merge
+54326758a24ca31f53d1898f9d3f07826213a7a8. Actual AuxiliaryRevalidation24 and all earlier installer
+suites PASS, Desktop6394/Instance30 and earlier logged suites PASS. Relay OwnedSetupRecovery
+only default-refusal/status-pending complete; cancel-retry fails after held-body check. Overall
+HomeVPN/remaining recovery modes/later suites NOT_RUN to completion; pack/public-content/uploads
+SKIPPED. No overall green CI or production/owner acceptance claim.
+
+Safe original stack ModalWizardCase IL155 -> OwnedSetupRecovery IL1624 -> Run IL471 -> Main IL4958.
+Next composite assertion has six conditions; individual values absent. Exact violated invariant/
+causal root UNKNOWN, not linked to independent installer-only diff. No runtime fix justified.
+
+Diff2files93add2delete, strictly test instrumentation + evidence document:
+HomeVpnSetupRecoveryTests retains exact original short-circuit expression/order/message/assert.
+Only failure collects six named boolean conditions, violated list, bounded safe stack, task enums,
+UI owner/modal/handle/disposal and counts, admin/cleanup/resources/release, accepted ID/result/journal/
+private-byte equality booleans. One atomic observation before original cancellation throw records
+actual copy token state (-1 not reached/0 false/1 true). No raw secret/ID/PID/path/argv/message/body.
+ShowDialog, all waits/assertions/no replay/production and finally cleanup unchanged. Diagnostics
+are observations after original sample and not a fix; incomplete collection still fails original.
+See docs/CI686_SETUP_RECOVERY_CANCEL_DIAGNOSTIC.md.
+
+Local review/static/signatures/full original fixture parity/secrets/public358/0/diff PASS.
+No local compiler/PowerShell/Windows: exact diagnostic/native/regressions NOT_RUN.
+Expected-HEAD guarded PR88 source update; public upload guards OFF/release/prune ineligible.
+Canonical tree guard rejected an initially truncated tool read before any ref update; reread full
+file/tree equality verified before sole publication. No wrong tree committed to PR/no duplicate CI.
+ONE automatic [CI687](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40149453845) sourcea9f8b8feb2cd74749a1503b71a71974441f96b86, in_progress/null count1.
+No full wait or second stage. Local docs checkpoint not pushed (avoids second CI).
+Next SAME687 final full logs/exact tested merge/named conditions and actual lifecycle facts.
+Non-reproduction alone leaves incident UNKNOWN. No pending-installed publication/new functions
+before verified PASS. F23 auxiliary revalidation now scoped CI686 PASS, whole F23 still open.
+Repair20s/sharing/Python/rebind UNKNOWN; PID/Marshal fixture fixes scoped PASS. BLOCKED_TRANSFER,
+no delivery retry; no live install/services/network/security/credentials/release/uploads.
+Weights unchanged/score change0. Older current-labelled sections below are historical snapshots.
+
+## F23 auxiliary durable receipt revalidation prerequisite; CI686 in progress
+
+Published source `5a6a23d33e784d929a370dd4a0daded4dc64cd6b`, tree `938ad1a83b6f63e8d2a9a6b7bde3abdfe893df83`, parent
+0b662b38bba5e799755f599ad5ab344a0ab067aa. Reviewed local code67e88df63734025dfad4687a3dbdfda9c79e81df
+has identical tree. Baseline checkpoint ca998a01a734f4771f0ffeb51b8f4b2fff9f3412 clean;
+PR88 source/sole root writer/no Git/build operations checked; old worktrees preserved.
+Full CI685 Windows15587/Ubuntu578 logs independently read, both SUCCESS; tested merge
+69fc0c87dac0d43d71d1df0b698c990e50796ce8. Legacy14 actual PASS plus Menu14/Startup13/
+PendingProof11/Reconcile13/RollbackOutcome12/Maintenance19 and all installer/SOCKS51/
+Desktop6394/Instance30/HomeVPN4816/Portable91 suites. Pack runner-only; uploads/prune SKIPPED.
+No owner-PC acceptance, whole F23 or production PASS inferred.
+
+One bounded read-only prerequisite: pinned bounded durable receipt, strict fixed DTO field/type/
+schema/hash/presence parsing; existing native Startup/Menu/Legacy verifiers check actual bytes/
+absence/legacy origin and replacement against independently supplied expected locations/root.
+No journal path is used as a target; runtime/admissions/snapshot/identity/owned inventory and
+conflicts rechecked before/after via existing proof. Unknown sibling pending journals block.
+New reader never writes/deletes/restores shortcuts/runtime or renames pending metadata.
+See docs/F23_AUXILIARY_RECEIPT_REVALIDATION.md for acceptance/observational limits.
+A positive observation is not atomic publication authority or hostile-journal authenticity.
+
+Diff5files255add0delete: ApplicationShortcuts strict durable DTO reader, Install-ProGo readonly
+auxiliary verifier/scope guard, harness hook, AuxiliaryRevalidation24 own-temp scenarios, evidence doc.
+Three positive variants plus21 refusals, all fixture bytes/inventory/private/external preservation,
+no automatic retry/publication; own locks/stage closed finally/reparse cleanup refused.
+No existing installer/native/test body altered; existing assertions/guards/timeouts byte-parity
+verified after removing additions. Static review/signatures/read-only guard/parity/secrets/public357/0 PASS.
+No local PowerShell/compiler/Windows: new compilation/parser/auxiliary24/native regressions NOT_RUN.
+
+Expected-HEAD guarded non-force source push PR88; public workflow upload guards remain OFF,
+release/prune ineligible. ONE automatic [CI686](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40147067305), exact source5a6a23d33e784d929a370dd4a0daded4dc64cd6b,
+pull_request count1, in_progress/null last observed. No manual rerun/duplicate/full-CI wait.
+Local docs-only checkpoint not pushed, avoiding second CI. Next SAME686 final logs/exact tested merge/
+AuxiliaryRevalidation24 and prior suites only if actually executed. If PASS, separate bounded
+pending-installed publication gate with final auxiliary/runtime/ownership/concurrency proof;
+no publication implemented in this stage. Runtime crash recovery, retention, auxiliary rollback,
+PGA04 installer opt-in and remaining F23 acceptance gates remain mandatory separate work.
+PID and SizeOf fixture fixes scoped Windows PASS; repair20s/sharing/Python/rebind incidents UNKNOWN,
+diagnostics preserved. Private candidate BLOCKED_TRANSFER, no delivery retry. No live install/
+services/security/network/credentials/release/uploads. Weights unchanged; score change0.
+Historical entries below are evidence snapshots, superseded for current status by this section.
+
+## CI684 verified; exact SizeOf(Type) fixture fix; CI685 in progress
+
+Published source `0b662b38bba5e799755f599ad5ab344a0ab067aa`, tree `044823a1467026622c7b114872c01f398281d76a`, parent2357a85691f17024a8a20381faa6a5051479c715.
+Baseline checkpoint c1d532878b1e30527c6cf46e42185384dc803e44 clean; PR88 HEAD/sole writer verified.
+Minimal diff2files38add2delete: test exact MethodInfo SizeOf(System.Type) invocation and evidence doc.
+Expected ABI sizes remain1/52; all scenario tail/assertions/guards/timeouts identical; runtime unchanged.
+Full CI684 Windows log independently read: tested merge488061a811c1609f6bc8e4cc0a3eb6657e9837c8,
+Windows121017174243 FAILURE, Ubuntu121017174418 SUCCESS. Failure test line19 marshals RuntimeType,
+not represented structure. Legacy14 NOT_RUN; relay/pack/uploads SKIPPED. Repair suites, SOCKS51,
+Desktop6394 including PID admission regression, Instance30/Maintenance126/Shutdown47 and all installer
+Payload9/Maintenance19/Stage8/Backup8/SelfCheck9/Rollback8/Journal8/RestartGate8/Outcome10/
+RollbackOutcome12/Reconcile13/PendingProof11/Startup13/Menu14 PASS on that merge only.
+PID fixture corrected code now scoped Windows PASS. Repair20s/Python/rebind/receipt causes UNKNOWN;
+non-reproduction is not a runtime fix. See docs/CI684_LEGACY_SIZEOF_FIXTURE.md.
+Local normalized scenario parity/review/signatures/diff/secrets/public355/0 PASS; initial byte parity
+check mismatched CRLF vs canonical Git LF, corrected normalized check PASS; no content changes needed.
+No local PowerShell/Windows: new ABI/Legacy14/exact regressions NOT_RUN.
+Expected-HEAD guarded non-force PR88 update; same public workflows four upload guards OFF,
+release ineligible. ONE automatic [CI685](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40144623516) source0b662b38bba5e799755f599ad5ab344a0ab067aa, in_progress/null; no duplicate/rerun/wait.
+Next SAME685 full final log: exact merge, ABI and actual Legacy14, downstream only if reached.
+No new function/runtime recovery/pending publication before PASS. BLOCKED_TRANSFER, no retry.
+Weights unchanged/no score increase. Old entries below are historical snapshots superseded here.
+
+## CI683 complete repair20s UNKNOWN; test-only diagnostic CI684 in progress
+
+Published diagnostic source `2357a85691f17024a8a20381faa6a5051479c715`, tree
+`fe813461e9648b76ccfbe6bfa400a8515b7d95a2`, parent
+`d4903e818c4c95eadf914a5e077737854071b223`; fetched exact tree/parent equals reviewed
+local code `9764d31067c849a36717ff6a4d6e84ef8ea75554`. Baseline checkpoint
+`24df24bb633458a041be612bec69d211d94113bf` clean/sole root writer confirmed. No competing
+Git/build process; old worktrees preserved. PR88 expected-HEAD non-force source update verified.
+Public repo/workflows unchanged/four artifact upload guards OFF; no release eligibility.
+
+Full final CI683 Windows191/Ubuntu578-line logs read independently: Windows121012684350
+FAILURE, Ubuntu121012684481 SUCCESS; tested merge
+`477bddbfec21431bbd1049bbc7daf86473b1ead7`. EXE build PASS, repair native null interop1 and
+four incomplete payload refusal PASS. Complete positive owned repair PowerShell root did not
+exit within WaitForExit20000 at fixture line156. No inner phase/process/stream evidence then.
+PID fixture regression/Desktop/SSH policy/Instance/all installer/LegacyEvidence14/relay NOT_RUN;
+pack/uploads SKIPPED. Repair script/fixture/helper match CI681 source5f84ceb (past PASS), so
+no link to test-only PID patch demonstrated. Actual new timeout cause UNKNOWN.
+
+ONE test-only phase experiment, NOT repair fix: only first complete repair uses a wrapper
+calling unchanged original script/arguments/environment with 17 exact unique source-line
+breakpoints and automatic safe actions. Entry/helper/maintenance/snapshot/copy/verify/
+selfcheck-call vs return/commit/transaction-cleanup/script-return/probe-cleanup checkpoints
+contain only fixed whitelist names and ms in CreateNew own-GUID trace. No stepping/prompt or
+source rewrite. Parent start-enter/start-return, deadline/normal exit/after original cleanup
+facts: own root exited-known/value/CPU/RAM, stdout/stderr task state, bounded trace, own journal
+whitelist phase/counts and self-check-data existence under guarded own stage folders. No raw
+journal/output/path/argv/PID/credential/exception message. Max6 sanitized managed method names;
+parent timeout stack is not claimed inner child stack. Native self-check handles not directly
+observed. Markers BEFORE lines certify prior boundary only. Any remaining native-loader vs
+image-init gap stays explicit. Diagnostic overhead is inside same20s, never timeout-as-PASS.
+
+Original 20s repair, 8s self-check, 3s stream/cleanup waits, asserts, kill only own root, later
+fixture scenarios/order preserved. Original arguments restored before later cases. Wrapper
+finally removes only own breakpoints/closes trace. Runtime/MaintenanceOperation/PID fix/legacy
+and other production code unchanged. Diff3files213add/2delete: RepairPayloadTests diagnostics,
+new test-only RepairPhaseProbe, evidence/incident doc. Local review/static17 anchors/timeout/
+assert/runtime parity/signatures/diff/secrets/public354/0 PASS. Local PowerShell/compiler/
+Windows unavailable: wrapper/phase/native/PID regression/LegacyEvidence14/exact suites NOT_RUN.
+
+ONE automatic [CI684/40142564635](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40142564635),
+source2357a85/pull_request/count1/in_progress/conclusion null observed. No dispatch/rerun/duplicate/
+full wait. Local docs-only checkpoint not pushed to avoid second CI.
+Next SAME684 full final logs/exact merge/last completed repair phase, owned root/stream/cleanup
+states and only downstream tests actually reached. No functional stage before exact PASS.
+
+Incident ledger (also CI683_REPAIR_PHASE_DIAGNOSTIC.md): Python startup CI662/670 UNKNOWN;
+listener release CI671 UNKNOWN; SOCKS pending receipt busy CI676 UNKNOWN, diagnostics retained.
+PID double-read fixture corrected in code d4903e8, Windows still NOT_RUN due earlier CI683;
+exact original null branch unmeasured, no runtime leak claim. Repair20s CI683 new UNKNOWN;
+this source DIAGNOSTIC, not fix. Prior non-reproduction never closes these incidents.
+Auxiliary durable revalidation/pending-installed, runtime recovery/retention/aux rollback and
+existing seven F23 acceptance gates stay OPEN. BLOCKED_TRANSFER/no retry. No live install/
+service/network/ACL/security/credentials/release/uploads. No score increase. STOP one stage.
+
+## CI682 test-only command admission capture correction; CI683 in progress
+
+Published source `d4903e818c4c95eadf914a5e077737854071b223`, tree
+`dbee8576d00770bc64a91066884f3c7b5f4c31f2`, parent
+`559a18adf35dfeeb23c16c7fc4880e2e0d41cd9a`; fetched exact parent/tree equals reviewed
+local code `0f4424be9aa0fe1480a5fb0b7a353e5d7530268a`. Baseline checkpoint
+`b8c3ce39f67529600213b1e5c74db3ba5331b3b4` clean/root-only writer verified. No competing
+Git/build process; old worktrees preserved. PR88 expected-HEAD non-force source push verified.
+Public repository/workflows unchanged/four upload guards OFF, no release eligibility.
+
+Full final CI682 Windows4293/Ubuntu578-line logs independently read: Windows121009095063
+FAILURE, Ubuntu121009094843 SUCCESS; tested merge
+`ba5b0470add2c8008bc9251825dc8ac10fc7e251`. CommandAvailabilityWorkflow -> Main failed
+original-fixture-pid-retained. capturedPidPresent=False/fixtureAliveKnown=False/fixtureAlive=False/
+releaseExists=False; all before-connect/after-connect/after-alias count1/pidPresentTrue/
+pidSameFalse/connectingTrue/stoppingFalse/requestedTrue/expectedWaitingLifecycleTrue.
+Original pending-route-count-one=True. SOCKS51 and logged earlier repair/vault/log/backup/
+updater suites PASS scoped. Desktop NOT complete; SSH policy214, Instance, ALL installer
+including LegacyEvidence14, relay NOT_RUN. Pack/uploads SKIPPED; no old PASS inherited.
+
+DesktopStartupTests blob equals preceding5f84ceb: no evidence tying early failure to new
+legacy native path, which was not reached. CurrentPid is a nonblocking TryEnter observation;
+PumpUntil has already seen a live owned process AFTER actual Process.Start/ownership admission,
+but then final DoEvents and UI checks precede a SECOND independent read for expected PID.
+Successful first read does not guarantee that second snapshot has a value. CI682 proves
+second captured baseline null, not which exact getter branch/gate owner caused it. Contention
+is a code-supported mechanism, not measured native cause. Not snapshot-before-admission;
+no proven runtime leak/process replacement/infrastructure/legacy defect.
+
+Minimal test-only fix captures PID from THE SAME successful predicate under unchanged 5000ms
+PumpUntil. Frozen before UI checks/dispatcher actions; actual liveness asserted before actions.
+No recapture/substitution from later observations. Original count and exact original-PID
+assertions/order, all tested actions/diagnostics/modal/Stop/shutdown/finally unchanged.
+Deterministic metadata regression absent -> admitted synthetic value -> later unavailable
+snapshot before wait returns requires original value and no extra read; no-admission wait
+must refuse. It supplements, not replaces, the actual owned-child integration scenario.
+All runtime/installer/legacy/transport code and old PumpUntil/timeout unchanged.
+
+Public diff2files98add/2delete: only DesktopStartupTests33add/2delete and evidence doc.
+Local review/static signatures/capture order/original action/assert/diagnostic/cleanup parity/
+diff/secretPII/public352/0 PASS. A review-script PID count initially included an unrelated later
+method, corrected to selected workflow; no source/assert changed for it. No local compiler/
+Windows: new capture regression/compilation/Desktop/LegacyEvidence14/all exact native suites
+NOT_RUN. Specific CI642 original individual failure still not observed; historical cause not
+retroactively claimed fixed. Sharing/Python/rebind incidents remain UNKNOWN with diagnostics.
+
+ONE automatic [CI683/40141050466](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40141050466),
+source d4903e8/pull_request/count1/in_progress/conclusion null observed. No dispatch/rerun/
+duplicate/full wait. Local docs-only checkpoint not pushed to avoid second CI.
+Next SAME683 full final logs/tested merge/frozen original admission plus count/PID/lifecycle,
+full Desktop/Instance/all installer including LegacyEvidence14/relay. No functional stage
+until exact PASS. Auxiliary durable revalidation/pending-installed remains OPEN; runtime
+recovery/retention/aux rollback and original seven F23 acceptance gates unchanged.
+BLOCKED_TRANSFER/no retry; no release/uploads/install/live services/network/ACL/security/
+credentials changes. No score increase or readiness percentage recalculation. STOP one stage.
+
+## F23 legacy migration completion evidence prerequisite; CI682 in progress
+
+Published source `559a18adf35dfeeb23c16c7fc4880e2e0d41cd9a`, tree
+`9599223a942085ca68bca3dda00916cd73e480f8`, parent
+`5f84ceb5f55d76a1f393e665de87053260b24aeb`; fetched exact parent/tree equals reviewed
+local code `e067e9ed96cac73d24817dc91ad5cf28803405ad`. Baseline checkpoint
+`8b92a750fdd5c2251e868ce25778a44f73b749d3` clean/root-only writer verified. No competing
+Git/build process. Old worktrees preserved; expected-HEAD non-force PR88 source push verified.
+Public repo/workflows unchanged; upload guards OFF, no release or artifact uploads authorized.
+
+Full final CI681 Windows15558/Ubuntu578-line logs independently read; Windows120998709418/
+Ubuntu120998709215 both SUCCESS; tested merge
+`01191ad24b207ce4f6191a65d34545ca71439128`. MenuEvidence14/StartupEvidence13/PendingProof11/
+Reconcile13/RollbackOutcome12/Maintenance19/Outcome10/RestartGate8/Journal8/Rollback8/Payload9/
+Stage8/Backup8/SelfCheck9/SOCKS51/Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/
+HomeVPN4816/Portable91/prior suites PASS. Pack runner-only/uploads-prune SKIPPED. Sharing/
+Python/rebind incidents remain UNKNOWN with diagnostics, not claimed runtime fixes.
+
+ONE installer legacy evidence slice: actual source bytes/absence and hashed file-object
+origin, semantic match, deleted-owned hash, replacement hash and install/location identities.
+Preserved absent/custom/foreign/skipped observations never claim owned deletion. Installer
+witness denies write/delete during semantic read; before removal an existing READ+DELETE
+handle must match exact origin AND bytes, rejecting changed/replaced identical-byte source.
+Only this validated handle is marked for deletion, no path-based delete or DELETE_ON_CLOSE;
+primary is pinned/verified until physical deletion settles. New foreign appearance is never
+removed and prevents accepted completion. Handle attributes reject linked/directory objects.
+Read-only current proof checks absence/preserved bytes/origin and actual replacement, never
+repairs mismatch. No claim against all hostile ancestor swaps or future external changes.
+
+Legacy receipt is nested with unchanged Startup/Menu proof semantics in actual durable runtime
+outcome, matching identity/inventory/admissions/ownership. Production blocks missing legacy
+before metadata creation; maintenance mock only gains synthetic result shape. Existing public
+Install and Desktop/token MigrateMenu/COM/guards unchanged. Pending gate remains fail-closed;
+original error/no Launch after rollback preserved. No automatic recovery/replay/aux rollback.
+
+LegacyEvidence14 own-GUID/temp actual adapter/native type cases absent/removed/skipped-owned/
+skipped-custom/foreign-target/malformed/locked-retry/changed-admission/replaced-identical/
+appeared/replacement-changed/other-identity/other-location/durable. Reflection invokes exact
+private admission for changed bytes or retained original plus identical-byte foreign object;
+requires specific IOException, not arbitrary reflection failure. Lock case requires actual
+DELETE-admission denial then explicit retry; durable writer round trip/missing proof refusal/
+pending blocked/private bytes intact. Cleanup owns creation flag, held handle/stage/temp only.
+No live known-folder shortcut/install/service/ACL/security/network/credential actions.
+
+Diff6files375add/6delete: ApplicationShortcuts; Install-ProGo missing legacy guard; one harness
+call; maintenance mock shape; new test and evidence doc. Existing tests/assertions/timeouts/
+scenarios/Startup/Menu verifiers/pending/snapshot/runtime rollback helpers preserved. Local
+review/static parity/API signatures/C#5/native ABI primary-doc review/diff/secretPII/public351/0
+PASS. A documentation wording triggered personal-path guard; reworded generic prose, no secret
+found and guard unchanged. No local parser/compiler/Windows: LegacyEvidence14/native/compilation/
+exact regressions NOT_RUN. No old PASS inherited.
+
+ONE automatic [CI682/40139850722](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40139850722),
+source559a18a/pull_request/count1/in_progress/conclusion null observed. No dispatch/rerun/duplicate/
+full wait. Local docs-only checkpoint not pushed to avoid another CI.
+Next SAME682 final logs/exact merge/LegacyEvidence14/all prior suites. Then ONE bounded durable
+auxiliary receipt parsing/revalidation against trusted expected Startup/Programs identities,
+full current Startup/Menu/Legacy result and runtime phase/snapshot/admission/ownership/conflict
+proof BEFORE any pending-installed metadata publication. Intent/receipt presence alone cannot
+authorize it. Runtime crash/partial recovery, retention and auxiliary rollback remain separate
+mandatory F23-R02 residuals. Existing seven whole F23 gates and engineering ZIP/standalone/
+commercial dependency matrix remain in F23_INSTALLER_MENU_COMPLETION_EVIDENCE.md, none closed.
+BLOCKED_TRANSFER/no retry. No release/uploads/install/live actions. No percentage recalculation
+or score increase for unexecuted new code/tests/docs. STOP one stage, no second stage/run.
+
+## F23 Start Menu primary completion evidence prerequisite; CI681 in progress
+
+Published source `5f84ceb5f55d76a1f393e665de87053260b24aeb`, tree
+`ccb60a608c581cb83fdd24d935cf64eea5736970`, parent
+`c7eb7c307ab7ce616a6feaed21b7aec7a5658d9f`; fetched full tree equals reviewed local
+code `b1a004089871518b7d4b793f5d1692b578598977`. Baseline checkpoint
+`a143c20a908513f4a6ac00ceb081a385404b9cfb` clean/root-only active writer verified.
+No parallel Git/build operations. Old worktrees preserved; expected-HEAD non-force PR88
+source update verified. Public repo/workflows unchanged; four upload guards OFF, no release.
+
+Full final CI680 Windows15544/Ubuntu578-line logs read independently; Windows120991364304/
+Ubuntu120991364239 both SUCCESS, tested merge
+`fd5cf0fcc063089ca302ca163aaa32cff4a09b5c`. StartupEvidence13/PendingProof11/Reconcile13/
+RollbackOutcome12/Maintenance19/Outcome10/RestartGate8/Journal8/Rollback8/Payload9/Stage8/
+Backup8/SelfCheck9/SOCKS51/Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/
+HomeVPN4816/Portable91/prior suites PASS. Pack runner-only, uploads/prune SKIPPED. Previous
+sharing/Python/rebind incidents remain UNKNOWN with diagnostics, not claimed fixed.
+
+Selected ONE primary Menu evidence slice; legacy migration proof remains separate. Existing
+installer path captures actual bounded before/after bytes/absence of primary link, creation
+only if this EnsureLink returned the exact actual bytes; otherwise preserved observation,
+never a new ownership claim. Requested Menu must match executable/--show via unchanged native
+oracle. Receipt binds install/expected Programs location identities, request/disposition/hashes;
+read-only verification rejects foreign/changed/removed/appeared/other-identity/location state
+without repair. No raw paths/shortcut bytes/arguments persisted. Startup receipt now nests
+Menu proof; production requires matching Menu schema/root before durable outcome creation.
+Existing COM writes/MigrateMenu and reparse guards unchanged. Pending gate not relaxed;
+legacy/current trusted auxiliary revalidation still required before pending-installed promotion.
+
+MenuEvidence14 own-temp actual adapter/native type cases created/existing-owned/skipped-
+absent/skipped-custom/foreign/foreign-target/changed/appeared/removed/other-identity/other-
+location/directory-conflict/oversized/durable. Durable case retains exact proof in actual
+owned writer payload, ties runtime inventory/admissions/ownership, rejects missing Menu,
+keeps all private/settings/vault/key-ref/foreign bytes and pending admission blocked.
+Diff6files263add/6delete: ApplicationShortcuts, Install-ProGo guard, Test-ProGo one call,
+Maintenance mock Menu shape, new test and evidence/gate document. All old assertions and
+timeouts/scenarios preserved. Local review/static parity/signatures/C#5 review/diff/secretPII/
+public-content349/0 PASS. Parser/C# compilation/Windows COM/MenuEvidence14/new regressions
+NOT_RUN here, no local tools. Baseline PASS never inherited by new SHA.
+
+ONE automatic [CI681/40136394776](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40136394776),
+source5f84ceb/pull_request/count1/in_progress/conclusion null observed. No manual dispatch/rerun/
+duplicate/full wait. Local docs-only checkpoint not pushed to avoid second CI.
+Next SAME681 final logs/tested merge/MenuEvidence14/all prior suites; then ONE legacy-
+migration evidence dependency. Pending-installed NOT complete; no runtime recovery, retention
+or auxiliary rollback implemented in this stage. Original failure/no Launch after rollback
+and private/external file guards unchanged. BLOCKED_TRANSFER, no retry or private candidate delivery/build.
+No live shortcuts/install/PC/VPS/services/network/ACL/security/credentials/release/uploads.
+
+Current finite gates and dependencies are in F23_INSTALLER_MENU_COMPLETION_EVIDENCE.md:
+- Personal engineering ZIP: supported transfer BLOCKED -> exact Windows build identity,
+  actual manifest/SHA256/package content/extracted smoke -> separate owner acceptance.
+  Diagnostic ZIP is not whole F23 standalone completion.
+- Standalone technical: R01 standalone prebuilt + PGA-04 OFF/default consent; R02 complete
+  auxiliary proof/pending installed, crash recovery/retention/aux rollback and shared
+  maintenance acceptance; R04 truthful final updater rollback and R05 immutable release
+  identity; R01/R02/R04/R05 -> R03 fixed-path verified installer fallback; R01-R05 + F31-R11
+  -> R06 unified package clean-install/both updates/cancel/offline/hash/self-check/handoff;
+  R06 -> R07 owner installed preservation/no replay. All seven whole gates remain OPEN.
+- Full commercial: same F23 gates plus original remaining registry incl F30 real mail/
+  account/billing/provider/payment/refund/webhook/session acceptance and final release gates.
+Historical old tables are retained as history; CI680 is current bounded dev proof, new SHA
+NOT_RUN and package/owner layers NOT_RUN. No new requirements/reweighting/percentages.
+STOP one stage, no second run. Score change not awarded for unexecuted code/tests/docs.
+
+## F23 auxiliary Startup completion evidence prerequisite; CI680 in progress
+
+Published source `c7eb7c307ab7ce616a6feaed21b7aec7a5658d9f`, tree
+`52885025518b8ed032bd8c118987c308ecb5b671`, parent
+`9819aaa632e59f0a439c639f0dae9acf3f17fd75`; fetched full tree equals reviewed local
+code `b27075dde795280b99e884c6f49609f87045f605`. Baseline checkpoint
+`139e54cd10dbe0a854326b7e1f4b97c58e3fbb13`, clean/root-only writer verified;
+no concurrent Git/build operation, old worktrees preserved. PR88 expected-HEAD non-force
+source update verified. Public repository/four upload guards unchanged and OFF; no release.
+
+Full final CI679 Windows15529/Ubuntu578-line logs independently read: tested merge
+`d994f31fded7861f588f57a4c7b8b4da9ad3235c`, Windows120981548253/Ubuntu120981548324,
+both SUCCESS. PendingProof11/Reconcile13/RollbackOutcome12/Maintenance19/Outcome10/
+RestartGate8/Journal8/Rollback8/Payload9/Stage8/Backup8/SelfCheck9/SOCKS51/Desktop6388/
+policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91/prior suites PASS.
+Pack runner-only/uploads-prune SKIPPED. Sharing/Python/rebind incidents UNKNOWN, not fixes.
+
+ONE prerequisite: Startup artifact of existing auxiliary path. Existing Install API remains
+compatible; installer opts into evidence via existing Initialize-ProGoShortcuts adapter.
+Actual created bytes must equal this operation's EnsureLink result and match expected target/
+arguments; preserved existing/customized/disabled or absent Startup state must equal actual
+before/after bytes/absence. Observational read-only verifier binds expected install/location
+hash identities and current exact bytes; mismatch/foreign edit returns false without repair.
+Receipt contains no raw paths/shortcut bytes/arguments, records created vs preserved (not a
+false ownership claim for custom links). Production requires receipt/non-null matching root
+identity; persists it with durable phase/inventory/admission/runtime ownership proof.
+The maintenance fixture adapter now returns synthetic evidence; all old assertions/timeouts/
+scenarios/guards remain unchanged. No other lifecycle or transport/runtime recovery changes.
+
+StartupEvidence13 uses only own GUID temporary Programs/Startup overrides and actual adapter/
+COM type. Created/existing-absent/existing-custom/existing-owned/fresh-owned/no-startup-
+absent/no-startup-custom/conflict/changed/appeared/other-identity/other-location/durable.
+Exact preserved custom/absence, no foreign overwrite/repair, rejected identity/location,
+missing/foreign receipt refused before pending creation, real durable writer round trip and
+private/settings/vault/key-ref/foreign byte preservation. Even valid Startup proof cannot
+publish pending-installed or unblock the existing admission gate. No live known folders used.
+Read-only observations are not an atomic lock against all future external edits.
+
+Diff7files238add/7delete: ApplicationShortcuts.cs; Shortcuts-ProGo.ps1; Install-ProGo.ps1;
+one Test-ProGo harness call; Maintenance mock interface; new StartupEvidence13; evidence doc.
+Local review/static parity/API signatures/C#5 review/diff/secrets-PII/public-content347/0
+PASS. Old COM writes/guards/MigrateMenu, pure pending/snapshot/rollback helpers, old assertions
+and all timeouts unchanged. PowerShell parser/C# compilation/Windows COM/StartupEvidence13/
+new exact regressions NOT_RUN (tools unavailable here). No prior PASS inherited.
+
+ONE automatic [CI680/40133945222](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40133945222),
+sourcec7eb7c3/pull_request/count1/in_progress/conclusion null observed; no manual dispatch/rerun/
+duplicate/full wait. Local docs-only checkpoint not pushed, avoiding another CI.
+Next SAME680 final logs/tested merge/StartupEvidence13 plus all prior suites. Mandatory
+next bounded auxiliary evidence: Start Menu primary/legacy migration; durable deserialization/
+trusted known-folder/current-result revalidation/conflict contract; then safe pending-installed
+metadata promotion. NOT completed here. Runtime crash recovery/durable partial ownership,
+retention protecting unresolved evidence, auxiliary rollback and other F23/PGA04/fallback/
+package/owner gates remain OPEN. Original failure/no Launch after rollback unchanged.
+BLOCKED_TRANSFER, no delivery retry. No live installation/PC/VPS/services/ACL/security/network/
+credentials/release/uploads actions. STOP one stage, no second stage.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0; fixed weights unchanged.
+
+## F23 pending installed proof prerequisite; CI679 in progress
+
+Published source `9819aaa632e59f0a439c639f0dae9acf3f17fd75`, tree
+`21732affee9676f0a2a7a8dbbe1b4e1e74d44fa7`, parent
+`abdaa54c6593da016e37bdeeb00a2dbfeb2e4344`; fetched parent/tree equals reviewed
+local code `c788163` tree. Baseline clean checkpoint
+`3a4a7a793147cd451742e62aae27933f73c5ef71`; root-only active writer, no running
+Git/build operation; old worktrees preserved. Guarded expected-HEAD non-force push to PR88.
+
+Full CI678 final Windows15517/Ubuntu578 lines independently read, tested merge
+`0922838486cb76ed71a8661244516a2727f118d7`, Windows120972858687/Ubuntu120972858686
+both SUCCESS. Reconcile13/RollbackOutcome12/Maintenance19/Outcome10/RestartGate8/Journal8/
+Rollback8/Payload9/Stage8/Backup8/SelfCheck9/SOCKS51/Desktop6388/policy214/Instance30/
+Maintenance126/Shutdown47/HomeVPN4816/Portable91/prior suites PASS. Pack runner-only,
+uploads/prune SKIPPED. Sharing/Python/rebind incidents still UNKNOWN, not runtime fixes.
+
+ONE minimum prerequisite: old pending-installed evidence lacked completed phase and owned
+byte proof. Actual production writer now records ordered self-check/shortcuts only after
+both existing calls successfully return, plus every captured owned hash. Explicit production
+completion proof is read-only verified before atomic terminal publication. New reader
+requires prior strict snapshot/identity/exact full inventory/linked admissions, completed
+phase schema/order, unique complete owned hashes and actual CURRENT new runtime bytes.
+No automatic pending publication: old/new pending journals remain fail-closed. Intent or a
+file is never authority. Auxiliary-state contract/current external shortcut state remains a
+separate dependency before safe restart metadata publication; no automatic runtime restore.
+See F23_INSTALLER_PENDING_INSTALLED_PROOF.md for exact acceptance and limits.
+
+Diff4files146 additions/3 deletions: Install-ProGo helper/writer/caller, one harness call,
+new PendingProof11, evidence document. Existing old tests/assertions/timeouts, snapshot/
+rollback/pending resolver, settings/vault/keys/foreign guards and workflows unchanged.
+PendingProof11 complete/fresh/legacy/phases/ownership/inventory/foreign-runtime/snapshot-
+corrupt/journal-corrupt/identity/conflict; actual owned writer interrupted after Flush,
+all fixture bytes/file count unchanged, ALL pending gates still blocked. No live actions.
+Local review/signatures/helper parity/production call order/no reader mutation/diff/secretPII
+scan/public-content345/0 PASS. First old fixture byte comparison failed solely worktree CRLF
+versus canonical Git LF; canonical blob equality then PASS, no fixture changed. No local
+PowerShell: parser/compilation/PendingProof11/exact native regressions NOT_RUN.
+
+ONE automatic [CI679/40130683445](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40130683445),
+source9819aaa/pull_request/count1/in_progress/conclusion null observed. No duplicate/rerun/
+dispatch/full wait. Public upload guards unchanged/OFF. Local docs-only checkpoint NOT pushed.
+Next SAME679 final logs/exact tested merge/PendingProof11 plus prior suites; then one bounded
+safe pending-installed publication prerequisite concerning auxiliary completion, without replay.
+Mandatory residual: other pending/partial crash states and durable byte ownership/runtime
+recovery; retention protecting unresolved proofs; auxiliary-state rollback; F23/PGA04/updater
+fallback/package/owner acceptance. BLOCKED_TRANSFER, no retry. No release/uploads/install/
+VPS/PC/service/ACL/security/network/credentials actions. STOP one stage, no second stage.
+Реализация58–80/100 · Проверенная готовность22/100 · Изменение+0; fixed weights unchanged.
+
+## F23 proven pending rollback metadata reconciliation; CI678 queued
+
+Published source `abdaa54c6593da016e37bdeeb00a2dbfeb2e4344`, tree
+`a50d105a9e872d584e0cb3d287df4a12088d5d8a`, parent
+`227d83774e82a101c2c2c67dee83a4120d1f2be6`; fetched tree equals reviewed local code
+`bb50bf040892735e39b3b65d1917329545660b0d`. Baseline checkpoint
+`4f7bd34ef8dc013dda8fc6854350a55bf4f2fab6`, clean/root-only active writer verified;
+old worktrees preserved, no unknown checkpoint replay/reset/clean/merge.
+
+Full final CI677 Windows15503/Ubuntu578-line logs independently read, both SUCCESS;
+source227d837/tested merge `b6711df3c075c1fe6842be8c9922c4bc6e77d60f`,
+Windows120964057190/Ubuntu120964057033. SOCKS51/RollbackOutcome12/Maintenance19/
+Outcome10/RestartGate8/Journal8/Rollback8/Payload9/Stage8/Backup8/SelfCheck9/
+Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91/prior
+suites PASS. Pack runner-only/uploads-prune SKIPPED. CI676 sharing failure did NOT recur,
+root UNKNOWN, not a runtime fix; prior Python/rebind incidents UNKNOWN, diagnostics kept.
+No owner-PC/whole installer/production acceptance inferred.
+
+Chosen ONE minimal unfinished phase: only fully durable rollback.pending.json whose saved
+snapshot/identity/ownership/admission proof passes existing verifier AND actual CURRENT old
+bytes/absence still match. New installer invocation acquires maintenance, resolves this
+phase before original pending gate/Stop/staging/write. Scan/validate ALL journals first,
+reject unknown/corrupt/conflicting entries or multiple pending rollback candidates before
+any rename. Recheck snapshot, actual old runtime and proof immediately before atomic
+no-overwrite Move to rolled-back.json. This ONLY moves own metadata without changing its
+bytes; it never restores runtime, deletes journal, repeats external action or trusts intent.
+Current-process original failed invocation still throws/no Launch; direct pending gate
+semantics unchanged until an explicit new production invocation reconciles saved evidence.
+Historical verified terminals skipped unchanged. Pending installed/outcome phases, intent-
+only/incomplete/invalid/foreign/appeared-old-absence/conflicting states stay fail-closed.
+No claim against every hostile external pathname race or directory power-loss case added.
+
+Reconcile13 own-temp/mock cases existing/fresh/partial/corrupt/snapshot/foreign/absence/
+identity/ownership/conflict/intent-only/pending-installed/multiple. Build genuine durable
+pending by error after Flush on actual rollback writer, then actual installer body as NEW
+attempt with no old memory admission passed. Only three proven cases reach fake Stop
+(sentinel refusal prevents real setup); all others block before Stop, maintenance releases
+once, no Install OK/Launch. Confirm exact metadata hash/name-only change and every runtime/
+private/settings/vault/key-ref/foreign/snapshot/other journal byte plus file count unchanged.
+Multiple case has two independently valid pending proofs and neither can publish. Original
+Outcome10/RollbackOutcome12/Maintenance19/RestartGate8/Journal8/Rollback8 assertions and
+all timeouts unchanged. Published diff4files192 additions:37 production lines +1 harness
+call +new test/evidence doc. No old fixture/runtime path rewrites or security/live actions.
+
+Local docs3/static/review/signatures/proof helper parity/actual gate order/preflight-before-
+rename/no-runtime-write/no-replay/diff/JSON/secrets/public-content343/0 PASS. No local
+PowerShell/Windows; new Reconcile13/exact compilation/prior native suites NOT_RUN.
+ONE automatic [CI678/40127796450](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40127796450),
+sourceabdaa54/count1/pull_request/queued/conclusion null last observed. Expected-HEAD
+non-force source push/fetched exact parent+tree verified; public repo/four upload guards
+unchanged. Docs-only checkpoint NOT pushed; no rerun/dispatch/duplicateCI/full CI wait.
+No install/release/uploads/live/services/ACL/security/network/credentials/transfer actions.
+Privatecandidate BLOCKED_TRANSFER, no delivery retry. Readiness58–80/22,+0, weights unchanged.
+
+Next SAME678 final logs/tested merge/Reconcile13 plus all regressions. Mandatory next
+bounded dependency: remaining unfinished installed/rollback commit phases with independent
+proof; incomplete admission/post-crash partial-byte ownership and bounded runtime recovery
+without replay/foreign overwrite; retention protecting unresolved evidence; auxiliary-state/
+shortcut transaction; remaining F23/PGA04/fallback/package/owner acceptance. Full crash
+recovery or production installer readiness NOT claimed. STOP one stage, no second stage.
+
+## CI676 SOCKS pending receipt sharing: test-only owner/stack experiment, CI677 in progress
+
+Published source `227d83774e82a101c2c2c67dee83a4120d1f2be6`, tree
+`1f286822de92c969d67c1b435bdd06a9190d08b9`, parent
+`1fff0f05024d7249495b9594fef162074e5aa95a`; fetched tree equals reviewed local code
+`0a8273402538cbefc9617628c64f5a3ac32fd6a1`. Baseline checkpoint
+`c9548c7f51bcf23a7a4e1c867338a841dcea48dd`, clean/root-only active writer verified.
+Old worktrees retained, no unknown operation replay/reset/clean/merge.
+
+Full CI676 Windows1953/Ubuntu578-line final logs independently read; Windows FAILURE,
+Ubuntu SUCCESS. Source1fff0f0/tested merge `1eb3bac1d59e9e0e066fd7635e33264f5dfb5181`,
+Windows120959851985/Ubuntu120959852104. Last PASS PermanentErrorFallback18 assertions,
+then IOException sharing violation on own GUID.json.pending from SocksRecoveryTests.exe,
+Test-ProGo.ps1:456. Next registered scenario SshDiagnosticDistinctions. Managed stack and
+actual owner absent due native stderr truncation. Earlier repair/vault/logged SOCKS cases
+scoped PASS only; whole SOCKS suite not complete. RollbackOutcome12/Maintenance19/Desktop/
+Instance/relay and later suites NOT_RUN. Do not inherit previous installer PASS onto676.
+
+No SocksRecoveryTests or ProxyService diff from675 to676; installer regression/runtime
+leak not established. Source facts: child writes unique pending receipt with WriteAllText
+(disposes stream) -> Move; capture reads only final json. Scenario nested using disposes
+Fixture/Proxy then replay then capture, whose env restore precedes Directory.Delete.
+Proxy.Dispose cancels and calls owned StopProcessOnly; async Stop has distinct settlement
+path. Which operation and lock owner failed remains UNKNOWN; race is only a hypothesis.
+See CI676_SOCKS_PENDING_DIAGNOSTIC.md for distinguishing experiment and interpretation.
+
+Published ONLY tests/SocksRecoveryTests.cs + evidence doc (156 additions3 deletions).
+On IOException scenario wrapper prints safe operation/scenario/type/HRESULT + up to32
+managed method/IL frames on stdout, original exception rethrown. Same Fixture.Dispose
+observed before/after without extra Stop/wait/kill; capture pending startup/Stop and owned
+process roles. Only capture-directory IOException triggers one own GUID pending-file
+Restart Manager owner query: scoped/reparse guards, one file, <=16 owners/2GetList/no retry,
+finally EndSession; owner roles/counts only, no PID/path/app/service/credential data.
+Temporary diagnostic session registration only; no Shutdown/Restart/service/security
+configuration. Name-derived claimed writer is not assumed actual lock owner; process
+start stamp/executable role checked when readable. Natural exit may yield no owners and
+must not be called proof of no earlier lock. Original scenarios/child writer/assertions/
+timeouts/share modes/cleanup order byte-equivalent; production and installer unchanged.
+A passing run would only non-reproduce failure, not prove root/fix.
+
+Local docs3/static/review/signatures/scenario+writer parity/asserts+budgets/diff/JSON/secrets/
+public-content341/0 PASS. No local C#/Windows compiler/native execution: diagnostic/SOCKS
+suite/installer RollbackOutcome12/Maintenance19 and all later suites NOT_RUN new source.
+ONE automatic [CI677/40124878568](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40124878568),
+source227d837/count1/pull_request/in_progress/conclusion null last observed. Initial metadata
+count0 then count1 after fetched source proof; no rerun/dispatch. Expected-HEAD non-force
+source update and fetched exact parent/tree verified. Public repo/four upload guards
+unchanged. Docs-only checkpoint not pushed, no second CI/full wait.
+
+Next SAME677 full final logs/tested merge; if recurrence inspect SOCKS_FIXTURE_IO/STACK/LOCK
+operation and owner roles before any runtime/fixture fix. Functional F23 progression paused
+until PASS. Unfinished outcome phases/crash recovery/retention/auxiliary-state rollback
+remain OPEN. Old Python/rebind incidents UNKNOWN, diagnostics retained. Privatecandidate
+BLOCKED_TRANSFER, no delivery retry. No install/release/uploads/live/VPS/services/ACL/
+network/security/credentials changes. Readiness58–80/22,+0; weights unchanged. STOP one stage.
+
+## F23 verified runtime rolled-back terminal; CI676 in progress
+
+Published source `1fff0f05024d7249495b9594fef162074e5aa95a`, tree
+`de30cb3d16fea805176e5fe9f9ebc5792477f505`, parent
+`a838d021fc631ca40bb9ec521f5b4f6409b68f57`; fetched tree equals reviewed local code
+`daaf754e841c232c51fe08e6477c147be086bb8b`. Baseline checkpoint
+`63c5122b3f4e92638f9853a9c2c5de7a1398c97a`, clean/root-only active writer verified.
+Old worktrees preserved, no unknown checkpoint replay/reset/clean/merge.
+
+Full CI675 Windows15488/Ubuntu578-line final logs independently read, both SUCCESS.
+Exact sourcea838d02/tested merge `5342f65d48e99bc85440e8356cf8d9e60f20ca4a`,
+Windows120950820808/Ubuntu120950821010. Outcome10/Maintenance17/RestartGate8/Journal8/
+Rollback8/Payload9/Stage8/Backup8/SelfCheck9/Desktop6388/policy214/Instance30/
+Maintenance126/Shutdown47/HomeVPN4816/Portable91/prior suites PASS. Pack runner-only,
+uploads/prune SKIPPED. Python/rebind incidents CI662/670/671 UNKNOWN; diagnostics retained.
+Non-reproduction not fixes, no owner-PC or whole installer/production acceptance inferred.
+
+Chosen ONE runtime rollback success terminal, NOT successful installation or automatic
+recovery. After current-process rollback and actual full old bytes/absence proof, verify
+snapshot/manifest, identity, known journal and exact nonempty one-to-one captured own
+write/admission coverage. Persist separate rolled-back/RuntimeState original-verified,
+root hash/journal GUID, full whitelisted inventory/snapshot, ordered admission digests and
+captured owned hashes. CreateNew/WriteThrough/Flush(true)/same-handle readback, full evidence
+validation, then atomic Move rollback.pending.json -> rolled-back.json without overwrite.
+Reader shares unchanged installed proof rules and admits known rolled-back with exact
+subset/ownership proofs. Restart can admit NEW explicit attempt only on verified terminal.
+No restore/replay/journal deletion occurs at restart; current live files still verified by
+new install ownership checks. Historical terminal is runtime completion evidence only.
+
+Main catch attempts terminal only after actual priorVerified and writes>0; persistence
+failure stays pending, preserves original ErrorRecord and never flips install to success.
+Original throw/no Install OK/Launch and maintenance/stage finally unchanged. Additional
+rollbackTerminalVerified boolean is not installation success. Unknown/extra journal files,
+incomplete/unconfirmed admission or failed restoration stay closed, including unfinished
+installed outcome pending files (not deleted/reinterpreted). No-write unproven failures
+remain pending. Snapshot/actual rollback/exclusive write/private exclusions unchanged;
+settings/vault/keys and foreign changes are never terminal restore targets.
+
+RollbackOutcome12 own-temp/mock cases existing/fresh/partial/unrestored/foreign/snapshot/
+ownership/record-corrupt/persist-fail/short/after-write-fail/identity. Actual old bytes or
+absence, actual partial hash, invalid material rejection, no installed marker, no runtime
+mutation by terminal writer, restart gate pass/refusal and new admission retaining history;
+private/foreign bytes intact. Maintenance17 preserved plus2 actual installer-tail rollback
+terminal persistence failures -> Maintenance19; precise original self-check failure/old
+bytes/no Launch retained, unconfirmed terminal blocks. Known existing copy/partial/selfcheck/
+shortcut failure cases also require rolled-back evidence and accepted gate. Outcome10/
+RestartGate8/Journal8/Rollback8/prior suites still registered unchanged; no timeout relaxed.
+Published diff5files228 additions11 deletions: installer/shared reader, one test call,
+maintenance assertions+2cases, new rollback outcome tests and scope/evidence doc.
+
+Local docs3/static/review/signatures/helper parity/installed full-count/order/atomic boundary/
+original-error/no Launch/diff/JSON/secrets/public-content340/0 PASS. No PowerShell/Windows
+locally: new RollbackOutcome12/Maintenance19/exact compilation/all regressions NOT_RUN.
+ONE automatic [CI676/40123483430](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40123483430),
+source1fff0f0/count1/pull_request/in_progress/conclusion null last observed. Initial metadata
+count0 then count1 after fetch; no dispatch/rerun. Expected-HEAD non-force source push and
+fetched exact parent/tree verified; public repo/four upload guards unchanged. Docs-only
+checkpoint not pushed. No release/uploads/install/live/services/ACL/security/network/
+credential/transfer actions. Privatecandidate BLOCKED_TRANSFER, no retry.
+
+Next SAME676 full final logs/tested merge/RollbackOutcome12/Maintenance19/prior regressions.
+Mandatory next separate bounded slice unfinished terminal/outcome phase reconciliation with
+independently verified snapshot/identity/ownership, then post-crash partial ownership proof
+and bounded interrupted recovery/no replay/foreign overwrite, retention preserving unresolved
+evidence and auxiliary-state/shortcut transaction, remaining F23/PGA04/fallback/package/owner
+gates. Runtime rolled-back outcome does NOT claim auxiliary rollback or full installer ready.
+Readiness58–80/22,+0; weights unchanged. STOP one bounded stage, no full CI wait/second stage.
+
+## F23 bounded installed terminal outcome; CI675 in progress
+
+Published source `a838d021fc631ca40bb9ec521f5b4f6409b68f57`, tree
+`066bf27f5c247d45d2f18bb3916e51e94fb66057`, parent
+`44bcf31080c685701e9eb8598fa25df7c3d5b57a`; fetched tree equals reviewed local code
+`49bfa093e89e124e4befc0c315c2408216121c74`. Baseline checkpoint
+`c01abbc1e15e8880822a2d01c3a1baa60e2623fa`, clean/root-only active writer verified.
+Old worktrees retained, no lost checkpoint replay/reset/clean/merge.
+
+Full final CI674 Windows15475/Ubuntu578-line logs independently read, both SUCCESS;
+source44bcf31/tested merge `99137658839fa18f6440df840db94470bf9792ac`,
+Windows120942960299/Ubuntu120942960086. RestartGate8/Journal8/Rollback8/Maintenance15/
+Payload9/Stage8/Backup8/SelfCheck9/Desktop6388/policy214/Instance30/Maintenance126/
+Shutdown47/HomeVPN4816/Portable91 and prior suites PASS. Pack runner-only/uploads-prune
+SKIPPED. Old Python startup CI662/670 and CI671 rebind roots UNKNOWN; diagnostics retained.
+Non-reproduction not fixes, no owner-PC or whole installer/production acceptance inferred.
+
+Chosen ONE success terminal path: after existing self-check and shortcuts, verify full
+saved snapshot/manifest, exact new runtime hashes, complete own write records and all
+admissions. Write immutable outcome.pending.json CreateNew/WriteThrough/Flush(true), exact
+same-handle text readback; verify all evidence then atomic File.Move to installed.json
+without overwrite. No fallible post-publication validation/rollback on an already-committed
+terminal boundary. Even exception after full durable pending write leaves no installed
+outcome. Main original failure/rollback/no Install OK/Launch, stage/finally preserved.
+
+Terminal binds install-root SHA256 identity, journal GUID, exact runtime-only whitelist,
+snapshot name/hash, all admission digests/sequence/inventory/entries. Restart gate accepts
+only this verified installed evidence; old intent-only/unknown/corrupt/missing/extra/wrong
+identity remains fail-closed. Historic terminal validates saved completion evidence, not
+historical live runtime hashes that later legitimate updates may replace. New install
+still captures current runtime and enforces unchanged exclusive ownership checks; terminal
+never authorizes restoration/overwrite after new admission. No automatic recovery/deletion.
+Payload name list extracted to a shared pure helper unchanged in content; Payload9 AST
+loader explicitly loads dependency, existing assertions retained. No private settings/
+vault/key contents included or read by terminal schema. Snapshot/owned-write/rollback/
+self-check helpers unchanged except success-path terminal integration.
+
+Outcome10 own-temp/mock cases complete/fresh/persist-fail/short/after-write-fail/
+foreign-runtime/snapshot-corrupt/journal-corrupt/identity/unknown. Check full actual streams/
+bytes, no false installed marker, restart pass/refusal, new admission without deleting old
+terminal, rollback after outcome failure stays pending, private/foreign bytes unchanged.
+Maintenance15 preserved plus2 actual installer-tail terminal failure cases (17): before
+write/after flush both restore exact old bytes, no installed/success/Launch. Old timeout/
+assertions unchanged; Journal8/Rollback8/RestartGate8 remain registered. Published diff
+6files259 additions8 deletions: installer, one harness call, payload fixture dependency,
+maintenance extra cases, new outcome tests and scope/evidence doc.
+
+Local docs3/static/review/signatures/helper parity/list identity/order/atomic boundary/
+diff/JSON/secrets/public-content338/0 PASS. No PowerShell/Windows locally; new Outcome10/
+Maintenance17/exact compilation and all regressions NOT_RUN until exact final logs.
+ONE automatic [CI675/40120509957](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40120509957),
+sourcea838d02/count1/pull_request/in_progress/conclusion null last observed; initial metadata
+count0 observed then count1 after fetch, no manual dispatch/rerun. Expected-HEAD non-force
+source push/fetched exact parent+tree verified. Public repo/four upload guards unchanged;
+no release/uploads/install/live/services/ACL/security/network/credential actions.
+Docs-only checkpoint not pushed. Next SAME675 full final logs/tested merge/Outcome10/
+Maintenance17 and prior suites. Mandatory next separate slice durable rolled-back/failed
+outcomes with verified ownership/snapshot/phase transition; then bounded interrupted
+recovery/no replay/foreign overwrite, retention and auxiliary-state/shortcut transaction,
+remaining F23/PGA04/updater fallback/package/owner gates. Privatecandidate BLOCKED_TRANSFER,
+no delivery retry. Readiness58–80/22,+0; weights unchanged. STOP one bounded stage.
+
+## F23 bounded restart pending-detection gate; CI674 in progress
+
+Published source `44bcf31080c685701e9eb8598fa25df7c3d5b57a`, tree
+`a26b478949705b01261a59e3958589b47f325b6b`, parent
+`f7ae8b2a03a9fea0141dc63118a273648b55bc2f`; fetched tree equals reviewed local code
+`183de5e9ee912c57bf75130e6aa3f79304ebf1fa`. Baseline checkpoint
+`c881c28714caa2b3152a7644ea04d339ac3f3b19`, clean/root-only active writer checked;
+old worktrees retained, no replay/rollback of unknown operations.
+
+Full CI673 Windows15466/Ubuntu578-line final logs independently read, both SUCCESS.
+Sourcef7ae8b2/tested merge `8202d37e4687c29e3205893455c8cbab1a29b280`,
+Windows120934803351/Ubuntu120934802966. Journal8 ALL PASS (existing/fresh/persist-fail/
+short-write/unknown/invalid/tampered/partial); Rollback8/Maintenance15/Payload9/Stage8/
+Backup8/SelfCheck9/Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/
+Portable91 and previous suites PASS. Pack runner-only/uploads+prune SKIPPED.
+Python startup CI662/670 and CI671 rebind roots remain UNKNOWN; diagnostics retained,
+non-reproduction NOT fixes. No owner-PC/whole installer/production acceptance inferred.
+
+Chosen ONE minimum production slice: Assert-ProGoInstallerNoPendingJournal under existing
+maintenance owner before Stop, staging or writes; also direct NewJournal before creation.
+Read only guarded direct backups metadata; no journal/credential contents. Missing parent
+or ordinary backups permit continuation. Any installer-journal namespace entry (case
+insensitive; directory/file/malformed name; empty/unknown/corrupt/intent) refuses without
+restore/delete/new admission. Existing ancestor/reparse/path guards remain active.
+Acceptance: pending state cannot reach Stop/new runtime/stage/journal mutation, exact
+failure propagated, maintenance disposed, no Install OK/Launch, all existing bytes intact.
+
+There is no durable terminal outcome yet, so even intent retained after previous successful
+install is conservatively pending. Normal restart continuation/reinstall is NOT complete;
+do not bypass this gate by deleting a journal or trusting a Phase complete string. Intent
+alone never proves snapshot identity or ownership after crash. Existing current-session
+admitted writes still use prior exact journal/snapshot/owned-write validation unchanged.
+
+New RestartGate8 tests actual production tail with no reconstructed in-memory journal and
+mock maintenance/Stop boundary, own temp paths only: no-parent/ordinary/empty/intent/corrupt/
+schema/file/malformed. Prove Stop reached only clean cases, exact pending refusal for both
+public route/direct journal API, single Dispose/no success/Launch, full runtime/private/
+foreign/journal file inventory+hash parity. Published diff4files144 additions:15 production
+gate lines +one test registration +new test/evidence doc. Old assertions/timeouts/helpers
+unchanged; no real installation/services/ACL/security/network/credentials/PC/VPS actions.
+
+Local docs3/static/review/signatures/order/helper parity/old asserts+budgets/diff/JSON/
+secrets/public-content336/0 PASS. No local PowerShell/Windows; RestartGate8/new compilation/
+Journal8/Rollback8/Maintenance15 and prior suites NOT_RUN exact new source.
+ONE automatic [CI674/40117901265](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40117901265),
+source44bcf31/count1/pull_request/in_progress/conclusion null last observed. Expected-HEAD
+non-force source update/fetched exact parent+tree verified. Public repo/four upload guards
+unchanged, no release/uploads/install/live/transfer action. Docs-only checkpoint NOT pushed.
+
+Next SAME674 exact final logs/tested merge/RestartGate8 and all regressions. Mandatory next
+separate slice durable terminal/outcome schema and verified transition with snapshot,
+identity and ownership proof, then recognition of terminal state/restart continuation,
+bounded interrupted recovery/no replay/foreign overwrite, retention and auxiliary-state/
+shortcut transaction plus remaining F23/PGA04/fallback/package gates. No automatic restore
+implemented here. Privatecandidate BLOCKED_TRANSFER, no delivery retry. Readiness58–80/22,+0,
+weights unchanged. STOP one bounded stage, no full CI wait or second stage.
+
+## F23 current-session durable admission-before-write; CI673 in progress
+
+Published source `f7ae8b2a03a9fea0141dc63118a273648b55bc2f`, tree
+`8c4628a3b72131a73c1662628b980d557d4da843`, parent
+`efc4cc91c19baff6dfcbdc25ef666df13362a485`; fetched tree equals reviewed local code
+`cb2b244cac1a6f13d6e7ba9284eb3a63054e2d8c`. Baseline checkpoint
+`7ebfc6143bc83a3c2e45da265b372e448b317110`, clean/root-only active writer checked.
+Original/recovery worktrees retained, no unknown operation replayed.
+
+Full final CI672 Windows15457/Ubuntu578-line logs independently read, both SUCCESS.
+Exact sourceefc4cc9/tested merge `806d4512dd5355542806e1ad934f8c50e4181e45`,
+Windows120927737675/Ubuntu120927737758. Rollback8 ALL PASS (including actual partial
+byte42/admission hash), Maintenance15/Payload9/Stage8/Backup8/SelfCheck9,
+Desktop6388/policy214/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91 and
+prior suites PASS. Pack runner-only; uploads/prune SKIPPED. Python exit0 and original
+1s queued Stop rebind PASS; CI662/670 and CI671 roots remain UNKNOWN, diagnostic retained,
+non-reproduction NOT incident fixes. No owner-PC/wholeF23/production acceptance inferred.
+
+Acceptance of ONE new bounded production prerequisite: persist a Schema1 admission tied
+to exact runtime inventory/snapshot before corresponding runtime leaf creation/modification;
+Flush(true) and exact byte readback through SAME WriteThrough/CreateNew handle required.
+Pin intent (FileShare.Read) through existing exclusive runtime-write and partial-hash capture.
+Nested finally releases runtime/source/admission even if disposal fails. Invalid/unknown/
+missing/tampered ACTIVE journal or failed/short persistence refuses before target creation
+or mutation. Existing snapshot verification, ownership/hash/rollback, original failure
+rethrow/no Install OK/Launch, stage/maintenance Stop/finally and private exclusions retained.
+Journal own GUID path guarded, no existing file overwritten; intent retained after rollback.
+This is NOT restart discovery or full crash recovery; intent alone does not establish
+post-crash partial-byte ownership. No power-loss metadata atomicity claim.
+
+New Journal8 own-temp/mock cases existing/fresh/persist-fail/short-write/unknown/invalid/
+tampered/partial. Prove unmodified old bytes/absence at persistence, one confirmed/pinned
+intent before actual write, exact partial byte/hash, verified rollback, intent retention,
+private/foreign byte preservation. New helper APIs used by existing owned setter, so old
+Maintenance15/Rollback8 remain registered untouched and exercise production route too.
+Published diff4files/228 additions3 deletions: Install-ProGo journal+admission/finally,
+Test-ProGo one test registration, new InstallerJournalTests.ps1 and scope/evidence doc.
+No workflow/VERSION/other runtime/server or old fixture changes.
+
+Local docs3/static/review/signatures/helper parity/order/asserts/budgets/diff/JSON/secrets/
+public-content334/0 PASS. No local PowerShell/Windows: Journal8/new exact compilation/
+Maintenance15/Rollback8/prior native suites NOT_RUN pending exact CI.
+ONE automatic [CI673/40115153183](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40115153183),
+sourcef7ae8b2/count1/pull_request/in_progress/conclusion null last observed. Expected-HEAD
+non-force source update and exact fetched parent/tree verified. Public repo/four upload
+guards unchanged. No rerun/dispatch/secondCI/release/uploads/install/live/ACL/security/
+network/credentials/services actions. Docs-only checkpoint NOT pushed.
+
+Next SAME673 final logs/tested merge/Journal8 and full regressions. Then separate mandatory
+restart discovery/validation of pending journals before new admission; durable outcomes/
+phase transitions and post-crash ownership proof; bounded interrupted recovery/no replay;
+terminal state/retention plus auxiliary-state/shortcut rollback. These are OPEN production
+gates, not waived or bundled into this slice. Privatecandidate BLOCKED_TRANSFER, no retry.
+Implementation58–80/100, verified22/100,+0; weights unchanged. STOP one bounded stage.
+
+## CI671 cold queued Stop: bounded owner-table experiment, CI672 queued
+
+Published source `efc4cc91c19baff6dfcbdc25ef666df13362a485`, tree
+`991516696fb8e2e551692abe8f1ae8fe625dc293`, parent
+`cb7632a9dcd46c3f4fe23b9059ad81f306b5a9b7`; fetched exact parent/tree equal reviewed
+local code `abc67d6512ad8690cae23b883555df901c311b96`. Baseline checkpoint
+`90d98b932a1fb93b507b0afbeba8bc23eb75f43b`, clean/root-only active writer checked;
+original30eb216/recoveryb3ec08 and other previous worktrees unchanged.
+
+Full CI671 Windows3407-line final log independently read. Sourcecb7632a/tested merge
+`366a0cca22c5743abf4418ba637619ff9721e4b7`, Windows FAILURE, Ubuntu SUCCESS.
+Python exit0 passed; CI662/670 root remains UNKNOWN, non-reproduction not a fix.
+New failure AsyncSettingsColdStartHeartbeat -> AssertPortReleased -> Occupy after
+queued Stop settles durable cold publication. Original settingsPending/Bridge.IsRunning
+check PASS, exclusive loopback rebind after1s AddressAlreadyInUse; loopback LISTEN reported.
+Desktop not complete; Instance/maintenance15/Rollback8/relay NOT_RUN on671. Early logged
+suites scoped PASS only. No owner PID in old log, no runtime leak or fixture blame proven.
+
+Code review: fixture retains occupied and SOCKS listeners, published fallback already
+asserted different from occupied. Candidate and accept thread are in-process, no child
+started by this slice. Stop queue waits cleanup then Bridge.Stop clears active, session
+Stop sets Running false and calls Server.Stop; false flag alone does not prove release.
+Need ownership to distinguish retained own socket versus external port reuse.
+
+Published only DesktopAsyncSettingsTests.cs diagnostic + CI671_COLD_STOP_OWNER_DIAGNOSTIC.md
+(95 additions/1 deletion). On original1s rebind failure only, add safe lifecycle/cleanup/
+endpoint-identity booleans and one read-only GetExtendedTcpTable owner snapshot for exact
+port: own/other-process LISTEN, loopback/wildcard/other-address counts and non-LISTEN rows.
+No raw PID/address/process args/paths/credentials. Max1MiB/4096rows, two calls/no retry;
+read failure is boolean; unmanaged buffer/current process wrapper released. Original
+AssertPortReleased/Occupy/loop20ms/1s and finally cleanup preserved; no runtime changes,
+no repeated Stop, socket manipulation, killing other processes or security/network changes.
+Experiment interpretation documented; success alone only non-reproduces failure.
+
+Local PASS docs3/static/signatures/review/original asserts+budgets/scope/diff/JSON/secrets/
+public-content332/0. New exact C# compiler/native experiment and Rollback8 NOT_RUN.
+ONE automatic [CI672/40112760540](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40112760540),
+sourceefc4cc9/count1/pull_request/queued/conclusion null last observed. Expected-HEAD
+non-force push verified, public repo/four artifact upload guards unchanged. No rerun/
+dispatch/secondCI/release/uploads/install/live/ACL/credentials/service operations.
+Docs-only checkpoint not pushed. Next SAME672 final logs/tested merge; if failure inspect
+COLD_STOP_REBIND/COLD_STOP_OWNER to classify ownership before any runtime change.
+Journal deferred. CI662/670 root UNKNOWN; privatecandidate BLOCKED_TRANSFER, no transfer
+retry. Readiness58–80/22,+0. STOP one diagnostic stage, no full CI wait/second stage.
+
+## CI670 early Python timeout: test-only diagnostic, CI671 in progress
+
+Published source `cb7632a9dcd46c3f4fe23b9059ad81f306b5a9b7`, tree
+`38fa21e60df5ddd143f77080f96e8755739d914a`, parent
+`9f08110db63dae3df7310b8d024bde5cd3935aa1`; fetched parent/tree verified equal local
+reviewed code `c20b18513ac42ffdcff29cae4dac531c56cdf157`. Baseline checkpoint
+`2bf512767c63c1f52f380342399f18dd00a7e160`, clean/root-only active writer checked.
+Existing recoveryb3ec08 and original30eb216 worktrees preserved; no replay of unknown writes.
+
+Full CI670 Windows2788-line final log independently read, source9f08110/tested merge
+`2be5c1e6d6d86f8b3c7a47a1dffd2bccc7676495`, Windows FAILURE/Ubuntu SUCCESS.
+Exit0 child start25ms/deadline5044ms, CPU15.625ms/RAM6000640, stdinClosed=True;
+streams waiting before kill, then cleanupExited=True/both completed/zero bytes. Body,
+bootstrap/encodings/os/site/banner/cleanup markers False, pthVisits0. Fixture body not
+observed; root UNKNOWN. No evidence establishes AV/infrastructure/loader/site cause.
+Early Repair/updater/transport74/adapter3/progress134/install-window145/update-check72
+and earlier logged suites PASS; Desktop/Instance/maintenance/installer/Rollback8/relay NOT_RUN.
+Do not transfer CI669 PASS to this source or claim partial-admission test fixed by670.
+
+CI662 full2782-line and CI663 full15400-line logs independently reread. CI662
+source db3adc280d500b97487a7991f25c1206248eb5b6 / merge06ae505a9e49082e74e8d09d50b361d28799b15a
+also deadline5137ms/CPU0/RAM5984256/waiting streams, insufficient startup phase facts.
+CI663 source44d76b2347cebd23c627003e231de86c261e97e1 / merge86d483cd84da1e3220273a6102f017609e5eaf20
+completed exit0 with body/bootstrap/encodings/os/site/cleanupTrue. Non-reproduction is
+NOT a fix; both timeout incidents remain UNKNOWN. Comparison in CI670_PYTHON_STARTUP_DIAGNOSTIC.md.
+
+Only test runner instrumentation + evidence document published (100 additions/1 deletion).
+Same Get-Command.Source selection, argv/body/stdin/verbose/site normal behavior retained.
+Presence-only influencing Python environment flags and executable/application booleans;
+on deadline before own kill, read own process main-image match and at most128 module roles/
+count/read-error flags (Python DLL/C runtime). No paths/module lists/environment values,
+config contents/raw error/secret data emitted. Synthetic redaction/present/empty tests2
+added; Windows execution NOT_RUN. Original WaitForExit5000/kill-join5000/streams3000,
+all assertions and expected negative timeout remain unchanged. No runtime/security changes.
+
+Local docs3/static/review/signatures/original budgets+assertions/scope/diff/JSON/secrets/
+public-content331/0 PASS. New exact PowerShell/native/installer/Rollback8 tests NOT_RUN.
+ONE automatic [CI671/40111310628](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40111310628),
+sourcecb7632a/count1/pull_request/in_progress/conclusion null last observed. No duplicate
+CI670/rerun/dispatch. Guarded expectedHEAD non-force source publication; public repo/four
+upload guards verified unchanged. Docs-only checkpoint not pushed, no second CI.
+Next SAME671 final logs; inspect named selection/loader facts if failure. Successful run
+would only non-reproduce timeout, NOT establish root/fix. Journal not started. CI662 root
+UNKNOWN; privatecandidate BLOCKED_TRANSFER, no transfer retries/install/release/uploads/
+live/ACL/network/credentials/service operations. Readiness58–80/22,+0. STOP one stage.
+
+## CI669 partial-admission fixture correction; sole CI670 in progress
+
+Published source `9f08110db63dae3df7310b8d024bde5cd3935aa1`, tree
+`b0ee307f336797b824b5dd0126f1017132f369ea`, parent
+`320c598521993220ae5c057301f2ebdc9a340d3d`. Local reviewed code
+`c1e4d5476be8fc57afc3db9204af44872bed15e7` identical tree; fetch/parent/tree verified.
+Recovery baseline `b3ec08d46bb41ba154e2014554b8b06d2438cadd`, clean/root-only writer;
+old checkpoint30eb216 and recovery worktrees preserved unchanged. Prior uncertain
+checkpoint outcome remains UNKNOWN, not rewritten as successful.
+
+CI669 full Windows10115-line log independently read: tested merge
+`107014f558643c211775afe1700b682f052d4c9c`, Windows FAILURE, Ubuntu SUCCESS.
+Maintenance15 ALL PASS including copy-fail/partial-copy, Payload9/Stage8/Backup8/SelfCheck9,
+Desktop6388/Instance30/Maintenance126/Shutdown47 and earlier logged suites PASS.
+Rollback complete only PASS (1/8), then original real written/partial bytes retained in
+admission assertion FAIL (InstallerRollbackTests.ps1:14). Remaining7 not PASS, relay and
+later suites NOT_RUN. Maintenance selector fix confirmed, not conflated with this fault.
+
+Proven separate test scope defect: write mock resolves mode to setter FileMode.Open;
+partial branch never writes/throws, writeFailed=false fails first original conjunct.
+No hash/finally runtime loss proven. Test now freezes Scenario in fixture state; partial
+branch uses it and increments fault count. Added exact one-byte42/one-fault proof before
+rollback, original exception message/full compound hash assertion unchanged. Held exclusive
+handle/hash-in-finally-before-dispose production bookkeeping unchanged. Published scope
+only InstallerRollbackTests.ps1 (9 additions/1 deletion) and CI669_PARTIAL_ADMISSION.md.
+No runtime/API/maintenance fixture/guards/timeouts/coverage/private-file behavior changes.
+
+PASS local docs3/static/review/signatures/original asserts/diff/secrets/public-content330/0.
+No local PowerShell/Windows; new exact Rollback8/regressions NOT_RUN. ONE automatic
+[CI670/40110064441](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40110064441), source9f08110,
+count1/pull_request/in_progress/conclusion null last observed. No manual dispatch/rerun.
+Expected-HEAD non-force update and source parent/tree proof confirmed. Public repository
+and four upload guards checked, workflow unchanged; no release/uploads/install/live/security/
+network/credential actions. Local checkpoint docs not pushed to avoid another CI.
+Next SAME CI670 final logs/tested merge/Rollback8 and later regressions; no journal yet.
+Journal/recovery/retention remain mandatory future slices. CI662 root UNKNOWN, diagnostic
+retained; privatecandidate BLOCKED_TRANSFER, no delivery retries. Readiness58–80/22,+0.
+STOP after this bounded correction, no full CI wait or second stage.
+
+## Recovery checkpoint: exact published source320c598 restored, 2026-10-24
+
+New recovery record; NOT a replay or proof of the prior uncertain checkpoint operation.
+The restored environment snapshot did not contain ProGo-ci668-fixture, its local branches,
+source320c598 object or CI669 state entry. The last observed checkpoint was
+`30eb21604d109a11ea839644d9db099fa733809a`. Whether the interrupted write never ran or
+was lost with a later environment snapshot remains UNKNOWN. No missing work was deleted.
+
+PR88 independently checked OPEN/unmerged, exact head
+`320c598521993220ae5c057301f2ebdc9a340d3d`. Root was the sole active agent, no git/PowerShell/
+dotnet/msbuild process observed. Exact source fetched successfully, then checked out in
+separate worktree ProGo-recovery-source320c598 / work/progo-recovery-source320c598.
+Source tree `e790435068a82c8d6cc2810198280726bff6efda`, parent
+`1bfc5a35ecad56605d385c02ff9cf85f39aa2532`, clean before documentation checkpoint.
+Diff exactly two published files: InstallerMaintenanceTests.ps1 + CI668_INSTALLER_FIXTURE.md,
+48 additions/3 deletions. Confirmed FixtureState.Mode correction for copy-fail/partial-copy
+and added real stream/admission/one fault/cleanup assertions. No runtime delta.
+
+The original clean worktree remains on branch work/progo-f23-rollback-checkpoint at
+`30eb21604d109a11ea839644d9db099fa733809a`, unchanged. This new local docs-only commit
+has exact published source as parent; it is not a new tested/published runtime SHA.
+
+CI669 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40108281318 is the existing run.
+Its current status and final logs deliberately NOT checked in this recovery stage.
+Exact-source Maintenance15/Rollback8 and subsequent Windows results NOT_RUN/unreviewed
+here; no inherited PASS. Next separate step: independently read SAME CI669 final logs,
+tested merge and actual suites. No push/new CI/build/install/journal/transfer/release/
+upload/live/network/security/credential action. CI662 root UNKNOWN; privatecandidate
+BLOCKED_TRANSFER. Implementation58–80/100, verified22/100, change0, weights unchanged.
+
+Earlier checkpoints below are historical; this recovery entry and current JSON fields
+supersede their old current/pending pointers without rewriting history.
+
 # ProGo: единый реестр фактического состояния
 
 Обновлено23.10.2026 (МСК). Точные текущие source/merge/CI указаны в последнем checkpoint ниже и JSON ci_candidate; локальный код отдельно в active_work.local_development_sha; PR88 OPEN/DRAFT, интеграция в main NOT_RUN. Исходная аудируемая база — `7861ea919eed24c5fe9964fc35a23d3958ba5a9d`. Машиночитаемые поля и точные критерии: [project_state.json](project_state.json). Это текущий реестр; прежние checkpoint-файлы сохраняются как история. Утверждённые требования остаются в [APPROVED_PLAN_31.md](APPROVED_PLAN_31.md) и [SSH_AGENT_AUTOSTART_SPEC.md](SSH_AGENT_AUTOSTART_SPEC.md).
@@ -54,6 +1386,19 @@ CI exact final logs/merge/suites, then ONE bounded durable recovery journal/admi
 retention mandatory next, plus auxiliary-state transaction/fallback/PGA04 opt-in/package/target gates.
 Privatecandidate BLOCKED_TRANSFER unchanged; no retry/delivery/install/release/uploads/live actions.
 STOP after one guarded source publication/checkpoint, no full CI wait or second stage.
+
+Publication checkpoint: exact source `1bfc5a35ecad56605d385c02ff9cf85f39aa2532`, parent
+`5690e559fbaaab452cf74f5b8c8cd0ce841568ad`, tree `bb1491182af4996c6f3bbf586cc3a41886c266e7`
+verified after fetch equals reviewed local freeze `466155f10fd115598985726f2757aeaa902014c8`.
+One expected-HEAD guarded non-force PR88 update; ONE automatic
+[CI668/40106066218](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40106066218), exact source count1,
+event pull_request/attempt1/in_progress/conclusion null on last observed metadata. New Windows parser/
+Rollback8/Maintenance15/SelfCheck9/Backup8/Stage8/Payload9 and native regressions NOT_RUN pending same run
+final logs. CI667 PASS covers only old source5690e55/mergefe740a5. Four public upload guards/workflows
+unchanged; no manual CI/release/uploads. Docs-only local checkpoint intentionally not pushed/no second CI;
+full SHA via git log -1/PR88 body. Next same CI668 final exact logs/merge/suites; then ONE bounded durable
+journal/admission-before-write slice; interrupted recovery/retention/auxiliary transaction remain open.
+CI662 UNKNOWN/diagnostics retained; BLOCKED_TRANSFER no delivery retries/install/live actions. STOP here.
 
 ## История этапа: F23 installed runtime self-check and truthful outcome prerequisite
 

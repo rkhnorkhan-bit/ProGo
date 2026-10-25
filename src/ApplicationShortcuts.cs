@@ -140,15 +140,16 @@ namespace ProGo
             public string InstallIdentity { get; private set; }
             public string LocationIdentity { get; private set; }
             public string Disposition { get; private set; }
+            public string OriginIdentity { get; private set; }
             public bool Requested { get; private set; }
             public bool BeforeExists { get; private set; }
             public string BeforeHash { get; private set; }
             public bool Exists { get; private set; }
             public string Hash { get; private set; }
-            internal MenuInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, bool requested)
+            internal MenuInstallEvidence(string install, string path, byte[] before, byte[] after, bool created, bool requested, string origin)
             {
                 InstallIdentity = Identity(install); LocationIdentity = Identity(path);
-                Disposition = created ? "created" : "preserved"; Requested = requested;
+                Disposition = created ? "created" : "preserved"; Requested = requested; OriginIdentity = origin;
                 BeforeExists = before != null; BeforeHash = Digest(before);
                 Exists = after != null; Hash = Digest(after);
             }
@@ -408,6 +409,23 @@ namespace ProGo
             } catch { return false; }
         }
 
+        // Read-only Menu rollback prerequisite. Byte equality alone cannot establish origin.
+        public bool VerifyDurableMenuRollbackEvidence(System.Collections.IDictionary receipt)
+        {
+            try {
+                var evidence = ReadDurableEvidence<MenuInstallEvidence>(receipt);
+                if (!VerifyMenuInstallEvidence(evidence)) return false;
+                if (evidence.Disposition == "preserved") return evidence.OriginIdentity == null;
+                if (evidence.OriginIdentity == null || evidence.OriginIdentity.Length != 64) return false;
+                string path = Path.Combine(menu, "ProGo.lnk");
+                CheckLocation(path);
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    return evidence.OriginIdentity == LegacyOrigin(stream.SafeFileHandle) &&
+                        evidence.Hash == Digest(ReadLegacyEvidenceBytes(stream));
+                }
+            } catch { return false; }
+        }
+
         // Observe only the real Startup original state; does not prove who removed a link.
         public bool VerifyDurableStartupOriginalResult(System.Collections.IDictionary startupReceipt,
             System.Collections.IDictionary menuReceipt, System.Collections.IDictionary legacyReceipt)
@@ -466,8 +484,11 @@ namespace ProGo
             byte[] before = captureStartup ? ReadStartupBytes() : null;
             byte[] menuBefore = captureStartup ? ReadMenuBytes() : null;
             byte[] menuCreated = null;
+            string menuCreatedOrigin = null;
             if (!noStartMenu) {
-                menuCreated = EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
+                menuCreated = captureStartup
+                    ? EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show", CancellationToken.None, handle => menuCreatedOrigin = LegacyOrigin(handle))
+                    : EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
                 if (!captureStartup) MigrateMenu();
             }
             var legacyEvidence = captureStartup ? MigrateLegacyWithEvidence(!noStartMenu) : null;
@@ -487,7 +508,7 @@ namespace ProGo
             if (menuCreated == null ? !Equal(menuBefore, menuAfter) :
                 (menuBefore != null || !Equal(menuCreated, menuAfter)))
                 throw new IOException("Menu completion could not be verified. Current state was preserved.");
-            var menuEvidence = new MenuInstallEvidence(root, Path.Combine(menu, "ProGo.lnk"), menuBefore, menuAfter, menuCreated != null, !noStartMenu);
+            var menuEvidence = new MenuInstallEvidence(root, Path.Combine(menu, "ProGo.lnk"), menuBefore, menuAfter, menuCreated != null, !noStartMenu, menuCreatedOrigin);
             return new StartupInstallEvidence(root, startup, before, after, created != null, createdOrigin, menuEvidence, legacyEvidence);
         }
 
