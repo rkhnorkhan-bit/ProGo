@@ -1062,6 +1062,49 @@ function Invoke-ProGoInstallerFailureStartup([bool]$AuxiliaryStarted, $Backup,
     } catch { return 'blocked' }
     return 'blocked'
 }
+# Read-only Legacy prerequisite. A verified removed receipt is NOT a source of original bytes.
+# No path/authority is accepted from metadata, and no Legacy write/delete/restore is performed.
+function Get-ProGoInstallerLegacyRollbackAdmission([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null; $resultStream = $null; $resultReader = $null
+    try {
+        $menuProof = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if (-not (Test-ProGoInstallerMenuResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return $null }
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        $stream = New-Object IO.FileStream -ArgumentList @($pending,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $null }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream,(New-Object Text.UTF8Encoding($false,$true)),$true,4096,$true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        if ((Get-FileHash -LiteralPath $pending).Hash -cne $menuProof.ReceiptHash) { return $null }
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $resultPath = Assert-ProGoInstallerStagePath $parent ('installer-menu-outcome-' + $menuProof.Journal.Substring('installer-journal-'.Length) + '.json')
+        $resultStream = New-Object IO.FileStream -ArgumentList @($resultPath,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        if ($resultStream.Length -lt 1 -or $resultStream.Length -gt 1048576) { return $null }
+        $resultReader = New-Object IO.StreamReader -ArgumentList @($resultStream,(New-Object Text.UTF8Encoding($false,$true)),$true,4096,$true)
+        $text = $menuProof | ConvertTo-Json -Depth 5 -Compress
+        if ($resultReader.ReadToEnd() -cne $text) { return $null }
+        # Existing Menu context independently performs fixed-schema/native Legacy identity,
+        # origin/bytes/absence and replacement-linkage verification at trusted locations.
+        $again = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if (($again | ConvertTo-Json -Depth 5 -Compress) -cne $text -or
+            -not (Test-ProGoInstallerMenuResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) { return $null }
+        $legacy = $saved.Completion.Startup.Legacy
+        $kind = if ($legacy.Disposition -ceq 'preserved') { 'preserve-only' }
+            elseif ($legacy.Disposition -ceq 'removed') { 'removed-needs-source' } else { return $null }
+        return [pscustomobject]@{ Schema = 1; Kind = $kind; MutationAllowed = $false; RestorationAllowed = $false;
+            FullRollback = $false; InstallSucceeded = $false; VerifiedRestoreSourceAvailable = $false;
+            RestorationRequired = ($kind -ceq 'removed-needs-source');
+            Identity = $menuProof.Identity; Journal = $menuProof.Journal; ReceiptHash = $menuProof.ReceiptHash;
+            MenuAdmissionHash = $menuProof.AdmissionHash; MenuResultHash = (Get-FileHash -LiteralPath $resultPath).Hash;
+            LocationIdentity = (Get-ProGoInstallerIdentity (Join-Path $ProgramsDirectory 'ProGo\ProGo Status.lnk'));
+            OriginIdentity = $legacy.OriginIdentity; BeforeExists = $legacy.BeforeExists; BeforeHash = $legacy.BeforeHash;
+            Exists = $legacy.Exists; Hash = $legacy.Hash; OwnedHash = $legacy.OwnedHash; ReplacementHash = $legacy.ReplacementHash }
+    } catch { return $null } finally {
+        if ($null -ne $resultReader) { $resultReader.Dispose() }; if ($null -ne $resultStream) { $resultStream.Dispose() }
+        if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() }
+    }
+}
 # Menu failure integration: maintenance owner only; an existing intent NEVER replays deletion.
 # Startup must settle first for fresh Menu mutation. Already-applied Menu uses read-only context,
 # which independently revalidates the canonical Startup result even without the Menu primary.

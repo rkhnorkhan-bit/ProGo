@@ -4031,8 +4031,8 @@
       "ci-complete"
     ],
     "tests": {
-      "Windows_MenuFailure19": "NOT_RUN",
-      "Installer29": "NOT_RUN",
+      "Windows_LegacyAdmission19": "NOT_RUN",
+      "Installer30": "NOT_RUN",
       "full_exact_SHA_aggregate": "NOT_RUN"
     }
   },
@@ -5526,13 +5526,13 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "4ac32450e72522699a09e0c07906c408165859f7",
-    "baseline_source": "9b784cd4804bf1029088d1f5d48c97d6cf5cb749",
-    "baseline_tested_merge": "93d27c362804592b34ad04faf12ef053034360b8",
-    "prior_checkpoint": "bad64b6f911a54c7494fcf31225b06ef49d8e6c0",
-    "stage": "F23 Menu failure-handler integration only",
+    "reviewed_local_code": "431294dc2c9bf4078cc8b09a7e89a5d6cf6d7240",
+    "baseline_source": "683608f464435347142243d5605c8dfa9bf71e1c",
+    "baseline_tested_merge": "835fe21f10889047e9d5cefaa879743a670ac172",
+    "prior_checkpoint": "08a71d12e4bfd78dfd5a424acb0936a87466d957",
+    "stage": "F23 readonly Legacy rollback prerequisite only",
     "status": "PARTIAL; new Windows NOT_RUN",
-    "next": "Guarded single publication; SAME new CI exact merge/all4/MenuFailure19/whole29/all old suites; then separate Legacy prerequisite",
+    "next": "Guarded single publication; SAME new CI exact merge/all4/LegacyAdmission19/full30/all old suites; then verified original Legacy byte capture prerequisite",
     "constraints": [
       "Entire approved scope retained",
       "UNKNOWN incidents retained",
@@ -22845,7 +22845,7 @@
     "installer_execution": "Full log shows about17:07-17:36 UTC / suites1765368ms; contradictory prior pending metadata is not a proven hang"
   },
   "f23_menu_failure_integration": {
-    "source": "CURRENT_TREE",
+    "source": "683608f464435347142243d5605c8dfa9bf71e1c",
     "reviewed_local_code": "4ac32450e72522699a09e0c07906c408165859f7",
     "status": "PARTIAL",
     "criterion": "F23 actual failure-handler invokes owned Menu rollback only after verified Startup settlement, with durable admission/result and no crash replay",
@@ -22861,6 +22861,74 @@
       "Runtime recovery/retention/PGA04/updater/final package/owner gates"
     ],
     "scope_preserved": "Entire APPROVED_PLAN_31/nested55 retained; no whole production acceptance",
+    "score_delta": 0,
+    "baseline_verification": "CI704 exact683608f / merge835fe21f actual integration19 and full29 PASS; no whole auxiliary/production acceptance"
+  },
+  "ci704_final": {
+    "source": "683608f464435347142243d5605c8dfa9bf71e1c",
+    "tested_merge": "835fe21f10889047e9d5cefaa879743a670ac172",
+    "run_id": 40218417994,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40218417994",
+    "status": "PASS",
+    "full_logs_read": true,
+    "jobs": {
+      "Installer": 121244485577,
+      "Core": 121244485595,
+      "Ubuntu": 121244485420,
+      "aggregate": 121251784829
+    },
+    "log_lines": [
+      709,
+      15409,
+      607,
+      167
+    ],
+    "tests": {
+      "Installer29": "PASS",
+      "MenuIntegration19": "PASS",
+      "MenuResult19": "PASS",
+      "MenuAdmission19": "PASS",
+      "Owned18": "PASS",
+      "Menu32": "PASS",
+      "Publication6": "PASS",
+      "Desktop6394": "PASS",
+      "Instance30": "PASS",
+      "Maintenance126": "PASS",
+      "Shutdown47": "PASS",
+      "HomeVPN4816": "PASS",
+      "Portable91": "PASS",
+      "Python38": "PASS",
+      "Python2": "SKIPPED",
+      "Ubuntu_aggregate12_operation16_profile13_provisioning": "PASS",
+      "strict_exact_SHA_aggregate": "PASS",
+      "public_content393_44": "PASS"
+    },
+    "runner_zip": {
+      "bytes": 668380,
+      "sha256": "01e2fbf8921fd9651ad84d112619cf3586ff80e9bd18dcbe107f38e5be6dd88b",
+      "pack": "PASS",
+      "uploads_prune": "SKIPPED",
+      "delivery_install_owner_acceptance": "NOT_RUN"
+    }
+  },
+  "f23_legacy_rollback_admission": {
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "431294dc2c9bf4078cc8b09a7e89a5d6cf6d7240",
+    "status": "PARTIAL",
+    "criterion": "F23 readonly Legacy rollback prerequisite, exact verified preserved/removed classification without mutation authority",
+    "implementation": "Pinned bounded receipt+Menu result; repeated native/identity/origin/bytes/location/context proof; preserve-only vs removed-needs-source; no write/restore/terminal claim",
+    "tests": {
+      "local_review_static_signatures_parity_secrets_content_JSON_diff": "PASS",
+      "local_aggregate12": "PASS",
+      "Windows_LegacyAdmission19_Installer30": "NOT_RUN"
+    },
+    "blocked_dependency": "Existing durable Legacy receipts contain hashes/origin but not verified original byte payload; removed state is not sufficient restore source",
+    "residual": [
+      "Verified original Legacy bytes capture before migration",
+      "Owned restore/durable mutation and crash settlement/result/error integration",
+      "Full auxiliary outcome/runtime recovery/retention/PGA04/updater/package/owner gates"
+    ],
+    "scope_preserved": "All approved31/nested55 requirements retained; no whole production acceptance",
     "score_delta": 0
   }
 }
