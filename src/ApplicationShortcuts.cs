@@ -112,6 +112,7 @@ namespace ProGo
         // Durable receipt contains identity and hashes only, never shortcut bytes or user paths.
         public sealed class StartupInstallEvidence
         {
+            private StartupInstallEvidence() { }
             public int Schema { get { return 1; } }
             public string InstallIdentity { get; private set; }
             public string LocationIdentity { get; private set; }
@@ -133,6 +134,7 @@ namespace ProGo
 
         public sealed class MenuInstallEvidence
         {
+            private MenuInstallEvidence() { }
             public int Schema { get { return 1; } }
             public string InstallIdentity { get; private set; }
             public string LocationIdentity { get; private set; }
@@ -188,6 +190,7 @@ namespace ProGo
 
         public sealed class LegacyInstallEvidence
         {
+            private LegacyInstallEvidence() { }
             public int Schema { get { return 1; } }
             public string InstallIdentity { get; private set; }
             public string LocationIdentity { get; private set; }
@@ -349,6 +352,54 @@ namespace ProGo
                 } else return false;
                 byte[] current = ReadStartupBytes();
                 return evidence.Exists == (current != null) && evidence.Hash == Digest(current);
+            } catch { return false; }
+        }
+
+        // Deserialize only fixed receipt fields; no path or operation is supplied by a receipt.
+        private static T ReadDurableEvidence<T>(System.Collections.IDictionary values) where T : class
+        {
+            if (values == null) throw new InvalidDataException("Auxiliary receipt is missing.");
+            var result = (T)Activator.CreateInstance(typeof(T), true);
+            int count = 0;
+            foreach (var property in typeof(T).GetProperties()) {
+                if (property.Name == "Menu" || property.Name == "Legacy") continue;
+                count++;
+                if (!values.Contains(property.Name)) throw new InvalidDataException("Auxiliary receipt field is missing.");
+                object value = values[property.Name];
+                if (property.Name == "Schema") {
+                    if (!(value is int || value is long) || Convert.ToInt64(value) != 1) throw new InvalidDataException("Auxiliary receipt schema is invalid.");
+                    continue;
+                }
+                if (value == null ? property.PropertyType != typeof(string) : value.GetType() != property.PropertyType)
+                    throw new InvalidDataException("Auxiliary receipt field type is invalid.");
+                if (property.Name.EndsWith("Hash", StringComparison.Ordinal) || property.Name.EndsWith("Identity", StringComparison.Ordinal)) {
+                    string hash = value as string;
+                    if (hash != null && (hash.Length != 64 || hash.Trim('0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F').Length != 0))
+                        throw new InvalidDataException("Auxiliary receipt digest is invalid.");
+                }
+                property.SetValue(result, value, null);
+            }
+            if (values.Count != count) throw new InvalidDataException("Auxiliary receipt has unknown fields.");
+            foreach (string prefix in new[] { "Before", "" }) {
+                bool exists = (bool)typeof(T).GetProperty(prefix + "Exists").GetValue(result, null);
+                string hash = (string)typeof(T).GetProperty(prefix + "Hash").GetValue(result, null);
+                if (exists != (hash != null)) throw new InvalidDataException("Auxiliary receipt presence is inconsistent.");
+            }
+            return result;
+        }
+
+        // Read-only. The caller supplies independently trusted locations through this manager.
+        // A positive result is observational evidence, never authority to mutate or publish.
+        public bool VerifyDurableInstallEvidence(System.Collections.IDictionary startupReceipt,
+            System.Collections.IDictionary menuReceipt, System.Collections.IDictionary legacyReceipt)
+        {
+            try {
+                var startupEvidence = ReadDurableEvidence<StartupInstallEvidence>(startupReceipt);
+                var menuEvidence = ReadDurableEvidence<MenuInstallEvidence>(menuReceipt);
+                var legacyEvidence = ReadDurableEvidence<LegacyInstallEvidence>(legacyReceipt);
+                return VerifyStartupInstallEvidence(startupEvidence) && VerifyMenuInstallEvidence(menuEvidence) &&
+                    VerifyLegacyInstallEvidence(legacyEvidence) &&
+                    (legacyEvidence.Disposition != "removed" || legacyEvidence.ReplacementHash == menuEvidence.Hash);
             } catch { return false; }
         }
 

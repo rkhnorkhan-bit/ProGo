@@ -478,6 +478,57 @@ function Test-ProGoInstallerPendingInstalledProof([string]$Directory, [string]$I
         return $true
     } catch { return $false }
 }
+function Test-ProGoInstallerAuxiliaryJournalScope([string]$Directory, [string]$InstallDirectory) {
+    if ([IO.Path]::GetFileName($Directory) -cnotmatch '^installer-journal-[a-f0-9]{32}$') { return $false }
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    if ((Assert-ProGoInstallerStagePath $parent ([IO.Path]::GetFileName($Directory))) -cne $Directory) { return $false }
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        if (-not $item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        if ($item.FullName -ceq $Directory) { continue }
+        if (-not (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -and
+            -not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { return $false }
+    }
+    return $true
+}
+# Read-only auxiliary revalidation prerequisite. Does not publish or recover pending state.
+# Expected locations come from the caller/platform, never from durable receipt data.
+function Test-ProGoInstallerPendingAuxiliaryProof([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null
+    try {
+        if (-not (Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory)) { return $false }
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        # Pin this exact bounded receipt against writes/deletion through all validation.
+        $stream = New-Object IO.FileStream -ArgumentList @($pending, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $false }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        if (-not (Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory) -or
+            -not (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory)) { return $false }
+        $receipt = $saved.Completion.Startup
+        $parts = @($receipt, $receipt.Menu, $receipt.Legacy)
+        $maps = @()
+        for ($index = 0; $index -lt 3; $index++) {
+            $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+            foreach ($property in $parts[$index].PSObject.Properties) {
+                if ($index -eq 0 -and $property.Name -cin @('Menu', 'Legacy')) { continue }
+                $map.Add($property.Name, $property.Value)
+            }
+            $maps += ,$map
+        }
+        # Use the shipped helper, not any executable or script identified by journal fields.
+        Import-ProGoShortcutType
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        if (-not $manager.VerifyDurableInstallEvidence($maps[0], $maps[1], $maps[2])) { return $false }
+        return ((Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory) -and
+            (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory))
+    } catch { return $false } finally {
+        if ($null -ne $reader) { $reader.Dispose() }
+        if ($null -ne $stream) { $stream.Dispose() }
+    }
+}
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
