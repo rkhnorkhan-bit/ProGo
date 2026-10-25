@@ -408,6 +408,24 @@ namespace ProGo
             } catch { return false; }
         }
 
+        // Observe only the real Startup original state; does not prove who removed a link.
+        public bool VerifyDurableStartupOriginalResult(System.Collections.IDictionary startupReceipt,
+            System.Collections.IDictionary menuReceipt, System.Collections.IDictionary legacyReceipt)
+        {
+            try {
+                var evidence = ReadDurableEvidence<StartupInstallEvidence>(startupReceipt);
+                var menuEvidence = ReadDurableEvidence<MenuInstallEvidence>(menuReceipt);
+                var legacyEvidence = ReadDurableEvidence<LegacyInstallEvidence>(legacyReceipt);
+                if (!VerifyMenuInstallEvidence(menuEvidence) || !VerifyLegacyInstallEvidence(legacyEvidence) ||
+                    (legacyEvidence.Disposition == "removed" && legacyEvidence.ReplacementHash != menuEvidence.Hash)) return false;
+                if (evidence.Disposition == "preserved") return VerifyStartupInstallEvidence(evidence);
+                return evidence.Disposition == "created" && evidence.InstallIdentity == Identity(root) &&
+                    evidence.LocationIdentity == Identity(startup) && !evidence.BeforeExists && evidence.BeforeHash == null &&
+                    evidence.Exists && evidence.Hash != null && evidence.OriginIdentity != null &&
+                    ReadStartupBytes() == null;
+            } catch { return false; }
+        }
+
         // Startup only: final validation/deletion on one exact owned handle, no path-based delete.
         public bool TryRollbackDurableStartup(System.Collections.IDictionary receipt, CancellationToken token)
         {

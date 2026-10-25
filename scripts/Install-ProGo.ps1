@@ -479,6 +479,7 @@ function Test-ProGoInstallerPendingInstalledProof([string]$Directory, [string]$I
     } catch { return $false }
 }
 function Test-ProGoInstallerAuxiliaryJournalScope([string]$Directory, [string]$InstallDirectory) {
+    Assert-ProGoInstallerNoAuxiliaryResult $InstallDirectory
     if ([IO.Path]::GetFileName($Directory) -cnotmatch '^installer-journal-[a-f0-9]{32}$') { return $false }
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if ((Assert-ProGoInstallerStagePath $parent ([IO.Path]::GetFileName($Directory))) -cne $Directory) { return $false }
@@ -593,6 +594,90 @@ function Invoke-ProGoInstallerStartupRollback([string]$Directory, [string]$Insta
         if ($null -ne $stream) { $stream.Dispose() }
     }
 }
+# Partial auxiliary evidence blocks automatic terminal reconciliation/new installation.
+function Assert-ProGoInstallerNoAuxiliaryResult([string]$InstallDirectory) {
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    if (-not (Test-Path -LiteralPath $parent)) { return }
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        if ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Installer auxiliary outcome requires verified completion before a new installation.'
+        }
+    }
+}
+# Read-only proof of observed original Startup state, not full rollback or mutation authority.
+function Get-ProGoInstallerStartupResultProof([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory) {
+    if (-not (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory)) { throw 'Installer Startup result requires verified runtime and snapshot.' }
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    $name = 'installer-startup-outcome-' + [IO.Path]::GetFileName($Directory).Substring('installer-journal-'.Length) + '.json'
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        if ($item.Name.StartsWith('installer-startup-outcome', [StringComparison]::OrdinalIgnoreCase) -and $item.Name -cne $name) { throw 'Installer auxiliary results conflict.' }
+        if ($item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase) -and $item.FullName -cne $Directory -and
+            -not (Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -and
+            -not (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { throw 'Installer pending journals conflict.' }
+    }
+    $stream = $null; $reader = $null
+    try {
+        $pending = Assert-ProGoInstallerStagePath $Directory 'outcome.pending.json'
+        $stream = New-Object IO.FileStream -ArgumentList @($pending, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { throw 'Installer Startup receipt size is invalid.' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        $saved = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+        $receipt = $saved.Completion.Startup; $maps = @(); $parts = @($receipt, $receipt.Menu, $receipt.Legacy)
+        for ($index = 0; $index -lt 3; $index++) {
+            $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+            foreach ($property in $parts[$index].PSObject.Properties) {
+                if ($index -eq 0 -and $property.Name -cin @('Menu', 'Legacy')) { continue }
+                $map.Add($property.Name, $property.Value)
+            }
+            $maps += ,$map
+        }
+        Import-ProGoShortcutType
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        if (-not $manager.VerifyDurableStartupOriginalResult($maps[0], $maps[1], $maps[2]) -or
+            -not (Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory)) { throw 'Installer Startup original state is not verified.' }
+        return [pscustomobject]@{ Schema = 1; Phase = 'startup-original-observed'; FullRollback = $false;
+            InstallSucceeded = $false; MutationAllowed = $false; RuntimeState = 'new-verified';
+            Identity = (Get-ProGoInstallerIdentity $InstallDirectory); Journal = [IO.Path]::GetFileName($Directory);
+            ReceiptHash = (Get-FileHash -LiteralPath $pending).Hash; StartupLocation = (Get-ProGoInstallerIdentity (Join-Path $StartupDirectory 'ProGo.lnk'));
+            OriginIdentity = $receipt.OriginIdentity; BeforeExists = $receipt.BeforeExists; BeforeHash = $receipt.BeforeHash }
+    } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+function Write-ProGoInstallerStartupResultBytes($Stream, [byte[]]$Bytes) { $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true) }
+function Complete-ProGoInstallerStartupResult([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $proof = Get-ProGoInstallerStartupResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    $name = 'installer-startup-outcome-' + $proof.Journal.Substring('installer-journal-'.Length) + '.json'
+    $path = Assert-ProGoInstallerStagePath $parent $name
+    $text = $proof | ConvertTo-Json -Depth 5 -Compress
+    $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
+    $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 4096, [IO.FileOptions]::WriteThrough)
+    try {
+        Write-ProGoInstallerStartupResultBytes $stream $bytes
+        $stream.Flush($true); $stream.Position = 0
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $false, 4096, $true)
+        try { if ($reader.ReadToEnd() -cne $text) { throw 'Installer Startup result readback failed.' } } finally { $reader.Dispose() }
+        $again = Get-ProGoInstallerStartupResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if (($again | ConvertTo-Json -Depth 5 -Compress) -cne $text) { throw 'Installer Startup result evidence changed.' }
+    } finally { $stream.Dispose() }
+}
+function Test-ProGoInstallerStartupResult([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $stream = $null; $reader = $null
+    try {
+        $expected = Get-ProGoInstallerStartupResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $path = Assert-ProGoInstallerStagePath $parent ('installer-startup-outcome-' + $expected.Journal.Substring('installer-journal-'.Length) + '.json')
+        $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { return $false }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream, (New-Object Text.UTF8Encoding($false, $true)), $true, 4096, $true)
+        return $reader.ReadToEnd() -ceq ($expected | ConvertTo-Json -Depth 5 -Compress)
+    } catch { return $false } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
@@ -605,6 +690,7 @@ function Resolve-ProGoInstallerPendingInstalled([string]$InstallDirectory,
     [string]$ShortcutScript,
     [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
     [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    Assert-ProGoInstallerNoAuxiliaryResult $InstallDirectory
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if (-not (Test-Path -LiteralPath $parent)) { return }
     if (-not [IO.Directory]::Exists($parent)) { throw 'Installer journal parent is invalid.' }
@@ -633,6 +719,7 @@ function Resolve-ProGoInstallerPendingInstalled([string]$InstallDirectory,
     [IO.File]::Move($pending, (Assert-ProGoInstallerStagePath $candidate 'installed.json'))
 }
 function Resolve-ProGoInstallerPendingRollback([string]$InstallDirectory) {
+    Assert-ProGoInstallerNoAuxiliaryResult $InstallDirectory
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if (-not (Test-Path -LiteralPath $parent)) { return }
     if (-not [IO.Directory]::Exists($parent)) { throw 'Installer journal parent is invalid.' }
@@ -668,6 +755,7 @@ function Resolve-ProGoInstallerPendingRollback([string]$InstallDirectory) {
     }
 }
 function Assert-ProGoInstallerNoPendingJournal([string]$InstallDirectory) {
+    Assert-ProGoInstallerNoAuxiliaryResult $InstallDirectory
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if (-not (Test-Path -LiteralPath $parent)) { return }
     if (-not [IO.Directory]::Exists($parent)) { throw 'Installer journal parent is invalid.' }
