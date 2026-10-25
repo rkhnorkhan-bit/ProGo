@@ -535,6 +535,39 @@ function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
 # An intent is not a terminal outcome or post-crash ownership proof.
 # Until durable terminal outcomes exist, every previous installer journal is pending.
 # Only finish metadata publication of an already-proven rollback. Never restore bytes.
+# Called under the installer maintenance lease, before Stop or any new runtime write.
+# Only publish a fully completed prior outcome; never restore runtime from an intent.
+function Resolve-ProGoInstallerPendingInstalled([string]$InstallDirectory,
+    [string]$ShortcutScript,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+    if (-not (Test-Path -LiteralPath $parent)) { return }
+    if (-not [IO.Directory]::Exists($parent)) { throw 'Installer journal parent is invalid.' }
+    $candidate = $null
+    foreach ($item in Get-ChildItem -LiteralPath $parent -Force -ErrorAction Stop) {
+        if (-not $item.Name.StartsWith('installer-journal', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        [void](Assert-ProGoInstallerStagePath $parent $item.Name)
+        if ((Test-ProGoInstallerInstalledOutcome $item.FullName $InstallDirectory) -or
+            (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory)) { continue }
+        # Existing verified rollback reconciliation keeps its separate contract below.
+        if (Test-ProGoInstallerRollbackOutcome $item.FullName $InstallDirectory 'rollback.pending.json') { continue }
+        if ($null -ne $candidate) { throw 'Installer multiple pending outcomes require verified recovery.' }
+        $candidate = $item.FullName
+    }
+    if ($null -eq $candidate) { return }
+    # Trusted helper is supplied by the installer itself, never selected by a journal.
+    if (-not [string]::IsNullOrEmpty($ShortcutScript)) { . $ShortcutScript }
+    if (-not (Test-ProGoInstallerPendingAuxiliaryProof $candidate $InstallDirectory $ProgramsDirectory $StartupDirectory)) {
+        throw 'Installer pending completion requires verified auxiliary and runtime evidence.'
+    }
+    $pending = Assert-ProGoInstallerStagePath $candidate 'outcome.pending.json'
+    $digest = (Get-FileHash -LiteralPath $pending).Hash
+    if (-not (Test-ProGoInstallerPendingAuxiliaryProof $candidate $InstallDirectory $ProgramsDirectory $StartupDirectory) -or
+        (Get-FileHash -LiteralPath $pending).Hash -cne $digest) { throw 'Installer pending completion evidence changed.' }
+    # Atomic no-overwrite rename only. Sharing/destination failures propagate; no Launch.
+    [IO.File]::Move($pending, (Assert-ProGoInstallerStagePath $candidate 'installed.json'))
+}
 function Resolve-ProGoInstallerPendingRollback([string]$InstallDirectory) {
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if (-not (Test-Path -LiteralPath $parent)) { return }
@@ -767,6 +800,7 @@ $InstallBackup = $null
 $InstallWrites = New-Object 'System.Collections.Generic.List[object]'
 try {
     $InstallMaintenance = Enter-ProGoInstallerMaintenance
+    Resolve-ProGoInstallerPendingInstalled $InstallDir -ShortcutScript (Join-Path $Payload.ScriptsDirectory 'Shortcuts-ProGo.ps1')
     Resolve-ProGoInstallerPendingRollback $InstallDir
     Assert-ProGoInstallerNoPendingJournal $InstallDir
     Stop-ProGoInstallerApplication -InstallDirectory $InstallDir
