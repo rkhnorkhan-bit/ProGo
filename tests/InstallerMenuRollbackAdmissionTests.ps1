@@ -11,6 +11,82 @@ foreach ($function in $ast.FindAll({ param($node)
     $node.Name -notin @('Enter-ProGoInstallerMaintenance', 'Stop-ProGoInstallerApplication')
 }, $false)) { . ([scriptblock]::Create($function.Extent.Text)) }
 function Check-MenuAdmission($Condition, $Name) { if (-not $Condition) { throw ('Installer Menu rollback admission failed: ' + $Name) } }
+# Failure-only, read-only diagnostics of the ORIGINAL fixture. Never substitutes a proof result.
+function Get-MenuAdmissionHandleFacts($Handle) {
+    $flags = [Reflection.BindingFlags]'Static,NonPublic'
+    $type = [ProGo.ApplicationShortcuts]
+    $origin = $type.GetMethod('LegacyOrigin', $flags).Invoke($null, [object[]]@($Handle))
+    $infoType = $type.GetNestedType('LegacyFileInfo', [Reflection.BindingFlags]::NonPublic)
+    $nativeArgs = [object[]]@($Handle, [Activator]::CreateInstance($infoType))
+    if (-not $type.GetMethod('GetFileInformationByHandle', $flags).Invoke($null, $nativeArgs)) { throw 'Native read-only fixture identity unavailable.' }
+    $fields = [Reflection.BindingFlags]'Instance,NonPublic'
+    $info = $nativeArgs[1]; $creation = $infoType.GetField('Creation', $fields).GetValue($info)
+    return [pscustomobject]@{ Origin = $origin; Volume = $infoType.GetField('Volume', $fields).GetValue($info);
+        IndexHigh = $infoType.GetField('IndexHigh', $fields).GetValue($info); IndexLow = $infoType.GetField('IndexLow', $fields).GetValue($info);
+        CreationHigh = $creation.dwHighDateTime; CreationLow = $creation.dwLowDateTime }
+}
+function Write-MenuAdmissionRefusal($Directory, $InstallDirectory, $ProgramsDirectory, $StartupDirectory, $Receipt, $DiagnosticRoot) {
+    $phase = 'snapshot'; $timer = [Diagnostics.Stopwatch]::StartNew(); $stream = $null
+    try {
+        $snapshot = $false; try { Assert-ProGoInstallerSnapshotMaterial $backup; $snapshot = $true } catch { }
+        $runtime = $false; try { Assert-ProGoInstallerRuntime $backup; $runtime = $true } catch { }
+        $pending = Test-ProGoInstallerPendingInstalledProof $Directory $InstallDirectory
+        $auxiliary = Test-ProGoInstallerPendingAuxiliaryProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        $contextOk = $false; $contextState = 'unavailable'; $phase = 'context'
+        try { $context = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory; $contextOk = $true; $contextState = $context.State } catch { }
+        $phase = 'native-verifiers'
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+        $typedMenu = $manager.VerifyMenuInstallEvidence($Receipt.Menu)
+        $typedStartup = $manager.VerifyStartupInstallEvidence($Receipt)
+        $typedLegacy = $manager.VerifyLegacyInstallEvidence($Receipt.Legacy)
+        $map = New-Object 'System.Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
+        foreach ($property in $Receipt.Menu.PSObject.Properties) { $map.Add($property.Name, $property.Value) }
+        $durableMenu = $manager.VerifyDurableMenuRollbackEvidence($map)
+        $primary = Join-Path $ProgramsDirectory 'ProGo\ProGo.lnk'
+        $stream = [IO.File]::Open($primary,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        $facts = Get-MenuAdmissionHandleFacts $stream.SafeFileHandle
+        $stream.Dispose(); $stream = $null
+        $originPresent = $null -ne $Receipt.Menu.OriginIdentity
+        $originSame = $originPresent -and $Receipt.Menu.OriginIdentity -ceq $facts.Origin
+        $hashSame = (Get-FileHash -LiteralPath $primary).Hash -ceq $Receipt.Menu.Hash
+        $legacyReplacementSame = $Receipt.Legacy.ReplacementHash -ceq $Receipt.Menu.Hash
+        Write-Host ('MENU_ADMISSION_REFUSAL case=legacy-removed snapshot=' + $snapshot + '; runtime=' + $runtime +
+            '; pending=' + $pending + '; auxiliary=' + $auxiliary + '; context=' + $contextOk + '; contextState=' + $contextState +
+            '; typedMenu=' + $typedMenu + '; typedStartup=' + $typedStartup + '; typedLegacy=' + $typedLegacy +
+            '; durableMenu=' + $durableMenu + '; originPresent=' + $originPresent + '; originSame=' + $originSame +
+            '; bytesSame=' + $hashSame + '; legacyRemoved=' + ($Receipt.Legacy.Disposition -ceq 'removed') + '; replacementSame=' + $legacyReplacementSame)
+        # One distinguishing reproduction under a NEW own GUID root. Same existing EnsureLink
+        # overload and vacated Menu-name sequence; no production modification or relaxed oracle.
+        $phase = 'rename-probe'; New-Item -ItemType Directory -Path $DiagnosticRoot | Out-Null
+        $probeInstall = Join-Path $DiagnosticRoot 'app'; $probePrograms = Join-Path $DiagnosticRoot 'Programs'
+        New-Item -ItemType Directory -Path $probeInstall, $probePrograms | Out-Null
+        [IO.File]::WriteAllText((Join-Path $probeInstall 'ProGo.exe'),'synthetic executable; never run')
+        $probeManager = New-Object ProGo.ApplicationShortcuts($probeInstall, $probePrograms, (Join-Path $DiagnosticRoot 'Startup'))
+        $probeManager.Install($true,$true,$false)
+        $probePrimary = Join-Path $probePrograms 'ProGo\ProGo.lnk'
+        [IO.File]::Move($probePrimary,(Join-Path $probePrograms 'ProGo\ProGo Status.lnk'))
+        $rename = @{ Before = $null }
+        $witness = [Action[Microsoft.Win32.SafeHandles.SafeFileHandle]]{ param($Handle) $rename.Before = Get-MenuAdmissionHandleFacts $Handle }
+        $methods = @([ProGo.ApplicationShortcuts].GetMethods([Reflection.BindingFlags]'Instance,NonPublic') | Where-Object { $_.Name -eq 'EnsureLink' -and $_.GetParameters().Count -eq 4 })
+        if ($methods.Count -ne 1) { throw 'Fixture witness overload is ambiguous.' }
+        [byte[]]$created = $methods[0].Invoke($probeManager,[object[]]@($probePrimary,'--show',[Threading.CancellationToken]::None,$witness))
+        $stream = [IO.File]::Open($probePrimary,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        $after = Get-MenuAdmissionHandleFacts $stream.SafeFileHandle
+        $stream.Dispose(); $stream = $null
+        $before = $rename.Before
+        if ($null -eq $before) { throw 'Fixture rename witness was not called.' }
+        Write-Host ('MENU_RENAME_PROBE witness=True; originSame=' + ($before.Origin -ceq $after.Origin) +
+            '; volumeSame=' + ($before.Volume -eq $after.Volume) + '; indexSame=' + ($before.IndexHigh -eq $after.IndexHigh -and $before.IndexLow -eq $after.IndexLow) +
+            '; creationSame=' + ($before.CreationHigh -eq $after.CreationHigh -and $before.CreationLow -eq $after.CreationLow) +
+            '; bytesSame=' + ([Convert]::ToBase64String($created) -ceq [Convert]::ToBase64String([IO.File]::ReadAllBytes($probePrimary))) + '; elapsedMs=' + $timer.ElapsedMilliseconds)
+    } catch {
+        Write-Host ('MENU_DIAGNOSTIC_ERROR phase=' + $phase + '; type=' + $_.Exception.GetType().Name + '; elapsedMs=' + $timer.ElapsedMilliseconds)
+        $frames = (New-Object Diagnostics.StackTrace($_.Exception, $false)).GetFrames()
+        if ($null -ne $frames) { foreach ($frame in @($frames | Select-Object -First 5)) {
+            $method = $frame.GetMethod(); if ($null -ne $method) { Write-Host ('MENU_SAFE_STACK method=' + $method.Name + '; il=' + $frame.GetILOffset()) }
+        } }
+    } finally { if ($null -ne $stream) { $stream.Dispose() }; $timer.Stop() }
+}
 $work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-menu-admission-' + [Guid]::NewGuid().ToString('N'))
 $stage = $null; $held = $null; $owned = $false
 try {
@@ -82,7 +158,14 @@ try {
         $before = @{}; foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $before[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
         $expected = $scenario -in @('created', 'custom-preserved', 'legacy-removed', 'absent-preserved', 'post-startup')
         if ($scenario -eq 'receipt-busy') { $held = [IO.File]::Open($pending, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::ReadWrite) }
-        try { for ($read = 0; $read -lt 3; $read++) { $admission = Get-ProGoInstallerMenuRollbackAdmission $journal $install $expectedPrograms $startup; Check-MenuAdmission (($null -ne $admission) -eq $expected) 'repeated fresh classification remains fail-closed' } }
+        try { for ($read = 0; $read -lt 3; $read++) {
+            $admission = Get-ProGoInstallerMenuRollbackAdmission $journal $install $expectedPrograms $startup
+            $matchesOriginalExpectation = (($null -ne $admission) -eq $expected)
+            if (-not $matchesOriginalExpectation -and $scenario -eq 'legacy-removed') {
+                Write-MenuAdmissionRefusal $journal $install $expectedPrograms $startup $receipt (Join-Path $work ('diagnostic-' + [Guid]::NewGuid().ToString('N')))
+            }
+            Check-MenuAdmission $matchesOriginalExpectation 'repeated fresh classification remains fail-closed'
+        } }
         finally { if ($null -ne $held) { $held.Dispose(); $held = $null } }
         Check-MenuAdmission (($null -ne $admission) -eq $expected) 'only full current snapshot/runtime/auxiliary ownership proof admits Menu classification'
         if ($expected) {

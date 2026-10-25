@@ -1,3 +1,74 @@
+## CURRENT CI695 failure / ONE targeted test-only Menu admission diagnostic
+
+Containing source is THIS git tree (git rev-parse HEAD); reviewed diagnostic code
+cde99a8d469b10d6966278abb83bc67b72309041. Baseline d57f23596f5a9920bfd899a3e2ba222d9a3c79df,
+checkpoint2bb6a518e1d9d36b8b152d469d70c43f40d66270 clean; PR88 exact baseline HEAD/open draft,
+sole root writer/no active Git/build/PowerShell checked; all old worktrees retained.
+Full CI695 Windows10473/Ubuntu578 logs independently checked: overall FAILURE, Ubuntu SUCCESS,
+exact tested merge3261d9af777fcc9883000c8cf3555177274048d3. Windows121145460388 at11:04:31UTC:
+InstallerMenuRollbackAdmissionTests Check-MenuAdmission line13, repeated fresh classification
+remains fail-closed. created/custom-preserved PASS; legacy-removed FAIL by exact third source case;
+remaining29 NOT_RUN. No individual failed proof value/native cause is exposed in existing log.
+StartupFailure15/Mutation14/Result13/Owned14/Admission25/all earlier installer/Desktop6394/Instance30/
+Maintenance126/Shutdown47 PASS. HomeVPN/Portable/relay/aggregate/public-content/pack NOT_RUN;
+uploads/prune SKIPPED. Do not transfer their older PASS or call whole Menu32 PASS.
+
+UNKNOWN root cause: classifier returns null on exception/refusal, individual gate unknown. Source
+shows Menu origin captured before publication rename and third fixture reuses a vacated Menu name;
+possible capture/rename identity change is a hypothesis, not a proven fix or test-contract error.
+No guessed runtime change or changed expected result. Original created/preserved ownership,
+identity/origin/bytes/snapshot/receipt/trusted-location fail-closed contract remains intact.
+See docs/CI695_MENU_ADMISSION_DIAGNOSTIC.md for exact evidence/distinguishing experiment.
+
+Strict test-only instrumentation +documents. Failure-only legacy-removed probe preserves original
+condition evaluated once, same assert/expected/order/all32/three reads/cleanup/deadlines. Read-only
+original fixture gate booleans and current-origin/byte equality; one separate own GUID reproduction
+of actual existing EnsureLink 4arg witness/vacated-name sequence compares native identity before/
+after rename. Emit only booleans/phase/elapsed/type/max5 method+IL frames, no paths/raw identity/
+hash/bytes/credentials/receipt contents. All own handles close and guarded own-root cleanup remains.
+Production/native APIs/installer handler/ownership checks/other suites/scripts/workflows unchanged.
+Local review/static/signatures/parity/diff/secrets/public374source0release/JSON PASS. Windows
+PowerShell/reflection/native diagnostics/exact suites NOT_RUN; this diagnostic is NOT a runtime fix.
+
+Pending one guarded expected-HEAD PR88 publication and ONE automatic diagnostic CI on new SHA;
+no blind rerun/dispatch/duplicate/timeout increase. Public uploads OFF/release/prune ineligible.
+Next SAME new CI full final logs: failed gate, originSame and exact rename-probe identity/bytes
+booleans, then minimal PROVEN correction only; no Menu mutation or next functionality before PASS.
+Menu32 remains2PASS/1FAIL/29NOT_RUN at CI695; new source all32 NOT_RUN until actually reached.
+All Menu/Legacy/durable outcome/retention/runtime recovery dependencies and original error/no Launch
+remain. Old incidents UNKNOWN; add CI695 unresolved gate refusal, no fabricated fix. BLOCKED_TRANSFER/
+no retry; weights/score unchanged delta0. No live shortcuts/install/services/network/ACL/security/
+credentials/VPS/release/uploads. Historical current headings below superseded here.
+
+## CURRENT published Menu admission / CI695 queued
+
+Published source `d57f23596f5a9920bfd899a3e2ba222d9a3c79df`, tree
+`79ba537644337e2bf4a3b798994b793f5a18ca4a`, parent1f6b0bb7a9f73b1326fcceece1af80657035f8b3.
+Reviewed local code255cc4ba095ebcb41d1e42d587f5592092687cb0; final synchronized/anonymized
+freeze b63121ebc187b440c457a50ff38a3e144a7cf00b, identical canonical tree fetched/verified.
+Expected-HEAD guarded non-force PR88 update, one automatic pull_request
+[CI695](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40185551629), exact sourced57f235,
+queued/null observed, no dispatch/rerun/duplicate/full wait. Upload guards OFF/release/prune ineligible.
+Published current state now includes CI668-694 local checkpoint history; stale CI667 active_work
+is superseded explicitly, historical fields preserved. Immutable tree resolves containing source
+with git rev-parse HEAD; this local checkpoint/PR metadata provide post-publication exact IDs.
+A private-root pattern in two historical documents was detected before publication and anonymized.
+Only final clean tree exported; intermediate local commits/ancestry NOT published. Public373/0 PASS.
+
+Runtime/test/evidence5files256add4del plus3 state files; full published diff8files4073add220del.
+New Menu origin capture/read-only classifier/32 cases; no Menu deletion, no ownership grants from
+intent, no full auxiliary outcome/success/Launch. Existing tests/assertions/timeouts unchanged.
+CI694 full15799/578 independently verified baseline SUCCESS; new source PowerShell/C# compilation/
+MenuRollbackAdmission32/previous exact-source suites NOT_RUN. Local review/static/signatures/parity/
+diff/secrets/public/JSON PASS; score delta0. Worktree clean after checkpoint commit.
+
+Next SAME695 full final logs/exact tested merge/MenuRollbackAdmission32 and reached prior suites.
+After PASS: ONE owned Menu rollback operation with fresh exact origin/byte/handle validation;
+its durable admission/result/error integration remains separate, followed by Legacy/full auxiliary
+transaction/partial-receipt evidence/retention/general runtime recovery. Do not repeat closed work.
+UNKNOWN incidents and BLOCKED_TRANSFER/no delivery retry unchanged. No live shortcut/install/
+service/network/ACL/security/credentials/VPS/release/uploads; stop without a second stage.
+
 ## CURRENT F23 read-only Menu rollback admission; publication candidate
 
 Authoritative current slice is THIS git tree; resolve its containing source with `git rev-parse HEAD`.

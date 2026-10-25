@@ -3905,10 +3905,11 @@
   ],
   "remote_visibility": {
     "observed": "public",
-    "pr88": "OPEN/DRAFT baseline source1f6b0bb verified",
-    "push": "pending expected-HEAD guarded publication, no force",
+    "pr88": "OPEN/DRAFT published d57f235 expected-HEAD guard verified",
+    "push": "PASS non-force expected-head guard/tree equality",
     "uploads": "automatic public PR uploads OFF; workflow unchanged",
-    "artifacts": "BLOCKED_TRANSFER; no retry"
+    "artifacts": "BLOCKED_TRANSFER; no retry",
+    "ci": "one automatic CI695 queued/null observed"
   },
   "local_regression": {
     "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
@@ -3930,7 +3931,11 @@
   "publication_scan": {
     "scope": "this Menu admission and three synchronized documents",
     "secret_private_data_findings": 0,
-    "local_checks": "review/static/signatures/parity/diff/JSON/public content; not Windows proof"
+    "local_checks": "review/static/signatures/parity/diff/JSON/public content; not Windows proof",
+    "final_source": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
+    "public_content": "PASS373 source/0release",
+    "private_root_references": "detected before publication, anonymized in two history documents; intermediate local ancestry excluded",
+    "findings_remaining": 0
   },
   "publication_mapping": [
     {
@@ -4016,16 +4021,14 @@
   ],
   "ci_candidate": {
     "source": null,
-    "source_resolution": "CURRENT_TREE containing this state; exact source and run recorded in PR/local post-publication checkpoint",
-    "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0",
-    "run_id": null,
-    "status": "NOT_RUN before single guarded publication",
-    "tested_merge": null,
+    "source_resolution": "CURRENT_TREE; exact publication/run follow in PR and local checkpoint",
+    "status": "NOT_RUN before one automatic diagnostic CI",
     "compilation": "NOT_RUN",
-    "menu_rollback_admission32": "NOT_RUN",
-    "prior_suites": "NOT_RUN exact new tree",
-    "baseline": "CI694 SUCCESS only source1f6b0bb / merge9e38b10",
-    "scope": "read-only Menu rollback admission, no Menu mutation/outcome"
+    "menu_admission_diagnostics": "NOT_RUN",
+    "menu32": "NOT_RUN exact new tree",
+    "run_id": null,
+    "tested_merge": null,
+    "scope": "test-only Menu gate/rename identity diagnostic, no runtime fix"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5472,7 +5475,7 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "CURRENT_TREE; resolve containing commit by git rev-parse HEAD/CI checkout, not old CI636 source",
+  "candidate_source_scope": "CURRENT_TREE test-only diagnostic; containing source resolved by git rev-parse HEAD and exact CI checkout",
   "uncommitted_candidate": {
     "state": "No inherited uncommitted candidate; this local slice committed before guarded publication",
     "current": "CURRENT_TREE",
@@ -5517,15 +5520,14 @@
   },
   "active_work": {
     "source": null,
-    "source_resolution": "CURRENT_TREE git rev-parse HEAD; never CI667",
-    "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0",
-    "baseline_source": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
-    "baseline_checkpoint": "b87e37a487d95bfa32075b1d7922517c19c3f0c8",
-    "phase": "ONE read-only Menu rollback admission prerequisite",
+    "source_resolution": "CURRENT_TREE git rev-parse HEAD",
+    "reviewed_local_code": "cde99a8d469b10d6966278abb83bc67b72309041",
+    "baseline_source": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
+    "baseline_checkpoint": "2bb6a518e1d9d36b8b152d469d70c43f40d66270",
+    "phase": "ONE test-only CI695 distinguishing gate/origin diagnostic",
     "status": "PARTIAL",
-    "ci_status": "NOT_RUN awaiting one automatic CI on publication",
-    "next": "same new exact CI final full logs/MenuRollbackAdmission32; no second stage",
-    "remaining": "owned Menu operation and durable outcome; Legacy/full auxiliary/partial-receipt/retention/runtime recovery remain",
+    "cause": "UNKNOWN; no guessed runtime fix",
+    "next": "same new diagnostic CI final evidence; no Menu mutation or next functional stage",
     "private_candidate": "BLOCKED_TRANSFER/no retry",
     "score_change": 0
   },
@@ -5724,10 +5726,10 @@
     "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a"
   },
   "pending_publication": {
+    "status": "pending guarded update",
     "source": "CURRENT_TREE",
-    "branch": "integration/approved-plan-31-20261011",
-    "expected_head": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
-    "scope": "Menu admission + synchronized latest state; ONE automatic CI; no artifacts/release"
+    "expected_head": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
+    "scope": "test-only instrumentation +documents; one diagnostic CI"
   },
   "local_preparation_guidance": {
     "status": "PARTIAL",
@@ -22151,14 +22153,15 @@
     "fields": [
       "active_work",
       "ci_candidate",
-      "ci694_final",
+      "ci695_final",
+      "ci695_menu_diagnostic",
       "f23_menu_rollback_admission",
-      "private_candidate_transfer",
       "incident_ledger_current",
+      "private_candidate_transfer",
       "current_readiness"
     ],
     "other_snapshots": "Historical evidence/requirements remain; current-labelled old fields/headings are superseded, not active plans",
-    "containing_source": "git rev-parse HEAD; immutable commit cannot embed own SHA",
+    "containing_source": "CURRENT_TREE; reviewed local codecde99a8d; exact post-publication checkpoint/PR",
     "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0"
   },
   "ci694_final": {
@@ -22193,9 +22196,9 @@
   },
   "f23_menu_rollback_admission": {
     "status": "PARTIAL",
-    "implementation": "CURRENT_TREE; reviewed local code255cc4ba095ebcb41d1e42d587f5592092687cb0",
+    "implementation": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
     "criterion": "F23-R02 read-only Menu rollback classification with exact origin/hash/snapshot/identity/ownership/receipt/trusted locations",
-    "tests": "MenuRollbackAdmission32 Windows NOT_RUN; all prior tests unchanged",
+    "tests": "CI695 source d57f235 / merge3261d9a:2PASS/legacy-removed FAIL/29NOT_RUN; diagnostic new tree NOT_RUN",
     "local": "PASS review/static/signatures/parity/diff/secrets/public373/0/JSON",
     "evidence": "docs/F23_MENU_ROLLBACK_ADMISSION.md",
     "remaining": [
@@ -22207,6 +22210,62 @@
       "retention",
       "general runtime recovery"
     ],
+    "score_change": 0
+  },
+  "ci695_final": {
+    "source": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
+    "tested_merge": "3261d9af777fcc9883000c8cf3555177274048d3",
+    "run_id": 40185551629,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40185551629",
+    "status": "FAILURE",
+    "windows_job": 121145460388,
+    "windows_lines": 10473,
+    "ubuntu_job": 121145460224,
+    "ubuntu_lines": 578,
+    "ubuntu": "SUCCESS",
+    "failure": "Menu admission repeated fresh classification remains fail-closed, helper line13; third legacy-removed inferred from exact order",
+    "menu32": {
+      "PASS": [
+        "created",
+        "custom-preserved"
+      ],
+      "FAIL": [
+        "legacy-removed"
+      ],
+      "NOT_RUN": 29
+    },
+    "earlier_pass": [
+      "StartupFailure15",
+      "StartupMutationAdmission14",
+      "StartupResult13",
+      "OwnedStartupRollback14",
+      "Admission25",
+      "earlier installer suites",
+      "Desktop6394",
+      "Instance30",
+      "Maintenance126",
+      "Shutdown47"
+    ],
+    "not_run": [
+      "HomeVPN",
+      "Portable",
+      "relay",
+      "aggregate",
+      "public-content",
+      "pack"
+    ],
+    "uploads": "SKIPPED",
+    "root_cause": "UNKNOWN; individual failed proof not logged"
+  },
+  "ci695_menu_diagnostic": {
+    "status": "PARTIAL",
+    "reviewed_local_code": "cde99a8d469b10d6966278abb83bc67b72309041",
+    "runtime_fix": false,
+    "hypothesis": "native origin recorded before rename might change during vacated-name publication; not proven",
+    "experiment": "original read-only gate booleans + one own EnsureLink witness before/after identity components, bytes equality; failure only legacy-removed",
+    "contract": "all32 original conditions/assertions/expected/order/cleanup/timeouts retained; runtime unchanged",
+    "tests": "Windows NOT_RUN",
+    "evidence": "docs/CI695_MENU_ADMISSION_DIAGNOSTIC.md",
     "score_change": 0
   }
 }
