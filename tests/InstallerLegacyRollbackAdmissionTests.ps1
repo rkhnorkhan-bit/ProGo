@@ -30,11 +30,27 @@ try {
             $manager = New-Object ProGo.ApplicationShortcuts($install,$programs,$startup)
             $manager.Install($true,$true,$false); [IO.File]::Move($primary,$legacy)
         }
-        if ($scenario -in @('custom-preserved','same-bytes-replaced','legacy-changed')) { [IO.File]::WriteAllText($legacy,'synthetic foreign customized shortcut') }
+        $customHash = $null
+        if ($scenario -in @('custom-preserved','same-bytes-replaced','legacy-changed')) {
+            # A customized shortcut must still be a real Shell Link for the native semantic oracle.
+            $foreignInstall = Join-Path $case 'foreign-app'
+            New-Item -ItemType Directory -Path $foreignInstall | Out-Null
+            [IO.File]::WriteAllText((Join-Path $foreignInstall 'ProGo.exe'),'synthetic foreign executable')
+            $customManager = New-Object ProGo.ApplicationShortcuts($foreignInstall,$programs,$startup)
+            $customManager.Install($true,$true,$false); [IO.File]::Move($primary,$legacy)
+            $matches = [ProGo.ApplicationShortcuts].GetMethod('Matches',[Reflection.BindingFlags]'Instance,NonPublic')
+            $currentManager = New-Object ProGo.ApplicationShortcuts($install,$programs,$startup)
+            Check-LegacyAdmission ($matches.Invoke($customManager,@($legacy,'--show')) -and
+                -not $matches.Invoke($currentManager,@($legacy,'--show'))) 'real native custom link loads and belongs only to foreign fixture target'
+            $customHash = (Get-FileHash -LiteralPath $legacy).Hash
+        }
         $backup = New-ProGoInstallerBackup $payload $install; $stage = New-ProGoInstallerStage $payload
         $writes = New-Object 'System.Collections.Generic.List[object]'
         foreach ($entry in $backup.Entries) { Set-ProGoInstallerRuntimeFile $stage $backup $entry $writes }
         $receipt = Initialize-ProGoShortcuts -InstallDirectory $install -WasInstalled $false -NoStartup $false -NoStartMenu $false -ProgramsDirectory $programs -StartupDirectory $startup -CaptureStartupEvidence
+        if ($null -ne $customHash) { Check-LegacyAdmission ((Get-FileHash -LiteralPath $legacy).Hash -ceq $customHash -and
+            $receipt.Legacy.Disposition -ceq 'preserved' -and -not $receipt.Legacy.BeforeMatched -and
+            $receipt.Legacy.BeforeExists -and $receipt.Legacy.Exists) 'actual migration preserves exact customized Legacy bytes and non-owned disposition' }
         function Write-ProGoInstallerOutcomeBytes($Stream,[byte[]]$Bytes) { $Stream.Write($Bytes,0,$Bytes.Length); $Stream.Flush($true); throw 'synthetic pending receipt interruption' }
         $interrupted = $false
         try { Complete-ProGoInstallerInstalledOutcome $backup $writes -CompletedPhases @('self-check','shortcuts') -StartupEvidence $receipt -RequireStartupEvidence }

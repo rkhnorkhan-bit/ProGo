@@ -4020,21 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": null,
-    "source_resolution": "CURRENT_TREE; exact source/run in PR and post-publication checkpoint",
-    "status": "NOT_RUN before single guarded publication",
-    "tested_merge": null,
-    "required_jobs": [
-      "vpn-server-test",
-      "windows-build",
-      "installer-tests",
-      "ci-complete"
-    ],
-    "tests": {
-      "Windows_LegacyAdmission19": "NOT_RUN",
-      "Installer30": "NOT_RUN",
-      "full_exact_SHA_aggregate": "NOT_RUN"
-    }
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "c05b64105486b80a4603e40a6d02cc0b00fb3b88",
+    "baseline_source": "b4327947646753ec4b20eef29bc99786b2add322",
+    "status": "Await one automatic CI after guarded publication",
+    "Windows_Legacy19": "NOT_RUN",
+    "Installer30": "NOT_RUN",
+    "exact_SHA_aggregate": "NOT_RUN",
+    "uploads": "NOT_AUTHORIZED",
+    "score_delta": 0
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5526,18 +5520,17 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "reviewed_local_code": "431294dc2c9bf4078cc8b09a7e89a5d6cf6d7240",
-    "baseline_source": "683608f464435347142243d5605c8dfa9bf71e1c",
-    "baseline_tested_merge": "835fe21f10889047e9d5cefaa879743a670ac172",
-    "prior_checkpoint": "08a71d12e4bfd78dfd5a424acb0936a87466d957",
-    "stage": "F23 readonly Legacy rollback prerequisite only",
-    "status": "PARTIAL; new Windows NOT_RUN",
-    "next": "Guarded single publication; SAME new CI exact merge/all4/LegacyAdmission19/full30/all old suites; then verified original Legacy byte capture prerequisite",
+    "reviewed_local_code": "c05b64105486b80a4603e40a6d02cc0b00fb3b88",
+    "baseline_source": "b4327947646753ec4b20eef29bc99786b2add322",
+    "prior_checkpoint": "106746d5d18fc52ef05091650ca3e1d3a1a8dc22",
+    "stage": "CI705 real custom Shell Link fixture only",
+    "status": "Local checks PASS; new Windows19/full30 NOT_RUN",
+    "next": "One automatic CI; read SAME run all4 final logs before verified Legacy bytes capture",
     "constraints": [
-      "Entire approved scope retained",
+      "Entire scope retained",
       "UNKNOWN incidents retained",
       "BLOCKED_TRANSFER/no retry",
-      "No live install/services/network/ACL/security/credentials/VPS/release/uploads"
+      "No live actions/security/network/credentials/services/release/uploads"
     ],
     "score_delta": 0
   },
@@ -22912,7 +22905,7 @@
     }
   },
   "f23_legacy_rollback_admission": {
-    "source": "CURRENT_TREE",
+    "source": "b4327947646753ec4b20eef29bc99786b2add322",
     "reviewed_local_code": "431294dc2c9bf4078cc8b09a7e89a5d6cf6d7240",
     "status": "PARTIAL",
     "criterion": "F23 readonly Legacy rollback prerequisite, exact verified preserved/removed classification without mutation authority",
@@ -22929,6 +22922,28 @@
       "Full auxiliary outcome/runtime recovery/retention/PGA04/updater/package/owner gates"
     ],
     "scope_preserved": "All approved31/nested55 requirements retained; no whole production acceptance",
-    "score_delta": 0
+    "score_delta": 0,
+    "ci705_status": "prior29 PASS; absent-preserved PASS/custom-preserved ERROR/remaining17 NOT_RUN; real custom Shell Link fixture correction pending new Windows execution"
+  },
+  "ci705_final": {
+    "source": "b4327947646753ec4b20eef29bc99786b2add322",
+    "tested_merge": "e371086cdaecf4773b188973e1f0d8414f8617ec",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40221509929",
+    "conclusion": "failure",
+    "independently_read_full_logs": true,
+    "jobs": {
+      "installer": 121253889508,
+      "core": 121253889415,
+      "ubuntu": 121253889440,
+      "aggregate": 121263428068
+    },
+    "old_installer29": "PASS",
+    "legacy19": {
+      "absent-preserved": "PASS",
+      "custom-preserved": "ERROR COM E_FAIL during invalid plain-text .lnk fixture load",
+      "remaining17": "NOT_RUN"
+    },
+    "runtime_fix": false,
+    "candidate": "NOT_ACCEPTED"
   }
 }

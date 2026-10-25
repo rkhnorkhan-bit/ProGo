@@ -1,3 +1,76 @@
+## CURRENT CI705 fixture-only COM correction; new Windows verification pending
+
+Baseline source b4327947646753ec4b20eef29bc99786b2add322, tree966ac450a99b4c785b9a2fc61021bea866d91718;
+checkpoint106746d5d18fc52ef05091650ca3e1d3a1a8dc22 clean/preserved. PR88 head independently matched,
+only root active; no active Git/compiler/PowerShell operation. New source CURRENT_TREE (git rev-parse HEAD),
+reviewed local code c05b64105486b80a4603e40a6d02cc0b00fb3b88. Old worktrees untouched.
+
+Full CI705 logs independently read: exact merge e371086cdaecf4773b188973e1f0d8414f8617ec.
+Installer121253889508 FAILURE, Core121253889415 SUCCESS, Ubuntu121253889440 SUCCESS,
+aggregate121263428068 FAILURE correctly rejecting installer failure despite matching all3 SHAs.
+Run https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40221509929 . NOT cancellation.
+All prior29 installer suites PASS; new Legacy19 absent-preserved PASS, custom-preserved ERROR,
+remaining17 NOT_RUN. InstallWithStartupEvidence COM E_FAIL at Shortcuts-ProGo.ps1:26 (19:09:28 UTC).
+Core Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91 PASS; Python38 PASS/2 SKIP;
+Ubuntu aggregate12/operation16/profile13/provisioning PASS. Public395/44 PASS. Pack runner-only,
+uploads/prune SKIPPED; runner ZIP is NOT a globally successful candidate, no delivery or PC acceptance.
+
+Proven fixture mismatch: three cases wrote plain text into Legacy .lnk then requested migration.
+MigrateLegacyWithEvidence -> ObserveLegacy(true) -> Matches -> IPersistFile.Load has no COM catch;
+plain text is not a loadable Shell Link. Earlier custom Menu fixtures suppressed Menu creation/migration;
+they do not establish that malformed Legacy text should load. Native fail-closed contract unchanged.
+Only fixture seeding changed: existing native ApplicationShortcuts creates real .lnk to an owned
+synthetic foreign-app/ProGo.exe, moved to Legacy before actual migration. Native Matches must load
+and recognize only the foreign fixture target, not current install; hash and preserved/nonmatched
+receipt must survive migration. Same-bytes-replaced and legacy-changed retain original negative
+faults and all strict native-origin/refusal/assertions. No retries/sleeps/timeouts or runtime changes.
+See CI705_LEGACY_CUSTOM_FIXTURE.md. New19 and original29 cases/order/deadlines/aggregate preserved.
+
+Local review/static/signatures/parity/reverse diff/aggregate12/secrets/public-content/JSON/diff PASS.
+New Windows Legacy19/full30/exact-SHA aggregate NOT_RUN until new automatic CI final logs.
+ONE expected-HEAD guarded publication and automatic PR CI only; no rerun/dispatch/duplicate/full wait.
+Next SAME new CI all4 final logs/exact merge/Legacy19/full30. Verified Legacy bytes capture remains
+BLOCKED until whole CI PASS, then separate stage. No Menu/Legacy mutation or next functional stage.
+UNKNOWN incidents (Python startup/rebind/receipt sharing/repair timeout/setup retry) retained;
+BLOCKED_TRANSFER/no retry unchanged. All31/nested55 scope, weights and scores retained delta0.
+No live install/shortcuts/services/network/ACL/security/credentials/VPS/release/uploads/transfer.
+
+Historical checkpoints below (statuses are scoped to their recorded observation):
+
+## CURRENT published read-only Legacy prerequisite / CI705 in progress
+
+Source `b4327947646753ec4b20eef29bc99786b2add322`, tree `966ac450a99b4c785b9a2fc61021bea866d91718`, parent
+`683608f464435347142243d5605c8dfa9bf71e1c`; reviewed code431294dc2c9bf4078cc8b09a7e89a5d6cf6d7240,
+freezee8a7d4d82bb093771e9a8f10b23c040928aeead1. Expected-HEAD non-force PR88 update; fetched exact
+commit/parent/tree equality verified. Prior08a71d12 checkpoint clean/preserved, old worktrees untouched.
+ONE automatic pull_request [CI705](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40221509929), run40221509929,
+exact sourceb432794, observed in_progress/null. New exact tested merge/final logs not yet read.
+No rerun/dispatch/duplicate/full wait. Local post-publication checkpoint only, NOT pushed for extra CI.
+
+Public diff7files461add10del: readonly helper/new19-case fixture/30th suite (165add1del), four evidence/
+state docs (296add9del). Pinned bounded receipt+Menu result, canonical hash/evidence/native origin/
+bytes-or-absence/trusted-location revalidation; preserve-only vs removed-needs-source. False mutation/
+restoration/full rollback/install-success/source-available flags. Existing receipt has no original
+Legacy byte payload; removed classification is NOT restore admission. No native/destructive/error-
+handler change; original exception/no Launch/pending gates retained. All prior29 calls/asserts/
+deadlines/native ownership/aggregate/workflow/upload guards unchanged. Three fresh reads preserve
+entire case inventory/bytes; same-byte+creation replacement rejected; cleanup only own GUID roots.
+
+Local review/static/signatures/parity/reverse diff/aggregate12/secrets/public395source0release/JSON/
+diff PASS. PowerShell5.1/Windows LegacyAdmission19/whole30/Core+Ubuntu/full exact aggregate NOT_RUN
+on this source. CI704 full29/integration19/result19/admission19/owned18/Menu32/Publication6/prior
+suites/all4 jobs actual PASS independently read at merge835fe21f, not inherited by new tests. Runner
+pack only/no transfer/install/PC acceptance. UNKNOWN incidents and BLOCKED_TRANSFER/no retry retained.
+
+Next SAME CI705 final exact merge/all4/Legacy19/whole30/all existing suites. Then separate minimal
+verified original Legacy bytes preservation before existing migration, linked to native retained
+identity/origin/receipt/snapshot; old hash-only receipts stay fail-closed. Owned restore/durable
+mutation/crash/result/error integration/full auxiliary outcome remain separate, plus all approved
+runtime recovery/retention/PGA04/standalone-updater/immutable version/package/owner/F31/portability/
+UI/signing/commercial gates. Full31/nested55 scope preserved; no production claim. Scores/weights
+unchanged delta0. No live install/shortcuts/services/network/ACL/security/credentials/VPS/release/
+uploads/delivery retry, or second stage.
+
 ## CURRENT read-only Legacy rollback prerequisite; CI704 fully verified
 
 Source is CURRENT_TREE (`git rev-parse HEAD`), reviewed local code `431294dc2c9bf4078cc8b09a7e89a5d6cf6d7240`.
