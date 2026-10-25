@@ -1,3 +1,76 @@
+## CURRENT CI698 CANCELLED; minimal exact-SHA CI partition/aggregate candidate
+
+Containing source is THIS git tree (git rev-parse HEAD); reviewed local code
+7db31c9687dd53560fdd3521d8a4663ea6dc2138. Baseline source48f079c79fb9dbb012dcf08eb75219bb17289127,
+checkpoint8f556cef6c58611d3be22b81c367486b1fb22418 clean; PR88 exact HEAD/open draft/sole root writer/
+no active Git/build/PowerShell verified; older worktrees retained. Full CI698 Windows10491/Ubuntu578
+logs independently read, mergec1de408f34bc29903cb032a321e39776d839c61f. Windows121177870869 CANCELLED,
+not FAILURE; Ubuntu121177870667 SUCCESS. Publication6 actual PASS, MenuAdmission29 actual PASS
+including legacy-removed/origin/replacement refusal; final3 NOT_RUN/unconfirmed (post-startup,
+post-startup-replaced, unproved-startup-absence). Full32 NOT PASS. Earlier installer/Startup15/14/13/
+14/25/Desktop6394/Instance30/Maintenance126/Shutdown47 PASS; HomeVPN/Portable/relay/aggregate/
+public-content/pack NOT_RUN. Capture fix scoped6/29 proven, no whole Menu/auxiliary acceptance.
+
+Cancellation initiator NOT confirmed: raw jobs40m10s vs workflow40m, log operation canceled only.
+Check-run annotations API rejected by connector HTTP400 INVALID_ARGUMENT, no bypass. Independently
+measured bottleneck: Core throughUpdater1279s, incomplete Installer1116s =2395s before final3 and
+mandatory relay/HomeVPN/content/pack. Budget already consumed regardless of cancellation initiator.
+No runtime defect/flaky/AV assumption or deadline increase. See docs/CI698_PARTITIONED_CI.md.
+
+Minimal CI-only split: default Test-ProGo Suite All preserves full coverage. Same25 installer calls
+extracted verbatim/order into one canonical runner with safe per-suite timing. Suite Core runs all
+old pre-tail checks then unchanged relay/HomeVPN/Portable/Python/content/runner pack. Suite Installer
+on a separate clean Windows runner runs common hygiene/parse/build then exact25 suites, no Core/SSH
+rerun. Each job records/verifies actual checkout vs GITHUB_SHA. Always aggregate requires exact
+Ubuntu/Core/Installer set, every result success and exact same tested commit; missing/skip/cancel/
+failure/wrong identity fail closed. Existing Windows40/Ubuntu12 deadlines retained; installer40,
+aggregate5 metadata gate. No artifact transfer/cache/new uploads. Original upload/pack/relay/prune/
+event/permission/concurrency bodies unchanged. Pack alone is not complete CI; branch protections
+not modified. No tests/asserts/timeouts removed or weakened. No Menu mutation/production change.
+
+Code/test/evidence6files417add29del plus3 synchronized state docs. Local aggregate12 PASS and CLI
+success0/malformed1, YAML/review/static/signatures/parity/full old test bodies/secrets/public384/0/
+JSON/diff PASS. Default All/partition dispatch Windows parser/compiler/native25/6/32/exact-SHA
+complete gate remain NOT_RUN until new CI. New Python test appears in original relay discover too;
+no old suite skipped. Both Windows jobs fresh-build own exact payload cheaply, no binary sharing.
+
+One expected-HEAD guarded PR88 publication and ONE automatic CI; no parallel rerun/full wait.
+Next SAME new exact run all4 jobs/full logs/tested merge/aggregate/Publication6/full Menu32/old suites.
+Only after complete proof may next separate owned Menu rollback stage begin. All F23 residuals and
+original error/no Launch/private settings/vault/keys unchanged. UNKNOWN unrelated incidents and
+BLOCKED_TRANSFER/no retry retained; no score increase. No live install/services/network/security/
+ACL/credentials/VPS/release/uploads. Older current headings below are historical and superseded.
+
+## CURRENT published Menu origin fix / CI698 in progress
+
+Published source `48f079c79fb9dbb012dcf08eb75219bb17289127`, tree
+`83392835e29ef3b1ca5cc90af43a273e7328699b`, parent8caf03239ce6d762aa49a044dad1a3270fd979de.
+Reviewed local code27cb4f79af3349096f19b82471f11339a8de8ae1, freezea50162d9ff8aa261a9ea150ead1da652bacef504,
+canonical full tree fetched/verified identical. Expected-HEAD non-force guarded existing PR88 update.
+ONE automatic pull_request [CI698](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40196340794),
+exact source48f079c, in_progress/null observed; no dispatch/rerun/parallel/full wait. Public upload
+guards OFF/release/prune ineligible; workflows unchanged. No artifacts delivered or installed.
+
+Diff8files440add24del: five code/test/evidence files221add2del plus3 synchronized state docs219add22del.
+Fix addresses PROVEN pre-rename Menu origin capture becoming stale when creation changes during
+owned publication. Full native identity retains creation. Menu-only opt-in retains original handle,
+proves volume/index continuity and bytes, pins published path/full post-origin before witness and
+rechecks full identity/bytes/location afterward. Foreign replacement (identical bytes/copied creation),
+partial evidence/witness errors fail closed; no blind receipt refresh or replay. Startup/noncapture/
+Legacy/native deletion/failure/Stop/finally unchanged. No Menu rollback mutation/full auxiliary
+outcome/success/Launch permission. Original32/all old assertions/timeouts byte-identical; new6 native
+regressions before32. Local static/review/signatures/parity/diff/secrets/public380/0/JSON PASS.
+No local compiler/Windows: C#/PowerShell/native Publication6/Menu32/prior exact-source suites NOT_RUN.
+Independent baseline CI697 full10478/578: volume/index/bytesSame True, creation/originSame False,
+probe completed once; origin capture defect proven, but new fix runtime PASS awaits exact CI.
+
+Next SAME698 full final logs/exact tested merge/Publication6/Menu32 and reached previous suites.
+After PASS only, next separate owned Menu rollback stage; durable Menu admission/result/error,
+Legacy/full auxiliary/partial-receipt/retention/general runtime recovery still open. Unrelated UNKNOWN
+Python/rebind/sharing/repair/setup incidents and BLOCKED_TRANSFER/no delivery retry preserved;
+no score increase. No live install/services/network/security/ACL/credentials/VPS/release/uploads.
+Local post-publication checkpoint only, no push/additional CI. Older headings superseded here.
+
 ## CURRENT CI697 proven Menu capture/publication-origin defect; minimal fix candidate
 
 Containing source is THIS git tree (git rev-parse HEAD); reviewed local code

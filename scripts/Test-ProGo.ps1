@@ -1,4 +1,5 @@
-﻿Set-StrictMode -Version 2.0
+﻿param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All')
+Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $PSScriptRoot
@@ -274,6 +275,11 @@ if (-not (Test-Path $ReleaseIcon)) { Fail "release ProGo.ico missing" }
 if ((Get-Item $ReleaseIcon).Length -le 0) { Fail "release ProGo.ico is empty" }
 $ReleaseVersion = Join-Path $Root "release\VERSION"
 if (-not (Test-Path $ReleaseVersion)) { Fail "release VERSION missing" }
+if ($Suite -eq 'Installer') {
+    & (Join-Path $Root 'scripts\Test-ProGoInstallerSuite.ps1')
+    Write-Host 'ProGo Installer partition PASS.'
+    return
+}
 & (Join-Path $Root 'tests\RepairPayloadTests.ps1') -Scripts $PSScriptRoot
 
 foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
@@ -765,29 +771,5 @@ $ShutdownHarness = Join-Path $Root 'build\ShutdownTests.exe'
 if ($LASTEXITCODE -ne 0) { Fail 'Shutdown harness build failed' }
 & $ShutdownHarness $Exe (Join-Path $Root 'release\scripts')
 if ($LASTEXITCODE -ne 0) { Fail 'Shutdown tests failed' }
-& (Join-Path $Root 'tests\UpdatePackageTests.ps1')
-& (Join-Path $Root 'tests\InstallPayloadTests.ps1')
-& (Join-Path $Root 'tests\InstallerMaintenanceTests.ps1')
-& (Join-Path $Root 'tests\InstallerStageTests.ps1')
-& (Join-Path $Root 'tests\InstallerBackupTests.ps1')
-& (Join-Path $Root 'tests\InstallerSelfCheckTests.ps1')
-& (Join-Path $Root 'tests\InstallerRollbackTests.ps1')
-& (Join-Path $Root 'tests\InstallerJournalTests.ps1')
-& (Join-Path $Root 'tests\InstallerRestartGateTests.ps1')
-& (Join-Path $Root 'tests\InstallerOutcomeTests.ps1')
-& (Join-Path $Root 'tests\InstallerRollbackOutcomeTests.ps1')
-& (Join-Path $Root 'tests\InstallerOutcomeReconcileTests.ps1')
-& (Join-Path $Root 'tests\InstallerPendingInstalledProofTests.ps1')
-& (Join-Path $Root 'tests\InstallerStartupEvidenceTests.ps1')
-& (Join-Path $Root 'tests\InstallerMenuEvidenceTests.ps1')
-& (Join-Path $Root 'tests\InstallerLegacyEvidenceTests.ps1')
-& (Join-Path $Root 'tests\InstallerAuxiliaryRevalidationTests.ps1')
-& (Join-Path $Root 'tests\InstallerPendingPublicationTests.ps1')
-& (Join-Path $Root 'tests\InstallerStartupRollbackAdmissionTests.ps1')
-& (Join-Path $Root 'tests\InstallerOwnedStartupRollbackTests.ps1')
-& (Join-Path $Root 'tests\InstallerStartupResultTests.ps1')
-& (Join-Path $Root 'tests\InstallerStartupMutationAdmissionTests.ps1')
-& (Join-Path $Root 'tests\InstallerStartupFailureTests.ps1')
-& (Join-Path $Root 'tests\InstallerMenuPublicationTests.ps1')
-& (Join-Path $Root 'tests\InstallerMenuRollbackAdmissionTests.ps1')
-Write-Host "ProGo tests PASS."
+if ($Suite -eq 'All') { & (Join-Path $Root 'scripts\Test-ProGoInstallerSuite.ps1') }
+if ($Suite -eq 'All') { Write-Host 'ProGo tests PASS.' } else { Write-Host 'ProGo Core partition PASS; installer requires independent aggregate success.' }

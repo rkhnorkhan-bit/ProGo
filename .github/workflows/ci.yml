@@ -25,8 +25,18 @@ jobs:
   vpn-server-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        run: |
+          tested_sha=$(git rev-parse HEAD)
+          test "$tested_sha" = "$GITHUB_SHA"
+          echo "sha=$tested_sha" >> "$GITHUB_OUTPUT"
+      - name: Verify strict aggregate refusals
+        run: python3 -m unittest discover -s tests -p 'test_ci_aggregate.py' -v
       - name: Verify private operation recovery
         # The isolated fixture exercises the real root-only owner entry point.
         # Its server effects are replaced; only temporary receipt files are written.
@@ -42,15 +52,25 @@ jobs:
   windows-build:
     runs-on: windows-latest
     timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Repository hygiene and build
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Repository hygiene and Core build/tests
         shell: powershell
         run: |
           try {
-            .\scripts\Test-ProGo.ps1 *>&1 | Tee-Object -FilePath ci-output.txt
+            .\scripts\Test-ProGo.ps1 -Suite Core *>&1 | Tee-Object -FilePath ci-output.txt
           } catch {
             $_ | Out-String | Tee-Object -FilePath ci-output.txt -Append
             throw
@@ -152,3 +172,39 @@ jobs:
                 core.info(`Deleted old artifact ${artifact.id} (${name}, ${artifact.created_at})`);
               }
             }
+
+  installer-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Repository hygiene, build and all Installer suites
+        shell: powershell
+        run: |
+          .\scripts\Test-ProGo.ps1 -Suite Installer
+
+  ci-complete:
+    name: Exact-SHA complete CI gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [vpn-server-test, windows-build, installer-tests]
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require all partitions on exact tested commit
+        env:
+          PROGO_EXPECTED_SHA: ${{ github.sha }}
+          PROGO_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 scripts/check_ci_aggregate.py

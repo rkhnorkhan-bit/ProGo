@@ -3905,11 +3905,11 @@
   ],
   "remote_visibility": {
     "observed": "public",
-    "pr88": "OPEN/DRAFT source8caf032 guard verified",
-    "push": "PASS expected-head/non-force/canonical tree parity",
+    "pr88": "OPEN/DRAFT source48f079c guard verified",
+    "push": "PASS expected-head non-force/canonical tree parity",
     "uploads": "automatic public PR uploads OFF; workflow unchanged",
     "artifacts": "BLOCKED_TRANSFER; no retry",
-    "ci": "one automatic CI697 queued/null observed"
+    "ci": "one automatic CI698 in_progress/null observed"
   },
   "local_regression": {
     "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
@@ -4021,15 +4021,17 @@
   ],
   "ci_candidate": {
     "source": null,
-    "source_resolution": "CURRENT_TREE exact post-publication source/run in PR/local checkpoint",
+    "source_resolution": "CURRENT_TREE; exact publication and run in PR/local checkpoint",
     "status": "NOT_RUN before guarded publication",
     "run_id": null,
     "tested_merge": null,
     "compilation": "NOT_RUN",
-    "publication6": "NOT_RUN",
-    "menu32": "NOT_RUN exact source",
-    "prior_suites": "NOT_RUN exact source",
-    "scope": "minimal proven Menu capture/publication origin fix, no rollback mutation"
+    "core": "NOT_RUN",
+    "installer25": "NOT_RUN",
+    "publication6": "NOT_RUN exact new source",
+    "menu32": "NOT_RUN exact new source",
+    "aggregate": "NOT_RUN GitHub; local12 PASS",
+    "scope": "exact-SHA split/complete gate, no Menu mutation"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5476,7 +5478,7 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "CURRENT_TREE minimal Menu publication origin fix; containing commit from git rev-parse HEAD; reviewed local code27cb4f79",
+  "candidate_source_scope": "CURRENT_TREE CI partition/strict aggregate; no production change, no partial-to-full PASS",
   "uncommitted_candidate": {
     "state": "No inherited uncommitted candidate; this local slice committed before guarded publication",
     "current": "CURRENT_TREE",
@@ -5522,13 +5524,13 @@
   "active_work": {
     "source": null,
     "source_resolution": "CURRENT_TREE git rev-parse HEAD",
-    "reviewed_local_code": "27cb4f79af3349096f19b82471f11339a8de8ae1",
-    "baseline_source": "8caf03239ce6d762aa49a044dad1a3270fd979de",
-    "baseline_checkpoint": "cee55133dd6d988f4fd7ca655069481240d84fe1",
-    "phase": "ONE proven Menu capture/publication origin fix",
+    "reviewed_local_code": "7db31c9687dd53560fdd3521d8a4663ea6dc2138",
+    "baseline_source": "48f079c79fb9dbb012dcf08eb75219bb17289127",
+    "baseline_checkpoint": "8f556cef6c58611d3be22b81c367486b1fb22418",
+    "phase": "ONE CI serial bottleneck split with strict exact-SHA aggregate",
     "status": "PARTIAL",
-    "cause": "PROVEN creation changed on owned rename, prepublication origin stale",
-    "next": "same new exact CI final logs/Publication6/Menu32; no next mutation stage this pass",
+    "cause": "serial capacity proven; exact cancellation initiator UNCONFIRMED",
+    "next": "same new exact CI all4 jobs/full logs/aggregate/complete32; no Menu mutation until proof",
     "private_candidate": "BLOCKED_TRANSFER/no retry",
     "score_change": 0
   },
@@ -5729,8 +5731,8 @@
   "pending_publication": {
     "status": "pending guarded update",
     "source": "CURRENT_TREE",
-    "expected_head": "8caf03239ce6d762aa49a044dad1a3270fd979de",
-    "scope": "minimal proven capture fix +native regressions/state; one automatic CI"
+    "expected_head": "48f079c79fb9dbb012dcf08eb75219bb17289127",
+    "scope": "CI split/aggregate +docs; one automatic CI, no parallel rerun"
   },
   "local_preparation_guidance": {
     "status": "PARTIAL",
@@ -22154,7 +22156,8 @@
     "fields": [
       "active_work",
       "ci_candidate",
-      "ci697_final",
+      "ci698_final",
+      "ci698_partitioning",
       "ci697_menu_publication_fix",
       "f23_menu_rollback_admission",
       "incident_ledger_current",
@@ -22162,7 +22165,7 @@
       "current_readiness"
     ],
     "other_snapshots": "Historical evidence/requirements remain; current-labelled old fields/headings are superseded, not active plans",
-    "containing_source": "CURRENT_TREE; reviewed local code27cb4f79; exact published IDs post-publication local/PR",
+    "containing_source": "CURRENT_TREE; local code7db31c96; exact published IDs post-publication local/PR",
     "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0"
   },
   "ci694_final": {
@@ -22199,7 +22202,7 @@
     "status": "PARTIAL",
     "implementation": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
     "criterion": "F23-R02 read-only Menu rollback classification with exact origin/hash/snapshot/identity/ownership/receipt/trusted locations",
-    "tests": "CI697 source8caf032:2PASS/1FAIL/29NOT_RUN; capture fix Publication6/Menu32 NOT_RUN new tree",
+    "tests": "CI698 Menu29 PASS, final3 NOT_RUN/unconfirmed; full32 PARTIAL; no mutation stage",
     "local": "PASS review/static/signatures/parity/diff/secrets/public373/0/JSON",
     "evidence": "docs/F23_MENU_ROLLBACK_ADMISSION.md",
     "remaining": [
@@ -22425,10 +22428,10 @@
   "ci697_menu_publication_fix": {
     "status": "PARTIAL",
     "reviewed_local_code": "27cb4f79af3349096f19b82471f11339a8de8ae1",
-    "implementation": "CURRENT_TREE",
+    "implementation": "48f079c79fb9dbb012dcf08eb75219bb17289127",
     "cause": "PROVEN capture-before-rename includes creation that changes on same owned object during rename",
     "criterion": "full post-publication native origin bound to same retained handle/volume-index continuity/exact bytes/published read pin; no blind receipt refresh",
-    "tests": "Publication6/Menu32 Windows NOT_RUN exact tree; all original32 assertions retained",
+    "tests": "CI698 source48f079c/mergec1de408: Publication6 PASS and Menu29 PASS incl legacy-removed; last3 unconfirmed/NOT_RUN, full32 NOT PASS",
     "local": "PASS review/static/signatures/parity/diff/secrets/public380/0/JSON",
     "evidence": "docs/CI697_MENU_PUBLICATION_ORIGIN_FIX.md",
     "remaining": [
@@ -22440,6 +22443,66 @@
       "retention",
       "general runtime recovery"
     ],
+    "score_change": 0
+  },
+  "ci698_final": {
+    "source": "48f079c79fb9dbb012dcf08eb75219bb17289127",
+    "tested_merge": "c1de408f34bc29903cb032a321e39776d839c61f",
+    "run_id": 40196340794,
+    "status": "CANCELLED",
+    "windows_job": 121177870869,
+    "windows_lines": 10491,
+    "ubuntu_job": 121177870667,
+    "ubuntu_lines": 578,
+    "ubuntu": "SUCCESS",
+    "publication6": "PASS actual",
+    "menu32": {
+      "PASS": 29,
+      "NOT_RUN": [
+        "post-startup",
+        "post-startup-replaced",
+        "unproved-startup-absence"
+      ],
+      "full32": "NOT PASS"
+    },
+    "earlier_pass": [
+      "prior installer",
+      "StartupFailure15",
+      "Mutation14",
+      "Result13",
+      "Owned14",
+      "Admission25",
+      "Desktop6394",
+      "Instance30",
+      "Maintenance126",
+      "Shutdown47"
+    ],
+    "later_not_run": [
+      "HomeVPN",
+      "Portable",
+      "relay",
+      "aggregate",
+      "public-content",
+      "pack"
+    ],
+    "cancel_cause": "UNCONFIRMED; operation canceled only; check annotations endpoint HTTP400 INVALID_ARGUMENT",
+    "job_duration_seconds": 2410,
+    "workflow_job_limit_seconds": 2400,
+    "measured_core_seconds": 1279,
+    "measured_installer_partial_seconds": 1116,
+    "capacity": "2395s consumed before final3 and required late suites; serial bottleneck proven independently of cancel initiator"
+  },
+  "ci698_partitioning": {
+    "status": "PARTIAL",
+    "reviewed_local_code": "7db31c9687dd53560fdd3521d8a4663ea6dc2138",
+    "implementation": "CURRENT_TREE",
+    "criterion": "preserve all original suites and strict aggregate success at one exact checkout SHA while serial capacity exceeds40m",
+    "tests": "local aggregate12 PASS, CLI2 PASS, static/YAML/parity PASS; Windows partitions/complete new CI NOT_RUN",
+    "scope": "Core and Installer jobs independent, same25 tail preserved; All default full; native/test/runtime unchanged",
+    "aggregate": "always require exact Ubuntu/Core/Installer success and actual checked-out SHA == github.sha; fail closed for skip/fail/cancel/missing/wrongSHA",
+    "uploads": "unchanged/OFF for public automatic run; no binary transfer",
+    "cancel_cause": "UNCONFIRMED; no claim of timeout-trigger proved by annotation",
+    "evidence": "docs/CI698_PARTITIONED_CI.md",
     "score_change": 0
   }
 }
