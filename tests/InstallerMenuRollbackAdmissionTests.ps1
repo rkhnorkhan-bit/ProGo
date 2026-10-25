@@ -57,28 +57,12 @@ function Write-MenuAdmissionRefusal($Directory, $InstallDirectory, $ProgramsDire
             '; bytesSame=' + $hashSame + '; legacyRemoved=' + ($Receipt.Legacy.Disposition -ceq 'removed') + '; replacementSame=' + $legacyReplacementSame)
         # One distinguishing reproduction under a NEW own GUID root. Same existing EnsureLink
         # overload and vacated Menu-name sequence; no production modification or relaxed oracle.
-        $phase = 'rename-probe'; New-Item -ItemType Directory -Path $DiagnosticRoot | Out-Null
-        $probeInstall = Join-Path $DiagnosticRoot 'app'; $probePrograms = Join-Path $DiagnosticRoot 'Programs'
-        New-Item -ItemType Directory -Path $probeInstall, $probePrograms | Out-Null
-        [IO.File]::WriteAllText((Join-Path $probeInstall 'ProGo.exe'),'synthetic executable; never run')
-        $probeManager = New-Object ProGo.ApplicationShortcuts($probeInstall, $probePrograms, (Join-Path $DiagnosticRoot 'Startup'))
-        $probeManager.Install($true,$true,$false)
-        $probePrimary = Join-Path $probePrograms 'ProGo\ProGo.lnk'
-        [IO.File]::Move($probePrimary,(Join-Path $probePrograms 'ProGo\ProGo Status.lnk'))
-        $rename = @{ Before = $null }
-        $witness = [Action[Microsoft.Win32.SafeHandles.SafeFileHandle]]{ param($Handle) $rename.Before = Get-MenuAdmissionHandleFacts $Handle }
-        $methods = @([ProGo.ApplicationShortcuts].GetMethods([Reflection.BindingFlags]'Instance,NonPublic') | Where-Object { $_.Name -eq 'EnsureLink' -and $_.GetParameters().Count -eq 4 })
-        if ($methods.Count -ne 1) { throw 'Fixture witness overload is ambiguous.' }
-        [byte[]]$created = $methods[0].Invoke($probeManager,[object[]]@($probePrimary,'--show',[Threading.CancellationToken]::None,$witness))
-        $stream = [IO.File]::Open($probePrimary,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
-        $after = Get-MenuAdmissionHandleFacts $stream.SafeFileHandle
-        $stream.Dispose(); $stream = $null
-        $before = $rename.Before
-        if ($null -eq $before) { throw 'Fixture rename witness was not called.' }
-        Write-Host ('MENU_RENAME_PROBE witness=True; originSame=' + ($before.Origin -ceq $after.Origin) +
-            '; volumeSame=' + ($before.Volume -eq $after.Volume) + '; indexSame=' + ($before.IndexHigh -eq $after.IndexHigh -and $before.IndexLow -eq $after.IndexLow) +
-            '; creationSame=' + ($before.CreationHigh -eq $after.CreationHigh -and $before.CreationLow -eq $after.CreationLow) +
-            '; bytesSame=' + ([Convert]::ToBase64String($created) -ceq [Convert]::ToBase64String([IO.File]::ReadAllBytes($probePrimary))) + '; elapsedMs=' + $timer.ElapsedMilliseconds)
+        $phase = 'probe-load'
+        if (-not ('ProGo.Tests.MenuRenameIdentityProbe' -as [type])) {
+            Add-Type -Path (Join-Path $PSScriptRoot 'MenuRenameIdentityProbe.cs')
+        }
+        $phase = 'probe-run'
+        Write-Host ([ProGo.Tests.MenuRenameIdentityProbe]::Run([ProGo.ApplicationShortcuts], $DiagnosticRoot))
     } catch {
         Write-Host ('MENU_DIAGNOSTIC_ERROR phase=' + $phase + '; type=' + $_.Exception.GetType().Name + '; elapsedMs=' + $timer.ElapsedMilliseconds)
         $frames = (New-Object Diagnostics.StackTrace($_.Exception, $false)).GetFrames()

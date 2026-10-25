@@ -1,3 +1,96 @@
+## CURRENT CI696 attempt2 origin mismatch; ONE test-only CLR probe replacement
+
+Containing source is THIS git tree (git rev-parse HEAD); reviewed local code
+5e9f6a37f603474ebd63b0cec43dd9bd462ea1f1. Baseline source4f75a48f356b2b49e823c5b38c1072f8b0453aeb,
+checkpoint2d25eeabf40153232c9211cb2a3319058ae19a1f clean, PR88 exact HEAD/open draft,
+sole root writer/no active Git/build/PowerShell checked, old worktrees unchanged.
+Full CI696 attempt2 Windows10481/Ubuntu578 logs independently read; Windows121156450377 FAILURE,
+Ubuntu121156452022 SUCCESS (reused original checkout/log). Tested merge8237cca8fc21678791d7517e8a96bf7374d849ef.
+SSH exit0 passed: non-reproduction, NOT a fix of attempt1/CI662/670. Earlier installer/StartupFailure15/
+Mutation14/Result13/Owned14/Admission25/Desktop6394/Instance30/Maintenance126/Shutdown47/Updater5 PASS.
+Menu32:2PASS/legacy-removedFAIL/29NOT_RUN; later HomeVPN/Portable/relay/aggregate/pack NOT_RUN.
+
+Proven: snapshot/runtime/pending/auxiliary/context/typed Menu+Startup+Legacy True, context not-applied;
+legacyRemoved/replacementSame/bytesSame/originPresent True; durableMenu/originSame False. A recorded
+native origin mismatch causes correct fail-closed refusal despite exact bytes. Volume/index/creation
+mechanism and capture/rename causality NOT proven. Never refresh receipt or replace identity by hash.
+Old rename probe MethodInvocationException has only broad phase/outer PowerShell stack; its inner
+cause/boundary is unknown. See docs/CI696_MENU_PROBE_BRIDGE.md; no claimed production correction.
+
+Minimal test-only replacement: separate C# probe uses already-loaded type, exact ctor/Install/
+EnsureLink/native-info signatures and typed CLR witness. Original native operations/sequence remain;
+no PowerShell delegate/scope or adapted object-array inside reflected call. Fixed subphase per
+boundary, callback count, native before/after origin/volume/index/creation and actual byte equality.
+Only booleans/count/elapsed/type/max4 inner exceptions x3 method+IL frames; no raw identities/hashes/
+paths/timestamps/args/receipt/secret values. New own GUID root guard, read handles using/finally and
+original own cleanup. Bridge load separate phase. All32/original expectations/assertions/order/
+three reads/deadlines retained. Runtime/native APIs/receipt/failure/Launch/Stop/cleanup unchanged.
+Local review/static/signatures/parity/diff/secrets/public377/0/JSON PASS. No local compiler/pwsh/
+Windows: C# compilation/PowerShell/bridge/native32/previous exact-source suites NOT_RUN.
+
+One expected-HEAD guarded publication/ONE automatic new CI; NO parallel rerun/third attempt of696.
+Next SAME new CI full logs/exact tested merge/read precise probe before/after or phase/inner types.
+Then only minimal PROVEN correction; no Menu mutation or Legacy/runtime/retention extension before
+PASS. All ownership/fail-closed/private data/original install error/no false success/Launch guarantees
+preserved. Full auxiliary outcome remains open. UNKNOWN old incidents and BLOCKED_TRANSFER/no
+retry retained; score delta0. No live shortcut/install/service/network/security/ACL/credentials/
+VPS/release/uploads. Older current headings superseded here; post-publication exact IDs local/PR.
+
+## CURRENT CI696 attempt1 FAILURE; one bounded same-source Windows retry (attempt2)
+
+Source remains `4f75a48f356b2b49e823c5b38c1072f8b0453aeb`, tested attempt1 merge
+8237cca8fc21678791d7517e8a96bf7374d849ef. Baseline checkpointd7db10135667c2e9c9f73f5c3d4da7b17dec0aec
+clean/sole root writer/PR88 exact HEAD/no active Git/build/PowerShell verified. Full attempt1 Windows
+2803/Ubuntu578 logs independently read. Windows121153171905 FAILURE at exit0-regression5000ms,
+Ubuntu121153171695 SUCCESS. Deadline5045ms/start28ms/CPU15.625ms; selected executable matched,
+Python DLL/C runtime loaded, body/import/bootstrap/encodings/site markers absent, empty streams after
+owned kill/drain and exited. Native validation/MenuAdmission32/rename-gate probe/Desktop/Instance/
+installer/relay NOT_RUN. CI695 legacy-removed root remains UNKNOWN; no rename facts reached.
+
+Exact Test-ProGo/SSH fixture/requirements/workflow diff from CI695 is empty. Gate passed in CI695;
+CI670 shared empty pre-body markers, CI662 lacked that tracing, CI663 non-reproduced. These facts
+do not prove a common cause, AV/runner load/flakiness/site or runtime defect. No guessed fix.
+See docs/CI696_PYTHON_STARTUP_INCIDENT.md for evidence/limits/one-retry justification.
+
+Owner expressly allowed ONE justified same-SHA repeat. After fresh run completed/attempt1/failure
+and PR HEAD checks, requested ONLY failed Windows job121153171905 via single-job rerun endpoint.
+No source/code/test/workflow changes, no push/new run/dispatch/parallel retry. SAME
+[CI696](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40188130796) now attempt2,
+Windows121156450377 in_progress/null observed. Latest Ubuntu121156452022 SUCCESS metadata only;
+no new full-log execution claim. Original attempt1 failure retained, no retry loop.
+
+Next SAME696 attempt2 final full logs/exact checkout/startup then actual Menu diagnostic if reached.
+If exit0 passes, non-reproduction NOT a fix; if it fails, preserve evidence and stop without another
+same action. No Menu mutation/new phase.5000ms/argv/stdin/ownership/cleanup/assertions/coverage all
+unchanged. No code change to test locally: runtime/SSH harness parity PASS; local docs/JSON/public
+checks only, new final Windows/installer/Menu results NOT_RUN. Score change0; UNKNOWN incidents/
+BLOCKED_TRANSFER unchanged. No live install/service/network/security/ACL/credentials/VPS/release/
+uploads. State checkpoint LOCAL ONLY (no second CI). Older current headings superseded here.
+
+## CURRENT CI696 diagnostic publication checkpoint
+
+Published source `4f75a48f356b2b49e823c5b38c1072f8b0453aeb`, tree
+`2b3c48a838ea2293cb891596ce787fcb28c3f1e9`, parentd57f23596f5a9920bfd899a3e2ba222d9a3c79df.
+Local reviewed codecde99a8d469b10d6966278abb83bc67b72309041, freeze31096a4283cfd7b35019afc7f91f29c5f911eb81,
+canonical full tree fetched/verified identical. Expected-HEAD non-force guarded PR88 source update.
+Exactly one automatic pull_request [CI696](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40188130796),
+exact source4f75a48, in_progress/null observed; no rerun/dispatch/duplicate/full wait.
+
+Diff5files360add30del: one test fixture130add1del including new evidence document; three synchronized
+state documents230add29del. STRICTLY test-only instrumentation+docs; no runtime/native/helper/API/
+workflow change. Original32/expectations/three reads/assertions/cleanup/timeouts retained.
+CI695 root cause UNKNOWN:2MenuPASS/legacy-removedFAIL/29NOT_RUN; reached earlier suites PASS,
+HomeVPN/Portable/relay/aggregate/public-content/pack NOT_RUN. Diagnostic source is NOT a fix.
+Local review/static/signatures/parity/diff/secrets/public374/0/JSON PASS; new Windows diagnostics/
+compilation/native32 and prior exact-source suites NOT_RUN. Current hypothesis only capture-before-
+rename origin difference on vacated name; require gate booleans/probe facts before changing code.
+Next SAME696 full final logs/exact tested merge/MENU_ADMISSION_REFUSAL/MENU_RENAME_PROBE (or safe
+phase/type/stack if diagnostic fails). Only then minimal PROVEN correction; Menu mutation and new
+functionality blocked until PASS. No score increase, no changes to ownership/fail-closed contract.
+UNKNOWN incidents/BLOCKED_TRANSFER remain. No live install/service/network/ACL/security/credentials/
+VPS/release/uploads. Local state checkpoint only, not pushed, no additional CI. Older headings below
+superseded here; immutable public tree identifies itself by checkout SHA, exact IDs now recorded here.
+
 ## CURRENT CI695 failure / ONE targeted test-only Menu admission diagnostic
 
 Containing source is THIS git tree (git rev-parse HEAD); reviewed diagnostic code

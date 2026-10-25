@@ -3905,11 +3905,11 @@
   ],
   "remote_visibility": {
     "observed": "public",
-    "pr88": "OPEN/DRAFT published d57f235 expected-HEAD guard verified",
-    "push": "PASS non-force expected-head guard/tree equality",
+    "pr88": "OPEN/DRAFT source4f75a48 expected-HEAD guard verified",
+    "push": "PASS non-force guard/tree parity",
     "uploads": "automatic public PR uploads OFF; workflow unchanged",
     "artifacts": "BLOCKED_TRANSFER; no retry",
-    "ci": "one automatic CI695 queued/null observed"
+    "ci": "CI696 in_progress/null observed, one automatic run"
   },
   "local_regression": {
     "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
@@ -4021,14 +4021,15 @@
   ],
   "ci_candidate": {
     "source": null,
-    "source_resolution": "CURRENT_TREE; exact publication/run follow in PR and local checkpoint",
-    "status": "NOT_RUN before one automatic diagnostic CI",
-    "compilation": "NOT_RUN",
-    "menu_admission_diagnostics": "NOT_RUN",
-    "menu32": "NOT_RUN exact new tree",
+    "source_resolution": "CURRENT_TREE; exact publication/CI in PR and post-publication local checkpoint",
+    "status": "NOT_RUN before guarded push",
     "run_id": null,
     "tested_merge": null,
-    "scope": "test-only Menu gate/rename identity diagnostic, no runtime fix"
+    "compilation": "NOT_RUN",
+    "menu_probe": "NOT_RUN",
+    "menu32": "NOT_RUN exact source",
+    "prior_suites": "NOT_RUN exact source",
+    "scope": "test-only probe bridge, no production fix"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5475,7 +5476,7 @@
     "runtime": "NOT_RUN; source-confirmed blocking I/O/repair contract failures, no owner PC/VPS actions"
   },
   "tested_baseline_scope": "Historical CI582 source/merge baseline retained; latest published CI evidence is ci_candidate; uncommitted candidate is separate",
-  "candidate_source_scope": "CURRENT_TREE test-only diagnostic; containing source resolved by git rev-parse HEAD and exact CI checkout",
+  "candidate_source_scope": "CURRENT_TREE test-only CLR probe replacement; reviewed local code5e9f6a37; exact checkout identifies containing source",
   "uncommitted_candidate": {
     "state": "No inherited uncommitted candidate; this local slice committed before guarded publication",
     "current": "CURRENT_TREE",
@@ -5521,13 +5522,13 @@
   "active_work": {
     "source": null,
     "source_resolution": "CURRENT_TREE git rev-parse HEAD",
-    "reviewed_local_code": "cde99a8d469b10d6966278abb83bc67b72309041",
-    "baseline_source": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
-    "baseline_checkpoint": "2bb6a518e1d9d36b8b152d469d70c43f40d66270",
-    "phase": "ONE test-only CI695 distinguishing gate/origin diagnostic",
+    "reviewed_local_code": "5e9f6a37f603474ebd63b0cec43dd9bd462ea1f1",
+    "baseline_source": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb",
+    "baseline_checkpoint": "2d25eeabf40153232c9211cb2a3319058ae19a1f",
+    "phase": "ONE test-only CLR probe replacement for CI696 attempt2",
     "status": "PARTIAL",
-    "cause": "UNKNOWN; no guessed runtime fix",
-    "next": "same new diagnostic CI final evidence; no Menu mutation or next functional stage",
+    "cause": "origin mismatch proven, mechanism/old probe exception root UNKNOWN",
+    "next": "same new exact CI final probe component/phase evidence before proven correction; no Menu mutation",
     "private_candidate": "BLOCKED_TRANSFER/no retry",
     "score_change": 0
   },
@@ -5726,10 +5727,10 @@
     "fixture_source": "65b98ead4c901aeae66d009f6eaa7ba6fe4c835a"
   },
   "pending_publication": {
-    "status": "pending guarded update",
+    "status": "pending guarded source update",
     "source": "CURRENT_TREE",
-    "expected_head": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
-    "scope": "test-only instrumentation +documents; one diagnostic CI"
+    "expected_head": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb",
+    "scope": "test-only probe +docs; one automatic CI, no parallel rerun"
   },
   "local_preparation_guidance": {
     "status": "PARTIAL",
@@ -22153,15 +22154,16 @@
     "fields": [
       "active_work",
       "ci_candidate",
-      "ci695_final",
-      "ci695_menu_diagnostic",
+      "ci696_attempt1",
+      "ci696_attempt2",
+      "ci696_menu_probe_replacement",
       "f23_menu_rollback_admission",
       "incident_ledger_current",
       "private_candidate_transfer",
       "current_readiness"
     ],
     "other_snapshots": "Historical evidence/requirements remain; current-labelled old fields/headings are superseded, not active plans",
-    "containing_source": "CURRENT_TREE; reviewed local codecde99a8d; exact post-publication checkpoint/PR",
+    "containing_source": "CURRENT_TREE; local code5e9f6a37; post-publication IDs local/PR",
     "reviewed_local_code": "255cc4ba095ebcb41d1e42d587f5592092687cb0"
   },
   "ci694_final": {
@@ -22198,7 +22200,7 @@
     "status": "PARTIAL",
     "implementation": "d57f23596f5a9920bfd899a3e2ba222d9a3c79df",
     "criterion": "F23-R02 read-only Menu rollback classification with exact origin/hash/snapshot/identity/ownership/receipt/trusted locations",
-    "tests": "CI695 source d57f235 / merge3261d9a:2PASS/legacy-removed FAIL/29NOT_RUN; diagnostic new tree NOT_RUN",
+    "tests": "CI696 attempt2 source4f75a48:2PASS/legacy-removedFAIL/29NOT_RUN; new probe Windows NOT_RUN",
     "local": "PASS review/static/signatures/parity/diff/secrets/public373/0/JSON",
     "evidence": "docs/F23_MENU_ROLLBACK_ADMISSION.md",
     "remaining": [
@@ -22264,8 +22266,121 @@
     "hypothesis": "native origin recorded before rename might change during vacated-name publication; not proven",
     "experiment": "original read-only gate booleans + one own EnsureLink witness before/after identity components, bytes equality; failure only legacy-removed",
     "contract": "all32 original conditions/assertions/expected/order/cleanup/timeouts retained; runtime unchanged",
-    "tests": "Windows NOT_RUN",
+    "tests": "NOT_RUN CI696 attempt1 blocked before native validation; same-source attempt2 pending",
     "evidence": "docs/CI695_MENU_ADMISSION_DIAGNOSTIC.md",
+    "score_change": 0,
+    "implementation": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb"
+  },
+  "ci696_attempt1": {
+    "source": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb",
+    "tested_merge": "8237cca8fc21678791d7517e8a96bf7374d849ef",
+    "run_id": 40188130796,
+    "attempt": 1,
+    "windows_job": 121153171905,
+    "windows_lines": 2803,
+    "ubuntu_job": 121153171695,
+    "ubuntu_lines": 578,
+    "windows": "FAILURE",
+    "ubuntu": "SUCCESS",
+    "failure": "owned exit0 Python fixture exceeded5000ms, pre-body/empty streams",
+    "facts": {
+      "startMs": 28,
+      "elapsedMs": 5045,
+      "cpuMs": 15.625,
+      "alive_at_deadline": true,
+      "selected_executable_matches": true,
+      "python_dll_loaded": true,
+      "c_runtime_loaded": true,
+      "bodyEntered": false,
+      "stdout_chars": 0,
+      "stderr_chars": 0,
+      "cleanupExited": true
+    },
+    "not_run": [
+      "native validation",
+      "Desktop",
+      "Instance",
+      "installer",
+      "MenuAdmission32",
+      "Menu gate/rename probe",
+      "HomeVPN",
+      "Portable",
+      "relay",
+      "aggregate",
+      "pack"
+    ],
+    "cause": "UNKNOWN; loaded modules and empty markers do not prove internal blocking stack"
+  },
+  "ci696_single_retry": {
+    "status": "requested ONE explicit owner-authorized same-SHA failed-job retry",
+    "request_job": 121153171905,
+    "run_id": 40188130796,
+    "attempt": 2,
+    "source": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb",
+    "windows_job": 121156450377,
+    "windows_status": "completed",
+    "conclusion": "failure",
+    "latest_ubuntu_job": 121156452022,
+    "ubuntu": "SUCCESS metadata only, no new log execution claim",
+    "justification": "same harness/workflow exact diff empty from CI695 where gate passed; recurring pre-body symptom blocks already prepared Menu distinguishing experiment, no proven code fix",
+    "contract": "5000ms/all asserts/coverage unchanged; no production change, no new run/parallel retry; original attempt1 failure retained",
+    "next": "no further same-SHA retry; targeted probe replacement with one new exact CI"
+  },
+  "ci696_attempt2": {
+    "source": "4f75a48f356b2b49e823c5b38c1072f8b0453aeb",
+    "tested_merge": "8237cca8fc21678791d7517e8a96bf7374d849ef",
+    "run_id": 40188130796,
+    "attempt": 2,
+    "status": "FAILURE",
+    "windows_job": 121156450377,
+    "windows_lines": 10481,
+    "ubuntu_job": 121156452022,
+    "ubuntu_lines": 578,
+    "ubuntu": "SUCCESS; reused original checkout/log",
+    "proof": {
+      "snapshot": true,
+      "runtime": true,
+      "pending": true,
+      "auxiliary": true,
+      "context": true,
+      "contextState": "not-applied",
+      "typedMenu": true,
+      "typedStartup": true,
+      "typedLegacy": true,
+      "durableMenu": false,
+      "originPresent": true,
+      "originSame": false,
+      "bytesSame": true,
+      "legacyRemoved": true,
+      "replacementSame": true
+    },
+    "probe": "MethodInvocationException in broad rename-probe phase; inner cause UNKNOWN",
+    "menu32": "2PASS/legacy-removed FAIL/29NOT_RUN",
+    "prior_pass": [
+      "earlier installer suites",
+      "StartupFailure15",
+      "MutationAdmission14",
+      "StartupResult13",
+      "OwnedStartupRollback14",
+      "Admission25",
+      "Desktop6394",
+      "Instance30",
+      "Maintenance126",
+      "Shutdown47",
+      "UpdaterPackage5"
+    ],
+    "later": "HomeVPN/Portable/relay/aggregate/pack NOT_RUN",
+    "python": "passed this attempt; non-reproduction NOT fix"
+  },
+  "ci696_menu_probe_replacement": {
+    "status": "PARTIAL",
+    "local_code": "5e9f6a37f603474ebd63b0cec43dd9bd462ea1f1",
+    "runtime_fix": false,
+    "proof": "recorded/native origin differs; precise component/capture mechanism and old probe root UNKNOWN",
+    "change": "test-only CLR typed witness/exact signatures/subphases/safe inner types and native before-after equality fields",
+    "contract": "all32 original tests/assertions/timeouts unchanged, no receipt refresh or identity weakening",
+    "tests": "Windows NOT_RUN",
+    "evidence": "docs/CI696_MENU_PROBE_BRIDGE.md",
     "score_change": 0
   }
 }
