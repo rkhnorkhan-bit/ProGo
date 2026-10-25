@@ -4021,13 +4021,11 @@
   ],
   "ci_candidate": {
     "source": "CURRENT_TREE",
-    "baseline_source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
-    "reviewed_local_code": "9d87fa4e64eb3f884d2e81ff799edbe85abcb197",
-    "status": "Await sole automatic CI after guarded publication",
-    "Foundation27": "NOT_RUN",
-    "Recovery4": "NOT_RUN",
-    "Source18": "NOT_RUN",
-    "exact_SHA_aggregate": "NOT_RUN",
+    "baseline_source": "a9b575079a5d006855d1dc7d8724caa3faa098d8",
+    "reviewed_local_code": "e8c7aade673b1b3afb0fb94b08a02c9a8e1fdd3c",
+    "status": "Await one automatic diagnostic CI",
+    "new_PowerShell_synthetic4": "NOT_RUN",
+    "new_exact_SHA_full_aggregate": "NOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,17 +5518,17 @@
   },
   "active_work": {
     "source": "CURRENT_TREE",
-    "baseline_source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
-    "reviewed_local_code": "9d87fa4e64eb3f884d2e81ff799edbe85abcb197",
-    "prior_checkpoint": "02cdca5ef9be493897b93d63cecbd8ead121c333",
-    "stage": "CI708 isolated Installer Foundation27/Recovery4 capacity correction only",
-    "status": "Local16/static checks PASS; Windows split/new Source18/full31 NOT_RUN",
-    "next": "SAME one new CI all5 full final logs/exact merge/27+4/all31/Source18; no durable Legacy work before full PASS",
+    "baseline_source": "a9b575079a5d006855d1dc7d8724caa3faa098d8",
+    "reviewed_local_code": "e8c7aade673b1b3afb0fb94b08a02c9a8e1fdd3c",
+    "prior_checkpoint": "25243409a1b78a68e502d4d2db3a09b91db74a48",
+    "stage": "CI709 deadline-only owned Python thread wait diagnostic",
+    "status": "Root UNKNOWN; local16/static checks PASS; new PS/native diagnostic NOT_RUN",
+    "next": "SAME one new CI all5 full logs; inspect thread wait facts on failure, preserve UNKNOWN on non-reproduction; no durable stage before whole PASS",
     "constraints": [
-      "All approved31/nested55 scope retained",
-      "UNKNOWN incidents/cancellation initiator retained",
+      "Entire approved31/nested55 scope retained",
+      "UNKNOWN incidents retained",
       "BLOCKED_TRANSFER/no retry",
-      "No production/runtime/live/security/network/services/credentials/release/uploads actions"
+      "No production/live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0
   },
@@ -23005,7 +23003,8 @@
     "tree": "4099f8665abca63d024e319ebfd4e18b5b0f0a76",
     "run_id": 40232984506,
     "ci_status": "queued/null; new Windows not yet confirmed",
-    "ci708_status": "Source18 NOT_RUN, suite not started; original31 incomplete due cancelled Installer; no native PASS yet"
+    "ci708_status": "Source18 NOT_RUN, suite not started; original31 incomplete due cancelled Installer; no native PASS yet",
+    "ci709_evidence": "Source18 actually PASS at mergef8f74738; native in-memory prerequisite scoped PASS only, no durable source/restore/full auxiliary recovery"
   },
   "ci708_final": {
     "source": "d6b25e8037e2387f74970aec92b5cc48001b3554",
@@ -23032,7 +23031,7 @@
     "candidate": "NOT_ACCEPTED"
   },
   "ci708_installer_split": {
-    "source": "CURRENT_TREE",
+    "source": "a9b575079a5d006855d1dc7d8724caa3faa098d8",
     "reviewed_local_code": "9d87fa4e64eb3f884d2e81ff799edbe85abcb197",
     "status": "Implemented CI-only capacity correction; Windows NOT_RUN",
     "foundation": "first27 original suites, installer-tests",
@@ -23046,6 +23045,41 @@
     "exact_sha": "all4 success required; aggregate always executes; no weakened gates",
     "local_tests": "16 PASS + exact31-body/native/fixture/workflow parity/YAML/review/signatures/JSON/secrets/public-content/diff",
     "cancellation_cause": "UNKNOWN",
+    "score_delta": 0,
+    "tree": "e23c11d697095db94c4d8a85db96eb6068afb72c",
+    "run_id": 40236712568,
+    "ci_status": "in_progress/null; Windows split not yet confirmed",
+    "ci709_evidence": "Foundation27/Recovery4 actual PASS at mergef8f74738; Core failure keeps whole aggregate FAIL; cancellation initiator still UNKNOWN"
+  },
+  "ci709_final": {
+    "source": "a9b575079a5d006855d1dc7d8724caa3faa098d8",
+    "tested_merge": "f8f747380d7e6cc9beefac6640aa0ecc40a7ea49",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40236712568",
+    "conclusion": "failure",
+    "all_five_logs_independently_read": true,
+    "jobs": {
+      "foundation": 121299742531,
+      "recovery": 121299742724,
+      "ubuntu": 121299742656,
+      "core": 121299742704,
+      "aggregate": 121304016893
+    },
+    "Foundation27": "PASS",
+    "Recovery4": "PASS MenuResult19/MenuFailure19/LegacyAdmission19/SourceCapture18 actually executed",
+    "Core": "FAIL exit0-regression5000ms; later native/Desktop/Instance/relay/pack NOT_RUN",
+    "aggregate": "FAIL correctly with identical4 SHA",
+    "package": "NOT_CREATED",
+    "cause": "UNKNOWN pre-body owned Python deadline, not proven common root with696/670"
+  },
+  "ci709_thread_diagnostic": {
+    "source": "CURRENT_TREE",
+    "reviewed_local_code": "e8c7aade673b1b3afb0fb94b08a02c9a8e1fdd3c",
+    "status": "Test-only discriminator, not runtime fix",
+    "probe": "deadline-only owned child thread states/wait roles, cap32, fixed counts and error flags, no IDs/paths/secret values",
+    "unchanged": "deadline5000/argv/body/stdin/kill+drain/assertions/native validation/31 suites/4-partition aggregate",
+    "synthetic4": "NOT_RUN locally",
+    "local_checks": "aggregate16/review/static/signatures/parity/reverse diff/JSON/secrets/public-content/diff PASS",
+    "root": "UNKNOWN",
     "score_delta": 0
   }
 }

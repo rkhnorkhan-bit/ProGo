@@ -614,6 +614,67 @@ $LoaderEmpty = Get-IsolatedSshFixtureLoaderFacts ([pscustomobject]@{ MainModule 
 if (-not $LoaderEmpty.Contains('mainMatchesSelected=False') -or -not $LoaderEmpty.Contains('pythonDllLoaded=False') -or
     -not $LoaderEmpty.Contains('moduleCount=0;')) { Fail 'SSH fixture loader diagnostic empty regression' }
 Write-Host 'SSH fixture loader facts synthetic/redaction tests PASS: 2'
+# Deadline-only discriminator: owned child thread state/wait-role counts, never IDs or native stacks.
+function Get-IsolatedSshFixtureThreadFacts($OwnedProcess) {
+    $count = 0; $capped = $false; $read = $false; $collectionErrors = 0; $threadErrors = 0; $waitErrors = 0
+    $running = 0; $ready = 0; $waiting = 0; $otherState = 0
+    $executive = 0; $userRequest = 0; $suspended = 0; $delay = 0; $page = 0; $otherWait = 0
+    try {
+        foreach ($thread in $OwnedProcess.Threads) {
+            if ($count -ge 32) { $capped = $true; break }
+            $count++
+            try {
+                $state = [string]$thread.ThreadState
+                switch ($state) {
+                    'Running' { $running++ }
+                    'Ready' { $ready++ }
+                    'Wait' {
+                        $waiting++
+                        try {
+                            switch ([string]$thread.WaitReason) {
+                                'Executive' { $executive++ }
+                                'UserRequest' { $userRequest++ }
+                                'Suspended' { $suspended++ }
+                                'ExecutionDelay' { $delay++ }
+                                { $_ -in @('FreePage','PageIn','VirtualMemory') } { $page++ }
+                                default { $otherWait++ }
+                            }
+                        } catch { $waitErrors++ }
+                    }
+                    default { $otherState++ }
+                }
+            } catch { $threadErrors++ }
+            finally { if ($thread -is [Diagnostics.ProcessThread]) { $thread.Dispose() } }
+        }
+        $read = $true
+    } catch { $collectionErrors++ }
+    return ('threadsRead=' + $read + '; threadCount=' + $count + '; threadsCapped=' + $capped +
+        '; collectionProbeErrors=' + $collectionErrors + '; threadProbeErrors=' + $threadErrors +
+        '; running=' + $running + '; ready=' + $ready + '; waiting=' + $waiting + '; otherState=' + $otherState +
+        '; waitExecutive=' + $executive + '; waitUserRequest=' + $userRequest + '; waitSuspended=' + $suspended +
+        '; waitDelay=' + $delay + '; waitPage=' + $page + '; waitOther=' + $otherWait + '; waitProbeErrors=' + $waitErrors)
+}
+# Synthetic role/redaction, empty, cap and failed-probe vectors: no child, host settings or secret data.
+$ThreadFactsProbe = Get-IsolatedSshFixtureThreadFacts ([pscustomobject]@{ Threads = @(
+    [pscustomobject]@{ ThreadState = 'Wait'; WaitReason = 'Executive' },
+    [pscustomobject]@{ ThreadState = 'Wait'; WaitReason = 'UserRequest' },
+    [pscustomobject]@{ ThreadState = 'Ready' },
+    [pscustomobject]@{ ThreadState = 'PRIVATE_THREAD_SENTINEL' }) })
+if ($ThreadFactsProbe.Contains('PRIVATE_THREAD_SENTINEL') -or -not $ThreadFactsProbe.Contains('threadCount=4;') -or
+    -not $ThreadFactsProbe.Contains('waiting=2;') -or -not $ThreadFactsProbe.Contains('ready=1;') -or
+    -not $ThreadFactsProbe.Contains('waitExecutive=1;') -or -not $ThreadFactsProbe.Contains('waitUserRequest=1;') -or
+    -not $ThreadFactsProbe.Contains('otherState=1;')) { Fail 'SSH fixture thread diagnostic role/redaction regression' }
+$ThreadFactsEmpty = Get-IsolatedSshFixtureThreadFacts ([pscustomobject]@{ Threads = @() })
+if (-not $ThreadFactsEmpty.Contains('threadsRead=True; threadCount=0;') -or
+    -not $ThreadFactsEmpty.Contains('threadsCapped=False;')) { Fail 'SSH fixture thread diagnostic empty regression' }
+$ThreadFactsCap = Get-IsolatedSshFixtureThreadFacts ([pscustomobject]@{ Threads = @(1..40 | ForEach-Object { [pscustomobject]@{ ThreadState = 'Running' } }) })
+if (-not $ThreadFactsCap.Contains('threadCount=32; threadsCapped=True;') -or
+    -not $ThreadFactsCap.Contains('running=32;')) { Fail 'SSH fixture thread diagnostic cap regression' }
+$ThreadFactsFailure = [pscustomobject]@{ MissingThreads = 'PRIVATE_THREAD_SENTINEL' } # StrictMode refuses absent Threads
+$ThreadFactsFailed = Get-IsolatedSshFixtureThreadFacts $ThreadFactsFailure
+if ($ThreadFactsFailed.Contains('PRIVATE_THREAD_SENTINEL') -or -not $ThreadFactsFailed.Contains('threadsRead=False;') -or
+    -not $ThreadFactsFailed.Contains('collectionProbeErrors=1;')) { Fail 'SSH fixture thread diagnostic failed-probe regression' }
+Write-Host 'SSH fixture thread facts synthetic/redaction tests PASS: 4'
 function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureOut = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stdout.txt')
     $FixtureError = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stderr.txt')
@@ -680,6 +741,9 @@ function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
                 $FixtureLoaderFacts = Get-IsolatedSshFixtureLoaderFacts $FixtureTool $FixturePython
                 Write-Host ('SSH_FIXTURE_LOADER label=exit0-regression; phase=deadline-before-owned-kill; ' +
                     $FixtureLoaderFacts + '; stack=Invoke-IsolatedSshFixtureTool>deadline')
+                $FixtureThreadFacts = Get-IsolatedSshFixtureThreadFacts $FixtureTool
+                Write-Host ('SSH_FIXTURE_THREADS label=exit0-regression; phase=deadline-before-owned-kill; ' +
+                    $FixtureThreadFacts + '; stack=Invoke-IsolatedSshFixtureTool>deadline>owned-thread-snapshot')
             }
             if (-not $FixtureTool.HasExited) {
                 try { $FixtureTool.Kill() } catch { if (-not $FixtureTool.HasExited) { throw } }

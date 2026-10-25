@@ -1,3 +1,84 @@
+## CURRENT CI709 owned Python pre-body deadline diagnosis; root UNKNOWN
+
+Baseline source a9b575079a5d006855d1dc7d8724caa3faa098d8/treee23c11d697095db94c4d8a85db96eb6068afb72c;
+checkpoint25243409a1b78a68e502d4d2db3a09b91db74a48 clean/preserved. PR88 exact baseline/open/unmerged;
+sole root/no Git/compiler/PowerShell writer; only CI709 at this source completed FAILURE, no active CI.
+New source CURRENT_TREE (git rev-parse HEAD), reviewed local codee8c7aade673b1b3afb0fb94b08a02c9a8e1fdd3c.
+Old worktrees preserved; no durable Legacy prerequisite or new functionality.
+
+All5 CI709 final logs independently read at exact mergef8f747380d7e6cc9beefac6640aa0ecc40a7ea49:
+Foundation121299742531/665lines SUCCESS all27, Recovery121299742724/259 SUCCESS all4:
+MenuResult19/MenuFailure19/LegacyAdmission19/SourceCapture18 actually PASS. Foundation elapsed830138ms,
+Recovery1091245ms; isolated split capacity and real native source18 now scoped PASS, not whole production.
+Ubuntu121299742656/611 SUCCESS aggregate16/operation16/profile13/provisioning.
+Core121299742704/2811 FAILURE; aggregate121304016893/174 correctly FAILURE with all4 tested_sha identical.
+Run https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40236712568 . No package created in CI709;
+no substitution of previous runner ZIP, delivery/install/owner PC acceptance NOT_RUN.
+
+At21:51:47 UTC Core exit0-regression exceeded5000ms. Start93ms/deadline5109ms/CPU15.625ms/RAM4812800;
+selected main image matches, moduleCount14, Python DLL/CRT loaded. Owned stdinClosed=True, argc2,
+-c=True/shell disabled/input redirected; five named Python environment overrides absent. Before kill both
+streams WaitingForActivation; owned cleanupExited=True, both streams RanToCompletion and chars0.
+No body/import/bootstrap/encodings/os/site/banner/cleanup/traceback markers; pthVisits0. Safe stack
+Invoke-IsolatedSshFixtureTool>exit0-regression. Native/Desktop/Instance/Maintenance/Shutdown/relay/
+HomeVPN/Portable/pack in Core NOT_RUN; prior early suites only have their logged scoped PASS.
+
+Compare CI696 attempt1 start28/deadline5045/CPU15.625, matching image/DLL/CRT and pre-body empty streams;
+CI670 start25/deadline5044/CPU15.625 likewise empty. CI662 had no phase trace, so precise stage remains
+unknown. Shared visible symptoms DO NOT establish common root/AV/runner load/loader deadlock or runtime
+fault. Later passing attempts/non-reproduction are not fixes. Existing UNKNOWN incidents retained.
+Installer split changed only selection/aggregate/tests/documents; no evidenced link to child startup.
+
+Missing discriminator: live owned child thread states/wait roles at failed deadline before owned kill.
+Selected only bounded test-only read-only snapshot: max32 threads, fixed Running/Ready/Wait/other counts,
+waitExecutive/UserRequest/Suspended/Delay/Page/other plus read-error counts; no IDs/raw paths/arguments/
+module lists/environment values/native stack or memory/config/secret reads. Dispose read thread wrappers.
+One deadline-only invocation, no polling/retry/extra process/-S/-I/-E/site or OS/security changes.
+Original WaitForExit5000/body/argv/stdin/exit0 marker/precise error/kill5000/drain3000/validation unchanged.
+The snapshot is evidence only, no timeout accepted as PASS, no production runtime guessed fix.
+Four synthetic role/redaction/empty/cap/missing-property probe vectors precede original child gate; actual
+PowerShell execution NOT_RUN locally. Fixed safe diagnostic stack, even unavailable probe reports counts.
+See CI709_OWNED_THREAD_DIAGNOSTIC.md. All31 suites and strict4-partition aggregate remain untouched.
+
+Local16 aggregate/partition tests PASS, exact additive reverse diff/review/static/signatures/parity/JSON/
+secrets/public-content/diff PASS. No local PowerShell/.NET: new synthetic4/native deadline observation/
+all5 exact-SHA CI NOT_RUN. One expected-HEAD guarded push and one automatic diagnostic CI only, no rerun.
+Next SAME new CI all5 full logs. If startup fails, inspect SSH_FIXTURE_THREADS together with existing facts;
+if it passes, call non-reproduction, preserve UNKNOWN, inspect actual downstream tests. No blind loop.
+Durable Legacy source prerequisite deferred until whole CI PASS. Entire31/nested55 scope/fixed weights/
+scores retained delta0; BLOCKED_TRANSFER/no retry and Python/rebind/sharing/repair/setup/cancellation
+UNKNOWN incidents retained. No live install/services/network/security/ACL/credentials/VPS/tunnel/release/uploads.
+
+Historical checkpoints below; old statuses are scoped to recorded observations.
+
+## CURRENT published Installer partition correction / sole automatic CI709 in progress
+
+Source `a9b575079a5d006855d1dc7d8724caa3faa098d8`, tree `e23c11d697095db94c4d8a85db96eb6068afb72c`,
+parent `d6b25e8037e2387f74970aec92b5cc48001b3554`; reviewed code9d87fa4e64eb3f884d2e81ff799edbe85abcb197,
+freeze f004e99d4f69b2a2c0a0b1cbae7f7db5283d10f4. Expected-HEAD non-force PR88 push completed; fetched
+commit/tree/checkout equal reviewed local tree. Prior checkpoint02cdca5ef9be493897b93d63cecbd8ead121c333 clean/
+preserved, old worktrees untouched, no competing writer. ONE automatic pull_request
+[CI709](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40236712568), run40236712568 observed in_progress/null.
+No rerun/dispatch/duplicate/full wait. New exact tested merge/Foundation27/Recovery4/Source18/full31/all5 final
+aggregate NOT_RUN/unconfirmed. Post-publication checkpoint documents local only, NOT another push/CI.
+
+CI708 independently full-log CANCELLED at merge0b948a5b31e1a9d05f83306ac1d626de56b74f27, old29 PASS,
+Legacy first3 PASS/16 unconfirmed, Source18 NOT_RUN. Core+Ubuntu SUCCESS; strict aggregate correctly FAIL.
+Cancellation initiator/root UNKNOWN:40m11s compatible with40m cap, not proof; supported annotations unavailable400.
+Measured first27=1577655ms, next2=665866ms, before Legacy=2243521ms, independently proving poor serial capacity.
+Correction only CI/test selection: original first27 Foundation + final4 Recovery, disjoint clean Windows jobs,
+unchanged40m caps/all31 exact bodies/order/negative cases/assertions/deadlines/default All behavior.
+Core/Ubuntu/workflow events/permissions/concurrency/upload/prune unchanged; no production runtime/fixture change.
+Aggregate now requires4 success on same exact merge; fail/cancel/skip/missing/wrongSHA refuses.
+Local16 tests PASS incl coverage loss/duplication/wrong-selector and all4 aggregate failure states; exact suite
+body/native/fixture/YAML/signatures/parity/review/JSON/diff/secrets/public400source0release PASS.
+
+Next SAME CI709 all5 full final logs/exact merge/27+4/full31/Source18/strict aggregate. Do not start durable Legacy
+source publication until full PASS. UNKNOWN Python/rebind/sharing/repair/setup/cancellation incidents retained,
+BLOCKED_TRANSFER/no retry/all31+nested55/fixed weights unchanged score_delta0. Full installer/auxiliary recovery/
+retention/PGA04/updater/package/owner/commercial scope retained, no production claim. No live install/services/
+network/security/ACL/credentials/VPS/tunnel/release/uploads/delivery retry or second stage.
+
 ## CURRENT CI708 bounded Installer split; cancellation initiator UNKNOWN
 
 Baseline source d6b25e8037e2387f74970aec92b5cc48001b3554/tree4099f8665abca63d024e319ebfd4e18b5b0f0a76;
