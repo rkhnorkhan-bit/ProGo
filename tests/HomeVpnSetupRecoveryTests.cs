@@ -574,6 +574,7 @@ namespace ProGo
                         HomeVpnWizardForm wizard = null; HomeVpnPreparationForm copyWindow = null; FileStream held = null;
                         Task<string> operation = null, cancelled = null; Task<bool> stop = null; Exception original = null;
                         int phase = 0, turns = 0, copies = 0, worker = 0, retained = 0, closedPublications = 0, importBoundaries = 0, ui = Thread.CurrentThread.ManagedThreadId;
+                        int copyCancellationObserved = -1;
                         bool helperRead = false, closing = mode == "owner-dispose";
                         Func<string[]> calls = () => File.Exists(Path.Combine(root, "calls")) ? File.ReadAllLines(Path.Combine(root, "calls")) : new string[0];
                         Func<string, bool> gone = name => {
@@ -598,7 +599,8 @@ namespace ProGo
                                         coreWork = Directory.GetDirectories(HomeVpnPrivateFiles.Root).Except(directories).Single();
                                         string helper = Directory.GetFiles(coreWork, "home_vpn_setup.py", SearchOption.AllDirectories).Single(); helperRead = File.ReadAllText(helper).Length != 0;
                                         if (mode == "cleanup-lock") held = File.Open(helper, FileMode.Open, FileAccess.Read, FileShare.Read);
-                                        entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned recovery copy fixture deadline"); ct.ThrowIfCancellationRequested();
+                                        entered.Set(); if (!release.Wait(5000)) throw new TimeoutException("Owned recovery copy fixture deadline");
+                                        Interlocked.Exchange(ref copyCancellationObserved, ct.IsCancellationRequested ? 1 : 0); ct.ThrowIfCancellationRequested();
                                     });
                                 }, Application.ExecutablePath); return operation;
                             };
@@ -641,7 +643,47 @@ namespace ProGo
                                     if (mode == "cleanup-lock") { original = failure; check(failure is HomeVpnSetupPendingException && service.HasPendingAdminCleanup && Directory.Exists(coreWork), "recovery cleanup failure retains exact directory and original pending-request outcome"); stop = service.StopAsync(); phase = 5; return false; }
                                     if (mode == "cancel-retry" && cancelled == null) {
                                         cancelled = operation; original = failure;
-                                        check(failure is HomeVpnPreparationCancelledException && failure.Message.Contains("могла завершиться") && next.Enabled && wizard.Modal && calls().Length == 0 && !RecoveryLeaseHeld(), "cancelled recovery keeps modal explicit Retry and releases lease without replacing request");
+                                        bool cancelReady = failure is HomeVpnPreparationCancelledException && failure.Message.Contains("могла завершиться") && next.Enabled && wizard.Modal && calls().Length == 0 && !RecoveryLeaseHeld();
+                                        if (!cancelReady) {
+                                            // Failure-only observations: preserve the original short-circuit assert above.
+                                            // Never print exception messages, IDs, paths, argv or protected content.
+                                            try {
+                                                bool[] conditions = { failure is HomeVpnPreparationCancelledException,
+                                                    failure != null && failure.Message.Contains("могла завершиться"), next.Enabled,
+                                                    wizard.Modal, calls().Length == 0, !RecoveryLeaseHeld() };
+                                                string[] names = { "typed-preparation-cancel", "recovery-warning", "retry-enabled",
+                                                    "wizard-modal", "no-transport-calls", "lease-released" };
+                                                Console.WriteLine("SETUP_RECOVERY_CANCEL composite=False; violated=" + String.Join(",", names.Where((name, index) => !conditions[index])));
+                                                for (int index = 0; index < names.Length; index++) Console.WriteLine("SETUP_RECOVERY_CANCEL " + names[index] + "=" + conditions[index]);
+                                                Console.WriteLine("SETUP_RECOVERY_STATE phase=" + phase + "; copies=" + copies + "; calls=" + calls().Length
+                                                    + "; operation=" + operation.Status + "; stopPresent=" + (stop != null) + "; stop=" + (stop == null ? "none" : stop.Status.ToString())
+                                                    + "; serviceStop=" + service.StopWork.Status + "; import=" + service.ImportWork.Status
+                                                    + "; setupRead=" + wizard.SetupReadWork.Status + "; busy=" + (bool)Field(wizard, "busy")
+                                                    + "; ownerDisposed=" + wizard.IsDisposed + "; ownerHandle=" + wizard.IsHandleCreated
+                                                    + "; copyDisposed=" + (copyWindow != null && copyWindow.IsDisposed)
+                                                    + "; copyCompletion=" + (copyWindow == null ? "none" : copyWindow.Completion.Status.ToString())
+                                                    + "; copyOwnerSame=" + (copyWindow != null && copyWindow.Owner == wizard)
+                                                    + "; publications=" + dispatcher.PublicationCount + "; adminWorking=" + service.IsAdminWorking
+                                                    + "; pendingCleanup=" + service.HasPendingAdminCleanup + "; ownedResources=" + service.HasOwnedResources
+                                                    + "; coreExists=" + Directory.Exists(coreWork) + "; releaseSet=" + release.IsSet
+                                                    + "; copyCancellationObserved=" + Volatile.Read(ref copyCancellationObserved)
+                                                    + "; failureType=" + (failure == null ? "none" : failure.GetType().Name));
+                                                var frames = new StackTrace(0, false).GetFrames();
+                                                if (frames != null) foreach (var frame in frames.Take(6)) {
+                                                    var method = frame.GetMethod();
+                                                    if (method != null) Console.WriteLine("SETUP_RECOVERY_STACK " + System.Text.RegularExpressions.Regex.Replace(
+                                                        (method.DeclaringType == null ? "unknown" : method.DeclaringType.Name) + "." + method.Name, "[^A-Za-z0-9_.<>]", "") + "; il=" + frame.GetILOffset());
+                                                }
+                                                var pending = Pending();
+                                                Console.WriteLine("SETUP_RECOVERY_REQUEST present=" + (pending != null)
+                                                    + "; idSame=" + (pending != null && pending.RequestId == request.RequestId)
+                                                    + "; resultAbsent=" + (pending != null && pending.Result == null)
+                                                    + "; journalSame=" + (File.Exists(PendingPath) && journal.SequenceEqual(File.ReadAllBytes(PendingPath)))
+                                                    + "; credentialsSame=" + credentials.All(p => p.Value == null ? !File.Exists(p.Key) : p.Value.SequenceEqual(File.ReadAllBytes(p.Key)))
+                                                    + "; unrelatedAlive=" + !unrelated.HasExited);
+                                            } catch (Exception diagnostic) { Console.WriteLine("SETUP_RECOVERY_DIAGNOSTIC incomplete=True; type=" + diagnostic.GetType().Name); }
+                                        }
+                                        check(cancelReady, "cancelled recovery keeps modal explicit Retry and releases lease without replacing request");
                                         next.PerformClick(); phase = 4; return false;
                                     }
                                     check(mode == "result" ? failure == null && Pending().Result == token && importBoundaries > 0
