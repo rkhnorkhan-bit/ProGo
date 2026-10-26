@@ -80,5 +80,5 @@ public static class LegacyMetadataThreatFixture
     }
     Check-LegacyMutationThreat ($unchanged -and [IO.File]::GetCreationTimeUtc($runtime) -eq $creation) 'private-foreign-bytes-metadata-and-cleanup-preserved'
     if ($script:LegacyMutationThreatChecks -ne 6) { throw 'Mutation threat counterexample did not execute all six checks.' }
-    Write-Host 'Legacy mutation threat tests PASS: 6; mutation-protocol BLOCKED_MODEL; deletion/power-loss NOT_RUN'
+    Write-Host 'Legacy mutation threat tests PASS: 6; global-freeze NOT_CLAIMED; deletion/power-loss NOT_RUN'
 }

@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "d454cfc114c4dbeace0a5f0bda7f88e6142e53b3",
-    "tree": "71cff3e04788df37e45065a9d3a1dd2ea634fb81",
-    "run_id": 40273846702,
-    "run_number": 719,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40273846702",
+    "source": "a2aae264baa197069b3513a2ee4348e8691eeb0c",
+    "tree": "a91731d48d1cc31b52cb224921f4e5ce9f6c492e",
+    "run_id": 40278550319,
+    "run_number": 720,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40278550319",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "936199c90a2c2de62662fc3b8ac2659de9f1ae71",
-    "Namespace41": "PASS fresh-process1; namespace reservation NOT_PROVIDED",
+    "tested_merge": "0e3afd00a0f90e66f950d146990231f8ed32e16d",
+    "MutationThreat6": "PASS actual limitation evidence; former BLOCKED_MODEL label superseded by scope correction",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "d454cfc114c4dbeace0a5f0bda7f88e6142e53b3",
-    "tree": "71cff3e04788df37e45065a9d3a1dd2ea634fb81",
-    "prior_checkpoint": "d226f318e0c5a6679bb4dd069129b0eb95d95cc6",
-    "stage": "Actual-operation BLOCKED_MODEL; independent test-only native metadata counterexample",
-    "status": "CI719 full5logs PASS; new MutationThreat6 Windows NOT_RUN; local78 static PASS",
-    "next": "One automatic test-only CI full logs; owner model decision pending before any mutation implementation",
+    "source": "a2aae264baa197069b3513a2ee4348e8691eeb0c",
+    "tree": "a91731d48d1cc31b52cb224921f4e5ce9f6c492e",
+    "prior_checkpoint": "b609f837cff8d92bd4242d4f737803f1bab6c915",
+    "stage": "Bounded exact-owned-object one-shot disposition; no durable outcome/restore/live integration",
+    "status": "CI720 full5logs PASS; new OwnedOperation15/native compilation Windows NOT_RUN; local84 static PASS",
+    "next": "One automatic exact-source CI full logs; then durable honest accepted-outcome/post-delete evidence gate",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -23423,16 +23423,15 @@
     "score_delta": 0
   },
   "legacy_actual_operation_model": {
-    "status": "BLOCKED_MODEL; no mutation protocol implemented",
-    "owner_decision": "PENDING exact-owned-object semantics with pinned positive evidence versus strict global namespace exclusion with separately approved isolation design; no choice or security action inferred",
+    "status": "Scope corrected: exact-owned-object protocol implemented for isolated tests, Windows NOT_RUN",
+    "owner_decision": "NOT_REQUIRED: global namespace/metadata freeze was an added engineering assumption, not APPROVED_PLAN_31 F03/F23 acceptance",
     "threat": "ordinary noncooperating writer with existing access, potentially same account",
     "evidence": "CI719 namespace appearance/current absence counterexamples; official CreateFile attribute-sharing and directory-oplock advisory semantics",
     "independent_tests": "MutationThreat6 prepared; same-process second native FILE_WRITE_ATTRIBUTES handle, Windows NOT_RUN; local78 static PASS",
-    "production_changes": "NONE",
+    "production_changes": "Explicit one-shot primitive and unused installer helper only; no ordinary live integration",
     "remaining": [
-      "explicit model decision and proven actual-operation primitive",
-      "same-handle owned deletion only after that gate",
-      "durable honest outcome/post-delete rehydration",
+      "exact new native/compiler/Owned15 CI evidence",
+      "durable honest accepted outcome and post-delete rehydration",
       "restore/error/full auxiliary recovery/retention/full scope"
     ],
     "limits": [
@@ -23442,6 +23441,41 @@
       "BLOCKED_TRANSFER",
       "power-loss NOT_RUN",
       "WCT/SeDebug not authorized"
+    ],
+    "score_delta": 0
+  },
+  "legacy_owned_operation": {
+    "scope": "One exact held owned target disposition, bounded to live validated positive proofs; no path-based deletion",
+    "new_tests": "OwnedOperation15 + fresh-process refusal1 prepared, Windows NOT_RUN",
+    "local_tests": "84 Python static PASS, not compilation/native",
+    "states": [
+      "blocked",
+      "cancelled-before-operation",
+      "in-progress",
+      "refused",
+      "indeterminate",
+      "accepted-unrecorded",
+      "accepted-context-conflict-unrecorded",
+      "accepted-cleanup-conflict-unrecorded"
+    ],
+    "always_false": [
+      "DurableOutcomeRecorded",
+      "WholeRollbackVerified",
+      "InstallSucceeded"
+    ],
+    "safety": [
+      "full native origin including creation and bytes retained",
+      "complete pinned runtime/snapshot/journal schema/hash plan",
+      "source/ref/seal/admission held through operation",
+      "read-only usable replacement pin; never mutation target",
+      "single result cached before late cancellation; no replay",
+      "namespace only conflict observation, not global lock",
+      "post-process unknown disposition remains blocked/manual"
+    ],
+    "remaining": [
+      "durable outcome/post-delete trusted evidence",
+      "no-overwrite owned restore",
+      "full auxiliary outcome/error integration/retention/runtime recovery/full scope"
     ],
     "score_delta": 0
   }

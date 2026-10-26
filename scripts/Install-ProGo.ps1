@@ -1629,6 +1629,27 @@ function Get-ProGoInstallerLegacyBoundaryObservation([string]$Directory, [string
         finally { if ($null -ne $physical) { $physical.Dispose() } }
     }
 }
+# Exact owned object only; not called by the ordinary installer/failure route.
+function Invoke-ProGoInstallerLegacyOwnedDeletion([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $CancellationToken.ThrowIfCancellationRequested(); $physical = $null; $original = $null; $result = $null; $cleanupFailed = $false
+    try {
+        $reference = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($null -eq $reference) { return $null }
+        $physical = Open-ProGoInstallerLegacyPhysicalPins $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory $CancellationToken
+        if ($null -eq $physical) { return $null }
+        $original = Open-ProGoInstallerLegacyDeletionPins $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory $CancellationToken
+        if ($null -eq $original) { return $null }
+        $result = $original.DeleteOwnedOnce($physical,$CancellationToken)
+    } finally {
+        try { if ($null -ne $original) { $original.Dispose() } } catch { $cleanupFailed = $true }
+        finally { try { if ($null -ne $physical) { $physical.Dispose() } } catch { $cleanupFailed = $true } }
+        if ($cleanupFailed -and $null -eq $result) { throw 'Legacy operation cleanup failed before any recorded in-memory result.' }
+    }
+    if ($cleanupFailed) { return $result.WithCleanupFailure() }
+    return $result
+}
 function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
     if ($null -eq $Backup.PSObject.Properties['Journal']) {
         $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)

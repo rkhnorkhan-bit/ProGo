@@ -6,7 +6,7 @@ class NamespaceObservationTests(unittest.TestCase):
  def setUpClass(cls):
   cls.ps=(ROOT/'scripts/Install-ProGo.ps1').read_text(encoding='utf-8-sig')
   cls.ns=cls.ps.split('function Test-ProGoInstallerLegacyNamespace',1)[1].split('# Read-only operation-boundary rehearsal',1)[0]
-  cls.boundary=cls.ps.split('function Get-ProGoInstallerLegacyBoundaryObservation',1)[1].split('function Open-ProGoInstallerJournalAdmission',1)[0]
+  cls.boundary=cls.ps.split('function Get-ProGoInstallerLegacyBoundaryObservation',1)[1].split('# Exact owned object only;',1)[0].split('function Open-ProGoInstallerJournalAdmission',1)[0]
   cls.fixture=(ROOT/'tests/InstallerLegacyNamespaceTests.ps1').read_text()
  def test_anchor_and_whitelist_precede_namespace_enumeration(self):
   for t in ('$Reference -isnot [ProGo.ApplicationShortcuts+LegacyJournalReferenceEvidence]','$digest -cne $Reference.Hash','$saved.Context.Operation -cne $operation','$saved.Context.SnapshotHash -cne $Reference.Source.SnapshotHash'):

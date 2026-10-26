@@ -1,3 +1,77 @@
+## CURRENT scope correction + bounded exact-owned-object operation; CI720 verified
+
+CI720 all five final logs independently read: sourcea2aae264baa197069b3513a2ee4348e8691eeb0c,
+merge0e3afd00a0f90e66f950d146990231f8ed32e16d. MutationThreat6 and all33 Foundation27/Recovery6 suites PASS;
+Namespace41/Physical50/Pinning39/PreDelete23/Restart26/Journal20/Durable12 retained. Core classifier26/SSH5/
+Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91, Python104PASS2SKIP, Ubuntu and
+aggregate121435722007 exact4SHA PASS. Runner ZIP686640 SHA256fc6a1c67dc4cad3091c4735d43dfff2789a236175116f0d2f5aad57cf169a076,
+upload skipped; not PC acceptance. Original checkpointb609f837cff8d92bd4242d4f737803f1bab6c915 clean, PR88
+HEAD/merge exact/open; no other active agent or queued/in-progress/waiting CI before this stage.
+
+SCOPE CORRECTION: APPROVED_PLAN_31 F23 verified backup/self-check/rollback/data and shortcut preservation;
+F03 one owner for ProGo operations; F23_LEGACY_ROLLBACK_ADMISSION requires capture/native handle continuity;
+F23_LEGACY_DURABLE_SOURCE already excludes secret-backed authentication against coherent same-account rewrite.
+Global namespace/metadata freeze and exclusion of every ABA history were added engineering assumptions, not
+approved acceptance gates. No owner decision/waiver is required to remove that added assumption. Historical
+BLOCKED_MODEL/owner-choice branch is superseded, not a requirement removed. Namespace41/MutationThreat6 remain
+actual limitation evidence; only the latter's display label changes to global-freeze NOT_CLAIMED, all6 checks
+and adversarial operations unchanged. No new ACL/isolation/privilege dependency or relaxed old assert.
+
+Acceptance: one constrained disposition on the SAME original native handle selected by a verified lease, never
+on an arbitrary current pathname. The original gate and physical gate serialize Dispose through the operation;
+source/ref/seal/admission/directory streams stay retained. Native revalidation reconstructs complete canonical
+source/seal/admission bytes + exact native origins/hashes. It projects anchored reference JSON into an EXACT
+approved physical plan: fixed payload whitelist (static parity with installer), operation/install/location/
+snapshot identity, manifest/entries/record schemas, actual pinned runtime/snapshot/record hashes and complete
+coverage. Incomplete/foreign/mismatched plan blocked, caller hash/serialized flag alone never authority. Uses
+existing System.Web.Extensions framework dependency via exact reflected DeserializeObject(string) signature;
+no standalone Add-Type reference flags/install/download changes. JSON arrays accept IList; bounded readers.
+
+The existing migration safeguard also requires a usable ProGo.lnk. A separate fixed-name READ-only handle
+pins its live native origin/bytes while the existing semantic predicate confirms this installation/arguments;
+it is not created, modified, adopted as owned or included among rollback targets. Missing/custom/unusable
+replacement blocks disposition, so the only usable launcher is not knowingly discarded. Immediately before
+SetFileInformationByHandle, actual positive proofs/physical origins+hashes and target full origin/creation/bytes
+are checked under retained handles. Metadata can race, but the target is still that same pinned object. No
+check or creation-time component removed, no global freeze/ABA guarantee claimed. Native namespace checks run NOW
+under pins as conflict observation, never previously returned observed-only after release. Optional callback is
+only an additional veto; the default production API takes only the live physical lease and cancellation token. Reentrant disposal
+or partial plan cannot silently release proofs and authorize a call. New children are never deletion targets.
+
+Immutable in-memory result separates OperationAttempted/AcceptanceKnown/OperationAccepted, own target-handle
+closure and ContextObservedAfterOperation. Accepted means OS accepted disposition on that handle, not verified
+physical unlink of all external references, no-path-reappearance, durable publication or complete rollback.
+Target closes to settle owned disposition; source/evidence/physical pins remain until the call ends. An accepted
+result is cached and joined before later cancellation/disposal/replay; no second native operation or deletion
+of a newly appeared foreign target. Unknown syscall acceptance stays indeterminate. Post-context/cleanup
+conflict preserves accepted truth and blocks full success. DurableOutcomeRecorded/WholeRollbackVerified/
+InstallSucceeded always false here. No arbitrary journal/result deserialization creates live authority; path-only
+rehydration without original after unrecorded disposition stays blocked/manual, including actual new-process
+refusal fixture. Future restore/create MUST use no-overwrite; occupied names remain conflicts. No restore or
+outcome writer implemented, original install error/no Launch guarantees unchanged.
+
+OwnedOperation15 Windows scenarios prepared: complete, equal-byte-replacement, foreign-appeared-name,
+target-metadata-change, evidence-metadata-change, accepted-context-change, accepted-persistence-fail,
+cancel-before, cancel-during-check, late-cancel-no-replay, disposed-lease, incomplete-physical-plan,
+missing-replacement, foreign-replacement, production-path. Each has a new isolated synthetic source/reference/
+seal/admission/snapshot/runtime fixture. Tests preserve every non-target byte/private/foreign file and exact
+metadata under held pins; caller-side occupied CreateNew persistence destination proves accepted truth is not
+lost on failure (NOT production durable-writer coverage). Actual production helper + actual fresh-process refusal
+are exercised only in these fixtures. Existing child20s/cleanup5s patterns retained, no old deadline increase.
+Nested once after existing PreDelete/MutationThreat in DurableInput Recovery, all33/classifier26/strict4aggregate
+and oldWindows suites retained. Namespace static extractor narrowed to its unchanged original function so its
+original three-check assert is not accidentally counting the new sibling function; assertion/coverage unchanged.
+
+Local84 Python static tests PASS; new C#/PowerShell/native15/fresh-process NOT_RUN locally. One reviewed
+expected-HEAD push and automatic CI only; no rerun/dispatch/duplicate. No default installer/failure/UI/live
+integration, real user-file deletion/services/network/security/ACL/credentials/VPS/tunnel/WCT/SeDebug/new
+privileges/release/uploads. UNKNOWN/BLOCKED_TRANSFER/no retry/power-lossNOT_RUN/fullscope/weights/delta0 remain.
+Next SAME new CI full5logs/Owned15/all33/Core/aggregate. Only after exact PASS: separately design durable honest
+accepted-outcome evidence and post-delete trusted rehydration; restore/full auxiliary outcome/error integration/
+retention/runtime recovery/PGA04/updater/package/owner/commercial acceptance remain open. Stop after one stage.
+
+Historical records below retain source-specific evidence, not superseded approval requirements:
+
 ## CURRENT CI719 verified; actual-operation model blocked, independent test-only counterexample
 
 CI719 all5 full logs independently read: sourced454cfc114c4dbeace0a5f0bda7f88e6142e53b3,
@@ -8,7 +82,7 @@ exact4SHA PASS. Runner ZIP686643 SHA2568a48240d045f0c6c16aeceff8aecca83a6ff41854
 upload skipped; not PC acceptance. Checkpointd226f318e0c5a6679bb4dd069129b0eb95d95cc6 clean, PR88 exactsource/
 merge/open; no other active agent or queued/in-progress/waiting CI before this stage.
 
-DEPENDENT MUTATION BLOCKED_MODEL: exact-target safety and global namespace/metadata immutability are different
+HISTORICAL ADDED-ASSUMPTION BLOCK (superseded by scope audit): exact-target safety and global namespace/metadata immutability are different
 contracts. Existing Native39/Physical50 positive pins do not reserve missing children; Namespace41 already
 proves appearance while pinned and observed-only after the fixture restores current absence. Another enum,
 mutex for cooperating ProGo processes, or directory oplock must not be promoted to atomic exclusion. No actual
@@ -35,11 +109,7 @@ WCT/SeDebug/new privileges/live install/services/network/security/ACL/credential
 remain prohibited. A green counterexample CI would NOT close BLOCKED_MODEL, authorize deletion, prove durable
 outcome/restore/FullRollback/production or change approved requirements.
 
-PENDING OWNER QUESTION, NOT ANSWERED: approve a separately reviewed exact-owned-object authorization model
-based on retained positive proofs and target handle (without global namespace/ABA freeze), OR retain strict
-namespace exclusion and separately agree a proven isolation design/scope? Neither option authorizes live or
-security changes. Until an explicit decision, mutation stays blocked. Independent next work: same new CI full5
-logs/MutationThreat6/old33/Core/strictaggregate and safe static requirement audits, not mutation/integration.
+SUPERSEDED TECHNICAL BRANCH: global namespace freeze was not in approved scope; no owner decision/waiver is required. Exact-owned-object semantics preserves existing checks. Historical counterexample evidence remains valid.
 
 Prior evidence/history:
 

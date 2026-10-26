@@ -22,6 +22,252 @@ namespace ProGo
             executable = Path.Combine(root, "ProGo.exe");
         }
 
+        private static readonly string[] LegacyOperationLeaves = new[] {
+            "ProGo.exe",
+            "VERSION",
+            "ProGo.ico",
+            "scripts/Install-ProGo.ps1",
+            "scripts/Uninstall-ProGo.ps1",
+            "scripts/Update-ProGo.ps1",
+            "scripts/Update-ProGo.Core.ps1",
+            "scripts/Restore-ProGoBackup.ps1",
+            "scripts/Show-ProGo.ps1",
+            "scripts/Start-ProGo.ps1",
+            "scripts/Repair-ProGo.ps1",
+            "scripts/Enable-HomeVpnFirewall.ps1",
+            "scripts/Maintenance-ProGo.ps1",
+            "scripts/BackupRetention-ProGo.ps1",
+            "scripts/BackupIntegrity-ProGo.ps1",
+            "scripts/Log-ProGo.ps1",
+            "scripts/Diagnostics-ProGo.ps1",
+            "scripts/Measure-RescueProGo.ps1",
+            "scripts/Shortcuts-ProGo.ps1",
+            "scripts/Firewall-ProGo.ps1",
+            "scripts/ApplicationShortcuts.cs",
+            "scripts/MaintenanceOperation.cs",
+            "scripts/InstalledUpdateTransport.cs",
+            "scripts/UpdateInstallSession.cs",
+            "scripts/BackupRetention.cs",
+            "scripts/BackupIntegrity.cs",
+            "scripts/BoundedLog.cs",
+            "scripts/RescueMeasurement.cs",
+            "scripts/DiagnosticReport.cs",
+            "scripts/DiagnosticPreview.cs",
+            "scripts/UiTheme.cs",
+            "scripts/BrandIcon.cs",
+            "scripts/home-vpn/HOME_IKEV2.md",
+            "scripts/home-vpn/server/ikev2_relay.py",
+            "scripts/home-vpn/server/install-ikev2-relay.sh",
+            "scripts/home-vpn/server/make_home_profile.py",
+            "scripts/home-vpn/server/home_vpn_setup.py",
+            "scripts/home-vpn/server/profile_share_setup.py",
+            "scripts/home-vpn/server/profile_share.py",
+            "scripts/home-vpn/server/qrcodegen.py",
+            "scripts/home-vpn/server/QR_LICENSE.txt",
+        };
+        // Exact-owned-object operation only. No path-based delete, durable outcome or restore authority.
+        public sealed class LegacyOwnedDeleteResult
+        {
+            private readonly LegacyJournalReferenceEvidence witness;
+            public string State { get; private set; }
+            public Guid OperationId { get; private set; }
+            public string InstallIdentity { get; private set; }
+            public string LocationIdentity { get; private set; }
+            public string OriginalOrigin { get; private set; }
+            public string OriginalHash { get; private set; }
+            public bool OperationAttempted { get; private set; }
+            public bool AcceptanceKnown { get; private set; }
+            public bool OperationAccepted { get; private set; }
+            public bool TargetHandleClosed { get; private set; }
+            public bool ContextObservedAfterOperation { get; private set; }
+            public bool DurableOutcomeRecorded { get { return false; } }
+            public bool WholeRollbackVerified { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            internal LegacyOwnedDeleteResult(LegacyJournalReferenceEvidence witness, string state, bool attempted, bool known, bool accepted, bool closed, bool context)
+            { this.witness = witness; OperationId = witness.Source.Operation; InstallIdentity = witness.Source.InstallIdentity; LocationIdentity = witness.Source.LocationIdentity;
+              OriginalOrigin = witness.Source.OriginIdentity; OriginalHash = witness.Source.Hash;
+              State = state; OperationAttempted = attempted; AcceptanceKnown = known; OperationAccepted = accepted;
+              TargetHandleClosed = closed; ContextObservedAfterOperation = context; }
+            public LegacyOwnedDeleteResult WithCleanupFailure()
+            { return new LegacyOwnedDeleteResult(witness, OperationAccepted ? "accepted-cleanup-conflict-unrecorded" : "cleanup-conflict", OperationAttempted, AcceptanceKnown, OperationAccepted, TargetHandleClosed, false); }
+        }
+        private static System.Collections.Generic.IDictionary<string, object> LegacyJson(byte[] bytes, params string[] keys)
+        {
+            if (bytes == null || bytes.Length < 1 || bytes.Length > 1048576) throw new IOException("Legacy document is invalid.");
+            // Existing .NET Framework dependency, already referenced by the application build.
+            // Reflection keeps the standalone shortcut Add-Type source independent of compiler reference lists.
+            var type = Type.GetType("System.Web.Script.Serialization.JavaScriptSerializer, System.Web.Extensions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35", true);
+            var value = type.GetMethod("DeserializeObject", new[] { typeof(string) }).Invoke(Activator.CreateInstance(type),
+                new object[] { new UTF8Encoding(false, true).GetString(bytes) });
+            return LegacyJsonObject(value, keys);
+        }
+        private static System.Collections.Generic.IDictionary<string, object> LegacyJsonObject(object value, params string[] keys)
+        {
+            var result = value as System.Collections.Generic.IDictionary<string, object>;
+            if (result == null || result.Count != keys.Length) throw new IOException("Legacy schema is invalid.");
+            foreach (string key in keys) if (!result.ContainsKey(key)) throw new IOException("Legacy schema is incomplete.");
+            return result;
+        }
+        private static bool LegacySchemaOne(object value) { return value is int && (int)value == 1; }
+        private static bool LegacyFalse(object value) { return value is bool && !(bool)value; }
+        private static bool LegacySameEntry(object first, object second)
+        {
+            var a = LegacyJsonObject(first, "Relative", "Exists", "Hash", "NewHash");
+            var b = LegacyJsonObject(second, "Relative", "Exists", "Hash", "NewHash");
+            foreach (string key in a.Keys) if (!Object.Equals(a[key], b[key])) return false;
+            return true;
+        }
+        private static bool LegacyOperationNamespace(string directory, System.Collections.Generic.Dictionary<string, string> plan)
+        {
+            var expectedFiles = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            var expectedDirectories = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            string prefix = directory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            foreach (string file in plan.Keys) {
+                if (!file.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                expectedFiles.Add(file);
+                for (string parent = Path.GetDirectoryName(file); !String.Equals(parent, directory, StringComparison.OrdinalIgnoreCase); parent = Path.GetDirectoryName(parent)) {
+                    if (String.IsNullOrEmpty(parent) || !parent.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return false;
+                    expectedDirectories.Add(parent);
+                }
+            }
+            if (expectedFiles.Count == 0) return false;
+            var seenFiles = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            var seenDirectories = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            var pending = new System.Collections.Generic.Stack<string>(); pending.Push(directory);
+            while (pending.Count > 0) {
+                string current = pending.Pop();
+                if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0) return false;
+                foreach (string path in Directory.EnumerateFileSystemEntries(current)) {
+                    FileAttributes attributes = File.GetAttributes(path);
+                    if ((attributes & FileAttributes.ReparsePoint) != 0) return false;
+                    if ((attributes & FileAttributes.Directory) != 0) {
+                        if (!expectedDirectories.Contains(path) || !seenDirectories.Add(path)) return false;
+                        pending.Push(path);
+                    } else if (!expectedFiles.Contains(path) || !seenFiles.Add(path)) return false;
+                }
+            }
+            return seenFiles.SetEquals(expectedFiles) && seenDirectories.SetEquals(expectedDirectories);
+        }
+        private bool VerifyLegacyOperationPlan(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        {
+            var reference = lease.reference; var proof = reference.Source;
+            if (!physical.MatchesOwner(this)) return false;
+            lease.evidence[1].Position = 0;
+            var doc = LegacyJson(ReadLegacyReferenceBytes(lease.evidence[1]), "Context", "Source");
+            var source = LegacyJsonObject(doc["Source"], "LocationIdentity", "OriginIdentity", "Hash", "StorageOrigin", "DocumentHash");
+            if (!Object.Equals(source["LocationIdentity"], proof.LocationIdentity) || !Object.Equals(source["OriginIdentity"], proof.OriginIdentity) ||
+                !Object.Equals(source["Hash"], proof.Hash) || !Object.Equals(source["StorageOrigin"], proof.StorageOrigin) || !Object.Equals(source["DocumentHash"], proof.DocumentHash)) return false;
+            var context = LegacyJsonObject(doc["Context"], "Schema", "Phase", "MutationAllowed", "FullRollback", "InstallSucceeded", "Operation", "Identity", "Journal", "Snapshot", "SnapshotHash", "Inventory", "Records");
+            string journal = "installer-journal-" + proof.Operation.ToString("N"), snapshot = context["Snapshot"] as string;
+            if (!LegacySchemaOne(context["Schema"]) || !Object.Equals(context["Phase"], "legacy-source-reference") ||
+                !LegacyFalse(context["MutationAllowed"]) || !LegacyFalse(context["FullRollback"]) || !LegacyFalse(context["InstallSucceeded"]) ||
+                !Object.Equals(context["Operation"], proof.Operation.ToString("N")) || !Object.Equals(context["Identity"], Identity(root)) ||
+                !Object.Equals(context["SnapshotHash"], proof.SnapshotHash) || !Object.Equals(context["Journal"], journal) || snapshot == null ||
+                !System.Text.RegularExpressions.Regex.IsMatch(snapshot, "^installer-[a-f0-9]{32}$")) return false;
+            string inventoryText = context["Inventory"] as string; if (inventoryText == null) return false;
+            var inventory = LegacyJson(Encoding.UTF8.GetBytes(inventoryText), "Schema", "SnapshotHash", "Files");
+            var entries = inventory["Files"] as System.Collections.IList; var records = context["Records"] as System.Collections.IList;
+            if (!LegacySchemaOne(inventory["Schema"]) || !Object.Equals(inventory["SnapshotHash"], proof.SnapshotHash) || entries == null || records == null ||
+                entries.Count != LegacyOperationLeaves.Length || records.Count != entries.Count) return false;
+            var expected = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var seen = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            string snapshotRoot = Path.Combine(root, "backups", snapshot), journalRoot = Path.Combine(root, "backups", journal);
+            string manifestPath = Path.Combine(snapshotRoot, "installer-snapshot.json"); expected.Add(manifestPath, proof.SnapshotHash);
+            for (int i = 0; i < entries.Count; i++) {
+                var entry = LegacyJsonObject(entries[i], "Relative", "Exists", "Hash", "NewHash");
+                string leaf = entry["Relative"] as string, oldHash = entry["Hash"] as string, newHash = entry["NewHash"] as string;
+                if (leaf == null || Array.IndexOf(LegacyOperationLeaves, leaf) < 0 || !seen.Add(leaf) || !(entry["Exists"] is bool) || !LegacySourceHash(newHash)) return false;
+                bool exists = (bool)entry["Exists"];
+                if (exists ? !LegacySourceHash(oldHash) : entry["Hash"] != null) return false;
+                expected.Add(Path.GetFullPath(Path.Combine(root, leaf)), newHash);
+                if (exists) expected.Add(Path.GetFullPath(Path.Combine(snapshotRoot, leaf)), oldHash);
+                var record = LegacyJsonObject(records[i], "Name", "Hash");
+                string name = "admit-" + i.ToString("D6") + ".json", digest = record["Hash"] as string;
+                if (!Object.Equals(record["Name"], name) || !LegacySourceHash(digest)) return false;
+                expected.Add(Path.Combine(journalRoot, name), digest);
+            }
+            if (!physical.MatchesPlan(expected)) return false;
+            var manifest = LegacyJson(physical.ReadDocument(manifestPath), "Schema", "NewVersion", "Files");
+            var saved = manifest["Files"] as System.Collections.IList;
+            if (!LegacySchemaOne(manifest["Schema"]) || !(manifest["NewVersion"] is string) || saved == null || saved.Count != entries.Count) return false;
+            for (int i = 0; i < entries.Count; i++) {
+                if (!LegacySameEntry(saved[i], entries[i])) return false;
+                var record = LegacyJson(physical.ReadDocument(Path.Combine(journalRoot, "admit-" + i.ToString("D6") + ".json")), "Schema", "Phase", "Sequence", "Inventory", "Entry");
+                if (!LegacySchemaOne(record["Schema"]) || !Object.Equals(record["Phase"], "admitted") || !(record["Sequence"] is int) || (int)record["Sequence"] != i ||
+                    !Object.Equals(record["Inventory"], inventoryText) || !LegacySameEntry(record["Entry"], entries[i])) return false;
+            }
+            return LegacyOperationNamespace(snapshotRoot, expected) && LegacyOperationNamespace(journalRoot, expected);
+        }
+        private bool VerifyLegacyOperationEvidence(LegacyDeletionPins lease, byte[] bytes)
+        {
+            var proof = lease.reference.Source;
+            foreach (var stream in lease.evidence) stream.Position = 0;
+            if (proof.InstallIdentity != Identity(root) || proof.LocationIdentity != Identity(Path.Combine(menu, "ProGo Status.lnk")) ||
+                proof.Hash != Digest(bytes) || proof.StorageOrigin != LegacyOrigin(lease.evidence[0].SafeFileHandle)) return false;
+            byte[] expectedSource = LegacySourceDocument(proof.Operation, proof.SnapshotHash, proof.InstallIdentity, proof.LocationIdentity,
+                proof.OriginIdentity, proof.Hash, proof.StorageOrigin, bytes);
+            if (Digest(expectedSource) != proof.DocumentHash || !Equal(expectedSource, ReadLegacySourceDocument(lease.evidence[0])) ||
+                lease.reference.Origin != LegacyOrigin(lease.evidence[1].SafeFileHandle) || lease.reference.Hash != Digest(ReadLegacyReferenceBytes(lease.evidence[1]))) return false;
+            string sealOrigin = LegacyOrigin(lease.evidence[2].SafeFileHandle); byte[] seal = ReadLegacyReferenceBytes(lease.evidence[2]);
+            return Equal(seal, LegacyRestartSealDocument(proof.Operation, proof.SnapshotHash, lease.reference, sealOrigin)) &&
+                Equal(ReadLegacyReferenceBytes(lease.evidence[3]), LegacyPreDeleteDocument(proof.Operation, proof.SnapshotHash, lease.reference, sealOrigin, seal, LegacyOrigin(lease.evidence[3].SafeFileHandle)));
+        }
+        private LegacyOwnedDeleteResult ExecuteLegacyOwnedDeletion(LegacyDeletionPins lease, LegacyPhysicalPins physical, Func<bool> observeContext, CancellationToken token)
+        {
+            lock (lease.gate) {
+                if (lease.lastResult != null) return lease.lastResult; // accepted result survives cancellation/disposal/re-entry
+                token.ThrowIfCancellationRequested();
+                if (lease.consumed) return new LegacyOwnedDeleteResult(lease.reference, "in-progress", false, false, false, false, false);
+                lease.consumed = true;
+                bool attempted = false, known = true, accepted = false, closed = false, after = false, targetAfter = false;
+                try {
+                    var result = physical == null ? null : physical.WithPins<LegacyOwnedDeleteResult>(() => {
+                      using (var replacement = OpenLegacyRestartRead(Path.Combine(menu, "ProGo.lnk"))) {
+                        string replacementOrigin = LegacyOrigin(replacement.SafeFileHandle);
+                        byte[] replacementBytes = ReadLegacyEvidenceBytes(replacement);
+                        byte[] bytes = null;
+                        try {
+                            if (lease.resources == null || lease.targetHandle.IsClosed || observeContext == null || !physical.MatchesOwner(this) || !observeContext() || lease.resources == null ||
+                                !physical.VerifyPinned(token) || !Matches(Path.Combine(menu, "ProGo.lnk"), "--show")) return new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
+                            lease.target.Position = 0; bytes = ReadLegacyEvidenceBytes(lease.target);
+                            if (!VerifyLegacyOperationEvidence(lease, bytes) || !VerifyLegacyOperationPlan(lease, physical) ||
+                                lease.reference.Source.OriginIdentity != LegacyOrigin(lease.target.SafeFileHandle) || !physical.VerifyPinned(token))
+                                return new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
+                            // Final same-handle origin/bytes check; metadata is observed, not promised frozen.
+                            lease.target.Position = 0;
+                            if (lease.reference.Source.Hash != Digest(ReadLegacyEvidenceBytes(lease.target)) ||
+                                lease.reference.Source.OriginIdentity != LegacyOrigin(lease.target.SafeFileHandle)) return new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
+                            replacement.Position = 0;
+                            if (replacementOrigin != LegacyOrigin(replacement.SafeFileHandle) || !Equal(replacementBytes, ReadLegacyEvidenceBytes(replacement)))
+                                return new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
+                            if (!VerifyLegacyOperationEvidence(lease, bytes)) return new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
+                            token.ThrowIfCancellationRequested();
+                            var disposition = new LegacyDisposition { DeleteFile = 1 };
+                            attempted = true; known = false;
+                            accepted = SetFileInformationByHandle(lease.target.SafeFileHandle, 4, ref disposition, 1); known = true;
+                            if (accepted) { lease.target.Position = 0; targetAfter = lease.reference.Source.OriginIdentity == LegacyOrigin(lease.target.SafeFileHandle) && lease.reference.Source.Hash == Digest(ReadLegacyEvidenceBytes(lease.target)); }
+                        } finally {
+                            if (attempted) { lease.target.Dispose(); closed = true; }
+                        }
+                        // Never throw late cancellation away as if the accepted disposition were a no-op.
+                        if (accepted) {
+                            try { replacement.Position = 0; after = targetAfter && observeContext() && physical.VerifyPinned(CancellationToken.None) && VerifyLegacyOperationEvidence(lease, bytes) && VerifyLegacyOperationPlan(lease, physical) && replacementOrigin == LegacyOrigin(replacement.SafeFileHandle) && Equal(replacementBytes, ReadLegacyEvidenceBytes(replacement)); }
+                            catch { after = false; }
+                        }
+                        return new LegacyOwnedDeleteResult(lease.reference, accepted ? (after ? "accepted-unrecorded" : "accepted-context-conflict-unrecorded") : "refused", attempted, known, accepted, closed, after);
+                      }
+                    });
+                    lease.lastResult = result ?? new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
+                } catch (OperationCanceledException) {
+                    lease.lastResult = new LegacyOwnedDeleteResult(lease.reference, attempted ? (accepted ? "accepted-context-conflict-unrecorded" : "indeterminate") : "cancelled-before-operation", attempted, known, accepted, closed, false);
+                    if (!attempted) throw;
+                } catch {
+                    lease.lastResult = new LegacyOwnedDeleteResult(lease.reference, accepted ? "accepted-context-conflict-unrecorded" : (attempted ? "indeterminate" : "blocked"), attempted, known, accepted, closed, false);
+                }
+                return lease.lastResult;
+            }
+        }
+
         public static bool IsExistingInstallation(string directory)
         {
             // Check before copying files. Retained user data also counts after
@@ -625,13 +871,31 @@ namespace ProGo
             held.Clear();
             if (failed) throw new IOException("Legacy pin cleanup did not complete.");
         }
-        // Pin-only prerequisite. No mutation method or durable outcome is exposed by this lease.
+        // Pin-only prerequisite. Explicit one-shot operation independently revalidates all positive proofs.
         public sealed class LegacyDeletionPins : IDisposable
         {
-            private readonly object gate = new object();
-            private System.Collections.Generic.List<IDisposable> resources;
-            internal LegacyDeletionPins(System.Collections.Generic.List<IDisposable> held) { resources = held; }
-            public bool IsPinned { get { lock (gate) { return resources != null; } } }
+            internal readonly object gate = new object();
+            internal System.Collections.Generic.List<IDisposable> resources;
+            internal readonly ApplicationShortcuts owner;
+            internal readonly FileStream target;
+            internal readonly SafeFileHandle targetHandle;
+            internal readonly LegacyJournalReferenceEvidence reference;
+            internal readonly System.Collections.Generic.List<FileStream> evidence = new System.Collections.Generic.List<FileStream>();
+            internal bool consumed;
+            internal LegacyOwnedDeleteResult lastResult;
+            internal LegacyDeletionPins(ApplicationShortcuts manager, System.Collections.Generic.List<IDisposable> held, FileStream original, LegacyJournalReferenceEvidence witness)
+            {
+                resources = held; owner = manager; target = original; targetHandle = original.SafeFileHandle; reference = witness;
+                foreach (var resource in held) { var stream = resource as FileStream; if (stream != null && stream != original) evidence.Add(stream); }
+                if (evidence.Count != 4) throw new IOException("Legacy pin graph is incomplete.");
+            }
+            // Default production path has no caller-supplied authorization boolean. Full live native
+            // namespace/positive-plan validation is mandatory; the overload is only an additional veto.
+            public LegacyOwnedDeleteResult DeleteOwnedOnce(LegacyPhysicalPins physical, CancellationToken token)
+            { return owner.ExecuteLegacyOwnedDeletion(this, physical, () => true, token); }
+            public LegacyOwnedDeleteResult DeleteOwnedOnce(LegacyPhysicalPins physical, Func<bool> observeContext, CancellationToken token)
+            { return owner.ExecuteLegacyOwnedDeletion(this, physical, observeContext, token); }
+            public bool IsPinned { get { lock (gate) { return resources != null && !targetHandle.IsClosed; } } }
             public bool MutationAllowed { get { return false; } }
             public bool FullRollback { get { return false; } }
             public bool InstallSucceeded { get { return false; } }
@@ -676,7 +940,7 @@ namespace ProGo
                     reference.Source.SnapshotHash != verifiedSnapshot || reference.Source.OriginIdentity != origin ||
                     reference.Source.Hash != Digest(bytes) || origin != LegacyOrigin(handle)) return null;
                 token.ThrowIfCancellationRequested();
-                var result = new LegacyDeletionPins(held); transferred = true; return result;
+                var result = new LegacyDeletionPins(this, held, original, reference); transferred = true; return result;
             } catch (OperationCanceledException) { throw; }
             catch { return null; }
             finally { if (!transferred) ReleaseLegacyDeletionPins(held); }
@@ -688,11 +952,27 @@ namespace ProGo
             private readonly object gate = new object();
             private System.Collections.Generic.List<IDisposable> held;
             private readonly System.Collections.Generic.List<FileStream> files;
+            private readonly ApplicationShortcuts owner;
+            private readonly System.Collections.Generic.List<string> paths;
             private readonly System.Collections.Generic.List<string> origins, hashes;
-            internal LegacyPhysicalPins(System.Collections.Generic.List<IDisposable> resources,
+            internal LegacyPhysicalPins(ApplicationShortcuts manager, System.Collections.Generic.List<string> pinnedPaths, System.Collections.Generic.List<IDisposable> resources,
                 System.Collections.Generic.List<FileStream> streams, System.Collections.Generic.List<string> native,
                 System.Collections.Generic.List<string> digests)
-            { held = resources; files = streams; origins = native; hashes = digests; }
+            { owner = manager; paths = pinnedPaths; held = resources; files = streams; origins = native; hashes = digests; }
+            internal T WithPins<T>(Func<T> body) where T : class { lock (gate) { return held == null ? null : body(); } }
+            internal bool MatchesOwner(ApplicationShortcuts manager)
+            { return String.Equals(owner.root, manager.root, StringComparison.OrdinalIgnoreCase) && String.Equals(owner.menu, manager.menu, StringComparison.OrdinalIgnoreCase) && String.Equals(owner.startup, manager.startup, StringComparison.OrdinalIgnoreCase); }
+            internal bool MatchesPlan(System.Collections.Generic.Dictionary<string, string> expected)
+            {
+                if (held == null || paths.Count != expected.Count) return false;
+                for (int i = 0; i < paths.Count; i++) { string hash; if (!expected.TryGetValue(paths[i], out hash) || hash != hashes[i]) return false; }
+                return true;
+            }
+            internal byte[] ReadDocument(string path)
+            {
+                for (int i = 0; i < paths.Count; i++) if (String.Equals(paths[i], path, StringComparison.OrdinalIgnoreCase)) { files[i].Position = 0; return ReadLegacyReferenceBytes(files[i]); }
+                throw new IOException("Legacy physical document is not pinned.");
+            }
             public bool MutationAllowed { get { return false; } }
             public bool FullRollback { get { return false; } }
             public bool InstallSucceeded { get { return false; } }
@@ -764,7 +1044,7 @@ namespace ProGo
                     var stream = OpenLegacyRestartRead(path); held.Add(stream); files.Add(stream);
                     origins.Add(LegacyOrigin(stream.SafeFileHandle)); hashes.Add(PhysicalPinHash(stream));
                 }
-                var result = new LegacyPhysicalPins(held, files, origins, hashes);
+                var result = new LegacyPhysicalPins(this, paths, held, files, origins, hashes);
                 if (!result.VerifyPinned(token)) return null;
                 transferred = true; return result;
             } catch (OperationCanceledException) { throw; } catch { return null; }

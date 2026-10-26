@@ -14,7 +14,7 @@ class MutationThreatContractTests(unittest.TestCase):
   for t in ('metadata-can-change-while-object-and-bytes-stay-pinned','-not $physical.VerifyPinned($token)','Get-FileHash -LiteralPath $runtime'):
    self.assertIn(t,self.fixture)
  def test_aba_and_no_authority_assertions(self):
-  for t in ('restored-current-origin-does-not-prove-no-ABA-history','-not $physical.MutationAllowed','-not $original.MutationAllowed','mutation-protocol BLOCKED_MODEL'):
+  for t in ('restored-current-origin-does-not-prove-no-ABA-history','-not $physical.MutationAllowed','-not $original.MutationAllowed','global-freeze NOT_CLAIMED'):
    self.assertIn(t,self.fixture)
  def test_restore_before_dispose_and_cleanup(self):
   self.assertLess(self.fixture.index('if ($touched -and $null -ne $physical)'),self.fixture.index('$physical.Dispose()'))
