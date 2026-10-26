@@ -1338,6 +1338,87 @@ function Test-ProGoInstallerLegacySourceReference($Backup, $Reference,
         return (((Get-ProGoInstallerLegacySourceContext $Backup) | ConvertTo-Json -Depth 8 -Compress) -ceq $canonical)
     } catch { return $false } finally { if ($null -ne $source) { $source.Dispose() } }
 }
+# Seal is a separate prerequisite, not an installer-flow mutation or permission to restore.
+function Complete-ProGoInstallerLegacyRestartSeal($Backup, $Reference,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $source = $null
+    try {
+        $CancellationToken.ThrowIfCancellationRequested()
+        if (-not (Test-ProGoInstallerLegacySourceReference $Backup $Reference $ProgramsDirectory $StartupDirectory)) { throw 'Legacy restart reference is not verified.' }
+        $context = Get-ProGoInstallerLegacySourceContext $Backup
+        $canonical = $context | ConvertTo-Json -Depth 8 -Compress
+        $document = Get-ProGoInstallerLegacyReferenceDocument $context $Reference.Source
+        $manager = New-Object ProGo.ApplicationShortcuts($Backup.InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+        $source = $manager.CaptureLegacyRollbackSource($CancellationToken)
+        [guid]$operation = [Guid]::ParseExact($context.Operation,'N')
+        if (-not $manager.PersistLegacyRestartSeal($source,$Reference,$operation,$context.SnapshotHash,
+            (New-Object Text.UTF8Encoding($false)).GetBytes($document),$CancellationToken)) { throw 'Legacy restart seal is not durable.' }
+        if (((Get-ProGoInstallerLegacySourceContext $Backup) | ConvertTo-Json -Depth 8 -Compress) -cne $canonical) { throw 'Legacy restart context changed.' }
+    } finally { if ($null -ne $source) { $source.Dispose() } }
+}
+function Read-ProGoInstallerLegacyRestartText([string]$Path) {
+    $stream = $null; $reader = $null
+    try {
+        $stream = New-Object IO.FileStream -ArgumentList @($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        if ($stream.Length -lt 1 -or $stream.Length -gt 1048576) { throw 'Legacy restart document size is invalid.' }
+        $reader = New-Object IO.StreamReader -ArgumentList @($stream,(New-Object Text.UTF8Encoding($false,$true)),$false,4096,$true)
+        return $reader.ReadToEnd()
+    } finally { if ($null -ne $reader) { $reader.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }
+}
+# No Backup, proof, expected hash or location from a previous process is accepted.
+function Restore-ProGoInstallerLegacyReferenceEvidence([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    try {
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $journal = [IO.Path]::GetFileName($Directory)
+        if ($journal -cnotmatch '^installer-journal-[a-f0-9]{32}$' -or
+            (Assert-ProGoInstallerStagePath $parent $journal) -cne $Directory) { return $null }
+        [guid]$operation = [Guid]::ParseExact($journal.Substring('installer-journal-'.Length),'N')
+        $referencePath = Assert-ProGoInstallerStagePath $parent ('installer-legacy-reference-' + $operation.ToString('N') + '.json')
+        $savedText = Read-ProGoInstallerLegacyRestartText $referencePath
+        $saved = $savedText | ConvertFrom-Json -ErrorAction Stop
+        # These are untrusted candidates, independently checked against actual snapshot/admissions/runtime below.
+        if ($saved.Context.Snapshot -cnotmatch '^installer-[a-f0-9]{32}$') { return $null }
+        $snapshot = Assert-ProGoInstallerStagePath $parent $saved.Context.Snapshot
+        $manifest = Assert-ProGoInstallerStagePath $snapshot 'installer-snapshot.json'
+        $snapshotHash = (Get-FileHash -LiteralPath $manifest).Hash
+        $first = Read-ProGoInstallerLegacyRestartText (Assert-ProGoInstallerStagePath $Directory 'admit-000000.json') | ConvertFrom-Json -ErrorAction Stop
+        $inventory = $first.Inventory | ConvertFrom-Json -ErrorAction Stop
+        if ($inventory.Schema -ne 1 -or $inventory.SnapshotHash -cne $snapshotHash) { return $null }
+        $entries = @($inventory.Files)
+        $allowed = @(Get-ProGoInstallerPayloadNames | Where-Object { $_ -notin @('README.md','README.ru.md','LICENSE.md') })
+        if ($entries.Count -ne $allowed.Count -or @(Get-ChildItem -LiteralPath $Directory -Force).Count -ne $allowed.Count) { return $null }
+        # Validate untrusted leaf names BEFORE snapshot/runtime helpers can open any candidate file.
+        $seen = @{}
+        foreach ($entry in $entries) {
+            if ($entry.Relative -cnotin $allowed -or $seen.ContainsKey($entry.Relative) -or $entry.Exists -isnot [bool] -or
+                $entry.NewHash -cnotmatch '^[A-F0-9]{64}$' -or ($entry.Exists -and $entry.Hash -cnotmatch '^[A-F0-9]{64}$') -or
+                (-not $entry.Exists -and $null -ne $entry.Hash)) { return $null }
+            $seen[$entry.Relative] = $true
+        }
+        $records = New-Object 'System.Collections.Generic.List[object]'
+        for ($index = 0; $index -lt $allowed.Count; $index++) {
+            $name = 'admit-{0:D6}.json' -f $index
+            $text = Read-ProGoInstallerLegacyRestartText (Assert-ProGoInstallerStagePath $Directory $name)
+            $records.Add([pscustomobject]@{ Name = $name; Text = $text })
+        }
+        $backup = [pscustomobject]@{ InstallDirectory = $InstallDirectory; Directory = $snapshot; ManifestHash = $snapshotHash; Entries = $entries;
+            Journal = [pscustomobject]@{ Directory = $Directory; InstallDirectory = $InstallDirectory; Inventory = $first.Inventory; Records = $records } }
+        $context = Get-ProGoInstallerLegacySourceContext $backup
+        $canonical = $context | ConvertTo-Json -Depth 8 -Compress
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+        $proof = $manager.RehydrateLegacySource($operation,$snapshotHash)
+        if ($null -eq $proof) { return $null }
+        $document = Get-ProGoInstallerLegacyReferenceDocument $context $proof
+        if ($document -cne $savedText) { return $null }
+        $reference = $manager.RehydrateLegacyJournalReference($proof,$operation,$snapshotHash,(New-Object Text.UTF8Encoding($false)).GetBytes($document))
+        if ($null -eq $reference -or ((Get-ProGoInstallerLegacySourceContext $backup) | ConvertTo-Json -Depth 8 -Compress) -cne $canonical) { return $null }
+        return $reference
+    } catch { return $null }
+}
 function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
     if ($null -eq $Backup.PSObject.Properties['Journal']) {
         $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)

@@ -518,6 +518,104 @@ namespace ProGo
             } catch { return false; }
         }
 
+        private string LegacyRestartSealPath(Guid operation)
+        {
+            if (operation == Guid.Empty) throw new IOException("Legacy restart operation is missing.");
+            return Path.Combine(root, "backups", "installer-legacy-seal-" + operation.ToString("N") + ".bin");
+        }
+        private static byte[] LegacyRestartSealDocument(Guid operation, string snapshot,
+            LegacyJournalReferenceEvidence reference, string sealOrigin)
+        {
+            var source = reference.Source;
+            return Encoding.ASCII.GetBytes("PROGO-LEGACY-SEAL-1\n" + operation.ToString("N") + "\n" + snapshot + "\n" +
+                source.InstallIdentity + "\n" + source.LocationIdentity + "\n" + source.OriginIdentity + "\n" + source.Hash + "\n" +
+                source.StorageOrigin + "\n" + source.DocumentHash + "\n" + reference.Origin + "\n" + reference.Hash + "\n" + sealOrigin + "\n");
+        }
+        public bool PersistLegacyRestartSeal(LegacyRollbackSource source, LegacyJournalReferenceEvidence reference,
+            Guid operation, string snapshot, byte[] document, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!VerifyLegacyJournalReference(source, reference, operation, snapshot, document))
+                throw new IOException("Legacy restart seal requires verified reference.");
+            using (var rootPin = PinLegacySourceDirectory(root))
+            using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups"))) {
+                string path = LegacyRestartSealPath(operation); CheckLocation(path);
+                using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                    string origin = LegacyOrigin(stream.SafeFileHandle);
+                    byte[] bytes = LegacyRestartSealDocument(operation, snapshot, reference, origin);
+                    stream.Write(bytes, 0, bytes.Length); stream.Flush(true); stream.Position = 0;
+                    if (!Equal(bytes, ReadLegacyReferenceBytes(stream)) || origin != LegacyOrigin(stream.SafeFileHandle))
+                        throw new IOException("Legacy restart seal readback failed.");
+                    CheckLocation(path);
+                    using (var current = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                        if (origin != LegacyOrigin(current.SafeFileHandle) || !Equal(bytes, ReadLegacyReferenceBytes(current)))
+                            throw new IOException("Legacy restart seal publication changed.");
+                    }
+                    if (!VerifyLegacyJournalReference(source, reference, operation, snapshot, document))
+                        throw new IOException("Legacy restart evidence changed.");
+                    token.ThrowIfCancellationRequested(); return true;
+                }
+            }
+        }
+        // Open the final leaf itself, never follow a leaf reparse point during restart verification.
+        private static FileStream OpenLegacyRestartRead(string path)
+        {
+            CheckLocation(path);
+            var handle = OpenLegacyForDisposition(path, 0x80000000u, 1, IntPtr.Zero, 3, 0x00200000u, IntPtr.Zero);
+            try {
+                if (handle.IsInvalid) throw new IOException("Legacy restart file is unavailable.");
+                LegacyOrigin(handle); // rejects directory/reparse object before reading
+                return new FileStream(handle, FileAccess.Read);
+            } catch { handle.Dispose(); throw; }
+        }
+        // Rebuild from independently observed owned original/source, not serialized identity claims.
+        public LegacyDurableSourceEvidence RehydrateLegacySource(Guid operation, string verifiedSnapshot)
+        {
+            try {
+                if (operation == Guid.Empty || !LegacySourceHash(verifiedSnapshot)) return null;
+                using (var source = CaptureLegacyRollbackSource(CancellationToken.None)) {
+                    if (source == null) return null;
+                    using (var rootPin = PinLegacySourceDirectory(root))
+                    using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups"))) {
+                        string path = LegacySourcePath(operation); CheckLocation(path);
+                        using (var stream = OpenLegacyRestartRead(path)) {
+                            string storage = LegacyOrigin(stream.SafeFileHandle);
+                            byte[] bytes = source.CopyBytes();
+                            byte[] expected = LegacySourceDocument(operation, verifiedSnapshot, source.InstallIdentity,
+                                source.LocationIdentity, source.OriginIdentity, source.Hash, storage, bytes);
+                            if (!Equal(expected, ReadLegacySourceDocument(stream))) return null;
+                            var proof = new LegacyDurableSourceEvidence(source, operation, verifiedSnapshot, storage, expected);
+                            return VerifyLegacySourceForReference(source, proof, operation, verifiedSnapshot) ? proof : null;
+                        }
+                    }
+                }
+            } catch { return null; }
+        }
+        public LegacyJournalReferenceEvidence RehydrateLegacyJournalReference(LegacyDurableSourceEvidence proof,
+            Guid operation, string verifiedSnapshot, byte[] expectedDocument)
+        {
+            try {
+                if (expectedDocument == null || expectedDocument.Length < 1 || expectedDocument.Length > 1048576) return null;
+                using (var source = CaptureLegacyRollbackSource(CancellationToken.None)) {
+                    if (!VerifyLegacySourceForReference(source, proof, operation, verifiedSnapshot)) return null;
+                    using (var rootPin = PinLegacySourceDirectory(root))
+                    using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups"))) {
+                        string referencePath = LegacyReferencePath(operation), sealPath = LegacyRestartSealPath(operation);
+                        CheckLocation(referencePath); CheckLocation(sealPath);
+                        using (var stream = OpenLegacyRestartRead(referencePath))
+                        using (var seal = OpenLegacyRestartRead(sealPath)) {
+                            if (!Equal(expectedDocument, ReadLegacyReferenceBytes(stream))) return null;
+                            var reference = new LegacyJournalReferenceEvidence(proof, LegacyOrigin(stream.SafeFileHandle), expectedDocument);
+                            byte[] expectedSeal = LegacyRestartSealDocument(operation, verifiedSnapshot, reference, LegacyOrigin(seal.SafeFileHandle));
+                            if (!Equal(expectedSeal, ReadLegacyReferenceBytes(seal)) ||
+                                !VerifyLegacyJournalReference(source, reference, operation, verifiedSnapshot, expectedDocument)) return null;
+                            return reference;
+                        }
+                    }
+                }
+            } catch { return null; }
+        }
+
         internal sealed class LegacyObservation
         {
             internal byte[] Bytes;

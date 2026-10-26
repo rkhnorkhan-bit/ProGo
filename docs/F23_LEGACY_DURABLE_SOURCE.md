@@ -1,3 +1,70 @@
+## CURRENT sealed restart rehydration — original-present phase only
+
+Acceptance: after loss of prior process memory, rebuild immutable LegacySource/reference evidence from the
+saved journal and actual files, rechecking operation, snapshot/material, complete admissions, runtime,
+independent trusted locations, original/source/reference native volume-index-creation origins and hashes.
+No caller Backup/proof/hash input to restart reader. Missing/partial/tampered/foreign/replaced/reparse states
+return null, preserve all files and grant no mutation/FullRollback/InstallSucceeded/Launch authority.
+This stage deliberately requires the original still present and semantically owned. If it was deleted,
+Capture returns no proof and restart refuses; post-delete recovery needs a separately verified admission.
+
+Independent anchor gap in CI714: reference native origin existed only in the in-memory witness. New explicit
+Complete-ProGoInstallerLegacyRestartSeal validates actual live context/native witness then writes own fixed
+backups/installer-legacy-seal-GUID.bin with CreateNew, WriteThrough/Flush(true), same-handle + independent-path
+readback and final context/token checks. Seal canonical bytes include operation/snapshot/install/location,
+original origin/hash, source storage origin/document hash, reference native origin/document hash AND seal's
+own actual native origin. Same-byte copied/replaced reference or seal therefore differs from persisted
+native-object binding. No key/credential/privilege or cryptographic-authentication claim introduced.
+
+Restore-ProGoInstallerLegacyReferenceEvidence accepts only trusted journal/install/Programs/Startup paths.
+It bounds strict UTF8 metadata reads to1MiB, treats saved Snapshot/inventory as untrusted candidates, scopes
+snapshot GUID under own backups, hashes actual manifest, whitelists full inventory names/types/hash formats
+BEFORE snapshot/runtime helpers may read candidate leaves, rebuilds every fixed admission from disk and
+reuses full canonical context verification. No saved flag or path supplies mutation authority. Native source
+rehydration recomputes the whole source envelope from actual STILL PRESENT owned original bytes/native
+origin, actual source storage native origin and independently verified snapshot; no source metadata claims
+are used to mint an unchecked proof. Expected reference JSON comes from this proof and fresh verified context,
+must exactly match actual saved bytes; native rehydration then recomputes seal from actual reference/seal
+native handles and expected hashes. Finally repeat journal/snapshot/runtime context before returning witness.
+
+New native final-leaf reads use existing OpenLegacyForDisposition with GENERIC_READ/share-read/
+OPEN_REPARSE_POINT and validate file attributes/native origin before FileStream. This avoids following a leaf
+link in a check/open window; non-reparse directory pins also retained. No new P/Invoke/security rights or
+SSH flags. Every original native/installer body remains unchanged; new helpers are additive and not invoked
+by normal installer/migration/failure/terminal paths. Getters/old33/classifier26/gates/deadlines unchanged.
+Reference20 and pre-existing witness API remain valid; old unsealed references are NOT silently upgraded on
+restart. Partial/unclaimed seal is never repaired/deleted/reused; explicit new seal publication requires a
+currently verified live witness and independent context. No intent replay or default install mutation added.
+
+Trust limit: evidence checks integrity/identity/ownership in scoped app files plus actual owned original,
+not secret-backed authentication against an actor coherently rewriting the entire evidence graph/current
+owned inputs. No stronger adversary resistance or historical journal-record file IDs are claimed. Journal
+records are verified by canonical content/hashes/scope, native origin checks apply original/source/reference/
+seal. This is read-only evidence reconstruction, never an authorization to restore. Any future mutation must
+revalidate under its own ownership/admission contract. The original-present boundary prevents manufacturing
+post-delete ownership from self-declared serialized original bytes; that dependency remains OPEN.
+
+Restart26 cases prepared: complete, no-seal, partial-seal, seal-tampered, seal-replaced-same-bytes, foreign-seal,
+reference-tampered, reference-replaced-same-bytes, source-tampered, source-replaced-same-bytes,
+original-replaced-same-bytes, journal-tampered, snapshot-tampered, runtime-tampered, wrong-location,
+operation-claim, snapshot-claim, location-claim, hash-claim, extra-record, missing-reference, missing-source,
+missing-original, reparse-seal, cancel-seal, private-entry-claim. Mutations happen in new own GUID fixtures;
+identical-byte/copied-creation replacements retain old native objects to prevent index reuse. Real own seal
+junction targets a retained own directory; no live shortcut or foreign resource touched. All recovery calls
+receive only paths after clearing old Backup/reference/manager variables, check readonly inventories/private
+bytes and exclusive reopen. Positive case ALSO invokes actual new powershell.exe/CLR with only own case path,
+no parent witness objects/handles; bounded20s exit +5s owned cleanup/drain, fixed safe marker, no raw args/
+paths/PIDs or child stderr printed. New process has no prior proof state. Other negatives are fresh disk
+reconstruction calls in the fixture process, NOT separately claimed process terminations.
+No crash/power-loss induced; prefix mutation is only partial-input refusal, actual power-loss NOT_RUN.
+
+Test wiring once after JournalReference20 within existing DurableInput Recovery suite before final PASS;
+no new job/dispatch/duplicate old suite. New static6 + existing42 =48 localPythonPASS; these are textual/layout/
+lexical checks, NOT C#/PS compilation or Windows execution. New Windows Restart26 NOT_RUN until exact new CI.
+Next gates: new full CI, then separate pre-delete integration/admission and post-delete rehydration/owned
+Legacy restore/crash settlement/error result/full auxiliary outcome/runtime recovery/retention; all F23/F31/
+package/updater/PGA04/owner/signing/UI/commercial requirements retained. No whole F23/production PASS.
+
 ## CURRENT trusted Legacy journal reference / live-session prerequisite
 
 Acceptance: reference can be returned and revalidated only for an actual verified snapshot, complete canonical

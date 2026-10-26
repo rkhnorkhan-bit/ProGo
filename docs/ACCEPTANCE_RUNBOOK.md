@@ -1,3 +1,51 @@
+## CURRENT CI714 independently verified; sealed Legacy restart evidence prerequisite
+
+CI714 full5 logs independently read: source99b6267b36c814dac4f078ea73af93d8790c2cfb,
+merge1379b8263ee485214a9423c07973b3aa400d21a6, run40253161658. Foundation121349246413/665 PASS27;
+Recovery121349246616/318 PASS6 incl JournalReference20/DurableInput12, all33 PASS. Core121349246868/15441
+PASS classifier26/SSHnative5/Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91,
+Python68PASS2SKIP; Ubuntu121349246661/612PASS; aggregate121356328779/173PASS identical4SHA.
+Runner ZIP677170 SHA2564def2dddbfd3d88ce6da7912c77ce43a02ac4068ee42a25c5d26934784bd2f52; uploads skipped,
+no delivery/ownerPC acceptance. Startup NONREPRO only, root UNKNOWN. PR88 exactsource/open, cleancheckpoint
+ dc67dea1148daf521a0139a104b4a3819225c7bf, activeCI0/sole writer before changes; old worktrees preserved.
+
+Chosen bounded slice: independent durable restart-seal + read-only rehydration from actual journal/snapshot,
+without old Backup/proof/hash objects. Requires STILL PRESENT owned Legacy original; missing original/no seal
+fail closed. No post-delete restore claim. Seal verifies own native origin, reference/source/original identities,
+canonical context/hashes; CreateNew/Flush/readback, never repair/reuse incomplete artifacts. Native restart
+reads use existing OPEN_REPARSE_POINT handle API (no new P/Invoke/privilege) to reject linked final leaves.
+Serialized candidate inventory is whitelisted BEFORE snapshot/runtime file opens. Full contract/cases/limits
+maintained in F23_LEGACY_DURABLE_SOURCE.md. New Restart26 includes 1 actual fresh PowerShell process case;
+Windows execution/compilation NOT_RUN locally, no real power-loss experiment. Local48PythonPASS, static only.
+Wired once inside existing DurableInput Recovery suite after JournalReference20: all33/classifier26/strict4
+aggregate/workflow/SSH5000/nativevalidation unchanged. New child has separate bounded20s test wait, no existing
+timeout changed, only owned kill/join/drain; no retries/sleeps/privileges/env changes.
+Next sole automatic CI full5logs/exactmerge/Restart26/all33/Core/strictaggregate; pre-delete integration,
+post-deletion admission/rehydration/restore/error settlement/fullrollback/retention remain separate OPEN gates.
+UNKNOWN/BLOCKED_TRANSFER/no retry/full31/nested55/weights/delta0 retained; WCT/SeDebug forbidden/pending.
+No live install/services/network/security/credentials/VPS/tunnel/release/uploads.
+
+## CURRENT CI714 trusted Legacy reference checkpoint; new Windows20 NOT_RUN
+
+Published source99b6267b36c814dac4f078ea73af93d8790c2cfb/treec9eecf54426eb63a1e0953ebe234865f25eb5a41,
+parent7defd1a0f943f81ae0d95586c9bdd17f28c83219. Reviewed localf5ae468534e02db64a8ef7378e21b61db55c558c
+has identical tree; prior clean56fb5c06936e4a0b60f6e836707c6cc71e71ed27 preserved. One expected-HEAD guarded
+PR88 source update succeeded, fetch joined exit0, exact commit/parent/tree checked in separate own checkpoint.
+One automatic pull_request CI714: https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40253161658 , in_progress;
+Foundation121349246413/Recovery121349246616/Ubuntu121349246661/Core121349246868 observed in_progress.
+No dispatch/rerun/duplicate/second push. New C#/PS/JournalReference20 Windows execution NOT_RUN until full logs.
+Local42PythonPASS; additive reverse parity of every original native/installer body, old33/classifier26/strict4
+aggregate/SSH5000/flags/environment/workflow unchanged; signatures/layout/JSON/diff/secrets/public412/0 PASS.
+Production prerequisite only: actual verified snapshot and canonical journal -> new source + immutable native
+reference origin/hash witness, CreateNew/Flush/readback, independent original/source/reference verification.
+Existing deletion/migration/failure/terminal routes unchanged. No restore, restart import, FullRollback/success
+or Launch authority. Durable anchor rehydration and pre-delete admission/integration remain separate OPEN gates.
+CI713 exactmergeed94a3dbcc38d7d2aeccff9261212f507a765412 full5PASS remains historical baseline, not transferred
+onto new tests. Getter fix scoped confirmed; old startup UNKNOWN, all other UNKNOWN incidents/BLOCKED_TRANSFER/
+no retry/fullscope/weights/delta0 retained. No WCT/SeDebug/privileges/live/system/credential/network changes.
+Next SAME CI714 full5 final logs/exact merge/new20/all33/classifier26/Core/strict4aggregate; do not wait here
+or start another stage. This checkpoint local only, no second CI publication.
+
 ## CURRENT CI713 verified; trusted Legacy journal reference prerequisite (new Windows NOT_RUN)
 
 CI713 all5 full logs independently read, source7defd1a0f943f81ae0d95586c9bdd17f28c83219,

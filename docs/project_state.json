@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "7defd1a0f943f81ae0d95586c9bdd17f28c83219",
-    "tree": "0ed5ea31262fd878a3f97edb2ef0f77f341d6906",
-    "run_id": 40249440586,
-    "run_number": 713,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40249440586",
+    "source": "99b6267b36c814dac4f078ea73af93d8790c2cfb",
+    "tree": "c9eecf54426eb63a1e0953ebe234865f25eb5a41",
+    "run_id": 40253161658,
+    "run_number": 714,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40253161658",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "ed94a3dbcc38d7d2aeccff9261212f507a765412",
-    "new_Windows_classifier26": "PASS, full logs independently read",
+    "tested_merge": "1379b8263ee485214a9423c07973b3aa400d21a6",
+    "JournalReference20": "PASS, full logs independently read",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "7defd1a0f943f81ae0d95586c9bdd17f28c83219",
-    "tree": "0ed5ea31262fd878a3f97edb2ef0f77f341d6906",
-    "prior_checkpoint": "56fb5c06936e4a0b60f6e836707c6cc71e71ed27",
-    "stage": "Trusted Legacy source journal-reference prerequisite; no migration/delete integration",
-    "status": "CI713 independently fullPASS; new Windows20 NOT_RUN; local42PythonPASS; startupUNKNOWN/BLOCKED_TRANSFER",
-    "next": "One guarded push/automatic CI; exact full5logs/new20/all33/Core/classifier26/strictaggregate; then separate anchor/pre-delete integration dependency",
+    "source": "99b6267b36c814dac4f078ea73af93d8790c2cfb",
+    "tree": "c9eecf54426eb63a1e0953ebe234865f25eb5a41",
+    "prior_checkpoint": "dc67dea1148daf521a0139a104b4a3819225c7bf",
+    "stage": "Sealed Legacy restart evidence original-present prerequisite",
+    "status": "CI714 fullPASS confirmed; new Windows26 NOT_RUN; local48PythonPASS; startupUNKNOWN/BLOCKED_TRANSFER",
+    "next": "One automatic CI full5logs/exactmerge/Restart26/all33/classifier26/Core/strictaggregate; no predelete/restore integration in same stage",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All32 suites/4aggregate/deadlines/runtime untouched",
@@ -23284,6 +23284,37 @@
       "owned Legacy restore/crash settlement/error result",
       "full auxiliary/runtime recovery/retention",
       "all existing packaging/installer/PGA04/updater/owner/commercial gates"
+    ],
+    "score_delta": 0
+  },
+  "ci714_verified_history": {
+    "source": "99b6267b36c814dac4f078ea73af93d8790c2cfb",
+    "tested_merge": "1379b8263ee485214a9423c07973b3aa400d21a6",
+    "run_id": 40253161658,
+    "status": "completed",
+    "conclusion": "success",
+    "full5_logs": "independently read",
+    "installer33": "Foundation27/Recovery6 incl JournalReference20/DurableInput12 PASS",
+    "Core": "classifier26/SSHnative5/Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4816/Portable91; Python68PASS2SKIP",
+    "aggregate": "PASS all4 exactSHA",
+    "ZIP": "runner-only677170 SHA2564def2dddbfd3d88ce6da7912c77ce43a02ac4068ee42a25c5d26934784bd2f52; upload skipped; no PC acceptance",
+    "startup": "UNKNOWN/nonreproduction only"
+  },
+  "legacy_restart_prerequisite": {
+    "parent_source": "99b6267b36c814dac4f078ea73af93d8790c2cfb",
+    "prior_checkpoint": "dc67dea1148daf521a0139a104b4a3819225c7bf",
+    "boundary": "sealed original-present read-only rehydration, no caller witness/hash input",
+    "anchor": "CreateNew self-native-origin seal binds actual reference/source/original/context; no repair/import without independent checks",
+    "private_inventory": "whitelist before runtime/snapshot leaf reads",
+    "Windows_Restart26": "NOT_RUN; includes one actual new-process case prepared",
+    "power_loss": "NOT_RUN, no crash claim",
+    "local_static6_plus_existing42": "48 PASS, not compilation/native",
+    "wiring": "once nested after JournalReference20 in existing DurableInput; all33/classifier26/strict4 unchanged",
+    "remaining": [
+      "pre-delete integration/admission",
+      "post-delete rehydration/owned restore",
+      "full auxiliary/error settlement/runtime recovery/retention",
+      "all existing installer/package/owner/commercial gates"
     ],
     "score_delta": 0
   }
