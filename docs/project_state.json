@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "99b6267b36c814dac4f078ea73af93d8790c2cfb",
-    "tree": "c9eecf54426eb63a1e0953ebe234865f25eb5a41",
-    "run_id": 40253161658,
-    "run_number": 714,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40253161658",
+    "source": "c51f9f6cfc0dd2ab15592eb580e8817e71abaf98",
+    "tree": "deac2e3160ee0dbed1a86a7f34145f99a58dd4d5",
+    "run_id": 40257479071,
+    "run_number": 715,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40257479071",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "1379b8263ee485214a9423c07973b3aa400d21a6",
-    "JournalReference20": "PASS, full logs independently read",
+    "tested_merge": "6ba2506a0085be3c722c54f0dad5bad31c40746a",
+    "Windows_Restart26": "PASS full logs incl actual fresh-process1; power-lossNOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "99b6267b36c814dac4f078ea73af93d8790c2cfb",
-    "tree": "c9eecf54426eb63a1e0953ebe234865f25eb5a41",
-    "prior_checkpoint": "dc67dea1148daf521a0139a104b4a3819225c7bf",
-    "stage": "Sealed Legacy restart evidence original-present prerequisite",
-    "status": "CI714 fullPASS confirmed; new Windows26 NOT_RUN; local48PythonPASS; startupUNKNOWN/BLOCKED_TRANSFER",
-    "next": "One automatic CI full5logs/exactmerge/Restart26/all33/classifier26/Core/strictaggregate; no predelete/restore integration in same stage",
+    "source": "c51f9f6cfc0dd2ab15592eb580e8817e71abaf98",
+    "tree": "deac2e3160ee0dbed1a86a7f34145f99a58dd4d5",
+    "prior_checkpoint": "e7a4d2576cc49b20162b9cc586a05207a9217a63",
+    "stage": "Legacy durable pre-delete admission prerequisite, no actual mutation",
+    "status": "CI715 fullPASS confirmed; new Windows23/compileNOT_RUN; local54PythonPASS; startupUNKNOWN/BLOCKED_TRANSFER",
+    "next": "One automatic CI full5logs/exactmerge/PreDelete23/all33/classifier26/Core/strictaggregate; then separate owned mutation/post-delete dependency",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All32 suites/4aggregate/deadlines/runtime untouched",
@@ -23315,6 +23315,39 @@
       "post-delete rehydration/owned restore",
       "full auxiliary/error settlement/runtime recovery/retention",
       "all existing installer/package/owner/commercial gates"
+    ],
+    "score_delta": 0
+  },
+  "ci715_verified_history": {
+    "source": "c51f9f6cfc0dd2ab15592eb580e8817e71abaf98",
+    "tested_merge": "6ba2506a0085be3c722c54f0dad5bad31c40746a",
+    "run_id": 40257479071,
+    "status": "completed",
+    "conclusion": "success",
+    "full5_logs": "independently read",
+    "Recovery6_Foundation27": "PASS33; Restart26 incl actual fresh-process1/power-lossNOT_RUN; JournalReference20/DurableInput12PASS",
+    "Core": "classifier26/SSHnative5/Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4816/Portable91; Python74PASS2SKIP",
+    "aggregate": "121370219827 PASS all4exactSHA",
+    "ZIP": "runner-only679882 SHA2565173b6e629a2ebeec62dffc4e79bf654830e0bb05aae68931dac87d76ab30a3f; upload skipped; no PC acceptance",
+    "startup": "UNKNOWN, nonreproduction only"
+  },
+  "legacy_predelete_prerequisite": {
+    "parent_source": "c51f9f6cfc0dd2ab15592eb580e8817e71abaf98",
+    "prior_checkpoint": "e7a4d2576cc49b20162b9cc586a05207a9217a63",
+    "boundary": "durable verified pre-delete INTENT + original-present readonly classification, no delete/integration",
+    "states": [
+      "not-applied",
+      "blocked"
+    ],
+    "authority": "never mutation/replay/restore/success/Launch",
+    "binding": "actual snapshot/journal/context/source/ref + seal origin/hash + admission own native origin; canonical recomputation, no serialized claims authority",
+    "Windows_PreDelete23": "NOT_RUN; actual fresh-process state case prepared",
+    "local_newstatic6_plus_existing48": "54 PASS, not native compilation",
+    "remaining": [
+      "owned deletion/admission pinning/integration",
+      "post-delete trusted readonly rehydration/physical outcome",
+      "owned restore/full auxiliary/error settlement/runtime recovery/retention",
+      "all existing project scope"
     ],
     "score_delta": 0
   }

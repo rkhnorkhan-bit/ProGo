@@ -616,6 +616,76 @@ namespace ProGo
             } catch { return null; }
         }
 
+        private string LegacyPreDeletePath(Guid operation)
+        {
+            if (operation == Guid.Empty) throw new IOException("Legacy admission operation is missing.");
+            return Path.Combine(root, "backups", "installer-legacy-admission-" + operation.ToString("N") + ".bin");
+        }
+        private static byte[] LegacyPreDeleteDocument(Guid operation, string snapshot,
+            LegacyJournalReferenceEvidence reference, string sealOrigin, byte[] sealBytes, string admissionOrigin)
+        {
+            return Encoding.ASCII.GetBytes("PROGO-LEGACY-PREDELETE-1\n" +
+                Encoding.ASCII.GetString(LegacyRestartSealDocument(operation, snapshot, reference, sealOrigin)) +
+                Digest(sealBytes) + "\n" + admissionOrigin + "\n");
+        }
+        // Durable intent only. No deletion, replay, restore or terminal authority.
+        public bool PersistLegacyPreDeleteAdmission(LegacyJournalReferenceEvidence reference, Guid operation,
+            string verifiedSnapshot, byte[] document, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            if (reference == null) throw new IOException("Legacy admission reference is missing.");
+            var currentReference = RehydrateLegacyJournalReference(reference.Source, operation, verifiedSnapshot, document);
+            if (currentReference == null || currentReference.Origin != reference.Origin || currentReference.Hash != reference.Hash)
+                throw new IOException("Legacy admission evidence is not verified.");
+            using (var rootPin = PinLegacySourceDirectory(root))
+            using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups")))
+            using (var seal = OpenLegacyRestartRead(LegacyRestartSealPath(operation))) {
+                string sealOrigin = LegacyOrigin(seal.SafeFileHandle);
+                byte[] sealBytes = ReadLegacyReferenceBytes(seal);
+                if (!Equal(sealBytes, LegacyRestartSealDocument(operation, verifiedSnapshot, reference, sealOrigin)))
+                    throw new IOException("Legacy admission seal changed.");
+                string path = LegacyPreDeletePath(operation); CheckLocation(path); token.ThrowIfCancellationRequested();
+                using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                    string origin = LegacyOrigin(stream.SafeFileHandle);
+                    byte[] expected = LegacyPreDeleteDocument(operation, verifiedSnapshot, reference, sealOrigin, sealBytes, origin);
+                    stream.Write(expected, 0, expected.Length); stream.Flush(true); stream.Position = 0;
+                    if (!Equal(expected, ReadLegacyReferenceBytes(stream)) || origin != LegacyOrigin(stream.SafeFileHandle))
+                        throw new IOException("Legacy admission readback failed.");
+                    CheckLocation(path);
+                    using (var current = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                        if (origin != LegacyOrigin(current.SafeFileHandle) || !Equal(expected, ReadLegacyReferenceBytes(current)))
+                            throw new IOException("Legacy admission publication changed.");
+                    }
+                    currentReference = RehydrateLegacyJournalReference(reference.Source, operation, verifiedSnapshot, document);
+                    if (currentReference == null || currentReference.Origin != reference.Origin || currentReference.Hash != reference.Hash)
+                        throw new IOException("Legacy admission source changed.");
+                    token.ThrowIfCancellationRequested(); return true;
+                }
+            }
+        }
+        public string GetLegacyPreDeleteAdmissionState(LegacyJournalReferenceEvidence reference, Guid operation,
+            string verifiedSnapshot, byte[] document)
+        {
+            try {
+                if (reference == null) return "blocked";
+                var currentReference = RehydrateLegacyJournalReference(reference.Source, operation, verifiedSnapshot, document);
+                if (currentReference == null || currentReference.Origin != reference.Origin || currentReference.Hash != reference.Hash) return "blocked";
+                using (var rootPin = PinLegacySourceDirectory(root))
+                using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups")))
+                using (var seal = OpenLegacyRestartRead(LegacyRestartSealPath(operation)))
+                using (var admission = OpenLegacyRestartRead(LegacyPreDeletePath(operation))) {
+                    string sealOrigin = LegacyOrigin(seal.SafeFileHandle);
+                    byte[] sealBytes = ReadLegacyReferenceBytes(seal);
+                    if (!Equal(sealBytes, LegacyRestartSealDocument(operation, verifiedSnapshot, reference, sealOrigin))) return "blocked";
+                    byte[] expected = LegacyPreDeleteDocument(operation, verifiedSnapshot, reference, sealOrigin, sealBytes, LegacyOrigin(admission.SafeFileHandle));
+                    if (!Equal(expected, ReadLegacyReferenceBytes(admission))) return "blocked";
+                    currentReference = RehydrateLegacyJournalReference(reference.Source, operation, verifiedSnapshot, document);
+                    return currentReference != null && currentReference.Origin == reference.Origin && currentReference.Hash == reference.Hash
+                        ? "not-applied" : "blocked";
+                }
+            } catch { return "blocked"; }
+        }
+
         internal sealed class LegacyObservation
         {
             internal byte[] Bytes;

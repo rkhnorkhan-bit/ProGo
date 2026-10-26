@@ -97,6 +97,7 @@ try {
     }
     & (Join-Path $Root 'tests\InstallerLegacyJournalReferenceTests.ps1')
     & (Join-Path $Root 'tests\InstallerLegacyRestartTests.ps1')
+    & (Join-Path $Root 'tests\InstallerLegacyPreDeleteTests.ps1')
     Write-Host ('Durable input tests PASS: ' + $scenarios.Count)
 } finally {
     if ($null -ne $source) { $source.Dispose() }

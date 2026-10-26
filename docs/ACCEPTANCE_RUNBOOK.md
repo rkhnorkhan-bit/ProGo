@@ -1,3 +1,53 @@
+## CURRENT CI715 full evidence verified; Legacy pre-delete durable admission prerequisite
+
+CI715 full5 final logs independently read: sourcec51f9f6cfc0dd2ab15592eb580e8817e71abaf98,
+merge6ba2506a0085be3c722c54f0dad5bad31c40746a. Ubuntu121362332488/612PASS; Core121362332598/15447PASS
+classifier26/SSHnative5/Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91,
+Python74PASS2SKIP. Foundation121362332625/665PASS27, Recovery121362332656/345PASS6 incl Restart26 actual
+fresh-process1/power-lossNOT_RUN, JournalReference20/DurableInput12; aggregate121370219827/173PASS same4SHA.
+Runner-only ZIP679882 SHA2565173b6e629a2ebeec62dffc4e79bf654830e0bb05aae68931dac87d76ab30a3f, uploads
+skipped, ownerPC/delivery acceptanceNOT_RUN. Startup nonreproduction only/rootUNKNOWN. PR88 exactsource/open,
+cleancheckpointe7a4d2576cc49b20162b9cc586a05207a9217a63/sole writer, activeCI0 before changes.
+
+Nearest required dependency: durable pre-delete admission with original-present read-only state, NOT actual
+delete or post-delete restore. Fresh actual snapshot/journal/sealed source/ref/native identity and hashes
+required before CreateNew/Flush/readback. Admission binds original/source/ref/context + actual seal origin/hash
+and its OWN native origin. State only not-applied (actual original currently verified) or blocked; intent plus
+absence NEVER means applied/restored or mutation/replay permission. No ordinary installer/migration/failure
+route invokes these helpers; all old bodies unchanged. Full contract in F23_LEGACY_DURABLE_SOURCE.md.
+New PreDelete23 prepared includes actual fresh-process state verification1, cancellation/conflict/partial/
+foreign/replaced/reparse and original-absent refusal; Windows/native compilationNOT_RUN locally.
+Local newstatic6+existing48 =54PythonPASS, not Windows evidence. Tests nested once after Restart26 in existing
+DurableInput Recovery suite; all33/classifier26/strict4aggregate/workflow/SSH5000/flags/deadlines preserved.
+Next sole new automatic CI full5logs/exactmerge/PreDelete23/all33/Core/strictaggregate. Only after fullPASS,
+separately scope owned deletion/admission pinning/integration and post-delete read-only trusted rehydration/
+physical outcome/restore/error settlement. No FullRollback, success or Launch authority from this step.
+UNKNOWN/BLOCKED_TRANSFER/no retry/power-lossNOT_RUN/full31/nested55/weights/delta0 preserved. WCT/SeDebug
+forbidden/pending; no live install/services/network/security/credentials/VPS/tunnel/release/uploads.
+
+## CURRENT CI715 sealed Legacy restart checkpoint — Windows Restart26 NOT_RUN
+
+Published sourcec51f9f6cfc0dd2ab15592eb580e8817e71abaf98/treedeac2e3160ee0dbed1a86a7f34145f99a58dd4d5,
+parent99b6267b36c814dac4f078ea73af93d8790c2cfb. Reviewed localde3fb7e9acaca06a07b8ecbb1af58ee2cb9332e9
+has identical tree; prior cleandc67dea1148daf521a0139a104b4a3819225c7bf preserved. Sole expected-HEAD guarded
+PR88 source update succeeded; joined fetch exit0/exact commit/parent/tree verified in separate own checkpoint.
+One automatic pull_request CI715 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40257479071 in_progress:
+Ubuntu121362332488/Core121362332598/Foundation121362332625/Recovery121362332656 observed in_progress.
+No rerun/dispatch/duplicate/second push. New C#/PowerShell/Windows Restart26 execution NOT_RUN until full logs.
+Local48PythonPASS; reverse additive parity preserves every prior native/installer body, old33/classifier26/
+strict4aggregate/workflow/SSH5000/nativevalidation; signatures/JSON/diff/secrets/public414/0 PASS.
+Scope is original-present read-only evidence rehydration, separate durable CreateNew self-native-origin seal,
+actual journal/snapshot/known leaves, native source/reference/seal/original identity/hash verification.
+Restart reader accepts only paths, no old witness/Backup/hash; inventory whitelist before private/runtime
+candidate opens. Prepared positive test uses one actual owned fresh PowerShell/CLR process, not executed here;
+25 negative cases use disk reconstruction after clearing old objects. No real power-loss experiment claimed.
+No missing-seal repair, pre-delete integration, post-delete restore, FullRollback or Launch permission.
+CI714 exactmerge1379b8263ee485214a9423c07973b3aa400d21a6 full5PASS retained as historical baseline only.
+Startup UNKNOWN/nonreproduction only; all UNKNOWN incidents/BLOCKED_TRANSFER/no retry/fullscope/weights/delta0
+retained. WCT/SeDebug forbidden/pending; no live/system/network/credentials/services/VPS/tunnel/release/uploads.
+Next SAME CI715 full5 final logs/exactmerge/Restart26/all33/classifier26/Core/strictaggregate, then separately
+scope pre-delete admission and post-delete evidence/restore dependencies. Local checkpoint only; no second CI.
+
 ## CURRENT CI714 independently verified; sealed Legacy restart evidence prerequisite
 
 CI714 full5 logs independently read: source99b6267b36c814dac4f078ea73af93d8790c2cfb,

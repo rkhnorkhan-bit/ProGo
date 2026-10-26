@@ -1419,6 +1419,46 @@ function Restore-ProGoInstallerLegacyReferenceEvidence([string]$Directory, [stri
         return $reference
     } catch { return $null }
 }
+# Pre-delete admission is intent, never evidence that deletion happened or permission to replay it.
+function New-ProGoInstallerLegacyPreDeleteAdmission($Backup,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $CancellationToken.ThrowIfCancellationRequested()
+    $context = Get-ProGoInstallerLegacySourceContext $Backup
+    $canonical = $context | ConvertTo-Json -Depth 8 -Compress
+    $reference = Restore-ProGoInstallerLegacyReferenceEvidence $Backup.Journal.Directory $Backup.InstallDirectory $ProgramsDirectory $StartupDirectory
+    if ($null -eq $reference) { throw 'Legacy admission requires independently rehydrated sealed evidence.' }
+    $document = Get-ProGoInstallerLegacyReferenceDocument $context $reference.Source
+    $manager = New-Object ProGo.ApplicationShortcuts($Backup.InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+    [guid]$operation = [Guid]::ParseExact($context.Operation,'N')
+    if (-not $manager.PersistLegacyPreDeleteAdmission($reference,$operation,$context.SnapshotHash,
+        (New-Object Text.UTF8Encoding($false)).GetBytes($document),$CancellationToken)) { throw 'Legacy admission was not persisted.' }
+    if (((Get-ProGoInstallerLegacySourceContext $Backup) | ConvertTo-Json -Depth 8 -Compress) -cne $canonical -or
+        (Get-ProGoInstallerLegacyPreDeleteState $Backup.Journal.Directory $Backup.InstallDirectory $ProgramsDirectory $StartupDirectory) -cne 'not-applied') {
+        throw 'Legacy admission context changed.'
+    }
+    return [pscustomobject]@{ Schema = 1; State = 'not-applied'; MutationAllowed = $false; FullRollback = $false; InstallSucceeded = $false }
+}
+function Get-ProGoInstallerLegacyPreDeleteState([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    try {
+        $reference = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($null -eq $reference) { return 'blocked' }
+        # Reference JSON is used only after independent rehydration, and is checked AGAIN natively below.
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $operation = $reference.Source.Operation
+        $path = Assert-ProGoInstallerStagePath $parent ('installer-legacy-reference-' + $operation.ToString('N') + '.json')
+        $text = Read-ProGoInstallerLegacyRestartText $path
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+        $state = $manager.GetLegacyPreDeleteAdmissionState($reference,$operation,$reference.Source.SnapshotHash,
+            (New-Object Text.UTF8Encoding($false)).GetBytes($text))
+        $again = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($state -cne 'not-applied' -or $null -eq $again -or $again.Origin -cne $reference.Origin -or $again.Hash -cne $reference.Hash) { return 'blocked' }
+        return 'not-applied'
+    } catch { return 'blocked' }
+}
 function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
     if ($null -eq $Backup.PSObject.Properties['Journal']) {
         $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)

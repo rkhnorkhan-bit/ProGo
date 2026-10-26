@@ -1,3 +1,59 @@
+## CURRENT pre-delete admission — durable intent, original-present classification only
+
+Dependency decision: CI715 restart reader intentionally requires the owned original still present. Removing
+that check and trusting saved origin/hash after disappearance would invent post-delete ownership. Before
+any owned deletion integration, persist the exact verified pre-delete evidence graph in a separate durable
+admission. This stage adds publication/read-only classification ONLY; no Legacy deletion or restore method.
+
+New-ProGoInstallerLegacyPreDeleteAdmission validates actual live context with existing snapshot/runtime/
+canonical admissions, independently rehydrates sealed source/reference, derives operation/snapshot/document
+from that verified context, then invokes native PersistLegacyPreDeleteAdmission. Fixed own path backups/
+installer-legacy-admission-GUID.bin, CreateNew/WriteThrough/Flush(true), same-handle exact and independent-path
+readback, actual original/source/ref verification before and after publication, final token/context/state check.
+Immutable reference proof is a validated input; native serialized admission bytes are NOT caller claims.
+Admission canonical bytes bind complete existing seal context (operation/snapshot/install/location/original/
+source/ref native identity/origin/hashes), actual seal hash/native origin and admission's actual OWN native
+origin. Missing/changed/foreign source or seal cannot publish valid intent; existing/partial/foreign admission
+never overwritten/reused/deleted. Failure can retain unclaimed new bytes, no success/mutation authority.
+
+Get-ProGoInstallerLegacyPreDeleteState accepts only journal/install and independently trusted location paths,
+rehydrates actual snapshot/runtime/source/reference/seal, derives fixed operation/path, verifies admission by
+recomputing expected whole canonical bytes against actual safe native handles, then repeats rehydration and
+compares reference origin/hash. OpenLegacyRestartRead rejects reparse final leaves; directory pins retained.
+No fields/paths/flags from the admission are parsed or trusted. Only states are not-applied and blocked.
+not-applied means the same owned original is CURRENTLY observed; it is not an assertion that no historical
+action ever occurred and never permits automatic replay. Intent plus disappearance/foreign replacement,
+unknown/partial/mutated evidence -> blocked. No applied/restored/success state. PS publication observation
+always MutationAllowed/FullRollback/InstallSucceeded=false. No restore/Launch/automatic installer retry.
+Metadata self/native binding and actual original checks are not secret-backed authentication against a
+privileged actor coherently rewriting all evidence/current owned inputs; no stronger claim introduced.
+
+Original33 suites/classifier26/strict4aggregate/old deadlines and every prior native/installer body unchanged.
+Helpers not called by default installer/migration/delete/failure/terminal route. Future mutation must pin
+admission and the exact owned original, revalidate immediately before operation and persist an honest
+physical outcome; this stage does not claim such pinning across a future call or post-delete rehydration.
+Those, owned restore/full auxiliary recovery/error outcomes/runtime recovery/retention and all other F23/F31/
+installer/updater/PGA04/package/signing/UI/owner/commercial gates remain OPEN. Actual installation error/no
+Launch contract remains, settings/vault/keys/foreign bytes untouched. Old UNKNOWN incidents and transfer block
+remain unchanged. No new native P/Invoke, security right, key/credential or network operation.
+
+PreDelete23 Windows cases prepared: complete, no-seal-before, snapshot-before, journal-before, runtime-before,
+foreign-location-before, conflict, cancel-before, partial-after, tampered-after, admission-replaced-same-bytes,
+seal-tampered-after, seal-replaced-same-bytes, reference-replaced-same-bytes, source-replaced-same-bytes,
+original-replaced-same-bytes, original-absent, snapshot-after, journal-after, wrong-location-after,
+reparse-admission, missing-admission, foreign-admission. Publication requires exact counts/no changed retained
+bytes; cancellation must be OperationCanceledException; same operation refuses retry without changing bytes.
+Same-byte/copied-creation replacements retain old native objects; real own admission junction targets own
+retained directory. After clearing parent objects, read-only state gets paths only and checks whole inventory/
+private bytes/exclusive reopen. Complete case also launches a new owned PowerShell/CLR process, bounded20s
+verification+5s cleanup/drain with fixed safe marker, no witness/hash arguments or raw private output.
+Original-absent is a fixture move preserving retained bytes, NOT evidence of owned deletion or real crash.
+Partial-after is malformed input refusal, NOT Write/Flush fault injection or power-loss test. Power-lossNOT_RUN.
+Nested once after Restart26 inside existing DurableInput Recovery suite before final PASS; no extra job or
+rerun of old suites. Localstatic6+prior48 =54PythonPASS; C#/PowerShell/native/new Windows23 NOT_RUN locally.
+Next full exact-source CI then separate owned deletion/admission integration or post-delete evidence gate;
+full rollback/production not declared.
+
 ## CURRENT sealed restart rehydration — original-present phase only
 
 Acceptance: after loss of prior process memory, rebuild immutable LegacySource/reference evidence from the
