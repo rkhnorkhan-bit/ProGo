@@ -1,3 +1,44 @@
+## CURRENT CI716 verified; bounded Legacy deletion-pinning prerequisite
+
+All five CI716 final logs independently read: source7ccefc17d2b8779adea38ec8d449c664b62c982c,
+merge73ddfb86fc22a04239dfb5a0ab334d2dbb716e58. Foundation27/Recovery6, PreDelete23 actual fresh-process1,
+Restart26/JournalReference20/DurableInput12 PASS. Core classifier26/SSHnative5/Desktop6394/Instance30/
+Maintenance126/Shutdown47/HomeVPN4816/Portable91 PASS, Python80PASS2SKIP; Ubuntu and aggregate121381799552
+same4 exactSHA PASS. Runner ZIP681487 SHA256fa36c906e5022e7fad7fd9ed7cfdb8b0c7e02b6b14b29eb7b4ee80e66fdf1234,
+uploads skipped; PC/delivery acceptance NOT_RUN. No active queued/waiting/in-progress CI or other agent before
+changes; checkpointa4c1665bbcf422bc535ced6a09a0ea874f10961a clean and PR88 exactsource/open/draft.
+
+Acceptance/gate decision: the existing intent is not retained across a future deletion call. Add a disposable
+pin-only lease for the verified original-present graph. Hold non-reparse install/backups/Menu directories,
+source/reference/seal/admission read handles; verify whole graph; acquire READ|DELETE/shareREAD/open-reparse
+handle on original; compare complete native origin and exact bytes to the verified immutable proof, operation,
+install/location/snapshot bindings. Keep all handles until Dispose. No write, delete, restore, receipt publication
+or live installer integration. Failure/cancellation closes all acquired resources; Dispose is idempotent and
+attempts every close. Read-only reacquisition is not mutation replay. All authority/success flags remain false.
+
+Important remaining boundary: this lease does not pin runtime/snapshot/journal material. Trusted PS context is
+verified at acquisition, but future mutation must independently pin/recheck physical context immediately before
+mutation, use the SAME retained original handle, settle accepted deletion honestly and durably publish a result.
+Absence/intent is never proof of our deletion. Post-delete trusted rehydration, restore, full auxiliary outcome,
+error integration, retention/runtime recovery and remaining approved installer/updater/PGA04/F31/owner/commercial
+requirements remain OPEN; original install error/no Launch and private-file guarantees unchanged.
+
+New PinGate39 checks reuse the existing 23 isolated admission cases: positive exact-handle acquisition/false
+authority, 5 leaves x write/replacement refusal, idempotent Dispose/exclusive reopen/reacquisition, busy original
+refusal/unwind, cancellation; remaining22 cases refuse pinning. Actual fresh-process child also acquires/releases
+pins from paths only. No deletion test claimed. Nested once in existing PreDelete23; all33 suites/classifier26/
+strict4aggregate/deadlines/SSHflags/environment/old native and installer bodies preserved. Local60 Python tests
+PASS (static contracts, not native compilation). New Windows pin39/native sharing/compilation NOT_RUN locally.
+One reviewed expected-HEAD push and automatic CI only; no retry/dispatch. UNKNOWN incidents/BLOCKED_TRANSFER/
+power-lossNOT_RUN/full scope/fixed weights/delta0 preserved. WCT/SeDebug/privileges remain unauthorized. No live
+shortcuts/install/services/network/credentials/security/VPS/tunnel/release/uploads/delivery retry.
+
+Next: SAME new CI full5logs/exactSHA/pin39/PreDelete23/old33/Core/aggregate. After fullPASS separately scope
+physical-context pinning and same-handle owned deletion with trustworthy durable post-delete evidence. No full
+rollback, production or PC acceptance claim.
+
+Prior evidence/history (superseded CURRENT headings below are historical):
+
 ## CURRENT CI715 full evidence verified; Legacy pre-delete durable admission prerequisite
 
 CI715 full5 final logs independently read: sourcec51f9f6cfc0dd2ab15592eb580e8817e71abaf98,

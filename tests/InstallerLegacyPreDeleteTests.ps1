@@ -11,6 +11,7 @@ foreach ($function in $ast.FindAll({ param($node)
     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
     $node.Name -notin @('Enter-ProGoInstallerMaintenance','Stop-ProGoInstallerApplication')
 },$false)) { . ([scriptblock]::Create($function.Extent.Text)) }
+. (Join-Path $PSScriptRoot 'InstallerLegacyDeletionPinsTests.ps1')
 if ($Child) {
     $parent = [IO.Path]::GetDirectoryName($CaseDirectory)
     if ([IO.Path]::GetFileName($CaseDirectory) -cne 'complete' -or [IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-legacy-predelete-[a-f0-9]{32}$' -or
@@ -18,6 +19,10 @@ if ($Child) {
     $install = Join-Path $CaseDirectory 'app'
     $journals = @(Get-ChildItem -LiteralPath (Join-Path $install 'backups') -Directory | Where-Object { $_.Name -cmatch '^installer-journal-[a-f0-9]{32}$' })
     if ($journals.Count -ne 1 -or (Get-ProGoInstallerLegacyPreDeleteState $journals[0].FullName $install (Join-Path $CaseDirectory 'Programs') (Join-Path $CaseDirectory 'Startup')) -cne 'not-applied') { throw 'Fresh-process admission state is not verified.' }
+    $pins = Open-ProGoInstallerLegacyDeletionPins $journals[0].FullName $install (Join-Path $CaseDirectory 'Programs') (Join-Path $CaseDirectory 'Startup')
+    try { if ($null -eq $pins -or -not $pins.IsPinned -or $pins.MutationAllowed) { throw 'Fresh-process pin gate is not verified.' } }
+    finally { if ($null -ne $pins) { $pins.Dispose() } }
+    Write-Host 'LEGACY_PINS_CHILD verified=True; mutationPerformed=False'
     Write-Host 'LEGACY_ADMISSION_CHILD state=not-applied; mutationPerformed=False'
     return
 }
@@ -114,6 +119,7 @@ try {
                 $process.Dispose(); $process = $null
             }
         }
+        Test-ProGoLegacyDeletionPinsFixture $scenario $journal $install $readPrograms $startup @($legacy,$sourcePath,$referencePath,$sealPath,$admissionPath)
         $backup = $null; $reference = $null; $admission = $null; $manager = $null; $writes = $null
         $readBefore = @{}; foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $readBefore[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
         Check-PreDelete ((Get-ProGoInstallerLegacyPreDeleteState $journal $install $readPrograms $startup) -ceq $(if ($scenario -eq 'complete') { 'not-applied' } else { 'blocked' })) 'restart classifier refuses intent plus absence or changed evidence without any replay'
@@ -124,7 +130,7 @@ try {
             $process = [Diagnostics.Process]::Start($info); $outTask = $process.StandardOutput.ReadToEndAsync(); $errTask = $process.StandardError.ReadToEndAsync()
             if (-not $process.WaitForExit(20000)) { throw 'Owned admission restart check exceeded bounded twenty-second contract.' }
             Check-PreDelete ([Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($outTask,$errTask),5000) -and $process.ExitCode -eq 0 -and
-                $outTask.Result.Contains('LEGACY_ADMISSION_CHILD state=not-applied; mutationPerformed=False') -and $errTask.Result.Length -eq 0) 'actual fresh process verifies admission without memory witnesses or mutation'
+                $outTask.Result.Contains('LEGACY_ADMISSION_CHILD state=not-applied; mutationPerformed=False') -and $outTask.Result.Contains('LEGACY_PINS_CHILD verified=True; mutationPerformed=False') -and $errTask.Result.Length -eq 0) 'actual fresh process verifies admission without memory witnesses or mutation'
             $process.Dispose(); $process = $null
         }
         Check-PreDelete (@(Get-ChildItem -LiteralPath $case -Recurse -File).Count -eq $readBefore.Count) 'restart read creates or deletes no object'
@@ -135,6 +141,8 @@ try {
         Remove-ProGoInstallerStage $stage; $stage = $null
         Write-Host ('PASS: installer Legacy pre-delete ' + $scenario)
     }
+    Check-PreDelete ($script:LegacyPinChecks -eq 39) 'all 39 pin checks completed without dropping old cases'
+    Write-Host ('Legacy pin gate tests PASS: ' + $script:LegacyPinChecks + '; fresh-process verification=1; deletion/power-loss NOT_RUN')
     Write-Host ('Legacy pre-delete tests PASS: ' + $scenarios.Count + '; fresh-process verification=1; deletion/power-loss NOT_RUN')
 } finally {
     if ($null -ne $cancel) { $cancel.Dispose() }

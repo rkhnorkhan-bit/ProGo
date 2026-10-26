@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_moscow_date": "2026-10-24",
+  "updated_moscow_date": "2026-10-26",
   "authority": "Current active_work, ci_candidate, current_readiness and per-requirement current evidence are canonical; active_work.tree is published candidate tree, local_development_tree is its separate local code SHA tree; prior checkpoint fields and dated reports are preserved history",
   "audit_baseline": "7861ea919eed24c5fe9964fc35a23d3958ba5a9d",
   "tested_baseline_source": "1f6b0bb7a9f73b1326fcceece1af80657035f8b3",
@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "c51f9f6cfc0dd2ab15592eb580e8817e71abaf98",
-    "tree": "deac2e3160ee0dbed1a86a7f34145f99a58dd4d5",
-    "run_id": 40257479071,
-    "run_number": 715,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40257479071",
+    "source": "7ccefc17d2b8779adea38ec8d449c664b62c982c",
+    "tree": "41f8987e8519c45e21eca5b7c5cb1dec6bad0821",
+    "run_id": 40261710798,
+    "run_number": 716,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40261710798",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "6ba2506a0085be3c722c54f0dad5bad31c40746a",
-    "Windows_Restart26": "PASS full logs incl actual fresh-process1; power-lossNOT_RUN",
+    "tested_merge": "73ddfb86fc22a04239dfb5a0ab334d2dbb716e58",
+    "Windows_PreDelete23": "PASS incl fresh-process1; deletion/power-loss NOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,15 +5520,15 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "c51f9f6cfc0dd2ab15592eb580e8817e71abaf98",
-    "tree": "deac2e3160ee0dbed1a86a7f34145f99a58dd4d5",
-    "prior_checkpoint": "e7a4d2576cc49b20162b9cc586a05207a9217a63",
-    "stage": "Legacy durable pre-delete admission prerequisite, no actual mutation",
-    "status": "CI715 fullPASS confirmed; new Windows23/compileNOT_RUN; local54PythonPASS; startupUNKNOWN/BLOCKED_TRANSFER",
-    "next": "One automatic CI full5logs/exactmerge/PreDelete23/all33/classifier26/Core/strictaggregate; then separate owned mutation/post-delete dependency",
+    "source": "7ccefc17d2b8779adea38ec8d449c664b62c982c",
+    "tree": "41f8987e8519c45e21eca5b7c5cb1dec6bad0821",
+    "prior_checkpoint": "a4c1665bbcf422bc535ced6a09a0ea874f10961a",
+    "stage": "Legacy pin-only prerequisite; no deletion/live integration",
+    "status": "CI716 full5logs PASS; new PinGate39/compile Windows NOT_RUN, local60 static PASS",
+    "next": "One automatic exact-source CI then physical context pins/same-handle owned deletion/durable post-delete result prerequisite",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
-      "All32 suites/4aggregate/deadlines/runtime untouched",
+      "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
       "Full approved31/nested55 scope retained",
       "UNKNOWN/BLOCKED_TRANSFER/no retry",
       "No live/security/network/credentials/services/release/uploads changes"
@@ -23348,6 +23348,29 @@
       "post-delete trusted readonly rehydration/physical outcome",
       "owned restore/full auxiliary/error settlement/runtime recovery/retention",
       "all existing project scope"
+    ],
+    "score_delta": 0
+  },
+  "legacy_deletion_pins_prerequisite": {
+    "boundary": "Pin exact original/evidence only, no delete or result authority",
+    "prior_checkpoint": "a4c1665bbcf422bc535ced6a09a0ea874f10961a",
+    "local_tests": "60 Python PASS; static not compiler/native",
+    "Windows_PinGate39": "NOT_RUN new source; fresh-process lease check prepared",
+    "unchanged": "old33/classifier26/strict4aggregate/deadlines/nativevalidation/SSHflags",
+    "remaining": [
+      "pin and revalidate physical snapshot/runtime/journal immediately before mutation",
+      "same retained native original handle owned deletion",
+      "durable honest result linked to actual accepted deletion",
+      "post-delete trusted rehydration/restore/error settlement/full auxiliary outcome",
+      "retention/runtime recovery and full approved scope"
+    ],
+    "limits": [
+      "intent/absence never deletion authority",
+      "no live integration",
+      "UNKNOWN incidents",
+      "BLOCKED_TRANSFER no delivery retry",
+      "power-loss NOT_RUN",
+      "WCT/SeDebug not authorized"
     ],
     "score_delta": 0
   }

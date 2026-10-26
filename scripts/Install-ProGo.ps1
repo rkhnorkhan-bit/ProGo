@@ -1459,6 +1459,28 @@ function Get-ProGoInstallerLegacyPreDeleteState([string]$Directory, [string]$Ins
         return 'not-applied'
     } catch { return 'blocked' }
 }
+# Pins evidence and the owned original only; never called by the live installer route.
+function Open-ProGoInstallerLegacyDeletionPins([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $CancellationToken.ThrowIfCancellationRequested()
+    $pins = $null
+    try {
+        $reference = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($null -eq $reference) { return $null }
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $path = Assert-ProGoInstallerStagePath $parent ('installer-legacy-reference-' + $reference.Source.Operation.ToString('N') + '.json')
+        $text = Read-ProGoInstallerLegacyRestartText $path
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+        $pins = $manager.PinLegacyPreDeleteAdmission($reference,$reference.Source.Operation,$reference.Source.SnapshotHash,
+            (New-Object Text.UTF8Encoding($false)).GetBytes($text),$CancellationToken)
+        if ($null -eq $pins) { return $null }
+        # Original is now READ|DELETE pinned: do not reopen it with incompatible share access.
+        # This lease does not pin runtime/snapshot/journal; future mutation must revalidate them.
+        $CancellationToken.ThrowIfCancellationRequested()
+        $result = $pins; $pins = $null; return $result
+    } finally { if ($null -ne $pins) { $pins.Dispose() } }
+}
 function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
     if ($null -eq $Backup.PSObject.Properties['Journal']) {
         $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)

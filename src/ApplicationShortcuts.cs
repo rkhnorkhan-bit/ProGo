@@ -616,6 +616,72 @@ namespace ProGo
             } catch { return null; }
         }
 
+        private static void ReleaseLegacyDeletionPins(System.Collections.Generic.List<IDisposable> held)
+        {
+            bool failed = false;
+            for (int i = held.Count - 1; i >= 0; i--) {
+                try { held[i].Dispose(); } catch { failed = true; }
+            }
+            held.Clear();
+            if (failed) throw new IOException("Legacy pin cleanup did not complete.");
+        }
+        // Pin-only prerequisite. No mutation method or durable outcome is exposed by this lease.
+        public sealed class LegacyDeletionPins : IDisposable
+        {
+            private readonly object gate = new object();
+            private System.Collections.Generic.List<IDisposable> resources;
+            internal LegacyDeletionPins(System.Collections.Generic.List<IDisposable> held) { resources = held; }
+            public bool IsPinned { get { lock (gate) { return resources != null; } } }
+            public bool MutationAllowed { get { return false; } }
+            public bool FullRollback { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            public void Dispose()
+            {
+                lock (gate) {
+                    if (resources == null) return;
+                    var held = resources; resources = null;
+                    ReleaseLegacyDeletionPins(held);
+                }
+            }
+        }
+        public LegacyDeletionPins PinLegacyPreDeleteAdmission(LegacyJournalReferenceEvidence reference,
+            Guid operation, string verifiedSnapshot, byte[] document, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            var held = new System.Collections.Generic.List<IDisposable>();
+            bool transferred = false;
+            try {
+                if (reference == null || document == null || document.Length < 1 || document.Length > 1048576) return null;
+                byte[] expectedDocument = (byte[])document.Clone();
+                held.Add(PinLegacySourceDirectory(root));
+                held.Add(PinLegacySourceDirectory(Path.Combine(root, "backups")));
+                held.Add(PinLegacySourceDirectory(menu));
+                // Keep the complete evidence graph stable through the original-handle admission.
+                held.Add(OpenLegacyRestartRead(LegacySourcePath(operation)));
+                held.Add(OpenLegacyRestartRead(LegacyReferencePath(operation)));
+                held.Add(OpenLegacyRestartRead(LegacyRestartSealPath(operation)));
+                held.Add(OpenLegacyRestartRead(LegacyPreDeletePath(operation)));
+                if (GetLegacyPreDeleteAdmissionState(reference, operation, verifiedSnapshot, expectedDocument) != "not-applied") return null;
+                string path = Path.Combine(menu, "ProGo Status.lnk"); CheckLocation(path);
+                // READ|DELETE on the exact non-followed leaf; deny writes/replacement. Acquiring
+                // this access is not deletion. Future deletion must use this SAME retained handle.
+                var handle = OpenLegacyForDisposition(path, 0x80010000u, 1, IntPtr.Zero, 3, 0x00200000u, IntPtr.Zero);
+                held.Add(handle);
+                if (handle.IsInvalid) return null;
+                string origin = LegacyOrigin(handle); // rejects directories and reparse leaves
+                var original = new FileStream(handle, FileAccess.Read); held.Add(original);
+                byte[] bytes = ReadLegacyEvidenceBytes(original);
+                if (reference.Source.InstallIdentity != Identity(root) ||
+                    reference.Source.LocationIdentity != Identity(path) || reference.Source.Operation != operation ||
+                    reference.Source.SnapshotHash != verifiedSnapshot || reference.Source.OriginIdentity != origin ||
+                    reference.Source.Hash != Digest(bytes) || origin != LegacyOrigin(handle)) return null;
+                token.ThrowIfCancellationRequested();
+                var result = new LegacyDeletionPins(held); transferred = true; return result;
+            } catch (OperationCanceledException) { throw; }
+            catch { return null; }
+            finally { if (!transferred) ReleaseLegacyDeletionPins(held); }
+        }
+
         private string LegacyPreDeletePath(Guid operation)
         {
             if (operation == Guid.Empty) throw new IOException("Legacy admission operation is missing.");
