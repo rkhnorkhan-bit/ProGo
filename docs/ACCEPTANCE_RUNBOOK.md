@@ -1,3 +1,112 @@
+## CURRENT CI727 SUCCESS verified; scoped live Legacy -> Startup -> Menu handler transition
+
+Admission checkpoint183246a94ec77cb1bedceb62864ceeef16180f8a available, HEAD exact/clean. Full unpublished
+three-doc diff(+93/-17) from source64b2cce974637fc05b2ef026372ef02f8b0b1683 preserved, no reset/discard.
+PR88 draft/open/unmerged at exact source; merge0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b. No active Git/
+build/SSH commands or Git-locks observed; GitHub in_progress/queued/waiting run queries all0. Sole writer,
+no agents. Earlier ps inventory command failed with a host library lookup error; direct /proc comm inventory
+subsequently completed with no active commands; it did not affect repository state or run any build.
+
+All five complete CI727 logs independently retrieved/read here after owner's independent SUCCESS report:
+run40330525850 attempt1; exact source64b2cce974637fc05b2ef026372ef02f8b0b1683 / tested merge
+0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b. Foundation121598427005 full724: LiveStartup19/refusal2,
+Restore22/Preparation13/retained-pin sharing and CLR regressions/old27 PASS. Recovery121598426514 full539:
+all6/Owned29/receipt14/refusal2 PASS. Core121598426907 full15489: classifier26/Desktop6394/Instance30/
+Maintenance126/Shutdown47/HomeVPN4816/Portable91/Python116PASS2SKIP. Ubuntu121598426956 full612 PASS.
+Aggregate121616141366 full173 all4 exact partitions PASS. ZIP710990 SHA256
+19afa949fdd17ea4b52688a33b5b914221a556ce01bc5f6f4eef4a30740c2b2d runner-only, uploads SKIPPED, no PC acceptance.
+This updates historical pending727 entries below; they remain history, not current status.
+
+Concrete dependency review: existing VerifyRestoredOutcome and live Startup verifier require original
+primary. After our accepted Menu deletion they must continue to refuse. A new expected post-transition
+state is necessary, bound to the very same original pre-delete native preparation/lease/physical pins/
+actual cached accepted+restore result. No new restore helper, receipt, origin rewrite, serialized capability,
+caller restored flag, namespace freeze or ABA-history requirement is introduced.
+
+Integrated optional live path now reaches real FailureMenu -> MenuRollback -> existing native
+TryRollbackDurableMenu exact-handle operation. Before mutation repeat current full Legacy restore/Startup
+settlement and original Menu schema/location/origin/hash/semantic guards. Retain restored Legacy via native
+READ/shareREAD/no-follow pin through mutation, post-verification and until finally Dispose. Original Menu
+native READ|DELETE/shareREAD handle independently checks exact origin/hash immediately before disposition;
+foreign/replaced/equal-byte identity never adopted or deleted. Only this actual accepted native disposition
+records MenuDispositionAccepted and deleted primary origin; MenuAttempted/HandleClosed/AbsenceObserved are
+separate truthful progress observations, not durable outcome flags or authority after proofs are lost.
+
+Post-transition verification requires cached result reference equality, live same physical/source/evidence/
+reference/seal/admission/runtime/snapshot/journal plan, canonical accepted and restore result origins/hash/
+bytes, exact retained restored Legacy origin/bytes and its current name, original Menu schema/location/hash/
+origin linkage to the deleted primary, independently verified Startup original state and strict expected
+primary absence. It does not call the obsolete primary-requiring verifier or blanket bypass a guard. Only
+this live operation's accepted Menu transition changes that primary-state expectation. Old receipt-only
+APIs stay strict. New state token legacy-startup-menu-observed is scoped observation only, not install
+success, durable auxiliary result, whole rollback or restart authority. Old Startup state token is retained
+for compatibility and grants no Menu capability without typed live proofs.
+
+One Menu failure admission and one native mutation reservation; cancellation/errors before mutation block
+repeat mutation. Error after Menu before handler settlement retains native progress; repeat can only observe
+current settlement, never replay. Late cancellation does not erase accepted mutation. Proof loss/result or
+source change/reappeared primary/changed Startup fail closed despite historical flags. Original install
+error remains with caller; partial source/result artifacts are not deleted or repaired. Dispose invalidates
+context and releases retained restored Legacy, original lease and physical graph in nested finally.
+
+Existing GUID synthetic fixture extended with MenuFlow24 through real preparation -> source/reference/
+admission/pins -> exact owned delete -> accepted receipt -> injected original install error -> Legacy restore
+-> existing FailureStartup/StartupRollback -> real FailureMenu/MenuRollback -> scoped settlement. Cases:
+complete, preserved-startup, before-menu-error, after-menu-error, cancel-before-menu, cancel-after-menu,
+primary-before-menu, legacy-before-menu, disposed-context/lease/physical-menu, wrong-root/operation-menu,
+real foreign live context, result-before/after-menu, source-after-menu, primary/startup-after-menu,
+restored-pin-lock, restore-partial/result-fault, cancel-before, error-after-legacy. Native equal-byte/copied
+creation replacements retain original object; real source creation threat shim restored before disposal.
+Existing partial/result fault seam uses unchanged checked CLR unwrapping bridge, no raw reflection Invoke.
+Compatible READ/shareREAD|DELETE inventory includes every file under live DELETE pins; new restored pin
+regression hashes exact bytes while native WRITE/DELETE are denied. Private/foreign install/Menu/Startup
+siblings preserved, repeats compare complete inventories/no extra calls, all files exclusively reopen after
+finally releases handles. Two fresh CLR children refuse old/serialized Startup AND Menu authority. Child20s/
+cleanup5s and all suite deadlines unchanged. Old19 scenarios/Startup assertions retained; obsolete blanket
+Menu-block assertion replaced with conflicting-operation refusal; positive Menu coverage is the new24.
+One additional MenuFlow invocation in same existing Foundation host; no suite/partition/workflow changes.
+
+Local83PASS (legacy66 +strict aggregate17), review/native operation and old verifier parity/default handler/
+main/catch/success parity/original tests/classifier26/aggregate/deadlines/approved/F23/fullF30 preservation,
+C#5 lexical/signatures/JSON/diff/secrets PASS. These are not compiler/native proof. No local Windows,
+PowerShell or C# compiler; new Menu24/fresh-process2/native compilation/full exact new aggregate NOT_RUN.
+One guarded publish and one automatic CI initial status only; no rerun/dispatch/duplicates/full CI wait.
+
+Default installer orchestration and success path remain OFF for this context. Durable Startup/Menu/whole
+auxiliary outcomes, full original-error default integration, safe accepted-deletion success path, whole
+runtime/auxiliary rollback, restart recovery, power-loss and PC acceptance remain OPEN/NOT_RUN. UNKNOWN
+startup incidents/BLOCKED_TRANSFER/no retry/all33/classifier26/strict4aggregate/deadlines/full approved31/
+nested55/F30 commercial scope/weights/score delta0 preserved. No live install/user data/network/security/
+ACL/privileges/WCT/SeDebug/credentials/services/VPS/tunnel actions; lost live proofs blocked/manual.
+
+## LOCAL post-publication checkpoint: integrated live Legacy->Startup / CI727 (Menu blocked)
+
+One expected-head nonforce PR88 update completed: source64b2cce974637fc05b2ef026372ef02f8b0b1683,
+parent7f8e5f7f40c32033dcd79092162c992c0135c5f8, treed6202457e43ca3e84d2c1e74229f6f62de93e108.
+Reviewed local2e385387c0871c218edb69816900190374708dd2 full tree matches canonical source; Git hash/
+parent/tree verified, joined at6777a204f37611bfabb0e3ce06d94340475ba6f2. Checkpoint8b4304a and full3docs
+unpublished diff preserved. PR88 draft/open/unmerged, merge REF0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b
+is candidate, not tested PASS. Sole automatic CI727 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40330525850,
+pull_request/attempt1, raw exact-source total_count1; observed in_progress/conclusion null. New compile/live19/
+fresh-process2/full exact aggregate NOT_RUN until same run's complete logs. CI726 full scoped baseline SUCCESS
+is independently recorded; no inherited new native PASS. Local83PASS +additive/default/old receipt guards/
+handler/main/old fixtures parity, C#5 lexical/signatures/JSON/secrets/public430source0release PASS.
+Published scope: real FailureStartup -> StartupRollback -> old native exact-owned Startup operation, bound
+before Legacy deletion to original preparation and same live pins/cached restore. Current VerifyRestoredOutcome
+at handoff; restored Legacy and primary retained through Startup. One failure entry/one Startup invocation;
+repeats only verify, including read-only settlement after error between Startup and Menu. Historical flags
+and receipts are never capability. Existing Legacy restore/result/receipt and receipt-only APIs unchanged.
+Real Menu handler explicitly blocked. No default success/orchestration activation, no new durable Startup
+outcome or claim of whole rollback. Native19 includes errors before/after Startup, partial/result native
+faults via checked CLR bridge, READ/share5 readers, replacement/source/disposed/foreign negative cases and
+fresh-process2. All prior Restore22/Preparation13/33 suites/classifier26/strict4aggregate/deadlines preserved.
+This docs-only checkpoint is local/unpushed: no second publication/rerun/dispatch/CI/full wait. Stop here.
+Next SAME CI727 five complete exact logs, live19 and children. Menu's future own post-primary-removal state,
+durable auxiliary outcomes and safe success/default orchestration remain OPEN; no blanket bypass of old
+primary-requiring guards. Whole auxiliary/runtime rollback/restart/power-loss/PC acceptance OPEN/NOT_RUN.
+UNKNOWN/BLOCKED_TRANSFER/no retry/all31/nested55/full F30/weights/delta0 retained. No live install/user data/
+ACL/privileges/WCT/SeDebug/network/credentials/services/VPS/tunnel actions. Lost proofs blocked/manual.
+
 ## CURRENT CI726 SUCCESS verified; integrated scoped live Legacy->Startup failure handlers (Menu blocked)
 
 Admission checkpoint8b4304a255a806394fb0d330aa8dc3855a06bbbc is available/clean, full3docs diff(+90/-17)

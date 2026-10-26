@@ -253,9 +253,15 @@ namespace ProGo
             internal readonly LegacyPhysicalPins physical;
             internal readonly System.Collections.IDictionary startupMap, menuMap, legacyMap;
             internal LegacyRestoreResult restored;
-            internal bool disposed, failureEntered, startupConsumed, startupVerified;
+            internal bool disposed, failureEntered, startupConsumed, startupVerified, menuConsumed, menuFailureEntered;
+            internal FileStream restoredPin;
+            internal string menuPrimaryOrigin;
+            public bool MenuAttempted { get; internal set; }
+            public bool MenuDispositionAccepted { get; internal set; }
+            public bool MenuHandleClosed { get; internal set; }
+            public bool MenuAbsenceObserved { get; internal set; }
             public bool StartupInvoked { get; private set; }
-            public bool MenuAllowed { get { return false; } }
+            public bool MenuAllowed { get { return VerifyStartupSettlement(); } }
             public bool WholeRollbackVerified { get { return false; } }
             public bool InstallSucceeded { get { return false; } }
             public bool RestartAuthority { get { return false; } }
@@ -302,8 +308,32 @@ namespace ProGo
             }
             public bool VerifyStartupSettlement()
             { lock (gate) { return !disposed && startupVerified && owner.VerifyDurableStartupOriginalResult(startupMap, menuMap, legacyMap, this); } }
+            public bool BeginMenuHandling()
+            { lock (gate) { if (disposed || menuFailureEntered) return false; menuFailureEntered = true; return true; } }
+            public bool RollbackMenuOnce(CancellationToken token)
+            {
+                lock (gate) {
+                    if (disposed) return false;
+                    if (menuConsumed) return VerifyMenuSettlement();
+                    menuConsumed = true; // cancellation/error never permits another destructive invocation
+                    try {
+                        lock (lease.gate) { return physical.WithPins<LegacyStartupContext>(() => {
+                            if (!VerifyStartupSettlement() || !owner.VerifyDurableMenuRollbackEvidence(menuMap)) return null;
+                            restoredPin = OpenLegacyRestartRead(Path.Combine(owner.menu, "ProGo Status.lnk"));
+                            if (restored.RestoredOrigin != LegacyOrigin(restoredPin.SafeFileHandle) || !VerifyStartupSettlement()) return null;
+                            token.ThrowIfCancellationRequested();
+                            owner.TryRollbackDurableMenu(menuMap, token, this);
+                            return VerifyMenuSettlement() ? this : null;
+                        }) != null; }
+                    } catch { return false; }
+                }
+            }
+            public bool VerifyMenuSettlement()
+            { lock (gate) { return owner.VerifyLiveMenuSettlement(this); } }
             public void Dispose()
-            { lock (gate) { if (disposed) return; disposed = true; try { lease.Dispose(); } finally { physical.Dispose(); } } }
+            { lock (gate) { if (disposed) return; disposed = true;
+                try { if (restoredPin != null) restoredPin.Dispose(); }
+                finally { try { lease.Dispose(); } finally { physical.Dispose(); } } } }
         }
         private static System.Collections.IDictionary LivePreparationMap(object evidence)
         {
@@ -361,6 +391,59 @@ namespace ProGo
                     context.preparation.Legacy.Hash == context.lease.reference.Source.Hash &&
                     VerifyLegacyRestoredOutcome(context.lease, context.physical);
             } catch { return false; }
+        }
+        private bool VerifyLiveMenuSettlement(LegacyStartupContext context)
+        {
+            if (context.disposed || !Object.ReferenceEquals(context.owner, this) || !context.menuConsumed ||
+                !context.startupVerified || !context.MenuDispositionAccepted || !context.MenuHandleClosed ||
+                context.restored == null || context.restoredPin == null || context.restoredPin.SafeFileHandle.IsClosed ||
+                !Object.ReferenceEquals(context.restored, context.lease.restoreResult) ||
+                !Object.ReferenceEquals(context.restored.AcceptedResult, context.lease.lastResult)) return false;
+            lock (context.lease.gate) {
+                byte[] document = null, original = null;
+                try { return context.physical.WithPins<LegacyStartupContext>(() => {
+                    var lease = context.lease; var result = context.restored; var primary = context.preparation.Menu;
+                    var first = context.preparation;
+                    if (lease.resources == null || lease.lastResult == null || !lease.lastResult.OperationAccepted ||
+                        !lease.lastResult.AcceptanceKnown || !lease.lastResult.TargetHandleClosed || !lease.lastResult.ContextObservedAfterOperation ||
+                        lease.acceptedOutcome == null || !lease.acceptedOutcome.DurableOutcomeRecorded ||
+                        !context.physical.MatchesOwner(this) || !context.physical.VerifyPinned(CancellationToken.None) ||
+                        !result.Created || !result.Flushed || !result.ReadbackVerified || !result.DurableResultRecorded ||
+                        primary.Schema != 1 || primary.Disposition != "created" || !primary.Requested || primary.BeforeExists || primary.BeforeHash != null ||
+                        !primary.Exists || primary.Hash == null || primary.OriginIdentity == null ||
+                        primary.InstallIdentity != Identity(root) || primary.LocationIdentity != Identity(Path.Combine(menu, "ProGo.lnk")) ||
+                        primary.OriginIdentity != context.menuPrimaryOrigin || primary.OriginIdentity != lease.replacementOrigin || primary.Hash != lease.replacementHash ||
+                        context.preparation.Legacy.OriginIdentity != lease.reference.Source.OriginIdentity || context.preparation.Legacy.Hash != lease.reference.Source.Hash) return null;
+                    // Absence is only an expected result of this exact accepted live mutation, never admission.
+                    string primaryPath = Path.Combine(menu, "ProGo.lnk"); CheckLocation(primaryPath);
+                    try { File.GetAttributes(primaryPath); return null; } catch (FileNotFoundException) { }
+                    bool startupOriginal = first.Disposition == "preserved" ? VerifyStartupInstallEvidence(first) :
+                        first.Schema == 1 && first.Disposition == "created" && first.InstallIdentity == Identity(root) &&
+                        first.LocationIdentity == Identity(startup) && !first.BeforeExists && first.BeforeHash == null && first.Exists &&
+                        first.Hash != null && first.OriginIdentity != null && ReadStartupBytes() == null;
+                    if (!startupOriginal) return null;
+                    lease.evidence[0].Position = 0; document = ReadLegacySourceDocument(lease.evidence[0]);
+                    int offset = 0, lines = 0; while (offset < document.Length && lines < 9) { if (document[offset++] == 10) lines++; }
+                    if (lines != 9 || offset == document.Length) return null;
+                    original = new byte[document.Length - offset]; Buffer.BlockCopy(document, offset, original, 0, original.Length);
+                    if (!VerifyLegacyOperationEvidence(lease, original) || !VerifyLegacyOperationPlan(lease, context.physical) ||
+                        result.BytesWritten != original.Length || result.RestoredOrigin == lease.reference.Source.OriginIdentity ||
+                        result.RestoredOrigin != LegacyOrigin(context.restoredPin.SafeFileHandle)) return null;
+                    context.restoredPin.Position = 0;
+                    if (!Equal(original, ReadLegacyEvidenceBytes(context.restoredPin))) return null;
+                    using (var current = OpenLegacyRestartRead(Path.Combine(menu, "ProGo Status.lnk")))
+                    using (var accepted = OpenLegacyRestartRead(LegacyAcceptedPath(lease.reference.Source.Operation)))
+                    using (var receipt = OpenLegacyRestartRead(LegacyRestoreResultPath(lease.reference.Source.Operation))) {
+                        byte[] acceptedBytes = LegacyAcceptedDocument(lease, lease.acceptedOutcome.Origin);
+                        byte[] restoreBytes = LegacyRestoreDocument(lease, result.RestoredOrigin, result.ResultOrigin, original);
+                        return result.RestoredOrigin == LegacyOrigin(current.SafeFileHandle) && Equal(original, ReadLegacyEvidenceBytes(current)) &&
+                            lease.acceptedOutcome.Origin == LegacyOrigin(accepted.SafeFileHandle) && lease.acceptedOutcome.Hash == Digest(acceptedBytes) &&
+                            Equal(acceptedBytes, ReadLegacyReferenceBytes(accepted)) && result.ResultOrigin == LegacyOrigin(receipt.SafeFileHandle) &&
+                            result.ResultHash == Digest(restoreBytes) && Equal(restoreBytes, ReadLegacyReferenceBytes(receipt)) ? context : null;
+                    }
+                }) != null; } catch { return false; }
+                finally { if (document != null) Array.Clear(document, 0, document.Length); if (original != null) Array.Clear(original, 0, original.Length); }
+            }
         }
         // Only the Legacy-state predicate differs in these typed-live overloads. Old APIs stay strict.
         public bool VerifyDurableInstallEvidence(System.Collections.IDictionary first, System.Collections.IDictionary primary,
@@ -1862,6 +1945,8 @@ namespace ProGo
         // Menu only: the caller retains the verified receipt and maintenance ownership.
         // No Legacy restoration, durable terminal outcome, replay or path-based deletion.
         public bool TryRollbackDurableMenu(System.Collections.IDictionary receipt, CancellationToken token)
+        { return TryRollbackDurableMenu(receipt, token, null); }
+        private bool TryRollbackDurableMenu(System.Collections.IDictionary receipt, CancellationToken token, LegacyStartupContext context)
         {
             try {
                 token.ThrowIfCancellationRequested();
@@ -1870,19 +1955,27 @@ namespace ProGo
                 if (evidence.Disposition == "preserved") return true;
                 string path = Path.Combine(menu, "ProGo.lnk");
                 CheckLocation(path);
+                if (context != null) context.MenuAttempted = true;
+                try {
                 using (var handle = OpenLegacyForDisposition(path, 0x80010000u, 1, IntPtr.Zero, 3, 0x00200080u, IntPtr.Zero)) {
                     if (handle.IsInvalid) return false;
                     using (var stream = new FileStream(handle, FileAccess.Read)) {
                         // Full native origin (including creation), not bytes alone. Read/delete
                         // share denies external replacement or writes until this handle settles.
                         if (evidence.OriginIdentity != LegacyOrigin(handle) || evidence.Hash != Digest(ReadLegacyEvidenceBytes(stream))) return false;
+                        if (context != null && (!Object.ReferenceEquals(context.owner, this) || context.disposed ||
+                            context.restoredPin == null || context.restored.RestoredOrigin != LegacyOrigin(context.restoredPin.SafeFileHandle))) return false;
                         token.ThrowIfCancellationRequested();
                         var disposition = new LegacyDisposition { DeleteFile = 1 };
                         if (!SetFileInformationByHandle(handle, 4, ref disposition, 1)) return false;
+                        if (context != null) { context.menuPrimaryOrigin = evidence.OriginIdentity; context.MenuDispositionAccepted = true; }
                     }
                 }
+                } finally { if (context != null) context.MenuHandleClosed = true; }
                 // A late cancellation must not discard the accepted physical result.
-                return ReadMenuBytes() == null;
+                bool absent = ReadMenuBytes() == null;
+                if (context != null) context.MenuAbsenceObserved = absent;
+                return absent;
             } catch (OperationCanceledException) { throw; }
             catch { return false; }
         }

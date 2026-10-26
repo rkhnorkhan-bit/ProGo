@@ -4020,19 +4020,19 @@
     }
   ],
   "ci_candidate": {
-    "source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
-    "tree": "86710a8133c00477c290b9921b8956a0766c5faa",
-    "run_id": 40322267040,
-    "run_number": 726,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40322267040",
+    "source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
+    "tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108",
+    "run_id": 40330525850,
+    "run_number": 727,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40330525850",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "completed",
     "conclusion": "success",
-    "candidate_merge_ref": "9b02419428438a5e7a9495ccd92b2f8977a3dd36",
-    "tested_merge": "9b02419428438a5e7a9495ccd92b2f8977a3dd36",
-    "new_windows": "CI726 full5logs SUCCESS: preparation13/child2/sharing/CLR/Restore22/all33/classifier26/strict4aggregate",
+    "candidate_merge_ref": "0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b",
+    "tested_merge": "0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b",
+    "new_windows": "CI727 all5 complete logs SUCCESS; LiveStartup19/refusal2/Restore22/Preparation13/CLR+sharing regressions/all33/classifier26/strict4aggregate",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5524,12 +5524,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
-    "tree": "86710a8133c00477c290b9921b8956a0766c5faa",
-    "prior_checkpoint": "8b4304a255a806394fb0d330aa8dc3855a06bbbc",
-    "stage": "Integrated typed live Legacy->Startup failure handlers; real Menu handler explicitly blocked; default success/orchestration unchanged",
-    "status": "CI726 full SUCCESS baseline; local83PASS/review; new native19/child2/compile/full exact aggregate NOT_RUN",
-    "next": "One guarded publication +sole automatic CI initial status; stop. Menu expected-state transition/durable auxiliary outcomes/default orchestration remain OPEN",
+    "source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
+    "tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108",
+    "prior_checkpoint": "183246a94ec77cb1bedceb62864ceeef16180f8a",
+    "stage": "Integrated live Legacy->Startup->Menu failure handlers and expected post-primary-removal scoped verifier; default orchestration OFF",
+    "status": "CI727 all5 logs SUCCESS baseline; local83PASS/review; new Menu24/fresh-process2/compile/full exact aggregate NOT_RUN",
+    "next": "One guarded publication +sole automatic CI initial status, no full wait. Durable auxiliary/safe success/default integration/whole rollback remain OPEN",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5538,8 +5538,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "bba843704d3b9c3a006542bb309fb71dde2c6718",
-    "local_development_tree": "86710a8133c00477c290b9921b8956a0766c5faa"
+    "local_development_sha": "2e385387c0871c218edb69816900190374708dd2",
+    "local_development_tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -23828,7 +23828,7 @@
   "legacy_startup_live_gate": {
     "base_checkpoint": "8b4304a255a806394fb0d330aa8dc3855a06bbbc",
     "baseline_source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
-    "status": "Prepared; native19/child2 NOT_RUN locally",
+    "status": "Published real Legacy->Startup handler branch; CI727 initial in_progress; new native19/child2 NOT_RUN",
     "integrated_path": "FailureStartup -> existing StartupRollback -> existing native exact-owned Startup operation; real FailureMenu explicitly blocked",
     "capability": "sealed pre-delete original preparation +same live pins/operation +actual cached restore reference; current VerifyRestoredOutcome at handoff; no bool or serialized authority",
     "guards": "original schema/location/hash/origin Startup/Menu preserved; old receipt-only APIs refuse; no old-origin rewrite; restored and primary pinned during Startup mutation",
@@ -23838,6 +23838,74 @@
     "local": "83PASS legacy/aggregate; parity/lexical/signatures/JSON/diff/secrets/public430source0release PASS",
     "remaining": "Menu expected post-primary-removal transition/durable outcomes/safe default success+orchestration/whole auxiliary/runtime/restart/power-loss/PC acceptance OPEN",
     "preservation": "all33/classifier26/strict4aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/F30 unchanged",
+    "score_delta": 0,
+    "source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
+    "tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108"
+  },
+  "live_startup_postpublication_checkpoint": {
+    "source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
+    "parent": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
+    "tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108",
+    "local_reviewed_code": "2e385387c0871c218edb69816900190374708dd2",
+    "canonical_join": "6777a204f37611bfabb0e3ce06d94340475ba6f2",
+    "base_checkpoint_preserved": "8b4304a255a806394fb0d330aa8dc3855a06bbbc",
+    "run_id": 40330525850,
+    "run_number": 727,
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "in_progress",
+    "conclusion": null,
+    "candidate_merge_ref": "0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b",
+    "kind": "local docs-only unpushed; no second CI",
+    "scope": "real Legacy->Startup live failure handlers; real Menu handler blocked; default success flow unchanged",
+    "score_delta": 0
+  },
+  "ci727_verified_baseline": {
+    "source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
+    "tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108",
+    "run_id": 40330525850,
+    "run_number": 727,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40330525850",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "candidate_merge_ref": "0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b",
+    "tested_merge": "0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b",
+    "new_windows": "CI727 all5 complete logs SUCCESS; LiveStartup19/refusal2/Restore22/Preparation13/CLR+sharing regressions/all33/classifier26/strict4aggregate",
+    "score_delta": 0,
+    "jobs": [
+      121598427005,
+      121598426514,
+      121598426907,
+      121598426956,
+      121616141366
+    ],
+    "full_log_lines": [
+      724,
+      539,
+      15489,
+      612,
+      173
+    ],
+    "Core": "classifier26/Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4816/Portable91/Python116PASS2SKIP",
+    "zip_bytes": 710990,
+    "zip_sha256": "19afa949fdd17ea4b52688a33b5b914221a556ce01bc5f6f4eef4a30740c2b2d",
+    "uploads": "SKIPPED runner-only; no PC acceptance"
+  },
+  "legacy_menu_live_gate": {
+    "base_checkpoint": "183246a94ec77cb1bedceb62864ceeef16180f8a",
+    "baseline_source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
+    "status": "Prepared; Menu24/fresh-process2/Windows compile NOT_RUN locally",
+    "integrated_path": "real FailureStartup -> StartupRollback -> FailureMenu -> MenuRollback -> existing native exact-handle Menu disposition -> expected scoped transition verification",
+    "capability": "original native preparation +same live lease/physical pins+actual cached accepted and restore references; exact restored Legacy retained until finally; no receipt-only/serialized authority",
+    "mutation": "original primary native origin/hash/location/schema/semantic guards before READ|DELETE exact handle; accepted disposition/handle closed/observed absence separate, no replay",
+    "post_transition": "full live source/evidence/runtime/snapshot/journal and accepted/restore canonical result +exact restored Legacy identity/bytes +Startup original +our primary origin and expected absence; no old verifier blanket bypass",
+    "fixture": "24 GUID native Menu cases, real foreign live context, equal-byte replacement, errors/cancel/partial/result/source/disposed/primary/Startup changes, repeated complete inventory, restored READ/hash WRITE+DELETE denial, fresh process refusal2",
+    "local": "83PASS legacy/aggregate; parity/review/C#5 lexical/signatures/JSON/diff/secrets PASS; native NOT_RUN",
+    "remaining": "durable auxiliary/default success+orchestration/full original error integration/whole runtime+auxiliary rollback/restart/power-loss/PC acceptance OPEN",
+    "preservation": "all33/classifier26/strict4aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/fullF30 unchanged",
     "score_delta": 0
   }
 }
