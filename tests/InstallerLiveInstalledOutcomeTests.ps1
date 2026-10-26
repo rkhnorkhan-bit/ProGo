@@ -8,6 +8,29 @@ if($errors.Count){throw 'Live installed handlers do not parse.'}
 foreach($function in $ast.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -notin @('Enter-ProGoInstallerMaintenance','Stop-ProGoInstallerApplication')},$false)){. ([scriptblock]::Create($function.Extent.Text))}
 function Check-LiveInstalled($Condition,[string]$Name){if(-not $Condition){throw ('Live installed failed: case='+$scenario+'; check='+$Name)}}
 function Get-LiveInstalledHash([string]$Path){$stream=$null;$hash=$null;try{$hash=[Security.Cryptography.SHA256]::Create();$stream=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,([IO.FileShare]::Read -bor [IO.FileShare]::Delete));return [BitConverter]::ToString($hash.ComputeHash($stream)).Replace('-','')}finally{if($null -ne $stream){$stream.Dispose()};if($null -ne $hash){$hash.Dispose()}}}
+# Valid foreign Shell Links, not opaque corruption bytes. Never launched; GUID fixture targets only.
+function Test-LiveInstalledCustomShortcut([string]$Path,[string]$Target,[string]$Arguments){
+    $shell=$null;$link=$null
+    try{
+        $shell=New-Object -ComObject WScript.Shell;$link=$shell.CreateShortcut($Path)
+        Check-LiveInstalled ([IO.File]::Exists($Path) -and [String]::Equals($link.TargetPath,$Target,[StringComparison]::OrdinalIgnoreCase) -and $link.Arguments -ceq $Arguments) 'custom synthetic Shell Link loads with actual foreign target and arguments'
+    }finally{if($null -ne $link){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link)};if($null -ne $shell){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)}}
+}
+function New-LiveInstalledCustomShortcut([string]$Path,[string]$Target,[string]$Arguments){
+    $shell=$null;$link=$null
+    try{
+        $shell=New-Object -ComObject WScript.Shell;$link=$shell.CreateShortcut($Path)
+        $link.TargetPath=$Target;$link.Arguments=$Arguments;$link.WorkingDirectory=[IO.Path]::GetDirectoryName($Target);$link.Description='Synthetic foreign shortcut';$link.Save()
+    }finally{if($null -ne $link){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link)};if($null -ne $shell){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)}}
+    Test-LiveInstalledCustomShortcut $Path $Target $Arguments
+}
+function Get-LiveInstalledOrigin([string]$Path){
+    $stream=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,([IO.FileShare]::Read -bor [IO.FileShare]::Delete))
+    try{
+        $method=[ProGo.ApplicationShortcuts].GetMethod('LegacyOrigin',[Reflection.BindingFlags]'NonPublic,Static')
+        return [LegacyRestoreReflectionFixture]::InvokeChecked($method,$null,[object[]]@($stream.SafeFileHandle))
+    }finally{$stream.Dispose()}
+}
 if($BlockedChild){
     $parent=[IO.Path]::GetDirectoryName($CaseDirectory)
     if([IO.Path]::GetFileName($CaseDirectory) -cnotin @('complete','context-lost-after-publish') -or [IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-live-installed-[a-f0-9]{32}$' -or [IO.Path]::GetDirectoryName($parent) -cne [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)){throw 'Live installed child refuses unowned scope.'}
@@ -96,17 +119,26 @@ try{
         $fixture=@{Writes=0;Seals=0;Publishes=0};$case=Join-Path $work $scenario;$app=Join-Path $case 'app';$programs=Join-Path $case 'Programs';$startup=Join-Path $case 'Startup';$menu=Join-Path $programs 'ProGo'
         $primary=Join-Path $menu 'ProGo.lnk';$legacy=Join-Path $menu 'ProGo Status.lnk';$startupLink=Join-Path $startup 'ProGo.lnk'
         New-Item -ItemType Directory -Path $app,$menu,$startup | Out-Null;[IO.File]::WriteAllText((Join-Path $app 'ProGo.exe'),'synthetic old executable')
-        $private=@{};foreach($path in @((Join-Path $app 'settings.json'),(Join-Path $app 'vault.enc'),(Join-Path $app 'key-reference.txt'),(Join-Path $menu 'foreign.txt'),(Join-Path $startup 'foreign.txt'))){[IO.File]::WriteAllText($path,'synthetic private or foreign bytes');$private[$path]=Get-LiveInstalledHash $path}
+        $customShortcuts=@{};$foreignTarget=Join-Path $case 'foreign-target.exe';[IO.File]::WriteAllText($foreignTarget,'synthetic foreign target; never execute')
+        $private=@{};$private[$foreignTarget]=Get-LiveInstalledHash $foreignTarget;foreach($path in @((Join-Path $app 'settings.json'),(Join-Path $app 'vault.enc'),(Join-Path $app 'key-reference.txt'),(Join-Path $menu 'foreign.txt'),(Join-Path $startup 'foreign.txt'))){[IO.File]::WriteAllText($path,'synthetic private or foreign bytes');$private[$path]=Get-LiveInstalledHash $path}
         $manager=New-Object ProGo.ApplicationShortcuts($app,$programs,$startup);$manager.Install($true,$true,$false);[IO.File]::Move($primary,$legacy)
         if($scenario -in @('preserved-primary','preserved-both')){[IO.File]::WriteAllBytes($primary,[IO.File]::ReadAllBytes($legacy))}
         $preserveStartup=$scenario -in @('preserved-startup','preserved-both','custom-startup-equal-byte','absent-startup')
-        if($preserveStartup -and $scenario -cne 'absent-startup'){[IO.File]::WriteAllText($startupLink,'synthetic customized Startup')}
+        if($preserveStartup -and $scenario -cne 'absent-startup'){
+            New-LiveInstalledCustomShortcut $startupLink $foreignTarget '--synthetic-startup'
+            if($scenario -cne 'custom-startup-equal-byte'){$customShortcuts[$startupLink]=[pscustomobject]@{Hash=(Get-LiveInstalledHash $startupLink);Origin=(Get-LiveInstalledOrigin $startupLink);Arguments='--synthetic-startup'}}
+        }
         if($scenario -ceq 'unsupported-absent'){[IO.File]::Delete($legacy)}
-        if($scenario -ceq 'unsupported-custom'){[IO.File]::WriteAllText($legacy,'synthetic custom Legacy')}
+        if($scenario -ceq 'unsupported-custom'){
+            New-LiveInstalledCustomShortcut $legacy $foreignTarget '--synthetic-legacy'
+            $customShortcuts[$legacy]=[pscustomobject]@{Hash=(Get-LiveInstalledHash $legacy);Origin=(Get-LiveInstalledOrigin $legacy);Arguments='--synthetic-legacy'}
+        }
         if($scenario -in @('unsupported-custom','unsupported-optout')){$private[$legacy]=Get-LiveInstalledHash $legacy}
         $backup=New-ProGoInstallerBackup $payload $app;$stage=New-ProGoInstallerStage $payload;$writes=New-Object 'System.Collections.Generic.List[object]'
         foreach($entry in $backup.Entries){Set-ProGoInstallerRuntimeFile $stage $backup $entry $writes}
         $prepared=Initialize-ProGoShortcuts -InstallDirectory $app -WasInstalled $false -NoStartup $preserveStartup -NoStartMenu ($scenario -ceq 'unsupported-optout') -ProgramsDirectory $programs -StartupDirectory $startup -CaptureStartupEvidence -PreserveLegacyForOwnedOperation
+        foreach($path in $customShortcuts.Keys){Check-LiveInstalled ((Get-LiveInstalledHash $path) -ceq $customShortcuts[$path].Hash -and (Get-LiveInstalledOrigin $path) -ceq $customShortcuts[$path].Origin) 'preparation preserves valid custom shortcut bytes and native identity'}
+        if($scenario -ceq 'unsupported-custom'){Check-LiveInstalled ($prepared.Legacy.Disposition -ceq 'preserved' -and -not $prepared.Legacy.BeforeMatched) 'valid foreign Legacy remains unsupported and is not admitted as owned'}
         $unsupported=$scenario.StartsWith('unsupported-',[StringComparison]::Ordinal)
         if(-not $unsupported){
             $reference=New-ProGoInstallerLegacySourceReference $backup $programs $startup;Complete-ProGoInstallerLegacyRestartSeal $backup $reference $programs $startup;[void](New-ProGoInstallerLegacyPreDeleteAdmission $backup $programs $startup)
@@ -125,7 +157,7 @@ try{
             $path=if($scenario -ceq 'primary-equal-byte'){$primary}else{$startupLink};[byte[]]$bytes=[IO.File]::ReadAllBytes($path);$creation=[IO.File]::GetCreationTimeUtc($path)
             [IO.File]::Move($path,(Join-Path $case 'retained-native-object'));[IO.File]::WriteAllBytes($path,$bytes);[IO.File]::SetCreationTimeUtc($path,$creation)
         }
-        if($scenario -ceq 'reappeared-legacy'){[IO.File]::WriteAllText($legacy,'synthetic foreign Legacy');$private[$legacy]=Get-LiveInstalledHash $legacy}
+        if($scenario -ceq 'reappeared-legacy'){New-LiveInstalledCustomShortcut $legacy $foreignTarget '--synthetic-reappeared';$private[$legacy]=Get-LiveInstalledHash $legacy;$customShortcuts[$legacy]=[pscustomobject]@{Hash=(Get-LiveInstalledHash $legacy);Origin=(Get-LiveInstalledOrigin $legacy);Arguments='--synthetic-reappeared'}}
         if($scenario -ceq 'occupied-pending'){[IO.File]::WriteAllText($pending,'synthetic foreign partial pending');$private[$pending]=Get-LiveInstalledHash $pending}
         if($scenario -in @('preexisting-installed','extra-journal','unowned-stream')){
             $extra=if($scenario -ceq 'preexisting-installed'){$installed}elseif($scenario -ceq 'unowned-stream'){$pending}else{Join-Path $journal 'foreign-extra.bin'}
@@ -185,6 +217,10 @@ try{
         if($null -ne $context){$context.Dispose();Check-LiveInstalled (-not $context.VerifyAcceptedInstallState() -and -not $context.VerifyInstalledOutcome()) 'disposed proofs block despite historical flags'}
         if($null -ne $foreignContext){$foreignContext.Dispose();$foreignContext=$null};if($null -ne $foreignStage){Remove-ProGoInstallerStage $foreignStage;$foreignStage=$null}
         if($null -ne $lease){$lease.Dispose()};if($null -ne $physical){$physical.Dispose()};$context=$null;$lease=$null;$physical=$null;$cancel.Dispose();$cancel=$null
+        foreach($path in $customShortcuts.Keys){
+            Check-LiveInstalled ((Get-LiveInstalledHash $path) -ceq $customShortcuts[$path].Hash -and (Get-LiveInstalledOrigin $path) -ceq $customShortcuts[$path].Origin) 'refusal repeat and disposal preserve valid custom shortcut exact bytes and native identity'
+            Test-LiveInstalledCustomShortcut $path $foreignTarget $customShortcuts[$path].Arguments
+        }
         foreach($path in $private.Keys){Check-LiveInstalled ((Get-LiveInstalledHash $path) -ceq $private[$path]) 'private foreign and unsupported Legacy bytes intact'}
         foreach($file in Get-ChildItem -LiteralPath $case -Recurse -File){$probe=[IO.File]::Open($file.FullName,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None);$probe.Dispose()}
         Remove-ProGoInstallerStage $stage;$stage=$null;Write-Host ('PASS: live installed transaction '+$scenario)

@@ -46,6 +46,22 @@ class InstalledNamespaceContract(unittest.TestCase):
                      'repeat observes only, never retries publication/deletion or cleans partial artifact']:
             self.assertIn(term,self.fixture)
         self.assertIn('ActualInstallationCompleted = $false; InstallSucceeded = $false',self.installer)
+    def test_custom_shortcut_fixture_is_valid_before_preparation_and_preserved(self):
+        f = self.fixture
+        for invalid in ["WriteAllText($legacy,'synthetic custom Legacy')",
+                        "WriteAllText($startupLink,'synthetic customized Startup')",
+                        "WriteAllText($legacy,'synthetic foreign Legacy')"]:
+            self.assertNotIn(invalid, f)
+        self.assertIn('New-Object -ComObject WScript.Shell', f)
+        self.assertIn('$link.TargetPath=$Target;$link.Arguments=$Arguments', f)
+        self.assertIn('Test-LiveInstalledCustomShortcut $Path $Target $Arguments', f)
+        self.assertLess(f.index("New-LiveInstalledCustomShortcut $legacy $foreignTarget '--synthetic-legacy'"),
+                        f.index('$prepared=Initialize-ProGoShortcuts', f.index('foreach($scenario in $cases)')))
+        self.assertIn("$prepared.Legacy.Disposition -ceq 'preserved' -and -not $prepared.Legacy.BeforeMatched", f)
+        self.assertIn('refusal repeat and disposal preserve valid custom shortcut exact bytes and native identity', f)
+        self.assertIn("GetMethod('LegacyOrigin',[Reflection.BindingFlags]'NonPublic,Static')", f)
+        self.assertIn('InvokeChecked($method,$null,[object[]]@($stream.SafeFileHandle))', f)
+        self.assertNotIn('.Invoke(', f)
     def test_core_incident_observer_keeps_deadline_and_real_body(self):
         fixture=(ROOT / 'tests/RepairPayloadTests.ps1').read_text()
         probe=(ROOT / 'tests/RepairPhaseProbe.ps1').read_text()

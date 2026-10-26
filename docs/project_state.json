@@ -4020,17 +4020,17 @@
     }
   ],
   "ci_candidate": {
-    "source": "031168e2a3e0711aabbe8946341554bbe57f2e96",
-    "tree": "1d606bb3fa6ea4a9fd2a0acaafeaa28a6f2797ae",
-    "run_id": 40378897754,
-    "run_number": 733,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40378897754",
+    "source": "93a012b67b1c51f05dbc19d48ff867a44451a457",
+    "tree": "ccc91df70d03f7d1dac50a22d54aa79aa54935da",
+    "run_id": 40386391040,
+    "run_number": 734,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40386391040",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "queued",
     "conclusion": null,
-    "candidate_merge_ref": "b6c5771c8fe3cc0b744bcfbfbab69817416ff199",
+    "candidate_merge_ref": "51cada113cd2250914fa007345be108553a9d696",
     "tested_merge": null,
     "required_partitions": [
       "vpn-server-test",
@@ -4039,7 +4039,7 @@
       "installer-live-tests",
       "installer-recovery-tests"
     ],
-    "new_windows": "diagnostic34/refusal2/compiler/full exact5 aggregate NOT_RUN; root UNKNOWN; inspect same sole CI733",
+    "new_windows": "namespace native40/refusal2/Windows compiler NOT_RUN; inspect same CI734; separate Core20s cause UNKNOWN diagnostic-only",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5530,7 +5530,7 @@
     "scoring": "Existing v1.0 weights unchanged; no points for documentation/commit/unexecuted tests",
     "continuity": "No schedule/restart/continuous guarantee created"
   },
-  "active_work": "CI733 source-proven installed namespace correction + separate Core UNKNOWN budget safe diagnostic; no new product stage/default activation; Windows native40/refusal2 NOT_RUN locally",
+  "active_work": "CI734 fixture-only valid custom Shell Link setup correction; not overall40 PASS; Core startup/Repair incidents UNKNOWN; default OFF/native Windows proof pending one new automatic CI",
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
     "implementation": "SettingsService.TryAcquireLaunchRevision: Acquired/Busy/Changed via nonblocking commitGate; same-worker release and no state/disk mutation",
@@ -24452,6 +24452,63 @@
     "local": "95PASS legacy71+aggregate24/review/static/parity/secrets/public433source0release PASS",
     "native": "native40/refusal2/Windows compiler/Core phase observer NOT_RUN locally",
     "core_incident": "UNKNOWN; diagnostics-only same20s deadline, no product repair change; green rerun not cause proof",
-    "remaining": "default/actual complete installation/whole/runtime rollback/restart/powerloss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30 preserved"
+    "remaining": "default/actual complete installation/whole/runtime rollback/restart/powerloss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30 preserved",
+    "publication": {
+      "source": "93a012b67b1c51f05dbc19d48ff867a44451a457",
+      "tree": "ccc91df70d03f7d1dac50a22d54aa79aa54935da",
+      "reviewed_local": "4ad797d11b55270f730516270d1cff597b9accfb",
+      "canonical_join": "cfaab4b0442b54b09ba964873c30d64ef3fb900c",
+      "run": 40386391040,
+      "status": "queued",
+      "default_activation": false,
+      "core_cause": "UNKNOWN"
+    }
+  },
+  "ci734_verified_owner_report": {
+    "source": "93a012b67b1c51f05dbc19d48ff867a44451a457",
+    "merge": "51cada113cd2250914fa007345be108553a9d696",
+    "run": 40386391040,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "logs": "owner independently read all6 full logs",
+    "live": {
+      "job": 121795672338,
+      "lines": 348,
+      "normal40": "6PASS/1setupERROR/33NOT_RUN",
+      "passed": "complete/preserved-primary/preserved-startup/preserved-both/absent-startup/unsupported-absent",
+      "native_positive_scope": "first5 prove real Flush/readback/native rename/recorded scoped outcome, not overall40 PASS or complete install",
+      "failure": "unsupported-custom opaque text .lnk -> COM E_FAIL during preparation before handler",
+      "refusal2": "complete child PASS/context-lost child NOT_RUN",
+      "old_failure_suites": "PASS"
+    },
+    "core": {
+      "job": 121795672143,
+      "lines": 2829,
+      "failure": "SSH exit0-regression >5000ms before body/stdout0/stderr0/cpu0/PythonDLL+CRT loaded/4waiting threads",
+      "cause": "UNKNOWN",
+      "classifier26": "PASS",
+      "later": "native suites/relay/pack SKIPPED/NOT_RUN",
+      "package": "NOT_CREATED",
+      "repair733": "NOT_REPRODUCED: committed child6952ms/expected exit1/41entries/41applied/recovery PASS; cause UNKNOWN, not fixed"
+    },
+    "foundation": "26PASS/full643",
+    "recovery": "6PASS/full539",
+    "ubuntu": "PASS/full619",
+    "aggregate": {
+      "job": 121813505901,
+      "lines": 180,
+      "result": "exact5 FAIL_CLOSED Live/Core"
+    }
+  },
+  "live_installed_custom_fixture_gate": {
+    "base_checkpoint": "35e9b4bdd8a4f75ada7b135ce1dbc4fdcf91b8b6",
+    "cause": "code-confirmed unsupported-custom fixture opaque text instead of valid Shell Link; production parsing unchanged",
+    "scope": "only normal-success fixture valid COM foreign target/arguments+fresh load before preparation; native origin/bytes preserved after preparation/refusal/repeat/dispose; audit custom Startup/reappeared Legacy same invalid setup corrected",
+    "preservation": "all40/refusal2/assertions/fault bodies/production/pins/defaultOFF/strict5/deadlines/classifier/F30 unchanged",
+    "local": "96PASS legacy72+aggregate24/review/static/parity/secrets/public433source0release",
+    "native": "Windows COM/native40/refusal2/compiler NOT_RUN locally",
+    "unknown": "Core Python startup5000ms UNKNOWN; historical Repair20s UNKNOWN despite nonreproduction; CI728 cancellation UNKNOWN",
+    "remaining": "whole/runtime rollback/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/fullF30 preserved"
   }
 }

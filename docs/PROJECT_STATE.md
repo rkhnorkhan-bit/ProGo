@@ -1,3 +1,70 @@
+## CURRENT CI734 FAILURE; fixture-only valid custom Shell Link correction
+
+Admission exact clean checkpoint35e9b4bdd8a4f75ada7b135ce1dbc4fdcf91b8b6 available in existing checkout;
+remote93a012b67b1c51f05dbc19d48ff867a44451a457, merge51cada113cd2250914fa007345be108553a9d696,
+PR88 draft/open. Full local docs/history preserved. No queued/in_progress/waiting CI, Git/build/SSH processes
+or Git locks; sole writer, no reset/discard/second writer.
+
+Owner independently verified SIX full CI734 logs, run40386391040 attempt1 FAILURE.
+Live121795672338 full348: NormalSuccess40=6PASS/1setupERROR/33NOT_RUN. Complete/preserved-primary/
+preserved-Startup/both/absent-Startup prove actual Flush/readback/native rename/recorded scoped outcome;
+unsupported-absent PASS. Unsupported-custom setup COM E_FAIL in PrepareForOwnedLegacyOperation via
+Shortcuts-ProGo.ps1:27 BEFORE success handler: fixture wrote opaque text instead of a Shell Link.
+This fixture defect is code-confirmed, not production COM parser failure; no parser relaxation.
+Complete fresh-process refusal PASS; context-lost second refusal NOT_RUN, not refusal2 PASS.
+All prior failure-chain suites PASS. Overall40 NOT PASS and not complete installation/default activation.
+
+Separate Core121795672143 full2829: SSH exit0-regression >5000ms before body entry, stdout/stderr0,
+cpu0, PythonDLL+CRT loaded,4 waiting threads; classifier26 PASS. Subsequent native suites/relay/pack
+SKIPPED/NOT_RUN, package734 NOT CREATED. Python startup root cause UNKNOWN; no deadline increase,
+blind rerun or claimed production fix. Earlier CI733 Repair20s incident did NOT reproduce: CI734
+committed child6952ms/expected exit1/entries41/applied41/recovery PASS; historical cause still UNKNOWN,
+nonreproduction is not a fix. CI728 cancellation cause likewise UNKNOWN.
+Foundation26 full643 PASS; Recovery6 full539 PASS; Ubuntu full619 PASS; aggregate121813505901
+full180 exact5 correctly FAIL_CLOSED on Live/Core. These are owner-verified full-log facts.
+
+Only normal-success synthetic fixture corrected (production/scripts/workflows/old failure fixtures unchanged):
+- Unsupported-custom now saves a valid WScript.Shell Shell Link with target+arguments foreign to ProGo,
+  entirely under its existing GUID temp fixture; never executes that target. A fresh independent COM object
+  loads it before preparation and verifies actual target/arguments; exceptions remain fatal setup errors.
+  Existing unsupported-custom state/recorded/authority refusal expectations are unchanged. Preparation must
+  actually complete with preserved/BeforeMatched=false, never catch setupERROR as expected PASS.
+- Audit all40 newly-added custom/optout/foreign shortcut setups: custom Startup and reappeared Legacy also
+  replace opaque text with valid foreign links. Optout and foreign native-context/primary seeds already use
+  real ApplicationShortcuts.Install; equal-byte identity cases copy valid links and copied creation times.
+  Tampered source/receipt/pending bytes remain explicit corruption/result-rejection tests, not valid shortcuts.
+  Historical prior suites are preserved byte-for-byte; no unrelated suite expansion or weakening.
+- Capture custom bytes and native LegacyOrigin via existing CLR-normalizing InvokeChecked (exact SafeFileHandle
+  parameter), READ/shareREAD|DELETE; compare after preparation and after real handler refusal/repeat/Dispose.
+  Equal-byte Startup negative deliberately replaces native identity and keeps its existing refusal checks.
+  COM save/load references explicitly released; private foreign target/shortcut bytes and exclusive reopen
+  checks retained. No new receipt/helper authority or production semantics.
+- All40 cases/refusal2/old assertions/actual Write-shortwrite-Flush-readback faults/cancellation/no-replay/
+  original-error/progress expectations remain. Added real Windows loadability+preservation regression checks
+  and one static fixture-wiring regression; static tests are not native proof.
+
+Local PASS: legacy72+aggregate24=96; fixture-only review/static/parity/lexical/JSON/diff/secrets/public433
+source0release. Runtime/default/COM parser/native pins/nooverwrite/strict5 exactSHA aggregate/deadlines/
+classifier26/approved plan/F23/F30 unchanged. Windows COM/native40/refusal2/compiler NOT_RUN locally
+(no pwsh/dotnet). One guarded publication +one automatic CI, no blind same-source rerun/dispatch/full wait.
+Default OFF; state verified != durable scoped installed outcome != actual complete installation. Whole/runtime
+rollback/restart/power-loss/PC acceptance OPEN. UNKNOWN/BLOCKED_TRANSFER/fullF30/all33+new suites retained.
+
+## CURRENT sole automatic CI734 queued; owned namespace correction native proof pending
+
+Published source `93a012b67b1c51f05dbc19d48ff867a44451a457`; full tree `ccc91df70d03f7d1dac50a22d54aa79aa54935da` equals reviewed local code
+`4ad797d11b55270f730516270d1cff597b9accfb`; canonical join `cfaab4b0442b54b09ba964873c30d64ef3fb900c` preserves all prior docs/checkpoints.
+Candidate merge `51cada113cd2250914fa007345be108553a9d696` NOT yet tested. Exactly one expected-head non-force update from exact
+CI733 source; one automatic [CI734](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40386391040),
+pull_request/attempt1/source-filtered count1, observed queued/conclusion null. No rerun/dispatch/duplicate/fullwait.
+Installed failure cause is code-verified admit-only namespace rejecting own pending; bounded same-live-session
+CreateNew/handle/origin/bytes/stage transition implemented, native40/refusal2/Windows compile NOT_RUN locally.
+Local95/review/static/parity/secrets/public433source0release PASS. Default activation OFF.
+Separate Core committed image-check20s incident stays UNKNOWN; safe synthetic phase/start/progress/exit diagnostics
+only, same deadlines. A future green run is not proof of a Core cause/fix. Inspect this SAME CI734 next.
+This checkpoint is local docs-only, intentionally not published. Whole/runtime rollback/restart/power-loss/
+PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30/all33+native40/strict5 exactSHA/deadlines preserved.
+
 ## CURRENT CI733 FAILURE; proven owned installed namespace transition correction
 
 Admission exact clean available checkpoint e69341bd268ff9a237e9e760b66b8cb70234879b; remote source
