@@ -1,3 +1,113 @@
+## CURRENT upgrade-only live auxiliary to single runtime leaf transition; native CI pending
+
+Admission exact clean local checkpoint e30abe450d5e9997966a1a07de14f5634a1dc3f0, PR88 remote
+90e9f321866b2a8a491d55b43c38830653dd1d2e and previous merge 986deb5ec095f365b30e2afc636c55aa767d981d;
+original three-document local diff/history preserved. No active Git/build/SSH, locks, queued/running/waiting CI;
+sole writer, no reset/discard. CI735 owner's independently verified six full logs: SUCCESS, Live NormalSuccess40/
+refusal2/all previous failure-chain PASS, Core/classifier26/SSH5 and all old checks PASS, Foundation26/Recovery6/
+Ubuntu PASS, aggregate exact five SHA PASS. ZIP727991 SHA256 84396fb9a0145f3189750fbca8276d2652d28306e44b1871933d66ad3462b83d
+runner-only, not transferred or PC accepted. CI728 cancellation and Repair20s/SSH startup causes remain UNKNOWN;
+nonreproduction is not a fix. Live duration39m37 near40m budget.
+
+Bounded implementation, optional same-process failure handler ONLY, default installer remains OFF:
+- After actual Legacy restore -> Startup -> Menu settlement and durable scoped auxiliary outcome, same typed
+  live context may attempt once to restore exactly ProGo.exe, only if its verified inventory says old file exists
+  in the same pinned verified snapshot. Original backup/source/journal/shortcut pins remain retained; receipt,
+  absence or historical bool alone cannot authorize. Snapshot-free new install remains BLOCKED, not simulated.
+- Revalidate complete auxiliary proof and every physical pin, release only the chosen runtime read-pin,
+  reopen target with READ|WRITE/NOFOLLOW/WriteThrough and compare native origin and new bytes on that exact
+  mutation handle. Source remains pinned; compare its hash. Re-establish complete auxiliary/snapshot graph using
+  the reopened same handle BEFORE first mutation. Restore from that retained snapshot handle to the same exact
+  runtime handle, Flush(true), readback/hash/native origin and then revalidate auxiliary+physical witnesses.
+  No path copy/delete, no global namespace freeze, no blanket bypass. Original physical-plan hashes remain;
+  separate typed live verification permits old hash only for that exact restored leaf in this same context.
+- Result distinguishes attempt/pin-release-attempt/released/reopened/mutation started/bytes written/flush/
+  readback/auxiliary/leaf verified/cancellation. Original installer error is preserved; partial artifacts and
+  backup retained. Failed, cancelled or disposed proof never authorizes retry; repeat consumes cached progress.
+  Late cancellation cannot become scoped success. Normal installed transaction blocks later runtime branch.
+  Old receipt-only VerifyPinned remains strict; no old terminal rollback record or restart capability issued.
+  One verified leaf is not whole runtime/auxiliary rollback or install success.
+- New separate installer-runtime-tests Windows partition has independent checkout, exact SHA, existing build
+  and standalone native fixture bootstrap. Existing 33 suites execute once in their prior partitions; Live not
+  lengthened. Strict aggregate requires all SIX exact merge SHA outputs; negative tests cover missing/skipped/
+  cancelled/failure/wrong SHA, partition coverage and deadlines. Existing individual deadlines unchanged.
+- Synthetic GUID upgrade fixture has 19 cases: real complete transition; equal-byte copied-creation native
+  replacement, changed target, reparse, changed snapshot before/after release and denied snapshot write;
+  pre/post-release cancellation/error, real Write/short-write/Flush/readback exception+actual mismatch,
+  cancellation after write/readback, disposed context, successful normal publication followed by late failure.
+  Repeated handler cannot re-mutate even after proof returns; source/snapshot/journal/private/shortcut bytes,
+  original error and handle release checked. A separate actual empty-snapshot refusal and fresh-process refusal
+  remain blocked/manual. These cases are written, NOT_RUN locally; Windows is the required evidence.
+
+Local PASS 77 legacy contract tests +25 aggregate tests=102; source/failure/default main/old tests parity,
+strict6/coverage/deadline and negative review, exact identity/sharing/reflection contracts, lexical/JSON/diff/
+secrets/public435source0release. No Windows pwsh/dotnet/compiler here: native compilation, 19 cases, empty
+snapshot/fresh-child and required full aggregate NOT_RUN. Publish one guarded update and one automatic CI;
+no rerun/dispatch/full wait. New-snapshot-free installation, remaining runtime leaves, durable terminal result,
+whole rollback, default activation, restart recovery, power-loss and PC acceptance remain OPEN. UNKNOWN/
+BLOCKED_TRANSFER/full F30/all previous suites/classifier26 preserved.
+
+## CURRENT CI735 SUCCESS; runtime rollback integration review, implementation NOT completed
+
+Admission exact clean checkpoint f24fc7cb8b8b594e32075b23a0720b4ce9aeb353 available in this checkout,
+remote source 90e9f321866b2a8a491d55b43c38830653dd1d2e / merge 986deb5ec095f365b30e2afc636c55aa767d981d.
+Prior three-document local diff preserved; no reset/discard, no queued/in_progress/waiting CI or active local
+Git/build/SSH/locks at admission. One writer. User independently reports all six full CI735 logs read;
+this review separately checked workflow/job metadata, not all log bodies. Run40392453039 attempt1
+completed SUCCESS, all five required jobs and aggregate SUCCESS. Owner's exact full-log evidence:
+Live121816686496 full411 NormalSuccess40/refusal2 and previous failure-chain PASS; Foundation26/full643,
+Recovery6/full539, Ubuntu/full619 PASS; Core121816686852/full15515 classifier26/SSH5/Desktop6394/
+Instance30/Maintenance126/Shutdown47/HomeVPN4817/Portable91/Python129PASS2SKIP; aggregate121837426179
+full179 exact five merge SHA PASS. ZIP727991 SHA256 84396fb9a0145f3189750fbca8276d2652d28306e44b1871933d66ad3462b83d
+runner-only, not transferred or PC accepted. CI728 cancellation and Core Repair20s/SSH startup causes UNKNOWN;
+nonreproduction is not proof of a fix. Live duration reported 39m37s, close to its 40min budget.
+
+Read-only review of next same-process runtime rollback gate: NOT IMPLEMENTED, no extra helper/default flow,
+no path-based mutation or release of existing proofs. The existing physical pin graph deliberately retains
+FileShare.Read native handles for runtime, backup, journal and evidence; VerifyPinned verifies their original
+native origins and hashes. VerifyLiveAuxiliaryOutcome -> VerifyMenuSettlement -> VerifyLegacyOperationPlan
+revalidates that same graph and NewHash plan. Releasing a runtime leaf pin or writing its old bytes makes
+those existing validators fail; blanket exemption or treating historical AuxiliaryOutcomeRecorded as capability
+would weaken the live proof. Required future bounded implementation must atomically transition just the
+admitted leaf's witness: capture existing identity/bytes, release only that leaf read-pin, open exact mutation
+handle with no reparse follow, verify SAME native identity and current bytes on that handle, then mutate via
+that same handle. It must model partial progress and expected old-runtime state and revalidate all retained
+source/snapshot/journal/shortcut witnesses and auxiliary proof after each actual transition. Conflict/cancel/
+failure preserves backup and original installation error, with no replay/foreign mutation.
+
+A concrete prerequisite for truly empty new install is currently absent: New-ProGoInstallerBackup creates
+an installer snapshot only if an original runtime entry exists, while Get-ProGoInstallerLegacySourceContext
+requires a non-null verified snapshot. New-install-with-no-original-runtime cannot be claimed covered by
+existing live Legacy context; a trusted empty-original inventory/snapshot construction and its native tests
+are required before that case. A mixed/new-leaf fixture under an existing verified snapshot is not equivalent.
+Existing Complete-ProGoInstallerRollbackOutcome invokes Assert-ProGoInstallerJournal and path-based original
+runtime checks; its compatibility with live auxiliary witnesses and exact owned mutation proof remains unproved.
+Do not publish its terminal result as restart authority; fresh process remains blocked/manual.
+
+CI topology remains original strict five exact-SHA partitions. No new integration partition was created:
+there is no completed integration body to run; no CI was launched, no push. Future integration must have a
+self-contained independent mandatory runtime partition, retain all existing suites exactly once and require
+all six same-SHA partition outputs with missing/skipped/cancelled/wrong SHA negative regressions. Do not add
+work to Live39m37 or extend deadlines. Required Windows GUID-only positive/fault/conflict/cancel/repeat/
+fresh-process tests remain NOT_RUN. No Windows PowerShell or .NET compiler exists in this environment;
+local baseline 72 legacy static +24 aggregate =96 PASS, public content433source/0release PASS, not native proof.
+Default installer OFF. Whole/runtime rollback, restart, power-loss and PC acceptance remain OPEN; full F30,
+UNKNOWN/BLOCKED_TRANSFER, all33+new suites, strict5 aggregate/deadlines/classifier26 preserved.
+
+## CURRENT sole automatic CI735 in_progress; valid custom fixture native proof pending
+
+Published source `90e9f321866b2a8a491d55b43c38830653dd1d2e`; tree `9a6720ec2ed388ef63b6bafa84e090ad4d6a810d` equals reviewed local code
+`13010cfe8883ffc5c26e585eb7cda61f293602e5`; canonical join `cad83631c598e64ef43772ea0e441264ad87cf94` preserves all prior checkpoints/docs.
+Candidate merge `986deb5ec095f365b30e2afc636c55aa767d981d` NOT yet tested. One expected-head non-force publication from exact CI734
+source and one automatic [CI735](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40392453039),
+pull_request/attempt1/source-filtered count1, observed in_progress/conclusion null. No rerun/dispatch/duplicate/fullwait.
+Fixture-only valid custom Shell Link setup/loadability/bytes+native identity preservation fix; production unchanged.
+Local96/review/static/parity/secrets/public433source0release PASS; new native40/refusal2/Windows COM/compiler
+NOT_RUN locally. First6 CI734 PASS are partial evidence, NOT overall40 PASS. Inspect this SAME CI735 next.
+Both Core Python startup5000ms and historical Repair20s causes remain UNKNOWN; nonreproduction not a fix.
+This docs-only checkpoint is intentionally local. Default OFF; whole/runtime rollback/restart/power-loss/
+PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30/all33+new40/refusal2/strict5 exactSHA/deadlines retained.
+
 ## CURRENT CI734 FAILURE; fixture-only valid custom Shell Link correction
 
 Admission exact clean checkpoint35e9b4bdd8a4f75ada7b135ce1dbc4fdcf91b8b6 available in existing checkout;

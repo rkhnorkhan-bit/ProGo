@@ -1292,16 +1292,19 @@ function Complete-ProGoInstallerAuxiliaryOutcome($LegacyContext,
     if ($LegacyContext -isnot [ProGo.ApplicationShortcuts+LegacyStartupContext]) { return $null }
     return $LegacyContext.RecordAuxiliaryOutcomeOnce($CancellationToken)
 }
+function Invoke-ProGoInstallerLiveRuntimeLeaf($LegacyContext, [Threading.CancellationToken]$CancellationToken) {
+    return $LegacyContext.RestoreOwnedRuntimeLeafOnce($CancellationToken)
+}
 function Invoke-ProGoInstallerFailureAuxiliary($OriginalError, $Backup, [string]$InstallDirectory,
     [string]$ProgramsDirectory, [string]$StartupDirectory, $LegacyContext,
-    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
-    $stateVerified = $false; $outcomeRecorded = $false; $publication = $null; $scopeMatched = $false
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None, [switch]$RestoreSingleRuntimeLeaf) {
+    $stateVerified = $false; $outcomeRecorded = $false; $publication = $null; $scopeMatched = $false; $runtimeLeaf = $null
     try {
         Import-ProGoShortcutType
         if ($LegacyContext -is [ProGo.ApplicationShortcuts+LegacyStartupContext] -and $null -ne $Backup -and $null -ne $Backup.Journal -and
             $LegacyContext.MatchesInstallerLocations($Backup.Journal.Directory,$InstallDirectory,$ProgramsDirectory,$StartupDirectory)) {
             $scopeMatched = $true
-            if ($LegacyContext.BeginAuxiliaryHandling()) {
+            if ((-not $RestoreSingleRuntimeLeaf -or $LegacyContext.RuntimeFailureBranchAllowed) -and $LegacyContext.BeginAuxiliaryHandling()) {
                 $startupState = Invoke-ProGoInstallerFailureStartup $true $Backup $InstallDirectory $ProgramsDirectory $StartupDirectory $LegacyContext $CancellationToken
                 [void](Invoke-ProGoInstallerFailureMenu $true $Backup $InstallDirectory $startupState $ProgramsDirectory $StartupDirectory $LegacyContext $CancellationToken)
                 if ($LegacyContext.VerifyMenuSettlement()) { [void](Complete-ProGoInstallerAuxiliaryOutcome $LegacyContext $CancellationToken) }
@@ -1309,6 +1312,11 @@ function Invoke-ProGoInstallerFailureAuxiliary($OriginalError, $Backup, [string]
             $stateVerified = $LegacyContext.VerifyMenuSettlement()
             $outcomeRecorded = $LegacyContext.VerifyAuxiliaryOutcome()
             $publication = $LegacyContext.AuxiliaryPublication
+            if ($RestoreSingleRuntimeLeaf -and $LegacyContext.RuntimeFailureBranchAllowed) {
+                $runtimeLeaf = $LegacyContext.RuntimeLeafProgress
+                if ($null -eq $runtimeLeaf) { $runtimeLeaf = Invoke-ProGoInstallerLiveRuntimeLeaf $LegacyContext $CancellationToken }
+                $stateVerified = $LegacyContext.VerifyMenuSettlement(); $outcomeRecorded = $LegacyContext.VerifyAuxiliaryOutcome()
+            }
         }
     } catch {
         # Publication errors cannot erase accepted mutations or replace the original install error.
@@ -1320,12 +1328,13 @@ function Invoke-ProGoInstallerFailureAuxiliary($OriginalError, $Backup, [string]
     $message = if ($outcomeRecorded) { 'install-failed; scoped-auxiliary-verified-recorded; runtime-unverified' }
         elseif ($stateVerified) { 'install-failed; scoped-auxiliary-verified-unrecorded; runtime-unverified' }
         else { 'install-failed; scoped-auxiliary-blocked; runtime-unverified' }
+    if ($scopeMatched -and $RestoreSingleRuntimeLeaf) { $LegacyContext.ObserveRuntimeCancellation($CancellationToken) }
     $legacyProgress = $null; $startupInvoked = $false; $menuAccepted = $false; $menuClosed = $false; $menuPreserved = $false
     if ($scopeMatched) { $legacyProgress = $LegacyContext.RestoreProgress; $startupInvoked = $LegacyContext.StartupInvoked;
         $menuAccepted = $LegacyContext.MenuDispositionAccepted; $menuClosed = $LegacyContext.MenuHandleClosed; $menuPreserved = $LegacyContext.MenuPreservedObserved }
     return [pscustomobject]@{ OriginalError = $OriginalError; Message = $message; LegacyProgress = $legacyProgress;
         StartupInvoked = $startupInvoked; MenuDispositionAccepted = $menuAccepted; MenuHandleClosed = $menuClosed; MenuPreservedObserved = $menuPreserved; AuxiliaryStateVerified = $stateVerified;
-        AuxiliaryOutcomeRecorded = $outcomeRecorded; Publication = $publication; InstallSucceeded = $false;
+        AuxiliaryOutcomeRecorded = $outcomeRecorded; Publication = $publication; RuntimeLeafProgress = $runtimeLeaf; RuntimeLeafVerified = ($null -ne $runtimeLeaf -and $LegacyContext.VerifyRuntimeLeafOutcome()); InstallSucceeded = $false;
         RuntimeRollbackAllowed = $false; BackupCleanupAllowed = $false; RestartAuthority = $false; WholeRollbackVerified = $false }
 }
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {

@@ -233,11 +233,32 @@ jobs:
         run: |
           .\scripts\Test-ProGo.ps1 -Suite Installer -InstallerPartition Recovery
 
+  installer-runtime-tests:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Build isolated runtime integration fixture
+        shell: powershell
+        run: |
+          .\scripts\Build-ProGo.ps1
+          .\tests\InstallerLiveRuntimeLeafTests.ps1
+
   ci-complete:
     name: Exact-SHA complete CI gate
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests]
+    needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests]
     if: ${{ always() }}
     steps:
       - uses: actions/checkout@v4

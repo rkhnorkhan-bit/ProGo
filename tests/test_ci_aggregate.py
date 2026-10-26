@@ -11,7 +11,7 @@ GATE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GATE)
 
 
-PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests')
+PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests', 'installer-runtime-tests')
 
 
 class AggregateTests(unittest.TestCase):
@@ -123,7 +123,7 @@ class PartitionLayoutTests(unittest.TestCase):
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Foundation'), 1)
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Recovery'), 1)
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Live'), 1)
-        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests]', workflow)
+        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests]', workflow)
         self.assertEqual(workflow.count('  installer-recovery-tests:\n'), 1)
         self.assertIn("tests\\InstallerLegacySourceCaptureTests.ps1'", self.text)
 
@@ -224,6 +224,10 @@ def require_workflow_contract(text):
         call = '-Suite Installer -InstallerPartition ' + selector
         if text.count(call) != 1 or call not in block:
             raise ValueError('Installer selector coverage differs')
+    runtime = re.search(r'^  installer-runtime-tests:\n(.*?)(?=^  [a-z][a-z0-9-]*:|\Z)', text, re.M | re.S).group(1)
+    for call in ('.\\scripts\\Build-ProGo.ps1', '.\\tests\\InstallerLiveRuntimeLeafTests.ps1'):
+        if text.count(call) != 1 or call not in runtime:
+            raise ValueError('Runtime integration self-contained bootstrap differs')
     gate = text.split('  ci-complete:', 1)[1]
     for token in ('timeout-minutes: 5\n', 'PROGO_EXPECTED_SHA: ${{ github.sha }}',
                   'PROGO_NEEDS_JSON: ${{ toJSON(needs) }}', 'python3 scripts/check_ci_aggregate.py'):
@@ -259,6 +263,20 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         del bodies['InstallerLegacyStartupLiveTests.ps1']
         with self.assertRaises(ValueError):
             require_fixture_parity(bodies)
+
+    def test_runtime_partition_missing_skipped_cancelled_wrong_sha_refused(self):
+        sha = 'a' * 40
+        jobs = {name: {'result': 'success', 'outputs': {'tested_sha': sha}} for name in PARTITIONS}
+        for state in ('failure', 'skipped', 'cancelled', None):
+            altered = copy.deepcopy(jobs); altered['installer-runtime-tests']['result'] = state
+            with self.assertRaises(ValueError): GATE.validate(altered, sha)
+        altered = copy.deepcopy(jobs); del altered['installer-runtime-tests']
+        with self.assertRaises(ValueError): GATE.validate(altered, sha)
+        altered = copy.deepcopy(jobs); altered['installer-runtime-tests']['outputs']['tested_sha'] = 'b' * 40
+        with self.assertRaises(ValueError): GATE.validate(altered, sha)
+        for before, after in (('  installer-runtime-tests:', '  wrong-runtime-tests:'),
+                              ('.\\tests\\InstallerLiveRuntimeLeafTests.ps1', '.\\tests\\wrong.ps1')):
+            with self.assertRaises(ValueError): require_workflow_contract(self.workflow.replace(before, after, 1))
 
     def test_missing_live_job_or_need_refused(self):
         for text in (self.workflow.replace('installer-live-tests, ', '', 1),

@@ -4020,17 +4020,17 @@
     }
   ],
   "ci_candidate": {
-    "source": "93a012b67b1c51f05dbc19d48ff867a44451a457",
-    "tree": "ccc91df70d03f7d1dac50a22d54aa79aa54935da",
-    "run_id": 40386391040,
-    "run_number": 734,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40386391040",
+    "source": "90e9f321866b2a8a491d55b43c38830653dd1d2e",
+    "tree": "9a6720ec2ed388ef63b6bafa84e090ad4d6a810d",
+    "run_id": 40392453039,
+    "run_number": 735,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40392453039",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
-    "status": "queued",
+    "status": "in_progress",
     "conclusion": null,
-    "candidate_merge_ref": "51cada113cd2250914fa007345be108553a9d696",
+    "candidate_merge_ref": "986deb5ec095f365b30e2afc636c55aa767d981d",
     "tested_merge": null,
     "required_partitions": [
       "vpn-server-test",
@@ -4039,7 +4039,7 @@
       "installer-live-tests",
       "installer-recovery-tests"
     ],
-    "new_windows": "namespace native40/refusal2/Windows compiler NOT_RUN; inspect same CI734; separate Core20s cause UNKNOWN diagnostic-only",
+    "new_windows": "valid custom Shell Link fixture native40/refusal2/Windows COM/compiler NOT_RUN; Core Python startup/Repair incidents UNKNOWN; inspect same sole CI735",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5530,7 +5530,7 @@
     "scoring": "Existing v1.0 weights unchanged; no points for documentation/commit/unexecuted tests",
     "continuity": "No schedule/restart/continuous guarantee created"
   },
-  "active_work": "CI734 fixture-only valid custom Shell Link setup correction; not overall40 PASS; Core startup/Repair incidents UNKNOWN; default OFF/native Windows proof pending one new automatic CI",
+  "active_work": "Upgrade-only live auxiliary to one exact-owned runtime leaf implemented, native19+empty snapshot/fresh child not run locally; default OFF, strict6 CI candidate pending publication",
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
     "implementation": "SettingsService.TryAcquireLaunchRevision: Acquired/Busy/Changed via nonblocking commitGate; same-worker release and no state/disk mutation",
@@ -24509,6 +24509,56 @@
     "local": "96PASS legacy72+aggregate24/review/static/parity/secrets/public433source0release",
     "native": "Windows COM/native40/refusal2/compiler NOT_RUN locally",
     "unknown": "Core Python startup5000ms UNKNOWN; historical Repair20s UNKNOWN despite nonreproduction; CI728 cancellation UNKNOWN",
-    "remaining": "whole/runtime rollback/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/fullF30 preserved"
+    "remaining": "whole/runtime rollback/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/fullF30 preserved",
+    "publication": {
+      "source": "90e9f321866b2a8a491d55b43c38830653dd1d2e",
+      "tree": "9a6720ec2ed388ef63b6bafa84e090ad4d6a810d",
+      "reviewed_local": "13010cfe8883ffc5c26e585eb7cda61f293602e5",
+      "canonical_join": "cad83631c598e64ef43772ea0e441264ad87cf94",
+      "run": 40392453039,
+      "status": "in_progress",
+      "default_activation": false
+    }
+  },
+  "ci735_verified_owner_report": {
+    "run": 40392453039,
+    "attempt": 1,
+    "source": "90e9f321866b2a8a491d55b43c38830653dd1d2e",
+    "merge": "986deb5ec095f365b30e2afc636c55aa767d981d",
+    "conclusion": "success",
+    "log_evidence": "all six full logs independently verified by owner; this review checked run and six job metadata",
+    "live": "121816686496 full411 NormalSuccess40/refusal2/failure chains PASS; duration39m37s reported",
+    "foundation": "26PASS/full643",
+    "recovery": "6PASS/full539",
+    "ubuntu": "PASS/full619",
+    "core": "121816686852 full15515 classifier26/SSH5/Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4817/Portable91/Python129PASS2SKIP",
+    "aggregate": "121837426179 full179 exact5 PASS",
+    "zip_bytes": 727991,
+    "zip_sha256": "84396fb9a0145f3189750fbca8276d2652d28306e44b1871933d66ad3462b83d",
+    "delivery": "runner-only; no transfer or PC acceptance",
+    "historical_incidents": "Repair20s/SSH startup did not reproduce; causes UNKNOWN"
+  },
+  "live_auxiliary_runtime_review": {
+    "status": "REVIEW ONLY; integration NOT IMPLEMENTED; no push or new CI",
+    "base_checkpoint": "f24fc7cb8b8b594e32075b23a0720b4ce9aeb353",
+    "blockers": [
+      "physical VerifyPinned/MatchesPlan and current auxiliary settlement require new runtime hashes; exact single-leaf native handle transfer and state-aware revalidation are unimplemented",
+      "new installation without any original runtime does not create snapshot; existing live Legacy source context requires verified non-null snapshot",
+      "old terminal rollback path-based original checks and auxiliary compatibility are unproved",
+      "separate mandatory CI runtime partition and exact same-SHA aggregate/regressions unimplemented"
+    ],
+    "tests": "baseline 96 local PASS; native new runtime integration/partition NOT_RUN",
+    "bounds": "no runtime or whole rollback claim; no restart/powerloss/PC acceptance; default OFF; UNKNOWN/BLOCKED_TRANSFER/fullF30 retained"
+  },
+  "live_runtime_single_leaf_gate": {
+    "base_checkpoint": "e30abe450d5e9997966a1a07de14f5634a1dc3f0",
+    "source_baseline": "90e9f321866b2a8a491d55b43c38830653dd1d2e",
+    "scope": "optional real auxiliary failure handler, existing verified upgrade snapshot, exact single ProGo.exe old-bytes transition; default OFF",
+    "proof": "same operation/context/physical pins, release only selected read pin, reopen nofollow READ|WRITE same native identity+new bytes, recheck complete auxiliary graph, mutate same handle from pinned source, flush/readback/reverify old leaf and auxiliary",
+    "result": "attempt/release/reopen/mutation/bytes/flush/readback/aux/leaf/cancel, original error preserved, no automatic cleanup/replay; no terminal result/restart authority",
+    "ci": "new independent installer-runtime-tests partition, all6 same SHA required, old33 exactly once/deadlines retained; native NOT_RUN locally",
+    "tests": "19 GUID native cases + empty snapshot refusal + fresh-process refusal written, not run locally",
+    "local": "102PASS legacy77+aggregate25; review/parity/secrets/public435source0release PASS",
+    "remaining": "snapshot-free new install/remaining leaves/terminal/whole rollback/default/restart/powerloss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/full F30 retained"
   }
 }
