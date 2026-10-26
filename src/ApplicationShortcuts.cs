@@ -65,6 +65,184 @@ namespace ProGo
             "scripts/home-vpn/server/qrcodegen.py",
             "scripts/home-vpn/server/QR_LICENSE.txt",
         };
+        // Live-lease restore only. Private fault selector is invoked only by isolated reflection fixtures.
+        // No serialized input, caller path, callback or process-wide fault switch grants authority.
+        public sealed class LegacyRestoreResult
+        {
+            public LegacyOwnedDeleteResult AcceptedResult { get; private set; }
+            public string State { get; private set; }
+            public bool Attempted { get; private set; }
+            public bool Created { get; private set; }
+            public long BytesWritten { get; private set; }
+            public bool Flushed { get; private set; }
+            public bool ReadbackVerified { get; private set; }
+            public bool DurableResultRecorded { get; private set; }
+            public string RestoredOrigin { get; private set; }
+            public string ResultOrigin { get; private set; }
+            public string ResultHash { get; private set; }
+            public bool WholeRollbackVerified { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            public bool RestartAuthority { get { return false; } }
+            internal LegacyRestoreResult(LegacyOwnedDeleteResult accepted, string state, bool attempted, bool created,
+                long written, bool flushed, bool readback, bool recorded, string origin, string resultOrigin, string resultHash)
+            { AcceptedResult = accepted; State = state; Attempted = attempted; Created = created; BytesWritten = written;
+              Flushed = flushed; ReadbackVerified = readback; DurableResultRecorded = recorded;
+              RestoredOrigin = origin; ResultOrigin = resultOrigin; ResultHash = resultHash; }
+        }
+        private string LegacyRestoreResultPath(Guid operation)
+        { return Path.Combine(root, "backups", "installer-legacy-restored-" + operation.ToString("N") + ".bin"); }
+        private byte[] ReadLiveLegacyRestoreBytes(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        {
+            if (lease.resources == null || lease.lastResult == null || !lease.lastResult.OperationAccepted ||
+                !lease.lastResult.AcceptanceKnown || !lease.lastResult.TargetHandleClosed || !lease.lastResult.ContextObservedAfterOperation ||
+                lease.acceptedOutcome == null || !lease.acceptedOutcome.DurableOutcomeRecorded || physical == null ||
+                !physical.MatchesOwner(this) || !physical.VerifyPinned(CancellationToken.None)) return null;
+            byte[] document = null, original = null;
+            try {
+                lease.evidence[0].Position = 0; document = ReadLegacySourceDocument(lease.evidence[0]);
+                int offset = 0, lines = 0;
+                while (offset < document.Length && lines < 9) { if (document[offset++] == 10) lines++; }
+                if (lines != 9 || offset == document.Length) return null;
+                original = new byte[document.Length - offset]; Buffer.BlockCopy(document, offset, original, 0, original.Length);
+                if (!VerifyLegacyOperationEvidence(lease, original) || !VerifyLegacyOperationPlan(lease, physical)) return null;
+                using (var replacement = OpenLegacyRestartRead(Path.Combine(menu, "ProGo.lnk")))
+                using (var accepted = OpenLegacyRestartRead(LegacyAcceptedPath(lease.reference.Source.Operation))) {
+                    var receipt = lease.acceptedOutcome;
+                    byte[] expected = LegacyAcceptedDocument(lease, receipt.Origin);
+                    if (!VerifyLegacyAcceptedReplacement(lease, replacement) || receipt.Origin != LegacyOrigin(accepted.SafeFileHandle) ||
+                        receipt.Hash != Digest(expected) || !Equal(expected, ReadLegacyReferenceBytes(accepted))) return null;
+                }
+                byte[] result = original; original = null; return result;
+            } finally {
+                if (document != null) Array.Clear(document, 0, document.Length);
+                if (original != null) Array.Clear(original, 0, original.Length);
+            }
+        }
+        private byte[] LegacyRestoreDocument(LegacyDeletionPins lease, string restoredOrigin, string resultOrigin, byte[] original)
+        {
+            // Canonical accepted document carries operation/snapshot/location/origin/hash/schema graph bindings.
+            string text = "PROGO-LEGACY-RESTORED-1\n" + restoredOrigin + "\n" + Digest(original) + "\n" +
+                original.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\n" + resultOrigin + "\n" +
+                "created-written-flushed-readback\nrollback-not-proven\nrestart-blocked\n";
+            return Encoding.ASCII.GetBytes(text + Encoding.ASCII.GetString(LegacyAcceptedDocument(lease, lease.acceptedOutcome.Origin)));
+        }
+        private bool VerifyLegacyRestoreMaterial(LegacyDeletionPins lease, LegacyPhysicalPins physical, string origin, byte[] expected)
+        {
+            // Post-restore phase: require this newly created native object, never the deleted object's identity.
+            byte[] current = ReadLiveLegacyRestoreBytes(lease, physical);
+            try {
+                if (current == null || !Equal(expected, current) || origin == null || origin == lease.reference.Source.OriginIdentity) return false;
+                using (var restored = OpenLegacyAcceptedPublicationRead(Path.Combine(menu, "ProGo Status.lnk"))) {
+                    return origin == LegacyOrigin(restored.SafeFileHandle) && Equal(expected, ReadLegacyEvidenceBytes(restored));
+                }
+            } finally { if (current != null) Array.Clear(current, 0, current.Length); }
+        }
+        private LegacyRestoreResult RestoreLegacyOwnedOnce(LegacyDeletionPins lease, LegacyPhysicalPins physical,
+            CancellationToken token, string fault, CancellationTokenSource faultCancellation)
+        {
+            lock (lease.gate) {
+                if (lease.restoreResult != null) return lease.restoreResult;
+                // Reserve before any I/O; reentrant/second calls cannot perform another mutation.
+                lease.restoreResult = new LegacyRestoreResult(lease.lastResult, "reserved", false, false, 0, false, false, false, null, null, null);
+                bool attempted = false, created = false, flushed = false, readback = false, recorded = false;
+                long written = 0; string origin = null, resultOrigin = null, resultHash = null, state = "blocked";
+                byte[] original = null;
+                try {
+                    if (fault != null && Array.IndexOf(new[] { "write", "short-write", "flush", "readback", "readback-throw",
+                        "cancel-created", "cancel-written", "cancel-flushed", "cancel-readback", "result-write", "result-flush", "result-readback" }, fault) < 0)
+                        throw new ArgumentException("Unknown isolated restore fault.");
+                    if (token.IsCancellationRequested) { state = "cancelled-before-create"; return lease.restoreResult =
+                        new LegacyRestoreResult(lease.lastResult, state, false, false, 0, false, false, false, null, null, null); }
+                    if (physical != null) physical.WithPins<LegacyRestoreResult>(() => {
+                        original = ReadLiveLegacyRestoreBytes(lease, physical);
+                        if (original == null || !VerifyLegacyAcceptedContext(lease, physical)) return null;
+                        string path = Path.Combine(menu, "ProGo Status.lnk"); CheckLocation(path);
+                        using (var rootPin = PinLegacySourceDirectory(root))
+                        using (var menuPin = PinLegacySourceDirectory(menu))
+                        using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups")))
+                        using (var replacement = OpenLegacyRestartRead(Path.Combine(menu, "ProGo.lnk"))) {
+                            if (!VerifyLegacyAcceptedReplacement(lease, replacement)) return null;
+                            token.ThrowIfCancellationRequested();
+                            attempted = true;
+                            using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                                created = true; state = "created-incomplete"; origin = LegacyOrigin(stream.SafeFileHandle);
+                                if (origin == lease.reference.Source.OriginIdentity) throw new IOException("Restore native identity was reused.");
+                                if (fault == "cancel-created") faultCancellation.Cancel();
+                                token.ThrowIfCancellationRequested();
+                                if (fault == "write") throw new IOException("Synthetic restore Write fault.");
+                                int count = fault == "short-write" ? Math.Max(1, original.Length / 2) : original.Length;
+                                try { stream.Write(original, 0, count); }
+                                finally { written = stream.Length; }
+                                if (written != original.Length) throw new IOException("Restore Write was incomplete.");
+                                if (fault == "cancel-written") faultCancellation.Cancel();
+                                token.ThrowIfCancellationRequested();
+                                if (fault == "flush") throw new IOException("Synthetic restore Flush fault.");
+                                stream.Flush(true); flushed = true;
+                                if (fault == "cancel-flushed") faultCancellation.Cancel();
+                                token.ThrowIfCancellationRequested();
+                                if (fault == "readback") { stream.Position = 0; stream.WriteByte((byte)(original[0] ^ 1)); stream.Flush(true); }
+                                if (fault == "readback-throw") throw new IOException("Synthetic restore readback fault.");
+                                stream.Position = 0;
+                                if (origin != LegacyOrigin(stream.SafeFileHandle) || !Equal(original, ReadLegacyEvidenceBytes(stream)) ||
+                                    !VerifyLegacyRestoreMaterial(lease, physical, origin, original) || !VerifyLegacyAcceptedReplacement(lease, replacement))
+                                    throw new IOException("Restore readback or context changed.");
+                                readback = true; state = "restored-unrecorded";
+                                if (fault == "cancel-readback") faultCancellation.Cancel();
+                                token.ThrowIfCancellationRequested();
+                                string resultPath = LegacyRestoreResultPath(lease.reference.Source.Operation); CheckLocation(resultPath);
+                                using (var result = new FileStream(resultPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                                    resultOrigin = LegacyOrigin(result.SafeFileHandle);
+                                    byte[] document = LegacyRestoreDocument(lease, origin, resultOrigin, original);
+                                    if (fault == "result-write") { result.Write(document, 0, document.Length / 2); throw new IOException("Synthetic result Write fault."); }
+                                    result.Write(document, 0, document.Length);
+                                    if (fault == "result-flush") throw new IOException("Synthetic result Flush fault.");
+                                    result.Flush(true); result.Position = 0;
+                                    if (fault == "result-readback") { result.WriteByte(0); result.Flush(true); result.Position = 0; }
+                                    if (resultOrigin != LegacyOrigin(result.SafeFileHandle) || !Equal(document, ReadLegacyReferenceBytes(result)))
+                                        throw new IOException("Restore result readback changed.");
+                                    using (var observed = OpenLegacyAcceptedPublicationRead(resultPath)) {
+                                        if (resultOrigin != LegacyOrigin(observed.SafeFileHandle) || !Equal(document, ReadLegacyReferenceBytes(observed)) ||
+                                            !VerifyLegacyRestoreMaterial(lease, physical, origin, original) || !VerifyLegacyAcceptedReplacement(lease, replacement) ||
+                                            !Equal(document, LegacyRestoreDocument(lease, origin, resultOrigin, original)))
+                                            throw new IOException("Restore result context changed.");
+                                    }
+                                    // Cancellation after actual complete publication does not erase its durable truth.
+                                    resultHash = Digest(document); recorded = true; state = "restored-recorded";
+                                }
+                            }
+                        }
+                        return lease.restoreResult;
+                    });
+                } catch (OperationCanceledException) { state = created ? "cancelled-after-create" : "cancelled-before-create"; }
+                catch { state = created ? (readback ? "restored-result-error" : "created-incomplete") : (attempted ? "create-conflict" : "blocked"); }
+                finally { if (original != null) Array.Clear(original, 0, original.Length); }
+                lease.restoreResult = new LegacyRestoreResult(lease.lastResult, state, attempted, created, written, flushed, readback,
+                    recorded, origin, resultOrigin, resultHash);
+                return lease.restoreResult;
+            }
+        }
+        private bool VerifyLegacyRestoredOutcome(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        {
+            lock (lease.gate) {
+                byte[] original = null;
+                try {
+                    var result = lease.restoreResult;
+                    if (result == null || !result.Created || !result.Flushed || !result.ReadbackVerified || !result.DurableResultRecorded || physical == null) return false;
+                    return physical.WithPins<LegacyRestoreResult>(() => {
+                        original = ReadLiveLegacyRestoreBytes(lease, physical);
+                        if (original == null || result.BytesWritten != original.Length || !VerifyLegacyRestoreMaterial(lease, physical, result.RestoredOrigin, original)) return null;
+                        using (var restored = OpenLegacyRestartRead(Path.Combine(menu, "ProGo Status.lnk")))
+                        using (var receipt = OpenLegacyRestartRead(LegacyRestoreResultPath(lease.reference.Source.Operation))) {
+                            byte[] expected = LegacyRestoreDocument(lease, result.RestoredOrigin, result.ResultOrigin, original);
+                            return result.RestoredOrigin == LegacyOrigin(restored.SafeFileHandle) && Equal(original, ReadLegacyEvidenceBytes(restored)) &&
+                                result.ResultOrigin == LegacyOrigin(receipt.SafeFileHandle) && result.ResultHash == Digest(expected) &&
+                                Equal(expected, ReadLegacyReferenceBytes(receipt)) && VerifyLegacyRestoreMaterial(lease, physical, result.RestoredOrigin, original) ? result : null;
+                        }
+                    }) != null;
+                } catch { return false; }
+                finally { if (original != null) Array.Clear(original, 0, original.Length); }
+            }
+        }
         // Exact-owned-object operation only. No path-based delete, durable outcome or restore authority.
         public sealed class LegacyOwnedDeleteResult
         {
@@ -1006,6 +1184,7 @@ namespace ProGo
             internal bool consumed;
             internal LegacyOwnedDeleteResult lastResult;
             internal LegacyAcceptedOutcome acceptedOutcome;
+            internal LegacyRestoreResult restoreResult;
             internal string replacementOrigin, replacementHash;
             internal LegacyDeletionPins(ApplicationShortcuts manager, System.Collections.Generic.List<IDisposable> held, FileStream original, LegacyJournalReferenceEvidence witness)
             {
@@ -1023,6 +1202,10 @@ namespace ProGo
             { return owner.RecordLegacyAcceptedOutcome(this, physical, token); }
             public bool VerifyAcceptedOutcome(LegacyPhysicalPins physical)
             { return owner.VerifyLegacyAcceptedOutcome(this, physical); }
+            public LegacyRestoreResult RestoreOwnedOnce(LegacyPhysicalPins physical, CancellationToken token)
+            { return owner.RestoreLegacyOwnedOnce(this, physical, token, null, null); }
+            public bool VerifyRestoredOutcome(LegacyPhysicalPins physical)
+            { return owner.VerifyLegacyRestoredOutcome(this, physical); }
             public bool IsPinned { get { lock (gate) { return resources != null && !targetHandle.IsClosed; } } }
             public bool MutationAllowed { get { return false; } }
             public bool FullRollback { get { return false; } }

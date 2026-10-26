@@ -4020,16 +4020,18 @@
     }
   ],
   "ci_candidate": {
-    "source": "3908feee6693e6ddfa40b27e503248fe4bcf9f1f",
-    "tree": "aca9c3d2eff351612eb592d57b5d6c02a8548ed5",
-    "run_id": 40288792739,
-    "run_number": 721,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40288792739",
+    "source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
+    "tree": "824ea8f3e36480ad153e2528e55fc3948db94c9a",
+    "run_id": 40295688624,
+    "run_number": 722,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40295688624",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "2f87d5e957e9fa0bf5eba89d2e7839d70595389a",
-    "OwnedOperation15": "PASS native, fresh-process refusal1; no durable receipt writer in721",
-    "score_delta": 0
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "new_windows": "CI722 five full exact logs verified; Owned29 receipt14 fresh-process refusal2 all33 strict4aggregate PASS",
+    "score_delta": 0,
+    "tested_merge": "e08807d35eff76db98dc712d4dfb4b13a5719a46"
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5520,12 +5522,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "3908feee6693e6ddfa40b27e503248fe4bcf9f1f",
-    "tree": "aca9c3d2eff351612eb592d57b5d6c02a8548ed5",
-    "prior_checkpoint": "b609f837cff8d92bd4242d4f737803f1bab6c915",
-    "stage": "Bounded durable accepted-disposition receipt, live lease only; no post-delete rehydration/restore/live integration",
-    "status": "CI721 full5logs PASS; new receipt native14/fresh-process2 Windows NOT_RUN; local90 static PASS",
-    "next": "One exact-source automatic CI full logs; then trusted post-delete actual outcome/rehydration prerequisite",
+    "source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
+    "tree": "824ea8f3e36480ad153e2528e55fc3948db94c9a",
+    "prior_checkpoint": "96d3586a2b7eb054a21f3f5562eb366ef4d2556f",
+    "stage": "Bounded same-live-lease owned Legacy restore + independent post-restore verifier; no live integration or restart authority",
+    "status": "Local review/parity/static PASS; Python131PASS3SKIP; Windows native22/full new aggregate NOT_RUN",
+    "next": "One guarded PR88 publication and sole automatic CI initial status; stop without full wait",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5533,7 +5535,9 @@
       "UNKNOWN/BLOCKED_TRANSFER/no retry",
       "No live/security/network/credentials/services/release/uploads changes"
     ],
-    "score_delta": 0
+    "score_delta": 0,
+    "local_development_sha": "41acf25c29267345271c8f53800b695494a12521",
+    "local_development_tree": "824ea8f3e36480ad153e2528e55fc3948db94c9a"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -23495,5 +23499,78 @@
     "restart_authority": "NONE; blocked/manual without sufficient proofs",
     "next": "full logs exact new CI; trusted post-delete outcome separately",
     "score_delta": 0
+  },
+  "ci721_verified_baseline": {
+    "source": "3908feee6693e6ddfa40b27e503248fe4bcf9f1f",
+    "tree": "aca9c3d2eff351612eb592d57b5d6c02a8548ed5",
+    "run_id": 40288792739,
+    "run_number": 721,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40288792739",
+    "status": "completed",
+    "conclusion": "success",
+    "tested_merge": "2f87d5e957e9fa0bf5eba89d2e7839d70595389a",
+    "OwnedOperation15": "PASS native, fresh-process refusal1; no durable receipt writer in721",
+    "score_delta": 0
+  },
+  "postpublication_checkpoint": {
+    "kind": "new local docs-only recovery/publication checkpoint; no pushed branch update",
+    "published_source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
+    "previous_missing_checkpoint": "NOT_OBSERVED; not recreated as known",
+    "clean_code": "41acf25c29267345271c8f53800b695494a12521",
+    "old_checkpoint_preserved": "b609f837cff8d92bd4242d4f737803f1bab6c915",
+    "stop_after_one_stage": true
+  },
+  "ci722_verified_baseline": {
+    "source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
+    "tree": "824ea8f3e36480ad153e2528e55fc3948db94c9a",
+    "run_id": 40295688624,
+    "run_number": 722,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40295688624",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "new_windows": "CI722 five full exact logs verified; Owned29 receipt14 fresh-process refusal2 all33 strict4aggregate PASS",
+    "score_delta": 0,
+    "tested_merge": "e08807d35eff76db98dc712d4dfb4b13a5719a46",
+    "job_ids": [
+      121481063052,
+      121481063078,
+      121481063101,
+      121481062773,
+      121495758491
+    ],
+    "Python": "116PASS2SKIP",
+    "zip_bytes": 701412,
+    "zip_sha256": "23a2bcc5be527c804323a56e5ea78f8de58057b07ad534e5520b4a2c8437d86d",
+    "uploads": "SKIPPED; runner-only; not delivered/PC accepted"
+  },
+  "legacy_live_restore_gate": {
+    "base_checkpoint": "96d3586a2b7eb054a21f3f5562eb366ef4d2556f",
+    "baseline_source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
+    "status": "Prepared; native Windows22 NOT_RUN locally",
+    "entry": "same retained live accepted operation and source/evidence/physical graph; receipt alone is not authority",
+    "target": "fixed owned Legacy name; CreateNew only; no overwrite/adoption/cleanup/replay",
+    "truths": [
+      "attempted",
+      "created",
+      "bytes_written",
+      "flushed",
+      "readback_verified",
+      "durable_result_recorded"
+    ],
+    "native_identity": "new restored origin recorded separately, never original identity",
+    "faults": "22 isolated native file scenarios; private per-call synthetic Write/short-write/Flush/readback/result/cancel fault selector; not OS/power-loss tests",
+    "local_tests": "Python131PASS3SKIP of134; review/parity/lexical/signatures/JSON/secrets/public428source0release PASS",
+    "restart": "blocked/manual after loss of live proofs",
+    "whole_rollback": "OPEN",
+    "power_loss": "NOT_RUN",
+    "PC_acceptance": "OPEN",
+    "transfer": "BLOCKED_TRANSFER; no retry",
+    "incidents": "UNKNOWN preserved",
+    "live_integration": "NONE",
+    "scope": "all31/nested55/F30 unchanged; original33 suites/classifier26/strict4aggregate/deadlines unchanged",
+    "score_delta": 0,
+    "wiring": "Nested once after Foundation MenuMutation19 cleanup; original33 top-level suite calls/bodies retained; original40min deadlines unchanged; new fixture uses measured Foundation headroom"
   }
 }

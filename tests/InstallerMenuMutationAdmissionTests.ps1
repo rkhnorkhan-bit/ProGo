@@ -137,3 +137,6 @@ try {
         Remove-Item -LiteralPath $work -Recurse -Force
     }
 }
+
+# Additive isolated restore cases use Foundation headroom; original suite and deadlines unchanged.
+& (Join-Path $Root 'tests\InstallerLegacyOwnedRestoreTests.ps1')

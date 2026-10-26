@@ -1,3 +1,70 @@
+## CURRENT bounded live-lease owned Legacy restore; new Windows execution NOT_RUN
+
+Base local checkpoint96d3586a2b7eb054a21f3f5562eb366ef4d2556f is available and clean at admission;
+its complete three-file docs/state diff (+87/-14) is preserved in this stage. Sole writer, no agents,
+Git/build/SSH processes or locks observed. PR88 draft/open/unmerged, source65f77542ad0d10a9ebc95a4dcc519683a06a5e59,
+mergee08807d35eff76db98dc712d4dfb4b13a5719a46. Same source has one completed CI722, no active CI.
+
+CI722 five complete final logs independently retrieved and exact merge checked:
+Core121481063052, Foundation121481063078, Recovery121481063101, Ubuntu121481062773,
+aggregate121495758491 all SUCCESS. Owned29 (operation15 + receipt14), fresh-process refusal2,
+Foundation27/Recovery6 = all33 installer suites PASS. Core classifier26/SSH5/Desktop6394/Instance30/
+Maintenance126/Shutdown47/HomeVPN4816/Portable91, Python116PASS2SKIP and exact4partition aggregate PASS.
+Runner-only ZIP701412 bytes SHA25623a2bcc5be527c804323a56e5ea78f8de58057b07ad534e5520b4a2c8437d86d;
+pack SUCCESS, uploads/prune SKIPPED. Not delivered, installed or accepted on the user's PC.
+Historical CI722 in_progress entries below describe publication-time observations, superseded here.
+PR description also contains older CI711 text; current refs and exact final logs are the evidence.
+
+Authorized bounded slice: LegacyDeletionPins.RestoreOwnedOnce(physical,token) and VerifyRestoredOutcome(physical).
+Only the same live accepted operation plus retained full verified source/reference/seal/admission and
+physical snapshot/runtime/journal graph can admit creation. The accepted receipt is an extra bound
+observation, never sufficient authority. Full native origins including creation, hash/bytes, fixed location,
+canonical schema/inventory/operation, current replacement and foreign/reparse guards are preserved.
+No path, serialized intent, saved result or absence is a capability. Existing helpers/bodies unchanged.
+
+Only fixed owned Menu/ProGo Status.lnk may be created, atomic FileMode.CreateNew/no overwrite. Existing,
+foreign, equal-byte, directory or reparse destination blocks; no adoption, retry mutation or automatic cleanup.
+WriteThrough/Flush(true), same-handle and independent no-follow native readback prove exact source bytes.
+The new native identity is recorded separately and must differ from the deleted object's full origin.
+New immutable LegacyRestoreResult separates Attempted/Created/BytesWritten/Flushed/ReadbackVerified/
+DurableResultRecorded and retains the exact accepted result. Partial/ambiguous artifacts remain; late
+cancellation/error preserves actual progress. One-shot cache precedes cancellation and all further I/O.
+
+Separate fixed backups/installer-legacy-restored-operation.bin uses CreateNew/WriteThrough/Flush(true),
+full same-handle/independent readback and canonical context binding. A failed result write cannot undo
+creation or pretend success; foreign result and partial own result are retained. Post verifier uses the
+new object's origin/bytes and current source/evidence/accepted/result graph rather than pre-restore absence.
+Later replacement, copied creation+identical bytes, metadata/byte/result tamper or disposed proofs fail.
+Historical recorded truth is distinct from present verification. No whole rollback/install/restart authority.
+
+New isolated native22 fixture wired once after the existing Foundation MenuMutation19 final cleanup;
+all original33 suite calls/bodies, classifier26, strict4aggregate, workflows, scripts, deadlines unchanged.
+Actual fixture file writes use a private per-call bounded fault selector accessed only via reflection:
+Write throws before write; short-write writes a real prefix and returns short; Flush throws after full real
+write before explicit Flush; readback mutates actual bytes or throws before read. Result Write/Flush/readback
+faults exercise separate durable result failure. These simulate I/O boundary failures, not OS power loss.
+Default public API has no fault/callback/path argument or global switch. No test seam grants authority.
+Cases: complete, write, short-write, flush, readback, readback-throw, cancel-before/created/written/flushed/
+readback, foreign, equal-byte, actual own junction, source-changed/disposed, lease-disposed, physical-disposed,
+result-write/flush/readback/foreign. Every case checks cached repeat/no mutation, partial retention, exact
+progress flags, preserved evidence/private/foreign inventories and exclusive reopen after handle settlement.
+Positive case also checks restored and result same-byte native replacement, creation/bytes/result tamper,
+path-only restart refusal and disposed live proof refusal. Own junction process is bounded5s and drained;
+no live user paths/privileges/ACL/services/network/VPS/tunnel/credentials/install or failure integration.
+
+Local review: reverse native parity, original tests/wiring/inventory/signatures/C#5 lexical delimiter check,
+JSON/diff/secrets/public content428source0release PASS. Python discover134 total:131PASS3SKIP; skipped is
+not executed. Windows C#/PowerShell compilation and native22/fresh exact aggregate NOT_RUN locally; one
+new guarded publication/automatic CI is the only permitted native verification. No CI722 PASS inherited.
+Both existing40min deadlines remain unchanged. CI722 Foundation took29min versus Recovery35min, so only
+the new fixture uses Foundation headroom; actual new native execution/time budget is not locally proven.
+
+Restart after loss of live proofs remains blocked/manual; receipt/absence/result never restore authority.
+UNKNOWN startup/other incidents, BLOCKED_TRANSFER/no retry, power-loss NOT_RUN, PC acceptance OPEN.
+Full approved31/nested55/F30 commercial scope, weights/delta0, live installer/error integration/whole auxiliary
+rollback/runtime recovery/retention/PGA04/updater/package/signing/UI/owner gates remain open unchanged.
+Stop after one publication and observe its initial status only; do not wait full CI or start another stage.
+
 ## CURRENT CI721 verified; bounded durable accepted-disposition receipt (new Windows execution NOT_RUN)
 
 Recovered the same clean worktree at local 4331dee20d5fc11c1b2149d745a02b033aab022c,
