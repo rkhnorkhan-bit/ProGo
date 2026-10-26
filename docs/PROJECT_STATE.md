@@ -1,3 +1,137 @@
+## CURRENT CI728 CANCELLED / aggregate FAILURE; diagnostic-only independent Live partition
+
+Admission HEADda89bafc7d020f68fd6d7223cc247065aafac10f exact, checkout clean/available at existing path;
+remote source16b28bc40f00a6c24d69add5665c58f0be8a8fee PR88 draft/open/unmerged. Full unpublished3docs
+(+96/-18) preserved; no reset/discard. /proc Git/build/SSH inventory empty, Git-locks empty; GitHub queued/
+in_progress/waiting run queries all0. Sole writer, no agents, no competing mutation observed.
+
+All five complete CI728 logs retrieved/read here, exact merge1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569:
+run40338423004 attempt1 terminal CANCELLED. Foundation121626136635 full723 cancelled: first26 suites PASS;
+inside suite27 old Menu admission cases/CLR+sharing regressions/Restore22/Preparation13/Startup19/refusal2
+PASS; new Menu24 complete PASS at14:58:23.3069132 UTC, preserved-startup interrupted without terminal result,
+remaining22 NOT_RUN. Menu24 is 1PASS/1interrupted/22NOT_RUN, NOT complete PASS. At14:58:35.0935866 UTC
+only explicit error is The operation was canceled. Recovery121626137453 full539 PASS all6/Owned29/
+receipt14/refusal2; Core121626136121 full15489 PASS incl classifier26/Desktop6394/Instance30/Maint126/
+Shutdown47/HomeVPN4816/Portable91/Python116PASS2SKIP; Ubuntu121626136498 full614 PASS. Aggregate121648740736
+full174 correctly FAILURE on cancelled Foundation, exact4 SHA. ZIP713801 SHA256
+52b92605faefccd41efcf508773d8af5e782a36711c07241b209805d2f8d1a2b runner-only, uploads SKIPPED/no PC acceptance.
+
+Cancellation cause UNKNOWN. Configured Foundation timeout40min; job API started14:18:30 / completed14:58:39
+UTC (40m09s including runner bookkeeping); log worker starts around14:18:31 and cleanup around14:58:37.
+Timing proximity is evidence of budget pressure, NOT proof of timeout/canceller/hang/production failure.
+Workflow concurrency cancel-in-progress=true remains unchanged; no evidence establishes a superseding run
+or identifies cancellation actor. Run actor/triggering_actor identify original trigger, not the canceller.
+Check-run/annotations endpoints were attempted but GitHub connector rejects them as unsupported endpoint;
+no annotation evidence obtained, no invented root cause. Full logs contain no proved locking exception or
+hang stack. preserved-startup ran successfully in old Startup19 in SAME job; new Menu variant has no
+terminal result. Do not infer a native deadlock from the roughly12s between last PASS and cancellation.
+
+Observed sequential scheduling did not complete within its available40min frame. First26 elapsed sum
+1487928ms (24m47.928s), suite27 starts14:43:36.9486501 and is still incomplete898145ms later when cancelled,
+with22 new scenarios not yet run. Recovery completed1955910ms in its suites (32m35.910s). This is concrete
+workload evidence for the authorized scheduling split, independent of UNKNOWN cancellation mechanism.
+No new budget estimate is a guarantee of future PASS; native Menu24 remains unverified in full.
+
+Move ENTIRE existing suite27 InstallerMenuMutationAdmissionTests.ps1 to a new independent Live job. No fixture
+or nested invocation/body/assertion/fault/deadline changes: Restore22 then Preparation13 then Startup19 then
+Menu24 stay in the same host/order/PowerShell process. Host imports shortcuts/native type and installer AST
+functions itself; Restore fixture defines both metadata and checked CLR reflection shims before preparation/
+live cases. It does not depend on previous26 suites. No sharing/reflection contract changes or early Dispose.
+Foundation now first26, Live original suite27, Recovery original final6. All mode retains exact33 dispatch
+blocks once in original order. Each independent Windows job does same hygiene/build/parse/exact SHA capture
+with unchanged40min deadline; Core40/Ubuntu12/aggregate5 and individual child20s+cleanup5s unchanged.
+No test omitted/duplicated/scenario reduced; no blind rerun.
+
+Strict aggregate now requires FIVE: vpn-server-test, windows-build, installer-tests, installer-live-tests,
+installer-recovery-tests, all success/exact SAME tested merge SHA. Exact required set, missing/extra/skipped/
+cancelled/failure/missing outputs/wrong SHA refusal and always() full needs unchanged/expanded. New negative
+regressions explicitly refuse old-four-only PASS with missing/cancelled/skipped/wrong-SHA Live, wrong selector/
+missing Live dependency/job, changed job SHA/deadline, missing/duplicate/misassigned boundaries/counts.
+Exact coverage26+1+6=33 and frozen normalized SHA256 parity for all33 fixture bodies plus Restore/Preparation/
+Startup+Menu fixture; nested order/argument parity verified. Old Menu-always-blocked assertion replacement
+was intentional in CI728; current stage preserves that existing conflicting-operation refusal and safety
+meaning byte-for-byte, not a claim of byte-identical assertions across the earlier semantic stage.
+
+Local90PASS: legacy66 +aggregate/partition24 (was17, added7 regressions); review/all33 dispatch and native
+fixture parity/default main+production unchanged/JSON/diff/secrets/public430source0release PASS. Native
+Windows/PowerShell compilation/new Live execution/full Menu24/new exact5aggregate NOT_RUN locally. One
+expected-head guarded publication +one automatic CI initial status only; no duplicate/rerun/dispatch/fullwait.
+Production scope unchanged; default flow remains OFF. All33/Restore22/Preparation13/Startup19/Menu24/
+classifier26/deadlines/full31/nested55/fullF30/UNKNOWN/BLOCKED_TRANSFER/no retry/weights/delta0 retained.
+Whole runtime/auxiliary rollback/durable auxiliary/default success+orchestration/restart/power-loss/PC acceptance
+remain OPEN/NOT_RUN. No user files/live install/network/security/privileges/WCT/SeDebug/ACL/credentials/
+services/VPS/tunnel actions. UNKNOWN remains UNKNOWN until actual evidence establishes cause.
+
+CI728 measured per-suite timings (original host nested tests remain one Live suite):
+
+| Suite | CI728 elapsed ms | New partition |
+|---|---:|---|
+| UpdatePackageTests.ps1 | 2672 | Foundation |
+| InstallPayloadTests.ps1 | 766 | Foundation |
+| InstallerMaintenanceTests.ps1 | 75296 | Foundation |
+| InstallerStageTests.ps1 | 730 | Foundation |
+| InstallerBackupTests.ps1 | 1500 | Foundation |
+| InstallerSelfCheckTests.ps1 | 6086 | Foundation |
+| InstallerRollbackTests.ps1 | 6239 | Foundation |
+| InstallerJournalTests.ps1 | 5653 | Foundation |
+| InstallerRestartGateTests.ps1 | 709 | Foundation |
+| InstallerOutcomeTests.ps1 | 38730 | Foundation |
+| InstallerRollbackOutcomeTests.ps1 | 11947 | Foundation |
+| InstallerOutcomeReconcileTests.ps1 | 14727 | Foundation |
+| InstallerPendingInstalledProofTests.ps1 | 43210 | Foundation |
+| InstallerStartupEvidenceTests.ps1 | 4485 | Foundation |
+| InstallerMenuEvidenceTests.ps1 | 4128 | Foundation |
+| InstallerLegacyEvidenceTests.ps1 | 4511 | Foundation |
+| InstallerAuxiliaryRevalidationTests.ps1 | 101225 | Foundation |
+| InstallerPendingPublicationTests.ps1 | 120015 | Foundation |
+| InstallerStartupRollbackAdmissionTests.ps1 | 166540 | Foundation |
+| InstallerOwnedStartupRollbackTests.ps1 | 82480 | Foundation |
+| InstallerStartupResultTests.ps1 | 101760 | Foundation |
+| InstallerStartupMutationAdmissionTests.ps1 | 133653 | Foundation |
+| InstallerStartupFailureTests.ps1 | 149361 | Foundation |
+| InstallerMenuPublicationTests.ps1 | 213 | Foundation |
+| InstallerMenuRollbackAdmissionTests.ps1 | 255714 | Foundation |
+| InstallerOwnedMenuRollbackTests.ps1 | 155578 | Foundation |
+| InstallerMenuMutationAdmissionTests.ps1 (incomplete) | 898145 observed to cancellation, not terminal duration | Live |
+| InstallerMenuResultTests.ps1 | 229273 | Recovery |
+| InstallerMenuFailureTests.ps1 | 410859 | Recovery |
+| InstallerLegacyRollbackAdmissionTests.ps1 | 376181 | Recovery |
+| InstallerLegacySourceCaptureTests.ps1 | 1835 | Recovery |
+| InstallerLegacyDurableSourceTests.ps1 | 2106 | Recovery |
+| InstallerLegacyDurableInputTests.ps1 | 935656 | Recovery |
+
+## LOCAL post-publication checkpoint: live Legacy -> Startup -> Menu / CI728 in progress
+
+Single guarded expected-head nonforce PR88 update: source16b28bc40f00a6c24d69add5665c58f0be8a8fee,
+parent64b2cce974637fc05b2ef026372ef02f8b0b1683, treedecb8f63cb24d18534c69f86a7c0a08a0a950af8.
+Reviewed local codefd5a7fb614fdbf475cbc50bda04d49e3333923b8 has identical full tree; canonical Git SHA/
+parent/tree verified before offline import and joined atadfd00e2c32fbf1cd998e28b8fd55f2688cb11fc.
+Initial raw Git commit reconstruction used literal newline escapes and failed SHA matching before any
+object write; corrected to actual newline bytes, exact SHA verified, no source change/ref retry/CI rerun.
+Checkpoint183246a and complete local docs history retained; no reset/discard/second writer.
+PR88 draft/open/unmerged, merge candidate1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569 is NOT tested PASS.
+Sole automatic CI728 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40338423004 pull_request/attempt1,
+raw exact-source total_count1, observed in_progress/conclusion null. New Menu24/refusal2/Windows compile/
+full exact aggregate NOT_RUN until same run's complete logs. No full CI wait or further publication.
+
+Actual optional real FailureMenu -> MenuRollback -> existing exact native owned Menu operation now follows
+Legacy restore and Startup settlement. Retained restored Legacy exact identity and same original live graph/
+cached result remain mandatory; post-state validates our accepted primary removal without requiring primary
+or bypassing original guards. Separate actual Menu attempted/disposition/close/absence flags; no durable
+auxiliary result or serialized capability. No retry/automatic partial cleanup; original install error retained.
+Old receipt-only APIs/default main/catch/success are unchanged. Menu24 is appended through the existing GUID
+fixture; old19/Restore22/Preparation13/old33/classifier26/strict aggregate/deadlines remain. Local83PASS,
+review/parity/C#5 lexical/signatures/JSON/diff/secrets/public430source0release PASS, not compiler/native proof.
+CI727 full5 logs SUCCESS and exact package facts recorded below. ZIP runner-only, uploads skipped, no PC
+acceptance. This local checkpoint changes only3docs/state files relative to published source, code/tests/
+workflow identical; it is intentionally unpushed so no duplicate CI.
+
+Next read SAME CI728 five final exact logs, especially new Menu24/fresh-process2 and prior guards. Default
+success and orchestration/durable Startup+Menu auxiliary outcomes/full default original-error integration/
+whole runtime+auxiliary rollback/restart recovery/power-loss/PC acceptance remain OPEN/NOT_RUN. UNKNOWN/
+BLOCKED_TRANSFER/no retry/full approved31/nested55/F30/weights/delta0 retained. No live install/user data/
+network/security/ACL/privileges/WCT/SeDebug/credentials/services/VPS/tunnel actions. Lost proofs blocked/manual.
+
 ## CURRENT CI727 SUCCESS verified; scoped live Legacy -> Startup -> Menu handler transition
 
 Admission checkpoint183246a94ec77cb1bedceb62864ceeef16180f8a available, HEAD exact/clean. Full unpublished

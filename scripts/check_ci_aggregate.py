@@ -3,7 +3,7 @@ import json
 import os
 import re
 
-REQUIRED = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-recovery-tests')
+REQUIRED = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests')
 
 
 def validate(needs, expected_sha):
@@ -26,7 +26,7 @@ def main():
     except (ValueError, TypeError):
         # No untrusted input/context dumps in the log.
         raise SystemExit('CI aggregate FAIL: all required partitions must succeed on the exact tested SHA')
-    print('CI aggregate PASS: Core, Installer Foundation, Installer Recovery and Ubuntu succeeded on the exact tested SHA')
+    print('CI aggregate PASS: Core, Installer Foundation, Installer Live, Installer Recovery and Ubuntu succeeded on the exact tested SHA')
 
 
 if __name__ == '__main__':

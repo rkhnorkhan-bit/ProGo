@@ -1,9 +1,9 @@
-param([ValidateSet('All', 'Foundation', 'Recovery')][string]$Partition = 'All')
+param([ValidateSet('All', 'Foundation', 'Live', 'Recovery')][string]$Partition = 'All')
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $SuiteWatch = [Diagnostics.Stopwatch]::StartNew()
-# PARTITION Foundation BEGIN: original first27, ordered and unchanged.
+# PARTITION Foundation BEGIN: original first26, ordered and unchanged.
 if ($Partition -in @('All', 'Foundation')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
 Write-Host 'INSTALLER_SUITE_START name=UpdatePackageTests.ps1'
@@ -161,6 +161,10 @@ try {
     & (Join-Path $Root 'tests\InstallerOwnedMenuRollbackTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerOwnedMenuRollbackTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+}
+# PARTITION Foundation END
+# PARTITION Live BEGIN: original suite27 including all Restore/Preparation/Startup/Menu nested cases, unchanged.
+if ($Partition -in @('All', 'Live')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
 Write-Host 'INSTALLER_SUITE_START name=InstallerMenuMutationAdmissionTests.ps1'
 try {
@@ -168,7 +172,7 @@ try {
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerMenuMutationAdmissionTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
 }
-# PARTITION Foundation END
+# PARTITION Live END
 # PARTITION Recovery BEGIN: original final4 plus durable source prerequisite, ordered.
 if ($Partition -in @('All', 'Recovery')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
@@ -210,5 +214,5 @@ try {
 }
 # PARTITION Recovery END
 $SuiteWatch.Stop()
-$SuiteCount = if ($Partition -eq 'Foundation') { 27 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }
+$SuiteCount = if ($Partition -eq 'Foundation') { 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }
 Write-Host ('Installer partition PASS: ' + $SuiteCount + ' suites; partition=' + $Partition + '; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)

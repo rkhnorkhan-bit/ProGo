@@ -30,7 +30,7 @@ class LegacyJournalReferenceStaticTests(unittest.TestCase):
         self.assertEqual(parent.count(call),1)
         self.assertLess(parent.index(call),parent.index("Write-Host ('Durable input tests PASS:"))
         suite=(ROOT/'scripts/Test-ProGoInstallerSuite.ps1').read_text(encoding='utf-8-sig')
-        self.assertIn("{ 27 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }",suite)
+        self.assertIn("{ 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }",suite)
         self.assertNotIn('InstallerLegacyJournalReferenceTests',suite)
     def test_twenty_real_cases_and_native_replacement_witness(self):
         cases=re.findall(r"'([^']+)'",self.fixture.split('$scenarios = @(',1)[1].split(')',1)[0])

@@ -4020,19 +4020,19 @@
     }
   ],
   "ci_candidate": {
-    "source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
-    "tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108",
-    "run_id": 40330525850,
-    "run_number": 727,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40330525850",
+    "source": "16b28bc40f00a6c24d69add5665c58f0be8a8fee",
+    "tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8",
+    "run_id": 40338423004,
+    "run_number": 728,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40338423004",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "completed",
-    "conclusion": "success",
-    "candidate_merge_ref": "0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b",
-    "tested_merge": "0b55a9f3eba041fd2d8fcd8baf0c8768cc8d513b",
-    "new_windows": "CI727 all5 complete logs SUCCESS; LiveStartup19/refusal2/Restore22/Preparation13/CLR+sharing regressions/all33/classifier26/strict4aggregate",
+    "conclusion": "cancelled",
+    "candidate_merge_ref": "1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569",
+    "tested_merge": "1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569",
+    "new_windows": "CI728 cancelled Foundation; Menu24 1PASS/1interrupted/22NOT_RUN; aggregate FAILURE exact4; no full native PASS",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5524,12 +5524,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
-    "tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108",
-    "prior_checkpoint": "183246a94ec77cb1bedceb62864ceeef16180f8a",
-    "stage": "Integrated live Legacy->Startup->Menu failure handlers and expected post-primary-removal scoped verifier; default orchestration OFF",
-    "status": "CI727 all5 logs SUCCESS baseline; local83PASS/review; new Menu24/fresh-process2/compile/full exact aggregate NOT_RUN",
-    "next": "One guarded publication +sole automatic CI initial status, no full wait. Durable auxiliary/safe success/default integration/whole rollback remain OPEN",
+    "source": "16b28bc40f00a6c24d69add5665c58f0be8a8fee",
+    "tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8",
+    "prior_checkpoint": "da89bafc7d020f68fd6d7223cc247065aafac10f",
+    "stage": "CI scheduling only: entire existing suite27 in independent Live partition; Foundation26/Live1/Recovery6 and exact5 required aggregate",
+    "status": "CI728 cancelled cause UNKNOWN; local90PASS/review; full new native Menu24 and exact5aggregate NOT_RUN",
+    "next": "One guarded publish +one automatic CI initial status; no full wait. Read same new full6logs before claiming native24 PASS",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5538,8 +5538,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "2e385387c0871c218edb69816900190374708dd2",
-    "local_development_tree": "d6202457e43ca3e84d2c1e74229f6f62de93e108"
+    "local_development_sha": "fd5a7fb614fdbf475cbc50bda04d49e3333923b8",
+    "local_development_tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -23897,7 +23897,7 @@
   "legacy_menu_live_gate": {
     "base_checkpoint": "183246a94ec77cb1bedceb62864ceeef16180f8a",
     "baseline_source": "64b2cce974637fc05b2ef026372ef02f8b0b1683",
-    "status": "Prepared; Menu24/fresh-process2/Windows compile NOT_RUN locally",
+    "status": "CI728 terminal CANCELLED; Menu24 1PASS/1interrupted/22NOT_RUN; complete native proof OPEN; current next gate only CI scheduling",
     "integrated_path": "real FailureStartup -> StartupRollback -> FailureMenu -> MenuRollback -> existing native exact-handle Menu disposition -> expected scoped transition verification",
     "capability": "original native preparation +same live lease/physical pins+actual cached accepted and restore references; exact restored Legacy retained until finally; no receipt-only/serialized authority",
     "mutation": "original primary native origin/hash/location/schema/semantic guards before READ|DELETE exact handle; accepted disposition/handle closed/observed absence separate, no replay",
@@ -23906,6 +23906,221 @@
     "local": "83PASS legacy/aggregate; parity/review/C#5 lexical/signatures/JSON/diff/secrets PASS; native NOT_RUN",
     "remaining": "durable auxiliary/default success+orchestration/full original error integration/whole runtime+auxiliary rollback/restart/power-loss/PC acceptance OPEN",
     "preservation": "all33/classifier26/strict4aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/fullF30 unchanged",
+    "score_delta": 0,
+    "publication": {
+      "source": "16b28bc40f00a6c24d69add5665c58f0be8a8fee",
+      "code_commit": "fd5a7fb614fdbf475cbc50bda04d49e3333923b8",
+      "join": "adfd00e2c32fbf1cd998e28b8fd55f2688cb11fc",
+      "tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8",
+      "guard": "expected64b2cce974637fc05b2ef026372ef02f8b0b1683 force=false once",
+      "ci": 40338423004,
+      "run_number": 728,
+      "attempt": 1,
+      "exact_source_count": 1,
+      "status": "in_progress",
+      "conclusion": null,
+      "checkpoint": "Local3docs-only unpushed; no second publication/CI/full wait"
+    },
+    "ci728_terminal_evidence": "ci728_verified_terminal is authoritative; old publication in_progress entry below is initial historical observation"
+  },
+  "ci728_verified_terminal": {
+    "source": "16b28bc40f00a6c24d69add5665c58f0be8a8fee",
+    "tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8",
+    "run_id": 40338423004,
+    "run_number": 728,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40338423004",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "cancelled",
+    "candidate_merge_ref": "1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569",
+    "tested_merge": "1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569",
+    "new_windows": "CI728 cancelled Foundation; Menu24 1PASS/1interrupted/22NOT_RUN; aggregate FAILURE exact4; no full native PASS",
+    "score_delta": 0,
+    "jobs": [
+      121626136635,
+      121626137453,
+      121626136121,
+      121626136498,
+      121648740736
+    ],
+    "full_log_lines": [
+      723,
+      539,
+      15489,
+      614,
+      174
+    ],
+    "Foundation": "CANCELLED; first26+old nested Restore22/Preparation13/Startup19/regressions PASS; Menu24 complete1PASS/preserved-startup interrupted/22NOT_RUN",
+    "Recovery": "SUCCESS all6/Owned29/receipt14/refusal2",
+    "Core": "SUCCESS classifier26/Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4816/Portable91/Python116PASS2SKIP",
+    "Ubuntu": "SUCCESS",
+    "aggregate": "FAILURE exact4, cancelled Foundation fail-closed",
+    "cause": "UNKNOWN; configured40min and observed40m09s do not prove timeout/hang/production defect; annotations unsupported by connector",
+    "foundation26_ms": 1487928,
+    "live_host_incomplete_ms": 898145,
+    "recovery6_ms": 1955910,
+    "suite_timings": {
+      "Foundation26": [
+        {
+          "name": "UpdatePackageTests.ps1",
+          "elapsedMs": 2672
+        },
+        {
+          "name": "InstallPayloadTests.ps1",
+          "elapsedMs": 766
+        },
+        {
+          "name": "InstallerMaintenanceTests.ps1",
+          "elapsedMs": 75296
+        },
+        {
+          "name": "InstallerStageTests.ps1",
+          "elapsedMs": 730
+        },
+        {
+          "name": "InstallerBackupTests.ps1",
+          "elapsedMs": 1500
+        },
+        {
+          "name": "InstallerSelfCheckTests.ps1",
+          "elapsedMs": 6086
+        },
+        {
+          "name": "InstallerRollbackTests.ps1",
+          "elapsedMs": 6239
+        },
+        {
+          "name": "InstallerJournalTests.ps1",
+          "elapsedMs": 5653
+        },
+        {
+          "name": "InstallerRestartGateTests.ps1",
+          "elapsedMs": 709
+        },
+        {
+          "name": "InstallerOutcomeTests.ps1",
+          "elapsedMs": 38730
+        },
+        {
+          "name": "InstallerRollbackOutcomeTests.ps1",
+          "elapsedMs": 11947
+        },
+        {
+          "name": "InstallerOutcomeReconcileTests.ps1",
+          "elapsedMs": 14727
+        },
+        {
+          "name": "InstallerPendingInstalledProofTests.ps1",
+          "elapsedMs": 43210
+        },
+        {
+          "name": "InstallerStartupEvidenceTests.ps1",
+          "elapsedMs": 4485
+        },
+        {
+          "name": "InstallerMenuEvidenceTests.ps1",
+          "elapsedMs": 4128
+        },
+        {
+          "name": "InstallerLegacyEvidenceTests.ps1",
+          "elapsedMs": 4511
+        },
+        {
+          "name": "InstallerAuxiliaryRevalidationTests.ps1",
+          "elapsedMs": 101225
+        },
+        {
+          "name": "InstallerPendingPublicationTests.ps1",
+          "elapsedMs": 120015
+        },
+        {
+          "name": "InstallerStartupRollbackAdmissionTests.ps1",
+          "elapsedMs": 166540
+        },
+        {
+          "name": "InstallerOwnedStartupRollbackTests.ps1",
+          "elapsedMs": 82480
+        },
+        {
+          "name": "InstallerStartupResultTests.ps1",
+          "elapsedMs": 101760
+        },
+        {
+          "name": "InstallerStartupMutationAdmissionTests.ps1",
+          "elapsedMs": 133653
+        },
+        {
+          "name": "InstallerStartupFailureTests.ps1",
+          "elapsedMs": 149361
+        },
+        {
+          "name": "InstallerMenuPublicationTests.ps1",
+          "elapsedMs": 213
+        },
+        {
+          "name": "InstallerMenuRollbackAdmissionTests.ps1",
+          "elapsedMs": 255714
+        },
+        {
+          "name": "InstallerOwnedMenuRollbackTests.ps1",
+          "elapsedMs": 155578
+        }
+      ],
+      "Recovery6": [
+        {
+          "name": "InstallerMenuResultTests.ps1",
+          "elapsedMs": 229273
+        },
+        {
+          "name": "InstallerMenuFailureTests.ps1",
+          "elapsedMs": 410859
+        },
+        {
+          "name": "InstallerLegacyRollbackAdmissionTests.ps1",
+          "elapsedMs": 376181
+        },
+        {
+          "name": "InstallerLegacySourceCaptureTests.ps1",
+          "elapsedMs": 1835
+        },
+        {
+          "name": "InstallerLegacyDurableSourceTests.ps1",
+          "elapsedMs": 2106
+        },
+        {
+          "name": "InstallerLegacyDurableInputTests.ps1",
+          "elapsedMs": 935656
+        }
+      ]
+    },
+    "zip_bytes": 713801,
+    "zip_sha256": "52b92605faefccd41efcf508773d8af5e782a36711c07241b209805d2f8d1a2b",
+    "uploads": "SKIPPED runner-only/no PC acceptance"
+  },
+  "installer_live_partition_gate": {
+    "base_checkpoint": "da89bafc7d020f68fd6d7223cc247065aafac10f",
+    "baseline_source": "16b28bc40f00a6c24d69add5665c58f0be8a8fee",
+    "cause": "UNKNOWN cancellation; no proved timeout or hang; observed sequential workload incomplete at40min budget",
+    "layout": {
+      "Foundation": 26,
+      "Live": 1,
+      "Recovery": 6,
+      "All": 33
+    },
+    "required": [
+      "vpn-server-test",
+      "windows-build",
+      "installer-tests",
+      "installer-live-tests",
+      "installer-recovery-tests"
+    ],
+    "scope": "entire host suite27 incl Restore22/Preparation13/Startup19/Menu24 unchanged; all33 body/dispatch parity; production/default OFF unchanged",
+    "deadlines": "each Windows job40/Core40/Ubuntu12/aggregate5 and all individual child waits unchanged",
+    "local": "90PASS=legacy66+aggregate24; static/parity/secrets/JSON/public430source0release PASS",
+    "native": "new Live/fullMenu24/exact5aggregate NOT_RUN until new full logs",
+    "remaining": "CI728 UNKNOWN cause/native Menu24 complete proof/default success/durable auxiliary/whole rollback/restart/power-loss/PC acceptance OPEN",
     "score_delta": 0
   }
 }
