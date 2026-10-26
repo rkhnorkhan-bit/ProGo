@@ -36,6 +36,79 @@ public static class LegacyMetadataThreatFixture
 }
 '@
     }
+# Reflection has no PowerShell method binder: normalize inside CLR, then check actual CLR types.
+if (-not ('LegacyRestoreReflectionFixture' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Reflection;
+using System.Threading;
+public static class LegacyRestoreReflectionFixture
+{
+    private static int probeCalls;
+    private static object Unwrap(object value)
+    {
+        for (int i = 0; value != null && value.GetType().FullName == "System.Management.Automation.PSObject"; i++) {
+            if (i == 8) throw new ArgumentException("Synthetic reflection wrapper depth exceeded.");
+            value = value.GetType().GetProperty("BaseObject").GetValue(value, null);
+        }
+        return value;
+    }
+    public static object InvokeChecked(MethodInfo method, object target, object[] arguments)
+    {
+        if (method == null || arguments == null) throw new ArgumentException("Reflection method or arguments missing.");
+        target = Unwrap(target);
+        if (!method.IsStatic && (target == null || target.GetType() != method.DeclaringType))
+            throw new ArgumentException("Reflection target CLR type mismatch.");
+        var parameters = method.GetParameters();
+        if (parameters.Length != arguments.Length) throw new ArgumentException("Reflection argument count mismatch.");
+        var clr = new object[arguments.Length];
+        for (int i = 0; i < clr.Length; i++) {
+            clr[i] = Unwrap(arguments[i]);
+            // All restore fault arguments are non-null, exact declared CLR types; no Convert/ChangeType.
+            if (clr[i] == null || clr[i].GetType() != parameters[i].ParameterType)
+                throw new ArgumentException("Reflection argument CLR type mismatch.");
+        }
+        return method.Invoke(target, clr);
+    }
+    public static object ReadFieldChecked(FieldInfo field, object target)
+    {
+        target = Unwrap(target);
+        if (field == null || target == null || target.GetType() != field.DeclaringType)
+            throw new ArgumentException("Reflection field target CLR type mismatch.");
+        return field.GetValue(target);
+    }
+    private static bool Probe(CancellationTokenSource source, CancellationToken token)
+    { probeCalls++; return token == source.Token && token.CanBeCanceled && !source.IsCancellationRequested; }
+    public static bool WrapperRegression()
+    {
+        Type ps = null;
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()) {
+            ps = assembly.GetType("System.Management.Automation.PSObject", false);
+            if (ps != null) break;
+        }
+        if (ps == null) return false;
+        var probe = typeof(LegacyRestoreReflectionFixture).GetMethod("Probe", BindingFlags.NonPublic | BindingFlags.Static);
+        using (var source = new CancellationTokenSource()) {
+            object wrappedSource = Activator.CreateInstance(ps, new object[] { source });
+            object wrappedToken = Activator.CreateInstance(ps, new object[] { source.Token });
+            if (wrappedSource.GetType() != ps || wrappedToken.GetType() != ps) return false;
+            probeCalls = 0; bool oldRefused = false;
+            try { probe.Invoke(null, new object[] { wrappedSource, source.Token }); }
+            catch (ArgumentException) { oldRefused = true; }
+            if (!oldRefused || probeCalls != 0) return false;
+            bool wrongTypeRefused = false;
+            try { InvokeChecked(probe, null, new object[] { source, "synthetic wrong token type" }); }
+            catch (ArgumentException) { wrongTypeRefused = true; }
+            if (!wrongTypeRefused || probeCalls != 0) return false;
+            object observed = InvokeChecked(probe, null, new object[] { wrappedSource, wrappedToken });
+            return observed is bool && (bool)observed && probeCalls == 1;
+        }
+    }
+}
+'@
+}
+if (-not [LegacyRestoreReflectionFixture]::WrapperRegression()) { throw 'CLR reflection wrapper regression failed.' }
+Write-Host 'Legacy restore reflection regression PASS: PSObject refused before call; unwrapped exact CLR arguments invoked once'
 function Check-OwnedRestore($Condition,[string]$Name) {
     if (-not $Condition) { throw ('Owned Legacy restore failed: case=' + $scenario + '; check=' + $Name) }
 }
@@ -99,14 +172,15 @@ try {
             [LegacyMetadataThreatFixture]::SetCreation($metadata,$creation.AddMinutes(1))
         }
         if ($scenario -ceq 'source-disposed') {
-            $streams = $lease.GetType().GetField('evidence',[Reflection.BindingFlags]'NonPublic,Instance').GetValue($lease)
+            $field = $lease.GetType().GetField('evidence',[Reflection.BindingFlags]'NonPublic,Instance')
+            $streams = [LegacyRestoreReflectionFixture]::ReadFieldChecked($field,$lease)
             $streams[0].Dispose()
         }
         if ($scenario -ceq 'lease-disposed') { $lease.Dispose() }
         if ($scenario -ceq 'physical-disposed') { $physical.Dispose() }
         if ($scenario -ceq 'cancel-before') { $cancel.Cancel() }
         $fault = if ($scenario -in @('write','short-write','flush','readback','readback-throw','cancel-created','cancel-written','cancel-flushed','cancel-readback','result-write','result-flush','result-readback')) { $scenario } else { $null }
-        if ($null -ne $fault) { $result = $restoreMethod.Invoke($manager,[object[]]@($lease,$physical,$cancel.Token,$fault,$cancel)) }
+        if ($null -ne $fault) { $result = [LegacyRestoreReflectionFixture]::InvokeChecked($restoreMethod,$manager,[object[]]@($lease,$physical,$cancel.Token,$fault,$cancel)) }
         else { $result = $lease.RestoreOwnedOnce($physical,$cancel.Token) }
         Check-OwnedRestore ([object]::ReferenceEquals($accepted,$result.AcceptedResult) -and -not $result.WholeRollbackVerified -and -not $result.InstallSucceeded -and -not $result.RestartAuthority) 'acceptance retained without whole success or restart authority'
         $blocked = $scenario -in @('cancel-before','foreign','equal-byte','reparse','source-changed','source-disposed','lease-disposed','physical-disposed')

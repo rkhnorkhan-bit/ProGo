@@ -1,3 +1,73 @@
+## CURRENT CI723 FAILURE verified; reflection harness-only CLR argument correction
+
+Admission checkpointfaeaa2005665bf7f237bb79f4b377913321a44b2 is available, clean and preserved with its
+three docs/state files (+83/-18) relative to source6e1d0d26a8d82e674c21045a070db2a00604d3b8. Remote PR88
+remains draft/open on that exact source/merge16c683e7a1bb4ee753a4f4254ccb29569e904346. No active queued/
+in_progress CI, Git/build/SSH processes, locks or other writer observed at admission. Sole writer/no agents.
+
+All five complete final CI723 logs retrieved and exact merge independently checked:
+Foundation121512123262 FAILURE, Core121512122501 SUCCESS, Recovery121512122741 SUCCESS,
+Ubuntu121512122764 SUCCESS, aggregate121525053392 FAILURE/fail-closed on exact merge.
+Run https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40305090957 attempt1.
+Foundation log:10:38:05 UTC owned restore complete PASS,10:38:18 UTC first fault write stops at fixture109
+BEFORE production method entry: System.Management.Automation.PSObject cannot convert to
+System.Threading.CancellationTokenSource at MethodInfo.Invoke. Restore22 =1PASS +1harnessERROR +20NOT_RUN;
+not full restore/F23/production PASS. Core Python116PASS2SKIP; Recovery6 suites incl Owned29/receipt14/
+fresh-process refusal2 PASS; original Foundation cases before the added child passed, partition still FAIL.
+No complete new33-suite/exact aggregate acceptance; startup/other root causes remain UNKNOWN.
+
+Only tests/InstallerLegacyOwnedRestoreTests.ps1 changes executable content. Test-only CLR reflection bridge
+unwraps actual PSObject.BaseObject inside CLR (bounded depth), constructs a fresh CLR object[] and checks
+actual target/each argument GetType against method DeclaringType/ParameterType before invoking. No dynamic
+PowerShell conversion, ChangeType, cast-based success or skipped invocation. The normal non-fault public API
+call and all original22 scenarios/assertions/fault selectors/deadlines/cleanup remain exactly unchanged.
+The other new reflection site, evidence FieldInfo.GetValue target, now uses the same checked CLR unwrapping.
+GetMethod/GetField name/flags queries have ordinary CLR string/enum arguments, not an object[] binder path.
+All direct MethodInfo.Invoke inside the test bridge receive CLR-owned arrays; the sole intentionally wrapped
+Invoke is the caught regression reproducer. Production/native source and all its semantics remain unchanged.
+
+Real CLR regression prepared inside the native fixture before any case: construct actual PSObject wrappers
+around a CTS and its boxed CancellationToken; old raw reflection MUST throw ArgumentException with probe
+call count0. Wrong CLR token type MUST be refused with count0. Checked unwrapped source/token MUST enter the
+probe exactly once and match the same uncancelled source.Token. Then the same checked bridge runs every real
+existing Write/short-write/Flush/readback/result/cancellation fault scenario. No static substitute for native
+execution; no fake successful fault result. New bridge compilation/regression and complete22 Windows cases
+remain NOT_RUN locally until the sole new exact CI. No additional production defect established by CI723.
+
+Local66 legacy contracts +17 strict aggregate tests =83PASS; reverse fixture parity (strip bridge/restore two
+call sites => byte-equivalent original normalized text), production/scripts/workflows/VERSION/all other tests/
+approved scope parity, C#5 lexical/signatures/JSON/diff/secrets/public428source0release PASS. No local C#/PS
+runtime available. Test bridge and native fault proof are NOT claimed from source-text checks.
+
+All original33 suite calls/classifier26/strict4aggregate/deadlines/UNKNOWN incidents/BLOCKED_TRANSFER/no retry/
+full31/nested55/F30 scope and weights/delta0 retained. Live proofs lost => blocked/manual; receipt/absence/result
+is never authority. Live installer/error integration/whole rollback/restart recovery/power-loss/PC acceptance
+remain OPEN/NOT_RUN. No live installation/user data/privileges/ACL/WCT/SeDebug/services/network/VPS/tunnel/
+credentials actions. One expected-head nonforce publication and sole automatic CI only; no duplicate/rerun/
+manual dispatch/full wait. After initial CI status create a local clean docs checkpoint and stop this stage.
+
+## LOCAL post-publication checkpoint: live-lease owned restore / CI723
+
+One expected-HEAD nonforce publication to the current PR88 branch completed.
+Source6e1d0d26a8d82e674c21045a070db2a00604d3b8, parent65f77542ad0d10a9ebc95a4dcc519683a06a5e59,
+treed5eeb460ddfd23bda06e09b4696d98627d03550b; reviewed local40440cbc77aa429a9260183b1a7ec4e66b15d8d1
+has the exact same full tree. Canonical Git commit imported and hash/parent/full tree verified;
+joined locally at93f231ea785408b21fbef7448a68b0cce4f3399e, preserving checkpoint96d3586 and all docs diff.
+PR88 draft/open/unmerged, merge REF16c683e7a1bb4ee753a4f4254ccb29569e904346 is a candidate, not tested PASS.
+Sole automatic CI723 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40305090957,
+pull_request/attempt1, initial in_progress/conclusion null. New compile/native22/full aggregate NOT_RUN
+until its exact complete final logs. CI722 verified SUCCESS remains the baseline, not inherited new PASS.
+Published total7files733add15delete includes all preserved local docs changes. Runtime only183 additive lines;
+old native methods/fixtures/33 suite calls/classifier26/strict4aggregate/deadlines/workflows preserved.
+New native22 runs nested after Foundation MenuMutation19 cleanup; no extra job or longer deadline.
+Local131PythonPASS3SKIP, reverse parity/C#5 lexical/signatures/JSON/secrets/diff/public428source0release PASS.
+No second update/push/rerun/dispatch/full CI wait/live installation/user data/security/ACL/privileges/
+WCT/SeDebug/services/VPS/tunnel/credentials change. This checkpoint changes docs/state only and is not pushed.
+Stop here. Next read SAME CI723 exact final five logs and new restore/fault cases; no automatic next feature.
+Whole rollback/live installer+error integration/restart recovery/power-loss/PC acceptance remain OPEN/NOT_RUN.
+Lost live proofs stay blocked/manual; receipt/absence/result grants no authority. UNKNOWN incidents,
+BLOCKED_TRANSFER/no retry, full31/nested55/F30 commercial scope and score delta0 preserved.
+
 ## CURRENT bounded live-lease owned Legacy restore; new Windows execution NOT_RUN
 
 Base local checkpoint96d3586a2b7eb054a21f3f5562eb366ef4d2556f is available and clean at admission;

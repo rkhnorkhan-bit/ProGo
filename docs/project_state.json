@@ -4020,18 +4020,20 @@
     }
   ],
   "ci_candidate": {
-    "source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
-    "tree": "824ea8f3e36480ad153e2528e55fc3948db94c9a",
-    "run_id": 40295688624,
-    "run_number": 722,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40295688624",
-    "status": "completed",
-    "conclusion": "success",
+    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
+    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
+    "run_id": 40305090957,
+    "run_number": 723,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40305090957",
+    "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
-    "new_windows": "CI722 five full exact logs verified; Owned29 receipt14 fresh-process refusal2 all33 strict4aggregate PASS",
-    "score_delta": 0,
-    "tested_merge": "e08807d35eff76db98dc712d4dfb4b13a5719a46"
+    "status": "completed",
+    "conclusion": "failure",
+    "candidate_merge_ref": "16c683e7a1bb4ee753a4f4254ccb29569e904346",
+    "tested_merge": "16c683e7a1bb4ee753a4f4254ccb29569e904346",
+    "new_windows": "CI723 restore complete1 PASS/write1 harnessERROR/remaining20 NOT_RUN; full gate FAIL",
+    "score_delta": 0
   },
   "signing_microtask": {
     "status": "PARTIAL",
@@ -5522,12 +5524,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
-    "tree": "824ea8f3e36480ad153e2528e55fc3948db94c9a",
-    "prior_checkpoint": "96d3586a2b7eb054a21f3f5562eb366ef4d2556f",
-    "stage": "Bounded same-live-lease owned Legacy restore + independent post-restore verifier; no live integration or restart authority",
-    "status": "Local review/parity/static PASS; Python131PASS3SKIP; Windows native22/full new aggregate NOT_RUN",
-    "next": "One guarded PR88 publication and sole automatic CI initial status; stop without full wait",
+    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
+    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
+    "prior_checkpoint": "faeaa2005665bf7f237bb79f4b377913321a44b2",
+    "stage": "CI723 reflection harness-only exact CLR unwrapping/type checks and reproducer regression",
+    "status": "CI723 full failure verified; local83PASS/review; new CLR regression/full native22 NOT_RUN",
+    "next": "One guarded publication/automatic CI initial status only; then stop; no duplicate or full wait",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5536,8 +5538,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "41acf25c29267345271c8f53800b695494a12521",
-    "local_development_tree": "824ea8f3e36480ad153e2528e55fc3948db94c9a"
+    "local_development_sha": "40440cbc77aa429a9260183b1a7ec4e66b15d8d1",
+    "local_development_tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -23548,7 +23550,7 @@
   "legacy_live_restore_gate": {
     "base_checkpoint": "96d3586a2b7eb054a21f3f5562eb366ef4d2556f",
     "baseline_source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
-    "status": "Prepared; native Windows22 NOT_RUN locally",
+    "status": "CI723 overall FAIL: complete1PASS +write1harnessERROR +20NOT_RUN; harness correction prepared, new native proof NOT_RUN",
     "entry": "same retained live accepted operation and source/evidence/physical graph; receipt alone is not authority",
     "target": "fixed owned Legacy name; CreateNew only; no overwrite/adoption/cleanup/replay",
     "truths": [
@@ -23571,6 +23573,68 @@
     "live_integration": "NONE",
     "scope": "all31/nested55/F30 unchanged; original33 suites/classifier26/strict4aggregate/deadlines unchanged",
     "score_delta": 0,
-    "wiring": "Nested once after Foundation MenuMutation19 cleanup; original33 top-level suite calls/bodies retained; original40min deadlines unchanged; new fixture uses measured Foundation headroom"
+    "wiring": "Nested once after Foundation MenuMutation19 cleanup; original33 top-level suite calls/bodies retained; original40min deadlines unchanged; new fixture uses measured Foundation headroom",
+    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
+    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
+    "harness_fix": "test-only CLR unwrapping of all reflection object arguments and field targets; actual type checks; old failure reproduced before probe, corrected probe once",
+    "local_fix_tests": "66 legacy+17 strict aggregate =83PASS; native bridge/regression/22cases NOT_RUN locally"
+  },
+  "live_restore_postpublication_checkpoint": {
+    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
+    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
+    "parent": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
+    "local_reviewed_code": "40440cbc77aa429a9260183b1a7ec4e66b15d8d1",
+    "canonical_join": "93f231ea785408b21fbef7448a68b0cce4f3399e",
+    "base_checkpoint_preserved": "96d3586a2b7eb054a21f3f5562eb366ef4d2556f",
+    "canonical_import": "full commit hash/parent/tree verified; timezone retained from canonical commit",
+    "run_id": 40305090957,
+    "run_number": 723,
+    "status": "in_progress",
+    "attempt": 1,
+    "candidate_merge_ref": "16c683e7a1bb4ee753a4f4254ccb29569e904346",
+    "kind": "local docs-only, not pushed, no second CI",
+    "stop_after_one_stage": true,
+    "score_delta": 0
+  },
+  "ci723_verified_failure": {
+    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
+    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
+    "run_id": 40305090957,
+    "run_number": 723,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40305090957",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "candidate_merge_ref": "16c683e7a1bb4ee753a4f4254ccb29569e904346",
+    "tested_merge": "16c683e7a1bb4ee753a4f4254ccb29569e904346",
+    "new_windows": "CI723 restore complete1 PASS/write1 harnessERROR/remaining20 NOT_RUN; full gate FAIL",
+    "score_delta": 0,
+    "job_results": {
+      "121512123262": "Foundation FAILURE; restore complete PASS then reflection harness ERROR before method entry",
+      "121512122501": "Core SUCCESS; Python116PASS2SKIP",
+      "121512122741": "Recovery SUCCESS; Owned29 receipt14 refusal2",
+      "121512122764": "Ubuntu SUCCESS",
+      "121525053392": "aggregate FAILURE/fail-closed exact4 merge"
+    },
+    "all_five_full_logs": "retrieved; exact merge checked",
+    "restore22": {
+      "PASS": 1,
+      "harness_ERROR": 1,
+      "NOT_RUN": 20
+    },
+    "cause": "PSObject in reflection object[] cannot convert to CancellationTokenSource; fixture109 before method invocation",
+    "production_defect": "not established by this failure"
+  },
+  "ci723_harness_fix": {
+    "base_checkpoint": "faeaa2005665bf7f237bb79f4b377913321a44b2",
+    "base_source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
+    "scope": "one test fixture + state only; all production unchanged",
+    "native_regression": "actual PSObject CTS/token wrappers; old Invoke rejected before probe; wrong type rejected; normalized exact CLR invokes once; NOT_RUN locally",
+    "preservation": "all22 scenarios/assertions/real fault injections/original33 suites/classifier26/strict aggregate/deadlines/fullscope unchanged",
+    "local": "83PASS; review/parity/lexical/signatures/JSON/diff/secrets/public428source0release PASS",
+    "next": "one exact-source automatic CI; no full wait",
+    "score_delta": 0
   }
 }
