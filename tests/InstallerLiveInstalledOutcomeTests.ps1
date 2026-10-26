@@ -130,10 +130,19 @@ try{
         $summary=Invoke-ProGoInstallerSuccess $callBackup $writes $callEvidence $programs $startup $callContext $cancel.Token $heldError
         $stateExpected=$scenario -notin @('unsupported-absent','unsupported-custom','unsupported-optout','wrong-operation','wrong-root','foreign-context','stale-evidence','serialized-context','disposed-context','failure-result','receipt-tampered','source-tampered','primary-equal-byte','startup-equal-byte','custom-startup-equal-byte','reappeared-legacy','context-lost-after-publish')
         $recordExpected=$scenario -in @('complete','preserved-primary','preserved-startup','preserved-both','absent-startup','cancel-after-publish','error-after-publish')
+        # Whitelisted scalar diagnostics before the first assertion; never error messages, paths or document content.
+        $safeDiagnostic=[ordered]@{Case=$scenario;ExpectedState=$stateExpected;ExpectedRecorded=$recordExpected}
+        foreach($name in @('Status','StateVerified','InstalledOutcomeRecorded','CompletionErrorObserved','CancellationObserved','ScopedSuccessVerified',
+            'PendingCreated','BytesWritten','FlushVerified','ReadbackVerified','RenameAccepted','DiagnosticStage','DiagnosticExceptionType','DiagnosticHResult',
+            'DiagnosticExceptionChain','NativeDiagnosticStage','NativeDiagnosticExceptionType','NativeDiagnosticHResult','NativeDiagnosticWin32')){$safeDiagnostic[$name]=$summary.$name}
+        Write-Host ('LIVE_INSTALLED_DIAGNOSTIC '+($safeDiagnostic|ConvertTo-Json -Compress))
         Check-LiveInstalled ($summary.StateVerified -eq $stateExpected -and $summary.InstalledOutcomeRecorded -eq $recordExpected) 'real success handler consumes current live state and existing installed transaction result'
         Check-LiveInstalled ($summary.ScopedSuccessVerified -eq ($scenario -in @('complete','preserved-primary','preserved-startup','preserved-both','absent-startup'))) 'handler distinguishes scoped successful metadata transaction from interruptions and actual installation'
         Check-LiveInstalled (-not $summary.ActualInstallationCompleted -and -not $summary.InstallSucceeded -and -not $summary.RuntimeRollbackAllowed -and -not $summary.BackupCleanupAllowed -and -not $summary.RestartAuthority) 'scoped outcome is not complete live installation rollback cleanup or restart authority'
         if($null -ne $heldError){Check-LiveInstalled ([Object]::ReferenceEquals($summary.OriginalError,$heldError) -and -not $summary.ScopedSuccessVerified) 'original error/late cancellation is not converted to success'}
+        if($scenario -ceq 'write'){Check-LiveInstalled ($summary.DiagnosticStage -ceq 'pending-write' -and $summary.CompletionErrorObserved -and $summary.DiagnosticExceptionChain.Count -gt 0) 'diagnostic Write failure stage and bounded safe exception types are observed'}
+        if($scenario -ceq 'flush'){Check-LiveInstalled ($summary.DiagnosticStage -ceq 'pending-seal' -and $summary.NativeDiagnosticStage -ceq 'seal-cancellation' -and $summary.NativeDiagnosticExceptionType -ceq 'System.IO.IOException') 'actual synthetic Flush exception is localized before Flush without claiming Win32 failure'}
+        if($scenario -ceq 'readback'){Check-LiveInstalled ($summary.DiagnosticStage -ceq 'pending-seal' -and $summary.NativeDiagnosticStage -ceq 'seal-readback') 'actual readback mismatch stage survives catch and current summary verification'}
         if($scenario -in @('write','short-write','flush','readback')){
             Check-LiveInstalled ($summary.PendingCreated -and [IO.File]::Exists($pending) -and -not $summary.InstalledOutcomeRecorded) 'real Write/short-write/Flush/readback fault retains pending artifact and truthful progress'
             if($scenario -ceq 'short-write'){Check-LiveInstalled ($summary.BytesWritten -gt 0 -and -not $summary.ReadbackVerified) 'actual short bytes cannot be readback success'}

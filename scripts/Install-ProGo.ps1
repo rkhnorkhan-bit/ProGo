@@ -416,6 +416,8 @@ function Write-ProGoInstallerRollbackOutcomeBytes($Stream, [byte[]]$Bytes) {
 function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$CompletedPhases = @(), $StartupEvidence = $null, [switch]$RequireStartupEvidence,
     $LiveContext = $null, [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
     [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'), [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $diagnosticStage = 'admission'
+    try {
     if ($null -ne $LiveContext) {
         Import-ProGoShortcutType
         if ($LiveContext -isnot [ProGo.ApplicationShortcuts+LegacyStartupContext] -or $null -eq $Backup -or $null -eq $Backup.Journal -or
@@ -424,17 +426,23 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$Co
             -not $LiveContext.BeginInstalledPublication()) { throw 'Live installed publication is blocked.' }
         $CancellationToken.ThrowIfCancellationRequested()
     }
+    $diagnosticStage = 'journal'
     Assert-ProGoInstallerJournal $Backup.Journal $Backup
+    $diagnosticStage = 'snapshot'
     Assert-ProGoInstallerSnapshotMaterial $Backup
+    $diagnosticStage = 'runtime'
     Assert-ProGoInstallerRuntime $Backup
+    $diagnosticStage = 'ownership'
     if ($Writes.Count -ne $Backup.Entries.Count -or $Backup.Journal.Records.Count -ne $Writes.Count) { throw 'Installer terminal ownership is incomplete.' }
     foreach ($entry in $Backup.Entries) {
         $owned = @($Writes | Where-Object { $_.Relative -ceq $entry.Relative })
         if ($owned.Count -ne 1 -or $owned[0].OwnedHash -cne $entry.NewHash) { throw 'Installer terminal owned bytes are invalid.' }
     }
+    $diagnosticStage = 'admission-record-hashes'
     $proofs = @($Backup.Journal.Records | ForEach-Object {
         [pscustomobject]@{ Name = $_.Name; Hash = (Get-FileHash -LiteralPath (Assert-ProGoInstallerStagePath $Backup.Journal.Directory $_.Name)).Hash }
     })
+    $diagnosticStage = 'preparation-schema'
     if ($RequireStartupEvidence -and $null -eq $StartupEvidence) { throw 'Installer startup completion evidence is missing.' }
     if ($null -ne $StartupEvidence -and ($StartupEvidence.Schema -ne 1 -or
         $StartupEvidence.InstallIdentity -cne (Get-ProGoInstallerIdentity $Backup.InstallDirectory))) {
@@ -448,6 +456,7 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$Co
         $StartupEvidence.Legacy.InstallIdentity -cne (Get-ProGoInstallerIdentity $Backup.InstallDirectory))) {
         throw 'Installer legacy evidence identity is invalid.'
     }
+    $diagnosticStage = 'serialize'
     $text = ([pscustomobject]@{ Schema = 1; Phase = 'installed'; Identity = (Get-ProGoInstallerIdentity $Backup.InstallDirectory);
         Journal = [IO.Path]::GetFileName($Backup.Journal.Directory); Snapshot = $(if ($null -eq $Backup.Directory) { $null } else { [IO.Path]::GetFileName($Backup.Directory) });
         Inventory = $Backup.Journal.Inventory; Records = $proofs;
@@ -461,11 +470,14 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$Co
     }
     $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
     $path = Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'outcome.pending.json'
+    $diagnosticStage = 'pending-create'
     $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 4096, [IO.FileOptions]::WriteThrough)
     try {
         if ($null -ne $LiveContext) { $LiveContext.ObserveInstalledPending($stream) }
+        $diagnosticStage = 'pending-write'
         Write-ProGoInstallerOutcomeBytes $stream $bytes
         if ($null -ne $LiveContext) {
+            $diagnosticStage = 'pending-seal'
             if (-not (Confirm-ProGoInstallerLiveInstalledPending $LiveContext $stream $text $CancellationToken)) { throw 'Live installed flush/readback/state verification failed.' }
         } else {
         $stream.Flush($true); $stream.Position = 0
@@ -473,14 +485,22 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$Co
         try { if ($reader.ReadToEnd() -cne $text) { throw 'Installer terminal outcome readback is invalid.' } } finally { $reader.Dispose() }
         }
     } finally { try { if ($null -ne $LiveContext) { $LiveContext.ObserveInstalledPending($stream) } } finally { $stream.Dispose() } }
+    $diagnosticStage = 'pending-terminal-proof'
     if (-not (Test-ProGoInstallerInstalledOutcome $Backup.Journal.Directory $Backup.InstallDirectory 'outcome.pending.json' $LiveContext)) { throw 'Installer terminal outcome is not verified.' }
+    $diagnosticStage = 'pending-phase-proof'
     if ($CompletedPhases.Count -gt 0 -and -not (Test-ProGoInstallerPendingInstalledProof $Backup.Journal.Directory $Backup.InstallDirectory $LiveContext)) { throw 'Installer completion phase proof is not verified.' }
     if ($null -ne $LiveContext) {
+        $diagnosticStage = 'publish'
         if (-not (Publish-ProGoInstallerLiveInstalledOutcome $LiveContext $CancellationToken)) { throw 'Live installed atomic publication is unrecorded.' }
         return
     }
     # Atomic publication is the terminal boundary; no fallible post-publish validation.
     [IO.File]::Move($path, (Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'installed.json'))
+    } catch {
+        # Fixed stage only; no paths, messages, document bytes, or identifiers are emitted.
+        $_.Exception.Data['ProGoInstalledStage'] = $diagnosticStage
+        throw
+    }
 }
 # Existing installed transaction is used; no parallel terminal file or default activation.
 function Confirm-ProGoInstallerLiveInstalledPending($LiveContext, $Stream, [string]$Text, [Threading.CancellationToken]$CancellationToken) {
@@ -491,21 +511,29 @@ function Publish-ProGoInstallerLiveInstalledOutcome($LiveContext, [Threading.Can
 }
 function Invoke-ProGoInstallerSuccess($Backup, $Writes, $StartupEvidence, [string]$ProgramsDirectory, [string]$StartupDirectory, $LiveContext,
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None, $OriginalError = $null) {
-    $errorRecord = $OriginalError; $stateVerified = $false; $recorded = $false; $matched = $false; $completionError = $false
+    $errorRecord = $OriginalError; $stateVerified = $false; $recorded = $false; $matched = $false; $completionError = $false; $diagnosticStage = 'context-match'; $diagnosticType = $null; $diagnosticHResult = 0; $diagnosticChain = @()
     try {
         Import-ProGoShortcutType
         if ($LiveContext -is [ProGo.ApplicationShortcuts+LegacyStartupContext] -and $null -ne $Backup -and $null -ne $Backup.Journal -and
             $LiveContext.MatchesInstallerLocations($Backup.Journal.Directory,$Backup.InstallDirectory,$ProgramsDirectory,$StartupDirectory) -and
             $StartupEvidence -is [ProGo.ApplicationShortcuts+StartupInstallEvidence] -and $LiveContext.MatchesStartupPreparation($StartupEvidence)) {
-            $matched = $true
+            $matched = $true; $diagnosticStage = 'begin-handling'
             if ($LiveContext.BeginInstalledHandling()) {
                 Complete-ProGoInstallerInstalledOutcome $Backup $Writes -CompletedPhases @('self-check','shortcuts') -StartupEvidence $StartupEvidence -RequireStartupEvidence `
                     -LiveContext $LiveContext -ProgramsDirectory $ProgramsDirectory -StartupDirectory $StartupDirectory -CancellationToken $CancellationToken
             }
+            $diagnosticStage = 'summary-current-verification'
             $stateVerified = $LiveContext.VerifyAcceptedInstallState(); $recorded = $LiveContext.VerifyInstalledOutcome()
         }
     } catch {
         $completionError = $true
+        $diagnosticType = $_.Exception.GetType().FullName; $diagnosticHResult = $_.Exception.HResult
+        $observedException = $_.Exception
+        for ($depth=0; $null -ne $observedException -and $depth -lt 4; $depth++) {
+            $diagnosticChain += [pscustomobject]@{ Type = $observedException.GetType().FullName; HResult = $observedException.HResult }
+            $observedException = $observedException.InnerException
+        }
+        if ($_.Exception.Data.Contains('ProGoInstalledStage')) { $diagnosticStage = [string]$_.Exception.Data['ProGoInstalledStage'] }
         if ($null -eq $errorRecord) { $errorRecord = $_ }
         if ($matched) { $stateVerified = $LiveContext.VerifyAcceptedInstallState(); $recorded = $LiveContext.VerifyInstalledOutcome() }
     }
@@ -514,6 +542,11 @@ function Invoke-ProGoInstallerSuccess($Backup, $Writes, $StartupEvidence, [strin
     $status = if ($recorded) { if ($interrupted) { 'installed-outcome-recorded-interrupted' } else { 'scoped-installed-recorded' } }
         elseif ($stateVerified) { 'installed-state-verified-unrecorded' } else { 'blocked' }
     return [pscustomobject]@{ Status = $status; StateVerified = $stateVerified; InstalledOutcomeRecorded = $recorded;
+        DiagnosticStage = $diagnosticStage; DiagnosticExceptionType = $diagnosticType; DiagnosticHResult = $diagnosticHResult; DiagnosticExceptionChain = @($diagnosticChain);
+        NativeDiagnosticStage = $(if ($matched) { $LiveContext.InstalledDiagnosticStage } else { $null });
+        NativeDiagnosticExceptionType = $(if ($matched) { $LiveContext.InstalledDiagnosticException } else { $null });
+        NativeDiagnosticHResult = $(if ($matched) { $LiveContext.InstalledDiagnosticHResult } else { 0 });
+        NativeDiagnosticWin32 = $(if ($matched) { $LiveContext.InstalledDiagnosticWin32 } else { 0 });
         CompletionErrorObserved = $completionError; CancellationObserved = $CancellationToken.IsCancellationRequested;
         ScopedSuccessVerified = ($stateVerified -and $recorded -and -not $interrupted); ActualInstallationCompleted = $false; InstallSucceeded = $false;
         OriginalError = $errorRecord; PendingCreated = ($matched -and $LiveContext.InstalledPendingCreated);

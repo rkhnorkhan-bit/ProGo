@@ -4020,18 +4020,18 @@
     }
   ],
   "ci_candidate": {
-    "source": "f6e795397ab6e148ce3450476e154ec6a1bcbc88",
-    "tree": "cd64f53ffe1ede66ae8949129313885045ae63a7",
-    "run_id": 40361848784,
-    "run_number": 731,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40361848784",
+    "source": "ed5a6d3460eb336a572f97692a432c7e6eccbe76",
+    "tree": "92ae495a582513e77c66d7e179912e73a365c34c",
+    "run_id": 40372281169,
+    "run_number": 732,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40372281169",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
-    "status": "completed",
-    "conclusion": "success",
-    "candidate_merge_ref": "daf25ca640d473a9dffb609cb0b4a10b228b0bb2",
-    "tested_merge": "daf25ca640d473a9dffb609cb0b4a10b228b0bb2",
+    "status": "in_progress",
+    "conclusion": null,
+    "candidate_merge_ref": "c5dc7da114300fec3cbda96a554e5362b0424a08",
+    "tested_merge": null,
     "required_partitions": [
       "vpn-server-test",
       "windows-build",
@@ -4039,7 +4039,7 @@
       "installer-live-tests",
       "installer-recovery-tests"
     ],
-    "new_windows": "CI731 full6logs SUCCESS: Preserved24/refusal2/Auxiliary26/Menu24/Startup19/Preparation13/Restore22/all33/classifier26/strict5aggregate",
+    "new_windows": "Native34/refusal2/compiler/ABI/full exact5 aggregate NOT_RUN; await same sole automatic CI, no full wait",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5530,24 +5530,7 @@
     "scoring": "Existing v1.0 weights unchanged; no points for documentation/commit/unexecuted tests",
     "continuity": "No schedule/restart/continuous guarantee created"
   },
-  "active_work": {
-    "source": "f6e795397ab6e148ce3450476e154ec6a1bcbc88",
-    "tree": "cd64f53ffe1ede66ae8949129313885045ae63a7",
-    "prior_checkpoint": "9003e6d9879cebdf861364968ea9dfbc80bcedf1",
-    "stage": "Optional InvokeInstallerSuccess -> existing CompleteInstalledOutcome with typed live accepted deletion evidence and consumed scoped summary; default OFF",
-    "status": "CI731 full6logs SUCCESS baseline/local90PASS; new native34/refusal2/compile/rename ABI/full aggregate NOT_RUN",
-    "next": "One guarded update +sole automatic CI initial status; no full wait. Same next full6logs before new native PASS. Default success/failure/runtime owner integration separately OPEN",
-    "constraints": [
-      "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
-      "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
-      "Full approved31/nested55 scope retained",
-      "UNKNOWN/BLOCKED_TRANSFER/no retry",
-      "No live/security/network/credentials/services/release/uploads changes"
-    ],
-    "score_delta": 0,
-    "local_development_sha": "762e51ddbe91d6f4cf8d231963f669eb52e2b8ed",
-    "local_development_tree": "cd64f53ffe1ede66ae8949129313885045ae63a7"
-  },
+  "active_work": "CI732 root UNKNOWN; bounded safe normal-success diagnostic stage only, no default activation/next feature; native proof pending sole new automatic CI",
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
     "implementation": "SettingsService.TryAcquireLaunchRevision: Acquired/Busy/Changed via nonblocking commitGate; same-worker release and no state/disk mutation",
@@ -24361,6 +24344,50 @@
     "local": "90PASS legacy66+aggregate24; old failure/default parity/review/C#5 lexical/JSON/diff/secrets/public432source0release PASS",
     "remaining": "default activation/actual self-check/owner success+failure+runtime integration/whole runtime rollback/restart/power-loss/PC acceptance OPEN; absent/custom/optout Legacy outside this live accepted-deletion scope",
     "preservation": "all33+prior failure/native/preserved/classifier26/strict5aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/fullF30 unchanged",
-    "score_delta": 0
+    "score_delta": 0,
+    "publication_checkpoint": {
+      "source": "ed5a6d3460eb336a572f97692a432c7e6eccbe76",
+      "tree": "92ae495a582513e77c66d7e179912e73a365c34c",
+      "reviewed_local": "aced013c5a2e4ec36a72ed7bf8f0e838bdb52772",
+      "canonical_join": "831b5dc07866a87b2a035a9cbb6ecc6f0bdb3e83",
+      "ci": 40372281169,
+      "status": "in_progress",
+      "default_activation": false,
+      "actual_installation_completed": false
+    }
+  },
+  "ci732_verified_owner_report": {
+    "source": "ed5a6d3460eb336a572f97692a432c7e6eccbe76",
+    "merge": "c5dc7da114300fec3cbda96a554e5362b0424a08",
+    "run": 40372281169,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "logs": "owner independently read all6 full logs",
+    "live_job": 121745876110,
+    "new34": {
+      "pass": 0,
+      "fail": 1,
+      "not_run": 33
+    },
+    "fresh_refusal2": "NOT_RUN",
+    "previous_failure_suites": "PASS",
+    "other_partitions": "Foundation/Recovery/Core/Ubuntu PASS",
+    "aggregate": "exact5 correctly FAIL_CLOSED",
+    "root_cause": "UNKNOWN; first complete assertion only, native publication error not emitted; ABI/sharing not proven",
+    "zip_bytes": 725111,
+    "zip_sha256": "587ee05fb28de750c7eda07114534481ae069d2e2ef5737fdce581f1214b62d3",
+    "delivery": "runner-only/no PC acceptance"
+  },
+  "live_installed_outcome_diagnostic_gate": {
+    "base_checkpoint": "ad7c6d49848c02b27efc64402bb3b8d056a6ff11",
+    "root_cause": "UNKNOWN",
+    "change": "diagnostic-only fixed transaction/native stage, bounded safe error type/HResult and failed Win32 code; fixture whitelist output before original assertion; actual Write/Flush/readback diagnostic regression checks",
+    "guards": "same native semantics/retained pins/nooverwrite/live authority; all34/refusal2 and prior assertions preserved",
+    "local": "90PASS/review/static/parity/secrets/public432source0release PASS",
+    "native": "Windows compilation/native34/refusal2 NOT_RUN",
+    "default_activation": false,
+    "next": "one automatic diagnostic CI, inspect exact failure evidence before root fix; no blind rerun/no next feature",
+    "bounds": "whole/runtime rollback/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/fullF30/strict5/deadlines unchanged"
   }
 }

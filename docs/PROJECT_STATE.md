@@ -1,3 +1,61 @@
+## CURRENT CI732 FAILURE verified by owner; bounded normal-success diagnostic candidate
+
+Admission exact clean checkpoint ad7c6d49848c02b27efc64402bb3b8d056a6ff11 in the existing checkout;
+remote ed5a6d3460eb336a572f97692a432c7e6eccbe76, PR88 draft/open; no active CI/Git/build/SSH or locks.
+All prior local docs/history preserved; no reset/discard/second writer.
+
+Owner independently read all SIX full CI732 logs: run40372281169 attempt1 FAILURE, exact source
+ed5a6d3460eb336a572f97692a432c7e6eccbe76, merge c5dc7da114300fec3cbda96a554e5362b0424a08.
+Live121745876110 full337: NormalSuccess complete first state/recorded assertion FAIL; new34=0PASS/1FAIL/
+33NOT_RUN, fresh-child2 NOT_RUN. ABI offset assertion passed before the case, NOT proof of successful
+native rename. Actual publication error/stage was not emitted: root cause UNKNOWN, neither ABI nor sharing proven.
+Previous Restore22/Preparation13/Startup19/Menu24/Auxiliary26/Preserved24/regressions PASS.
+Foundation121745876464 full643 PASS; Recovery121745876024 full539 PASS; Core121745875819 full15496
+PASS including Python123PASS2SKIP/classifier26; Ubuntu121745875505 full619 PASS;
+aggregate121764394438 full180 exact5 correctly fail-closed on Live failure.
+ZIP725111 SHA256587ee05fb28de750c7eda07114534481ae069d2e2ef5737fdce581f1214b62d3 runner-only,
+no upload/delivery/installation/PC acceptance. These are owner-verified log facts, not new local native proof.
+CI728 cancellation reason remains UNKNOWN.
+
+This stage adds diagnostics only, no speculative root-cause fix or production scope expansion:
+- Existing CompleteInstalled transaction records fixed stages admission/journal/snapshot/runtime/ownership/
+  admission-record-hashes/preparation-schema/serialize/pending-create/write/seal/terminal-proof/phase-proof/publish.
+  Catch annotates the actual completion exception then rethrows; original handler error identity is retained.
+- Same native live context exposes read-only diagnostic stage/type/HResult and exact failing open/rename Win32
+  error captured before returning false. Seal/schema/reference/binding/inventory/records/ownership/phases/
+  preparation/Flush/readback/current-state stages distinguish refusal from exceptions. Diagnostic fields are
+  never consulted by admission, verification, mutation, repeat or success decisions; not capability.
+- Handler summary includes fixed stage, at most four exception types/HResults, native reason and actual progress.
+  Synthetic fixture prints only whitelisted scalar summary/expected flags before the unchanged first assertion;
+  no error messages, paths, source bytes, operation identifiers, secrets or exception ToString/stack emission.
+- All34/fresh-refusal2/old failure-chain and preserved assertions retained; native Write/Flush/readback cases
+  add regression assertions that safe stage/error evidence survives catch/current-state summary. Same retained
+  pins, nooverwrite, identity, actual Write/shortwrite/Flush/readback injections, cancellation and partial artifacts.
+
+Local PASS: 66 legacy contract +24 aggregate tests=90; native semantic parity after stripping diagnostics;
+all old34/refusal2 and prior fixtures/assertions preserved; main/default/failure/strict5 aggregate/workflows/
+deadlines/classifier26/F23/approved plan unchanged; lexical/JSON/diff/secrets/public432source0release.
+No local pwsh/dotnet/compiler: diagnostic native34/refusal2 and Windows compilation NOT_RUN.
+One guarded publication and one NEW automatic diagnostic CI only; no same-source rerun/dispatch/full wait.
+Root remains UNKNOWN until exact same diagnostic run's evidence, no next feature stage.
+Default OFF; state verified != durable installed outcome != actual complete installation. Unsupported Legacy
+cases remain blocked. Whole/runtime rollback, restart recovery, power-loss and PC acceptance remain OPEN;
+UNKNOWN/BLOCKED_TRANSFER/full F30 and all33+new suites/strict5 exactSHA failclosed/deadlines preserved.
+
+## CURRENT publication: sole CI732 in_progress; native proof pending
+
+Source `ed5a6d3460eb336a572f97692a432c7e6eccbe76`; tree `92ae495a582513e77c66d7e179912e73a365c34c`; candidate merge `c5dc7da114300fec3cbda96a554e5362b0424a08` (not yet tested).
+Reviewed local code `aced013c5a2e4ec36a72ed7bf8f0e838bdb52772`; canonical join `831b5dc07866a87b2a035a9cbb6ecc6f0bdb3e83`.
+Expected-head non-force publication from exact CI731 source confirmed; full remote tree equals reviewed tree.
+One automatic pull_request [CI732](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40372281169), attempt1,
+source-filtered count1, observed in_progress/conclusion null. No rerun/dispatch/second push/full CI wait.
+Local90 tests PASS; review/static/parity/secrets/public guard PASS. New native34/refusal2/Windows compilation
+and metadata rename ABI/full exact5 aggregate NOT_RUN until this same CI completes. CI731 SUCCESS is baseline only.
+Optional real success handler consumes the existing installed transaction's current state and durable scoped result;
+actual complete installation remains false, default activation OFF. Unsupported absent/custom/optout Legacy blocked.
+Historical docs diff fully preserved below. This local docs-only checkpoint is intentionally not published.
+Whole/runtime rollback/restart/power-loss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30 retained.
+
 ## CURRENT CI731 SUCCESS verified; optional live accepted-deletion installed transaction
 
 Admission HEAD9003e6d9879cebdf861364968ea9dfbc80bcedf1 exact/clean/available; remote source
