@@ -1,3 +1,56 @@
+## CURRENT trusted Legacy journal reference / live-session prerequisite
+
+Acceptance: reference can be returned and revalidated only for an actual verified snapshot, complete canonical
+journal admissions and exact current new runtime, with a matching owned original + durable source. Snapshot
+hash is read/checked against actual manifest/material, not accepted as a new public parameter. Derive operation
+GUID from validated own journal name; bind full inventory + actual record hashes, snapshot/install/location,
+original origin/hash, durable storage native origin/document hash. Unknown/missing/mutated/foreign/partial/
+replaced/reparse evidence refuses; no overwrite, deletion, restore or success authority.
+
+PS entry points New-ProGoInstallerLegacySourceReference and Test-ProGoInstallerLegacySourceReference take the
+existing live Backup/Journal model and independently trusted Programs/Startup locations. Get context validates
+actual snapshot/runtime/journal, full approved runtime inventory and every exact schema/sequence/inventory/entry
+admission against physical files, then repeats context before/after publication/verification. No fields/paths or
+success flags from a saved reference are used as authority. Verifier constructs expected canonical JSON from
+fresh context plus immutable writer-issued evidence; does not deserialize a journal into a capability.
+
+Native additive methods PersistLegacyJournalReference / VerifyLegacyJournalReference use sealed evidence with
+private setters/internal constructor (Source proof, reference native Origin/hash, false authority flags).
+Private VerifyLegacySourceForReference fills missing pre-delete API: re-captures/holds original, exact owner,
+install/location/origin/hash, semantic ShellLink ownership, source canonical bytes and native storage origin.
+It is observation-only. Native bounded reference reader 1MiB; fixed own backups/installer-legacy-reference-GUID.json,
+non-reparse root/backups directory pins, CreateNew/WriteThrough/Flush(true), same-handle exact readback and
+independent-path native origin/hash check, final source/cancellation check. Existing/partial/foreign files
+never overwritten/reused/deleted; failure retains unclaimed bytes and yields no valid reference witness.
+Source/ref read pins prevent write/delete while observed. No new native P/Invoke/privilege, no original method
+body changed. No general lease across future operations is claimed: revalidate again at any future mutation.
+
+Journal record format/terminal strict inventory remain unchanged: reference lives beside the journal, bound
+to its operation/canonical records, NOT as an unknown extra admission in it. Current caller must retain the
+immutable native witness. Durable document does NOT by itself authorize restart import: independent durable
+anchor rehydration/validation (including reference origin/hash), pre-delete admission/integration, interrupted
+settlement, owned Legacy restore/error result/full auxiliary outcome, runtime recovery/retention remain OPEN.
+This is a verified reference publication/live verification prerequisite, not completed crash recovery or
+pre-delete integration. New helper is not called from actual migration/deletion/production failure path yet.
+Source hash-only historical receipts remain fail-closed. No intent-based automatic mutation/FullRollback/
+InstallSucceeded/Launch permission; settings/vault/keys/foreign resources unchanged. Trusted caller locations
+remain explicit and are never loaded from reference JSON. No full F23 or production PASS claimed.
+
+JournalReference20 Windows cases (prepared, NOT_RUN on new source): complete, caller-snapshot, snapshot-before,
+journal-before, foreign-journal, source-exists, reference-exists, cancel-before, missing-reference, partial-reference,
+reference-tampered, reference-replaced-same-bytes, source-tampered, source-replaced-same-bytes,
+original-replaced-same-bytes, journal-after, snapshot-after, wrong-location, runtime-after, reference-reparse.
+Actual snapshot/journal/runtime owned-file writes and synthetic real native Legacy link, no executable launch.
+Identical bytes/copied creation replacement retains old object to avoid native index reuse. Real directory
+junction at own reference filename targets own retained fixture directory; bounded owned cmd mklink process,
+no privilege/system changes, own kill/drain/finally and guarded no-follow cleanup, target bytes unchanged.
+Reader inventories and private bytes preserved; all retained files reopened exclusively after settlement.
+Cancellation is BEFORE entry; partial reference models a mutated file, NOT crash/Write/Flush fault injection.
+MEDIUM fault-injection specification remains open, unchanged; no new test seam or fake crash test.
+Wired once via existing DurableInput12 at end of Recovery before final PASS; no new suite/job/dispatch.
+New static6 verifies contract/wiring/case inventory/additive lexical delimiter sanity only (not compilation).
+Local42PythonPASS; new Windows20/C#/PS compile NOT_RUN until exact new CI logs. No inherited CI713PASS.
+
 ## CURRENT durable Legacy source file prerequisite; CI710 fully verified
 
 Baseline source4de597fba29d91fb8b8242c36f5b2a01d9681598/tree89ad162396260778b7a08679b3cac8885adfcbef;

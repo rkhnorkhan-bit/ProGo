@@ -95,6 +95,7 @@ try {
         }
         Write-Host ('PASS: durable input ' + $scenario)
     }
+    & (Join-Path $Root 'tests\InstallerLegacyJournalReferenceTests.ps1')
     Write-Host ('Durable input tests PASS: ' + $scenarios.Count)
 } finally {
     if ($null -ne $source) { $source.Dispose() }

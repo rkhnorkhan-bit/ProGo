@@ -415,6 +415,109 @@ namespace ProGo
             } catch { return null; }
         }
 
+        // Installer-only prerequisite: an immutable reference witness, never restore/terminal authority.
+        public sealed class LegacyJournalReferenceEvidence
+        {
+            public LegacyDurableSourceEvidence Source { get; private set; }
+            public string Origin { get; private set; }
+            public string Hash { get; private set; }
+            public bool MutationAllowed { get { return false; } }
+            public bool FullRollback { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            internal LegacyJournalReferenceEvidence(LegacyDurableSourceEvidence source, string origin, byte[] bytes)
+            { Source = source; Origin = origin; Hash = Digest(bytes); }
+        }
+        private static byte[] ReadLegacyReferenceBytes(FileStream stream)
+        {
+            if (stream.Length < 1 || stream.Length > 1048576) throw new IOException("Legacy reference size is invalid.");
+            byte[] bytes = new byte[(int)stream.Length]; int offset = 0, count;
+            while (offset < bytes.Length && (count = stream.Read(bytes, offset, bytes.Length - offset)) > 0) offset += count;
+            if (offset != bytes.Length) throw new IOException("Legacy reference read is incomplete.");
+            return bytes;
+        }
+        private string LegacyReferencePath(Guid operation)
+        {
+            if (operation == Guid.Empty) throw new IOException("Legacy reference operation is missing.");
+            return Path.Combine(root, "backups", "installer-legacy-reference-" + operation.ToString("N") + ".json");
+        }
+        // A pre-delete observation, independently checks the original and durable file. No caller hash is authority.
+        private bool VerifyLegacySourceForReference(LegacyRollbackSource source, LegacyDurableSourceEvidence proof,
+            Guid operation, string snapshot)
+        {
+            try {
+                if (source == null || source.Owner != this || proof == null || operation == Guid.Empty ||
+                    proof.Operation != operation || proof.SnapshotHash != snapshot || !LegacySourceHash(snapshot) ||
+                    proof.InstallIdentity != Identity(root) || proof.LocationIdentity != source.LocationIdentity ||
+                    proof.InstallIdentity != source.InstallIdentity || proof.OriginIdentity != source.OriginIdentity ||
+                    proof.Hash != source.Hash) return false;
+                byte[] bytes = source.CopyBytes(); if (bytes == null) return false;
+                using (var rootPin = PinLegacySourceDirectory(root))
+                using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups")))
+                using (var menuPin = PinLegacySourceDirectory(menu)) {
+                    string originalPath = Path.Combine(menu, "ProGo Status.lnk"), path = LegacySourcePath(operation);
+                    CheckLocation(originalPath); CheckLocation(path);
+                    using (var original = new FileStream(originalPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                        AssertLegacySourceOriginal(source, original, bytes);
+                        byte[] expected = LegacySourceDocument(operation, snapshot, source.InstallIdentity,
+                            source.LocationIdentity, source.OriginIdentity, source.Hash, proof.StorageOrigin, bytes);
+                        if (proof.StorageOrigin != LegacyOrigin(stream.SafeFileHandle) || proof.DocumentHash != Digest(expected) ||
+                            !Equal(expected, ReadLegacySourceDocument(stream))) return false;
+                        AssertLegacySourceOriginal(source, original, bytes);
+                        return true;
+                    }
+                }
+            } catch { return false; }
+        }
+        public LegacyJournalReferenceEvidence PersistLegacyJournalReference(LegacyRollbackSource source,
+            LegacyDurableSourceEvidence proof, Guid operation, string snapshot, byte[] document, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            if (document == null || document.Length < 1 || document.Length > 1048576 ||
+                !VerifyLegacySourceForReference(source, proof, operation, snapshot))
+                throw new IOException("Legacy journal reference source is not verified.");
+            // Caller supplies canonical journal binding; copy it before writing, never trust mutable caller bytes.
+            byte[] expected = (byte[])document.Clone(); string path = LegacyReferencePath(operation);
+            using (var rootPin = PinLegacySourceDirectory(root))
+            using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups"))) {
+                CheckLocation(path);
+                using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                    string origin = LegacyOrigin(stream.SafeFileHandle);
+                    stream.Write(expected, 0, expected.Length); stream.Flush(true); stream.Position = 0;
+                    byte[] read = new byte[expected.Length]; int offset = 0, count;
+                    while (offset < read.Length && (count = stream.Read(read, offset, read.Length - offset)) > 0) offset += count;
+                    if (offset != read.Length || stream.Length != expected.Length || !Equal(expected, read) ||
+                        origin != LegacyOrigin(stream.SafeFileHandle)) throw new IOException("Legacy reference readback failed.");
+                    CheckLocation(path);
+                    using (var current = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                        if (origin != LegacyOrigin(current.SafeFileHandle) || Digest(expected) != Digest(ReadLegacyReferenceBytes(current)))
+                            throw new IOException("Legacy reference publication changed.");
+                    }
+                    if (!VerifyLegacySourceForReference(source, proof, operation, snapshot))
+                        throw new IOException("Legacy reference source changed.");
+                    token.ThrowIfCancellationRequested();
+                    return new LegacyJournalReferenceEvidence(proof, origin, expected);
+                }
+            }
+        }
+        public bool VerifyLegacyJournalReference(LegacyRollbackSource source, LegacyJournalReferenceEvidence reference,
+            Guid operation, string snapshot, byte[] expected)
+        {
+            try {
+                if (reference == null || expected == null || expected.Length < 1 || expected.Length > 1048576 ||
+                    reference.Hash != Digest(expected) || !VerifyLegacySourceForReference(source, reference.Source, operation, snapshot)) return false;
+                using (var rootPin = PinLegacySourceDirectory(root))
+                using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups"))) {
+                    string path = LegacyReferencePath(operation); CheckLocation(path);
+                    using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                        if (reference.Origin != LegacyOrigin(stream.SafeFileHandle) || stream.Length != expected.Length ||
+                            reference.Hash != Digest(ReadLegacyReferenceBytes(stream))) return false;
+                        return VerifyLegacySourceForReference(source, reference.Source, operation, snapshot);
+                    }
+                }
+            } catch { return false; }
+        }
+
         internal sealed class LegacyObservation
         {
             internal byte[] Bytes;

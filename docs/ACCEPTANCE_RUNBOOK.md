@@ -1,3 +1,48 @@
+## CURRENT CI713 verified; trusted Legacy journal reference prerequisite (new Windows NOT_RUN)
+
+CI713 all5 full logs independently read, source7defd1a0f943f81ae0d95586c9bdd17f28c83219,
+exactmergeed94a3dbcc38d7d2aeccff9261212f507a765412. Core121337890936/15435lines SUCCESS:
+classifier26, SSH native5/5, exit0 without deadline, Desktop6394/Instance30/Maintenance126/Shutdown47/
+HomeVPN4816/Portable91; Python62PASS/2SKIP. Foundation121337891006/665 PASS27, Recovery121337890948/297
+PASS6 incl actual DurableInput12, total33. Ubuntu121337890786/612 PASS; aggregate121344562213/173 PASS,
+all4 testedSHA exactsame. Pack runner-only673903bytes SHA2567bde011a045e56be0e17890dee96d51facc6d5f7b491fb55f9cb97e8f56dd930,
+uploads skipped; no ownerPC/delivery acceptance. Getter fix scoped confirmed, old Python startup only NONREPRO,
+root UNKNOWN. PR88 exactsource/open, clean checkpoint56fb5c06936e4a0b60f6e836707c6cc71e71ed27;
+queued/in_progress/waiting0, sole writer. Old worktrees untouched.
+
+Bounded production prerequisite: verified live journal/snapshot -> durable Legacy source/reference + immutable
+native witness. Context hashes come from actual snapshot and every canonical admission/current runtime,
+not caller hash input. Native original/source/reference full origin+bytes verification; CreateNew/Flush/readback,
+reparse/refusal/no overwrite. No existing migration/delete/failure/outcome path changed or helper invoked there.
+Full contract/limits and new native JournalReference20 cases in F23_LEGACY_DURABLE_SOURCE.md.
+Tests wired once inside existing DurableInput Recovery suite, before its final summary: original33 suites,
+classifier26/strict4aggregate/workflow/deadlines untouched; no duplicate old suites. New Windows20 NOT_RUN.
+Local newstatic6 + existing36 =42 PythonPASS; C#/PowerShell/native compilation NOT_RUN locally.
+Next sole new automatic CI full5logs/exactmerge/JournalReference20/all33/Core/classifier26/strictaggregate;
+then separately review durable anchor rehydration and pre-delete integration/admission, not automatic restore.
+UNKNOWN incidents/BLOCKED_TRANSFER/no retry/full31/nested55/fixedweights/delta0 retained. WCT/SeDebug forbidden,
+owner question pending; no live install/services/network/security/credentials/VPS/tunnel/release/uploads.
+
+## CURRENT CI713 checkpoint — getter-error diagnostic fix published, Windows NOT_RUN
+
+Exact source7defd1a0f943f81ae0d95586c9bdd17f28c83219/tree0ed5ea31262fd878a3f97edb2ef0f77f341d6906,
+parentbfa4cbaa964b5ae79995547c20070d3797474b51; reviewed local44f2b69afa3ffb8c7854cc3e6c45395abbb5727d
+has identical tree. One expected-HEAD guarded PR88 update succeeded; joined fetch exit0/exact commit-tree-parent
+verified in separate own checkpoint worktree. One automatic pull_request CI713 observed in_progress:
+https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40249440586 . No rerun/dispatch/duplicate or second push.
+Fix is 3 explicit PSPropertyInfo.get_Value METHOD reads to expose masked getter exceptions to original catches;
+synthetic state-error assertions retained/strengthened, direct-access masking witness added, all26 vectors and
+33 installer suites retained. DurableInput comment now reflects actual Recovery registration. Runtime/SSH
+launch/deadline5000/flags/environment/killdrain/nativevalidation/strict4aggregate/workflow untouched.
+Local classifier static7/durable12/aggregate17 =36 Python PASS; reverse parity/signatures/JSON/diff/secrets/
+public-content410/0 PASS. Focused PS execution unavailable locally, new Windows26 and whole Core NOT_RUN until
+CI713 full logs. Prior CI712 exactmerge d8dfb08cdc0a670904f6a338313b562b027b80f7 all33installer/Durable12PASS,
+classifier26FAIL state-getter-error; subsequent SSH/native/Core/packageNOT_RUN and aggregateFAIL preserved.
+Source-level binder cause established; Windows fix validation not claimed yet. StartupUNKNOWN independent;
+WCT/SeDebug forbidden/questionpending, BLOCKED_TRANSFER/no retry/fullscope/weights/delta0 retained.
+Next SAME CI713 full5 logs, exactmerge, all26/33/Core/aggregate. No journal/predelete or new function.
+Checkpoint is local only; no second CI publication.
+
 ## CURRENT CI712 getter-exception diagnostic fix; new Windows verification NOT_RUN
 
 CI712 all5 full final logs independently read: sourcebfa4cbaa964b5ae79995547c20070d3797474b51,

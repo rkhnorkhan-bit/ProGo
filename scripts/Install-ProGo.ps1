@@ -1259,6 +1259,85 @@ function Assert-ProGoInstallerJournal($Journal, $Backup) {
         }
     }
 }
+# Trusted live-session binding only. No restart-import, deletion or automatic restoration.
+function Get-ProGoInstallerLegacySourceContext($Backup) {
+    Assert-ProGoInstallerSnapshotMaterial $Backup
+    Assert-ProGoInstallerRuntime $Backup
+    Assert-ProGoInstallerJournal $Backup.Journal $Backup
+    if ($null -eq $Backup.Directory -or $Backup.ManifestHash -cnotmatch '^[A-F0-9]{64}$') { throw 'Legacy source requires an actual verified snapshot.' }
+    $allowed = @(Get-ProGoInstallerPayloadNames | Where-Object { $_ -notin @('README.md','README.ru.md','LICENSE.md') })
+    if ($Backup.Entries.Count -ne $allowed.Count -or $Backup.Journal.Records.Count -ne $allowed.Count) { throw 'Legacy journal coverage is incomplete.' }
+    $seen = @{}; $records = @()
+    for ($index = 0; $index -lt $Backup.Entries.Count; $index++) {
+        $entry = $Backup.Entries[$index]; $record = $Backup.Journal.Records[$index]
+        if ($entry.Relative -cnotin $allowed -or $seen.ContainsKey($entry.Relative) -or $entry.Exists -isnot [bool] -or
+            $entry.NewHash -cnotmatch '^[A-F0-9]{64}$' -or ($entry.Exists -and $entry.Hash -cnotmatch '^[A-F0-9]{64}$') -or
+            (-not $entry.Exists -and $null -ne $entry.Hash)) { throw 'Legacy journal inventory is invalid.' }
+        $seen[$entry.Relative] = $true
+        $name = 'admit-{0:D6}.json' -f $index
+        if ($record.Name -cne $name) { throw 'Legacy journal sequence is invalid.' }
+        $path = Assert-ProGoInstallerStagePath $Backup.Journal.Directory $name
+        if ((Get-Item -LiteralPath $path).Length -gt 1048576) { throw 'Legacy journal admission is oversized.' }
+        $expected = ([pscustomobject]@{ Schema = 1; Phase = 'admitted'; Sequence = $index; Inventory = $Backup.Journal.Inventory; Entry = $entry } | ConvertTo-Json -Depth 8 -Compress)
+        if ($record.Text -cne $expected -or [IO.File]::ReadAllText($path) -cne $expected) { throw 'Legacy journal admission is not canonical.' }
+        $records += [pscustomobject]@{ Name = $name; Hash = (Get-FileHash -LiteralPath $path).Hash }
+    }
+    $journal = [IO.Path]::GetFileName($Backup.Journal.Directory)
+    $operation = [Guid]::ParseExact($journal.Substring('installer-journal-'.Length),'N')
+    return [pscustomobject]@{ Schema = 1; Phase = 'legacy-source-reference'; MutationAllowed = $false;
+        FullRollback = $false; InstallSucceeded = $false; Operation = $operation.ToString('N');
+        Identity = (Get-ProGoInstallerIdentity $Backup.InstallDirectory); Journal = $journal;
+        Snapshot = [IO.Path]::GetFileName($Backup.Directory); SnapshotHash = $Backup.ManifestHash;
+        Inventory = $Backup.Journal.Inventory; Records = $records }
+}
+function Get-ProGoInstallerLegacyReferenceDocument($Context, $Proof) {
+    if ($null -eq $Proof -or $Proof -isnot [ProGo.ApplicationShortcuts+LegacyDurableSourceEvidence] -or
+        $Proof.Operation.ToString('N') -cne $Context.Operation -or $Proof.SnapshotHash -cne $Context.SnapshotHash -or
+        $Proof.InstallIdentity -cne $Context.Identity) { throw 'Legacy source proof does not match verified journal.' }
+    return ([pscustomobject]@{ Context = $Context; Source = [pscustomobject]@{
+        LocationIdentity = $Proof.LocationIdentity; OriginIdentity = $Proof.OriginIdentity; Hash = $Proof.Hash;
+        StorageOrigin = $Proof.StorageOrigin; DocumentHash = $Proof.DocumentHash } } | ConvertTo-Json -Depth 10 -Compress)
+}
+function New-ProGoInstallerLegacySourceReference($Backup,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $source = $null
+    try {
+        $CancellationToken.ThrowIfCancellationRequested()
+        $context = Get-ProGoInstallerLegacySourceContext $Backup
+        $canonical = $context | ConvertTo-Json -Depth 8 -Compress
+        [guid]$operation = [Guid]::ParseExact($context.Operation,'N')
+        $manager = New-Object ProGo.ApplicationShortcuts($Backup.InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+        $source = $manager.CaptureLegacyRollbackSource($CancellationToken)
+        if ($null -eq $source) { throw 'Legacy source is absent or not owned.' }
+        $proof = $manager.PersistLegacyRollbackSource($source,$operation,$context.SnapshotHash,$CancellationToken)
+        $document = Get-ProGoInstallerLegacyReferenceDocument $context $proof
+        if (((Get-ProGoInstallerLegacySourceContext $Backup) | ConvertTo-Json -Depth 8 -Compress) -cne $canonical) { throw 'Legacy journal changed before reference.' }
+        $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($document)
+        $reference = $manager.PersistLegacyJournalReference($source,$proof,$operation,$context.SnapshotHash,$bytes,$CancellationToken)
+        if (((Get-ProGoInstallerLegacySourceContext $Backup) | ConvertTo-Json -Depth 8 -Compress) -cne $canonical -or
+            -not $manager.VerifyLegacyJournalReference($source,$reference,$operation,$context.SnapshotHash,$bytes)) { throw 'Legacy reference is not verified.' }
+        return $reference
+    } finally { if ($null -ne $source) { $source.Dispose() } }
+}
+function Test-ProGoInstallerLegacySourceReference($Backup, $Reference,
+    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    $source = $null
+    try {
+        if ($Reference -isnot [ProGo.ApplicationShortcuts+LegacyJournalReferenceEvidence]) { return $false }
+        $context = Get-ProGoInstallerLegacySourceContext $Backup
+        $canonical = $context | ConvertTo-Json -Depth 8 -Compress
+        $document = Get-ProGoInstallerLegacyReferenceDocument $context $Reference.Source
+        $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($document)
+        $manager = New-Object ProGo.ApplicationShortcuts($Backup.InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+        $source = $manager.CaptureLegacyRollbackSource([Threading.CancellationToken]::None)
+        [guid]$operation = [Guid]::ParseExact($context.Operation,'N')
+        if (-not $manager.VerifyLegacyJournalReference($source,$Reference,$operation,$context.SnapshotHash,$bytes)) { return $false }
+        return (((Get-ProGoInstallerLegacySourceContext $Backup) | ConvertTo-Json -Depth 8 -Compress) -ceq $canonical)
+    } catch { return $false } finally { if ($null -ne $source) { $source.Dispose() } }
+}
 function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
     if ($null -eq $Backup.PSObject.Properties['Journal']) {
         $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)
