@@ -1215,11 +1215,11 @@ function Invoke-ProGoInstallerFailureAuxiliary($OriginalError, $Backup, [string]
     $message = if ($outcomeRecorded) { 'install-failed; scoped-auxiliary-verified-recorded; runtime-unverified' }
         elseif ($stateVerified) { 'install-failed; scoped-auxiliary-verified-unrecorded; runtime-unverified' }
         else { 'install-failed; scoped-auxiliary-blocked; runtime-unverified' }
-    $legacyProgress = $null; $startupInvoked = $false; $menuAccepted = $false; $menuClosed = $false
+    $legacyProgress = $null; $startupInvoked = $false; $menuAccepted = $false; $menuClosed = $false; $menuPreserved = $false
     if ($scopeMatched) { $legacyProgress = $LegacyContext.RestoreProgress; $startupInvoked = $LegacyContext.StartupInvoked;
-        $menuAccepted = $LegacyContext.MenuDispositionAccepted; $menuClosed = $LegacyContext.MenuHandleClosed }
+        $menuAccepted = $LegacyContext.MenuDispositionAccepted; $menuClosed = $LegacyContext.MenuHandleClosed; $menuPreserved = $LegacyContext.MenuPreservedObserved }
     return [pscustomobject]@{ OriginalError = $OriginalError; Message = $message; LegacyProgress = $legacyProgress;
-        StartupInvoked = $startupInvoked; MenuDispositionAccepted = $menuAccepted; MenuHandleClosed = $menuClosed; AuxiliaryStateVerified = $stateVerified;
+        StartupInvoked = $startupInvoked; MenuDispositionAccepted = $menuAccepted; MenuHandleClosed = $menuClosed; MenuPreservedObserved = $menuPreserved; AuxiliaryStateVerified = $stateVerified;
         AuxiliaryOutcomeRecorded = $outcomeRecorded; Publication = $publication; InstallSucceeded = $false;
         RuntimeRollbackAllowed = $false; BackupCleanupAllowed = $false; RestartAuthority = $false; WholeRollbackVerified = $false }
 }

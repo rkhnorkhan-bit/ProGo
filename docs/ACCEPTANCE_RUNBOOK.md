@@ -1,3 +1,129 @@
+## CURRENT CI730 SUCCESS verified; existing preserved-primary live Menu/auxiliary terminal branch
+
+Admission HEADddf55c0bfe39accfc4edfac20322106393166a1e exact/clean/available at existing checkout; remote
+source9799b7746be95fe351754786be30b5ac1ba74618 PR88 draft/open/unmerged. Full local3docs(+105/-18)
+diff/history preserved. /proc Git/build/SSH inventory empty, Git-locks empty; queued/in_progress/waiting
+CI queries all0. Sole writer/no agents/reset/discard. CI728 cancellation cause remains UNKNOWN.
+
+All SIX complete CI730 logs independently retrieved/read, run40354928566 attempt1 SUCCESS, exact source
+9799b7746be95fe351754786be30b5ac1ba74618 /merge6e90ac60b9b7a2c548c2d7d9f1f4a377d11cac2e.
+Live121684706453 full305: Auxiliary26/refusal2/Menu24/Startup19/Preparation13/Restore22/CLR+sharing
+regressions PASS. Foundation121684706870 full643 26PASS; Recovery121684706078 full539 6PASS/Owned29/
+receipt14/refusal2; Core121684706321 full15496 Python123PASS2SKIP/classifier26/all prior checks PASS;
+Ubuntu121684706402 full621 aggregate24 parity/fail-closed tests PASS; aggregate121699185711 full179 all5
+exact same tested merge SHA PASS. ZIP717216 SHA256
+9968caef0698f38cf8ec0599742f0f7b88e96655aabb01d97e9386a193b9f532 runner-only/upload SKIPPED/not PC acceptance.
+Live measured736632ms; this stage retains existing40min jobs/all individual waits, new mode runtime NOT_RUN.
+
+Concrete missing branch addressed in EXISTING typed context/Menu handler/settlement/auxiliary outcome,
+not a new receipt or parallel rollback implementation. Before this stage RollbackMenuOnce vetoed preserved
+preparation and VerifyMenuSettlement required own accepted deletion +absence. Now two explicit states:
+created primary -> unchanged existing exact owned native deletion -> strict verified absence;
+preserved primary -> NO mutation -> strict current original primary verification. Real FailureAuxiliary
+still invokes real FailureStartup then FailureMenu/MenuRollback, then same VerifyMenuSettlement and same
+single auxiliary publication/current verification and consumed honest failure summary. No default activation.
+
+Preserved admission requires current full Startup/Legacy handoff, same original preparation Menu schema/
+requested/before-exists/exists/hash/location/semantic guards, null original receipt origin unchanged, and
+lease.replacementOrigin/replacementHash actual primary witnesses of this exact live accepted operation.
+Acquire native READ/shareREAD/no-follow primary handle and retain it through Menu settlement, auxiliary
+publication and caller-owned finally disposal. Verify both held handle AND actual current name via existing
+native VerifyLegacyAcceptedReplacement; full native identity including creation and exact hash, not bytes
+alone. No caller origin/restored bool/serialized evidence; original preparation receipt never rewritten.
+Same source/reference/admission/physical pins/cached accepted+restore object references/current canonical
+result graph remain mandatory. A foreign/replaced/equal-byte/copied-creation/metadata/byte/reparse/missing
+primary vetoes, never adopted/deleted. Preserved semantics still require owned requested primary matching
+this install --show target; arbitrary customized/foreign primary is not granted authority.
+
+Preserved branch returns BEFORE existing native Menu mutator. MenuAttempted/MenuDispositionAccepted/
+MenuAbsenceObserved/MenuHandleClosed remain FALSE; historical MenuPreservedObserved is separate and never
+capability. VerifyMenuSettlement repeats current held/native-name checks and original evidence; after proof
+loss it fails despite historical flag. Created guard expressions/native mutator/absence requirement unchanged.
+Same auxiliary document now explicitly differentiates menu-owned-deletion-absence vs menu-preserved-no-mutation,
+actual lease primary origin/hash and truthful disposition/presence markers. Existing result file/path/schema
+family/one-shot reservation/CreateNew/WriteThrough/Flush/exact readback/context identity unchanged; no second
+result/helper/receipt, no fabricated primary origin in old maps. Publication and summary retain separate
+AuxiliaryStateVerified/AuxiliaryOutcomeRecorded and same OriginalError. Flags do not grant whole/runtime
+rollback, cleanup, restart or install success. Nested Dispose finally releases restored pin, new primary pin,
+original lease and physical pins even if one disposal throws. No pin weakened to allow test mutation.
+
+Existing Auxiliary26 scenarios/order retained. Its former preserved-primary-always-blocked assertion is
+intentionally replaced by actual full-chain recorded preservation and negative witness cases; do not claim
+byte-identical assertions across this semantic change. Existing/private/custom Startup and primary bytes
+remain exact. Old receipt-only APIs are explicitly tested refusing stale original Legacy identity even with
+preserved primary. All other old33/nested Restore22/Preparation13/Startup19/Menu24 bodies unchanged.
+
+New PreservedFlow24 GUID-only real E2E mode in SAME fixture, appended once after existing Auxiliary26:
+complete(existing primary+created Startup), preserved-startup(existing primary+custom preserved Startup),
+actual auxiliary Write/short-write/Flush/readback faults after real Legacy restore/Startup/preserved Menu;
+equal-byte replaced aggregate result/source-before-publication; primary equal-byte/copied creation, changed
+bytes, changed native metadata, disappearance and real NTFS reparse junction between Startup and Menu;
+cancel/error after Legacy restore, after Startup, after preserved Menu and before publication; disposed valid
+outcome; post-settlement primary metadata change; retained primary read/hash with native WRITE+DELETE denied.
+Actual wrappers delegate original handlers and inject only fixed fixture faults; repeat verifies complete
+inventory and no extra Startup/Menu/publication calls, same OriginalError, source/backup/foreign bytes.
+
+Exact same proven CLR bridge unwraps/checks native context/token/string/CTS types for actual publication
+fault seam, no new raw reflection Invoke. Readers READ/shareREAD|DELETE work under live DELETE proofs;
+new primary pin is READ/shareREAD, compatible native verifier reads; write/delete attempts must fail32.
+Junction child bounded5s+drain5s creates only GUID-owned local junction to own foreign target, no privileges;
+assert handlers retained conflict and target bytes, fixture removes ONLY its own junction link; finally
+refuses other redirects. Fresh-process2 per mode see valid aggregate result but absent/serialized live session
+still blocked; existing child20s+cleanup5s unchanged. Finally exclusive reopen proves all handles released.
+Original26 +new24 modes use distinct GUID roots, original top-level33 dispatch once; strict5 aggregate and
+all suites/deadlines unchanged. Frozen original host parity strips ONLY exact two authorized auxiliary mode
+invocations; nested order/arguments exact, no exclusion/duplicate scenario body. No global freeze/ABA history.
+
+Local90PASS=legacy66+aggregate24; review unrelated native/created mutation/restore/publication/old receipt/
+main/default CompleteInstalledOutcome parity; preserved guard/pin/mode/canonical evidence/current proof,
+reflection/sharing/C#5 lexical/signatures/JSON/diff/secrets/public431source0release PASS. These are not compiler
+or native proof: new preserved24/refusal2/changed preserved-primary positive/Windows build/full new aggregate
+NOT_RUN locally until sole next automatic CI complete logs. No inherited native PASS from CI730 created scope.
+
+Normal-success via Complete-ProGoInstallerInstalledOutcome with live accepted-deletion evidence is a separate
+NEXT stage and NOT started here; main/default installer remains OFF/unchanged. Whole auxiliary/runtime
+rollback/default success/restart recovery/power-loss/PC acceptance OPEN/NOT_RUN. All33+native cases/classifier26/
+strict5partitions/deadlines/approved31/nested55/fullF30/UNKNOWN/BLOCKED_TRANSFER/no retry/weights/delta0 retained.
+No live installer/user files/network/security/privileges/ACL/WCT/SeDebug/credentials/services/VPS/tunnel actions.
+One guarded publication +one automatic CI initial status only, no duplicate/rerun/dispatch/full wait.
+
+## LOCAL post-publication checkpoint: scoped auxiliary outcome + consumed failure summary / CI730
+
+Exactly one expected-head nonforce PR88 update: source9799b7746be95fe351754786be30b5ac1ba74618,
+parent7a5950272207a0ca94c6fd01266592d8b375e820, treeebecfb0a1339ecbd9a2a9c576b2faf12cc16d0b7.
+Reviewed local78d177346c9321018d12cdc8a239627550e12366 tree equals canonical; Git SHA/parent/tree verified
+before offline import; joined at66fac01f01a6baf904a8ad5f424301e7471960ab. Admission checkpoint01ffd056
+and full local3docs diff/history retained, no reset/discard/second writer. PR88 draft/open/unmerged,
+merge candidate6e90ac60b9b7a2c548c2d7d9f1f4a377d11cac2e is NOT tested PASS.
+Sole automatic CI730 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40354928566 pull_request/attempt1,
+raw exact-source total_count1; observed in_progress/conclusion null. First immediate source query returned0
+before webhook run appeared; read-only recheck found1, no ref retry/rerun/dispatch/manual CI. New native
+auxiliary26/fresh-process2/compile/full exact5aggregate NOT_RUN until SAME run's six complete logs.
+
+Actual optional FailureAuxiliary -> real FailureStartup/FailureMenu -> current VerifyMenuSettlement -> one
+CreateNew/WriteThrough/Flush/exact readback scoped auxiliary outcome -> summary consuming separate current
+AuxiliaryStateVerified/AuxiliaryOutcomeRecorded plus historical component/publication progress and original
+ErrorRecord. Same typed live session/operation/install/snapshot +existing canonical accepted/restore links;
+no duplicate Legacy receipt, receipt-only authority, result adoption, replay, cleanup or origin rewrite.
+New26 synthetic real publication faults and valid-file fresh-process refusal2 are NOT_RUN locally. Preserved
+primary explicitly blocked before Menu mutation, preserved Startup/primary retained; no whole auxiliary
+coverage claimed. Default installer/main/catch/success untouched/OFF, caller-owned finally releases pins.
+
+Local90PASS (legacy66+aggregate24), review/parity/reflection CLR exact types/READ share5/lexical/signatures/
+JSON/diff/secrets/public431source0release PASS, not compiler/native proof. All old33/nested Restore22/
+Preparation13/Startup19/Menu24/refusal/regressions unchanged except one additive host invocation, old host
+hash parity preserved by stripping only that exact call. Strict5 partitions/deadlines/classifier26 unchanged.
+CI729 full6logs exact SUCCESS baseline recorded below; ZIP runner-only, uploads skipped, not PC acceptance.
+CI728 cancellation cause remains UNKNOWN. No inherited PASS for new native26.
+
+Local docs-only checkpoint is intentionally unpushed: code/tests/workflow equal published source; no second
+CI/full wait. Next SAME CI730 six complete logs, new26 +fresh-process2 and all mandatory prior regressions.
+Existing/preserved-primary upgrade/default success+orchestration/full auxiliary+runtime rollback/restart/
+power-loss/PC acceptance OPEN/NOT_RUN. Outcome never permits runtime rollback/backup cleanup/install success/
+restart. UNKNOWN/BLOCKED_TRANSFER/full approved31/nested55/fullF30/weights/delta0 retained. No live installer/
+user data/network/security/privileges/ACL/WCT/SeDebug/credentials/services/VPS/tunnel actions; lost proofs
+blocked/manual, partial/source/evidence artifacts retained.
+
 ## CURRENT CI729 SUCCESS verified; opt-in scoped auxiliary durable outcome + consumed failure summary
 
 Admission HEAD01ffd05695b04755907d946da428685be6a29bde available/clean; exact remote source

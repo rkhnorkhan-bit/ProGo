@@ -256,7 +256,9 @@ namespace ProGo
             internal bool disposed, failureEntered, startupConsumed, startupVerified, menuConsumed, menuFailureEntered, auxiliaryEntered;
             internal readonly Guid session = Guid.NewGuid();
             internal AuxiliaryOutcomeResult auxiliaryResult;
-            internal FileStream restoredPin;
+            internal FileStream restoredPin, primaryPin;
+            internal bool menuPreservedVerified;
+            public bool MenuPreservedObserved { get { return menuPreservedVerified; } }
             internal string menuPrimaryOrigin;
             public bool MenuAttempted { get; internal set; }
             public bool MenuDispositionAccepted { get; internal set; }
@@ -320,9 +322,16 @@ namespace ProGo
                     menuConsumed = true; // cancellation/error never permits another destructive invocation
                     try {
                         lock (lease.gate) { return physical.WithPins<LegacyStartupContext>(() => {
-                            if (preparation.Menu.Disposition != "created" || !VerifyStartupSettlement() || !owner.VerifyDurableMenuRollbackEvidence(menuMap)) return null;
+                            if (!VerifyStartupSettlement() || !owner.VerifyDurableMenuRollbackEvidence(menuMap)) return null;
                             restoredPin = OpenLegacyRestartRead(Path.Combine(owner.menu, "ProGo Status.lnk"));
                             if (restored.RestoredOrigin != LegacyOrigin(restoredPin.SafeFileHandle) || !VerifyStartupSettlement()) return null;
+                            if (preparation.Menu.Disposition == "preserved") {
+                                // A read-only lease on the exact originally witnessed primary, never deletion/adoption.
+                                primaryPin = OpenLegacyRestartRead(Path.Combine(owner.menu, "ProGo.lnk"));
+                                if (!owner.VerifyLivePreservedPrimary(this) || !VerifyStartupSettlement()) return null;
+                                token.ThrowIfCancellationRequested(); menuPreservedVerified = true;
+                                return VerifyMenuSettlement() ? this : null;
+                            }
                             token.ThrowIfCancellationRequested();
                             owner.TryRollbackDurableMenu(menuMap, token, this);
                             return VerifyMenuSettlement() ? this : null;
@@ -343,7 +352,8 @@ namespace ProGo
             public void Dispose()
             { lock (gate) { if (disposed) return; disposed = true;
                 try { if (restoredPin != null) restoredPin.Dispose(); }
-                finally { try { lease.Dispose(); } finally { physical.Dispose(); } } } }
+                finally { try { if (primaryPin != null) primaryPin.Dispose(); }
+                    finally { try { lease.Dispose(); } finally { physical.Dispose(); } } } } }
         }
         // One terminal observation of all three auxiliary components, never restart/runtime authority.
         public sealed class AuxiliaryOutcomeResult
@@ -375,7 +385,12 @@ namespace ProGo
                 context.OperationId.ToString("N"), Identity(root), context.lease.reference.Source.SnapshotHash,
                 context.lease.acceptedOutcome.Origin, context.lease.acceptedOutcome.Hash, context.restored.ResultOrigin,
                 context.restored.ResultHash, context.restored.RestoredOrigin, context.preparation.OriginIdentity ?? "preserved",
-                context.preparation.Hash ?? "absent", context.preparation.Menu.OriginIdentity, context.preparation.Menu.Hash,
+                context.preparation.Hash ?? "absent", context.preparation.Menu.OriginIdentity ?? "preserved-original-evidence", context.preparation.Menu.Hash,
+                context.preparation.Menu.Disposition == "preserved" ? "menu-preserved-no-mutation" : "menu-owned-deletion-absence",
+                context.lease.replacementOrigin, context.lease.replacementHash,
+                context.MenuDispositionAccepted ? "menu-disposition-accepted" : "menu-no-disposition",
+                context.preparation.Menu.Disposition == "preserved" ? "menu-present-original" :
+                    (context.MenuAbsenceObserved ? "menu-absence-observed" : "menu-absence-not-observed"),
                 "legacy-restored-startup-original-menu-original", "runtime-unverified", "install-failed", "restart-blocked", origin, "" }));
         }
         private AuxiliaryOutcomeResult RecordLiveAuxiliaryOutcome(LegacyStartupContext context, CancellationToken token,
@@ -502,10 +517,25 @@ namespace ProGo
                     VerifyLegacyRestoredOutcome(context.lease, context.physical);
             } catch { return false; }
         }
+        private bool VerifyLivePreservedPrimary(LegacyStartupContext context)
+        {
+            try {
+                var primary = context.preparation.Menu;
+                if (context.disposed || !Object.ReferenceEquals(context.owner, this) || primary.Schema != 1 ||
+                    primary.Disposition != "preserved" || !primary.Requested || !primary.BeforeExists || !primary.Exists ||
+                    primary.OriginIdentity != null || primary.BeforeHash == null || primary.BeforeHash != primary.Hash ||
+                    primary.InstallIdentity != Identity(root) || primary.LocationIdentity != Identity(Path.Combine(menu, "ProGo.lnk")) ||
+                    primary.Hash != context.lease.replacementHash || context.primaryPin == null || context.primaryPin.SafeFileHandle.IsClosed ||
+                    !VerifyDurableMenuRollbackEvidence(context.menuMap) || !VerifyLegacyAcceptedReplacement(context.lease, context.primaryPin)) return false;
+                using (var current = OpenLegacyRestartRead(Path.Combine(menu, "ProGo.lnk"))) {
+                    return VerifyLegacyAcceptedReplacement(context.lease, current);
+                }
+            } catch { return false; }
+        }
         private bool VerifyLiveMenuSettlement(LegacyStartupContext context)
         {
             if (context.disposed || !Object.ReferenceEquals(context.owner, this) || !context.menuConsumed ||
-                !context.startupVerified || !context.MenuDispositionAccepted || !context.MenuHandleClosed ||
+                !context.startupVerified ||
                 context.restored == null || context.restoredPin == null || context.restoredPin.SafeFileHandle.IsClosed ||
                 !Object.ReferenceEquals(context.restored, context.lease.restoreResult) ||
                 !Object.ReferenceEquals(context.restored.AcceptedResult, context.lease.lastResult)) return false;
@@ -519,14 +549,19 @@ namespace ProGo
                         lease.acceptedOutcome == null || !lease.acceptedOutcome.DurableOutcomeRecorded ||
                         !context.physical.MatchesOwner(this) || !context.physical.VerifyPinned(CancellationToken.None) ||
                         !result.Created || !result.Flushed || !result.ReadbackVerified || !result.DurableResultRecorded ||
-                        primary.Schema != 1 || primary.Disposition != "created" || !primary.Requested || primary.BeforeExists || primary.BeforeHash != null ||
-                        !primary.Exists || primary.Hash == null || primary.OriginIdentity == null ||
-                        primary.InstallIdentity != Identity(root) || primary.LocationIdentity != Identity(Path.Combine(menu, "ProGo.lnk")) ||
-                        primary.OriginIdentity != context.menuPrimaryOrigin || primary.OriginIdentity != lease.replacementOrigin || primary.Hash != lease.replacementHash ||
                         context.preparation.Legacy.OriginIdentity != lease.reference.Source.OriginIdentity || context.preparation.Legacy.Hash != lease.reference.Source.Hash) return null;
-                    // Absence is only an expected result of this exact accepted live mutation, never admission.
-                    string primaryPath = Path.Combine(menu, "ProGo.lnk"); CheckLocation(primaryPath);
-                    try { File.GetAttributes(primaryPath); return null; } catch (FileNotFoundException) { }
+                    if (primary.Disposition == "preserved") {
+                        if (!context.menuPreservedVerified || context.MenuAttempted || context.MenuDispositionAccepted || context.MenuAbsenceObserved ||
+                            context.MenuHandleClosed || !VerifyLivePreservedPrimary(context)) return null;
+                    } else {
+                        if (!context.MenuDispositionAccepted || !context.MenuHandleClosed || primary.Schema != 1 || primary.Disposition != "created" ||
+                            !primary.Requested || primary.BeforeExists || primary.BeforeHash != null || !primary.Exists || primary.Hash == null || primary.OriginIdentity == null ||
+                            primary.InstallIdentity != Identity(root) || primary.LocationIdentity != Identity(Path.Combine(menu, "ProGo.lnk")) ||
+                            primary.OriginIdentity != context.menuPrimaryOrigin || primary.OriginIdentity != lease.replacementOrigin || primary.Hash != lease.replacementHash) return null;
+                        // Absence is only an expected result of this exact accepted live mutation, never admission.
+                        string primaryPath = Path.Combine(menu, "ProGo.lnk"); CheckLocation(primaryPath);
+                        try { File.GetAttributes(primaryPath); return null; } catch (FileNotFoundException) { }
+                    }
                     bool startupOriginal = first.Disposition == "preserved" ? VerifyStartupInstallEvidence(first) :
                         first.Schema == 1 && first.Disposition == "created" && first.InstallIdentity == Identity(root) &&
                         first.LocationIdentity == Identity(startup) && !first.BeforeExists && first.BeforeHash == null && first.Exists &&
