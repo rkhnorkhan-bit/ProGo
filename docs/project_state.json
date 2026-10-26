@@ -4020,18 +4020,18 @@
     }
   ],
   "ci_candidate": {
-    "source": "9799b7746be95fe351754786be30b5ac1ba74618",
-    "tree": "ebecfb0a1339ecbd9a2a9c576b2faf12cc16d0b7",
-    "run_id": 40354928566,
-    "run_number": 730,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40354928566",
+    "source": "f6e795397ab6e148ce3450476e154ec6a1bcbc88",
+    "tree": "cd64f53ffe1ede66ae8949129313885045ae63a7",
+    "run_id": 40361848784,
+    "run_number": 731,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40361848784",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "completed",
     "conclusion": "success",
-    "candidate_merge_ref": "6e90ac60b9b7a2c548c2d7d9f1f4a377d11cac2e",
-    "tested_merge": "6e90ac60b9b7a2c548c2d7d9f1f4a377d11cac2e",
+    "candidate_merge_ref": "daf25ca640d473a9dffb609cb0b4a10b228b0bb2",
+    "tested_merge": "daf25ca640d473a9dffb609cb0b4a10b228b0bb2",
     "required_partitions": [
       "vpn-server-test",
       "windows-build",
@@ -4039,7 +4039,7 @@
       "installer-live-tests",
       "installer-recovery-tests"
     ],
-    "new_windows": "CI730 full6logs SUCCESS incl Auxiliary26/refusal2/Menu24/Startup19/Preparation13/Restore22/all33/classifier26/exact5aggregate",
+    "new_windows": "CI731 full6logs SUCCESS: Preserved24/refusal2/Auxiliary26/Menu24/Startup19/Preparation13/Restore22/all33/classifier26/strict5aggregate",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5531,12 +5531,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "9799b7746be95fe351754786be30b5ac1ba74618",
-    "tree": "ebecfb0a1339ecbd9a2a9c576b2faf12cc16d0b7",
-    "prior_checkpoint": "ddf55c0bfe39accfc4edfac20322106393166a1e",
-    "stage": "Preserved-primary NO-mutation branch in same real failure chain/Menu settlement/aggregate outcome; current native lease witness +retained primary; default OFF",
-    "status": "CI730 full6logs SUCCESS baseline; local90PASS; new preserved24/refusal2/changed Auxiliary26/compile/exact5aggregate NOT_RUN",
-    "next": "One guarded publish +sole automatic CI initial status, no full wait. SAME next six full logs before new native PASS. Normal success accepted deletion is separate next stage NOT started",
+    "source": "f6e795397ab6e148ce3450476e154ec6a1bcbc88",
+    "tree": "cd64f53ffe1ede66ae8949129313885045ae63a7",
+    "prior_checkpoint": "9003e6d9879cebdf861364968ea9dfbc80bcedf1",
+    "stage": "Optional InvokeInstallerSuccess -> existing CompleteInstalledOutcome with typed live accepted deletion evidence and consumed scoped summary; default OFF",
+    "status": "CI731 full6logs SUCCESS baseline/local90PASS; new native34/refusal2/compile/rename ABI/full aggregate NOT_RUN",
+    "next": "One guarded update +sole automatic CI initial status; no full wait. Same next full6logs before new native PASS. Default success/failure/runtime owner integration separately OPEN",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5545,8 +5545,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "78d177346c9321018d12cdc8a239627550e12366",
-    "local_development_tree": "ebecfb0a1339ecbd9a2a9c576b2faf12cc16d0b7"
+    "local_development_sha": "762e51ddbe91d6f4cf8d231963f669eb52e2b8ed",
+    "local_development_tree": "cd64f53ffe1ede66ae8949129313885045ae63a7"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -24274,7 +24274,7 @@
   "preserved_primary_live_gate": {
     "base_checkpoint": "ddf55c0bfe39accfc4edfac20322106393166a1e",
     "baseline_source": "9799b7746be95fe351754786be30b5ac1ba74618",
-    "status": "Prepared; new Preserved24/refusal2/changed Auxiliary26/native compile NOT_RUN locally",
+    "status": "CI731 full6logs SUCCESS baseline; normal installed success is separate new unverified scope",
     "integration": "same FailureAuxiliary -> actual Startup/Menu handlers -> same Menu settlement -> same one aggregate outcome -> consumed failure summary",
     "created": "old owned deletion/accepted disposition/verified absence native path unchanged",
     "preserved": "no mutator call; preparation original unchanged +actual lease.replacementOrigin/replacementHash +retained native READ/shareREAD primary through settlement/publication/finally",
@@ -24284,6 +24284,83 @@
     "local": "90PASS legacy66+aggregate24; parity/review/lexical/JSON/diff/secrets/public431source0release PASS; Windows NOT_RUN",
     "remaining": "normal-success CompleteInstalledOutcome with live accepted deletion separate NEXT not started; default OFF/whole auxiliary+runtime/restart/power-loss/PC acceptance OPEN",
     "preservation": "all33+prior native/classifier26/strict5aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/fullF30 unchanged",
+    "score_delta": 0,
+    "publication": {
+      "source": "f6e795397ab6e148ce3450476e154ec6a1bcbc88",
+      "code_commit": "762e51ddbe91d6f4cf8d231963f669eb52e2b8ed",
+      "tree": "cd64f53ffe1ede66ae8949129313885045ae63a7",
+      "join": "f4fc401030df7edcdae110709913db9256252c2b",
+      "guard": "expected9799b7746be95fe351754786be30b5ac1ba74618 force=false once",
+      "ci": 40361848784,
+      "run_number": 731,
+      "attempt": 1,
+      "exact_source_count": 1,
+      "status": "queued",
+      "conclusion": null,
+      "checkpoint": "Local3docs-only unpushed, no second CI/full wait"
+    }
+  },
+  "ci731_verified_baseline": {
+    "source": "f6e795397ab6e148ce3450476e154ec6a1bcbc88",
+    "tree": "cd64f53ffe1ede66ae8949129313885045ae63a7",
+    "run_id": 40361848784,
+    "run_number": 731,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40361848784",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "candidate_merge_ref": "daf25ca640d473a9dffb609cb0b4a10b228b0bb2",
+    "tested_merge": "daf25ca640d473a9dffb609cb0b4a10b228b0bb2",
+    "required_partitions": [
+      "vpn-server-test",
+      "windows-build",
+      "installer-tests",
+      "installer-live-tests",
+      "installer-recovery-tests"
+    ],
+    "new_windows": "CI731 full6logs SUCCESS: Preserved24/refusal2/Auxiliary26/Menu24/Startup19/Preparation13/Restore22/all33/classifier26/strict5aggregate",
+    "score_delta": 0,
+    "jobs": [
+      121709102577,
+      121709102611,
+      121709102568,
+      121709102356,
+      121709102956,
+      121728229570
+    ],
+    "full_log_lines": [
+      330,
+      643,
+      539,
+      15496,
+      619,
+      179
+    ],
+    "Live": "PreservedFlow24/refusal2/Auxiliary26/Menu24/Startup19/Preparation13/Restore22 PASS",
+    "Foundation": "26PASS",
+    "Recovery": "6PASS/Owned29/receipt14/refusal2",
+    "Core": "Python123PASS2SKIP/classifier26/previous checks PASS",
+    "Ubuntu": "aggregate24 PASS",
+    "aggregate": "all5 exact SHA PASS",
+    "zip_bytes": 718117,
+    "zip_sha256": "ed0230171f84355db9e1384c0d670bce28762d1e560049a7080a81d06453052d",
+    "uploads": "SKIPPED runner-only/no PC acceptance",
+    "ci728_cause": "UNKNOWN"
+  },
+  "live_installed_outcome_gate": {
+    "base_checkpoint": "9003e6d9879cebdf861364968ea9dfbc80bcedf1",
+    "baseline_source": "f6e795397ab6e148ce3450476e154ec6a1bcbc88",
+    "status": "Prepared native34/refusal2/Windows compile/metadata rename ABI NOT_RUN locally",
+    "integration": "actual optional Success handler -> existing CompleteInstalled transaction and validators -> same fixed pending/installed JSON -> consumed current state/durable scoped result; actual complete installation false/default OFF",
+    "proof": "same native preparation reference/session/operation/install/snapshot/physical pins/current primary+Startup identity/hash/accepted deletion+canonical durable receipt; failure auxiliary result not authority",
+    "publication": "existing CreateNew/WriteThrough/Write/Flush/exact same-stream readback, exact-owned pending handle rename nooverwrite fixed installed target/current identity verification, no parallel result file",
+    "readers": "tagged LiveLegacy records require same live context, root, journal and native metadata; old receipt-only readers refuse; fresh process blocked/manual",
+    "fixture": "34 GUID cases including actual foreign context/current source/receipt/equalbyte/custom startup, unsupported Legacy blocked, actual new installed publication faults/conflicts/cancel/late error/context loss, child2/noreplay/private+backup/error/handle release",
+    "local": "90PASS legacy66+aggregate24; old failure/default parity/review/C#5 lexical/JSON/diff/secrets/public432source0release PASS",
+    "remaining": "default activation/actual self-check/owner success+failure+runtime integration/whole runtime rollback/restart/power-loss/PC acceptance OPEN; absent/custom/optout Legacy outside this live accepted-deletion scope",
+    "preservation": "all33+prior failure/native/preserved/classifier26/strict5aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/fullF30 unchanged",
     "score_delta": 0
   }
 }

@@ -1,3 +1,139 @@
+## CURRENT CI731 SUCCESS verified; optional live accepted-deletion installed transaction
+
+Admission HEAD9003e6d9879cebdf861364968ea9dfbc80bcedf1 exact/clean/available; remote source
+f6e795397ab6e148ce3450476e154ec6a1bcbc88 PR88 draft/open/unmerged. Full3docs(+114/-18) local diff/history
+preserved. /proc Git/build/SSH inventory empty, Git-locks empty, queued/in_progress/waiting CI all0;
+sole writer/no agents/reset/discard. CI728 cancellation cause stays UNKNOWN.
+
+All SIX complete CI731 logs independently retrieved/read: run40361848784 attempt1 SUCCESS; exact source
+f6e795397ab6e148ce3450476e154ec6a1bcbc88 /merge daf25ca640d473a9dffb609cb0b4a10b228b0bb2.
+Live121709102577 full330 PreservedFlow24/refusal2/Auxiliary26/Menu24/Startup19/Preparation13/Restore22
+PASS; Foundation121709102611 full643 26PASS; Recovery121709102568 full539 6PASS/Owned29/receipt14/refusal2;
+Core121709102356 full15496 Python123PASS2SKIP/classifier26/previous checks PASS; Ubuntu121709102956 full619
+aggregate24 PASS; aggregate121728229570 full179 all5 exact same tested SHA PASS. ZIP718117 SHA256
+ed0230171f84355db9e1384c0d670bce28762d1e560049a7080a81d06453052d runner-only/upload SKIPPED, no PC acceptance.
+
+Dependency review found existing Complete-ProGoInstallerInstalledOutcome already publishes fixed
+outcome.pending.json -> installed.json after journal/snapshot/runtime/ownership/phase proof checks. Added
+optional typed live branch INSIDE that same transaction, not a parallel publisher/result file. Actual
+Invoke-ProGoInstallerSuccess consumes its result and reports StateVerified, InstalledOutcomeRecorded and
+ScopedSuccessVerified separately from ActualInstallationCompleted/InstallSucceeded (always false here).
+No real installer/self-check execution/default owner integration is claimed by this synthetic gate.
+
+Current accepted-install state requires same typed pre-delete context, immutable preparation reference,
+operation/install/snapshot/source/reference/admission/physical pins, canonical accepted deletion result and
+durable receipt, original current native Menu origin/hash via lease witness and original current Startup
+state. Newly capture Startup native origin/hash at existing context binding (including preserved/custom
+Startup) without changing old receipts; creation/equal-byte replacement cannot exploit null preserved
+receipt origin. Before publication retain primary and existing Startup READ/shareREAD handles through
+same-session state/metadata checks and caller-owned finally disposal. No failure/restored/auxiliary-result
+session qualifies as installed evidence. Legacy absence is only a veto/expected state within that accepted
+live graph, never independent authority. Absent/custom/opt-out Legacy remains explicitly unsupported/blocked;
+created/preserved primary+created/preserved/custom/absent requested Startup supported only with accepted
+owned Legacy deletion and full original native guards.
+
+Complete retains all existing journal/snapshot/runtime/ownership/phase gates and normal old behavior when
+LiveContext absent. Same original StartupEvidence object required, no reconstructed bool/serialized receipt.
+Existing Completion adds explicit LiveLegacy session/operation/install/snapshot/accepted-origin/hash binding;
+preparation Legacy receipt stays unchanged and is NOT used as current absence proof. Native authorization
+checks exact JSON scope/inventory/records/ownership/phases and all original Startup/Menu/Legacy maps against
+original preparation and pinned plan. Same CreateNew/WriteThrough publisher/old Write primitive, explicit
+Flush(true), bounded exact bytes/native origin readback/current context verification. Attempted pending
+creation/bytes/Flush/readback/rename acceptance/closed handle/recorded truth stay separate; no replay/repair.
+
+Existing final metadata rename required a concrete live identity extension: path-only close+Move leaves
+an avoidable pending-name replacement gap. Live branch opens ONLY its fixed pending metadata with existing
+native READ|DELETE/shareREAD/no-follow primitive, verifies sealed native origin/bytes/current graph, then
+renames THAT handle atomically to fixed installed.json with ReplaceIfExists=false. Same underlying Win32
+SetFileInformationByHandle family already used for owned disposition, now FILE_RENAME_INFO for metadata;
+no path-based foreign overwrite/adoption or additional file/receipt. Root journal pinned, target fixed from
+same operation/root. ABI layout uses Marshal.OffsetOf/IntPtr width and Unicode byte length, zeroed false/
+NULL root fields. Primary MicrosoftDocs/sdk-api FILE_RENAME_INFO documentation read before implementing:
+https://github.com/MicrosoftDocs/sdk-api/blob/docs/sdk-api-src/content/winbase/ns-winbase-file_rename_info.md
+Documents no-overwrite error when target exists, absolute target path and optional NULL RootDirectory;
+new Windows fixture independently asserts native header offset20(x64)/12(x86). New API runtime proof NOT_RUN.
+
+After exact accepted rename, close handle and reverify current fixed target/native origin/bytes/live state
+before recording scoped truth. Late cancellation/error cannot erase accepted progress; summary keeps
+recorded truth but marks monotonic same-session interruption and refuses ScopedSuccessVerified even on repeats. Context loss/equal-byte replaced
+metadata rejects current recorded success despite historical fields. New tagged pending/installed records
+are refused by old receipt-only terminal/pending readers; typed reader requires same journal/install root,
+current exact metadata object AND live accepted state. Fresh process cannot reconstruct authority, rename,
+restore, clean backup or claim actual installation from file. Old untagged formats/default flow untouched.
+No runtime rollback/cleanup/restart/whole installation authority; original error is retained on failure.
+
+New34 GUID Windows E2E through actual success handler/CompleteInstalled transaction: created/created,
+preserved-primary/created-Startup, created-primary/custom-preserved-Startup, preserved-both, absent Startup;
+unsupported absent/custom/opt-out Legacy; real foreign native context, wrong operation, root or stale evidence/
+serialized/disposed context, actual failure auxiliary result rejection; tampered accepted receipt/source,
+primary/Startup/custom-Startup equal-byte copied-creation replacements, reappeared Legacy; real Write/short-
+write/Flush/readback faults in pending publication; occupied partial pending/foreign installed target;
+equal-byte replaced pending/installed exact identities; cancel before/just before rename/after publication,
+error or context loss after publication; repeated calls/no additional write/seal/rename/deletion/cleanup.
+Private/foreign/original snapshot/source/evidence bytes, existing error reference and exclusive reopen after
+finally disposal asserted. Two fresh CLR children see actual valid installed file but receipt-only/serialized
+session are refused. Foreign-context fixture holds real distinct operation pins and leaves its Legacy intact.
+
+Reflection uses unchanged checked CLR bridge with exact context/FileStream/string/token/string/CTS unwrapping;
+no raw Invoke, no pin weakened or file skipped. Existing pending publisher ShareNone is read/flushed through
+same actual FileStream during native seal (no conflicting second reader); rename's READ|DELETE handle is
+closed before ordinary pending/installed readers, all inventory readers READ/shareREAD|DELETE. Original
+failure fixtures (including preserved24/Auxiliary26) byte-identical. Append one new invocation after all
+prior nested tests, exact original33 dispatch/strict5partitions/deadlines/classifier26 unchanged. Frozen
+original host parity strips only exact approved additive invocations, exact nested order remains tested.
+
+Local90PASS=legacy66+aggregate24; manual/review all old native failure/restore guards, default Complete/
+readers/main behavior parity, new typed binding/JSON authorization/nooverwrite metadata path/consumed honest
+summary, C#5 lexical/signatures/JSON/diff/secrets/public432source0release PASS. Static is NOT compilation.
+New Windows compile/native34/refusal2/rename ABI/full exact5aggregate NOT_RUN locally until sole next CI.
+All existing failure-chain tests preserved. Default activation remains OFF pending actual self-check/owner/
+success/failure/runtime integration boundaries. Whole/runtime rollback/restart recovery/power-loss/PC
+acceptance OPEN/NOT_RUN; UNKNOWN/BLOCKED_TRANSFER/no retry/approved31/nested55/fullF30/weights/delta0 retained.
+No new global namespace freeze/ABA history; no live installer/user files/network/security/privileges/ACL/WCT/
+SeDebug/credentials/services/VPS/tunnel actions. Only approved GitHub reads/publication and isolated fixtures.
+One guarded update +one automatic CI initial status, no duplicate/rerun/dispatch/full CI wait.
+
+## LOCAL post-publication checkpoint: preserved-primary live branch / CI731 queued
+
+Exactly one guarded expected-head nonforce PR88 update: sourcef6e795397ab6e148ce3450476e154ec6a1bcbc88,
+parent9799b7746be95fe351754786be30b5ac1ba74618, treecd64f53ffe1ede66ae8949129313885045ae63a7.
+Reviewed local762e51ddbe91d6f4cf8d231963f669eb52e2b8ed full tree matches canonical; Git SHA/parent/tree
+verified before offline import; joined atf4fc401030df7edcdae110709913db9256252c2b. Admission checkpoint
+ddf55c0bfe39accfc4edfac20322106393166a1e and complete3docs unpublished diff/history retained, no reset/
+discard/second writer. PR88 draft/open/unmerged; merge candidatedaf25ca640d473a9dffb609cb0b4a10b228b0bb2
+is NOT tested PASS. Sole automatic CI731 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40361848784
+pull_request/attempt1, raw exact-source total_count1; initial observed queued/conclusion null. No rerun/
+duplicate/dispatch/full CI wait. Changed preserved-primary positive/newPreserved24/refusal2/compile/full
+exact5aggregate NOT_RUN until SAME CI731 six complete logs; no inherited new native PASS from CI730.
+
+Same actual failure chain now admits existing preserved primary only through original preparation +same
+live operation/physical pins/cached results and native lease.replacementOrigin/replacementHash witnesses;
+retained READ/shareREAD primary through settlement/publication. No primary mutation or deletion/absence
+flags; same aggregate outcome/consumed summary explicitly distinguish preserved-no-mutation from original
+created-owned-deletion-absence path. Old receipt-only APIs/default main/catch/normal-success/native owned
+mutator/restore and publication primitive remain unchanged. No new result/helper/receipt/serialized bool
+capability or invented old receipt origin. Historical preservation flag alone never authorizes settlement.
+Caller finally releases restored/primary/lease/physical handles. Foreign/equal-byte/copied-creation/metadata/
+bytes/reparse/missing identity vetoes; no adoption/overwrite/replay/cleanup. Actual state verification and
+outcome recording remain separate; original install error/private/foreign/backup bytes retained.
+
+OriginalAuxiliary26 retained with former always-blocked test deliberately replaced by positive original
+preservation proof and negative cases; new PreservedFlow24 +fresh-process2 appended once through same Live
+host. Old33/Restore22/Preparation13/Startup19/Menu24/refusal/regressions bodies untouched; no assertion
+byte-parity claim across the deliberate preserved-primary semantic change. Native field/created guard/old
+APIs/main/CompleteInstalledOutcome parity reviewed. Local90PASS=legacy66+aggregate24; review/static/parity/
+reflection CLR exact types/READ share5/JSON/diff/secrets/public431source0release PASS, not Windows proof.
+CI730 full6logs exact SUCCESS +ZIP runner-only facts recorded below; CI728 cause remains UNKNOWN.
+
+This local checkpoint is intentionally unpushed, only3docs/state differ from source, code/tests/workflow
+identical; no second publication/CI. Next SAME731 full6 exact logs/new24/refusal2/changed original26 and all
+mandatory old suites. Normal success through Complete-ProGoInstallerInstalledOutcome with live accepted
+deletion evidence is separate NEXT, not started. Default installer stays OFF; whole auxiliary/runtime rollback/
+default success/restart recovery/power-loss/PC acceptance OPEN/NOT_RUN. All33+native/classifier26/strict5
+partitions/deadlines/UNKNOWN/BLOCKED_TRANSFER/approved31/nested55/fullF30/weights/delta0 retained. No global
+freeze/ABA history, no live install/user files/network/security/privileges/ACL/WCT/SeDebug/credentials/
+services/VPS/tunnel actions. Lost proofs blocked/manual, partial/source/evidence artifacts retained.
+
 ## CURRENT CI730 SUCCESS verified; existing preserved-primary live Menu/auxiliary terminal branch
 
 Admission HEADddf55c0bfe39accfc4edfac20322106393166a1e exact/clean/available at existing checkout; remote
