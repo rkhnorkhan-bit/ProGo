@@ -1,3 +1,69 @@
+## CURRENT CI736 FAILURE; callback evidence and independent Success partition
+
+Admission clean local checkpoint b28fa15251cd8d4170c0b27338070148517cb3c9; remote source
+9991163b2e72a9d958f80fbd53807e30e65631a6, merge 417c4df3bfa7c7f3ca6c1c11495e961516cd7562.
+Existing three-doc local diff/history retained; no active Git/build/SSH/locks or queued/running/waiting CI,
+sole writer, no reset/discard. Owner independently read all SEVEN complete CI736 logs; evidence below.
+Run40401949420 attempt1 FAILURE: Runtime121849807370 full178 complete PASS, actual no-snapshot and
+fresh-process refusal PASS; equal-byte-replaced expected refusal but RuntimeLeafVerified=true. Runtime19
+1PASS/1FAIL/17NOT_RUN. Cause UNKNOWN: original fixture callback invocation/completion and differing
+native identities were not established. GetNewClosure external-scope capture is a code-supported hypothesis,
+not proven root cause. Original moved to retained was never deleted, so file-ID reuse after deletion is not
+an explanation. Native origin comparison exists before mutation; no production guard weakened or changed.
+
+Live121849806693 full404: Restore22/Preparation13/Startup19/Menu24/Auxiliary26/Preserved24 PASS;
+NormalSuccess40 38PASS; both fresh-process refusals PASS; after pending-bytes-changed at21:49:40 operation
+cancelled, installed-extra has no terminal result, unowned-stream NOT_RUN. Cancellation reason UNKNOWN,
+not a proven timeout. CI735 Live39m37 near40min; reduce load without changing individual deadlines.
+Foundation26/full643, Recovery6/full539, Ubuntu/full620, Core/full15520 SUCCESS; Core classifier26/SSH5/
+Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4816/Portable91/Python135PASS2SKIP. Aggregate
+121869279507 full186 exact6 SHA correctly FAIL_CLOSED on Runtime+Live. ZIP732912 SHA256
+13c670e78a863b610fa846ab78a2afbad76d626b01a8c27a41d519adf11fb543 runner-only, uploads SKIPPED,
+not delivered or PC accepted. Historical Repair20s/SSH startup and CI728 cancellation UNKNOWN despite
+nonreproduction. Overall CI736 FAILURE; no full runtime19 or NormalSuccess40 PASS claim.
+
+Bounded corrective change: ONLY synthetic fixture and CI topology; no production code/guards/semantics change.
+- Runtime callback copies all scenario/target/retained/snapshot/token and hash/identity reader inputs into
+  local values before closure, plus a shared observation object. Every one of the 13 callback-dependent
+  cases asserts entered exactly1/completed exactly1 and no setup error; intentional injected error is distinguished.
+- Equal-byte setup observes original native identity/hash/creation before release. After moving original to
+  retained and copying replacement, before production mutation it proves equal bytes and creation, different
+  native identities, original identity/bytes unchanged. Original remains retained and is rechecked after handler.
+  Missing/incomplete injection or failed setup comparisons is explicit SETUP ERROR, never accepted as product
+  PASS or classified as a demonstrated product failure. Existing refusal before mutation remains unchanged.
+  Safe diagnostics print only case, callback counts/comparison booleans and result progress, no paths/bytes.
+  Reflection identity helper checks the exact CLR SafeFileHandle method signature before invocation.
+- NormalSuccess40 host moved whole from its Live nested host to an independent mandatory Success partition.
+  Fresh process separately compiles exactly the existing CLR fixture types from the canonical prerequisite
+  source, without executing or duplicating any previous test suite; then invokes the unchanged complete host
+  exactly once. All previous33 suite bodies/assertions/fault injections and both Success fresh-child refusals
+  retained. Live now executes the earlier nested suites only, avoiding its former 40min capacity boundary.
+- Strict aggregate now requires all SEVEN exact merge SHA outputs. Missing/skipped/cancelled/failure/wrongSHA
+  for the Success partition, topology/parity/exact coverage and preserved individual deadlines are tested.
+  Runtime partition and all previous job deadlines unchanged; no case counts or assertions shortened.
+
+Local PASS: 78 legacy contracts +26 aggregate=104; callback/local capture/CLR/sharing review, old runtime19
+assertions and unchanged success40 body, all prior tests/production parity, strict7 topology/negative/deadline,
+lexical/JSON/diff/secrets/public436source0release. No Windows pwsh/dotnet/compiler: callback actual native
+identity/refusal, runtime19, separate success40/refusal2, compilation/full strict7 aggregate NOT_RUN locally.
+One guarded push +one automatic CI only, no rerun/dispatch/full wait. Both CI736 causes remain UNKNOWN until
+new evidence. Default OFF; whole/runtime rollback, remaining leaves/newinstall/restart/power-loss/PC acceptance
+OPEN; UNKNOWN/BLOCKED_TRANSFER/full F30/all33+new suite bodies/classifier26 retained.
+
+## CURRENT sole automatic CI736 queued; single runtime leaf Windows proof pending
+
+Published source `9991163b2e72a9d958f80fbd53807e30e65631a6`; tree `4bc254af5c6ec2ddd5cdc65d824aaa3204935043` equals reviewed local code
+`aba1288e45a32bf73e7c38f6d0159a8bbc909b54`; canonical join `31db5fdd4dcc32e336edffc17a3b7eb3eb985fb0` preserves prior docs/checkpoints.
+Candidate merge `417c4df3bfa7c7f3ca6c1c11495e961516cd7562` NOT yet tested. One guarded expected-head non-force update from CI735 source;
+one automatic [CI736](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40401949420), pull_request/
+attempt1/source-filtered count1, observed queued/conclusion null. No rerun/dispatch/duplicate/fullwait.
+Optional same-process upgrade-only auxiliary-to-exact-owned ProGo.exe restore; one leaf, existing verified
+snapshot, same live pins/session, current auxiliary and native identity/bytes checks, actual Flush/readback.
+Default OFF. Local102/review/static/parity/secrets/public435source0release PASS; Windows compilation,
+19 native cases + empty-snapshot/fresh-child refusals and full strict6 aggregate NOT_RUN locally.
+This checkpoint is intentionally local docs-only. Snapshot-free new install/remaining leaves/durable terminal/
+whole runtime rollback/restart/power-loss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30 retained.
+
 ## CURRENT upgrade-only live auxiliary to single runtime leaf transition; native CI pending
 
 Admission exact clean local checkpoint e30abe450d5e9997966a1a07de14f5634a1dc3f0, PR88 remote

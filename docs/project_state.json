@@ -4020,26 +4020,27 @@
     }
   ],
   "ci_candidate": {
-    "source": "90e9f321866b2a8a491d55b43c38830653dd1d2e",
-    "tree": "9a6720ec2ed388ef63b6bafa84e090ad4d6a810d",
-    "run_id": 40392453039,
-    "run_number": 735,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40392453039",
+    "source": "9991163b2e72a9d958f80fbd53807e30e65631a6",
+    "tree": "4bc254af5c6ec2ddd5cdc65d824aaa3204935043",
+    "run_id": 40401949420,
+    "run_number": 736,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40401949420",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
-    "status": "in_progress",
+    "status": "queued",
     "conclusion": null,
-    "candidate_merge_ref": "986deb5ec095f365b30e2afc636c55aa767d981d",
+    "candidate_merge_ref": "417c4df3bfa7c7f3ca6c1c11495e961516cd7562",
     "tested_merge": null,
     "required_partitions": [
       "vpn-server-test",
       "windows-build",
       "installer-tests",
       "installer-live-tests",
-      "installer-recovery-tests"
+      "installer-recovery-tests",
+      "installer-runtime-tests"
     ],
-    "new_windows": "valid custom Shell Link fixture native40/refusal2/Windows COM/compiler NOT_RUN; Core Python startup/Repair incidents UNKNOWN; inspect same sole CI735",
+    "new_windows": "runtime19/empty-snapshot/fresh-child/Windows compilation/full strict6 NOT_RUN; inspect this same CI736",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5530,7 +5531,7 @@
     "scoring": "Existing v1.0 weights unchanged; no points for documentation/commit/unexecuted tests",
     "continuity": "No schedule/restart/continuous guarantee created"
   },
-  "active_work": "Upgrade-only live auxiliary to one exact-owned runtime leaf implemented, native19+empty snapshot/fresh child not run locally; default OFF, strict6 CI candidate pending publication",
+  "active_work": "CI736 FAILURE; bounded callback evidence and independent Success CI partition, no production change; runtime19/success40 Windows proof pending one automatic CI",
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
     "implementation": "SettingsService.TryAcquireLaunchRevision: Acquired/Busy/Changed via nonblocking commitGate; same-worker release and no state/disk mutation",
@@ -24559,6 +24560,55 @@
     "ci": "new independent installer-runtime-tests partition, all6 same SHA required, old33 exactly once/deadlines retained; native NOT_RUN locally",
     "tests": "19 GUID native cases + empty snapshot refusal + fresh-process refusal written, not run locally",
     "local": "102PASS legacy77+aggregate25; review/parity/secrets/public435source0release PASS",
-    "remaining": "snapshot-free new install/remaining leaves/terminal/whole rollback/default/restart/powerloss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/full F30 retained"
+    "remaining": "snapshot-free new install/remaining leaves/terminal/whole rollback/default/restart/powerloss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/full F30 retained",
+    "publication": {
+      "source": "9991163b2e72a9d958f80fbd53807e30e65631a6",
+      "tree": "4bc254af5c6ec2ddd5cdc65d824aaa3204935043",
+      "reviewed_local": "aba1288e45a32bf73e7c38f6d0159a8bbc909b54",
+      "canonical_join": "31db5fdd4dcc32e336edffc17a3b7eb3eb985fb0",
+      "run": 40401949420,
+      "status": "queued",
+      "default_activation": false
+    }
+  },
+  "ci736_verified_owner_report": {
+    "run": 40401949420,
+    "attempt": 1,
+    "source": "9991163b2e72a9d958f80fbd53807e30e65631a6",
+    "merge": "417c4df3bfa7c7f3ca6c1c11495e961516cd7562",
+    "conclusion": "failure",
+    "logs": "owner independently read all seven full logs",
+    "runtime": {
+      "job": 121849807370,
+      "lines": 178,
+      "cases": "1PASS/1FAIL/17NOT_RUN",
+      "passed": "complete/no-snapshot/fresh-process refusal",
+      "failure": "equal-byte-replaced expected refusal but verified true; callback invocation and distinct native identity not proved",
+      "cause": "UNKNOWN; closure scope is hypothesis; retained original not deleted, file-ID reuse after deletion not explanation"
+    },
+    "live": {
+      "job": 121849806693,
+      "lines": 404,
+      "old_suites": "Restore22/Preparation13/Startup19/Menu24/Auxiliary26/Preserved24 PASS",
+      "normal": "38/40 PASS, both child refusals PASS, installed-extra cancelled before terminal, unowned-stream NOT_RUN",
+      "cause": "UNKNOWN cancellation, not a proven timeout"
+    },
+    "core": "full15520 classifier26/SSH5/Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4816/Portable91/Python135PASS2SKIP",
+    "foundation": "26PASS/full643",
+    "recovery": "6PASS/full539",
+    "ubuntu": "PASS/full620",
+    "aggregate": "121869279507 full186 exact6 FAIL_CLOSED Runtime+Live",
+    "zip_bytes": 732912,
+    "zip_sha256": "13c670e78a863b610fa846ab78a2afbad76d626b01a8c27a41d519adf11fb543",
+    "delivery": "runner-only uploads skipped; no PC acceptance"
+  },
+  "runtime_callback_success_partition_gate": {
+    "base_checkpoint": "b28fa15251cd8d4170c0b27338070148517cb3c9",
+    "root_cause": "UNKNOWN; closure scope hypothesis only; original retained means deleted-file ID reuse not explanation",
+    "scope": "fixture captures CLR local callback inputs, asserts entered/completed, equal bytes/creation, distinct native identities and retained original; unexecuted injection SETUP ERROR; production unchanged",
+    "ci": "move complete existing NormalSuccess40 host unchanged to independent mandatory Success partition with type-only bootstrap; strict7 exact SHA/deadline/coverage/failclosed",
+    "local": "104PASS legacy78+aggregate26, fixture-only review/static/parity/secrets/public436source0release PASS",
+    "windows": "runtime19/callback native identity/success40/refusal2/compiler/full strict7 NOT_RUN locally",
+    "remaining": "both CI736 causes UNKNOWN; default OFF, remaining runtime/newinstall/whole/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/full F30 preserved"
   }
 }

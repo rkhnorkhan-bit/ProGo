@@ -8,6 +8,10 @@ if($errors.Count){throw 'Runtime fixture installer handlers do not parse.'}
 foreach($fn in $ast.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -notin @('Enter-ProGoInstallerMaintenance','Stop-ProGoInstallerApplication')},$false)){. ([scriptblock]::Create($fn.Extent.Text))}
 function Check-RuntimeLeaf($Condition,[string]$Name){if(-not $Condition){throw ('Runtime fixture failed: '+$Name)}}
 function Get-RuntimeFixtureHash([string]$Path){$h=[Security.Cryptography.SHA256]::Create();$f=$null;try{$f=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,([IO.FileShare]::Read -bor [IO.FileShare]::Delete));return [BitConverter]::ToString($h.ComputeHash($f)).Replace('-','')}finally{if($null -ne $f){$f.Dispose()};$h.Dispose()}}
+function Get-RuntimeFixtureOrigin([string]$Path){
+    $f=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,([IO.FileShare]::Read -bor [IO.FileShare]::Delete))
+    try{return [RuntimeLeafFixture]::Origin($f.SafeFileHandle,[ProGo.ApplicationShortcuts])}finally{$f.Dispose()}
+}
 if($BlockedChild){
     $parent=[IO.Path]::GetDirectoryName($CaseDirectory)
     if([IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-runtime-leaf-[a-f0-9]{32}$' -or [IO.Path]::GetFileName($CaseDirectory) -cne 'complete' -or [IO.Path]::GetDirectoryName($parent) -cne [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)){throw 'Runtime child scope refused.'}
@@ -38,6 +42,12 @@ public static class RuntimeLeafFixture {
             if(!SetFileTime(handle,ref f,IntPtr.Zero,IntPtr.Zero)) throw new IOException("Fixture metadata change failed.");
         }
     }
+    public static string Origin(SafeFileHandle handle,Type type) {
+        if(handle==null || handle.GetType()!=typeof(SafeFileHandle) || type==null) throw new ArgumentException("Fixture native handle type");
+        var method=type.GetMethod("LegacyOrigin",BindingFlags.NonPublic|BindingFlags.Static);
+        if(method==null || method.GetParameters().Length!=1 || method.GetParameters()[0].ParameterType!=typeof(SafeFileHandle)) throw new ArgumentException("Fixture identity contract");
+        return (string)method.Invoke(null,new object[]{handle});
+    }
     private static object Unwrap(object value) {
         for(int i=0;value!=null && value.GetType().FullName=="System.Management.Automation.PSObject";i++) {
             if(i==8) throw new ArgumentException("Wrapper depth"); value=value.GetType().GetProperty("BaseObject").GetValue(value,null);
@@ -55,20 +65,42 @@ $actualRuntime=(Get-Command Invoke-ProGoInstallerLiveRuntimeLeaf).ScriptBlock
 function Invoke-ProGoInstallerLiveRuntimeLeaf($LegacyContext,[Threading.CancellationToken]$CancellationToken){
     $calls.Runtime++
     if($scenario -in @('equal-byte-replaced','target-changed','reparse','snapshot-changed-after-release','cancel-after-release','error-after-release','write','short-write','flush','readback','readback-mismatch','cancel-written','cancel-readback')){
+        # Capture actual CLR values locally before GetNewClosure; the mutable observation object survives callback execution.
+        $localScenario=[string]$scenario;$localTarget=[string]$target;$localRetained=[string]$retained;$localJunctionTarget=[string]$junctionTarget
+        $localSnapshotPath=[string]$snapshotPath;$localSnapshotStamp=$snapshotStamp;$localCancel=$cancel;$observed=$calls
+        $localGetOrigin=(Get-Command Get-RuntimeFixtureOrigin).ScriptBlock;$localGetHash=(Get-Command Get-RuntimeFixtureHash).ScriptBlock
+        $localOrigin=$null;$localHash=$null;$localCreation=$null
+        if($localScenario -ceq 'equal-byte-replaced'){
+            $localOrigin=Get-RuntimeFixtureOrigin $localTarget;$localHash=Get-RuntimeFixtureHash $localTarget;$localCreation=[IO.File]::GetCreationTimeUtc($localTarget)
+            $observed.BaselineOrigin=$localOrigin;$observed.BaselineHash=$localHash;$observed.BaselineCreation=$localCreation
+        }
         $action=[Action]({
-            if($scenario -in @('equal-byte-replaced','target-changed','reparse')){
-                $creation=[IO.File]::GetCreationTimeUtc($target);[IO.File]::Move($target,$retained)
-                if($scenario -ceq 'equal-byte-replaced'){[IO.File]::Copy($retained,$target);[IO.File]::SetCreationTimeUtc($target,$creation)}
-                if($scenario -ceq 'target-changed'){[IO.File]::WriteAllText($target,'synthetic foreign target bytes')}
-                if($scenario -ceq 'reparse'){
-                    New-Item -ItemType Directory -Path $junctionTarget | Out-Null
-                    & $env:ComSpec /c mklink /J $target $junctionTarget | Out-Null
-                    if($LASTEXITCODE -ne 0 -or -not ([IO.File]::GetAttributes($target) -band [IO.FileAttributes]::ReparsePoint)){throw 'Synthetic fixture junction unavailable.'}
+            $observed.CallbackEntered++
+            try {
+                if($localScenario -in @('equal-byte-replaced','target-changed','reparse')){
+                    $creation=[IO.File]::GetCreationTimeUtc($localTarget);[IO.File]::Move($localTarget,$localRetained)
+                    if($localScenario -ceq 'equal-byte-replaced'){
+                        [IO.File]::Copy($localRetained,$localTarget);[IO.File]::SetCreationTimeUtc($localTarget,$creation)
+                        $retainedOrigin=& $localGetOrigin $localRetained;$newOrigin=& $localGetOrigin $localTarget
+                        $retainedHash=& $localGetHash $localRetained;$copyHash=& $localGetHash $localTarget
+                        $observed.EqualBytes=($retainedHash -ceq $copyHash -and $retainedHash -ceq $localHash)
+                        $observed.EqualCreation=([IO.File]::GetCreationTimeUtc($localTarget) -eq $localCreation -and [IO.File]::GetCreationTimeUtc($localRetained) -eq $localCreation)
+                        $observed.DifferentIdentity=($newOrigin -cne $retainedOrigin)
+                        $observed.OriginalUnchanged=($retainedOrigin -ceq $localOrigin -and $retainedHash -ceq $localHash)
+                        if(-not ($observed.EqualBytes -and $observed.EqualCreation -and $observed.DifferentIdentity -and $observed.OriginalUnchanged)){throw 'Equal-byte replacement fixture precondition failed.'}
+                    }
+                    if($localScenario -ceq 'target-changed'){[IO.File]::WriteAllText($localTarget,'synthetic foreign target bytes')}
+                    if($localScenario -ceq 'reparse'){
+                        New-Item -ItemType Directory -Path $localJunctionTarget | Out-Null
+                        & $env:ComSpec /c mklink /J $localTarget $localJunctionTarget | Out-Null
+                        if($LASTEXITCODE -ne 0 -or -not ([IO.File]::GetAttributes($localTarget) -band [IO.FileAttributes]::ReparsePoint)){throw 'Synthetic fixture junction unavailable.'}
+                    }
                 }
-            }
-            if($scenario -ceq 'snapshot-changed-after-release'){[RuntimeLeafFixture]::SetCreation($snapshotPath,$snapshotStamp.AddMinutes(1))}
-            if($scenario -ceq 'cancel-after-release'){$cancel.Cancel()}
-            if($scenario -ceq 'error-after-release'){throw 'synthetic after pin release'}
+                if($localScenario -ceq 'snapshot-changed-after-release'){[RuntimeLeafFixture]::SetCreation($localSnapshotPath,$localSnapshotStamp.AddMinutes(1))}
+                if($localScenario -ceq 'cancel-after-release'){$localCancel.Cancel()}
+                $observed.CallbackCompleted++
+                if($localScenario -ceq 'error-after-release'){throw 'synthetic after pin release'}
+            } catch { if($localScenario -cne 'error-after-release' -or $observed.CallbackCompleted -ne 1){$observed.CallbackSetupError=$true}; throw }
         }.GetNewClosure())
         $fault=if($scenario -in @('write','short-write','flush','readback','readback-mismatch','cancel-written','cancel-readback')){$scenario}else{'none'}
         $method=[ProGo.ApplicationShortcuts].GetMethod('RestoreLiveRuntimeLeaf',[Reflection.BindingFlags]'NonPublic,Instance')
@@ -89,7 +121,7 @@ try{
         $blocked=$false;try{Get-ProGoInstallerLegacySourceContext $newBackup}catch{$blocked=$true};Check-RuntimeLeaf $blocked 'no snapshot blocks live Legacy source context even after actual synthetic writes'
     }finally{Remove-ProGoInstallerStage $newStage}
     foreach($scenario in @('complete','equal-byte-replaced','target-changed','reparse','snapshot-changed','snapshot-write-denied','snapshot-changed-after-release','cancel-before','cancel-after-release','error-after-release','write','short-write','flush','readback','readback-mismatch','cancel-written','cancel-readback','disposed','late-success')){
-        $calls=@{Runtime=0};$case=Join-Path $work $scenario;$app=Join-Path $case 'app';$programs=Join-Path $case 'Programs';$startup=Join-Path $case 'Startup';$menu=Join-Path $programs 'ProGo'
+        $calls=@{Runtime=0;CallbackEntered=0;CallbackCompleted=0;CallbackSetupError=$false;EqualBytes=$false;EqualCreation=$false;DifferentIdentity=$false;OriginalUnchanged=$false;BaselineOrigin=$null;BaselineHash=$null;BaselineCreation=$null};$case=Join-Path $work $scenario;$app=Join-Path $case 'app';$programs=Join-Path $case 'Programs';$startup=Join-Path $case 'Startup';$menu=Join-Path $programs 'ProGo'
         New-Item -ItemType Directory -Path $app,$menu,$startup | Out-Null
         $target=Join-Path $app 'ProGo.exe';$retained=Join-Path $case 'retained-native-target';$junctionTarget=Join-Path $case 'foreign-junction-target'
         [IO.File]::WriteAllText($target,'synthetic original executable');$oldHash=Get-RuntimeFixtureHash $target
@@ -122,6 +154,13 @@ try{
             if($scenario -ceq 'cancel-before'){$cancel.Cancel()}
             if($scenario -ceq 'disposed'){$context.Dispose()}
             $summary=Invoke-ProGoInstallerFailureAuxiliary $heldError $backup $app $programs $startup $context $cancel.Token -RestoreSingleRuntimeLeaf
+            if($scenario -in @('equal-byte-replaced','target-changed','reparse','snapshot-changed-after-release','cancel-after-release','error-after-release','write','short-write','flush','readback','readback-mismatch','cancel-written','cancel-readback')){
+                $progress=$summary.RuntimeLeafProgress;$attempted=if($null -ne $progress){$progress.Attempted}else{$false};$released=if($null -ne $progress){$progress.PinReleased}else{$false};$reopened=if($null -ne $progress){$progress.HandleReopened}else{$false};$mutated=if($null -ne $progress){$progress.MutationStarted}else{$false}
+                Write-Host ('RUNTIME_INJECTION case='+$scenario+'; entered='+$calls.CallbackEntered+'; completed='+$calls.CallbackCompleted+'; setupError='+$calls.CallbackSetupError+'; equalBytes='+$calls.EqualBytes+'; equalCreation='+$calls.EqualCreation+'; differentIdentity='+$calls.DifferentIdentity+'; originalUnchanged='+$calls.OriginalUnchanged+'; attempted='+$attempted+'; pinReleased='+$released+'; reopened='+$reopened+'; mutationStarted='+$mutated+'; verified='+$summary.RuntimeLeafVerified)
+                if($calls.CallbackEntered -ne 1 -or $calls.CallbackCompleted -ne 1 -or $calls.CallbackSetupError){throw 'SETUP ERROR: required synthetic callback did not complete exactly once.'}
+                if($scenario -ceq 'equal-byte-replaced' -and -not ($calls.EqualBytes -and $calls.EqualCreation -and $calls.DifferentIdentity -and $calls.OriginalUnchanged)){throw 'SETUP ERROR: equal-byte native replacement was not established.'}
+                if($scenario -ceq 'equal-byte-replaced'){Check-RuntimeLeaf ([IO.File]::Exists($retained) -and (Get-RuntimeFixtureOrigin $retained) -ceq $calls.BaselineOrigin -and (Get-RuntimeFixtureHash $retained) -ceq $calls.BaselineHash -and [IO.File]::GetCreationTimeUtc($retained) -eq $calls.BaselineCreation) 'retained original native object and bytes remain intact after refusal'}
+            }
             Check-RuntimeLeaf ([Object]::ReferenceEquals($summary.OriginalError,$heldError) -and -not $summary.WholeRollbackVerified -and -not $summary.RestartAuthority -and -not $summary.BackupCleanupAllowed) 'original error and scoped boundaries retained'
             if($scenario -in @('complete','snapshot-write-denied')){
                 Check-RuntimeLeaf ($summary.RuntimeLeafVerified -and $summary.RuntimeLeafProgress.Attempted -and $summary.RuntimeLeafProgress.PinReleased -and $summary.RuntimeLeafProgress.HandleReopened -and $summary.RuntimeLeafProgress.MutationStarted -and $summary.RuntimeLeafProgress.Flushed -and $summary.RuntimeLeafProgress.ReadbackVerified -and $summary.AuxiliaryOutcomeRecorded) 'same process actual handle restore, flush, readback and live auxiliary revalidation'

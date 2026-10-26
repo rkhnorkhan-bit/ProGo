@@ -44,6 +44,19 @@ class LiveRuntimeLeafContract(unittest.TestCase):
                       'if (result.CancellationObserved) result.LeafVerified = false',
                       '!runtimeLeafResult.CancellationObserved && runtimeLeafResult.LeafVerified'):
             self.assertIn(token,self.native)
+    def test_fixture_callback_requires_actual_replacement_and_reports_setup_errors(self):
+        f=self.fixture
+        for token in ('$localScenario=[string]$scenario','$localTarget=[string]$target',
+                      '$localGetOrigin=(Get-Command Get-RuntimeFixtureOrigin).ScriptBlock',
+                      '$observed.CallbackEntered++','$observed.CallbackCompleted++',
+                      '$observed.EqualBytes=','$observed.EqualCreation=','$observed.DifferentIdentity=',
+                      '$observed.OriginalUnchanged=','SETUP ERROR: required synthetic callback did not complete exactly once',
+                      'SETUP ERROR: equal-byte native replacement was not established',
+                      'retained original native object and bytes remain intact after refusal','RUNTIME_INJECTION case='):
+            self.assertIn(token,f)
+        self.assertLess(f.index('SETUP ERROR: equal-byte native replacement was not established'),
+                        f.index("'conflict cancellation fault or lost proof never becomes success'"))
+        self.assertIn('method.GetParameters()[0].ParameterType!=typeof(SafeFileHandle)',f)
     def test_windows_fixture_real_context_and_negative_cases(self):
         f=self.fixture
         cases=re.findall(r"'([^']+)'",f.split('foreach($scenario in @(',1)[1].split(')',1)[0])
@@ -56,7 +69,8 @@ class LiveRuntimeLeafContract(unittest.TestCase):
                       'RestoreSingleRuntimeLeaf','same process actual handle restore','fresh process cannot use stored auxiliary receipt',
                       'snapshot source journal and auxiliary bytes preserved','once blocked snapshot proof returns, repeat cannot mutate'):
             self.assertIn(token,f)
-        self.assertEqual(f.count('.Invoke('),1)
+        self.assertEqual(f.count('.Invoke('),2)
         self.assertIn('args[i].GetType()!=p[i].ParameterType', f)
         self.assertIn('return method.Invoke(target,args);', f)
+        self.assertIn('method.GetParameters()[0].ParameterType!=typeof(SafeFileHandle)', f)
 if __name__ == '__main__': unittest.main()

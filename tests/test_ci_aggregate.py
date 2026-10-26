@@ -11,7 +11,7 @@ GATE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GATE)
 
 
-PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests', 'installer-runtime-tests')
+PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests', 'installer-runtime-tests', 'installer-success-tests')
 
 
 class AggregateTests(unittest.TestCase):
@@ -123,7 +123,7 @@ class PartitionLayoutTests(unittest.TestCase):
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Foundation'), 1)
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Recovery'), 1)
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Live'), 1)
-        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests]', workflow)
+        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests, installer-success-tests]', workflow)
         self.assertEqual(workflow.count('  installer-recovery-tests:\n'), 1)
         self.assertIn("tests\\InstallerLegacySourceCaptureTests.ps1'", self.text)
 
@@ -226,8 +226,12 @@ def require_workflow_contract(text):
             raise ValueError('Installer selector coverage differs')
     runtime = re.search(r'^  installer-runtime-tests:\n(.*?)(?=^  [a-z][a-z0-9-]*:|\Z)', text, re.M | re.S).group(1)
     for call in ('.\\scripts\\Build-ProGo.ps1', '.\\tests\\InstallerLiveRuntimeLeafTests.ps1'):
-        if text.count(call) != 1 or call not in runtime:
+        if call not in runtime or (call.endswith('InstallerLiveRuntimeLeafTests.ps1') and text.count(call) != 1):
             raise ValueError('Runtime integration self-contained bootstrap differs')
+    success = re.search(r'^  installer-success-tests:\n(.*?)(?=^  [a-z][a-z0-9-]*:|\Z)', text, re.M | re.S).group(1)
+    for call in ('.\\scripts\\Build-ProGo.ps1', '.\\tests\\InstallerSuccessBootstrap.ps1'):
+        if call not in success or (call.endswith('InstallerSuccessBootstrap.ps1') and text.count(call) != 1):
+            raise ValueError('Success host self-contained bootstrap differs')
     gate = text.split('  ci-complete:', 1)[1]
     for token in ('timeout-minutes: 5\n', 'PROGO_EXPECTED_SHA: ${{ github.sha }}',
                   'PROGO_NEEDS_JSON: ${{ toJSON(needs) }}', 'python3 scripts/check_ci_aggregate.py'):
@@ -253,7 +257,7 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         host = bodies['InstallerMenuMutationAdmissionTests.ps1']
         nested = re.findall(r"^& \(Join-Path \$Root 'tests\\([^']+)'\)([^\n]*)$", host, re.M)
         self.assertEqual(nested, [('InstallerLegacyOwnedRestoreTests.ps1',''), ('InstallerLegacyPreparationTests.ps1',''),
-                                 ('InstallerLegacyStartupLiveTests.ps1',''), ('InstallerLegacyStartupLiveTests.ps1',' -MenuFlow'), ('InstallerAuxiliaryScopedOutcomeTests.ps1',''), ('InstallerAuxiliaryScopedOutcomeTests.ps1',' -PreservedFlow'), ('InstallerLiveInstalledOutcomeTests.ps1','')])
+                                 ('InstallerLegacyStartupLiveTests.ps1',''), ('InstallerLegacyStartupLiveTests.ps1',' -MenuFlow'), ('InstallerAuxiliaryScopedOutcomeTests.ps1',''), ('InstallerAuxiliaryScopedOutcomeTests.ps1',' -PreservedFlow')])
 
     def test_changed_or_missing_fixture_refused(self):
         bodies = {name: (self.root / 'tests' / name).read_text(encoding='utf-8-sig') for name in CI728_FIXTURE_SHA256}
@@ -263,6 +267,28 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         del bodies['InstallerLegacyStartupLiveTests.ps1']
         with self.assertRaises(ValueError):
             require_fixture_parity(bodies)
+
+    def test_success_partition_fail_closed_and_exact_coverage(self):
+        sha = 'a' * 40
+        jobs = {name: {'result': 'success', 'outputs': {'tested_sha': sha}} for name in PARTITIONS}
+        for state in ('failure','skipped','cancelled',None):
+            changed=copy.deepcopy(jobs); changed['installer-success-tests']['result']=state
+            with self.assertRaises(ValueError): GATE.validate(changed,sha)
+        changed=copy.deepcopy(jobs); del changed['installer-success-tests']
+        with self.assertRaises(ValueError): GATE.validate(changed,sha)
+        changed=copy.deepcopy(jobs); changed['installer-success-tests']['outputs']['tested_sha']='b'*40
+        with self.assertRaises(ValueError): GATE.validate(changed,sha)
+        root=pathlib.Path(__file__).resolve().parents[1]
+        bootstrap=(root/'tests/InstallerSuccessBootstrap.ps1').read_text()
+        host=(root/'tests/InstallerMenuMutationAdmissionTests.ps1').read_text()
+        direct="& (Join-Path $Root 'tests\\InstallerLiveInstalledOutcomeTests.ps1')"
+        self.assertEqual(bootstrap.count(direct),1)
+        self.assertNotIn(direct,host)
+        for name in ('LegacyMetadataThreatFixture','LegacyRestoreReflectionFixture'):
+            self.assertIn(name,bootstrap)
+        for before,after in (('  installer-success-tests:', '  wrong-success-tests:'),
+                             ('.\\tests\\InstallerSuccessBootstrap.ps1', '.\\tests\\wrong.ps1')):
+            with self.assertRaises(ValueError): require_workflow_contract(self.workflow.replace(before,after,1))
 
     def test_runtime_partition_missing_skipped_cancelled_wrong_sha_refused(self):
         sha = 'a' * 40
