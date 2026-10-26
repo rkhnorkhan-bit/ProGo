@@ -47,6 +47,15 @@ class LiveRuntimeLeafContract(unittest.TestCase):
                       'if (result.CancellationObserved) { result.LeafVerified = false; result.SetVerified = false; }',
                       '!runtimeLeafResult.CancellationObserved && runtimeLeafResult.SetVerified'):
             self.assertIn(token,self.native)
+    def test_child_scope_matches_both_invocations_and_rejects_unknown(self):
+        guard=self.fixture.split('if($BlockedChild){',1)[1].split('foreach($p in @($parent,$CaseDirectory))',1)[0]
+        self.assertIn("[IO.Path]::GetFileName($CaseDirectory) -cnotin @('complete','multi-complete')",guard)
+        self.assertIn("if($scenario -in @('complete','multi-complete'))",self.fixture)
+        self.assertIn("$unknown=Join-Path $work 'unknown-child'",self.fixture)
+        self.assertIn("$child.ExitCode -ne 0",self.fixture)
+        self.assertIn("$err.Result.Contains('Runtime child scope refused.')",self.fixture)
+        self.assertIn("-not $out.Result.Contains('RUNTIME_CHILD blocked=True')",self.fixture)
+
     def test_fixture_callback_requires_actual_replacement_and_reports_setup_errors(self):
         f=self.fixture
         for token in ('$localScenario=[string]$scenario','$localTarget=if($scenario -in',

@@ -14,7 +14,7 @@ function Get-RuntimeFixtureOrigin([string]$Path){
 }
 if($BlockedChild){
     $parent=[IO.Path]::GetDirectoryName($CaseDirectory)
-    if([IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-runtime-leaf-[a-f0-9]{32}$' -or [IO.Path]::GetFileName($CaseDirectory) -cne 'complete' -or [IO.Path]::GetDirectoryName($parent) -cne [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)){throw 'Runtime child scope refused.'}
+    if([IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-runtime-leaf-[a-f0-9]{32}$' -or [IO.Path]::GetFileName($CaseDirectory) -cnotin @('complete','multi-complete') -or [IO.Path]::GetDirectoryName($parent) -cne [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)){throw 'Runtime child scope refused.'}
     foreach($p in @($parent,$CaseDirectory)){if([IO.File]::GetAttributes($p) -band [IO.FileAttributes]::ReparsePoint){throw 'Runtime child refuses redirect.'}}
     $app=Join-Path $CaseDirectory 'app';$backup=[pscustomobject]@{InstallDirectory=$app;Journal=[pscustomobject]@{Directory=Join-Path (Join-Path $app 'backups') 'untrusted'}}
     $receipts=@(Get-ChildItem -LiteralPath (Join-Path $app 'backups') -File -Filter 'installer-auxiliary-scoped-*.bin')
@@ -213,6 +213,13 @@ try{
             if($scenario -in @('complete','multi-complete')){
                 $info=New-Object Diagnostics.ProcessStartInfo;$info.FileName=Join-Path $PSHOME 'powershell.exe';$info.Arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$PSCommandPath+'" -BlockedChild -CaseDirectory "'+$case+'"';$info.UseShellExecute=$false;$info.CreateNoWindow=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
                 $child=[Diagnostics.Process]::Start($info);$out=$child.StandardOutput.ReadToEndAsync();$err=$child.StandardError.ReadToEndAsync();if(-not $child.WaitForExit(20000)){throw 'Runtime child deadline exceeded.'};Check-RuntimeLeaf ([Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($out,$err),5000) -and $child.ExitCode -eq 0 -and $err.Result.Length -eq 0 -and $out.Result.Contains('RUNTIME_CHILD blocked=True')) 'fresh process cannot use stored auxiliary receipt';$child.Dispose();$child=$null
+                if($scenario -ceq 'complete'){
+                    $unknown=Join-Path $work 'unknown-child'
+                    $info.Arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$PSCommandPath+'" -BlockedChild -CaseDirectory "'+$unknown+'"'
+                    $child=[Diagnostics.Process]::Start($info);$out=$child.StandardOutput.ReadToEndAsync();$err=$child.StandardError.ReadToEndAsync();if(-not $child.WaitForExit(20000)){throw 'Runtime unknown child deadline exceeded.'}
+                    Check-RuntimeLeaf ([Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($out,$err),5000) -and $child.ExitCode -ne 0 -and $err.Result.Contains('Runtime child scope refused.') -and -not $out.Result.Contains('RUNTIME_CHILD blocked=True')) 'unknown child name refused before receipt access'
+                    $child.Dispose();$child=$null
+                }
             }
             if($null -ne $snapshotStamp){
                 [RuntimeLeafFixture]::SetCreation($snapshotPath,$snapshotStamp);$snapshotStamp=$null
