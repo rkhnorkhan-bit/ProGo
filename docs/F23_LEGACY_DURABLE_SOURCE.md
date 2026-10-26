@@ -1,3 +1,87 @@
+## CURRENT CI719 verified; actual-operation model blocked, independent test-only counterexample
+
+CI719 all5 full logs independently read: sourced454cfc114c4dbeace0a5f0bda7f88e6142e53b3,
+merge936199c90a2c2de62662fc3b8ac2659de9f1ae71; Namespace41/fresh-process1, PhysicalPins50/Pinning39/PreDelete23/
+Restart26/JournalReference20/DurableInput12/Foundation27/Recovery6 PASS. Core classifier26/SSH5/Desktop6394/
+Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91, Python98PASS2SKIP, Ubuntu and aggregate121420106103
+exact4SHA PASS. Runner ZIP686643 SHA2568a48240d045f0c6c16aeceff8aecca83a6ff4185451e9b6da91dd95879127a10,
+upload skipped; not PC acceptance. Checkpointd226f318e0c5a6679bb4dd069129b0eb95d95cc6 clean, PR88 exactsource/
+merge/open; no other active agent or queued/in-progress/waiting CI before this stage.
+
+DEPENDENT MUTATION BLOCKED_MODEL: exact-target safety and global namespace/metadata immutability are different
+contracts. Existing Native39/Physical50 positive pins do not reserve missing children; Namespace41 already
+proves appearance while pinned and observed-only after the fixture restores current absence. Another enum,
+mutex for cooperating ProGo processes, or directory oplock must not be promoted to atomic exclusion. No actual
+mutation primitive is implemented, no assertion weakened, no origin field removed and no scope waived. Full
+threat analysis, primary sources and the pending owner decision are in F23_LEGACY_DURABLE_SOURCE.md.
+
+Independent allowed work only: test-only native FILE_WRITE_ATTRIBUTES counterexample on our new complete
+fixture's synthetic runtime ProGo.exe. Creation time change uses a SECOND native handle with minimal attribute
+access, share7, OPEN_REPARSE_POINT, same-handle closure; no new privilege/security/ACL action. Ordinary .NET
+Framework File.SetCreationTimeUtc asks for FileAccess.Write (reference source inspected), so would test the
+wrong contract; it is not used for the adversarial write. Expected six checks: valid pins, changed creation+
+unchanged bytes/object pin, VerifyPinned false, no mutation/success authority, exact current origin restored
+under the STILL HELD pin (not no-ABA history), then private/foreign bytes and exclusive reopen preserved.
+Scope/reparse/temp-parent guards; metadata cleanup occurs before dropping native pins, never edits a stale
+unprotected path. Safe fixed checks/type diagnostics only, no raw path/timestamp/credentials/journal output.
+This is a same-process second-handle experiment, not measured cross-process exclusion or power-loss proof.
+
+New Windows MutationThreat6/C# test-shim compilation NOT_RUN. Local78 Python static tests PASS, not Windows
+execution. Nested once only in existing complete case; old33/classifier26/strict4aggregate/deadlines/SSHflags/
+environment and ALL production C#/installer/workflow bodies remain unchanged. One reviewed guarded test-only
+push and automatic CI allowed for this concrete adversarial experiment, no blind repeat or duplicate.
+UNKNOWN incidents/BLOCKED_TRANSFER/no delivery retry/deletion-power-lossNOT_RUN/fullscope/weights/delta0 remain.
+WCT/SeDebug/new privileges/live install/services/network/security/ACL/credentials/VPS/tunnel/release/uploads
+remain prohibited. A green counterexample CI would NOT close BLOCKED_MODEL, authorize deletion, prove durable
+outcome/restore/FullRollback/production or change approved requirements.
+
+PENDING OWNER QUESTION, NOT ANSWERED: approve a separately reviewed exact-owned-object authorization model
+based on retained positive proofs and target handle (without global namespace/ABA freeze), OR retain strict
+namespace exclusion and separately agree a proven isolation design/scope? Neither option authorizes live or
+security changes. Until an explicit decision, mutation stays blocked. Independent next work: same new CI full5
+logs/MutationThreat6/old33/Core/strictaggregate and safe static requirement audits, not mutation/integration.
+
+## Actual-operation threat model decision — BLOCKED_MODEL, no mutation implementation
+
+Threat actor: an ordinary non-cooperating writer already allowed to access these paths, including another
+process of the same account. Kernel/admin compromise is not required for the counterexamples. One Codex/repo
+writer or one ProGo maintenance lease is not evidence that every filesystem actor cooperates.
+
+Required distinction:
+- Exact held target identity and protected file data can remain bound to pinned positive proofs. A future
+  operation on that retained native handle does not re-resolve a replacement pathname.
+- Missing names, arbitrary new child names and global namespace histories are not positive objects held by
+  those handles. An actor can create/move a child between final observation and operation, or perform ABA.
+  Two executions can yield the same endpoint observations but different intervening histories. Current719
+  actual tests directory-pins-do-not-reserve-absent-child and current-absence-observation-is-not-ABA-history-
+  or-deletion-proof provide scoped Windows evidence, not a new reservation protocol.
+- Attribute access is distinct from file data sharing. Mutable creation time in the full native origin must
+  not be silently redefined as immutable or removed from current verifiers. Independent MutationThreat6
+  specifically measures this boundary on a second ordinary FILE_WRITE_ATTRIBUTES handle.
+
+Primary sources independently inspected:
+https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_request_oplock
+Directory R/RH child-enumeration breaks are advisory; child changes need not await acknowledgement. This
+cannot supply the requested namespace reservation. No oplock or notification probe is implemented.
+https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+Sharing modes do not constrain attribute/extended-attribute requests; access is not a global metadata freeze.
+https://github.com/microsoft/referencesource/blob/main/mscorlib/system/io/file.cs
+SetCreationTimeUtc uses OpenFile(FileAccess.Write); its helper constructs a write FileStream. Hence the new
+fixture uses minimal native attribute access, not that higher-level setter as a substitute.
+
+No claim is made that every possible Windows primitive is impossible. The existing permitted protocol has no
+proved atomic namespace exclusion primitive. Adding ACL/principal isolation, a transactional filesystem
+contract or a cooperative-writers-only assumption requires its own proof and authorization; an ACL edit alone
+must not be assumed to exclude other same-account actors or pre-existing handles. None is implemented or
+approved here. Finite placeholders likewise cannot reserve an arbitrary unknown child namespace or be added
+to snapshot/journal schemas unnoticed. No permissive fallback is introduced.
+
+The owner decision is pending: separately agree exact-owned-object semantics with retained positive evidence
+and honest outcomes (explicitly not global namespace/ABA immutability), or retain that stronger exclusion
+requirement and approve a proven isolation design. This is NOT an automatic reduction of scope; no chosen
+option, security action or deletion authorization is inferred. Existing source remains observation-only.
+New counterexample tests are independent of this choice and cannot lift the block even when passing.
+
 ## CURRENT CI718 verified; namespace operation-boundary observation prerequisite
 
 Baseline full5 logs independently read: sourcea5d0e5d5d070f16157f8db00a0d411ecacd89f63,

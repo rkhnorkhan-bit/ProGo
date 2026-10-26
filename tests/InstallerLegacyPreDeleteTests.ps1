@@ -14,6 +14,7 @@ foreach ($function in $ast.FindAll({ param($node)
 . (Join-Path $PSScriptRoot 'InstallerLegacyDeletionPinsTests.ps1')
 . (Join-Path $PSScriptRoot 'InstallerLegacyPhysicalPinsTests.ps1')
 . (Join-Path $PSScriptRoot 'InstallerLegacyNamespaceTests.ps1')
+. (Join-Path $PSScriptRoot 'InstallerLegacyMutationThreatTests.ps1')
 if ($Child) {
     $parent = [IO.Path]::GetDirectoryName($CaseDirectory)
     if ([IO.Path]::GetFileName($CaseDirectory) -cne 'complete' -or [IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-legacy-predelete-[a-f0-9]{32}$' -or
@@ -130,6 +131,7 @@ try {
         Test-ProGoLegacyDeletionPinsFixture $scenario $journal $install $readPrograms $startup @($legacy,$sourcePath,$referencePath,$sealPath,$admissionPath)
         Test-ProGoLegacyPhysicalPinsFixture $scenario $journal $install $readPrograms $startup $backup.Directory
         Test-ProGoLegacyNamespaceFixture $scenario $journal $install $readPrograms $startup $backup.Directory
+        if ($scenario -ceq 'complete') { Test-ProGoLegacyMutationThreatFixture $journal $install $programs $startup }
         $backup = $null; $reference = $null; $admission = $null; $manager = $null; $writes = $null
         $readBefore = @{}; foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $readBefore[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
         Check-PreDelete ((Get-ProGoInstallerLegacyPreDeleteState $journal $install $readPrograms $startup) -ceq $(if ($scenario -eq 'complete') { 'not-applied' } else { 'blocked' })) 'restart classifier refuses intent plus absence or changed evidence without any replay'
@@ -151,6 +153,7 @@ try {
         Remove-ProGoInstallerStage $stage; $stage = $null
         Write-Host ('PASS: installer Legacy pre-delete ' + $scenario)
     }
+    Check-PreDelete ($script:LegacyMutationThreatChecks -eq 6) 'independent mutation threat counterexample completed'
     Check-PreDelete ($script:LegacyNamespaceChecks -eq 41) 'all namespace observations executed'
     Write-Host ('Legacy namespace tests PASS: ' + $script:LegacyNamespaceChecks + '; fresh-process verification=1; namespace-reservation NOT_PROVIDED; deletion/power-loss NOT_RUN')
     Check-PreDelete ($script:LegacyPhysicalChecks -eq 50) 'all physical pin checks executed'

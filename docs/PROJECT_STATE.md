@@ -1,3 +1,48 @@
+## CURRENT CI719 verified; actual-operation model blocked, independent test-only counterexample
+
+CI719 all5 full logs independently read: sourced454cfc114c4dbeace0a5f0bda7f88e6142e53b3,
+merge936199c90a2c2de62662fc3b8ac2659de9f1ae71; Namespace41/fresh-process1, PhysicalPins50/Pinning39/PreDelete23/
+Restart26/JournalReference20/DurableInput12/Foundation27/Recovery6 PASS. Core classifier26/SSH5/Desktop6394/
+Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91, Python98PASS2SKIP, Ubuntu and aggregate121420106103
+exact4SHA PASS. Runner ZIP686643 SHA2568a48240d045f0c6c16aeceff8aecca83a6ff4185451e9b6da91dd95879127a10,
+upload skipped; not PC acceptance. Checkpointd226f318e0c5a6679bb4dd069129b0eb95d95cc6 clean, PR88 exactsource/
+merge/open; no other active agent or queued/in-progress/waiting CI before this stage.
+
+DEPENDENT MUTATION BLOCKED_MODEL: exact-target safety and global namespace/metadata immutability are different
+contracts. Existing Native39/Physical50 positive pins do not reserve missing children; Namespace41 already
+proves appearance while pinned and observed-only after the fixture restores current absence. Another enum,
+mutex for cooperating ProGo processes, or directory oplock must not be promoted to atomic exclusion. No actual
+mutation primitive is implemented, no assertion weakened, no origin field removed and no scope waived. Full
+threat analysis, primary sources and the pending owner decision are in F23_LEGACY_DURABLE_SOURCE.md.
+
+Independent allowed work only: test-only native FILE_WRITE_ATTRIBUTES counterexample on our new complete
+fixture's synthetic runtime ProGo.exe. Creation time change uses a SECOND native handle with minimal attribute
+access, share7, OPEN_REPARSE_POINT, same-handle closure; no new privilege/security/ACL action. Ordinary .NET
+Framework File.SetCreationTimeUtc asks for FileAccess.Write (reference source inspected), so would test the
+wrong contract; it is not used for the adversarial write. Expected six checks: valid pins, changed creation+
+unchanged bytes/object pin, VerifyPinned false, no mutation/success authority, exact current origin restored
+under the STILL HELD pin (not no-ABA history), then private/foreign bytes and exclusive reopen preserved.
+Scope/reparse/temp-parent guards; metadata cleanup occurs before dropping native pins, never edits a stale
+unprotected path. Safe fixed checks/type diagnostics only, no raw path/timestamp/credentials/journal output.
+This is a same-process second-handle experiment, not measured cross-process exclusion or power-loss proof.
+
+New Windows MutationThreat6/C# test-shim compilation NOT_RUN. Local78 Python static tests PASS, not Windows
+execution. Nested once only in existing complete case; old33/classifier26/strict4aggregate/deadlines/SSHflags/
+environment and ALL production C#/installer/workflow bodies remain unchanged. One reviewed guarded test-only
+push and automatic CI allowed for this concrete adversarial experiment, no blind repeat or duplicate.
+UNKNOWN incidents/BLOCKED_TRANSFER/no delivery retry/deletion-power-lossNOT_RUN/fullscope/weights/delta0 remain.
+WCT/SeDebug/new privileges/live install/services/network/security/ACL/credentials/VPS/tunnel/release/uploads
+remain prohibited. A green counterexample CI would NOT close BLOCKED_MODEL, authorize deletion, prove durable
+outcome/restore/FullRollback/production or change approved requirements.
+
+PENDING OWNER QUESTION, NOT ANSWERED: approve a separately reviewed exact-owned-object authorization model
+based on retained positive proofs and target handle (without global namespace/ABA freeze), OR retain strict
+namespace exclusion and separately agree a proven isolation design/scope? Neither option authorizes live or
+security changes. Until an explicit decision, mutation stays blocked. Independent next work: same new CI full5
+logs/MutationThreat6/old33/Core/strictaggregate and safe static requirement audits, not mutation/integration.
+
+Prior evidence/history:
+
 ## CURRENT CI718 verified; namespace operation-boundary observation prerequisite
 
 Baseline full5 logs independently read: sourcea5d0e5d5d070f16157f8db00a0d411ecacd89f63,

@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "a5d0e5d5d070f16157f8db00a0d411ecacd89f63",
-    "tree": "e451f4fa328841f166fe054b520c823440cb51b5",
-    "run_id": 40270033424,
-    "run_number": 718,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40270033424",
+    "source": "d454cfc114c4dbeace0a5f0bda7f88e6142e53b3",
+    "tree": "71cff3e04788df37e45065a9d3a1dd2ea634fb81",
+    "run_id": 40273846702,
+    "run_number": 719,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40273846702",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "aea0706a6e8341ae8c5ddbedc0e1315d194e9a19",
-    "PhysicalPins50": "PASS fresh-process1; deletion/power-loss NOT_RUN",
+    "tested_merge": "936199c90a2c2de62662fc3b8ac2659de9f1ae71",
+    "Namespace41": "PASS fresh-process1; namespace reservation NOT_PROVIDED",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "a5d0e5d5d070f16157f8db00a0d411ecacd89f63",
-    "tree": "e451f4fa328841f166fe054b520c823440cb51b5",
-    "prior_checkpoint": "0c3ca31de153033c08a07378aa1c96a475b32a95",
-    "stage": "Read-only namespace/operation-boundary observation prerequisite; no mutation",
-    "status": "CI718 full5logs PASS; new Namespace41 Windows NOT_RUN; local72 static PASS",
-    "next": "One automatic exact-source CI then safe actual-operation namespace/absence protocol; actual deletion/result/restore remain separate",
+    "source": "d454cfc114c4dbeace0a5f0bda7f88e6142e53b3",
+    "tree": "71cff3e04788df37e45065a9d3a1dd2ea634fb81",
+    "prior_checkpoint": "d226f318e0c5a6679bb4dd069129b0eb95d95cc6",
+    "stage": "Actual-operation BLOCKED_MODEL; independent test-only native metadata counterexample",
+    "status": "CI719 full5logs PASS; new MutationThreat6 Windows NOT_RUN; local78 static PASS",
+    "next": "One automatic test-only CI full logs; owner model decision pending before any mutation implementation",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -23415,6 +23415,29 @@
       "enumeration not atomic; ABA not excluded",
       "returned string is not mutation capability",
       "intent/absence never proves owned deletion",
+      "UNKNOWN incidents",
+      "BLOCKED_TRANSFER",
+      "power-loss NOT_RUN",
+      "WCT/SeDebug not authorized"
+    ],
+    "score_delta": 0
+  },
+  "legacy_actual_operation_model": {
+    "status": "BLOCKED_MODEL; no mutation protocol implemented",
+    "owner_decision": "PENDING exact-owned-object semantics with pinned positive evidence versus strict global namespace exclusion with separately approved isolation design; no choice or security action inferred",
+    "threat": "ordinary noncooperating writer with existing access, potentially same account",
+    "evidence": "CI719 namespace appearance/current absence counterexamples; official CreateFile attribute-sharing and directory-oplock advisory semantics",
+    "independent_tests": "MutationThreat6 prepared; same-process second native FILE_WRITE_ATTRIBUTES handle, Windows NOT_RUN; local78 static PASS",
+    "production_changes": "NONE",
+    "remaining": [
+      "explicit model decision and proven actual-operation primitive",
+      "same-handle owned deletion only after that gate",
+      "durable honest outcome/post-delete rehydration",
+      "restore/error/full auxiliary recovery/retention/full scope"
+    ],
+    "limits": [
+      "green counterexample CI is not protocol PASS",
+      "no origin-field or assertion removal",
       "UNKNOWN incidents",
       "BLOCKED_TRANSFER",
       "power-loss NOT_RUN",
