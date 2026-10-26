@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "a2aae264baa197069b3513a2ee4348e8691eeb0c",
-    "tree": "a91731d48d1cc31b52cb224921f4e5ce9f6c492e",
-    "run_id": 40278550319,
-    "run_number": 720,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40278550319",
+    "source": "3908feee6693e6ddfa40b27e503248fe4bcf9f1f",
+    "tree": "aca9c3d2eff351612eb592d57b5d6c02a8548ed5",
+    "run_id": 40288792739,
+    "run_number": 721,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40288792739",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "0e3afd00a0f90e66f950d146990231f8ed32e16d",
-    "MutationThreat6": "PASS actual limitation evidence; former BLOCKED_MODEL label superseded by scope correction",
+    "tested_merge": "2f87d5e957e9fa0bf5eba89d2e7839d70595389a",
+    "OwnedOperation15": "PASS native, fresh-process refusal1; no durable receipt writer in721",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "a2aae264baa197069b3513a2ee4348e8691eeb0c",
-    "tree": "a91731d48d1cc31b52cb224921f4e5ce9f6c492e",
+    "source": "3908feee6693e6ddfa40b27e503248fe4bcf9f1f",
+    "tree": "aca9c3d2eff351612eb592d57b5d6c02a8548ed5",
     "prior_checkpoint": "b609f837cff8d92bd4242d4f737803f1bab6c915",
-    "stage": "Bounded exact-owned-object one-shot disposition; no durable outcome/restore/live integration",
-    "status": "CI720 full5logs PASS; new OwnedOperation15/native compilation Windows NOT_RUN; local84 static PASS",
-    "next": "One automatic exact-source CI full logs; then durable honest accepted-outcome/post-delete evidence gate",
+    "stage": "Bounded durable accepted-disposition receipt, live lease only; no post-delete rehydration/restore/live integration",
+    "status": "CI721 full5logs PASS; new receipt native14/fresh-process2 Windows NOT_RUN; local90 static PASS",
+    "next": "One exact-source automatic CI full logs; then trusted post-delete actual outcome/rehydration prerequisite",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -23477,6 +23477,23 @@
       "no-overwrite owned restore",
       "full auxiliary outcome/error integration/retention/runtime recovery/full scope"
     ],
+    "score_delta": 0
+  },
+  "legacy_accepted_outcome_current": {
+    "scope": "live one-shot accepted disposition receipt only",
+    "new_native_cases": 14,
+    "original_native_cases_preserved": 15,
+    "new_native_status": "NOT_RUN",
+    "fresh_process_refusals_prepared": 2,
+    "local_focused_static_tests": "90 PASS",
+    "write_flush_fault_injection": "NOT_RUN",
+    "power_loss": "NOT_RUN",
+    "post_delete_rehydration": "NOT_IMPLEMENTED",
+    "physical_unlink_verified": false,
+    "whole_rollback_verified": false,
+    "install_succeeded": false,
+    "restart_authority": "NONE; blocked/manual without sufficient proofs",
+    "next": "full logs exact new CI; trusted post-delete outcome separately",
     "score_delta": 0
   }
 }

@@ -1,3 +1,72 @@
+## CURRENT CI721 verified; bounded durable accepted-disposition receipt (new Windows execution NOT_RUN)
+
+Recovered the same clean worktree at local 4331dee20d5fc11c1b2149d745a02b033aab022c,
+identical tree aca9c3d2eff351612eb592d57b5d6c02a8548ed5 to published
+3908feee6693e6ddfa40b27e503248fe4bcf9f1f. No post-publication checkpoint was found;
+old clean b609f837cff8d92bd4242d4f737803f1bab6c915 remains untouched. A new separate
+worktree starts at exact published source, preserving all previous work. PR88 exact source/merge,
+no active CI/other agent; ps failed with a library error, /proc process-name inspection completed
+without active Git/build/SSH commands. No credentials/arguments/private paths inspected.
+
+CI721 all five final logs independently retrieved and checked, run40288792739,
+tested merge 2f87d5e957e9fa0bf5eba89d2e7839d70595389a. OwnedOperation15 and actual
+fresh-process refusal1 PASS. All33 Foundation27/Recovery6 suites, nested Namespace41/
+MutationThreat6/Physical50/Pinning39/PreDelete23/Restart26/Journal20/Durable12 PASS.
+Core classifier26/SSH5/Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/
+Portable91 PASS; Python110PASS2SKIP, Ubuntu and aggregate121469694994 exact4SHA PASS.
+ZIP697783 SHA256f4c5f08555bab159c209154f7927e357725fd30341c1bf6b1b33fb5a53e65227
+runner-only, upload skipped, not delivered and not PC acceptance. Startup/other incidents UNKNOWN.
+
+Acceptance/scope: record ONLY the actual already-accepted disposition from the same live
+one-shot lease, preserving its immutable accepted result. New RecordAcceptedOutcome(physical,token)
+and VerifyAcceptedOutcome(physical) are not wired into the installer or failure handler.
+Under original and physical locks, retain source/reference/seal/admission and parent handles;
+repeat full snapshot/runtime/operation/location/ownership/schema/origin/hash/native namespace
+checks. The source envelope is reconstructed from the actual pinned bounded source bytes.
+The usable primary's full origin/hash captured at disposition is bound in the receipt; hold
+and recheck its read-only handle through receipt publication/verification. A reappeared target
+name is only a conflict veto, never a deletion/overwrite target. Absence alone grants no right.
+
+Fixed backups/installer-legacy-accepted-<operation>.bin uses atomic CreateNew, WriteThrough,
+Flush(true), exact same-handle and independently reopened no-follow readback, full native origin
+and receipt hash. Reconstruct the whole expected document from live immutable witnesses and
+actual native evidence hashes; do not trust caller hashes or serialized claims. No overwrite,
+repair, partial cleanup/adoption, native mutation or replay in the writer/verifier. A failed or
+cancelled publication caches an unrecorded result preserving the original OperationAccepted;
+partial/ambiguous files remain for later manual/verified settlement. Foreign/partial destinations,
+context changes, disposed proofs, native replacements, tamper and extra bytes fail closed.
+
+Four truths remain separate: OS accepted disposition; observed post-operation context;
+readback-verified durable acceptance record; physical unlink/whole rollback/install success.
+The last three authority properties PhysicalUnlinkVerified/WholeRollbackVerified/InstallSucceeded
+remain false in this new receipt. DurableOutcomeRecorded is a historical successful publication,
+not a permanent current validation: VerifyAcceptedOutcome rechecks actual material every time
+and returns false for later tamper/replacement/conflict/disposal. It is not a restart authority API.
+Metadata/namespace are observed conflict checks, not global freezing/reservation/ABA exclusion.
+After process loss the old path-only rehydration remains blocked/manual even with a receipt.
+
+Tests extend the SAME OwnedOperation fixture with14 receipt cases (original15 unchanged):
+complete, foreign destination, preexisting partial destination, directory destination, cancellation,
+context conflict, disposed physical lease, tamper, trailing bytes, empty file, equal-byte native
+replacement, creation metadata change, foreign reappeared target, evidence metadata change.
+New actual fresh-process refusal also runs after receipt publication (two total children);
+no old deadline changed. Existing33 suites/classifier26/strict4partition exact-SHA aggregate
+and old regressions retained. New Python static contract6 joins existing automatic discovery.
+Local90 focused Python/static tests PASS; new C#/PowerShell/native14/fresh-process2 NOT_RUN locally.
+Preexisting partial-artifact cases are NOT injected Write/Flush/readback faults or actual crashes;
+those and power-loss remain NOT_RUN, not replaced by checking strings. No new fault hooks.
+
+Next: same single new automatic CI full logs. Then separately design trusted post-delete
+rehydration/confirmed actual outcome with sufficient surviving proofs; no intent/absence/
+self-declared journal authority. Restore/create must remain no-overwrite. Restore/full auxiliary
+rollback/error integration/retention/general runtime recovery/PGA04/updater/package/PC/commercial
+acceptance remain open. UNKNOWN incidents, BLOCKED_TRANSFER (no retry), WCT/SeDebug not authorized,
+power-loss NOT_RUN, full approved scope and readiness weights/delta0 unchanged.
+No live user-file deletion/installer integration/install/services/ACL/privileges/security/network/
+credentials/VPS/tunnel/release/uploads performed. One bounded stage, one guarded source push/CI only.
+
+Historical source-specific records below:
+
 ## CURRENT scope correction + bounded exact-owned-object operation; CI720 verified
 
 CI720 all five final logs independently read: sourcea2aae264baa197069b3513a2ee4348e8691eeb0c,

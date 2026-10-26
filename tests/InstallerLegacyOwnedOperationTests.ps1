@@ -13,7 +13,7 @@ foreach ($function in $ast.FindAll({ param($node)
 },$false)) { . ([scriptblock]::Create($function.Extent.Text)) }
 if ($BlockedChild) {
     $parent = [IO.Path]::GetDirectoryName($CaseDirectory)
-    if ([IO.Path]::GetFileName($CaseDirectory) -cne 'complete' -or [IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-legacy-ownedop-[a-f0-9]{32}$' -or
+    if ([IO.Path]::GetFileName($CaseDirectory) -cnotin @('complete','outcome-complete') -or [IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-legacy-ownedop-[a-f0-9]{32}$' -or
         [IO.Path]::GetDirectoryName($parent) -cne [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)) { throw 'Owned operation child refuses unowned scope.' }
     $install = Join-Path $CaseDirectory 'app'; $programs = Join-Path $CaseDirectory 'Programs'; $startup = Join-Path $CaseDirectory 'Startup'
     $journals = @(Get-ChildItem -LiteralPath (Join-Path $install 'backups') -Directory | Where-Object { $_.Name -cmatch '^installer-journal-[a-f0-9]{32}$' })
@@ -33,6 +33,10 @@ try {
     $payload = Get-ProGoInstallPayload -Directory (Join-Path $Root 'release')
     $cases = @('complete','equal-byte-replacement','foreign-appeared-name','target-metadata-change','evidence-metadata-change',
         'accepted-context-change','accepted-persistence-fail','cancel-before','cancel-during-check','late-cancel-no-replay','disposed-lease','incomplete-physical-plan','missing-replacement','foreign-replacement','production-path')
+    # Additional receipt cases reuse the same real owned operation setup; original fifteen remain intact.
+    $outcomeCases = @('outcome-complete','outcome-foreign','outcome-partial','outcome-directory','outcome-cancel','outcome-context',
+        'outcome-disposed','outcome-tamper','outcome-trailing','outcome-empty','outcome-replaced','outcome-metadata','outcome-foreign-target','outcome-evidence')
+    $cases += $outcomeCases
     foreach ($scenario in $cases) {
         $case = Join-Path $ownedWork $scenario; $install = Join-Path $case 'app'; $programs = Join-Path $case 'Programs'; $startup = Join-Path $case 'Startup'
         $menu = Join-Path $programs 'ProGo'; $legacy = Join-Path $menu 'ProGo Status.lnk'
@@ -98,7 +102,7 @@ try {
             $result = $null; $cancelled = $false
             try { $result = $original.DeleteOwnedOnce($physical,([Func[bool]]$check),$cancel.Token) }
             catch { $cause = $_.Exception; while ($null -ne $cause.InnerException) { $cause = $cause.InnerException }; if ($cause -isnot [OperationCanceledException]) { throw }; $cancelled = $true }
-            $expected = $scenario -in @('complete','accepted-context-change','accepted-persistence-fail','late-cancel-no-replay')
+            $expected = $scenario -in @('complete','accepted-context-change','accepted-persistence-fail','late-cancel-no-replay') -or $scenario.StartsWith('outcome-')
             if ($scenario -ceq 'cancel-during-check') {
                 Check-OwnedLegacy ($cancelled -and [IO.File]::Exists($legacy)) 'cancellation under retained pins precedes native operation'
                 $cancelledResult = $original.DeleteOwnedOnce($physical,([Func[bool]]$check),$token)
@@ -124,6 +128,48 @@ try {
                     if ($scenario -ceq 'late-cancel-no-replay') { Check-OwnedLegacy ([IO.File]::ReadAllText($legacy) -ceq 'synthetic new foreign target') 'replay never touches newly appeared target name' }
                 } else { Check-OwnedLegacy (-not $result.OperationAttempted -and [IO.File]::Exists($legacy)) 'invalid proof blocked before native operation' }
             }
+            if ($scenario.StartsWith('outcome-')) {
+                $outcomePath = Join-Path (Join-Path $install 'backups') ('installer-legacy-accepted-' + $operation + '.bin')
+                $foreignBytes = [Text.Encoding]::ASCII.GetBytes('synthetic occupied outcome')
+                if ($scenario -in @('outcome-foreign','outcome-partial')) {
+                    if ($scenario -ceq 'outcome-partial') { $foreignBytes = [Text.Encoding]::ASCII.GetBytes("PROGO-LEGACY-ACCEPTED-1`n") }
+                    [IO.File]::WriteAllBytes($outcomePath,$foreignBytes)
+                }
+                if ($scenario -ceq 'outcome-directory') { New-Item -ItemType Directory -Path $outcomePath | Out-Null }
+                if ($scenario -ceq 'outcome-cancel') { $cancel.Cancel() }
+                if ($scenario -ceq 'outcome-context') { [IO.File]::WriteAllText($appeared,'synthetic foreign child') }
+                if ($scenario -ceq 'outcome-disposed') { $physical.Dispose() }
+                if ($scenario -ceq 'outcome-foreign-target') { [IO.File]::WriteAllText($legacy,'synthetic new foreign target') }
+                if ($scenario -ceq 'outcome-evidence') {
+                    $metadataTarget = $referencePath; $metadataCreation = [IO.File]::GetCreationTimeUtc($metadataTarget); $metadataTouched = $true
+                    [LegacyMetadataThreatFixture]::SetCreation($metadataTarget,$metadataCreation.AddMinutes(1))
+                }
+                $record = $original.RecordAcceptedOutcome($physical,$cancel.Token)
+                $shouldRecord = $scenario -in @('outcome-complete','outcome-tamper','outcome-trailing','outcome-empty','outcome-replaced','outcome-metadata')
+                Check-OwnedLegacy ($null -ne $record -and $record.DurableOutcomeRecorded -eq $shouldRecord -and
+                    $record.AcceptedResult.OperationAccepted -and -not $record.PhysicalUnlinkVerified -and
+                    -not $record.WholeRollbackVerified -and -not $record.InstallSucceeded) 'durable observation never promotes acceptance to unlink rollback or install success'
+                Check-OwnedLegacy ($original.VerifyAcceptedOutcome($physical) -eq $shouldRecord) 'same-live-operation durable readback and complete context verification'
+                Check-OwnedLegacy ([object]::ReferenceEquals($record,($original.RecordAcceptedOutcome($physical,$token)))) 'one receipt attempt does not overwrite or replay after failure or cancellation'
+                if ($scenario -in @('outcome-foreign','outcome-partial')) {
+                    Check-OwnedLegacy ([Convert]::ToBase64String([IO.File]::ReadAllBytes($outcomePath)) -ceq [Convert]::ToBase64String($foreignBytes)) 'foreign or partial destination retained without overwrite'
+                }
+                if ($scenario -ceq 'outcome-foreign-target') { Check-OwnedLegacy ([IO.File]::ReadAllText($legacy) -ceq 'synthetic new foreign target') 'reappeared target is conflict without overwrite or replay' }
+                if ($shouldRecord) {
+                    [byte[]]$recordBytes = [IO.File]::ReadAllBytes($outcomePath)
+                    if ($scenario -ceq 'outcome-tamper') { $recordBytes[0] = $recordBytes[0] -bxor 1; [IO.File]::WriteAllBytes($outcomePath,$recordBytes) }
+                    if ($scenario -ceq 'outcome-trailing') { [IO.File]::AppendAllText($outcomePath,'foreign trailing data') }
+                    if ($scenario -ceq 'outcome-empty') { [IO.File]::WriteAllBytes($outcomePath,[byte[]]@()) }
+                    if ($scenario -ceq 'outcome-replaced') {
+                        $time = [IO.File]::GetCreationTimeUtc($outcomePath)
+                        [IO.File]::Move($outcomePath,(Join-Path $case 'retained-original-outcome'))
+                        [IO.File]::WriteAllBytes($outcomePath,$recordBytes); [IO.File]::SetCreationTimeUtc($outcomePath,$time)
+                    }
+                    if ($scenario -ceq 'outcome-metadata') { [LegacyMetadataThreatFixture]::SetCreation($outcomePath,([IO.File]::GetCreationTimeUtc($outcomePath)).AddMinutes(1)) }
+                    Check-OwnedLegacy ($original.VerifyAcceptedOutcome($physical) -eq ($scenario -ceq 'outcome-complete')) 'tampered partial same-byte replacement and metadata change cannot validate persisted outcome'
+                }
+                Check-OwnedLegacy ($null -eq (Restore-ProGoInstallerLegacyReferenceEvidence $journal $install $programs $startup)) 'persisted observation alone is not restart restore or replay authority'
+            }
             if ($metadataTouched) { [LegacyMetadataThreatFixture]::SetCreation($metadataTarget,$metadataCreation); $metadataTouched = $false; $metadataTarget = $null }
             $original.Dispose(); $original = $null; $physical.Dispose(); $physical = $null
             if ($scenario -ceq 'cancel-during-check') {
@@ -134,7 +180,7 @@ try {
                 Check-OwnedLegacy ($null -eq (Restore-ProGoInstallerLegacyReferenceEvidence $journal $install $programs $startup)) 'path-only rehydration remains blocked after unrecorded disposition'
             }
         }
-        if ($scenario -ceq 'complete') {
+        if ($scenario -in @('complete','outcome-complete')) {
             $info = New-Object Diagnostics.ProcessStartInfo
             $info.FileName = Join-Path $PSHOME 'powershell.exe'; $info.Arguments = '-NoProfile -NonInteractive -File "' + $PSCommandPath + '" -BlockedChild -CaseDirectory "' + $case + '"'
             $info.UseShellExecute = $false; $info.CreateNoWindow = $true; $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
@@ -151,7 +197,7 @@ try {
         Remove-ProGoInstallerStage $stage; $stage = $null
         Write-Host ('PASS: installer Legacy owned operation ' + $scenario)
     }
-    Write-Host ('Legacy owned operation tests PASS: ' + $cases.Count + '; fresh-process refusal=1; durable outcome/restore/power-loss NOT_RUN')
+    Write-Host ('Legacy owned operation tests PASS: ' + $cases.Count + '; fresh-process refusal=2; accepted receipt cases=14; physical unlink/restore/power-loss NOT_RUN')
 } finally {
     try { if ($metadataTouched -and $null -ne $original) { [LegacyMetadataThreatFixture]::SetCreation($metadataTarget,$metadataCreation) } }
     finally {

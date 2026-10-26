@@ -91,6 +91,127 @@ namespace ProGo
             public LegacyOwnedDeleteResult WithCleanupFailure()
             { return new LegacyOwnedDeleteResult(witness, OperationAccepted ? "accepted-cleanup-conflict-unrecorded" : "cleanup-conflict", OperationAttempted, AcceptanceKnown, OperationAccepted, TargetHandleClosed, false); }
         }
+        // A durable observation of one live accepted disposition, never restore or unlink authority.
+        public sealed class LegacyAcceptedOutcome
+        {
+            public LegacyOwnedDeleteResult AcceptedResult { get; private set; }
+            public bool DurableOutcomeRecorded { get; private set; }
+            public bool PhysicalUnlinkVerified { get { return false; } }
+            public bool WholeRollbackVerified { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            public string Origin { get; private set; }
+            public string Hash { get; private set; }
+            internal LegacyAcceptedOutcome(LegacyOwnedDeleteResult accepted, bool recorded, string origin, string hash)
+            { AcceptedResult = accepted; DurableOutcomeRecorded = recorded; Origin = origin; Hash = hash; }
+        }
+        private string LegacyAcceptedPath(Guid operation)
+        { return Path.Combine(root, "backups", "installer-legacy-accepted-" + operation.ToString("N") + ".bin"); }
+        private byte[] LegacyAcceptedDocument(LegacyDeletionPins lease, string origin)
+        {
+            var proof = lease.reference.Source;
+            var text = new StringBuilder("PROGO-LEGACY-ACCEPTED-1\n");
+            // Full context and actual native origins/hashes, not caller-supplied serialized authority.
+            foreach (string value in new[] { proof.Operation.ToString("N"), proof.SnapshotHash, proof.InstallIdentity,
+                proof.LocationIdentity, proof.OriginIdentity, proof.Hash, proof.StorageOrigin, proof.DocumentHash,
+                lease.reference.Origin, lease.reference.Hash, lease.replacementOrigin, lease.replacementHash, origin, "accepted-disposition", "unlink-not-proven", "rollback-not-proven" })
+                text.Append(value).Append('\n');
+            foreach (var stream in lease.evidence) {
+                stream.Position = 0;
+                text.Append(LegacyOrigin(stream.SafeFileHandle)).Append('\n').Append(PhysicalPinHash(stream)).Append('\n');
+            }
+            return Encoding.ASCII.GetBytes(text.ToString());
+        }
+        private static bool VerifyLegacyAcceptedReplacement(LegacyDeletionPins lease, FileStream replacement)
+        {
+            replacement.Position = 0;
+            return lease.replacementOrigin == LegacyOrigin(replacement.SafeFileHandle) &&
+                lease.replacementHash == Digest(ReadLegacyEvidenceBytes(replacement));
+        }
+        private bool VerifyLegacyAcceptedContext(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        {
+            if (lease.resources == null || lease.lastResult == null || !lease.lastResult.OperationAccepted ||
+                !lease.lastResult.AcceptanceKnown || !lease.lastResult.TargetHandleClosed || !lease.lastResult.ContextObservedAfterOperation ||
+                physical == null || !physical.MatchesOwner(this) || !physical.VerifyPinned(CancellationToken.None)) return false;
+            // A present/reappeared name is a conflict veto, never an object to adopt or overwrite.
+            string originalPath = Path.Combine(menu, "ProGo Status.lnk"); CheckLocation(originalPath);
+            // Unlike File.Exists, GetAttributes does not turn access/other probe errors into absence.
+            try { File.GetAttributes(originalPath); return false; }
+            catch (FileNotFoundException) { }
+            // Extract original bytes from the still-pinned bounded source; canonical reconstruction below
+            // validates every header byte, native origin, hash and full reference/seal/admission graph.
+            lease.evidence[0].Position = 0;
+            byte[] source = ReadLegacySourceDocument(lease.evidence[0]); int offset = 0, lines = 0;
+            while (offset < source.Length && lines < 9) { if (source[offset++] == 10) lines++; }
+            if (lines != 9 || offset == source.Length) return false;
+            byte[] original = new byte[source.Length - offset]; Buffer.BlockCopy(source, offset, original, 0, original.Length);
+            try { return VerifyLegacyOperationEvidence(lease, original) && VerifyLegacyOperationPlan(lease, physical); }
+            finally { Array.Clear(original, 0, original.Length); Array.Clear(source, 0, source.Length); }
+        }
+        private static FileStream OpenLegacyAcceptedPublicationRead(string path)
+        {
+            // Symmetric Windows sharing: this reader must permit our still-open writer's access.
+            // The writer itself shares READ only, preventing other write/delete opens. No following.
+            var handle = OpenLegacyForDisposition(path, 0x80000000u, 3, IntPtr.Zero, 3, 0x00200000u, IntPtr.Zero);
+            try {
+                if (handle.IsInvalid) throw new IOException("Legacy accepted publication is unavailable.");
+                LegacyOrigin(handle);
+                return new FileStream(handle, FileAccess.Read);
+            } catch { handle.Dispose(); throw; }
+        }
+        private LegacyAcceptedOutcome RecordLegacyAcceptedOutcome(LegacyDeletionPins lease, LegacyPhysicalPins physical, CancellationToken token)
+        {
+            lock (lease.gate) {
+                if (lease.acceptedOutcome != null) return lease.acceptedOutcome;
+                var failure = new LegacyAcceptedOutcome(lease.lastResult, false, null, null);
+                // Cancellation after acceptance never erases the real result or claims a no-op.
+                lease.acceptedOutcome = failure;
+                try {
+                    var result = physical == null ? null : physical.WithPins<LegacyAcceptedOutcome>(() => {
+                        if (token.IsCancellationRequested || !VerifyLegacyAcceptedContext(lease, physical)) return failure;
+                        string path = LegacyAcceptedPath(lease.reference.Source.Operation); CheckLocation(path);
+                        using (var replacement = OpenLegacyRestartRead(Path.Combine(menu, "ProGo.lnk"))) {
+                            if (!VerifyLegacyAcceptedReplacement(lease, replacement)) return failure;
+                            using (var rootPin = PinLegacySourceDirectory(root))
+                            using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups")))
+                            using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                                string origin = LegacyOrigin(stream.SafeFileHandle);
+                                byte[] expected = LegacyAcceptedDocument(lease, origin);
+                                stream.Write(expected, 0, expected.Length); stream.Flush(true); stream.Position = 0;
+                                if (origin != LegacyOrigin(stream.SafeFileHandle) || !Equal(expected, ReadLegacyReferenceBytes(stream))) return failure;
+                                using (var current = OpenLegacyAcceptedPublicationRead(path)) {
+                                    if (origin != LegacyOrigin(current.SafeFileHandle) || !Equal(expected, ReadLegacyReferenceBytes(current)) ||
+                                        token.IsCancellationRequested || !VerifyLegacyAcceptedReplacement(lease, replacement) || !VerifyLegacyAcceptedContext(lease, physical) ||
+                                        !Equal(expected, LegacyAcceptedDocument(lease, origin))) return failure;
+                                }
+                                return new LegacyAcceptedOutcome(lease.lastResult, true, origin, Digest(expected));
+                            }
+                        }
+                    });
+                    lease.acceptedOutcome = result ?? failure;
+                } catch { /* Keep any partial/ambiguous artifact; no overwrite, delete, success or replay. */ }
+                return lease.acceptedOutcome;
+            }
+        }
+        private bool VerifyLegacyAcceptedOutcome(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        {
+            lock (lease.gate) {
+                try {
+                    var receipt = lease.acceptedOutcome;
+                    if (receipt == null || !receipt.DurableOutcomeRecorded || physical == null) return false;
+                    var observed = physical.WithPins<LegacyAcceptedOutcome>(() => {
+                        if (!VerifyLegacyAcceptedContext(lease, physical)) return null;
+                        using (var replacement = OpenLegacyRestartRead(Path.Combine(menu, "ProGo.lnk")))
+                        using (var stream = OpenLegacyRestartRead(LegacyAcceptedPath(lease.reference.Source.Operation))) {
+                            byte[] expected = LegacyAcceptedDocument(lease, receipt.Origin);
+                            return receipt.Origin == LegacyOrigin(stream.SafeFileHandle) && receipt.Hash == Digest(expected) &&
+                                Equal(expected, ReadLegacyReferenceBytes(stream)) && VerifyLegacyAcceptedReplacement(lease, replacement) &&
+                                VerifyLegacyAcceptedContext(lease, physical) ? receipt : null;
+                        }
+                    });
+                    return observed != null;
+                } catch { return false; }
+            }
+        }
         private static System.Collections.Generic.IDictionary<string, object> LegacyJson(byte[] bytes, params string[] keys)
         {
             if (bytes == null || bytes.Length < 1 || bytes.Length > 1048576) throw new IOException("Legacy document is invalid.");
@@ -242,6 +363,7 @@ namespace ProGo
                                 return new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
                             if (!VerifyLegacyOperationEvidence(lease, bytes)) return new LegacyOwnedDeleteResult(lease.reference, "blocked", false, true, false, false, false);
                             token.ThrowIfCancellationRequested();
+                            lease.replacementOrigin = replacementOrigin; lease.replacementHash = Digest(replacementBytes);
                             var disposition = new LegacyDisposition { DeleteFile = 1 };
                             attempted = true; known = false;
                             accepted = SetFileInformationByHandle(lease.target.SafeFileHandle, 4, ref disposition, 1); known = true;
@@ -883,6 +1005,8 @@ namespace ProGo
             internal readonly System.Collections.Generic.List<FileStream> evidence = new System.Collections.Generic.List<FileStream>();
             internal bool consumed;
             internal LegacyOwnedDeleteResult lastResult;
+            internal LegacyAcceptedOutcome acceptedOutcome;
+            internal string replacementOrigin, replacementHash;
             internal LegacyDeletionPins(ApplicationShortcuts manager, System.Collections.Generic.List<IDisposable> held, FileStream original, LegacyJournalReferenceEvidence witness)
             {
                 resources = held; owner = manager; target = original; targetHandle = original.SafeFileHandle; reference = witness;
@@ -895,6 +1019,10 @@ namespace ProGo
             { return owner.ExecuteLegacyOwnedDeletion(this, physical, () => true, token); }
             public LegacyOwnedDeleteResult DeleteOwnedOnce(LegacyPhysicalPins physical, Func<bool> observeContext, CancellationToken token)
             { return owner.ExecuteLegacyOwnedDeletion(this, physical, observeContext, token); }
+            public LegacyAcceptedOutcome RecordAcceptedOutcome(LegacyPhysicalPins physical, CancellationToken token)
+            { return owner.RecordLegacyAcceptedOutcome(this, physical, token); }
+            public bool VerifyAcceptedOutcome(LegacyPhysicalPins physical)
+            { return owner.VerifyLegacyAcceptedOutcome(this, physical); }
             public bool IsPinned { get { lock (gate) { return resources != null && !targetHandle.IsClosed; } } }
             public bool MutationAllowed { get { return false; } }
             public bool FullRollback { get { return false; } }
