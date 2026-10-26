@@ -27,13 +27,16 @@ class LiveRuntimeLeafContract(unittest.TestCase):
         for token in steps:
             cursor=body.index(token,cursor)+len(token)
         self.assertNotIn('File.Copy(',body); self.assertNotIn('File.Delete(',body)
-        self.assertIn('"ProGo.exe"',body); self.assertIn('!(bool)selected["Exists"]',body)
+        self.assertIn('Array.IndexOf(LegacyOperationLeaves, leaf)',body); self.assertIn('!(bool)entry["Exists"]',body)
+        self.assertIn('selected.Count == 0',body); self.assertIn('result.CompletedCount == result.SelectedCount',body)
     def test_live_expected_state_is_narrow_and_old_api_strict(self):
         body=self.native.split('internal bool VerifyPinnedForRuntime(',1)[1].split('public bool MutationAllowed',1)[0]
         for token in ('Object.ReferenceEquals(runtimeContext, context)','context.disposed',
                       'context.runtimeLeafResult.HandleReopened','context.runtimeLeafResult.MutationStarted',
                       'context.runtimeLeafResult.ReadbackVerified','LegacyOrigin(files[i].SafeFileHandle)',
-                      'i == runtimeIndex && !beforeMutation ? runtimeOldHash : hashes[i]'):
+                      'runtimeTransitions.TryGetValue(i, out transition)',
+                      'if (transition.Completed) expected = transition.OldHash',
+                      'i != runtimeActiveIndex', 'runtimeTransitions.ContainsKey(index)', 'CompleteRuntimeLeaf'):
             self.assertIn(token,body)
         self.assertIn('public bool VerifyPinned(CancellationToken token)',self.native)
         self.assertIn('hashes[i] != PhysicalPinHash(files[i])',self.native)
@@ -41,12 +44,12 @@ class LiveRuntimeLeafContract(unittest.TestCase):
         for token in ('if (context.runtimeLeafResult != null)',
                       'context.ObserveRuntimeCancellation(token); return context.runtimeLeafResult',
                       'result.PinReleaseAttempted = true', 'result.CancellationObserved = token.IsCancellationRequested',
-                      'if (result.CancellationObserved) result.LeafVerified = false',
-                      '!runtimeLeafResult.CancellationObserved && runtimeLeafResult.LeafVerified'):
+                      'if (result.CancellationObserved) { result.LeafVerified = false; result.SetVerified = false; }',
+                      '!runtimeLeafResult.CancellationObserved && runtimeLeafResult.SetVerified'):
             self.assertIn(token,self.native)
     def test_fixture_callback_requires_actual_replacement_and_reports_setup_errors(self):
         f=self.fixture
-        for token in ('$localScenario=[string]$scenario','$localTarget=[string]$target',
+        for token in ('$localScenario=[string]$scenario','$localTarget=if($scenario -in',
                       '$localGetOrigin=(Get-Command Get-RuntimeFixtureOrigin).ScriptBlock',
                       '$observed.CallbackEntered++','$observed.CallbackCompleted++',
                       '$observed.EqualBytes=','$observed.EqualCreation=','$observed.DifferentIdentity=',
@@ -60,10 +63,11 @@ class LiveRuntimeLeafContract(unittest.TestCase):
     def test_windows_fixture_real_context_and_negative_cases(self):
         f=self.fixture
         cases=re.findall(r"'([^']+)'",f.split('foreach($scenario in @(',1)[1].split(')',1)[0])
-        self.assertEqual(len(cases),19); self.assertEqual(len(set(cases)),19)
+        self.assertEqual(len(cases),35); self.assertEqual(len(set(cases)),35)
         for case in ('complete','equal-byte-replaced','target-changed','reparse','snapshot-changed',
                      'snapshot-changed-after-release','snapshot-write-denied','write','short-write','flush','readback','readback-mismatch',
-                     'cancel-before','cancel-after-release','cancel-written','cancel-readback','disposed','late-success'):
+                     'cancel-before','cancel-after-release','cancel-written','cancel-readback','disposed','late-success',
+                     'multi-complete','multi-second-write','multi-second-cancel-written','multi-last-write','multi-last-cancel-written','multi-between-cancel','multi-equal-second','multi-snapshot-second','multi-target-second','multi-reparse-second','multi-disposed','multi-late-success','multi-inventory-missing','multi-inventory-duplicate','multi-inventory-unknown','multi-installed-handling'):
             self.assertIn(case,cases)
         for token in ('Invoke-ProGoInstallerFailureAuxiliary','Invoke-ProGoInstallerSuccess','InvokeChecked($method,$manager',
                       'RestoreSingleRuntimeLeaf','same process actual handle restore','fresh process cannot use stored auxiliary receipt',

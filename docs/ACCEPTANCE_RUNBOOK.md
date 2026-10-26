@@ -1,3 +1,28 @@
+## CURRENT CI737 completed SUCCESS; multi-leaf checkpoint remains unfinished
+
+CI737 run 40408525572, attempt 1, source `115f49f4ad51264c3d7063b9300af482fc4e73ac`,
+tested merge `f22d022b5240d48cf695c82253f462a5863e8abc`: SUCCESS, as recorded with full-log
+evidence in PROJECT_STATE. The following in-progress entry is historical. Local checkpoint
+`a22540ed0198eee01091c66c778bd9beaf07a511` is unfinished: single-leaf admission remains;
+its Windows compilation and native tests are NOT_RUN. Default activation remains OFF.
+
+## CURRENT sole automatic CI737 in_progress; callback/native identity proof pending
+
+Published source `115f49f4ad51264c3d7063b9300af482fc4e73ac`; tree `3bc8d3336b0c5413b28aaea15ccedd8c09e21359` equals reviewed local code
+`f3f9f51f8b91587a3e171d628314468584bdeaab`; canonical join `6a1120d29132b3d72de16cbfb5a1f4fe7b1ef7d2` preserves prior docs/checkpoints.
+Candidate merge `f22d022b5240d48cf695c82253f462a5863e8abc` NOT yet tested. One guarded expected-head non-force update from exact CI736
+source; one automatic [CI737](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40408525572), pull_request/
+attempt1/source-filtered count1, observed in_progress/conclusion null. No rerun/dispatch/duplicate/fullwait.
+Runtime fixture now locally captures callback inputs, requires exactly one entered/completed injection and
+proves equal bytes/creation plus distinct native identities while original remains retained; unexecuted injection
+is SETUP ERROR. Production code/guards unchanged. Actual root cause of CI736 equal-byte failure remains UNKNOWN.
+Complete existing NormalSuccess40 host moved unchanged to separate required Success partition with independent
+fixture-type bootstrap; all33 prior suites stay exactly once and strict aggregate requires seven same-SHA jobs.
+CI736 Live cancellation cause also UNKNOWN, not a proven timeout. Local104/review/static/parity/secrets/public436
+source0release PASS; Windows compiler/native callback/runtime19/Success40/refusal2/full strict7 NOT_RUN locally.
+This docs-only checkpoint is local. Default OFF; whole/runtime rollback, remaining leaves/newinstall, restart,
+power-loss and PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30/classifier26/deadlines retained.
+
 ## CURRENT CI736 FAILURE; callback evidence and independent Success partition
 
 Admission clean local checkpoint b28fa15251cd8d4170c0b27338070148517cb3c9; remote source

@@ -376,7 +376,7 @@ namespace ProGo
             public AuxiliaryOutcomeResult AuxiliaryPublication { get { lock (gate) { return auxiliaryResult; } } }
             public bool VerifyAuxiliaryOutcome()
             { lock (gate) { return owner.VerifyLiveAuxiliaryOutcome(this); } }
-            // One existing snapshot-backed leaf only. This is not whole-runtime rollback or restart authority.
+            // Existing snapshot-backed leaves only. This is not whole-runtime rollback or restart authority.
             public RuntimeLeafResult RuntimeLeafProgress { get { lock (gate) { return runtimeLeafResult; } } }
             public void ObserveRuntimeCancellation(CancellationToken token)
             { lock (gate) { if (token.IsCancellationRequested && runtimeLeafResult != null) {
@@ -386,7 +386,7 @@ namespace ProGo
             { return owner.RestoreLiveRuntimeLeaf(this, token, null, null, null); }
             public bool RuntimeFailureBranchAllowed { get { lock (gate) { return !disposed && !installedHandling && !installedPublication; } } }
             public bool VerifyRuntimeLeafOutcome()
-            { lock (gate) { return runtimeLeafResult != null && !runtimeLeafResult.CancellationObserved && runtimeLeafResult.LeafVerified && runtimeLeafResult.ReadbackVerified &&
+            { lock (gate) { return runtimeLeafResult != null && !runtimeLeafResult.CancellationObserved && runtimeLeafResult.SetVerified && runtimeLeafResult.LeafVerified && runtimeLeafResult.ReadbackVerified &&
                 owner.VerifyLiveAuxiliaryOutcome(this) && physical.VerifyPinnedForRuntime(CancellationToken.None, this); } }
 
             public bool VerifyAcceptedInstallState()
@@ -473,6 +473,10 @@ namespace ProGo
         }
         public sealed class RuntimeLeafResult
         {
+            public int SelectedCount { get; internal set; }
+            public int MissingSnapshotCount { get; internal set; }
+            public int CompletedCount { get; internal set; }
+            public bool SetVerified { get; internal set; }
             public bool Attempted { get; internal set; }
             public bool PinReleaseAttempted { get; internal set; }
             public bool PinReleased { get; internal set; }
@@ -487,7 +491,7 @@ namespace ProGo
             public bool WholeRollbackVerified { get { return false; } }
             public bool RestartAuthority { get { return false; } }
         }
-        // Scoped to the same live auxiliary session and a single snapshot-backed ProGo.exe leaf.
+        // Scoped to the verified fixed inventory and the same live auxiliary session.
         private RuntimeLeafResult RestoreLiveRuntimeLeaf(LegacyStartupContext context, CancellationToken token,
             string fault, CancellationTokenSource syntheticCancellation, Action afterRelease)
         {
@@ -501,7 +505,11 @@ namespace ProGo
                         context.installedPublication || !context.VerifyAuxiliaryOutcome()) {
                         result.CancellationObserved = token.IsCancellationRequested; return result;
                     }
-                    if (fault != null && Array.IndexOf(new[] { "none", "write", "short-write", "flush", "readback", "readback-mismatch", "cancel-written", "cancel-readback" }, fault) < 0) {
+                    bool cancelBetween = fault == "between-cancel";
+                    string faultName = cancelBetween ? "none" : fault; int faultOrdinal = 0;
+                    if (faultName != null && faultName.StartsWith("second-", StringComparison.Ordinal)) { faultOrdinal = 2; faultName = faultName.Substring(7); }
+                    else if (faultName != null && faultName.StartsWith("last-", StringComparison.Ordinal)) { faultOrdinal = -1; faultName = faultName.Substring(5); }
+                    if (faultName != null && Array.IndexOf(new[] { "none", "write", "short-write", "flush", "readback", "readback-mismatch", "cancel-written", "cancel-readback" }, faultName) < 0) {
                         result.CancellationObserved = token.IsCancellationRequested; return result;
                     }
                     lock (context.lease.gate) { context.physical.WithPins<LegacyStartupContext>(() => {
@@ -513,19 +521,34 @@ namespace ProGo
                         if (snapshot == null || !System.Text.RegularExpressions.Regex.IsMatch(snapshot, "^installer-[a-f0-9]{32}$")) return null;
                         var inventory = LegacyJson(Encoding.UTF8.GetBytes((string)plan["Inventory"]), "Schema", "SnapshotHash", "Files");
                         var entries = inventory["Files"] as System.Collections.IList; if (entries == null) return null;
-                        System.Collections.Generic.IDictionary<string, object> selected = null;
+                        if (entries.Count != LegacyOperationLeaves.Length || !context.physical.VerifyPinned(CancellationToken.None) || !context.VerifyAuxiliaryOutcome()) return null;
+                        var selected = new System.Collections.Generic.List<System.Collections.Generic.IDictionary<string, object>>();
+                        var seen = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
                         foreach (var item in entries) {
                             var entry = LegacyJsonObject(item, "Relative", "Exists", "Hash", "NewHash");
-                            if (Object.Equals(entry["Relative"], "ProGo.exe")) { if (selected != null) return null; selected = entry; }
+                            string leaf = entry["Relative"] as string, old = entry["Hash"] as string, updated = entry["NewHash"] as string;
+                            if (leaf == null || Array.IndexOf(LegacyOperationLeaves, leaf) < 0 || !seen.Add(leaf) ||
+                                !(entry["Exists"] is bool) || !LegacySourceHash(updated)) return null;
+                            if (!(bool)entry["Exists"]) { if (entry["Hash"] != null) return null; result.MissingSnapshotCount++; continue; }
+                            if (!LegacySourceHash(old)) return null;
+                            int targetPin = context.physical.IndexOfPath(Path.Combine(root, leaf));
+                            int snapshotPin = context.physical.IndexOfPath(Path.Combine(root, "backups", snapshot, leaf));
+                            if (targetPin < 0 || snapshotPin < 0 || targetPin == snapshotPin ||
+                                context.physical.RuntimeHash(targetPin) != updated || context.physical.RuntimeHash(snapshotPin) != old) return null;
+                            selected.Add(entry);
                         }
-                        if (selected == null || !(selected["Exists"] is bool) || !(bool)selected["Exists"]) return null;
-                        string oldHash = selected["Hash"] as string, newHash = selected["NewHash"] as string;
-                        if (!LegacySourceHash(oldHash) || !LegacySourceHash(newHash)) return null;
-                        string target = Path.Combine(root, "ProGo.exe"), source = Path.Combine(root, "backups", snapshot, "ProGo.exe");
+                        if (selected.Count == 0) return null;
+                        result.SelectedCount = selected.Count;
+                        int ordinal = 0;
+                        foreach (var entry in selected) {
+                        ordinal++;
+                        string currentFault = faultOrdinal == 0 || faultOrdinal == ordinal || (faultOrdinal == -1 && ordinal == selected.Count) ? faultName : null;
+                        string leaf = (string)entry["Relative"], oldHash = (string)entry["Hash"], newHash = (string)entry["NewHash"];
+                        string target = Path.Combine(root, leaf), source = Path.Combine(root, "backups", snapshot, leaf);
                         int targetIndex = context.physical.IndexOfPath(target), sourceIndex = context.physical.IndexOfPath(source);
-                        if (targetIndex < 0 || sourceIndex < 0 || targetIndex == sourceIndex ||
-                            context.physical.RuntimeHash(targetIndex) != newHash || context.physical.RuntimeHash(sourceIndex) != oldHash ||
-                            !context.physical.VerifyPinned(CancellationToken.None) || !context.VerifyAuxiliaryOutcome()) return null;
+                        result.Attempted = result.PinReleaseAttempted = result.PinReleased = result.HandleReopened = false;
+                        result.MutationStarted = result.Flushed = result.ReadbackVerified = result.AuxiliaryVerified = result.LeafVerified = false;
+                        result.BytesWritten = 0;
                         string origin = context.physical.RuntimeOrigin(targetIndex); FileStream saved = context.physical.RuntimeFile(sourceIndex);
                         token.ThrowIfCancellationRequested(); result.Attempted = true;
                         result.PinReleaseAttempted = true;
@@ -546,28 +569,37 @@ namespace ProGo
                         if (!context.VerifyAuxiliaryOutcome()) return null;
                         token.ThrowIfCancellationRequested(); result.MutationStarted = true; output.SetLength(0); output.Position = 0; saved.Position = 0;
                         try {
-                            if (fault == "write") throw new IOException("Synthetic runtime write fault.");
-                            if (fault == "short-write") {
+                            if (currentFault == "write") throw new IOException("Synthetic runtime write fault.");
+                            if (currentFault == "short-write") {
                                 byte[] buffer = new byte[1]; int count = saved.Read(buffer, 0, buffer.Length); if (count > 0) output.Write(buffer, 0, count);
                             } else saved.CopyTo(output);
                         } finally { result.BytesWritten = output.Length; }
-                        if (fault == "cancel-written") syntheticCancellation.Cancel(); token.ThrowIfCancellationRequested();
+                        if (currentFault == "cancel-written") syntheticCancellation.Cancel(); token.ThrowIfCancellationRequested();
                         if (result.BytesWritten != saved.Length) throw new IOException("Runtime copy is incomplete.");
-                        if (fault == "flush") throw new IOException("Synthetic runtime flush fault.");
+                        if (currentFault == "flush") throw new IOException("Synthetic runtime flush fault.");
                         output.Flush(true); result.Flushed = true; token.ThrowIfCancellationRequested();
-                        if (fault == "readback") throw new IOException("Synthetic runtime readback fault.");
-                        if (fault == "readback-mismatch") { output.Position = 0; output.WriteByte(0); output.Flush(true); }
+                        if (currentFault == "readback") throw new IOException("Synthetic runtime readback fault.");
+                        if (currentFault == "readback-mismatch") { output.Position = 0; output.WriteByte(0); output.Flush(true); }
                         if (origin != LegacyOrigin(output.SafeFileHandle) || PhysicalPinHash(output) != oldHash || PhysicalPinHash(saved) != oldHash) return null;
                         result.ReadbackVerified = true;
-                        if (fault == "cancel-readback") syntheticCancellation.Cancel(); token.ThrowIfCancellationRequested();
+                        if (currentFault == "cancel-readback") syntheticCancellation.Cancel(); token.ThrowIfCancellationRequested();
                         result.AuxiliaryVerified = context.VerifyAuxiliaryOutcome();
                         token.ThrowIfCancellationRequested();
                         result.LeafVerified = result.AuxiliaryVerified && context.physical.VerifyPinnedForRuntime(CancellationToken.None, context);
+                        if (!result.LeafVerified || !context.physical.CompleteRuntimeLeaf(context, targetIndex)) { result.LeafVerified = false; return null; }
+                        result.CompletedCount++;
+                        if (cancelBetween && ordinal == 1) { syntheticCancellation.Cancel(); token.ThrowIfCancellationRequested(); }
+                        }
+                        token.ThrowIfCancellationRequested();
+                        result.AuxiliaryVerified = context.VerifyAuxiliaryOutcome();
+                        result.LeafVerified = result.AuxiliaryVerified && context.physical.VerifyPinnedForRuntime(CancellationToken.None, context);
+                        token.ThrowIfCancellationRequested();
+                        result.SetVerified = result.LeafVerified && result.CompletedCount == result.SelectedCount;
                         return context;
                     }); }
                 } catch { /* Progress and all surviving witnesses retained; never retry or cleanup. */ }
                 result.CancellationObserved = token.IsCancellationRequested;
-                if (result.CancellationObserved) result.LeafVerified = false;
+                if (result.CancellationObserved) { result.LeafVerified = false; result.SetVerified = false; }
                 return result;
             }
         }
@@ -2046,8 +2078,12 @@ namespace ProGo
             private readonly System.Collections.Generic.List<string> paths;
             private readonly System.Collections.Generic.List<string> origins, hashes;
             private LegacyStartupContext runtimeContext;
-            private int runtimeIndex = -1;
-            private string runtimeOldHash;
+            // Each admitted transition retains its own expected old hash. The current
+            // single-leaf caller still admits only one until orchestration is extended.
+            private sealed class RuntimeTransition { internal string OldHash; internal bool Completed; }
+            private readonly System.Collections.Generic.Dictionary<int, RuntimeTransition> runtimeTransitions =
+                new System.Collections.Generic.Dictionary<int, RuntimeTransition>();
+            private int runtimeActiveIndex = -1;
 
             internal LegacyPhysicalPins(ApplicationShortcuts manager, System.Collections.Generic.List<string> pinnedPaths, System.Collections.Generic.List<IDisposable> resources,
                 System.Collections.Generic.List<FileStream> streams, System.Collections.Generic.List<string> native,
@@ -2072,16 +2108,27 @@ namespace ProGo
                 lock (gate) {
                     token.ThrowIfCancellationRequested();
                     if (held == null || context == null) return false;
-                    if (runtimeIndex < 0) return VerifyPinned(token);
-                    if (!Object.ReferenceEquals(runtimeContext, context) || context.disposed || context.runtimeLeafResult == null ||
-                        !context.runtimeLeafResult.HandleReopened || runtimeOldHash == null) return false;
-                    bool beforeMutation = !context.runtimeLeafResult.MutationStarted;
-                    if (!beforeMutation && !context.runtimeLeafResult.ReadbackVerified) return false;
+                    if (runtimeTransitions.Count == 0) return VerifyPinned(token);
+                    if (!Object.ReferenceEquals(runtimeContext, context) || context.disposed || context.runtimeLeafResult == null) return false;
                     try {
                         for (int i = 0; i < files.Count; i++) {
                             token.ThrowIfCancellationRequested();
+                            RuntimeTransition transition;
+                            bool transitioned = runtimeTransitions.TryGetValue(i, out transition);
+                            string expected = hashes[i];
+                            if (transitioned) {
+                                if (transition == null || transition.OldHash == null) return false;
+                                if (transition.Completed) expected = transition.OldHash;
+                                else {
+                                    if (i != runtimeActiveIndex || !context.runtimeLeafResult.HandleReopened) return false;
+                                    if (context.runtimeLeafResult.MutationStarted) {
+                                        if (!context.runtimeLeafResult.ReadbackVerified) return false;
+                                        expected = transition.OldHash;
+                                    }
+                                }
+                            }
                             if (files[i] == null || origins[i] != LegacyOrigin(files[i].SafeFileHandle) ||
-                                PhysicalPinHash(files[i]) != (i == runtimeIndex && !beforeMutation ? runtimeOldHash : hashes[i])) return false;
+                                PhysicalPinHash(files[i]) != expected) return false;
                         }
                         token.ThrowIfCancellationRequested(); return true;
                     } catch (OperationCanceledException) { throw; } catch { return false; }
@@ -2094,12 +2141,22 @@ namespace ProGo
             internal string RuntimeHash(int index) { return hashes[index]; }
             internal bool BeginRuntimeLeaf(LegacyStartupContext context, int index, string oldHash)
             {
-                if (held == null || runtimeIndex >= 0 || index < 0 || files[index] == null) return false;
-                runtimeIndex = index; runtimeContext = context; runtimeOldHash = oldHash;
+                if (held == null || (runtimeContext != null && !Object.ReferenceEquals(runtimeContext, context)) ||
+                    runtimeActiveIndex >= 0 || runtimeTransitions.ContainsKey(index) || index < 0 || index >= files.Count ||
+                    files[index] == null || oldHash == null) return false;
+                runtimeTransitions.Add(index, new RuntimeTransition { OldHash = oldHash }); runtimeActiveIndex = index; runtimeContext = context;
                 var old = files[index]; files[index] = null; old.Dispose(); held.Remove(old); return true;
             }
+            internal bool CompleteRuntimeLeaf(LegacyStartupContext context, int index)
+            {
+                RuntimeTransition transition;
+                if (!Object.ReferenceEquals(runtimeContext, context) || runtimeActiveIndex != index ||
+                    !runtimeTransitions.TryGetValue(index, out transition) || transition.Completed ||
+                    !context.runtimeLeafResult.ReadbackVerified || !context.runtimeLeafResult.LeafVerified) return false;
+                transition.Completed = true; runtimeActiveIndex = -1; return true;
+            }
             internal void RetainRuntimeLeaf(FileStream stream)
-            { held.Add(stream); files[runtimeIndex] = stream; }
+            { held.Add(stream); files[runtimeActiveIndex] = stream; }
             public bool MutationAllowed { get { return false; } }
             public bool FullRollback { get { return false; } }
             public bool InstallSucceeded { get { return false; } }

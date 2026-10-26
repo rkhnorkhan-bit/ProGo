@@ -1,3 +1,53 @@
+## CURRENT local multi-leaf candidate; Windows evidence pending
+
+The optional consumed live failure branch now derives all existing snapshot-backed leaves from the
+fixed verified inventory. It retains every other witness, releases one target read pin at a time,
+reopens the exact native target, checks identity/current bytes and pinned snapshot bytes, restores,
+flushes and reads back on that handle, and records only exact completed per-index transitions.
+It finally revalidates the selected set and auxiliary evidence. Missing snapshot leaves are counted
+and remain outside the scoped result; whole rollback, new install, restart and power loss remain OPEN.
+Partial/cancelled results remain consumed. installedHandling still blocks the branch before publication.
+Runtime fixture now includes three-file different-size success, second/last faults and cancellation,
+between-leaf cancellation, equal-byte distinct-identity replacement, target/reparse/snapshot conflict,
+missing/duplicate/unknown inventory refusal at admission, repeat, disposal, fresh child and late success.
+Fixture assertions are present but Windows compilation and all new native cases are NOT_RUN locally.
+Prior CI737 is the baseline only. Runtime CI737 took 202 seconds; 16 additional cases expand its work,
+with the existing 40-minute partition deadline unchanged; this estimate is not a Windows timing result.
+Default activation OFF; full rollback/restart/power loss/PC acceptance, F30 and BLOCKED_TRANSFER remain OPEN.
+Repair20s/SSH startup/earlier Live cancellation UNKNOWN. No live install or user files accessed.
+
+## CURRENT CI737 independently verified SUCCESS; multi-leaf upgrade gate in development
+
+CI737 run 40408525572 attempt 1: source `115f49f4ad51264c3d7063b9300af482fc4e73ac`,
+merge `f22d022b5240d48cf695c82253f462a5863e8abc`. Owner independently read all eight full logs.
+Runtime 121872441216: Runtime19, no-snapshot and fresh-process refusals PASS; equal-byte injection
+entered/completed 1/1, same bytes/creation, different native identity, retained original unchanged, refusal
+before mutation. Success 121872441564: NormalSuccess40 and refusal2 PASS. Live prior 22/13/19/24/26/24,
+Foundation26, Recovery6, Ubuntu and Core PASS. Core classifier26, SSH native, Desktop6394, Instance30,
+Maintenance126, Shutdown47, HomeVPN4816, Portable91, Python137 PASS and 2 SKIP. Aggregate 121888988273
+requires all seven partitions and reports exact merge SHA PASS. All old 33 suites execute once.
+Runner-only ZIP 732919 bytes SHA256 `f5f1cf5086142b19a227ab24f8f8485a6d1980e55fff1f8df2f819284884d143`;
+uploads skipped, no PC delivery or acceptance. Repair20s, SSH startup and earlier Live cancellation causes remain
+UNKNOWN. Multi-leaf runtime transition and native tests NOT_RUN; default OFF; no-snapshot/new-install, whole
+rollback, restart, power-loss and PC acceptance remain OPEN. BLOCKED_TRANSFER and full F30 scope retained.
+
+## CURRENT sole automatic CI737 in_progress; callback/native identity proof pending
+
+Published source `115f49f4ad51264c3d7063b9300af482fc4e73ac`; tree `3bc8d3336b0c5413b28aaea15ccedd8c09e21359` equals reviewed local code
+`f3f9f51f8b91587a3e171d628314468584bdeaab`; canonical join `6a1120d29132b3d72de16cbfb5a1f4fe7b1ef7d2` preserves prior docs/checkpoints.
+Candidate merge `f22d022b5240d48cf695c82253f462a5863e8abc` NOT yet tested. One guarded expected-head non-force update from exact CI736
+source; one automatic [CI737](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40408525572), pull_request/
+attempt1/source-filtered count1, observed in_progress/conclusion null. No rerun/dispatch/duplicate/fullwait.
+Runtime fixture now locally captures callback inputs, requires exactly one entered/completed injection and
+proves equal bytes/creation plus distinct native identities while original remains retained; unexecuted injection
+is SETUP ERROR. Production code/guards unchanged. Actual root cause of CI736 equal-byte failure remains UNKNOWN.
+Complete existing NormalSuccess40 host moved unchanged to separate required Success partition with independent
+fixture-type bootstrap; all33 prior suites stay exactly once and strict aggregate requires seven same-SHA jobs.
+CI736 Live cancellation cause also UNKNOWN, not a proven timeout. Local104/review/static/parity/secrets/public436
+source0release PASS; Windows compiler/native callback/runtime19/Success40/refusal2/full strict7 NOT_RUN locally.
+This docs-only checkpoint is local. Default OFF; whole/runtime rollback, remaining leaves/newinstall, restart,
+power-loss and PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30/classifier26/deadlines retained.
+
 ## CURRENT CI736 FAILURE; callback evidence and independent Success partition
 
 Admission clean local checkpoint b28fa15251cd8d4170c0b27338070148517cb3c9; remote source

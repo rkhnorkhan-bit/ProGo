@@ -4020,27 +4020,28 @@
     }
   ],
   "ci_candidate": {
-    "source": "9991163b2e72a9d958f80fbd53807e30e65631a6",
-    "tree": "4bc254af5c6ec2ddd5cdc65d824aaa3204935043",
-    "run_id": 40401949420,
-    "run_number": 736,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40401949420",
+    "source": "115f49f4ad51264c3d7063b9300af482fc4e73ac",
+    "tree": "3bc8d3336b0c5413b28aaea15ccedd8c09e21359",
+    "run_id": 40408525572,
+    "run_number": 737,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40408525572",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
-    "status": "queued",
-    "conclusion": null,
-    "candidate_merge_ref": "417c4df3bfa7c7f3ca6c1c11495e961516cd7562",
-    "tested_merge": null,
+    "status": "completed",
+    "conclusion": "success",
+    "candidate_merge_ref": "f22d022b5240d48cf695c82253f462a5863e8abc",
+    "tested_merge": "f22d022b5240d48cf695c82253f462a5863e8abc",
     "required_partitions": [
       "vpn-server-test",
       "windows-build",
       "installer-tests",
       "installer-live-tests",
       "installer-recovery-tests",
-      "installer-runtime-tests"
+      "installer-runtime-tests",
+      "installer-success-tests"
     ],
-    "new_windows": "runtime19/empty-snapshot/fresh-child/Windows compilation/full strict6 NOT_RUN; inspect this same CI736",
+    "new_windows": "CI737 baseline verified SUCCESS; multi-leaf checkpoint compilation and native runtime tests NOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -24609,6 +24610,15 @@
     "ci": "move complete existing NormalSuccess40 host unchanged to independent mandatory Success partition with type-only bootstrap; strict7 exact SHA/deadline/coverage/failclosed",
     "local": "104PASS legacy78+aggregate26, fixture-only review/static/parity/secrets/public436source0release PASS",
     "windows": "runtime19/callback native identity/success40/refusal2/compiler/full strict7 NOT_RUN locally",
-    "remaining": "both CI736 causes UNKNOWN; default OFF, remaining runtime/newinstall/whole/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/full F30 preserved"
+    "remaining": "both CI736 causes UNKNOWN; default OFF, remaining runtime/newinstall/whole/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/full F30 preserved",
+    "publication": {
+      "source": "115f49f4ad51264c3d7063b9300af482fc4e73ac",
+      "tree": "3bc8d3336b0c5413b28aaea15ccedd8c09e21359",
+      "reviewed_local": "f3f9f51f8b91587a3e171d628314468584bdeaab",
+      "canonical_join": "6a1120d29132b3d72de16cbfb5a1f4fe7b1ef7d2",
+      "run": 40408525572,
+      "status": "completed_success",
+      "default_activation": false
+    }
   }
 }
