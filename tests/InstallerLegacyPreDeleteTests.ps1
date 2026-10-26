@@ -13,6 +13,7 @@ foreach ($function in $ast.FindAll({ param($node)
 },$false)) { . ([scriptblock]::Create($function.Extent.Text)) }
 . (Join-Path $PSScriptRoot 'InstallerLegacyDeletionPinsTests.ps1')
 . (Join-Path $PSScriptRoot 'InstallerLegacyPhysicalPinsTests.ps1')
+. (Join-Path $PSScriptRoot 'InstallerLegacyNamespaceTests.ps1')
 if ($Child) {
     $parent = [IO.Path]::GetDirectoryName($CaseDirectory)
     if ([IO.Path]::GetFileName($CaseDirectory) -cne 'complete' -or [IO.Path]::GetFileName($parent) -cnotmatch '^ProGo-legacy-predelete-[a-f0-9]{32}$' -or
@@ -26,6 +27,8 @@ if ($Child) {
     $physical = Open-ProGoInstallerLegacyPhysicalPins $journals[0].FullName $install (Join-Path $CaseDirectory 'Programs') (Join-Path $CaseDirectory 'Startup')
     try { if ($null -eq $physical -or -not $physical.VerifyPinned([Threading.CancellationToken]::None) -or $physical.MutationAllowed) { throw 'Fresh physical pins are not verified.' } }
     finally { if ($null -ne $physical) { $physical.Dispose() } }
+    if ((Get-ProGoInstallerLegacyBoundaryObservation $journals[0].FullName $install (Join-Path $CaseDirectory 'Programs') (Join-Path $CaseDirectory 'Startup')) -cne 'observed-only') { throw 'Fresh namespace observation is blocked.' }
+    Write-Host 'LEGACY_NAMESPACE_CHILD observedOnly=True; mutationPerformed=False'
     Write-Host 'LEGACY_PHYSICAL_CHILD verified=True; mutationPerformed=False'
     Write-Host 'LEGACY_PINS_CHILD verified=True; mutationPerformed=False'
     Write-Host 'LEGACY_ADMISSION_CHILD state=not-applied; mutationPerformed=False'
@@ -126,6 +129,7 @@ try {
         }
         Test-ProGoLegacyDeletionPinsFixture $scenario $journal $install $readPrograms $startup @($legacy,$sourcePath,$referencePath,$sealPath,$admissionPath)
         Test-ProGoLegacyPhysicalPinsFixture $scenario $journal $install $readPrograms $startup $backup.Directory
+        Test-ProGoLegacyNamespaceFixture $scenario $journal $install $readPrograms $startup $backup.Directory
         $backup = $null; $reference = $null; $admission = $null; $manager = $null; $writes = $null
         $readBefore = @{}; foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $readBefore[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
         Check-PreDelete ((Get-ProGoInstallerLegacyPreDeleteState $journal $install $readPrograms $startup) -ceq $(if ($scenario -eq 'complete') { 'not-applied' } else { 'blocked' })) 'restart classifier refuses intent plus absence or changed evidence without any replay'
@@ -136,7 +140,7 @@ try {
             $process = [Diagnostics.Process]::Start($info); $outTask = $process.StandardOutput.ReadToEndAsync(); $errTask = $process.StandardError.ReadToEndAsync()
             if (-not $process.WaitForExit(20000)) { throw 'Owned admission restart check exceeded bounded twenty-second contract.' }
             Check-PreDelete ([Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($outTask,$errTask),5000) -and $process.ExitCode -eq 0 -and
-                $outTask.Result.Contains('LEGACY_ADMISSION_CHILD state=not-applied; mutationPerformed=False') -and $outTask.Result.Contains('LEGACY_PINS_CHILD verified=True; mutationPerformed=False') -and $outTask.Result.Contains('LEGACY_PHYSICAL_CHILD verified=True; mutationPerformed=False') -and $errTask.Result.Length -eq 0) 'actual fresh process verifies admission without memory witnesses or mutation'
+                $outTask.Result.Contains('LEGACY_ADMISSION_CHILD state=not-applied; mutationPerformed=False') -and $outTask.Result.Contains('LEGACY_PINS_CHILD verified=True; mutationPerformed=False') -and $outTask.Result.Contains('LEGACY_PHYSICAL_CHILD verified=True; mutationPerformed=False') -and $outTask.Result.Contains('LEGACY_NAMESPACE_CHILD observedOnly=True; mutationPerformed=False') -and $errTask.Result.Length -eq 0) 'actual fresh process verifies admission without memory witnesses or mutation'
             $process.Dispose(); $process = $null
         }
         Check-PreDelete (@(Get-ChildItem -LiteralPath $case -Recurse -File).Count -eq $readBefore.Count) 'restart read creates or deletes no object'
@@ -147,6 +151,8 @@ try {
         Remove-ProGoInstallerStage $stage; $stage = $null
         Write-Host ('PASS: installer Legacy pre-delete ' + $scenario)
     }
+    Check-PreDelete ($script:LegacyNamespaceChecks -eq 41) 'all namespace observations executed'
+    Write-Host ('Legacy namespace tests PASS: ' + $script:LegacyNamespaceChecks + '; fresh-process verification=1; namespace-reservation NOT_PROVIDED; deletion/power-loss NOT_RUN')
     Check-PreDelete ($script:LegacyPhysicalChecks -eq 50) 'all physical pin checks executed'
     Write-Host ('Legacy physical pins tests PASS: ' + $script:LegacyPhysicalChecks + '; fresh-process verification=1; deletion/power-loss NOT_RUN')
     Check-PreDelete ($script:LegacyPinChecks -eq 39) 'all 39 pin checks completed without dropping old cases'

@@ -1525,6 +1525,110 @@ function Open-ProGoInstallerLegacyPhysicalPins([string]$Directory, [string]$Inst
         $result = $pins; $pins = $null; return $result
     } finally { if ($null -ne $pins) { $pins.Dispose() } }
 }
+# Namespace observation only. A directory handle does NOT reserve absent children.
+function Test-ProGoInstallerLegacyNamespace($Reference, [string]$Directory, [string]$InstallDirectory,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $CancellationToken.ThrowIfCancellationRequested()
+    try {
+        if ($Reference -isnot [ProGo.ApplicationShortcuts+LegacyJournalReferenceEvidence]) { return $false }
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $operation = $Reference.Source.Operation.ToString('N'); $journal = 'installer-journal-' + $operation
+        if ($Directory -cne (Assert-ProGoInstallerStagePath $parent $journal) -or
+            $Reference.Source.InstallIdentity -cne (Get-ProGoInstallerIdentity $InstallDirectory)) { return $false }
+        $text = Read-ProGoInstallerLegacyRestartText (Assert-ProGoInstallerStagePath $parent ('installer-legacy-reference-' + $operation + '.json'))
+        $hash = [Security.Cryptography.SHA256]::Create()
+        try { $digest = [BitConverter]::ToString($hash.ComputeHash((New-Object Text.UTF8Encoding($false)).GetBytes($text))).Replace('-','') }
+        finally { $hash.Dispose() }
+        if ($digest -cne $Reference.Hash) { return $false }
+        $saved = $text | ConvertFrom-Json -ErrorAction Stop
+        if ($saved.Context.Operation -cne $operation -or $saved.Context.Journal -cne $journal -or
+            $saved.Context.Identity -cne $Reference.Source.InstallIdentity -or
+            $saved.Context.SnapshotHash -cne $Reference.Source.SnapshotHash -or
+            $saved.Context.Snapshot -cnotmatch '^installer-[a-f0-9]{32}$') { return $false }
+        $snapshot = Assert-ProGoInstallerStagePath $parent $saved.Context.Snapshot
+        $entries = @(($saved.Context.Inventory | ConvertFrom-Json -ErrorAction Stop).Files)
+        $allowed = @(Get-ProGoInstallerPayloadNames | Where-Object { $_ -notin @('README.md','README.ru.md','LICENSE.md') })
+        if ($entries.Count -ne $allowed.Count) { return $false }
+        $files = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+        $directories = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+        $seen = @{}; [void]$files.Add('installer-snapshot.json')
+        foreach ($entry in $entries) {
+            if ($entry.Relative -cnotin $allowed -or $seen.ContainsKey($entry.Relative) -or $entry.Exists -isnot [bool]) { return $false }
+            $seen[$entry.Relative] = $true
+            if (-not $entry.Exists) { continue }
+            $relative = $entry.Relative.Replace('\','/'); [void]$files.Add($relative)
+            $parts = @($relative.Split('/')); $prefix = ''
+            for ($index = 0; $index -lt ($parts.Length - 1); $index++) {
+                $prefix = if ($index -eq 0) { $parts[$index] } else { $prefix + '/' + $parts[$index] }
+                [void]$directories.Add($prefix)
+            }
+        }
+        # Enumerate one directory at a time; reject unknown/reparse nodes BEFORE descending.
+        $pending = New-Object 'System.Collections.Generic.Stack[string]'; $pending.Push($snapshot)
+        $fileCount = 0; $directoryCount = 0
+        $actualFiles = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+        $actualDirectories = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+        while ($pending.Count -gt 0) {
+            $current = $pending.Pop()
+            if (([IO.File]::GetAttributes($current) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { return $false }
+            foreach ($path in [IO.Directory]::EnumerateFileSystemEntries($current)) {
+                $CancellationToken.ThrowIfCancellationRequested()
+                $relative = $path.Substring($snapshot.Length + 1).Replace('\','/')
+                $attributes = [IO.File]::GetAttributes($path)
+                if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { return $false }
+                if (($attributes -band [IO.FileAttributes]::Directory) -ne 0) {
+                    if (-not $directories.Contains($relative) -or -not $actualDirectories.Add($relative)) { return $false }
+                    $directoryCount++; if ($directoryCount -gt $directories.Count) { return $false }
+                    $pending.Push($path)
+                } else {
+                    if (-not $files.Contains($relative) -or -not $actualFiles.Add($relative)) { return $false }
+                    $fileCount++; if ($fileCount -gt $files.Count) { return $false }
+                }
+            }
+        }
+        if ($fileCount -ne $files.Count -or $directoryCount -ne $directories.Count -or
+            -not $actualFiles.SetEquals($files) -or -not $actualDirectories.SetEquals($directories)) { return $false }
+        if (([IO.File]::GetAttributes($Directory) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { return $false }
+        $names = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+        for ($index = 0; $index -lt $entries.Count; $index++) { [void]$names.Add(('admit-{0:D6}.json' -f $index)) }
+        $count = 0; $actualNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+        foreach ($path in [IO.Directory]::EnumerateFileSystemEntries($Directory)) {
+            $CancellationToken.ThrowIfCancellationRequested(); $attributes = [IO.File]::GetAttributes($path)
+            if (($attributes -band ([IO.FileAttributes]::Directory -bor [IO.FileAttributes]::ReparsePoint)) -ne 0 -or
+                -not $names.Contains([IO.Path]::GetFileName($path)) -or -not $actualNames.Add([IO.Path]::GetFileName($path))) { return $false }
+            $count++; if ($count -gt $names.Count) { return $false }
+        }
+        $CancellationToken.ThrowIfCancellationRequested(); return ($count -eq $names.Count -and $actualNames.SetEquals($names))
+    } catch {
+        $cause = $_.Exception; while ($null -ne $cause.InnerException) { $cause = $cause.InnerException }
+        if ($cause -is [OperationCanceledException]) { throw }; return $false
+    }
+}
+# Read-only operation-boundary rehearsal, never a capability for a later mutation.
+function Get-ProGoInstallerLegacyBoundaryObservation([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $CancellationToken.ThrowIfCancellationRequested(); $physical = $null; $original = $null
+    try {
+        $reference = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($null -eq $reference) { return 'blocked' }
+        $physical = Open-ProGoInstallerLegacyPhysicalPins $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory $CancellationToken
+        if ($null -eq $physical -or -not (Test-ProGoInstallerLegacyNamespace $reference $Directory $InstallDirectory $CancellationToken)) { return 'blocked' }
+        $original = Open-ProGoInstallerLegacyDeletionPins $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory $CancellationToken
+        if ($null -eq $original -or -not $original.IsPinned -or
+            -not (Test-ProGoInstallerLegacyNamespace $reference $Directory $InstallDirectory $CancellationToken) -or
+            -not $physical.VerifyPinned($CancellationToken) -or
+            -not (Test-ProGoInstallerLegacyNamespace $reference $Directory $InstallDirectory $CancellationToken)) { return 'blocked' }
+        $CancellationToken.ThrowIfCancellationRequested(); return 'observed-only'
+    } catch {
+        $cause = $_.Exception; while ($null -ne $cause.InnerException) { $cause = $cause.InnerException }
+        if ($cause -is [OperationCanceledException]) { throw }; return 'blocked'
+    }
+    finally {
+        try { if ($null -ne $original) { $original.Dispose() } }
+        finally { if ($null -ne $physical) { $physical.Dispose() } }
+    }
+}
 function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
     if ($null -eq $Backup.PSObject.Properties['Journal']) {
         $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)

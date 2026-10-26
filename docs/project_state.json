@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "2cdae18a737eef593c520b155932bc54a82b4a27",
-    "tree": "6ecde6c9368f459f56c77cd0c940efdc5df98ff0",
-    "run_id": 40265148660,
-    "run_number": 717,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40265148660",
+    "source": "a5d0e5d5d070f16157f8db00a0d411ecacd89f63",
+    "tree": "e451f4fa328841f166fe054b520c823440cb51b5",
+    "run_id": 40270033424,
+    "run_number": 718,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40270033424",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "507a64bc295c3a8849467ec2fbebe8d7cc7d8356",
-    "Pinning39": "PASS actual fresh-process1; deletion/power-loss NOT_RUN",
+    "tested_merge": "aea0706a6e8341ae8c5ddbedc0e1315d194e9a19",
+    "PhysicalPins50": "PASS fresh-process1; deletion/power-loss NOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "2cdae18a737eef593c520b155932bc54a82b4a27",
-    "tree": "6ecde6c9368f459f56c77cd0c940efdc5df98ff0",
-    "prior_checkpoint": "8a7091377def8cddbece4237cf0a1ca43166d7a4",
-    "stage": "Existing physical-material pins prerequisite only; no mutation",
-    "status": "CI717 full5logs PASS; new PhysicalPins50 Windows NOT_RUN; local66 static PASS",
-    "next": "One automatic exact-source CI; then separate operation-boundary namespace/context and same-handle deletion/durable result gate",
+    "source": "a5d0e5d5d070f16157f8db00a0d411ecacd89f63",
+    "tree": "e451f4fa328841f166fe054b520c823440cb51b5",
+    "prior_checkpoint": "0c3ca31de153033c08a07378aa1c96a475b32a95",
+    "stage": "Read-only namespace/operation-boundary observation prerequisite; no mutation",
+    "status": "CI718 full5logs PASS; new Namespace41 Windows NOT_RUN; local72 static PASS",
+    "next": "One automatic exact-source CI then safe actual-operation namespace/absence protocol; actual deletion/result/restore remain separate",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -23388,6 +23388,33 @@
     "limits": [
       "intent/absence never operation proof",
       "no live integration",
+      "UNKNOWN incidents",
+      "BLOCKED_TRANSFER",
+      "power-loss NOT_RUN",
+      "WCT/SeDebug not authorized"
+    ],
+    "score_delta": 0
+  },
+  "legacy_namespace_observation_prerequisite": {
+    "boundary": "Exact current snapshot/journal namespace observation under pins, not reservation/history/operation permission",
+    "prior_checkpoint": "0c3ca31de153033c08a07378aa1c96a475b32a95",
+    "local_tests": "72 Python static PASS, not Windows/native",
+    "Windows_Namespace41": "NOT_RUN; actual fresh-process check prepared",
+    "states": [
+      "blocked",
+      "observed-only"
+    ],
+    "remaining": [
+      "safe actual-operation namespace/absence policy and retained coherent context",
+      "same-handle owned deletion",
+      "durable honest result/post-delete rehydration",
+      "restore/error/full auxiliary recovery/retention/remaining scope"
+    ],
+    "limits": [
+      "directory pins do not reserve absent children",
+      "enumeration not atomic; ABA not excluded",
+      "returned string is not mutation capability",
+      "intent/absence never proves owned deletion",
       "UNKNOWN incidents",
       "BLOCKED_TRANSFER",
       "power-loss NOT_RUN",

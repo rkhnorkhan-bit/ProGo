@@ -1,3 +1,51 @@
+## CURRENT CI718 verified; namespace operation-boundary observation prerequisite
+
+Baseline full5 logs independently read: sourcea5d0e5d5d070f16157f8db00a0d411ecacd89f63,
+mergeaea0706a6e8341ae8c5ddbedc0e1315d194e9a19; CI718/40270033424 SUCCESS. PhysicalPins50/fresh-process1,
+Pinning39/PreDelete23/Restart26/JournalReference20/DurableInput12/Foundation27/Recovery6 PASS; Core classifier26/
+SSH5/Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4816/Portable91, Python92PASS2SKIP, Ubuntu and
+aggregate121408506041 exact4SHA PASS. Runner ZIP685496 SHA2567da5e5259962497eb994cd55c913880a5d062970cab1c6b9e895b50ce3f28b28,
+upload skipped; no PC/delivery acceptance. Original checkpoint0c3ca31de153033c08a07378aa1c96a475b32a95 clean,
+PR88 HEAD exact baseline/open; no other active agent or queued/in-progress/waiting CI before changes.
+
+Acceptance/scope: read-only namespace observation under physical and exact-original pins. Derive snapshot files,
+required directories and missing leaves from the immutable anchored reference, verify raw document hash before
+parsing, operation/install/snapshot/journal bindings and payload-name whitelist before enumerating. Snapshot and
+journal must have exact observed name/type SETS, not counts alone; reject unknown/duplicate/missing/reparse
+nodes before descending. Only runtime leaves in the existing approved inventory are involved; settings/vault/
+keys/private/foreign install-root files are not declared forbidden or enumerated as snapshot payload.
+
+Boundary observer first independently rehydrates reference, acquires actual physical pins, checks namespace,
+acquires exact original pins, repeats namespace, verifies physical native origins/hashes and checks namespace
+again. Nested finally disposes BOTH leases on all returns; cancellation including wrapped PS method exceptions
+is propagated, never reported as observed success. No native/API/ordinary installer body changes, no deletion,
+metadata publication, restore, callback/action capability or live flow integration. Only blocked/observed-only.
+
+TOCTOU boundary is intentional and explicit: directories DO NOT reserve absent children. Enumeration is not
+an atomic namespace transaction, cannot exclude transient ABA events and cannot authorize a later operation.
+observed-only means repeated current observations matched while resources were retained; the helper then
+releases them, so its string must NEVER be used as permission for subsequent deletion/replay/restore/Launch.
+Future mutation still needs a safe in-scope same-handle protocol with namespace/absence policy and retained
+coherent evidence at the actual operation boundary. Intent/current absence never proves our deletion. Actual
+delete/durable result/post-delete trusted rehydration/restore/error settlement remain separate gates. Full
+auxiliary/runtime recovery/retention/PGA04/updater/package/F31/owner/commercial scope remains OPEN, no scores
+raised. Original error/no Launch, private-file exclusions and external-change refusal remain unchanged.
+
+Prepared Namespace41 Windows checks: 19 positive/mutation/cancel/cleanup checks plus22 existing refusal states.
+Actual synthetic child creation WHILE directory/physical/original pins are held demonstrates non-reservation;
+new snapshot leaf is rejected although existing physical bytes still verify. Unknown journal record/snapshot
+directory and missing manifest are refused without deletion/repair; own fixture bytes are retained, restoration
+of the fixture's current namespace yields observed-only but not ABA/history/operation proof. Read-only inventory
+and exclusive reopen prove cleanup; actual fresh-process child requires observed-only with no mutation marker.
+Nested once in existing PreDelete23, all33/classifier26/strict4aggregate/deadlines/SSHflags/environment unchanged.
+Local72 Python static tests PASS, not Windows/native execution. New Namespace41/fresh-process Windows NOT_RUN.
+UNKNOWN incidents/BLOCKED_TRANSFER/no retry/power-lossNOT_RUN/fullscope/fixedweights/delta0 retained. No WCT/
+SeDebug/privileges/live install/services/network/security/ACL/credentials/VPS/tunnel/release/uploads.
+Next SAME new exact-source CI full5logs/Namespace41/all33/Core/strictaggregate, then separately resolve safe
+actual-operation namespace semantics before any owned deletion/result/restore integration. Stop after one stage.
+
+Prior evidence/history:
+
 ## CURRENT CI717 verified; existing physical-material pinning prerequisite
 
 The previous execution environment was genuinely unavailable, then one authorized pwd probe executed in the
