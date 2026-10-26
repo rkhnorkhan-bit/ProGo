@@ -24,6 +24,20 @@ if ($BlockedChild) {
     Write-Host 'LEGACY_PREPARE_CHILD blocked=True; replayPerformed=False'
     return
 }
+# The retained native target requests READ|DELETE and shares READ only. Symmetric sharing
+# requires our reader to share DELETE too; this does not grant the reader DELETE/WRITE access.
+function Get-LegacyPreparationFileHash([string]$LiteralPath) {
+    $stream = $null; $algorithm = $null
+    try {
+        $algorithm = [Security.Cryptography.SHA256]::Create()
+        $share = [IO.FileShare]([IO.FileShare]::Read -bor [IO.FileShare]::Delete)
+        $stream = [IO.File]::Open($LiteralPath,[IO.FileMode]::Open,[IO.FileAccess]::Read,$share)
+        return [pscustomobject]@{ Hash = [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-','') }
+    } finally {
+        if ($null -ne $stream) { $stream.Dispose() }
+        if ($null -ne $algorithm) { $algorithm.Dispose() }
+    }
+}
 function Check-LegacyPreparation($Condition,[string]$Name) { if (-not $Condition) { throw ('Legacy preparation failed: case=' + $scenario + '; check=' + $Name) } }
 $scenario = 'initial'; $work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-legacy-prepare-' + [Guid]::NewGuid().ToString('N'))
 $stage = $null; $physical = $null; $lease = $null; $cancel = $null; $process = $null; $outTask = $null; $errTask = $null
@@ -42,7 +56,7 @@ try {
         [IO.File]::WriteAllText((Join-Path $install 'ProGo.exe'),'synthetic original executable')
         $private = @{}
         foreach ($name in @('settings.json','vault.enc','key-reference.txt','foreign.txt')) {
-            $path = Join-Path $install $name; [IO.File]::WriteAllText($path,'synthetic private or foreign bytes'); $private[$path] = (Get-FileHash -LiteralPath $path).Hash
+            $path = Join-Path $install $name; [IO.File]::WriteAllText($path,'synthetic private or foreign bytes'); $private[$path] = (Get-LegacyPreparationFileHash -LiteralPath $path).Hash
         }
         $manager = New-Object ProGo.ApplicationShortcuts($install,$programs,$startup)
         $seed = $manager
@@ -57,7 +71,7 @@ try {
         $origin = $null; $capture = $manager.CaptureLegacyRollbackSource([Threading.CancellationToken]::None)
         if ($null -ne $capture) { try { $origin = $capture.OriginIdentity } finally { $capture.Dispose() } }
         if ($scenario -ceq 'existing-primary') { [IO.File]::WriteAllBytes($primary,$before) }
-        if ($scenario -ceq 'foreign-primary') { $other.Install($true,$true,$false); $foreignPrimaryHash = (Get-FileHash -LiteralPath $primary).Hash }
+        if ($scenario -ceq 'foreign-primary') { $other.Install($true,$true,$false); $foreignPrimaryHash = (Get-LegacyPreparationFileHash -LiteralPath $primary).Hash }
         $backup = New-ProGoInstallerBackup $payload $install; $stage = New-ProGoInstallerStage $payload
         $writes = New-Object 'System.Collections.Generic.List[object]'
         foreach ($entry in $backup.Entries) { Set-ProGoInstallerRuntimeFile $stage $backup $entry $writes }
@@ -65,7 +79,7 @@ try {
         try { $prepared = Initialize-ProGoShortcuts -InstallDirectory $install -WasInstalled $false -NoStartup ($scenario -ceq 'startup-optout') -NoStartMenu ($scenario -ceq 'menu-optout') -ProgramsDirectory $programs -StartupDirectory $startup -CaptureStartupEvidence -PreserveLegacyForOwnedOperation }
         catch { if ($scenario -cne 'foreign-primary') { throw }; $failed = $true }
         if ($scenario -ceq 'foreign-primary') {
-            Check-LegacyPreparation ($failed -and (Get-FileHash -LiteralPath $primary).Hash -ceq $foreignPrimaryHash -and [IO.File]::Exists($legacy) -and [Convert]::ToBase64String([IO.File]::ReadAllBytes($legacy)) -ceq [Convert]::ToBase64String($before)) 'foreign primary blocks preparation without deleting Legacy'
+            Check-LegacyPreparation ($failed -and (Get-LegacyPreparationFileHash -LiteralPath $primary).Hash -ceq $foreignPrimaryHash -and [IO.File]::Exists($legacy) -and [Convert]::ToBase64String([IO.File]::ReadAllBytes($legacy)) -ceq [Convert]::ToBase64String($before)) 'foreign primary blocks preparation without deleting Legacy'
         } else {
             Check-LegacyPreparation ($prepared.Legacy.Disposition -ceq 'preserved' -and $manager.VerifyStartupInstallEvidence($prepared) -and $manager.VerifyMenuInstallEvidence($prepared.Menu) -and $manager.VerifyLegacyInstallEvidence($prepared.Legacy)) 'existing full evidence verifiers accept only preserved preparation'
             if ($null -ne $before) { Check-LegacyPreparation ([Convert]::ToBase64String([IO.File]::ReadAllBytes($legacy)) -ceq [Convert]::ToBase64String($before)) 'preparation never deletes or refreshes Legacy' }
@@ -76,7 +90,7 @@ try {
             if ($scenario -ceq 'startup-optout') { Check-LegacyPreparation (-not [IO.File]::Exists((Join-Path $startup 'ProGo.lnk'))) 'startup optout retained' }
             if ($scenario -ceq 'existing-primary') { Check-LegacyPreparation ($prepared.Menu.Disposition -ceq 'preserved') 'existing primary not recreated' }
             if ($scenario -notin @('absent','custom-preserved','menu-optout','startup-optout')) {
-                $primaryHash = (Get-FileHash -LiteralPath $primary).Hash
+                $primaryHash = (Get-LegacyPreparationFileHash -LiteralPath $primary).Hash
                 $reference = New-ProGoInstallerLegacySourceReference $backup $programs $startup
                 Complete-ProGoInstallerLegacyRestartSeal $backup $reference $programs $startup
                 [void](New-ProGoInstallerLegacyPreDeleteAdmission $backup $programs $startup)
@@ -114,10 +128,32 @@ try {
                 }
                 if ($scenario -ceq 'foreign-destination') { Check-LegacyPreparation ([IO.File]::ReadAllText($legacy) -ceq 'synthetic foreign destination' -and -not $restored.Created) 'foreign restore destination never overwritten' }
                 if ($scenario -ceq 'equal-byte-destination') { Check-LegacyPreparation ([Convert]::ToBase64String([IO.File]::ReadAllBytes($legacy)) -ceq [Convert]::ToBase64String($before) -and -not $restored.Created) 'equal-byte destination never adopted' }
-                $inventory = @{}; foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $inventory[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
+                if ($scenario -ceq 'cancel-before') {
+                    Check-LegacyPreparation ($lease.IsPinned -and $physical.VerifyPinned([Threading.CancellationToken]::None)) 'regression begins with real live retained target and physical pins'
+                    $defaultReaderRefused = $false
+                    try { Get-FileHash -LiteralPath $legacy -ErrorAction Stop | Out-Null } catch { $defaultReaderRefused = $true }
+                    Check-LegacyPreparation $defaultReaderRefused 'actual old cmdlet reader refuses the retained DELETE-access target'
+                    $readRefused = $false; $writeRefused = $false; $sharingProbe = $null
+                    try { $sharingProbe = [IO.File]::Open($legacy,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read) }
+                    catch {
+                        $cause = $_.Exception; while ($null -ne $cause.InnerException) { $cause = $cause.InnerException }
+                        $readRefused = $cause -is [IO.IOException] -and ($cause.HResult -band 65535) -eq 32
+                    } finally { if ($null -ne $sharingProbe) { $sharingProbe.Dispose(); $sharingProbe = $null } }
+                    $compatibleHash = (Get-LegacyPreparationFileHash -LiteralPath $legacy).Hash
+                    Check-LegacyPreparation ($readRefused -and $compatibleHash -ceq $prepared.Legacy.Hash) 'explicit READ share1 fails Win32 sharing32 while READ share5 hashes exact retained bytes'
+                    try { $sharingProbe = [IO.File]::Open($legacy,[IO.FileMode]::Open,[IO.FileAccess]::Write,([IO.FileShare]::Read -bor [IO.FileShare]::Delete)) }
+                    catch {
+                        $cause = $_.Exception; while ($null -ne $cause.InnerException) { $cause = $cause.InnerException }
+                        $writeRefused = $cause -is [IO.IOException] -and ($cause.HResult -band 65535) -eq 32
+                    } finally { if ($null -ne $sharingProbe) { $sharingProbe.Dispose(); $sharingProbe = $null } }
+                    foreach ($path in $private.Keys) { Check-LegacyPreparation ((Get-LegacyPreparationFileHash -LiteralPath $path).Hash -ceq $private[$path]) 'live-pin inventory preserves private and foreign bytes' }
+                    Check-LegacyPreparation ($writeRefused -and $lease.IsPinned -and $physical.VerifyPinned([Threading.CancellationToken]::None)) 'compatible read settles without releasing or weakening production pins'
+                    Write-Host 'Legacy preparation sharing regression PASS: retained READ|DELETE share1; read share1 refused32; read share5 SHA256 verified; write refused32; pins retained'
+                }
+                $inventory = @{}; foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $inventory[$file.FullName] = (Get-LegacyPreparationFileHash -LiteralPath $file.FullName).Hash }
                 Check-LegacyPreparation ([object]::ReferenceEquals($restored,$lease.RestoreOwnedOnce($physical,$cancel.Token))) 'repeated error handler returns exact result without mutation'
                 Check-LegacyPreparation (@(Get-ChildItem -LiteralPath $case -Recurse -File).Count -eq $inventory.Count) 'repeated handler creates no artifact'
-                foreach ($path in $inventory.Keys) { Check-LegacyPreparation ((Get-FileHash -LiteralPath $path).Hash -ceq $inventory[$path]) 'repeated handler preserves partial/source/evidence bytes' }
+                foreach ($path in $inventory.Keys) { Check-LegacyPreparation ((Get-LegacyPreparationFileHash -LiteralPath $path).Hash -ceq $inventory[$path]) 'repeated handler preserves partial/source/evidence bytes' }
                 if ($scenario -in @('matched-failure','context-lost')) {
                     $info = New-Object Diagnostics.ProcessStartInfo; $info.FileName = Join-Path $PSHOME 'powershell.exe'
                     $info.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "' + $PSCommandPath + '" -BlockedChild -CaseDirectory "' + $case + '"'
@@ -127,12 +163,12 @@ try {
                     Check-LegacyPreparation ([Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($outTask,$errTask),5000) -and $process.ExitCode -eq 0 -and $outTask.Result.Contains('LEGACY_PREPARE_CHILD blocked=True; replayPerformed=False') -and $errTask.Result.Length -eq 0) 'actual new process cannot recover live mutation authority'
                     $process.Dispose(); $process = $null
                 }
-                Check-LegacyPreparation ((Get-FileHash -LiteralPath $primary).Hash -ceq $primaryHash) 'primary retained through Legacy restore; Startup/Menu mutation not authorized early'
+                Check-LegacyPreparation ((Get-LegacyPreparationFileHash -LiteralPath $primary).Hash -ceq $primaryHash) 'primary retained through Legacy restore; Startup/Menu mutation not authorized early'
                 $lease.Dispose(); Check-LegacyPreparation (-not $lease.VerifyRestoredOutcome($physical)) 'disposed live context cannot authorize restoration'
                 $lease = $null; $physical.Dispose(); $physical = $null; $cancel.Dispose(); $cancel = $null
             }
         }
-        foreach ($path in $private.Keys) { Check-LegacyPreparation ((Get-FileHash -LiteralPath $path).Hash -ceq $private[$path]) 'private and foreign bytes preserved' }
+        foreach ($path in $private.Keys) { Check-LegacyPreparation ((Get-LegacyPreparationFileHash -LiteralPath $path).Hash -ceq $private[$path]) 'private and foreign bytes preserved' }
         foreach ($file in Get-ChildItem -LiteralPath $case -Recurse -File) { $probe = [IO.File]::Open($file.FullName,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None); $probe.Dispose() }
         Remove-ProGoInstallerStage $stage; $stage = $null
         Write-Host ('PASS: installer Legacy preparation ' + $scenario)

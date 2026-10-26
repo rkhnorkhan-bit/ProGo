@@ -1,3 +1,88 @@
+## CURRENT CI725 FAILURE verified; fixture-only compatible read inventory correction
+
+Admission checkpointac3d0a7e80df2afaf320435720e3eb75c02b8829 available/clean, full3docs diff(+85/-17)
+relative to sourcec4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2 retained. PR88 draft/open/unmerged exact
+source/merge58d5df7107d4847151d7b1e727b25dc0c210c68e. No active queued/in_progress CI, Git/build/SSH
+process, Git lock or competing writer observed. Sole writer/no subagents/reset/clean/discarded work.
+
+All five complete final CI725 logs retrieved and exact merge independently checked:
+Foundation121550581113 FAILURE: CLR regression/Restore22/prior checks PASS; preparation13 =7PASS,
+cancel-before1harnessERROR at fixture117, remaining5NOT_RUN. Actual matched-failure child PASS;
+context-lost child NOT_RUN. Recovery121550581134 SUCCESS/all6/Owned29/receipt14/refusal2;
+Core121550581208 SUCCESS/prior checks/classifier26/Python116PASS2SKIP; Ubuntu121550580608 SUCCESS;
+aggregate121564975165 correctly FAILURE/fail-closed on exact merge. Run40316580282/attempt1.
+Runner-only ZIP706924 SHA256653cbf1ab7f9bc3d2be7f44cbf3b66505966a1fa4ca62d0f533bad7d55e56fe3,
+uploads SKIPPED; no transfer/installation/PC acceptance. Not all13/all33/full F23/production PASS.
+
+Evidence: cancel-before returns without deleting or closing the retained original target, as intended.
+PinLegacyPreDeleteAdmission opens the exact no-follow Legacy handle with desired access0x80010000
+(GENERIC_READ|DELETE), share1(FILE_SHARE_READ), OPEN_EXISTING3/OPEN_REPARSE_POINT0x00200000.
+Symmetric Win32 sharing requires a new reader's share flags to admit the existing DELETE access, while
+that new reader may itself request READ only. Existing FileShare.Read-only inventory/Get-FileHash path
+refuses this held object (observed sharing violation at fixture117); this does not establish a production
+pin or migration defect. Production target/evidence/origin/hash/nooverwrite guards remain unchanged.
+
+Only executable change: tests/InstallerLegacyPreparationTests.ps1. Fixture Get-LegacyPreparationFileHash
+uses FileMode.Open/FileAccess.Read/FileShare.Read|FileShare.Delete (share5), SHA256.ComputeHash(stream),
+uppercase hex identical to the old Hash property, and finally-disposes only its own reader/hasher. No
+write/delete access, mutation, skipped file, suppressed hash failure or premature production Dispose.
+All eight previous hash call sites now use this same explicit contract, including complete inventory
+and repeated-handler equality. The sole remaining real Get-FileHash is an intentional caught reproducer.
+Existing retained share1 still denies a write/delete opener; reader share5 does not relax that handle.
+
+Real native regression added inside unchanged cancel-before scenario while lease.IsPinned and physical
+VerifyPinned are true: actual old cmdlet must refuse; explicit FileAccess.Read/FileShare.Read must fail
+IOException Win32 sharing32; compatible READ/share5 must hash the complete original Legacy and equal its
+bound prepared evidence hash; FileAccess.Write/share5 must still fail sharing32. Private/foreign files
+must hash identically under live pins, pins remain verified after readers settle. Existing full inventory,
+file count, cached-repeat identity/equality, final handle release/exclusive reopen all remain unchanged.
+This is prepared Windows I/O regression, NOT executed by local textual checks.
+
+Read audit: preparation reads before pins (initial Legacy bytes/custom/optout/primary) are compatible;
+post-restore/foreign/equal-byte Legacy ReadAllBytes/ReadAllText run after original TargetHandleClosed.
+The cancel-before present target was the incompatible inventory case; both inventory/hash read passes
+and every other preparation hash site now share DELETE explicitly. Restore22 and prior OwnedOperation
+inventories run after accepted original handle closure or exclude the held Legacy; all passed CI725 and
+are untouched. Read-only evidence/primary pins require only READ sharing. No additional code bug proven.
+No identity handoff/orchestration work started; src/scripts/main installer/error flow unchanged.
+
+Local66 legacy contracts +17 strict aggregate =83PASS. Reverse fixture parity restores exact prior text
+by removing new helper/regression and substituting old hash command name: all13 scenarios/assertions/
+real mutations/cancellation/children/deadlines/cleanup preserved; Restore22/all other tests/pins/runtime/
+workflow/classifier26/strict4aggregate/33 suite calls/fullscope unchanged. JSON/diff/secrets/public429source0release
+PASS; sharing-bit arithmetic review is not native proof. No local Windows/PowerShell: new sharing regression/
+compile/full13/both children/full exact aggregate NOT_RUN until the sole new automatic CI.
+
+One guarded nonforce PR88 publication and automatic CI initial status only; no duplicate/rerun/dispatch/
+full CI wait. Preserve UNKNOWN incidents/BLOCKED_TRANSFER/no retry/all31/nested55/full F30/weights/delta0.
+Whole auxiliary/runtime rollback, actual main orchestration/identity handoff, restart recovery, power-loss
+and PC acceptance remain OPEN/NOT_RUN. Lost live proofs blocked/manual; receipts/absence not authority.
+No live installation/user files/network/security/ACL/privileges/WCT/SeDebug/services/credentials/VPS/tunnel.
+
+## LOCAL post-publication checkpoint: preserved Legacy preparation prerequisite / CI725
+
+One expected-head nonforce PR88 update completed: sourcec4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2,
+parente872a5be3b4f87bf15eb28bce5ec524658541bec, treef7218d3a5fcc2e5c949a2d8934ec7e274cef8785.
+Reviewed local720298ac96ffcf9ba882cf5e12e8bc156e363d5c full tree exactly matches canonical source;
+Git commit hash/parent/tree verified, joined atd9dea39ca887f1be63f6c4b2dd51e8468fdfc67e. Base checkpoint0d104a3
+and full3docs diff retained. PR88 draft/open/unmerged, merge REF58d5df7107d4847151d7b1e727b25dc0c210c68e
+is a candidate, not tested PASS. Sole automatic CI725 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40316580282,
+pull_request/attempt1, raw exact-source count1, observed in_progress/conclusion null. New compile/preparation13/
+fresh-process2/full exact aggregate NOT_RUN until this same run's complete logs. CI724 scoped SUCCESS baseline
+remains separately verified, no inherited new PASS. Local83PASS plus reverse default/native/PS/old fixture/main
+installer/restore/verifier/result parity, C#5 lexical/signatures/JSON/diff/secrets/public429source0release PASS.
+Scope explicitly limited by actual missing prerequisite: nondeleting primary/Startup preparation reusing old
+evidence, and isolated preparation->same live delete/receipt->failure->existing restore/post verifier. Main
+Install-ProGo.ps1 orchestration/catch/finally is unchanged; strict restored-identity Startup/Menu handoff and
+actual installer integration remain OPEN. Old guards fail after NEW restored identity; no fabricated origin,
+absence, replacement receipt or bypass. No duplicate restore helper/result/receipt. All original33 suites/
+classifier26/strict4aggregate/deadlines/full31/nested55/F30 unchanged. UNKNOWN/BLOCKED_TRANSFER/no retry retained.
+This docs-only checkpoint is local/unpushed; no second CI/update/rerun/dispatch/full wait. Stop here.
+Next SAME CI725 five complete exact logs and preparation13/child2; subsequent actual orchestration needs the
+already-identified strict live evidence handoff. Whole auxiliary/runtime rollback/restart/power-loss/PC
+acceptance remain OPEN/NOT_RUN. No live installation/user data/privileges/ACL/WCT/SeDebug/services/network/
+credentials/VPS/tunnel operations. Lost live proofs blocked/manual; receipts/absence never authority.
+
 ## CURRENT CI724 SUCCESS verified; bounded missing preparation prerequisite (not full orchestration)
 
 Admission checkpoint0d104a3dceef9ae0dfbfbc103e984c6375e865e3 available/clean, all prior3docs diff(+86/-19)

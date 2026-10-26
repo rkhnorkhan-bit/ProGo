@@ -4020,19 +4020,19 @@
     }
   ],
   "ci_candidate": {
-    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
-    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
-    "run_id": 40310537537,
-    "run_number": 724,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40310537537",
+    "source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
+    "tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785",
+    "run_id": 40316580282,
+    "run_number": 725,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40316580282",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "completed",
-    "conclusion": "success",
-    "candidate_merge_ref": "d1a9fa720e2afb864a56b3b4c16fd5eda7381082",
-    "tested_merge": "d1a9fa720e2afb864a56b3b4c16fd5eda7381082",
-    "new_windows": "CI724 full five exact logs SUCCESS: CLR regression/Restore22/all33/classifier26/Python116PASS2SKIP/strict4aggregate",
+    "conclusion": "failure",
+    "candidate_merge_ref": "58d5df7107d4847151d7b1e727b25dc0c210c68e",
+    "tested_merge": "58d5df7107d4847151d7b1e727b25dc0c210c68e",
+    "new_windows": "CI725 CLR regression/Restore22 PASS; preparation7PASS1harnessERROR5NOT_RUN; full gate FAIL",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5524,12 +5524,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
-    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
-    "prior_checkpoint": "0d104a3dceef9ae0dfbfbc103e984c6375e865e3",
-    "stage": "Nearest missing prerequisite: shortcut preparation preserves Legacy before owned live lease; main orchestration not activated",
-    "status": "CI724 full SUCCESS baseline; local83PASS/review; native preparation13/child2/full new aggregate NOT_RUN",
-    "next": "One guarded publication/automatic CI initial status only. Next dependency: strict restored-identity Startup/Menu handoff before actual orchestration",
+    "source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
+    "tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785",
+    "prior_checkpoint": "ac3d0a7e80df2afaf320435720e3eb75c02b8829",
+    "stage": "CI725 fixture inventory-only symmetric Win32 share correction; no identity handoff/orchestration",
+    "status": "CI725 full FAIL verified; local83PASS/review; new live-pin sharing regression/13/child2 NOT_RUN",
+    "next": "One guarded publication/automatic CI initial status only; stop without full wait",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5538,8 +5538,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "b1e33ea5906e9703d03afc451a10eda6d0e61490",
-    "local_development_tree": "dc857fc772c6de6db30141eed989c8394185725b"
+    "local_development_sha": "720298ac96ffcf9ba882cf5e12e8bc156e363d5c",
+    "local_development_tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -23688,7 +23688,7 @@
   "legacy_preparation_prerequisite": {
     "base_checkpoint": "0d104a3dceef9ae0dfbfbc103e984c6375e865e3",
     "baseline_source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
-    "status": "Prepared native13/child2; NOT_RUN locally",
+    "status": "CI725 FAIL:7PASS1harnessERROR5NOT_RUN; sharing-only fixture fix prepared; new native13/child2 NOT_RUN",
     "scope_limit_evidence": [
       "InstallCore ensures primary then unconditionally enters legacy migration; no nondeleting preparation API",
       "original Legacy preserved evidence binds old origin; removed evidence requires absence+live primary",
@@ -23701,6 +23701,80 @@
     "main_orchestration": "OPEN; actual Install-ProGo.ps1/catch/finally unchanged under owner fallback",
     "next": "strict live restored-identity handoff then actual orchestration; keep primary until Legacy settles; no new acceptance requirement",
     "remaining": "whole auxiliary/runtime rollback/restart recovery/power-loss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/full F30 retained",
+    "score_delta": 0,
+    "source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
+    "tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785"
+  },
+  "legacy_preparation_postpublication_checkpoint": {
+    "source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
+    "parent": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785",
+    "local_reviewed_code": "720298ac96ffcf9ba882cf5e12e8bc156e363d5c",
+    "canonical_join": "d9dea39ca887f1be63f6c4b2dd51e8468fdfc67e",
+    "base_checkpoint_preserved": "0d104a3dceef9ae0dfbfbc103e984c6375e865e3",
+    "run_id": 40316580282,
+    "run_number": 725,
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "in_progress",
+    "conclusion": null,
+    "candidate_merge_ref": "58d5df7107d4847151d7b1e727b25dc0c210c68e",
+    "kind": "local docs-only unpushed; no second CI",
+    "scope": "nearest prerequisite only; main flow unchanged by evidence-based fallback",
+    "score_delta": 0
+  },
+  "ci725_verified_failure": {
+    "source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
+    "tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785",
+    "run_id": 40316580282,
+    "run_number": 725,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40316580282",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "candidate_merge_ref": "58d5df7107d4847151d7b1e727b25dc0c210c68e",
+    "tested_merge": "58d5df7107d4847151d7b1e727b25dc0c210c68e",
+    "new_windows": "CI725 CLR regression/Restore22 PASS; preparation7PASS1harnessERROR5NOT_RUN; full gate FAIL",
+    "score_delta": 0,
+    "all_five_logs": "retrieved; exact merge checked",
+    "jobs": {
+      "121550581113": "Foundation FAILURE at preparation cancel-before inventory117; Restore22/prior checks PASS",
+      "121550581134": "Recovery SUCCESS/all6/Owned29/receipt14/refusal2",
+      "121550581208": "Core SUCCESS/prior checks/classifier26/Python116PASS2SKIP",
+      "121550580608": "Ubuntu SUCCESS",
+      "121564975165": "aggregate FAILURE/fail-closed exact SHA"
+    },
+    "preparation13": {
+      "PASS": 7,
+      "harness_ERROR": 1,
+      "NOT_RUN": 5
+    },
+    "children": {
+      "matched-failure": "PASS",
+      "context-lost": "NOT_RUN"
+    },
+    "cause": "fixture Get-FileHash lacks compatible sharing while original READ|DELETE/share1 handle remains alive after pre-deletion cancellation",
+    "production_bug": "not established",
+    "zip_bytes": 706924,
+    "zip_sha256": "653cbf1ab7f9bc3d2be7f44cbf3b66505966a1fa4ca62d0f533bad7d55e56fe3",
+    "uploads": "SKIPPED runner-only; no PC acceptance"
+  },
+  "ci725_inventory_fix": {
+    "base_checkpoint": "ac3d0a7e80df2afaf320435720e3eb75c02b8829",
+    "baseline_source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
+    "scope": "one fixture inventory reader + state only; all production/pins unchanged",
+    "contract": {
+      "retained_access": "GENERIC_READ|DELETE 0x80010000",
+      "retained_share": "FILE_SHARE_READ 1",
+      "reader_access": "READ only",
+      "reader_share": "READ|DELETE 5; admits existing access, does not grant DELETE/WRITE access"
+    },
+    "native_regression": "cancel-before live pins: actual old cmdlet and READ/share1 refuse; compatible SHA256 equals original bound hash; write/share5 refuses32; private/foreign bytes and pins retained; NOT_RUN locally",
+    "local": "83PASS legacy/aggregate +review/parity/JSON/diff/secrets/public429source0release",
+    "preservation": "all13/Restore22/assertions/fault injections/suites/classifier26/strict aggregate/deadlines/full F30 unchanged",
+    "identity_handoff_orchestration": "NOT_STARTED",
     "score_delta": 0
   }
 }
