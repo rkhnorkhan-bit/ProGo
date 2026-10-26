@@ -45,7 +45,7 @@ function Assert-FixtureSnapshot($Expected, [string]$Message) {
     if ($Expected.Count -ne $actual.Count) { throw $Message }
     foreach ($path in $Expected.Keys) { if (-not $actual.ContainsKey($path) -or $actual[$path] -cne $Expected[$path]) { throw $Message } }
 }
-# Read-only evidence for only the complete positive repair. Never log captured output,
+# Read-only evidence for the complete and committed synthetic repairs. Never log captured output,
 # exception messages, paths, command lines, raw process IDs or journal contents.
 function Write-FixtureRepairProbe([string]$Checkpoint) {
     try {
@@ -65,6 +65,7 @@ function Write-FixtureRepairProbe([string]$Checkpoint) {
             } finally { $readerStream.Dispose() }
         }
     } catch { $traceKnown = $false }
+    $safeExit = -1; if ($known -and $exited) { try { $safeExit = $child.ExitCode } catch { } }
     $journalPresent = [IO.File]::Exists((Join-Path $installed '.repair-state.json'))
     $journalKnown = $false; $phase = 'unknown'; $entries = -1; $appliedCount = -1; $checkRoot = $false
     try {
@@ -83,7 +84,7 @@ function Write-FixtureRepairProbe([string]$Checkpoint) {
         }
     } catch { $journalKnown = $false }
     [Console]::WriteLine('REPAIR_FIXTURE checkpoint=' + $Checkpoint + '; elapsedMs=' + $probeClock.ElapsedMilliseconds + '; startMs=' + $probeStartMs +
-        '; exitedKnown=' + $known + '; exited=' + $exited + '; stdout=' + $stdout.Status + '; stderr=' + $stderr.Status + '; cpuMs=' + $cpu + '; ramBytes=' + $ram +
+        '; exitCode=' + $safeExit + '; exitedKnown=' + $known + '; exited=' + $exited + '; stdout=' + $stdout.Status + '; stderr=' + $stderr.Status + '; cpuMs=' + $cpu + '; ramBytes=' + $ram +
         '; traceKnown=' + $traceKnown + '; journalPresent=' + $journalPresent + '; journalKnown=' + $journalKnown + '; phase=' + $phase + '; entries=' + $entries + '; applied=' + $appliedCount + '; selfCheckRoot=' + $checkRoot)
     [Console]::WriteLine('REPAIR_FIXTURE phases=' + ($phases -join ','))
     if ($stdout.Status -eq [Threading.Tasks.TaskStatus]::RanToCompletion) {
@@ -256,7 +257,14 @@ try {
     $acceptedSnapshot = Get-FixtureSnapshot
     [IO.File]::WriteAllText((Join-Path $installed 'VERSION'), 'old version before accepted repair')
     $heldSnapshot = $null
+    # Same real script/arguments under the existing synthetic safe phase observer; separate CreateNew trace.
+    $probeTrace = Join-Path $work 'committed-repair.phases'
+    $info.Arguments = '-NoProfile -File "' + (Join-Path $PSScriptRoot 'RepairPhaseProbe.ps1') + '" -RepairScript "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -Payload "' + $payload + '" -FixtureRoot "' + $work + '" -CommittedProbe'
+    $probeClock = [Diagnostics.Stopwatch]::StartNew()
+    [Console]::WriteLine('REPAIR_FIXTURE checkpoint=committed-start-enter')
     $child = [Diagnostics.Process]::Start($info)
+    $probeStartMs = $probeClock.ElapsedMilliseconds
+    [Console]::WriteLine('REPAIR_FIXTURE checkpoint=committed-start-return; startMs=' + $probeStartMs)
     $stdout = $child.StandardOutput.ReadToEndAsync(); $stderr = $child.StandardError.ReadToEndAsync()
     try {
         $deadline = [Diagnostics.Stopwatch]::StartNew()
@@ -268,9 +276,11 @@ try {
                     if ([IO.File]::Exists($oldVersion)) { $heldSnapshot = [IO.File]::Open($oldVersion, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read); break }
                 } catch [IO.IOException] { }
             }
-            if ($deadline.ElapsedMilliseconds -gt 10000) { throw 'Owned committed cleanup barrier was not reached within ten seconds' }
+            if ($deadline.ElapsedMilliseconds -gt 10000) { Write-FixtureRepairProbe 'committed-barrier-deadline'; throw 'Owned committed cleanup barrier was not reached within ten seconds' }
         }
-        if (-not $child.WaitForExit(20000)) { throw 'Post-commit repair cleanup exceeded its bounded image-check budget' }
+        Write-FixtureRepairProbe 'committed-barrier-held'
+        if (-not $child.WaitForExit(20000)) { Write-FixtureRepairProbe 'committed-deadline'; throw 'Post-commit repair cleanup exceeded its bounded image-check budget' }
+        Write-FixtureRepairProbe 'committed-process-exit'
         if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Post-commit repair output did not settle' }
         $journalPath = Join-Path $installed '.repair-state.json'
         $journal = [IO.File]::ReadAllText($journalPath) | ConvertFrom-Json
@@ -302,7 +312,7 @@ try {
             if ($null -ne $heldSnapshot) { $heldSnapshot.Dispose() }
             if (-not $child.HasExited) { $child.Kill(); if (-not $child.WaitForExit(3000)) { throw 'Owned committed repair child cleanup failed' } }
             if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), 3000)) { throw 'Owned committed repair output cleanup failed' }
-        } finally { $child.Dispose() }
+        } finally { try { Write-FixtureRepairProbe 'committed-cleanup-return' } finally { $child.Dispose(); $info.Arguments = $originalCompleteArguments } }
     }
     # A real Windows read-sharing handle allows the old VERSION snapshot but
     # denies its replacement after ProGo.exe has already been replaced.

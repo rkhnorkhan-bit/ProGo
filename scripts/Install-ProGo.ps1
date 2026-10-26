@@ -471,7 +471,9 @@ function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$Co
     $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($text)
     $path = Assert-ProGoInstallerStagePath $Backup.Journal.Directory 'outcome.pending.json'
     $diagnosticStage = 'pending-create'
+    if ($null -ne $LiveContext) { $stream = $LiveContext.CreateInstalledPending() } else {
     $stream = New-Object IO.FileStream -ArgumentList @($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 4096, [IO.FileOptions]::WriteThrough)
+    }
     try {
         if ($null -ne $LiveContext) { $LiveContext.ObserveInstalledPending($stream) }
         $diagnosticStage = 'pending-write'

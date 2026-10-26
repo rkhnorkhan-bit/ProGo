@@ -51,14 +51,21 @@ function Write-ProGoInstallerOutcomeBytes($Stream,[byte[]]$Bytes){
 }
 function Confirm-ProGoInstallerLiveInstalledPending($LiveContext,$Stream,[string]$Text,$CancellationToken){
     $fixture.Seals++
+    $LiveContext.ObserveInstalledPending($Stream)
+    Check-LiveInstalled ($LiveContext.VerifyAcceptedInstallState() -and -not $lease.VerifyAcceptedOutcome($physical)) 'own current pending writer is admitted only through same live typed context; old receipt-only namespace stays strict'
     if($scenario -in @('flush','readback')){
         $method=[ProGo.ApplicationShortcuts].GetMethod('SealLiveInstalledPending',[Reflection.BindingFlags]'NonPublic,Instance')
         return [LegacyRestoreReflectionFixture]::InvokeChecked($method,$manager,[object[]]@($LiveContext,$Stream,$Text,$CancellationToken,$scenario,$cancel))
     }
-    return & $actualConfirm $LiveContext $Stream $Text $CancellationToken
+    $sealed=& $actualConfirm $LiveContext $Stream $Text $CancellationToken
+    if($sealed){Check-LiveInstalled ($LiveContext.VerifyAcceptedInstallState() -and $LiveContext.InstalledFlushVerified -and $LiveContext.InstalledReadbackVerified) 'same writer namespace survives native seal Flush and exact readback'}
+    return $sealed
 }
 function Publish-ProGoInstallerLiveInstalledOutcome($LiveContext,$CancellationToken){
     $fixture.Publishes++
+    Check-LiveInstalled ($LiveContext.VerifyAcceptedInstallState() -and $LiveContext.VerifyInstalledMetadata('outcome.pending.json') -and -not $lease.VerifyAcceptedOutcome($physical)) 'closed owned pending survives current proof before exact rename without receipt-only bypass'
+    if($scenario -ceq 'extra-after-seal'){$extra=Join-Path $journal 'foreign-extra.bin';[IO.File]::WriteAllText($extra,'synthetic extra');$private[$extra]=Get-LiveInstalledHash $extra}
+    if($scenario -ceq 'pending-bytes-changed'){$b=[IO.File]::ReadAllBytes($pending);$b[0]=$b[0] -bxor 1;[IO.File]::WriteAllBytes($pending,$b);$private[$pending]=Get-LiveInstalledHash $pending}
     if($scenario -ceq 'cancel-before-publish'){$cancel.Cancel()}
     if($scenario -ceq 'foreign-target'){[IO.File]::WriteAllText($installed,'synthetic foreign installed result');$private[$installed]=Get-LiveInstalledHash $installed}
     if($scenario -ceq 'pending-replaced'){
@@ -66,6 +73,8 @@ function Publish-ProGoInstallerLiveInstalledOutcome($LiveContext,$CancellationTo
         [IO.File]::Move($pending,$retained);[IO.File]::WriteAllBytes($pending,$bytes);[IO.File]::SetCreationTimeUtc($pending,$creation);$private[$pending]=Get-LiveInstalledHash $pending
     }
     $observed=& $actualPublish $LiveContext $CancellationToken
+    if($observed){Check-LiveInstalled ($LiveContext.VerifyAcceptedInstallState() -and $LiveContext.VerifyInstalledOutcome() -and -not $lease.VerifyAcceptedOutcome($physical)) 'same exact native object admitted at installed state after rename and final verification; old API strict'}
+    if($scenario -ceq 'installed-extra'){$extra=Join-Path $journal 'foreign-extra.bin';[IO.File]::WriteAllText($extra,'synthetic extra');$private[$extra]=Get-LiveInstalledHash $extra}
     if($scenario -ceq 'cancel-after-publish'){$cancel.Cancel()}
     if($scenario -ceq 'context-lost-after-publish'){$context.Dispose()}
     if($scenario -ceq 'installed-replaced'){
@@ -82,7 +91,7 @@ try{
     $cases=@('complete','preserved-primary','preserved-startup','preserved-both','absent-startup','unsupported-absent','unsupported-custom','unsupported-optout',
         'wrong-operation','wrong-root','foreign-context','stale-evidence','serialized-context','disposed-context','failure-result','receipt-tampered','source-tampered',
         'primary-equal-byte','startup-equal-byte','custom-startup-equal-byte','reappeared-legacy','write','short-write','flush','readback','occupied-pending','foreign-target',
-        'pending-replaced','installed-replaced','cancel-before','cancel-before-publish','cancel-after-publish','error-after-publish','context-lost-after-publish')
+        'pending-replaced','installed-replaced','cancel-before','cancel-before-publish','cancel-after-publish','error-after-publish','context-lost-after-publish','preexisting-installed','extra-journal','extra-after-seal','pending-bytes-changed','installed-extra','unowned-stream')
     foreach($scenario in $cases){
         $fixture=@{Writes=0;Seals=0;Publishes=0};$case=Join-Path $work $scenario;$app=Join-Path $case 'app';$programs=Join-Path $case 'Programs';$startup=Join-Path $case 'Startup';$menu=Join-Path $programs 'ProGo'
         $primary=Join-Path $menu 'ProGo.lnk';$legacy=Join-Path $menu 'ProGo Status.lnk';$startupLink=Join-Path $startup 'ProGo.lnk'
@@ -118,6 +127,15 @@ try{
         }
         if($scenario -ceq 'reappeared-legacy'){[IO.File]::WriteAllText($legacy,'synthetic foreign Legacy');$private[$legacy]=Get-LiveInstalledHash $legacy}
         if($scenario -ceq 'occupied-pending'){[IO.File]::WriteAllText($pending,'synthetic foreign partial pending');$private[$pending]=Get-LiveInstalledHash $pending}
+        if($scenario -in @('preexisting-installed','extra-journal','unowned-stream')){
+            $extra=if($scenario -ceq 'preexisting-installed'){$installed}elseif($scenario -ceq 'unowned-stream'){$pending}else{Join-Path $journal 'foreign-extra.bin'}
+            [IO.File]::WriteAllText($extra,'synthetic preexisting foreign bytes')
+            if($scenario -ceq 'unowned-stream'){
+                $unowned=[IO.File]::Open($extra,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
+                try{$context.ObserveInstalledPending($unowned);Check-LiveInstalled (-not $context.InstalledPendingCreated) 'arbitrary existing stream cannot obtain CreateNew provenance'}finally{$unowned.Dispose()}
+            }
+            $private[$extra]=Get-LiveInstalledHash $extra
+        }
         $callBackup=$backup;$callEvidence=$prepared;$callContext=$context
         if($scenario -ceq 'wrong-operation'){$callBackup=[pscustomobject]@{InstallDirectory=$app;Journal=[pscustomobject]@{Directory=Join-Path (Join-Path $app 'backups') ('installer-journal-'+[Guid]::NewGuid().ToString('N'))}}}
         if($scenario -ceq 'wrong-root'){$callBackup=[pscustomobject]@{InstallDirectory=Join-Path $case 'foreign-app';Journal=$backup.Journal}}
@@ -128,7 +146,7 @@ try{
         $frozen=@{};foreach($file in Get-ChildItem -LiteralPath (Join-Path $app 'backups') -Recurse -File){$frozen[$file.FullName]=Get-LiveInstalledHash $file.FullName}
         $heldError=$null;if($scenario -in @('write','short-write','flush','readback','cancel-before','cancel-before-publish','cancel-after-publish','error-after-publish')){try{throw 'synthetic original installer error'}catch{$heldError=$_}}
         $summary=Invoke-ProGoInstallerSuccess $callBackup $writes $callEvidence $programs $startup $callContext $cancel.Token $heldError
-        $stateExpected=$scenario -notin @('unsupported-absent','unsupported-custom','unsupported-optout','wrong-operation','wrong-root','foreign-context','stale-evidence','serialized-context','disposed-context','failure-result','receipt-tampered','source-tampered','primary-equal-byte','startup-equal-byte','custom-startup-equal-byte','reappeared-legacy','context-lost-after-publish')
+        $stateExpected=$scenario -notin @('unsupported-absent','unsupported-custom','unsupported-optout','wrong-operation','wrong-root','foreign-context','stale-evidence','serialized-context','disposed-context','failure-result','receipt-tampered','source-tampered','primary-equal-byte','startup-equal-byte','custom-startup-equal-byte','reappeared-legacy','context-lost-after-publish','occupied-pending','foreign-target','pending-replaced','installed-replaced','preexisting-installed','extra-journal','extra-after-seal','pending-bytes-changed','installed-extra','unowned-stream')
         $recordExpected=$scenario -in @('complete','preserved-primary','preserved-startup','preserved-both','absent-startup','cancel-after-publish','error-after-publish')
         # Whitelisted scalar diagnostics before the first assertion; never error messages, paths or document content.
         $safeDiagnostic=[ordered]@{Case=$scenario;ExpectedState=$stateExpected;ExpectedRecorded=$recordExpected}

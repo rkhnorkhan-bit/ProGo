@@ -4020,17 +4020,17 @@
     }
   ],
   "ci_candidate": {
-    "source": "ed5a6d3460eb336a572f97692a432c7e6eccbe76",
-    "tree": "92ae495a582513e77c66d7e179912e73a365c34c",
-    "run_id": 40372281169,
-    "run_number": 732,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40372281169",
+    "source": "031168e2a3e0711aabbe8946341554bbe57f2e96",
+    "tree": "1d606bb3fa6ea4a9fd2a0acaafeaa28a6f2797ae",
+    "run_id": 40378897754,
+    "run_number": 733,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40378897754",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
-    "status": "in_progress",
+    "status": "queued",
     "conclusion": null,
-    "candidate_merge_ref": "c5dc7da114300fec3cbda96a554e5362b0424a08",
+    "candidate_merge_ref": "b6c5771c8fe3cc0b744bcfbfbab69817416ff199",
     "tested_merge": null,
     "required_partitions": [
       "vpn-server-test",
@@ -4039,7 +4039,7 @@
       "installer-live-tests",
       "installer-recovery-tests"
     ],
-    "new_windows": "Native34/refusal2/compiler/ABI/full exact5 aggregate NOT_RUN; await same sole automatic CI, no full wait",
+    "new_windows": "diagnostic34/refusal2/compiler/full exact5 aggregate NOT_RUN; root UNKNOWN; inspect same sole CI733",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5530,7 +5530,7 @@
     "scoring": "Existing v1.0 weights unchanged; no points for documentation/commit/unexecuted tests",
     "continuity": "No schedule/restart/continuous guarantee created"
   },
-  "active_work": "CI732 root UNKNOWN; bounded safe normal-success diagnostic stage only, no default activation/next feature; native proof pending sole new automatic CI",
+  "active_work": "CI733 source-proven installed namespace correction + separate Core UNKNOWN budget safe diagnostic; no new product stage/default activation; Windows native40/refusal2 NOT_RUN locally",
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
     "implementation": "SettingsService.TryAcquireLaunchRevision: Acquired/Busy/Changed via nonblocking commitGate; same-worker release and no state/disk mutation",
@@ -24388,6 +24388,70 @@
     "native": "Windows compilation/native34/refusal2 NOT_RUN",
     "default_activation": false,
     "next": "one automatic diagnostic CI, inspect exact failure evidence before root fix; no blind rerun/no next feature",
-    "bounds": "whole/runtime rollback/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/fullF30/strict5/deadlines unchanged"
+    "bounds": "whole/runtime rollback/restart/powerloss/PC acceptance open; UNKNOWN/BLOCKED_TRANSFER/fullF30/strict5/deadlines unchanged",
+    "publication": {
+      "source": "031168e2a3e0711aabbe8946341554bbe57f2e96",
+      "tree": "1d606bb3fa6ea4a9fd2a0acaafeaa28a6f2797ae",
+      "reviewed_local": "84ee00bf0b12b49070420e729822d5a1d5c50130",
+      "canonical_join": "db39fe53c1d0d6f5e5f15bfda9a6d93403851591",
+      "run": 40378897754,
+      "status": "queued",
+      "root_cause": "UNKNOWN",
+      "default_activation": false
+    }
+  },
+  "ci733_verified_owner_report": {
+    "source": "031168e2a3e0711aabbe8946341554bbe57f2e96",
+    "merge": "b6c5771c8fe3cc0b744bcfbfbab69817416ff199",
+    "run": 40378897754,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "logs": "owner independently read all6 full logs",
+    "live": {
+      "job": 121769428306,
+      "lines": 338,
+      "stage": "pending-seal/seal-current-state",
+      "pending_created": true,
+      "bytes_written": 18197,
+      "state_verified": false,
+      "recorded": false,
+      "flushed": false,
+      "readback": false,
+      "rename_accepted": false,
+      "native_exception": null,
+      "hresult": 0,
+      "win32": 0,
+      "new34": "0PASS/1FAIL/33NOT_RUN",
+      "refusal2": "NOT_RUN",
+      "old_failure_cases": "PASS"
+    },
+    "proven_code_cause": "own pending extra rejected by original admit-only journal namespace before seal; native rename not reached",
+    "core": {
+      "job": 121769429917,
+      "lines": 210,
+      "failure": "committed image-check WaitForExit(20000) budget",
+      "cause": "UNKNOWN, separate incident; no claimed fix/nonreproduction not proof",
+      "later": "Core/classifier/relay/pack NOT_RUN"
+    },
+    "foundation": "26PASS/full643",
+    "recovery": "6PASS/full539",
+    "ubuntu": "PASS/full623",
+    "aggregate": {
+      "job": 121788245321,
+      "lines": 180,
+      "status": "FAIL_CLOSED exact5 Core/Live failures"
+    }
+  },
+  "live_installed_namespace_gate": {
+    "base_checkpoint": "e69341bd268ff9a237e9e760b66b8cb70234879b",
+    "root_cause": "code-verified own pending rejected by original admit-only namespace, agrees with CI733 live progress; fixed native proof NOT_RUN",
+    "integration": "same existing installed transaction/session CreateNew provenance -> current own open/closed pending -> same exact renamed installed object -> existing current outcome consumption; default OFF",
+    "authority": "same context owner/lease/physical; original physical plan/source/receipt/runtime/snapshot/native origin+bytes; old receipt-only remains strict; no name-only or bool capability",
+    "tests": "original34/refusal2 assertions retained +6 native negatives; positive checks at real writer/seal/closed/rename/final boundaries; foreign output expectations strengthened to refuse current state",
+    "local": "95PASS legacy71+aggregate24/review/static/parity/secrets/public433source0release PASS",
+    "native": "native40/refusal2/Windows compiler/Core phase observer NOT_RUN locally",
+    "core_incident": "UNKNOWN; diagnostics-only same20s deadline, no product repair change; green rerun not cause proof",
+    "remaining": "default/actual complete installation/whole/runtime rollback/restart/powerloss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30 preserved"
   }
 }

@@ -1,3 +1,83 @@
+## CURRENT CI733 FAILURE; proven owned installed namespace transition correction
+
+Admission exact clean available checkpoint e69341bd268ff9a237e9e760b66b8cb70234879b; remote source
+031168e2a3e0711aabbe8946341554bbe57f2e96, merge b6c5771c8fe3cc0b744bcfbfbab69817416ff199,
+PR88 draft/open. Existing checkout and full docs/history retained. No queued/in_progress/waiting CI,
+Git/build/SSH processes or Git locks at admission; sole writer, no reset/discard.
+
+Owner independently verified all SIX CI733 logs: run40378897754 attempt1 FAILURE.
+Live121769428306 full338: complete refuses at pending-seal/seal-current-state, PendingCreated=true,
+BytesWritten18197, StateVerified=false/Recorded=false, Flush/Readback/RenameAccepted=false;
+native exception null/HResult0/Win320. New34=0PASS/1FAIL/33NOT_RUN, fresh-process2 NOT_RUN;
+all previous failure-chain cases PASS. Native rename was NOT reached; ABI/sharing not a proven cause.
+Code independently confirms exact cause: VerifyAcceptedInstallState -> VerifyLegacyAcceptedOutcome ->
+VerifyLegacyAcceptedContext -> VerifyLegacyOperationPlan -> strict LegacyOperationNamespace(journalRoot,
+expected) admits only original admit records, rejecting this live operation's own new outcome.pending.json.
+Correction is source-proven; new native correctness is NOT_RUN until the next exact CI.
+
+Separate Core121769429917 full210: committed image-check child did not finish WaitForExit(20000),
+RepairPayloadTests.ps1 former273. Earlier repair/self-check/copy PASS, later Core/classifier/relay/pack
+NOT_RUN. This budget incident root stays UNKNOWN, distinct from installed namespace. No ZIP/pack PASS
+inherited from another run. Foundation26 full643 PASS; Recovery6 full539 PASS; Ubuntu full623 PASS;
+aggregate121788245321 full180 exact5 correctly FAIL_CLOSED for Core/Live. CI728 cancellation UNKNOWN.
+These are owner-verified complete-log facts, not an assertion that this checkout executed Windows tests.
+
+Bounded correction in the EXISTING installed transaction, no new terminal mechanism/default activation:
+- The same typed session now creates the fixed pending via the existing CreateNew/ReadWrite/shareNone/
+  WriteThrough primitive, retaining its actual FileStream/SafeFileHandle/native origin and observed bytes.
+  Observe accepts only ReferenceEquals to that newly created stream; arbitrary preexisting file/stream is not
+  adopted. Seal additionally requires that same still-open writer, never a replacement stream/replay.
+- Only the live normal-success call threads this same context through accepted context/operation plan checks.
+  Original physical plan/hash/source/receipt/snapshot/runtime/admit validation stays exact BEFORE adding the
+  new output to namespace observation. Old receipt-only/failure paths keep the strict original namespace.
+- Initial namespace has no output exemption. Open owned pending verifies exact handle/origin/current bytes
+  on the same actual shareNone writer (no incompatible second reader). Closed pending uses native NOFOLLOW
+  READ/shareREAD|DELETE with exact original creation/native identity+bytes; compatible with the retained
+  exact rename DELETE handle, no production pin relaxed. Only accepted actual rename+flush/readback permits
+  the same object at installed.json; strict enumeration still rejects both names/any foreign extra/reparse.
+  Every recheck before/after seal/Flush/readback/rename/final current outcome follows this same transition.
+- Own empty/partial observed bytes permit truthful state observation, never durable recorded success;
+  sealed canonical document/Flush/exact readback/native rename/final verification remain separate requirements.
+  Changed/foreign/replaced output vetoes current state. Partial artifacts retained, no cleanup/retry/adoption.
+- Real Windows fixture retains all34 scenarios/fresh-refusal2/old assertions and adds6: preexisting-installed,
+  extra-journal, extra-after-seal, pending-bytes-changed, installed-extra, unowned-stream. Existing equal-byte/
+  copied-creationtime pending+installed replacements remain native negative cases. Four old output-conflict
+  state expectations are strengthened to false (occupied-pending/foreign-target/pending-replaced/installed-
+  replaced): current state now includes exact owned output namespace, not just original auxiliary material.
+  Same state/result assertions retained, not waived. Positive checks explicitly exercise actual live writer,
+  sealed/closed pending, exact renamed installed state; old receipt-only accepted verification refuses each.
+  Actual Write/shortwrite/Flush/readback/cancel/late error/source/context/fresh child/no-replay/error preservation
+  and all preserved-primary/failure fixtures remain. Private/foreign/source/backup bytes and handle release checked.
+
+Separate limited Core diagnostic: reuse existing synthetic RepairPhaseProbe's exact real Repair script/phase
+observer with a separate fixed CreateNew committed-repair.phases. Safe start/body-phase/elapsed/process/
+stream-progress/exit-code/journal-phase/error-type evidence at start/barrier/deadline/exit/cleanup. No raw
+output/paths/argv/IDs/messages/credentials. Original 20s child,10s barrier,3s drain/cleanup deadlines and
+all commit/recovery/assertions remain. No production repair change; a future green run is NOT a proven
+fix of this UNKNOWN incident. Core classification needs actual evidence from that same next run.
+
+Local PASS: legacy71 (including5 additional static wiring regressions) + aggregate24 =95; bounded review/
+all-other-native+failure/default parity/prior34 assertions/strict5 aggregate/workflow/deadline/classifier/F23/
+F30 preservation; sharing/reflection contracts/lexical/JSON/diff/secrets/public433source0release.
+Native40/refusal2/Windows compilation/actual Core phase probe NOT_RUN locally (no pwsh/dotnet/compiler).
+One guarded publication and one automatic CI; no blind rerun/dispatch/full CI wait/next product stage.
+Default OFF; state verified != durable installed result != actual complete installation. Whole/runtime
+rollback/restart recovery/power-loss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/fullF30/all33+new
+suites/strict5 exact merge failclosed/deadlines retained. No live install/user data/security/privilege changes.
+
+## CURRENT sole diagnostic CI733 queued; CI732 root UNKNOWN
+
+Published source `031168e2a3e0711aabbe8946341554bbe57f2e96`; full tree `1d606bb3fa6ea4a9fd2a0acaafeaa28a6f2797ae` equals reviewed local code
+`84ee00bf0b12b49070420e729822d5a1d5c50130`; canonical join `db39fe53c1d0d6f5e5f15bfda9a6d93403851591` preserves prior checkpoints/docs.
+Candidate merge `b6c5771c8fe3cc0b744bcfbfbab69817416ff199` is NOT yet tested. One guarded expected-head non-force update from exact
+CI732 source; one automatic [CI733](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40378897754),
+pull_request/attempt1/source-filtered count1, observed queued/conclusion null. No rerun/dispatch/second push.
+Local90/review/static/parity/secrets/public guard PASS; new native diagnostic34/refusal2/compiler/full5
+exactSHA aggregate NOT_RUN. No full CI wait; inspect this SAME run's safe state/stage/error evidence next.
+Root cause remains UNKNOWN; no speculative fix/default activation/next feature. This docs-only checkpoint
+is intentionally local. Whole/runtime rollback/restart/power-loss/PC acceptance OPEN;
+UNKNOWN/BLOCKED_TRANSFER/fullF30/all33+native cases/strict5/deadlines preserved.
+
 ## CURRENT CI732 FAILURE verified by owner; bounded normal-success diagnostic candidate
 
 Admission exact clean checkpoint ad7c6d49848c02b27efc64402bb3b8d056a6ff11 in the existing checkout;

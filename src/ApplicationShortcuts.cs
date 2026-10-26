@@ -258,7 +258,9 @@ namespace ProGo
             internal AuxiliaryOutcomeResult auxiliaryResult;
             internal readonly string startupPreparationOrigin;
             internal bool installedHandling, installedPublication, installedRenameAttempted, installedInterrupted;
-            internal FileStream installedStartupPin;
+            internal FileStream installedStartupPin, installedPendingWriter;
+            internal SafeFileHandle installedPendingHandle;
+            internal byte[] installedObservedBytes;
             internal byte[] installedDocument;
             internal string installedOrigin, installedHash;
             public bool InstalledPendingCreated { get; internal set; }
@@ -403,14 +405,29 @@ namespace ProGo
                     } catch (Exception error) { ObserveInstalledException(error); return false; }
                 }
             }
+            // The live session itself owns CreateNew provenance, never an arbitrary observed file/stream.
+            public FileStream CreateInstalledPending()
+            {
+                lock (gate) {
+                    if (disposed || !installedPublication || installedPendingWriter != null || !VerifyAcceptedInstallState())
+                        throw new IOException("Live installed pending creation is blocked.");
+                    var stream = new FileStream(owner.InstalledMetadataPath(this, false), FileMode.CreateNew,
+                        FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);
+                    installedPendingWriter = stream; installedPendingHandle = stream.SafeFileHandle;
+                    InstalledPendingCreated = true;
+                    try { installedOrigin = LegacyOrigin(installedPendingHandle); ObserveInstalledPending(stream); return stream; }
+                    catch { stream.Dispose(); throw; } // retain partial artifact, never retry or delete
+                }
+            }
             public void ObserveInstalledPending(FileStream stream)
             {
                 lock (gate) { try {
-                    if (!installedPublication || stream == null || stream.GetType() != typeof(FileStream) ||
+                    if (disposed || !installedPublication || stream == null || !Object.ReferenceEquals(stream, installedPendingWriter) ||
+                        installedPendingHandle == null || installedPendingHandle.IsClosed || installedOrigin != LegacyOrigin(installedPendingHandle) ||
                         !String.Equals(Path.GetFullPath(stream.Name), owner.InstalledMetadataPath(this, false), StringComparison.OrdinalIgnoreCase)) return;
-                    string origin = LegacyOrigin(stream.SafeFileHandle);
-                    if (installedOrigin != null && installedOrigin != origin) return;
-                    installedOrigin = origin; InstalledPendingCreated = true; InstalledBytesWritten = stream.Length;
+                    long position = stream.Position;
+                    try { stream.Position = 0; installedObservedBytes = ReadLiveInstalledProgressBytes(stream); InstalledBytesWritten = stream.Length; }
+                    finally { stream.Position = position; }
                 } catch { } }
             }
             public bool SealInstalledPending(FileStream stream, string text, CancellationToken token)
@@ -423,11 +440,22 @@ namespace ProGo
             public bool VerifyInstalledOutcome()
             { lock (gate) { return InstalledOutcomeRecorded && owner.VerifyLiveInstalledMetadata(this, true); } }
             public void Dispose()
-            { lock (gate) { if (disposed) return; disposed = true;
-                try { if (restoredPin != null) restoredPin.Dispose(); }
-                finally { try { if (primaryPin != null) primaryPin.Dispose(); }
-                    finally { try { if (installedStartupPin != null) installedStartupPin.Dispose(); }
-                        finally { try { lease.Dispose(); } finally { physical.Dispose(); } } } } } }
+            {
+                lock (gate) {
+                    if (disposed) return; disposed = true;
+                    try { if (restoredPin != null) restoredPin.Dispose(); }
+                    finally {
+                        try { if (primaryPin != null) primaryPin.Dispose(); }
+                        finally {
+                            try { if (installedPendingWriter != null) installedPendingWriter.Dispose(); }
+                            finally {
+                                try { if (installedStartupPin != null) installedStartupPin.Dispose(); }
+                                finally { try { lease.Dispose(); } finally { physical.Dispose(); } }
+                            }
+                        }
+                    }
+                }
+            }
         }
         // One terminal observation of all three auxiliary components, never restart/runtime authority.
         public sealed class AuxiliaryOutcomeResult
@@ -599,7 +627,7 @@ namespace ProGo
                 if (context.disposed || !Object.ReferenceEquals(context.owner, this) || context.failureEntered || context.startupConsumed || context.menuConsumed ||
                     context.auxiliaryEntered || context.auxiliaryResult != null || context.restored != null || context.lease.restoreResult != null ||
                     !VerifyLivePreparationStartup(context.preparation) || !VerifyDurableMenuRollbackEvidence(context.menuMap) ||
-                    !VerifyLegacyAcceptedOutcome(context.lease, context.physical)) return false;
+                    !VerifyLegacyAcceptedOutcome(context.lease, context.physical, context)) return false;
                 if (context.preparation.Exists) using (var stream = OpenLegacyRestartRead(startup)) {
                     if (context.startupPreparationOrigin != LegacyOrigin(stream.SafeFileHandle) || context.preparation.Hash != Digest(ReadLegacyEvidenceBytes(stream))) return false;
                 }
@@ -662,7 +690,9 @@ namespace ProGo
                     context.InstalledDiagnosticStage = "seal-observe";
                     context.ObserveInstalledPending(stream);
                     context.InstalledDiagnosticStage = "seal-current-state";
-                    if (!context.installedPublication || !context.InstalledPendingCreated || context.installedDocument != null || !context.VerifyAcceptedInstallState()) return false;
+                    if (!context.installedPublication || !context.InstalledPendingCreated || context.installedDocument != null ||
+                        !Object.ReferenceEquals(stream, context.installedPendingWriter) || context.installedPendingHandle == null ||
+                        context.installedPendingHandle.IsClosed || !context.VerifyAcceptedInstallState()) return false;
                     byte[] document = Encoding.UTF8.GetBytes(text);
                     context.InstalledDiagnosticStage = "seal-document";
                     if (!AuthorizeInstalledDocument(context, document)) return false;
@@ -901,7 +931,7 @@ namespace ProGo
             return lease.replacementOrigin == LegacyOrigin(replacement.SafeFileHandle) &&
                 lease.replacementHash == Digest(ReadLegacyEvidenceBytes(replacement));
         }
-        private bool VerifyLegacyAcceptedContext(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        private bool VerifyLegacyAcceptedContext(LegacyDeletionPins lease, LegacyPhysicalPins physical, LegacyStartupContext installedContext = null)
         {
             if (lease.resources == null || lease.lastResult == null || !lease.lastResult.OperationAccepted ||
                 !lease.lastResult.AcceptanceKnown || !lease.lastResult.TargetHandleClosed || !lease.lastResult.ContextObservedAfterOperation ||
@@ -918,7 +948,8 @@ namespace ProGo
             while (offset < source.Length && lines < 9) { if (source[offset++] == 10) lines++; }
             if (lines != 9 || offset == source.Length) return false;
             byte[] original = new byte[source.Length - offset]; Buffer.BlockCopy(source, offset, original, 0, original.Length);
-            try { return VerifyLegacyOperationEvidence(lease, original) && VerifyLegacyOperationPlan(lease, physical); }
+            try { return VerifyLegacyOperationEvidence(lease, original) && (installedContext == null ?
+                VerifyLegacyOperationPlan(lease, physical) : VerifyLegacyOperationPlan(lease, physical, installedContext)); }
             finally { Array.Clear(original, 0, original.Length); Array.Clear(source, 0, source.Length); }
         }
         private static FileStream OpenLegacyAcceptedPublicationRead(string path)
@@ -966,20 +997,20 @@ namespace ProGo
                 return lease.acceptedOutcome;
             }
         }
-        private bool VerifyLegacyAcceptedOutcome(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        private bool VerifyLegacyAcceptedOutcome(LegacyDeletionPins lease, LegacyPhysicalPins physical, LegacyStartupContext installedContext = null)
         {
             lock (lease.gate) {
                 try {
                     var receipt = lease.acceptedOutcome;
                     if (receipt == null || !receipt.DurableOutcomeRecorded || physical == null) return false;
                     var observed = physical.WithPins<LegacyAcceptedOutcome>(() => {
-                        if (!VerifyLegacyAcceptedContext(lease, physical)) return null;
+                        if (!VerifyLegacyAcceptedContext(lease, physical, installedContext)) return null;
                         using (var replacement = OpenLegacyRestartRead(Path.Combine(menu, "ProGo.lnk")))
                         using (var stream = OpenLegacyRestartRead(LegacyAcceptedPath(lease.reference.Source.Operation))) {
                             byte[] expected = LegacyAcceptedDocument(lease, receipt.Origin);
                             return receipt.Origin == LegacyOrigin(stream.SafeFileHandle) && receipt.Hash == Digest(expected) &&
                                 Equal(expected, ReadLegacyReferenceBytes(stream)) && VerifyLegacyAcceptedReplacement(lease, replacement) &&
-                                VerifyLegacyAcceptedContext(lease, physical) ? receipt : null;
+                                VerifyLegacyAcceptedContext(lease, physical, installedContext) ? receipt : null;
                         }
                     });
                     return observed != null;
@@ -1043,7 +1074,7 @@ namespace ProGo
             }
             return seenFiles.SetEquals(expectedFiles) && seenDirectories.SetEquals(expectedDirectories);
         }
-        private bool VerifyLegacyOperationPlan(LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        private bool VerifyLegacyOperationPlan(LegacyDeletionPins lease, LegacyPhysicalPins physical, LegacyStartupContext installedContext = null)
         {
             var reference = lease.reference; var proof = reference.Source;
             if (!physical.MatchesOwner(this)) return false;
@@ -1091,7 +1122,45 @@ namespace ProGo
                 if (!LegacySchemaOne(record["Schema"]) || !Object.Equals(record["Phase"], "admitted") || !(record["Sequence"] is int) || (int)record["Sequence"] != i ||
                     !Object.Equals(record["Inventory"], inventoryText) || !LegacySameEntry(record["Entry"], entries[i])) return false;
             }
+            // Physical original-material plan stays exact above. Only the same live session can add its
+            // newly created metadata object to namespace observation; every old receipt-only path is strict.
+            if (installedContext != null && !AddLiveInstalledNamespace(installedContext, lease, physical, journalRoot, expected)) return false;
             return LegacyOperationNamespace(snapshotRoot, expected) && LegacyOperationNamespace(journalRoot, expected);
+        }
+        private static byte[] ReadLiveInstalledProgressBytes(FileStream stream)
+        { return stream.Length == 0 ? new byte[0] : ReadLegacyReferenceBytes(stream); }
+        private bool AddLiveInstalledNamespace(LegacyStartupContext context, LegacyDeletionPins lease, LegacyPhysicalPins physical,
+            string journalRoot, System.Collections.Generic.Dictionary<string, string> expected)
+        {
+            if (context.disposed || !Object.ReferenceEquals(context.owner, this) || !Object.ReferenceEquals(context.lease, lease) ||
+                !Object.ReferenceEquals(context.physical, physical) || context.failureEntered || context.auxiliaryEntered || context.restored != null) return false;
+            if (context.installedPendingWriter == null) return true; // original namespace, no name exemption
+            if (!context.installedPublication || !context.InstalledPendingCreated || context.installedOrigin == null || context.installedObservedBytes == null ||
+                context.installedPendingHandle == null) return false;
+            bool installed = context.InstalledRenameAccepted;
+            if (installed && (!context.installedRenameAttempted || !context.InstalledFlushVerified || !context.InstalledReadbackVerified ||
+                context.installedDocument == null || !Equal(context.installedDocument, context.installedObservedBytes))) return false;
+            string path = InstalledMetadataPath(context, installed);
+            if (!String.Equals(Path.GetDirectoryName(path), journalRoot, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!context.installedPendingHandle.IsClosed) {
+                if (installed || context.installedOrigin != LegacyOrigin(context.installedPendingHandle)) return false;
+                long position = context.installedPendingWriter.Position;
+                try {
+                    context.installedPendingWriter.Position = 0;
+                    if (!Equal(context.installedObservedBytes, ReadLiveInstalledProgressBytes(context.installedPendingWriter))) return false;
+                } finally { context.installedPendingWriter.Position = position; }
+                // The actual CreateNew writer shares None, so this exact name cannot be replaced while open.
+            } else {
+                CheckLocation(path);
+                // READ reader permits our exact rename handle's DELETE access, never a WRITE open.
+                using (var handle = OpenLegacyForDisposition(path, 0x80000000u, 5, IntPtr.Zero, 3, 0x00200000u, IntPtr.Zero)) {
+                    if (handle.IsInvalid || context.installedOrigin != LegacyOrigin(handle)) return false;
+                    using (var stream = new FileStream(handle, FileAccess.Read))
+                        if (!Equal(context.installedObservedBytes, ReadLiveInstalledProgressBytes(stream))) return false;
+                }
+            }
+            expected.Add(path, Digest(context.installedObservedBytes));
+            return true;
         }
         private bool VerifyLegacyOperationEvidence(LegacyDeletionPins lease, byte[] bytes)
         {

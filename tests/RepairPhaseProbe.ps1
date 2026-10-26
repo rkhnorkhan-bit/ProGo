@@ -1,4 +1,4 @@
-param([string]$RepairScript, [string]$Payload, [string]$FixtureRoot)
+param([string]$RepairScript, [string]$Payload, [string]$FixtureRoot, [switch]$CommittedProbe)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Repair phase probe requires isolated CI.' }
@@ -8,7 +8,7 @@ if ([IO.Path]::GetDirectoryName($fixture) -ine $tempRoot -or [IO.Path]::GetFileN
     -not [IO.Directory]::Exists($fixture) -or ((Get-Item -LiteralPath $fixture -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Repair probe fixture scope is invalid.' }
 if ([IO.Path]::GetFileName($RepairScript) -cne 'Repair-ProGo.ps1' -or -not [IO.File]::Exists($RepairScript) -or
     [IO.Path]::GetFullPath($Payload) -ine (Join-Path $fixture 'payload')) { throw 'Repair probe input scope is invalid.' }
-$trace = Join-Path $fixture 'complete-repair.phases'
+$trace = Join-Path $fixture $(if ($CommittedProbe) { 'committed-repair.phases' } else { 'complete-repair.phases' })
 $stream = New-Object IO.FileStream -ArgumentList @($trace, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::ReadWrite)
 $clock = [Diagnostics.Stopwatch]::StartNew(); $probe = @{ Failed = $false }
 $writePhase = {
