@@ -620,18 +620,19 @@ function Get-IsolatedSshFixtureThreadFacts($OwnedProcess) {
     $running = 0; $ready = 0; $waiting = 0; $otherState = 0
     $executive = 0; $userRequest = 0; $suspended = 0; $delay = 0; $page = 0; $otherWait = 0
     try {
-        foreach ($thread in $OwnedProcess.Threads) {
+        # Invoke get_Value as a METHOD: ordinary property syntax masks getter exceptions as null.
+        foreach ($thread in $OwnedProcess.PSObject.Properties['Threads'].get_Value()) {
             if ($count -ge 32) { $capped = $true; break }
             $count++
             try {
-                $state = [string]$thread.ThreadState
+                $state = [string]$thread.PSObject.Properties['ThreadState'].get_Value()
                 switch ($state) {
                     'Running' { $running++ }
                     'Ready' { $ready++ }
                     'Wait' {
                         $waiting++
                         try {
-                            switch ([string]$thread.WaitReason) {
+                            switch ([string]$thread.PSObject.Properties['WaitReason'].get_Value()) {
                                 'Executive' { $executive++ }
                                 'UserRequest' { $userRequest++ }
                                 'Suspended' { $suspended++ }

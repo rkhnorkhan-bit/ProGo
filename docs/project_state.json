@@ -4020,14 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
-    "tree": "ca28cd6919be80187a3c9c13d924d6e7fc9b77f3",
-    "run_id": 40241990486,
-    "run_number": 711,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40241990486",
+    "source": "bfa4cbaa964b5ae79995547c20070d3797474b51",
+    "tree": "087641a838041fcae098b55d32023253cb97f06f",
+    "run_id": 40247448487,
+    "run_number": 712,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40247448487",
     "status": "completed",
     "conclusion": "failure",
-    "tested_merge": "e245c2466270caeb3729f030b461d919217c5b9b",
+    "tested_merge": "d8dfb08cdc0a670904f6a338313b562b027b80f7",
+    "Windows_classifier26_DurableInput12": "classifier26 FAIL state-getter-error; DurableInput12 scoped PASS; all33 installer PASS; real SSH/laterCore/package NOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5519,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
-    "tree": "ca28cd6919be80187a3c9c13d924d6e7fc9b77f3",
-    "prior_checkpoint": "680d2360335b6830108c51e0d382e1e166b5ddfd",
-    "stage": "Approved test-only wiring classifier26/Core + DurableInput12/Recovery",
-    "status": "Windows NOT_RUN before automatic CI; old CI711 globalFAIL/startupUNKNOWN preserved",
-    "next": "After sole automatic CI, full5 logs/exact merge/new38cases/all33installer/Core/strict4aggregate; no journal/predelete until fullPASS",
+    "source": "bfa4cbaa964b5ae79995547c20070d3797474b51",
+    "tree": "087641a838041fcae098b55d32023253cb97f06f",
+    "prior_checkpoint": "7ee61de08815e2e4db37b311d0a8434310019de2",
+    "stage": "CI712 bounded getter-exception diagnostic fix",
+    "status": "CI712 terminalFAIL; exact installer33/DurableInput12PASS; classifier error source-proven; new WindowsNOT_RUN",
+    "next": "One guarded push/automatic CI; full5logs/exactmerge/classifier26/all33/Core/strictaggregate before journal integration",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All32 suites/4aggregate/deadlines/runtime untouched",
@@ -23216,6 +23217,42 @@
     "local_tests": "static12+classifier6+aggregate17 PASS (35)",
     "WCT_privileges_runtime_timeout_flags": "NO CHANGES",
     "publication": "one expected-HEAD push / one automatic PR run authorized",
+    "score_delta": 0
+  },
+  "ci711_history_before_supplemental": {
+    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
+    "tree": "ca28cd6919be80187a3c9c13d924d6e7fc9b77f3",
+    "run_id": 40241990486,
+    "run_number": 711,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40241990486",
+    "status": "completed",
+    "conclusion": "failure",
+    "tested_merge": "e245c2466270caeb3729f030b461d919217c5b9b",
+    "score_delta": 0
+  },
+  "ci712_history_before_getter_fix": {
+    "source": "bfa4cbaa964b5ae79995547c20070d3797474b51",
+    "tree": "087641a838041fcae098b55d32023253cb97f06f",
+    "run_id": 40247448487,
+    "run_number": 712,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40247448487",
+    "status": "completed",
+    "conclusion": "failure",
+    "tested_merge": "d8dfb08cdc0a670904f6a338313b562b027b80f7",
+    "Windows_classifier26_DurableInput12": "classifier26 FAIL state-getter-error; DurableInput12 scoped PASS; all33 installer PASS; real SSH/laterCore/package NOT_RUN",
+    "score_delta": 0
+  },
+  "ci712_getter_fix": {
+    "parent_source": "bfa4cbaa964b5ae79995547c20070d3797474b51",
+    "prior_checkpoint": "7ee61de08815e2e4db37b311d0a8434310019de2",
+    "root_cause": "PowerShell property binder masks throwing getter as null; diagnostic catch not reached",
+    "fix": "Explicit PSPropertyInfo.get_Value method calls for collection/state/reason; unchanged error-count expectations",
+    "vectors": 26,
+    "installer_suites": 33,
+    "new_Windows_execution": "NOT_RUN",
+    "local_static_classifier7_durable12_aggregate17": "36 PASS",
+    "runtime_flags_deadlines_privileges": "UNCHANGED",
+    "old_startup": "UNKNOWN, independent incident",
     "score_delta": 0
   }
 }

@@ -86,9 +86,13 @@ $sample = New-Sample; $sample.State = [Enum]::ToObject([Diagnostics.ThreadState]
 $facts = Read-Facts ([pscustomobject]@{ Threads = @($sample) })
 Assert-Facts ($facts['otherState'] -ceq '1' -and $sample.ReasonReads -eq 0) 'unknown-state'
 $checks++
+# Regression witness: direct CLR property syntax masks the exception even under StrictMode/Stop.
+$maskedSample = New-Sample; $maskedSample.ThrowState = $true
+$maskedState = [string]$maskedSample.ThreadState
+Assert-Facts ($maskedState -ceq '' -and $maskedSample.StateReads -eq 1 -and $maskedSample.ReasonReads -eq 0) 'direct-state-getter-exception-is-masked'
 $sample = New-Sample; $sample.ThrowState = $true
 $facts = Read-Facts ([pscustomobject]@{ Threads = @($sample) })
-Assert-Facts ($facts['threadProbeErrors'] -ceq '1' -and $facts['waiting'] -ceq '0' -and $sample.ReasonReads -eq 0) 'state-getter-error'
+Assert-Facts ($facts['threadProbeErrors'] -ceq '1' -and $facts['waiting'] -ceq '0' -and $facts['otherState'] -ceq '0' -and $sample.StateReads -eq 1 -and $sample.ReasonReads -eq 0) 'state-getter-error'
 $checks++
 $sample = New-Sample; $sample.ThrowReason = $true
 $facts = Read-Facts ([pscustomobject]@{ Threads = @($sample) })

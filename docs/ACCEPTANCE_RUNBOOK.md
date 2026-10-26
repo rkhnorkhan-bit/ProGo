@@ -1,3 +1,65 @@
+## CURRENT CI712 getter-exception diagnostic fix; new Windows verification NOT_RUN
+
+CI712 all5 full final logs independently read: sourcebfa4cbaa964b5ae79995547c20070d3797474b51,
+merge d8dfb08cdc0a670904f6a338313b562b027b80f7, run40247448487. Foundation121331921829
+PASS27/665lines; Recovery121331921733 PASS6/297lines including actual DurableInput12 and all33 installer suites.
+Ubuntu121331921904 SUCCESS/612lines including aggregate layout17. Core121331921885 FAILURE/2794lines:
+2026-10-26 00:12:17 UTC Synthetic thread facts failed: state-getter-error at Assert-Facts helper line44.
+Aggregate121336105934/174lines correctly FAIL, all4 tested SHA equal. No classifier26 summary; real owned SSH
+launcher and subsequent Core/native/Desktop/Instance/relay/package NOT_RUN. This is NOT the old startup timeout.
+PR88 remains exact source/open, queued/in_progress/waiting independently0; clean checkpoint7ee61de verified,
+sole root/no Git/compiler/PowerShell writer. Historical local-only checkpoints preserved, no reset/clean.
+
+Proven source-level cause: PowerShell ordinary property-access binder WrapGetMemberInTry intentionally catches
+getter exceptions and returns null (including StrictMode). Thus [string]$thread.ThreadState can become empty
+rather than reach the diagnostic catch/threadProbeErrors. The test expectation is correct: inaccessible state
+must be counted as a probe error, not a successfully read other state. Log does not expose individual count
+values; the derived empty/other-state behavior is code analysis, not invented log output.
+Primary source: https://github.com/PowerShell/PowerShell/blob/v7.4.0/src/System.Management.Automation/engine/runtime/Binding/Binders.cs
+WrapGetMemberInTry explicitly returns NullConstant for ordinary Exception; nearby property branch documents
+this behavior since V2 even in StrictMode. Public source corroborates mechanism, not a local PS5.1 execution.
+https://github.com/PowerShell/PowerShell/blob/v7.4.0/src/System.Management.Automation/engine/CoreAdapter.cs
+GetDotNetMethodImpl exposes named accessor methods; MshMemberInfo.cs PSProperty/PSNoteProperty.Value supplies
+actual getter/note value. Use PSObject.Properties[name].get_Value() as a METHOD to let the existing catches
+receive exceptions for Threads, ThreadState and WaitReason. No native methods/privileges/process probe added.
+
+Bounded fix: only these3 diagnostic property reads plus explanatory comment. Counters/buckets/schema/cap32/
+error ownership remain unchanged. Existing synthetic assertions retained; state case strengthened with exact
+StateReads1/ReasonReads0/otherState0, plus direct-getter masking witness under same StrictMode/Stop. All26 vectors
+remain and complete26 mandatory; no expectation relaxation. Adjacent reason/state-change/collection errors use
+the same explicit access so they cannot silently mask an exception either. Real SSH launch/stdio/ownership/
+5000ms/flags/environment/native validation/cleanup unchanged. DurableInput stale not-registered comment corrected;
+Foundation27/Recovery6/installer33/strict4aggregate/workflow and all native test bodies unchanged.
+
+Local focused PowerShell execution unsupported: no pwsh/powershell/.NET/Mono/Wine, no install/download or new
+permission sought. Python static classifier7 + durable12 + aggregate17 =36 PASS; signature/accessor source
+review, reverse parity, JSON/diff/secrets/public-content checks local. New classifier Windows26 NOT_RUN until
+new CI full logs; DurableInput12 actual CI712PASS remains exact-source scoped, not automatically a new-sourcePASS.
+Old pre-body Python startup and all other UNKNOWN incidents remain UNKNOWN; diagnostic getter fix does not
+claim startup repair. BLOCKED_TRANSFER/no retry, WCT/SeDebug forbidden/pending actual owner answer, complete
+approved31/nested55 and weights retained delta0. No journal/predelete/next feature.
+One expected-HEAD source push and one automatic PR run only; no rerun/dispatch. Next SAME new run all5 full logs,
+exact merge/classifier26/previous33+Core/strict aggregate; no early fullPASS based on synthetic output.
+
+## CURRENT CI712 published supplemental tests; Windows NOT_RUN pending full logs
+
+Published source bfa4cbaa964b5ae79995547c20070d3797474b51,
+exact tree087641a838041fcae098b55d32023253cb97f06f, parentbd823bec071f611ee73d4e9045e737cdcb2d5709.
+Reviewed local8f412927bbf227cfd27f9ec07fdf14eca4108dc0, same tree; prior clean680d236 preserved.
+One guarded expected-parent PR88 update succeeded, exactly one automatic pull_request CI712 observed:
+https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40247448487 — in_progress, no conclusion at checkpoint.
+No dispatch/rerun/second push. Fetch joined exit0, exact published commit/parent/tree restored in separate own
+checkpoint worktree. Full logs/tested merge/new Windows38 results still NOT_RUN/not reviewed, no inherited PASS.
+Core classifier26 once before unchanged SSH startup; Recovery adds DurableInput12 after existing Durable20.
+Foundation27/Recovery6/total33, old32 unchanged; strict4partitions/aggregate unchanged. Python35 local PASS,
+public-content410/0 PASS, reverse parity/signatures/layout/JSON/diff/secrets/manual-public review PASS.
+CI711 Source18/Durable20 scopedPASS only at mergee245c2466270caeb3729f030b461d919217c5b9b;
+CI711 globalFAIL/startupUNKNOWN not repaired by this test-only patch. No production, privilege/WCT/security/
+flags/environment/deadline changes. UNKNOWN/BLOCKED_TRANSFER/no retry/fullscope/weights retained delta0.
+Next SAME CI712 all5 final logs, exact tested merge and classifier26/DurableInput12 + every previous suite;
+new synthetic PASS cannot replace Core/strict aggregate gate. No journal/predelete until full CI PASS.
+This checkpoint is local only; no second publication or CI.
+
 ## CURRENT approved CI wiring for supplemental Durable12 and classifier26
 
 Base local clean680d2360335b6830108c51e0d382e1e166b5ddfd; published parent

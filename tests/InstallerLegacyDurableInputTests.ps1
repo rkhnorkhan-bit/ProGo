@@ -1,4 +1,4 @@
-# Standalone supplemental Windows native tests; deliberately not registered in the existing 32 suites.
+# Supplemental Windows native tests; registered once in Installer Recovery after the original 32 suites.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 . (Join-Path (Split-Path -Parent $PSScriptRoot) 'scripts\Shortcuts-ProGo.ps1')

@@ -16,9 +16,19 @@ class SshThreadFactsStaticTests(unittest.TestCase):
         self.launcher = self.driver.split('function Invoke-IsolatedSshFixtureTool', 1)[1].split(
             '# Regression vectors use only', 1)[0]
 
-    def test_existing_classifier_is_unchanged(self):
+    def test_reviewed_classifier_getter_fix_is_frozen(self):
         actual = hashlib.sha256(('function Get-IsolatedSshFixtureThreadFacts' + self.classifier).encode()).hexdigest()
-        self.assertEqual(actual, '70984ce4c0ab16cd98982c5241b995ea0b790f0ad3eef5a80733989351f64681')
+        self.assertEqual(actual, 'a360a969ccd5d3dc3ec04aa039535c85c4bc63abb19fa9362cc984ce280e9dd9')
+
+    def test_explicit_method_getters_preserve_original_error_contract(self):
+        for owner, name in (('$OwnedProcess','Threads'),('$thread','ThreadState'),('$thread','WaitReason')):
+            self.assertIn(owner + ".PSObject.Properties['" + name + "'].get_Value()", self.classifier)
+        for masked in ('$OwnedProcess.Threads', '$thread.ThreadState', '$thread.WaitReason'):
+            self.assertNotIn(masked, self.classifier)
+        self.assertIn('direct-state-getter-exception-is-masked', self.harness)
+        self.assertIn("$facts['threadProbeErrors'] -ceq '1'", self.harness)
+        self.assertIn("$facts['otherState'] -ceq '0'", self.harness)
+        self.assertIn('$checks -eq 26', self.harness)
 
     def test_existing_launch_stdio_ownership_is_unchanged(self):
         actual = hashlib.sha256(('function Invoke-IsolatedSshFixtureTool' + self.launcher).encode()).hexdigest()
