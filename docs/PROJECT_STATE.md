@@ -1,3 +1,105 @@
+## CURRENT CI726 SUCCESS verified; integrated scoped live Legacy->Startup failure handlers (Menu blocked)
+
+Admission checkpoint8b4304a255a806394fb0d330aa8dc3855a06bbbc is available/clean, full3docs diff(+90/-17)
+relative to source7f8e5f7f40c32033dcd79092162c992c0135c5f8 retained. PR88 draft/open/unmerged exact
+source/merge9b02419428438a5e7a9495ccd92b2f8977a3dd36. No active queued/in_progress CI, Git/build/SSH process,
+Git lock or competing writer observed at admission. Sole writer/no agents/reset/clean/discarded work.
+
+CI726 five complete logs retrieved and exact merge checked (Ubuntu retrieval initially errored, retried read
+successfully, not a CI rerun): Foundation121569899469 preparation13/child2/live sharing/CLR/Restore22/all27
+PASS; Recovery121569899773 all6/Owned29/receipt14/refusal2 PASS; Core121569899764 classifier26/Desktop6394/
+Instance30/Maintenance126/Shutdown47/HomeVPN4817/Portable91/Python116PASS2SKIP; Ubuntu121569899743 PASS;
+aggregate121584878997 all4 exact merge PASS. Run40322267040/attempt1 SUCCESS. ZIP706928 SHA256
+8da34a60742b2eecf2503dfb935b3c784758e4f1d42e715c780349384963609f runner-only/uploads SKIPPED, not PC acceptance.
+
+Authorized bounded fallback implemented: real Invoke-ProGoInstallerFailureStartup -> existing
+Invoke-ProGoInstallerStartupRollback -> existing native TryRollbackDurableStartup, with narrow typed-live
+combined guard overloads. Real FailureMenu explicitly returns blocked for this live context. This is a
+completed live Legacy->Startup handler boundary, not another unused verifier. Full Menu transition and
+main/default orchestration remain OPEN; default success path is NOT switched to stale preserved evidence.
+No whole auxiliary/runtime rollback, install success, restart authority or durable Startup settlement claimed.
+
+New sealed LegacyStartupContext binds BEFORE deletion to original native preparation evidence, exact
+LegacyDeletionPins/LegacyPhysicalPins and operation, trusted root/locations/schema/origin/hash/native target/source/
+reference/admission graph. No caller restored bool, reconstructed context, receipt patch or origin rewrite.
+Maps are cloned from the immutable original native evidence. Bind checks actual held original bytes/origin,
+full verified runtime/snapshot/journal plan and native Startup/Menu evidence. Context owns pin disposal.
+Existing RestoreOwnedOnce/VerifyRestoredOutcome/accepted and durable restore results remain byte-identical.
+
+Failure handler obtains only that operation's actual cached restore result; ReferenceEquals must match
+lease.restoreResult AND lease.lastResult, and VerifyRestoredOutcome rechecks current full evidence at every
+handoff. Historical flags survive disposal but cannot pass current proof checks. Typed combined overloads
+change ONLY Legacy-state provenance: original map/schema/Startup/Menu location/hash/origin/native guards
+remain strict (Menu uses existing native owned-origin verifier). Old3argument APIs are unchanged and still
+refuse after new-identity restoration. Accepted deletion plus stale preparation receipt also fails the live
+overload before restore, so it cannot accidentally authorize a success path.
+
+Before Startup mutation retain exact restored Legacy origin and the actual bound primary via read pins;
+under context->original->physical locks repeat full live verification, then invoke the old native Startup
+owned operation with unchanged exact-handle origin/bytes/location checks. Verify the expected own Startup
+original state afterward; presence/absence alone grants nothing. Primary and restored Legacy stay unchanged.
+Failure entry and Startup invocation each consume once; errors/cancellation/partial or failed restore/result
+keep truthful historical progress and never replay on repeated handler. Current settlement revalidates proofs.
+Dispose invalidates context then releases both pin graphs. Existing receipt-only handlers/guards and main
+installer/catch/success body are byte-identical when the optional context is absent. No new receipt/helper
+for Legacy restore and no pending journal rewrite. This scoped Startup branch is live-only; it does not mint
+old durable admission/result/restart authority from new flags or serialize a new capability.
+
+Native19 GUID-only cases prepared through real handlers: complete, preserved-startup, wrong-preparation,
+wrong-root, wrong-operation, disposed-context/lease/physical, source-changed, result-tampered,
+legacy-equal-byte, primary-replaced, startup-replaced, error-after-legacy, error-after-startup, cancel-before, cancel-after-legacy,
+restore-partial, restore-result-fault. Actual preparation -> source/reference/admission/pins -> owned delete/
+accepted record -> injected original install failure -> existing restore -> typed handoff -> actual Startup
+rollback -> live scoped observation; real Menu failure handler remains blocked, primary retained.
+Positive/preserved cases plus old API refusal, original error preservation, repeated handler inventory/no
+mutation, disposed historical flags and exclusive reopen checked. Actual old short-write/result-write fault
+seams reused via the proven CLR bridge; every new reflection argument is normalized/type-checked there.
+All hash readers explicitly READ/share5; no held target is skipped or prematurely released. Equal-byte/copied
+creation replacement retains old native object to prevent index reuse. Existing metadata shim modifies only
+own source creation in the negative case and restores it under live pins. Two real fresh CLR processes reject
+receipt-only/serialized flags. Child20s+cleanup5s bounds unchanged; no application/live installer/IPC/network.
+New19 appended once after unchanged preparation13/Restore22 inside existing Foundation host. CI726 Foundation
+33m26s, original40min deadline untouched; new runtime/time budget NOT_RUN locally, no blanket timeout bypass.
+
+Local66 legacy +17 aggregate =83PASS; additive native/old handler/main/receipt/default test parity, schema/
+signature/C#5 lexical/JSON/diff/secrets/public430source0release PASS. No local C#/PowerShell/Windows runtime;
+new compile/live19/child2/full exact aggregate NOT_RUN until the sole new automatic CI. No old PASS inherited.
+
+Remaining: verified Menu mutation with retained restored Legacy and an explicit post-Menu state that no
+longer requires the removed primary, durable Startup/Menu outcomes and full original error integration;
+then safe success/deletion evidence and actual default orchestration. Do not call the old primary-requiring
+verifier after our future Menu removal or blanket bypass it. Whole auxiliary/runtime rollback/restart recovery/
+power-loss/PC acceptance remain OPEN/NOT_RUN. UNKNOWN/BLOCKED_TRANSFER/no retry/all33 suites/classifier26/
+strict4aggregate/deadlines/full31/nested55/full F30 commercial scope/weights/delta0 preserved. No global freeze/
+ABA history requirement added. No live install/user data/ACL/privileges/WCT/SeDebug/network/credentials/services/
+VPS/tunnel actions. One guarded publication +one automatic CI initial status; no duplicate/rerun/full CI wait.
+
+## LOCAL post-publication checkpoint: compatible fixture inventory reader / CI726
+
+One expected-head nonforce PR88 publication completed: source7f8e5f7f40c32033dcd79092162c992c0135c5f8,
+parentc4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2, tree86710a8133c00477c290b9921b8956a0766c5faa.
+Reviewed localbba843704d3b9c3a006542bb309fb71dde2c6718 has identical full tree; canonical Git hash/parent/
+tree verified, joined at562b503caa96e32580ea47be7196fd224f581a71. Checkpointac3d0a7 and full3docs diff retained.
+PR88 draft/open/unmerged; merge REF9b02419428438a5e7a9495ccd92b2f8977a3dd36 is candidate, not tested PASS.
+Sole automatic CI726 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40322267040,
+pull_request/attempt1, raw exact-source total_count1; observed in_progress/conclusion null.
+New live-pin sharing regression/preparation13/child2/full exact aggregate NOT_RUN until same run's full logs.
+CI725 remains verified FAILURE: preparation7PASS1harnessERROR5NOT_RUN, Restore22/prior checks PASS,
+matched child PASS/context-lost child NOT_RUN; no inherited full13/full33/F23/production PASS.
+Only executable change is fixture read-only SHA256 inventory share5, admitting retained READ|DELETE/share1
+without weakening/closing production pins or skipping files. Regression uses actual failing old reader,
+explicit incompatible read/share1 and write/share5 error32, compatible hash equals original bound hash,
+private/foreign bytes stable and pins still verified. All13/Restore22/assertions/faults and original33 suites/
+classifier26/strict4aggregate/deadlines retained. Src/scripts/production/identity handoff/orchestration unchanged.
+Local83PASS; reverse fixture/runtime/test parity, read-call/share-contract review, JSON/diff/secrets/
+public429source0release PASS. Native regression is not proved by these local checks; no Windows/PS here.
+This checkpoint changes docs/state only, is local/unpushed, and starts no second CI/update/rerun/dispatch.
+Stop without full wait or next stage. Next SAME CI726 five exact final logs, new regression then all13,
+Restore22 and both fresh children. UNKNOWN/BLOCKED_TRANSFER/no retry/full31/nested55/F30/weights/delta0 retained.
+Whole auxiliary/runtime rollback, main orchestration/identity handoff, restart/power-loss/PC acceptance remain
+OPEN/NOT_RUN. Lost live proofs blocked/manual; receipts/absence never authority. No live install/user files/
+network/security/ACL/privileges/WCT/SeDebug/services/credentials/VPS/tunnel operations.
+
 ## CURRENT CI725 FAILURE verified; fixture-only compatible read inventory correction
 
 Admission checkpointac3d0a7e80df2afaf320435720e3eb75c02b8829 available/clean, full3docs diff(+85/-17)
@@ -1409,7 +1511,7 @@ that same source object and verified removal/replacement. Same-byte replacement 
 changed/corrupt bytes, foreign receipt/owner, reappeared Legacy, changed replacement, preserved receipt,
 missing source, busy/cancelled/malformed/oversized/reparse sources fail closed. Capture/read create/delete
 no file; runtime/settings/vault/keys/private/foreign inventory preserved, own resources exclusively reopen.
-New18 own GUID/temp-parent/reparse-guarded fixtures use actual native Install/InstallWithStartupEvidence;
+New19 own GUID/temp-parent/reparse-guarded fixtures use actual native Install/InstallWithStartupEvidence;
 no runtime synthetic bypass and no new production hooks. All30 old suites/test bodies/native migration/
 deletion/default installer/failure handlers/timeout/aggregate/upload guards unchanged; one31st suite.
 
@@ -1969,11 +2071,11 @@ no rerun/dispatch/duplicate/full wait. Exact new tested merge not yet read, no n
 Public diff8files508add33del: native28 +installer27 +suite7/1 +new127-line18-case fixture,
 new50-line contract and3 synchronized state docs. All old test bodies/25 suite calls and workflow
 unchanged. Full review/static/signatures/parity/secrets/public386source0release/JSON/diff PASS;
-local aggregate12 PASS. Windows PowerShell/compiler/new native18/full26/Core+Ubuntu+aggregate
+local aggregate12 PASS. Windows PowerShell/compiler/new native19/full26/Core+Ubuntu+aggregate
 NOT_RUN at this exact new source. CI699 baseline full25/Publication6/Menu32 and all4 jobs PASS
 independently verified, not transferred to new tests. No binary delivery/install/owner acceptance.
 
-Next SAME CI700 final logs/exact tested merge: all26 Installer/new18/retained32+6/Core/Ubuntu and
+Next SAME CI700 final logs/exact tested merge: all26 Installer/new19/retained32+6/Core/Ubuntu and
 strict aggregate required. Only after that a separate durable Menu pre-mutation admission/crash
 settlement slice; no automatic failure-handler integration/full auxiliary rollback/Launch in this
 stage. Legacy/full outcome/retention/runtime recovery/PGA04/package gates remain open. Original
@@ -2011,7 +2113,7 @@ external replacement/equal bytes without ownership/conflicts refuse. Cancellatio
 propagates; accepted deletion settles before result, no cancellation-after-write false denial.
 No Path Delete, receipt refresh, replay, restore, terminal success, retry authorization or Launch.
 
-Code4files189add1del: two new methods, one new18-case real Windows fixture, one suite hook (26total).
+Code4files189add1del: two new methods, one new19-case real Windows fixture, one suite hook (26total).
 All existing test bodies, installer/error handler, Startup/Legacy functions, native interop/origin,
 workflow/deadlines/upload gates unchanged. New scenarios include legacy-removed and post-Startup
 settlement, unproved Startup absence refusal, exact native replacement with equal bytes AND copied
@@ -2019,12 +2121,12 @@ creation time, lock/explicit Retry, cancellation, snapshot/runtime/trusted locat
 existing admission; receipt/link exclusive reopen and exact whole-case inventory/private-byte checks.
 
 Local PASS: exact reverse diff/review/signatures/parity, aggregate12, JSON/diff/public-content and
-added secrets/PII scan. NOT_RUN: local PowerShell5.1 parsing/C# compilation/new native18/full26/new
+added secrets/PII scan. NOT_RUN: local PowerShell5.1 parsing/C# compilation/new native19/full26/new
 complete exact-SHA aggregate (no local Windows/pwsh/compiler). No old PASS transferred to new tests.
 Expected-HEAD guarded publication will trigger ONE automatic CI; source/run confirmed afterward in
 local checkpoint and PR. Scores/weights unchanged delta0. UNKNOWN repair/sharing/Python/rebind/setup
 incidents and BLOCKED_TRANSFER/no retry retained. No live install/services/network/ACL/security/
-credentials/VPS/release/uploads. Next verify SAME new CI all4 jobs/full26/new18 before another stage;
+credentials/VPS/release/uploads. Next verify SAME new CI all4 jobs/full26/new19 before another stage;
 then separate durable Menu pre-mutation admission/crash settlement and scoped result/error integration.
 Legacy rollback/full auxiliary result/retention/runtime recovery and package acceptance remain open.
 

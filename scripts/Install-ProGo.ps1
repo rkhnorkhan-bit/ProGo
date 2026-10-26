@@ -639,7 +639,13 @@ function Invoke-ProGoInstallerMenuRollback([string]$Directory, [string]$InstallD
 function Invoke-ProGoInstallerStartupRollback([string]$Directory, [string]$InstallDirectory,
     [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
     [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
-    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None, $LegacyContext = $null) {
+    if ($null -ne $LegacyContext) {
+        Import-ProGoShortcutType
+        if ($LegacyContext -isnot [ProGo.ApplicationShortcuts+LegacyStartupContext] -or
+            -not $LegacyContext.MatchesInstallerLocations($Directory,$InstallDirectory,$ProgramsDirectory,$StartupDirectory)) { return $false }
+        return $LegacyContext.RollbackStartupOnce($CancellationToken)
+    }
     $stream = $null; $reader = $null; $mutation = $null
     try {
         $CancellationToken.ThrowIfCancellationRequested()
@@ -1044,8 +1050,25 @@ function Test-ProGoInstallerMenuResult([string]$Directory, [string]$InstallDirec
 function Invoke-ProGoInstallerFailureStartup([bool]$AuxiliaryStarted, $Backup,
     [string]$InstallDirectory,
     [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'), $LegacyContext = $null,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
     if (-not $AuxiliaryStarted) { return 'not-started' }
+    if ($null -ne $LegacyContext) {
+        try {
+            Import-ProGoShortcutType
+            if ($LegacyContext -isnot [ProGo.ApplicationShortcuts+LegacyStartupContext] -or $null -eq $Backup -or $null -eq $Backup.Journal -or
+                -not $LegacyContext.MatchesInstallerLocations($Backup.Journal.Directory,$InstallDirectory,$ProgramsDirectory,$StartupDirectory)) { return 'blocked' }
+            if (-not $LegacyContext.BeginFailureHandling()) {
+                if ($LegacyContext.VerifyStartupSettlement()) { return 'legacy-startup-observed-menu-blocked' }
+                return 'blocked'
+            }
+            [void]$LegacyContext.RestoreLegacy($CancellationToken)
+            if (-not $LegacyContext.VerifyHandoff()) { return 'blocked' }
+            if ((Invoke-ProGoInstallerStartupRollback $Backup.Journal.Directory $InstallDirectory $ProgramsDirectory $StartupDirectory $CancellationToken $LegacyContext) -and
+                $LegacyContext.VerifyStartupSettlement()) { return 'legacy-startup-observed-menu-blocked' }
+        } catch { return 'blocked' }
+        return 'blocked'
+    }
     try {
         if ($null -eq $Backup -or $null -eq $Backup.Journal) { return 'blocked' }
         $directory = $Backup.Journal.Directory
@@ -1111,8 +1134,9 @@ function Get-ProGoInstallerLegacyRollbackAdmission([string]$Directory, [string]$
 function Invoke-ProGoInstallerFailureMenu([bool]$AuxiliaryStarted, $Backup, [string]$InstallDirectory,
     [string]$StartupFailureState,
     [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'), $LegacyContext = $null) {
     if (-not $AuxiliaryStarted) { return 'not-started' }
+    if ($null -ne $LegacyContext) { return 'blocked' } # This bounded live gate never permits Menu mutation.
     if ($StartupFailureState -cnotin @('startup-observed','blocked')) { return 'blocked' }
     try {
         if ($null -eq $Backup -or $null -eq $Backup.Journal) { return 'blocked' }

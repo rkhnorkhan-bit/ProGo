@@ -141,3 +141,4 @@ try {
 # Additive isolated restore cases use Foundation headroom; original suite and deadlines unchanged.
 & (Join-Path $Root 'tests\InstallerLegacyOwnedRestoreTests.ps1')
 & (Join-Path $Root 'tests\InstallerLegacyPreparationTests.ps1')
+& (Join-Path $Root 'tests\InstallerLegacyStartupLiveTests.ps1')

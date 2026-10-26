@@ -243,6 +243,154 @@ namespace ProGo
                 finally { if (original != null) Array.Clear(original, 0, original.Length); }
             }
         }
+        // One live preparation/operation binding; historical restore flags are never a capability.
+        public sealed class LegacyStartupContext : IDisposable
+        {
+            internal readonly object gate = new object();
+            internal readonly ApplicationShortcuts owner;
+            internal readonly StartupInstallEvidence preparation;
+            internal readonly LegacyDeletionPins lease;
+            internal readonly LegacyPhysicalPins physical;
+            internal readonly System.Collections.IDictionary startupMap, menuMap, legacyMap;
+            internal LegacyRestoreResult restored;
+            internal bool disposed, failureEntered, startupConsumed, startupVerified;
+            public bool StartupInvoked { get; private set; }
+            public bool MenuAllowed { get { return false; } }
+            public bool WholeRollbackVerified { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            public bool RestartAuthority { get { return false; } }
+            public Guid OperationId { get { return lease.reference.Source.Operation; } }
+            internal LegacyStartupContext(ApplicationShortcuts owner, StartupInstallEvidence preparation, LegacyDeletionPins lease, LegacyPhysicalPins physical)
+            {
+                this.owner = owner; this.preparation = preparation; this.lease = lease; this.physical = physical;
+                startupMap = LivePreparationMap(preparation); menuMap = LivePreparationMap(preparation.Menu); legacyMap = LivePreparationMap(preparation.Legacy);
+            }
+            public bool MatchesInstallerLocations(string directory, string install, string programs, string startup)
+            {
+                try { return !disposed && Identity(install) == Identity(owner.root) && Identity(Path.Combine(programs, "ProGo")) == Identity(owner.menu) &&
+                    Identity(Path.Combine(startup, "ProGo.lnk")) == Identity(owner.startup) &&
+                    String.Equals(Path.GetFullPath(directory), Path.Combine(owner.root, "backups", "installer-journal-" + OperationId.ToString("N")), StringComparison.OrdinalIgnoreCase); }
+                catch { return false; }
+            }
+            public bool BeginFailureHandling()
+            { lock (gate) { if (disposed || failureEntered) return false; failureEntered = true; return true; } }
+            public LegacyRestoreResult RestoreLegacy(CancellationToken token)
+            { lock (gate) { if (disposed) return null; if (restored == null) restored = lease.RestoreOwnedOnce(physical, token); return restored; } }
+            public bool VerifyHandoff()
+            { lock (gate) { return owner.VerifyLiveLegacyHandoff(this); } }
+            public bool RollbackStartupOnce(CancellationToken token)
+            {
+                lock (gate) {
+                    if (disposed) return false;
+                    if (startupConsumed) return VerifyStartupSettlement();
+                    startupConsumed = true; // no retry after cancellation, failed admission, or indeterminate mutation
+                    try {
+                        lock (lease.gate) { return physical.WithPins<LegacyStartupContext>(() => {
+                            if (!owner.VerifyDurableInstallEvidence(startupMap, menuMap, legacyMap, this)) return null;
+                            // Pin the exact restored launcher and primary throughout the Startup mutation.
+                            using (var legacy = OpenLegacyRestartRead(Path.Combine(owner.menu, "ProGo Status.lnk")))
+                            using (var primary = OpenLegacyRestartRead(Path.Combine(owner.menu, "ProGo.lnk"))) {
+                                if (restored.RestoredOrigin != LegacyOrigin(legacy.SafeFileHandle) || !VerifyLegacyAcceptedReplacement(lease, primary) ||
+                                    !owner.VerifyDurableInstallEvidence(startupMap, menuMap, legacyMap, this)) return null;
+                                token.ThrowIfCancellationRequested(); StartupInvoked = true;
+                                startupVerified = owner.TryRollbackDurableStartup(startupMap, token);
+                                return startupVerified && owner.VerifyDurableStartupOriginalResult(startupMap, menuMap, legacyMap, this) ? this : null;
+                            }
+                        }) != null; }
+                    } catch { return false; }
+                }
+            }
+            public bool VerifyStartupSettlement()
+            { lock (gate) { return !disposed && startupVerified && owner.VerifyDurableStartupOriginalResult(startupMap, menuMap, legacyMap, this); } }
+            public void Dispose()
+            { lock (gate) { if (disposed) return; disposed = true; try { lease.Dispose(); } finally { physical.Dispose(); } } }
+        }
+        private static System.Collections.IDictionary LivePreparationMap(object evidence)
+        {
+            var map = new System.Collections.Generic.Dictionary<string, object>(StringComparer.Ordinal);
+            foreach (var property in evidence.GetType().GetProperties()) {
+                if (property.Name != "Menu" && property.Name != "Legacy") map.Add(property.Name, property.GetValue(evidence, null));
+            }
+            return map;
+        }
+        private static bool SameLivePreparation<T>(System.Collections.IDictionary map, T original) where T : class
+        {
+            var parsed = ReadDurableEvidence<T>(map);
+            foreach (var property in typeof(T).GetProperties()) {
+                if (property.Name != "Menu" && property.Name != "Legacy" && !Object.Equals(property.GetValue(parsed, null), property.GetValue(original, null))) return false;
+            }
+            return true;
+        }
+        private bool VerifyLivePreparationStartup(StartupInstallEvidence evidence)
+        {
+            if (!VerifyStartupInstallEvidence(evidence)) return false;
+            if (evidence.Disposition == "preserved") return evidence.OriginIdentity == null;
+            using (var stream = OpenLegacyRestartRead(startup)) {
+                return evidence.OriginIdentity == LegacyOrigin(stream.SafeFileHandle) && evidence.Hash == Digest(ReadLegacyEvidenceBytes(stream));
+            }
+        }
+        public LegacyStartupContext BindLegacyStartupContext(StartupInstallEvidence preparation, LegacyDeletionPins lease, LegacyPhysicalPins physical)
+        {
+            if (preparation == null || lease == null || physical == null) return null;
+            lock (lease.gate) {
+                try { return physical.WithPins<LegacyStartupContext>(() => {
+                    if (lease.resources == null || lease.targetHandle.IsClosed || lease.lastResult != null || lease.consumed ||
+                        lease.restoreResult != null || !physical.MatchesOwner(this) || !physical.VerifyPinned(CancellationToken.None) ||
+                        preparation.Legacy == null || preparation.Menu == null || preparation.Legacy.Disposition != "preserved" ||
+                        !preparation.Legacy.Requested || !preparation.Legacy.BeforeMatched || !preparation.Legacy.BeforeExists ||
+                        preparation.Legacy.OriginIdentity != lease.reference.Source.OriginIdentity || preparation.Legacy.Hash != lease.reference.Source.Hash ||
+                        preparation.Legacy.InstallIdentity != Identity(root) || preparation.Legacy.LocationIdentity != Identity(Path.Combine(menu, "ProGo Status.lnk")) ||
+                        !VerifyLivePreparationStartup(preparation) || !VerifyDurableMenuRollbackEvidence(LivePreparationMap(preparation.Menu))) return null;
+                    lease.target.Position = 0; byte[] bytes = ReadLegacyEvidenceBytes(lease.target);
+                    try {
+                        if (lease.reference.Source.OriginIdentity != LegacyOrigin(lease.target.SafeFileHandle) ||
+                            !VerifyLegacyOperationEvidence(lease, bytes) || !VerifyLegacyOperationPlan(lease, physical)) return null;
+                        return new LegacyStartupContext(this, preparation, lease, physical);
+                    } finally { Array.Clear(bytes, 0, bytes.Length); }
+                }); } catch { return null; }
+            }
+        }
+        private bool VerifyLiveLegacyHandoff(LegacyStartupContext context)
+        {
+            try {
+                return !context.disposed && Identity(context.owner.root) == Identity(root) && Identity(context.owner.menu) == Identity(menu) &&
+                    Identity(context.owner.startup) == Identity(startup) && context.restored != null &&
+                    Object.ReferenceEquals(context.restored, context.lease.restoreResult) &&
+                    Object.ReferenceEquals(context.restored.AcceptedResult, context.lease.lastResult) &&
+                    context.preparation.Legacy.OriginIdentity == context.lease.reference.Source.OriginIdentity &&
+                    context.preparation.Legacy.Hash == context.lease.reference.Source.Hash &&
+                    VerifyLegacyRestoredOutcome(context.lease, context.physical);
+            } catch { return false; }
+        }
+        // Only the Legacy-state predicate differs in these typed-live overloads. Old APIs stay strict.
+        public bool VerifyDurableInstallEvidence(System.Collections.IDictionary first, System.Collections.IDictionary primary,
+            System.Collections.IDictionary legacy, LegacyStartupContext context)
+        {
+            if (context == null) return false;
+            lock (context.gate) {
+                try { return SameLivePreparation(first, context.preparation) && SameLivePreparation(primary, context.preparation.Menu) &&
+                    SameLivePreparation(legacy, context.preparation.Legacy) && VerifyLiveLegacyHandoff(context) &&
+                    VerifyLivePreparationStartup(ReadDurableEvidence<StartupInstallEvidence>(first)) && VerifyDurableMenuRollbackEvidence(primary); }
+                catch { return false; }
+            }
+        }
+        public bool VerifyDurableStartupOriginalResult(System.Collections.IDictionary first, System.Collections.IDictionary primary,
+            System.Collections.IDictionary legacy, LegacyStartupContext context)
+        {
+            if (context == null) return false;
+            lock (context.gate) {
+                try {
+                    if (!SameLivePreparation(first, context.preparation) || !SameLivePreparation(primary, context.preparation.Menu) ||
+                        !SameLivePreparation(legacy, context.preparation.Legacy) || !VerifyLiveLegacyHandoff(context) ||
+                        !VerifyDurableMenuRollbackEvidence(primary) || !context.startupVerified) return false;
+                    var evidence = ReadDurableEvidence<StartupInstallEvidence>(first);
+                    if (evidence.Disposition == "preserved") return VerifyStartupInstallEvidence(evidence);
+                    return evidence.Disposition == "created" && evidence.InstallIdentity == Identity(root) &&
+                        evidence.LocationIdentity == Identity(startup) && !evidence.BeforeExists && evidence.BeforeHash == null &&
+                        evidence.Exists && evidence.Hash != null && evidence.OriginIdentity != null && ReadStartupBytes() == null;
+                } catch { return false; }
+            }
+        }
         // Exact-owned-object operation only. No path-based delete, durable outcome or restore authority.
         public sealed class LegacyOwnedDeleteResult
         {

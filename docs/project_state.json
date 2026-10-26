@@ -4020,19 +4020,19 @@
     }
   ],
   "ci_candidate": {
-    "source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
-    "tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785",
-    "run_id": 40316580282,
-    "run_number": 725,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40316580282",
+    "source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
+    "tree": "86710a8133c00477c290b9921b8956a0766c5faa",
+    "run_id": 40322267040,
+    "run_number": 726,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40322267040",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "completed",
-    "conclusion": "failure",
-    "candidate_merge_ref": "58d5df7107d4847151d7b1e727b25dc0c210c68e",
-    "tested_merge": "58d5df7107d4847151d7b1e727b25dc0c210c68e",
-    "new_windows": "CI725 CLR regression/Restore22 PASS; preparation7PASS1harnessERROR5NOT_RUN; full gate FAIL",
+    "conclusion": "success",
+    "candidate_merge_ref": "9b02419428438a5e7a9495ccd92b2f8977a3dd36",
+    "tested_merge": "9b02419428438a5e7a9495ccd92b2f8977a3dd36",
+    "new_windows": "CI726 full5logs SUCCESS: preparation13/child2/sharing/CLR/Restore22/all33/classifier26/strict4aggregate",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5524,12 +5524,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
-    "tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785",
-    "prior_checkpoint": "ac3d0a7e80df2afaf320435720e3eb75c02b8829",
-    "stage": "CI725 fixture inventory-only symmetric Win32 share correction; no identity handoff/orchestration",
-    "status": "CI725 full FAIL verified; local83PASS/review; new live-pin sharing regression/13/child2 NOT_RUN",
-    "next": "One guarded publication/automatic CI initial status only; stop without full wait",
+    "source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
+    "tree": "86710a8133c00477c290b9921b8956a0766c5faa",
+    "prior_checkpoint": "8b4304a255a806394fb0d330aa8dc3855a06bbbc",
+    "stage": "Integrated typed live Legacy->Startup failure handlers; real Menu handler explicitly blocked; default success/orchestration unchanged",
+    "status": "CI726 full SUCCESS baseline; local83PASS/review; new native19/child2/compile/full exact aggregate NOT_RUN",
+    "next": "One guarded publication +sole automatic CI initial status; stop. Menu expected-state transition/durable auxiliary outcomes/default orchestration remain OPEN",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5538,8 +5538,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "720298ac96ffcf9ba882cf5e12e8bc156e363d5c",
-    "local_development_tree": "f7218d3a5fcc2e5c949a2d8934ec7e274cef8785"
+    "local_development_sha": "bba843704d3b9c3a006542bb309fb71dde2c6718",
+    "local_development_tree": "86710a8133c00477c290b9921b8956a0766c5faa"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -23688,7 +23688,7 @@
   "legacy_preparation_prerequisite": {
     "base_checkpoint": "0d104a3dceef9ae0dfbfbc103e984c6375e865e3",
     "baseline_source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
-    "status": "CI725 FAIL:7PASS1harnessERROR5NOT_RUN; sharing-only fixture fix prepared; new native13/child2 NOT_RUN",
+    "status": "CI725 FAIL7PASS1harnessERROR5NOT_RUN; compatible reader fix published; CI726 initial in_progress/native13/child2 NOT_RUN",
     "scope_limit_evidence": [
       "InstallCore ensures primary then unconditionally enters legacy migration; no nondeleting preparation API",
       "original Legacy preserved evidence binds old origin; removed evidence requires absence+live primary",
@@ -23775,6 +23775,69 @@
     "local": "83PASS legacy/aggregate +review/parity/JSON/diff/secrets/public429source0release",
     "preservation": "all13/Restore22/assertions/fault injections/suites/classifier26/strict aggregate/deadlines/full F30 unchanged",
     "identity_handoff_orchestration": "NOT_STARTED",
+    "score_delta": 0,
+    "source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
+    "tree": "86710a8133c00477c290b9921b8956a0766c5faa",
+    "status": "Published; sole CI726 initial in_progress; native regression/full new gate NOT_RUN"
+  },
+  "inventory_fix_postpublication_checkpoint": {
+    "source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
+    "parent": "c4dd450bcc0b43dc1de3c9e13024b3c8252ba3e2",
+    "tree": "86710a8133c00477c290b9921b8956a0766c5faa",
+    "local_reviewed_code": "bba843704d3b9c3a006542bb309fb71dde2c6718",
+    "canonical_join": "562b503caa96e32580ea47be7196fd224f581a71",
+    "base_checkpoint_preserved": "ac3d0a7e80df2afaf320435720e3eb75c02b8829",
+    "run_id": 40322267040,
+    "run_number": 726,
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "in_progress",
+    "conclusion": null,
+    "candidate_merge_ref": "9b02419428438a5e7a9495ccd92b2f8977a3dd36",
+    "kind": "local docs-only unpushed; no second CI",
+    "scope": "fixture compatible inventory reads only; no production/pin/orchestration change",
+    "score_delta": 0
+  },
+  "ci726_verified_baseline": {
+    "source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
+    "tree": "86710a8133c00477c290b9921b8956a0766c5faa",
+    "run_id": 40322267040,
+    "run_number": 726,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40322267040",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "candidate_merge_ref": "9b02419428438a5e7a9495ccd92b2f8977a3dd36",
+    "tested_merge": "9b02419428438a5e7a9495ccd92b2f8977a3dd36",
+    "new_windows": "CI726 full5logs SUCCESS: preparation13/child2/sharing/CLR/Restore22/all33/classifier26/strict4aggregate",
+    "score_delta": 0,
+    "jobs": [
+      121569899469,
+      121569899773,
+      121569899764,
+      121569899743,
+      121584878997
+    ],
+    "Core": "classifier26/Desktop6394/Instance30/Maint126/Shutdown47/HomeVPN4817/Portable91/Python116PASS2SKIP",
+    "zip_bytes": 706928,
+    "zip_sha256": "8da34a60742b2eecf2503dfb935b3c784758e4f1d42e715c780349384963609f",
+    "uploads": "SKIPPED runner-only; no PC acceptance"
+  },
+  "legacy_startup_live_gate": {
+    "base_checkpoint": "8b4304a255a806394fb0d330aa8dc3855a06bbbc",
+    "baseline_source": "7f8e5f7f40c32033dcd79092162c992c0135c5f8",
+    "status": "Prepared; native19/child2 NOT_RUN locally",
+    "integrated_path": "FailureStartup -> existing StartupRollback -> existing native exact-owned Startup operation; real FailureMenu explicitly blocked",
+    "capability": "sealed pre-delete original preparation +same live pins/operation +actual cached restore reference; current VerifyRestoredOutcome at handoff; no bool or serialized authority",
+    "guards": "original schema/location/hash/origin Startup/Menu preserved; old receipt-only APIs refuse; no old-origin rewrite; restored and primary pinned during Startup mutation",
+    "repeat": "one failure entry and one Startup invocation; repeats verify only, no retry",
+    "scope": "live Legacy->Startup observation only; no durable Startup terminal, Menu mutation, install success/default orchestration or whole rollback",
+    "fixture": "19 GUID-only real handler cases, old native partial/result fault seams via CLR bridge, READ/share5 hash readers, fresh-process refusal2",
+    "local": "83PASS legacy/aggregate; parity/lexical/signatures/JSON/diff/secrets/public430source0release PASS",
+    "remaining": "Menu expected post-primary-removal transition/durable outcomes/safe default success+orchestration/whole auxiliary/runtime/restart/power-loss/PC acceptance OPEN",
+    "preservation": "all33/classifier26/strict4aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/F30 unchanged",
     "score_delta": 0
   }
 }
