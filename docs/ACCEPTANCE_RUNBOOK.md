@@ -1,3 +1,48 @@
+## CURRENT CI717 verified; existing physical-material pinning prerequisite
+
+The previous execution environment was genuinely unavailable, then one authorized pwd probe executed in the
+same workspace. Original checkpoint8a7091377def8cddbece4237cf0a1ca43166d7a4 found clean; parent/source
+2cdae18a737eef593c520b155932bc54a82b4a27 matches open PR88. Metadata/HEAD reconfirmed, no other agent or
+queued/in-progress/waiting CI. CI717 all five full logs were independently read: merge507a64bc295c3a8849467ec2fbebe8d7cc7d8356,
+Pinning39/PreDelete23/Restart26/JournalReference20/DurableInput12/Foundation27/Recovery6, classifier26/SSH5/
+Desktop6394/Instance30/Maintenance126/Shutdown47/HomeVPN4817/Portable91 PASS; Python86PASS2SKIP, Ubuntu and
+aggregate121392573749 exact4SHA PASS. Runner ZIP683026 SHA25605198ac208fcdc0a54bf88e2162edb8f7de1799a95b785ff47947ffcc74fe6a7,
+upload skipped; no delivery or PC acceptance. Startup UNKNOWN is not closed by this non-reproduction.
+
+Acceptance: retain the exact verified existing runtime/snapshot/manifest/journal physical objects and all
+required ancestors under non-following native read handles through validation and observation. First derive
+a bounded read/pin plan from a reference whose exact UTF8 hash matches the independently rehydrated immutable
+anchor. Whitelist payload leaves before opening any candidate; derive fixed operation/snapshot/admission names.
+Pin all existing planned files and ancestors, then independently rehydrate actual snapshot/runtime/journal/
+source/reference/seal/admission context AGAIN. Compare anchor origin/hash, require actual original-present
+state and VerifyPinned native origins/hashes on those same handles. Never trust serialized flags or paths as
+proof. Hold resources until idempotent Dispose; cancellation/failure unwinds every acquired handle. Verification
+cancellation does not pretend the retained lease is disposed. No mutation, delete, restore, publication or live
+installer-flow integration. Public native read/pin plan is NOT evidence; only the trusted wrapper verifies it.
+
+Boundary: existing physical-file pins are not a namespace transaction or reservation for absent snapshot leaves
+or new journal records. Existing file bytes/replacement are denied; native metadata/origin is reread on the same
+handles by VerifyPinned, which must run at any future operation boundary. This stage does not authorize a future
+operation on a one-time bool. Coherent context must be rechecked with pins held at that boundary and combined
+with the retained original handle; missing/extra/conflicting namespace state remains fail-closed. No deletion or
+post-delete result is inferred from intent/absence. Actual deletion, durable result/post-delete rehydration and
+restore/error integration remain separate gates. Full auxiliary rollback/runtime recovery/retention/PGA04/
+updater/package/owner/commercial requirements retained; error/no Launch/private-file guarantees unchanged.
+
+Prepared PhysicalPins50 Windows checks reuse all old23 cases: complete positive (28 checks) and22 existing
+negative/foreign/replaced/reparse/partial contexts refuse. Positive actual write/replacement denial on runtime,
+snapshot/manifest/journal, own required-parent rename denial, original-pin coexistence, cancellation/Dispose,
+partial/tamper, busy input, native invalid/duplicate/traversal/late-open unwind and verified reacquisition.
+Existing fresh-process child also verifies physical pins from paths only. All33/classifier26/strict4aggregate/
+SSH5000/flags/environment/old deadlines preserved; no duplicate job/dispatch. Local66 Python static tests PASS,
+not compilation/native proof. New Windows PhysicalPins50/fresh-process/native sharing NOT_RUN locally.
+UNKNOWN incidents/BLOCKED_TRANSFER/no retry/deletion-power-lossNOT_RUN/fullscope/weights/delta0 preserved.
+WCT/SeDebug/privileges remain unauthorized. No live install/services/network/ACL/security/credentials/VPS/
+tunnel/release/uploads/delivery retry. Next SAME new CI full5logs then separately close operation-boundary
+namespace/context verification and same-handle deletion with honest durable result; no full rollback claim.
+
+Prior evidence/history:
+
 ## CURRENT CI716 verified; bounded Legacy deletion-pinning prerequisite
 
 All five CI716 final logs independently read: source7ccefc17d2b8779adea38ec8d449c664b62c982c,

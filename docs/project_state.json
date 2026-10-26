@@ -4020,15 +4020,15 @@
     }
   ],
   "ci_candidate": {
-    "source": "7ccefc17d2b8779adea38ec8d449c664b62c982c",
-    "tree": "41f8987e8519c45e21eca5b7c5cb1dec6bad0821",
-    "run_id": 40261710798,
-    "run_number": 716,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40261710798",
+    "source": "2cdae18a737eef593c520b155932bc54a82b4a27",
+    "tree": "6ecde6c9368f459f56c77cd0c940efdc5df98ff0",
+    "run_id": 40265148660,
+    "run_number": 717,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40265148660",
     "status": "completed",
     "conclusion": "success",
-    "tested_merge": "73ddfb86fc22a04239dfb5a0ab334d2dbb716e58",
-    "Windows_PreDelete23": "PASS incl fresh-process1; deletion/power-loss NOT_RUN",
+    "tested_merge": "507a64bc295c3a8849467ec2fbebe8d7cc7d8356",
+    "Pinning39": "PASS actual fresh-process1; deletion/power-loss NOT_RUN",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5520,12 +5520,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "7ccefc17d2b8779adea38ec8d449c664b62c982c",
-    "tree": "41f8987e8519c45e21eca5b7c5cb1dec6bad0821",
-    "prior_checkpoint": "a4c1665bbcf422bc535ced6a09a0ea874f10961a",
-    "stage": "Legacy pin-only prerequisite; no deletion/live integration",
-    "status": "CI716 full5logs PASS; new PinGate39/compile Windows NOT_RUN, local60 static PASS",
-    "next": "One automatic exact-source CI then physical context pins/same-handle owned deletion/durable post-delete result prerequisite",
+    "source": "2cdae18a737eef593c520b155932bc54a82b4a27",
+    "tree": "6ecde6c9368f459f56c77cd0c940efdc5df98ff0",
+    "prior_checkpoint": "8a7091377def8cddbece4237cf0a1ca43166d7a4",
+    "stage": "Existing physical-material pins prerequisite only; no mutation",
+    "status": "CI717 full5logs PASS; new PhysicalPins50 Windows NOT_RUN; local66 static PASS",
+    "next": "One automatic exact-source CI; then separate operation-boundary namespace/context and same-handle deletion/durable result gate",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -23369,6 +23369,27 @@
       "no live integration",
       "UNKNOWN incidents",
       "BLOCKED_TRANSFER no delivery retry",
+      "power-loss NOT_RUN",
+      "WCT/SeDebug not authorized"
+    ],
+    "score_delta": 0
+  },
+  "legacy_physical_pins_prerequisite": {
+    "boundary": "Existing runtime/snapshot/manifest/journal objects plus ancestors, no namespace transaction or mutation authority",
+    "prior_checkpoint": "8a7091377def8cddbece4237cf0a1ca43166d7a4",
+    "local_tests": "66 Python static PASS, not compiler/native",
+    "Windows_PhysicalPins50": "NOT_RUN; fresh-process1 prepared",
+    "remaining": [
+      "operation-boundary namespace/context verification under retained pins",
+      "same-handle owned deletion",
+      "durable honest result/post-delete trusted rehydration",
+      "restore/error/full auxiliary recovery/retention/remaining full scope"
+    ],
+    "limits": [
+      "intent/absence never operation proof",
+      "no live integration",
+      "UNKNOWN incidents",
+      "BLOCKED_TRANSFER",
       "power-loss NOT_RUN",
       "WCT/SeDebug not authorized"
     ],

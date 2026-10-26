@@ -682,6 +682,95 @@ namespace ProGo
             finally { if (!transferred) ReleaseLegacyDeletionPins(held); }
         }
 
+        // Existing physical material only. No namespace/absence or mutation authority.
+        public sealed class LegacyPhysicalPins : IDisposable
+        {
+            private readonly object gate = new object();
+            private System.Collections.Generic.List<IDisposable> held;
+            private readonly System.Collections.Generic.List<FileStream> files;
+            private readonly System.Collections.Generic.List<string> origins, hashes;
+            internal LegacyPhysicalPins(System.Collections.Generic.List<IDisposable> resources,
+                System.Collections.Generic.List<FileStream> streams, System.Collections.Generic.List<string> native,
+                System.Collections.Generic.List<string> digests)
+            { held = resources; files = streams; origins = native; hashes = digests; }
+            public bool MutationAllowed { get { return false; } }
+            public bool FullRollback { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            public bool VerifyPinned(CancellationToken token)
+            {
+                lock (gate) {
+                    token.ThrowIfCancellationRequested();
+                    if (held == null) return false;
+                    try {
+                        for (int i = 0; i < files.Count; i++) {
+                            token.ThrowIfCancellationRequested();
+                            if (origins[i] != LegacyOrigin(files[i].SafeFileHandle) || hashes[i] != PhysicalPinHash(files[i])) return false;
+                        }
+                        token.ThrowIfCancellationRequested(); return true;
+                    } catch (OperationCanceledException) { throw; } catch { return false; }
+                }
+            }
+            public void Dispose()
+            {
+                lock (gate) {
+                    if (held == null) return;
+                    var resources = held; held = null;
+                    try { ReleaseLegacyDeletionPins(resources); }
+                    finally { files.Clear(); origins.Clear(); hashes.Clear(); }
+                }
+            }
+        }
+        private static string PhysicalPinHash(FileStream stream)
+        {
+            stream.Position = 0;
+            using (var hash = SHA256.Create()) {
+                string result = BitConverter.ToString(hash.ComputeHash(stream)).Replace("-", "");
+                stream.Position = 0; return result;
+            }
+        }
+        // Relative leaves are a read/pin plan, NOT evidence. The trusted caller must independently
+        // verify the full canonical journal/snapshot/runtime graph while these pins are held.
+        public LegacyPhysicalPins PinLegacyPhysicalMaterial(string[] relativeFiles, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            var held = new System.Collections.Generic.List<IDisposable>();
+            var files = new System.Collections.Generic.List<FileStream>();
+            var origins = new System.Collections.Generic.List<string>(); var hashes = new System.Collections.Generic.List<string>();
+            bool transferred = false;
+            try {
+                if (relativeFiles == null || relativeFiles.Length < 1 || relativeFiles.Length > 256) return null;
+                var paths = new System.Collections.Generic.List<string>();
+                var seen = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var parents = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (string relative in (string[])relativeFiles.Clone()) {
+                    if (String.IsNullOrEmpty(relative) || Path.IsPathRooted(relative) || relative.IndexOf(':') >= 0) return null;
+                    foreach (string part in relative.Replace('\\', '/').Split('/'))
+                        if (part.Length == 0 || part == "." || part == "..") return null;
+                    string path = Path.GetFullPath(Path.Combine(root, relative));
+                    if (!path.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || !seen.Add(path)) return null;
+                    CheckLocation(path); paths.Add(path);
+                }
+                // Pin every ancestor, including independently configured Menu/Startup locations.
+                foreach (string leaf in paths.ToArray()) {
+                    for (string parent = Path.GetDirectoryName(leaf); !String.IsNullOrEmpty(parent); parent = Path.GetDirectoryName(parent))
+                        if (parents.Add(parent)) held.Add(PinLegacySourceDirectory(parent));
+                }
+                foreach (string leaf in new[] { Path.Combine(menu, "ProGo Status.lnk"), startup }) {
+                    for (string parent = Path.GetDirectoryName(leaf); !String.IsNullOrEmpty(parent); parent = Path.GetDirectoryName(parent))
+                        if (parents.Add(parent)) held.Add(PinLegacySourceDirectory(parent));
+                }
+                foreach (string path in paths) {
+                    token.ThrowIfCancellationRequested();
+                    var stream = OpenLegacyRestartRead(path); held.Add(stream); files.Add(stream);
+                    origins.Add(LegacyOrigin(stream.SafeFileHandle)); hashes.Add(PhysicalPinHash(stream));
+                }
+                var result = new LegacyPhysicalPins(held, files, origins, hashes);
+                if (!result.VerifyPinned(token)) return null;
+                transferred = true; return result;
+            } catch (OperationCanceledException) { throw; } catch { return null; }
+            finally { if (!transferred) ReleaseLegacyDeletionPins(held); }
+        }
+
         private string LegacyPreDeletePath(Guid operation)
         {
             if (operation == Guid.Empty) throw new IOException("Legacy admission operation is missing.");

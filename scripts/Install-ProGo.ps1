@@ -1481,6 +1481,50 @@ function Open-ProGoInstallerLegacyDeletionPins([string]$Directory, [string]$Inst
         $result = $pins; $pins = $null; return $result
     } finally { if ($null -ne $pins) { $pins.Dispose() } }
 }
+# Pin existing physical objects, then independently verify the actual graph under those pins.
+# No deletion, missing-leaf reservation or installer-flow integration is provided.
+function Open-ProGoInstallerLegacyPhysicalPins([string]$Directory, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $CancellationToken.ThrowIfCancellationRequested(); $pins = $null
+    try {
+        $reference = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($null -eq $reference) { return $null }
+        $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
+        $operation = $reference.Source.Operation.ToString('N')
+        $referencePath = Assert-ProGoInstallerStagePath $parent ('installer-legacy-reference-' + $operation + '.json')
+        $text = Read-ProGoInstallerLegacyRestartText $referencePath
+        $hash = [Security.Cryptography.SHA256]::Create()
+        try { $documentHash = [BitConverter]::ToString($hash.ComputeHash((New-Object Text.UTF8Encoding($false)).GetBytes($text))).Replace('-','') }
+        finally { $hash.Dispose() }
+        # Bind the pin plan itself before opening its leaves; no transient caller/serialized plan.
+        if ($documentHash -cne $reference.Hash) { return $null }
+        $saved = $text | ConvertFrom-Json -ErrorAction Stop
+        $entries = @(($saved.Context.Inventory | ConvertFrom-Json -ErrorAction Stop).Files)
+        $allowed = @(Get-ProGoInstallerPayloadNames | Where-Object { $_ -notin @('README.md','README.ru.md','LICENSE.md') })
+        if ($saved.Context.Operation -cne $operation -or $saved.Context.Snapshot -cnotmatch '^installer-[a-f0-9]{32}$' -or $entries.Count -ne $allowed.Count) { return $null }
+        $seen = @{}; $paths = New-Object 'System.Collections.Generic.List[string]'
+        $snapshot = $saved.Context.Snapshot; $journal = 'installer-journal-' + $operation
+        $paths.Add('backups/' + $snapshot + '/installer-snapshot.json')
+        for ($index = 0; $index -lt $entries.Count; $index++) {
+            $entry = $entries[$index]
+            if ($entry.Relative -cnotin $allowed -or $seen.ContainsKey($entry.Relative) -or $entry.Exists -isnot [bool]) { return $null }
+            $seen[$entry.Relative] = $true
+            $paths.Add($entry.Relative)
+            if ($entry.Exists) { $paths.Add('backups/' + $snapshot + '/' + $entry.Relative) }
+            $paths.Add(('backups/' + $journal + '/admit-{0:D6}.json' -f $index))
+        }
+        $manager = New-Object ProGo.ApplicationShortcuts($InstallDirectory,$ProgramsDirectory,$StartupDirectory)
+        $pins = $manager.PinLegacyPhysicalMaterial($paths.ToArray(),$CancellationToken)
+        if ($null -eq $pins) { return $null }
+        # The plan and serialized claims are not authority: repeat all existing physical checks.
+        $again = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
+        if ($null -eq $again -or $again.Origin -cne $reference.Origin -or $again.Hash -cne $reference.Hash -or
+            (Get-ProGoInstallerLegacyPreDeleteState $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory) -cne 'not-applied' -or
+            -not $pins.VerifyPinned($CancellationToken)) { return $null }
+        $result = $pins; $pins = $null; return $result
+    } finally { if ($null -ne $pins) { $pins.Dispose() } }
+}
 function Open-ProGoInstallerJournalAdmission($Backup, $Entry) {
     if ($null -eq $Backup.PSObject.Properties['Journal']) {
         $Backup | Add-Member -MemberType NoteProperty -Name Journal -Value (New-ProGoInstallerJournal $Backup)
