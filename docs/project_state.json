@@ -4020,19 +4020,19 @@
     }
   ],
   "ci_candidate": {
-    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
-    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
-    "run_id": 40305090957,
-    "run_number": 723,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40305090957",
+    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
+    "run_id": 40310537537,
+    "run_number": 724,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40310537537",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "completed",
-    "conclusion": "failure",
-    "candidate_merge_ref": "16c683e7a1bb4ee753a4f4254ccb29569e904346",
-    "tested_merge": "16c683e7a1bb4ee753a4f4254ccb29569e904346",
-    "new_windows": "CI723 restore complete1 PASS/write1 harnessERROR/remaining20 NOT_RUN; full gate FAIL",
+    "conclusion": "success",
+    "candidate_merge_ref": "d1a9fa720e2afb864a56b3b4c16fd5eda7381082",
+    "tested_merge": "d1a9fa720e2afb864a56b3b4c16fd5eda7381082",
+    "new_windows": "CI724 full five exact logs SUCCESS: CLR regression/Restore22/all33/classifier26/Python116PASS2SKIP/strict4aggregate",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5524,12 +5524,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
-    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
-    "prior_checkpoint": "faeaa2005665bf7f237bb79f4b377913321a44b2",
-    "stage": "CI723 reflection harness-only exact CLR unwrapping/type checks and reproducer regression",
-    "status": "CI723 full failure verified; local83PASS/review; new CLR regression/full native22 NOT_RUN",
-    "next": "One guarded publication/automatic CI initial status only; then stop; no duplicate or full wait",
+    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
+    "prior_checkpoint": "0d104a3dceef9ae0dfbfbc103e984c6375e865e3",
+    "stage": "Nearest missing prerequisite: shortcut preparation preserves Legacy before owned live lease; main orchestration not activated",
+    "status": "CI724 full SUCCESS baseline; local83PASS/review; native preparation13/child2/full new aggregate NOT_RUN",
+    "next": "One guarded publication/automatic CI initial status only. Next dependency: strict restored-identity Startup/Menu handoff before actual orchestration",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5538,8 +5538,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "40440cbc77aa429a9260183b1a7ec4e66b15d8d1",
-    "local_development_tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b"
+    "local_development_sha": "b1e33ea5906e9703d03afc451a10eda6d0e61490",
+    "local_development_tree": "dc857fc772c6de6db30141eed989c8394185725b"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -23550,7 +23550,7 @@
   "legacy_live_restore_gate": {
     "base_checkpoint": "96d3586a2b7eb054a21f3f5562eb366ef4d2556f",
     "baseline_source": "65f77542ad0d10a9ebc95a4dcc519683a06a5e59",
-    "status": "CI723 overall FAIL: complete1PASS +write1harnessERROR +20NOT_RUN; harness correction prepared, new native proof NOT_RUN",
+    "status": "CI724 Restore22/CLR regression full PASS scoped; new nondeleting preparation13/child2 NOT_RUN locally; actual main orchestration OPEN",
     "entry": "same retained live accepted operation and source/evidence/physical graph; receipt alone is not authority",
     "target": "fixed owned Legacy name; CreateNew only; no overwrite/adoption/cleanup/replay",
     "truths": [
@@ -23574,8 +23574,8 @@
     "scope": "all31/nested55/F30 unchanged; original33 suites/classifier26/strict4aggregate/deadlines unchanged",
     "score_delta": 0,
     "wiring": "Nested once after Foundation MenuMutation19 cleanup; original33 top-level suite calls/bodies retained; original40min deadlines unchanged; new fixture uses measured Foundation headroom",
-    "source": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
-    "tree": "d5eeb460ddfd23bda06e09b4696d98627d03550b",
+    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
     "harness_fix": "test-only CLR unwrapping of all reflection object arguments and field targets; actual type checks; old failure reproduced before probe, corrected probe once",
     "local_fix_tests": "66 legacy+17 strict aggregate =83PASS; native bridge/regression/22cases NOT_RUN locally"
   },
@@ -23635,6 +23635,72 @@
     "preservation": "all22 scenarios/assertions/real fault injections/original33 suites/classifier26/strict aggregate/deadlines/fullscope unchanged",
     "local": "83PASS; review/parity/lexical/signatures/JSON/diff/secrets/public428source0release PASS",
     "next": "one exact-source automatic CI; no full wait",
+    "score_delta": 0,
+    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
+    "status": "Published; sole CI724 initial in_progress; new native proof NOT_RUN"
+  },
+  "harness_fix_postpublication_checkpoint": {
+    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "parent": "6e1d0d26a8d82e674c21045a070db2a00604d3b8",
+    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
+    "local_reviewed_code": "b1e33ea5906e9703d03afc451a10eda6d0e61490",
+    "canonical_join": "08d13c1330c819fd949a53f1e8249b337d611e16",
+    "base_checkpoint_preserved": "faeaa2005665bf7f237bb79f4b377913321a44b2",
+    "run_id": 40310537537,
+    "run_number": 724,
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "in_progress",
+    "conclusion": null,
+    "candidate_merge_ref": "d1a9fa720e2afb864a56b3b4c16fd5eda7381082",
+    "kind": "local docs-only, unpushed; no second CI",
+    "stop_after_one_stage": true,
+    "score_delta": 0
+  },
+  "ci724_verified_baseline": {
+    "source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "tree": "dc857fc772c6de6db30141eed989c8394185725b",
+    "run_id": 40310537537,
+    "run_number": 724,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40310537537",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "candidate_merge_ref": "d1a9fa720e2afb864a56b3b4c16fd5eda7381082",
+    "tested_merge": "d1a9fa720e2afb864a56b3b4c16fd5eda7381082",
+    "new_windows": "CI724 full five exact logs SUCCESS: CLR regression/Restore22/all33/classifier26/Python116PASS2SKIP/strict4aggregate",
+    "score_delta": 0,
+    "jobs": [
+      121530315782,
+      121530315792,
+      121530315513,
+      121530315632,
+      121543540107
+    ],
+    "restore22": "PASS with CLR regression",
+    "zip_bytes": 706585,
+    "zip_sha256": "544473469f7bf9da0208e9342e6a192966fb2a6785f0b2551d7c2250a618c57b",
+    "uploads": "SKIPPED runner-only; no delivery/PC acceptance"
+  },
+  "legacy_preparation_prerequisite": {
+    "base_checkpoint": "0d104a3dceef9ae0dfbfbc103e984c6375e865e3",
+    "baseline_source": "e872a5be3b4f87bf15eb28bce5ec524658541bec",
+    "status": "Prepared native13/child2; NOT_RUN locally",
+    "scope_limit_evidence": [
+      "InstallCore ensures primary then unconditionally enters legacy migration; no nondeleting preparation API",
+      "original Legacy preserved evidence binds old origin; removed evidence requires absence+live primary",
+      "restored NEW identity invalidates old auxiliary dependency receipt; old guards must not be relaxed"
+    ],
+    "implementation": "PrepareForOwnedLegacyOperation via existing InstallCore/evidence/schema/verifiers; PreserveLegacyForOwnedOperation opt-in with required capture; default paths unchanged",
+    "duplication": "existing RestoreOwnedOnce/VerifyRestoredOutcome/durable restore result untouched",
+    "fixtures": "13 GUID-owned preparation/live operation/failure/restore/cancellation/conflict cases; two real fresh-process refusals; no default installer invocation",
+    "local": "83PASS legacy/aggregate; parity/lexical/signatures/JSON/diff/secrets/public429source0release PASS",
+    "main_orchestration": "OPEN; actual Install-ProGo.ps1/catch/finally unchanged under owner fallback",
+    "next": "strict live restored-identity handoff then actual orchestration; keep primary until Legacy settles; no new acceptance requirement",
+    "remaining": "whole auxiliary/runtime rollback/restart recovery/power-loss/PC acceptance OPEN; UNKNOWN/BLOCKED_TRANSFER/full F30 retained",
     "score_delta": 0
   }
 }

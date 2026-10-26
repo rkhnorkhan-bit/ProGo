@@ -1,3 +1,93 @@
+## CURRENT CI724 SUCCESS verified; bounded missing preparation prerequisite (not full orchestration)
+
+Admission checkpoint0d104a3dceef9ae0dfbfbc103e984c6375e865e3 available/clean, all prior3docs diff(+86/-19)
+retained. PR88 draft/open/unmerged exact sourcee872a5be3b4f87bf15eb28bce5ec524658541bec /
+merged1a9fa720e2afb864a56b3b4c16fd5eda7381082. No active queued/in_progress CI, Git/build/SSH process,
+Git lock or other writer observed at admission. Sole writer/no subagents. No reset/clean or discarded work.
+
+All five complete final CI724 logs independently retrieved and exact merge checked:
+Foundation121530315782 CLR wrapper regression +Restore22 +original27 suites PASS;
+Recovery121530315792 all6 suites, Owned29/receipt14/fresh-process refusal2 PASS;
+Core121530315513 all prior checks/classifier26/Python116PASS2SKIP, Ubuntu121530315632 SUCCESS;
+aggregate121543540107 exact all4 merge PASS. Run40310537537/attempt1 SUCCESS.
+Runner-only ZIP706585 SHA256544473469f7bf9da0208e9342e6a192966fb2a6785f0b2551d7c2250a618c57b,
+uploads SKIPPED; no delivery or user-PC acceptance. This is scoped baseline evidence, not new native PASS.
+
+CODE EVIDENCE FOR AUTHORIZED SCOPE LIMIT: InstallCore currently ensures primary then immediately calls
+MigrateLegacyWithEvidence; no public primary/Startup preparation without Legacy removal existed. Calling the
+ordinary initializer before a live owned operation would delete too early; calling it after would create a
+second Legacy path with an incompatible receipt. Further, VerifyLegacyInstallEvidence(preserved) binds the
+original native origin, while removed requires absence+verified primary. After RestoreOwnedOnce correctly
+creates a NEW native identity, the old preserved/removed receipt fails both expected states. Existing
+VerifyDurableAuxiliaryEvidence and Startup/Menu rollback guards depend on that exact Legacy evidence.
+Do not fabricate the old origin/absence, weaken those guards or delete the verified primary before restore.
+These are existing dependencies in code, not new namespace/ABA acceptance requirements.
+
+Per the owner's explicit nearest-prerequisite fallback, this stage is ONLY nondeleting shortcut preparation
+and isolated preparation/live-lease failure restoration, not default installer orchestration integration.
+New PrepareForOwnedLegacyOperation reuses InstallCore and existing Startup/Menu/Legacy schema/evidence and
+verifiers. The existing migration helper gains an explicit preserveOnly mode: default false retains exact
+old behavior, true observes same original native origin/bytes before+after without deletion. Existing
+Install/InstallWithStartupEvidence remain default deletion paths unchanged. No restore helper/receipt/
+result/verifier duplicated. Existing owned delete/accepted record/RestoreOwnedOnce/VerifyRestoredOutcome
+and durable restore result are byte-for-byte unchanged. Preparation itself grants no mutation authority.
+Initialize-ProGoShortcuts exposes opt-in PreserveLegacyForOwnedOperation ONLY with CaptureStartupEvidence;
+invalid mode refuses before writes. Default switch off, main Install-ProGo.ps1 flow/catch/finally unchanged.
+
+New native13 GUID-only synthetic fixtures: matched-failure, absent, custom-preserved, menu-optout,
+startup-optout, existing-primary, foreign-primary, cancel-before, cancel-after-accepted,
+cancel-after-receipt, foreign-destination, equal-byte-destination, context-lost. Actual runtime/snapshot/
+journal writes and Shell Links, prepared primary, existing source/reference/seal/admission/retained physical+
+delete pins, exactly one owned disposition and accepted record; deliberate fixture failure after preparation
+then existing restore+post verifier before releasing proofs. Positive cases keep exact Legacy bytes but new
+identity and explicitly require old preparation Legacy verifier to refuse afterward. This is the concrete
+next handoff dependency; no Startup/Menu guard is bypassed, primary remains until Legacy settles.
+Negative/cancellation states keep honest accepted/receipt/created flags and retain sources/evidence/conflicts.
+Repeated handler returns same result with unchanged inventory; disposed proofs refuse. Two actual separate
+powershell/CLR children (20s bounded+5s cleanup/drain) cannot rehydrate/replay from paths/receipts, after a
+verified restore or lost live context. Private/foreign bytes and primary retained, exclusive reopen after
+finally releases handles. No ProGo process, real installer, user file, service or external connection used.
+Existing Restore22 actual fault injections remain unchanged and independently exercised by same suite.
+New13 is appended once after Restore22 in existing Foundation host; all original33 suite calls/body/asserts,
+classifier26/strict4aggregate/workflows/deadlines unchanged. CI724 Foundation30m40s/Recovery26m53s; new tests
+use existing Foundation40min budget, not a longer timeout. New compile/13/child2/full aggregate NOT_RUN locally.
+
+Local66 legacy +17 aggregate =83PASS. Reverse default native/PS parity, old fixture/restore/result/verifier/
+main installer/catch parity, C#5 lexical/signatures/JSON/diff/secrets/public429source0release PASS.
+No local Windows/C#/PowerShell runtime: static checks are not new native proof. One guarded nonforce PR88
+publication and one automatic CI initial status only; no duplicate/rerun/manual dispatch/full wait.
+
+Next OPEN dependency: join live operation into actual installer with current Startup/Menu evidence bound to
+accepted delete/restored NEW identity, keeping strict existing guards and Legacy-before-Startup-before-Menu
+settlement; no claim that this prerequisite closes that orchestration. Main catch still reports auxiliary
+rollback false and preserves original install error. Whole auxiliary/runtime rollback, restart recovery,
+power-loss and PC acceptance remain OPEN/NOT_RUN. UNKNOWN incidents/BLOCKED_TRANSFER/no retry/all31/nested55/
+full F30 commercial scope/weights/delta0 retained. Lost live proofs blocked/manual; receipt/absence not authority.
+No live installation/user data/privileges/ACL/WCT/SeDebug/services/network/credentials/VPS/tunnel actions.
+
+## LOCAL post-publication checkpoint: CLR reflection harness correction / CI724
+
+One expected-head nonforce PR88 update completed: sourcee872a5be3b4f87bf15eb28bce5ec524658541bec,
+parent6e1d0d26a8d82e674c21045a070db2a00604d3b8, treedc857fc772c6de6db30141eed989c8394185725b.
+Reviewed localb1e33ea5906e9703d03afc451a10eda6d0e61490 has identical full tree; canonical Git commit hash/
+parent/full tree verified and joined at08d13c1330c819fd949a53f1e8249b337d611e16. Base checkpointfaeaa200
+and its entire docs/state diff retained. Only fixture harness +3 docs/state files published; production unchanged.
+PR88 draft/open/unmerged; candidate merge REFd1a9fa720e2afb864a56b3b4c16fd5eda7381082, not tested PASS.
+Sole automatic CI724 https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40310537537,
+pull_request/attempt1, exact-source raw total_count1; observed in_progress/conclusion null.
+New bridge compilation/actual CLR wrapper regression/full restore22/exact aggregate NOT_RUN until same run's
+complete exact logs. CI723 FAILURE remains: complete1PASS, write1harnessERROR before method,20NOT_RUN.
+No inherited full restore/F23/production PASS. Local83 contracts/aggregate PASS; reverse fixture/production/
+assertion/scenario/fault parity, C#5 lexical/signatures/JSON/diff/secrets/public428source0release PASS.
+All22 original cases and real fault injections retained. All33 suites/classifier26/strict4aggregate/deadlines
+unchanged. No production change or additional production defect established in this correction.
+This docs-only checkpoint is local/unpushed: no second update/rerun/dispatch/CI/full wait/live operations.
+Stop here. Next SAME CI724 full five exact final logs, first CLR regression then all22 fault cases;
+no second stage. UNKNOWN incidents/BLOCKED_TRANSFER/no retry/full31/nested55/F30 and weights/delta0 preserved.
+Lost live proofs => blocked/manual; receipt/absence/result never authority. Whole rollback/live installer/error
+integration/restart recovery/power-loss/PC acceptance remain OPEN/NOT_RUN. No user-data/security/ACL/privilege/
+WCT/SeDebug/services/network/VPS/tunnel/credentials/install actions.
+
 ## CURRENT CI723 FAILURE verified; reflection harness-only CLR argument correction
 
 Admission checkpointfaeaa2005665bf7f237bb79f4b377913321a44b2 is available, clean and preserved with its

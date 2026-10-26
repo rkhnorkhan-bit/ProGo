@@ -1489,11 +1489,11 @@ namespace ProGo
             }
         }
 
-        private LegacyInstallEvidence MigrateLegacyWithEvidence(bool requested)
+        private LegacyInstallEvidence MigrateLegacyWithEvidence(bool requested, bool preserveOnly = false)
         {
             string path = Path.Combine(menu, "ProGo Status.lnk");
             var before = ObserveLegacy(requested); bool removed = false; string replacement = null;
-            if (requested && before.Matched) {
+            if (requested && before.Matched && !preserveOnly) {
                 string primary = Path.Combine(menu, "ProGo.lnk"); CheckLocation(primary);
                 // Existing install already ensured primary; pin its verified bytes until legacy deletion settles.
                 using (var stream = new FileStream(primary, FileMode.Open, FileAccess.Read, FileShare.Read)) {
@@ -1749,7 +1749,18 @@ namespace ProGo
             return evidence;
         }
 
-        private StartupInstallEvidence InstallCore(bool wasInstalled, bool noStartup, bool noStartMenu, bool captureStartup)
+        // Preparation only: preserve the exact Legacy object while ensuring the requested primary/Startup.
+        // Existing evidence schema is reused; it grants no owned deletion, restoration or install success.
+        public StartupInstallEvidence PrepareForOwnedLegacyOperation(bool wasInstalled, bool noStartup, bool noStartMenu)
+        {
+            var evidence = InstallCore(wasInstalled, noStartup, noStartMenu, true, true);
+            if (!VerifyStartupInstallEvidence(evidence) || !VerifyMenuInstallEvidence(evidence.Menu) ||
+                !VerifyLegacyInstallEvidence(evidence.Legacy) || evidence.Legacy.Disposition != "preserved")
+                throw new IOException("Legacy preparation evidence changed.");
+            return evidence;
+        }
+
+        private StartupInstallEvidence InstallCore(bool wasInstalled, bool noStartup, bool noStartMenu, bool captureStartup, bool preserveLegacy = false)
         {
             if (!File.Exists(executable)) throw new IOException("Installed executable is missing.");
             byte[] before = captureStartup ? ReadStartupBytes() : null;
@@ -1762,7 +1773,7 @@ namespace ProGo
                     : EnsureLink(Path.Combine(menu, "ProGo.lnk"), "--show");
                 if (!captureStartup) MigrateMenu();
             }
-            var legacyEvidence = captureStartup ? MigrateLegacyWithEvidence(!noStartMenu) : null;
+            var legacyEvidence = captureStartup ? MigrateLegacyWithEvidence(!noStartMenu, preserveLegacy) : null;
             // Existing links (including disabled/customized ones) are never
             // refreshed: preserve Windows' StartupApproved state and user edits.
             byte[] created = null;

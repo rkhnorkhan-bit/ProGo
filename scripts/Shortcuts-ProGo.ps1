@@ -20,9 +20,11 @@ function Initialize-ProGoShortcuts {
     param([string]$InstallDirectory, [bool]$WasInstalled, [bool]$NoStartup, [bool]$NoStartMenu,
         [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
         [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
-        [switch]$CaptureStartupEvidence)
+        [switch]$CaptureStartupEvidence, [switch]$PreserveLegacyForOwnedOperation)
+    if ($PreserveLegacyForOwnedOperation -and -not $CaptureStartupEvidence) { throw 'Legacy preparation requires captured shortcut evidence.' }
     Import-ProGoShortcutType
     $shortcuts = New-Object ProGo.ApplicationShortcuts($InstallDirectory, $ProgramsDirectory, $StartupDirectory)
+    if ($PreserveLegacyForOwnedOperation) { return $shortcuts.PrepareForOwnedLegacyOperation($WasInstalled, $NoStartup, $NoStartMenu) }
     if ($CaptureStartupEvidence) { return $shortcuts.InstallWithStartupEvidence($WasInstalled, $NoStartup, $NoStartMenu) }
     $shortcuts.Install($WasInstalled, $NoStartup, $NoStartMenu)
 }
