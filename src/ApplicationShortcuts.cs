@@ -253,7 +253,9 @@ namespace ProGo
             internal readonly LegacyPhysicalPins physical;
             internal readonly System.Collections.IDictionary startupMap, menuMap, legacyMap;
             internal LegacyRestoreResult restored;
-            internal bool disposed, failureEntered, startupConsumed, startupVerified, menuConsumed, menuFailureEntered;
+            internal bool disposed, failureEntered, startupConsumed, startupVerified, menuConsumed, menuFailureEntered, auxiliaryEntered;
+            internal readonly Guid session = Guid.NewGuid();
+            internal AuxiliaryOutcomeResult auxiliaryResult;
             internal FileStream restoredPin;
             internal string menuPrimaryOrigin;
             public bool MenuAttempted { get; internal set; }
@@ -318,7 +320,7 @@ namespace ProGo
                     menuConsumed = true; // cancellation/error never permits another destructive invocation
                     try {
                         lock (lease.gate) { return physical.WithPins<LegacyStartupContext>(() => {
-                            if (!VerifyStartupSettlement() || !owner.VerifyDurableMenuRollbackEvidence(menuMap)) return null;
+                            if (preparation.Menu.Disposition != "created" || !VerifyStartupSettlement() || !owner.VerifyDurableMenuRollbackEvidence(menuMap)) return null;
                             restoredPin = OpenLegacyRestartRead(Path.Combine(owner.menu, "ProGo Status.lnk"));
                             if (restored.RestoredOrigin != LegacyOrigin(restoredPin.SafeFileHandle) || !VerifyStartupSettlement()) return null;
                             token.ThrowIfCancellationRequested();
@@ -330,10 +332,118 @@ namespace ProGo
             }
             public bool VerifyMenuSettlement()
             { lock (gate) { return owner.VerifyLiveMenuSettlement(this); } }
+            public bool BeginAuxiliaryHandling()
+            { lock (gate) { if (disposed || auxiliaryEntered) return false; auxiliaryEntered = true; return true; } }
+            public AuxiliaryOutcomeResult RecordAuxiliaryOutcomeOnce(CancellationToken token)
+            { return owner.RecordLiveAuxiliaryOutcome(this, token, null, null); }
+            public LegacyRestoreResult RestoreProgress { get { lock (gate) { return restored; } } }
+            public AuxiliaryOutcomeResult AuxiliaryPublication { get { lock (gate) { return auxiliaryResult; } } }
+            public bool VerifyAuxiliaryOutcome()
+            { lock (gate) { return owner.VerifyLiveAuxiliaryOutcome(this); } }
             public void Dispose()
             { lock (gate) { if (disposed) return; disposed = true;
                 try { if (restoredPin != null) restoredPin.Dispose(); }
                 finally { try { lease.Dispose(); } finally { physical.Dispose(); } } } }
+        }
+        // One terminal observation of all three auxiliary components, never restart/runtime authority.
+        public sealed class AuxiliaryOutcomeResult
+        {
+            public bool AuxiliaryStateVerified { get; private set; }
+            public bool AuxiliaryOutcomeRecorded { get; private set; }
+            public bool Attempted { get; private set; }
+            public bool Created { get; private set; }
+            public long BytesWritten { get; private set; }
+            public bool Flushed { get; private set; }
+            public bool ReadbackVerified { get; private set; }
+            public string Origin { get; private set; }
+            public string Hash { get; private set; }
+            public bool RestartAuthority { get { return false; } }
+            public bool RuntimeRollbackAllowed { get { return false; } }
+            public bool BackupCleanupAllowed { get { return false; } }
+            public bool InstallSucceeded { get { return false; } }
+            internal AuxiliaryOutcomeResult(bool verified, bool recorded, bool attempted, bool created, long written,
+                bool flushed, bool readback, string origin, string hash)
+            { AuxiliaryStateVerified = verified; AuxiliaryOutcomeRecorded = recorded; Attempted = attempted; Created = created;
+                BytesWritten = written; Flushed = flushed; ReadbackVerified = readback; Origin = origin; Hash = hash; }
+        }
+        private string AuxiliaryOutcomePath(LegacyStartupContext context)
+        { return Path.Combine(root, "backups", "installer-auxiliary-scoped-" + context.OperationId.ToString("N") + ".bin"); }
+        private byte[] AuxiliaryOutcomeDocument(LegacyStartupContext context, string origin)
+        {
+            // Refer to existing canonical accepted/restore results; do not duplicate their documents.
+            return Encoding.ASCII.GetBytes(String.Join("\n", new[] { "PROGO-AUXILIARY-SCOPED-1", context.session.ToString("N"),
+                context.OperationId.ToString("N"), Identity(root), context.lease.reference.Source.SnapshotHash,
+                context.lease.acceptedOutcome.Origin, context.lease.acceptedOutcome.Hash, context.restored.ResultOrigin,
+                context.restored.ResultHash, context.restored.RestoredOrigin, context.preparation.OriginIdentity ?? "preserved",
+                context.preparation.Hash ?? "absent", context.preparation.Menu.OriginIdentity, context.preparation.Menu.Hash,
+                "legacy-restored-startup-original-menu-original", "runtime-unverified", "install-failed", "restart-blocked", origin, "" }));
+        }
+        private AuxiliaryOutcomeResult RecordLiveAuxiliaryOutcome(LegacyStartupContext context, CancellationToken token,
+            string fault, CancellationTokenSource faultCancellation)
+        {
+            lock (context.gate) {
+                if (context.auxiliaryResult != null) return context.auxiliaryResult;
+                context.auxiliaryResult = new AuxiliaryOutcomeResult(false, false, false, false, 0, false, false, null, null);
+                bool verified = false, attempted = false, created = false, flushed = false, readback = false, recorded = false;
+                long written = 0; string origin = null, hash = null;
+                try {
+                    if (fault != null && Array.IndexOf(new[] { "write", "short-write", "flush", "readback", "readback-throw",
+                        "cancel-created", "cancel-written", "cancel-flushed", "cancel-readback" }, fault) < 0) throw new ArgumentException("Unknown isolated auxiliary fault.");
+                    lock (context.lease.gate) { context.physical.WithPins<LegacyStartupContext>(() => {
+                        if (!Object.ReferenceEquals(context.owner, this) || !context.VerifyMenuSettlement()) return null;
+                        verified = true; token.ThrowIfCancellationRequested();
+                        string path = AuxiliaryOutcomePath(context); CheckLocation(path);
+                        using (var rootPin = PinLegacySourceDirectory(root))
+                        using (var backupPin = PinLegacySourceDirectory(Path.Combine(root, "backups"))) {
+                            if (!context.VerifyMenuSettlement()) return null;
+                            attempted = true;
+                            using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough)) {
+                                created = true; origin = LegacyOrigin(stream.SafeFileHandle);
+                                byte[] document = AuxiliaryOutcomeDocument(context, origin);
+                                if (fault == "cancel-created") faultCancellation.Cancel();
+                                token.ThrowIfCancellationRequested();
+                                if (fault == "write") throw new IOException("Synthetic auxiliary Write fault.");
+                                int count = fault == "short-write" ? Math.Max(1, document.Length / 2) : document.Length;
+                                try { stream.Write(document, 0, count); } finally { written = stream.Length; }
+                                if (written != document.Length) throw new IOException("Auxiliary Write incomplete.");
+                                if (fault == "cancel-written") faultCancellation.Cancel(); token.ThrowIfCancellationRequested();
+                                if (fault == "flush") throw new IOException("Synthetic auxiliary Flush fault.");
+                                stream.Flush(true); flushed = true;
+                                if (fault == "cancel-flushed") faultCancellation.Cancel(); token.ThrowIfCancellationRequested();
+                                if (fault == "readback") { stream.Position = 0; stream.WriteByte(0); stream.Flush(true); }
+                                if (fault == "readback-throw") throw new IOException("Synthetic auxiliary readback fault.");
+                                stream.Position = 0;
+                                if (origin != LegacyOrigin(stream.SafeFileHandle) || !Equal(document, ReadLegacyReferenceBytes(stream))) throw new IOException("Auxiliary readback changed.");
+                                readback = true;
+                                if (fault == "cancel-readback") faultCancellation.Cancel(); token.ThrowIfCancellationRequested();
+                                // The compatible reader permits this still-open READ|WRITE publisher, whose share denies external mutations.
+                                using (var current = OpenLegacyAcceptedPublicationRead(path)) {
+                                    if (origin != LegacyOrigin(current.SafeFileHandle) || !Equal(document, ReadLegacyReferenceBytes(current)) ||
+                                        !context.VerifyMenuSettlement() || !Equal(document, AuxiliaryOutcomeDocument(context, origin))) throw new IOException("Auxiliary publication context changed.");
+                                }
+                                hash = Digest(document);
+                            }
+                        }
+                        recorded = true; return context;
+                    }); }
+                } catch { /* Retain every partial/conflicting artifact; no overwrite, cleanup, repair or replay. */ }
+                return context.auxiliaryResult = new AuxiliaryOutcomeResult(verified, recorded, attempted, created, written, flushed, readback, origin, hash);
+            }
+        }
+        private bool VerifyLiveAuxiliaryOutcome(LegacyStartupContext context)
+        {
+            try {
+                var result = context.auxiliaryResult;
+                if (context.disposed || !Object.ReferenceEquals(context.owner, this) || result == null || !result.AuxiliaryOutcomeRecorded ||
+                    !result.Created || !result.Flushed || !result.ReadbackVerified || !context.VerifyMenuSettlement()) return false;
+                lock (context.lease.gate) { return context.physical.WithPins<LegacyStartupContext>(() => {
+                    using (var current = OpenLegacyRestartRead(AuxiliaryOutcomePath(context))) {
+                        byte[] document = AuxiliaryOutcomeDocument(context, result.Origin);
+                        return result.Origin == LegacyOrigin(current.SafeFileHandle) && result.Hash == Digest(document) && result.BytesWritten == document.Length &&
+                            Equal(document, ReadLegacyReferenceBytes(current)) && context.VerifyMenuSettlement() ? context : null;
+                    }
+                }) != null; }
+            } catch { return false; }
         }
         private static System.Collections.IDictionary LivePreparationMap(object evidence)
         {

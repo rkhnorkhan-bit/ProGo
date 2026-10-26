@@ -143,3 +143,4 @@ try {
 & (Join-Path $Root 'tests\InstallerLegacyPreparationTests.ps1')
 & (Join-Path $Root 'tests\InstallerLegacyStartupLiveTests.ps1')
 & (Join-Path $Root 'tests\InstallerLegacyStartupLiveTests.ps1') -MenuFlow
+& (Join-Path $Root 'tests\InstallerAuxiliaryScopedOutcomeTests.ps1')

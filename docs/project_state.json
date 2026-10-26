@@ -4020,19 +4020,26 @@
     }
   ],
   "ci_candidate": {
-    "source": "16b28bc40f00a6c24d69add5665c58f0be8a8fee",
-    "tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8",
-    "run_id": 40338423004,
-    "run_number": 728,
-    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40338423004",
+    "source": "7a5950272207a0ca94c6fd01266592d8b375e820",
+    "tree": "a5e0e3715798845b5616c7612d232d7558148e94",
+    "run_id": 40346729561,
+    "run_number": 729,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40346729561",
     "event": "pull_request",
     "attempt": 1,
     "source_filtered_run_count": 1,
     "status": "completed",
-    "conclusion": "cancelled",
-    "candidate_merge_ref": "1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569",
-    "tested_merge": "1e53e1d2aaddbb4a5fbd9f87a5f634c76a2be569",
-    "new_windows": "CI728 cancelled Foundation; Menu24 1PASS/1interrupted/22NOT_RUN; aggregate FAILURE exact4; no full native PASS",
+    "conclusion": "success",
+    "candidate_merge_ref": "be9e9e6d5714a9d671ced72d2ba5b7ba9248b8c2",
+    "tested_merge": "be9e9e6d5714a9d671ced72d2ba5b7ba9248b8c2",
+    "required_partitions": [
+      "vpn-server-test",
+      "windows-build",
+      "installer-tests",
+      "installer-live-tests",
+      "installer-recovery-tests"
+    ],
+    "new_windows": "CI729 full6logs SUCCESS incl first complete Menu24/refusal2/all33/Restore22/Preparation13/Startup19/classifier26/exact5aggregate",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5524,12 +5531,12 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "16b28bc40f00a6c24d69add5665c58f0be8a8fee",
-    "tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8",
-    "prior_checkpoint": "da89bafc7d020f68fd6d7223cc247065aafac10f",
-    "stage": "CI scheduling only: entire existing suite27 in independent Live partition; Foundation26/Live1/Recovery6 and exact5 required aggregate",
-    "status": "CI728 cancelled cause UNKNOWN; local90PASS/review; full new native Menu24 and exact5aggregate NOT_RUN",
-    "next": "One guarded publish +one automatic CI initial status; no full wait. Read same new full6logs before claiming native24 PASS",
+    "source": "7a5950272207a0ca94c6fd01266592d8b375e820",
+    "tree": "a5e0e3715798845b5616c7612d232d7558148e94",
+    "prior_checkpoint": "01ffd05695b04755907d946da428685be6a29bde",
+    "stage": "Opt-in real failure handlers -> live Menu settlement -> one durable scoped auxiliary outcome -> consumed honest failure summary; preserved primary explicitly blocked/default OFF",
+    "status": "CI729 full6logs SUCCESS baseline; local90PASS; new auxiliary26/refusal2/compile/full exact aggregate NOT_RUN",
+    "next": "One guarded publish +sole automatic CI initial status, no full wait. Read same full6logs before claiming new native26 PASS",
     "constraints": [
       "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
       "All33 suites/classifier26/strict4aggregate/deadlines/SSH runtime untouched",
@@ -5538,8 +5545,8 @@
       "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0,
-    "local_development_sha": "fd5a7fb614fdbf475cbc50bda04d49e3333923b8",
-    "local_development_tree": "decb8f63cb24d18534c69f86a7c0a08a0a950af8"
+    "local_development_sha": "7c69ff673dfafb06c5f3f8c2e67ea0f033059d6c",
+    "local_development_tree": "a5e0e3715798845b5616c7612d232d7558148e94"
   },
   "f31_launch_revision_microtask": {
     "status": "PARTIAL",
@@ -24121,6 +24128,84 @@
     "local": "90PASS=legacy66+aggregate24; static/parity/secrets/JSON/public430source0release PASS",
     "native": "new Live/fullMenu24/exact5aggregate NOT_RUN until new full logs",
     "remaining": "CI728 UNKNOWN cause/native Menu24 complete proof/default success/durable auxiliary/whole rollback/restart/power-loss/PC acceptance OPEN",
+    "score_delta": 0,
+    "status": "CI729 full6logs SUCCESS exact5partitions; current new auxiliary26 NOT_RUN until next candidate logs",
+    "publication": {
+      "source": "7a5950272207a0ca94c6fd01266592d8b375e820",
+      "code_commit": "7c69ff673dfafb06c5f3f8c2e67ea0f033059d6c",
+      "tree": "a5e0e3715798845b5616c7612d232d7558148e94",
+      "join": "ec6bfa3a75a7f55b526aa75d28c4ab785b50dbb5",
+      "guard": "expected16b28bc40f00a6c24d69add5665c58f0be8a8fee force=false once",
+      "ci": 40346729561,
+      "run_number": 729,
+      "attempt": 1,
+      "exact_source_count": 1,
+      "status": "queued",
+      "conclusion": null,
+      "checkpoint": "local3docs-only unpushed, no second CI/full wait"
+    }
+  },
+  "ci729_verified_baseline": {
+    "source": "7a5950272207a0ca94c6fd01266592d8b375e820",
+    "tree": "a5e0e3715798845b5616c7612d232d7558148e94",
+    "run_id": 40346729561,
+    "run_number": 729,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40346729561",
+    "event": "pull_request",
+    "attempt": 1,
+    "source_filtered_run_count": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "candidate_merge_ref": "be9e9e6d5714a9d671ced72d2ba5b7ba9248b8c2",
+    "tested_merge": "be9e9e6d5714a9d671ced72d2ba5b7ba9248b8c2",
+    "required_partitions": [
+      "vpn-server-test",
+      "windows-build",
+      "installer-tests",
+      "installer-live-tests",
+      "installer-recovery-tests"
+    ],
+    "new_windows": "CI729 full6logs SUCCESS incl first complete Menu24/refusal2/all33/Restore22/Preparation13/Startup19/classifier26/exact5aggregate",
+    "score_delta": 0,
+    "jobs": [
+      121655514538,
+      121655514374,
+      121655514321,
+      121655514046,
+      121655515133,
+      121673236331
+    ],
+    "full_log_lines": [
+      278,
+      643,
+      539,
+      15496,
+      621,
+      179
+    ],
+    "Live": "Menu24/refusal2/Startup19/Preparation13/Restore22/MenuMutation19/CLR+sharing regressions PASS",
+    "Foundation": "26PASS",
+    "Recovery": "6PASS/Owned29/receipt14/refusal2",
+    "Core": "Python123PASS2SKIP/classifier26/all previous checks PASS",
+    "Ubuntu": "aggregate24 parity/failclosed negatives PASS",
+    "aggregate": "all5 exact merge PASS",
+    "zip_bytes": 713799,
+    "zip_sha256": "7c9a7d324a67317bb0a80b37d3f97ce29c319a9cedbd25cfdf7f3a3c13ac5f74",
+    "uploads": "SKIPPED runner-only/no PC acceptance",
+    "ci728_cause": "UNKNOWN"
+  },
+  "scoped_auxiliary_outcome_gate": {
+    "base_checkpoint": "01ffd05695b04755907d946da428685be6a29bde",
+    "baseline_source": "7a5950272207a0ca94c6fd01266592d8b375e820",
+    "status": "Prepared, auxiliary26/fresh-process2/native compilation NOT_RUN locally",
+    "integration": "FailureAuxiliary invokes real FailureStartup/FailureMenu -> VerifyMenuSettlement -> one context cached publication -> summary consuming current independent state/recorded flags +same OriginalError",
+    "binding": "same live typed context/session/operation/install/snapshot/accepted+restore origin/hash, retained restored Legacy identity; no new Legacy receipt or serialized capability",
+    "publication": "fixed CreateNew/WriteThrough/Flush(true)/exact bounded readback/current native identity; separate attempted/created/bytes/flushed/readback/recorded; no overwrite/replay/cleanup/repair",
+    "preserved_primary": "explicit blocked pre-menu-mutation; actual restored Legacy/preserved Startup+primary retained, no complete auxiliary coverage",
+    "fixture": "26 GUID actual handler/new publication fault cases, exact CLR bridge and READ/share5, private/foreign/backup/error retention, actual valid result fresh-process refusal2, handles released finally",
+    "local": "90PASS legacy66+aggregate24; review/parity/static/JSON/diff/secrets/public431source0release PASS",
+    "remaining": "preserved-primary upgrade/full auxiliary+runtime rollback/default success+orchestration/restart/power-loss/PC acceptance OPEN; CI728 cancellation cause UNKNOWN",
+    "preservation": "all33/prior native22+13+19+24/classifier26/strict5partition aggregate/deadlines/UNKNOWN/BLOCKED_TRANSFER/fullF30 unchanged",
     "score_delta": 0
   }
 }

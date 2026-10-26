@@ -1180,6 +1180,49 @@ function Invoke-ProGoInstallerFailureMenu([bool]$AuxiliaryStarted, $Backup, [str
     } catch { return 'blocked' }
     return 'blocked'
 }
+# Opt-in live failure orchestration only. The main/default installer remains unchanged.
+function Complete-ProGoInstallerAuxiliaryOutcome($LegacyContext,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    Import-ProGoShortcutType
+    if ($LegacyContext -isnot [ProGo.ApplicationShortcuts+LegacyStartupContext]) { return $null }
+    return $LegacyContext.RecordAuxiliaryOutcomeOnce($CancellationToken)
+}
+function Invoke-ProGoInstallerFailureAuxiliary($OriginalError, $Backup, [string]$InstallDirectory,
+    [string]$ProgramsDirectory, [string]$StartupDirectory, $LegacyContext,
+    [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $stateVerified = $false; $outcomeRecorded = $false; $publication = $null; $scopeMatched = $false
+    try {
+        Import-ProGoShortcutType
+        if ($LegacyContext -is [ProGo.ApplicationShortcuts+LegacyStartupContext] -and $null -ne $Backup -and $null -ne $Backup.Journal -and
+            $LegacyContext.MatchesInstallerLocations($Backup.Journal.Directory,$InstallDirectory,$ProgramsDirectory,$StartupDirectory)) {
+            $scopeMatched = $true
+            if ($LegacyContext.BeginAuxiliaryHandling()) {
+                $startupState = Invoke-ProGoInstallerFailureStartup $true $Backup $InstallDirectory $ProgramsDirectory $StartupDirectory $LegacyContext $CancellationToken
+                [void](Invoke-ProGoInstallerFailureMenu $true $Backup $InstallDirectory $startupState $ProgramsDirectory $StartupDirectory $LegacyContext $CancellationToken)
+                if ($LegacyContext.VerifyMenuSettlement()) { [void](Complete-ProGoInstallerAuxiliaryOutcome $LegacyContext $CancellationToken) }
+            }
+            $stateVerified = $LegacyContext.VerifyMenuSettlement()
+            $outcomeRecorded = $LegacyContext.VerifyAuxiliaryOutcome()
+            $publication = $LegacyContext.AuxiliaryPublication
+        }
+    } catch {
+        # Publication errors cannot erase accepted mutations or replace the original install error.
+        if ($scopeMatched -and $LegacyContext -is [ProGo.ApplicationShortcuts+LegacyStartupContext]) {
+            $stateVerified = $LegacyContext.VerifyMenuSettlement(); $outcomeRecorded = $LegacyContext.VerifyAuxiliaryOutcome()
+            $publication = $LegacyContext.AuxiliaryPublication
+        }
+    }
+    $message = if ($outcomeRecorded) { 'install-failed; scoped-auxiliary-verified-recorded; runtime-unverified' }
+        elseif ($stateVerified) { 'install-failed; scoped-auxiliary-verified-unrecorded; runtime-unverified' }
+        else { 'install-failed; scoped-auxiliary-blocked; runtime-unverified' }
+    $legacyProgress = $null; $startupInvoked = $false; $menuAccepted = $false; $menuClosed = $false
+    if ($scopeMatched) { $legacyProgress = $LegacyContext.RestoreProgress; $startupInvoked = $LegacyContext.StartupInvoked;
+        $menuAccepted = $LegacyContext.MenuDispositionAccepted; $menuClosed = $LegacyContext.MenuHandleClosed }
+    return [pscustomobject]@{ OriginalError = $OriginalError; Message = $message; LegacyProgress = $legacyProgress;
+        StartupInvoked = $startupInvoked; MenuDispositionAccepted = $menuAccepted; MenuHandleClosed = $menuClosed; AuxiliaryStateVerified = $stateVerified;
+        AuxiliaryOutcomeRecorded = $outcomeRecorded; Publication = $publication; InstallSucceeded = $false;
+        RuntimeRollbackAllowed = $false; BackupCleanupAllowed = $false; RestartAuthority = $false; WholeRollbackVerified = $false }
+}
 function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }

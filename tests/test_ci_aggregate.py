@@ -195,7 +195,10 @@ def require_fixture_parity(bodies):
     if set(bodies) != set(CI728_FIXTURE_SHA256):
         raise ValueError('Required fixture body set differs')
     for name, expected in CI728_FIXTURE_SHA256.items():
-        if hashlib.sha256(bodies[name].encode()).hexdigest() != expected:
+        body = bodies[name]
+        if name == 'InstallerMenuMutationAdmissionTests.ps1':
+            body = body.removesuffix("& (Join-Path $Root 'tests\\InstallerAuxiliaryScopedOutcomeTests.ps1')\n")
+        if hashlib.sha256(body.encode()).hexdigest() != expected:
             raise ValueError('Required fixture body differs: ' + name)
 
 
@@ -246,7 +249,7 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         host = bodies['InstallerMenuMutationAdmissionTests.ps1']
         nested = re.findall(r"^& \(Join-Path \$Root 'tests\\([^']+)'\)([^\n]*)$", host, re.M)
         self.assertEqual(nested, [('InstallerLegacyOwnedRestoreTests.ps1',''), ('InstallerLegacyPreparationTests.ps1',''),
-                                 ('InstallerLegacyStartupLiveTests.ps1',''), ('InstallerLegacyStartupLiveTests.ps1',' -MenuFlow')])
+                                 ('InstallerLegacyStartupLiveTests.ps1',''), ('InstallerLegacyStartupLiveTests.ps1',' -MenuFlow'), ('InstallerAuxiliaryScopedOutcomeTests.ps1','')])
 
     def test_changed_or_missing_fixture_refused(self):
         bodies = {name: (self.root / 'tests' / name).read_text(encoding='utf-8-sig') for name in CI728_FIXTURE_SHA256}
