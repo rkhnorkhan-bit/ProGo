@@ -201,8 +201,14 @@ try {
     & (Join-Path $Root 'tests\InstallerLegacyDurableSourceTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacyDurableSourceTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+$CaseWatch = [Diagnostics.Stopwatch]::StartNew()
+Write-Host 'INSTALLER_SUITE_START name=InstallerLegacyDurableInputTests.ps1'
+try {
+    & (Join-Path $Root 'tests\InstallerLegacyDurableInputTests.ps1')
+    Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacyDurableInputTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
+} finally { $CaseWatch.Stop() }
 }
 # PARTITION Recovery END
 $SuiteWatch.Stop()
-$SuiteCount = if ($Partition -eq 'Foundation') { 27 } elseif ($Partition -eq 'Recovery') { 5 } else { 32 }
+$SuiteCount = if ($Partition -eq 'Foundation') { 27 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }
 Write-Host ('Installer partition PASS: ' + $SuiteCount + ' suites; partition=' + $Partition + '; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)

@@ -4020,13 +4020,14 @@
     }
   ],
   "ci_candidate": {
-    "source": "CURRENT_TREE",
-    "baseline_source": "4de597fba29d91fb8b8242c36f5b2a01d9681598",
-    "reviewed_local_code": "912003d80b0bfdafabd20d3fd63376622ec1af4c",
-    "status": "Await one automatic CI after guarded publication",
-    "Windows_Durable20": "NOT_RUN",
-    "Installer32": "NOT_RUN",
-    "exact_SHA_aggregate": "NOT_RUN",
+    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
+    "tree": "ca28cd6919be80187a3c9c13d924d6e7fc9b77f3",
+    "run_id": 40241990486,
+    "run_number": 711,
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40241990486",
+    "status": "completed",
+    "conclusion": "failure",
+    "tested_merge": "e245c2466270caeb3729f030b461d919217c5b9b",
     "score_delta": 0
   },
   "signing_microtask": {
@@ -5518,18 +5519,18 @@
     "continuity": "No schedule/restart/continuous guarantee created"
   },
   "active_work": {
-    "source": "CURRENT_TREE",
-    "baseline_source": "4de597fba29d91fb8b8242c36f5b2a01d9681598",
-    "reviewed_local_code": "912003d80b0bfdafabd20d3fd63376622ec1af4c",
-    "prior_checkpoint": "e970edf4583da98e632821440ce6f81c76d5f5e2",
-    "stage": "F23 native durable original Legacy source storage/evidence-linked read only",
-    "status": "Local checks PASS; C# compile/Windows Durable20/full32 NOT_RUN",
-    "next": "SAME one new CI all5 full logs/merge/27+5/Durable20/all32; then trusted journal reference/pre-delete integration, not restore yet",
+    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
+    "tree": "ca28cd6919be80187a3c9c13d924d6e7fc9b77f3",
+    "prior_checkpoint": "680d2360335b6830108c51e0d382e1e166b5ddfd",
+    "stage": "Approved test-only wiring classifier26/Core + DurableInput12/Recovery",
+    "status": "Windows NOT_RUN before automatic CI; old CI711 globalFAIL/startupUNKNOWN preserved",
+    "next": "After sole automatic CI, full5 logs/exact merge/new38cases/all33installer/Core/strict4aggregate; no journal/predelete until fullPASS",
     "constraints": [
-      "All approved31/nested55 scope retained",
-      "UNKNOWN incidents retained",
-      "BLOCKED_TRANSFER/no retry",
-      "No live install/services/network/ACL/security/credentials/VPS/tunnel/release/uploads"
+      "WCT/SeDebug NOT AUTHORIZED, do not answer for sleeping owner",
+      "All32 suites/4aggregate/deadlines/runtime untouched",
+      "Full approved31/nested55 scope retained",
+      "UNKNOWN/BLOCKED_TRANSFER/no retry",
+      "No live/security/network/credentials/services/release/uploads changes"
     ],
     "score_delta": 0
   },
@@ -23109,7 +23110,7 @@
     "uploads_prune": "SKIPPED"
   },
   "f23_legacy_durable_source": {
-    "source": "CURRENT_TREE",
+    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
     "reviewed_local_code": "912003d80b0bfdafabd20d3fd63376622ec1af4c",
     "status": "PARTIAL native durable source storage/receipt-linked read prerequisite only",
     "acceptance": "CreateNew/WriteThrough/Flush/readback; pinned directories/original/source; independent writer-issued storage origin/document proof and exact canonical original bytes; refuse partial/foreign/mutation",
@@ -23118,6 +23119,103 @@
     "local_checks": "PASS review/static/signatures/parity/reverse diff/header size/aggregate16/JSON/secrets/public-content/diff",
     "Windows_Durable20": "NOT_RUN",
     "Installer32": "NOT_RUN",
+    "score_delta": 0,
+    "tree": "ca28cd6919be80187a3c9c13d924d6e7fc9b77f3",
+    "run_id": 40241990486,
+    "ci_status": "queued/null; new native tests not executed yet",
+    "ci711_evidence": "Durable20 actually PASS at mergee245c246; native source prerequisite only; journal/pre-delete integration deferred until full CI PASS"
+  },
+  "ci711_final": {
+    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
+    "tested_merge": "e245c2466270caeb3729f030b461d919217c5b9b",
+    "url": "https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40241990486",
+    "conclusion": "failure",
+    "all_five_full_logs_independently_read": true,
+    "jobs": {
+      "core": 121315564109,
+      "foundation": 121315564321,
+      "recovery": 121315564249,
+      "ubuntu": 121315564294,
+      "aggregate": 121321513314
+    },
+    "Foundation27": "PASS",
+    "Recovery5": "PASS Durable20/Source18/Legacy19/MenuResult19/MenuFailure19",
+    "Ubuntu": "PASS",
+    "Core": "FAIL exit0-regression5000ms; later native/Desktop/Instance/relay/pack NOT_RUN",
+    "aggregate": "FAIL correctly exact4 SHA",
+    "package": "NOT_CREATED",
+    "startup_root": "UNKNOWN",
+    "threads": "4 waiting; Executive1/Other3; running0/ready0; uncapped; probe errors0"
+  },
+  "ci711_startup_diagnosis": {
+    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
+    "status": "BLOCKED_NATIVE_MEASUREMENT; cause UNKNOWN; documents only",
+    "hypothesis": "supported synchronization dependency vs unsupported/unresolved native wait",
+    "minimal_measurement": "bounded owned-child WCT relation/object class/cycle, flags0/no foreign traversal, no raw names/IDs/paths/memory",
+    "privilege_requirement": "Microsoft docs SE_DEBUG_NAME; runner enabled-state NOT_RUN, do not assume denial or definite need to change",
+    "approval_boundary": "WCT/SeDebug explicitly NOT AUTHORIZED; mandatory question pending actual owner answer morning; do not enable/probe/bypass",
+    "focused_environment": "Linux/no pwsh/.NET/Wine; authorized isolated Windows endpoint unavailable",
+    "native_reproduction": "NOT_RUN",
+    "new_CI": "NOT_CREATED; unchanged rerun not justified",
+    "runtime_fix": false,
+    "score_delta": 0
+  },
+  "ci711_synthetic_audit": {
+    "source": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
+    "status": "LOCAL_ONLY independent test preparation/static audit",
+    "finding": "Existing synthetic coverage incomplete; no demonstrated launch/runtime defect",
+    "classification_decision": "Keep existing counters/buckets unchanged; finer enum classes do not establish blocker/owner/startup phase or authorized corrective action",
+    "prepared_PowerShell26": "NOT_RUN (no local PowerShell/.NET/Wine); extracts existing function only, synthetic CLR objects, no process/native actions",
+    "local_static_contract6": "PASS",
+    "local_aggregate16": "PASS",
+    "total_local_Python22": "PASS, not native coverage",
+    "WCT_SeDebug": "NOT_AUTHORIZED; question pending actual owner answer morning",
+    "code_runtime_suite_workflow_changes": "NONE",
+    "new_CI_push": "NONE",
+    "score_delta": 0
+  },
+  "ci711_durable_adversarial_review": {
+    "base_checkpoint": "a6ab425de5e85372ea74a4167230e20a841844f1",
+    "status": "LOCAL_ONLY; no demonstrated production defect",
+    "findings": [
+      "MEDIUM native mid-publication write/flush/readback/cancel/crash injection gap",
+      "LOW durable size/empty/trailing/invalid-input dedicated case gap"
+    ],
+    "static_contract8": "PASS (source text/arithmetic only)",
+    "local_total_Python30": "PASS",
+    "Source18_Durable20": "scoped PASS only at CI711 merge e245c2466270caeb3729f030b461d919217c5b9b",
+    "global_CI711": "FAILURE; startup UNKNOWN",
+    "PowerShell26": "NOT_RUN",
+    "transfer": "BLOCKED_TRANSFER; no retry",
+    "WCT_SeDebug": "NOT_AUTHORIZED; actual owner question pending",
+    "runtime_push_CI_network_changes": "NONE",
+    "score_delta": 0
+  },
+  "ci711_durable_input_tests": {
+    "base_checkpoint": "706d280f9330e6cc9dae057d4ba1c193070cb405",
+    "prepared_Windows_cases": 12,
+    "Windows_status": "NOT_RUN; public black-box rejection, not inner parser coverage",
+    "writer_invalid_cases": 6,
+    "reader_cases": 6,
+    "local_static_contract12_classifier6_aggregate16": "34 PASS",
+    "medium_injection": "SPECIFICATION ONLY; deterministic seam absent, no crash experiment executed",
+    "existing_Durable20_and_32_suites": "UNCHANGED",
+    "production_push_CI_privileges_network": "NONE",
+    "score_delta": 0
+  },
+  "supplemental_tests_ci_wiring": {
+    "reviewed_base_checkpoint": "680d2360335b6830108c51e0d382e1e166b5ddfd",
+    "published_parent": "bd823bec071f611ee73d4e9045e737cdcb2d5709",
+    "Core": "classifier26 once, original4 retained; native SSH unchanged",
+    "Foundation": 27,
+    "Recovery": 6,
+    "installer_total": 33,
+    "original_32_suites": "ALL retained once, original bodies unchanged",
+    "strict_aggregate": "same4 partitions/sameSHA; no workflow change",
+    "Windows_new_tests": "NOT_RUN before automatic CI",
+    "local_tests": "static12+classifier6+aggregate17 PASS (35)",
+    "WCT_privileges_runtime_timeout_flags": "NO CHANGES",
+    "publication": "one expected-HEAD push / one automatic PR run authorized",
     "score_delta": 0
   }
 }

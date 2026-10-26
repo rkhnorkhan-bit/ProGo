@@ -87,7 +87,7 @@ class AggregateTests(unittest.TestCase):
 
 
 # Coverage contract: original CI708 suites plus approved durable source prerequisite, once, ordered.
-EXPECTED_INSTALLER_SUITES = ('UpdatePackageTests.ps1', 'InstallPayloadTests.ps1', 'InstallerMaintenanceTests.ps1', 'InstallerStageTests.ps1', 'InstallerBackupTests.ps1', 'InstallerSelfCheckTests.ps1', 'InstallerRollbackTests.ps1', 'InstallerJournalTests.ps1', 'InstallerRestartGateTests.ps1', 'InstallerOutcomeTests.ps1', 'InstallerRollbackOutcomeTests.ps1', 'InstallerOutcomeReconcileTests.ps1', 'InstallerPendingInstalledProofTests.ps1', 'InstallerStartupEvidenceTests.ps1', 'InstallerMenuEvidenceTests.ps1', 'InstallerLegacyEvidenceTests.ps1', 'InstallerAuxiliaryRevalidationTests.ps1', 'InstallerPendingPublicationTests.ps1', 'InstallerStartupRollbackAdmissionTests.ps1', 'InstallerOwnedStartupRollbackTests.ps1', 'InstallerStartupResultTests.ps1', 'InstallerStartupMutationAdmissionTests.ps1', 'InstallerStartupFailureTests.ps1', 'InstallerMenuPublicationTests.ps1', 'InstallerMenuRollbackAdmissionTests.ps1', 'InstallerOwnedMenuRollbackTests.ps1', 'InstallerMenuMutationAdmissionTests.ps1', 'InstallerMenuResultTests.ps1', 'InstallerMenuFailureTests.ps1', 'InstallerLegacyRollbackAdmissionTests.ps1', 'InstallerLegacySourceCaptureTests.ps1', 'InstallerLegacyDurableSourceTests.ps1')
+EXPECTED_INSTALLER_SUITES = ('UpdatePackageTests.ps1', 'InstallPayloadTests.ps1', 'InstallerMaintenanceTests.ps1', 'InstallerStageTests.ps1', 'InstallerBackupTests.ps1', 'InstallerSelfCheckTests.ps1', 'InstallerRollbackTests.ps1', 'InstallerJournalTests.ps1', 'InstallerRestartGateTests.ps1', 'InstallerOutcomeTests.ps1', 'InstallerRollbackOutcomeTests.ps1', 'InstallerOutcomeReconcileTests.ps1', 'InstallerPendingInstalledProofTests.ps1', 'InstallerStartupEvidenceTests.ps1', 'InstallerMenuEvidenceTests.ps1', 'InstallerLegacyEvidenceTests.ps1', 'InstallerAuxiliaryRevalidationTests.ps1', 'InstallerPendingPublicationTests.ps1', 'InstallerStartupRollbackAdmissionTests.ps1', 'InstallerOwnedStartupRollbackTests.ps1', 'InstallerStartupResultTests.ps1', 'InstallerStartupMutationAdmissionTests.ps1', 'InstallerStartupFailureTests.ps1', 'InstallerMenuPublicationTests.ps1', 'InstallerMenuRollbackAdmissionTests.ps1', 'InstallerOwnedMenuRollbackTests.ps1', 'InstallerMenuMutationAdmissionTests.ps1', 'InstallerMenuResultTests.ps1', 'InstallerMenuFailureTests.ps1', 'InstallerLegacyRollbackAdmissionTests.ps1', 'InstallerLegacySourceCaptureTests.ps1', 'InstallerLegacyDurableSourceTests.ps1', 'InstallerLegacyDurableInputTests.ps1')
 
 def require_partition_layout(text):
     found = re.findall(r"& \(Join-Path \$Root 'tests\\([^']+)'\)", text)
@@ -121,6 +121,15 @@ class PartitionLayoutTests(unittest.TestCase):
         self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-recovery-tests]', workflow)
         self.assertEqual(workflow.count('  installer-recovery-tests:\n'), 1)
         self.assertIn("tests\\InstallerLegacySourceCaptureTests.ps1'", self.text)
+
+    def test_classifier_wired_once_in_core_after_installer_return(self):
+        driver = (self.root / 'scripts' / 'Test-ProGo.ps1').read_text(encoding='utf-8-sig')
+        call = "& (Join-Path $Root 'tests\\TestSshFixtureThreadFacts.ps1')"
+        self.assertEqual(driver.count(call), 1)
+        self.assertLess(driver.index("ProGo Installer "), driver.index(call))
+        self.assertLess(driver.index(call), driver.index('function Invoke-IsolatedSshFixtureTool'))
+        self.assertNotIn('TestSshFixtureThreadFacts.ps1', self.text)
+        self.assertIn("{ 27 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }", self.text)
 
     def test_missing_suite_refused(self):
         for name in EXPECTED_INSTALLER_SUITES:

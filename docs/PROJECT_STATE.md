@@ -1,3 +1,268 @@
+## CURRENT approved CI wiring for supplemental Durable12 and classifier26
+
+Base local clean680d2360335b6830108c51e0d382e1e166b5ddfd; published parent
+bd823bec071f611ee73d4e9045e737cdcb2d5709/treeca28cd6919be80187a3c9c13d924d6e7fc9b77f3.
+Whole unpublished chain reviewed: docs + four added test files, plus minimal existing test-driver/layout wiring;
+production/native source, original32 suite bodies, fixture launch/flags/environment/5000ms/deadlines unchanged.
+PR88 exact parent OPEN, sole root/no competing writer; queued/in_progress/waiting independently0 before changes.
+Owner explicitly authorizes one guarded source push and automatic existing PR CI, not WCT/privileges.
+New classifier26 invoked once in Core after original4 synthetic checks and before owned SSH fixture launch.
+New DurableInput12 invoked once after DurableSource20 in Recovery: Foundation27 unchanged, Recovery6,
+installer total33 (original32 retained once). No new job/dispatch/rerun; exact4-partition aggregate unchanged.
+Layout tests enforce new suite once/order/partition and classifier once/Core location. Aggregate refusals retained.
+Before CI: classifier26/DurableInput12 Windows compilation/native execution NOT_RUN. Static/Python PASS is not
+Windows evidence. Source18/Durable20 scoped CI711PASS, whole CI711FAIL at startupUNKNOWN, not fixed by wiring.
+One automatic CI intended; exact source/run recorded in next local checkpoint. Public PR artifact guards remain
+OFF, no uploads/release/install/delivery. MEDIUM fault injection remains specification only; no hooks added.
+WCT/AdjustTokenPrivileges/SeDebug/protected probes, memory/stack/IDs and production mutations absent from added
+executable code. Historical docs mentioning a future WCT proposal are NOT implementation or authorization.
+UNKNOWN incidents, pending WCT question, BLOCKED_TRANSFER/no retry and all approved31/nested55 retained.
+Score delta0. Next read same run full5 logs + exact merge; require classifier26/Durable12 and all prior suites,
+strict same-SHA aggregate before any journal/predelete integration. Do not infer root cause from non-reproduction.
+
+## CURRENT local-only DurableSource input12 preparation
+
+Base checkpoint706d280f9330e6cc9dae057d4ba1c193070cb405. New standalone Windows fixture prepares12
+cases: document oversize/empty/trailing-data, six invalid writer inputs, three invalid reader inputs.
+Every case includes real native positive control, exact bytes/inventory/private-file and cleanup assertions.
+Windows12 and classifier26 NOT_RUN. Local static12+classifier6+aggregate16 =34 Python PASS, not native PASS.
+Existing20/32 suites, production/scripts/workflow unchanged. No push/CI/network/WCT/privilege operations.
+Full case scope, one future focused Windows command and MEDIUM Write/Flush/readback/latecancel/actual-child-crash
+fault-injection specification are maintained ONCE in CI711_DURABLE_SOURCE_ADVERSARIAL_REVIEW.md.
+No seam or crash test implemented; malformed-document rejection may occur before inner parser branches.
+Source18/Durable20 remain scoped PASS at CI711 merge e245c2466270caeb3729f030b461d919217c5b9b;
+globalCI711 FAIL/startupUNKNOWN. BLOCKED_TRANSFER/no retry; WCT/SeDebug forbidden, owner question pending.
+Journal/predelete integration remains blocked. Next safe step: review prepared fixture/specification;
+Windows execution only in authorized isolated environment. Full scope/weights retained, score delta0.
+
+## CURRENT local-only DurableSource adversarial review
+
+Base clean checkpoint a6ab425de5e85372ea74a4167230e20a841844f1; no competing Git/compiler/PowerShell process observed.
+No remote query/network, push, CI, runtime, existing fixture, workflow or security change in this stage.
+Published source bd823bec071f611ee73d4e9045e737cdcb2d5709 remains the recorded PR source (not re-queried).
+CI711 merge e245c2466270caeb3729f030b461d919217c5b9b: Source18/Durable20 scoped PASS;
+whole CI FAILURE at Core startup, root UNKNOWN, package not created. Standalone PS classifier26 NOT_RUN.
+BLOCKED_TRANSFER/no retry and pending NOT-AUTHORIZED WCT/SeDebug remain unchanged. Score delta0.
+
+Review result: no demonstrated production defect in the bounded storage/reader prerequisite.
+MEDIUM coverage gap: Durable20 partial-existing/partial-after model unclaimed prefix/truncation; no injected
+short stream.Write, Flush(true) failure or independent readback failure inside publication, no cancellation
+between Flush/readback/proof return, and no actual process/power-loss crash. These are NOT executed crash tests.
+LOW coverage gap: durable reader oversize/empty/extra trailing bytes and Guid.Empty/bad snapshot format are
+not individual Durable20 cases. Source18 oversize applies to original capture, not durable document reader.
+Static guards exist (70000 envelope bound, 65536 payload, canonical full equality/hash, Guid/hash validation);
+8 new source-contract tests execute locally but do NOT close native failure-injection/race coverage gaps.
+No production patch justified by these coverage observations; future focused Windows cases require a separate stage.
+
+Evidence: ApplicationShortcuts.cs PersistLegacyRollbackSource retains original read pin, validates full native
+volume/index/creation and bytes + semantic ownership, pins non-reparse root/backups/Menu directories, creates
+only a new fixed GUID filename. WriteThrough + Flush(true) precede exact same-handle and independent-path
+readback; independent immutable proof is returned only after final cancellation check. No overwrite/delete or
+partial-file reuse/cleanup fallback. Failed publication may retain its new incomplete file, intentionally no proof.
+ReadDurableLegacyRollbackBytes derives its own fixed path; validates operation/snapshot/install/location,
+removed receipt/original origin/hash, actual absence/current replacement, storage native origin, document hash,
+bounded complete read and whole canonical envelope; repeats receipt check before releasing copied bytes.
+CreateNew plus sharing pins reject pre-existing hardlink/file destinations; full native identity rejects identical
+bytes/copied creation replacements. Static reparse checks and directory pins are present; redirected-backups is
+an actual CI711 native case. Concurrent ancestor/final-component substitution is not simulated by this review;
+no claim that source-text checks prove all Windows namespace races. Receipt state is an observation, not a lease
+for a later mutation; future mutation must revalidate against independently trusted locations immediately before use.
+
+Future journal trust boundary (NOT integrated): snapshot hash here is caller-provided binding, not verified
+snapshot authority. Writer-issued proof is not a restart-persisted/importable capability. Never reconstruct it
+from self-declared envelope paths/flags or accept hash-only legacy receipts. A future authorized integration
+must independently verify snapshot, operation/install/location and origin, persist a validated reference before
+delete, verify actual source bytes/storage identity and current receipt/runtime state, and fail closed on missing,
+foreign, invalid, conflicting or partial evidence. No intent-based restore, replay, FullRollback/InstallSucceeded
+or Launch authority follows from this prerequisite. Journal/predelete integration remains gated on full Core CI.
+
+Candidate acceptance checklist — existing requirements only, no delivery or execution now:
+- Identity: accepted version/source/exact tested merge, complete package inventory, SHA256/size and matching
+  manifest; successful strict same-SHA aggregate required. CI711 has no accepted candidate package.
+- Clean install: standalone prebuilt/offline path without build/download fallback; explicit protected-action
+  consent and PGA04 opt-in OFF; preserve settings/vault/keys and custom resources. Live approval still required.
+- Upgrade/offline/cancel: both approved update/fallback paths, immutable accepted request/version/hash, maintenance
+  ownership, bounded Stop/Cancel/Retry/finally, offline/hash/refusal paths, no duplicate request or unsafe Launch.
+- Rollback: controlled copy/self-check failure, verified old bytes/absence, no overwrite of external changes,
+  original failure retained and Launch blocked; full auxiliary/Legacy recovery and retention remain open.
+- SSH: selected key/direct/agent startup and recovery, SSH→SOCKS5→HTTP, slow-I/O cancellation/close/recovery
+  and performance against approved criteria; isolated historical evidence is not user-PC acceptance.
+- VPS: separately authorized disposable acceptance environment only; actual live VPS/credentials/network/security
+  work remains NOT_RUN and forbidden in this stage. Personal external MTProxy is not ProGo acceptance.
+- Other PC: approved portable/standalone installation, paths/choices/private-data preservation and installed
+  user scenarios on another Windows PC; delivery/install/owner acceptance NOT_RUN, transfer BLOCKED.
+These do not replace full approved31/nested55/F23/F31/commercial requirements or signing/UI/package gates.
+
+Local tests: new static8 + existing classifier static6 + aggregate16 =30 Python PASS; actual PS26 NOT_RUN.
+Review/static/signature/parity/JSON/diff/public-content checks recorded with this local checkpoint only.
+Safe next work: improve static coverage-map traceability or audit existing acceptance/evidence consistency;
+prepare focused native failure-injection specifications without execution. No journal/predelete integration,
+WCT, new privilege, delivery retry, runtime recovery/retention or live operations authorized by this review.
+
+## CURRENT local-only independent SSH fixture static audit and synthetic coverage
+
+Published source remains bd823bec071f611ee73d4e9045e737cdcb2d5709/treeca28cd6919be80187a3c9c13d924d6e7fc9b77f3;
+last published CI711 FAILURE unchanged. Prior local checkpoint67d3dc4d0a28c69ee3471fbc8aee4612a89777e0 clean/
+preserved; earlier ea8f68f checkpoint untouched. PR88 independently read exact source/open, only root active,
+no Git/compiler/PowerShell writer. Owner independently confirmed queued/in_progress/waiting=0; no new CI/push.
+WCT/SeDebug explicitly NOT AUTHORIZED; approval question PENDING until actual owner response. Do not answer
+for owner or treat sleeping/silence/24x7 permission as protected approval. No WCT/native stack/memory/ID probe.
+
+Chosen independent slice: static launch/stdio/ownership audit + prepared focused synthetic unit coverage of
+EXISTING thread classifier, without changing its buckets/counters or any launch/runtime behavior. Root UNKNOWN.
+Concrete finding is TEST COVERAGE GAP only: existing4 synthetic checks cover role/redaction/empty/cap40/missing
+collection, not complete14 enum mapping, invalid enum, state/reason getter failures, state transition, exact32
+boundary or preservation of original failure after diagnostic error. No demonstrated runtime defect found.
+
+Enum assessment from https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.threadwaitreason?view=netframework-4.8.1 :
+SystemAllocation/EventPairHigh/EventPairLow/LpcReceive/LpcReply/PageOut/Unknown legitimately fall into current
+waitOther; PageOut not called waitPage by current coarse schema. Separate counters would distinguish broad OS
+semantic categories (e.g. LPC vs paging), NOT object/owner/function/CRT-vs-Python startup or a common root. No
+currently authorized corrective decision follows solely from this extra granularity. Keep classifier unchanged;
+do not add7 fields merely to collect more counters. ThreadWaitReason valid only in Wait state, can change between
+reads; current catch increments waitProbeErrors rather than inventing a reason. CI711 had0 probe errors, so
+this race is not its demonstrated cause. Other3 cannot be retrospectively assigned particular enum values.
+
+Static audit findings/limits:
+- Get-Command selects exact executable; direct Process object owns start/handle/kill/dispose, no raw-PID lookup
+  used for termination. Selected image equality facts already oppose simple interpreter mismatch, not root proof.
+- UseShellExecuteFalse, redirected stdin closed before original wait, both output reads started asynchronously.
+  WaitForExit5000 follows launch/stdio setup; wall5042 includes setup overhead, not a changed5000 test allowance.
+- No argv/site/environment/flag changes, inherited stdin, retry/sleep or bypass. Empty drained verbose streams
+  indicate no observed Python markers; they do not identify native startup call or exclude every I/O hypothesis.
+- Timeout remains precise FAIL/native validation NOT_RUN, own kill/join5000 and output/error drain3000 preserved.
+  Classifier catches read failures; cleanup failures are separate failures, never false PASS. No proven code fix.
+- All32 installer suites, source/durable proof paths, strict4 aggregate/workflow/deadlines/assertions untouched.
+
+Prepared tests/TestSshFixtureThreadFacts.ps1: AST parses existing driver, extracts ONLY exact named classifier,
+not dot-sourcing build driver. Synthetic CLR getter classes only; no Process.Start/PInvoke/probes/system settings.
+26 vectors: all14 ThreadWaitReason values; invalid enum; nonwait Running/Ready with reason getter forbidden;
+unknown state; state getter error; reason getter error; Wait->Running before reason; collection getter error;
+32 vs40 cap and no getters after32; fixed schema/redaction/empty; original FAIL survives diagnostic getter error.
+Invalid enum uses Enum.ToObject, no unsupported PowerShell enum literal conversion. Fully qualified CLR state
+references avoid name shadowing. Every output constrained to fixed boolean/count schema; private sentinel denied.
+NOT_RUN: actual PowerShell parsing/Add-Type compilation/26 vectors, because local executor Linux/no pwsh/.NET/Wine.
+No Windows or model/mocked execution is falsely reported as native PASS. Harness NOT added to32 suites or workflow.
+
+Locally executed tests/test_ssh_thread_facts_contract.py6 PASS: exact classifier and launch hash freeze,
+complete prepared enum/vector set, safe AST extraction, no native/process actions, original timeout/FAIL order.
+These are STATIC contracts, not an emulator of PowerShell or proof of26 vector execution. Existing aggregate16
+PASS; total22 local Python checks PASS. Review/static/signatures/parity/JSON/diff/secrets/public-content PASS.
+See CI711_SYNTHETIC_CLASSIFIER_AUDIT.md. Separate clean LOCAL commit only; no publish/new CI.
+
+Next independent authorized work (without claiming Coregate PASS): manual/static review of existing code and
+requirements-to-evidence/docs consistency; refinement/review of synthetic tests without protected execution;
+read-only planning of remaining package/acceptance gates (no delivery retry). None grants journal/pre-delete/
+restore/runtime integration or next gated functionality. Focused actual PowerShell26 execution is pending an
+available authorized Windows test environment; no new CI for this unproven hypothesis in this stage.
+WCT question stays PENDING FOR OWNER MORNING; do not repeat/answer it on their behalf. If later separately
+approved, bounded diagnostic scope still applies. No protected probe or privilege enable performed here.
+All31/nested55 scope/fixed weights retained delta0, UNKNOWN incidents/BLOCKED_TRANSFER/no retry retained.
+No live install/services/network/security/ACL/credentials/VPS/tunnel/release/uploads; journal/pre-delete untouched.
+
+Historical checkpoints below; earlier approval proposals are NOT current authorization.
+
+## CURRENT CI711 bounded startup diagnosis; no guessed fix or new CI
+
+Published source remains bd823bec071f611ee73d4e9045e737cdcb2d5709, treeca28cd6919be80187a3c9c13d924d6e7fc9b77f3;
+prior local checkpointea8f68f99cf1c88552b88f909523fe78109b0746 clean/preserved. PR88 independently exact source/open/unmerged;
+sole root/no Git/compiler/PowerShell writer; sole source CI711 completed FAILURE, no active CI. Old worktrees untouched.
+This stage changes DOCUMENTS ONLY locally; no push/CI/runtime/fixture/counter additions.
+
+All5 CI711 full final logs independently read at exact mergee245c2466270caeb3729f030b461d919217c5b9b:
+Core121315564109/2816lines FAILURE; Foundation121315564321/665 SUCCESS all27; Recovery121315564249/282
+SUCCESS all5 including Durable20/Source18/Legacy19/MenuResult19/MenuFailure19. Ubuntu121315564294/611
+SUCCESS; aggregate121321513314/174 correctly FAILURE despite all4 identical tested_sha. Run
+https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40241990486 . No package created; do not substitute older ZIP.
+Native durable source20 now scoped PASS, not journal/pre-delete integration/full rollback/production.
+
+At22:59:40 UTC Core exit0-regression exceeded5000ms; elapsed5042/CPU15.625/RAM5906432, live selected
+matching image, moduleCount15/Python DLL/CRT loaded. Stdin closed, argc2/-c/shell-disabled/input-redirection
+unchanged. Both streams waiting at deadline; after owned kill/join/drain: cleanupExited=True, streams
+RanToCompletion/chars0, all Python body/bootstrap/encodings/site/banner/cleanup markers False. Owned snapshot
+4threads waiting, Executive1/Other3, running0/ready0, uncapped and collection/thread/wait probeErrors0.
+These are instantaneous OS wait categories, NOT synchronization ownership, native function location or deadlock proof.
+No AV/load/site/loader/CRT/stdio/runtime cause demonstrated; root UNKNOWN.
+
+Exact launch-path review: CI709->CI711 Test-ProGo diff only64 additive thread diagnostic lines; argv/body,
+Get-Command selection, direct Process ownership, UseShellExecuteFalse, input Close, async concurrent stream
+reads, WaitForExit5000, kill/join5000/drain3000 remain identical. SSH fixture/requirements/workflow diff empty.
+Input close completed before original wait. Empty drained verbose trace argues against emitted Python startup
+logs, but does not locate the blocker or prove absence of unobserved I/O. Successful CI710 non-reproduction
+not a fix for709/711/696/670/662. Similar deadline/CPU/pre-body markers do NOT establish common root.
+
+Discriminating hypotheses (not conclusions):
+1. Supported synchronization dependency (critical section/mutex/thread/COM/ALPC), possibly same-child owner chain.
+   Minimal next fact is dependency relation/object class and whether a cycle exists, NOT more WaitReason counts.
+2. Unsupported or unresolved wait, e.g. native stdio/CRT/runtime/bootstrap I/O. A one-node/unavailable chain
+   does NOT identify I/O or Python function; state stays UNKNOWN, and any later native stack proposal is separate.
+3. Executable/pipe ownership mismatch: selected-image equality/stdin closure/owned cleanup currently oppose
+   those simple hypotheses; preserve original gates, do not replace expected interpreter or alter site/env/argv.
+
+Candidate measurement: Windows Wait Chain Traversal on THIS owned failed child only, after original deadline,
+flags0 (never follow chains into foreign processes), bounded asynchronous query/cancel, sanitized type/status/
+cycle/own-vs-external relation only. No IDs/object names/paths/arguments/secret content/raw memory/dump output,
+no debugger attach/injection/foreign process inspection or target mutation. Original failure/5000ms/kill/drain stay.
+WCT supports listed synchronization classes; one-node result covers both not-blocked and unsupported waits.
+Official requirements: https://learn.microsoft.com/en-us/windows/win32/api/wct/nf-wct-getthreadwaitchain
+states caller must have SE_DEBUG_NAME; actual runner token enabled state has NOT been measured. Do not infer
+AccessDenied or that privilege change definitely is necessary. If enabling SeDebugPrivilege is needed, current
+no-security-changes authorization does NOT permit it. No privilege change or WCT call performed in this stage.
+Session bounds: https://learn.microsoft.com/en-us/windows/win32/debug/wait-chain-traversal says synchronous
+queries cannot be cancelled; any implementation must use bounded async/cancel or isolated owned helper.
+
+Focused reproduction environment: current executor Linux, no pwsh/.NET/Wine/C# compiler. No available authorized
+isolated Windows endpoint in this session; do not change network/credentials or create another writer/runner.
+Linux Python/mocks cannot reproduce Windows CLR/CRT/pipe startup and must not be counted as native evidence.
+Focused native reproduction/WCT therefore NOT_RUN. Another full CI with unchanged evidence would be blind rerun;
+none launched. No speculative production fix or further counters added.
+
+Concrete approval boundary before implementation: one isolated Windows CI diagnostic of own synthetic Python
+child only; read WCT using existing rights, and ONLY if required, separately approve temporary process-local
+SeDebugPrivilege enable in an owned diagnostic helper. No persistent privileges/ACL/owners/services/security policy,
+user PC/VPS/tunnel changes; no out-of-process traversal. If denied/unavailable, report BLOCKED/UNKNOWN, no bypass.
+No permission for enabling any privilege has been assumed. After approval, review bounded helper/redaction/focused
+contracts before one guarded diagnostic publication/automatic CI. Do not start journal/pre-delete integration before
+whole CI PASS. All32 suites/strict4-partition gate/native assertions/deadlines remain untouched.
+
+Local aggregate16/review/static/exact launch-path parity/JSON/diff/secrets/public-content PASS. New native Windows
+measurements NOT_RUN; no new CI. UNKNOWN incidents/BLOCKED_TRANSFER/no retry/all31+nested55 approved scope/fixed
+weights retained delta0. No live install/network/services/security/ACL/credentials/VPS/tunnel/release/uploads.
+
+Historical checkpoints below; old statuses apply only to recorded observations.
+
+## CURRENT published durable Legacy source prerequisite / sole automatic CI711 queued
+
+Source `bd823bec071f611ee73d4e9045e737cdcb2d5709`, tree `ca28cd6919be80187a3c9c13d924d6e7fc9b77f3`,
+parent `4de597fba29d91fb8b8242c36f5b2a01d9681598`; reviewed local code912003d80b0bfdafabd20d3fd63376622ec1af4c,
+freeze7cee6ea1b41d3837f59b514607500810da4e14c5. Remote/local tree and fetched checkout verified equal.
+Expected-HEAD non-force PR88 update completed; sole writer, prior e970edf checkpoint clean/preserved, old worktrees untouched.
+ONE automatic pull_request [CI711](https://github.com/rkhnorkhan-bit/ProGo/actions/runs/40241990486),
+run40241990486 observed queued/null; no dispatch/rerun/duplicate/full wait. New tested merge/C# compilation/
+Windows Durable20/Installer32/all5 exact-SHA aggregate NOT_RUN/unconfirmed. Post-publication checkpoint
+is local documents only, NOT another push/CI. No production-ready or FullRollback claim.
+
+Code: CreateNew fixed own source file, pinned non-reparse install/backups/Menu directories and exact owned
+original, WriteThrough/Flush(true)/exact read-back, writer-issued storage origin/document hash evidence,
+canonical bounded original bytes + operation/snapshot/install/location/original origin/hash bindings.
+Reader pins exact stored object and requires evidence/current real removed receipt and replacement;
+identical-byte/creation foreign replacement refused. No restore/delete/default installer integration,
+no arbitrary journal path/flag authority. Evidence explicitly MutationAllowed/FullRollback/InstallSucceeded false.
+20 new own temporary native cases added as32nd suite (Foundation27/Recovery5), old31 exact bodies and
+strict4-partition aggregate/assertions/deadlines preserved. Local review/static/signatures/parity/reverse diff/
+header-size/aggregate16/JSON/diff/secrets/public403source0release PASS; native Windows execution NOT_RUN.
+CI710 all5 final logs independently verified SUCCESS at19fe447889d9e62a8809bf372762d0b517328be1 incl
+Source18/Legacy19/diagnostic4/all31; startup incident NON-REPRODUCTION, cause UNKNOWN. Runner-only pack,
+no transfer/install/owner PC acceptance. Partial/crash fixture states are modeled, not real power-loss tests.
+
+Boundary: snapshot hash remains trusted caller binding, actual snapshot/journal validation and durable
+reference/pre-deletion integration still required; source evidence not automatically rehydrated from disk.
+Next SAME CI711 all5 full final logs/exact merge/Durable20/27+5/full32. Only after full PASS separate
+trusted journal source reference/pre-delete integration prerequisite, before owned restore/crash/result/error
+handler/full auxiliary recovery/runtime recovery/retention/PGA04/updater/package/owner/commercial gates.
+All31/nested55 scope/weights unchanged score_delta0; UNKNOWN incidents/BLOCKED_TRANSFER/no retry retained.
+No live install/services/network/security/ACL/credentials/VPS/tunnel/release/uploads/transfer retry or second stage.
+
 ## CURRENT durable Legacy source file prerequisite; CI710 fully verified
 
 Baseline source4de597fba29d91fb8b8242c36f5b2a01d9681598/tree89ad162396260778b7a08679b3cac8885adfcbef;

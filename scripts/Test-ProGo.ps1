@@ -675,6 +675,7 @@ $ThreadFactsFailed = Get-IsolatedSshFixtureThreadFacts $ThreadFactsFailure
 if ($ThreadFactsFailed.Contains('PRIVATE_THREAD_SENTINEL') -or -not $ThreadFactsFailed.Contains('threadsRead=False;') -or
     -not $ThreadFactsFailed.Contains('collectionProbeErrors=1;')) { Fail 'SSH fixture thread diagnostic failed-probe regression' }
 Write-Host 'SSH fixture thread facts synthetic/redaction tests PASS: 4'
+& (Join-Path $Root 'tests\TestSshFixtureThreadFacts.ps1')
 function Invoke-IsolatedSshFixtureTool($ToolArguments, $Label, $BudgetMs) {
     $FixtureOut = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stdout.txt')
     $FixtureError = Join-Path $Root ('build\ssh-fixture-' + $Label + '-stderr.txt')
