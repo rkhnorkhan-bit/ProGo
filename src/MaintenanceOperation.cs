@@ -122,6 +122,9 @@ namespace ProGo
                     throw new InvalidOperationException("Очистка прокси ProGo не завершена. Файлы приложения сохранены. Откройте ProGo и повторите выключение Windows/CLI, затем повторите операцию.");
         }
         public static void StopApplication(string installDir)
+        { StopApplication(installDir, installDir); }
+
+        public static void StopApplication(string installDir, string dataRoot)
         {
             bool running;
             using (var instance = CreateMutex("Global\\ProGo.Instance." + User.Value)) {
@@ -149,7 +152,7 @@ namespace ProGo
             }
             // Older builds without IPC are refused while running; never kill by process name.
             RequireApplicationStopped(installDir);
-            RequireProxyCleanupCompleted(installDir);
+            RequireProxyCleanupCompleted(dataRoot);
         }
         public static bool StartHandoff(ProcessStartInfo info)
         {

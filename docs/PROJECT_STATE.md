@@ -1,3 +1,248 @@
+## PUBLICATION CANDIDATE: one authorized cumulative Windows checkpoint
+
+Independent review of 8417349 found no blocking production defect. Owner now
+allows one coherent PR88 CI checkpoint before any Program Files enablement.
+Expected remote head is 1ed86243e5373e86b598d97107492eeabbe39bfd (CI742).
+Cumulative scope starts at local docs checkpoint 7665978; remote baseline tree
+comparison differs only in PROJECT_STATE.md. Existing installer suite bodies,
+partitions, workflow deadlines, strict aggregate and release guards are unchanged.
+Repair journal admission assertions now require the exact 42-leaf inventory
+including Layout-ProGo, rather than the old 41-leaf inventory.
+
+Existing MaintenanceTests mode rollback-self-check-timeout executes the actual
+bounded rollback self-check waiter and confirms native child termination. New
+RestoreSplitTests mode selfcheck-live instead injects timeout/cleanup refusal
+while a generated exact-runtime ProGo child is really alive. Actual restore
+catch must hit RequireApplicationStopped before Undo: test verifies its exact
+installed-process refusal, no Undo entry/relaunch, retained transaction/previous
+bytes and unchanged private data. Only then does the fixture terminate its owned
+child with bounded cleanup. This is an injected cleanup-refusal boundary, not
+proof that Windows denied an actual Kill call. New Windows execution NOT_RUN.
+Real different-volume and access-denied verification remain mandatory before
+Program Files activation; no privilege installer or new mutation authority.
+No duplicate rerun/manual dispatch/merge/release/PC or infrastructure changes.
+
+## LOCAL REVIEW: RestoreBackup consumes recovery layout; Windows NOT_RUN
+
+RestoreBackup now selects the fixed production legacy recovery layout; Program
+Files mutation remains gated. Installed runtime and settings/vault destinations
+are split. Protective backups retain the flat legacy composition. Staging and
+previous roots are created under each destination root for same-volume moves;
+the actual Commit and Undo route every selected item to its matching root.
+StopApplication(runtime, data) preserves the existing IPC and stopped-process
+checks. Data replacement still requires RestoreNames scope plus ConfirmData.
+Self-check requests an isolated data root; synthetic self-check is explicitly
+stubbed, while native integrity, maintenance and Undo remain actual.
+
+A missing runtime component produces a labelled pre-restore-incomplete snapshot,
+not a purported restorable program backup. Its full inventory/hashes, including
+manifest/index/archives, are retained in memory and revalidated before commit;
+complete snapshots and every input backup still use strict BackupIntegrity.
+A Python parity guard checks the required-file list against BackupIntegrity.
+
+Registered actual-body fixtures cover Program, missing EXE, Data, All, consent
+refusal, runtime/data post-publication faults and real Undo (including returning
+an EXE to absence), unchanged private/foreign sentinels and source backup bytes.
+They use fresh generated roots and a fixture-only AST resolver substitution.
+Repair fixture cleanup/drain now shares the existing 30s process + 5s drain
+budget; unconfirmed settlement fails and retains the fixture. Proxy, junction
+and conflict refusals check expected phase/reason. Real access-denied remains
+uncovered. Windows fixtures/legacy compatibility/multiple-volume execution are
+NOT_RUN; local Python/static checks are not native evidence. No push or CI.
+
+## LOCAL REVIEW: Repair recovery layout consumer; Windows NOT_RUN
+
+Repair now consumes a structural recovery layout: production selects the fixed
+legacy KnownFolder, while isolated tests substitute separate temporary roots.
+Missing runtime/EXE and damaged EXE are accepted as structural preflight, not
+ownership proof or new write authority. Existing repair lease, payload, journal,
+snapshot, hash and self-check paths remain in use. Root and existing ancestors
+are checked for reparse and access errors; journal, lock and stage stay in the
+runtime root; proxy cleanup and backups use data. Production Program Files is
+not selected. Existing Repair fixtures use a fixture-only copied source seam.
+
+The registered synthetic actual-body fixture covers missing/corrupt EXE, a
+marked post-write fault and rollback, proxy marker, foreign root, junction,
+root conflict and private-data sentinels. Windows execution is NOT_RUN; an
+actual access-denied fixture is not included. Source review and Windows suite
+remain necessary, including legacy and updater fixtures. RestoreBackup is not
+integrated. No push or CI.
+
+## LOCAL INCOMPLETE: maintenance data root boundary; Repair integration open
+
+MaintenanceOperation now has a two-root StopApplication overload: its original
+signature delegates to it with the legacy root for both arguments. IPC shutdown,
+runtime process identity and the final stopped-process check are unchanged; the
+proxy marker check uses the explicit data root. Repair's existing stopped-process
+checks now pass DataRoot to the proxy check. Because Repair still assigns both
+roots to LocalAppData, this is not separate-root Repair integration. A Windows
+maintenance fixture for the separate proxy marker is prepared but NOT_RUN.
+
+Repair has no trusted ownership evidence for a corrupt existing executable;
+the existing snapshot/hash admission proves the bytes did not change, not that
+they belong to ProGo. Missing-leaf resolver preflight is not write authority.
+The requested recovery admission, actual Repair layout consumer and isolated
+missing/corrupt/foreign/reparse/access fixtures remain OPEN. Production separate
+mutation remains gated. No push or CI.
+
+## LOCAL INCOMPLETE: updater rollback fixture; Repair/Restore integration open
+
+The separate-root updater fixture now injects a marked failure after real
+Install-StagingToMain sets MainWasChanged, invokes the actual rollback body and
+checks original program hashes and private/foreign sentinels. Its synthetic
+BackupIntegrity supplies a disposable prepared copy, not real integrity
+verification; rollback application self-check is explicitly stubbed. The
+fixture is registered through the existing Foundation fixture but remains
+Windows NOT_RUN and requires review. Repair and RestoreBackup have not yet
+been integrated: Restore uses a single-root transaction, and Repair currently
+accepts damaged runtime payloads while the resolver rejects an invalid existing
+executable. A safe implementation must preserve that repair behavior and the
+legacy suites, keep runtime/data rollback on their respective volumes and retain
+the proxy IPC/ownership boundary. No push or CI.
+
+## LOCAL REVIEW: updater consumes layout; Windows NOT_RUN
+
+The updater wrapper and core independently resolve the production KnownFolder
+layout; the core takes runtime and data roots from that result. Production
+resolver still selects only legacy, so separate Program Files mutation remains
+gated. EXE, VERSION and scripts use runtime; logs, settings, vault, archive
+sources and backups use data, including the proxy-cleanup check and staging
+input. Existing staging copies personal files to temporary storage as before;
+this change does not establish a new privacy or transaction guarantee.
+
+The Foundation fixture now drives the actual updater core statements with an
+in-memory synthetic resolver substitution and generated separate roots. It
+checks proxy-marker refusal, runtime installation and private-data sentinels;
+network, UI, self-check execution, backup integrity and retention are stubbed.
+Existing maintenance/progress/log fixtures substitute isolated resolver inputs
+without adding a production override. These fixtures and legacy Windows suites
+are NOT_RUN; local Python/static checks are not Windows evidence. Repair and
+Restore remain legacy-only; separate-root recovery, privilege transaction,
+independent review and Windows validation remain open. No push or CI.
+
+## LOCAL INCOMPLETE: missing-leaf preflight and old fixture cleanup
+
+After e0b67e4, the missing executable preflight uses GetAttributes and accepts
+only FileNotFoundException as a missing leaf; other I/O and access failures fail
+closed. Existing directory and reparse leaves are rejected. This is read-only
+and supplies no authority to create a file. Directory and junction refusal cases
+are added, but an actual access-denied fixture and all Windows execution remain
+NOT_RUN. The old-backup timeout now waits for the killed child to exit before
+fixture cleanup. These are partial changes, not an implementation of the requested
+Update/Repair/Restore separate-root chain. No push or CI was performed.
+
+The chain, two-root transactional restore/rollback, write-boundary no-overwrite
+checks, isolated end-to-end fixtures, review and Windows verification remain OPEN.
+Program Files mutation remains gated until a trusted privilege transaction exists.
+
+## LOCAL REVIEW: compatibility rollback evidence and missing-EXE preflight
+
+The old-backup fault fixture now marks the fourth move only after checking the
+staged version, absence of the target and the original version in the transaction;
+it records entry and completion of the real Undo and checks the restored bytes.
+Self-check is stubbed only in both compatibility modes. The resolver exposes an
+explicit read-only missing-executable mode for future recovery; it still rejects
+unconfirmed separate roots and invalid existing executables. This is not repair
+or mutation authority. Synthetic Windows cases are NOT_RUN. Update, Repair and
+Restore are not connected to the resolver or to separate-root transactions: that
+requested chain remains OPEN. Do not enable Program Files mutation or publish/CI.
+
+## LOCAL REVIEW: old-backup and old-inventory fixtures; Windows NOT_RUN
+
+The layout refusal fixture now checks exact errors and managed assembly identities.
+An isolated old-backup fixture exercises the restore transaction, injected rollback,
+whole old scripts and old Start/Show with process creation stubbed; self-check is
+stubbed to avoid the runner KnownFolder. The old pending-inventory fixture constructs
+its receipt using the old exact allowlist, then restores the new allowlist and checks
+fail-closed preservation. These are unexecuted Windows fixtures, not Windows PASS.
+Update/Repair/Restore separate-root integration and missing-executable repair mode are
+NOT IMPLEMENTED. Program Files remains gated. Review and Windows evidence are needed;
+no push or CI has been run. Prior UNKNOWNs and guardrails remain open.
+
+## LOCAL REVIEW: read-only layout resolver; integration incomplete
+
+Added a KnownFolder-based legacy production resolver and connected Start/Show. The
+shared read-only core validates synthetic legacy and separately rooted paths; Program
+Files has no production confirmation mechanism and is never selected. A synthetic
+confirmation boolean is a test input, not mutation authority or proof of ownership.
+Root/executable reparse checks and managed assembly name validation are preflight only,
+not a signature, durable physical pin, or protection from concurrent replacement.
+The resolver is included in payload, runtime inventories, repair and Foundation fixture.
+Windows execution of this source is NOT_RUN; Python/static checks are not Windows PASS.
+Old backups may lack the new helper: restore compatibility remains OPEN for review.
+Install, updater, repair, restore, uninstall and shortcuts still use legacy roots; no
+migration, ARP, trusted privilege transaction or Program Files mutation is implemented.
+Do not publish or run CI until review. Default OFF and prior UNKNOWNs remain unchanged.
+
+## LOCAL INCOMPLETE: fixture isolation and maintenance path preparation
+
+Following checkpoint dbb0d8a, updater root-separation synthetic fixture is now a
+mandatory additional Foundation check in a fresh Windows PowerShell process; the
+existing 33 fixture bodies, aggregate and deadlines are unchanged. Repair backup root
+and restore backup/log/archive sources now explicitly use the legacy DataRoot. Runtime
+and data roots still coincide and restore does not support distinct roots. Windows
+fixture execution is NOT_RUN. No Program Files activation or new CI.
+
+Next: implement a single KnownFolder-based production resolver, add it to every
+payload and fixed inventory, then wire install/update/repair/restore/start/show/uninstall
+and shortcuts together. First adapt all mutation fixtures currently overriding
+LOCALAPPDATA: inject test roots into isolated fixture copies/drivers without an
+attacker-controlled production override or access to the real runner profile. Split
+restore transaction state/rollback by root and implement ownership/reparse checks;
+uninstall still has existing recursive deletion and must not be considered safe for
+new layout. Review actual Windows end-to-end failures and preservation before enabling
+privileged Program Files mutation. No claim of install readiness.
+
+## LOCAL INCOMPLETE: personal Program Files layout integration started
+
+User now requests a conventional Program Files install, Start Menu and uninstall
+registration, retaining user data in LocalAppData; commercial F30 remains deferred.
+The local, unpublished first slice separates updater backup runtime inputs from data,
+archives, logs and diagnostics, while explicitly keeping InstallDir equal to DataRoot.
+No Program Files activation, privilege handoff, migration, registration or uninstall
+implementation is included. The synthetic separate/legacy roots PowerShell fixture is
+not yet wired into CI and Windows execution is NOT_RUN. Static checks cannot prove it.
+
+Next implementation: establish a protected, verified runtime identity and elevated
+mutation boundary that does not trust user-writable metadata or start ordinary UI
+ elevated; integrate installer and all maintenance entrypoints with separate roots,
+legacy stop/migration and ownership-scoped rollback/uninstall. Add isolated Windows
+end-to-end fault, refusal and preservation coverage before any activation or publication.
+Default OFF and prior rollback boundaries remain. No claim of PC readiness. CI742 remains
+the last verified remote baseline; this local source has no CI. HomeStation is outside
+this work: do not install, touch the active profile/tunnel or write to D:; safe storage
+remains unconfirmed. A process-only build bypass has now been explicitly permitted, but
+is not used here. F:\BackUP is out of scope.
+
+## CURRENT CI742 SUCCESS; personal package, delivery and target acceptance remain open
+
+CI742 run 40581860901 attempt 1, terminal 2026-10-27 21:27:33 UTC: source
+`1ed86243e5373e86b598d97107492eeabbe39bfd`, tested merge
+`3d71efb7a32f0cd063320b2cbbe693c51c6c8424`. Owner reports independent review of all
+eight full logs; GitHub metadata observed completed/success. Aggregate 122480784026:
+all seven required partitions exact-merge SHA SUCCESS. Core15630: full Windows PowerShell
+5.1.26100.33648 and PowerShell 7.6.7 fixtures PASS; actual identity `0.2.2+` tested merge,
+local fixture identity, recursive closure private-count2 (System.Private.Windows.Core and
+GdiPlus 10, Drawing.Common and Primitives 10), missing-dependency refusal, compile-failure
+output preservation and seven ICO PNG decodes PASS. Old 33 suites preserved; Runtime35 plus
+refusals, Success40/refusal2, Live22/13/19/24/26/24, Recovery6, classifier26, SSH native5
+and Core PASS. Python147 = 145 PASS + 2 SKIP. Runner-only ZIP 734853 bytes SHA256
+`e8d77b7d28f6a6a3d3da18e77699fb8a35868638eeeb360fd13273ab0229377d`; uploads SKIPPED,
+not delivered and not PC-accepted. CI741 SSH pre-body timeout cause and prior UNKNOWN causes
+remain UNKNOWN; a later successful run does not explain them.
+
+Priority is personal working candidate; commercial F30 deferred. No new feature stage.
+Existing HomeStation package materials are 117 verified inputs from GREEN737, not CI742;
+no new package is claimed. TEMP/TMP/profile reside on D:; read-only preflight encountered
+CIM error and unauthorized System log, and safe storage is unconfirmed. One process-only
+execution-policy bypass approval remains pending; do not bypass, repeat or write to D:.
+Next bounded step after necessary permissions and safe storage confirmation: prepare exact
+verified candidate package with honest build identity, isolated self-check, private delivery,
+and actual PC acceptance. Default OFF; whole rollback, new-install, restart, power-loss and
+PC acceptance remain OPEN. No changes to HomeStation, policy, live profile, tunnel or F:\BackUP.
+
+Historical CURRENT labels below refer to earlier checkpoints.
+
 ## CURRENT CI741 FAILURE; reviewed independent host evidence steps
 
 CI741 run 40574558365 attempt 1 terminal 2026-10-27 20:41:31 UTC: source

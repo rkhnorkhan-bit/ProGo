@@ -11,16 +11,25 @@
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
-$InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+. (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
+$StartupProbe = $null
+if (-not [ProGo.MaintenanceOperation]::TryEnterStartup([ref]$StartupProbe)) {
+    throw 'ProGo: update or restore is already in progress.'
+}
+if ($null -ne $StartupProbe) { $StartupProbe.Dispose() }
+. (Join-Path $PSScriptRoot 'Layout-ProGo.ps1')
+$layout = Resolve-ProGoLayout
+$DataRoot = $layout.DataRoot
+$InstallDir = $layout.RuntimeRoot
 try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
-$UpdateLog = Join-Path $InstallDir "update.log"
-$LegacyUpdateLog = Join-Path $InstallDir "progo-update.log"
+$UpdateLog = Join-Path $DataRoot "update.log"
+$LegacyUpdateLog = Join-Path $DataRoot "progo-update.log"
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $TransactionRoot = Join-Path $env:TEMP ("ProGo-update-" + $Timestamp)
 $StageDir = Join-Path $TransactionRoot "stage"
 $SourceDir = Join-Path $TransactionRoot "source"
 $PackageDir = Join-Path $TransactionRoot "package"
-$BackupsDir = Join-Path $InstallDir "backups"
+$BackupsDir = Join-Path $DataRoot "backups"
 $LocalVersionFile = Join-Path $InstallDir "VERSION"
 $State = @{
     RemoteVersion = $null
@@ -96,7 +105,7 @@ function Test-UpdateCancelled($ErrorObject) {
 function Copy-LogToClipboard {
     try {
         . (Join-Path $PSScriptRoot 'Diagnostics-ProGo.ps1')
-        Show-ProGoDiagnostics -Root $InstallDir
+        Show-ProGoDiagnostics -Root $DataRoot
     } catch {
         Write-Host 'Не удалось открыть предпросмотр диагностики. Личный журнал доступен на этом компьютере.'
     }
@@ -358,12 +367,15 @@ function Backup-InstalledState {
     $backupDir = Join-Path $BackupsDir $backupName
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
-    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
         Copy-FileIfExists $InstallDir $name $backupDir $false
+    }
+    foreach ($name in @("vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
+        Copy-FileIfExists $DataRoot $name $backupDir $false
     }
 
     Copy-DirectoryIfExists $InstallDir "scripts" $backupDir $false
-    [ProGo.BackupIntegrity]::CopyPersonalArchives($InstallDir, $backupDir)
+    [ProGo.BackupIntegrity]::CopyPersonalArchives($DataRoot, $backupDir)
 
     $manifest = @(
         "product=ProGo",
@@ -419,8 +431,11 @@ function New-StagingCopy($TargetDir) {
     Write-UpdateLog "Creating intermediate staging copy: $TargetDir"
     New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
 
-    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION", "vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
+    foreach ($name in @("ProGo.exe", "ProGo.ico", "VERSION")) {
         Copy-FileIfExists $InstallDir $name $TargetDir $false
+    }
+    foreach ($name in @("vault.enc.json", "settings.json", "progo.log", "update.log", "progo-update.log")) {
+        Copy-FileIfExists $DataRoot $name $TargetDir $false
     }
 
     Copy-DirectoryIfExists $InstallDir "scripts" $TargetDir $false
@@ -671,7 +686,6 @@ function Cleanup-TemporaryFiles {
 
 # Acquire before logs, network, backups or waits. A rejected contender has no
 # installed-state side effects and cannot enter rollback/cleanup for the owner.
-. (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
 $Maintenance = [ProGo.MaintenanceOperation]::Enter()
 try {
     . (Join-Path $PSScriptRoot 'BackupRetention-ProGo.ps1')
@@ -689,7 +703,7 @@ try {
     Show-UpdatePhase waiting
     Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
     [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
-    [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
+    [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($DataRoot)
 
     $Exe = Join-Path $InstallDir "ProGo.exe"
     Wait-FileUnlocked -Path $Exe -TimeoutSeconds 30

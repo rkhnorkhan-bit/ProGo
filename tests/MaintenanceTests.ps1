@@ -57,6 +57,19 @@ try {
     Set-Content (Join-Path $install 'VERSION') '0.0.1'
     Set-Content (Join-Path $install 'settings.json') '{}'
     Copy-Item $Scripts (Join-Path $install 'scripts') -Recurse
+    # Distinct, generated roots: the two-argument stop retains runtime identity
+    # and must refuse the marker stored only under the private-data root.
+    $splitData = Join-Path $fixture 'split-data'
+    [void][IO.Directory]::CreateDirectory($splitData)
+    $marker = Join-Path $splitData 'system-proxy-backup.json'
+    [IO.File]::WriteAllText($marker, 'fixture-marker')
+    $cleanupRefused = $false
+    try { [ProGo.MaintenanceOperation]::StopApplication($install, $splitData) }
+    catch { $expectedCleanup = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('0J7Rh9C40YHRgtC60LAg0L/RgNC+0LrRgdC4IFByb0dvINC90LUg0LfQsNCy0LXRgNGI0LXQvdCw')); $cleanupRefused = $_.Exception.ToString().Contains($expectedCleanup) }
+    Check ($cleanupRefused -and [IO.File]::ReadAllText($marker) -ceq 'fixture-marker') 'separate data proxy marker refuses stop without mutation'
+    [IO.File]::Delete($marker)
+    [ProGo.MaintenanceOperation]::StopApplication($install, $splitData)
+    Check $true 'separate data stop accepts a settled proxy state'
     Copy-Item $Exe (Join-Path $backup 'ProGo.exe')
     Copy-Item $Scripts (Join-Path $backup 'scripts') -Recurse
     Set-Content (Join-Path $backup 'manifest.txt') @('product=ProGo','version=0.0.1')

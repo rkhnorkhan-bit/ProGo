@@ -72,7 +72,7 @@ function Write-FixtureRepairProbe([string]$Checkpoint) {
         $journalFile = Join-Path $installed '.repair-state.json'
         if ($journalPresent -and (Get-Item -LiteralPath $journalFile).Length -le 65536) {
             $record = [IO.File]::ReadAllText($journalFile) | ConvertFrom-Json
-            if ($record.phase -cin @('preparing', 'prepared', 'applying', 'committed', 'rolled-back') -and @($record.entries).Count -le 41 -and @($record.applied).Count -le 41) {
+            if ($record.phase -cin @('preparing', 'prepared', 'applying', 'committed', 'rolled-back') -and @($record.entries).Count -le 42 -and @($record.applied).Count -le 42) {
                 $phase = $record.phase; $entries = @($record.entries).Count; $appliedCount = @($record.applied).Count; $journalKnown = $true
             }
         }
@@ -101,7 +101,7 @@ function Write-FixtureRepairProbe([string]$Checkpoint) {
 function Invoke-FixtureRepair([switch]$Recover, [string]$ExpectedFailure, [ValidateSet('applying', 'committed')][string]$ExpectedPhase = 'applying') {
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
-    $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch'
+    $info.Arguments = '-NoProfile -File "' + $fixtureRepair + '" -NoLaunch'
     if ($Recover) { $info.Arguments += ' -Recover' }
     else { $info.Arguments += ' -PayloadDirectory "' + $payload + '"' }
     $info.UseShellExecute = $false; $info.CreateNoWindow = $true
@@ -125,6 +125,16 @@ function Invoke-FixtureRepair([switch]$Recover, [string]$ExpectedFailure, [Valid
 try {
     New-Item -ItemType Directory -Path $payload -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $installed 'backups') -Force | Out-Null
+    # Fixture-only copy substitutes the KnownFolder resolver; production receives no override.
+    $fixtureScripts = Join-Path $work 'fixture-scripts'
+    [void][IO.Directory]::CreateDirectory($fixtureScripts)
+    $fixtureRepair = Join-Path $fixtureScripts 'Repair-ProGo.ps1'
+    Copy-Item -LiteralPath (Join-Path $Scripts 'Layout-ProGo.ps1') -Destination $fixtureScripts
+    $repairText = [IO.File]::ReadAllText((Join-Path $Scripts 'Repair-ProGo.ps1'))
+    $seam = '$layout = Resolve-ProGoRecoveryLayout'
+    if (($repairText.Split([string[]]@($seam), [StringSplitOptions]::None).Count -ne 2)) { throw 'Repair resolver seam is not unique.' }
+    $substitution = '$layout = Resolve-ProGoRecoveryLayoutCore -DataBase $env:LOCALAPPDATA -ProgramBase (Join-Path $env:LOCALAPPDATA ''fixture-programs'') -RuntimeRoot (Join-Path $env:LOCALAPPDATA ''ProGo'')'
+    [IO.File]::WriteAllText($fixtureRepair, $repairText.Replace($seam, $substitution), (New-Object Text.UTF8Encoding($true)))
     [IO.File]::WriteAllText((Join-Path $installed 'settings.json'), 'opaque private settings fixture')
     [IO.File]::WriteAllText((Join-Path $installed 'vault.enc.json'), 'opaque protected vault fixture')
     [IO.File]::WriteAllText((Join-Path $installed 'backups\keep.txt'), 'opaque backup fixture')
@@ -157,7 +167,7 @@ try {
         else { Remove-Item -LiteralPath $damaged -Force }
         $info = New-Object Diagnostics.ProcessStartInfo
         $info.FileName = Join-Path $PSHOME 'powershell.exe'
-        $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
+        $info.Arguments = '-NoProfile -File "' + $fixtureRepair + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
         $info.UseShellExecute = $false; $info.CreateNoWindow = $true
         $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
         $info.EnvironmentVariables['LOCALAPPDATA'] = $userRoot
@@ -193,19 +203,19 @@ try {
     $sourceFiles = @(Get-ChildItem -LiteralPath $payload -File -Recurse | Where-Object {
         -not ($_.DirectoryName -ieq $payloadRoot -and $documents -icontains $_.Name)
     })
-    if ($sourceFiles.Count -ne 41) { throw ('Built runtime changed: repair fixture must explicitly cover every mandatory leaf; runtime_count=' + $sourceFiles.Count) }
+    if ($sourceFiles.Count -ne 42) { throw ('Built runtime changed: repair fixture must explicitly cover every mandatory leaf; runtime_count=' + $sourceFiles.Count) }
     $knownRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) 'ProGo'
     $knownRootExisted = [IO.Directory]::Exists($knownRoot)
     $knownBefore = Get-FixtureSnapshot $knownRoot
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
-    $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
+    $info.Arguments = '-NoProfile -File "' + $fixtureRepair + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
     $info.UseShellExecute = $false; $info.CreateNoWindow = $true
     $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
     $info.EnvironmentVariables['LOCALAPPDATA'] = $userRoot
     $originalCompleteArguments = $info.Arguments
     $probeTrace = Join-Path $work 'complete-repair.phases'
-    $info.Arguments = '-NoProfile -File "' + (Join-Path $PSScriptRoot 'RepairPhaseProbe.ps1') + '" -RepairScript "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -Payload "' + $payload + '" -FixtureRoot "' + $work + '"'
+    $info.Arguments = '-NoProfile -File "' + (Join-Path $PSScriptRoot 'RepairPhaseProbe.ps1') + '" -RepairScript "' + $fixtureRepair + '" -Payload "' + $payload + '" -FixtureRoot "' + $work + '"'
     $probeClock = [Diagnostics.Stopwatch]::StartNew()
     [Console]::WriteLine('REPAIR_FIXTURE checkpoint=start-enter')
     $child = [Diagnostics.Process]::Start($info)
@@ -259,7 +269,7 @@ try {
     $heldSnapshot = $null
     # Same real script/arguments under the existing synthetic safe phase observer; separate CreateNew trace.
     $probeTrace = Join-Path $work 'committed-repair.phases'
-    $info.Arguments = '-NoProfile -File "' + (Join-Path $PSScriptRoot 'RepairPhaseProbe.ps1') + '" -RepairScript "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -Payload "' + $payload + '" -FixtureRoot "' + $work + '" -CommittedProbe'
+    $info.Arguments = '-NoProfile -File "' + (Join-Path $PSScriptRoot 'RepairPhaseProbe.ps1') + '" -RepairScript "' + $fixtureRepair + '" -Payload "' + $payload + '" -FixtureRoot "' + $work + '" -CommittedProbe'
     $probeClock = [Diagnostics.Stopwatch]::StartNew()
     [Console]::WriteLine('REPAIR_FIXTURE checkpoint=committed-start-enter')
     $child = [Diagnostics.Process]::Start($info)
@@ -322,7 +332,7 @@ try {
     try {
         $info = New-Object Diagnostics.ProcessStartInfo
         $info.FileName = Join-Path $PSHOME 'powershell.exe'
-        $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
+        $info.Arguments = '-NoProfile -File "' + $fixtureRepair + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
         $info.UseShellExecute = $false; $info.CreateNoWindow = $true
         $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
         $info.EnvironmentVariables['LOCALAPPDATA'] = $userRoot
@@ -376,7 +386,7 @@ internal static class RepairCheckFixture {
     $checkBefore = Get-FixtureSnapshot
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
-    $info.Arguments = '-NoProfile -File "' + (Join-Path $Scripts 'Repair-ProGo.ps1') + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
+    $info.Arguments = '-NoProfile -File "' + $fixtureRepair + '" -NoLaunch -PayloadDirectory "' + $payload + '"'
     $info.UseShellExecute = $false; $info.CreateNoWindow = $true
     $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
     $info.EnvironmentVariables['LOCALAPPDATA'] = $userRoot
@@ -403,7 +413,7 @@ internal static class RepairCheckFixture {
             }
             if ($ownedChecks.Count -eq 2 -and -not $journalObserved) {
                 $journal = [IO.File]::ReadAllText((Join-Path $installed '.repair-state.json')) | ConvertFrom-Json
-                if ($journal.schema -ne 1 -or $journal.phase -cne 'applying' -or @($journal.entries).Count -ne 41 -or @($journal.applied).Count -ne 41 -or $journal.self_check_passed) { throw 'Native self-check started before complete durable runtime admission' }
+                if ($journal.schema -ne 1 -or $journal.phase -cne 'applying' -or @($journal.entries).Count -ne 42 -or @($journal.applied).Count -ne 42 -or $journal.self_check_passed) { throw 'Native self-check started before complete durable runtime admission' }
                 $journalObserved = $true
             }
             if ($deadline.ElapsedMilliseconds -gt 20000) { throw 'Owned repair self-check exceeded its bounded check and cleanup budget' }
@@ -456,7 +466,7 @@ internal static class RepairCheckFixture {
         }
         $journalPath = Join-Path $installed '.repair-state.json'
         $journal = [IO.File]::ReadAllText($journalPath) | ConvertFrom-Json
-        if ($journal.phase -cne 'applying' -or @($journal.applied).Count -ne 41 -or $journal.self_check_passed) { throw 'Hard-kill barrier has no unaccepted complete admission' }
+        if ($journal.phase -cne 'applying' -or @($journal.applied).Count -ne 42 -or $journal.self_check_passed) { throw 'Hard-kill barrier has no unaccepted complete admission' }
         $child.Kill()
         if (-not $child.WaitForExit(3000)) { throw 'Owned hard-killed repair parent did not exit' }
         foreach ($process in $ownedChecks) { if (-not $process.WaitForExit(3000)) { throw 'Owner death did not terminate its contained check image' } }

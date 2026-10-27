@@ -10,18 +10,21 @@
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
-$InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
-try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
-$LocalCoreScriptPath = Join-Path $PSScriptRoot "Update-ProGo.Core.ps1"
-
 . (Join-Path $PSScriptRoot 'Maintenance-ProGo.ps1')
-# The core takes the operation lease. Do not handle a competing operation as an
-# update failure or relaunch another process after its owner has exited.
 $StartupProbe = $null
 if (-not [ProGo.MaintenanceOperation]::TryEnterStartup([ref]$StartupProbe)) {
     throw 'ProGo: update or restore is already in progress.'
 }
 if ($null -ne $StartupProbe) { $StartupProbe.Dispose() }
+. (Join-Path $PSScriptRoot 'Layout-ProGo.ps1')
+$layout = Resolve-ProGoLayout
+$DataRoot = $layout.DataRoot
+$InstallDir = $layout.RuntimeRoot
+try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
+$LocalCoreScriptPath = Join-Path $PSScriptRoot "Update-ProGo.Core.ps1"
+
+# The core takes the operation lease. Do not handle a competing operation as an
+# update failure or relaunch another process after its owner has exited.
 function Test-UpdaterCancellation($ErrorObject) {
     $exception = $ErrorObject.Exception
     while ($null -ne $exception) {
@@ -59,7 +62,7 @@ try {
     if ($_.Exception.ToString().Contains("already in progress")) { throw }
     $cancelled = Test-UpdaterCancellation $_
     $outcome = if ($cancelled) { 'Installed updater download cancelled.' } else { 'Installed updater failed: ' + $_.Exception.Message }
-    try { Write-ProGoLog -Path (Join-Path $InstallDir "update.log") -Message $outcome } catch { }
+    try { Write-ProGoLog -Path (Join-Path $DataRoot "update.log") -Message $outcome } catch { }
     # Existing process stays alive after an early launch failure. Relaunch only if it exited.
     if (-not $NoLaunch -and $WaitPid -gt 0) {
         $old = Get-Process -Id $WaitPid -ErrorAction SilentlyContinue

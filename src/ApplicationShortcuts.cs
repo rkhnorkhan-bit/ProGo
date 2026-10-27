@@ -42,6 +42,7 @@ namespace ProGo
             "scripts/Diagnostics-ProGo.ps1",
             "scripts/Measure-RescueProGo.ps1",
             "scripts/Shortcuts-ProGo.ps1",
+            "scripts/Layout-ProGo.ps1",
             "scripts/Firewall-ProGo.ps1",
             "scripts/ApplicationShortcuts.cs",
             "scripts/MaintenanceOperation.cs",

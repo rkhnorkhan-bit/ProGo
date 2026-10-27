@@ -1,4 +1,4 @@
-﻿param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All',
+param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All',
     [ValidateSet('All', 'Foundation', 'Live', 'Recovery')][string]$InstallerPartition = 'All')
 if ($Suite -ne 'Installer' -and $InstallerPartition -ne 'All') { throw 'Installer partition requires Installer suite.' }
 Set-StrictMode -Version 2.0
@@ -242,7 +242,7 @@ foreach ($required in @(
     if ($releaseWorkflowText -notmatch [regex]::Escape($required)) { Fail "release workflow marker missing: $required" }
 }
 
-foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
+foreach ($scriptName in @("Build-ProGo.ps1", "Install-ProGo.ps1", "Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Install-FromGitHub.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Layout-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $scriptPath = Join-Path $PSScriptRoot $scriptName
     if (-not (Test-Path $scriptPath)) { Fail "script missing: $scriptName" }
     $scriptText = Get-Content -Encoding UTF8 -Raw -Path $scriptPath
@@ -283,8 +283,10 @@ if ($Suite -eq 'Installer') {
     return
 }
 & (Join-Path $Root 'tests\RepairPayloadTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\RepairSplitTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\RestoreSplitTests.ps1') -Scripts $PSScriptRoot
 
-foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Firewall-ProGo.ps1")) {
+foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Layout-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)
     if (-not (Test-Path $releaseScript)) { Fail "release script missing: $scriptName" }
 }
@@ -834,6 +836,7 @@ if ($LASTEXITCODE -ne 0) { Fail 'Instance harness build failed' }
 & $InstanceHarness $Exe $PSScriptRoot
 if ($LASTEXITCODE -ne 0) { Fail 'Instance tests failed' }
 & (Join-Path $Root 'tests\MaintenanceTests.ps1') $Exe (Join-Path $Root 'release\scripts')
+& (Join-Path $Root 'tests\OldBackupCompatibilityTests.ps1') $Exe (Join-Path $Root 'release\scripts')
 $ShutdownHarness = Join-Path $Root 'build\ShutdownTests.exe'
 & $Csc /nologo /target:exe /main:ProGo.ShutdownTests /codepage:65001 /reference:System.dll /reference:System.Core.dll /reference:System.Security.dll /reference:System.Xml.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "/out:$ShutdownHarness" $DesktopSources (Join-Path $Root 'tests\ShutdownTests.cs')
 if ($LASTEXITCODE -ne 0) { Fail 'Shutdown harness build failed' }

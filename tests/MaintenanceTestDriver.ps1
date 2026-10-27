@@ -46,6 +46,9 @@ foreach ($statement in $ast.EndBlock.Statements) {
     }
 }
 function Show-UserMessage($Text, $Title) {}
+# Only this synthetic compatibility case skips executing the application: AppPaths
+# uses the real KnownFolder and cannot be redirected by LOCALAPPDATA.
+if ($Mode -in @('restore-old-backup', 'restore-old-commit-fail')) { function Test-RestoredApplication { } }
 function Show-UpdateDialog($Text, $Title, $Kind) { Set-Content -LiteralPath (Join-Path $Fixture 'update-dialog.txt') -Value ($Kind + "`n" + $Text) -Encoding UTF8 }
 function Test-UpdateRequired { $State.RemoteVersion = (Get-Content (Join-Path $Release 'VERSION')).Trim(); return $true }
 function Get-ReleaseDirForUpdate { return $Release }
@@ -72,6 +75,30 @@ if ($Mode -eq 'restore-stage-copy-fail') {
             throw 'Injected staging copy failure'
         }
         & $realCopy $Source $Target $Names
+    }
+}
+# Instrument only the compatibility case; the transaction's real Undo remains in use.
+if ($Mode -eq 'restore-old-commit-fail') {
+    $realMove = ${function:Move-RestoreRoot}; $realUndo = ${function:Undo-Restore}; $script:moveCount = 0
+    function Move-RestoreRoot($From, $To) {
+        $script:moveCount++
+        if ($script:moveCount -eq 4) {
+            $savedVersion = Join-Path $Transaction.Previous 'VERSION'
+            if ($From -cne (Join-Path $Transaction.Stage 'VERSION') -or
+                $To -cne (Join-Path $InstallDir 'VERSION') -or
+                [IO.File]::Exists($To) -or
+                [IO.File]::ReadAllText($savedVersion) -cne '0.1.0' -or
+                [IO.File]::ReadAllText($From) -cne '0.0.1') { throw 'Compatibility injection preconditions failed' }
+            [IO.File]::WriteAllText((Join-Path $Fixture 'old-restore-injected'), 'move-4-version')
+            throw 'Injected old backup fourth move failure'
+        }
+        & $realMove $From $To
+    }
+    function Undo-Restore {
+        [IO.File]::WriteAllText((Join-Path $Fixture 'old-restore-undo-entered'), 'entered')
+        & $realUndo
+        if ([IO.File]::ReadAllText((Join-Path $InstallDir 'VERSION')) -cne '0.1.0') { throw 'Compatibility undo did not restore original version' }
+        [IO.File]::WriteAllText((Join-Path $Fixture 'old-restore-undo-verified'), 'verified')
     }
 }
 if ($Mode -eq 'restore-commit-fail' -or $Mode -eq 'restore-rollback-fail') {
@@ -142,6 +169,13 @@ if ($Mode -like 'rollback*') {
 }
 foreach ($statement in $ast.EndBlock.Statements) {
     if ($statement -isnot [Management.Automation.Language.FunctionDefinitionAst]) {
-        . ([scriptblock]::Create($statement.Extent.Text.Replace('$PSScriptRoot','$Scripts')))
+        $source = $statement.Extent.Text.Replace('$PSScriptRoot','$Scripts')
+        if ($source -ceq '$layout = Resolve-ProGoLayout') {
+            $source = '$layout = Resolve-ProGoLayoutCore -DataBase $Fixture -ProgramBase (Join-Path $Fixture ''unused-programs'') -RuntimeRoot (Join-Path $Fixture ''ProGo'')'
+        }
+        if ($source -ceq '$layout = Resolve-ProGoRecoveryLayout') {
+            $source = '$layout = Resolve-ProGoRecoveryLayoutCore -DataBase $Fixture -ProgramBase (Join-Path $Fixture ''unused-programs'') -RuntimeRoot (Join-Path $Fixture ''ProGo'')'
+        }
+        . ([scriptblock]::Create($source))
     }
 }

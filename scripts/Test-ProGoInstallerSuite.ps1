@@ -161,6 +161,15 @@ try {
     & (Join-Path $Root 'tests\InstallerOwnedMenuRollbackTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerOwnedMenuRollbackTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+# Synthetic types require a fresh process; the old suites remain unchanged.
+$fixtureHost = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+if (-not (Test-Path -LiteralPath $fixtureHost -PathType Leaf)) { throw 'Windows PowerShell fixture host is missing' }
+& $fixtureHost -NoProfile -NonInteractive -File (Join-Path $Root 'tests\UpdaterRootSeparationTests.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Updater root separation fixture failed with exit code $LASTEXITCODE" }
+& $fixtureHost -NoProfile -NonInteractive -File (Join-Path $Root 'tests\LayoutResolverTests.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Layout resolver fixture failed with exit code $LASTEXITCODE" }
+& $fixtureHost -NoProfile -NonInteractive -File (Join-Path $Root 'tests\InstallerOldPendingInventoryTests.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Old pending inventory fixture failed with exit code $LASTEXITCODE" }
 }
 # PARTITION Foundation END
 # PARTITION Live BEGIN: original suite27 including all Restore/Preparation/Startup/Menu nested cases, unchanged.

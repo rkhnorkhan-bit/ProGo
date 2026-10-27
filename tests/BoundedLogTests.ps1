@@ -41,10 +41,17 @@ try {
     # Real bootstrap failure with a locked log must preserve its original error.
     $bootstrap = Join-Path $work 'bootstrap'
     New-Item -ItemType Directory $bootstrap | Out-Null
-    foreach ($name in @('Update-ProGo.ps1','Maintenance-ProGo.ps1','MaintenanceOperation.cs','Log-ProGo.ps1','BoundedLog.cs')) {
+    foreach ($name in @('Update-ProGo.ps1','Layout-ProGo.ps1','Maintenance-ProGo.ps1','MaintenanceOperation.cs','Log-ProGo.ps1','BoundedLog.cs')) {
         Copy-Item (Join-Path $Scripts $name) $bootstrap
     }
     $app = Join-Path $work 'ProGo'; New-Item -ItemType Directory $app | Out-Null
+    # The copied fixture replaces only KnownFolder resolution, never the shipped entrypoint.
+    $fixtureBootstrap = Join-Path $bootstrap 'Update-ProGo.ps1'
+    $bootstrapText = [IO.File]::ReadAllText($fixtureBootstrap)
+    $fixtureCall = '$layout = Resolve-ProGoLayoutCore -DataBase $env:LOCALAPPDATA -ProgramBase (Join-Path $env:LOCALAPPDATA ''unused-programs'') -RuntimeRoot (Join-Path $env:LOCALAPPDATA ''ProGo'')'
+    if (-not $bootstrapText.Contains('$layout = Resolve-ProGoLayout')) { throw 'Fixture resolver seam missing' }
+    [IO.File]::WriteAllText($fixtureBootstrap, $bootstrapText.Replace('$layout = Resolve-ProGoLayout', $fixtureCall), (New-Object Text.UTF8Encoding($true)))
+    Add-Type -TypeDefinition 'public static class BoundedLogFixtureProgram { public static void Main() {} }' -OutputAssembly (Join-Path $app 'ProGo.exe') -OutputType ConsoleApplication
     $locked = [IO.File]::Open((Join-Path $app 'update.log'), [IO.FileMode]::Create, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     $process = $null
     try {

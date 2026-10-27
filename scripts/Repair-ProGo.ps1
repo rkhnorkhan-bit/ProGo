@@ -7,9 +7,12 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
-$InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+. (Join-Path $PSScriptRoot 'Layout-ProGo.ps1')
+$layout = Resolve-ProGoRecoveryLayout
+$DataRoot = $layout.DataRoot
+$InstallDir = $layout.RuntimeRoot
 $ScriptsDir = Join-Path $InstallDir "scripts"
-$BackupsDir = Join-Path $InstallDir "backups"
+$BackupsDir = Join-Path $DataRoot "backups"
 $Root = Split-Path -Parent $PSScriptRoot
 $ReleaseDir = if ([string]::IsNullOrWhiteSpace($PayloadDirectory)) { Join-Path $Root "release" } else { [IO.Path]::GetFullPath($PayloadDirectory) }
 $journalPath = Join-Path $InstallDir '.repair-state.json'
@@ -36,6 +39,7 @@ $RequiredRuntimePaths = @(
     'scripts\Diagnostics-ProGo.ps1',
     'scripts\Measure-RescueProGo.ps1',
     'scripts\Shortcuts-ProGo.ps1',
+    'scripts\Layout-ProGo.ps1',
     'scripts\Firewall-ProGo.ps1',
     'scripts\ApplicationShortcuts.cs',
     'scripts\MaintenanceOperation.cs',
@@ -220,7 +224,7 @@ if ($Recover) {
             if (-not ('ProGo.MaintenanceOperation' -as [type])) { Add-Type -TypeDefinition ([IO.File]::ReadAllText($helper)) }
             $maintenance = [ProGo.MaintenanceOperation]::Enter()
             [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
-            [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
+            [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($DataRoot)
             for ($index = $applied.Count - 1; $index -ge 0; $index--) {
                 $relative = $applied[$index]; Assert-RepairTarget $relative
                 $target = Join-Path $InstallDir $relative
@@ -277,7 +281,7 @@ try {
     $repairPhase = 'maintenance-gate'
     $maintenance = [ProGo.MaintenanceOperation]::Enter()
     [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
-    [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
+    [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($DataRoot)
     Assert-RepairTarget 'ProGo.exe'
     Ensure-RepairDirectory $InstallDir
     if ((Test-Path -LiteralPath $lockPath) -and ((Get-Item -LiteralPath $lockPath -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Repair ownership file is redirected.' }

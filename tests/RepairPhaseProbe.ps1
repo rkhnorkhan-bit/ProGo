@@ -25,7 +25,7 @@ try {
     # Constant safe phase names, exact unique original source lines. No source rewrite,
     # stepping, prompt, runtime variable/journal/credential output or wait is introduced.
     $points = @(
-        @{ Name = 'script-enter'; Text = '$InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"' },
+        @{ Name = 'script-enter'; Text = '$InstallDir = $layout.RuntimeRoot' },
         @{ Name = 'preflight-complete'; Text = '$repairPhase = ''maintenance-load''; $selfCheckExit = -1' },
         @{ Name = 'helper-loaded'; Text = '$repairPhase = ''maintenance-gate''' },
         @{ Name = 'maintenance-acquired'; Text = 'Assert-RepairTarget ''ProGo.exe''' },

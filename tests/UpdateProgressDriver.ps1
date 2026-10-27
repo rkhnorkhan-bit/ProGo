@@ -65,7 +65,11 @@ try {
     # final modal UI are replaced; no remote request or normal app launch occurs.
     foreach ($statement in $ast.EndBlock.Statements) {
         if ($statement -isnot [Management.Automation.Language.FunctionDefinitionAst]) {
-            . ([scriptblock]::Create($statement.Extent.Text.Replace('$PSScriptRoot','$Scripts')))
+            $source = $statement.Extent.Text.Replace('$PSScriptRoot','$Scripts')
+            if ($source -ceq '$layout = Resolve-ProGoLayout') {
+                $source = '$layout = Resolve-ProGoLayoutCore -DataBase $Fixture -ProgramBase (Join-Path $Fixture ''unused-programs'') -RuntimeRoot (Join-Path $Fixture ''ProGo'')'
+            }
+            . ([scriptblock]::Create($source))
         }
     }
 } catch {

@@ -9,9 +9,12 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
-$InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+. (Join-Path $PSScriptRoot 'Layout-ProGo.ps1')
+$layout = Resolve-ProGoRecoveryLayout
+$DataRoot = $layout.DataRoot
+$InstallDir = $layout.RuntimeRoot
 try { . (Join-Path $PSScriptRoot 'Log-ProGo.ps1') } catch { }
-$RestoreLog = Join-Path $InstallDir "progo-restore.log"
+$RestoreLog = Join-Path $DataRoot "progo-restore.log"
 
 function U8($Base64) {
     return [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Base64))
@@ -103,31 +106,76 @@ function Copy-RestoreRoots($Source, $Target, $Names) {
     }
 }
 
+# The backup composition stays flat. Only installed destinations are split.
+function Get-RestoreDestinationRoot([string]$Name) {
+    if (@('settings.json','vault.enc.json') -ccontains $Name) { return $DataRoot }
+    if (@('ProGo.exe','VERSION','scripts','ProGo.ico') -ccontains $Name) { return $InstallDir }
+    throw 'Unknown restore destination.'
+}
+function Get-InstalledRestoreState($Names) {
+    return (@(foreach ($name in $Names) { Get-RestoreState (Get-RestoreDestinationRoot $name) @($name) }) -join "`n")
+}
+function Get-RestoreTransactionPath([string]$Name, [string]$Part) {
+    if (@('settings.json','vault.enc.json') -ccontains $Name) {
+        if ($Part -ceq 'stage') { return $Transaction.DataStage }
+        return $Transaction.DataPrevious
+    }
+    if ($Part -ceq 'stage') { return $Transaction.Stage }
+    return $Transaction.Previous
+}
+function Get-StagedRestoreState($Names) {
+    return (@(foreach ($name in $Names) { Get-RestoreState (Get-RestoreTransactionPath $name 'stage') @($name) }) -join "`n")
+}
+
 function Backup-BeforeRestore {
     $names = @('ProGo.exe','VERSION','scripts','ProGo.ico','settings.json','vault.enc.json')
-    $before = Get-RestoreState $InstallDir $names
-    $root = Join-Path $InstallDir 'backups'
+    $before = Get-InstalledRestoreState $names
+    $root = Join-Path $DataRoot 'backups'
     if (Test-Path -LiteralPath $root) { Assert-RestoreTree $root -Shallow } else { New-Item -ItemType Directory -Path $root | Out-Null }
     $path = Join-Path $root ('backup-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-pre-restore-' + [guid]::NewGuid().ToString('N'))
-    Copy-RestoreRoots $InstallDir $path $names
-    [ProGo.BackupIntegrity]::CopyPersonalArchives($InstallDir, $path)
+    if ($InstallDir -ieq $DataRoot) { Copy-RestoreRoots $InstallDir $path $names }
+    else {
+        Copy-RestoreRoots $InstallDir $path @('ProGo.exe','VERSION','scripts','ProGo.ico')
+        foreach ($name in @('settings.json','vault.enc.json')) {
+            $source = Join-Path $DataRoot $name
+            if (Test-Path -LiteralPath $source) { Assert-RestoreTree $source; Copy-Item -LiteralPath $source -Destination (Join-Path $path $name) -ErrorAction Stop }
+        }
+    }
+    [ProGo.BackupIntegrity]::CopyPersonalArchives($DataRoot, $path)
     if ($before -cne (Get-RestoreState $path $names)) { throw 'Current state changed during protective backup.' }
-    $version = ([IO.File]::ReadAllText((Join-Path $path 'VERSION'))).Trim()
+    $version = if ([IO.File]::Exists((Join-Path $path 'VERSION'))) { ([IO.File]::ReadAllText((Join-Path $path 'VERSION'))).Trim() } else { 'unknown' }
+    $complete = $true
+    foreach ($required in @('ProGo.exe','VERSION','scripts\Start-ProGo.ps1','scripts\Restore-ProGoBackup.ps1','scripts\Update-ProGo.Core.ps1')) {
+        if (-not [IO.File]::Exists((Join-Path $path $required))) { $complete = $false }
+    }
+    $kind = if ($complete) { 'pre-restore' } else { 'pre-restore-incomplete' }
     $manifest = @(
         'product=ProGo', "version=$version", "created=$([DateTimeOffset]::Now.ToString('o'))",
-        'created_by=restore', 'backup_kind=pre-restore', 'reason=before-transactional-restore',
+        'created_by=restore', "backup_kind=$kind", 'reason=before-transactional-restore',
         "contains=$([ProGo.BackupIntegrity]::Contents($path))")
     $manifest += [ProGo.BackupIntegrity]::CompositionLines($path)
     Set-Content -LiteralPath (Join-Path $path 'manifest.txt') -Encoding UTF8 -Value $manifest
     [ProGo.BackupIntegrity]::Write($path)
-    [ProGo.BackupIntegrity]::Validate($path)
-    Write-RestoreLog "Protective backup verified: $path"
+    if ($complete) { [ProGo.BackupIntegrity]::Validate($path) }
+    # A newly created incomplete snapshot cannot be a restorable program backup.
+    # Retain its exact full inventory in this operation, including archives/index.
+    $script:ProtectionPath = $path
+    $script:ProtectionComplete = $complete
+    $script:ProtectionEvidence = (@(Get-RestoreChildren $path '') -join "`n")
+    if ($complete) { Write-RestoreLog "Protective backup verified: $path" }
+    else { Write-RestoreLog "Incomplete protective snapshot verified for this transaction: $path" }
     return $path
+}
+
+function Assert-RestoreProtection([string]$Path) {
+    Assert-RestoreTree $Path -Shallow
+    if ($Path -cne $ProtectionPath -or (@(Get-RestoreChildren $Path '') -join "`n") -cne $ProtectionEvidence) { throw 'Protective snapshot changed.' }
+    if ($ProtectionComplete) { [ProGo.BackupIntegrity]::Validate($Path) }
 }
 
 function Assert-RestoreUnlocked($Names) {
     foreach ($name in $Names) {
-        $path = Join-Path $InstallDir $name
+        $path = Join-Path (Get-RestoreDestinationRoot $name) $name
         if (-not (Test-Path -LiteralPath $path)) { continue }
         Assert-RestoreTree $path
         $item = Get-Item -LiteralPath $path -Force
@@ -150,12 +198,12 @@ function Commit-Restore {
     foreach ($name in $RestoreNames) {
         $entry = [pscustomobject]@{ Name=$name; OldMoved=$false; NewMoved=$false }
         $Transaction.Journal.Add($entry)
-        $target = Join-Path $InstallDir $name
+        $target = Join-Path (Get-RestoreDestinationRoot $name) $name
         if (Test-Path -LiteralPath $target) {
-            Move-RestoreRoot $target (Join-Path $Transaction.Previous $name)
+            Move-RestoreRoot $target (Join-Path (Get-RestoreTransactionPath $name 'previous') $name)
             $entry.OldMoved = $true
         }
-        Move-RestoreRoot (Join-Path $Transaction.Stage $name) $target
+        Move-RestoreRoot (Join-Path (Get-RestoreTransactionPath $name 'stage') $name) $target
         $entry.NewMoved = $true
     }
 }
@@ -165,16 +213,16 @@ function Undo-Restore {
     for ($i = $Transaction.Journal.Count - 1; $i -ge 0; $i--) {
         $entry = $Transaction.Journal[$i]
         try {
-            $target = Join-Path $InstallDir $entry.Name
+            $target = Join-Path (Get-RestoreDestinationRoot $entry.Name) $entry.Name
             if ($entry.NewMoved -and (Test-Path -LiteralPath $target)) {
                 Assert-RestoreTree $target
                 Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction Stop
             }
-            if ($entry.OldMoved) { Move-RestoreRoot (Join-Path $Transaction.Previous $entry.Name) $target }
+            if ($entry.OldMoved) { Move-RestoreRoot (Join-Path (Get-RestoreTransactionPath $entry.Name 'previous') $entry.Name) $target }
         } catch { $failures.Add($entry.Name + ': ' + $_.Exception.Message) }
     }
     if ($failures.Count -gt 0) { throw ('Rollback failed: ' + ($failures -join '; ')) }
-    if ((Get-RestoreState $InstallDir $RestoreNames) -cne $Transaction.Before) { throw 'Rollback verification failed.' }
+    if ((Get-InstalledRestoreState $RestoreNames) -cne $Transaction.Before) { throw 'Rollback verification failed.' }
     $Transaction.SafeToRemove = $true
 }
 
@@ -183,9 +231,12 @@ function Test-RestoredApplication {
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = $exe; $info.Arguments = '--self-check'; $info.WorkingDirectory = $InstallDir
     $info.UseShellExecute = $false; $info.CreateNoWindow = $true
+    $checkRoot = Join-Path $Transaction.Root 'self-check-data'
+    $info.EnvironmentVariables['LOCALAPPDATA'] = $checkRoot
+    $info.EnvironmentVariables['PROGO_SELF_CHECK_ROOT'] = $checkRoot
     $process = [Diagnostics.Process]::Start($info)
     try {
-        if (-not $process.WaitForExit(30000)) { $process.Kill(); $process.WaitForExit(); throw 'Restored application self-check timed out.' }
+        if (-not $process.WaitForExit(30000)) { $process.Kill(); if (-not $process.WaitForExit(2000)) { throw 'Restored application self-check cleanup unconfirmed.' }; throw 'Restored application self-check timed out.' }
         if ($process.ExitCode -ne 0) { throw "Restored application self-check failed: exit=$($process.ExitCode)" }
     } finally { $process.Dispose() }
 }
@@ -239,32 +290,49 @@ try {
 
     [ProGo.MaintenanceOperation]::ConfirmHandoff()
     Wait-ProGoExit -TargetProcessId $WaitPid -TimeoutMs 30000
-    [ProGo.MaintenanceOperation]::RequireApplicationStopped($InstallDir)
-    [ProGo.MaintenanceOperation]::RequireProxyCleanupCompleted($InstallDir)
+    [ProGo.MaintenanceOperation]::StopApplication($InstallDir, $DataRoot)
     [ProGo.BackupIntegrity]::Validate($BackupDir)
-    Assert-RestoreTree $InstallDir -Shallow
+    foreach ($destination in @($InstallDir, $DataRoot) | Select-Object -Unique) {
+        [void](Assert-ProGoRecoveryDirectory $destination $true)
+        if (-not [IO.Directory]::Exists($destination)) { [void][IO.Directory]::CreateDirectory($destination) }
+        Assert-RestoreTree $destination -Shallow
+    }
     Assert-RestoreUnlocked $RestoreNames
     $Protection = Backup-BeforeRestore
     $txnRoot = Join-Path $InstallDir ('restore-txn-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $txnRoot | Out-Null
     $Transaction = [pscustomobject]@{
         Root=$txnRoot; Stage=(Join-Path $txnRoot 'stage'); Previous=(Join-Path $txnRoot 'previous');
-        Before=(Get-RestoreState $InstallDir $RestoreNames); Journal=(New-Object System.Collections.Generic.List[object]);
+        DataStage=(Join-Path $txnRoot 'stage'); DataPrevious=(Join-Path $txnRoot 'previous');
+        Roots=(New-Object System.Collections.Generic.List[string]);
+        Before=(Get-InstalledRestoreState $RestoreNames); Journal=(New-Object System.Collections.Generic.List[object]);
         SafeToRemove=$false; Complete=$false
     }
+    $Transaction.Roots.Add($txnRoot)
     New-Item -ItemType Directory -Path $Transaction.Previous | Out-Null
-    Copy-RestoreRoots $BackupDir $Transaction.Stage $RestoreNames
+    $dataNames = @($RestoreNames | Where-Object { @('settings.json','vault.enc.json') -ccontains $_ })
+    if ($InstallDir -ine $DataRoot -and $dataNames.Count -gt 0) {
+        $dataTxn = Join-Path $DataRoot ('restore-txn-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $dataTxn -ErrorAction Stop | Out-Null
+        $Transaction.Roots.Add($dataTxn)
+        $Transaction.DataStage = Join-Path $dataTxn 'stage'
+        $Transaction.DataPrevious = Join-Path $dataTxn 'previous'
+        New-Item -ItemType Directory -Path $Transaction.DataPrevious | Out-Null
+        $programNames = @($RestoreNames | Where-Object { @('settings.json','vault.enc.json') -cnotcontains $_ })
+        Copy-RestoreRoots $BackupDir $Transaction.Stage $programNames
+        Copy-RestoreRoots $BackupDir $Transaction.DataStage $dataNames
+    } else { Copy-RestoreRoots $BackupDir $Transaction.Stage $RestoreNames }
     $expected = Get-RestoreState $BackupDir $RestoreNames
     if ($Transaction.Before -cne (Get-RestoreState $Protection $RestoreNames)) { throw 'Current state changed after protective backup.' }
     Assert-RestoreUnlocked $RestoreNames
     # Recheck recorded evidence after staging I/O, immediately before replacing roots.
     [ProGo.BackupIntegrity]::Validate($BackupDir)
-    [ProGo.BackupIntegrity]::Validate($Protection)
-    if ((Get-RestoreState $Transaction.Stage $RestoreNames) -cne $expected) { throw 'Staged payload changed before commit.' }
+    Assert-RestoreProtection $Protection
+    if ((Get-StagedRestoreState $RestoreNames) -cne $expected) { throw 'Staged payload changed before commit.' }
     Commit-Restore
-    if ((Get-RestoreState $InstallDir $RestoreNames) -cne $expected) { throw 'Installed payload does not match the prepared copy.' }
+    if ((Get-InstalledRestoreState $RestoreNames) -cne $expected) { throw 'Installed payload does not match the prepared copy.' }
     Test-RestoredApplication
-    if ((Get-RestoreState $InstallDir $RestoreNames) -cne $expected) { throw 'Self-check changed the selected payload.' }
+    if ((Get-InstalledRestoreState $RestoreNames) -cne $expected) { throw 'Self-check changed the selected payload.' }
     Start-ProGo
     $Transaction.Complete = $true; $Transaction.SafeToRemove = $true
 
@@ -282,7 +350,7 @@ try {
             try { Start-ProGo } catch { $outcome += ' Previous application could not restart: ' + $_.Exception.Message }
         } catch {
             $rollbackFailed = $true
-            $outcome = 'Rollback incomplete. Recovery files retained: ' + $Transaction.Root + '; ' + $Protection + '. ' + $_.Exception.Message
+            $outcome = 'Rollback incomplete. Recovery files retained: ' + ($Transaction.Roots -join '; ') + '; ' + $Protection + '. ' + $_.Exception.Message
         }
     } elseif ($null -ne $Transaction -and $Transaction.Complete) { $outcome = 'Restore completed; only completion reporting failed.' }
     if ($null -ne $Prepared) { try { Write-RestoreLog ("RESTORE FAILED: $failure $outcome") } catch { Write-Host ("RESTORE FAILED: $failure $outcome") } }
@@ -296,7 +364,7 @@ try {
 } finally {
     try {
         if ($null -ne $Transaction -and ($Transaction.SafeToRemove -or $Transaction.Journal.Count -eq 0)) {
-            try { Assert-RestoreTree $Transaction.Root; Remove-Item -LiteralPath $Transaction.Root -Recurse -Force -ErrorAction Stop }
+            try { foreach ($ownedRoot in $Transaction.Roots) { Assert-RestoreTree $ownedRoot; Remove-Item -LiteralPath $ownedRoot -Recurse -Force -ErrorAction Stop } }
             catch { Write-Host ('Restore temporary cleanup warning: ' + $_.Exception.Message) }
         }
         if ($null -ne $Prepared) { try { $Prepared.Dispose() } catch { Write-Host ('Prepared-copy cleanup warning: ' + $_.Exception.Message) } }
