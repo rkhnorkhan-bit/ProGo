@@ -76,6 +76,25 @@ jobs:
             throw
           }
 
+      - name: Verify build identity and icon generation in both PowerShell hosts
+        shell: powershell
+        run: |
+          $version = (Get-Content -LiteralPath .\VERSION -Raw).Trim()
+          $checkout = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $checkout -cne $env:GITHUB_SHA) { throw 'Clean build checkout identity mismatch.' }
+          $dirty = @(git status --porcelain --untracked-files=no)
+          if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { throw 'Build checkout is not clean.' }
+          $exe = [Reflection.Assembly]::Load([IO.File]::ReadAllBytes((Join-Path $PWD 'release\ProGo.exe')))
+          $identity = @($exe.GetCustomAttributes([Reflection.AssemblyInformationalVersionAttribute], $false))[0].InformationalVersion
+          if ($identity -cne ($version + '+' + $checkout)) { throw 'Actual build informational identity mismatch.' }
+          $desktop = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+          if (-not (Test-Path -LiteralPath $desktop -PathType Leaf)) { throw 'Windows PowerShell 5.1 missing.' }
+          $core = Get-Command pwsh -ErrorAction Stop
+          & $desktop -NoProfile -File .\tests\BuildIconCompatibilityTests.ps1 -ExpectedHost Desktop51
+          if ($LASTEXITCODE -ne 0) { throw 'Windows PowerShell icon fixture failed.' }
+          & $core.Source -NoProfile -File .\tests\BuildIconCompatibilityTests.ps1 -ExpectedHost Core7
+          if ($LASTEXITCODE -ne 0) { throw 'PowerShell 7 icon fixture failed.' }
+
       - name: Set up Python for relay tests
         uses: actions/setup-python@v5
         with:

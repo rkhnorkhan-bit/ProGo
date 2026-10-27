@@ -1,3 +1,38 @@
+## CURRENT CI739 SUCCESS; personal package and acceptance next
+
+CI739 run 40423171843 attempt 1, terminal 2026-10-27 00:32:43 UTC: source
+`b51a0b0c2e57db65a042c494a25c76f3c390cce4`, tested merge
+`be6f59e84e22ad9d80a24efad650fd5341b4779f`. Owner reports independently reviewing all
+8 complete logs; GitHub run metadata also observed completed/success in this checkpoint.
+Aggregate 121935390637: all seven required partitions, exact merge SHA PASS. Runtime35:
+old19 + new16 PASS, empty-snapshot refusal, fresh-child refusal for both complete and
+multi-complete, and unknown-name refusal PASS. Fixture footer refusal=1 is stale: actual 2.
+Success40/refusal2 PASS; old33 suites retained: Foundation26, Live1, Recovery6;
+Live22/13/19/24/26/24 PASS; Recovery26/23/39/50/41/Owned29 receipt14/refusal2 PASS.
+Core/classifier26/native PASS; Python140 = 138 PASS + 2 SKIP. Runner-only ZIP 734852 bytes,
+SHA256 `52fa17426c5f39978b10811e64e7195f09b14737d41e12d90ee66fe85f0842c6`;
+uploads SKIPPED, not delivered and not PC-accepted. CI738 failed as documented by owner;
+CI739 verifies its bounded fixture correction, not whole rollback or PC acceptance.
+
+Priority: personal working version; commercial F30 deferred, not a prerequisite for the
+personal candidate. Stop further installer feature expansion pending package delivery and
+personal acceptance. Default activation OFF; whole rollback, new install, restart, power
+loss and PC acceptance OPEN. Repair20s, SSH startup and prior Live cancellation remain
+UNKNOWN; do not infer their resolution from CI739.
+
+Separate HomeStation package-only task `01a17a8e` uses GREEN737: 117 inputs materialized via
+connector/verified Git blobs, without a Git checkout. Windows PowerShell execution policy
+blocked the script; PowerShell 7 failed with Drawing.Bitmap. No EXE or ZIP produced. Owner
+was asked at 23:46 UTC for one process-only execution-policy bypass; answer not yet received.
+Do not bypass or repeat while pending. Without a valid Git checkout the existing build script
+uses revision `local` (unless a parent repository is resolved); it cannot honestly produce a
+verified-merge build identity automatically. Record actual identity and verified blob provenance;
+do not label it with the tested merge SHA unless the build process establishes that identity.
+Next work, subject to the needed permissions: package, isolated self-check, private delivery,
+and actual PC acceptance. No production profile, tunnel or F:\BackUP access.
+
+Historical entries below describe earlier checkpoints; their CURRENT/pending labels are historical.
+
 ## CURRENT local multi-leaf candidate; Windows evidence pending
 
 The optional consumed live failure branch now derives all existing snapshot-backed leaves from the

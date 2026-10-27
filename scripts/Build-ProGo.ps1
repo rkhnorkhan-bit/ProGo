@@ -16,8 +16,25 @@ $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
 function New-ProGoIconFile {
     param([Parameter(Mandatory=$true)][string]$Path)
-    Add-Type -AssemblyName System.Drawing
-    Add-Type -Path (Join-Path $Src "BrandIcon.cs") -ReferencedAssemblies System.Drawing
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        # Resolve the actual runtime implementations and the host's .NET reference assembly.
+        Add-Type -AssemblyName System.Drawing.Common -ErrorAction Stop
+        $bitmapAssembly = [System.Drawing.Bitmap].Assembly.Location
+        $colorAssembly = [System.Drawing.Color].Assembly.Location
+        $runtimeReference = Join-Path $PSHOME 'ref\System.Runtime.dll'
+        if (-not (Test-Path -LiteralPath $runtimeReference -PathType Leaf)) {
+            $runtimeReference = Join-Path $PSHOME 'System.Runtime.dll'
+        }
+        foreach ($dependency in @($bitmapAssembly, $colorAssembly, $runtimeReference)) {
+            if ([string]::IsNullOrEmpty($dependency) -or -not (Test-Path -LiteralPath $dependency -PathType Leaf)) {
+                throw 'PowerShell 7 icon generation dependency is unavailable.'
+            }
+        }
+        Add-Type -Path (Join-Path $Src "BrandIcon.cs") -ReferencedAssemblies @($bitmapAssembly, $colorAssembly, $runtimeReference) -ErrorAction Stop
+    } else {
+        Add-Type -AssemblyName System.Drawing -ErrorAction Stop
+        Add-Type -Path (Join-Path $Src "BrandIcon.cs") -ReferencedAssemblies System.Drawing -ErrorAction Stop
+    }
     [ProGo.BrandIcon]::WriteIcon($Path)
 }
 
@@ -36,19 +53,43 @@ foreach ($readmeName in @('README.md', 'README.ru.md')) {
     if ($heading -ne "# ProGo $Version") { throw "Documentation version mismatch: $readmeName; update heading to VERSION before building." }
 }
 
-if (Test-Path $Release) {
-    Remove-Item $Release -Recurse -Force
-}
-if (Test-Path $BuildDir) {
-    Remove-Item $BuildDir -Recurse -Force
-}
-New-Item -ItemType Directory -Path $Release | Out-Null
-New-Item -ItemType Directory -Path $BuildDir | Out-Null
-New-ProGoIconFile -Path $IconPath
-
+# Validate build and mandatory packaging inputs before replacing prior outputs.
 $Sources = @(Get-ChildItem -Path $Src -Filter "*.cs" -File | Sort-Object FullName | ForEach-Object { $_.FullName })
-if ($Sources.Count -eq 0) {
-    throw "C# sources not found in $Src"
+if ($Sources.Count -eq 0) { throw "C# sources not found in $Src" }
+$requiredInputs = @(
+    'src\BrandIcon.cs', 'src\ApplicationShortcuts.cs', 'src\MaintenanceOperation.cs',
+    'src\InstalledUpdateTransport.cs', 'src\UpdateInstallSession.cs', 'src\BackupRetention.cs',
+    'src\BackupIntegrity.cs', 'src\BoundedLog.cs', 'src\RescueMeasurement.cs',
+    'src\DiagnosticReport.cs', 'src\DiagnosticPreview.cs', 'src\UiTheme.cs',
+    'docs\HOME_IKEV2.md', 'server\ikev2_relay.py', 'server\install-ikev2-relay.sh',
+    'server\make_home_profile.py', 'server\home_vpn_setup.py', 'server\profile_share_setup.py',
+    'server\profile_share.py', 'server\qrcodegen.py', 'server\QR_LICENSE.txt'
+)
+foreach ($inputPath in $requiredInputs) {
+    if (-not (Test-Path -LiteralPath (Join-Path $Root $inputPath) -PathType Leaf)) {
+        throw "Build dependency is missing: $inputPath"
+    }
+}
+
+# Generate the complete icon first: missing dependencies or rendering failures must
+# not remove the existing build and release directories.
+$preflightIcon = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-icon-' + [Guid]::NewGuid().ToString('N') + '.ico')
+try {
+    New-ProGoIconFile -Path $preflightIcon
+    if (-not (Test-Path -LiteralPath $preflightIcon -PathType Leaf) -or (Get-Item -LiteralPath $preflightIcon).Length -le 0) {
+        throw 'Icon preflight did not produce an icon.'
+    }
+    if (Test-Path $Release) {
+        Remove-Item $Release -Recurse -Force
+    }
+    if (Test-Path $BuildDir) {
+        Remove-Item $BuildDir -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $Release | Out-Null
+    New-Item -ItemType Directory -Path $BuildDir | Out-Null
+    Copy-Item -LiteralPath $preflightIcon -Destination $IconPath
+} finally {
+    if (Test-Path -LiteralPath $preflightIcon -PathType Leaf) { Remove-Item -LiteralPath $preflightIcon -Force }
 }
 
 $Version = (Get-Content -Raw $VersionFile).Trim()
@@ -56,13 +97,24 @@ if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid version' }
 # VERSION identifies the product release; the reviewed commit identifies a candidate build.
 # Local uncommitted changes must not masquerade as the exact reviewed commit.
 $BuildRevision = 'local'
-if (Get-Command git -ErrorAction SilentlyContinue) {
-    $revisionOutput = & git -C $Root rev-parse HEAD 2>$null
-    if ($LASTEXITCODE -eq 0 -and "$revisionOutput" -match '^[0-9a-f]{40}$') {
-        $BuildRevision = "$revisionOutput"
-        $dirtyOutput = & git -C $Root status --porcelain --untracked-files=no 2>$null
-        if ($LASTEXITCODE -ne 0 -or $dirtyOutput) { $BuildRevision += '.modified' }
-    }
+# A materialized source tree may have no Git metadata. Avoid invoking git there:
+# Windows PowerShell 5.1 can promote native stderr to a terminating error.
+$gitProbe = [IO.Path]::GetFullPath($Root)
+$hasGitMetadata = $false
+while (-not [string]::IsNullOrEmpty($gitProbe)) {
+    if (Test-Path -LiteralPath (Join-Path $gitProbe '.git') -ErrorAction Stop) { $hasGitMetadata = $true; break }
+    $gitProbe = [IO.Path]::GetDirectoryName($gitProbe)
+}
+# Explicit Git environment may designate a repository outside the directory tree.
+if (-not [string]::IsNullOrEmpty($env:GIT_DIR) -or -not [string]::IsNullOrEmpty($env:GIT_WORK_TREE)) { $hasGitMetadata = $true }
+if ($hasGitMetadata) {
+    $gitCommand = Get-Command git -ErrorAction Stop
+    $revisionOutput = & $gitCommand.Source -C $Root rev-parse HEAD
+    if ($LASTEXITCODE -ne 0 -or "$revisionOutput" -cnotmatch '^[0-9a-f]{40}$') { throw 'Git checkout revision could not be verified.' }
+    $BuildRevision = "$revisionOutput"
+    $dirtyOutput = & $gitCommand.Source -C $Root status --porcelain --untracked-files=no
+    if ($LASTEXITCODE -ne 0) { throw 'Git checkout status could not be verified.' }
+    if ($dirtyOutput) { $BuildRevision += '.modified' }
 }
 $BuildIdentity = "$Version+$BuildRevision"
 $VersionSource = Join-Path $BuildDir 'VersionInfo.cs'
