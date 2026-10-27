@@ -1,3 +1,26 @@
+## CURRENT CI741 FAILURE; reviewed independent host evidence steps
+
+CI741 run 40574558365 attempt 1 terminal 2026-10-27 20:41:31 UTC: source
+`0e69975cb9997fdf1a09fa5bbb47cdaef15c052c`, merge
+`63d90ed031c0a6790f694570348d673fbe743e15`. Owner reports independently reviewing all
+eight complete logs; GitHub run metadata confirms completed/failure. Core2829: classifier26
+PASS; existing SSH exit0-regression child failed the 5000ms pre-body deadline; cause UNKNOWN.
+Dual-host, resolver, PS7 compilation and ICO decoding NOT_RUN; downstream relay/Python/ZIP and
+uploads SKIPPED. Live22/13/19/24/26/24, Recovery6, Foundation26, Runtime35 plus refusals,
+Success40 plus two refusals and Ubuntu PASS. Aggregate FAIL-CLOSED for Core alone with all
+seven tested SHAs matching the exact merge.
+
+Independent review reports no blockers for CI-only split checkpoint
+`1c4477088cb6d18ae417a4ef36f4419854bcc4f1`: identity stays success-only after Core;
+PS5.1 and PS7 fixture steps run independently unless cancelled and fail closed. Existing SSH
+gate/deadline and strict aggregate remain unchanged; no production, resolver or fixture change.
+New Windows execution remains NOT_RUN until the exact new source's CI. Personal candidate
+is the priority; commercial F30 deferred. Default OFF; whole rollback, new-install, restart,
+power-loss and PC acceptance remain OPEN. Old SSH and other recorded UNKNOWN causes remain
+UNKNOWN. No HomeStation, policy, live profile, tunnel or installer action in this stage.
+
+Historical CURRENT labels below reflect prior checkpoint times.
+
 ## CURRENT CI740 FAILURE; reviewed PS7 dependency fix pending Windows evidence
 
 CI740 run 40568919658 attempt 1, terminal 2026-10-27 19:57:28 UTC: source

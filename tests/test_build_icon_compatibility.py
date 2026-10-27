@@ -46,14 +46,26 @@ class BuildIconCompatibility(unittest.TestCase):
     def test_ci_requires_both_fresh_hosts_and_exact_existing_build(self):
         workflow = (ROOT / '.github/workflows/ci.yml').read_text()
         job = workflow.split('  windows-build:', 1)[1].split('  installer-tests:', 1)[0]
-        for token in ("Get-Command pwsh -ErrorAction Stop",
-                      "& $desktop -NoProfile -File .\\tests\\BuildIconCompatibilityTests.ps1",
-                      "& $core.Source -NoProfile -File .\\tests\\BuildIconCompatibilityTests.ps1",
-                      "$identity -cne ($version + '+' + $checkout)",
-                      "if ($LASTEXITCODE -ne 0)"):
-            self.assertIn(token, job)
-        self.assertEqual(job.count('BuildIconCompatibilityTests.ps1'), 2)
+        identity = job.split('      - name: Verify clean checkout build identity', 1)[1].split('      - name:', 1)[0]
+        desktop = job.split('      - name: Verify icon fixture on Windows PowerShell 5.1', 1)[1].split('      - name:', 1)[0]
+        core = job.split('      - name: Verify icon fixture on PowerShell 7', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('if: ${{ success() }}', identity)
+        self.assertIn("$identity -cne ($version + '+' + $checkout)", identity)
+        self.assertIn("'release\\ProGo.exe'", identity)
+        for step in (desktop, core):
+            self.assertIn('if: ${{ !cancelled() }}', step)
+            self.assertIn('if ($LASTEXITCODE -ne 0)', step)
+            self.assertNotIn('continue-on-error:', step)
+            self.assertEqual(step.count('BuildIconCompatibilityTests.ps1'), 1)
+        self.assertIn('& $desktop -NoProfile -File', desktop)
+        self.assertIn('-ExpectedHost Desktop51', desktop)
+        self.assertIn('Test-Path -LiteralPath $desktop -PathType Leaf', desktop)
+        self.assertIn('Get-Command pwsh -ErrorAction Stop', core)
+        self.assertIn('& $core.Source -NoProfile -File', core)
+        self.assertIn('-ExpectedHost Core7', core)
         self.assertNotIn('continue-on-error:', job)
+        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests, installer-success-tests]', workflow)
+        self.assertIn('if: success() && (github.event.repository.private', job)
     def test_fixture_demands_injected_compile_failure(self):
         fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text()
         for token in ('#error PROGO_ICON_COMPILE_SENTINEL',
