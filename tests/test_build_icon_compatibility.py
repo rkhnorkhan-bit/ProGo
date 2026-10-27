@@ -19,6 +19,19 @@ class BuildIconCompatibility(unittest.TestCase):
                       '[System.Drawing.Bitmap].Assembly.Location', '[System.Drawing.Color].Assembly.Location',
                       "'ref\\System.Runtime.dll'", '-ReferencedAssemblies System.Drawing -ErrorAction Stop'):
             self.assertIn(token, source)
+    def test_drawing_dependency_closure_and_missing_refusal(self):
+        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text()
+        body = source.split('function Get-ProGoDrawingReferences', 1)[1].split('function New-ProGoIconFile', 1)[0]
+        for token in ('GetReferencedAssemblies()', "StartsWith('System.Private.Windows.'", 'GetAssemblyName($path)',
+                      'FullName -cne $reference.FullName', 'LoadFrom($candidate)', '$pending.Enqueue($loaded)',
+                      'Missing drawing dependency:', '$rootsAllowed.Contains'):
+            self.assertIn(token, body)
+        self.assertNotIn('System.Private.CoreLib', body)
+        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text()
+        for token in ('Drawing dependency closure is incomplete.', 'System.Private.Windows.ProGoMissing',
+                      'missing dependency injection did not reach resolver refusal', 'Missing dependency did not preserve outputs.'):
+            self.assertIn(token, fixture)
+
     def test_no_checkout_skips_git_and_checkout_errors_fail_closed(self):
         source = (ROOT / 'scripts/Build-ProGo.ps1').read_text()
         body = source.split("$BuildRevision = 'local'", 1)[1].split('$BuildIdentity =', 1)[0]

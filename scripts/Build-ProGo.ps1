@@ -14,6 +14,65 @@ $IconPath = Join-Path $BuildDir "ProGo.ico"
 $VersionFile = Join-Path $Root "VERSION"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
+function Get-ProGoDrawingReferences {
+    param([Parameter(Mandatory=$true)][System.Reflection.Assembly[]]$Roots,
+          [Parameter(Mandatory=$true)][string]$RuntimeReference)
+    # Restrict resolution to the current host and the actual loaded drawing assemblies' directories.
+    $rootsAllowed = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    [void]$rootsAllowed.Add([IO.Path]::GetFullPath($PSHOME).TrimEnd([IO.Path]::DirectorySeparatorChar))
+    $hostRuntime = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath([object].Assembly.Location))
+    [void]$rootsAllowed.Add($hostRuntime)
+    foreach ($assembly in $Roots) {
+        if ([string]::IsNullOrEmpty($assembly.Location)) { throw 'Drawing assembly has no physical location.' }
+        $directory = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($assembly.Location))
+        if (-not $rootsAllowed.Contains($directory)) { throw "Drawing assembly is outside the current host: $($assembly.GetName().Name)" }
+    }
+    $pending = New-Object 'System.Collections.Generic.Queue[System.Reflection.Assembly]'
+    $seen = @{}; $paths = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($assembly in $Roots) { $pending.Enqueue($assembly) }
+    while ($pending.Count -gt 0) {
+        $current = $pending.Dequeue(); $identity = $current.GetName()
+        if ($seen.ContainsKey($identity.Name)) {
+            if ($seen[$identity.Name] -cne $identity.FullName) { throw "Conflicting drawing dependency: $($identity.Name)" }
+            continue
+        }
+        $seen[$identity.Name] = $identity.FullName
+        if ([string]::IsNullOrEmpty($current.Location) -or
+            -not $rootsAllowed.Contains([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($current.Location)))) {
+            throw "Drawing dependency is outside the current host: $($identity.Name)"
+        }
+        $paths.Add($current.Location)
+        Write-Host ("Icon dependency host=" + $PSVersionTable.PSEdition + "/" + $PSVersionTable.PSVersion + "; assembly=" + $identity.FullName)
+        foreach ($reference in $current.GetReferencedAssemblies()) {
+            if (-not $reference.Name.StartsWith('System.Private.Windows.', [StringComparison]::Ordinal)) { continue }
+            if ($seen.ContainsKey($reference.Name)) {
+                if ($seen[$reference.Name] -cne $reference.FullName) { throw "Mismatched drawing dependency: $($reference.Name)" }
+                continue
+            }
+            $candidate = $null
+            foreach ($directory in $rootsAllowed) {
+                $path = Join-Path $directory ($reference.Name + '.dll')
+                if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+                $fileIdentity = [Reflection.AssemblyName]::GetAssemblyName($path)
+                if ($fileIdentity.FullName -cne $reference.FullName) { throw "Mismatched drawing dependency: $($reference.Name)" }
+                if ($null -ne $candidate -and -not [String]::Equals($candidate, $path, [StringComparison]::OrdinalIgnoreCase)) {
+                    throw "Ambiguous drawing dependency: $($reference.Name)"
+                }
+                $candidate = $path
+            }
+            if ($null -eq $candidate) { throw "Missing drawing dependency: $($reference.Name)" }
+            $loaded = [Reflection.Assembly]::LoadFrom($candidate)
+            if ($loaded.GetName().FullName -cne $reference.FullName -or
+                -not [String]::Equals([IO.Path]::GetFullPath($loaded.Location), [IO.Path]::GetFullPath($candidate), [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Loaded drawing dependency mismatch: $($reference.Name)"
+            }
+            $pending.Enqueue($loaded)
+        }
+    }
+    $paths.Add($RuntimeReference)
+    return $paths.ToArray()
+}
+
 function New-ProGoIconFile {
     param([Parameter(Mandatory=$true)][string]$Path)
     if ($PSVersionTable.PSEdition -eq 'Core') {
@@ -30,7 +89,8 @@ function New-ProGoIconFile {
                 throw 'PowerShell 7 icon generation dependency is unavailable.'
             }
         }
-        Add-Type -Path (Join-Path $Src "BrandIcon.cs") -ReferencedAssemblies @($bitmapAssembly, $colorAssembly, $runtimeReference) -ErrorAction Stop
+        $drawingReferences = @(Get-ProGoDrawingReferences -Roots @([System.Drawing.Bitmap].Assembly, [System.Drawing.Color].Assembly) -RuntimeReference $runtimeReference)
+        Add-Type -Path (Join-Path $Src "BrandIcon.cs") -ReferencedAssemblies $drawingReferences -ErrorAction Stop
     } else {
         Add-Type -AssemblyName System.Drawing -ErrorAction Stop
         Add-Type -Path (Join-Path $Src "BrandIcon.cs") -ReferencedAssemblies System.Drawing -ErrorAction Stop

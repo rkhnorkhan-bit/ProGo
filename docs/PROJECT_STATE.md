@@ -1,3 +1,26 @@
+## CURRENT CI740 FAILURE; reviewed PS7 dependency fix pending Windows evidence
+
+CI740 run 40568919658 attempt 1, terminal 2026-10-27 19:57:28 UTC: source
+`f43f273c9f62f28ff55717016a8e860738ff44b5`, merge
+`5755bd6e631c73c00e6a24c9ab7d90bd1c02fb6b`. The owner reports independent review
+of all eight full logs; GitHub metadata confirms completed/failure. Core job 122417553559
+failed in the PS7 fixture: BrandIcon.cs CS0012 IGraphics requires System.Private.Windows.GdiPlus
+10.0.0.0. PS5.1 full fixture, old Core build/tests and exact merge identity PASS; PS7 positive
+build and ICO decoding NOT_RUN. Six other partitions PASS: Live22/13/19/24/26/24,
+Foundation26, Recovery6, Runtime35 plus refusals, Success40 plus two refusals and Ubuntu.
+Aggregate correctly FAIL-CLOSED with seven tested SHAs matching the merge. Downstream relay,
+Python, ZIP, public-content checks and uploads SKIPPED; no new ZIP or hash.
+
+Independent review of local checkpoint `68be2e4d9eeed9b6edafc5c7cbb8f46b27bbd28f`
+reports no blockers. It resolves the current host's actual System.Private.Windows dependency
+graph recursively, checks identity and origin, and includes missing-dependency refusal coverage.
+New Windows compilation and both-host fixtures remain NOT_RUN until the new exact-source CI.
+Default OFF; whole rollback, new-install, restart, power-loss and target PC acceptance OPEN.
+Repair20s, SSH startup and previous Live cancellation causes remain UNKNOWN. Personal working
+candidate is the priority; F30 commercial deferred. No HomeStation/policy/installer action.
+
+Historical CURRENT labels below reflect earlier checkpoint times.
+
 ## CURRENT CI739 SUCCESS; personal package and acceptance next
 
 CI739 run 40423171843 attempt 1, terminal 2026-10-27 00:32:43 UTC: source

@@ -28,6 +28,55 @@ try {
         throw 'Missing icon dependency did not preserve existing outputs.'
     }
     Move-Item -LiteralPath $savedIconSource -Destination $iconSource
+    if ($ExpectedHost -ceq 'Core7') {
+        # Exercise the real resolver over the host's actual dependency graph.
+        $buildScript = Join-Path $temp 'scripts\Build-ProGo.ps1'
+        $tokens = $null; $parseErrors = $null
+        $ast = [Management.Automation.Language.Parser]::ParseFile($buildScript, [ref]$tokens, [ref]$parseErrors)
+        if ($parseErrors.Count -ne 0) { throw 'SETUP ERROR: build script does not parse.' }
+        $resolver = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Get-ProGoDrawingReferences' }, $false)
+        if ($null -eq $resolver) { throw 'SETUP ERROR: drawing resolver not found.' }
+        . ([scriptblock]::Create($resolver.Extent.Text))
+        Add-Type -AssemblyName System.Drawing.Common -ErrorAction Stop
+        $runtime = Join-Path $PSHOME 'ref\System.Runtime.dll'
+        if (-not (Test-Path -LiteralPath $runtime -PathType Leaf)) { $runtime = Join-Path $PSHOME 'System.Runtime.dll' }
+        $references = @(Get-ProGoDrawingReferences -Roots @([System.Drawing.Bitmap].Assembly, [System.Drawing.Color].Assembly) -RuntimeReference $runtime)
+        $names = @{}; $actual = @{}
+        foreach ($path in $references) {
+            $name = [Reflection.AssemblyName]::GetAssemblyName($path)
+            if ($names.ContainsKey($name.Name)) { throw 'Drawing reference was duplicated.' }
+            $names[$name.Name] = $name.FullName
+            if ($name.Name.StartsWith('System.Private.Windows.', [StringComparison]::Ordinal)) { $actual[$name.Name] = $name.FullName }
+        }
+        foreach ($path in $references) {
+            $name = [Reflection.AssemblyName]::GetAssemblyName($path)
+            if ($name.Name -ceq 'System.Runtime') { continue }
+            $assembly = [Reflection.Assembly]::LoadFrom($path)
+            foreach ($dependency in $assembly.GetReferencedAssemblies()) {
+                if ($dependency.Name.StartsWith('System.Private.Windows.', [StringComparison]::Ordinal) -and
+                    (-not $actual.ContainsKey($dependency.Name) -or $actual[$dependency.Name] -cne $dependency.FullName)) {
+                    throw 'Drawing dependency closure is incomplete.'
+                }
+            }
+        }
+        Write-Host ('PASS drawing dependency closure: host=' + $PSVersionTable.PSEdition + '/' + $PSVersionTable.PSVersion + '; private-count=' + $actual.Count)
+        # Change only the copied fixture script to inject a missing private assembly request.
+        $originalBuild = [IO.File]::ReadAllBytes($buildScript)
+        try {
+            $text = [IO.File]::ReadAllText($buildScript)
+            $needle = 'foreach ($reference in $current.GetReferencedAssemblies()) {'
+            $injected = 'foreach ($reference in @($current.GetReferencedAssemblies()) + @([Reflection.AssemblyName]::new("System.Private.Windows.ProGoMissing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"))) {'
+            if (-not $text.Contains($needle)) { throw 'SETUP ERROR: missing dependency injection anchor.' }
+            [IO.File]::WriteAllText($buildScript, $text.Replace($needle, $injected))
+            $missingError = $null
+            try { & $buildScript } catch { $missingError = $_ }
+            if ($null -eq $missingError -or ($missingError | Out-String) -cnotmatch 'Missing drawing dependency: System.Private.Windows.ProGoMissing') {
+                throw 'SETUP ERROR: missing dependency injection did not reach resolver refusal.'
+            }
+            if ([IO.File]::ReadAllText((Join-Path $build 'sentinel')) -cne 'build survives' -or
+                [IO.File]::ReadAllText((Join-Path $release 'sentinel')) -cne 'release survives') { throw 'Missing dependency did not preserve outputs.' }
+        } finally { [IO.File]::WriteAllBytes($buildScript, $originalBuild) }
+    }
     # Existing source, valid preflight inputs and a compiler-specific diagnostic prove
     # that the failure reached Add-Type rather than an earlier setup check.
     $originalSource = [IO.File]::ReadAllBytes($iconSource)
