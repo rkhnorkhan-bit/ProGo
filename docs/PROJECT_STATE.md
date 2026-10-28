@@ -1,3 +1,32 @@
+## CI747 terminal FAILURE; local-only OldBackup launcher mock closure correction
+
+All eight complete exact-SHA logs independently checked: CI747 run40621025974,
+attempt1 FAILURE, sourcec265c6d68d763eea12d34c66e0f9b24e13c919f3 and merge
+ffd5c246e5929fc56a05a2c4c3d726c3d3bd9771. Six other partitions SUCCESS;
+Core and strict aggregate FAILURE. Backup updater tests PASS: retention parity,
+archived DPAPI/ownership composition, plaintext exclusion, current personal state
+retained on actual rollback, shared integrity and locked-copy refusal. Diagnostic
+preview, real alias and nine RestoreSplit cases PASS; Maintenance128 PASS.
+CI744 root cause remains UNKNOWN; no overall CI747 PASS claimed.
+
+Core subsequently failed at OldBackupCompatibilityTests.ps1:61, VariableIsUndefined
+for script:launches in the Start-Process mock invoked by restored launcher via &.
+Independent exact-source review confirms script: resolves to the nested launcher
+script, whereas the collector was initialized in the outer fixture. Local-only
+fix uses a fixture-local mutable ArrayList and a GetNewClosure scriptblock that
+captures that object and calls Add; assertions read the same object. No global
+state, no StrictMode relaxation, and both real restored launchers still run via &.
+Exact two launches/EXE/WorkingDirectory/--show checks, complete old scripts without
+Layout helper, actual restore/Undo/hash/data checks and finally environment/mock
+cleanup remain unchanged. No production, inventory, deadline or authority change.
+
+Targeted source preservation/closure contracts PASS (static only); Python8 PASS;
+full Python170 =167 PASS +3 SKIP; public-content451source/0release, BOM/body
+preservation and diff check PASS. New closure fixture Windows NOT_RUN because
+pwsh/dotnet unavailable locally. No push/CI/rerun or other fix; review required
+before any further publication. Local checkpoint only; PC/network/Program Files
+and ACL unchanged. Shutdown C# remains the next existing suite after OldBackup.
+
 ## CI746 terminal FAILURE; bounded BackupRetention fixture setup correction
 
 Independent complete eight-log exact-SHA review confirms CI746 run40616826333,

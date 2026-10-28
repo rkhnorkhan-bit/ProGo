@@ -57,14 +57,18 @@ try {
     Check-Old (-not [IO.File]::Exists((Join-Path $install 'scripts\Layout-ProGo.ps1'))) 'helper was inserted into old composition'
     Check-Old ((Snapshot-Old (Join-Path $install 'scripts')) -ceq (Snapshot-Old (Join-Path $backup 'scripts'))) 'restored scripts differ from old backup'
     # Execute the actual restored old entrypoints, but replace only process creation.
-    $oldLocal = $env:LOCALAPPDATA; $env:LOCALAPPDATA = $work; $script:launches = @()
-    function Start-Process { param($FilePath, $WorkingDirectory, $ArgumentList) $script:launches += ,@($FilePath, $WorkingDirectory, $ArgumentList) }
+    $oldLocal = $env:LOCALAPPDATA; $env:LOCALAPPDATA = $work
+    $launches = New-Object System.Collections.ArrayList
+    Set-Item -Path Function:Start-Process -Value ({
+        param($FilePath, $WorkingDirectory, $ArgumentList)
+        [void]$launches.Add(@($FilePath, $WorkingDirectory, $ArgumentList))
+    }.GetNewClosure())
     try {
         & (Join-Path $install 'scripts\Start-ProGo.ps1')
         & (Join-Path $install 'scripts\Show-ProGo.ps1')
-        Check-Old ($script:launches.Count -eq 2) 'old entrypoints did not request both launches'
-        foreach ($launch in $script:launches) { Check-Old ($launch[0] -ceq (Join-Path $install 'ProGo.exe') -and $launch[1] -ceq $install) 'old launcher escaped fixture' }
-        Check-Old ($script:launches[1][2] -ceq '--show') 'old show argument missing'
+        Check-Old ($launches.Count -eq 2) 'old entrypoints did not request both launches'
+        foreach ($launch in $launches) { Check-Old ($launch[0] -ceq (Join-Path $install 'ProGo.exe') -and $launch[1] -ceq $install) 'old launcher escaped fixture' }
+        Check-Old ($launches[1][2] -ceq '--show') 'old show argument missing'
     } finally { $env:LOCALAPPDATA = $oldLocal; Remove-Item Function:Start-Process }
     Write-Host 'PASS: old backup restore, rollback and launchers'
 } finally { if ([IO.Directory]::Exists($work)) { Remove-Item -LiteralPath $work -Recurse -Force } }
