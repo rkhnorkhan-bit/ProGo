@@ -11,7 +11,7 @@ GATE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GATE)
 
 
-PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests', 'installer-runtime-tests', 'installer-success-tests')
+PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests', 'installer-recovery-input-tests', 'installer-runtime-tests', 'installer-success-tests')
 
 
 class AggregateTests(unittest.TestCase):
@@ -96,7 +96,8 @@ def require_partition_layout(text):
         raise ValueError('Installer coverage/order differs')
     for name, expected in (('Foundation', EXPECTED_INSTALLER_SUITES[:26]),
                            ('Live', EXPECTED_INSTALLER_SUITES[26:27]),
-                           ('Recovery', EXPECTED_INSTALLER_SUITES[27:])):
+                           ('Recovery', EXPECTED_INSTALLER_SUITES[27:32]),
+                           ('RecoveryInput', EXPECTED_INSTALLER_SUITES[32:])):
         start = '# PARTITION ' + name + ' BEGIN:'
         end = '# PARTITION ' + name + ' END'
         if text.count(start) != 1 or text.count(end) != 1:
@@ -106,9 +107,9 @@ def require_partition_layout(text):
             raise ValueError('Partition selector differs')
         if tuple(re.findall(r"& \(Join-Path \$Root 'tests\\([^']+)'\)", group)) != expected:
             raise ValueError('Partition coverage differs')
-    if "$SuiteCount = if ($Partition -eq 'Foundation') { 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }" not in text:
+    if "$SuiteCount = if ($Partition -eq 'Foundation') { 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 5 } elseif ($Partition -eq 'RecoveryInput') { 1 } else { 33 }" not in text:
         raise ValueError('Partition count differs')
-    if "[ValidateSet('All', 'Foundation', 'Live', 'Recovery')]" not in text:
+    if "[ValidateSet('All', 'Foundation', 'Live', 'Recovery', 'RecoveryInput')]" not in text:
         raise ValueError('Unknown partition must be refused')
 
 
@@ -121,11 +122,24 @@ class PartitionLayoutTests(unittest.TestCase):
         require_partition_layout(self.text)
         workflow = (self.root / '.github' / 'workflows' / 'ci.yml').read_text()
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Foundation'), 1)
-        self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Recovery'), 1)
+        self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Recovery\n'), 1)
+        self.assertEqual(workflow.count('-Suite Installer -InstallerPartition RecoveryInput\n'), 1)
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Live'), 1)
-        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests, installer-success-tests]', workflow)
+        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests]', workflow)
         self.assertEqual(workflow.count('  installer-recovery-tests:\n'), 1)
+        self.assertEqual(workflow.count('  installer-recovery-input-tests:\n'), 1)
         self.assertIn("tests\\InstallerLegacySourceCaptureTests.ps1'", self.text)
+
+    def test_recovery_split_is_disjoint_complete_and_misassignment_refused(self):
+        groups = []
+        for name in ('Recovery', 'RecoveryInput'):
+            group = self.text.split('# PARTITION ' + name + ' BEGIN:', 1)[1].split('# PARTITION ' + name + ' END', 1)[0]
+            groups.append(tuple(re.findall(r"& \(Join-Path \$Root 'tests\\([^']+)'\)", group)))
+        self.assertEqual(groups, [EXPECTED_INSTALLER_SUITES[27:32], EXPECTED_INSTALLER_SUITES[32:]])
+        self.assertFalse(set(groups[0]) & set(groups[1]))
+        self.assertEqual(groups[0] + groups[1], EXPECTED_INSTALLER_SUITES[27:])
+        with self.assertRaises(ValueError):
+            require_partition_layout(self.text.replace("@('All', 'RecoveryInput')", "@('All', 'Recovery')", 1))
 
     def test_classifier_wired_once_in_core_after_installer_return(self):
         driver = (self.root / 'scripts' / 'Test-ProGo.ps1').read_text(encoding='utf-8-sig')
@@ -134,7 +148,7 @@ class PartitionLayoutTests(unittest.TestCase):
         self.assertLess(driver.index("ProGo Installer "), driver.index(call))
         self.assertLess(driver.index(call), driver.index('function Invoke-IsolatedSshFixtureTool'))
         self.assertNotIn('TestSshFixtureThreadFacts.ps1', self.text)
-        self.assertIn("{ 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }", self.text)
+        self.assertIn("{ 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 5 } elseif ($Partition -eq 'RecoveryInput') { 1 } else { 33 }", self.text)
 
     def test_missing_suite_refused(self):
         for name in EXPECTED_INSTALLER_SUITES:
@@ -146,7 +160,7 @@ class PartitionLayoutTests(unittest.TestCase):
             require_partition_layout(self.text + "\n& (Join-Path $Root 'tests\\InstallerLegacySourceCaptureTests.ps1')\n")
 
     def test_wrong_partition_selector_refused(self):
-        for name in ('Foundation', 'Live', 'Recovery'):
+        for name in ('Foundation', 'Live', 'Recovery', 'RecoveryInput'):
             with self.subTest(partition=name), self.assertRaises(ValueError):
                 require_partition_layout(self.text.replace("@('All', '" + name + "')", "@('All', 'unknown')", 1))
 
@@ -237,9 +251,9 @@ def require_workflow_contract(text):
             if token not in block:
                 raise ValueError('Required exact SHA/deadline contract differs: ' + job)
     for job, selector in (('installer-tests', 'Foundation'), ('installer-live-tests', 'Live'),
-                          ('installer-recovery-tests', 'Recovery')):
+                          ('installer-recovery-tests', 'Recovery'), ('installer-recovery-input-tests', 'RecoveryInput')):
         block = re.search(r'^  ' + job + r':\n(.*?)(?=^  [a-z][a-z0-9-]*:|\Z)', text, re.M | re.S).group(1)
-        call = '-Suite Installer -InstallerPartition ' + selector
+        call = '-Suite Installer -InstallerPartition ' + selector + '\n'
         if text.count(call) != 1 or call not in block:
             raise ValueError('Installer selector coverage differs')
     runtime = re.search(r'^  installer-runtime-tests:\n(.*?)(?=^  [a-z][a-z0-9-]*:|\Z)', text, re.M | re.S).group(1)
@@ -266,7 +280,7 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
     def test_exact_workflow_and_driver_selectors(self):
         require_workflow_contract(self.workflow)
         driver = (self.root / 'scripts/Test-ProGo.ps1').read_text(encoding='utf-8-sig')
-        self.assertIn("[ValidateSet('All', 'Foundation', 'Live', 'Recovery')]", driver)
+        self.assertIn("[ValidateSet('All', 'Foundation', 'Live', 'Recovery', 'RecoveryInput')]", driver)
         self.assertIn("if ($Suite -ne 'Installer' -and $InstallerPartition -ne 'All') { throw", driver)
 
     def test_fixture_bodies_and_nested_live_order_are_frozen(self):
@@ -323,6 +337,16 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         for before,after in (('  installer-success-tests:', '  wrong-success-tests:'),
                              ('.\\tests\\InstallerSuccessBootstrap.ps1', '.\\tests\\wrong.ps1')):
             with self.assertRaises(ValueError): require_workflow_contract(self.workflow.replace(before,after,1))
+
+    def test_recovery_input_job_guards_refuse_mutations(self):
+        start = self.workflow.index('  installer-recovery-input-tests:')
+        for before, after in (('-InstallerPartition RecoveryInput', '-InstallerPartition Recovery'),
+                              ('timeout-minutes: 40', 'timeout-minutes: 41'),
+                              ('tested_sha: ${{ steps.identity.outputs.sha }}', 'tested_sha: wrong')):
+            with self.subTest(change=before), self.assertRaises(ValueError):
+                require_workflow_contract(self.workflow[:start] + self.workflow[start:].replace(before, after, 1))
+        with self.assertRaises(ValueError):
+            require_workflow_contract(self.workflow.replace('installer-recovery-input-tests, ', '', 1))
 
     def test_runtime_partition_missing_skipped_cancelled_wrong_sha_refused(self):
         sha = 'a' * 40

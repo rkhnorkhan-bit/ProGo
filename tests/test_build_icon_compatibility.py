@@ -70,7 +70,7 @@ class BuildIconCompatibility(unittest.TestCase):
         self.assertIn('& $core.Source -NoProfile -File', core)
         self.assertIn('-ExpectedHost Core7', core)
         self.assertNotIn('continue-on-error:', job)
-        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests, installer-success-tests]', workflow)
+        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests]', workflow)
         self.assertIn('if: success() && (github.event.repository.private', job)
     def test_fixture_demands_injected_compile_failure(self):
         fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text(encoding='utf-8-sig')

@@ -69,11 +69,11 @@ class DurableInputPreparedStaticTests(unittest.TestCase):
         for token in ('New-Object byte[] 70001','[byte[]]@()','$stream.WriteByte(1)','Check-InputInventory $case $beforeRead','ReparsePoint','cleanup refuses unowned root','FileShare]::None'):
             self.assertIn(token,self.text)
         self.assertNotRegex(self.text,r'(?i)DllImport|Start-Process|Set-Acl|Set-Service|Start-Sleep|Invoke-WebRequest')
-    def test_registered_once_in_recovery_only(self):
+    def test_registered_once_in_recovery_input_only(self):
         suite = (ROOT/'scripts/Test-ProGoInstallerSuite.ps1').read_text(encoding='utf-8-sig')
         call = "& (Join-Path $Root 'tests\\InstallerLegacyDurableInputTests.ps1')"
         self.assertEqual(suite.count(call),1)
-        recovery = suite.split('# PARTITION Recovery BEGIN:',1)[1].split('# PARTITION Recovery END',1)[0]
+        recovery = suite.split('# PARTITION RecoveryInput BEGIN:',1)[1].split('# PARTITION RecoveryInput END',1)[0]
         self.assertIn(call,recovery)
         self.assertNotIn('InstallerLegacyDurableInputTests', (ROOT/'scripts/Test-ProGo.ps1').read_text(encoding='utf-8-sig'))
         self.assertNotIn('Reflection',self.text)

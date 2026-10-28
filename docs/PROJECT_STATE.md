@@ -1,3 +1,130 @@
+## Local Recovery scheduling split; no push/CI; cancellation cause UNKNOWN
+
+Continued from clean6ee66c48782d8b7543e6caf2bf168062ada57195, same checkout/sole
+writer. Full Recovery logs CI751-755 were compared with both exact source/merge
+identities verified. Job IDs: 751=122665792528, 752=122691955311,
+753=122708925457, 754=122729753309, 755=122749321908. These are suite stopwatch
+elapsedMs, including each suite's children/cleanup, not estimates:
+
+| Suite | CI751 | CI752 | CI753 | CI754 | CI755 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| InstallerMenuResultTests | 220062 | 214089 | 255616 | 251949 | 324395 |
+| InstallerMenuFailureTests | 396586 | 427775 | 469767 | 477883 | 478332 |
+| InstallerLegacyRollbackAdmissionTests | 358335 | 333881 | 415440 | 427798 | 446033 |
+| InstallerLegacySourceCaptureTests | 1650 | 2065 | 1556 | 1752 | 1734 |
+| InstallerLegacyDurableSourceTests | 1822 | 2923 | 2148 | 2197 | 2512 |
+| InstallerLegacyDurableInputTests | 855503 | 915620 | 1031951 | 1021586 | 1121988 |
+| Sum suite elapsedMs | 1833958 | 1896353 | 2176478 | 2183165 | 2374994 |
+| Partition elapsedMs | 1833968 | 1896363 | 2176490 | 2183176 | 2375007 |
+
+Suite totals grew30:33.958 ->39:34.994; driver overhead only10/10/12/11/13ms.
+DurableInput alone14:15.503 ->18:41.988 includes its unchanged JournalReference,
+Restart, PreDelete and OwnedOperation nested consumers; the other five sum
+16:18.455/16:20.733/19:04.527/19:21.579/20:53.006. Observed time is accounted for by serial independent suite execution; this does
+not establish cancellation provenance or a new assertion defect.
+CI755 setup before first suite and final cleanup consume remaining margin around
+configured40m. Cancellation provenance remains UNKNOWN without direct evidence;
+no timeout causality claim, rerun, case/wait/deadline reduction or increase.
+
+Minimal scheduling-only split: Recovery retains exactly the original first five
+suites; RecoveryInput contains exactly original DurableInput (including unchanged
+nested order). Both bootstrap through existing Test-ProGo Installer build/hygiene
+path in independent windows-latest jobs, with unchanged40m deadline, exact SHA
+identity and no conditional skip/continue-on-error. Each suite imports its own
+helpers, creates unique owned temporary fixtures and cleans up; no artifacts are
+passed between groups. Shared runner Root/release bootstrap is identical. Native
+fresh-partition execution remains NOT_RUN until separately authorized CI.
+
+All still selects the original ordered33 once. New mandatory job
+installer-recovery-input-tests is added to needs and exact REQUIRED set; aggregate
+still rejects failure/cancelled/skipped/missing/extra/wrong or absent tested_sha.
+Next full CI inventory is eight mandatory partitions plus aggregate = nine jobs.
+No old suite body, nested call, injection, assertion, delay, process/child deadline,
+physical/hash/ownership guard, or production source changed. Existing frozen-body
+hash dictionary and adapter allowlist remain unchanged; coverage tests demand
+exact5+1 union, empty intersection, unchanged global33 ordering and reject changed
+selectors/deadlines/SHA/dependencies. Three existing static contracts updated only
+to the new exact scheduling names/counts; their other assertions remain intact.
+
+Local Python173=170PASS+3SKIP; strict aggregate/partition29 tests PASS,
+public453source/0release, BOM, full frozen bodies, original suite timing wrappers,
+diff and targeted secret checks PASS. No local Windows tool installation/native
+PASS. All CI755 protected ACL/cross-volume/Diagnostics evidence and historical
+inherited mismatch records remain unchanged; CI755 CANCELLED/NOT_ACCEPTED stays.
+No push/CI, production or PC action. Prepared for independent review only; staged
+self-contained uninstall retry/ProgramFiles/UAC/ARP remain subsequent installer work.
+
+## CI755 all eight full logs; native storage PASS, run CANCELLED / aggregate FAIL
+
+Sole authorized corrective run40668583036 / CI755 attempt1 terminated CANCELLED
+2026-10-28 10:40:12 UTC; strict aggregate FAILURE. CAS expected
+668553d2dd1697b83d2eb4e4713fe693c6735317 matched. Source
+ d3ecd1ab52d6db08a71201402ebe58bc57492395, tested merge
+55a1a843f44fcd2d4e1aca41f49b575735ab3bf4. Local publication checkpoint
+ dda3b4fadb7b2b963143140e9242121740786228, exact tree
+4c338fa768bb2206b28469f456dcba815ff18986. Published only two Int32 casts,
+in-memory metadata regression and docs; all blobs/tree matched local. All-event
+exact-source runs total_count1, attempt1 only; no rerun754 or duplicate.
+
+All eight full logs contain exact source/merge and terminal cleanup. Core
+122749322436, Ubuntu122749322412, Foundation122749322455, Live122749322515,
+Runtime122749322296 and Success122749322403 SUCCESS. Recovery122749321908
+has GitHub job conclusion CANCELLED despite every step SUCCESS and full log
+emitting all six suite PASS markers, partition PASS and terminal cleanup.
+Strict aggregate122767374366 correctly FAILURE: all seven tested_sha outputs
+match merge, but Recovery result=cancelled is unacceptable. Thus CI755 is NOT
+GREEN / packet NOT_ACCEPTED. No native assertion failed in the complete logs.
+
+Recovery API start09:59:55/end10:40:02 UTC (40m07s), configured timeout40m;
+partition PASS10:39:57.5097962 and cleanup through10:40:00.5814552. Cancellation
+is consistent with the job deadline race, not proven cancellation provenance.
+Check-run/annotation URL is rejected by connector endpoint restrictions; no
+annotation was obtained. No timeout/assertion change or blind rerun performed.
+Old installer33 suite bodies all emitted PASS (Foundation26+Live1+Recovery6),
+including PendingPublication25/StartupFailure15, but Recovery job is not SUCCESS.
+Runtime35/refusals and Success40/fresh-process2 PASS; all40 expected-state/recorded
+records match. Core Desktop6394, Shutdown49, both icon hosts, downstream Python155
+(153PASS+2SKIP), Diagnostics report32/helper2 and remaining mandatory Core PASS.
+
+Actual in-memory metadata regression PASS in both normal and storage hosts:
+explicit/inherited/mixed counts, exact flags/equality/XOR and negative comparisons.
+The real storage ACL packet records ProtectedAclCase=true, BaselineReady=true.
+Two initial inherited rounds: exact=false, ReadWrite=true, owner/group=true,
+DACL binary equality=true, flags32772->33796/XOR1024, three inherited/zero explicit
+ACEs, unprotected/canonical. Two protected rounds: exact=true, ReadWrite=true,
+flags37892->37892/XOR0, zero inherited/three explicit ACEs, protected/canonical;
+owner/group and DACL equality=true. No flag was ignored to obtain exact PASS.
+This proves the new protected fixture baseline, not restoration or a fix of
+CI753's historical inherited descriptor. Historical CI752 UNKNOWN remains separate.
+
+Actual Install: UnauthorizedAccessException Win325 (inner HResult -2147024891),
+Writes=1, PublishedHash present, PublishedEqualsOld=false,
+PublishedEqualsPayload=true, OldEqualsPayload=false. Setup=null, Cleanup=null,
+CleanupErrors=[]; cleanup exact SDDL=true, ReadWrite=true, ACL settled=true;
+owner/group/DACL equal, control flags/XOR37892/0. Original runtime rollback,
+retained snapshot/two admissions/no false terminal and pending replay assertions
+all passed. No cleanup failure was suppressed or baseline recaptured.
+
+Actual distinct pre-consumer volume GUIDs: data C:
+BC7F279C-06E3-4EB3-9FD6-2498AAFE64B5; runtime D:
+7BF0F7B7-0000-0000-0000-100000000000. Storage lifecycle9split+5legacy, actual
+Repair success/rollback, Restore program/missing/fault-program/fault-missing/all/
+data/fault-all/no-consent/selfcheck-live PASS. Data/foreign/recovery proofs retained
+through those checks. Final storage PASS follows actual post-consumer GUID reads
+compared equal to these same identities and successful cleanup; post GUIDs were
+not separately printed. Both Diagnostics UI sanitization/no-auto-copy and explicit
+Copy-equals-preview assertions PASS with separate runtime/data roots.
+
+Runner ZIP741083 bytes; SHA256
+b120b804cf29792a01f15c409234831b97552531de4cde95c411b27ac0598523,
+identity0.2.2+55a1a843f44fcd2d4e1aca41f49b575735ab3bf4. Uploads/prune SKIPPED,
+artifacts0: package built, not delivered/PC accepted. Local prepublication
+Python171=168PASS+3SKIP, public453source/0release, BOM/CRLF/exact diff/safety checks
+PASS; runner public453source/45release. Freeze held until all eight full logs;
+only this local result record follows. No further fix, CI, production activation,
+PC/production ACL/VHD/volume policy action. Late uninstall retry/UAC/ARP remain
+next related installer gates. Overall exact aggregate acceptance is still blocked.
+
 ## Local corrective AceFlags casts and in-memory metadata regression
 
 Continued frombd8d2e7c5ab375c8bf9c9f4767e0f3ebd9a189e6, same checkout/sole

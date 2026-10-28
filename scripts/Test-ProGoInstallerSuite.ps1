@@ -1,4 +1,4 @@
-param([ValidateSet('All', 'Foundation', 'Live', 'Recovery')][string]$Partition = 'All')
+param([ValidateSet('All', 'Foundation', 'Live', 'Recovery', 'RecoveryInput')][string]$Partition = 'All')
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
@@ -182,7 +182,7 @@ try {
 } finally { $CaseWatch.Stop() }
 }
 # PARTITION Live END
-# PARTITION Recovery BEGIN: original final4 plus durable source prerequisite, ordered.
+# PARTITION Recovery BEGIN: original recovery first5, ordered and unchanged.
 if ($Partition -in @('All', 'Recovery')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
 Write-Host 'INSTALLER_SUITE_START name=InstallerMenuResultTests.ps1'
@@ -214,6 +214,10 @@ try {
     & (Join-Path $Root 'tests\InstallerLegacyDurableSourceTests.ps1')
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacyDurableSourceTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
+}
+# PARTITION Recovery END
+# PARTITION RecoveryInput BEGIN: original recovery final suite including all nested cases, unchanged.
+if ($Partition -in @('All', 'RecoveryInput')) {
 $CaseWatch = [Diagnostics.Stopwatch]::StartNew()
 Write-Host 'INSTALLER_SUITE_START name=InstallerLegacyDurableInputTests.ps1'
 try {
@@ -221,7 +225,7 @@ try {
     Write-Host ('INSTALLER_SUITE_PASS name=InstallerLegacyDurableInputTests.ps1; elapsedMs=' + $CaseWatch.ElapsedMilliseconds)
 } finally { $CaseWatch.Stop() }
 }
-# PARTITION Recovery END
+# PARTITION RecoveryInput END
 $SuiteWatch.Stop()
-$SuiteCount = if ($Partition -eq 'Foundation') { 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 6 } else { 33 }
+$SuiteCount = if ($Partition -eq 'Foundation') { 26 } elseif ($Partition -eq 'Live') { 1 } elseif ($Partition -eq 'Recovery') { 5 } elseif ($Partition -eq 'RecoveryInput') { 1 } else { 33 }
 Write-Host ('Installer partition PASS: ' + $SuiteCount + ' suites; partition=' + $Partition + '; elapsedMs=' + $SuiteWatch.ElapsedMilliseconds)
