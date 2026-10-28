@@ -32,8 +32,23 @@ function New-LifecycleDriver([string]$source, [string]$boundary, [string]$adapte
 }
 $script:storageAclSettled = $true
 $storageSuitePassed = $false
+# Metadata only: never emit exception messages, source text, paths, SDDL or hashes.
+function Get-LifecycleErrorMetadata($Record) {
+    if ($null -eq $Record) { return $null }
+    $chain = @(); $exception = $Record.Exception
+    for ($depth = 0; $null -ne $exception -and $depth -lt 8; $depth++) {
+        $chain += [ordered]@{ Type = $exception.GetType().FullName; HResult = $exception.HResult }
+        $exception = $exception.InnerException
+    }
+    $fqid = [string]$Record.FullyQualifiedErrorId
+    if ($fqid.Length -gt 160 -or $fqid -cnotmatch '^[A-Za-z0-9_.]+(?:,[A-Za-z0-9_.]+)*$') { $fqid = '<redacted>' }
+    return [ordered]@{ Chain = $chain; ChainTruncated = ($null -ne $exception); FQID = $fqid;
+        Line = $Record.InvocationInfo.ScriptLineNumber; Offset = $Record.InvocationInfo.OffsetInLine }
+}
 function Invoke-LifecycleInstall {
     if ($Fixture.Mode -cne 'access-denied') { & $installDriver -PayloadDirectory $payload -NoStartup; return }
+    $Fixture.InstallError = $null; $Fixture.SetupError = $null; $Fixture.CleanupError = $null
+    $Fixture.AclRestored = $false; $Fixture.ExactSddl = $false; $Fixture.ReadWriteRestored = $false
     $path = Join-Path $Fixture.Runtime 'VERSION'
     $sections = [Security.AccessControl.AccessControlSections]'Access, Owner, Group'
     $original = [IO.File]::GetAccessControl($path, $sections).GetSecurityDescriptorSddlForm($sections)
@@ -51,16 +66,27 @@ function Invoke-LifecycleInstall {
         catch { $cause = $_.Exception.GetBaseException(); $denied = $cause -is [UnauthorizedAccessException] -and ($cause.HResult -band 65535) -eq 5 }
         finally { if ($null -ne $probe) { $probe.Dispose() } }
         Check-Lifecycle ($denied -and (Get-FileHash -LiteralPath $path).Hash -ceq $versionHash) 'real WriteData access-denied 5 with readable original bytes'
-        & $installDriver -PayloadDirectory $payload -NoStartup
-    } finally {
+        try { & $installDriver -PayloadDirectory $payload -NoStartup }
+        catch { $Fixture.InstallError = $_ }
+    } catch { $Fixture.SetupError = $_ }
+    finally {
         # Restore only this created file's DACL; owner/group must also remain exact.
-        $restore = New-Object Security.AccessControl.FileSecurity
-        $restore.SetSecurityDescriptorSddlForm($original, [Security.AccessControl.AccessControlSections]::Access)
-        [IO.File]::SetAccessControl($path, $restore)
-        Check-Lifecycle ([IO.File]::GetAccessControl($path, $sections).GetSecurityDescriptorSddlForm($sections) -ceq $original) 'exact fixture ACL restored'
-        $probe = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None); $probe.Dispose()
-        $script:storageAclSettled = $true
+        try {
+            $restore = New-Object Security.AccessControl.FileSecurity
+            $restore.SetSecurityDescriptorSddlForm($original, [Security.AccessControl.AccessControlSections]::Access)
+            [IO.File]::SetAccessControl($path, $restore)
+            $Fixture.AclRestored = $true
+            $Fixture.ExactSddl = [IO.File]::GetAccessControl($path, $sections).GetSecurityDescriptorSddlForm($sections) -ceq $original
+            Check-Lifecycle $Fixture.ExactSddl 'exact fixture ACL restored'
+            $probe = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+            try { $Fixture.ReadWriteRestored = $true } finally { $probe.Dispose() }
+            $script:storageAclSettled = $true
+        } catch { $Fixture.CleanupError = $_ }
     }
+    # Keep the actual install failure distinct from a later restoration failure.
+    if ($null -ne $Fixture.SetupError) { throw $Fixture.SetupError }
+    if ($null -ne $Fixture.InstallError) { throw $Fixture.InstallError }
+    if ($null -ne $Fixture.CleanupError) { throw $Fixture.CleanupError }
 }
 $installAdapters = @'
 function Get-ProGoInstallerLayout {
@@ -189,8 +215,35 @@ try {
             $failed = $true
             if ($mode -notin @('write-fault', 'self-check-fault', 'access-denied')) { throw }
             if ($mode -ceq 'access-denied') {
-                $cause = $_.Exception.GetBaseException()
-                Check-Lifecycle ($cause -is [UnauthorizedAccessException] -and ($cause.HResult -band 65535) -eq 5 -and $Fixture.Writes -eq 1 -and $Fixture.PublishedHash -cne $oldHash) 'actual installer denied VERSION only after changed EXE publication'
+                $caughtError = $_
+                $cause = $null
+                if ($Fixture.ContainsKey('InstallError') -and $null -ne $Fixture.InstallError) { $cause = $Fixture.InstallError.Exception.GetBaseException() }
+                $hasPublished = $Fixture.ContainsKey('PublishedHash') -and -not [string]::IsNullOrEmpty($Fixture.PublishedHash)
+                $payloadHash = (Get-FileHash -LiteralPath (Join-Path $payload 'ProGo.exe')).Hash
+                $diagnostic = [ordered]@{
+                    Caught = (Get-LifecycleErrorMetadata $caughtError)
+                    Setup = (Get-LifecycleErrorMetadata $Fixture.SetupError)
+                    Install = (Get-LifecycleErrorMetadata $Fixture.InstallError)
+                    Cleanup = (Get-LifecycleErrorMetadata $Fixture.CleanupError)
+                    InstallIsUnauthorized = ($cause -is [UnauthorizedAccessException])
+                    InstallWin32Code = $(if ($null -ne $cause) { $cause.HResult -band 65535 } else { $null })
+                    OldEqualsPayload = ($oldHash -ceq $payloadHash)
+                    Writes = $Fixture.Writes; HasPublishedHash = $hasPublished
+                    PublishedEqualsOld = ($hasPublished -and $Fixture.PublishedHash -ceq $oldHash)
+                    PublishedEqualsPayload = ($hasPublished -and $Fixture.PublishedHash -ceq $payloadHash)
+                    AclRestored = $Fixture.AclRestored; ExactSddl = $Fixture.ExactSddl
+                    ReadWriteRestored = $Fixture.ReadWriteRestored; AclSettled = $script:storageAclSettled
+                }
+                Write-Host ('LIFECYCLE_ACL_DIAGNOSTIC ' + ($diagnostic | ConvertTo-Json -Depth 8 -Compress))
+                # Evaluate both mandatory requirements even when the first fails.
+                $requirements = New-Object 'Collections.Generic.List[Exception]'
+                try {
+                    Check-Lifecycle ($cause -is [UnauthorizedAccessException] -and ($cause.HResult -band 65535) -eq 5 -and $Fixture.Writes -eq 1 -and $Fixture.PublishedHash -cne $oldHash) 'actual installer denied VERSION only after changed EXE publication'
+                } catch { $requirements.Add($_.Exception) }
+                try {
+                    Check-Lifecycle ($null -eq $Fixture.SetupError -and $null -eq $Fixture.CleanupError -and $Fixture.AclRestored -and $Fixture.ExactSddl -and $Fixture.ReadWriteRestored -and $script:storageAclSettled) 'fixture ACL cleanup completed exactly'
+                } catch { $requirements.Add($_.Exception) }
+                if ($requirements.Count -gt 0) { throw [AggregateException]::new('ACL fixture requirements failed; see metadata packet.', [Exception[]]$requirements.ToArray()) }
             } else {
                 $expected = if ($mode -ceq 'write-fault') { 'Synthetic lifecycle partial write fault' } else { 'Installed installer self-check failed.' }
                 Check-Lifecycle ($_.Exception.ToString().Contains($expected)) 'expected injected install failure'

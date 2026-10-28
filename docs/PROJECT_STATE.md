@@ -1,3 +1,94 @@
+## Local bounded ACL diagnostics after CI752; Windows NOT_RUN
+
+Continued from4bdfec9a00a3b40cf5239047d746e32521152fbb, same checkout/sole
+writer. Diagnostic-only fixture change; CI752 diagnosis remains UNKNOWN and its
+FAILURE/NOT_ACCEPTED evidence below is unchanged. No production changes,
+publication, CI, PC, network, volume policy or ACL actions were performed.
+
+InstallerLifecycleTests retains setup, original install and cleanup ErrorRecords
+separately. Cleanup still attempts the same fixture-leaf DACL restoration, exact
+Access/Owner/Group SDDL comparison and real ReadWrite reopen. Separate flags
+record each completed step; unsettled/failed fixtures retain existing evidence.
+Before the unchanged four-condition consumer assertion, a bounded metadata JSON
+packet reports exception chain types/HResult (maximum eight), identifier-only
+FQID (maximum160), invocation line/offset, Writes, PublishedHash presence and
+boolean old/payload hash comparisons, plus ACL restore/exact SDDL/ReadWrite flags.
+No messages, source lines, paths, file content, SDDL, SID or actual hashes emitted.
+The assertion now uses only the captured install error, never a cleanup error.
+Both install and cleanup requirements are evaluated; aggregated failures retain
+both requirement errors. A cleanup failure cannot become accepted access-denied5.
+Exact Win325, exactly one changed write, all original rollback/snapshot/pending
+proofs, deadlines, isolation seams and cleanup retention remain mandatory.
+
+Local Python171=168PASS+3SKIP, public453source/0release, diff/BOM/secret and
+original assertion/remaining consumer-body preservation checks PASS. No local
+pwsh/dotnet/mono/csc available; new diagnostic/exception aggregation native
+execution is Windows NOT_RUN. No proven CI752 failed conjunct or root-cause fix
+is claimed. Complete incremental diff awaits independent review; no push/CI.
+
+## CI752 complete FAILURE; storage/ACL candidate NOT_ACCEPTED
+
+One authorized automatic run40651366742 / CI752 attempt1 completed FAILURE
+2026-10-28 08:10:29 UTC. CAS expected PR88 head
+bb8e46cf94e903277459725ddd56b2f88af0ad9d matched. Published source
+c6fd0f6c9fe1ae414b5154b4ed5103775ed251ea, tested merge
+4aa6303d9ac2f209b8bbb2316cfc32e370f75f44. Local publication checkpoint
+5daf5f4799c12af15abb8a8fa6f54f7eb4a94264, exact tree
+7ed458effb82e7408654534b943a18f36794ced6. All 12 reviewed blobs and complete
+API publication tree matched local Git objects. No feature changes or rerun.
+All-event exact-source query reports total_count1; attempt1 only, no duplicate.
+
+All eight complete logs, including terminal cleanup, were read and checked for
+both exact source and merge. Core job122691954970 FAILURE; Ubuntu122691955312,
+Foundation122691955307, Live122691955423, Recovery122691955311,
+Runtime122691955292 and Success122691955325 SUCCESS. Strict aggregate
+job122703418253 FAILURE correctly refuses Core failure; all seven needs outputs
+carry the exact merge SHA. Foundation26 + Live1 + Recovery6 = all old installer33
+suites PASS, including PendingPublication25 and StartupFailure15. Runtime35 plus
+refusals and Success40 plus fresh-process2 PASS; all 40 structured Success
+expected-state/recorded comparisons match. Both icon host fixtures PASS.
+Local prepublication Python171=168PASS+3SKIP, public453source/0release,
+cumulative/local diff checks, BOM, frozen bodies, old inventory, both original
+Diagnostics UI assertion bodies and targeted secret checks PASS.
+
+Actual existing volume identities before consumers were different:
+data C: volume BC7F279C-06E3-4EB3-9FD6-2498AAFE64B5;
+runtime D: volume 58C22CE0-0000-0000-0000-100000000000.
+The read-only directory-handle GUID API provided these identities; no VHD,
+mount, policy or machine ACL change. The eight cross-volume actual lifecycle
+cases complete/keep-data/write-fault/self-check-fault/changed-runtime/pending/
+stop-fault/delete-fault each emitted PASS, including existing data/foreign and
+rollback/terminal proof assertions. Access-denied case then failed the compound
+assertion: actual installer denied VERSION only after changed EXE publication.
+Production failure report shows priorRuntimeVerified=True,
+rollbackAttempted=True, rollbackVerified=True, rollbackTerminalVerified=False,
+rollbackErrorType=none, backupRetained=True.
+
+Bounded diagnosis: failure is in the new fixture's compound predicate combining
+base exception type/Win32 5, Writes==1 and PublishedHash!=oldHash. The full log
+does not expose the actual values or the original caught exception, so the exact
+failed conjunct is UNKNOWN, not diagnosed as a production defect. The direct
+real WriteData-denial probe occurs before Install and did not stop execution;
+this does not prove the consumer's required access-denied5. ACL finally is in
+the exercised path, but its exact-restoration/reopen result is not independently
+reported and could be masked by the outer compound assertion: ACL restore remains
+UNCONFIRMED, never PASS. The next recovery-material assertions and final volume
+revalidation were not reached. Cross-volume Repair/Restore and post-consumer
+GUIDs are NOT_RUN, as are later Core Shutdown/Diagnostics UI/Desktop/relay tests.
+Earlier same-volume Repair/Restore and lifecycle8split+5legacy passed in Core;
+those do not substitute for the missing cross-volume or later UI checks.
+
+Both data-side and runtime-side fixture evidence were explicitly retained:
+ProGo-lifecycle-7196a0b9830347eba587b1bd7cb0d3d5 under runner temp, and
+D-drive root ProGo-storage-fixture-93eb8c96b89544428acc4a586c2a7069.
+These warnings prove cleanup was skipped, not durable export of runner files.
+Pack release zip, uploads and prune SKIPPED; artifacts0. No new package size/hash
+exists. CI752 packet NOT_ACCEPTED. CI751 historical GREEN and CI750 original
+FAILURE/NOT_ACCEPTED records below remain unchanged. Source stayed frozen until
+all eight complete logs; only this local result record follows. No corrective
+code, further publication, rerun, merge, release, PC or production activation.
+Late helper retry/staged elevated uninstall/UAC/ARP remain subsequent gates.
+
 ## Local storage-volume/ACL fixtures and Diagnostics roots; Windows NOT_RUN
 
 Continued from6622cdfcdd4e3eaf0242c244720e929e38cb9c9c,
