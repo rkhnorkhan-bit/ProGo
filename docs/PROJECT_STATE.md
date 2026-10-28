@@ -1,3 +1,32 @@
+## CI745 terminal FAILURE; bounded DiagnosticPreview fixture setup correction
+
+Independent complete eight-log exact-SHA review confirms CI745 run40613249715,
+attempt1 FAILURE, source22d963762ac06cf15beee48b22629c81a174e0ec and merge
+2aa8f637860d27c861906a230f32a88814f352a0. Six other partitions SUCCESS; Core
+and strict aggregate FAILURE. Real Windows short/long alias PASS (not SKIP),
+raw/resolved root lengths45/90, oldRelativeMatches=False. All nine actual split
+restore cases PASS: program, missing, fault-program, fault-missing, all, data,
+fault-all, no-consent, selfcheck-live. CI744 root cause remains UNKNOWN.
+
+Core later failed at DiagnosticPreviewTests.ps1:63: extracted
+Copy-LogToClipboard uses DataRoot, but fixture supplies only InstallDir and does
+not execute production initialization; exact log reports VariableIsUndefined
+for DataRoot at Show-ProGoDiagnostics -Root $DataRoot. Local correction adds
+only DataRoot = work alongside InstallDir before extracting the actual function.
+StrictMode, catch, sanitized read-only preview/secret sentinel/no automatic
+clipboard write and explicit Copy-equals-preview assertions are byte-unchanged.
+Production diagnostics unchanged. Existing actual UI assertions provide the
+regression check; no redundant string-only test added for the setup assignment.
+
+Local full Python170 =167 PASS +3 SKIP; targeted Python8 PASS; public-content451
+source/0release, BOM/body preservation and diff check PASS. New fixture setup
+Windows NOT_RUN pending the single conditionally authorized corrective CI.
+Expected CAS head22d963762ac06cf15beee48b22629c81a174e0ec; no rerun745 or
+additional feature/authority/deadline changes. After publication freeze until
+all eight full exact-SHA logs. No Program Files/PC/network/ACL action.
+Future Program Files integration must separately revisit ShowInstalled VERSION
+lookup from DataRoot versus runtime; deliberately unchanged in this bounded fix.
+
 ## Local RestoreSplit fixture-only correction after independent CI744 review
 
 Continued from8882e007. Production restore/authority and driver unchanged.

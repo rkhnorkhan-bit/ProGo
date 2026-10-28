@@ -29,6 +29,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $work 'VERSION'), '0.2.2')
     [IO.File]::WriteAllText((Join-Path $work 'update.log'), 'TRANSACTION FAILED: password=private-helper-fixture')
     $InstallDir = $work
+    $DataRoot = $work
     $tokens = $null; $errors = $null
     $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $Scripts 'Update-ProGo.Core.ps1'), [ref]$tokens, [ref]$errors)
     $fn = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Copy-LogToClipboard' }, $false)
