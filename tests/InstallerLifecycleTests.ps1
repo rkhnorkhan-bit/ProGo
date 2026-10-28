@@ -315,11 +315,11 @@ try {
         $Fixture.Data = Join-Path $Fixture.DataBase 'ProGo'
         $Fixture.Runtime = Join-Path $Fixture.ProgramBase 'ProGo'
         foreach ($dir in @($Fixture.Data, $Fixture.Runtime, $Fixture.Programs, $Fixture.Startup)) { [void][IO.Directory]::CreateDirectory($dir) }
-        $personal = @{}
+        $retainedDataHashes = @{}
         foreach ($leaf in @('settings.json', 'vault.enc', 'ProGo.exe', 'foreign.txt')) {
             $path = Join-Path $Fixture.Data $leaf
             [IO.File]::WriteAllText($path, 'synthetic retained personal bytes: ' + $leaf)
-            $personal[$leaf] = (Get-FileHash -LiteralPath $path).Hash
+            $retainedDataHashes[$leaf] = (Get-FileHash -LiteralPath $path).Hash
         }
         $foreign = Join-Path $Fixture.Runtime 'foreign.txt'
         [IO.File]::WriteAllText($foreign, 'foreign runtime sibling')
@@ -438,7 +438,7 @@ try {
             }
             Check-Lifecycle ((Get-FileHash -LiteralPath (Join-Path $Fixture.Startup 'ProGo.lnk')).Hash -ceq $startupHash -and [IO.File]::ReadAllText($menuForeign) -ceq 'foreign menu sibling') 'foreign Startup and Start Menu preserved'
         }
-        foreach ($leaf in $personal.Keys) { Check-Lifecycle ((Get-FileHash -LiteralPath (Join-Path $Fixture.Data $leaf)).Hash -ceq $personal[$leaf]) 'data and legacy executable preserved' }
+        foreach ($leaf in $retainedDataHashes.Keys) { Check-Lifecycle ((Get-FileHash -LiteralPath (Join-Path $Fixture.Data $leaf)).Hash -ceq $retainedDataHashes[$leaf]) 'data and legacy executable preserved' }
         Check-Lifecycle ([IO.File]::ReadAllText($foreign) -ceq 'foreign runtime sibling') 'foreign runtime preserved'
         Check-Lifecycle ($Fixture.Prompts -eq [int]($mode -ceq 'keep-data')) 'data removal uses its separate confirmation'
         Check-Lifecycle ($Fixture.LayoutReads -eq 1) 'install resolves both roots exactly once'

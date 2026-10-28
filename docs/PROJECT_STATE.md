@@ -1,3 +1,76 @@
+## CI759 corrective candidate — reviewed lifecycle map rename only
+
+Continue clean6c5e18c7ce6bc70f99bacbc7abf20324060c64cb. CI758 failure and
+minimal correction independently reviewed: rename only the four fixture map
+references `$personal` to `$retainedDataHashes` in InstallerLifecycleTests.ps1.
+Byte comparison after reversing that rename matches the previous fixture exactly;
+data, hashes, assertions, production switch, StrictMode and deadlines unchanged.
+Six legacy body adapters remain unchanged. No other source correction.
+Local Python182=179PASS+3SKIP, public457source/0release and diff checks PASS.
+Native downstream NOT_RUN locally; CI758 downstream remains NOT_REACHED.
+One corrective CAS publication authorized, expected source
+6c4084334b56672a3d2d8afff3da4f3c0932c6a4, then one automatic CI759 attempt.
+Freeze after publication through nine full exact source/merge terminal logs.
+Trusted UAC/native ARP and production/PC remain closed; no inherited native pass.
+
+## CI758 FAILURE — nine complete exact-SHA terminal logs; source frozen for review
+
+One authorized CAS publication in PR88, expected head
+a0a7bb946df28ceec74641504f0b8d52740eb378 matched. Sole writer; clean local
+7b623c9469aa6578f9124e07da448d48b7d98851, reviewed tree
+c40c2a71b33c58d38173718b56123837c68d828a. Full remote/local comparison matched
+all462 blobs; exactly14 reviewed files changed, no deletions. Prepublication
+Python182=179PASS+3SKIP, public457source/0release and cumulative diff checks PASS.
+No active run before publication; no extra source changes, reset or new clone.
+
+Published source6c4084334b56672a3d2d8afff3da4f3c0932c6a4 has expected parent
+a0a7bb946df28ceec74641504f0b8d52740eb378 and exact reviewed tree above. Tested
+merge39611516a0720fb615b4ba8de12e2821a7af3872 has the same tree, parents main
+4bb336575bb1216d3047bd2b294aeecad9fdd65a and that source. Run40703936620,
+CI758 attempt1, pull_request, completed FAILURE 2026-10-28 14:35:53 UTC.
+All-event source query confirms exactly one run; no dispatch/rerun757/duplicate.
+
+All nine full terminal logs fetched, source/merge identities and final cleanup
+checked. Jobs: Core122870858936 FAILURE; Ubuntu122870859124 SUCCESS;
+Foundation122870858966 SUCCESS; Live122870859115 SUCCESS;
+Recovery122870858975 SUCCESS; RecoveryInput122870858495 SUCCESS;
+Runtime122870858928 SUCCESS; Success122870858816 SUCCESS;
+strict aggregate122883401309 FAILURE. Aggregate needs includes all eight jobs,
+each tested_sha exactly39611516a0720fb615b4ba8de12e2821a7af3872; it correctly
+refuses because windows-build failed. Seven successful logs have zero actual
+##[error] markers; Core and aggregate each have one exit-code1 marker.
+
+Core blocker at tests/InstallerLifecycleTests.ps1:318: `$personal = @{}` fails
+with ArgumentTransformationMetadataException, Cannot convert Hashtable to
+System.Management.Automation.SwitchParameter. The fixture dot-sources current
+Install-ProGo.ps1 -FunctionsOnly at line285 into its scope, introducing the new
+typed switch `$Personal`; PowerShell variable names are case-insensitive. Its
+existing `$personal` saved-data table therefore collides before lifecycle cases.
+This is distinct from the six body-only adapters corrected in7b623c9. No fix or
+test weakening was made after publication; this newly observed conflict needs
+bounded review before any correction/publication/next CI.
+
+All original33 suites passed exactly once with matching start/pass sets:
+Foundation26 + Live1 + Recovery5 + RecoveryInput1. All six corrected legacy body
+adapters passed native execution. Runtime35 plus inventory/empty-snapshot and
+fresh-process refusals PASS; installed Success40 plus fresh-process refusal2 PASS.
+Core passed preceding repair preflight/copy/committed-cleanup/rollback/owned-child/
+durable-recovery and synthetic separate-root repair checks; icon Desktop5.1 and
+Core7.6.7 fixtures also PASS. Lifecycle cases, UninstallStage10, new personal16
+E2E, storage/real protected ACL, Restore/Diagnostics and Shutdown were NOT_REACHED
+on this source due to the earlier lifecycle bootstrap failure. No CI757 evidence
+is promoted into a native pass for those new-source suites. Core pack/upload
+steps did not execute; artifacts0, no CI758 ZIP/delivery/installation claim.
+
+Full logs, manifest and SHA256 inventory retained outside checkout at
+/workspace/scratch/4d867f513347/ci758-evidence (nine logs, 356433 bytes total).
+Result record only; implementation remains byte-identical to reviewed checkpoint.
+Production/PC remain closed. Trusted UAC broker and native ARP backend remain
+substantive unfinished work. CI757 stays the last independently confirmed full
+green baseline; CI755 cancellation/CI753 inherited mismatch remain UNKNOWN.
+Optional PID reuse risk unchanged. F30/payment/licensing remains backlog and is
+not a condition for personal use. Next: review observed collision; no silent fix.
+
 ## Selected bounded architecture: consumed personal commit/registration transaction
 
 Start clean49f3f68f595caf27a73814721a009cf2d3eaccfa; sole source writer.
