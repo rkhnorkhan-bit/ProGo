@@ -4,16 +4,74 @@ $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: split restore requires isolated Windows CI'; return }
 . (Join-Path $Scripts 'BackupIntegrity-ProGo.ps1')
 $driver = Join-Path $PSScriptRoot 'RestoreSplitDriver.ps1'
+function Snapshot-SplitChildren($Path, $Prefix) {
+    foreach ($item in @(Get-ChildItem -LiteralPath $Path -Force)) {
+        $relative = $Prefix + '\' + $item.Name
+        if ($item.PSIsContainer) {
+            $relative + ':directory'
+            Snapshot-SplitChildren $item.FullName $relative
+        } else { $relative + ':' + (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash }
+    }
+}
 function Snapshot-Split($Root, $Names) {
     return (@(foreach ($name in $Names) {
         $path = Join-Path $Root $name
         if (-not (Test-Path -LiteralPath $path)) { $name + ':absent'; continue }
-        foreach ($item in @(Get-Item -LiteralPath $path) + @(if ([IO.Directory]::Exists($path)) { Get-ChildItem -LiteralPath $path -Recurse -Force })) {
-            if ($item.PSIsContainer) { $item.FullName.Substring($Root.Length) + ':directory' }
-            else { $item.FullName.Substring($Root.Length) + ':' + (Get-FileHash -LiteralPath $item.FullName).Hash }
-        }
+        $item = Get-Item -LiteralPath $path -Force
+        if ($item.PSIsContainer) {
+            $name + ':directory'
+            Snapshot-SplitChildren $path $name
+        } else { $name + ':' + (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash }
     }) | Sort-Object) -join "`n"
 }
+function Write-SplitSnapshotDifference($Expected, $Actual, $ExpectedRoot, $ActualRoot) {
+    foreach ($pair in @(@('expected', $ExpectedRoot), @('actual', $ActualRoot))) {
+        $resolved = (Get-Item -LiteralPath $pair[1] -Force).FullName
+        Write-Host ('SPLIT_SNAPSHOT_ROOT side={0}; rawLength={1}; resolvedLength={2}; lengthMismatch={3}' -f $pair[0], $pair[1].Length, $resolved.Length, ($pair[1].Length -ne $resolved.Length))
+    }
+    # Generated fixture relative keys/types/digests only; never file contents.
+    $differences = @(Compare-Object -ReferenceObject @($Expected -split "`n") -DifferenceObject @($Actual -split "`n") -CaseSensitive)
+    foreach ($difference in @($differences | Select-Object -First 12)) {
+        $record = [string]$difference.InputObject
+        $separator = $record.LastIndexOf(':')
+        $key = $record.Substring(0, $separator)
+        $value = $record.Substring($separator + 1)
+        $type = if ($value -in @('directory','absent')) { $value } else { 'file' }
+        $hash = if ($type -eq 'file') { $value } else { '-' }
+        Write-Host ('SPLIT_SNAPSHOT_DIFF side={0}; key={1}; type={2}; sha256={3}' -f $difference.SideIndicator, $key, $type, $hash)
+    }
+    Write-Host ('SPLIT_SNAPSHOT_DIFF total={0}; shown={1}; <=expected; =>actual' -f $differences.Count, [Math]::Min(12, $differences.Count))
+}
+# Exercise actual Windows short/long aliases without changing volume policy.
+Add-Type -TypeDefinition 'using System.Text; using System.Runtime.InteropServices; public static class RestoreSplitAliasFixture { [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] public static extern uint GetShortPathName(string path, StringBuilder result, uint capacity); }'
+$aliasWork = Join-Path $env:TEMP ('ProGo-split-alias-' + [guid]::NewGuid().ToString('N'))
+try {
+    [void][IO.Directory]::CreateDirectory((Join-Path $aliasWork 'nested\empty'))
+    [IO.File]::WriteAllText((Join-Path $aliasWork 'nested\probe.txt'), 'generated-alias-sentinel')
+    $longRoot = (Get-Item -LiteralPath $aliasWork -Force).FullName
+    $shortBuffer = New-Object Text.StringBuilder 32768
+    $shortLength = [RestoreSplitAliasFixture]::GetShortPathName($longRoot, $shortBuffer, 32768)
+    if ($shortLength -eq 0) { throw ('Short-path fixture lookup failed; win32=' + [Runtime.InteropServices.Marshal]::GetLastWin32Error()) }
+    if ($shortLength -ge 32768) { throw 'Short-path fixture exceeded bounded buffer.' }
+    $shortRoot = $shortBuffer.ToString()
+    if ($shortRoot -ieq $longRoot) { Write-Host 'SKIP: split snapshot real short/long alias unavailable; alias regression NOT_RUN' }
+    else {
+        $names = @('nested','absent.txt')
+        $digest = (Get-FileHash -LiteralPath (Join-Path $longRoot 'nested\probe.txt') -Algorithm SHA256).Hash
+        $expectedAlias = (@('nested:directory','nested\empty:directory',('nested\probe.txt:' + $digest),'absent.txt:absent') | Sort-Object) -join "`n"
+        $longState = Snapshot-Split $longRoot $names
+        $shortState = Snapshot-Split $shortRoot $names
+        if ($longState -cne $expectedAlias -or $shortState -cne $expectedAlias) {
+            Write-SplitSnapshotDifference $expectedAlias $shortState $longRoot $shortRoot
+            throw 'Real Windows alias snapshot regression failed.'
+        }
+        # Evidence for the old substring assumption, not a claim about CI744.
+        $rawLeaf = Join-Path $shortRoot 'nested'
+        $resolvedLeaf = (Get-Item -LiteralPath $rawLeaf -Force).FullName
+        Write-Host ('SPLIT_ALIAS_EVIDENCE rawRootLength={0}; resolvedRootLength={1}; oldRelativeMatches={2}' -f $shortRoot.Length, $longRoot.Length, ($resolvedLeaf.Substring($shortRoot.Length) -ceq '\nested'))
+        Write-Host 'PASS: split snapshot real Windows short/long alias; exact directory/absent/SHA256 records'
+    }
+} finally { if ([IO.Directory]::Exists($aliasWork)) { Remove-Item -LiteralPath $aliasWork -Recurse -Force } }
 foreach ($mode in @('program','missing','fault-program','fault-missing','all','data','fault-all','no-consent','selfcheck-live')) {
     $work = Join-Path $env:TEMP ('ProGo-split-restore-' + [guid]::NewGuid().ToString('N'))
     $data = Join-Path $work 'data\ProGo'; $runtime = Join-Path $work 'programs\ProGo'; $backup = Join-Path $work 'backup'
@@ -69,7 +127,14 @@ foreach ($mode in @('program','missing','fault-program','fault-missing','all','d
             if ($child.ExitCode -eq 0 -or -not $errorText.Contains('SPLIT_RESTORE_CONSENT_REFUSED') -or (Snapshot-Split $runtime $programNames) -cne $oldProgram -or (Snapshot-Split $data $privateNames) -cne $oldData -or [IO.File]::Exists((Join-Path $work 'selfcheck-stub'))) { throw 'Data consent refusal failed.' }
         } else {
             if ($child.ExitCode -ne 0 -or -not $stdout.Result.Contains('ProGo restore completed.') -or [IO.File]::ReadAllText((Join-Path $work 'selfcheck-stub')) -cne 'isolated') { throw ('Split restore failed: ' + $mode + '; ' + $errorText) }
-            if ($mode -ne 'data' -and (Snapshot-Split $runtime $programNames) -cne (Snapshot-Split $backup $programNames)) { throw 'Restored runtime composition mismatch.' }
+            if ($mode -ne 'data') {
+                $expectedProgram = Snapshot-Split $backup $programNames
+                $actualProgram = Snapshot-Split $runtime $programNames
+                if ($actualProgram -cne $expectedProgram) {
+                    Write-SplitSnapshotDifference $expectedProgram $actualProgram $backup $runtime
+                    throw 'Restored runtime composition mismatch.'
+                }
+            }
             if ($mode -eq 'data' -and (Snapshot-Split $runtime $programNames) -cne $oldProgram) { throw 'Data-only restore changed runtime.' }
             if ($mode -in @('all','data')) {
                 if ([IO.File]::ReadAllText((Join-Path $data 'settings.json')) -cne 'backup-settings' -or [IO.File]::ReadAllText((Join-Path $data 'vault.enc.json')) -cne 'backup-vault') { throw 'Opted-in data restore missed DataRoot.' }

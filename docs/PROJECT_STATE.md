@@ -1,3 +1,72 @@
+## Local RestoreSplit fixture-only correction after independent CI744 review
+
+Continued from8882e007. Production restore/authority and driver unchanged.
+Snapshot-Split now builds relative keys from selected names and child.Name;
+no absolute-root substring. Explicit SHA256, final sort, directory/empty-directory
+and absent records and strict case-sensitive equality remain. On runtime mismatch,
+Compare-Object emits at most12 expected/actual relative key/type/hash records plus
+raw/resolved root lengths and mismatch flags; no file contents are printed.
+
+Conditional local counterexample: expanding RUNNER~1 to runneradmin makes the
+old comparator yield oGo\VERSION versus kup\VERSION for identical relative
+VERSION under runtime and backup. This demonstrates the invalid assumption,
+NOT the actual CI744 cause. Exact CI744 differing snapshot lines were not logged;
+CI744 root cause remains UNKNOWN. No other cause established in this pass.
+
+Mandatory RestoreSplit fixture now generates a fresh isolated alias directory,
+uses real Windows GetShortPathName with a bounded buffer, compares both root
+spellings with exact expected nested/empty/absent/SHA256 records, and reports the
+old substring assumption separately. If no distinct real alias is available,
+prints explicit SKIP / alias regression NOT_RUN, never alias PASS. This new
+fixture and diagnostics are Windows NOT_RUN; no pwsh/dotnet locally.
+
+Targeted Python8 PASS; fixture static checks and conditional counterexample PASS
+(not PowerShell execution); full Python170 =167 PASS +3 SKIP; public-content451
+source/0release and diff check PASS. Test-ProGo Git body remains byte-identical
+to9bbcfb03 after stripping only EF BB BF, SHA256
+c52d5a8f0c43fdf26c91b05c360de9e31d3a303eacac1ea2bc23d07235e8ee30.
+No push, CI, rerun744, production changes, PC/network/ACL/Program Files action.
+
+## CI744 completed FAILURE; all eight complete logs checked; publication frozen
+
+One CAS publication from exact expected source1ff918ba4ff2414f1c457267801c296a098c02f4
+created source67bd58171225a3c4f071dc4ca0de44c899e7ce36, tested merge
+b73c85cd2b9ee31f46daf9a03afc08c360bd446a. Sole run40607173194 / CI744
+attempt1 is terminal completed/failure. Local publication freeze
+2f608a796904a1d57e9461108ce6fec8c5d55ecd and remote source have identical
+full tree0fedf031da561657f6d4ef40ba64725d7c9ad70c. PR88 still has that exact
+source/merge; no duplicate, rerun743, dispatch, additional publication or merge.
+
+All eight full logs retrieved, each contains the exact tested merge:
+- runtime122549456124 SUCCESS: Runtime35 plus refusals;
+- success122549456573 SUCCESS: Success40, fresh-process refusal2;
+- Ubuntu122549456414 SUCCESS: strict aggregate refusals and server checks;
+- Foundation122549456586 SUCCESS: 26 suites, actual split updater success,
+  proxy refusal and injected post-MainWasChanged real Restore-BackupToMain
+  rollback with private sentinels; layout and old pending inventory refusal;
+- Live122549456395 SUCCESS: existing complete Live partition;
+- Recovery122549456351 SUCCESS: six mandatory suites including durable input,
+  legacy restart/pins/namespace/pre-delete/owned operation checks;
+- Core122549456592 FAILURE: source-marker gate now passes; production build
+  identity0.2.2+b73c85cd2b9ee31f46daf9a03afc08c360bd446a; old Repair fixtures
+  and actual split Repair/rollback PASS; first RestoreSplitTests program case
+  fails at tests/RestoreSplitTests.ps1:72, Restored runtime composition mismatch.
+  Driver exited0 and completion/self-check stub assertions passed immediately
+  before this external snapshot comparison. Both independent icon hosts PASS;
+- aggregate122562159754 FAILURE: all required partitions must succeed on the
+  exact tested SHA. Packaging/uploads skipped; no PASS inherited from CI743.
+
+BOM regression is cleared at its former failure boundary. Restore composition
+mismatch is a new, separately observed failure. Exact differing snapshot lines
+are not logged, so production root cause is NOT established. Source inspection
+identifies Snapshot-Split FullName.Substring(Root.Length) as a possible Windows
+8.3 alias-sensitive comparator; this is a hypothesis, not proven diagnosis.
+Later Restore missing/fault/data/selfcheck-live cases remain NOT_RUN. The newly
+added parent marker cleanup refusal is NOT Windows-proven. Actual different
+volumes and actual access-denied remain mandatory before Program Files enablement.
+No further code changes, rerun or publication after failure; this result record
+is local-only. Program Files mutation remains gated; PC/network/ACL unchanged.
+
 ## Corrective CI candidate after independent f04/selfcheck-live review
 
 One corrective publication is authorized against exact PR88 source
