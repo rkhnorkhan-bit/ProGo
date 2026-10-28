@@ -1,3 +1,242 @@
+## Local review corrections to3558d60 — UNREVIEWED / native NOT_RUN
+
+Four bounded corrections only; no push/CI/PC action. Production uninstall layout
+no longer admits ProgramFiles from retry-script location plus inventory. A retry
+filename is explicitly refused until a trusted installation boundary exists;
+legacy resolution remains the production default. The consumed stage, pinned
+bytes, existing deletion allowlist/evidence guards and isolated fresh-process
+synthetic resolver adapter are retained. This supersedes the production retry
+admission described in the preceding candidate entry.
+
+Invoke-StageHost now bounds both stdout/stderr drain and post-Kill settlement to
+5000ms each, retaining the existing60000ms normal child deadline. Kill alone is
+not settlement. On any unknown child/drain state the fixture and junction remain;
+cleanup occurs only after confirmed settlement. No unbounded Task.Wait remains.
+
+All negative cases demand their specific admission refusal, no execution canary,
+and unchanged surviving runtime plus modified/foreign stage/retry bytes. Junction
+attributes/target and all nine target files are checked before unlinking the
+fixture junction. Foreign stage-entry and executable firewall-dependency payloads
+carry file/output/error canaries. The retry consumer is copied from trusted entry
+code BEFORE tampering: this tests a trusted caller rejecting changed bytes, not
+self-defense by an already malicious trusted entrypoint. Ten synthetic cases now
+include the explicit foreign executable dependency. Windows execution NOT_RUN.
+
+Python extraction requires one exact function declaration, rejecting Core-prefix,
+missing and duplicate matches. Regression cases and exact comparisons cover both
+production layout resolver functions independently. Local Python178=175PASS+3SKIP,
+public455source/0release and diff checks PASS. No native parse/compile/PASS claimed.
+Original33 suites, deadlines and CI partitions remain unchanged. Freeze resumes
+at the clean correction checkpoint pending review; normal installation remains
+gated. CI756 stays the prior baseline; historical UNKNOWN records are unchanged.
+
+## Local consumed uninstall stage candidate — UNREVIEWED / native NOT_RUN
+
+Continued as the sole source writer in the existing checkout/branch from exact
+67a6dece7a82d5395956081c1f485af616a66b9d, tree
+e58add80370e839a9b2f4d27cf679ff3174527f8. Initial status was clean. No parallel
+writer/build or Git lock was found. No AGENTS.md or .agents/skills exists in this
+checkout or its ancestors. No reset/clean/clone, push, CI, merge, release, PC access
+or toolchain installation was performed. This is a local review candidate, not a
+new Windows acceptance result and not a normal installation on Orkhan's PC.
+
+Uninstall-ProGo now embeds exact copies of the existing read-only installer
+admission functions and layout definitions. A Python contract compares every
+embedded function with its original source, including pending/auxiliary guards,
+terminal/installed/rollback checks, snapshot material, completion ownership and
+surviving-leaf inventory checks. These definitions execute before any dependency
+stage code is loaded. They are not replaced by a new stage manifest or receipt.
+
+For an admitted separate runtime the current uninstall consumer creates/opens
+fixed runtime/backups/uninstall-stage/scripts with the nine fixed uninstall
+sources, admitting each against the original installed outcome's NewHash. It
+compiles the admitted ApplicationShortcuts/MaintenanceOperation bytes and loads
+firewall definitions from pinned memory. No separate-runtime consumer imports
+Install/Layout/Shortcuts/Maintenance from the disappearing runtime after this.
+The existing native per-leaf deletion and owned-shortcut routines are unchanged.
+Stage bytes/namespace are rechecked before mutations and each runtime deletion;
+installed inventory/pending proofs are checked again under the maintenance lease.
+
+The durable retry entry is fixed runtime/backups/Uninstall-ProGo.retry.ps1,
+OUTSIDE the dependency stage, containing the original admitted installed Uninstall
+source. It is created/flushed and checked before runtime deletion and printed as
+the retry command. Neither root discovery nor command arguments come from stage
+metadata. Production retry discovery accepts only the exact ProgramFiles known-
+folder location plus original installed evidence, then the existing recovery
+layout. It does not activate a new ProgramFiles installation. Direct invocation
+of the dependency-stage Uninstall copy is refused; the retained installed entry
+is the trusted entrypoint. As with any installed executable script, replacing
+that trusted entry's code before invocation is outside its own verifier's trust
+boundary; no self-verification is claimed to stop already executing malicious
+entrypoint code. Replaced dependency-stage code is never trusted on that basis.
+
+Embedded native directory pins use the same access0/share-read/OPEN_REPARSE_POINT
+contract as ApplicationShortcuts' existing directory pins, holding ancestors,
+backups, stage and scripts against write/rename/delete throughout staging and
+consumption. Dependency and retry streams deny write/delete sharing. Foreign,
+corrupt, reparse or replaced existing leaves are refused without overwriting or
+recursive cleanup. Only absent stage dependencies can be populated from still-
+admitted runtime bytes. An interrupted partial write is retained/refused rather
+than guessed-owned or overwritten; runtime mutation has not yet begun in that
+case. All stage/retry material and original evidence are retained after deletion.
+
+New mandatory Core UninstallStageTests.ps1 executes the actual install/uninstall
+consumers with AST-inserted isolated root/OS/self-check/fault adapters. Nine cases
+use separate Windows PowerShell processes for synthetic install, late uninstall
+fault after real Install/Layout/Shortcuts deletions, and retry from the retained
+entry source. Cases: successful retry; corrupt dependency; replaced stage entry;
+foreign stage sibling; junction; pending journal; surviving runtime replacement;
+actual stage file-write/directory-rename pin refusal in both consumers; changed
+retained retry bytes observed by an already trusted test consumer. It checks
+nonzero/no false success for refusals, unchanged surviving runtime bytes, private
+data, foreign links/siblings and all original recovery evidence. This is fixture
+source only: its Windows parse/compile/execution and deadlines are NOT_RUN locally.
+It does not claim arbitrary malicious trusted-entry replacement is safe.
+
+Local Python177 =174PASS+3SKIP; public455source/0release and git diff --check PASS.
+No pwsh/dotnet/mono/csc is available; no native PASS is inferred from Python/static
+checks. All original33 suites26+1+5+1, their bodies/assertions/waits/deadlines,
+mandatory RecoveryInput and strict exact-SHA aggregate are unchanged. Shutdown49
+and original lifecycle/legacy valid/missing/corrupt/foreign/conflict are unchanged.
+Legacy uninstall remains EXE-only; hash is revalidation, not legacy identity.
+Userdata deletion still requires the separate literal DELETE consent.
+
+Next gate: independent review of the FULL unified diff, then only separately
+approved publication/native CI. Staged uninstall acceptance remains OPEN pending
+that evidence. Normal personal ProgramFiles/UAC/ARP installation remains gated
+and is the subsequent stage, not completed here. No PC, forbidden backup drive,
+network/security/ACL policy, service or startup action was taken. F30/payment/
+licensing remains backlog and is not a condition for Orkhan's personal version.
+CI756 remains the old complete baseline; CI755 cancellation and CI753 inherited
+ACL mismatch remain UNKNOWN. Baseline ZIP was not delivered to the PC.
+
+## Verified clean handoff: staged self-contained uninstall NOT_IMPLEMENTED
+
+Continued fromae51d4416c5b02bb7e0fd418b195660ffe64b964, tree
+214c3d84b77f57b4556754d9a49eed867c95f515, same cloud checkout/branch and sole
+writer. User explicitly permits verified handoff instead of scaffolding when the
+accumulated context cannot support a coherent security-sensitive consumer/test
+stage. That fallback is used here. This is a context-capacity limitation, not a
+missing checkout/toolchain blocker. No production/test code or fixture was changed.
+The writer role ends with this documentation-only clean checkpoint; no parallel
+writer, push, CI, merge, release or production activation was started.
+
+CI756 remains the complete verified nine-job GREEN baseline: run40675909807,
+attempt1, source82626ac5b1b7d86c140cfd1b0e90106593fe9ab9, merge
+b9964cb4c0cb77b9b79c2239d03ea70957d55fb7. Package741084 bytes / SHA256
+a845161eddc018cf612daa25c239ea31c1cc3052ba98a6fd4464c2572a84d4b7, uploads
+SKIPPED/artifacts0, no PC delivery. CI755 cancellation and CI753 inherited ACL
+mismatch remain UNKNOWN; protected fixture proof does not close historical facts.
+
+Read-only source findings for the next sole writer:
+- scripts/Uninstall-ProGo.ps1 loads Layout before admission, then Install
+  FunctionsOnly, Shortcuts and Layout from its current PSScriptRoot. Maintenance
+  and Firewall also resolve runtime helpers there. There is no staged entrypoint.
+- scripts/Install-ProGo.ps1 Get-ProGoUninstallInventory (line2002) requires pending
+  journal clearance, installed terminal/snapshot/completion ownership proofs,
+  unambiguous inventories and matching hashes for every surviving admitted leaf;
+  missing leaves are accepted for retry. Evidence remains runtime/backups.
+- Test-ProGoInstallerTerminalOutcome (line309), snapshot material (line294),
+  installed outcome (line374) and pending guard (line1417) are distinct checks;
+  do not substitute a stage manifest or self-reported hash for these authorities.
+- src/ApplicationShortcuts.cs RemoveRuntimeFile (line1394) restricts fixed
+  LegacyOperationLeaves, root containment and uppercase SHA256; native deletion
+  pins/revalidates origin and digest. RemoveOwnedShortcuts (line1405) checks actual
+  owned links and retains foreign siblings/menu directory. No recursive fallback.
+- tests/InstallerLifecycleTests.ps1 delete-fault mode faults after the first
+  actual EXE removal; line432 retries with & $driver in the same PowerShell host.
+  It does NOT prove fresh-process late retry after Install/Layout/Shortcuts removal.
+- tests/ShutdownTests.cs invokes a real fresh PowerShell uninstaller (line35)
+  with30s deadline, copies nine helpers (line117), and preserves49 IPC/proxy/
+  rollback/firewall/retry assertions. It does not close that late helper gap.
+
+Next bounded deliverable must connect current Uninstall to a self-contained stage
+and a retry entrypoint that survives partial runtime/helper deletion. Stage code,
+root discovery and command arguments must be bound to existing verified evidence,
+not arbitrary metadata paths/commands or a self-hashed untrusted bundle. Revalidate
+stage/foreign/reparse changes before runtime mutation; preserve per-leaf authority,
+original pending/terminal/snapshot proofs and safe failures, never false success.
+Required actual fresh-process install->late partial uninstall->retry fixtures must
+remove Install/Layout/Shortcuts, test corrupt/replaced stage and foreign/reparse
+refusal, and verify retained private data/foreign links/recovery evidence. Keep
+all legacy valid/missing/corrupt/foreign/conflict cases and narrow EXE-only scope;
+hash is revalidation, not legacy identity. Userdata remains separate DELETE consent.
+
+No implementation or new native PASS is claimed. Uninstall retry gap stays OPEN;
+no scaffold/helper/receipt framework was added. Preserve all33 suites26+1+5+1,
+mandatory RecoveryInput/strict exact-SHA aggregate and all cases/waits/deadlines.
+Production ProgramFiles/UAC/ARP remains gated; staged elevated installation is not
+accepted. Do not touch PC or F-drive BackUP, profile/vault/settings/logs/backups,
+services/startup/network/production ACL. Do not reset/clean or create another source
+checkout. Native Windows verification requires separate review/CI authorization.
+Local unchanged-code Python173=170PASS+3SKIP, public453source/0release and diff
+checks PASS; HEAD was clean and no active writer/build process or Git lock found.
+
+## CI756 complete SUCCESS; nine full exact-SHA logs, Recovery5+1 verified
+
+Sole authorized automatic run40675909807 / CI756 attempt1 completed SUCCESS
+2026-10-28 11:28:55 UTC. CAS expected d3ecd1ab52d6db08a71201402ebe58bc57492395
+matched; no active branch CI or new-source duplicate before publication. Published
+source82626ac5b1b7d86c140cfd1b0e90106593fe9ab9, tested merge
+b9964cb4c0cb77b9b79c2239d03ea70957d55fb7. Local publication checkpoint
+05f9ea621def39fa199b70185e5de2a896ed4e76, exact tree
+d895ddc96d195c627e86a58a7eaac6c5e6542e2a. All nine reviewed blobs and complete
+tree matched local Git. One non-force CAS publication; all-event exact-source
+query total_count1 / attempt1; no rerun755, duplicate or subsequent code changes.
+
+All nine full logs, including terminal cleanup, contain exact source and merge;
+zero actual error markers. Core122774134582, Ubuntu122774134447,
+Foundation122774134335, Live122774134393, Recovery122774134340,
+RecoveryInput122774133985, Runtime122774134411, Success122774134432 and strict
+aggregate122788909977 all SUCCESS. All eight aggregate needs results=success,
+outputs tested_sha exactly match merge, final exact aggregate PASS.
+
+All33 old suites passed as26+1+5+1, including PendingPublication25 and
+StartupFailure15. Recovery first5 completed1144907ms (19:04.907); own full job
+SUCCESS. RecoveryInput completed1042951ms (17:22.951); own full job SUCCESS,
+DurableInput12 and all unchanged JournalReference20/Restart26/PreDelete23/
+OwnedOperation29 plus nested namespace/physical/pin/threat cases PASS. Full
+nonoverlapping coverage, independent bootstrap and unchanged deadlines confirmed.
+CI755 cancellation cause remains UNKNOWN: current scheduling success does not
+prove historical cancellation provenance. CI755 CANCELLED/NOT_ACCEPTED unchanged.
+Runtime35/refusals and Success40/fresh-process2 PASS; all40 structured expected
+state/recorded comparisons match. Core Desktop6394, Shutdown49, both icon hosts,
+remaining mandatory Core and downstream Python157=155PASS+2SKIP passed.
+
+Core real storage packet: ProtectedAclCase=true/BaselineReady=true. Two initial
+inherited rounds exact=false/RW=true, flags32772->33796/XOR1024, owner/group and
+DACL bytes equal, inherited3/explicit0, unprotected/canonical. Two protected rounds
+exact=true/RW=true, flags37892->37892/XOR0, inherited0/explicit3, owner/group/DACL
+equal, protected/canonical. In-memory explicit/inherited/mixed regression PASS in
+both hosts. This proves the new protected fixture baseline; historical inherited
+CI753 mismatch is not declared fixed and CI752 UNKNOWN remains historical.
+Actual Install UnauthorizedAccessException Win325, Writes1, PublishedHash present,
+PublishedEqualsOld=false, PublishedEqualsPayload=true, OldEqualsPayload=false.
+Setup=null/Cleanup=null/CleanupErrors=[]; cleanup exact=true/RW=true/settled=true,
+owner/group/DACL equal, flags37892/XOR0. Actual runtime rollback, retained snapshot,
+two admissions, refusal of false terminal and pending replay guards passed.
+
+Actual distinct volume GUIDs: data C: BC7F279C-06E3-4EB3-9FD6-2498AAFE64B5;
+runtime D: 4234E3DC-0000-0000-0000-100000000000. Cross-volume lifecycle9split+
+legacy5, actual Repair success/rollback and all9 Restore scenarios passed with
+data/foreign/recovery evidence checks. Final storage PASS follows post-consumer
+GUID reads comparing equal to these identities and successful fixture cleanup;
+post GUIDs are verified comparisons, not separately printed values. No VHD,
+volume policy or permissions outside fixture. Both separate-root Diagnostics UI
+sanitization/no-auto-copy and explicit Copy-equals-reviewed-preview assertions PASS.
+
+Runner ZIP741084 bytes; SHA256
+a845161eddc018cf612daa25c239ea31c1cc3052ba98a6fd4464c2572a84d4b7,
+identity0.2.2+b9964cb4c0cb77b9b79c2239d03ea70957d55fb7. Uploads/prune SKIPPED,
+artifacts0: built runner package, not delivery or PC acceptance. Runner public
+453source/45release PASS. Local prepublication Python173=170PASS+3SKIP,
+public453source/0release, clean/diff/BOM/sole-writer checks PASS. Frozen bodies,
+assertions/waits/deadlines/guards and production unchanged. Freeze held through
+all nine full logs; only this local result record follows, not another publication.
+No merge/release/PC/production activation. Staged self-contained uninstall retry,
+trusted elevation/UAC/ARP and normal ProgramFiles activation remain next bounded
+installer stage; not enabled or accepted by this CI.
+
 ## Local Recovery scheduling split; no push/CI; cancellation cause UNKNOWN
 
 Continued from clean6ee66c48782d8b7543e6caf2bf168062ada57195, same checkout/sole
