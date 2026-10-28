@@ -101,6 +101,18 @@ try {
         } else {
             $writeFault = $mode -in @('registration-before', 'registry-write', 'registry-commit', 'registration-after')
             if ($writeFault) {
+                # Synthetic fixture streams only. Lengths are UTF-16 code units;
+                # cap each prefix before JSON escaping, without changing the checks.
+                Write-Host ('NATIVE_REGISTRATION_DIAGNOSTIC ' + ([ordered]@{
+                    Mode = $mode; ChildCode = $installed.Code
+                    CodeNonZero = ($installed.Code -ne 0)
+                    ExpectedErrorMatched = $installed.Error.Contains('Synthetic native registration fault: ' + $mode + '.')
+                    InstallOkAbsent = (-not $installed.Output.Contains('Install OK'))
+                    Stderr = [ordered]@{ Length = $installed.Error.Length; Truncated = ($installed.Error.Length -gt 1024);
+                        Text = $installed.Error.Substring(0, [Math]::Min(1024, $installed.Error.Length)) }
+                    Stdout = [ordered]@{ Length = $installed.Output.Length; Truncated = ($installed.Output.Length -gt 1024);
+                        Text = $installed.Output.Substring(0, [Math]::Min(1024, $installed.Output.Length)) }
+                } | ConvertTo-Json -Depth 4 -Compress))
                 Check-Stage ($installed.Code -ne 0 -and $installed.Error.Contains('Synthetic native registration fault: ' + $mode + '.') -and -not $installed.Output.Contains('Install OK')) 'native publication fault never reports success'
                 if ($mode -eq 'registration-after') { Assert-NativeExact $Fixture $target }
                 else { Check-Stage ((Read-NativeSnapshot $target) -ceq 'ABSENT') 'native partial writes rolled back without published key' }

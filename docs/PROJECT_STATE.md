@@ -1,3 +1,90 @@
+## Local diagnostic-only candidate for CI760 native registration-before failure
+
+Continue clean269736a30d363581d165cb224e0b0f38ca1e0388,
+treed2a75bcb3da57d45a91d2b6c343051166eb13270 in the same checkout/branch,
+sole writer. No AGENTS, Git locks or competing source/native processes found.
+CI760 and its nine complete logs are independently confirmed FAILURE. Violated
+conjunct/root cause remain UNKNOWN; wrapping/rollback explanations are hypotheses.
+
+Only fixture diagnostics inserted immediately before the unchanged publication
+fault compound assertion. One compressed JSON record prints mode, child Code,
+CodeNonZero, ExpectedErrorMatched, InstallOkAbsent; stderr/stdout each include
+full UTF-16 Length, Truncated and at most1024 code units of prefix Text. JSON
+escaping follows truncation, bounding the record below14KiB even with escapes.
+Only synthetic fixture child streams are printed. Full streams still feed the
+original predicate/message matching; no result mutation or extra child invocation.
+Reverse removal of the12-line insertion exactly matches the original Git blob
+after repository LF/working-tree CRLF normalization; UTF-8 BOM preserved.
+Minimal static coverage checks placement, original compound, fields and caps.
+Production/rollback/cases/deadlines/security gates and all prior assertions intact.
+
+Local Python187=184PASS+3SKIP, public458source/0release, diff checks PASS.
+Native parse/execution NOT_RUN; pwsh/dotnet/mono/csc absent, no tools installed.
+This is not a product fix. CI760 remains1nativePASS/1FAIL/13NOT_REACHED; later
+storage/Diagnostics/Shutdown remain NOT_REACHED. Production factories stay closed.
+No push/CI/rerun or real registry/security/PC action. Next independent diff review;
+a separately authorized diagnostic CI would establish facts, not a blind rerun.
+
+## CI760 FAILURE — nine complete exact-SHA terminal logs; no source correction
+
+One authorized CAS publication in PR88 matched expected source
+21d2c4d524dd5f5d3d1b14ec261403ee4d11c2a9. Sole writer; clean reviewed local
+098cd9e6251929f8d563036c2d5bae51865fccbe/tree3ad93207b423134a1a6922040e0045a780a0ee65.
+No AGENTS/Git locks/competing source or native processes found. All463 local blobs
+compared with remote462: exactly six reviewed changes, no deletions. Cumulative
+review diff64332bytes/806lines/SHA256
+9239e318647212d1d315e1de79c7d0fb56e7455f370ecbb711dbcebaf7eae5ef unchanged.
+Python186=183PASS+3SKIP, public458source/0release, cumulative diff checks PASS.
+Remote expected head and active/queued0 rechecked before the single non-force CAS.
+
+Published source739cc363875cd9e8180b1e4fc3050dd8a081e7f7 has the expected parent
+and exact reviewed tree. Tested merge59437533410c82d644afafe858a17faacf86fabd
+has the same tree, parents main4bb336575bb1216d3047bd2b294aeecad9fdd65a and source.
+Run40725376849, CI760 attempt1, pull_request, completed FAILURE
+2026-10-28 19:42:11 Europe/Istanbul (16:42:11 UTC). All-event exact-source query
+confirms one run only; no dispatch/rerun/duplicate or additional publication.
+
+All nine full terminal logs through cleanup saved at
+/workspace/scratch/4d867f513347/ci760-evidence; total370491bytes, individual SHA256
+and sizes in verified-summary.json; publication/run/jobs/artifacts in manifest.json.
+Core122947091162 FAILURE; Ubuntu122947090990 SUCCESS;
+Foundation122947090569 SUCCESS; Live122947091019 SUCCESS;
+Recovery122947091071 SUCCESS; RecoveryInput122947091063 SUCCESS;
+Runtime122947091413 SUCCESS; Success122947090967 SUCCESS;
+strict aggregate122958233405 FAILURE. Every log contains exact source/merge.
+Core/aggregate each has one actual error marker; all seven successful logs zero.
+Aggregate needs contains all eight exact tested_sha outputs and seven success/one
+Core failure; it correctly refuses. Remote source remains the published candidate.
+
+Personal18 (including same-SID impersonation construction/revalidation refusals)
+and UninstallStage10 all PASS exactly once. Lifecycle8split+5legacy PASS. Native
+registry success (actual isolated HKCU install/uninstall) PASS. Next case,
+registration-before, FAIL at NativeRegistrationTransactionTests.ps1:104, assertion
+"native publication fault never reports success". The composite requires nonzero
+child Code, exact expected Error text, and absence of Install OK in Output. The
+log does not expose those three child values, so the failed predicate and native
+root cause are UNKNOWN; neither TxR failure nor false-success is established.
+Native15 therefore1PASS/1FAIL/13NOT_REACHED, never a complete backend validation.
+No silent fix, diagnostic source edit, assertion weakening or timeout change.
+
+All original33 suites have one exact start/pass pair each:26+1+5+1. Runtime35 plus
+empty-snapshot/fresh-process refusal and installed Success40/fresh refusals2 PASS.
+Repair preflight/copy/committed cleanup/rollback/owned child/durable recovery and
+synthetic separate-root repair PASS before Core failure. Icon Desktop5.1/Core7.6.7
+PASS in their always steps. Later Core storage/cross-volume/protected ACL, Restore,
+Diagnostics, Desktop/Instance/Maintenance/Shutdown/HomeVPN/Portable and relay
+regression are NOT_REACHED on this source; no inherited CI759 PASS for them.
+
+Core verify-clean-build-identity, package and uploads/prune skipped after failure;
+artifacts0. CI760 ZIP NOT_BUILT, package SHA unavailable, no delivery/PC validation.
+Historical CI759 package SHA remains only that historical candidate's evidence.
+Source stayed frozen until all nine logs; this subsequent local docs-only result
+checkpoint is not published. UAC broker/authenticated SID+KnownFolder+code-origin
+transport and production activation remain unfinished; production factories closed.
+HKCU success is not elevated HKLM/UAC, registry-link adversarial or PC proof.
+No real PC/ARP/security action. CI753/755 remain UNKNOWN; F30 remains deferred.
+Next is independent review of this observed failure; no further CI authorized.
+
 ## Native ARP backend local candidate — consumed TxR, production UAC still closed
 
 Continued sole writer in the same checkout/branch from clean578463eac09b70783e64f9e8104b70a2543272fa,

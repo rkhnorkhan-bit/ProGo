@@ -102,6 +102,22 @@ class PersonalTransactionContract(unittest.TestCase):
         self.assertIn("Write-StageDriver $retained '$Layout'", fixture)
         self.assertIn('$context.PublishRegistration()', fixture)
 
+    def test_native_fault_diagnostic_is_bounded_and_precedes_unchanged_assertion(self):
+        fixture = read('tests/NativeRegistrationTransactionTests.ps1')
+        assertion = "Check-Stage ($installed.Code -ne 0 -and $installed.Error.Contains('Synthetic native registration fault: ' + $mode + '.') -and -not $installed.Output.Contains('Install OK')) 'native publication fault never reports success'"
+        self.assertEqual(fixture.count(assertion), 1)
+        diagnostic = fixture.split("if ($writeFault) {", 1)[1].split(assertion, 1)[0]
+        self.assertEqual(diagnostic.count('NATIVE_REGISTRATION_DIAGNOSTIC'), 1)
+        for field in ('Mode = $mode', 'ChildCode = $installed.Code', 'CodeNonZero = ($installed.Code -ne 0)', "ExpectedErrorMatched = $installed.Error.Contains('Synthetic native registration fault: ' + $mode + '.')", "InstallOkAbsent = (-not $installed.Output.Contains('Install OK'))"):
+            self.assertIn(field, diagnostic)
+        for stream in ('Error', 'Output'):
+            self.assertIn('Length = $installed.' + stream + '.Length', diagnostic)
+            self.assertIn('Truncated = ($installed.' + stream + '.Length -gt 1024)', diagnostic)
+            self.assertIn('$installed.' + stream + '.Substring(0, [Math]::Min(1024, $installed.' + stream + '.Length))', diagnostic)
+        self.assertIn('ConvertTo-Json -Depth 4 -Compress', diagnostic)
+        self.assertNotRegex(diagnostic, r'(?m)^\s*\$installed(?:\.|\s*=)')
+        self.assertNotIn('Invoke-StageHost', diagnostic)
+
     def test_registration_is_consumed_after_terminal_and_not_rolled_back_as_precommit(self):
         text = read('scripts/Install-ProGo.ps1')
         body = text.split('$InstallDir = ', 1)[1]
