@@ -201,7 +201,8 @@ function Get-ProGoInstallerLayout {
 }
 """
 LEGACY_LAYOUT_FIXTURES = ('InstallerMaintenanceTests.ps1', 'InstallerMenuFailureTests.ps1',
-                          'InstallerRestartGateTests.ps1', 'InstallerOutcomeReconcileTests.ps1')
+                          'InstallerRestartGateTests.ps1', 'InstallerOutcomeReconcileTests.ps1',
+                          'InstallerPendingPublicationTests.ps1', 'InstallerStartupFailureTests.ps1')
 
 
 def require_fixture_parity(bodies):
@@ -275,6 +276,19 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         nested = re.findall(r"^& \(Join-Path \$Root 'tests\\([^']+)'\)([^\n]*)$", host, re.M)
         self.assertEqual(nested, [('InstallerLegacyOwnedRestoreTests.ps1',''), ('InstallerLegacyPreparationTests.ps1',''),
                                  ('InstallerLegacyStartupLiveTests.ps1',''), ('InstallerLegacyStartupLiveTests.ps1',' -MenuFlow'), ('InstallerAuxiliaryScopedOutcomeTests.ps1',''), ('InstallerAuxiliaryScopedOutcomeTests.ps1',' -PreservedFlow')])
+
+    def test_all_installer_body_consumers_have_exact_layout_adapter(self):
+        consumers = {}
+        for path in (self.root / 'tests').glob('*.ps1'):
+            body = path.read_text(encoding='utf-8-sig')
+            if re.search(r'\[scriptblock\]\s*::\s*Create\s*\(.*?\.Substring\s*\(\s*\$boundary\s*\[0\]\.Extent\.StartOffset\s*\)', body, re.S | re.I):
+                consumers[path.name] = body
+        self.assertEqual(set(consumers), set(LEGACY_LAYOUT_FIXTURES))
+        for name, body in consumers.items():
+            with self.subTest(fixture=name):
+                self.assertEqual(body.count(LEGACY_LAYOUT_FIXTURE_ADAPTER), 1)
+                import_end = '}, $false)) { . ([scriptblock]::Create($function.Extent.Text)) }\n'
+                self.assertIn(import_end + LEGACY_LAYOUT_FIXTURE_ADAPTER + '$boundary = @(', body)
 
     def test_changed_or_missing_fixture_refused(self):
         bodies = {name: (self.root / 'tests' / name).read_text(encoding='utf-8-sig') for name in CI728_FIXTURE_SHA256}

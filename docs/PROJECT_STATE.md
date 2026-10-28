@@ -1,3 +1,105 @@
+## Local CI750 fixture-only correction; one conditional corrective CI authorized
+
+Continued from1511d3caa7e9f7d758d755c5b17dcbf819f889f8,
+tree2e5e210ea98c7753406188d61b1235e2f295b44d, same clean checkout and sole
+writer. Independent review confirmed CI750 terminal FAILURE06:11:40 and the
+first PendingPublication created-case failure; other six partitions PASS.
+CI750 package remains NOT_ACCEPTED despite Core lifecycle split8/legacy5 and
+Shutdown49 scoped PASS. Its full failure record below is retained unchanged.
+
+Only InstallerPendingPublicationTests and InstallerStartupFailureTests receive
+the same exact synthetic legacy-layout adapter immediately after AST imports.
+Existing LEGACY_LAYOUT_FIXTURES expands4to6. Frozen original SHA values remain
+unchanged: stripping only the exact reviewed adapter reproduces original bodies.
+All scenarios/assertions/proofs/deadlines and production resolver/rename remain
+unchanged. StartupFailure was NOT_RUN in750; no actual KnownFolder write claimed.
+
+One minimal existing-suite inventory test discovers every installer body-tail
+scriptblock consumer across tests/*.ps1 and requires exact equality with the six
+legacy fixtures and the exact adapter between AST import and boundary extraction.
+Lifecycle has its own adapter, InstallPayload executes only the prefix before
+layout, other installer fixtures are function-only. No new framework introduced.
+
+Local Python171=168PASS+3SKIP; public452source/0release, exact two-adapter diff,
+original frozen-body/SHA dictionary, BOM, production/suite preservation and diff
+checks PASS. Native corrected fixtures remain Windows NOT_RUN before publication.
+Scope is only these two adapters, existing allowlist/inventory check and docs.
+One corrective automatic CI is conditionally authorized with CAS expected
+ dc20f280234ecad2729c58c537d3678db2df51a0; no rerun750 or duplicate. After
+publication freeze until all eight full exact source/merge logs. No production
+Program Files, PC/network/machine-ACL, rename, release or merge changes.
+
+## CI750 completed FAILURE; all eight full exact-source/merge logs verified
+
+One authorized CAS non-force fast-forward from expected PR88 source
+72ca87a53c138e9e43c37ba37ab23b5eaeba1223 published source
+ dc20f280234ecad2729c58c537d3678db2df51a0, tested merge
+ a153d4af4323d21eb9d0c7060a9822151967132e. Local publication checkpoint
+154bea0b5b5c4c71a47b26de63cdabf59b486384, full tree
+87b339046380288b49c3fd4a64391c1570202282 equals remote publication tree.
+Remote parent tree equals de045a25 publication tree. Exactly the reviewed12-file
+cumulative lifecycle/fixes/docs delta; no workflow/feature/authority change.
+Local Python170=167PASS+3SKIP, public452source/0release, BOM/inventory/diff/secret
+checks passed before publication. Each uploaded blob and resulting tree matched.
+
+Sole automatic run40639167390 / CI750 attempt1 completed FAILURE. Exact-source
+query returns one run; PR88 still has that source/merge. All eight complete logs
+retrieved and examined, each contains exact source and tested merge and terminal
+cleanup; no partial-log success inference. Terminal results/job IDs:
+- Core122653013106 SUCCESS;
+- Ubuntu122653013055 SUCCESS;
+- Foundation122653013184 FAILURE;
+- Live122653013145 SUCCESS;
+- Recovery122653013063 SUCCESS;
+- Runtime122653012670 SUCCESS;
+- Success122653013104 SUCCESS;
+- strict aggregate122663175138 FAILURE.
+Aggregate records all seven partition outputs on the exact merge and correctly
+requires every partition SUCCESS. No overall GREEN or all33-old-suite PASS.
+
+Core native evidence: actual lifecycle split8 plus legacy5 PASS, including valid/
+missing/corrupt/foreign/conflicting bytes, resolver checks and one-layout-read
+assertions. Updated Shutdown49 PASS; Desktop6394, Instance30, Maintenance128,
+old backup actual restore/rollback/launchers and prior Repair/Restore suites PASS.
+Real short/long alias regression executed (not SKIP). Clean build identity
+0.2.2+a153d4af4323d21eb9d0c7060a9822151967132e; both PS5.1/PS7 icon fixtures
+PASS. Downstream Python154=152PASS+2SKIP; public452source/45release PASS.
+Recovery6 and Live1 complete including their nested suites; Runtime35 plus
+refusals and Success40/fresh-process refusal2 PASS. All40 success diagnostic
+records match their expected state/publication flags. Ubuntu26/16/13 and
+isolated provisioning checks PASS.
+
+Foundation completed17 suites, then failed in suite18
+InstallerPendingPublicationTests: exact durable metadata bytes renamed without
+replacement (Check-Publication helper line28; assertion call lines102-103).
+No pending-publication scenario reached its PASS marker. Remaining eight
+Foundation suites NOT_RUN; the failed suite is not counted as passed.
+Bounded exact-source diagnosis: fixture extracts actual body at InstallDir and
+sets env:LOCALAPPDATA to its synthetic case (line39), but lacks a fixture
+Get-ProGoInstallerLayout adapter. Body now uses the verified production
+KnownFolder layout, so reconciliation/Stop target a different root from the
+fixture pending metadata. The preceding reached-Stop/dispose assertion passed;
+its following expected synthetic rename assertion failed. Actual selected root
+is not logged; target mismatch is exact-source reasoning, not a recorded path
+observation or evidence of a production File.Move defect.
+Audit of all six body-only consumers: four have the explicit adapter;
+InstallerPendingPublicationTests and InstallerStartupFailureTests lack it.
+The latter is a source-identified pending integration gap, NOT an observed
+CI750 failure because execution stopped earlier. No test/production correction
+or blind rerun made. Next bounded review should address these two fixture
+adapters while preserving every assertion, scenario, proof and deadline.
+
+Runner-only ZIP740876bytes, SHA256
+fcb188ca361191a921475b017a3dc13aaa5aab17fa07b937ad1b39179aff517c.
+All upload/prune steps SKIPPED; artifact query returns zero. Overall CI FAILURE
+means no complete accepted candidate or PC delivery. No rerun749/750, duplicate,
+dispatch, merge, release, PC/network/machine-ACL or Program Files action.
+Different-volume identity, isolated access-denied/ACL restoration, late helper
+retry/staged self-contained elevated uninstall/ARP and Diagnostics VERSION
+remain subsequent gates. Historical UNKNOWN and previous CI results unchanged.
+This result/diagnosis record is local-only after all eight logs; no second
+publication or source change during the freeze.
+
 ## Local review87387da corrections; native execution still pending
 
 Bounded continuation from87387da047e3fe2708635d7141c8662633d03912,
