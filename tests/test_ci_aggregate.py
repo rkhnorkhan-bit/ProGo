@@ -2,6 +2,10 @@ import copy
 import hashlib
 import importlib.util
 import pathlib
+import json
+import os
+import subprocess
+import sys
 import re
 import unittest
 
@@ -11,7 +15,7 @@ GATE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GATE)
 
 
-PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests', 'installer-recovery-input-tests', 'installer-runtime-tests', 'installer-success-tests')
+PARTITIONS = ('vpn-server-test', 'windows-build', 'installer-tests', 'installer-live-tests', 'installer-recovery-tests', 'installer-recovery-input-tests', 'installer-runtime-tests', 'installer-success-tests', 'windows-relay-tests')
 
 
 class AggregateTests(unittest.TestCase):
@@ -25,6 +29,49 @@ class AggregateTests(unittest.TestCase):
 
     def test_all_exact_success(self):
         GATE.validate(self.needs, self.sha)
+
+    def test_prerequisite_scope_refuses_incomplete_or_non_exact_results(self):
+        required = tuple(name for name in PARTITIONS if name != 'windows-build')
+        self.assertEqual(GATE.PREREQUISITES, required)
+        jobs = {name: self.needs[name] for name in required}
+        GATE.validate_prerequisites(jobs, self.sha)
+        for name in required:
+            for state in ('failure', 'cancelled', 'skipped', 'in_progress', None):
+                changed = copy.deepcopy(jobs); changed[name]['result'] = state
+                with self.subTest(job=name, state=state), self.assertRaises(ValueError):
+                    GATE.validate_prerequisites(changed, self.sha)
+            for sha in (None, '', 'b' * 40, self.sha.upper()):
+                changed = copy.deepcopy(jobs); changed[name]['outputs']['tested_sha'] = sha
+                with self.subTest(job=name, sha=sha), self.assertRaises(ValueError):
+                    GATE.validate_prerequisites(changed, self.sha)
+            changed = copy.deepcopy(jobs); del changed[name]
+            with self.assertRaises(ValueError): GATE.validate_prerequisites(changed, self.sha)
+            changed = copy.deepcopy(jobs); del changed[name]['outputs']['tested_sha']
+            with self.assertRaises(ValueError): GATE.validate_prerequisites(changed, self.sha)
+        for extra in ('unapproved', 'windows-build'):
+            with self.assertRaises(ValueError):
+                GATE.validate_prerequisites({**jobs, extra: self.needs['windows-build']}, self.sha)
+        with self.assertRaises(ValueError): GATE.validate(jobs, self.sha)
+
+    def test_consumed_cli_scopes_fail_closed(self):
+        for args, required in (([], PARTITIONS), (['--prerequisites'], GATE.PREREQUISITES)):
+            jobs = {name: self.needs[name] for name in required}
+            vectors = [(jobs, 0)]
+            for state in ('skipped', 'cancelled'):
+                changed = copy.deepcopy(jobs); changed['windows-relay-tests']['result'] = state
+                vectors.append((changed, 1))
+            changed = copy.deepcopy(jobs); changed['windows-relay-tests']['outputs']['tested_sha'] = 'b' * 40
+            vectors.append((changed, 1))
+            changed = copy.deepcopy(jobs); del changed['windows-relay-tests']
+            vectors.append((changed, 1))
+            vectors.append(({**jobs, 'extra': jobs['windows-relay-tests']}, 1))
+            for needs, code in vectors:
+                env = dict(os.environ, PROGO_EXPECTED_SHA=self.sha, PROGO_NEEDS_JSON=json.dumps(needs))
+                result = subprocess.run([sys.executable, str(SPEC.origin), *args], env=env,
+                                        capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertNotIn(self.sha, result.stdout + result.stderr)
+                self.assertIn('PASS' if code == 0 else 'FAIL', result.stdout + result.stderr)
 
     def test_any_non_success(self):
         for name in PARTITIONS:
@@ -125,7 +172,7 @@ class PartitionLayoutTests(unittest.TestCase):
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Recovery\n'), 1)
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition RecoveryInput\n'), 1)
         self.assertEqual(workflow.count('-Suite Installer -InstallerPartition Live'), 1)
-        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests]', workflow)
+        self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests, windows-relay-tests]', workflow)
         self.assertEqual(workflow.count('  installer-recovery-tests:\n'), 1)
         self.assertEqual(workflow.count('  installer-recovery-input-tests:\n'), 1)
         self.assertIn("tests\\InstallerLegacySourceCaptureTests.ps1'", self.text)
@@ -265,9 +312,43 @@ def require_workflow_contract(text):
     for call in ('.\\scripts\\Build-ProGo.ps1', '.\\tests\\InstallerSuccessBootstrap.ps1'):
         if call not in success or (call.endswith('InstallerSuccessBootstrap.ps1') and text.count(call) != 1):
             raise ValueError('Success host self-contained bootstrap differs')
+    relay = re.search(r'^  windows-relay-tests:\n(.*?)(?=^  [a-z][a-z0-9-]*:|\Z)', text, re.M | re.S).group(1)
+    build = re.search(r'^  windows-build:\n(.*?)(?=^  [a-z][a-z0-9-]*:|\Z)', text, re.M | re.S).group(1)
+    prerequisites = tuple(name for name in PARTITIONS if name != 'windows-build')
+    if ('needs: [' + ', '.join(prerequisites) + ']') not in build.split('    steps:', 1)[0]:
+        raise ValueError('Build prerequisite set differs')
+    if 'if:' in build.split('    steps:', 1)[0] or 'needs:' in relay or 'continue-on-error:' in text:
+        raise ValueError('Scheduling success dependency bypass')
+    relay_call = '.\\scripts\\Test-HomeVpnRelay.ps1'
+    if text.count(relay_call) != 1 or relay_call not in relay or text.count('actions/setup-python@v5') != 1:
+        raise ValueError('Relay must execute once independently')
+    for token in ('runs-on: windows-latest', 'actions/setup-python@v5', 'python-version: "3.12"'):
+        if token not in relay:
+            raise ValueError('Relay self-contained Windows/Python setup differs')
+    if relay.index('actions/setup-python@v5') > relay.index(relay_call):
+        raise ValueError('Relay setup must precede execution')
+    for token in ('PROGO_EXPECTED_SHA: ${{ github.sha }}', 'PROGO_NEEDS_JSON: ${{ toJSON(needs) }}'):
+        if token not in build.split('    steps:', 1)[0]:
+            raise ValueError('Build prerequisite context differs')
+    guard = 'python .\\scripts\\check_ci_aggregate.py --prerequisites'
+    pack = build.split('      - name: Pack release zip', 1)[1].split('      - name:', 1)[0]
+    if build.count(guard) != 2 or guard not in pack or 'if: success()' not in pack:
+        raise ValueError('Consumed prerequisite guards missing')
+    for scope in ('Build', 'Package'):
+        if "if ($LASTEXITCODE -ne 0) { throw '" + scope + " prerequisites did not pass on the exact tested SHA.' }" not in build:
+            raise ValueError('Prerequisite checker failure ignored')
+    ordered = (guard, '      - name: Repository hygiene and Core build/tests',
+               '      - name: Verify clean checkout build identity',
+               '      - name: Verify icon fixture on Windows PowerShell 5.1',
+               '      - name: Verify icon fixture on PowerShell 7',
+               '      - name: Check public sources and release content', '      - name: Pack release zip')
+    if any(build.index(a) >= build.index(b) for a, b in zip(ordered, ordered[1:])) or pack.index(guard) >= pack.index('Compress-Archive'):
+        raise ValueError('Same-runner validation/package order differs')
+    if 'actions/download-artifact' in text or 'actions/upload-artifact' in relay:
+        raise ValueError('Cross-runner payload transfer introduced')
     gate = text.split('  ci-complete:', 1)[1]
     for token in ('timeout-minutes: 5\n', 'PROGO_EXPECTED_SHA: ${{ github.sha }}',
-                  'PROGO_NEEDS_JSON: ${{ toJSON(needs) }}', 'python3 scripts/check_ci_aggregate.py'):
+                  'PROGO_NEEDS_JSON: ${{ toJSON(needs) }}', '          python3 scripts/check_ci_aggregate.py\n', expected_needs):
         if token not in gate:
             raise ValueError('Strict aggregate invocation differs')
 
@@ -283,6 +364,37 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         driver = (self.root / 'scripts/Test-ProGo.ps1').read_text(encoding='utf-8-sig')
         self.assertIn("[ValidateSet('All', 'Foundation', 'Live', 'Recovery', 'RecoveryInput')]", driver)
         self.assertIn("if ($Suite -ne 'Installer' -and $InstallerPartition -ne 'All') { throw", driver)
+
+    def test_relay_and_package_scheduling_refuses_bypasses(self):
+        for before, after in (
+                ('  windows-relay-tests:', '  wrong-relay-tests:'),
+                ('timeout-minutes: 40', 'timeout-minutes: 41'),
+                ('.\\scripts\\Test-HomeVpnRelay.ps1', '.\\scripts\\wrong.ps1'),
+                ('windows-relay-tests]', 'windows-build]'),
+                ('--prerequisites', '--unknown'),
+                ('python3 scripts/check_ci_aggregate.py\n', 'python3 scripts/check_ci_aggregate.py --prerequisites\n'),
+                ("if ($LASTEXITCODE -ne 0) { throw 'Package", "if ($false) { throw 'Package"),
+                ('    needs: [vpn-server-test, installer-tests', '    if: ${{ always() }}\n    needs: [vpn-server-test, installer-tests')):
+            with self.subTest(change=before), self.assertRaises(ValueError):
+                require_workflow_contract(self.workflow.replace(before, after, 1))
+        duplicate = self.workflow.replace('          .\\scripts\\Test-HomeVpnRelay.ps1',
+                                          '          .\\scripts\\Test-HomeVpnRelay.ps1\n          .\\scripts\\Test-HomeVpnRelay.ps1', 1)
+        with self.assertRaises(ValueError): require_workflow_contract(duplicate)
+        relay = (self.root / 'scripts/Test-HomeVpnRelay.ps1').read_text(encoding='utf-8-sig')
+        self.assertNotIn('release', relay.lower())
+        for token in ('build\\RelayHarness.exe', 'build\\HomeVpnWizardTests.exe',
+                      'build\\HomeVpnPortableArchiveTests.exe', 'make_vpn_test_token.py',
+                      "python -m unittest discover -s tests -p 'test_*.py' -v"):
+            self.assertIn(token, relay)
+
+    def test_upload_privacy_guards_and_no_payload_download(self):
+        self.assertNotIn('actions/download-artifact', self.workflow)
+        for name, condition in (
+                ('Upload wizard screenshots', 'always()'), ('Upload diagnostics', 'always()'),
+                ('Upload release folder', 'success()'), ('Upload release package', 'success()')):
+            step = self.workflow.split('      - name: ' + name + '\n', 1)[1].split('      - name:', 1)[0]
+            self.assertIn("if: " + condition + " && (github.event.repository.private || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts))", step)
+        self.assertEqual(self.workflow.count('uses: actions/upload-artifact@v4'), 4)
 
     def test_fixture_bodies_and_nested_live_order_are_frozen(self):
         bodies = {name: (self.root / 'tests' / name).read_text(encoding='utf-8-sig') for name in CI728_FIXTURE_SHA256}

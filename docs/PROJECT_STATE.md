@@ -1,3 +1,120 @@
+## Local scheduling-only relay partition correction after CI762 review
+
+Continue clean8851fa848449878671bc1953e80fb1fd5d2378f6,
+tree5502033c839b9b5efaae3c280159eff90739a515, same checkout/branch, sole writer.
+No AGENTS, Git locks or competing source/native processes. CI762 remains run
+CANCELLED/Core CANCELLED/aggregate FAILURE; cancellation reason UNKNOWN, timing
+only consistent with40minutes. This correction does not establish its cause.
+
+Verified Test-HomeVpnRelay.ps1 builds RelayHarness/HomeVpnWizardTests/
+HomeVpnPortableArchiveTests from checkout sources, generates its own token/QR
+fixture and invokes Python discovery. It never consumes the Core release folder.
+Move its unchanged Python3.12 setup and single unchanged script call to independent
+windows-relay-tests/windows-latest/40minutes, with the existing exact checkout SHA
+identity/output pattern. Script, harnesses, cases and deadlines remain unchanged.
+
+windows-build now needs all8 prerequisites (Ubuntu, six Installer partitions,
+Windows relay). Default success dependency semantics skip it on failed/skipped/
+cancelled prerequisites. Consumed strict prerequisite checker requires the exact
+8-job set, SUCCESS and tested_sha == github.sha before Core and again in the Pack
+step before compression. No result/SHA truthiness admission. Final always aggregate
+requires all9 jobs including windows-build and relay on that same SHA; now10 total
+terminal jobs. Both CLI scopes have executable positive/negative tests. Final gate
+cannot substitute prerequisite scope without failing the scheduling contract.
+
+Core build/tests, clean build informational identity, both fresh icon hosts, public
+release-content validation and packaging stay ordered in one windows-build runner;
+its local checked release bytes are packaged, no artifact download or payload handoff.
+Upload privacy guards and existing steps preserved; relay fixture outputs remain
+local to its runner. Existing40/12/5minute limits unchanged; no deadline increase.
+Only workflow, scheduling checker/contracts and this documentation changed.
+Production, native/protocol/binding assertions, shared host and legacy fixtures untouched.
+
+Local Python194=191PASS+3SKIP; public458source0release and diff checks PASS.
+PyYAML parse/acyclic exact needs, unchanged baseline steps/deadlines/privacy and exact
+relay step movement PASS. Relay entrypoint Git/worktree LF/CRLF parity PASS.
+Windows execution/actual job scheduling/package creation NOT_RUN: local pwsh/dotnet/
+mono/csc absent. No push/new CI/dispatch/rerun or real UAC/HKLM/PC/security actions.
+Production activation stays closed; trusted UAC broker remains unfinished. Full local
+unified diff supplied for independent review before any publication.
+
+## CI762 terminal CANCELLED — native fixture correction passed; relay incomplete
+
+One authorized non-force CAS published reviewed local checkpoint
+9544569fb6beff67d39def8ff6509c7707ba93ec/tree00f625d5c2c002052562e9ef48f2d5b464af9459,
+source c9371898eba9e7870001999c78569d9f973be60d, parent exactly expected remote
+4695af62b9f47f80c1b033a84c2fb4371560c089. Tested merge
+70d3c61fac7c809d115fe17c667207eea664c81e has the same reviewed tree; other parent
+4bb336575bb1216d3047bd2b294aeecad9fdd65a. All463 blobs compared before publication:
+only the reviewed native fixture, Python contract and PROJECT_STATE differ.
+Exact HEAD/tree/clean/sole writer/no locks/no AGENTS and active/queued0 rechecked.
+Local Python190=187PASS+3SKIP/public458source0release/diff checks PASS.
+No production/shared-host/legacy change, deadline/assertion/matcher weakening,
+manual dispatch, rerun, duplicate, cancellation request or silent fix.
+
+Automatic pull_request run40746451621, CI762 attempt1: terminal run conclusion
+CANCELLED at2026-10-28 19:15:19UTC /22:15:19 Europe/Istanbul. Seven partitions SUCCESS;
+windows-build CANCELLED; strict Exact-SHA complete CI gate FAILURE. These are
+separate conclusions, not an overall successful CI. All9 full terminal logs saved,
+2054474 UTF-8 bytes, each exact source+merge and cleanup present. Aggregate needs
+contains all8 exact tested merge outputs, seven success and Core cancelled; gate
+correctly refuses. Final exact-source run count1/attempt1 and remote unchanged.
+
+Core main step SUCCESS18:35:09–19:08:29UTC, ending with explicit ProGo Core partition
+PASS. Fresh-child binding3 (install/uninstall/empty), all15 negative protocol vectors,
+known-wrapper/direct positives and external catch/finally probe PASS. Native15 PASS,
+including both write/delete failure and retry paths, foreign/changed typed inventory,
+registry/runtime/shortcut/private-data assertions. Personal18 and Stage10 PASS.
+Four bounded fault diagnostics (registration-before, registry-write, registry-commit,
+registration-after): Code1, CodeNonZero/ExpectedErrorMatched/InstallOkAbsent all true;
+one complete untruncated System.IO.IOException record with exact mode/full ordinal
+message in each. Raw physical console lines and decoded diagnostic/inner records kept.
+These13 previously unpassed native cases and Core downstream are now reached in
+CI762; CI760/761 failures and their historical NOT_REACHED results remain unchanged.
+
+Original33 mandatory suites have exactly33 unique START/PASS pairs (Foundation26,
+Live1, Recovery5, RecoveryInput1). Runtime35 plus empty-snapshot/fresh-process refusal;
+Success40 plus2 fresh-process refusals PASS. Lifecycle8split+5legacy, storage9split+
+5legacy, actual different-volume Install/Uninstall/Repair/Restore and isolated ACL
+refusal/restoration PASS. Restore split reached and completed. Diagnostics32report+
+2helper, Desktop6394, Instance30, Maintenance128, Shutdown49 PASS. Core main also
+completed vault/storage/backup/update/SSH fixtures; icon fixtures Desktop5.1/Core7
+and clean build identity steps SUCCESS. These are isolated CI results, not PC acceptance.
+
+Later IKEv2 relay integration step started19:08:38UTC,
+CANCELLED19:15:03UTC. Its full log ends during actual Admin cleanup retry coverage,
+then only 'The operation was canceled.' No final relay suite success: remaining
+relay/HomeVPN/portable harness completion is NOT_PROVEN. Core job ran18:34:57–
+19:15:09UTC, consistent with unchanged timeout-minutes40. Timeout is an inference
+from timing/configuration, not an independently established cancellation cause:
+exact cancellation initiator/reason UNKNOWN. Check-run/annotations reads are not
+supported by the available GitHub fetch endpoint; no stronger claim from them.
+No blind rerun, deadline increase or product change made.
+
+Post-relay public release-content check SKIPPED; main build/test release folder
+was built, but Pack release zip SKIPPED: ZIP NOT_BUILT, package SHA unavailable,
+upload steps SKIPPED, artifacts0, NOT_DELIVERED. Do not reuse CI759 ZIP/SHA as CI762.
+Production factory stays closed; trusted UAC broker, elevated HKLM/UAC, registry-link
+adversarial execution and real PC acceptance remain unimplemented/unverified.
+No real HKLM/PC/security actions performed by this writer. Historical CI753 inherited
+mismatch and CI755 cancellation remain UNKNOWN. F30/payment/licensing stay deferred.
+
+Evidence directory: /workspace/scratch/4d867f513347/ci762-evidence
+publication.json, metadata.json, verified-summary.json, diagnostic-records.json,
+diagnostic-raw.txt and manifest.json accompany all9 logs. SHA256 inventory:
+
+| Full terminal log | Bytes | SHA256 |
+| --- | ---: | --- |
+| ci-complete.log | 12664 | a1ffdadf3e143034c2d5257e2d1570891cc01bfcbaff110827e8e9ba41a698ab |
+| installer-live-tests.log | 32824 | 0460ca962036e1cb3c096fd475b95869fd69bc555efd50339cae9ba16881a6d7 |
+| installer-recovery-input-tests.log | 40543 | 7c52bd64c146dfde04315cad91ebee721ad5bd8dce9639e3a1837b32afa2c800 |
+| installer-recovery-tests.log | 26630 | 2a37487334c8140212536bdcce09692b3500c4e24d8d2a2b310fc54fd867767a |
+| installer-runtime-tests.log | 23374 | 442fea8066dbc5a965b4914761bd09c238f06c93075e2546f731b845b13be6c0 |
+| installer-success-tests.log | 50040 | 3ac19e4db0981ffebae492c9bcd91bc82a8394df4494e305cc836375cfb4d978 |
+| installer-tests.log | 65162 | 37375d3ee1feb5a8b875bc98d87e63e01c793984028707c9a6aa847be67c39ed |
+| vpn-server-test.log | 56259 | 1895f9868185bc6c3021bf79a0b7286b8f9ca78a3df5088a6de6e47daa29df42 |
+| windows-build.log | 1746978 | 57fdee61a7a1a04fdbdc45613751e7e01a0cf9b5cc777777228c17d1f7e4d523 |
+
 ## Local wrapper named argument binding correction after 6cdbb478 review
 
 Continue clean6cdbb478cb77b676e1067a66e51a5391b17036b0,

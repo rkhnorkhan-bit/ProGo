@@ -49,7 +49,7 @@ jobs:
       - name: Provision isolated VPN and test invitation restrictions
         run: sudo --preserve-env=GITHUB_ACTIONS python3 tests/home_vpn_provision_smoke.py
 
-  windows-build:
+  windows-relay-tests:
     runs-on: windows-latest
     timeout-minutes: 40
     outputs:
@@ -65,6 +65,43 @@ jobs:
           $tested = (git rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
           "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Set up Python for relay tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: IKEv2 relay integration tests on .NET Framework
+        shell: powershell
+        run: |
+          .\scripts\Test-HomeVpnRelay.ps1
+
+  windows-build:
+    needs: [vpn-server-test, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests, windows-relay-tests]
+    env:
+      PROGO_EXPECTED_SHA: ${{ github.sha }}
+      PROGO_NEEDS_JSON: ${{ toJSON(needs) }}
+    runs-on: windows-latest
+    timeout-minutes: 40
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record exact tested commit
+        id: identity
+        shell: powershell
+        run: |
+          $tested = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tested -cne $env:GITHUB_SHA) { throw 'Tested checkout identity mismatch' }
+          "sha=$tested" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Require successful prerequisites on exact tested commit
+        shell: powershell
+        run: |
+          python .\scripts\check_ci_aggregate.py --prerequisites
+          if ($LASTEXITCODE -ne 0) { throw 'Build prerequisites did not pass on the exact tested SHA.' }
 
       - name: Repository hygiene and Core build/tests
         shell: powershell
@@ -106,16 +143,6 @@ jobs:
           & $core.Source -NoProfile -File .\tests\BuildIconCompatibilityTests.ps1 -ExpectedHost Core7
           if ($LASTEXITCODE -ne 0) { throw 'PowerShell 7 icon fixture failed.' }
 
-      - name: Set up Python for relay tests
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: IKEv2 relay integration tests on .NET Framework
-        shell: powershell
-        run: |
-          .\scripts\Test-HomeVpnRelay.ps1
-
       - name: Check public sources and release content
         shell: powershell
         run: |
@@ -138,6 +165,8 @@ jobs:
         if: success()
         shell: powershell
         run: |
+          python .\scripts\check_ci_aggregate.py --prerequisites
+          if ($LASTEXITCODE -ne 0) { throw 'Package prerequisites did not pass on the exact tested SHA.' }
           if (Test-Path ProGo-release.zip) { Remove-Item ProGo-release.zip -Force }
           Compress-Archive -Path .\release\* -DestinationPath .\ProGo-release.zip -Force
           Get-Item .\ProGo-release.zip | Format-List FullName,Length
@@ -329,7 +358,7 @@ jobs:
     name: Exact-SHA complete CI gate
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests]
+    needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests, windows-relay-tests]
     if: ${{ always() }}
     steps:
       - uses: actions/checkout@v4
