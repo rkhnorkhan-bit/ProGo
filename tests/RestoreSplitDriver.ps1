@@ -1,10 +1,18 @@
-param([string]$Scripts, [string]$Fixture, [string]$Mode)
+param([string]$Scripts, [string]$Fixture, [string]$Mode, [string]$StorageRoot)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Requires isolated Windows CI' }
+if (-not [string]::IsNullOrWhiteSpace($StorageRoot)) {
+    $StorageRoot = [IO.Path]::GetFullPath($StorageRoot).TrimEnd([char]'\')
+    $leaf = [IO.Path]::GetFileName($StorageRoot)
+    if ([IO.Path]::GetDirectoryName($StorageRoot) -ine [IO.Path]::GetPathRoot($StorageRoot) -or
+        $leaf -cnotmatch '^ProGo-storage-fixture-[a-f0-9]{32}$' -or
+        ([IO.File]::GetAttributes($StorageRoot) -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+        [IO.File]::ReadAllText((Join-Path $StorageRoot 'owner.txt')) -cne $leaf) { throw 'Storage fixture root is not owned.' }
+}
 $fixture = [IO.Path]::GetFullPath($Fixture)
 if ([IO.Path]::GetDirectoryName($fixture) -ine [IO.Path]::GetFullPath($env:TEMP).TrimEnd([char]'\') -or [IO.Path]::GetFileName($fixture) -cnotmatch '^ProGo-split-restore-[a-f0-9]{32}$') { throw 'Restore fixture escaped its owned root.' }
-$dataBase = Join-Path $fixture 'data'; $programBase = Join-Path $fixture 'programs'
+$dataBase = Join-Path $fixture 'data'; $programBase = if ($StorageRoot) { Join-Path $StorageRoot ('restore-' + $Mode) } else { Join-Path $fixture 'programs' }
 $runtime = Join-Path $programBase 'ProGo'; $data = Join-Path $dataBase 'ProGo'
 $BackupDir = Join-Path $fixture 'backup'; $WaitPid = 0; $NoLaunch = $true
 $Scope = if ($Mode -eq 'data') { 'Data' } elseif ($Mode -in @('all','fault-all','no-consent')) { 'All' } else { 'Program' }

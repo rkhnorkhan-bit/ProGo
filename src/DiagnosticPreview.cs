@@ -17,7 +17,11 @@ namespace ProGo
         }
         public static void ShowInstalled(string root)
         {
-            using (var form = new DiagnosticPreviewForm(root, null, readInstalledVersion: true)) form.ShowDialog();
+            ShowInstalledLayout(root, root);
+        }
+        public static void ShowInstalledLayout(string root, string runtimeRoot)
+        {
+            using (var form = new DiagnosticPreviewForm(root, null, readInstalledVersion: true, runtimeRoot: runtimeRoot)) form.ShowDialog();
         }
     }
 
@@ -37,7 +41,7 @@ namespace ProGo
             internal DiagnosticReport Report;
             internal bool Cancelled, Failed, Saved;
         }
-        private readonly string root, version;
+        private readonly string root, version, runtimeRoot;
         private readonly bool readInstalledVersion;
         private readonly Action<string> copy;
         private readonly Func<string, bool> legacySave;
@@ -60,11 +64,11 @@ namespace ProGo
         internal bool IsBusy { get { return active != null; } }
         internal bool ReportReady { get { return report != null; } }
 
-        // The installed PowerShell helper uses the same root/version path. No
+        // Installed callers provide data and optional runtime VERSION roots. No
         // log read is performed while constructing or showing the empty window.
         internal DiagnosticPreviewForm(string root, string version, Action<string> copy = null,
-            Func<IWin32Window, string> chooseSave = null, Action<string, CancellationToken> beforeIo = null, bool readInstalledVersion = false)
-            : this(null, root, version, copy, null, chooseSave, beforeIo, readInstalledVersion) { }
+            Func<IWin32Window, string> chooseSave = null, Action<string, CancellationToken> beforeIo = null, bool readInstalledVersion = false, string runtimeRoot = null)
+            : this(null, root, version, copy, null, chooseSave, beforeIo, readInstalledVersion, runtimeRoot) { }
 
         // Existing snapshot callers retain their reviewed immutable report. The
         // optional legacy test writer runs on the save worker, never on the owner.
@@ -74,9 +78,9 @@ namespace ProGo
         { if (report == null) throw new ArgumentNullException("report"); return report; }
 
         private DiagnosticPreviewForm(DiagnosticReport report, string root, string version, Action<string> copy,
-            Func<string, bool> legacySave, Func<IWin32Window, string> chooseSave, Action<string, CancellationToken> beforeIo, bool readInstalledVersion = false)
+            Func<string, bool> legacySave, Func<IWin32Window, string> chooseSave, Action<string, CancellationToken> beforeIo, bool readInstalledVersion = false, string runtimeRoot = null)
         {
-            this.report = report; this.root = root; this.version = version; this.copy = copy; this.readInstalledVersion = readInstalledVersion;
+            this.report = report; this.root = root; this.version = version; this.copy = copy; this.readInstalledVersion = readInstalledVersion; this.runtimeRoot = runtimeRoot ?? root;
             this.legacySave = legacySave; this.chooseSave = chooseSave; this.beforeIo = beforeIo;
             Work = BuildWork = SaveWork = Task.FromResult(false); dispatcher.CreateControl();
             Text = "Передать диагностику · ProGo"; ClientSize = new Size(820, 600); MinimumSize = new Size(700, 500);
@@ -185,7 +189,7 @@ namespace ProGo
                                 string snapshotVersion = version;
                                 if (readInstalledVersion) {
                                     Probe("version-read", operation.Token); operation.Token.ThrowIfCancellationRequested();
-                                    snapshotVersion = ReadInstalledVersion(root, operation.Token);
+                                    snapshotVersion = ReadInstalledVersion(runtimeRoot, operation.Token);
                                 }
                                 return new Outcome { Report = DiagnosticReport.Build(root, snapshotVersion, operation.Token) };
                             }

@@ -26,10 +26,12 @@ $timer.Interval = 100
 $script:seen = $false; $script:probeError = $null; $script:copyReport = $false; $script:previewText = ''
 try {
     New-Item -ItemType Directory $work | Out-Null
-    [IO.File]::WriteAllText((Join-Path $work 'VERSION'), '0.2.2')
-    [IO.File]::WriteAllText((Join-Path $work 'update.log'), 'TRANSACTION FAILED: password=private-helper-fixture')
-    $InstallDir = $work
-    $DataRoot = $work
+    $InstallDir = Join-Path $work 'runtime'; $DataRoot = Join-Path $work 'data'
+    [void][IO.Directory]::CreateDirectory($InstallDir); [void][IO.Directory]::CreateDirectory($DataRoot)
+    [IO.File]::WriteAllText((Join-Path $InstallDir 'VERSION'), '0.2.2')
+    [IO.File]::WriteAllText((Join-Path $DataRoot 'VERSION'), '0.0.1')
+    [IO.File]::WriteAllText((Join-Path $DataRoot 'update.log'), 'TRANSACTION FAILED: password=private-helper-fixture')
+    [IO.File]::WriteAllText((Join-Path $InstallDir 'update.log'), 'TRANSACTION OK: private-runtime-fixture')
     $tokens = $null; $errors = $null
     $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $Scripts 'Update-ProGo.Core.ps1'), [ref]$tokens, [ref]$errors)
     $fn = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Copy-LogToClipboard' }, $false)

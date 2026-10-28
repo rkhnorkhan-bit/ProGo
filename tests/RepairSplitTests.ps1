@@ -1,18 +1,28 @@
-param([string]$Scripts)
+param([string]$Scripts, [string]$StorageRoot)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: separate-root repair requires isolated Windows CI'; return }
+if (-not [string]::IsNullOrWhiteSpace($StorageRoot)) {
+    $StorageRoot = [IO.Path]::GetFullPath($StorageRoot).TrimEnd([char]'\')
+    $leaf = [IO.Path]::GetFileName($StorageRoot)
+    if ([IO.Path]::GetDirectoryName($StorageRoot) -ine [IO.Path]::GetPathRoot($StorageRoot) -or
+        $leaf -cnotmatch '^ProGo-storage-fixture-[a-f0-9]{32}$' -or
+        ([IO.File]::GetAttributes($StorageRoot) -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+        [IO.File]::ReadAllText((Join-Path $StorageRoot 'owner.txt')) -cne $leaf) { throw 'Storage fixture root is not owned.' }
+}
 $root = Join-Path $env:TEMP ('ProGo-split-repair-' + [guid]::NewGuid().ToString('N'))
 $driver = Join-Path $PSScriptRoot 'RepairSplitDriver.ps1'
 $payload = Join-Path (Split-Path -Parent $Scripts) 'release'
-$dataBase = Join-Path $root 'data'; $programBase = Join-Path $root 'programs'
+$dataBase = Join-Path $root 'data'; $programBase = if ($StorageRoot) { Join-Path $StorageRoot 'repair' } else { Join-Path $root 'programs' }
 $data = Join-Path $dataBase 'ProGo'; $runtime = Join-Path $programBase 'ProGo'
 $foreign = Join-Path $root 'foreign'
 $script:repairUnsettled = $false
+$storageSuitePassed = $false
 function Run-Repair([string]$Mode) {
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
     $info.Arguments = '-NoProfile -NonInteractive -File "' + $driver + '" -Scripts "' + $Scripts + '" -Fixture "' + $root + '" -Payload "' + $payload + '" -Mode ' + $Mode
+    if ($StorageRoot) { $info.Arguments += ' -StorageRoot "' + $StorageRoot + '"' }
     $info.UseShellExecute = $false; $info.CreateNoWindow = $true
     $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
     $child = [Diagnostics.Process]::Start($info)
@@ -76,5 +86,6 @@ try {
     $result = Run-Repair 'conflict'
     if ($result.ExitCode -eq 0 -or -not $result.ErrorText.Contains('Recovery layout requires directories.') -or [IO.File]::ReadAllText($runtime) -cne 'conflicting file') { throw 'Conflicting runtime root was accepted.' }
     Check-Private
+    $storageSuitePassed = $true
     Write-Host 'PASS: synthetic separate-root actual repair and rollback'
-} finally { if (-not $script:repairUnsettled -and [IO.Directory]::Exists($root)) { Remove-Item -LiteralPath $root -Recurse -Force } }
+} finally { if (-not $script:repairUnsettled -and (-not $StorageRoot -or $storageSuitePassed) -and [IO.Directory]::Exists($root)) { Remove-Item -LiteralPath $root -Recurse -Force } }

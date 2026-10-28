@@ -1,7 +1,15 @@
-﻿param([string]$Scripts)
+﻿param([string]$Scripts, [string]$StorageRoot)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: install lifecycle requires isolated Windows CI'; return }
+if (-not [string]::IsNullOrWhiteSpace($StorageRoot)) {
+    $StorageRoot = [IO.Path]::GetFullPath($StorageRoot).TrimEnd([char]'\')
+    $leaf = [IO.Path]::GetFileName($StorageRoot)
+    if ([IO.Path]::GetDirectoryName($StorageRoot) -ine [IO.Path]::GetPathRoot($StorageRoot) -or
+        $leaf -cnotmatch '^ProGo-storage-fixture-[a-f0-9]{32}$' -or
+        ([IO.File]::GetAttributes($StorageRoot) -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+        [IO.File]::ReadAllText((Join-Path $StorageRoot 'owner.txt')) -cne $leaf) { throw 'Storage fixture root is not owned.' }
+}
 $repo = Split-Path -Parent $Scripts
 $payload = Join-Path $repo 'release'
 $work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-lifecycle-' + [guid]::NewGuid().ToString('N'))
@@ -21,6 +29,38 @@ function New-LifecycleDriver([string]$source, [string]$boundary, [string]$adapte
     # do not reproduce install, rollback, journal, shortcut or uninstall logic.
     $text = $text.Insert($statement[0].Extent.StartOffset, $adapters + "`r`n")
     [IO.File]::WriteAllText($destination, $text, (New-Object Text.UTF8Encoding($true)))
+}
+$script:storageAclSettled = $true
+$storageSuitePassed = $false
+function Invoke-LifecycleInstall {
+    if ($Fixture.Mode -cne 'access-denied') { & $installDriver -PayloadDirectory $payload -NoStartup; return }
+    $path = Join-Path $Fixture.Runtime 'VERSION'
+    $sections = [Security.AccessControl.AccessControlSections]'Access, Owner, Group'
+    $original = [IO.File]::GetAccessControl($path, $sections).GetSecurityDescriptorSddlForm($sections)
+    $versionHash = (Get-FileHash -LiteralPath $path).Hash
+    $probe = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None); $probe.Dispose()
+    $script:storageAclSettled = $false
+    try {
+        $acl = [IO.File]::GetAccessControl($path)
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        try { $sid = $identity.User } finally { $identity.Dispose() }
+        $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, [Security.AccessControl.FileSystemRights]::WriteData, [Security.AccessControl.AccessControlType]::Deny)
+        [void]$acl.AddAccessRule($rule); [IO.File]::SetAccessControl($path, $acl)
+        $denied = $false; $probe = $null
+        try { $probe = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
+        catch { $cause = $_.Exception.GetBaseException(); $denied = $cause -is [UnauthorizedAccessException] -and ($cause.HResult -band 65535) -eq 5 }
+        finally { if ($null -ne $probe) { $probe.Dispose() } }
+        Check-Lifecycle ($denied -and (Get-FileHash -LiteralPath $path).Hash -ceq $versionHash) 'real WriteData access-denied 5 with readable original bytes'
+        & $installDriver -PayloadDirectory $payload -NoStartup
+    } finally {
+        # Restore only this created file's DACL; owner/group must also remain exact.
+        $restore = New-Object Security.AccessControl.FileSecurity
+        $restore.SetSecurityDescriptorSddlForm($original, [Security.AccessControl.AccessControlSections]::Access)
+        [IO.File]::SetAccessControl($path, $restore)
+        Check-Lifecycle ([IO.File]::GetAccessControl($path, $sections).GetSecurityDescriptorSddlForm($sections) -ceq $original) 'exact fixture ACL restored'
+        $probe = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None); $probe.Dispose()
+        $script:storageAclSettled = $true
+    }
 }
 $installAdapters = @'
 function Get-ProGoInstallerLayout {
@@ -50,6 +90,7 @@ function Write-ProGoInstallerRuntimeBytes($Source, $Target) {
         throw 'Synthetic lifecycle partial write fault'
     }
     $Source.CopyTo($Target); $Target.Flush($true)
+    if ($Fixture.Mode -ceq 'access-denied') { $Fixture.PublishedHash = Get-ProGoInstallerStreamHash $Target }
 }
 function Initialize-ProGoInstallerShortcuts($RuntimeRoot, $WasInstalled, $NoStartup, $NoStartMenu) {
     Check-Lifecycle $NoStartup 'personal candidate requests NoStartup'
@@ -122,9 +163,11 @@ try {
     }
     $installDriver = Join-Path $work 'InstallConsumer.ps1'
     New-LifecycleDriver (Join-Path $Scripts 'Install-ProGo.ps1') '$InstallDir' $installAdapters $installDriver
-    foreach ($mode in @('complete', 'keep-data', 'write-fault', 'self-check-fault', 'changed-runtime', 'pending', 'stop-fault', 'delete-fault')) {
+    $modes = @('complete', 'keep-data', 'write-fault', 'self-check-fault', 'changed-runtime', 'pending', 'stop-fault', 'delete-fault')
+    if ($StorageRoot) { $modes += 'access-denied' }
+    foreach ($mode in $modes) {
         $case = Join-Path $work $mode
-        $Fixture = @{ Mode = $mode; DataBase = (Join-Path $case 'data'); ProgramBase = (Join-Path $case 'programs'); Programs = (Join-Path $case 'menu'); Startup = (Join-Path $case 'startup'); Enters = 0; Disposes = 0; Writes = 0; Deletes = 0; Prompts = 0; LayoutReads = 0 }
+        $Fixture = @{ Mode = $mode; DataBase = (Join-Path $case 'data'); ProgramBase = $(if ($StorageRoot) { Join-Path $StorageRoot $mode } else { Join-Path $case 'programs' }); Programs = (Join-Path $case 'menu'); Startup = (Join-Path $case 'startup'); Enters = 0; Disposes = 0; Writes = 0; Deletes = 0; Prompts = 0; LayoutReads = 0 }
         $Fixture.Data = Join-Path $Fixture.DataBase 'ProGo'
         $Fixture.Runtime = Join-Path $Fixture.ProgramBase 'ProGo'
         foreach ($dir in @($Fixture.Data, $Fixture.Runtime, $Fixture.Programs, $Fixture.Startup)) { [void][IO.Directory]::CreateDirectory($dir) }
@@ -139,20 +182,40 @@ try {
         $oldExe = Join-Path $Fixture.Runtime 'ProGo.exe'
         [IO.File]::Copy((Join-Path $payload 'ProGo.exe'), $oldExe)
         [IO.File]::WriteAllText((Join-Path $Fixture.Runtime 'VERSION'), '0.2.1')
+        if ($mode -ceq 'access-denied') { [IO.File]::AppendAllText($oldExe, 'synthetic prior-image overlay') }
         $oldHash = (Get-FileHash -LiteralPath $oldExe).Hash
         $failed = $false
-        try { & $installDriver -PayloadDirectory $payload -NoStartup } catch {
+        try { Invoke-LifecycleInstall } catch {
             $failed = $true
-            if ($mode -notin @('write-fault', 'self-check-fault')) { throw }
-            $expected = if ($mode -ceq 'write-fault') { 'Synthetic lifecycle partial write fault' } else { 'Installed installer self-check failed.' }
-            Check-Lifecycle ($_.Exception.ToString().Contains($expected)) 'expected injected install failure'
+            if ($mode -notin @('write-fault', 'self-check-fault', 'access-denied')) { throw }
+            if ($mode -ceq 'access-denied') {
+                $cause = $_.Exception.GetBaseException()
+                Check-Lifecycle ($cause -is [UnauthorizedAccessException] -and ($cause.HResult -band 65535) -eq 5 -and $Fixture.Writes -eq 1 -and $Fixture.PublishedHash -cne $oldHash) 'actual installer denied VERSION only after changed EXE publication'
+            } else {
+                $expected = if ($mode -ceq 'write-fault') { 'Synthetic lifecycle partial write fault' } else { 'Installed installer self-check failed.' }
+                Check-Lifecycle ($_.Exception.ToString().Contains($expected)) 'expected injected install failure'
+            }
         }
-        Check-Lifecycle ($failed -eq ($mode -in @('write-fault', 'self-check-fault'))) 'actual install outcome'
+        Check-Lifecycle ($failed -eq ($mode -in @('write-fault', 'self-check-fault', 'access-denied'))) 'actual install outcome'
         if ($failed) {
             Check-Lifecycle ((Get-FileHash -LiteralPath $oldExe).Hash -ceq $oldHash -and [IO.File]::ReadAllText((Join-Path $Fixture.Runtime 'VERSION')) -ceq '0.2.1') 'actual rollback restores original bytes'
             $journals = @(Get-ChildItem -LiteralPath (Join-Path $Fixture.Runtime 'backups') -Directory -Filter 'installer-journal-*')
-            Check-Lifecycle ($journals.Count -eq 1 -and (Test-ProGoInstallerRollbackOutcome $journals[0].FullName $Fixture.Runtime)) 'rollback terminal and snapshot proof'
-            Assert-ProGoInstallerNoPendingJournal $Fixture.Runtime
+            if ($mode -ceq 'access-denied') {
+                Check-Lifecycle ($journals.Count -eq 1 -and @(Get-ChildItem -LiteralPath $journals[0].FullName -Filter 'admit-*.json').Count -eq 2 -and
+                    -not [IO.File]::Exists((Join-Path $journals[0].FullName 'rolled-back.json'))) 'denied open retains two admissions without false rollback terminal'
+                $admission = Read-ProGoInstallerJson (Join-Path $journals[0].FullName 'admit-000000.json')
+                $inventory = $admission.Inventory | ConvertFrom-Json
+                $snapshots = @(Get-ChildItem -LiteralPath (Join-Path $Fixture.Runtime 'backups') -Directory | Where-Object { $_.Name -cmatch '^installer-[a-f0-9]{32}$' })
+                Check-Lifecycle ($snapshots.Count -eq 1) 'denial retains recovery snapshot'
+                $backup = [pscustomobject]@{ InstallDirectory = $Fixture.Runtime; Directory = $snapshots[0].FullName; ManifestHash = $inventory.SnapshotHash; Entries = @($inventory.Files) }
+                Assert-ProGoInstallerSnapshotMaterial $backup; Assert-ProGoInstallerRuntime $backup -Original
+                $blocked = $false
+                try { Assert-ProGoInstallerNoPendingJournal $Fixture.Runtime } catch { $blocked = $_.Exception.Message -ceq 'Installer pending journal requires verified recovery before a new installation.' }
+                Check-Lifecycle $blocked 'denied-open pending evidence still blocks replay'
+            } else {
+                Check-Lifecycle ($journals.Count -eq 1 -and (Test-ProGoInstallerRollbackOutcome $journals[0].FullName $Fixture.Runtime)) 'rollback terminal and snapshot proof'
+                Assert-ProGoInstallerNoPendingJournal $Fixture.Runtime
+            }
             Check-Lifecycle (-not [IO.File]::Exists((Join-Path $Fixture.Runtime 'ProGo.ico'))) 'rollback restores absent leaves'
         } else {
             $inventory = @(Get-ProGoUninstallInventory $Fixture.Runtime)
@@ -257,7 +320,10 @@ try {
         Check-Lifecycle ($Fixture.Enters -eq 1 -and $Fixture.Disposes -eq 1 -and $Fixture.Prompts -eq 0) 'legacy lease released and no implicit data removal'
         Write-Host ('PASS: actual legacy uninstall ' + $mode)
     }
-    Write-Host 'Installer lifecycle tests PASS: 8 split + 5 legacy; different-volume/access-denied NOT_RUN'
+    if ($StorageRoot) { Write-Host 'Installer lifecycle storage cases PASS: 9 split + 5 legacy; real ACL restored' }
+    else { Write-Host 'Installer lifecycle tests PASS: 8 split + 5 legacy; different-volume/access-denied NOT_RUN' }
+    $storageSuitePassed = $true
 } finally {
-    if ([IO.Directory]::Exists($work)) { Remove-Item -LiteralPath $work -Recurse -Force }
+    if ($script:storageAclSettled -and (-not $StorageRoot -or $storageSuitePassed) -and [IO.Directory]::Exists($work)) { Remove-Item -LiteralPath $work -Recurse -Force }
+    elseif (-not $script:storageAclSettled -or ($StorageRoot -and -not $storageSuitePassed)) { Write-Warning ('Storage/ACL fixture evidence retained: ' + $work) }
 }

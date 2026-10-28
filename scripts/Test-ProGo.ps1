@@ -286,6 +286,7 @@ if ($Suite -eq 'Installer') {
 & (Join-Path $Root 'tests\RepairSplitTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\InstallerLifecycleTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\RestoreSplitTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\InstallerStorageTests.ps1') -Scripts $PSScriptRoot
 
 foreach ($scriptName in @("Update-ProGo.ps1", "Update-ProGo.Core.ps1", "Restore-ProGoBackup.ps1", "Show-ProGo.ps1", "Uninstall-ProGo.ps1", "Start-ProGo.ps1", "Repair-ProGo.ps1", "Maintenance-ProGo.ps1", "BackupRetention-ProGo.ps1", "BackupIntegrity-ProGo.ps1", "Log-ProGo.ps1", "Diagnostics-ProGo.ps1", "Measure-RescueProGo.ps1", "Shortcuts-ProGo.ps1", "Layout-ProGo.ps1", "Firewall-ProGo.ps1")) {
     $releaseScript = Join-Path $Root ("release\scripts\" + $scriptName)

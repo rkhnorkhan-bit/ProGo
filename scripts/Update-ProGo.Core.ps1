@@ -105,7 +105,7 @@ function Test-UpdateCancelled($ErrorObject) {
 function Copy-LogToClipboard {
     try {
         . (Join-Path $PSScriptRoot 'Diagnostics-ProGo.ps1')
-        Show-ProGoDiagnostics -Root $DataRoot
+        Show-ProGoDiagnostics -Root $DataRoot -RuntimeRoot $InstallDir
     } catch {
         Write-Host 'Не удалось открыть предпросмотр диагностики. Личный журнал доступен на этом компьютере.'
     }

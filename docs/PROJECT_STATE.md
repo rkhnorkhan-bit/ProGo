@@ -1,3 +1,101 @@
+## Local storage-volume/ACL fixtures and Diagnostics roots; Windows NOT_RUN
+
+Continued from6622cdfcdd4e3eaf0242c244720e929e38cb9c9c,
+tree47bdbdb0fbbeab4251f8717839fa254ac6951dc3, same clean checkout and sole
+writer. No push/CI, PC/network/production ACL, VHD, mount, volume policy, service,
+production activation, merge or release action. CI751 historical exact-source
+GREEN and CI750 FAILURE/packet NOT_ACCEPTED below remain unchanged.
+
+Mandatory Core InstallerStorageTests enumerates existing ready fixed runner
+volumes only. Read-only directory handles/GetFinalPathNameByHandle with
+VOLUME_NAME_GUID prove actual volume identities, following mount/junction aliases.
+Data temp APIs must agree, and the selected writable unique root must have a
+different identity. No second writable identity means explicit blocker/NOT_RUN
+and a failing mandatory suite, never PASS. Before/after identities are recorded.
+No storage availability or native PASS is claimed from this Linux environment.
+
+The suite invokes existing Install/Uninstall, Repair and Restore fixtures in
+fresh Windows PowerShell hosts. Their optional fixture-only StorageRoot is
+restricted to an exclusively created drive-root ProGo-storage-fixture-GUID
+with matching owner marker and no redirected root. Production KnownFolder
+selection is unchanged. Existing actual success, partial write/rollback/Undo,
+private/foreign preservation and recovery-material assertions remain active
+across data/runtime volumes. Failed cross-volume fixtures retain evidence on
+both sides; existing process settlement guards remain. No replacement framework.
+
+One additional actual Install access-denied case runs only in the storage suite.
+A created VERSION leaf is readable but its current-user DACL denies WriteData.
+A real ReadWrite probe must fail UnauthorizedAccessException/Win32 5. Actual
+Install must then fail with that same cause after exactly one changed EXE write;
+old overlay-bearing EXE and VERSION bytes are restored. Original snapshot hash/
+bytes are revalidated, both persisted admissions retained, no false rollback
+terminal accepted, and pending-journal replay guard remains blocking. DACL is
+restored in finally; exact original Access/Owner/Group SDDL and reopened ReadWrite
+access must match before cleanup. Failed restoration retains the unique fixture
+and fails the suite. No ACL outside the created fixture is changed.
+
+Diagnostics reads bounded VERSION on its existing worker from RuntimeRoot and
+builds sanitized data from DataRoot. ShowInstalled(root) and script default keep
+legacy behavior; consumed ShowInstalledLayout API avoids reflection overload
+ambiguity. Older loaded API falls back without claiming a separate-root version.
+Actual updater action passes both roots. The real STA UI fixture supplies
+conflicting VERSION/logs under separate roots while preserving both original
+sanitization/no-automatic-copy and explicit Copy-equals-preview assertions.
+
+Local Python171=168PASS+3SKIP; public453source/0release, diff/secret checks,
+existing BOM boundaries, frozen bodies/old partitions and original diagnostic
+UI body preservation PASS. New native volume/denial/ACL restore/diagnostic roots
+are Windows NOT_RUN: no pwsh/dotnet/mono/csc installed. Independent complete diff
+review is required before a separately agreed Windows CI. Late helper-removal
+retry, staged self-contained elevated uninstall/UAC/ARP and production Program
+Files activation remain the next related installer stage, not enabled here.
+
+## CI751 complete SUCCESS; corrected fixtures and all eight full logs verified
+
+Sole authorized corrective automatic run40643166015 / CI751 attempt1 completed
+SUCCESS. Sourcebb8e46cf94e903277459725ddd56b2f88af0ad9d, tested merge
+ ea3d1cdce5b089ab94a4ac2fbe3f2a0dab0ef565. CAS expected prior source
+ dc20f280234ecad2729c58c537d3678db2df51a0 matched; one non-force fast-forward,
+no rerun750, dispatch or duplicate. Exact-source run query returns one run.
+Local publication checkpoint5709c943e4219635ab4e67a24a5a653e00581e76, full tree
+ a036fe3681cdf2448feac37717d71903895eac52 equals remote publication tree;
+each of the four blobs matched. PR88 remains open/unmerged at this source/merge.
+
+All eight complete terminal logs retrieved and examined, each contains exact
+source/merge and terminal cleanup. All eight SUCCESS:
+Core122665792124; Ubuntu122665792476; Foundation122665792472;
+Live122665792482; Recovery122665792528; Runtime122665792517;
+Success122665792441; strict aggregate122676385095.
+Aggregate explicitly requires all seven successful partitions on the exact SHA.
+No source/test changes during the publication-to-eight-log freeze.
+
+Foundation26 complete: PendingPublication25 PASS including created and all
+negative/locked-publication cases; StartupFailure15 PASS. Old frozen SHA bodies,
+scenarios/assertions/proofs/deadlines remain unchanged after the sole adapters.
+Inventory regression passes on Ubuntu27 and Windows downstream Python155;
+full downstream155=153PASS+2SKIP. Local171=168PASS+3SKIP before publication.
+Original installer33=Foundation26+Live1+Recovery6 complete; nested suites,
+Runtime35 plus refusals and Success40/fresh-process refusal2 PASS. All40 success
+diagnostic records match expected state/publication flags. Core actual split8,
+legacy5, resolver checks and Shutdown49 PASS; Desktop6394, Instance30,
+Maintenance128, prior Repair/Restore, alias, backup and diagnostic checks retained.
+
+Clean build identity0.2.2+ea3d1cdce5b089ab94a4ac2fbe3f2a0dab0ef565 and both
+PS5.1/PS7 icon fixtures PASS. Public content452source/45release PASS. Runner ZIP
+740876bytes, SHA256
+7a910765b0ab60add9848f3f1e9ff4797d511f4686cf0d854cd85bd4be723d83.
+Upload/prune steps SKIPPED, artifacts0; no delivery, release or PC acceptance.
+CI750 remains terminal FAILURE and its packet NOT_ACCEPTED; its original
+failure record below is unchanged. StartupFailure was NOT_RUN in750; no actual
+KnownFolder write in that run is claimed. Historical UNKNOWN remains unchanged.
+
+Real different-volume identity, isolated access-denied/ACL restoration, late
+helper-removal retry, staged self-contained elevated uninstall/ARP, Diagnostics
+VERSION and production Program Files activation remain subsequent gates.
+No PC/network/machine-ACL, production resolver/rename, merge or release change.
+This successful result record is local-only after all eight complete logs;
+no second publication or CI is triggered.
+
 ## Local CI750 fixture-only correction; one conditional corrective CI authorized
 
 Continued from1511d3caa7e9f7d758d755c5b17dcbf819f889f8,

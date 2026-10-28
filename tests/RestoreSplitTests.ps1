@@ -1,7 +1,15 @@
-param([string]$Scripts)
+param([string]$Scripts, [string]$StorageRoot)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { Write-Host 'SKIP: split restore requires isolated Windows CI'; return }
+if (-not [string]::IsNullOrWhiteSpace($StorageRoot)) {
+    $StorageRoot = [IO.Path]::GetFullPath($StorageRoot).TrimEnd([char]'\')
+    $leaf = [IO.Path]::GetFileName($StorageRoot)
+    if ([IO.Path]::GetDirectoryName($StorageRoot) -ine [IO.Path]::GetPathRoot($StorageRoot) -or
+        $leaf -cnotmatch '^ProGo-storage-fixture-[a-f0-9]{32}$' -or
+        ([IO.File]::GetAttributes($StorageRoot) -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+        [IO.File]::ReadAllText((Join-Path $StorageRoot 'owner.txt')) -cne $leaf) { throw 'Storage fixture root is not owned.' }
+}
 . (Join-Path $Scripts 'BackupIntegrity-ProGo.ps1')
 $driver = Join-Path $PSScriptRoot 'RestoreSplitDriver.ps1'
 function Snapshot-SplitChildren($Path, $Prefix) {
@@ -74,8 +82,8 @@ try {
 } finally { if ([IO.Directory]::Exists($aliasWork)) { Remove-Item -LiteralPath $aliasWork -Recurse -Force } }
 foreach ($mode in @('program','missing','fault-program','fault-missing','all','data','fault-all','no-consent','selfcheck-live')) {
     $work = Join-Path $env:TEMP ('ProGo-split-restore-' + [guid]::NewGuid().ToString('N'))
-    $data = Join-Path $work 'data\ProGo'; $runtime = Join-Path $work 'programs\ProGo'; $backup = Join-Path $work 'backup'
-    $settled = $true; $child = $null
+    $data = Join-Path $work 'data\ProGo'; $runtime = if ($StorageRoot) { Join-Path (Join-Path $StorageRoot ('restore-' + $mode)) 'ProGo' } else { Join-Path $work 'programs\ProGo' }; $backup = Join-Path $work 'backup'
+    $settled = $true; $child = $null; $storageCasePassed = $false
     try {
         foreach ($root in @($runtime, $backup)) {
             [void][IO.Directory]::CreateDirectory((Join-Path $root 'scripts'))
@@ -103,6 +111,7 @@ foreach ($mode in @('program','missing','fault-program','fault-missing','all','d
         $info = New-Object Diagnostics.ProcessStartInfo
         $info.FileName = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
         $info.Arguments = '-NoProfile -NonInteractive -File "' + $driver + '" -Scripts "' + $Scripts + '" -Fixture "' + $work + '" -Mode ' + $mode
+        if ($StorageRoot) { $info.Arguments += ' -StorageRoot "' + $StorageRoot + '"' }
         $info.UseShellExecute = $false; $info.CreateNoWindow = $true; $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
         $clock = [Diagnostics.Stopwatch]::StartNew()
         $child = [Diagnostics.Process]::Start($info)
@@ -143,6 +152,7 @@ foreach ($mode in @('program','missing','fault-program','fault-missing','all','d
         if ([IO.File]::ReadAllText((Join-Path $runtime 'settings.json')) -cne 'foreign-runtime-settings' -or [IO.File]::ReadAllText((Join-Path $runtime 'foreign.txt')) -cne 'foreign-runtime-file' -or
             [IO.File]::ReadAllText((Join-Path $data 'progo.log')) -cne 'log-sentinel' -or [IO.File]::ReadAllText((Join-Path $data 'backups\keep.txt')) -cne 'backup-sentinel') { throw 'Foreign/private sentinel changed.' }
         if ((Snapshot-Split $backup @('ProGo.exe','VERSION','scripts','settings.json','vault.enc.json','manifest.txt','backup-files.sha256')) -cne $backupState) { throw 'Source backup changed.' }
+        $storageCasePassed = $true
         Write-Host ('PASS: actual split restore ' + $mode)
     } finally {
         if ($null -ne $child) {
@@ -156,6 +166,6 @@ foreach ($mode in @('program','missing','fault-program','fault-missing','all','d
             $settled = $false
             Write-Warning ('Native self-check cleanup unconfirmed; fixture evidence retained: ' + $work)
         }
-        if ($settled -and [IO.Directory]::Exists($work)) { Remove-Item -LiteralPath $work -Recurse -Force }
+        if ($settled -and (-not $StorageRoot -or $storageCasePassed) -and [IO.Directory]::Exists($work)) { Remove-Item -LiteralPath $work -Recurse -Force }
     }
 }

@@ -1,11 +1,19 @@
-param([string]$Scripts, [string]$Fixture, [string]$Payload, [string]$Mode)
+param([string]$Scripts, [string]$Fixture, [string]$Payload, [string]$Mode, [string]$StorageRoot)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Requires isolated Windows CI' }
+if (-not [string]::IsNullOrWhiteSpace($StorageRoot)) {
+    $StorageRoot = [IO.Path]::GetFullPath($StorageRoot).TrimEnd([char]'\')
+    $leaf = [IO.Path]::GetFileName($StorageRoot)
+    if ([IO.Path]::GetDirectoryName($StorageRoot) -ine [IO.Path]::GetPathRoot($StorageRoot) -or
+        $leaf -cnotmatch '^ProGo-storage-fixture-[a-f0-9]{32}$' -or
+        ([IO.File]::GetAttributes($StorageRoot) -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+        [IO.File]::ReadAllText((Join-Path $StorageRoot 'owner.txt')) -cne $leaf) { throw 'Storage fixture root is not owned.' }
+}
 $fixture = [IO.Path]::GetFullPath($Fixture)
 $temp = [IO.Path]::GetFullPath($env:TEMP).TrimEnd([char]'\')
 if ([IO.Path]::GetDirectoryName($fixture) -ine $temp -or [IO.Path]::GetFileName($fixture) -cnotmatch '^ProGo-split-repair-[a-f0-9]{32}$') { throw 'Fixture path outside owned temporary root.' }
-$dataBase = Join-Path $fixture 'data'; $programBase = Join-Path $fixture 'programs'
+$dataBase = Join-Path $fixture 'data'; $programBase = if ($StorageRoot) { Join-Path $StorageRoot 'repair' } else { Join-Path $fixture 'programs' }
 $runtime = Join-Path $programBase 'ProGo'
 if ($Mode -eq 'foreign') { $runtime = Join-Path $fixture 'foreign' }
 $NoLaunch = $true; $Recover = $false; $PayloadDirectory = $Payload
