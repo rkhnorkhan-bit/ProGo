@@ -191,11 +191,28 @@ CI728_FIXTURE_SHA256 = {'UpdatePackageTests.ps1': '2a95e34d382c69e1c0d9ca8bc4045
  'InstallerLegacyStartupLiveTests.ps1': '40ba99e4d4b5e9d3d0d6153bc67e0f7e1c188f51c747e2c85dbdba873d113002'}
 
 
+# Only these body-only fixtures may inject a legacy layout. Strip exactly this
+# reviewed adapter before checking their original CI728 frozen bodies; scenarios,
+# assertions, injections and deadlines retain their historical hashes.
+LEGACY_LAYOUT_FIXTURE_ADAPTER = """# Isolated legacy destination; production known folders must not be redirected.
+function Get-ProGoInstallerLayout {
+    $legacy = Join-Path $env:LOCALAPPDATA 'ProGo'
+    return [pscustomobject]@{ RuntimeRoot = $legacy; DataRoot = $legacy }
+}
+"""
+LEGACY_LAYOUT_FIXTURES = ('InstallerMaintenanceTests.ps1', 'InstallerMenuFailureTests.ps1',
+                          'InstallerRestartGateTests.ps1', 'InstallerOutcomeReconcileTests.ps1')
+
+
 def require_fixture_parity(bodies):
     if set(bodies) != set(CI728_FIXTURE_SHA256):
         raise ValueError('Required fixture body set differs')
     for name, expected in CI728_FIXTURE_SHA256.items():
         body = bodies[name]
+        if name in LEGACY_LAYOUT_FIXTURES:
+            if body.count(LEGACY_LAYOUT_FIXTURE_ADAPTER) != 1:
+                raise ValueError('Required fixture layout adapter differs: ' + name)
+            body = body.replace(LEGACY_LAYOUT_FIXTURE_ADAPTER, '', 1)
         if name == 'InstallerMenuMutationAdmissionTests.ps1':
             body = body.removesuffix("& (Join-Path $Root 'tests\\InstallerLiveInstalledOutcomeTests.ps1')\n").removesuffix("& (Join-Path $Root 'tests\\InstallerAuxiliaryScopedOutcomeTests.ps1') -PreservedFlow\n").removesuffix("& (Join-Path $Root 'tests\\InstallerAuxiliaryScopedOutcomeTests.ps1')\n")
         if hashlib.sha256(body.encode()).hexdigest() != expected:
@@ -264,6 +281,9 @@ class ExpandedPartitionRegressionTests(unittest.TestCase):
         for name in bodies:
             with self.subTest(fixture=name), self.assertRaises(ValueError):
                 require_fixture_parity({**bodies, name: bodies[name] + '# altered'})
+        for name in LEGACY_LAYOUT_FIXTURES:
+            with self.subTest(layout=name), self.assertRaises(ValueError):
+                require_fixture_parity({**bodies, name: bodies[name].replace('$env:LOCALAPPDATA', '$env:ProgramFiles', 1)})
         del bodies['InstallerLegacyStartupLiveTests.ps1']
         with self.assertRaises(ValueError):
             require_fixture_parity(bodies)

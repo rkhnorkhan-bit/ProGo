@@ -2,6 +2,7 @@ param(
     [switch]$NoStartup,
     [switch]$NoStartMenuShortcut,
     [switch]$Launch,
+    [switch]$FunctionsOnly,
     [ValidateNotNullOrEmpty()][string]$PayloadDirectory
 )
 
@@ -1980,9 +1981,68 @@ function Enter-ProGoInstallerMaintenance {
     . (Join-Path $PayloadScripts 'Maintenance-ProGo.ps1')
     return [ProGo.MaintenanceOperation]::Enter()
 }
-function Stop-ProGoInstallerApplication([string]$InstallDirectory) {
-    [ProGo.MaintenanceOperation]::StopApplication($InstallDirectory)
+function Stop-ProGoInstallerApplication([string]$InstallDirectory, [string]$DataDirectory) {
+    [ProGo.MaintenanceOperation]::StopApplication($InstallDirectory, $DataDirectory)
 }
+# Internal adapter: no public path override or Program Files activation. Keep the
+# historical legacy destination until the elevated transaction is implemented.
+function Initialize-ProGoInstallerShortcuts([string]$RuntimeRoot, [bool]$WasInstalled, [bool]$NoStartup, [bool]$NoStartMenu) {
+    return Initialize-ProGoShortcuts -InstallDirectory $RuntimeRoot -WasInstalled $WasInstalled -NoStartup $NoStartup -NoStartMenu $NoStartMenu -CaptureStartupEvidence
+}
+function Get-ProGoInstallerLayout {
+    $helper = Assert-ProGoInstallerStagePath $Payload.Directory 'scripts/Layout-ProGo.ps1'
+    if ((Get-FileHash -LiteralPath $helper -Algorithm SHA256).Hash -cne $Payload.Hashes['scripts/Layout-ProGo.ps1']) {
+        throw 'Installer layout helper changed after payload verification.'
+    }
+    . $helper
+    return Resolve-ProGoRecoveryLayout
+}
+# Evidence stays in runtime/backups, including after uninstall. It is not user
+# data and is not disposable: existing snapshot/pending/terminal proofs bind here.
+function Get-ProGoUninstallInventory([string]$RuntimeRoot) {
+    Assert-ProGoInstallerNoPendingJournal $RuntimeRoot
+    $parent = Assert-ProGoInstallerStagePath $RuntimeRoot 'backups'
+    $candidates = @()
+    if ([IO.Directory]::Exists($parent)) {
+        foreach ($directory in Get-ChildItem -LiteralPath $parent -Directory -Force) {
+            if ($directory.Name -cnotmatch '^installer-journal-[a-f0-9]{32}$') { continue }
+            if (-not (Test-ProGoInstallerInstalledOutcome $directory.FullName $RuntimeRoot)) { continue }
+            $outcome = Read-ProGoInstallerJson (Join-Path $directory.FullName 'installed.json')
+            $inventory = $outcome.Inventory | ConvertFrom-Json -ErrorAction Stop
+            $completion = $outcome.Completion
+            if ($completion.Schema -ne 1 -or @($completion.Phases).Count -ne 2 -or
+                $completion.Phases[0] -cne 'self-check' -or $completion.Phases[1] -cne 'shortcuts' -or
+                @($completion.Ownership).Count -ne @($inventory.Files).Count) { continue }
+            $seen = @{}; $valid = $true
+            foreach ($owner in $completion.Ownership) {
+                $entry = @($inventory.Files | Where-Object { $_.Relative -ceq $owner.Relative })
+                if ($seen.ContainsKey($owner.Relative) -or $entry.Count -ne 1 -or $owner.OwnedHash -cne $entry[0].NewHash) { $valid = $false; break }
+                $seen[$owner.Relative] = $true
+            }
+            if (-not $valid) { continue }
+            $valid = $true
+            foreach ($entry in $inventory.Files) {
+                $path = Assert-ProGoInstallerStagePath $RuntimeRoot $entry.Relative
+                try { $attributes = [IO.File]::GetAttributes($path) }
+                catch [IO.FileNotFoundException] { continue }
+                catch [IO.DirectoryNotFoundException] { continue }
+                if (($attributes -band [IO.FileAttributes]::Directory) -ne 0 -or
+                    (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne $entry.NewHash) { $valid = $false; break }
+            }
+            if ($valid) { $candidates += ,@($inventory.Files) }
+        }
+    }
+    if ($candidates.Count -eq 0) { throw 'Uninstall requires a verified installed runtime inventory.' }
+    # Multiple historical outcomes are acceptable only for identical new bytes.
+    $signature = @($candidates[0] | ForEach-Object { $_.Relative + ':' + $_.NewHash }) -join '|'
+    foreach ($candidate in $candidates) {
+        if ((@($candidate | ForEach-Object { $_.Relative + ':' + $_.NewHash }) -join '|') -cne $signature) {
+            throw 'Uninstall runtime inventory is ambiguous.'
+        }
+    }
+    return $candidates[0]
+}
+if ($FunctionsOnly) { return }
 if ($PSBoundParameters.ContainsKey('PayloadDirectory')) {
     $Payload = Get-ProGoInstallPayload -Directory $PayloadDirectory
 } else {
@@ -1995,7 +2055,8 @@ $Exe = $Payload.Executable
 $VersionFile = $Payload.VersionFile
 $PayloadScripts = $Payload.ScriptsDirectory
 
-$InstallDir = Join-Path $env:LOCALAPPDATA "ProGo"
+$InstallDir = ($InstallLayout = Get-ProGoInstallerLayout).RuntimeRoot
+$DataRoot = $InstallLayout.DataRoot
 $InstallMaintenance = $null
 $InstallStage = $null
 $InstallBackup = $null
@@ -2006,7 +2067,7 @@ try {
     Resolve-ProGoInstallerPendingInstalled $InstallDir -ShortcutScript (Join-Path $Payload.ScriptsDirectory 'Shortcuts-ProGo.ps1')
     Resolve-ProGoInstallerPendingRollback $InstallDir
     Assert-ProGoInstallerNoPendingJournal $InstallDir
-    Stop-ProGoInstallerApplication -InstallDirectory $InstallDir
+    Stop-ProGoInstallerApplication -InstallDirectory $InstallDir -DataDirectory $DataRoot
     $InstallStage = New-ProGoInstallerStage $Payload
     $ReleaseDir = $InstallStage.Payload.Directory
     $Exe = $InstallStage.Payload.Executable
@@ -2016,7 +2077,7 @@ try {
     Assert-ProGoInstallerBackup $InstallBackup
     $InstalledVersion = $InstallStage.Payload.Version
     . (Join-Path $PayloadScripts "Shortcuts-ProGo.ps1")
-    $WasInstalled = Test-ProGoExistingInstallation -InstallDirectory $InstallDir
+    $WasInstalled = (Test-ProGoExistingInstallation -InstallDirectory $InstallDir) -or (Test-ProGoExistingInstallation -InstallDirectory $DataRoot)
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $InstallDir "backups") -Force | Out-Null
     Copy-ProGoInstallerRuntime $Exe -Destination (Join-Path $InstallDir "ProGo.exe") -Force
@@ -2054,7 +2115,7 @@ try {
 
     Confirm-ProGoInstallerSelfCheck $InstallBackup $InstallStage
     $InstallAuxiliaryStarted = $true
-    $InstallStartupEvidence = Initialize-ProGoShortcuts -InstallDirectory $InstallDir -WasInstalled $WasInstalled -NoStartup ([bool]$NoStartup) -NoStartMenu ([bool]$NoStartMenuShortcut) -CaptureStartupEvidence
+    $InstallStartupEvidence = Initialize-ProGoInstallerShortcuts $InstallDir $WasInstalled ([bool]$NoStartup) ([bool]$NoStartMenuShortcut)
     Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites -CompletedPhases @('self-check', 'shortcuts') -StartupEvidence $InstallStartupEvidence -RequireStartupEvidence
 
 } catch {
@@ -2101,7 +2162,7 @@ Write-Host "Visible launcher: $(Join-Path $InstalledScripts 'Show-ProGo.ps1')"
 Write-Host "Start helper: $(Join-Path $InstalledScripts 'Start-ProGo.ps1')"
 Write-Host "Repair helper: $(Join-Path $InstalledScripts 'Repair-ProGo.ps1')"
 Write-Host "Backups folder: $(Join-Path $InstallDir 'backups')"
-Write-Host "Vault/settings/logs are preserved in %LOCALAPPDATA%\ProGo."
+Write-Host "Vault/settings/logs are preserved in $DataRoot."
 
 if ($Launch) {
     Start-Process -FilePath (Join-Path $InstallDir "ProGo.exe") -WorkingDirectory $InstallDir -ArgumentList "--show" | Out-Null

@@ -1,3 +1,144 @@
+## Local review87387da corrections; native execution still pending
+
+Bounded continuation from87387da047e3fe2708635d7141c8662633d03912,
+treeb6d0b27d43100ef874740a603bb120b6d68d978d, same checkout/branch and sole
+writer. Initial status clean. No push/CI, Windows execution, tool installation,
+production Program Files activation, PC/network/ACL change or parallel stage.
+
+Shutdown fixture now copies all nine required local helpers and creates actual
+owned primary/Startup ShellLinks using ApplicationShortcuts. A real foreign
+managed-target Legacy-name ShellLink and a foreign menu sibling are retained and
+checked after success and all retries/refusals. Every prior Main Check call is
+preserved except replacing whole-menu absence with exact owned-primary absence;
+IPC, competing lease, locked-journal proxy rollback/retry, disabled real firewall
+fixture, external Windows/CLI proxy and missing-cleanup-handler checks remain.
+
+Install resolves production legacy recovery layout once through the payload
+Layout helper, checking its path/hash against preflight before dot-sourcing.
+Both roots come from that one result; no environment-root production override.
+Four body-only legacy fixtures receive only the explicit synthetic adapter.
+Their original bodies/CI728 hashes remain frozen after stripping exactly that
+reviewed block, with changed/missing adapter refusal. Existing 33 installer,
+Runtime35 and Success40 partitions are not changed. Prepared actual resolver
+checks ignore LOCALAPPDATA and refuse a changed payload helper before execution;
+split consumer fixtures require exactly one layout read.
+
+Legacy uninstall retains fixed-root EXE-only scope for valid/missing/corrupt
+bytes. Only BadImageFormat is admitted as historical corrupt/non-managed data;
+recognized foreign managed identity and I/O failures still refuse. Hashes before
+and after metadata inspection and the existing pinned native delete revalidation
+detect changes; they are not ownership or registration proof. Prepared actual
+legacy consumer cases cover valid, missing, corrupt, foreign managed payload and
+concurrent changed bytes before native delete. Data/helpers and foreign links/
+siblings are checked unchanged. No legacy registration/receipt framework added.
+Separate terminal/admission/inventory/pending checks and pinned deletion logic
+remain unchanged apart from neutral change-detection error wording.
+
+Local Python170 =167 PASS +3 SKIP; public-content452source/0release and diff checks
+PASS. Original four fixture bodies preserved after the sole adapter removal;
+Shutdown prior16 Main Check call sites preserved with the exact menu predicate
+adjustment. Test-ProGo BOM and old partition driver preserved. Native split8,
+legacy5, resolver checks and updated Shutdown are Windows NOT_RUN. Different
+volumes/volume identity and isolated access-denied/ACL restoration remain pending.
+Independent incremental diff review is required before Windows CI. Late helper
+removal/restart remains a gap: a staged self-contained uninstaller is required
+before production activation, outside this corrective pass. No historical
+UNKNOWN relabelled or prior CI749 proof transferred to this candidate.
+
+## Local bounded install/uninstall consumer; independent review and Windows pending
+
+Continued as sole writer in the same cloud checkout from
+cbf03c299ae979e7f2749ad4ef2641033d5136d7, tree
+38f273c2adbe10142cda287a8fe1fad00b7a423e, branch
+work/progo-legacy-accepted-outcome-checkpoint. Initial tracked/untracked status
+clean; no other writer/ProGo/compiler/PowerShell process observed in accessible
+/proc (ps itself fails with fatal library error). No applicable AGENTS or local
+SKILL files found. No reset/clean, second checkout, push, CI, PC or ACL change.
+
+Install's actual consumer now takes RuntimeRoot/DataRoot from its internal
+legacy-only layout adapter and passes both to StopApplication. No public root
+argument, production separate identity, Program Files activation or legacy
+autostart default change. Existing data also counts for installation detection.
+Personal synthetic candidate explicitly uses NoStartup. FunctionsOnly imports
+existing installer proof functions without preflight/build/install side effects.
+
+Installer snapshot/journal/terminal schema, identity and runtime/backups location
+are deliberately unchanged. This evidence is retained by uninstall, together
+with all unknown runtime files/directories. No mechanical backup relocation or
+legacy admission change. Uninstall uses recovery layout and StopApplication with
+both roots. Separate-root deletion requires verified terminal/snapshot/admission
+inventory plus current matching runtime hashes; pending/unknown journals block.
+Each runtime file deletion checks the allowlist and expected hash on its DELETE
+handle. Shortcuts are matched to runtime target/arguments under an observation
+pin, then origin/hash rechecked on the deletion handle. Foreign links and menu
+siblings remain; no recursive Start Menu/Startup removal. Legacy EXE-only removal
+remains, with managed ProGo identity/hash admission. RemoveUserData retains its
+separate explicit DELETE confirmation and now uses DataRoot with reparse guards.
+
+New InstallerLifecycleTests runs entire actual installer/uninstaller scripts with
+only isolated layout/maintenance/firewall/self-check adapters. Real payload
+staging, writes, snapshots, journals, terminal validation and ShellLink operations
+remain active. Eight prepared native scenarios: success, rejected data deletion,
+partial write rollback, self-check rollback, changed runtime refusal, pending
+journal refusal, stop refusal, actual first-file deletion fault then retry.
+Asserts runtime targets, NoStartup, original rollback bytes/absence/proofs,
+private data/legacy EXE/foreign runtime/menu/Startup retention and lease release.
+Registered once in Core, keeping the original 33 installer partitions unchanged;
+Runtime35 and Success40 inventories and all existing test bodies unchanged.
+
+Local Python170 =167 PASS +3 SKIP; public-content452source/0release PASS;
+existing-test byte/body preservation, harness BOM preservation and diff checks
+PASS. These are local/static results, not native execution. All eight new native
+scenarios, actual different-volume identity and isolated access-denied/ACL restore
+are Windows NOT_RUN. No tools installed. CI749 historical SUCCESS remains only
+its exact prior source/merge proof, not proof of this dirty candidate.
+
+Remaining gates: independent complete diff review; one agreed Windows CI after
+review; different-volume/access-denied evidence; trusted elevated transaction,
+UAC/ARP and Program Files activation as the next coherent stage. Uninstall is
+per-file, not atomic: the tested retry fault is after the first deletion while
+helper scripts remain; late helper-removal failure/restart is not proven and
+requires the next staged trusted lifecycle. Diagnostics runtime VERSION lookup
+is unchanged. No PC delivery/installation acceptance or historical UNKNOWN fix
+is claimed. Commercial F30/payments/licensing remains deferred.
+
+## CI749 complete SUCCESS; all eight full logs verified; candidate ZIP recorded
+
+Sole corrective run40631299278 / CI749 attempt1 is terminal completed/SUCCESS.
+Source72ca87a53c138e9e43c37ba37ab23b5eaeba1223, tested merge
+ a5995700fcd4a1247b13ebe1a93445d1cb6fb659. All eight complete job logs retrieved
+and checked; each records the exact merge. PR88 still has this source/merge;
+exact-source workflow query returns one run. CAS expected prior source was
+ aeb3c381e6ef1a675781c89c025a94a32c9a46f9. Full remote tree
+ e2e09a8da77a11bba3ec11919b13948096d87ac9 equals clean local publication freeze
+ de045a25c02576ecc5dc2c355cff7d4ab588c3fe. No rerun748/duplicate/dispatch.
+
+Eight SUCCESS results: Core/windows122628042180; Ubuntu122628042184;
+Foundation122628042183 (26 suites); Live122628042139; Recovery122628042175
+(six suites); Runtime122628042161 (35 plus refusals); Success122628042032
+(40, fresh-process refusal2); strict aggregate122638658083. Aggregate explicitly
+requires Core/Foundation/Live/Recovery/Runtime/Success/Ubuntu on exact tested SHA.
+Native Core PASS includes real alias (not SKIP), nine RestoreSplit scenarios,
+DiagnosticPreview2, backup retention/composition/locked-copy checks, Maintenance128,
+OldBackup actual restore/Undo/whole scripts/exact launcher assertions and Shutdown47.
+Clean compiled identity0.2.2+a5995700fcd4a1247b13ebe1a93445d1cb6fb659 and both
+PS5.1/PS7 icon checks PASS. Downstream Python154 =152 PASS +2 SKIP, no encoding
+errors; relay transport PASS. Public content451source/45release PASS; ZIP pack PASS.
+
+Candidate built on this CI runner: ProGo-release.zip, exactly737918 bytes.
+SHA256 e6a5b72649241d53bdb019ffb0db743fc75234f1111e815afcdf1cef8aec410b.
+Build identity0.2.2+a5995700fcd4a1247b13ebe1a93445d1cb6fb659, source/run above.
+These are recorded CI measurements; package not downloaded or delivered to PC.
+Upload steps correctly SKIPPED by existing public-repository guard; artifact query
+returns zero artifacts. No release, merge, deployment or installation acceptance.
+
+Before publication local Python170 =167 PASS +3 SKIP, public-content/BOM/exact17
+edit preservation/diff checks PASS. CI748 remains FAILURE and CI744 cause UNKNOWN;
+no prior failed result relabelled. Actual different-volume and access-denied tests
+remain mandatory before Program Files enablement; production mutation still gated.
+No installer work, PC/network/ACL changes or further publication. This successful
+result/package record is local-only after all eight full results, avoiding new CI.
+
 ## CI748 terminal FAILURE after native Core PASS; local-only contract encoding fix
 
 All eight complete exact-SHA logs independently checked: CI748 run40625872780,

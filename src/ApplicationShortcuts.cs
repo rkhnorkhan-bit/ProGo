@@ -1389,6 +1389,63 @@ namespace ProGo
                 File.Exists(Path.Combine(directory, "settings.json"));
         }
 
+        // Uninstall never recursively removes runtime, evidence or known folders.
+        // Hash and delete disposition refer to the same pinned native file object.
+        public void RemoveRuntimeFile(string relative, string expectedHash)
+        {
+            if (Array.IndexOf(LegacyOperationLeaves, relative) < 0 || expectedHash == null ||
+                !System.Text.RegularExpressions.Regex.IsMatch(expectedHash, "^[A-F0-9]{64}$"))
+                throw new IOException("Uninstall runtime admission is invalid.");
+            string path = Path.GetFullPath(Path.Combine(root, relative));
+            if (!path.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Uninstall runtime escaped its root.");
+            RemovePinnedUninstallFile(path, expectedHash, null);
+        }
+
+        public void RemoveOwnedShortcuts()
+        {
+            RemovePinnedUninstallFile(startup, null, "");
+            RemovePinnedUninstallFile(Path.Combine(menu, "ProGo.lnk"), null, "--show");
+            RemovePinnedUninstallFile(Path.Combine(menu, "ProGo Status.lnk"), null, "--show");
+            // Even an empty menu directory is retained. Foreign siblings are never enumerated/deleted.
+        }
+
+        private void RemovePinnedUninstallFile(string path, string expectedHash, string arguments)
+        {
+            for (string probe = path; probe != null; probe = Path.GetDirectoryName(probe)) {
+                FileAttributes attributes;
+                try { attributes = File.GetAttributes(probe); }
+                catch (FileNotFoundException) { continue; }
+                catch (DirectoryNotFoundException) { continue; }
+                if ((attributes & FileAttributes.ReparsePoint) != 0) throw new IOException("Uninstall refuses redirected paths.");
+                if (probe == path && (attributes & FileAttributes.Directory) != 0) throw new IOException("Uninstall leaf is a directory.");
+            }
+            try { File.GetAttributes(path); }
+            catch (FileNotFoundException) { return; }
+            catch (DirectoryNotFoundException) { return; }
+            string origin;
+            using (var observation = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                origin = LegacyOrigin(observation.SafeFileHandle);
+                if (arguments != null) {
+                    // COM opens while the observation denies changes/replacement. The
+                    // later DELETE pin must have this exact origin and byte digest.
+                    try { if (!Matches(path, arguments)) return; }
+                    catch (COMException) { return; } // malformed/foreign link is retained
+                    expectedHash = Digest(ReadLegacyEvidenceBytes(observation));
+                }
+            }
+            using (var handle = OpenLegacyForDisposition(path, 0x80010000u, 1, IntPtr.Zero, 3, 0x00200080u, IntPtr.Zero)) {
+                if (handle.IsInvalid) throw new IOException("Uninstall could not pin its file.");
+                using (var stream = new FileStream(handle, FileAccess.Read)) {
+                    string hash;
+                    using (var algorithm = SHA256.Create()) { hash = BitConverter.ToString(algorithm.ComputeHash(stream)).Replace("-", ""); }
+                    if (origin != LegacyOrigin(handle) || hash != expectedHash) throw new IOException("Uninstall file changed.");
+                    var disposition = new LegacyDisposition { DeleteFile = 1 };
+                    if (!SetFileInformationByHandle(handle, 4, ref disposition, 1)) throw new IOException("Uninstall delete was refused.");
+                }
+            }
+        }
+
         public sealed class StartupSnapshot
         {
             internal readonly byte[] Bytes;

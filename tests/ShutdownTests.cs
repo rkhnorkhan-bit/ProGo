@@ -94,6 +94,9 @@ namespace ProGo
             string startup = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "ProGo.lnk");
             string menu = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "ProGo");
             bool hadScripts = Directory.Exists(scripts), hadMenu = Directory.Exists(menu);
+            string foreignFixture = Path.Combine(Path.GetTempPath(), "ProGo-shutdown-links-" + Guid.NewGuid().ToString("N"));
+            string foreignLink = Path.Combine(menu, "ProGo Status.lnk"), foreignSibling = Path.Combine(menu, "foreign.txt");
+            byte[] foreignLinkBytes = null;
             var occupied = new System.Collections.Generic.List<string>();
             if (File.Exists(installed)) occupied.Add("executable");
             if (hadScripts && Directory.GetFileSystemEntries(scripts).Length != 0) occupied.Add("nonempty scripts");
@@ -111,11 +114,18 @@ namespace ProGo
             try {
                 CheckLogBarrier();
                 AppPaths.EnsureDirectories(); Directory.CreateDirectory(scripts);
-                foreach (string file in new[] { "Uninstall-ProGo.ps1", "Maintenance-ProGo.ps1", "MaintenanceOperation.cs", "Firewall-ProGo.ps1", "Enable-HomeVpnFirewall.ps1" }) File.Copy(Path.Combine(args[1], file), Path.Combine(scripts, file));
+                foreach (string file in new[] { "Uninstall-ProGo.ps1", "Maintenance-ProGo.ps1", "MaintenanceOperation.cs", "Firewall-ProGo.ps1", "Enable-HomeVpnFirewall.ps1", "Layout-ProGo.ps1", "Install-ProGo.ps1", "Shortcuts-ProGo.ps1", "ApplicationShortcuts.cs" }) File.Copy(Path.Combine(args[1], file), Path.Combine(scripts, file));
                 string uninstall = Path.Combine(scripts, "Uninstall-ProGo.ps1");
                 File.Copy(args[0], installed);
                 Directory.CreateDirectory(Path.GetDirectoryName(startup)); Directory.CreateDirectory(menu);
-                File.WriteAllText(startup, "synthetic startup fixture"); File.WriteAllText(Path.Combine(menu, "ProGo.lnk"), "synthetic menu fixture");
+                new ApplicationShortcuts(AppPaths.Root, Environment.GetFolderPath(Environment.SpecialFolder.Programs),
+                    Environment.GetFolderPath(Environment.SpecialFolder.Startup)).Install(false, false, false);
+                string foreignPrograms = Path.Combine(foreignFixture, "programs"), foreignStartup = Path.Combine(foreignFixture, "startup");
+                Directory.CreateDirectory(foreignPrograms); Directory.CreateDirectory(foreignStartup);
+                new ApplicationShortcuts(Path.GetDirectoryName(args[0]), foreignPrograms, foreignStartup).Install(false, true, false);
+                File.Copy(Path.Combine(foreignPrograms, "ProGo", "ProGo.lnk"), foreignLink);
+                foreignLinkBytes = File.ReadAllBytes(foreignLink);
+                File.WriteAllText(foreignSibling, "synthetic foreign menu sibling");
                 foreach (var name in CliProxyEnvironmentService.Names) Environment.SetEnvironmentVariable(name, null, EnvironmentVariableTarget.User);
                 Environment.SetEnvironmentVariable("HTTPS_PROXY", "http://prior.example.org:8080", EnvironmentVariableTarget.User);
                 using (var key = Registry.CurrentUser.CreateSubKey(keyPath)) {
@@ -171,7 +181,9 @@ namespace ProGo
                 primary.Dispose(); primary = null;
                 Check(FirewallFixture("if (@(Get-NetFirewallRule -PolicyStore PersistentStore | Where-Object { $_.Name -in @('ProGo-Home-IKE','ProGo-Home-NAT-T') }).Count) { throw 'rules remain' }") == 0,
                     "actual uninstall confirms both real phone firewall rules removed");
-                Check(!File.Exists(installed) && !File.Exists(startup) && !Directory.Exists(menu) && File.Exists(AppPaths.SettingsPath), "successful uninstall removes executable/shortcuts and retains user data");
+                Check(!File.Exists(installed) && !File.Exists(startup) && !File.Exists(Path.Combine(menu, "ProGo.lnk")) && File.Exists(AppPaths.SettingsPath), "successful uninstall removes executable/shortcuts and retains user data");
+                Check(File.ReadAllBytes(foreignLink).SequenceEqual(foreignLinkBytes) && File.ReadAllText(foreignSibling) == "synthetic foreign menu sibling",
+                    "successful uninstall preserves foreign ShellLink and Start Menu sibling");
                 Check(!File.Exists(SystemProxyService.BackupPath) && !File.Exists(CliProxyEnvironmentService.BackupPath) && !PortOpen(prefs.HttpProxyPort), "successful uninstall leaves no owned backup or dead local listener");
                 foreach (var name in SystemProxyService.FieldNames) CheckField(name, baseline.Values[name], "uninstall restores original Windows field");
                 foreach (var pair in environment) Check(Environment.GetEnvironmentVariable(pair.Key, EnvironmentVariableTarget.User) == pair.Value, "new-terminal user environment restored: " + pair.Key);
@@ -204,6 +216,8 @@ namespace ProGo
                     owner.Attach(() => { }); // Startup owner has not attached a cleanup handler.
                     Check(Uninstall(uninstall) != 0 && File.Exists(installed), "missing cleanup handler cannot masquerade as successful removal");
                 }
+                Check(File.ReadAllBytes(foreignLink).SequenceEqual(foreignLinkBytes) && File.ReadAllText(foreignSibling) == "synthetic foreign menu sibling",
+                    "foreign ShellLink and sibling survive all uninstall retries and refusals");
                 Console.WriteLine("Shutdown tests PASS: " + passed); return 0;
             } catch (Exception ex) {
                 Console.WriteLine("FAIL: " + ex);
@@ -226,6 +240,7 @@ namespace ProGo
                 File.Delete(installed); File.Delete(startup);
                 if (Directory.Exists(menu)) Directory.Delete(menu, true);
                 if (Directory.Exists(scripts)) Directory.Delete(scripts, true);
+                if (Directory.Exists(foreignFixture)) Directory.Delete(foreignFixture, true);
                 if (hadScripts) Directory.CreateDirectory(scripts);
                 if (hadMenu) Directory.CreateDirectory(menu);
             }
