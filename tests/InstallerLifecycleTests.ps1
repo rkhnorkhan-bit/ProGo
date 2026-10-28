@@ -60,10 +60,10 @@ function Get-LifecycleAclMetadata($Expected, $Actual) {
     }
     $leftInherited = 0; $leftExplicit = 0; $rightInherited = 0; $rightExplicit = 0
     foreach ($ace in $left.DiscretionaryAcl) {
-        if (($ace.AceFlags -band [Security.AccessControl.AceFlags]::Inherited) -ne 0) { $leftInherited++ } else { $leftExplicit++ }
+        if (([int]$ace.AceFlags -band [int][Security.AccessControl.AceFlags]::Inherited) -ne 0) { $leftInherited++ } else { $leftExplicit++ }
     }
     foreach ($ace in $right.DiscretionaryAcl) {
-        if (($ace.AceFlags -band [Security.AccessControl.AceFlags]::Inherited) -ne 0) { $rightInherited++ } else { $rightExplicit++ }
+        if (([int]$ace.AceFlags -band [int][Security.AccessControl.AceFlags]::Inherited) -ne 0) { $rightInherited++ } else { $rightExplicit++ }
     }
     $daclEqual = ($null -eq $leftBytes -and $null -eq $rightBytes)
     if ($null -ne $leftBytes -and $null -ne $rightBytes) { $daclEqual = [Convert]::ToBase64String($leftBytes) -ceq [Convert]::ToBase64String($rightBytes) }
@@ -77,6 +77,38 @@ function Get-LifecycleAclMetadata($Expected, $Actual) {
         ExpectedCanonical = $Expected.AreAccessRulesCanonical; ActualCanonical = $Actual.AreAccessRulesCanonical
     }
 }
+# Exercise the actual metadata helper entirely in memory before fixture mutations.
+function Test-LifecycleAclMetadata {
+    $sections = [Security.AccessControl.AccessControlSections]'Access, Owner, Group'
+    foreach ($case in @(
+        @{ Aces = '(A;;FR;;;WD)'; Explicit = 1; Inherited = 0 },
+        @{ Aces = '(A;ID;FR;;;WD)'; Explicit = 0; Inherited = 1 },
+        @{ Aces = '(A;OICI;FR;;;WD)(A;OICIID;FR;;;WD)'; Explicit = 1; Inherited = 1 }
+    )) {
+        $expected = New-Object Security.AccessControl.FileSecurity
+        $actual = New-Object Security.AccessControl.FileSecurity
+        $expected.SetSecurityDescriptorSddlForm(('O:SYG:SYD:' + $case.Aces), $sections)
+        $actual.SetSecurityDescriptorSddlForm(('O:SYG:SYD:' + $case.Aces), $sections)
+        $equal = Get-LifecycleAclMetadata $expected $actual
+        Check-Lifecycle ($equal.ExpectedExplicitAces -eq $case.Explicit -and $equal.ActualExplicitAces -eq $case.Explicit -and
+            $equal.ExpectedInheritedAces -eq $case.Inherited -and $equal.ActualInheritedAces -eq $case.Inherited) 'in-memory exact explicit/inherited/mixed ACE counts'
+        Check-Lifecycle ($equal.OwnerEqual -and $equal.GroupEqual -and $equal.DaclBinaryEqual -and
+            $equal.ControlFlagsXor -eq 0 -and $equal.ExpectedControlFlags -eq 32772 -and $equal.ActualControlFlags -eq 32772 -and
+            -not $equal.ExpectedProtected -and -not $equal.ActualProtected -and $equal.ExpectedCanonical -and $equal.ActualCanonical) 'in-memory exact metadata equality/flags'
+        $actual.SetSecurityDescriptorSddlForm(('O:SYG:SYD:P' + $case.Aces), $sections)
+        $protected = Get-LifecycleAclMetadata $expected $actual
+        Check-Lifecycle ($protected.OwnerEqual -and $protected.GroupEqual -and $protected.DaclBinaryEqual -and
+            $protected.ControlFlagsXor -eq 4096 -and $protected.ExpectedControlFlags -eq 32772 -and $protected.ActualControlFlags -eq 36868 -and
+            -not $protected.ExpectedProtected -and $protected.ActualProtected -and $protected.ExpectedCanonical -and $protected.ActualCanonical -and
+            $protected.ActualExplicitAces -eq $case.Explicit -and $protected.ActualInheritedAces -eq $case.Inherited) 'in-memory exact protected XOR preserves ACE bytes/counts'
+        $actual.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;;FW;;;WD)', $sections)
+        $different = Get-LifecycleAclMetadata $expected $actual
+        Check-Lifecycle (-not $different.OwnerEqual -and -not $different.GroupEqual -and -not $different.DaclBinaryEqual -and
+            $different.ControlFlagsXor -eq 4096 -and $different.ActualExplicitAces -eq 1 -and $different.ActualInheritedAces -eq 0) 'in-memory metadata detects actual descriptor differences'
+    }
+    Write-Host 'PASS: in-memory ACL metadata explicit/inherited/mixed counts, equality and XOR'
+}
+Test-LifecycleAclMetadata
 function Set-LifecycleFixtureAcl([string]$Path, [string]$Sddl) {
     $restore = New-Object Security.AccessControl.FileSecurity
     $restore.SetSecurityDescriptorSddlForm($Sddl, [Security.AccessControl.AccessControlSections]::Access)

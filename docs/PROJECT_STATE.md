@@ -1,3 +1,81 @@
+## Local corrective AceFlags casts and in-memory metadata regression
+
+Continued frombd8d2e7c5ab375c8bf9c9f4767e0f3ebd9a189e6, same checkout/sole
+writer. Both byte-backed AceFlags operands in each inherited-count predicate
+are explicitly cast to Int32. No other helper/baseline/denial/cleanup/consumer,
+assertion, timeout, production or filesystem-permission behavior changed.
+
+The actual metadata helper is exercised before any fixture ACL/filesystem
+mutation with in-memory FileSecurity descriptors: explicit, inherited and mixed
+inheritance bits/ACEs. Checks require exact expected counts, owner/group/DACL
+binary equality, numeric control flags and XOR (0 equal,4096 protected), protected/
+canonical flags, and changed owner/group/DACL negative comparisons. No filesystem,
+ACL API write, SID/SDDL/ACE-content output occurs in that regression.
+
+Local Python171=168PASS+3SKIP, public453source/0release, diff/BOM/CRLF/secrets and
+exact preservation after removing only regression/two casts PASS. Native Windows
+regression/baseline/denial/cleanup remains NOT_RUN locally. CI754 metadata failure
+and CI753 inherited-descriptor mismatch remain historical; no native fix claimed.
+User conditionally authorized one corrective CI only for this exact diff scope,
+CAS expected668553d2dd1697b83d2eb4e4713fe693c6735317. No production/PC/ACL action.
+
+## CI754 complete FAILURE; ACL metadata InvalidCast before baseline proof
+
+One authorized automatic run40662805986 / CI754 attempt1 completed FAILURE
+2026-10-28 09:52:15 UTC. CAS expected550d4567a191262e26f944f84ce09a5ebe8b5cda
+matched. Published source668553d2dd1697b83d2eb4e4713fe693c6735317, tested merge
+f8be1e5e4be3aed2d5152a1c6456dcf8437fa2ba. Local publication checkpoint
+5b97bd2de150def7c267881dfb961207cc4d6e2a, exact tree
+8f84e91266c89c40095a6490de9d4c593b8c08b4. Only reviewed fixture/docs published;
+both blob SHAs and complete tree matched. All-event exact-source runs total_count1,
+attempt1 only, no rerun753/duplicate. Source frozen until all eight complete logs.
+
+All full logs contain exact source/merge and terminal cleanup. Core122729753470
+FAILURE; Ubuntu122729753084, Success122729753297, Foundation122729753299,
+Recovery122729753309, Live122729753338 and Runtime122729753392 SUCCESS.
+Strict aggregate122745941669 FAILURE correctly rejects Core; all seven needs
+outputs carry exact merge. All old installer33 suites PASS (Foundation26+Live1+
+Recovery6), including PendingPublication25/StartupFailure15. Runtime35/refusals
+and Success40/fresh-process2 PASS; all 40 structured expected-state/recorded
+comparisons match. Both icon host tests PASS. Local prepublication Python171=
+168PASS+3SKIP, public453source/0release, BOM/CRLF, original compound/rollback
+body preservation, secret and diff checks PASS; production/assertions unchanged.
+
+Bounded packet at09:18:35.7334366 UTC: Caught, Setup, Cleanup and sole CleanupErrors
+entry are System.InvalidCastException, HResult -2147467262, FQID
+System.InvalidCastException, invocation line63/offset13, no chain truncation.
+That exact fixture line counts inherited ACEs with AceFlags -band Inherited.
+This is a metadata enum/count predicate failure, not a production install error.
+Install=null, Writes=0, HasPublishedHash=false, PublishedEqualsOld=false,
+PublishedEqualsPayload=false, OldEqualsPayload=false; InstallIsUnauthorized=false,
+InstallWin32Code=null. BaselineReady=false, ProtectedAclCase=false,
+BaselineRounds=[], CleanupAcl=null. Setup did not reach a completed two-round
+proof, protected fallback or denial/Install. Protected=false does not prove the
+inherited descriptor stable. No new install-deny5/write/hash proof in this run.
+
+Cleanup independently reports AclRestored=true, ExactSddl=false,
+ReadWriteRestored=true, AclSettled=false. ReadWrite was attempted despite prior
+metadata/SDDL failure. Exact mismatch remains rejected; metadata failed before
+the direct exact assertion, while the outer mandatory cleanup requirement still
+fails. No baseline was committed/resampled, no cleanup or permission bypass.
+CI753 inherited-descriptor mismatch reason remains UNKNOWN and is not fixed by
+this run. Next correction is limited by the observed metadata InvalidCast line;
+none has been made or published. Native baseline/metadata proof remains pending.
+
+Actual pre-consumer GUIDs: data C: BC7F279C-06E3-4EB3-9FD6-2498AAFE64B5;
+runtime D: 0962CFD8-0000-0000-0000-100000000000. Eight existing cross-volume
+Install/Uninstall scenarios PASS, including partial rollback/data/foreign proofs;
+earlier same-volume lifecycle8split+5legacy and Repair/Restore also PASS.
+Cross-volume Repair/Restore, post-volume GUIDs and later Core Shutdown/Diagnostics
+UI/Desktop/relay are NOT_RUN. Both fixture sides explicitly retained: runner-temp
+ProGo-lifecycle-9e17c3fb812a4019b1533e5330cdd1e0 and runtime drive-root
+ProGo-storage-fixture-54fd81fcae6642b5af7c5d5b1eafae96. Runner-local retention is
+not durable export. Pack ZIP/uploads/prune SKIPPED, artifacts0; no new package
+size/hash. CI754 packet NOT_ACCEPTED. Historical CI753/752 failures and CI751 GREEN
+remain separate. Only this local result record follows full-log freeze; no
+corrective code, additional CI/publication, production activation, PC, production
+ACL, VHD or volume-policy action. Late uninstall retry/UAC/ARP remain later gates.
+
 ## Local stable ACL baseline candidate after CI753; Windows NOT_RUN
 
 Continued from4ac17343c08d9583bbff87e64273433f78528290, same checkout and sole
