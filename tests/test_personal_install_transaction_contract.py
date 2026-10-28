@@ -102,13 +102,13 @@ class PersonalTransactionContract(unittest.TestCase):
         self.assertIn("Write-StageDriver $retained '$Layout'", fixture)
         self.assertIn('$context.PublishRegistration()', fixture)
 
-    def test_native_fault_diagnostic_is_bounded_and_precedes_unchanged_assertion(self):
+    def test_native_fault_diagnostic_is_bounded_and_precedes_strict_assertion(self):
         fixture = read('tests/NativeRegistrationTransactionTests.ps1')
-        assertion = "Check-Stage ($installed.Code -ne 0 -and $installed.Error.Contains('Synthetic native registration fault: ' + $mode + '.') -and -not $installed.Output.Contains('Install OK')) 'native publication fault never reports success'"
+        assertion = "Check-Stage ($installed.Code -ne 0 -and (Test-NativeFailureRecord $installed $mode ('Synthetic native registration fault: ' + $mode + '.')) -and -not $installed.Output.Contains('Install OK')) 'native publication fault never reports success'"
         self.assertEqual(fixture.count(assertion), 1)
         diagnostic = fixture.split("if ($writeFault) {", 1)[1].split(assertion, 1)[0]
         self.assertEqual(diagnostic.count('NATIVE_REGISTRATION_DIAGNOSTIC'), 1)
-        for field in ('Mode = $mode', 'ChildCode = $installed.Code', 'CodeNonZero = ($installed.Code -ne 0)', "ExpectedErrorMatched = $installed.Error.Contains('Synthetic native registration fault: ' + $mode + '.')", "InstallOkAbsent = (-not $installed.Output.Contains('Install OK'))"):
+        for field in ('Mode = $mode', 'ChildCode = $installed.Code', 'CodeNonZero = ($installed.Code -ne 0)', "ExpectedErrorMatched = (Test-NativeFailureRecord $installed $mode ('Synthetic native registration fault: ' + $mode + '.'))", "InstallOkAbsent = (-not $installed.Output.Contains('Install OK'))"):
             self.assertIn(field, diagnostic)
         for stream in ('Error', 'Output'):
             self.assertIn('Length = $installed.' + stream + '.Length', diagnostic)
@@ -117,6 +117,58 @@ class PersonalTransactionContract(unittest.TestCase):
         self.assertIn('ConvertTo-Json -Depth 4 -Compress', diagnostic)
         self.assertNotRegex(diagnostic, r'(?m)^\s*\$installed(?:\.|\s*=)')
         self.assertNotIn('Invoke-StageHost', diagnostic)
+
+    def test_native_error_record_is_external_bounded_exact_and_fail_closed(self):
+        fixture = read('tests/NativeRegistrationTransactionTests.ps1')
+        emitter = STAGE.function(fixture, 'ConvertTo-NativeErrorRecord')
+        wrapper = STAGE.function(fixture, 'Invoke-NativeHost')
+        matcher = STAGE.function(fixture, 'Test-NativeFailureRecord')
+        self.assertIn('$depth -lt 4', emitter)
+        for name in ('[Management.Automation.MethodInvocationException]', '[Reflection.TargetInvocationException]'):
+            self.assertIn('$Exception.GetType() -eq ' + name, emitter)
+        self.assertNotIn('GetBaseException', emitter)
+        self.assertIn('$Exception = $Exception.InnerException; $depth++', emitter)
+        self.assertIn('$message.Substring(0, [Math]::Min(1024, $message.Length))', emitter)
+        self.assertIn("'    & ' + (Quote-Stage $Driver)", wrapper)
+        self.assertIn(' @consumerArguments', wrapper)
+        self.assertIn('[Console]::Error.WriteLine', wrapper)
+        self.assertIn('throw`r`n}', wrapper)
+        self.assertIn('return Invoke-StageHost $wrapper', wrapper)
+        self.assertNotIn('trap', wrapper)
+        self.assertEqual(fixture.count('Invoke-StageHost $'), 1)
+        for guard in ("$Result.Code -eq 0", "$Result.Output.Contains('Install OK')", "$Result.Output.Contains('Uninstall OK')", '$Result.Error.Length -gt 65536', '$json.Length -gt 8192', '$lines.Count -ne 1', '$record.Truncated', "'System.IO.IOException'", '[StringComparison]::Ordinal'):
+            self.assertIn(guard, matcher)
+        self.assertIn('[string]::Equals($record.Message, $Message, [StringComparison]::Ordinal)', matcher)
+        self.assertIn('($record | ConvertTo-Json -Depth 4 -Compress)', matcher)
+        self.assertNotIn('InnerException', matcher)
+        self.assertNotIn('.Error.Contains(', fixture.split('function Read-NativeSnapshot', 1)[1].replace("$changed.Error.Contains('CHANGED_REGISTRATION_ACCEPTED')", ''))
+
+    def test_native_wrapper_uses_typed_named_binding_and_fresh_child_probe(self):
+        fixture = read('tests/NativeRegistrationTransactionTests.ps1')
+        wrapper = STAGE.function(fixture, 'Invoke-NativeHost')
+        for token in ('[hashtable]$ConsumerArguments', "$key -cnotin @('Personal', 'PayloadDirectory')", "$ConsumerArguments['Personal'] -isnot [bool]", "$ConsumerArguments['PayloadDirectory'] -isnot [string]", "{ '$true' } else { '$false' }", "Quote-Stage $ConsumerArguments['PayloadDirectory']", "'    $consumerArguments = @{'", ' @consumerArguments'):
+            self.assertIn(token, wrapper)
+        self.assertNotIn('[string[]]$ConsumerArguments', fixture)
+        self.assertNotIn('-ConsumerArguments @(', fixture)
+        self.assertEqual(fixture.count('-ConsumerArguments @{ Personal = $true; PayloadDirectory = $Fixture.Payload }'), 2)
+        self.assertEqual(fixture.count('-ConsumerArguments @{ Personal = $true }'), 2)
+        probe = fixture.split('function Test-NativeArgumentBinding(', 1)[1].split('function Test-NativeFailureProtocol(', 1)[0]
+        for token in ("@('install', 'uninstall', 'empty')", "payload with spaces and O'Brien", 'param([switch]$Personal, [string]$PayloadDirectory)', '$Personal.IsPresent', '[StringComparison]::Ordinal', '$PSBoundParameters.Keys | Sort-Object', "$keys = 'PayloadDirectory,Personal'", '$args.Count -ne 0', '-ConsumerArguments $parameters', '$result.Code -eq 0', '$result.Error.Length -eq 0', 'NATIVE_BINDING_OK'):
+            self.assertIn(token, probe)
+        self.assertLess(fixture.index('    Test-NativeArgumentBinding $work'), fixture.index("    foreach ($mode in @('success'"))
+
+    def test_native_error_protocol_has_negative_identity_and_success_vectors(self):
+        fixture = read('tests/NativeRegistrationTransactionTests.ps1')
+        protocol = fixture.split('function Test-NativeFailureProtocol(', 1)[1].split('function Read-NativeSnapshot(', 1)[0]
+        for case in ('wrong-mode', 'wrong-type', 'wrong-message', 'wrong-case', 'formatted-message', 'foreign-outer-with-expected-inner', 'wrapper-depth', 'truncated', 'missing', 'duplicate', 'malformed', 'duplicate-key', 'exit-zero', 'install-success', 'uninstall-success'):
+            self.assertIn("'" + case + "'", protocol)
+        self.assertIn('Test-NativeFailureProtocol $work', fixture)
+        self.assertIn('external wrapper records only after consumer catch/finally', protocol)
+        self.assertIn("throw [InvalidOperationException]::new('foreign consumer fault')", protocol)
+        self.assertIn("throw [IO.IOException]::new('Synthetic native registration fault: protocol.')", protocol)
+        self.assertIn('Invoke-NativeHost -Driver $driver -ConsumerArguments @{} -Mode $mode', protocol)
+        for result in ('installed', 'changed', 'removed'):
+            self.assertIn('Test-NativeFailureRecord $' + result + ' $mode', fixture)
 
     def test_registration_is_consumed_after_terminal_and_not_rolled_back_as_precommit(self):
         text = read('scripts/Install-ProGo.ps1')

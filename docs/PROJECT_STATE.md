@@ -1,3 +1,134 @@
+## Local wrapper named argument binding correction after 6cdbb478 review
+
+Continue clean6cdbb478cb77b676e1067a66e51a5391b17036b0,
+tree372f2cb526691632dfd13e7a4bc55158809be47b, same checkout/branch,
+sole writer. No AGENTS, Git locks or competing source/native processes found.
+Review identified array splatting as positional binding under &, unlike -File.
+
+Only fixture wrapper binding changed: typed hashtable, case-sensitive fixed key
+whitelist Personal/Boolean and PayloadDirectory/String; Boolean literals retained,
+paths serialized through existing Quote-Stage. Install/retry pass both named keys,
+uninstall/retry only Personal, other probes an empty hashtable. No command evaluation.
+A mandatory fresh-child binding probe before registry cases checks install/uninstall/
+empty forms, Personal.IsPresent, full ordinal payload with spaces/apostrophe, exact
+PSBoundParameters keys and zero positional args. Existing exception protocol, known
+wrapper identity, negative vectors, diagnostics, assertions and deadlines unchanged.
+Production/shared host/legacy files unchanged. No push/CI or real registry/PC action.
+
+Local Python190=187PASS+3SKIP, public458source0release, diff checks PASS. Windows
+binding/protocol/native execution NOT_RUN: pwsh/dotnet/mono/csc remain absent.
+CI761 remains FAILURE; all13 unpassed native cases and Core downstream remain
+NOT_REACHED until reviewed Windows CI. Production factory closed; UAC broker remains.
+
+## Local fixture-only structured exception transport correction after CI761 review
+
+Continue clean786eabbc30d54f03bf7f64e9348c5ce5cc426538,
+tree2683aed7f5bf9d7f0b0d25ff218e6ea1bb13e492, same checkout/branch, sole writer.
+No AGENTS, Git locks or competing source/native processes found. Independent
+CI761 review confirms its formatted stderr CRLF mismatch; CI761 remains FAILURE.
+
+Only NativeRegistrationTransactionTests uses an external child wrapper. The old
+generated consumer is invoked with & and splatted fixed fixture arguments inside
+the same fresh child, through unchanged Invoke-StageHost. Its original catch/finally
+finish before the wrapper catch writes one Console.Error JSON record then bare
+rethrows the original error. No injected trap, consumer catch/finally modification,
+extra descendant process, deadline or settlement change. Emitter unwraps only exact
+MethodInvocationException/TargetInvocationException, at most4; never searches other
+inner chains or calls GetBaseException. Mode/type/message prefixes bounded64/128/1024
+UTF-16 units; truncation flagged and inadmissible. Record is below8KiB after escaping.
+
+Parent requires one framed canonical JSON object with fixed schema, no duplicate
+marker/key/extra field, bounded8KiB record/64KiB captured stderr, exact mode and
+System.IO.IOException/full message ordinal equality. No whitespace flattening,
+short needle or formatted-error Contains admission. Nonzero exit and absence of
+both Install OK/Uninstall OK required even for a valid record. All six positive
+native error assertions and diagnostic matcher consume it; prior accepted foreign
+error alternatives remain exact individual records. Raw1024-prefix diagnostics kept.
+
+Mandatory fixture protocol checks include15 negative vectors: wrong mode/type/full
+message/case, embedded CRLF, foreign outer with expected inner, excessive wrappers,
+truncation, missing/duplicate/malformed/duplicate-key record, valid record with exit0
+or either success output. A separate fresh-child probe replaces an earlier foreign
+exception only in its synthetic finally; the external catch must capture that final
+IOException, proving it runs after consumer catch/finally. Original15 native cases,
+registry/runtime/retry/private data checks remain. Reverse helper/call/matcher
+substitutions exactly reproduce the baseline fixture Git blob (LF/CRLF normalized).
+Production/shared host/legacy/personal fixture blobs unchanged; no runtime code fix.
+
+Local Python189=186PASS+3SKIP, public458source0release, diff checks PASS. New Windows
+parse/protocol/native execution NOT_RUN: pwsh/dotnet/mono/csc absent, none installed.
+All13 unpassed native cases and Core storage/Diagnostics/Shutdown stay NOT_REACHED
+until a separately reviewed Windows CI. No push/CI, real registry/security/PC action,
+factory activation or UAC work. Full unified diff follows for independent review.
+
+## CI761 diagnostic FAILURE — exact failed conjunct and formatted stderr captured
+
+After transport outage, the same checkout recovered clean at reviewed local
+93bb7eeba48d9c1a35c68334f067cbaed040efec/tree6f80a1130ad25e21c42bddc511c85707dc43fceb.
+No clone/reset/clean or reconstruction from partial source. Sole writer, no AGENTS,
+Git locks or competing source/native processes. All463 blobs compared with remote:
+only the three reviewed diagnostic/static/docs files differ, no deletions.
+Review delta6560bytes/85lines/SHA256
+e7d0d4311d3341dcb69db8e96e2b2652328042b4bcdfc72ec6fa73f439954619.
+Python187=184PASS+3SKIP/public458source0release/diff checks PASS before publication.
+Expected remote739cc363875cd9e8180b1e4fc3050dd8a081e7f7 and active/queued0 rechecked.
+
+One authorized non-force CAS published source4695af62b9f47f80c1b033a84c2fb4371560c089,
+parent exactly the expected remote. Tested merge120122b939b33ddf21ce702d938e150df6f3af67
+has parents main4bb336575bb1216d3047bd2b294aeecad9fdd65a and published source.
+Source/merge trees both equal reviewed6f80a1130ad25e21c42bddc511c85707dc43fceb.
+Run40734848406/CI761/attempt1/pull_request completed FAILURE at
+2026-10-28 20:54:19 Europe/Istanbul (17:54:19 UTC). Exact-source all-event count1;
+no rerun760, dispatch, duplicate or second publication. Remote remains this source.
+
+Nine complete terminal logs through cleanup saved at
+/workspace/scratch/4d867f513347/ci761-evidence; total372368bytes. Sizes/SHA256 and
+suite/diagnostic checks in verified-summary.json; run/jobs/provenance in manifest.json
+and publication.json. Core122980504422 FAILURE; Ubuntu122980504867 SUCCESS;
+Foundation122980504625 SUCCESS; Live122980504062 SUCCESS;
+Recovery122980504631 SUCCESS; RecoveryInput122980504954 SUCCESS;
+Runtime122980505202 SUCCESS; Success122980504798 SUCCESS;
+strict aggregate122998976041 FAILURE. Every full log contains exact source/merge.
+Seven success logs have zero actual error markers; Core/aggregate have one each.
+Aggregate has all eight needs with exact tested merge, seven success/one Core fail;
+strict fail-closed result confirmed.
+
+Diagnostic record at17:28:44 UTC, mode registration-before:
+ChildCode=1; CodeNonZero=true; ExpectedErrorMatched=false; InstallOkAbsent=true.
+Stderr.Length498/Truncated=false; Stdout.Length1078/Truncated=true/prefix1024.
+Captured stderr contains JSON-escaped literal:
+`Synthetic native registration fault: \r\nregistration-before.`
+The deliberately injected native fault reached PublishRegistration; the child
+returned failure and did not print Install OK. The expected exact string is split
+by actual CRLF in formatted stderr, so the second conjunct is false. This is an
+observed CI761 text-transport/matcher failure, not evidence of a product rollback
+error or false success. The other two conjuncts are true on the original streams.
+
+Raw timestamped outer JSON is retained in diagnostic-raw.txt. The CI console also
+wrapped that JSON across physical log lines; diagnostic-record.json was reconstructed
+by removing timestamp/physical-wrap boundaries only, leaving its escaped inner
+CRLF unchanged. JSON parsing, full stderr UTF-16 length498 and stdout prefix1024
+verified. No source/matcher correction or normalization was made. Historical CI760
+remains FAILURE; its uncaptured child values are not retroactively invented.
+
+Personal18, Stage10 and lifecycle8split+5legacy PASS. Native success PASS, then
+registration-before compound assertion FAIL (now line116); Native15=1PASS/1FAIL/
+13NOT_REACHED. Post-fault registration/runtime preservation assertions after the
+compound were also NOT_REACHED. All original33 suites have exact unique start/pass
+pairs26+1+5+1; Runtime35/refusals and Success40/fresh refusals2 PASS. Repair and
+Desktop5.1/Core7.6.7 icon checks PASS within their observed scope. Later Core storage,
+protected ACL/cross-volume, Restore/Diagnostics/Desktop/Instance/Maintenance/Shutdown/
+HomeVPN/Portable/relay regression NOT_REACHED, never inherited from CI759.
+
+Package/verify-clean-build-identity/uploads/prune skipped after Core failure;
+artifacts0, ZIP NOT_BUILT, package SHA unavailable, no delivery or PC validation.
+Production factories stay closed; UAC broker/authenticated SID/KnownFolder/code-origin
+transport remain unfinished. HKCU fixture success is not elevated HKLM/UAC,
+registry-link adversarial or PC proof. CI753/755 UNKNOWN; F30 remains deferred.
+Source stayed frozen through all nine logs; only this local result record follows.
+No changes to product/matcher/assertions/deadlines/rollback/security, no real PC
+registry/security action. Next independent review of these facts; no new CI authorized.
+
 ## Local diagnostic-only candidate for CI760 native registration-before failure
 
 Continue clean269736a30d363581d165cb224e0b0f38ca1e0388,
