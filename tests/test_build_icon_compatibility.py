@@ -5,6 +5,12 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 class BuildIconCompatibility(unittest.TestCase):
+    def test_windows_test_entrypoint_preserves_utf8_bom(self):
+        # CI743: WinPS 5.1 interpreted non-BOM source markers as ANSI.
+        data = (ROOT / 'scripts/Test-ProGo.ps1').read_bytes()
+        self.assertTrue(data.startswith(b'\xef\xbb\xbf'), 'WinPS 5.1 test entrypoint requires UTF-8 BOM')
+        data.decode('utf-8-sig', errors='strict')
+
     def test_icon_is_rendered_before_removing_outputs(self):
         source = (ROOT / 'scripts/Build-ProGo.ps1').read_text()
         call = source.index('New-ProGoIconFile -Path $preflightIcon')

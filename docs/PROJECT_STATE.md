@@ -1,3 +1,71 @@
+## Corrective CI candidate after independent f04/selfcheck-live review
+
+One corrective publication is authorized against exact PR88 source
+1ff918ba4ff2414f1c457267801c296a098c02f4; no rerun of CI743. Only additional
+fixture change: parent preserves selfcheck-live evidence when its driver was
+started but live-child-settled is absent, including abnormal driver exit.
+Successful settled cleanup and all assertions/deadlines/authority are unchanged.
+Targeted Python8 PASS; full Python170 =167 PASS +3 SKIP; public-content check
+and diff check PASS. Canonical Test-ProGo body equals 9bbcfb03 byte-for-byte
+with only EF BB BF prepended (body SHA256
+c52d5a8f0c43fdf26c91b05c360de9e31d3a303eacac1ea2bc23d07235e8ee30).
+Cleanup decision cases checked locally as static logic, not Windows execution.
+New split/selfcheck suites remain NOT_RUN pending this independent CI result.
+Actual different volumes and access-denied remain mandatory before Program Files.
+No privilege installer, production separate-root enablement or PC changes.
+
+## CI743 completed FAILURE: exact-SHA diagnosis; local BOM correction only
+
+Sole run40605184043 / CI743 attempt1 completed FAILURE. Source
+1ff918ba4ff2414f1c457267801c296a098c02f4, tested merge
+c5f7316957b9fab8414283dee3d686f56e30a15b. All eight complete job logs were
+retrieved and checked; exact checkout merge was observed in each. Remote PR88
+head is still the same source; exact-head workflow query returns only this run.
+Publication freeze 9bbcfb03e45bad1a53f53bd3a7ea2e44e4cfbd62 has the exact remote
+tree 112e1294f05c6745d0a1ea16cf4bae0e0fff4693; local publication record58d7617.
+
+Full results: Ubuntu122542800276 SUCCESS (aggregate refusal26, operation16,
+QR13 and provisioning checks); runtime122542800225 SUCCESS (Runtime35 plus
+refusals); success122542800127 SUCCESS (Success40, fresh-process refusal2).
+Core122542800289 and Foundation122542800130/Live122542800275/Recovery122542799875
+FAIL before their suites at Test-ProGo's source-marker gate. Core still executed
+both separate icon host fixtures successfully. Aggregate122546045419 FAIL:
+all required partitions must succeed on the exact SHA. Packaging/uploads skipped.
+
+Diagnosis: cumulative editing removed the UTF-8 BOM from scripts/Test-ProGo.ps1.
+Windows PowerShell5.1 read its Russian marker literal as ANSI, while C# source is
+read with explicit UTF8. The logged mojibake matches the Windows1252 decoding
+of the exact UTF8 marker bytes. The original marker exists in src/Ui.cs; this
+is a harness encoding regression, not evidence of a missing production marker.
+New updater/layout/Repair/Restore/selfcheck-live suites were NOT_RUN in this CI;
+no earlier PASS is transferred to them. Different volumes and access-denied
+remain mandatory before Program Files; no privilege installer was introduced.
+
+After full failed-job logs and diagnosis, a local-only correction restores the
+three BOM bytes without changing the published harness body (Git newline
+normalization accounted for). Added a byte-level BOM regression guard. Local170
+=167 PASS +3 SKIP; diff check PASS. This correction has no Windows proof and was
+NOT published. No blind rerun, duplicate run, dispatch, additional branch write,
+merge, release, PC installation or infrastructure change. A further CI is outside
+this one-run authorization. Current source remains the failed, diagnosed CI743.
+
+## CI743 publication checkpoint: only attempt 1, verification in progress
+
+Authorized guarded fast-forward updated PR88 from exact expected source
+1ed86243e5373e86b598d97107492eeabbe39bfd to source
+1ff918ba4ff2414f1c457267801c296a098c02f4. Source parent is exactly the old
+head; full Git tree 112e1294f05c6745d0a1ea16cf4bae0e0fff4693 equals local
+publication checkpoint 9bbcfb03e45bad1a53f53bd3a7ea2e44e4cfbd62.
+PR merge is c5f7316957b9fab8414283dee3d686f56e30a15b (tested checkout must
+still be verified from logs). Sole automatic pull_request run40605184043,
+CI743 attempt1, observed in_progress; no conclusions inherited from CI742.
+Local169 = 166 PASS + 3 SKIP; public-content451source/0release PASS; exact42
+runtime inventory parity and original installer suite/workflow/aggregate
+preservation verified. Access-denied and actual separate-volume testing remain
+mandatory before Program Files enablement. No duplicate/rerun/dispatch, merge,
+release, PC installation, privilege installer or infrastructure changes.
+This publication record is local-only to avoid another workflow run.
+
 ## PUBLICATION CANDIDATE: one authorized cumulative Windows checkpoint
 
 Independent review of 8417349 found no blocking production defect. Owner now

@@ -87,6 +87,10 @@ foreach ($mode in @('program','missing','fault-program','fault-missing','all','d
             }
             finally { $child.Dispose() }
         }
+        if ($mode -eq 'selfcheck-live' -and $null -ne $child -and -not [IO.File]::Exists((Join-Path $work 'live-child-settled'))) {
+            $settled = $false
+            Write-Warning ('Native self-check cleanup unconfirmed; fixture evidence retained: ' + $work)
+        }
         if ($settled -and [IO.Directory]::Exists($work)) { Remove-Item -LiteralPath $work -Recurse -Force }
     }
 }

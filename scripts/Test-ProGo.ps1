@@ -1,4 +1,4 @@
-param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All',
+﻿param([ValidateSet('All', 'Core', 'Installer')][string]$Suite = 'All',
     [ValidateSet('All', 'Foundation', 'Live', 'Recovery')][string]$InstallerPartition = 'All')
 if ($Suite -ne 'Installer' -and $InstallerPartition -ne 'All') { throw 'Installer partition requires Installer suite.' }
 Set-StrictMode -Version 2.0
