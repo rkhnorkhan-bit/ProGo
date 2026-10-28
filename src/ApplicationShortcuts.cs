@@ -2899,13 +2899,14 @@ namespace ProGo
             void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
         }
         // Live transaction capability. No production factory until the authenticated
-        // UAC/code-origin boundary and native ARP store are reviewed and implemented.
+        // UAC/code-origin boundary and native ARP activation are reviewed and implemented.
         // Existing hashes are revalidation, never installation provenance.
         public sealed class PersonalInstallTransaction : IDisposable
         {
             private interface RegistrationStore : IDisposable {
                 string Read();
                 bool CompareExchange(string expected, string replacement);
+                void PublicationFailed(string expected);
             }
             private readonly string runtime, data, payload, sid, version;
             private readonly RegistrationStore registration;
@@ -2919,7 +2920,52 @@ namespace ProGo
             public string PayloadRoot { get { return payload; } }
             public string RetryPath { get { return Path.Combine(runtime, "backups", "Uninstall-ProGo.retry.ps1"); } }
             private static string Canonical(string path) { return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar); }
-            private static string CurrentSid() { using (var identity = System.Security.Principal.WindowsIdentity.GetCurrent()) return identity.User.Value; }
+            // The effective thread identity can be impersonated, including by the
+            // same SID. It is not the worker's original process identity. This is
+            // admission only: it does not authenticate a UAC parent or grant elevation.
+            private sealed class PersonalTokenHandle : SafeHandleZeroOrMinusOneIsInvalid {
+                public PersonalTokenHandle() : base(true) { }
+                protected override bool ReleaseHandle() { return ClosePersonalToken(handle); }
+            }
+            [DllImport("kernel32.dll", EntryPoint = "GetCurrentProcess")]
+            private static extern IntPtr PersonalProcess();
+            [DllImport("kernel32.dll", EntryPoint = "GetCurrentThread")]
+            private static extern IntPtr PersonalThread();
+            [DllImport("kernel32.dll", EntryPoint = "CloseHandle", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool ClosePersonalToken(IntPtr token);
+            [DllImport("advapi32.dll", EntryPoint = "OpenProcessToken", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool OpenPersonalProcessToken(IntPtr process, uint access, out PersonalTokenHandle token);
+            [DllImport("advapi32.dll", EntryPoint = "OpenThreadToken", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool OpenPersonalThreadToken(IntPtr thread, uint access,
+                [MarshalAs(UnmanagedType.Bool)] bool openAsSelf, out PersonalTokenHandle token);
+            private static void RefusePersonalImpersonation() {
+                PersonalTokenHandle threadToken;
+                bool present = OpenPersonalThreadToken(PersonalThread(), 0x0008u, true, out threadToken);
+                int error = Marshal.GetLastWin32Error();
+                if (threadToken != null) threadToken.Dispose();
+                if (present) throw new System.Security.SecurityException("Personal installer refuses thread impersonation.");
+                // Only ERROR_NO_TOKEN proves absence. Access denied, anonymous
+                // impersonation and every other native failure are refusals.
+                if (error != 1008) throw new System.Security.SecurityException("Personal installer thread identity unavailable.");
+            }
+            private static string CurrentSid() {
+                RefusePersonalImpersonation();
+                PersonalTokenHandle processToken;
+                bool opened = OpenPersonalProcessToken(PersonalProcess(), 0x0008u, out processToken);
+                using (processToken) {
+                    if (!opened || processToken == null || processToken.IsInvalid)
+                        throw new System.Security.SecurityException("Personal installer process identity unavailable.");
+                    using (var identity = new System.Security.Principal.WindowsIdentity(processToken.DangerousGetHandle())) {
+                        if (identity.User == null) throw new System.Security.SecurityException("Personal installer process user unavailable.");
+                        string result = identity.User.Value;
+                        RefusePersonalImpersonation();
+                        return result;
+                    }
+                }
+            }
             private PersonalInstallTransaction(string runtimeRoot, string dataRoot, string payloadRoot, string originalSid,
                 string[] names, string[] expectedHashes, string payloadVersion, RegistrationStore store)
             {
@@ -2962,13 +3008,21 @@ namespace ProGo
                     }
                 }
             }
-            private string ExpectedRegistration() {
+            private static string[] RegistrationStrings(string runtime, string version, string sid) {
+                foreach (string field in new[] { runtime, version, sid })
+                    if (String.IsNullOrEmpty(field) || field.IndexOfAny(new[] { '\0', '\r', '\n', '"' }) >= 0)
+                        throw new IOException("Personal registration field is invalid.");
+                string retry = Path.Combine(runtime, "backups", "Uninstall-ProGo.retry.ps1");
                 string shell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
-                string command = "\"" + shell + "\" -NoProfile -File \"" + RetryPath + "\" -Personal";
-                // Typed values are a fixed adapter contract, never commands read from metadata.
-                return "DisplayName=ProGo\nDisplayVersion=" + version + "\nInstallLocation=" + runtime +
-                    "\nUninstallString=" + command + "\nNoModify:DWORD=1\nNoRepair:DWORD=1\nProGoOwnerSid=" + sid + "\n";
+                string command = "\"" + shell + "\" -NoProfile -File \"" + retry + "\" -Personal";
+                return new[] { "ProGo", version, runtime, command, null, null, sid };
             }
+            private static string RegistrationText(string runtime, string version, string sid) {
+                string[] values = RegistrationStrings(runtime, version, sid);
+                return "DisplayName=ProGo\nDisplayVersion=" + values[1] + "\nInstallLocation=" + values[2] +
+                    "\nUninstallString=" + values[3] + "\nNoModify:DWORD=1\nNoRepair:DWORD=1\nProGoOwnerSid=" + values[6] + "\n";
+            }
+            private string ExpectedRegistration() { return RegistrationText(runtime, version, sid); }
             public void AdmitRegistration() {
                 lock (contextGate) {
                     Validate(runtime, data, payload);
@@ -2991,9 +3045,9 @@ namespace ProGo
                     try {
                         if (!registration.CompareExchange(null, expected) || registration.Read() != expected) throw new IOException("Personal registration publication failed.");
                     } catch {
-                        // Adapter must provide real ownership/CAS semantics. A native
-                        // registry implementation is deliberately not assumed atomic here.
-                        if (registration.Read() == expected) registration.CompareExchange(expected, null);
+                        // Native commit outcomes are re-read on retry, never guessed
+                        // or compensated by deleting a possibly committed ARP entry.
+                        registration.PublicationFailed(expected);
                         throw;
                     }
                 }
@@ -3023,12 +3077,218 @@ namespace ProGo
                     }
                 }
             }
+            // Fixed native ARP adapter. TxR is mandatory: no sequential-write CAS
+            // claim and no nontransactional fallback when KTM is unavailable.
+            private sealed class NativeRegistrationStore : RegistrationStore {
+                private const string MachineParent = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+                private const string Leaf = "ProGo";
+                private static readonly string[] ValueNames = { "DisplayName", "DisplayVersion", "InstallLocation", "UninstallString", "NoModify", "NoRepair", "ProGoOwnerSid" };
+                private readonly IntPtr hive;
+                private readonly string parent, physicalParent, expected;
+                private readonly byte[][] values;
+                private bool disposed;
+                private readonly object gate = new object();
+#if PROGO_PERSONAL_INSTALL_FIXTURE
+                private string fault;
+#endif
+                internal NativeRegistrationStore(string runtime, string version, string sid)
+                    : this(new IntPtr(unchecked((int)0x80000002)), MachineParent, @"\REGISTRY\MACHINE\" + MachineParent, runtime, version, sid) { }
+                private NativeRegistrationStore(IntPtr root, string path, string physical, string runtime, string version, string sid) {
+                    hive = root; parent = path; physicalParent = physical;
+                    expected = RegistrationText(runtime, version, sid);
+                    string[] strings = RegistrationStrings(runtime, version, sid);
+                    values = new byte[ValueNames.Length][];
+                    for (int n = 0; n < values.Length; n++) {
+                        values[n] = n == 4 || n == 5 ? new byte[] { 1, 0, 0, 0 } : Encoding.Unicode.GetBytes(strings[n] + "\0");
+                        if (values[n].Length > 16384) throw new IOException("Personal native registration value exceeds bound.");
+                    }
+                }
+                private sealed class TransactionHandle : SafeHandleZeroOrMinusOneIsInvalid {
+                    public TransactionHandle() : base(true) { }
+                    protected override bool ReleaseHandle() { return ClosePersonalToken(handle); }
+                }
+                [DllImport("ktmw32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+                private static extern TransactionHandle CreateTransaction(IntPtr attributes, IntPtr uow, uint options, uint isolation, uint flags, uint timeout, string description);
+                [DllImport("ktmw32.dll", SetLastError = true)]
+                [return: MarshalAs(UnmanagedType.Bool)]
+                private static extern bool CommitTransaction(TransactionHandle transaction);
+                [DllImport("ktmw32.dll", SetLastError = true)]
+                [return: MarshalAs(UnmanagedType.Bool)]
+                private static extern bool RollbackTransaction(TransactionHandle transaction);
+                [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+                private static extern int RegOpenKeyTransactedW(IntPtr key, string name, uint options, uint access, out SafeRegistryHandle result, TransactionHandle transaction, IntPtr extended);
+                [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+                private static extern int RegCreateKeyTransactedW(IntPtr key, string name, uint reserved, IntPtr keyClass, uint options, uint access, IntPtr attributes, out SafeRegistryHandle result, out uint disposition, TransactionHandle transaction, IntPtr extended);
+                [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+                private static extern int RegQueryInfoKeyW(SafeRegistryHandle key, IntPtr keyClass, IntPtr classLength, IntPtr reserved,
+                    out uint subkeys, IntPtr maxSubkey, IntPtr maxClass, out uint count, IntPtr maxName, IntPtr maxValue, IntPtr security, IntPtr lastWrite);
+                [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+                private static extern int RegEnumValueW(SafeRegistryHandle key, uint index, StringBuilder name, ref uint nameLength, IntPtr reserved, out uint type, [Out] byte[] bytes, ref uint length);
+                [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+                private static extern int RegSetValueExW(SafeRegistryHandle key, string name, uint reserved, uint type, byte[] bytes, uint length);
+                [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+                private static extern int RegDeleteValueW(SafeRegistryHandle key, string name);
+                [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+                private static extern int RegDeleteKeyTransactedW(IntPtr key, string name, uint view, uint reserved, TransactionHandle transaction, IntPtr extended);
+                [DllImport("ntdll.dll", ExactSpelling = true)]
+                private static extern int NtQueryKey(SafeRegistryHandle key, int informationClass, [Out] byte[] information, uint length, out uint required);
+                private static IOException Failure(string phase, int code) {
+                    // Fixed phase and numeric status only; no registry data, paths,
+                    // shell commands or unbounded system-generated error text.
+                    return new IOException("Personal native registration " + phase + " failed (" + code.ToString(System.Globalization.CultureInfo.InvariantCulture) + ").");
+                }
+                private static void Check(int code, string phase) { if (code != 0) throw Failure(phase, code); }
+                private static void Origin(SafeRegistryHandle key, string path) {
+                    byte[] bytes = new byte[8192]; uint required;
+                    Check(NtQueryKey(key, 3, bytes, (uint)bytes.Length, out required), "origin");
+                    uint length = BitConverter.ToUInt32(bytes, 0);
+                    if (required < 4 || required > bytes.Length || length > required - 4 || (length & 1) != 0 ||
+                        !String.Equals(Encoding.Unicode.GetString(bytes, 4, (int)length), path, StringComparison.OrdinalIgnoreCase))
+                        throw new IOException("Personal native registration origin differs.");
+                }
+                private static TransactionHandle Begin() {
+                    if (!Environment.Is64BitOperatingSystem) throw Failure("platform", 50);
+                    var transaction = CreateTransaction(IntPtr.Zero, IntPtr.Zero, 1, 0, 0, 5000, "ProGo registration");
+                    if (transaction == null || transaction.IsInvalid) {
+                        int error = Marshal.GetLastWin32Error();
+                        if (transaction != null) transaction.Dispose();
+                        throw Failure("begin", error);
+                    }
+                    return transaction;
+                }
+                private SafeRegistryHandle OpenParent(TransactionHandle transaction) {
+                    SafeRegistryHandle key;
+                    int code = RegOpenKeyTransactedW(hive, parent, 0, 0x010Du, out key, transaction, IntPtr.Zero);
+                    try { Check(code, "parent"); Origin(key, physicalParent); return key; }
+                    catch { if (key != null) key.Dispose(); throw; }
+                }
+                private SafeRegistryHandle OpenLeaf(SafeRegistryHandle parentKey, TransactionHandle transaction) {
+                    SafeRegistryHandle key;
+                    int code = RegOpenKeyTransactedW(parentKey.DangerousGetHandle(), Leaf, 0, 0x0103u, out key, transaction, IntPtr.Zero);
+                    if (code == 2) { if (key != null) key.Dispose(); return null; }
+                    try { Check(code, "open"); Origin(key, physicalParent + "\\" + Leaf); return key; }
+                    catch { if (key != null) key.Dispose(); throw; }
+                }
+                private static void Counts(SafeRegistryHandle key, out uint subkeys, out uint count) {
+                    Check(RegQueryInfoKeyW(key, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, out subkeys, IntPtr.Zero, IntPtr.Zero,
+                        out count, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero), "inventory");
+                }
+                private bool Exact(SafeRegistryHandle key) {
+                    uint subkeys, count; Counts(key, out subkeys, out count);
+                    if (subkeys != 0 || count != ValueNames.Length) return false;
+                    bool[] seen = new bool[ValueNames.Length];
+                    for (uint n = 0; n < count; n++) {
+                        var name = new StringBuilder(256); uint characters = 256, length = 16384, type;
+                        var bytes = new byte[16384];
+                        Check(RegEnumValueW(key, n, name, ref characters, IntPtr.Zero, out type, bytes, ref length), "read");
+                        int index = Array.IndexOf(ValueNames, name.ToString());
+                        if (index < 0 || seen[index] || type != (index == 4 || index == 5 ? 4u : 1u) || length != values[index].Length) return false;
+                        seen[index] = true;
+                        for (int b = 0; b < length; b++) if (bytes[b] != values[index][b]) return false;
+                    }
+                    Counts(key, out subkeys, out count);
+                    return subkeys == 0 && count == ValueNames.Length;
+                }
+                private string Snapshot(SafeRegistryHandle key) {
+                    if (key == null) return null;
+                    if (!Exact(key)) throw new IOException("Personal registration is foreign or changed.");
+                    return expected;
+                }
+                public string Read() {
+                    lock (gate) {
+                        if (disposed) throw new ObjectDisposedException("Personal native registration");
+                        using (var transaction = Begin())
+                        using (var parentKey = OpenParent(transaction))
+                        using (var key = OpenLeaf(parentKey, transaction)) {
+                            string snapshot = Snapshot(key);
+                            // Explicitly settle the read transaction. Closing the last
+                            // uncommitted KTM handle also rolls it back on exceptions.
+                            if (!RollbackTransaction(transaction)) throw Failure("read settlement", Marshal.GetLastWin32Error());
+                            return snapshot;
+                        }
+                    }
+                }
+                public bool CompareExchange(string previous, string replacement) {
+                    lock (gate) {
+                        if (disposed) throw new ObjectDisposedException("Personal native registration");
+                        if ((previous != null && previous != expected) || (replacement != null && replacement != expected) || previous == replacement)
+                            throw new IOException("Personal native registration replacement contract differs.");
+                        using (var transaction = Begin())
+                        using (var parentKey = OpenParent(transaction)) {
+                            SafeRegistryHandle key = OpenLeaf(parentKey, transaction);
+                            bool committed = false;
+                            try {
+                                if (Snapshot(key) != previous) return false;
+                                if (replacement != null) {
+                                    Inject("registration-before");
+                                    uint disposition;
+                                    Check(RegCreateKeyTransactedW(parentKey.DangerousGetHandle(), Leaf, 0, IntPtr.Zero, 0, 0x0103u,
+                                        IntPtr.Zero, out key, out disposition, transaction, IntPtr.Zero), "create");
+                                    if (disposition != 1) throw new IOException("Personal registration is foreign or changed.");
+                                    Origin(key, physicalParent + "\\" + Leaf);
+                                    for (int n = 0; n < ValueNames.Length; n++) {
+                                        Check(RegSetValueExW(key, ValueNames[n], 0, n == 4 || n == 5 ? 4u : 1u, values[n], (uint)values[n].Length), "write");
+                                        if (n == 2) Inject("registry-write");
+                                    }
+                                    if (!Exact(key)) throw new IOException("Personal native registration publication snapshot differs.");
+                                } else {
+                                    for (int n = 0; n < ValueNames.Length; n++) {
+                                        Check(RegDeleteValueW(key, ValueNames[n]), "delete value");
+                                        if (n == 2) Inject("registry-delete");
+                                    }
+                                    uint subkeys, count; Counts(key, out subkeys, out count);
+                                    if (subkeys != 0 || count != 0) throw new IOException("Personal registration is foreign or changed.");
+                                    Origin(key, physicalParent + "\\" + Leaf);
+                                    Check(RegDeleteKeyTransactedW(parentKey.DangerousGetHandle(), Leaf, 0x0100u, 0, transaction, IntPtr.Zero), "delete key");
+                                }
+                                Origin(parentKey, physicalParent);
+                                Inject("registry-commit");
+                                if (!CommitTransaction(transaction)) throw Failure("commit", Marshal.GetLastWin32Error());
+                                committed = true;
+                                // A postcommit failure is deliberately not compensated:
+                                // keep committed runtime/retry and re-read on fresh retry.
+                                Inject(replacement != null ? "registration-after" : "registry-delete-after");
+                                return true;
+                            } finally {
+                                try { if (key != null) key.Dispose(); }
+                                finally {
+                                    if (!committed && !RollbackTransaction(transaction))
+                                        throw Failure("rollback", Marshal.GetLastWin32Error());
+                                }
+                            }
+                        }
+                    }
+                }
+                private void Inject(string point) {
+#if PROGO_PERSONAL_INSTALL_FIXTURE
+                    if (fault == point) { fault = null; throw new IOException("Synthetic native registration fault: " + point + "."); }
+#endif
+                }
+                public void PublicationFailed(string value) { /* No compensating delete after an uncertain native commit. */ }
+                public void Dispose() { lock (gate) disposed = true; }
+#if PROGO_PERSONAL_INSTALL_FIXTURE
+                internal static NativeRegistrationStore Fixture(string fixtureRoot, string caseName, string runtime, string version, string sid, string failure) {
+                    string suffix = Path.GetFileName(fixtureRoot).Substring("ProGo-personal-transaction-".Length);
+                    string path = @"SOFTWARE\ProGo.RegistryFixtures\" + suffix + "\\" + caseName;
+                    return new NativeRegistrationStore(new IntPtr(unchecked((int)0x80000001)), path,
+                        @"\REGISTRY\USER\" + CurrentSid() + "\\" + path, runtime, version, sid) { fault = failure };
+                }
+#endif
+            }
 #if PROGO_PERSONAL_INSTALL_FIXTURE
             // This factory and file store are absent from normal application/Add-Type
             // builds. Only isolated fixture compilation can construct this capability.
             public static PersonalInstallTransaction CreateFixture(string fixtureRoot, string caseName, string runtimeRoot, string dataRoot,
                 string payloadRoot, string originalSid, string[] names, string[] expectedHashes, string payloadVersion, string fault)
             {
+                return CreateFixtureCore(fixtureRoot, caseName, runtimeRoot, dataRoot, payloadRoot, originalSid, names, expectedHashes, payloadVersion, fault, false);
+            }
+            public static PersonalInstallTransaction CreateRegistryFixture(string fixtureRoot, string caseName, string runtimeRoot, string dataRoot,
+                string payloadRoot, string originalSid, string[] names, string[] expectedHashes, string payloadVersion, string fault) {
+                return CreateFixtureCore(fixtureRoot, caseName, runtimeRoot, dataRoot, payloadRoot, originalSid, names, expectedHashes, payloadVersion, fault, true);
+            }
+            private static PersonalInstallTransaction CreateFixtureCore(string fixtureRoot, string caseName, string runtimeRoot, string dataRoot,
+                string payloadRoot, string originalSid, string[] names, string[] expectedHashes, string payloadVersion, string fault, bool native) {
                 string rootPath = Canonical(fixtureRoot);
                 if (!String.Equals(Path.GetDirectoryName(rootPath), Canonical(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) ||
                     !System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(rootPath), "^ProGo-personal-transaction-[a-f0-9]{32}$") ||
@@ -3038,7 +3298,8 @@ namespace ProGo
                     Canonical(dataRoot) != Canonical(Path.Combine(scope, "data", "ProGo")) ||
                     Canonical(payloadRoot) != Canonical(Path.Combine(scope, "payload"))) throw new IOException("Personal fixture fixed paths differ.");
                 return new PersonalInstallTransaction(runtimeRoot, dataRoot, payloadRoot, originalSid, names, expectedHashes, payloadVersion,
-                    new FixtureRegistrationStore(Path.Combine(scope, "arp.txt"), fault));
+                    native ? (RegistrationStore)NativeRegistrationStore.Fixture(rootPath, caseName, runtimeRoot, payloadVersion, originalSid, fault) :
+                        new FixtureRegistrationStore(Path.Combine(scope, "arp.txt"), fault));
             }
             private sealed class FixtureRegistrationStore : RegistrationStore {
                 private readonly string path;
@@ -3063,6 +3324,7 @@ namespace ProGo
                     return new UTF8Encoding(false, true).GetString(bytes);
                 }
                 public string Read() { lock (gate) return ReadValue(Open()); }
+                public void PublicationFailed(string expected) { if (Read() == expected) CompareExchange(expected, null); }
                 public void Dispose() { lock (gate) { if (held != null) { held.Dispose(); held = null; } } }
                 public bool CompareExchange(string expected, string replacement) {
                     lock (gate) {

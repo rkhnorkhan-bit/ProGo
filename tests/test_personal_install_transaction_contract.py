@@ -32,6 +32,76 @@ class PersonalTransactionContract(unittest.TestCase):
         self.assertIn('LegacyOrigin(current.SafeFileHandle) != LegacyOrigin(source.Value.SafeFileHandle)', production)
         self.assertNotIn('Microsoft.Win32.Registry', source)
 
+    def test_process_identity_gate_refuses_impersonation_at_construction_and_revalidation(self):
+        source = read('src/ApplicationShortcuts.cs')
+        gate = source.split('private static void RefusePersonalImpersonation()', 1)[1].split('private static string CurrentSid()', 1)[0]
+        self.assertIn('OpenPersonalThreadToken(PersonalThread(), 0x0008u, true', gate)
+        self.assertIn('if (present) throw', gate)
+        self.assertIn('if (error != 1008) throw', gate)
+        self.assertLess(gate.index('Marshal.GetLastWin32Error()'), gate.index('threadToken.Dispose()'))
+        identity = source.split('private static string CurrentSid()', 1)[1].split('private PersonalInstallTransaction(', 1)[0]
+        self.assertEqual(identity.count('RefusePersonalImpersonation();'), 2)
+        self.assertIn('OpenPersonalProcessToken(PersonalProcess(), 0x0008u', identity)
+        self.assertIn('using (processToken)', identity)
+        self.assertNotIn('WindowsIdentity.GetCurrent()', identity)
+        constructor = source.split('private PersonalInstallTransaction(', 1)[1].split('private void PinAncestors', 1)[0]
+        self.assertLess(constructor.index('sid != CurrentSid()'), constructor.index('PinAncestors(rootPath)'))
+        validate = source.split('public void Validate(string runtimeRoot', 1)[1].split('private string ExpectedRegistration()', 1)[0]
+        self.assertIn('sid != CurrentSid()', validate)
+        fixture = read('tests/PersonalInstallTransactionTests.ps1')
+        for mode in ('context-impersonation', 'context-revalidate'):
+            self.assertIn("'" + mode + "'", fixture)
+        self.assertIn('$context.AdmitRegistration()', fixture)
+        self.assertIn('$impersonation.Dispose()', fixture)
+
+    def test_native_store_requires_transactional_registry_and_fixed_typed_inventory(self):
+        source = read('src/ApplicationShortcuts.cs')
+        native = source.split('private sealed class NativeRegistrationStore', 1)[1].split('// This factory and file store', 1)[0]
+        for api in ('RegOpenKeyTransactedW', 'RegCreateKeyTransactedW', 'RegDeleteKeyTransactedW', 'RegSetValueExW', 'RegDeleteValueW', 'RegEnumValueW', 'CommitTransaction', 'RollbackTransaction', 'NtQueryKey'):
+            self.assertIn(api, native)
+        for forbidden in ('RegDeleteTree', 'RegSetKeySecurity', 'RegConnectRegistry', 'RegCreateKeyExW', 'RegDeleteKeyW'):
+            self.assertNotIn(forbidden, native)
+        self.assertIn('SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall', native)
+        names = re.search(r'ValueNames = \{ (.*?) \};', native).group(1)
+        self.assertEqual(re.findall(r'"([A-Za-z]+)"', names), ['DisplayName', 'DisplayVersion', 'InstallLocation', 'UninstallString', 'NoModify', 'NoRepair', 'ProGoOwnerSid'])
+        self.assertIn('type != (index == 4 || index == 5 ? 4u : 1u)', native)
+        self.assertIn('bytes[b] != values[index][b]', native)
+        self.assertIn('subkeys != 0 || count != ValueNames.Length', native)
+        self.assertIn('new byte[16384]', native)
+        self.assertIn('0, 0, 5000, "ProGo registration"', native)
+        self.assertLess(native.index('if (Snapshot(key) != previous)'), native.index('RegCreateKeyTransactedW(parentKey'))
+        self.assertIn('if (disposition != 1) throw', native)
+        self.assertIn('if (!committed && !RollbackTransaction(transaction))', native)
+        self.assertIn('public void PublicationFailed(string value) { /* No compensating delete', native)
+
+    def test_native_backend_is_consumed_and_fixture_factory_is_compile_time_only(self):
+        source = read('src/ApplicationShortcuts.cs')
+        production = re.sub(r'#if PROGO_PERSONAL_INSTALL_FIXTURE\n.*?\n#endif', '', source, flags=re.S)
+        self.assertNotIn('CreateRegistryFixture(', production)
+        self.assertNotIn('ProGo.RegistryFixtures', production)
+        self.assertIn('private sealed class NativeRegistrationStore : RegistrationStore', production)
+        self.assertIn('NativeRegistrationStore.Fixture(rootPath, caseName, runtimeRoot, payloadVersion, originalSid, fault)', source)
+        publish = source.split('public void PublishRegistration()', 1)[1].split('public void RemoveRegistration()', 1)[0]
+        self.assertIn('registration.PublicationFailed(expected)', publish)
+        self.assertNotIn('registration.CompareExchange(expected, null)', publish)
+        self.assertIn("'tests\\NativeRegistrationTransactionTests.ps1'", read('scripts/Test-ProGo.ps1'))
+        fixture = read('tests/NativeRegistrationTransactionTests.ps1')
+        self.assertIn("Replace(']::CreateFixture(', ']::CreateRegistryFixture(')", fixture)
+        self.assertNotIn('RegistryHive]::LocalMachine', fixture)
+        self.assertNotIn('DeleteSubKeyTree', fixture)
+        self.assertIn('RegistryHive]::CurrentUser', fixture)
+        self.assertIn('RegistryView]::Registry64', fixture)
+
+    def test_native_fixture_covers_consumers_partial_failures_and_foreign_snapshots(self):
+        fixture = read('tests/NativeRegistrationTransactionTests.ps1')
+        for mode in ('success', 'registration-before', 'registry-write', 'registry-commit', 'registration-after', 'registry-delete', 'registry-delete-after', 'parent-missing', 'foreign-existing', 'foreign-type', 'foreign-extra', 'foreign-child', 'foreign-partial', 'foreign-oversize', 'changed-after-admit'):
+            self.assertIn("'" + mode + "'", fixture)
+        for assertion in ('native partial writes rolled back', 'partial native value deletion rolls back', 'without replaying runtime transaction', 'foreign typed registry snapshot preserved exactly', 'native registration removed last', 'live admission snapshot cannot authorize changed', 'copied owner SID cannot authorize foreign', 'native exact fixed key/value inventory'):
+            self.assertIn(assertion, fixture)
+        self.assertIn("Write-StageDriver (Join-Path $Scripts 'Install-ProGo.ps1')", fixture)
+        self.assertIn("Write-StageDriver $retained '$Layout'", fixture)
+        self.assertIn('$context.PublishRegistration()', fixture)
+
     def test_registration_is_consumed_after_terminal_and_not_rolled_back_as_precommit(self):
         text = read('scripts/Install-ProGo.ps1')
         body = text.split('$InstallDir = ', 1)[1]

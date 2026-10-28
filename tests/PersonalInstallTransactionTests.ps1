@@ -23,8 +23,29 @@ function New-PersonalFixtureContext {
     $sid = $Fixture.OwnerSid; $runtime = $Fixture.Runtime
     if ($Fixture.Mode -ceq 'context-sid') { $sid = $sid + '-foreign' }
     if ($Fixture.Mode -ceq 'context-path') { $runtime += '-foreign' }
-    return [ProGo.ApplicationShortcuts+PersonalInstallTransaction]::CreateFixture($Fixture.Root, $Fixture.Case, $runtime, $Fixture.Data,
-        $Fixture.Payload, $sid, [string[]]$Fixture.Names, [string[]]$Fixture.Hashes, $Fixture.Version, $Fixture.Mode)
+    $identity = $null; $impersonation = $null; $context = $null
+    try {
+        if ($Fixture.Mode -ceq 'context-impersonation') {
+            $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+            $impersonation = $identity.Impersonate()
+        }
+        $context = [ProGo.ApplicationShortcuts+PersonalInstallTransaction]::CreateFixture($Fixture.Root, $Fixture.Case, $runtime, $Fixture.Data,
+            $Fixture.Payload, $sid, [string[]]$Fixture.Names, [string[]]$Fixture.Hashes, $Fixture.Version, $Fixture.Mode)
+        if ($Fixture.Mode -ceq 'context-revalidate') {
+            $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+            $impersonation = $identity.Impersonate()
+            # Exercise the actual registration admission after constructing the
+            # capability without impersonation. Same SID must still be refused.
+            $context.AdmitRegistration()
+        }
+        return $context
+    } catch {
+        if ($null -ne $context) { $context.Dispose() }
+        throw
+    } finally {
+        if ($null -ne $impersonation) { $impersonation.Dispose() }
+        if ($null -ne $identity) { $identity.Dispose() }
+    }
 }
 function Open-ProGoPersonalInstallerTransaction($Payload) {
     if ($Fixture.Mode -ceq 'context-object') {
@@ -94,7 +115,7 @@ Add-Type -TypeDefinition ("#define PROGO_PERSONAL_INSTALL_FIXTURE`r`n" + [IO.Fil
 }
 try {
     [void][IO.Directory]::CreateDirectory($work)
-    foreach ($mode in @('success', 'uac-cancel', 'uac-denied', 'context-sid', 'context-path', 'context-object', 'context-reparse', 'payload-tamper', 'entry-tamper', 'registry-foreign', 'registration-before', 'registration-after', 'registration-pins', 'runtime-fault', 'uninstall-fault', 'uninstall-foreign')) {
+    foreach ($mode in @('success', 'uac-cancel', 'uac-denied', 'context-sid', 'context-impersonation', 'context-revalidate', 'context-path', 'context-object', 'context-reparse', 'payload-tamper', 'entry-tamper', 'registry-foreign', 'registration-before', 'registration-after', 'registration-pins', 'runtime-fault', 'uninstall-fault', 'uninstall-foreign')) {
         $case = Join-Path $work $mode
         $Fixture = @{ Root = $work; Case = $mode; Mode = $mode; Runtime = (Join-Path $case 'program/ProGo'); Data = (Join-Path $case 'data/ProGo'); Payload = (Join-Path $case 'payload'); Menu = (Join-Path $case 'menu'); Startup = (Join-Path $case 'startup'); Source = (Join-Path $repo 'src/ApplicationShortcuts.cs'); Writes = 0; Version = $original.Version; OwnerSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value; Names = @($original.Files); Hashes = @($original.Files | ForEach-Object { $original.Hashes[$_] }) }
         foreach ($dir in @($Fixture.Runtime, $Fixture.Data, $Fixture.Payload, $Fixture.Menu, $Fixture.Startup)) { [void][IO.Directory]::CreateDirectory($dir) }
@@ -145,6 +166,8 @@ try {
             'uac-cancel' { 'Synthetic UAC cancellation.' }
             'uac-denied' { 'Synthetic UAC refusal.' }
             'context-sid' { 'Personal installer original user context differs.' }
+            'context-impersonation' { 'Personal installer refuses thread impersonation.' }
+            'context-revalidate' { 'Personal installer refuses thread impersonation.' }
             'context-path' { 'Personal fixture fixed paths differ.' }
             'context-object' { 'Personal installer requires a live typed transaction.' }
             'context-reparse' { 'Legacy source directory is unavailable or redirected.' }
@@ -220,7 +243,7 @@ try {
     $productionCompile = Join-Path $work 'ProductionContext.ps1'
     $compileText = 'Add-Type -TypeDefinition ([IO.File]::ReadAllText(' + (Quote-Stage (Join-Path $repo 'src/ApplicationShortcuts.cs')) + '))' + "`r`n" + @'
 $type = [ProGo.ApplicationShortcuts+PersonalInstallTransaction]
-if ($null -ne $type.GetMethod('CreateFixture') -or $type.GetConstructors().Length -ne 0) { throw 'Production context factory is exposed.' }
+if ($null -ne $type.GetMethod('CreateFixture') -or $null -ne $type.GetMethod('CreateRegistryFixture') -or $type.GetConstructors().Length -ne 0) { throw 'Production context factory is exposed.' }
 Write-Host 'PRODUCTION_PERSONAL_FACTORY_CLOSED'
 '@
     [IO.File]::WriteAllText($productionCompile, $compileText)

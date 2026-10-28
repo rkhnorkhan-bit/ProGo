@@ -1,3 +1,218 @@
+## Native ARP backend local candidate — consumed TxR, production UAC still closed
+
+Continued sole writer in the same checkout/branch from clean578463eac09b70783e64f9e8104b70a2543272fa,
+treec75ca95ed376485d1b5dcd891fc586642088265a. No AGENTS, Git locks or competing
+source/native worker found. No reset/clean/clone, installation or new tooling.
+
+NativeRegistrationStore implements the existing registration transaction adapter;
+CreateRegistryFixture consumes it through actual Install/retained Uninstall bodies.
+Normal construction binds HKLM64 SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ProGo;
+no public production capability/factory is enabled. Registry fixtures bind only
+HKCU64 SOFTWARE\ProGo.RegistryFixtures\<unique filesystem fixture GUID>\<case>\ProGo.
+No fixture accepts a hive/key/command supplied by metadata or touches real ARP.
+
+KTM/TxR is mandatory: bounded 5s transaction timeout, no sequential-write fallback.
+Exact seven-value names, REG_SZ/DWORD types and raw bytes including terminators,
+zero subkeys and native key origin (NtQueryKey) are checked. Only the fixed leaf
+can be created/deleted; ancestors must already exist. Foreign/partial/changed keys
+refuse, even with a copied owner SID. No recursive deletion or security changes.
+Snapshot comparison and writes/deletes share one native transaction. Precommit
+partial operations roll back. Postcommit/uncertain outcomes are never compensated
+by deleting a registration: runtime/retry remain; fresh retry re-reads exact state.
+KTM timeout is not a hard bound on every synchronous OS call after preparation;
+existing fresh-host deadline remains60s with5s settlement, unchanged.
+
+New mandatory NativeRegistrationTransactionTests has15 isolated registry cases:
+success; before/mid-write/precommit/postcommit faults; mid-delete/post-delete
+faults and fresh retries; missing parent/native error; existing foreign copied SID;
+foreign type/extra value/child/partial/oversize; changed-after-admit snapshot.
+These use real registry APIs and existing bounded actual-consumer adapters.
+Original18 personal cases/assertions/deadlines remain, including SID hardening.
+Registry fixtures are intentionally retained after failed cases, not recursively
+cleaned. No actual native fixture, real HKLM/ARP/UAC/PC/security action ran locally.
+
+Local Python186=183PASS+3SKIP; public458source/0release and diff checks PASS.
+Native Windows parse/compile/15registry+18personal execution NOT_RUN: tools absent.
+No CI/push/package/delivery; CI759 proves only its exact historical source.
+CI753/755 remain UNKNOWN; F30/payment/licensing deferred. Full cumulative unified
+diff from25ea054 is delivered inline for independent review before publication/CI.
+Remaining: trusted UAC broker, authenticated parent/original SID transport,
+KnownFolder roots and payload/entrypoint provenance across elevation, activation
+and Windows validation. Backend source is implemented; working installer/PC
+readiness is NOT claimed. Production factories still fail closed.
+
+## Local consumed process-token admission checkpoint — native broker/ARP still unfinished
+
+Sole writer resumed the exact clean handoff25ea0548b42ef0d3a32415d4844aedf91720eb7a,
+treed50ab4a98a52356045d039352d4bce381c5124c4 on the existing branch/checkout.
+No AGENTS found in checkout or ancestors; no Git locks or competing source/native
+worker found. ps failed with "fatal library error, lookup self"; /proc cmdline
+inspection supplied process evidence instead. No reset/clean/clone/new writer.
+
+Selected a bounded consumed subset of the trusted elevation boundary: personal
+transaction identity admission now rejects all thread impersonation, even the
+same SID, and reads original-user equality from an explicit process TOKEN_QUERY
+handle. OpenThreadToken uses OpenAsSelf only for the access check, not authority.
+Only ERROR_NO_TOKEN permits continuation; access denied/anonymous/other errors
+refuse. Both successful and failed token handles are disposed. A second thread
+check follows process identity extraction. No token privilege/ACL/policy change,
+RevertToSelf, token assignment, UAC launch or credential handling in production.
+This does not defend a compromised process or authenticate the elevation parent.
+
+The gate is consumed by the existing private transaction constructor before
+root/payload pin admission and every Validate, hence existing registration
+admission/publication/removal. Caller-supplied originalSid is still only a fixture
+input, never trusted production provenance. No bool/env grants authority. Existing
+payload/physical pins, roots, journals, rollback, terminal proof, retained retry,
+registration-last, foreign shortcuts/registration and userdata guards unchanged.
+
+Mandatory PersonalInstallTransactionTests adds two fresh-process isolated cases:
+context-impersonation (constructor) and context-revalidate (live registration
+admission). Both use the existing user's own identity only, dispose impersonation
+in finally, and retain all existing specific refusal/no mutation/data-preservation
+assertions. Existing16 cases and deadlines unchanged. New static contract checks
+the consumed process-token gate and fail-closed native error handling.
+
+Local Python183=180PASS+3SKIP, public457source/0release and git diff --check PASS.
+Native parse/compile/new18-case suite NOT_RUN: pwsh/dotnet/mono/csc absent, none
+installed. CI759 remains evidence for its old exact source only, not this change.
+No push/CI/package/delivery/PC action. CI753/755 remain UNKNOWN. F30 deferred.
+
+Substantive remainder: authenticated UAC broker/parent and original SID transport,
+fixed KnownFolder binding across elevation, trusted payload/entrypoint provenance,
+native Windows ARP transactional ownership backend and its consumed fixture tests.
+Production factories remain closed. This checkpoint is identity admission hardening,
+not a completed trusted broker, native ARP backend or working Windows installer.
+Full cumulative unified diff from incoming25ea054 is prepared for independent
+review before any separately authorized publication or CI.
+
+## Verified clean writer handoff — next consumed trusted UAC/native ARP stage
+
+This writer stops source work after accumulated implementation/review/CI context,
+using the user's explicit handoff alternative. No new broker/ARP scaffolding or
+implementation was started. CI759 has now also been independently confirmed by
+the user. Existing personal transaction is meaningful consumed code, not a ready
+normal Windows installer. Production personal factories still refuse.
+
+Existing checkout (do not replace/reset/clean/clone):
+/workspace/scratch/4d867f513347/ProGo-legacy-accepted-outcome-checkpoint
+branch work/progo-legacy-accepted-outcome-checkpoint. Verified incoming clean HEAD
+b3cadd05027e22419260b734d446b30289db816e, tree
+a4a65981580eb83dfc4fa8dcdad19d57ba9250f8. This handoff changes only PROJECT_STATE;
+the final local handoff commit/tree are reported in the accompanying response.
+No other agents; no active git/pwsh/powershell/dotnet/mono/csc processes or Git
+lock files at verification. Normal environment app/exec servers remain available;
+no source worker or CI was launched for this handoff. No dirty source left.
+
+Rechecked local Python182=179PASS+3SKIP, public457source/0release and diff PASS.
+All nine saved CI759 full logs match verified-summary.json sizes/SHA256 at
+/workspace/scratch/4d867f513347/ci759-evidence; total2124553 bytes. Exact successful
+source21d2c4d524dd5f5d3d1b14ec261403ee4d11c2a9,
+merge5d2f60ce15b261a180594e2ff58eee4c26e93090,
+tree8e78bfd2097754a8fa0a5e63b3abadbdaa0bb9ad, run40709169148 attempt1.
+PR88 remote source remains the published CI759 source; local result/handoff docs
+have not been published. No additional publication or CI authorized in next stage
+before local implementation/checkpoint/full cumulative diff review.
+
+Next sole writer must implement a coherent consumed trusted UAC broker/native
+Windows ARP boundary, or select a substantive consumed subset and state remaining.
+Actual consumers: Install Open-ProGoPersonalInstallerTransaction (line2048),
+Get-ProGoInstallerOperationLayout, Test-ProGoPersonalCommittedRuntime and
+Complete-ProGoPersonalInstallerRegistration; Uninstall
+Open-ProGoPersonalUninstallerTransaction (line560) and registration removal last.
+The sealed PersonalInstallTransaction is nested in ApplicationShortcuts.cs
+(line2904), private RegistrationStore (line2906), PublishRegistration (line2979),
+RemoveRegistration (line3001). Its only current factory/backend are compile-time
+PROGO_PERSONAL_INSTALL_FIXTURE CreateFixture/file-store; normal build exposes no
+factory. PersonalInstallTransactionTests exercises real consumer scripts with
+isolated adapters; synthetic UAC cancel/denied is not native UAC proof, file CAS
+is not a native registry backend. Never promote either to installation authority.
+
+Preserve original SID and fixed KnownFolder runtime/data roots through elevation,
+including alternate-admin context refusal. Bind exact payload/entrypoint origin
+and bytes before elevated execution; no untrusted metadata bool/env/path/hash or
+arbitrary command grants authority. Keep common UI unelevated, NoStartup for
+personal use, registration only after verified commit, retained safe uninstaller
+and retry after partial deletion/failure. Preserve all ownership/hash/reparse/
+pending/terminal/snapshot/physical guards, exact inventories, original data roots,
+vault/settings/logs/backups and foreign registration/shortcuts. No user-data
+deletion in the privileged personal path; existing separate DELETE consent remains.
+No services/network/new credentials/startup or real PC UAC/ProgramFiles/ARP action.
+Only development/isolated fixtures now authorized. No local native tools exist;
+do not install them. F:\BackUP forbidden even for reads. No parallel writers or
+duplicate CI. No readiness claim until trusted boundary review and Windows CI.
+Historical CI755/CI753 UNKNOWN and optional PID reuse risk remain unchanged;
+F30/payment/licensing stays backlog, never a condition for the personal version.
+
+## CI759 SUCCESS — all nine full exact-SHA terminal logs; personal16 reached
+
+One authorized corrective CAS publication in PR88 matched expected source
+6c4084334b56672a3d2d8afff3da4f3c0932c6a4. Local corrective checkpoint
+0c264f8fabaf72d2dae3734fa30b89e1c373948c, tree
+8e78bfd2097754a8fa0a5e63b3abadbdaa0bb9ad. Compared all462 blobs with remote;
+only InstallerLifecycleTests.ps1 four map references and PROJECT_STATE differ
+from published CI758. Exact reverse-rename Git blob comparison PASS; no other
+fixture byte/assertion/hash/deadline or production source change. Sole writer,
+clean checkout, no active/queued runs before publication. Local Python182=
+179PASS+3SKIP, public457source/0release, cumulative diff checks PASS.
+
+Published source21d2c4d524dd5f5d3d1b14ec261403ee4d11c2a9 has expected parent
+6c4084334b56672a3d2d8afff3da4f3c0932c6a4 and exact checkpoint tree. Tested
+merge5d2f60ce15b261a180594e2ff58eee4c26e93090 has that same tree, parents main
+4bb336575bb1216d3047bd2b294aeecad9fdd65a and published source. Run40709169148,
+CI759 attempt1, pull_request, completed SUCCESS 2026-10-28 15:24:48 UTC.
+All-event source query confirms exactly one run; no rerun758/dispatch/duplicate.
+
+Nine complete terminal logs retrieved through cleanup, each contains exact
+source/merge; zero actual ##[error] markers. Core122889400102,
+Ubuntu122889400391, Foundation122889399833, Live122889400222,
+Recovery122889400378, RecoveryInput122889399466, Runtime122889400267,
+Success122889399934, strict aggregate122912500922 all SUCCESS. Aggregate needs
+contains all eight required success results with tested_sha exactly the merge;
+strict aggregate PASS. Full logs and SHA256/manifest/verified summary retained at
+/workspace/scratch/4d867f513347/ci759-evidence (nine logs, 2124553 bytes total).
+
+Core now actually reaches and passes all16 consumed personal transaction modes:
+success; synthetic UAC cancel/denied; context SID/path/object/reparse refusals;
+payload/entry tamper; foreign registration; registration-before/after faults and
+fresh retry without reinstall; registration pins; runtime rollback/retry; late
+uninstall retry; foreign uninstall registration preservation. Fixture assertions
+include execution-canary absence, private/foreign data and recovery evidence
+preservation, retained retry, NoStartup, registration ordering and closed normal
+entry/factory. These are isolated fixture context/registration adapters, not real
+UAC or native ARP proof. Production activation remains closed.
+
+UninstallStage10 all distinct fresh-process modes PASS: retry, corrupt,
+replaced-entry, foreign, reparse, pending, runtime-conflict, pins, retry-replaced,
+dependency-code. Existing late dependency deletion/retry and trusted caller
+negative guards are reached on this source. Lifecycle8split+5legacy and storage
+9split+5legacy PASS; legacy valid/missing/corrupt/foreign/conflict retained.
+Actual cross-volume Install/Uninstall/Repair/Restore PASS. Volume data
+BC7F279C-06E3-4EB3-9FD6-2498AAFE64B5, runtime F0A3B9A6-0000-0000-0000-100000000000.
+Protected ACL BaselineReady/ProtectedAclCase true; inherited control XOR1024,
+protected XOR0/exact true. Real Win32 5 after Writes1, published EXE equals
+payload and differs from old; Setup/Cleanup null, CleanupErrors empty. Cleanup
+owner/group/DACL, ExactSddl, ReadWriteRestored and AclSettled all true. This does
+not resolve historical CI753 causality. Split Restore9 and Diagnostics/updater
+shared sanitized preview/no automatic clipboard and explicit-copy checks PASS.
+
+Original33 full suites each start/pass exactly once:26+1+5+1. Runtime35/refusals
+and Success40/fresh-process refusals2 PASS. Desktop6394, Instance30,
+Maintenance128, Shutdown49 PASS. Icon Desktop5.1/Core7.6.7 PASS; HomeVPN4816,
+Portable91 PASS. Runner Python166=164PASS+2SKIP, public457source/45release PASS.
+Candidate ZIP755224 bytes SHA256
+d69080409c96211ffad59f4128f22a8ddaa5e8e2235d9d0156ee7a125b9cbca0;
+build0.2.2+5d2f60ce15b261a180594e2ff58eee4c26e93090. Four uploads and prune
+SKIPPED, artifacts0; no delivery or installation on PC. Result-only local docs
+checkpoint follows; no second publication/CI or silent source fix.
+
+CI758 remains accurately recorded as FAILURE; its downstream were not inherited.
+Trusted UAC broker/native ARP backend remain substantive remaining work; real
+production ProgramFiles/UAC/ARP/PC remain gated. Optional PID reuse risk unchanged.
+CI755 cancellation/CI753 inherited mismatch remain UNKNOWN. F30/payment/licensing
+remains backlog, not a condition for personal use. Await independent full-log
+review before the next implementation or publication.
+
 ## CI759 corrective candidate — reviewed lifecycle map rename only
 
 Continue clean6c5e18c7ce6bc70f99bacbc7abf20324060c64cb. CI758 failure and
