@@ -21,7 +21,7 @@ class UpdaterRoots(unittest.TestCase):
         self.assertIn('Copy-FileIfExists $InstallDir $name $backupDir $false', core)
         self.assertIn('Join-Path $DataRoot "update.log"', wrapper)
         self.assertIn('RequireProxyCleanupCompleted($DataRoot)', core)
-        self.assertIn('synthetic separate-root updater transaction', (ROOT / 'tests/UpdaterRootSeparationTests.ps1').read_text())
+        self.assertIn('synthetic separate-root updater transaction', (ROOT / 'tests/UpdaterRootSeparationTests.ps1').read_text(encoding='utf-8-sig'))
 
     def test_restore_and_repair_remain_legacy_only(self):
         repair = (ROOT / 'scripts/Repair-ProGo.ps1').read_text(encoding='utf-8-sig')
@@ -37,8 +37,8 @@ class UpdaterRoots(unittest.TestCase):
         self.assertIn('CopyPersonalArchives($DataRoot, $path)', restore)
 
     def test_protective_snapshot_completeness_matches_integrity(self):
-        integrity = (ROOT / 'src/BackupIntegrity.cs').read_text()
-        restore = (ROOT / 'scripts/Restore-ProGoBackup.ps1').read_text()
+        integrity = (ROOT / 'src/BackupIntegrity.cs').read_text(encoding='utf-8-sig')
+        restore = (ROOT / 'scripts/Restore-ProGoBackup.ps1').read_text(encoding='utf-8-sig')
         required = re.search(r'private static readonly string\[\] Required = \{(.*?)\};', integrity, re.S).group(1)
         preflight = re.search(r'foreach \(\$required in @\((.*?)\)\)', restore, re.S).group(1)
         self.assertEqual(re.findall(r'"([^"\n]+)"', required),

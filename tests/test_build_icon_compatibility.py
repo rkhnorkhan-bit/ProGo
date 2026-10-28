@@ -12,7 +12,7 @@ class BuildIconCompatibility(unittest.TestCase):
         data.decode('utf-8-sig', errors='strict')
 
     def test_icon_is_rendered_before_removing_outputs(self):
-        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text()
+        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text(encoding='utf-8-sig')
         call = source.index('New-ProGoIconFile -Path $preflightIcon')
         self.assertLess(source.index('foreach ($inputPath in $requiredInputs)'), call)
         self.assertLess(call, source.index('Remove-Item $Release -Recurse -Force'))
@@ -20,26 +20,26 @@ class BuildIconCompatibility(unittest.TestCase):
         self.assertIn('Copy-Item -LiteralPath $preflightIcon -Destination $IconPath', source)
         self.assertIn('Remove-Item -LiteralPath $preflightIcon -Force', source)
     def test_host_specific_drawing_references(self):
-        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text()
+        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text(encoding='utf-8-sig')
         for token in ("$PSVersionTable.PSEdition -eq 'Core'", 'System.Drawing.Common',
                       '[System.Drawing.Bitmap].Assembly.Location', '[System.Drawing.Color].Assembly.Location',
                       "'ref\\System.Runtime.dll'", '-ReferencedAssemblies System.Drawing -ErrorAction Stop'):
             self.assertIn(token, source)
     def test_drawing_dependency_closure_and_missing_refusal(self):
-        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text()
+        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text(encoding='utf-8-sig')
         body = source.split('function Get-ProGoDrawingReferences', 1)[1].split('function New-ProGoIconFile', 1)[0]
         for token in ('GetReferencedAssemblies()', "StartsWith('System.Private.Windows.'", 'GetAssemblyName($path)',
                       'FullName -cne $reference.FullName', 'LoadFrom($candidate)', '$pending.Enqueue($loaded)',
                       'Missing drawing dependency:', '$rootsAllowed.Contains'):
             self.assertIn(token, body)
         self.assertNotIn('System.Private.CoreLib', body)
-        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text()
+        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text(encoding='utf-8-sig')
         for token in ('Drawing dependency closure is incomplete.', 'System.Private.Windows.ProGoMissing',
                       'missing dependency injection did not reach resolver refusal', 'Missing dependency did not preserve outputs.'):
             self.assertIn(token, fixture)
 
     def test_no_checkout_skips_git_and_checkout_errors_fail_closed(self):
-        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text()
+        source = (ROOT / 'scripts/Build-ProGo.ps1').read_text(encoding='utf-8-sig')
         body = source.split("$BuildRevision = 'local'", 1)[1].split('$BuildIdentity =', 1)[0]
         self.assertIn("Test-Path -LiteralPath (Join-Path $gitProbe '.git')", body)
         self.assertIn('if ($hasGitMetadata)', body)
@@ -50,7 +50,7 @@ class BuildIconCompatibility(unittest.TestCase):
         self.assertNotIn("$ErrorActionPreference =", body)
 
     def test_ci_requires_both_fresh_hosts_and_exact_existing_build(self):
-        workflow = (ROOT / '.github/workflows/ci.yml').read_text()
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text(encoding='utf-8-sig')
         job = workflow.split('  windows-build:', 1)[1].split('  installer-tests:', 1)[0]
         identity = job.split('      - name: Verify clean checkout build identity', 1)[1].split('      - name:', 1)[0]
         desktop = job.split('      - name: Verify icon fixture on Windows PowerShell 5.1', 1)[1].split('      - name:', 1)[0]
@@ -73,7 +73,7 @@ class BuildIconCompatibility(unittest.TestCase):
         self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-runtime-tests, installer-success-tests]', workflow)
         self.assertIn('if: success() && (github.event.repository.private', job)
     def test_fixture_demands_injected_compile_failure(self):
-        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text()
+        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text(encoding='utf-8-sig')
         for token in ('#error PROGO_ICON_COMPILE_SENTINEL',
                       "-cnotmatch 'PROGO_ICON_COMPILE_SENTINEL'",
                       'Compile failure did not preserve existing outputs.',
@@ -82,7 +82,7 @@ class BuildIconCompatibility(unittest.TestCase):
             self.assertIn(token, fixture)
 
     def test_windows_fixture_checks_failure_and_seven_frames(self):
-        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text()
+        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text(encoding='utf-8-sig')
         for token in ("'build survives'", "'release survives'", '@(16,24,32,48,64,128,256)',
                       "'ProGo.exe'", '-Configuration Release'):
             self.assertIn(token, fixture)

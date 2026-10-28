@@ -1,3 +1,32 @@
+## CI748 terminal FAILURE after native Core PASS; local-only contract encoding fix
+
+All eight complete exact-SHA logs independently checked: CI748 run40625872780,
+attempt1 FAILURE, sourceaeb3c381e6ef1a675781c89c025a94a32c9a46f9 and merge
+72a686a89513a4f79930dfdb3d0b3a12896eddfc. Six other partitions SUCCESS;
+strict aggregate122621675253 correctly FAILURE. OldBackup actual restore/Undo
+and exact two restored launcher assertions PASS; Shutdown47 PASS; entire native
+Core suite PASS. Clean build identity and PS5.1/PS7 icon checks PASS. Downstream
+relay transport cases PASS, but Python154 totals150 PASS/2 ERROR/2 SKIP, so the
+Windows job failed. Package/public-content/upload steps after this failure SKIPPED;
+no complete green chain or package proof. CI744 root cause remains UNKNOWN.
+
+Two exact failures: test_layout_resolver_contract.py:24 and
+ test_updater_root_separation.py:40 use default read_text decoding of UTF-8 source
+under Windows Python cp1252; UnicodeDecodeError byte0x81 at positions3555 and2178.
+Independent review reproduced failure on exact Test-ProGo.ps1/BackupIntegrity.cs
+Git blobs. Local bounded fix adds encoding='utf-8-sig' to all17 remaining default
+read_text calls in three new contract modules: layout6, updater3, build-icon8.
+Existing explicit encodings, read_bytes BOM assertion, content/assertions unchanged;
+no errors ignore/replace, production encoding or CI locale/environment changes.
+
+Local targeted14 tests PASS with default Path.read_text forced to strict cp1252
+for unspecified encodings; every consumed source also strictly decodes utf-8-sig.
+This is local encoding-boundary verification, not a Windows run. Full Python170
+=167 PASS +3 SKIP; public-content451source/0release, exact17-edit preservation,
+BOM/body preservation and diff check PASS. New Windows execution NOT_RUN.
+No push/CI/rerun, production or installer work; clean local checkpoint for review.
+Program Files/PC/network/ACL unchanged; complete green chain still required.
+
 ## CI747 terminal FAILURE; local-only OldBackup launcher mock closure correction
 
 All eight complete exact-SHA logs independently checked: CI747 run40621025974,
