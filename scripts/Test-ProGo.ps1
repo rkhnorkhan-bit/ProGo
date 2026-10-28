@@ -286,6 +286,7 @@ if ($Suite -eq 'Installer') {
 & (Join-Path $Root 'tests\RepairSplitTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\InstallerLifecycleTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\UninstallStageTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\PersonalInstallTransactionTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\RestoreSplitTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\InstallerStorageTests.ps1') -Scripts $PSScriptRoot
 

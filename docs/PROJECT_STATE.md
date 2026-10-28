@@ -1,3 +1,176 @@
+## Selected bounded architecture: consumed personal commit/registration transaction
+
+Start clean49f3f68f595caf27a73814721a009cf2d3eaccfa; sole source writer.
+Implement the transaction linking the existing separate-root Install consumer,
+verified installed terminal, prepared retained uninstall stage, and registration
+publication/removal. Personal mode requires NoStartup. Legacy defaults/inventory/
+per-leaf/journal/snapshot/physical guards remain unchanged. Registration is last;
+a failed publication retains the committed runtime and stage for verified retry,
+while a precommit fault uses the existing rollback. Uninstall retains registration
+until every admitted runtime deletion succeeds and removes only exact owned values.
+
+An immutable live typed context pins the payload/entrypoint and fixed roots,
+checks the original user's SID, and derives fixed registration values/command.
+No metadata command/root or bool/env grants privilege. Synthetic E2E uses the real
+Install/Uninstall consumers, a compile-time-only fixture context factory and an
+isolated compare/exchange registration adapter. No real runner registry/ACL or
+ProgramFiles changes. The registration state machine is consumed now; a Windows
+registry backend is not to be guessed equivalent to the fixture adapter.
+
+This deliberately selects the coherent postcommit/registration transactional
+part allowed by the request. Production personal entry remains fail-closed.
+Remaining before activation: reviewed trusted UAC broker/code-origin validation,
+authenticated original-user context across elevation (including alternate-admin
+refusal), secure staging/known-folder token binding and native Windows ARP backend
+with its physical ownership/atomicity checks. No UAC launch or production ARP write
+is enabled by this stage. Self-hashed payload inventory is revalidation within the
+trusted synthetic caller, never installation provenance or elevation authority.
+First local implementation/checks/full diff review; no push/CI/PC action.
+
+Local implementation candidate: current Install -Personal consumes a sealed live
+context, forces NoStartup and refuses Launch; registration follows the original
+installed terminal plus the existing retained-stage preparer. A precommit runtime
+fault uses the existing rollback. A registration fault after commit never enters
+precommit rollback; a verified retry does not copy runtime again or create another
+journal. Current Uninstall -Personal admits the exact registration before deletion
+and removes it last. Failed late deletion keeps the registration/retained retry.
+Personal worker refuses RemoveUserData before any mutation; the old unelevated
+legacy DELETE-consent path is unchanged. Original data/legacy EXE stays in place.
+
+The context checks current SID, immutable roots and every pinned payload/entrypoint
+origin/digest. The fixture registration object is held by one native non-reparse
+read/write handle with no sharing throughout the transaction, not reopened by
+self-reported values; read/CAS/disposal and the live context are serialized. No
+foreign context method (including Dispose) is invoked on type refusal. The normal
+build contains no fixture factory or file-store implementation. No Registry API,
+RunAs/UAC process, real ProgramFiles or runner ACL change was introduced.
+
+New mandatory Core PersonalInstallTransactionTests has16 isolated synthetic cases:
+success, UAC cancel/refusal adapters, SID/path/foreign-object/reparse refusals,
+payload/entry tamper with execution canary, foreign registration, pre/post-write
+registration faults and retry, physical registration pins, runtime rollback/retry,
+late uninstall retry and foreign uninstall registration preservation. Actual
+Install/Uninstall bodies and the existing bounded fresh-host/AST helpers are used;
+normal compilation and direct production entrypoints are also checked closed.
+These are fixture sources only: local Windows parse/compile/E2E NOT_RUN.
+
+Local Python182=179PASS+3SKIP, public457source/0release and diff checks PASS. All92
+old installer function bodies and the entire preexisting C# source (apart from
+inserting the new nested context) are byte-identical; original inventory, guards,
+33 mandatory suites and deadlines are unchanged. Of31 old uninstaller functions,
+only its production resolver has the new typed Personal branch; the production
+factory always refuses, and the prior legacy/staged gate remains in force.
+No native result is inherited from CI757 for these changes. No push/CI/PC action.
+Remaining trusted broker/known-folder token binding/native ARP backend above are
+substantive unfinished work; this checkpoint does not complete or enable normal
+Windows installation. F30/payment/licensing remains backlog, never a personal
+candidate prerequisite. Next: review full local diff, then separately approved CI.
+
+## CI757 SUCCESS — nine full exact-SHA terminal logs; UninstallStage10 verified
+
+One authorized non-force CAS publication in PR88, expected head
+82626ac5b1b7d86c140cfd1b0e90106593fe9ab9 matched. Sole source writer, existing
+checkout/branch; reviewed local checkpoint ac58a1b17070014484707e6f5573b7bf10ec1c28.
+Published source a0a7bb946df28ceec74641504f0b8d52740eb378 has that expected parent
+and exact reviewed tree bec9e44bd003dc589fa0dd02a530d757717a0199. All460 blobs
+and the complete remote tree matched local Git; delta from remote baseline is
+exactly the five approved files, no deletions. Local prepublication Python178 =
+175PASS+3SKIP; public455source/0release, cumulative diff and clean/sole-writer/lock
+checks PASS. All active branch run-status queries returned0 before publication;
+new-source all-event count0 before ref update. No other publication or dispatch.
+
+Sole automatic CI757 run40688882160, pull_request/attempt1, completed SUCCESS
+2026-10-28 13:03:01 UTC. Tested merge170d3693aa3d6e190bf43ff2358cd177b3cbd00e,
+parents main4bb336575bb1216d3047bd2b294aeecad9fdd65a and exact published source;
+merge tree is also bec9e44bd003dc589fa0dd02a530d757717a0199. Final all-event
+source query total_count1/attempt1. PR head/merge remained exact, open/unmerged.
+No rerun756, duplicate run, new code, source publication, merge or release.
+Freeze held through all nine full terminal logs and their cleanup, before this
+local result-only documentation record.
+
+| Job | ID | Terminal result |
+| --- | ---: | --- |
+| Core/windows-build | 122818273477 | SUCCESS |
+| Ubuntu/vpn-server-test | 122818273640 | SUCCESS |
+| Installer Foundation | 122818273673 | SUCCESS |
+| Installer Live | 122818273517 | SUCCESS |
+| Installer Recovery | 122818273511 | SUCCESS |
+| Installer RecoveryInput | 122818273044 | SUCCESS |
+| Runtime | 122818273576 | SUCCESS |
+| Success | 122818273573 | SUCCESS |
+| Exact-SHA complete CI gate | 122832026163 | SUCCESS |
+
+All nine complete logs contain exact source and tested merge, no actual fatal
+GitHub error/nonzero-exit markers, and terminal cleanup. Expected negative
+transaction/restore failure messages remain in the passing fixtures; they are
+not suppressed or mistaken for an actual failed job. Aggregate needs contains
+exactly all eight required partitions, each result=success and tested_sha exactly
+170d3693aa3d6e190bf43ff2358cd177b3cbd00e; final strict aggregate PASS.
+
+Core actually executed all ten distinct UninstallStage fresh-process cases:
+retry, corrupt, replaced-entry, foreign, reparse, pending, runtime-conflict, pins,
+retry-replaced, dependency-code. Synthetic install -> real late runtime helper
+deletions (Install/Layout/Shortcuts) -> fresh retry passed. Exact negative refusal
+reasons, no execution canary, surviving runtime/private/foreign/recovery byte
+preservation, junction/target preservation and both fresh consumers' physical
+file-write/directory-rename pin refusals passed through the actual consumer.
+No unknown child settlement/drain warning or PID assertion failure was observed.
+Timeout/Kill/drain code remains bounded, but a timeout injection is not separately
+claimed by these ten cases. The optional noted PID-reuse risk was not changed
+and is not declared generally solved by this successful run.
+
+Trust boundary remains explicit: trusted retained entry code is copied before
+adversarial stage mutation; the test proves trusted caller refusal of foreign
+stage/dependency bytes, not self-defense by already malicious executable code.
+Production ProgramFiles admission remains CLOSED; no path+inventory or boolean
+becomes trusted installation provenance. Native acceptance here is limited to
+the isolated synthetic staged flow, not a production installation or elevation.
+
+Original33 suites all passed exactly once as26+1+5+1, with matching start/pass
+order and no missing/duplicate suite. PendingPublication25, StartupFailure15,
+Live nested cases and all RecoveryInput nested JournalReference20/Restart26/
+PreDelete23/OwnedOperation29 plus namespace/physical/pin/threat cases passed.
+Recovery5 elapsed1157955ms; RecoveryInput1 elapsed1022903ms. Runtime35 plus
+refusals, Success40 plus fresh-process2 passed; all40 structured expected state/
+recorded comparisons equal observed values. No body/assertion/wait/deadline,
+mandatory RecoveryInput dependency or strict aggregate was changed.
+
+Core original lifecycle8split+5legacy and storage9split+5legacy passed, including
+legacy valid/missing/corrupt/foreign/conflict and narrow EXE-only behavior. Hash
+remains revalidation, not legacy identity. Desktop6394, Instance30, Maintenance128,
+Shutdown49, both icon hosts (Desktop5.1/Core7.6.7), Core clean build identity,
+HomeVPN4816, Portable91 and runner Python162=160PASS+2SKIP passed. Existing
+separate-root Diagnostics updater preview sanitization/no-auto-copy and explicit
+Copy-equals-reviewed-report checks passed, together with Desktop diagnostic
+preview/projection/export guards. No automatic private diagnostic export.
+
+Actual distinct storage GUIDs: dataC BC7F279C-06E3-4EB3-9FD6-2498AAFE64B5;
+runtimeD FBB11E49-B28F-4340-959C-75D4973DB9B1. Cross-volume Install/Uninstall,
+actual Repair/rollback and all9 Restore cases passed, including final equal
+post-consumer volume identities and successful fixture cleanup. Protected ACL
+BaselineReady=true/ProtectedAclCase=true: inherited rounds flags32772->33796,
+XOR1024, exact=false/RW=true; protected rounds37892->37892/XOR0, exact=true/RW=true.
+Actual installer UnauthorizedAccessException Win325 after Writes1, changed EXE
+published and equal to payload; old!=payload. Setup=null/Cleanup=null/errors[].
+Cleanup owner/group/DACL equal, flags37892/XOR0; exact=true/RW=true/settled=true.
+Original snapshots, admissions and pending replay refusals remained verified.
+This confirms the protected fixture baseline, not historical CI753 causality.
+
+Runner ZIP748650 bytes, SHA256
+3e26514de5f42f7ea45664410c9ff7cb1e37de30b4b2e4666924d7734d8c9e20,
+verified build identity0.2.2+170d3693aa3d6e190bf43ff2358cd177b3cbd00e.
+Runner public455source/45release PASS. All four uploads and prune SKIPPED;
+artifacts0. Built runner candidate only, no delivery or installation on the PC.
+
+CI755 cancellation and CI753 inherited ACL mismatch remain UNKNOWN. Normal
+personal installation/trusted installation boundary/UAC/ARP/ProgramFiles/PC
+activation remains the next gated stage, not performed or accepted here. No PC,
+forbidden backup-drive access, production network/security/ACL policy, service or
+startup action. Userdata retains its separate literal DELETE consent. F30/payment/
+licensing stays backlog and is not a prerequisite for Orkhan's personal version.
+Only this local PROJECT_STATE result record follows; do not publish it to trigger
+a second CI. Source/test freeze and sole writer remain in force for next review.
+
 ## Local review corrections to3558d60 — UNREVIEWED / native NOT_RUN
 
 Four bounded corrections only; no push/CI/PC action. Production uninstall layout

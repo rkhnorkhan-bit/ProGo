@@ -1,11 +1,22 @@
 param(
-    [switch]$RemoveUserData
+    [switch]$RemoveUserData,
+    [switch]$FunctionsOnly,
+    [switch]$Personal
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 function Get-ProGoUninstallLayout {
+    if ($Personal) {
+        if ($RemoveUserData) { throw 'Personal privileged transaction keeps user data; use the original user data-removal flow.' }
+        $context = Open-ProGoPersonalUninstallerTransaction
+        try {
+            if ($context -isnot [ProGo.ApplicationShortcuts+PersonalInstallTransaction]) { throw 'Personal uninstaller requires a live typed transaction.' }
+            $context.AdmitRegistration()
+            return [pscustomobject]@{ RuntimeRoot = $context.RuntimeRoot; DataRoot = $context.DataRoot; PersonalTransaction = $context }
+        } catch { if ($context -is [ProGo.ApplicationShortcuts+PersonalInstallTransaction]) { $context.Dispose() }; throw }
+    }
     # Production separate-root admission stays closed until a trusted installation
     # boundary exists. Path equality and self-consistent inventory are insufficient.
     # Synthetic consumers override this resolver at their isolated AST boundary.
@@ -546,13 +557,20 @@ function Import-ProGoUninstallStage($Stage) {
 
 }
 
+function Open-ProGoPersonalUninstallerTransaction {
+    throw 'Personal uninstaller trusted UAC/ARP boundary is not activated.'
+}
+
+if ($FunctionsOnly) { return }
 $Layout = Get-ProGoUninstallLayout
 $InstallDir = $Layout.RuntimeRoot
 $DataRoot = $Layout.DataRoot
+$PersonalTransaction = if ($Personal) { $Layout.PersonalTransaction } else { $null }
 $Separate = -not $InstallDir.Equals($DataRoot, [StringComparison]::OrdinalIgnoreCase)
 $UninstallStage = $null
 $Maintenance = $null
 try {
+    if ($Personal) { $PersonalTransaction.AdmitRegistration() }
     if ($Separate) {
         $Inventory = @(Get-ProGoUninstallInventory $InstallDir)
         $UninstallStage = Open-ProGoUninstallStage $InstallDir $Inventory
@@ -611,7 +629,9 @@ try {
             Remove-ProGoInstallerOwnedDirectory $DataRoot
             Write-Host 'User data removed.'
         } else { Write-Host 'User data kept.' }
-    } else { Write-Host "Uninstall OK. User vault/settings/logs kept in $DataRoot." }
+    }
+    if ($Personal) { $PersonalTransaction.RemoveRegistration() }
+    if (-not $RemoveUserData) { Write-Host "Uninstall OK. User vault/settings/logs kept in $DataRoot." }
 } finally {
     try { if ($null -ne $Maintenance) { $Maintenance.Dispose() } }
     finally {
@@ -620,5 +640,6 @@ try {
             if ($null -ne $UninstallStage.RetryPin) { $UninstallStage.RetryPin.Dispose() }
             $UninstallStage.DirectoryPins.Dispose()
         }
+        if ($null -ne $PersonalTransaction) { $PersonalTransaction.Dispose() }
     }
 }

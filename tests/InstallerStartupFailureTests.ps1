@@ -13,6 +13,7 @@ foreach ($function in $ast.FindAll({ param($node)
     $node.Name -notin @('Enter-ProGoInstallerMaintenance', 'Stop-ProGoInstallerApplication')
 }, $false)) { . ([scriptblock]::Create($function.Extent.Text)) }
 # Isolated legacy destination; production known folders must not be redirected.
+$Personal = $false
 function Get-ProGoInstallerLayout {
     $legacy = Join-Path $env:LOCALAPPDATA 'ProGo'
     return [pscustomobject]@{ RuntimeRoot = $legacy; DataRoot = $legacy }

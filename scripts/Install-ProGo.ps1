@@ -3,6 +3,7 @@ param(
     [switch]$NoStartMenuShortcut,
     [switch]$Launch,
     [switch]$FunctionsOnly,
+    [switch]$Personal,
     [ValidateNotNullOrEmpty()][string]$PayloadDirectory
 )
 
@@ -2042,6 +2043,59 @@ function Get-ProGoUninstallInventory([string]$RuntimeRoot) {
     }
     return $candidates[0]
 }
+# Production factory remains closed: a path, hash inventory or caller boolean is
+# not authenticated original-user/code provenance across an elevation boundary.
+function Open-ProGoPersonalInstallerTransaction($Payload) {
+    throw 'Personal installer trusted UAC/ARP boundary is not activated.'
+}
+function Get-ProGoInstallerOperationLayout {
+    if (-not $Personal) { return Get-ProGoInstallerLayout }
+    if ($Launch) { throw 'Personal privileged worker cannot launch the application UI.' }
+    $context = Open-ProGoPersonalInstallerTransaction $Payload
+    try {
+        if ($context -isnot [ProGo.ApplicationShortcuts+PersonalInstallTransaction]) { throw 'Personal installer requires a live typed transaction.' }
+        $context.Validate($context.RuntimeRoot, $context.DataRoot, $Payload.Directory)
+        $context.AdmitRegistration()
+        return [pscustomobject]@{ RuntimeRoot = $context.RuntimeRoot; DataRoot = $context.DataRoot; PersonalTransaction = $context }
+    } catch { if ($context -is [ProGo.ApplicationShortcuts+PersonalInstallTransaction]) { $context.Dispose() }; throw }
+}
+function Test-ProGoPersonalCommittedRuntime($Context, $Payload) {
+    $Context.Validate($Context.RuntimeRoot, $Context.DataRoot, $Payload.Directory)
+    $present = $false
+    foreach ($relative in $Payload.Files) {
+        if ($relative -in @('README.md', 'README.ru.md', 'LICENSE.md')) { continue }
+        $path = Assert-ProGoInstallerStagePath $Context.RuntimeRoot $relative
+        try { [void][IO.File]::GetAttributes($path); $present = $true }
+        catch [IO.FileNotFoundException] { }
+        catch [IO.DirectoryNotFoundException] { }
+    }
+    if (-not $present) { return $false }
+    # This is not just payload equality: original terminal/snapshot/completion and
+    # pending guards must independently authorize the existing installed outcome.
+    foreach ($entry in @(Get-ProGoUninstallInventory $Context.RuntimeRoot)) {
+        if ($entry.NewHash -cne $Payload.Hashes[$entry.Relative]) { throw 'Personal registration retry payload differs from committed outcome.' }
+    }
+    return $true
+}
+function Complete-ProGoPersonalInstallerRegistration($Context) {
+    if ($Context -isnot [ProGo.ApplicationShortcuts+PersonalInstallTransaction]) { throw 'Personal registration requires a live typed transaction.' }
+    $Context.Validate($Context.RuntimeRoot, $Context.DataRoot, $Context.PayloadRoot)
+    $UninstallSource = Join-Path $Context.PayloadRoot 'scripts/Uninstall-ProGo.ps1'
+    # Consume the existing stage preparer and original admission checks. No new
+    # elevated command/path is interpreted from registration or a receipt.
+    . $UninstallSource -FunctionsOnly
+    $inventory = @(Get-ProGoUninstallInventory $Context.RuntimeRoot)
+    $stage = Open-ProGoUninstallStage $Context.RuntimeRoot $inventory
+    try {
+        Assert-ProGoUninstallStage $stage
+        $Context.PublishRegistration()
+    } finally {
+        foreach ($pin in $stage.Pins.Values) { $pin.Dispose() }
+        if ($null -ne $stage.RetryPin) { $stage.RetryPin.Dispose() }
+        $stage.DirectoryPins.Dispose()
+    }
+}
+
 if ($FunctionsOnly) { return }
 if ($PSBoundParameters.ContainsKey('PayloadDirectory')) {
     $Payload = Get-ProGoInstallPayload -Directory $PayloadDirectory
@@ -2055,8 +2109,11 @@ $Exe = $Payload.Executable
 $VersionFile = $Payload.VersionFile
 $PayloadScripts = $Payload.ScriptsDirectory
 
-$InstallDir = ($InstallLayout = Get-ProGoInstallerLayout).RuntimeRoot
+if ($Personal) { $NoStartup = $true }
+$InstallDir = ($InstallLayout = Get-ProGoInstallerOperationLayout).RuntimeRoot
 $DataRoot = $InstallLayout.DataRoot
+$PersonalTransaction = if ($Personal) { $InstallLayout.PersonalTransaction } else { $null }
+$PersonalRuntimeCommitted = $false
 $InstallMaintenance = $null
 $InstallStage = $null
 $InstallBackup = $null
@@ -2068,6 +2125,12 @@ try {
     Resolve-ProGoInstallerPendingRollback $InstallDir
     Assert-ProGoInstallerNoPendingJournal $InstallDir
     Stop-ProGoInstallerApplication -InstallDirectory $InstallDir -DataDirectory $DataRoot
+    if ($Personal -and (Test-ProGoPersonalCommittedRuntime $PersonalTransaction $Payload)) {
+        $PersonalRuntimeCommitted = $true
+        Complete-ProGoPersonalInstallerRegistration $PersonalTransaction
+        Write-Host 'Personal install OK: committed runtime and registration verified without reinstall.'
+        return
+    }
     $InstallStage = New-ProGoInstallerStage $Payload
     $ReleaseDir = $InstallStage.Payload.Directory
     $Exe = $InstallStage.Payload.Executable
@@ -2117,9 +2180,19 @@ try {
     $InstallAuxiliaryStarted = $true
     $InstallStartupEvidence = Initialize-ProGoInstallerShortcuts $InstallDir $WasInstalled ([bool]$NoStartup) ([bool]$NoStartMenuShortcut)
     Complete-ProGoInstallerInstalledOutcome $InstallBackup $InstallWrites -CompletedPhases @('self-check', 'shortcuts') -StartupEvidence $InstallStartupEvidence -RequireStartupEvidence
+    if ($Personal) {
+        $PersonalRuntimeCommitted = $true
+        Complete-ProGoPersonalInstallerRegistration $PersonalTransaction
+    }
 
 } catch {
     $installFailure = $_
+    if ($PersonalRuntimeCommitted) {
+        # Runtime/shortcuts already have their installed terminal. Never run the
+        # precommit rollback after a registration fault or claim full success.
+        Write-Host 'Personal registration incomplete; committed runtime, retained uninstaller and recovery evidence kept for retry.'
+        throw $installFailure
+    }
     $priorVerified = $false; $rollbackAttempted = $false; $rollbackErrorType = 'none'
     # Set the conservative default before calling any fallible failure-path helper.
     $startupFailureState = if ($InstallAuxiliaryStarted) { 'blocked' } else { 'not-started' }
@@ -2151,7 +2224,8 @@ try {
     try {
         if ($null -ne $InstallStage) { Remove-ProGoInstallerStage $InstallStage }
     } finally {
-        if ($null -ne $InstallMaintenance) { $InstallMaintenance.Dispose() }
+        try { if ($null -ne $InstallMaintenance) { $InstallMaintenance.Dispose() } }
+        finally { if ($null -ne $PersonalTransaction) { $PersonalTransaction.Dispose() } }
     }
 }
 

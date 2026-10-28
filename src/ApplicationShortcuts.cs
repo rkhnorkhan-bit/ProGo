@@ -2898,5 +2898,185 @@ namespace ProGo
             void Resolve(IntPtr window, uint flags);
             void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
         }
+        // Live transaction capability. No production factory until the authenticated
+        // UAC/code-origin boundary and native ARP store are reviewed and implemented.
+        // Existing hashes are revalidation, never installation provenance.
+        public sealed class PersonalInstallTransaction : IDisposable
+        {
+            private interface RegistrationStore : IDisposable {
+                string Read();
+                bool CompareExchange(string expected, string replacement);
+            }
+            private readonly string runtime, data, payload, sid, version;
+            private readonly RegistrationStore registration;
+            private readonly System.Collections.Generic.Dictionary<string, string> hashes = new System.Collections.Generic.Dictionary<string, string>(StringComparer.Ordinal);
+            private readonly System.Collections.Generic.List<IDisposable> pins = new System.Collections.Generic.List<IDisposable>();
+            private readonly System.Collections.Generic.Dictionary<string, FileStream> sources = new System.Collections.Generic.Dictionary<string, FileStream>(StringComparer.Ordinal);
+            private bool disposed;
+            private readonly object contextGate = new object();
+            public string RuntimeRoot { get { return runtime; } }
+            public string DataRoot { get { return data; } }
+            public string PayloadRoot { get { return payload; } }
+            public string RetryPath { get { return Path.Combine(runtime, "backups", "Uninstall-ProGo.retry.ps1"); } }
+            private static string Canonical(string path) { return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar); }
+            private static string CurrentSid() { using (var identity = System.Security.Principal.WindowsIdentity.GetCurrent()) return identity.User.Value; }
+            private PersonalInstallTransaction(string runtimeRoot, string dataRoot, string payloadRoot, string originalSid,
+                string[] names, string[] expectedHashes, string payloadVersion, RegistrationStore store)
+            {
+                runtime = Canonical(runtimeRoot); data = Canonical(dataRoot); payload = Canonical(payloadRoot);
+                sid = originalSid; version = payloadVersion; registration = store;
+                try {
+                    if (sid != CurrentSid()) throw new System.Security.SecurityException("Personal installer original user context differs.");
+                    if (runtime == data || data.StartsWith(runtime + "\\", StringComparison.OrdinalIgnoreCase) ||
+                        runtime.StartsWith(data + "\\", StringComparison.OrdinalIgnoreCase)) throw new IOException("Personal roots overlap.");
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(version ?? "", @"^\d+\.\d+\.\d+$")) throw new IOException("Personal version is invalid.");
+                    foreach (string rootPath in new[] { runtime, data, payload }) PinAncestors(rootPath);
+                    var required = new System.Collections.Generic.List<string>(LegacyOperationLeaves);
+                    required.AddRange(new[] { "README.md", "README.ru.md", "LICENSE.md" });
+                    if (names.Length != required.Count || names.Length != expectedHashes.Length) throw new IOException("Personal payload inventory differs.");
+                    for (int n = 0; n < names.Length; n++) {
+                        if (!required.Contains(names[n]) || hashes.ContainsKey(names[n]) || !LegacySourceHash(expectedHashes[n])) throw new IOException("Personal payload inventory differs.");
+                        hashes.Add(names[n], expectedHashes[n]);
+                        string path = Path.Combine(payload, names[n]);
+                        PinAncestors(Path.GetDirectoryName(path));
+                        var stream = OpenLegacyRestartRead(path); pins.Add(stream); sources.Add(names[n], stream);
+                    }
+                    Validate(runtime, data, payload);
+                } catch { Dispose(); throw; }
+            }
+            private void PinAncestors(string path) {
+                var paths = new System.Collections.Generic.Stack<string>();
+                for (string p = Canonical(path); p != null; p = Path.GetDirectoryName(p)) paths.Push(p);
+                while (paths.Count != 0) pins.Add(PinLegacySourceDirectory(paths.Pop()));
+            }
+            public void Validate(string runtimeRoot, string dataRoot, string payloadRoot) {
+                lock (contextGate) {
+                    if (disposed || sid != CurrentSid() || !String.Equals(runtime, Canonical(runtimeRoot), StringComparison.OrdinalIgnoreCase) ||
+                        !String.Equals(data, Canonical(dataRoot), StringComparison.OrdinalIgnoreCase) || !String.Equals(payload, Canonical(payloadRoot), StringComparison.OrdinalIgnoreCase))
+                        throw new System.Security.SecurityException("Personal installer context changed.");
+                    foreach (var source in sources) {
+                        if (PhysicalPinHash(source.Value) != hashes[source.Key]) throw new IOException("Personal payload differs from trusted caller input.");
+                        using (var current = OpenLegacyRestartRead(Path.Combine(payload, source.Key)))
+                            if (LegacyOrigin(current.SafeFileHandle) != LegacyOrigin(source.Value.SafeFileHandle) || PhysicalPinHash(current) != hashes[source.Key])
+                                throw new IOException("Personal payload origin changed.");
+                    }
+                }
+            }
+            private string ExpectedRegistration() {
+                string shell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
+                string command = "\"" + shell + "\" -NoProfile -File \"" + RetryPath + "\" -Personal";
+                // Typed values are a fixed adapter contract, never commands read from metadata.
+                return "DisplayName=ProGo\nDisplayVersion=" + version + "\nInstallLocation=" + runtime +
+                    "\nUninstallString=" + command + "\nNoModify:DWORD=1\nNoRepair:DWORD=1\nProGoOwnerSid=" + sid + "\n";
+            }
+            public void AdmitRegistration() {
+                lock (contextGate) {
+                    Validate(runtime, data, payload);
+                    string current = registration.Read();
+                    if (current != null && current != ExpectedRegistration()) throw new IOException("Personal registration is foreign or changed.");
+                }
+            }
+            public void PublishRegistration() {
+                lock (contextGate) {
+                    AdmitRegistration();
+                    // The PowerShell consumer independently requires its original complete
+                    // installed outcome/snapshot/admission proofs before this final step.
+                    foreach (string leaf in LegacyOperationLeaves)
+                        using (var stream = OpenLegacyRestartRead(Path.Combine(runtime, leaf)))
+                            if (PhysicalPinHash(stream) != hashes[leaf]) throw new IOException("Personal committed runtime differs.");
+                    using (var retry = OpenLegacyRestartRead(RetryPath))
+                        if (PhysicalPinHash(retry) != hashes["scripts/Uninstall-ProGo.ps1"]) throw new IOException("Personal retry entry differs.");
+                    string expected = ExpectedRegistration();
+                    if (registration.Read() == expected) return;
+                    try {
+                        if (!registration.CompareExchange(null, expected) || registration.Read() != expected) throw new IOException("Personal registration publication failed.");
+                    } catch {
+                        // Adapter must provide real ownership/CAS semantics. A native
+                        // registry implementation is deliberately not assumed atomic here.
+                        if (registration.Read() == expected) registration.CompareExchange(expected, null);
+                        throw;
+                    }
+                }
+            }
+            public void RemoveRegistration() {
+                lock (contextGate) {
+                    AdmitRegistration();
+                    foreach (string leaf in LegacyOperationLeaves) {
+                        string path = Path.Combine(runtime, leaf); CheckLocation(path);
+                        try { File.GetAttributes(path); }
+                        catch (FileNotFoundException) { continue; }
+                        catch (DirectoryNotFoundException) { continue; }
+                        throw new IOException("Personal uninstall runtime deletion is incomplete.");
+                    }
+                    string current = registration.Read();
+                    if (current != null && !registration.CompareExchange(ExpectedRegistration(), null)) throw new IOException("Personal registration changed during removal.");
+                    if (registration.Read() != null) throw new IOException("Personal registration removal is incomplete.");
+                }
+            }
+            public void Dispose() {
+                lock (contextGate) {
+                    if (disposed) return; disposed = true;
+                    try { registration.Dispose(); }
+                    finally {
+                        for (int n = pins.Count - 1; n >= 0; n--) pins[n].Dispose();
+                        pins.Clear(); sources.Clear();
+                    }
+                }
+            }
+#if PROGO_PERSONAL_INSTALL_FIXTURE
+            // This factory and file store are absent from normal application/Add-Type
+            // builds. Only isolated fixture compilation can construct this capability.
+            public static PersonalInstallTransaction CreateFixture(string fixtureRoot, string caseName, string runtimeRoot, string dataRoot,
+                string payloadRoot, string originalSid, string[] names, string[] expectedHashes, string payloadVersion, string fault)
+            {
+                string rootPath = Canonical(fixtureRoot);
+                if (!String.Equals(Path.GetDirectoryName(rootPath), Canonical(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) ||
+                    !System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(rootPath), "^ProGo-personal-transaction-[a-f0-9]{32}$") ||
+                    !System.Text.RegularExpressions.Regex.IsMatch(caseName, "^[a-z-]+$")) throw new IOException("Personal fixture scope is invalid.");
+                string scope = Path.Combine(rootPath, caseName);
+                if (Canonical(runtimeRoot) != Canonical(Path.Combine(scope, "program", "ProGo")) ||
+                    Canonical(dataRoot) != Canonical(Path.Combine(scope, "data", "ProGo")) ||
+                    Canonical(payloadRoot) != Canonical(Path.Combine(scope, "payload"))) throw new IOException("Personal fixture fixed paths differ.");
+                return new PersonalInstallTransaction(runtimeRoot, dataRoot, payloadRoot, originalSid, names, expectedHashes, payloadVersion,
+                    new FixtureRegistrationStore(Path.Combine(scope, "arp.txt"), fault));
+            }
+            private sealed class FixtureRegistrationStore : RegistrationStore {
+                private readonly string path;
+                private string fault;
+                private FileStream held;
+                private readonly object gate = new object();
+                internal FixtureRegistrationStore(string file, string failure) { path = file; fault = failure; }
+                private FileStream Open() {
+                    if (held != null) { held.Position = 0; return held; }
+                    CheckLocation(path);
+                    var handle = OpenLegacyForDisposition(path, 0xC0000000u, 0, IntPtr.Zero, 3, 0x00200000u, IntPtr.Zero);
+                    try {
+                        if (handle.IsInvalid) throw new IOException("Personal fixture registration unavailable.");
+                        LegacyOrigin(handle); held = new FileStream(handle, FileAccess.ReadWrite); return held;
+                    } catch { handle.Dispose(); throw; }
+                }
+                private static string ReadValue(FileStream stream) {
+                    if (stream.Length > 65536) throw new IOException("Personal fixture registration oversized.");
+                    if (stream.Length == 0) return null;
+                    var bytes = new byte[(int)stream.Length]; int offset = 0;
+                    while (offset < bytes.Length) { int n = stream.Read(bytes, offset, bytes.Length - offset); if (n == 0) throw new IOException("Personal fixture registration truncated."); offset += n; }
+                    return new UTF8Encoding(false, true).GetString(bytes);
+                }
+                public string Read() { lock (gate) return ReadValue(Open()); }
+                public void Dispose() { lock (gate) { if (held != null) { held.Dispose(); held = null; } } }
+                public bool CompareExchange(string expected, string replacement) {
+                    lock (gate) {
+                        var stream = Open();
+                        if (ReadValue(stream) != expected) return false;
+                        if (replacement != null && fault == "registration-before") { fault = null; throw new IOException("Synthetic registration pre-write fault."); }
+                        byte[] bytes = Encoding.UTF8.GetBytes(replacement ?? "");
+                        stream.Position = 0; stream.SetLength(0); stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
+                        if (replacement != null && fault == "registration-after") { fault = null; throw new IOException("Synthetic registration post-write fault."); }
+                        return true;
+                    }
+                }
+            }
+#endif
+        }
     }
 }

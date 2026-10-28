@@ -209,6 +209,7 @@ CI728_FIXTURE_SHA256 = {'UpdatePackageTests.ps1': '2a95e34d382c69e1c0d9ca8bc4045
 # reviewed adapter before checking their original CI728 frozen bodies; scenarios,
 # assertions, injections and deadlines retain their historical hashes.
 LEGACY_LAYOUT_FIXTURE_ADAPTER = """# Isolated legacy destination; production known folders must not be redirected.
+$Personal = $false
 function Get-ProGoInstallerLayout {
     $legacy = Join-Path $env:LOCALAPPDATA 'ProGo'
     return [pscustomobject]@{ RuntimeRoot = $legacy; DataRoot = $legacy }
