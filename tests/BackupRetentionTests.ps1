@@ -12,7 +12,8 @@ foreach ($function in $ast.FindAll({ param($node) $node -is [Management.Automati
 }
 function Write-UpdateLog($Message) { Write-Host $Message }
 $InstallDir = Join-Path $env:TEMP ('ProGo-retention-updater-' + [guid]::NewGuid().ToString('N'))
-$BackupsDir = Join-Path $InstallDir 'backups'
+$DataRoot = $InstallDir
+$BackupsDir = Join-Path $DataRoot 'backups'
 $LocalVersionFile = Join-Path $InstallDir 'VERSION'
 $State = @{ RemoteVersion = '0.0.2'; UpdateMode = 'fixture' }
 $Timestamp = '20260201-000000'

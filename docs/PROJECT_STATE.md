@@ -1,3 +1,33 @@
+## CI746 terminal FAILURE; bounded BackupRetention fixture setup correction
+
+Independent complete eight-log exact-SHA review confirms CI746 run40616826333,
+attempt1 FAILURE, sourcec58d97a5bb628ef41ea553add3baead66569356d and merge
+795ec7a1720705a4455c71cc5c1aa1272d3b0b12. Six other partitions SUCCESS; Core
+and strict aggregate FAILURE. DiagnosticPreview actual read-only sanitized
+preview/no automatic clipboard writes and explicit Copy-equals-preview both
+PASS. Real alias and all nine actual RestoreSplit cases again PASS. CI744
+root cause remains UNKNOWN; no overall CI746 PASS claimed.
+
+Next Core failure was the extracted Backup-InstalledState call in
+BackupRetentionTests.ps1: fixture supplied InstallDir but not DataRoot; exact
+log reports VariableIsUndefined at Copy-FileIfExists $DataRoot. Independent
+AST/extracted-consumer and helper-inventory audit of exact sourcec58d97a found
+this as the sole remaining missing setup. Local correction aliases DataRoot to
+the same generated temporary legacy fixture InstallDir, then derives BackupsDir
+from DataRoot. No production change or new root authority. Fixture remainder
+is byte-unchanged: DPAPI/ownership archive composition, plaintext exclusions,
+retention parity, private-data preservation on rollback, integrity and locked
+copy assertions remain. Existing actual assertions provide the regression check.
+Payload inventory remains42; InstallerLegacyPreDeleteTests41 counts namespace
+observations and is deliberately unchanged.
+
+Local full Python170 =167 PASS +3 SKIP; targeted Python8 PASS; public-content451
+source/0release, BOM/body preservation and diff check PASS. New setup Windows
+NOT_RUN pending the one conditionally authorized corrective CI. Expected CAS
+headc58d97a5bb628ef41ea553add3baead66569356d; no rerun746 or duplicate CI.
+After publication freeze until all eight complete exact-SHA results. Production,
+Program Files, PC/network/ACL unchanged; no additional fixes in this checkpoint.
+
 ## CI745 terminal FAILURE; bounded DiagnosticPreview fixture setup correction
 
 Independent complete eight-log exact-SHA review confirms CI745 run40613249715,
