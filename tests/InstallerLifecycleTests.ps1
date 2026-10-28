@@ -45,17 +45,96 @@ function Get-LifecycleErrorMetadata($Record) {
     return [ordered]@{ Chain = $chain; ChainTruncated = ($null -ne $exception); FQID = $fqid;
         Line = $Record.InvocationInfo.ScriptLineNumber; Offset = $Record.InvocationInfo.OffsetInLine }
 }
+# Fixture-local comparisons emit only booleans/counts/flags, never SID/SDDL/ACE bytes.
+function Get-LifecycleAclMetadata($Expected, $Actual) {
+    $left = New-Object Security.AccessControl.RawSecurityDescriptor($Expected.GetSecurityDescriptorSddlForm($sections))
+    $right = New-Object Security.AccessControl.RawSecurityDescriptor($Actual.GetSecurityDescriptorSddlForm($sections))
+    $leftBytes = $null; $rightBytes = $null
+    if ($null -ne $left.DiscretionaryAcl) {
+        $leftBytes = New-Object byte[] $left.DiscretionaryAcl.BinaryLength
+        $left.DiscretionaryAcl.GetBinaryForm($leftBytes, 0)
+    }
+    if ($null -ne $right.DiscretionaryAcl) {
+        $rightBytes = New-Object byte[] $right.DiscretionaryAcl.BinaryLength
+        $right.DiscretionaryAcl.GetBinaryForm($rightBytes, 0)
+    }
+    $leftInherited = 0; $leftExplicit = 0; $rightInherited = 0; $rightExplicit = 0
+    foreach ($ace in $left.DiscretionaryAcl) {
+        if (($ace.AceFlags -band [Security.AccessControl.AceFlags]::Inherited) -ne 0) { $leftInherited++ } else { $leftExplicit++ }
+    }
+    foreach ($ace in $right.DiscretionaryAcl) {
+        if (($ace.AceFlags -band [Security.AccessControl.AceFlags]::Inherited) -ne 0) { $rightInherited++ } else { $rightExplicit++ }
+    }
+    $daclEqual = ($null -eq $leftBytes -and $null -eq $rightBytes)
+    if ($null -ne $leftBytes -and $null -ne $rightBytes) { $daclEqual = [Convert]::ToBase64String($leftBytes) -ceq [Convert]::ToBase64String($rightBytes) }
+    return [ordered]@{
+        OwnerEqual = $left.Owner.Equals($right.Owner); GroupEqual = $left.Group.Equals($right.Group)
+        ExpectedControlFlags = [int]$left.ControlFlags; ActualControlFlags = [int]$right.ControlFlags
+        ControlFlagsXor = ([int]$left.ControlFlags -bxor [int]$right.ControlFlags); DaclBinaryEqual = $daclEqual
+        ExpectedInheritedAces = $leftInherited; ExpectedExplicitAces = $leftExplicit
+        ActualInheritedAces = $rightInherited; ActualExplicitAces = $rightExplicit
+        ExpectedProtected = $Expected.AreAccessRulesProtected; ActualProtected = $Actual.AreAccessRulesProtected
+        ExpectedCanonical = $Expected.AreAccessRulesCanonical; ActualCanonical = $Actual.AreAccessRulesCanonical
+    }
+}
+function Set-LifecycleFixtureAcl([string]$Path, [string]$Sddl) {
+    $restore = New-Object Security.AccessControl.FileSecurity
+    $restore.SetSecurityDescriptorSddlForm($Sddl, [Security.AccessControl.AccessControlSections]::Access)
+    [IO.File]::SetAccessControl($Path, $restore)
+}
+function Test-LifecycleAclBaseline([string]$Path, $Candidate) {
+    $candidateSddl = $Candidate.GetSecurityDescriptorSddlForm($sections)
+    $stable = $true
+    # Exactly two writes of the same candidate with the actual cleanup API.
+    for ($pass = 0; $pass -lt 2; $pass++) {
+        Set-LifecycleFixtureAcl $Path $candidateSddl
+        $actual = [IO.File]::GetAccessControl($Path, $sections)
+        $exact = $actual.GetSecurityDescriptorSddlForm($sections) -ceq $candidateSddl
+        $metadata = Get-LifecycleAclMetadata $Candidate $actual
+        $metadata['ExactSddl'] = $exact
+        $metadata['Pass'] = $pass; $metadata['ReadWrite'] = $false
+        $Fixture.BaselineRounds += $metadata
+        # Probe independently even when exact SDDL differs; no fallback for I/O failure.
+        $probe = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+        try { $metadata['ReadWrite'] = $true } finally { $probe.Dispose() }
+        $stable = $stable -and $exact
+    }
+    return $stable
+}
 function Invoke-LifecycleInstall {
     if ($Fixture.Mode -cne 'access-denied') { & $installDriver -PayloadDirectory $payload -NoStartup; return }
     $Fixture.InstallError = $null; $Fixture.SetupError = $null; $Fixture.CleanupError = $null
+    $Fixture.CleanupErrors = @(); $Fixture.CleanupAcl = $null; $Fixture.BaselineRounds = @()
+    $Fixture.BaselineReady = $false; $Fixture.ProtectedAclCase = $false
     $Fixture.AclRestored = $false; $Fixture.ExactSddl = $false; $Fixture.ReadWriteRestored = $false
     $path = Join-Path $Fixture.Runtime 'VERSION'
     $sections = [Security.AccessControl.AccessControlSections]'Access, Owner, Group'
-    $original = [IO.File]::GetAccessControl($path, $sections).GetSecurityDescriptorSddlForm($sections)
-    $versionHash = (Get-FileHash -LiteralPath $path).Hash
-    $probe = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None); $probe.Dispose()
+    $initial = $null; $restoreSddl = $null; $baselineSddl = $null; $baselineAcl = $null
     $script:storageAclSettled = $false
     try {
+        $initial = [IO.File]::GetAccessControl($path, $sections)
+        $restoreSddl = $initial.GetSecurityDescriptorSddlForm($sections)
+        $candidate = $initial
+        $stable = Test-LifecycleAclBaseline $path $candidate
+        if (-not $stable) {
+            Check-Lifecycle (-not $initial.AreAccessRulesProtected) 'unstable protected baseline refuses further ACL adaptation'
+            # Only this new fixture leaf: preserve inherited grants as explicit grants.
+            $Fixture.ProtectedAclCase = $true
+            $candidate = [IO.File]::GetAccessControl($path, $sections)
+            $candidate.SetAccessRuleProtection($true, $true)
+            [IO.File]::SetAccessControl($path, $candidate)
+            $candidate = [IO.File]::GetAccessControl($path, $sections)
+            $stable = Test-LifecycleAclBaseline $path $candidate
+        }
+        $ownerGroup = Get-LifecycleAclMetadata $initial $candidate
+        Check-Lifecycle ($ownerGroup.OwnerEqual -and $ownerGroup.GroupEqual) 'baseline preserves original owner/group'
+        Check-Lifecycle $stable 'fixture ACL baseline is exact round-trip stable'
+        # Commit once, only after setup proof. Never recapture after denial/failure.
+        Set-Variable -Name baselineSddl -Value ($candidate.GetSecurityDescriptorSddlForm($sections)) -Option ReadOnly
+        $baselineAcl = $candidate
+        $restoreSddl = $baselineSddl
+        $Fixture.BaselineReady = $true
+        $versionHash = (Get-FileHash -LiteralPath $path).Hash
         $acl = [IO.File]::GetAccessControl($path)
         $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
         try { $sid = $identity.User } finally { $identity.Dispose() }
@@ -70,18 +149,25 @@ function Invoke-LifecycleInstall {
         catch { $Fixture.InstallError = $_ }
     } catch { $Fixture.SetupError = $_ }
     finally {
-        # Restore only this created file's DACL; owner/group must also remain exact.
+        # Restore only the committed baseline; on setup failure attempt initial ACL.
         try {
-            $restore = New-Object Security.AccessControl.FileSecurity
-            $restore.SetSecurityDescriptorSddlForm($original, [Security.AccessControl.AccessControlSections]::Access)
-            [IO.File]::SetAccessControl($path, $restore)
-            $Fixture.AclRestored = $true
-            $Fixture.ExactSddl = [IO.File]::GetAccessControl($path, $sections).GetSecurityDescriptorSddlForm($sections) -ceq $original
-            Check-Lifecycle $Fixture.ExactSddl 'exact fixture ACL restored'
+            if ($null -ne $restoreSddl) {
+                Set-LifecycleFixtureAcl $path $restoreSddl
+                $Fixture.AclRestored = $true
+                $actual = [IO.File]::GetAccessControl($path, $sections)
+                $Fixture.ExactSddl = $actual.GetSecurityDescriptorSddlForm($sections) -ceq $restoreSddl
+                $expected = if ($Fixture.BaselineReady) { $baselineAcl } else { $initial }
+                $Fixture.CleanupAcl = Get-LifecycleAclMetadata $expected $actual
+                Check-Lifecycle $Fixture.ExactSddl 'exact fixture ACL restored'
+            }
+        } catch { $Fixture.CleanupErrors += $_ }
+        # Always attempt ReadWrite, independently of restore/SDDL mismatch.
+        try {
             $probe = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
             try { $Fixture.ReadWriteRestored = $true } finally { $probe.Dispose() }
-            $script:storageAclSettled = $true
-        } catch { $Fixture.CleanupError = $_ }
+        } catch { $Fixture.CleanupErrors += $_ }
+        if ($Fixture.CleanupErrors.Count -gt 0) { $Fixture.CleanupError = $Fixture.CleanupErrors[0] }
+        $script:storageAclSettled = $Fixture.BaselineReady -and $Fixture.AclRestored -and $Fixture.ExactSddl -and $Fixture.ReadWriteRestored -and $Fixture.CleanupErrors.Count -eq 0
     }
     # Keep the actual install failure distinct from a later restoration failure.
     if ($null -ne $Fixture.SetupError) { throw $Fixture.SetupError }
@@ -225,6 +311,9 @@ try {
                     Setup = (Get-LifecycleErrorMetadata $Fixture.SetupError)
                     Install = (Get-LifecycleErrorMetadata $Fixture.InstallError)
                     Cleanup = (Get-LifecycleErrorMetadata $Fixture.CleanupError)
+                    CleanupErrors = @($Fixture.CleanupErrors | ForEach-Object { Get-LifecycleErrorMetadata $_ })
+                    BaselineReady = $Fixture.BaselineReady; ProtectedAclCase = $Fixture.ProtectedAclCase
+                    BaselineRounds = $Fixture.BaselineRounds; CleanupAcl = $Fixture.CleanupAcl
                     InstallIsUnauthorized = ($cause -is [UnauthorizedAccessException])
                     InstallWin32Code = $(if ($null -ne $cause) { $cause.HResult -band 65535 } else { $null })
                     OldEqualsPayload = ($oldHash -ceq $payloadHash)
@@ -234,14 +323,14 @@ try {
                     AclRestored = $Fixture.AclRestored; ExactSddl = $Fixture.ExactSddl
                     ReadWriteRestored = $Fixture.ReadWriteRestored; AclSettled = $script:storageAclSettled
                 }
-                Write-Host ('LIFECYCLE_ACL_DIAGNOSTIC ' + ($diagnostic | ConvertTo-Json -Depth 8 -Compress))
+                Write-Host ('LIFECYCLE_ACL_DIAGNOSTIC ' + ($diagnostic | ConvertTo-Json -Depth 10 -Compress))
                 # Evaluate both mandatory requirements even when the first fails.
                 $requirements = New-Object 'Collections.Generic.List[Exception]'
                 try {
                     Check-Lifecycle ($cause -is [UnauthorizedAccessException] -and ($cause.HResult -band 65535) -eq 5 -and $Fixture.Writes -eq 1 -and $Fixture.PublishedHash -cne $oldHash) 'actual installer denied VERSION only after changed EXE publication'
                 } catch { $requirements.Add($_.Exception) }
                 try {
-                    Check-Lifecycle ($null -eq $Fixture.SetupError -and $null -eq $Fixture.CleanupError -and $Fixture.AclRestored -and $Fixture.ExactSddl -and $Fixture.ReadWriteRestored -and $script:storageAclSettled) 'fixture ACL cleanup completed exactly'
+                    Check-Lifecycle ($Fixture.BaselineReady -and $null -eq $Fixture.SetupError -and $null -eq $Fixture.CleanupError -and $Fixture.AclRestored -and $Fixture.ExactSddl -and $Fixture.ReadWriteRestored -and $script:storageAclSettled) 'fixture ACL cleanup completed exactly'
                 } catch { $requirements.Add($_.Exception) }
                 if ($requirements.Count -gt 0) { throw [AggregateException]::new('ACL fixture requirements failed; see metadata packet.', [Exception[]]$requirements.ToArray()) }
             } else {

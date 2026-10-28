@@ -1,3 +1,104 @@
+## Local stable ACL baseline candidate after CI753; Windows NOT_RUN
+
+Continued from4ac17343c08d9583bbff87e64273433f78528290, same checkout and sole
+writer. Only the existing mandatory lifecycle ACL fixture and this record change.
+No production/CI locale/permissions, network, PC, push or CI action performed.
+CI753 exact-SDDL cleanup failure and original CI752 UNKNOWN remain historical.
+
+Before denial/Install, the new unique VERSION fixture attempts exactly two writes
+of the same candidate descriptor through the same DACL-only restore API used by
+cleanup. Each write requires exact Access/Owner/Group SDDL and real ReadWrite.
+Only an unstable unprotected descriptor permits one protected-DACL fallback:
+SetAccessRuleProtection(true,true) preserves inherited grants as explicit grants,
+without changing owner/group or adding grants. That candidate must pass another
+two exact round trips; I/O errors or unstable protected descriptors fail setup.
+The packet explicitly identifies ProtectedAclCase, not proof of restoring CI753's
+historical inherited descriptor. A baseline string becomes local ReadOnly only
+after setup proof, never resampled after denial or failure. On setup failure,
+cleanup attempts the initial descriptor and retains evidence; setup stays FAIL.
+
+Metadata includes separate OwnerEqual/GroupEqual, numeric control flags/XOR,
+DACL binary equality, inherited/explicit ACE counts, protected/canonical flags,
+per-round exact/ReadWrite flags and cleanup comparison. No SID, SDDL, ACE contents
+or binary/hash values are emitted. Cleanup always independently probes ReadWrite
+after restore/SDDL failure; exact mismatch remains mandatory FAIL. Both cleanup
+errors are retained alongside separate setup/install errors. Original Win325,
+one changed EXE/hash, actual rollback/snapshot/pending assertions, deadlines,
+isolation seams and evidence retention remain intact. No semantic-equality bypass.
+
+Local Python171=168PASS+3SKIP, public453source/0release, BOM/CRLF, original
+compound/rollback/consumer preservation, targeted secrets and diff checks PASS.
+Native Windows baseline/metadata/ACL execution NOT_RUN (no local tool install).
+No claim of stable Windows ACL, fixed historical descriptor or accepted candidate.
+Full incremental diff awaits review; no push/CI. Production activation remains
+closed; cross-volume post-GUID/Repair/Restore/late UI gates remain pending, as do
+late uninstall retry/staged elevated uninstall/UAC/ARP.
+
+## CI753 complete diagnostic FAILURE; exact SDDL cleanup condition identified
+
+One authorized automatic run40656571009 / CI753 attempt1 completed FAILURE
+2026-10-28 09:01:28 UTC. CAS expected c6fd0f6c9fe1ae414b5154b4ed5103775ed251ea
+matched; published only reviewed fixture/docs. Source
+550d4567a191262e26f944f84ce09a5ebe8b5cda, tested merge
+21409b37ce1a8400151944b7d5a89301ea91786f. Local publication checkpoint
+feea1ddd5edfa37bec1a2e7f0bf9e325119a73b3, exact tree
+85c40b9fb86158a6334793472140f2f41f4c82bc. Both published blob SHAs and complete
+tree matched local Git. All-event exact-source runs total_count1, attempt1 only.
+No rerun752, duplicate, corrective code or additional publication.
+
+All eight full logs contain exact source/merge and terminal cleanup. Core
+122708925844 FAILURE; Ubuntu122708925868, Foundation122708925846,
+Live122708925825, Recovery122708925457, Runtime122708926616 and
+Success122708925854 SUCCESS. Strict aggregate122723753264 FAILURE correctly
+refuses Core; all seven needs outputs match the exact merge. All old installer33
+suites PASS (Foundation26 + Live1 + Recovery6), including PendingPublication25
+and StartupFailure15. Runtime35 plus refusals and Success40 plus fresh-process2
+PASS; all 40 expected-state/recorded records match. Both icon host tests PASS.
+Local prepublication Python171=168PASS+3SKIP; public453source/0release,
+BOM/CRLF, exact original compound assertion, remaining rollback/consumer bodies,
+secret and diff checks PASS. No production change or weakened requirement.
+
+The bounded ACL packet from Core at08:27:33.0319601 UTC independently reports:
+Caught and Install chains: System.Management.Automation.MethodInvocationException
+HResult -2146233087 -> System.UnauthorizedAccessException HResult -2147024891;
+no truncation, FQID UnauthorizedAccessException, invocation line1902/offset9.
+Setup=null. InstallIsUnauthorized=true, InstallWin32Code=5, Writes=1,
+HasPublishedHash=true, PublishedEqualsOld=false, PublishedEqualsPayload=true,
+OldEqualsPayload=false. Thus all four original install predicates are true:
+actual Win325 after exactly one changed EXE write; the installed bytes match payload.
+Cleanup has a separate System.Management.Automation.RuntimeException,
+HResult -2146233087, no truncation, redacted FQID, line17/offset28.
+AclRestored=true, ExactSddl=false, ReadWriteRestored=false, AclSettled=false.
+
+Precise failed condition in CI753: the fixture's exact Access/Owner/Group SDDL
+comparison after SetAccessControl returned successfully. ReadWrite reopen was
+not reached after that assertion, not a proven ReadWrite denial. Both mandatory
+install/cleanup requirements were evaluated; only cleanup failed. No messages,
+paths, source text, SDDL, SID, file bytes or hash values were emitted in packet.
+The technical reason for the descriptor mismatch remains UNKNOWN; this is not
+a proven fix or a retrospective proof of CI752's original failed conjunct.
+Next correction must be bounded to this observed exact-SDDL condition, with
+independent review/CI authorization. No such correction has been started here.
+
+Actual volume GUIDs before consumers: data C:
+BC7F279C-06E3-4EB3-9FD6-2498AAFE64B5; runtime D:
+E1DDC9E5-F620-4C07-8ECE-8806E3828C26. Existing eight cross-volume actual
+Install/Uninstall scenarios PASS, including partial rollback/data/foreign proofs.
+Access-denied production report: priorRuntimeVerified=True,
+rollbackAttempted=True, rollbackVerified=True, rollbackTerminalVerified=False,
+rollbackErrorType=none, backupRetained=True. Later access-case snapshot/pending
+assertions were not reached after cleanup failure. Cross-volume Repair/Restore,
+post-consumer GUIDs and later Core Shutdown/Diagnostics UI/Desktop/relay are
+NOT_RUN. Earlier same-volume fixtures do not substitute for these gates.
+Both fixture sides were retained: data temp leaf
+ProGo-lifecycle-323035a6809c4825850b2d9276946f1c and runtime drive-root leaf
+ProGo-storage-fixture-0142d92a4c6d4c1782bb3d8c278d44b6. Retention warnings are
+runner-local, not durable export. Pack ZIP/uploads/prune SKIPPED, artifacts0;
+no new package size/hash. CI753 packet NOT_ACCEPTED; historical CI752 diagnosis
+UNKNOWN/FAILURE and CI751 GREEN remain separate. Freeze held until all eight full
+logs; only this local result record follows. Production activation/PC/production
+ACL/VHD/volume policy unchanged; late uninstall retry/UAC/ARP remain later gates.
+
 ## Local bounded ACL diagnostics after CI752; Windows NOT_RUN
 
 Continued from4bdfec9a00a3b40cf5239047d746e32521152fbb, same checkout/sole
