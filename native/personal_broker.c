@@ -34,6 +34,33 @@ typedef struct pg_native {
     pg_exchange exchange;
 } pg_native;
 static pg_native g;
+/* Numeric-only fixture telemetry; never an admission input. Stage values are stable. */
+#ifdef PROGO_BROKER_NATIVE_FIXTURE
+typedef enum pg_diag_stage {
+    PG_D_SYSTEM=1, PG_D_WINDOWS, PG_D_DLL_POLICY, PG_D_MODULE, PG_D_LOCAL_IMAGE,
+    PG_D_IMAGE, PG_D_TOKEN, PG_D_SHELL, PG_D_SPLIT, PG_D_ARGV,
+    PG_D_FIXTURE_ROOT, PG_D_TEMP, PG_D_TEMP_MATCH, PG_D_SCRATCH,
+    PG_D_COMMAND, PG_D_ENGINE, PG_D_ENV_ALLOC, PG_D_ENV, PG_D_JOB_CREATE,
+    PG_D_JOB_LIMIT, PG_D_CREATE, PG_D_ASSIGN, PG_D_RESUME, PG_D_WAIT,
+    PG_D_EXIT, PG_D_ACCOUNT, PG_D_DONE
+} pg_diag_stage;
+static struct { unsigned stage; DWORD error; int temp_match,long_known,long_match;
+    int created,assigned,resumed,exit_known,account_ok; DWORD host_exit,active,wait_result; } pg_diag;
+#define PG_STAGE(x) do { pg_diag.stage=(x); SetLastError(ERROR_SUCCESS); } while(0)
+#define PG_ERROR() do { pg_diag.error=GetLastError(); } while(0)
+static void pg_diag_write(void) {
+    char line[512]; DWORD written; int n;
+    n=sprintf_s(line,sizeof(line),"PG_NATIVE_DIAG v=1 stage=%u error=%lu temp_match=%d long_known=%d long_match=%d created=%d assigned=%d resumed=%d exit_known=%d host_exit=%lu account_ok=%d active=%lu wait_result=%lu\n",
+        pg_diag.stage,pg_diag.error,pg_diag.temp_match,pg_diag.long_known,pg_diag.long_match,
+        pg_diag.created,pg_diag.assigned,pg_diag.resumed,pg_diag.exit_known,pg_diag.host_exit,pg_diag.account_ok,pg_diag.active,pg_diag.wait_result);
+    if(n>0) WriteFile(GetStdHandle(STD_OUTPUT_HANDLE),line,(DWORD)n,&written,NULL);
+}
+#define PG_FLAG(x) do { pg_diag.x=1; } while(0)
+#else
+#define PG_STAGE(x) ((void)0)
+#define PG_ERROR() ((void)0)
+#define PG_FLAG(x) ((void)0)
+#endif
 static const GUID pg_programs = {0x905e63b6,0xc1bf,0x494e,{0xb2,0x9c,0x65,0xb7,0x32,0xd3,0xd2,0x1a}};
 static const GUID pg_local = {0xf1b32785,0x6fba,0x4fcf,{0x9d,0x55,0x7b,0x8e,0x7f,0x15,0x70,0x91}};
 static const GUID pg_menu = {0xa77f5d77,0x2e2b,0x44c3,{0xa6,0xa2,0xab,0xa6,0x01,0x05,0x4a,0x51}};
@@ -51,15 +78,17 @@ static int pg_local_path(const wchar_t *path) {
     wchar_t drive[4],device[32768];
     if(!path || wcslen(path)<3 || path[1]!=L':' || path[2]!=L'\\') return 0;
     drive[0]=path[0];drive[1]=L':';drive[2]=0;
-    if(!QueryDosDeviceW(drive,device,32768) || wcsncmp(device,L"\\Device\\HarddiskVolume",22)) return 0;
+    if(!QueryDosDeviceW(drive,device,32768)) { PG_ERROR(); return 0; }
+    if(wcsncmp(device,L"\\Device\\HarddiskVolume",22)) return 0;
     drive[2]=L'\\';drive[3]=0;return GetDriveTypeW(drive)==DRIVE_FIXED;
 }
 static HANDLE pg_open(const wchar_t *path, int directory) {
     HANDLE h = CreateFileW(path,directory?FILE_READ_ATTRIBUTES:GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,
         FILE_FLAG_OPEN_REPARSE_POINT | (directory ? FILE_FLAG_BACKUP_SEMANTICS : 0),NULL);
     BY_HANDLE_FILE_INFORMATION info;
-    if (h == INVALID_HANDLE_VALUE) return NULL;
-    if (!GetFileInformationByHandle(h,&info) || (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
+    if (h == INVALID_HANDLE_VALUE) { PG_ERROR(); return NULL; }
+    if (!GetFileInformationByHandle(h,&info)) { PG_ERROR(); CloseHandle(h); return NULL; }
+    if ((info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
         (!!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != !!directory)) { CloseHandle(h); return NULL; }
     return h;
 }
@@ -76,7 +105,7 @@ static int pg_pin_tree(wchar_t *path,int create) {
         saved=path[i]; path[i]=0;
         for(k=0;k<g.directory_count;++k) if(!_wcsicmp(path,g.directories[k])) break;
         if(k<g.directory_count) { path[i]=saved; continue; }
-        if (create && !CreateDirectoryW(path,NULL) && GetLastError()!=ERROR_ALREADY_EXISTS) { path[i]=saved; return 0; }
+        if (create && !CreateDirectoryW(path,NULL) && GetLastError()!=ERROR_ALREADY_EXISTS) { PG_ERROR(); path[i]=saved; return 0; }
         if (!pg_hold(pg_open(path,1))) { path[i]=saved; return 0; }
         if(g.directory_count==256) { path[i]=saved; return 0; }
         g.directories[g.directory_count]=(wchar_t*)HeapAlloc(GetProcessHeap(),0,(i+1)*sizeof(wchar_t));
@@ -324,22 +353,42 @@ static int pg_receive_roots(HANDLE pipe) {
 static int pg_start_host(const wchar_t *script,const wchar_t *working,const wchar_t *scratch,const wchar_t *arguments,PROCESS_INFORMATION *pi) {
     wchar_t engine[32768],command[32768],*environment; STARTUPINFOW si; HANDLE engine_pin;
     JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits;
+    PG_STAGE(PG_D_COMMAND);
     if(swprintf_s(engine,32768,L"%s\\WindowsPowerShell\\v1.0\\powershell.exe",g.system)<0 ||
         swprintf_s(command,32768,L"\"%s\" -NoLogo -NoProfile -NonInteractive -File \"%s\" %s",engine,script,arguments)<0) return 0;
+    PG_STAGE(PG_D_ENGINE);
     engine_pin=pg_open(engine,0); if(!pg_hold(engine_pin)) return 0;
+    PG_STAGE(PG_D_ENV_ALLOC);
     environment=(wchar_t*)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,131072*sizeof(wchar_t)); if(!environment) return 0;
+    PG_STAGE(PG_D_ENV);
     if(!pg_environment(environment,131072,g.windows,g.system,scratch)) { HeapFree(GetProcessHeap(),0,environment); return 0; }
     ZeroMemory(&si,sizeof(si)); si.cb=sizeof(si); ZeroMemory(pi,sizeof(*pi));
-    g.job=CreateJobObjectW(NULL,NULL); ZeroMemory(&limits,sizeof(limits));
+    PG_STAGE(PG_D_JOB_CREATE);
+    g.job=CreateJobObjectW(NULL,NULL);
+    if(!g.job) { PG_ERROR(); HeapFree(GetProcessHeap(),0,environment); return 0; }
+    ZeroMemory(&limits,sizeof(limits));
     limits.BasicLimitInformation.LimitFlags=JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-    if(!g.job || !SetInformationJobObject(g.job,JobObjectExtendedLimitInformation,&limits,sizeof(limits))) { HeapFree(GetProcessHeap(),0,environment); return 0; }
+    PG_STAGE(PG_D_JOB_LIMIT);
+    if(!SetInformationJobObject(g.job,JobObjectExtendedLimitInformation,&limits,sizeof(limits))) { PG_ERROR(); HeapFree(GetProcessHeap(),0,environment); return 0; }
     /* No ShellExecute/elevation, inherited handles, script text evaluation or
      * ExecutionPolicy override in the privileged managed-host launch. */
-    if(!CreateProcessW(engine,command,NULL,NULL,FALSE,CREATE_SUSPENDED|CREATE_UNICODE_ENVIRONMENT|CREATE_NO_WINDOW,environment,working,&si,pi)) { HeapFree(GetProcessHeap(),0,environment); return 0; }
-    if(!AssignProcessToJobObject(g.job,pi->hProcess) || ResumeThread(pi->hThread)==(DWORD)-1) {
+    PG_STAGE(PG_D_CREATE);
+    if(!CreateProcessW(engine,command,NULL,NULL,FALSE,CREATE_SUSPENDED|CREATE_UNICODE_ENVIRONMENT|CREATE_NO_WINDOW,environment,working,&si,pi)) { PG_ERROR(); HeapFree(GetProcessHeap(),0,environment); return 0; }
+    PG_FLAG(created);
+    PG_STAGE(PG_D_ASSIGN);
+    if(!AssignProcessToJobObject(g.job,pi->hProcess)) {
+        PG_ERROR();
         TerminateProcess(pi->hProcess,3); WaitForSingleObject(pi->hProcess,5000); CloseHandle(pi->hThread); CloseHandle(pi->hProcess);
         HeapFree(GetProcessHeap(),0,environment); return 0;
     }
+    PG_FLAG(assigned);
+    PG_STAGE(PG_D_RESUME);
+    if(ResumeThread(pi->hThread)==(DWORD)-1) {
+        PG_ERROR();
+        TerminateProcess(pi->hProcess,3); WaitForSingleObject(pi->hProcess,5000); CloseHandle(pi->hThread); CloseHandle(pi->hProcess);
+        HeapFree(GetProcessHeap(),0,environment); return 0;
+    }
+    PG_FLAG(resumed);
     HeapFree(GetProcessHeap(),0,environment); CloseHandle(pi->hThread); return 1;
 }
 static int pg_child(void) {
@@ -380,22 +429,48 @@ static int pg_child(void) {
 }
 #ifdef PROGO_BROKER_NATIVE_FIXTURE
 static int pg_fixture_host(void) {
-    wchar_t root[32768],script[32768],scratch[32768],temporary[32768],*leaf; PROCESS_INFORMATION pi; DWORD code=1;
+    wchar_t root[32768],script[32768],scratch[32768],temporary[32768],*leaf;
+    wchar_t long_root[32768],long_temp[32768]; DWORD count,wait; PROCESS_INFORMATION pi; DWORD code=1;
     JOBOBJECT_BASIC_ACCOUNTING_INFORMATION accounting;
+    PG_STAGE(PG_D_FIXTURE_ROOT);
     if(wcscpy_s(root,32768,g.self)) return 1; *wcsrchr(root,L'\\')=0;
     leaf=wcsrchr(root,L'\\'); if(!leaf || !pg_fixture_leaf(leaf+1)) return 1;
-    if(!GetTempPathW(32768,temporary)) return 1;
-    *leaf=0; if(_wcsnicmp(root,temporary,wcslen(root)) || wcslen(temporary)!=wcslen(root)+1) return 1; *leaf=L'\\';
-    if(swprintf_s(script,32768,L"%s\\host.ps1",root)<0 || swprintf_s(scratch,32768,L"%s\\scratch",root)<0 || !pg_pin_tree(scratch,1) ||
-        !pg_start_host(script,root,scratch,L"",&pi)) return 1;
+    PG_STAGE(PG_D_TEMP);
+    count=GetTempPathW(32768,temporary); if(!count || count>=32768) { PG_ERROR(); return 1; }
+    *leaf=0;
+    pg_diag.temp_match=!_wcsnicmp(root,temporary,wcslen(root)) && wcslen(temporary)==wcslen(root)+1;
+    /* Observation only: long-name equality cannot authorize this launch. */
+    count=GetLongPathNameW(root,long_root,32768);
+    if(count && count<32768) {
+        count=GetLongPathNameW(temporary,long_temp,32768);
+        if(count && count<32768) {
+            size_t n=wcslen(long_temp); if(n && long_temp[n-1]==L'\\') long_temp[n-1]=0;
+            pg_diag.long_known=1; pg_diag.long_match=!_wcsicmp(long_root,long_temp);
+        }
+    }
+    PG_STAGE(PG_D_TEMP_MATCH);
+    if(_wcsnicmp(root,temporary,wcslen(root)) || wcslen(temporary)!=wcslen(root)+1) return 1; *leaf=L'\\';
+    PG_STAGE(PG_D_SCRATCH);
+    if(swprintf_s(script,32768,L"%s\\host.ps1",root)<0 || swprintf_s(scratch,32768,L"%s\\scratch",root)<0 || !pg_pin_tree(scratch,1)) return 1;
+    if(!pg_start_host(script,root,scratch,L"",&pi)) return 1;
     g.client=pi.hProcess;
-    if(WaitForSingleObject(g.client,60000)!=WAIT_OBJECT_0) {
+    PG_STAGE(PG_D_WAIT);
+    wait=WaitForSingleObject(g.client,60000);
+    pg_diag.wait_result=wait;
+    if(wait!=WAIT_OBJECT_0) {
+        if(wait==WAIT_FAILED) PG_ERROR();
         TerminateJobObject(g.job,3); WaitForSingleObject(g.client,5000); return 3;
     }
-    if(!GetExitCodeProcess(g.client,&code) ||
-        !QueryInformationJobObject(g.job,JobObjectBasicAccountingInformation,&accounting,sizeof(accounting),NULL) || accounting.ActiveProcesses!=0) {
-        TerminateJobObject(g.job,3); return 3;
+    PG_STAGE(PG_D_EXIT);
+    if(!GetExitCodeProcess(g.client,&code)) { PG_ERROR(); TerminateJobObject(g.job,3); return 3; }
+    pg_diag.exit_known=1; pg_diag.host_exit=code;
+    PG_STAGE(PG_D_ACCOUNT);
+    if(!QueryInformationJobObject(g.job,JobObjectBasicAccountingInformation,&accounting,sizeof(accounting),NULL)) {
+        PG_ERROR(); TerminateJobObject(g.job,3); return 3;
     }
+    pg_diag.account_ok=1; pg_diag.active=accounting.ActiveProcesses;
+    if(accounting.ActiveProcesses!=0) { TerminateJobObject(g.job,3); return 3; }
+    PG_STAGE(PG_D_DONE);
     return (int)code;
 }
 #endif
@@ -432,16 +507,30 @@ static int pg_parent(unsigned op) {
     } else result=1;
     if(worker_token) CloseHandle(worker_token); return (int)result;
 }
-int WINAPI wWinMain(HINSTANCE instance,HINSTANCE previous,PWSTR cmd,int show) {
+static int pg_main(HINSTANCE instance,HINSTANCE previous,PWSTR cmd,int show) {
     typedef LPWSTR* (WINAPI *argv_fn)(LPCWSTR,int*);
     HMODULE shell; argv_fn split; wchar_t **argv; int argc=0,result=1; unsigned i;
     (void)instance; (void)previous; (void)cmd; (void)show;
-    if(!GetSystemDirectoryW(g.system,32768) || !GetSystemWindowsDirectoryW(g.windows,32768) ||
-        !SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32) || !GetModuleFileNameW(NULL,g.self,32768)) return 1;
+    PG_STAGE(PG_D_SYSTEM);
+    if(!GetSystemDirectoryW(g.system,32768)) { PG_ERROR(); return 1; }
+    PG_STAGE(PG_D_WINDOWS);
+    if(!GetSystemWindowsDirectoryW(g.windows,32768)) { PG_ERROR(); return 1; }
+    PG_STAGE(PG_D_DLL_POLICY);
+    if(!SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32)) { PG_ERROR(); return 1; }
+    PG_STAGE(PG_D_MODULE);
+    if(!GetModuleFileNameW(NULL,g.self,32768)) { PG_ERROR(); return 1; }
+    PG_STAGE(PG_D_LOCAL_IMAGE);
     if(!pg_local_path(g.self)) return 1;
-    g.image=pg_open(g.self,0); if(!pg_hold(g.image) || !pg_token(GetCurrentProcess(),TOKEN_QUERY,&g.self_token)) return 1;
-    shell=pg_system_library(L"shell32.dll"); if(!shell) return 1; split=(argv_fn)GetProcAddress(shell,"CommandLineToArgvW"); if(!split) return 1;
-    argv=split(GetCommandLineW(),&argc); if(!argv) return 1;
+    PG_STAGE(PG_D_IMAGE);
+    g.image=pg_open(g.self,0); if(!pg_hold(g.image)) return 1;
+    PG_STAGE(PG_D_TOKEN);
+    if(!pg_token(GetCurrentProcess(),TOKEN_QUERY,&g.self_token)) { PG_ERROR(); return 1; }
+    PG_STAGE(PG_D_SHELL);
+    shell=pg_system_library(L"shell32.dll"); if(!shell) { PG_ERROR(); return 1; }
+    PG_STAGE(PG_D_SPLIT);
+    split=(argv_fn)GetProcAddress(shell,"CommandLineToArgvW"); if(!split) { PG_ERROR(); return 1; }
+    PG_STAGE(PG_D_ARGV);
+    argv=split(GetCommandLineW(),&argc); if(!argv) { PG_ERROR(); return 1; }
     g.deadline=GetTickCount64()+PG_LIFETIME_MS;
 #ifdef PROGO_BROKER_NATIVE_FIXTURE
     if(argc==2 && !wcscmp(argv[1],L"--fixture-host")) result=pg_fixture_host();
@@ -456,4 +545,12 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE previous,PWSTR cmd,int show) {
     if(g.original_token) CloseHandle(g.original_token); if(g.original) CloseHandle(g.original); if(g.self_token) CloseHandle(g.self_token);
     for(i=g.pin_count;i>0;--i) CloseHandle(g.pins[i-1]);
     for(i=g.directory_count;i>0;--i) HeapFree(GetProcessHeap(),0,g.directories[i-1]); return result;
+}
+
+int WINAPI wWinMain(HINSTANCE instance,HINSTANCE previous,PWSTR cmd,int show) {
+    int result=pg_main(instance,previous,cmd,show);
+#ifdef PROGO_BROKER_NATIVE_FIXTURE
+    pg_diag_write();
+#endif
+    return result;
 }

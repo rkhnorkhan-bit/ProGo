@@ -1,3 +1,136 @@
+## CI766 native launch diagnosis — local fixture telemetry, review pending
+
+Sole writer verified clean65e30c745b832a3492c87be7e09b2b9ea9312d41 /
+treefa6de09276cff4d88e54efd321e25ff3541ef5ab, exact checkout/branch/backing Git,
+no locks or competing git/compiler/PowerShell processes; AGENTS absent.
+CI766 remains terminal FAILURE, exact source33eb0b0f658b156a0a68e56199f793899d8e09ac /
+merge1714398bdbb85d5ae5714bfe374401740b29a234, attempt1. All10 saved full logs
+were independently verified. Stage10/Personal18/NativeRegistration15 and both icon
+hosts passed; NativeBrokerLaunch line71 first refusal, PersonalBrokerTests NOT_RUN.
+Native exit/phase were absent; root cause still UNKNOWN. No fix claimed here.
+
+Added consumed fixture-only numeric diagnostics, one bounded line below512 bytes,
+compiled under PROGO_BROKER_NATIVE_FIXTURE only. No paths, process IDs, environment
+values, script output or secrets are emitted. Shared launch/startup statements are
+split without changing order, short-circuit refusal, launch arguments or cleanup;
+production diagnostic macros are no-ops and contain no telemetry serializer.
+Win32 errors are saved at failing API boundaries before cleanup. Logical refusals
+and APIs without documented last-error semantics can report error0; stage remains
+the discriminator. Helper file-information failures capture error before CloseHandle.
+
+Stable stage enum (wire v1): 1 System directory; 2 Windows directory; 3 DLL search
+policy; 4 module name; 5 local-image guard; 6 image pin; 7 token; 8 system shell
+library; 9 argv resolver; 10 argv; 11 fixture root/leaf; 12 temp acquisition;
+13 raw temp-parent admission; 14 scratch; 15 command formatting; 16 engine pin;
+17 environment allocation; 18 allowlist construction; 19 job creation; 20 job
+limits; 21 host creation; 22 assignment; 23 resume; 24 wait; 25 host exit query;
+26 job accounting; 27 done. Records include raw temp match, optional long-name
+comparison known/match, created/assigned/resumed, exit-known/code, accounting-ok/
+active count and wait result. Validity is interpreted with stage: zero defaults
+are not evidence of an API call or successful settlement. Error is meaningful only
+at a failing Win32 boundary. Exit-known distinguishes host exit0 from NOT_RUN.
+
+Reviewer short-name hypothesis remains unproven. Raw GetTempPathW parent comparison
+is unchanged; long-name equality is observation only and cannot authorize launch.
+GetTempPathW oversized return is refused before reading its insufficient buffer.
+Long-name comparison requires both bounded GetLongPathNameW calls to succeed and
+strips one trailing separator; it does not claim handle identity or reparse safety.
+No paths from CI were inspected or inferred. Only a later Windows diagnostic run
+can establish whether raw mismatch/long match occurs on that runner.
+
+PowerShell redirects only native fixture stdout, reads at most513 characters and
+prints only the exact versioned numeric schema; malformed/missing output gets a
+fixed marker. Native launcher exit and host-success/pre-CLR-canary booleans are
+printed before the same nonzero-exit assertion. Fixed System32 host, allowlisted
+environment, no policy override, 60000ms host/launcher and5000ms settlement deadlines,
+production CWD and sticky unknown-tree evidence retention remain unchanged. Host
+handles are not inherited, so the launched host cannot keep the telemetry pipe open.
+No diagnostics authorize admission or clear an unknown settlement outcome.
+
+Local204 Python tests:201 PASS/3 SKIP, including actual portable policy and actual
+C diagnostic serializer compiled with existing cc, strict warnings. Serializer
+regression exercises saved-error survival across cleanup, raw-mismatch/long-match,
+created-but-unassigned and settled nonzero-host-exit states; actual consumed PS
+schema rejects extra fields/text, invalid enum/version/booleans and nonnumeric
+values. Source contracts keep raw admission and parent-before-assert ordering. Existing cc
+preprocessing with empty SDK headers verifies telemetry/long-name probes are absent
+from production and present in fixture; this is preprocessing, not a Windows build.
+Public scan469source/0release PASS; diff and BOM/CRLF checks PASS. Windows native
+build, PowerShell parser/runtime and actual launch remain NOT_RUN locally; no
+pwsh/dotnet/mono/csc or new tools installed. This is not Windows PASS or cause proof.
+
+No push, dispatch, rerun, CI, artifact publication or actual UAC/HKLM/ProgramFiles/
+ACL/production-network/credentials/owner-PC actions. Full delta and exact clean
+checkpoint/tree/checks are saved alongside checkout in ci766-launch-diagnostics/.
+Pause for independent review before any separately authorized Windows CI. No
+admission fix was made on the short-name hypothesis.
+
+## CI766 terminal FAILURE — Personal18/Native15 passed; native launch cause UNKNOWN
+
+Sole writer reverified clean41683993043d60271cd3e1575472b61e5444e2b0 /
+treedacc8e17b93803b23d0436705c627da25f81cfce and reviewed delta13798 bytes SHA256
+95c62c439e70dccd1673db14ed74ce3d74d98f4754b10bb0db20ef8d34e5eaf7. AGENTS absent,
+no locks/competing git/compiler processes; expected remotec2e804d2 and all-event
+queued/in_progress/waiting/pending/requested0 checked twice before non-force CAS.
+One publication preserved history: source33eb0b0f658b156a0a68e56199f793899d8e09ac,
+parentc2e804d2b9fb0e428fb624a5995f1546891c8852, exact reviewed tree above. No
+force/history replacement, dispatch, rerun, duplicate, installation or PC action.
+
+Automatic pull_request CI766 run40954644604 attempt1 terminal FAILURE at
+2026-10-29 21:51:32UTC /2026-10-30 00:51:32 Europe/Istanbul. Tested merge
+1714398bdbb85d5ae5714bfe374401740b29a234 has the exact reviewed tree above;
+parents main4bb336575bb1216d3047bd2b294aeecad9fdd65a and published source33eb0b0f.
+Final PR88 draft/open source/merge unchanged; source run count1/attempt1;
+all-event active CI0. No automatic correction or repeat publication after failure.
+
+All10 COMPLETE full terminal logs saved with exact source/merge/terminal records
+and per-log SHA256:1052190 decoded UTF-8 bytes,2 real error records. All8
+prerequisites SUCCESS: old33 Installer suites Foundation26/Live1/Recovery5/Input1;
+Runtime35 plus refusals; Success40 plus2 fresh-process refusals; Ubuntu SUCCESS;
+Relay HomeVPN4816/Portable91/Python186 with2 SKIP (both new parity contracts PASS).
+Exact-SHA prerequisite guard PASS before Core; MSVC production/fixture, C# and
+resource sealing BUILD OK. Repair runtime42 and both icon steps Desktop51/Core7
+SUCCESS remain confirmed; checks/deadlines/privacy/scheduling were not weakened.
+
+Reviewed expectation fixes now passed Windows synthetic execution: all18 consumed
+personal transaction modes report PASS, including exact seven-field record oracle,
+13 same-matcher negative mutations in the successful path, actual installer/
+uninstaller bootstrap refusal messages, original SID, root and version identity,
+legacy retained retry/data refusal, foreign/rollback/registration preservation.
+All10 staged-uninstall cases passed. Next NativeRegistration all15 modes passed,
+including structured protocol negatives, named binding and catch/finally probes.
+These are isolated fixtures, not original-user elevation or owner-PC acceptance.
+
+Core later FAILED at tests/NativeBrokerLaunchTests.ps1:71: 'actual native launch
+uses the fixed system host and respects policy'. Native --fixture-host returns
+nonzero to Invoke-NativeLaunch; the exact exit value, native phase and Win32 error
+are NOT logged. Root cause UNKNOWN. This may be an early native refusal before
+managed-host launch; the assertion text does NOT establish a policy refusal or an
+exploit. Earlier managed positive-control compile/config/canary assertions passed
+before line71 (source-control-flow evidence); native launch boundary NOT_PROVEN.
+The host.success/canary-absence check, production fixture-entrypoint absence check,
+sticky unknown settlement regression calls and PersonalBrokerTests were NOT_RUN
+because they follow the failing assertion. Do not claim those suites passed.
+
+windows-build FAILURE and strict aggregate FAILURE, correctly refusing. Build
+identity self-check/public release scan/Pack ZIP/all uploads SKIPPED; artifacts0.
+ZIP NOT_PRODUCED, no package SHA256 exists for CI766. No binary delivery, actual
+UAC/HKLM/ProgramFiles/ACL/production-network/credentials/owner-PC action/acceptance.
+
+Evidence: /workspace/scratch/4d867f513347/ci766-evidence/ publication.json,
+initial-metadata.json, final-metadata.json, verified-summary.json, manifest.json
+and10 full .log files. checkpoint.json gives final local HEAD/tree/clean state and
+cumulative/docs-only delta hashes after this documentation-only checkpoint.
+Published reviewed content is unchanged; local source code exactly matches4168399,
+only this result prefix is added locally and NOT published. Local public scanner,
+diff and source-equality checks rerun. Writer stops at that clean checkpoint.
+
+Next work requires a separate agreed/reviewed stage: diagnose native --fixture-host
+nonzero using bounded privacy-preserving exit/phase/Win32 evidence without weakening
+pre-CLR native/code-origin/original-user/policy/environment/job/settlement guards or
+assertions. No source patch or additional CI in this stage. Native consumed-broker
+runtime proof and real installation/owner-PC acceptance remain outstanding.
+
 ## Native broker expectation audit/fix — local only, independent review pending
 
 Sole writer resumed from verified clean deebd739c3900bb43f9d2f454b54bfccc444079d /

@@ -177,6 +177,85 @@ int main(void) {
                                 'SystemRoot=C:\\Windows', 'TEMP=C:\\fixture\\scratch',
                                 'TMP=C:\\fixture\\scratch', 'WINDIR=C:\\Windows'])
 
+    def test_fixture_diagnostic_wire_from_actual_native_serializer(self):
+        # Execute the consumed C serializer/macros, not a separately retyped oracle.
+        import re
+        compiler = shutil.which('cc')
+        if not compiler:
+            self.skipTest('existing C compiler unavailable')
+        native = (ROOT/'native/personal_broker.c').read_text()
+        block = native.split('#ifdef PROGO_BROKER_NATIVE_FIXTURE', 1)[1].split('#else', 1)[0]
+        launch = (ROOT/'tests/NativeBrokerLaunchTests.ps1').read_text(encoding='utf-8-sig')
+        pattern = re.search(r"\$diagnostic -cmatch '([^']+)'", launch).group(1)
+        harness = r'''#include <stdio.h>
+#include <stddef.h>
+typedef unsigned long DWORD;
+static DWORD last_error;
+#define ERROR_SUCCESS 0
+#define STD_OUTPUT_HANDLE 0
+#define GetLastError() last_error
+#define SetLastError(e) (last_error=(e))
+#define GetStdHandle(x) (x)
+#define sprintf_s snprintf
+static int WriteFile(int h,const char *s,DWORD n,DWORD *written,void *unused) {
+    (void)h; (void)unused; *written=n; return fwrite(s,1,n,stdout)==n;
+}
+''' + block + r'''
+int main(void) {
+    PG_STAGE(PG_D_ASSIGN); SetLastError(5); PG_ERROR(); SetLastError(99);
+    PG_FLAG(created); pg_diag.temp_match=0; pg_diag.long_known=1; pg_diag.long_match=1;
+    pg_diag_write();
+    PG_STAGE(PG_D_DONE); PG_FLAG(assigned); PG_FLAG(resumed);
+    pg_diag.error=0; pg_diag.exit_known=1; pg_diag.host_exit=7;
+    pg_diag.account_ok=1; pg_diag.active=0; pg_diag_write(); return 0;
+}
+'''
+        with tempfile.TemporaryDirectory(prefix='ProGo-diag-contract-') as temp:
+            source = pathlib.Path(temp)/'diag.c'
+            executable = pathlib.Path(temp)/'diag'
+            source.write_text(harness)
+            subprocess.run([compiler, '-std=c11', '-Wall', '-Wextra', '-Werror',
+                            str(source), '-o', str(executable)], check=True, capture_output=True)
+            output = subprocess.run([str(executable)], check=True, capture_output=True, text=True).stdout
+        lines = output.splitlines(keepends=True)
+        self.assertEqual(len(lines), 2)
+        for line in lines:
+            self.assertLess(len(line.encode()), 512)
+            self.assertRegex(line, pattern)
+        self.assertIn('error=5 ', lines[0])  # cleanup did not overwrite immediate error
+        self.assertIn('temp_match=0 long_known=1 long_match=1', lines[0])
+        self.assertIn('created=1 assigned=0 resumed=0', lines[0])
+        self.assertIn('stage=27 ', lines[1])
+        self.assertIn('exit_known=1 host_exit=7 account_ok=1 active=0', lines[1])
+        for bad in (re.sub(r'stage=[0-9]+', 'stage=99', lines[0]),
+                    lines[0] + 'extra', lines[0].replace('error=5', 'error=secret'),
+                    lines[0].replace('temp_match=0', 'temp_match=2'),
+                    lines[0].replace('v=1', 'v=2')):
+            self.assertIsNone(re.search(pattern, bad))
+        fixture = native.split('static int pg_fixture_host(void)', 1)[1].split('\n#endif', 1)[0]
+        self.assertIn('if(_wcsnicmp(root,temporary,wcslen(root)) || wcslen(temporary)!=wcslen(root)+1) return 1;', fixture)
+        self.assertNotIn('if(pg_diag.long_match', fixture)
+        self.assertLess(launch.index('PG_NATIVE_PARENT exit='), launch.index('Check-NativeLaunch ($nativeExit -eq 0)'))
+
+    def test_diagnostic_preprocessor_is_fixture_only(self):
+        compiler = shutil.which('cc')
+        if not compiler:
+            self.skipTest('existing C compiler unavailable')
+        # Empty SDK headers permit preprocessing only; this is NOT a Windows build.
+        with tempfile.TemporaryDirectory(prefix='ProGo-diag-preprocess-') as temp:
+            for name in ('windows.h', 'shellapi.h', 'shlobj.h', 'bcrypt.h', 'broker_key.h'):
+                (pathlib.Path(temp)/name).write_text('')
+            command = [compiler, '-E', '-P', '-x', 'c', '-I', temp,
+                       str(ROOT/'native/personal_broker.c')]
+            production = subprocess.run(command, check=True, capture_output=True, text=True).stdout
+            fixture = subprocess.run(command[:-1] + ['-DPROGO_BROKER_NATIVE_FIXTURE', command[-1]],
+                                     check=True, capture_output=True, text=True).stdout
+        for token in ('PG_NATIVE_DIAG', 'GetLongPathNameW', 'pg_diag_write', 'pg_diag.stage'):
+            self.assertNotIn(token, production)
+            self.assertIn(token, fixture)
+        self.assertIn('LOAD_LIBRARY_SEARCH_SYSTEM32', production)
+        self.assertIn('CREATE_SUSPENDED|CREATE_UNICODE_ENVIRONMENT|CREATE_NO_WINDOW', production)
+
     def test_consumed_factory_bootstrap_and_fixture_boundaries(self):
         native = (ROOT/'native/personal_broker.c').read_text()
         managed = (ROOT/'src/PersonalBroker.cs').read_text()
