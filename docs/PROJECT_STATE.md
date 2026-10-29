@@ -1,3 +1,209 @@
+## Fixture identity cache-skip correction — local only, review pending
+
+Sole writer verified clean6268de7036c0616f03737493bb7afca0dfc7ecc3 /
+treefb1ca7f404f1ec1f186aeee797cbf2d9d44d8513, expected checkout, no Git locks or
+competing git/compiler/PowerShell processes, AGENTS absent. No publication/CI.
+This supersedes the prior claim that the case-folded pg_pin_tree cache was safe
+for both independently spelled fixture admission chains. Previous synthetic
+foldcmp lookup did not cover case-sensitive directory entries.
+
+Confirmed baseline defect with actual C helper/local/open/pin/identity bodies:
+case-sensitive synthetic lookup has distinct Temp and TEMP entries; TEMP is a
+reparse ancestor resolving its Allowed child to the SAME final object as Temp.
+Baseline6268 admitted=1, reparse_ancestor_inspected=0. New consumed regression
+rejects that baseline with exactly those booleans. This is a synthetic Win32 model,
+not actual Windows case-sensitive NTFS or short-name proof.
+
+Fixture-only pg_fixture_pin_directory no longer calls pg_pin_tree or consults its
+case-insensitive directory cache. It retains existing pg_local_path, pins volume
+root, then opens EACH path component in the supplied spelling using pg_open
+(directory1) and pg_hold, always with existing local/nonreparse/read-attributes/
+share-read-only/OPEN_EXISTING/OPEN_REPARSE_POINT/BACKUP_SEMANTICS guards. It opens
+and pins the exact final directory too. No create, case-folded skip, canonical
+string admission, early release, or boolean authority is introduced. Saved path
+separator is restored on refusal. Capacity remains bounded by g.pins256 and
+insufficient capacity refuses. All pins remain until existing pg_main cleanup.
+
+Both fixture-root and parent/temp chains use that uncached walker. Exact GUID leaf,
+physical parent/temp identity including volume/index/creation fields and identity
+API refusal remain unchanged. Production pg_pin_tree, pg_same_file and all code
+outside the fixture walker are byte-identical to6268. Existing scratch use of the
+production walker is unchanged; the corrected admission already holds every root
+component before scratch. Telemetry v2/identity-result bounds, host/env/CWD/job/
+policy/deadlines/parent assertions and sticky unknown evidence retention unchanged.
+No production authority expanded.
+
+Consumed synthetic vectors now17, retaining all16 previous positive/fault/refusal
+cases and adding case-sensitive reparse-ancestor collision. Backend explicitly
+uses wcscmp for that mode, models different Temp/TEMP entries, and checks that final
+Allowed identity is equal before invoking the actual helper. New result must be
+refused with the reparse ancestor actually inspected once, before any identity
+comparison. Existing exact open flags/no-create/pin lifetime/cleanup leak checks
+continue to apply. Baseline6268 substitution fails the consumed test; current code
+passes. No standalone predicate or optimistic long-match oracle substitutes for it.
+
+Local205 Python tests:202 PASS/3 SKIP;17 actual consumed synthetic vectors,
+serializer/schema/preprocessing/portable policy PASS. Public scan469source/0release
+PASS, diff check PASS. No pwsh/dotnet/mono/csc installed; Windows compile/parser/
+runtime, actual aliases, real elevation/installation remain NOT_RUN. No new tools.
+
+Full cumulative stage delta from0c61d90201a16c80ccd6da10a3d1b1b09a2078fd and separate
+correction delta from6268, bytes/SHA256, regression evidence and exact final clean
+checkpoint/tree are saved beside checkout in ci767-temp-identity-correction/.
+Independent review pending; writer stops clean. No push, dispatch, rerun, CI,
+artifact publication, actual UAC/HKLM/ProgramFiles/ACL/production-network/
+credentials/owner-PC actions. CI767 FAILURE remains the last Windows result.
+
+## CI767 fixture temp-parent identity fix — local only, review pending
+
+Sole writer resumed verified clean0c61d90201a16c80ccd6da10a3d1b1b09a2078fd /
+tree3398164cd81f34e2c9bbcb0e7e4581b10ec947c6, exact checkout/backing Git,
+AGENTS absent; no locks or competing git/compiler/PowerShell processes.
+CI767 independently verified FAILURE remains recorded below: all10 full logs,
+1051320 bytes, source0629bcf8c36c3ee0ec44ea064ced04c127a29096 /
+merge6fa10384e0003d42dac7b71ecac4f49bc43c68c7 attempt1. Stage13 raw spelling
+mismatch preceded host creation; exact short-name mechanism and physical identity
+were NOT proven by those logs. No retrospective Windows success claim.
+
+Consumed pg_fixture_host now admits temp-parent ONLY through fixture-only
+pg_fixture_temp_identity, not raw/long string equality. Exact fixture leaf/GUID
+checks remain and are repeated in that helper. Fixture root, its parent and raw
+GetTempPathW directory each use pg_fixture_pin_directory: existing local fixed-drive
+check, explicit volume-root nonreparse directory pin, existing pg_pin_tree(create0)
+for every ancestor/leaf, then another exact pg_open(directory1)/pg_hold handle.
+All open flags/sharing are the existing read-attributes, share-read-only,
+OPEN_EXISTING/OPEN_REPARSE_POINT/BACKUP_SEMANTICS primitives. No directories are
+created by this admission. Fixture root itself is pinned, not just its parent.
+
+Exact retained parent/temp handles must pass existing pg_same_file identity:
+volume serial, both file-index halves and both creation-time halves. API failures
+refuse. pg_same_file short-circuit query statements were split solely to capture
+GetLastError immediately before cleanup; production comparison/outcome is unchanged,
+production PG_ERROR remains a no-op. No long/canonical string, environment boolean,
+caller-supplied identity array or telemetry field authorizes admission. Both pinned
+chains and all exact/root handles stay in g.pins until existing pg_main cleanup,
+including refusal paths; no early release/reopen gap is introduced.
+
+Numeric telemetry is version2, same stage numbers; stage13 now TEMP_IDENTITY.
+Raw temp-match and optional long-known/long-match remain observation only.
+Added identity_result bounded enum:0 NOT_RUN;1 chain/exact-directory pin refused;
+2 identity mismatch or identity API failure (saved Win32 error where available);
+3 both pinned chains and exact directory identity admitted. No paths, PIDs,
+environment values or secrets emitted. Existing512-byte serializer and513-character
+parent reader/strict numeric whitelist remain bounded and schema updated together.
+All launch/host-exit/job accounting/parent canary diagnostics remain in place.
+
+Scratch admission, fixed System32 host, env allowlist, production System32 CWD,
+no policy override, suspended-create/job-assign/resume, host/launcher60000ms and
+settlement5000ms deadlines, sticky unknown outcome/evidence preservation and all
+subsequent assertions unchanged. New identity helper is compiled only in native
+fixture; preprocessing verifies it and both telemetry helpers absent from production.
+No production admission authority expanded.
+
+Regression executes ACTUAL C helper and existing local/open/pin/same-file bodies
+against a faulted synthetic Win32 directory backend, using existing cc with strict
+warnings.16 vectors: same spelling; alternate spelling of same modeled object;
+other same-volume directory; other-volume identity; fixture reparse leaf; fixture
+parent reparse; temp ancestor reparse; volume-root reparse; nondirectory leaf;
+missing directory; inaccessible fixture chain; first/second identity API failure;
+different high file-index; different creation identity; temp-only access denial.
+Checks exact open flags, no create calls, both identity queries, pins held until
+cleanup and no leaked handles. Separate local mutation probes prove regression
+rejects pinning parent instead of fixture root and omitting volume identity.
+These are SYNTHETIC, not actual Windows alias/short-name/reparse behavior proof.
+
+Neighbor audit: native GetTempPathW admission occurs only in this fixture path.
+pg_image and pg_check_roots already consume handle identity; pg_pin_tree string
+cache only reuses still-held exact-path pins and does not equate alternate paths.
+No same-class proven production guard defect found or changed. Other lexical
+routing/leaf/operation guards retained. Windows fixtures remain to be executed.
+
+Local205 Python tests:202 PASS/3 SKIP; portable policy, actual serializer/schema,
+16 consumed identity vectors and fixture-only preprocessing PASS. Public scanner
+469source/0release PASS; git diff/BOM/CRLF checks PASS. No local Windows compile,
+PowerShell parser/runtime, native host, actual aliases or elevation proof. Existing
+pwsh/dotnet/mono/csc unavailable; no tools installed. Full delta/checkpoint/checks
+saved beside checkout in ci767-temp-identity-review/. Independent review required
+before any publication/CI. No push, dispatch, rerun, CI, artifacts, actual UAC/HKLM/
+ProgramFiles/ACL/production-network/credentials/owner-PC actions in this stage.
+
+## CI767 terminal FAILURE — native raw temp-parent refusal localized
+
+Sole writer reverified clean d355da2a8979c5be2fb98e0ea6c181944620bd5c /
+tree387e973e5ccddeaac598db088a5960bda2b216b1, exact checkout/branch/backing Git,
+AGENTS absent, no locks or competing git/compiler/PowerShell processes. Reviewed
+full delta27854 bytes SHA256633b232eab92eb52998df382c7c3c5df3f46a261c2b8d74b03f85efe06d9565f.
+Expected PR88 source33eb0b0f658b156a0a68e56199f793899d8e09ac and all-event
+queued/in_progress/waiting/pending/requested0 checked twice before non-force CAS.
+Canonical Git blobs and reconstructed tree exactly matched reviewed content.
+
+Published source0629bcf8c36c3ee0ec44ea064ced04c127a29096 with parent33eb0b0f above,
+tree387e973e5ccddeaac598db088a5960bda2b216b1. History preserved; force=false and
+expected-SHA CAS succeeded. Exactly one automatic pull_request CI767 run40966962769,
+attempt1; no dispatch, rerun or duplicate. Tested merge6fa10384e0003d42dac7b71ecac4f49bc43c68c7
+has that same tree and parents main4bb336575bb1216d3047bd2b294aeecad9fdd65a plus
+published source0629bcf8. Terminal FAILURE at2026-10-29 23:14:14UTC /
+2026-10-30 02:14:14 Europe/Istanbul. Final PR88 source/merge unchanged; source run
+count1, attempt1, all-event active0. No source correction after failure.
+
+All10 full decoded terminal logs saved:1051320 UTF-8 bytes, exact source and merge
+plus Complete job records verified in each, individual SHA256 in verified-summary
+and manifest. All8 prerequisites SUCCESS, retaining all33 old Installer suites,
+Runtime35 plus refusal, Success40 plus2 fresh-process refusals, Relay and Ubuntu.
+Relay Python188 with2 SKIP includes both new diagnostic regressions PASS. Existing
+cc compiled the actual native serializer and preprocessing boundary test in CI;
+these are not substitute proof of actual trusted host launch.
+
+Exact-SHA prerequisite gate before Core PASS; native production/fixture and managed
+build/resource sealing Build OK. Repair runtime42/per-runtime checks/recovery/
+rollback/refusals, Stage10, Personal18, NativeRegistration15 passed. Desktop icon
+host5.1.26100.33648 and Core7.6.7 steps both SUCCESS. Windows-build Core and strict
+aggregate FAILED. Identity/release scan/ZIP/uploads/prune SKIPPED, artifacts0;
+ZIP NOT_PRODUCED, no package SHA256 exists. No PC delivery or acceptance.
+
+Actual fixture numeric record (PowerShell wrapped it over two terminal log lines):
+PG_NATIVE_DIAG v=1 stage=13 error=0 temp_match=0 long_known=1 long_match=1
+created=0 assigned=0 resumed=0 exit_known=0 host_exit=0 account_ok=0 active=0 wait_result=0
+PG_NATIVE_PARENT exit=1 host_success=0 preclr_canary=0
+
+Stage13 is PG_D_TEMP_MATCH: the unchanged RAW temp-parent lexical admission guard
+returned1 before scratch preparation or pg_start_host. Both bounded optional
+GetLongPathNameW observations succeeded and their normalized strings compare equal
+ignoring case and one trailing separator, while raw parent comparison is false.
+This establishes CI767 immediate refusal branch and a lexical representation
+mismatch. Actual path spellings and mechanism are intentionally not logged: the
+specific short-name hypothesis is compatible, not independently established; long
+string equality is not handle identity or reparse admission authority. CI766 lacks
+telemetry, so do not retrospectively claim this proves its exact cause.
+
+Error0 is a logical refusal, not a failed Win32 API diagnostic or a host success.
+Created/assigned/resumed0 plus stage13 establish that no managed host launch was
+reached. Exit-known0 means host-exit0 is NOT_RUN; account-ok/active/wait-result0
+are defaults, NOT successful job accounting, wait or tree-settlement proof. Native
+parent exit1 is observed, host-success absent and pre-CLR canary absent after the
+managed positive-control canary was removed. That canary absence does NOT establish
+the unexecuted native managed-host boundary. No policy refusal or exploit proven.
+
+Failure remains the same nonzero-exit assertion, now NativeBrokerLaunchTests line88
+(previously71), thrown by helper line8. Host-success/canary-absence assertion,
+production fixture-entrypoint absence assertion, sticky unknown-tree regression
+calls, PersonalBrokerTests and later Core are NOT_RUN. All origin/original-user/
+payload, fixed host/environment/CWD, policy, deadline, privacy and sticky unknown
+settlement guards/assertions are preserved. No actual UAC/HKLM/ProgramFiles/ACL/
+production-network/credentials/owner-PC action or binary artifact publication.
+
+Evidence beside checkout: ci767-evidence/publication.json, initial/final-metadata,
+verified-summary.json, manifest.json, checkpoint.json and10 full .log files.
+Only this terminal result is added locally to PROJECT_STATE; source/tests exactly
+match reviewed d355da2 and published tree. Local public scan/diff/source-equality
+checks rerun; docs-only delta and cumulative patch plus exact final clean HEAD/tree
+are recorded in checkpoint.json. This local documentation is NOT published.
+
+Writer stops after clean checkpoint. Any correction of fixture admission requires
+a separate agreed/reviewed stage preserving handle/origin/reparse isolation; no
+automatic fix, push or subsequent CI. Native trusted-host runtime, consumed broker
+runtime after that point and real personal installation remain unproven.
+
 ## CI766 native launch diagnosis — local fixture telemetry, review pending
 
 Sole writer verified clean65e30c745b832a3492c87be7e09b2b9ea9312d41 /

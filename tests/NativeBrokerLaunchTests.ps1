@@ -26,7 +26,7 @@ function Invoke-NativeLaunch([string]$executable,[string]$arguments,[hashtable]$
             }
             $diagnostic = -join $buffer[0..([Math]::Max(0,$length - 1))]
             # Never echo arbitrary child output, paths or environment values.
-            if ($diagnostic -cmatch '^PG_NATIVE_DIAG v=1 stage=([1-9]|1[0-9]|2[0-7]) error=[0-9]{1,10} temp_match=[01] long_known=[01] long_match=[01] created=[01] assigned=[01] resumed=[01] exit_known=[01] host_exit=[0-9]{1,10} account_ok=[01] active=[0-9]{1,10} wait_result=[0-9]{1,10}\n$') {
+            if ($diagnostic -cmatch '^PG_NATIVE_DIAG v=2 stage=([1-9]|1[0-9]|2[0-7]) error=[0-9]{1,10} temp_match=[01] long_known=[01] long_match=[01] created=[01] assigned=[01] resumed=[01] exit_known=[01] host_exit=[0-9]{1,10} account_ok=[01] active=[0-9]{1,10} wait_result=[0-9]{1,10} identity_result=[0-3]\n$') {
                 Write-Host $diagnostic.TrimEnd()
             } else { Write-Host 'PG_NATIVE_DIAG invalid_or_missing=1' }
         }

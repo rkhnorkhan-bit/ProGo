@@ -39,20 +39,20 @@ static pg_native g;
 typedef enum pg_diag_stage {
     PG_D_SYSTEM=1, PG_D_WINDOWS, PG_D_DLL_POLICY, PG_D_MODULE, PG_D_LOCAL_IMAGE,
     PG_D_IMAGE, PG_D_TOKEN, PG_D_SHELL, PG_D_SPLIT, PG_D_ARGV,
-    PG_D_FIXTURE_ROOT, PG_D_TEMP, PG_D_TEMP_MATCH, PG_D_SCRATCH,
+    PG_D_FIXTURE_ROOT, PG_D_TEMP, PG_D_TEMP_IDENTITY, PG_D_SCRATCH,
     PG_D_COMMAND, PG_D_ENGINE, PG_D_ENV_ALLOC, PG_D_ENV, PG_D_JOB_CREATE,
     PG_D_JOB_LIMIT, PG_D_CREATE, PG_D_ASSIGN, PG_D_RESUME, PG_D_WAIT,
     PG_D_EXIT, PG_D_ACCOUNT, PG_D_DONE
 } pg_diag_stage;
-static struct { unsigned stage; DWORD error; int temp_match,long_known,long_match;
+static struct { unsigned stage; DWORD error; int temp_match,long_known,long_match,identity_result;
     int created,assigned,resumed,exit_known,account_ok; DWORD host_exit,active,wait_result; } pg_diag;
 #define PG_STAGE(x) do { pg_diag.stage=(x); SetLastError(ERROR_SUCCESS); } while(0)
 #define PG_ERROR() do { pg_diag.error=GetLastError(); } while(0)
 static void pg_diag_write(void) {
     char line[512]; DWORD written; int n;
-    n=sprintf_s(line,sizeof(line),"PG_NATIVE_DIAG v=1 stage=%u error=%lu temp_match=%d long_known=%d long_match=%d created=%d assigned=%d resumed=%d exit_known=%d host_exit=%lu account_ok=%d active=%lu wait_result=%lu\n",
+    n=sprintf_s(line,sizeof(line),"PG_NATIVE_DIAG v=2 stage=%u error=%lu temp_match=%d long_known=%d long_match=%d created=%d assigned=%d resumed=%d exit_known=%d host_exit=%lu account_ok=%d active=%lu wait_result=%lu identity_result=%d\n",
         pg_diag.stage,pg_diag.error,pg_diag.temp_match,pg_diag.long_known,pg_diag.long_match,
-        pg_diag.created,pg_diag.assigned,pg_diag.resumed,pg_diag.exit_known,pg_diag.host_exit,pg_diag.account_ok,pg_diag.active,pg_diag.wait_result);
+        pg_diag.created,pg_diag.assigned,pg_diag.resumed,pg_diag.exit_known,pg_diag.host_exit,pg_diag.account_ok,pg_diag.active,pg_diag.wait_result,pg_diag.identity_result);
     if(n>0) WriteFile(GetStdHandle(STD_OUTPUT_HANDLE),line,(DWORD)n,&written,NULL);
 }
 #define PG_FLAG(x) do { pg_diag.x=1; } while(0)
@@ -94,8 +94,10 @@ static HANDLE pg_open(const wchar_t *path, int directory) {
 }
 static int pg_same_file(HANDLE a,HANDLE b) {
     BY_HANDLE_FILE_INFORMATION x,y;
-    return a && b && GetFileInformationByHandle(a,&x) && GetFileInformationByHandle(b,&y) &&
-        x.dwVolumeSerialNumber == y.dwVolumeSerialNumber && x.nFileIndexHigh == y.nFileIndexHigh && x.nFileIndexLow == y.nFileIndexLow &&
+    if(!a || !b) return 0;
+    if(!GetFileInformationByHandle(a,&x)) { PG_ERROR(); return 0; }
+    if(!GetFileInformationByHandle(b,&y)) { PG_ERROR(); return 0; }
+    return x.dwVolumeSerialNumber == y.dwVolumeSerialNumber && x.nFileIndexHigh == y.nFileIndexHigh && x.nFileIndexLow == y.nFileIndexLow &&
         x.ftCreationTime.dwHighDateTime==y.ftCreationTime.dwHighDateTime && x.ftCreationTime.dwLowDateTime==y.ftCreationTime.dwLowDateTime;
 }
 static int pg_pin_tree(wchar_t *path,int create) {
@@ -428,6 +430,41 @@ static int pg_child(void) {
     return status;
 }
 #ifdef PROGO_BROKER_NATIVE_FIXTURE
+/* Fixture-only: pin every nonreparse component, including the volume root,
+ * then retain an exact directory handle. Neither spelling nor telemetry admits. */
+static int pg_fixture_pin_directory(wchar_t *path,HANDLE *exact) {
+    wchar_t drive[4],saved; HANDLE h; size_t i,n=wcslen(path);
+    if(!pg_local_path(path)) return 0;
+    memcpy(drive,path,3*sizeof(wchar_t)); drive[3]=0;
+    if(!pg_hold(pg_open(drive,1))) return 0;
+    /* Inspect each spelling independently: case-folded cache hits cannot prove
+     * nonreparse ancestry on case-sensitive directories. No directory cache. */
+    for(i=3;i<=n;++i) if(path[i]==L'\\' || path[i]==0) {
+        saved=path[i]; path[i]=0;
+        h=pg_open(path,1);
+        if(!pg_hold(h)) { path[i]=saved; return 0; }
+        path[i]=saved;
+    }
+    h=pg_open(path,1); if(!pg_hold(h)) return 0;
+    *exact=h; return 1;
+}
+static int pg_fixture_temp_identity(wchar_t *root,wchar_t *temporary) {
+    wchar_t parent[32768],temp[32768],*leaf; size_t n;
+    HANDLE fixture_pin=NULL,parent_pin=NULL,temp_pin=NULL;
+    pg_diag.identity_result=1; /* chain/exact-directory pin refused */
+    if(wcscpy_s(parent,32768,root) || wcscpy_s(temp,32768,temporary)) return 0;
+    leaf=wcsrchr(parent,L'\\'); if(!leaf || !pg_fixture_leaf(leaf+1)) return 0;
+    if(leaf==parent+2) leaf[1]=0; else *leaf=0;
+    n=wcslen(temp); while(n>3 && temp[n-1]==L'\\') temp[--n]=0;
+    if(!pg_fixture_pin_directory(root,&fixture_pin) ||
+        !pg_fixture_pin_directory(parent,&parent_pin) ||
+        !pg_fixture_pin_directory(temp,&temp_pin)) return 0;
+    pg_diag.identity_result=2; /* identity mismatch or failed identity API */
+    SetLastError(ERROR_SUCCESS);
+    if(!pg_same_file(parent_pin,temp_pin)) return 0;
+    pg_diag.identity_result=3; /* exact pinned directory identity equal */
+    return 1;
+}
 static int pg_fixture_host(void) {
     wchar_t root[32768],script[32768],scratch[32768],temporary[32768],*leaf;
     wchar_t long_root[32768],long_temp[32768]; DWORD count,wait; PROCESS_INFORMATION pi; DWORD code=1;
@@ -448,8 +485,9 @@ static int pg_fixture_host(void) {
             pg_diag.long_known=1; pg_diag.long_match=!_wcsicmp(long_root,long_temp);
         }
     }
-    PG_STAGE(PG_D_TEMP_MATCH);
-    if(_wcsnicmp(root,temporary,wcslen(root)) || wcslen(temporary)!=wcslen(root)+1) return 1; *leaf=L'\\';
+    PG_STAGE(PG_D_TEMP_IDENTITY);
+    *leaf=L'\\';
+    if(!pg_fixture_temp_identity(root,temporary)) return 1;
     PG_STAGE(PG_D_SCRATCH);
     if(swprintf_s(script,32768,L"%s\\host.ps1",root)<0 || swprintf_s(scratch,32768,L"%s\\scratch",root)<0 || !pg_pin_tree(scratch,1)) return 1;
     if(!pg_start_host(script,root,scratch,L"",&pi)) return 1;
