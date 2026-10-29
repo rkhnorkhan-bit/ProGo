@@ -14,6 +14,24 @@ $Root = Split-Path -Parent $PSScriptRoot
 # An explicit prebuilt payload never falls back to compilation or network access.
 # Read-only preflight shared by the source installer and an explicit prebuilt payload.
 # No compilation, download, installation, service, elevation or settings changes here.
+# Personal auxiliary/pending/rollback defaults consume captured capability roots.
+# The static getters are read-only routing; they do not mint a transaction.
+function Get-ProGoInstallerProgramsDirectory {
+    $type = 'ProGo.ApplicationShortcuts+PersonalInstallTransaction' -as [type]
+    if ($null -ne $type -and $null -ne $type.GetProperty('BoundProgramsRoot')) {
+        $bound = [ProGo.ApplicationShortcuts+PersonalInstallTransaction]::BoundProgramsRoot
+        if ($null -ne $bound) { return $bound }
+    }
+    return [Environment]::GetFolderPath('Programs')
+}
+function Get-ProGoInstallerStartupDirectory {
+    $type = 'ProGo.ApplicationShortcuts+PersonalInstallTransaction' -as [type]
+    if ($null -ne $type -and $null -ne $type.GetProperty('BoundStartupRoot')) {
+        $bound = [ProGo.ApplicationShortcuts+PersonalInstallTransaction]::BoundStartupRoot
+        if ($null -ne $bound) { return $bound }
+    }
+    return [Environment]::GetFolderPath('Startup')
+}
 function Get-ProGoInstallerPayloadNames {
     $required = @('ProGo.exe', 'VERSION', 'ProGo.ico', 'README.md', 'README.ru.md', 'LICENSE.md')
     $scriptFiles = @(
@@ -416,8 +434,8 @@ function Write-ProGoInstallerRollbackOutcomeBytes($Stream, [byte[]]$Bytes) {
     $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true)
 }
 function Complete-ProGoInstallerInstalledOutcome($Backup, $Writes, [string[]]$CompletedPhases = @(), $StartupEvidence = $null, [switch]$RequireStartupEvidence,
-    $LiveContext = $null, [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'), [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
+    $LiveContext = $null, [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory), [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
     $diagnosticStage = 'admission'
     try {
     if ($null -ne $LiveContext) {
@@ -602,8 +620,8 @@ function Test-ProGoInstallerAuxiliaryJournalScope([string]$Directory, [string]$I
 # Read-only auxiliary revalidation prerequisite. Does not publish or recover pending state.
 # Expected locations come from the caller/platform, never from durable receipt data.
 function Test-ProGoInstallerPendingAuxiliaryProof([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null
     try {
         if (-not (Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory)) { return $false }
@@ -640,8 +658,8 @@ function Test-ProGoInstallerPendingAuxiliaryProof([string]$Directory, [string]$I
 # Read-only Startup rollback prerequisite, not authority to mutate or publish rollback.
 # Caller must supply trusted locations independently and revalidate again at any future write.
 function Get-ProGoInstallerStartupRollbackAdmission([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null
     try {
         if (-not (Test-ProGoInstallerAuxiliaryJournalScope $Directory $InstallDirectory)) { return $null }
@@ -673,8 +691,8 @@ function Get-ProGoInstallerStartupRollbackAdmission([string]$Directory, [string]
 }
 # Observational Menu prerequisite only: never a deletion target, mutation lease or terminal outcome.
 function Get-ProGoInstallerMenuRollbackAdmission([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null
     try {
         $context = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
@@ -715,8 +733,8 @@ function Get-ProGoInstallerMenuRollbackAdmission([string]$Directory, [string]$In
 # Admission is revalidated while the bounded receipt is pinned, then native ownership is acquired.
 # This partial operation never publishes full rollback, success, Launch or retry authorization.
 function Invoke-ProGoInstallerMenuRollback([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory),
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None, $LegacyContext = $null) {
     if ($null -ne $LegacyContext) {
         Import-ProGoShortcutType
@@ -750,8 +768,8 @@ function Invoke-ProGoInstallerMenuRollback([string]$Directory, [string]$InstallD
 # Startup-only owned rollback operation. Caller holds maintenance and preserves original install error.
 # Does not publish a full auxiliary/runtime rollback outcome or authorize a retry.
 function Invoke-ProGoInstallerStartupRollback([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory),
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None, $LegacyContext = $null) {
     if ($null -ne $LegacyContext) {
         Import-ProGoShortcutType
@@ -841,8 +859,8 @@ function Get-ProGoInstallerStartupResultProof([string]$Directory, [string]$Insta
 }
 function Write-ProGoInstallerStartupResultBytes($Stream, [byte[]]$Bytes) { $Stream.Write($Bytes, 0, $Bytes.Length); $Stream.Flush($true) }
 function Complete-ProGoInstallerStartupResult([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $proof = Get-ProGoInstallerStartupResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     $name = 'installer-startup-outcome-' + $proof.Journal.Substring('installer-journal-'.Length) + '.json'
@@ -860,8 +878,8 @@ function Complete-ProGoInstallerStartupResult([string]$Directory, [string]$Insta
     } finally { $stream.Dispose() }
 }
 function Test-ProGoInstallerStartupResult([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null
     try {
         $expected = Get-ProGoInstallerStartupResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
@@ -948,8 +966,8 @@ function Open-ProGoInstallerStartupMutationAdmission([string]$Directory, [string
 }
 # Read-only crash classification; never starts native rollback or restores bytes.
 function Get-ProGoInstallerStartupMutationState([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null
     try {
         $context = Get-ProGoInstallerStartupMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
@@ -964,8 +982,8 @@ function Get-ProGoInstallerStartupMutationState([string]$Directory, [string]$Ins
 }
 # Settlement may only persist a verified observation; intent grants no mutation authority.
 function Complete-ProGoInstallerStartupMutationSettlement([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     if ((Get-ProGoInstallerStartupMutationState $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory) -cne 'original-observed') { return $false }
     if (-not (Test-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory)) {
         Complete-ProGoInstallerStartupResult $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
@@ -1085,8 +1103,8 @@ function Open-ProGoInstallerMenuMutationAdmission([string]$Directory, [string]$I
 }
 # Read-only crash settlement: observes actual results, never replays native mutation or writes outcomes.
 function Get-ProGoInstallerMenuMutationState([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null
     try {
         $context = Get-ProGoInstallerMenuMutationContext $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
@@ -1124,8 +1142,8 @@ function Get-ProGoInstallerMenuResultProof([string]$Directory, [string]$InstallD
 }
 function Write-ProGoInstallerMenuResultBytes($Stream, [byte[]]$Bytes) { $Stream.Write($Bytes,0,$Bytes.Length); $Stream.Flush($true) }
 function Complete-ProGoInstallerMenuResult([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $proof = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     $path = Assert-ProGoInstallerStagePath $parent ('installer-menu-outcome-' + $proof.Journal.Substring('installer-journal-'.Length) + '.json')
@@ -1142,8 +1160,8 @@ function Complete-ProGoInstallerMenuResult([string]$Directory, [string]$InstallD
 }
 # Independent bounded, pinned read plus physical revalidation; saved flags alone never suffice.
 function Test-ProGoInstallerMenuResult([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null
     try {
         $proof = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
@@ -1162,8 +1180,8 @@ function Test-ProGoInstallerMenuResult([string]$Directory, [string]$InstallDirec
 # A restart intent alone never enters this path. No full auxiliary/runtime outcome is claimed.
 function Invoke-ProGoInstallerFailureStartup([bool]$AuxiliaryStarted, $Backup,
     [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'), $LegacyContext = $null,
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory), $LegacyContext = $null,
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
     if (-not $AuxiliaryStarted) { return 'not-started' }
     if ($null -ne $LegacyContext) {
@@ -1201,8 +1219,8 @@ function Invoke-ProGoInstallerFailureStartup([bool]$AuxiliaryStarted, $Backup,
 # Read-only Legacy prerequisite. A verified removed receipt is NOT a source of original bytes.
 # No path/authority is accepted from metadata, and no Legacy write/delete/restore is performed.
 function Get-ProGoInstallerLegacyRollbackAdmission([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $stream = $null; $reader = $null; $resultStream = $null; $resultReader = $null
     try {
         $menuProof = Get-ProGoInstallerMenuResultProof $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
@@ -1246,8 +1264,8 @@ function Get-ProGoInstallerLegacyRollbackAdmission([string]$Directory, [string]$
 # which independently revalidates the canonical Startup result even without the Menu primary.
 function Invoke-ProGoInstallerFailureMenu([bool]$AuxiliaryStarted, $Backup, [string]$InstallDirectory,
     [string]$StartupFailureState,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'), $LegacyContext = $null,
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory), $LegacyContext = $null,
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
     if (-not $AuxiliaryStarted) { return 'not-started' }
     if ($null -ne $LegacyContext) {
@@ -1349,8 +1367,8 @@ function Write-ProGoInstallerOutcomeBytes($Stream, [byte[]]$Bytes) {
 # Only publish a fully completed prior outcome; never restore runtime from an intent.
 function Resolve-ProGoInstallerPendingInstalled([string]$InstallDirectory,
     [string]$ShortcutScript,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     Assert-ProGoInstallerNoAuxiliaryResult $InstallDirectory
     $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
     if (-not (Test-Path -LiteralPath $parent)) { return }
@@ -1501,8 +1519,8 @@ function Get-ProGoInstallerLegacyReferenceDocument($Context, $Proof) {
         StorageOrigin = $Proof.StorageOrigin; DocumentHash = $Proof.DocumentHash } } | ConvertTo-Json -Depth 10 -Compress)
 }
 function New-ProGoInstallerLegacySourceReference($Backup,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory),
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
     $source = $null
     try {
@@ -1524,8 +1542,8 @@ function New-ProGoInstallerLegacySourceReference($Backup,
     } finally { if ($null -ne $source) { $source.Dispose() } }
 }
 function Test-ProGoInstallerLegacySourceReference($Backup, $Reference,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     $source = $null
     try {
         if ($Reference -isnot [ProGo.ApplicationShortcuts+LegacyJournalReferenceEvidence]) { return $false }
@@ -1542,8 +1560,8 @@ function Test-ProGoInstallerLegacySourceReference($Backup, $Reference,
 }
 # Seal is a separate prerequisite, not an installer-flow mutation or permission to restore.
 function Complete-ProGoInstallerLegacyRestartSeal($Backup, $Reference,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory),
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
     $source = $null
     try {
@@ -1571,8 +1589,8 @@ function Read-ProGoInstallerLegacyRestartText([string]$Path) {
 }
 # No Backup, proof, expected hash or location from a previous process is accepted.
 function Restore-ProGoInstallerLegacyReferenceEvidence([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     try {
         $parent = Assert-ProGoInstallerStagePath $InstallDirectory 'backups'
         $journal = [IO.Path]::GetFileName($Directory)
@@ -1623,8 +1641,8 @@ function Restore-ProGoInstallerLegacyReferenceEvidence([string]$Directory, [stri
 }
 # Pre-delete admission is intent, never evidence that deletion happened or permission to replay it.
 function New-ProGoInstallerLegacyPreDeleteAdmission($Backup,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup'),
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory),
     [Threading.CancellationToken]$CancellationToken = [Threading.CancellationToken]::None) {
     $CancellationToken.ThrowIfCancellationRequested()
     $context = Get-ProGoInstallerLegacySourceContext $Backup
@@ -1643,8 +1661,8 @@ function New-ProGoInstallerLegacyPreDeleteAdmission($Backup,
     return [pscustomobject]@{ Schema = 1; State = 'not-applied'; MutationAllowed = $false; FullRollback = $false; InstallSucceeded = $false }
 }
 function Get-ProGoInstallerLegacyPreDeleteState([string]$Directory, [string]$InstallDirectory,
-    [string]$ProgramsDirectory = [Environment]::GetFolderPath('Programs'),
-    [string]$StartupDirectory = [Environment]::GetFolderPath('Startup')) {
+    [string]$ProgramsDirectory = (Get-ProGoInstallerProgramsDirectory),
+    [string]$StartupDirectory = (Get-ProGoInstallerStartupDirectory)) {
     try {
         $reference = Restore-ProGoInstallerLegacyReferenceEvidence $Directory $InstallDirectory $ProgramsDirectory $StartupDirectory
         if ($null -eq $reference) { return 'blocked' }
@@ -1985,9 +2003,12 @@ function Enter-ProGoInstallerMaintenance {
 function Stop-ProGoInstallerApplication([string]$InstallDirectory, [string]$DataDirectory) {
     [ProGo.MaintenanceOperation]::StopApplication($InstallDirectory, $DataDirectory)
 }
-# Internal adapter: no public path override or Program Files activation. Keep the
-# historical legacy destination until the elevated transaction is implemented.
+# Legacy defaults stay intact. The personal capability supplies original-user
+# shortcut roots independently of the elevated host environment.
 function Initialize-ProGoInstallerShortcuts([string]$RuntimeRoot, [bool]$WasInstalled, [bool]$NoStartup, [bool]$NoStartMenu) {
+    if ($Personal) {
+        return Initialize-ProGoShortcuts -InstallDirectory $RuntimeRoot -WasInstalled $WasInstalled -NoStartup $NoStartup -NoStartMenu $NoStartMenu -ProgramsDirectory $PersonalTransaction.ProgramsRoot -StartupDirectory $PersonalTransaction.StartupRoot -CaptureStartupEvidence
+    }
     return Initialize-ProGoShortcuts -InstallDirectory $RuntimeRoot -WasInstalled $WasInstalled -NoStartup $NoStartup -NoStartMenu $NoStartMenu -CaptureStartupEvidence
 }
 function Get-ProGoInstallerLayout {
@@ -2043,10 +2064,11 @@ function Get-ProGoUninstallInventory([string]$RuntimeRoot) {
     }
     return $candidates[0]
 }
-# Production factory remains closed: a path, hash inventory or caller boolean is
-# not authenticated original-user/code provenance across an elevation boundary.
+# Only a live native broker can mint the production transaction. Payload/path,
+# hash inventory and caller booleans never authenticate the privilege boundary.
 function Open-ProGoPersonalInstallerTransaction($Payload) {
-    throw 'Personal installer trusted UAC/ARP boundary is not activated.'
+    if (-not ('ProGo.ApplicationShortcuts+PersonalInstallTransaction' -as [type])) { throw 'Personal installer requires its native bootstrap.' }
+    return [ProGo.ApplicationShortcuts+PersonalInstallTransaction]::OpenPersonalInstallerTransaction()
 }
 function Get-ProGoInstallerOperationLayout {
     if (-not $Personal) { return Get-ProGoInstallerLayout }

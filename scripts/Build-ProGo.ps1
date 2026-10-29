@@ -121,6 +121,9 @@ $requiredInputs = @(
     'src\InstalledUpdateTransport.cs', 'src\UpdateInstallSession.cs', 'src\BackupRetention.cs',
     'src\BackupIntegrity.cs', 'src\BoundedLog.cs', 'src\RescueMeasurement.cs',
     'src\DiagnosticReport.cs', 'src\DiagnosticPreview.cs', 'src\UiTheme.cs',
+    'src\PersonalBroker.cs', 'src\PersonalBootstrapImage.cs',
+    'native\personal_broker.c', 'native\personal_broker_policy.h',
+    'scripts\Build-PersonalBroker.ps1', 'scripts\PersonalBroker.ps1', 'scripts\personal_broker_image.py',
     'docs\HOME_IKEV2.md', 'server\ikev2_relay.py', 'server\install-ikev2-relay.sh',
     'server\make_home_profile.py', 'server\home_vpn_setup.py', 'server\profile_share_setup.py',
     'server\profile_share.py', 'server\qrcodegen.py', 'server\QR_LICENSE.txt'
@@ -130,6 +133,13 @@ foreach ($inputPath in $requiredInputs) {
         throw "Build dependency is missing: $inputPath"
     }
 }
+
+# Refuse missing prerequisites before replacing any prior build outputs.
+$nativeVswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+if (-not (Test-Path -LiteralPath $nativeVswhere -PathType Leaf)) { throw 'Existing MSVC x64 toolchain is required; no tools will be installed.' }
+$nativeInstallations = @(& $nativeVswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
+if ($LASTEXITCODE -ne 0 -or $nativeInstallations.Count -ne 1) { throw 'Existing MSVC x64 toolchain is unavailable or ambiguous.' }
+[void](Get-Command python -ErrorAction Stop)
 
 # Generate the complete icon first: missing dependencies or rendering failures must
 # not remove the existing build and release directories.
@@ -189,6 +199,9 @@ using System.Reflection;
 "@ | Set-Content -LiteralPath $VersionSource -Encoding UTF8
 $Sources += $VersionSource
 
+$BrokerBuild = & (Join-Path $PSScriptRoot 'Build-PersonalBroker.ps1') -Phase Prepare -BuildDirectory $BuildDir -ReleaseDirectory $Release
+try {
+
 $Args = @(
     "/nologo",
     "/target:winexe",
@@ -203,7 +216,8 @@ $Args = @(
     "/reference:System.Xml.dll",
     "/reference:System.Drawing.dll",
     "/reference:System.Windows.Forms.dll",
-    "/reference:System.Web.Extensions.dll"
+    "/reference:System.Web.Extensions.dll",
+    "/resource:$($BrokerBuild.Origin),ProGo.PersonalBrokerOrigin"
 ) + $Sources
 
 Write-Host "Building ProGo..."
@@ -263,7 +277,9 @@ foreach ($serverFile in @("ikev2_relay.py", "install-ikev2-relay.sh", "make_home
     Copy-Item (Join-Path $Root ("server\" + $serverFile)) -Destination (Join-Path $HomeVpnServer $serverFile) -Force
 }
 
+& (Join-Path $PSScriptRoot 'Build-PersonalBroker.ps1') -Phase Seal -BuildDirectory $BuildDir -ReleaseDirectory $Release -Prepared $BrokerBuild
 Write-Host "Build OK: $Out"
 Write-Host "Icon OK: $IconPath"
 Write-Host "Version OK: $((Get-Content -Raw -Path $VersionFile).Trim())"
 Write-Host "Release folder: $Release"
+} finally { $BrokerBuild.Seal.Dispose() }

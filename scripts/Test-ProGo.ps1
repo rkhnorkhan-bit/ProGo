@@ -26,7 +26,7 @@ foreach ($pattern in $ForbiddenNames) {
     if ($items.Count -gt 0) { Fail "forbidden runtime/secret-like file found: $pattern" }
 }
 
-$TextFiles = @(Get-RepoFiles | Where-Object { $_.Extension -in @(".cs", ".ps1", ".md", ".yml", ".yaml", ".json") })
+$TextFiles = @(Get-RepoFiles | Where-Object { $_.Extension -in @(".c", ".h", ".cs", ".ps1", ".md", ".yml", ".yaml", ".json") })
 $LegacyParts = @(
     ("DM KZ Vault" + "Desk"),
     ("Dungeon" + "Masters"),
@@ -288,6 +288,8 @@ if ($Suite -eq 'Installer') {
 & (Join-Path $Root 'tests\UninstallStageTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\PersonalInstallTransactionTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\NativeRegistrationTransactionTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\NativeBrokerLaunchTests.ps1') -Scripts $PSScriptRoot
+& (Join-Path $Root 'tests\PersonalBrokerTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\RestoreSplitTests.ps1') -Scripts $PSScriptRoot
 & (Join-Path $Root 'tests\InstallerStorageTests.ps1') -Scripts $PSScriptRoot
 

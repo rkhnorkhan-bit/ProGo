@@ -1,9 +1,233 @@
+## Independent review fixes — local checkpoint, repeat review required
+
+Sole writer resumed from verified clean617bf17c4e580863401405554ff17e9df0b284f4 /
+tree817662bb1f1347d5ea186eccc0c0496c9236e868. Independent cumulative review identified
+three confirmed defects: relocation-directory substitution, fixture leaf length,
+and overwritten unknown descendant settlement. Implemented mirrored bounded
+.reloc admission, exact literal+GUID predicate, sticky retained unknown-tree state
+and regression fixtures. Conditional staging DLL-origin risk was not excluded by
+old guards; fixed actual KTM imports to System32 and production host CWD System32,
+without changing ACLs or claiming a reproduced Windows exploit.
+See docs/NATIVE_PERSONAL_BROKER_REVIEW.md for exact changes and proof limits.
+Local Python/portable-C checks:199 total /196 PASS /3 SKIP; public content469/0 PASS.
+Windows compilation/PowerShell fixtures/UpdateResource/DLL resolution/elevation/PC
+proof NOT_RUN. Previous CI763 does not verify these changes. PR88 remote unchanged
+at a517dab25ed0a5daeda040b368f5282e49bf5481; source-associated CI763 completed success,
+no active source-associated run. No push/newCI/tool installation or real PC writes.
+Final exact checkpoint/tree and full cumulative/delta hashes are in the adjacent
+progo-native-broker-review-fixes.json review manifest (avoids self-referential hash).
+Writer pauses at that clean checkpoint pending repeat independent review.
+
+## Local consumed native personal broker candidate — review required, no new CI
+
+Continue the sole writer from clean77e0ec291626598b3a214c5643c9cf2b559a0401 /
+tree8920488b5f322cd353bf440652a0e64311d910c7, same checkout and branch. Incoming
+handoff/AGENTS/HEAD/tree/dirty/process/locks/remote/activeCI checks completed.
+Remote PR88 remains a517dab25ed0a5daeda040b368f5282e49bf5481 / merge
+a6e39fb765bb7caad1a5d6db090706922cdcad6a; only source-associated CI763 completed
+SUCCESS. No clone/reset/clean, second writer, tool installation, publication or CI.
+
+Implemented connected native bootstrap -> fixed System32 managed host -> actual
+Open-ProGoPersonalInstallerTransaction / Open-ProGoPersonalUninstallerTransaction
+-> PersonalInstallTransaction -> existing native HKLM64 ARP. The previous managed
+RunAs-only hypothesis was rejected: CLR can run AppDomainManager before managed
+Main. Native code now controls the host launch BEFORE CLR loads. No environment
+cleanup inside an already running managed Main is used as the security boundary.
+
+Bootstrap has no CLR header, TLS callbacks, delay imports or non-Kernel32 imports;
+optional OS DLLs use fixed System32 resolution. Original process/SID/session,
+linked limited/full token AuthenticationId, kernel pipe peers, physical image pins,
+fixed operations and one-use lifetime are bound. Four KnownFolder directory handles
+are captured by the ORIGINAL native process before UAC and duplicated across the
+verified boundary. Physical root identity is revalidated across device namespaces;
+user KnownFolders require original-user write admission, not new elevated write
+rights. Alternate-admin, already-elevated original, nonlocal/reparse/foreign roots,
+wrong operation, replay, expired/dead original and substituted origin are refused.
+
+Build emits an ephemeral memory-only RSA3072 seal: native compiled public key ->
+canonical native code/manifest identity embedded in ProGo.exe -> signed complete
+fixed payload embedded as resources. No private key file, publisher certificate or
+credential action. Initial user-selected native EXE + ordinary OS UAC is the trust
+root, not hash equality or serialized metadata; this is NOT publisher authentication.
+Before privileged managed launch the native worker verifies seal/inventory and pins
+fixed retained payload. It builds an allowlisted environment and starts the actual
+system PowerShell host with NoProfile/NonInteractive/File, no policy override, no
+caller command text, no caller paths/SID/hash-array authority. User/machine execution
+policy can refuse; no fallback bypass. Native/managed origin + seal checks are shared
+with the synthetic fixtures. See NATIVE_PERSONAL_BROKER_REVIEW.md for assumptions,
+wire schema, build/dependency requirements, failure domains and exact proof limits.
+
+Existing install/uninstall consumers now claim the live typed capability. ARP is
+still registration-last/removal-last and points at retained native
+backups/personal-broker/ProGo.Setup.exe --uninstall. Legacy staged retry code and
+all journal/terminal/snapshot/rollback/per-leaf/foreign-registration/shortcut guards
+remain. Native retained complete payload survives partial runtime/helper deletion.
+Original shortcut KnownFolders are bound; NoStartup/NoLaunch and userdata refusal
+remain. No recursive deletion fallback, service/autostart/network/credential/profile
+or vault/settings/logs/backups deletion. Different-build retained broker/registration
+is conservatively refused; no new personal upgrade/migration authority is claimed.
+
+Host is created suspended and assigned to an owned kill-on-close job before resume.
+Connect/frame/heartbeat/result/lifetime/settlement waits are bounded. Revocation gives
+catch/finally grace, then may terminate ONLY that job-owned tree. Forced or unknown
+settlement is RECOVERY_REQUIRED, never rollback-success; retained pending/terminal
+and self-contained bytes are not deleted. Async cancellation never releases a
+pending stack buffer; incomplete native I/O storage stays owned until process exit.
+
+Local Python198 =195PASS+3SKIP, including compiled/executed portable C policy tests
+under hostile inherited CLR/profiler variables; synthetic PE origin/manifest/key/
+header/overlap/managed/TLS/truncation vectors and static consumer wiring checks.
+Public privacy scanner now includes native C/headers; existing checks are preserved.
+These are LOCAL static/portable/synthetic checks, NOT Windows/UAC/HKLM/PC proof.
+
+Prepared mandatory Core additions: NativeBrokerLaunchTests (real isolated pre-Main
+manager control vs native adjacent-config/hostile-environment system-host launch,
+NO elevation); PersonalBrokerTests (actual factories/session/consumers, mock OS
+proof + isolated file ARP, seal/code substitution, origin/session/alternate-admin/
+operation/replay/expiry/fault/retained uninstall retry/private and foreign preservation).
+Original33 Installer suites and all previous mandatory tests/assertions/deadlines,
+CI scheduling/needs/exact-SHA/privacy/upload contracts remain. Native15 expected
+ARP command alone changes to the real retained entrypoint. No workflow changes.
+
+Windows MSVC/C#/PowerShell compilation, AST/runtime fixtures, actual UAC/token/code
+origin/registry/ProgramFiles/ACL adversarial proof, delivery and owner-PC acceptance
+are NOT_RUN. Local pwsh/dotnet/mono/csc still absent; install nothing. CI763 SUCCESS
+applies only to old source. Full cumulative diff/local checks and final clean local
+checkpoint/tree are supplied for INDEPENDENT REVIEW BEFORE ANY push/new CI.
+This writer pauses at the reported checkpoint; do not start a competing writer.
+
+## CI763 verified SUCCESS and sole-writer handoff before consumed trusted UAC work
+
+Recovered same checkout clean at d497be4a1e488324de01cef4f25969b81598dd41,
+tree e0b4a28fe565d8e0608842250c5a5419c297181e. No clone/reset/clean, no second
+writer, no AGENTS or Git locks/competing source/native processes. Source unchanged
+since the approved one non-force CAS publication. Independent user review and
+fresh GitHub API/full terminal log audit now agree on the complete CI763 result.
+
+Run40754957773/CI763 attempt1, automatic pull_request, all10 terminal jobs SUCCESS,
+completed2026-10-28 20:37:44UTC /23:37:44 Europe/Istanbul. Source
+ a517dab25ed0a5daeda040b368f5282e49bf5481
+parent c9371898eba9e7870001999c78569d9f973be60d; tested merge
+ a6e39fb765bb7caad1a5d6db090706922cdcad6a
+with reviewed tree e0b4a28fe565d8e0608842250c5a5419c297181e and base parent
+4bb336575bb1216d3047bd2b294aeecad9fdd65a. Final exact-source run count1/attempt1.
+Remote PR88 source/merge still exactly these values; active/queued CI0.
+
+Previously saved7 full logs retained; remaining Live/Core/aggregate full logs fetched.
+All10 logs (2160322 UTF-8 bytes) have exact source+merge, terminal cleanup and0 real
+##[error] records. Relay HomeVPN4816, Portable91, Python176PASS+2Linux-only SKIP;
+Ubuntu SUCCESS separately covers Linux ownership/flock. Native15, Personal18,
+Stage10, binding3, protocol15negative/direct+known-wrapper positives/catch-finally
+probe PASS. Old33 suites have exactly33 unique START/PASS pairs (26+1+5+1).
+Runtime35 plus empty-snapshot/fresh-process refusal, Success40 plus2 refusals PASS.
+Lifecycle/storage/actual cross-volume/ACL/Restore, Diagnostics32report+2helper,
+Desktop6394, Instance30, Maintenance128, Shutdown49 and prior mandatory Core
+fixtures PASS. Clean build informational identity and both icon hosts SUCCESS.
+
+windows-build correctly waited for all8 prerequisites. Its consumed checker passed
+before Core and again before ZIP, with exactly8 SUCCESS results/tested_sha outputs
+matching the merge. Core test step explicitly PASS; public content458source/45release
+PASS. Final aggregate checked all9 required SUCCESS/exact tested_sha outputs.
+CI762 windows-build CANCELLED, Core test step PASS, aggregate FAILURE; exact cause
+of cancellation remains UNKNOWN. No deadline/test/matcher/security weakening.
+
+Pack step SUCCESS: ZIP762271bytes, SHA256
+ e09ea16421127c11c09ef6b898716530d7d827c922b8c77939d1dd26f68d6a97
+from actual CI log; binary was not downloaded or delivered. All upload steps SKIPPED,
+artifacts0, PC acceptance NOT_DONE. Relay screenshots remain on its runner. Existing
+privacy guards unchanged. Do not confuse CI/package provenance with delivery or
+real elevated HKLM/UAC/Program Files/registry-link adversarial/PC verification.
+
+Evidence: /workspace/scratch/4d867f513347/ci763-evidence
+publication.json, metadata.json, verified-summary.json, manifest.json and10 full logs.
+Manifest SHA256: 362afc7e216fdf649d977f7fec20d5d68d4662404e47bb7f8c0ce5f2691b75c5
+
+| Full terminal log | Bytes | SHA256 |
+| --- | ---: | --- |
+| ci-complete.log | 12728 | 65646d56638b5fdb6aa1089a30668a62bcdab8c05933238b03a9f6b842277115 |
+| installer-live-tests.log | 32825 | 34c4ddda91640076523cceac70afdfe9f808fd620ab7a65ef0f59ed5fb9b217c |
+| installer-recovery-input-tests.log | 40535 | e132dcc24bbb93885e3976809a9cba78882522051fea804b0e9e0ca8345e1603 |
+| installer-recovery-tests.log | 26636 | 74cb21cbe16d22a9bf9de6e4e35b204dc4736181d3e22602cce65f1d54b876c1 |
+| installer-runtime-tests.log | 23371 | 723988e8b2b6c46dc3c423dac8bfb5b6cd5e1b19b50ad8ce4c1ae2da5cb5aa95 |
+| installer-success-tests.log | 50033 | 475a835110361cb455b3705bd32e09300749cd47b5b92129f84514144c67c92d |
+| installer-tests.log | 65158 | bd7a8b1ed2ec680683b7e2741f7a7d8a78b3f9c3fc2b975410117cde917095ed |
+| vpn-server-test.log | 57497 | 3d3b128229ea7217721bf1a83b116bfe319b46c389bdc048b0f9b2843c35a98d |
+| windows-build.log | 1198539 | 49c50ac1657da7a03c23069b2bf3d2255391eda04ea369acd1ac209b451fd29c |
+| windows-relay-tests.log | 653000 | 57e7a13525a226cb3ae6c6d669417ef04178d575d988f1ed6f2641725a9bb4a2 |
+
+### Verified handoff: stop this writer after the reported local checkpoint
+
+Final local checks: Python194=191PASS+3SKIP, public458source0release and diff checks
+PASS. These are local checks, not a new Windows run. Only PROJECT_STATE changed.
+
+The remaining conversation context cannot safely hold a complete consumed trusted
+UAC implementation plus its synthetic positive/fault/refusal suite and full review.
+No UAC scaffolding/helper/production mutation introduced. This checkpoint changes
+PROJECT_STATE only, records verified CI763, and transfers the next implementation
+step. This writer relinquishes after the final checkpoint report; continue with one
+writer in a new dialogue. New source publication/CI remains forbidden until review.
+
+Exact checkout: /workspace/scratch/4d867f513347/ProGo-legacy-accepted-outcome-checkpoint
+Branch: work/progo-legacy-accepted-outcome-checkpoint
+Git backing directory: /workspace/scratch/a6821a71f56f/ProGo/.git
+Incoming HEAD d497be4a1e488324de01cef4f25969b81598dd41 / tree above; final docs-only
+HEAD/tree/clean/process status are supplied in the final handoff response (a commit
+cannot embed its own SHA). Remote expected a517dab25ed0a5daeda040b368f5282e49bf5481.
+First recheck access/AGENTS/HEAD/tree/dirty/process/remote/activeCI and this state;
+never reset/clean/clone or reconstruct source from partial data. F:\BackUP must
+not be read or listed. pwsh/dotnet/mono/csc absent locally; install nothing.
+
+Next authorized work is the REAL consumed trusted UAC broker, not another guard:
+connect Open-ProGoPersonalInstallerTransaction in scripts/Install-ProGo.ps1 and
+Open-ProGoPersonalUninstallerTransaction in scripts/Uninstall-ProGo.ps1 to an
+unforgeable live capability across a verified elevation boundary, consumed by the
+existing PersonalInstallTransaction and its fixed native ARP store. Both factories
+currently throw 'trusted UAC/ARP boundary is not activated'. Production normal builds
+have no public transaction constructor/fixture factory. Existing synthetic adapters
+in tests/PersonalInstallTransactionTests.ps1 override these factories; their UAC
+cancel/denied cases are synthetic refusal only, no authenticated broker exists.
+NativeRegistrationTransactionTests.ps1 consumes the native HKCU fixture backend.
+
+Concrete code integration points: src/ApplicationShortcuts.cs nested
+PersonalInstallTransaction (around2904), private ctor (2969), CurrentSid/process-token
+and thread-impersonation checks, Validate/payload origin pins, AdmitRegistration,
+PublishRegistration/RemoveRegistration; NativeRegistrationStore (3082) already has
+fixed HKLM64 Uninstall/ProGo constructor, typed inventory and bounded TxR semantics.
+Only CreateFixture/CreateRegistryFixture exist under PROGO_PERSONAL_INSTALL_FIXTURE
+(around3281). Hash equality is revalidation, never a bootstrap/code-origin authority.
+Do not expose a path/SID/hash-array factory or activate HKLM merely by caller boolean.
+Current ctor/Validate require original SID == process-token SID: don't relax that
+invariant to accept metadata. Any alternate-admin credential/elevated identity flow
+must be securely bound to the trusted original context or explicitly refused.
+
+Broker boundary must bind original SID/session/process/code origin and actual
+worker elevation, fixed operation/entrypoint identity and payload hashes/pins, bounded
+request/result/lifetime/settlement, cancellation/refusal and replay/substitution
+resistance. Resolve fixed KnownFolder runtime/data/menu from trusted original-user
+context, not the elevated account environment or arbitrary metadata; read-only
+Layout-ProGo.ps1/SeparateIdentityConfirmed is not privileged authority. Keep consumed
+registration-last, pending/terminal/rollback admission, retained self-contained retry
+after partial deletion, per-leaf ownership/reparse/origin pins, and refusal of foreign
+registration/shortcuts. No recursive deletion fallback, command evaluation, services,
+startup, network or new credentials. Personal path never authorizes userdata removal;
+profile/vault/settings/logs/backups and foreign shortcuts must survive.
+
+Development and isolated synthetic positive/fault/refusal tests are authorized;
+actual UAC launch/HKLM/Program Files/real ACL/security/network/credentials/PC actions
+remain forbidden pending separate review/necessary approval. Tests must exercise
+actual consumer/factory/broker transaction orchestration, not a disconnected helper.
+Explicitly separate synthetic proof from real elevation/code-origin/PC proof. Preserve
+all existing suites/assertions/deadlines, fixture-only error protocol/binding and
+scheduling/privacy contracts. Full cumulative diff/local checks/clean checkpoint/tree
+before review, then only an explicitly approved next Windows CI. Trusted UAC is the
+next real implementation step; F30/payment/licensing remain deferred.
+
 ## Local scheduling-only relay partition correction after CI762 review
 
 Continue clean8851fa848449878671bc1953e80fb1fd5d2378f6,
 tree5502033c839b9b5efaae3c280159eff90739a515, same checkout/branch, sole writer.
 No AGENTS, Git locks or competing source/native processes. CI762 remains run
-CANCELLED/Core CANCELLED/aggregate FAILURE; cancellation reason UNKNOWN, timing
+CANCELLED/windows-build CANCELLED/Core test step PASS/aggregate FAILURE; cancellation reason UNKNOWN, timing
 only consistent with40minutes. This correction does not establish its cause.
 
 Verified Test-HomeVpnRelay.ps1 builds RelayHarness/HomeVpnWizardTests/

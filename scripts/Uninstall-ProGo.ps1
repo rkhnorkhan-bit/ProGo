@@ -37,11 +37,15 @@ function Stop-ProGoUninstallApplication([string]$RuntimeRoot, [string]$DataRoot)
     [ProGo.MaintenanceOperation]::StopApplication($RuntimeRoot, $DataRoot)
 }
 function Complete-ProGoUninstallFirewall([string]$RuntimeRoot) {
+    # The personal broker grants runtime/ARP authority only. Network policy stays
+    # outside that capability; the historical separate legacy cleanup is unchanged.
+    if ($Personal) { return }
     if ($null -eq $UninstallStage) { . (Join-Path $PSScriptRoot 'Firewall-ProGo.ps1'); $firewallScripts = $PSScriptRoot }
     else { $firewallScripts = Join-Path $UninstallStage.Directory 'scripts' }
     Complete-ProGoHomeFirewallCleanup (Join-Path $RuntimeRoot 'ProGo.exe') (Join-Path $firewallScripts 'Enable-HomeVpnFirewall.ps1')
 }
 function New-ProGoUninstallShortcuts([string]$RuntimeRoot) {
+    if ($Personal) { return New-Object ProGo.ApplicationShortcuts($RuntimeRoot, $PersonalTransaction.ProgramsRoot, $PersonalTransaction.StartupRoot) }
     if (-not ('ProGo.ApplicationShortcuts' -as [type])) { Import-ProGoShortcutType }
     return New-Object ProGo.ApplicationShortcuts($RuntimeRoot, [Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Startup'))
 }
@@ -558,7 +562,8 @@ function Import-ProGoUninstallStage($Stage) {
 }
 
 function Open-ProGoPersonalUninstallerTransaction {
-    throw 'Personal uninstaller trusted UAC/ARP boundary is not activated.'
+    if (-not ('ProGo.ApplicationShortcuts+PersonalInstallTransaction' -as [type])) { throw 'Personal uninstaller requires its native bootstrap.' }
+    return [ProGo.ApplicationShortcuts+PersonalInstallTransaction]::OpenPersonalUninstallerTransaction()
 }
 
 if ($FunctionsOnly) { return }
@@ -577,7 +582,8 @@ try {
         Import-ProGoUninstallStage $UninstallStage
         # Load the admitted firewall definitions in this script scope, from pinned bytes.
         . ([scriptblock]::Create($UninstallStage.Text['scripts/Firewall-ProGo.ps1']))
-        Write-Host ('Retry uninstall with: powershell.exe -NoProfile -File "' + $UninstallStage.RetryPath + '"')
+        if ($Personal) { Write-Host ('Retry uninstall with: "' + (Join-Path $InstallDir 'backups/personal-broker/ProGo.Setup.exe') + '" --uninstall') }
+        else { Write-Host ('Retry uninstall with: powershell.exe -NoProfile -File "' + $UninstallStage.RetryPath + '"') }
     } else {
         . (Join-Path $PSScriptRoot 'Install-ProGo.ps1') -FunctionsOnly
         . (Join-Path $PSScriptRoot 'Shortcuts-ProGo.ps1')

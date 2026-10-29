@@ -194,7 +194,7 @@ function Assert-NativeExact($Fixture, [string]$Path) {
     try {
         $shell = Join-Path ([Environment]::GetFolderPath('System')) 'WindowsPowerShell/v1.0/powershell.exe'
         $expected = @{ DisplayName = 'ProGo'; DisplayVersion = $Fixture.Version; InstallLocation = $Fixture.Runtime;
-            UninstallString = ('"' + $shell + '" -NoProfile -File "' + (Join-Path $Fixture.Runtime 'backups/Uninstall-ProGo.retry.ps1') + '" -Personal');
+            UninstallString = ('"' + (Join-Path $Fixture.Runtime 'backups/personal-broker/ProGo.Setup.exe') + '" --uninstall');
             NoModify = 1; NoRepair = 1; ProGoOwnerSid = $Fixture.OwnerSid }
         Check-Stage ($key.SubKeyCount -eq 0 -and $key.ValueCount -eq 7) 'native exact fixed key/value inventory'
         foreach ($name in $expected.Keys) {

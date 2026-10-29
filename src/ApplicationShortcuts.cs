@@ -11,7 +11,7 @@ namespace ProGo
 {
     // Windows shortcuts are the source of truth. Installation must not restore
     // an absent Startup link on an existing installation.
-    public sealed class ApplicationShortcuts
+    public sealed partial class ApplicationShortcuts
     {
         private readonly string root, menu, startup, executable;
         public ApplicationShortcuts(string installDirectory, string programsDirectory, string startupDirectory)
@@ -2898,10 +2898,10 @@ namespace ProGo
             void Resolve(IntPtr window, uint flags);
             void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
         }
-        // Live transaction capability. No production factory until the authenticated
-        // UAC/code-origin boundary and native ARP activation are reviewed and implemented.
+        // Live transaction capability. Production factories are in PersonalBroker.cs
+        // and consume the authenticated native launch session, never caller metadata.
         // Existing hashes are revalidation, never installation provenance.
-        public sealed class PersonalInstallTransaction : IDisposable
+        public sealed partial class PersonalInstallTransaction : IDisposable
         {
             private interface RegistrationStore : IDisposable {
                 string Read();
@@ -2914,10 +2914,19 @@ namespace ProGo
             private readonly System.Collections.Generic.List<IDisposable> pins = new System.Collections.Generic.List<IDisposable>();
             private readonly System.Collections.Generic.Dictionary<string, FileStream> sources = new System.Collections.Generic.Dictionary<string, FileStream>(StringComparer.Ordinal);
             private bool disposed;
+            private Action brokerCheck = null;
+            private bool registrationSettled;
+            private bool HasSettledRegistration { get { return registrationSettled; } }
             private readonly object contextGate = new object();
             public string RuntimeRoot { get { return runtime; } }
             public string DataRoot { get { return data; } }
             public string PayloadRoot { get { return payload; } }
+            public string ProgramsRoot { get; private set; }
+            public string StartupRoot { get; private set; }
+            private static readonly object shortcutRootsGate = new object();
+            private static string boundProgramsRoot = null, boundStartupRoot = null;
+            public static string BoundProgramsRoot { get { lock(shortcutRootsGate) return boundProgramsRoot; } }
+            public static string BoundStartupRoot { get { lock(shortcutRootsGate) return boundStartupRoot; } }
             public string RetryPath { get { return Path.Combine(runtime, "backups", "Uninstall-ProGo.retry.ps1"); } }
             private static string Canonical(string path) { return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar); }
             // The effective thread identity can be impersonated, including by the
@@ -2997,6 +3006,7 @@ namespace ProGo
             }
             public void Validate(string runtimeRoot, string dataRoot, string payloadRoot) {
                 lock (contextGate) {
+                    if (brokerCheck != null) brokerCheck();
                     if (disposed || sid != CurrentSid() || !String.Equals(runtime, Canonical(runtimeRoot), StringComparison.OrdinalIgnoreCase) ||
                         !String.Equals(data, Canonical(dataRoot), StringComparison.OrdinalIgnoreCase) || !String.Equals(payload, Canonical(payloadRoot), StringComparison.OrdinalIgnoreCase))
                         throw new System.Security.SecurityException("Personal installer context changed.");
@@ -3012,9 +3022,7 @@ namespace ProGo
                 foreach (string field in new[] { runtime, version, sid })
                     if (String.IsNullOrEmpty(field) || field.IndexOfAny(new[] { '\0', '\r', '\n', '"' }) >= 0)
                         throw new IOException("Personal registration field is invalid.");
-                string retry = Path.Combine(runtime, "backups", "Uninstall-ProGo.retry.ps1");
-                string shell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
-                string command = "\"" + shell + "\" -NoProfile -File \"" + retry + "\" -Personal";
+                string command = "\"" + Path.Combine(runtime, "backups", "personal-broker", "ProGo.Setup.exe") + "\" --uninstall";
                 return new[] { "ProGo", version, runtime, command, null, null, sid };
             }
             private static string RegistrationText(string runtime, string version, string sid) {
@@ -3041,9 +3049,10 @@ namespace ProGo
                     using (var retry = OpenLegacyRestartRead(RetryPath))
                         if (PhysicalPinHash(retry) != hashes["scripts/Uninstall-ProGo.ps1"]) throw new IOException("Personal retry entry differs.");
                     string expected = ExpectedRegistration();
-                    if (registration.Read() == expected) return;
+                    if (registration.Read() == expected) { registrationSettled = true; return; }
                     try {
                         if (!registration.CompareExchange(null, expected) || registration.Read() != expected) throw new IOException("Personal registration publication failed.");
+                        registrationSettled = true;
                     } catch {
                         // Native commit outcomes are re-read on retry, never guessed
                         // or compensated by deleting a possibly committed ARP entry.
@@ -3065,6 +3074,7 @@ namespace ProGo
                     string current = registration.Read();
                     if (current != null && !registration.CompareExchange(ExpectedRegistration(), null)) throw new IOException("Personal registration changed during removal.");
                     if (registration.Read() != null) throw new IOException("Personal registration removal is incomplete.");
+                    registrationSettled = true;
                 }
             }
             public void Dispose() {
@@ -3107,11 +3117,14 @@ namespace ProGo
                     public TransactionHandle() : base(true) { }
                     protected override bool ReleaseHandle() { return ClosePersonalToken(handle); }
                 }
+                [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
                 [DllImport("ktmw32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
                 private static extern TransactionHandle CreateTransaction(IntPtr attributes, IntPtr uow, uint options, uint isolation, uint flags, uint timeout, string description);
+                [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
                 [DllImport("ktmw32.dll", SetLastError = true)]
                 [return: MarshalAs(UnmanagedType.Bool)]
                 private static extern bool CommitTransaction(TransactionHandle transaction);
+                [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
                 [DllImport("ktmw32.dll", SetLastError = true)]
                 [return: MarshalAs(UnmanagedType.Bool)]
                 private static extern bool RollbackTransaction(TransactionHandle transaction);
@@ -3297,9 +3310,12 @@ namespace ProGo
                 if (Canonical(runtimeRoot) != Canonical(Path.Combine(scope, "program", "ProGo")) ||
                     Canonical(dataRoot) != Canonical(Path.Combine(scope, "data", "ProGo")) ||
                     Canonical(payloadRoot) != Canonical(Path.Combine(scope, "payload"))) throw new IOException("Personal fixture fixed paths differ.");
-                return new PersonalInstallTransaction(runtimeRoot, dataRoot, payloadRoot, originalSid, names, expectedHashes, payloadVersion,
+                var context = new PersonalInstallTransaction(runtimeRoot, dataRoot, payloadRoot, originalSid, names, expectedHashes, payloadVersion,
                     native ? (RegistrationStore)NativeRegistrationStore.Fixture(rootPath, caseName, runtimeRoot, payloadVersion, originalSid, fault) :
                         new FixtureRegistrationStore(Path.Combine(scope, "arp.txt"), fault));
+                context.ProgramsRoot = Path.Combine(scope, "menu"); context.StartupRoot = Path.Combine(scope, "startup");
+                lock(shortcutRootsGate) { boundProgramsRoot=context.ProgramsRoot; boundStartupRoot=context.StartupRoot; }
+                return context;
             }
             private sealed class FixtureRegistrationStore : RegistrationStore {
                 private readonly string path;

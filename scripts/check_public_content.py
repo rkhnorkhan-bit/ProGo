@@ -20,7 +20,7 @@ PERSONAL_PATH = re.compile(
 )
 # Match actual PEM content, not the format delimiter used by the token validator.
 PRIVATE_KEY = re.compile(r'-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----[\r\n]+[A-Za-z0-9+/]{32}')
-TEXT_SUFFIXES = {'.cs', '.ps1', '.py', '.sh', '.md', '.json', '.yml', '.yaml', '.csproj'}
+TEXT_SUFFIXES = {'.c', '.h', '.cs', '.ps1', '.py', '.sh', '.md', '.json', '.yml', '.yaml', '.csproj'}
 SECRET_SUFFIXES = {'.pem', '.key', '.pfx', '.p12', '.mobileconfig', '.log'}
 
 
@@ -76,7 +76,7 @@ def main():
     parser.add_argument('--release', type=pathlib.Path)
     args = parser.parse_args()
     sources = list(ROOT.glob('*.md'))
-    for folder in ('src', 'scripts', 'server', 'tests', 'docs', '.github'):
+    for folder in ('src', 'native', 'scripts', 'server', 'tests', 'docs', '.github'):
         sources.extend(p for p in (ROOT / folder).rglob('*')
                        if p.is_file() and p.suffix in TEXT_SUFFIXES
                        and not {'__pycache__', 'bin', 'obj'}.intersection(p.parts))
