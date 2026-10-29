@@ -1,3 +1,123 @@
+## Native broker expectation audit/fix — local only, independent review pending
+
+Sole writer resumed from verified clean deebd739c3900bb43f9d2f454b54bfccc444079d /
+tree dadc242cd389689c2c02fab84afadc5a9fab7267. Same checkout/branch; AGENTS absent,
+no locks or competing git/compiler/PowerShell processes. CI765 failure remains
+independently verified below. No publication, newCI, tool installation or PC action.
+
+Three confirmed stale PersonalInstallTransactionTests expectations corrected:
+- ARP now uses an independent exact complete seven-field record oracle, including
+  quoted backups/personal-broker/ProGo.Setup.exe --uninstall. Exact RuntimeRoot,
+  Version, original OwnerSid, DisplayName, NoModify/NoRepair and full formatting
+  are compared case-sensitively; substring acceptance is removed.
+- Direct production uninstaller/installer refusals expect their actual current
+  'requires its native bootstrap.' diagnostics. Nonzero exits and unchanged ARP
+  snapshot checks remain. The user-data refusal assertion is unchanged.
+- The legacy $retained backups/Uninstall-ProGo.retry.ps1 variable and every later
+  evidence/adapted-consumer/retry/private-data use remain intact. All pre-existing
+  statements except those3 reviewed assertions are preserved, including deadlines,
+  18 modes, negative cases, registration-last/retry/rollback and settlement logic.
+
+Regression additions:13 negative mutations use the SAME exact registration oracle
+as the actual consumed fixture: old PS command, missing quotes, extra arguments,
+wrong operation/root, changed identity fields/flags, duplicate command and prefix.
+These Windows assertions are prepared, NOT_RUN locally. Two available Python
+cross-source contracts compare factory refusal messages and C#/fixture schema,
+entrypoint path/operation. The gate parity regression rejects the original stale
+baseline and passes current; it does not execute PowerShell or establish elevation.
+
+Audit scope: native-broker transition expectations only, not general correctness.
+All213 .ps1/.cs/.py test sources screened;149 direct mandatory references from
+Test-ProGo/Test-ProGoInstallerSuite/CI workflow screened. Focused source review:
+PersonalInstallTransactionTests, NativeRegistrationTransactionTests,
+PersonalBrokerTests, NativeBrokerLaunchTests, UninstallStageTests,
+InstallerLifecycleTests, RepairPayloadTests, BuildIconCompatibilityTests,
+test_personal_install_transaction_contract, test_personal_broker,
+test_uninstall_stage_contract. NativeRegistration already has current exact native
+ARP command; broker factories/proof/operation/replay/expired/fault diagnostics match
+current code/adapters. Legacy staged-uninstall gates remain applicable to their
+separate non-Personal path. No other confirmed same-class mismatch was found;
+those fixtures were not changed. Full screened/focused path lists and limitations
+are in adjacent progo-ci765-expectations-audit.json.
+
+Local202 tests /199 PASS /3 SKIP; public scanner469source/0release PASS; diff and
+UTF-8 BOM/CRLF PASS. Production src/native/scripts, workflow/VERSION, scheduling,
+privacy, payload inventories and guards unchanged. Windows AST/runtime, new negative
+mutations and corrected suites NOT_RUN; no local pwsh/dotnet/mono/csc installed.
+No real UAC/HKLM/ProgramFiles/ACL/production-network/credentials/owner-PC actions.
+
+Complete delta from deebd739 and exact final clean checkpoint/tree/hashes are in
+adjacent progo-ci765-expectations-review.json / progo-ci765-expectations.delta.patch.
+Writer pauses at that checkpoint pending independent review BEFORE publication/CI.
+
+## CI765 terminal FAILURE — reviewed fixture fixes passed; no automatic correction
+
+Sole writer verified clean639f5d0c8e0e6cdf985a7057d2cc4372b468c372 /
+tree68d1a99fdbd19ff520ef51dc6c62a02176a5a815, delta7535 bytes SHA256
+ d5236e8565dfc03f9b388fe86455c63a51af2c3eb7f0a91bfe08f4e6d80588af.
+AGENTS absent, no locks/competing git/compiler processes; remote expected7ead0289
+and all-event queued/in_progress/waiting/pending/requested0 rechecked before CAS.
+One non-force expected_sha CAS preserved history: published source
+ c2e804d2b9fb0e428fb624a5995f1546891c8852
+parent7ead02893556cd28c39b4050085dae2614503055, exact reviewed tree above.
+No dispatch, rerun, duplicate publication, tools installed or owner-PC action.
+
+Automatic pull_request CI765 run40948020431 attempt1, terminal FAILURE at
+2026-10-29 20:49:04UTC /23:49:04 Europe/Istanbul. Tested merge
+ 6eb4e33fa2bcfb2c9cabefe42da9f969dad89ee3
+has reviewed tree68d1a99fdbd19ff520ef51dc6c62a02176a5a815, parents main
+4bb336575bb1216d3047bd2b294aeecad9fdd65a and published sourcec2e804d2.
+Final PR88 draft/open source/merge unchanged, exact-source run count1/attempt1,
+active all-event CI0. No silent fix or automatic repeat after this failure.
+
+All10 full COMPLETE terminal logs saved and checked for source/merge and terminal
+records:1037232 decoded UTF-8 bytes, per-log SHA256,2 real error records. All8
+prerequisites SUCCESS: old33 Installer suites Foundation26/Live1/Recovery5/Input1,
+Runtime35 plus refusals, Success40 plus2 fresh-process refusals; Ubuntu SUCCESS;
+Relay HomeVPN4816/Portable91/Python184 with2 SKIP. MSVC production/fixture, C# and
+sealing BUILD OK. Exact-SHA prerequisite guard passed before Core.
+
+The two reviewed CI764 fixture integration fixes now PASS on Windows:
+- RepairPayloadTests completes runtime42 copy, byte-equality, committed cleanup,
+  rollback, owned self-check, durable recovery+9 refusals and4 preflight refusals.
+  Bootstrap leaves are not counted as installed runtime; no42 ->44 relaxation.
+- Both icon compatibility steps Desktop51 and Core7 SUCCESS, including original
+  compiler/resolver refusal and output-preservation/ICO assertions. Core7.6.7.
+
+Core later fails in tests/PersonalInstallTransactionTests.ps1:202, first success
+mode: 'registration derives fixed version, root, command and original user only
+after commit'. Despite its 'Uninstall stage' helper prefix, this is the personal
+transaction fixture, NOT a staged uninstall failure: all10 fresh-process staged
+uninstall cases immediately before it passed. Source-derived sufficient mismatch:
+fixture expects backups/Uninstall-ProGo.retry.ps1 followed by quoted -Personal;
+actual ApplicationShortcuts.RegistrationStrings emits quoted fixed
+backups/personal-broker/ProGo.Setup.exe --uninstall. No raw registry/SID dump taken.
+No assertion/production code was changed to conceal this failure. Remaining
+personal modes and NativeRegistration/NativeBrokerLaunch/PersonalBroker/new later
+Core suites were NOT_RUN after the first success-case assertion failure.
+
+windows-build FAILURE; strict Exact-SHA aggregate FAILURE, correctly refusing.
+Build identity self-check and public release scan SKIPPED after Core failed.
+Pack ZIP SKIPPED: NOT_PRODUCED, no package SHA256 for CI765. All upload steps
+SKIPPED/artifacts0. No binary delivery, real elevation/HKLM/ProgramFiles/ACL/
+production-network/credentials/owner-PC action or acceptance.
+
+Evidence: /workspace/scratch/4d867f513347/ci765-evidence/ publication.json,
+initial-metadata.json, final-metadata.json, verified-summary.json, manifest.json
+and10 full .log files. checkpoint.json supplies the final local clean HEAD/tree
+and full cumulative/docs-only delta hashes after this documentation-only commit.
+Published source remains exactly the reviewed content; local code matches639f5d0,
+only this result prefix is added locally and is NOT published. Local scanner/diff
+and source-equality checks rerun. Writer stops at that clean checkpoint.
+
+Remaining work is a SEPARATE agreed/reviewed stage: reconcile stale personal ARP
+command expectation with native entrypoint while preserving fixed root/version/
+original SID, registration-last, retained retry/data refusal and all foreign/
+rollback/ownership/deadline/privacy assertions. In particular legacy retained PS
+retry is still used by later fixture checks; do not blindly replace its variable.
+No next source patch, push or CI in this stage. New broker Windows runtime proof
+and real installation/owner-PC acceptance remain outstanding.
+
 ## CI764 fixture integration corrections — local only, independent review pending
 
 Sole writer resumed from verified clean1bac5b26262502058de387635bf8a9acd2382b34 /

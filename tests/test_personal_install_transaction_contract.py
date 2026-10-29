@@ -32,6 +32,41 @@ class PersonalTransactionContract(unittest.TestCase):
         self.assertIn('LegacyOrigin(current.SafeFileHandle) != LegacyOrigin(source.Value.SafeFileHandle)', production)
         self.assertNotIn('Microsoft.Win32.Registry', source)
 
+    def test_fixture_refusals_follow_consumed_factory_diagnostics(self):
+        fixture = read('tests/PersonalInstallTransactionTests.ps1')
+        for operation in ('installer', 'uninstaller'):
+            entry = 'Install' if operation == 'installer' else 'Uninstall'
+            factory = STAGE.function(read('scripts/' + entry + '-ProGo.ps1'),
+                                     'Open-ProGoPersonal' + entry + 'erTransaction')
+            message = re.search(r"throw '([^']+)'", factory).group(1)
+            assertions = [line for line in fixture.splitlines()
+                          if '$gate.Code -ne 0' in line and message in line]
+            self.assertEqual(len(assertions), 1, 'fixture must assert the actual bootstrap refusal')
+            if operation == 'uninstaller':
+                self.assertIn('[IO.File]::ReadAllText($arp) -ceq $registered', assertions[0])
+        self.assertNotIn('trusted UAC/ARP boundary is not activated.', fixture)
+
+    def test_fixture_registration_oracle_matches_native_schema_and_entrypoint(self):
+        fixture = read('tests/PersonalInstallTransactionTests.ps1')
+        checker = STAGE.function(fixture, 'Test-PersonalFixtureRegistration')
+        source = read('src/ApplicationShortcuts.cs')
+        command = source.split('private static string[] RegistrationStrings(', 1)[1].split('private static string RegistrationText(', 1)[0]
+        parts = re.findall(r'"([^"\\]+)"', re.search(r'Path.Combine\(runtime, ([^)]+)\)', command).group(1))
+        fixture_path = re.search(r"Join-Path \$Runtime '([^']+)'", checker).group(1)
+        self.assertEqual('/'.join(parts), fixture_path)
+        self.assertEqual(re.search(r' --([a-z]+)', command).group(1),
+                         re.search(r' --([a-z]+)', checker).group(1))
+        native_record = source.split('private static string RegistrationText(', 1)[1].split('private string ExpectedRegistration()', 1)[0]
+        labels = re.findall(r'(?:"|\\n)([A-Za-z]+)(?:=|:DWORD=)', native_record)
+        fixture_record = re.search(r'\$expectedRegistration = "([^"\n]+)"', checker).group(1)
+        self.assertEqual(labels, re.findall(r'(?:^|`n)([A-Za-z]+)(?:=|:DWORD=)', fixture_record))
+        self.assertIn('return $Value -ceq $expectedRegistration', checker)
+        self.assertIn('Check-Stage (Test-PersonalFixtureRegistration $registered', fixture)
+        self.assertIn('Test-PersonalFixtureRegistration $mutation', fixture)
+        self.assertIn("$retained = Join-Path $Fixture.Runtime 'backups/Uninstall-ProGo.retry.ps1'", fixture)
+        self.assertIn("Write-StageDriver $retained '$Layout'", fixture)
+        self.assertIn("$dataGate = Invoke-StageHost $retained '-Personal -RemoveUserData'", fixture)
+
     def test_process_identity_gate_refuses_impersonation_at_construction_and_revalidation(self):
         source = read('src/ApplicationShortcuts.cs')
         gate = source.split('private static void RefusePersonalImpersonation()', 1)[1].split('private static string CurrentSid()', 1)[0]

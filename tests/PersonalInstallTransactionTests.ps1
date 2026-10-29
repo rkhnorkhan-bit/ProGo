@@ -17,6 +17,12 @@ $work = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-personal-transaction-' + [g
 $repo = Split-Path -Parent $Scripts
 . (Join-Path $Scripts 'Install-ProGo.ps1') -FunctionsOnly
 $original = Get-ProGoInstallPayload (Join-Path $repo 'release')
+# Test-only oracle: independent exact record, never used as production authority.
+function Test-PersonalFixtureRegistration([string]$Value, [string]$Runtime, [string]$Version, [string]$OwnerSid) {
+    $nativeCommand = '"' + (Join-Path $Runtime 'backups/personal-broker/ProGo.Setup.exe') + '" --uninstall'
+    $expectedRegistration = "DisplayName=ProGo`nDisplayVersion=$Version`nInstallLocation=$Runtime`nUninstallString=$nativeCommand`nNoModify:DWORD=1`nNoRepair:DWORD=1`nProGoOwnerSid=$OwnerSid`n"
+    return $Value -ceq $expectedRegistration
+}
 $adapters = @'
 function Check-Stage($condition, [string]$message) { if (-not $condition) { throw ('Personal transaction: ' + $message) } }
 function New-PersonalFixtureContext {
@@ -199,11 +205,33 @@ try {
         }
         if ($null -eq $expected -or $mode -in @('registration-before', 'registration-after', 'runtime-fault')) {
             $registered = [IO.File]::ReadAllText($arp); $retained = Join-Path $Fixture.Runtime 'backups/Uninstall-ProGo.retry.ps1'
-            Check-Stage ($registered.Contains('DisplayName=ProGo') -and $registered.Contains('DisplayVersion=' + $original.Version) -and $registered.Contains('InstallLocation=' + $Fixture.Runtime) -and $registered.Contains($retained + '" -Personal') -and $registered.Contains($Fixture.OwnerSid)) 'registration derives fixed version, root, command and original user only after commit'
+            Check-Stage (Test-PersonalFixtureRegistration $registered $Fixture.Runtime $original.Version $Fixture.OwnerSid) 'registration derives fixed version, root, command and original user only after commit'
+            if ($mode -ceq 'success') {
+                $nativeCommand = '"' + (Join-Path $Fixture.Runtime 'backups/personal-broker/ProGo.Setup.exe') + '" --uninstall'
+                # Exercise the SAME matcher as the consumed registration assertion.
+                $mutations = @(
+                    $registered.Replace($nativeCommand, ('"' + $retained + '" -Personal')),
+                    $registered.Replace($nativeCommand, ((Join-Path $Fixture.Runtime 'backups/personal-broker/ProGo.Setup.exe') + ' --uninstall')),
+                    $registered.Replace($nativeCommand, ($nativeCommand + ' -Personal')),
+                    $registered.Replace(' --uninstall', ' --install'),
+                    $registered.Replace($nativeCommand, ('"' + (Join-Path ($Fixture.Runtime + '-foreign') 'backups/personal-broker/ProGo.Setup.exe') + '" --uninstall')),
+                    $registered.Replace('DisplayName=ProGo', 'DisplayName=ProGoForeign'),
+                    $registered.Replace('DisplayVersion=' + $original.Version, 'DisplayVersion=' + $original.Version + '-foreign'),
+                    $registered.Replace('InstallLocation=' + $Fixture.Runtime, 'InstallLocation=' + $Fixture.Runtime + '-foreign'),
+                    $registered.Replace('ProGoOwnerSid=' + $Fixture.OwnerSid, 'ProGoOwnerSid=' + $Fixture.OwnerSid + '-foreign'),
+                    $registered.Replace('NoModify:DWORD=1', 'NoModify:DWORD=0'),
+                    $registered.Replace('NoRepair:DWORD=1', 'NoRepair:DWORD=0'),
+                    ($registered + 'UninstallString=' + $nativeCommand + "`n"),
+                    ('foreign-prefix' + $registered)
+                )
+                foreach ($mutation in $mutations) {
+                    Check-Stage (-not (Test-PersonalFixtureRegistration $mutation $Fixture.Runtime $original.Version $Fixture.OwnerSid)) 'exact registration matcher rejects command/identity/duplicate mutations'
+                }
+            }
             $dataGate = Invoke-StageHost $retained '-Personal -RemoveUserData'
             Check-Stage ($dataGate.Code -ne 0 -and $dataGate.Error.Contains('Personal privileged transaction keeps user data') -and [IO.File]::ReadAllText($arp) -ceq $registered) 'privileged worker cannot delete user data'
             $gate = Invoke-StageHost $retained '-Personal'
-            Check-Stage ($gate.Code -ne 0 -and $gate.Error.Contains('Personal uninstaller trusted UAC/ARP boundary is not activated.') -and [IO.File]::ReadAllText($arp) -ceq $registered) 'production uninstall remains gated without fixture factory'
+            Check-Stage ($gate.Code -ne 0 -and $gate.Error.Contains('Personal uninstaller requires its native bootstrap.') -and [IO.File]::ReadAllText($arp) -ceq $registered) 'production uninstall remains gated without fixture factory'
             $proofs = @{}
             foreach ($file in Get-ChildItem -LiteralPath (Join-Path $Fixture.Runtime 'backups') -Recurse -File) { $proofs[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
             $runtimeBefore = @{}
@@ -250,7 +278,7 @@ Write-Host 'PRODUCTION_PERSONAL_FACTORY_CLOSED'
     $compile = Invoke-StageHost $productionCompile
     Check-Stage ($compile.Code -eq 0 -and $compile.Output.Contains('PRODUCTION_PERSONAL_FACTORY_CLOSED')) 'normal compilation excludes fixture factory'
     $gate = Invoke-StageHost (Join-Path $Scripts 'Install-ProGo.ps1') ('-Personal -PayloadDirectory "' + $original.Directory + '"')
-    Check-Stage ($gate.Code -ne 0 -and $gate.Error.Contains('Personal installer trusted UAC/ARP boundary is not activated.')) 'production installer remains gated without fixture factory'
+    Check-Stage ($gate.Code -ne 0 -and $gate.Error.Contains('Personal installer requires its native bootstrap.')) 'production installer remains gated without fixture factory'
 } finally {
     if ($script:StageChildrenSettled) {
         if ($null -ne $junction) { [IO.Directory]::Delete($junction.FullName, $false) }
