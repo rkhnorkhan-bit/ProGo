@@ -196,12 +196,20 @@ try {
     # installed image must pass the isolated self-check before success.
     Get-ChildItem -LiteralPath $payload -Force | Remove-Item -Force -Recurse
     Get-ChildItem -LiteralPath $release -Force | Copy-Item -Destination $payload -Recurse -Force
-    # Build also supplies three distributable documents. Install-ProGo does
-    # not deploy them as runtime leaves; every other built file is mandatory.
+    # Documents and these two exact root bootstrap leaves are distribution-only.
+    # Nested names and every other built file remain mandatory runtime leaves.
     $documents = @('README.md', 'README.ru.md', 'LICENSE.md')
+    $bootstrap = @('ProGo.Setup.exe', 'PersonalBroker.ps1')
     $payloadRoot = (Get-Item -LiteralPath $payload).FullName.TrimEnd([char]'\')
-    $sourceFiles = @(Get-ChildItem -LiteralPath $payload -File -Recurse | Where-Object {
-        -not ($_.DirectoryName -ieq $payloadRoot -and $documents -icontains $_.Name)
+    $builtFiles = @(Get-ChildItem -LiteralPath $payload -Force -File -Recurse)
+    foreach ($name in $bootstrap) {
+        $classified = @($builtFiles | Where-Object { $_.DirectoryName -ieq $payloadRoot -and $_.Name -ceq $name })
+        if ($classified.Count -ne 1 -or ($classified[0].Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw ('Built bootstrap leaf is missing, ambiguous or redirected: ' + $name)
+        }
+    }
+    $sourceFiles = @($builtFiles | Where-Object {
+        -not ($_.DirectoryName -ieq $payloadRoot -and ($documents -icontains $_.Name -or $bootstrap -ccontains $_.Name))
     })
     if ($sourceFiles.Count -ne 42) { throw ('Built runtime changed: repair fixture must explicitly cover every mandatory leaf; runtime_count=' + $sourceFiles.Count) }
     $knownRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) 'ProGo'

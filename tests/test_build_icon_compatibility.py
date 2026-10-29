@@ -72,6 +72,18 @@ class BuildIconCompatibility(unittest.TestCase):
         self.assertNotIn('continue-on-error:', job)
         self.assertIn('needs: [vpn-server-test, windows-build, installer-tests, installer-live-tests, installer-recovery-tests, installer-recovery-input-tests, installer-runtime-tests, installer-success-tests, windows-relay-tests]', workflow)
         self.assertIn('if: success() && (github.event.repository.private', job)
+    def test_isolated_copy_contains_every_required_input_root(self):
+        import re
+        build = (ROOT / 'scripts/Build-ProGo.ps1').read_text(encoding='utf-8-sig')
+        fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text(encoding='utf-8-sig')
+        inputs = build.split('$requiredInputs = @(', 1)[1].split('\n)', 1)[0]
+        required_roots = {p.split('\\', 1)[0] for p in re.findall(r"'([^']+)'", inputs)}
+        copy_loop = fixture.split('foreach ($name in @(', 1)[1].split(')) {', 1)[0]
+        copied_roots = set(re.findall(r"'([^']+)'", copy_loop))
+        self.assertLessEqual(required_roots, copied_roots)
+        self.assertIn('native', copied_roots)
+        self.assertLess(fixture.index(copy_loop), fixture.index('#error PROGO_ICON_COMPILE_SENTINEL'))
+
     def test_fixture_demands_injected_compile_failure(self):
         fixture = (ROOT / 'tests/BuildIconCompatibilityTests.ps1').read_text(encoding='utf-8-sig')
         for token in ('#error PROGO_ICON_COMPILE_SENTINEL',

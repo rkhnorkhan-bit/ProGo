@@ -8,7 +8,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('ProGo-icon-test-' + [Guid]::NewGuid().ToString('N'))
 try {
     New-Item -ItemType Directory -Path $temp | Out-Null
-    foreach ($name in @('src','scripts','docs','server')) {
+    foreach ($name in @('src','scripts','docs','server','native')) {
         Copy-Item -LiteralPath (Join-Path $root $name) -Destination (Join-Path $temp $name) -Recurse
     }
     foreach ($name in @('VERSION','README.md','README.ru.md','LICENSE.md')) {

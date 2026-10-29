@@ -1,3 +1,100 @@
+## CI764 fixture integration corrections — local only, independent review pending
+
+Sole writer resumed from verified clean1bac5b26262502058de387635bf8a9acd2382b34 /
+tree356679f5f218cdc260f06162dad8bc751e272808, same checkout/branch. No AGENTS,
+Git locks or competing git/compiler/PowerShell processes. CI764 failure remains
+independently verified as recorded below; no new CI, publication or PC operation.
+
+Bounded changes only in the two fixtures and one icon source-contract test:
+- RepairPayloadTests explicitly classifies only exact root ProGo.Setup.exe and
+  PersonalBroker.ps1 as distribution-only bootstrap leaves. Both must occur once
+  as files and must not be reparse points. Nested or differently named leaves
+  remain in mandatory runtime enumeration. Force enumeration includes hidden extras.
+  Runtime count remains42; unknown extra files still increase it and are refused.
+  All code after classification, per-runtime byte equality, journal42 assertions,
+  private snapshots, deadlines, ownership and settlement checks remain byte-identical.
+- BuildIconCompatibilityTests copies native with src/scripts/docs/server into its
+  isolated fixture. All remaining script text, injected resolver/compiler refusal
+  assertions, preservation checks, host checks, deadlines and ICO checks are unchanged.
+- New available Python contract derives required top-level input directories from
+  actual Build-ProGo requiredInputs and checks that the isolated fixture copies
+  every one. It independently rejects the old missing-native fixture and passes new.
+
+Local checks:200 Python tests /197 PASS /3 SKIP; public scanner469source/0release
+PASS; diff checks PASS; UTF-8 CRLF for both PowerShell fixtures PASS. Exact baseline
+comparison confirms unchanged repair suffix and icon script except copy-list native.
+Production src/native/scripts, workflow/VERSION, guards/scheduling/privacy unchanged.
+No local pwsh/dotnet/mono/csc, installation or policy workaround. PowerShell AST,
+Windows fixture execution, new broker runtime suites and corrected CI NOT_RUN.
+
+Full delta from1bac5b2 and final clean checkpoint/tree/hashes are in adjacent
+progo-ci764-fixture-integration-review.json and progo-ci764-fixture-integration.delta.patch.
+Writer pauses after this local checkpoint for independent review before publication
+or CI. No real UAC/HKLM/ProgramFiles/ACL/network/credentials/owner-PC actions.
+
+## CI764 terminal FAILURE — sole writer paused, no retry or PC action
+
+One authorized reviewed-content publication: local19ee68fd0a205010dae6b8b36d0c8eec1c662096 /
+tree6303361b20e9ff65115060ff3e485e04dd80f915 -> source
+7ead02893556cd28c39b4050085dae2614503055, parent exactly the expected remote
+ a517dab25ed0a5daeda040b368f5282e49bf5481. All474 remote blobs match the reviewed
+tree. Non-force expected_sha CAS on integration/approved-plan-31-20261011 succeeded;
+no history replacement. Pre-publication HEAD/tree/clean/AGENTS/process/locks,
+PR88 head and active/queued/waiting/pending/requested runs across ALL event types
+were rechecked. No tools installed, clone/reset/clean, dispatch, rerun or duplicate.
+
+Automatic pull_request CI764 run40940973697 attempt1 reached terminal FAILURE
+2026-10-29 20:06:54UTC /23:06:54 Europe/Istanbul. Tested merge
+ b605183a176bc7d199392a3881fb8a7413caf942 has the exact reviewed tree above;
+parents main4bb336575bb1216d3047bd2b294aeecad9fdd65a and published source7ead0289.
+Exact-source run count1/attempt1; final all-event active/queued/etc0. PR88 remains
+draft/open at this source/merge. No second publication or automatic fix/retry.
+
+All10 COMPLETE terminal logs obtained, source/merge and terminal records checked,
+1000225 decoded UTF-8 bytes with individual SHA256. Eight prerequisites SUCCESS:
+Ubuntu, Relay, Foundation26, Live1, Recovery5, RecoveryInput1 (old33 suites retained),
+Runtime35 plus refusals, Success40 plus2 fresh-process refusals. Relay HomeVPN4816,
+Portable91, Python183 incl all5 personal_broker tests PASS with2 SKIP. MSVC native,
+C# executable and resource sealing builds passed in Windows partitions. The exact
+prerequisite gate passed before Core with all8 success/tested_sha outputs matching.
+
+windows-build FAILURE and strict Exact-SHA aggregate FAILURE (not successful CI):
+1. Core aborts at tests/RepairPayloadTests.ps1:206: sourceFiles44 versus expected42.
+   The fixture excludes only3 documents from distribution; the build now adds
+   ProGo.Setup.exe and PersonalBroker.ps1. These bootstrap distribution leaves must
+   be reconciled explicitly with actual runtime inventory and full runtime-leaf
+   coverage; do not blindly change42 ->44 or relax journal/assertion counts.
+2. Windows PowerShell icon fixture fails at BuildIconCompatibilityTests.ps1:88,
+   expected injected compiler diagnostic not observed; PowerShell7 fixture fails
+   at:74, missing-dependency injection did not reach resolver refusal. Source
+   inspection: fixture copies src/scripts/docs/server but omits newly mandatory
+   native inputs, so Build preflight refuses earlier. Caught underlying error was
+   not printed in CI; this diagnosis is source-derived, not a captured inner trace.
+   Preserve compiler/resolver-specific negative assertions, output preservation,
+   valid fixture isolation and deadlines when repairing the fixture prerequisites.
+3. Aggregate correctly refuses windows-build failure. No checks were weakened.
+
+NativeBrokerLaunchTests/PersonalBrokerTests and later Core suites NOT_RUN because
+RepairPayloadTests aborts earlier. Do NOT claim Windows pre-CLR/consumed broker/
+relocation C# fixtures passed. MSVC warning C4701 personal_broker.c:211 granted is
+recorded; its read is guarded by same i!=0 branch and successful query, no invalid
+read reproduced. Existing compiler/action deprecation warnings remain.
+
+Pack ZIP, clean-build identity self-check, public release scan and all uploads
+SKIPPED. Artifacts0; ZIP NOT_PRODUCED, no package SHA256 exists for CI764. No binary
+delivery, real UAC/HKLM/ProgramFiles/ACL/network/credentials/PC action or acceptance.
+Prior CI763 package hash does not apply to this source.
+
+Evidence: /workspace/scratch/4d867f513347/ci764-evidence/
+publication.json, initial-metadata.json, final-metadata.json, verified-summary.json,
+manifest.json and10 full .log files. Final checkpoint/tree and patch hashes are in
+checkpoint.json beside evidence (written after this documentation-only checkpoint).
+Reviewed source code remains exactly19ee68f; only this local result documentation
+is added, not published. Local public scanner and diff checks rerun for the doc.
+Writer stops after this agreed one CI. Remaining fixture/inventory corrections,
+any source patch, repeat independent review and any future CI require a new agreed
+stage. Installation/elevation/PC proof remains separate and unauthorized here.
+
 ## Independent review fixes — local checkpoint, repeat review required
 
 Sole writer resumed from verified clean617bf17c4e580863401405554ff17e9df0b284f4 /
